@@ -139,8 +139,8 @@ static int readHeader(parserFile data)
   int error_occurred = 0;
 
   while ((status = g_io_channel_read_line_string(data->file, data->gff_line,
-						 &terminator_pos,
-						 &gff_file_err)) == G_IO_STATUS_NORMAL)
+ &terminator_pos,
+ &gff_file_err)) == G_IO_STATUS_NORMAL)
     {
       gboolean done_header = FALSE ;
       ZMapGFFHeaderState header_ok = FALSE ;
@@ -208,37 +208,37 @@ static gboolean readFeatures(parserFile data)
   gff_line = data->gff_line;
 
   while ((status = g_io_channel_read_line_string(gff_file, gff_line, &terminator_pos,
-						 &gff_file_err)) == G_IO_STATUS_NORMAL)
+         &gff_file_err)) == G_IO_STATUS_NORMAL)
     {
-      *(gff_line->str + terminator_pos) = '\0' ;	    /* Remove terminating newline. */
+      *(gff_line->str + terminator_pos) = '\0' ;    /* Remove terminating newline. */
 
       if (!zMapGFFParseLine(parser, gff_line->str))
-	{
-	  GError *error = zMapGFFGetError(parser) ;
+        {
+          GError *error = zMapGFFGetError(parser) ;
 
-	  if (!error)
-	    {
+          if (!error)
+            {
               printf("zMapGFFParseLine() failed with no GError for line %d: %s",
                      zMapGFFGetLineNumber(parser), gff_line->str) ;
-	      result = FALSE ;
-	    }
-	  else
-	    {
-	      /* If the error was serious we stop processing and return the error,
-	       * otherwise we just log the error. */
-	      if (zMapGFFTerminated(parser))
-		{
-		  result = FALSE ;
-		  printf("%s", error->message) ;
-		}
-	      else
-		{
-                  /* Ignore these for this debugging.
-		  printf("%s", error->message) ;
-                  */
-		}
-	    }
-	}
+              result = FALSE ;
+            }
+          else
+            {
+              /* If the error was serious we stop processing and return the error,
+               * otherwise we just log the error. */
+              if (zMapGFFTerminated(parser))
+                {
+                  result = FALSE ;
+                  printf("%s", error->message) ;
+                }
+              else
+                {
+                          /* Ignore these for this debugging.
+                                  printf("%s", error->message) ;
+                          */
+                }
+            }
+        }
 
       gff_line = g_string_truncate(gff_line, 0) ;   /* Reset line to empty. */
     }
@@ -250,12 +250,12 @@ static gboolean readFeatures(parserFile data)
     {
 #ifdef RDS_DONT_INCLUDE
       if (zMapGFFGetFeatures(parser, feature_block))
-	{
-	  free_on_destroy = FALSE ;			    /* Make sure parser does _not_ free
-							       our data ! */
+        {
+          free_on_destroy = FALSE ;    /* Make sure parser does _not_ free
+                                               our data ! */
 
-	  result = TRUE ;
-	}
+          result = TRUE ;
+        }
 #endif
       result = TRUE;
     }

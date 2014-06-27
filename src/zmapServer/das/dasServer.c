@@ -42,7 +42,6 @@ typedef struct
   ZMapServerResponseType result ;
   DasServer server ;
   GHashTable *styles ;
-  int num_features ;
 } GetFeaturesStruct, *GetFeatures ;
 
 typedef struct
@@ -100,7 +99,7 @@ static ZMapServerResponseType getFeatureSets(void *server,
 					     GHashTable **source_2_sourcedata_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
-					  ZMapFeatureContext feature_context, int *num_features_out) ;
+					  ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code) ;
@@ -525,7 +524,7 @@ static ZMapServerResponseType setContext(void *server, ZMapFeatureContext featur
 
 
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
-					  ZMapFeatureContext feature_context, int *num_features_out)
+					  ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
   DasServer server = (DasServer)server_in;
@@ -538,7 +537,6 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   g_hash_table_foreach(feature_context->alignments, getFeatures4Aligns, (gpointer)&get_features);
 
   result = get_features.result ;
-  *num_features_out = get_features.num_features ;
 
   return result ;
 }

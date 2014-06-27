@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -65,14 +65,16 @@ typedef struct MainFrameStructName
 
 
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
-			    ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
+    ZMapAppGetSequenceViewCB user_func, gpointer user_data,
+    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeButtonBox(MainFrame main_data) ;
 static void setSequenceEntries(MainFrame main_data) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void createViewCB(GtkWidget *widget, gpointer cb_data) ;
+#ifndef __CYGWIN__
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
+#endif
 static void defaultsCB(GtkWidget *widget, gpointer cb_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 
@@ -87,7 +89,7 @@ static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 /* Display a dialog to get from the reader a sequence to be displayed with a start/end
  * and optionally a config file. */
 void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
+    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
 {
   GtkWidget *toplevel, *container ;
   gpointer seq_data = NULL ;
@@ -105,7 +107,7 @@ void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_da
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
-		     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
+     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
 
   gtk_widget_show_all(toplevel) ;
 
@@ -116,7 +118,7 @@ void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_da
 /* As for zMapAppGetSequenceView() except that returns a GtkWidget that can be
  * incorporated into a window. */
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-				      ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
+      ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
 {
   GtkWidget *container = NULL ;
 
@@ -135,8 +137,8 @@ GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpoint
 
 /* Make the whole panel returning the top container of the panel. */
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
-			    ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
+    ZMapAppGetSequenceViewCB user_func, gpointer user_data,
+    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
 {
   GtkWidget *frame = NULL ;
   GtkWidget *vbox, *main_frame, *button_box ;
@@ -257,19 +259,22 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 
   create_button = gtk_button_new_with_label("Create ZMap") ;
   gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
-		     GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_data) ;
+     GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_data) ;
   gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
 
+#ifndef __CYGWIN__
   /* N.B. we use the gtk "built-in" file chooser stuff. */
   main_data->chooser_widg = chooser_button = gtk_file_chooser_button_new("Choose A Config File",
-									 GTK_FILE_CHOOSER_ACTION_OPEN) ;
+         GTK_FILE_CHOOSER_ACTION_OPEN) ;
   gtk_signal_connect(GTK_OBJECT(chooser_button), "file-set",
-		     GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_data) ;
+     GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_data) ;
   gtk_box_pack_start(GTK_BOX(button_box), chooser_button, FALSE, TRUE, 0) ;
   home_dir = (char *)g_get_home_dir() ;
   gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(chooser_button), home_dir) ;
   gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(chooser_button), TRUE) ;
-
+#else
+  main_data->chooser_widg = chooser_button = NULL ;
+#endif
 
   /* If a sequence is provided then make a button to set it in the entries fields,
    * saves the user tedious typing. */
@@ -277,7 +282,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
     {
       defaults_button = gtk_button_new_with_label("Set Defaults") ;
       gtk_signal_connect(GTK_OBJECT(defaults_button), "clicked",
-			 GTK_SIGNAL_FUNC(defaultsCB), (gpointer)main_data) ;
+         GTK_SIGNAL_FUNC(defaultsCB), (gpointer)main_data) ;
       gtk_box_pack_start(GTK_BOX(button_box), defaults_button, FALSE, TRUE, 0) ;
     }
 
@@ -287,7 +292,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
     {
       close_button = gtk_button_new_with_label("Close") ;
       gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
-			 GTK_SIGNAL_FUNC(closeCB), (gpointer)main_data) ;
+         GTK_SIGNAL_FUNC(closeCB), (gpointer)main_data) ;
       gtk_box_pack_start(GTK_BOX(button_box), close_button, FALSE, TRUE, 0) ;
 
       /* set create button as default. */
@@ -338,17 +343,20 @@ static void defaultsCB(GtkWidget *widget, gpointer cb_data)
 
   setSequenceEntries(main_data) ;
 
+#ifndef __CYGWIN__
   gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(main_data->chooser_widg), main_data->sequence_map.config_file) ;
+#endif
 
   return ;
 }
 
 
+#ifndef __CYGWIN__
 /* Called when user chooses a file via the file dialog. */
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 {
   MainFrame main_data = (MainFrame)user_data ;
-  char *filename ;
+  char *filename = NULL ;
 
   filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget)) ;
 
@@ -358,6 +366,8 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 
   return ;
 }
+#endif
+
 
 /* Insert start/end etc. into entry fields for sequence to be displayed. */
 static void setSequenceEntries(MainFrame main_data)
@@ -421,35 +431,35 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
   else if (*sequence && *start_txt && *end_txt)
     {
       if (status)
-	{
-	  if (!(*start_txt) || !zMapStr2Int(start_txt, &start) || start < 1)
-	    {
-	      status = FALSE ;
-	      err_msg = "Invalid start specified." ;
-	    }
-	}
+        {
+          if (!(*start_txt) || !zMapStr2Int(start_txt, &start) || start < 1)
+            {
+              status = FALSE ;
+              err_msg = "Invalid start specified." ;
+            }
+        }
 
       if (status)
-	{
-	  if (!(*end_txt) || !zMapStr2Int(end_txt, &end) || end <= start)
-	    {
-	      status = FALSE ;
-	      err_msg = "Invalid end specified." ;
-	    }
-	}
+        {
+          if (!(*end_txt) || !zMapStr2Int(end_txt, &end) || end <= start)
+            {
+              status = FALSE ;
+              err_msg = "Invalid end specified." ;
+            }
+        }
 
       if (status)
-	{
-	  if (!(*config_txt))
-	    config_txt = NULL ;				    /* No file specified. */
-	}
+        {
+          if (!(*config_txt))
+            config_txt = NULL ;    /* No file specified. */
+        }
     }
   else
     {
       status = FALSE ;
       err_msg = "You must specify\n"
-	"either just a config file containing a sequence and start,end\n"
-	"or a sequence, start, end and optionally a config file." ;
+                "either just a config file containing a sequence and start,end\n"
+                "or a sequence, start, end and optionally a config file." ;
     }
 
 
@@ -467,41 +477,41 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
 
       seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
 
-	seq_map->config_file = config_txt ;
+        seq_map->config_file = config_txt ;
 
       if (*sequence)
-	{
-	  sequence_ok = TRUE ;
-	  seq_map->sequence = sequence ;
-	  seq_map->start = start ;
-	  seq_map->end = end ;
-	}
+        {
+          sequence_ok = TRUE ;
+          seq_map->sequence = sequence ;
+          seq_map->start = start ;
+          seq_map->end = end ;
+        }
       else
-	{
-          zMapAppGetSequenceConfig(seq_map, &tmp_error);
-          
+        {
+                  zMapAppGetSequenceConfig(seq_map, &tmp_error);
+                  
           if (tmp_error)
-	    {
+            {
               sequence_ok = FALSE ;
               err_msg = tmp_error->message ;
-	    }
-	  else if (!seq_map->sequence || !seq_map->start || !seq_map->end)
-	    {
-	      err_msg = "Cannot load sequence from config file, check sequence, start and end specified." ;
-	      sequence_ok = FALSE ;
-	    }
-	}
+            }
+          else if (!seq_map->sequence || !seq_map->start || !seq_map->end)
+            {
+              err_msg = "Cannot load sequence from config file, check sequence, start and end specified." ;
+              sequence_ok = FALSE ;
+            }
+        }
 
       if (!sequence_ok)
-	{
-	  zMapWarning("%s", err_msg) ;
-	  g_free(seq_map) ;
-	}
+        {
+          zMapWarning("%s", err_msg) ;
+          g_free(seq_map) ;
+        }
       else
-	{
-	  /* Call back with users parameters for new sequence display. */
-	  (main_data->user_func)(seq_map, main_data->user_data) ;
-	}
+        {
+          /* Call back with users parameters for new sequence display. */
+          (main_data->user_func)(seq_map, main_data->user_data) ;
+        }
     }
 
   if (tmp_error)

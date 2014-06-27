@@ -19,7 +19,7 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *
  * Description: Functions to create valid xml for remote commands.
  *              

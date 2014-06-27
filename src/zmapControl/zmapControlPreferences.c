@@ -38,9 +38,23 @@
 #include <zmapControl_P.h>
 
 
+#define CONTROL_CHAPTER "Display"
+#define CONTROL_PAGE "Window"
+#define CONTROL_SHRINKABLE "Shrinkable Window"
+
+
+
 static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data) ;
+static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_parent, ZMap zmap) ;
+static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
+static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused) ;
+static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap) ;
 
 
+
+/* 
+ *                  Globals
+ */
 
 static char *help_title_G = "ZMap Configuration" ;
 static char *help_text_G =
@@ -56,57 +70,51 @@ static char *help_text_G =
   "\t\"Cancel\" to discard them and quit the resources dialog\n"
   "\t\"Ok\" to apply them and quit the resources dialog\n" ;
 
+/* WHAT IS THIS FOR ????? 
+ * (sm23) I reomved this as it is not used.  
+ */
+/* static ZMapGuiNotebook note_book_G = NULL ; */
 
 
-static ZMapGuiNotebook note_book_G = NULL ;
 
+/* 
+ *                   External interface routines
+ */
 
 void zmapControlShowPreferences(ZMap zmap)
 {
   ZMapGuiNotebook note_book ;
   char *notebook_title ;
   GtkWidget *notebook_dialog ;
-  ZMapGuiNotebookChapter chapter ;
+  /* ZMapGuiNotebookChapter chapter ; */
 
-  zMapReturnIfFailSafe(!note_book_G) ;
+  zMapReturnIfFailSafe(!(zmap->preferences_note_book)) ;
+
 
   /* Construct the preferences representation */
   notebook_title = g_strdup_printf("Preferences for zmap %s", zMapGetZMapID(zmap)) ;
-  note_book = zMapGUINotebookCreateNotebook(notebook_title, TRUE, cleanUpCB, NULL) ;
+  note_book = zMapGUINotebookCreateNotebook(notebook_title, TRUE, cleanUpCB, zmap) ;
   g_free(notebook_title) ;
 
 
-  /* Now we should add preferences for the current zmapview and current zmapwindow.... */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMapViewRedraw(zmap->focus_viewwindow) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  /* Now add preferences for the current zmapview and current zmapwindow.... */
   if (note_book)
     {
       ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
-      
-      zMapViewBlixemGetConfigChapter(zmap_view, note_book) ;
+
+      /* Add prefs for control. */
+      addControlPrefsChapter(note_book, zmap) ;
+
+      /* Add general view prefs. */
       zMapViewGetPrefsChapter(zmap_view, note_book);
-
-      if(0)
-        {
-          ZMapWindow window;
-
-          window  = zMapViewGetWindow(zmap->focus_viewwindow);
-
-          chapter = zMapWindowGetConfigChapter(window, note_book) ;
-        }
-
-#ifdef NO_EDITING_YET
-      chapter = zMapViewSourcesGetConfigChapter(note_book) ;
-#endif /* NO_EDITING_YET */
-
+      
+      /* Add blixmem view prefs. */
+      zMapViewBlixemGetConfigChapter(zmap_view, note_book) ;
 
       /* Display the preferences. */
       notebook_dialog = zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
 
-      note_book_G = note_book ;
-
+      zmap->preferences_note_book = note_book ;
     }
   else
     {
@@ -118,119 +126,91 @@ void zmapControlShowPreferences(ZMap zmap)
 
 
 
+
 /* 
  *                      Internal routines
  */
 
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* If we add configuration for control here is some code.... */
-
-static void addControlChapter(ZMapGuiNotebook note_book, char *chapter_name)
-{
-  ZMapGuiNotebookChapter chapter ;
-  ZMapGuiNotebookCBStruct callbacks = {cancelCB, NULL, okCB, NULL} ;
-
-
-  chapter = zMapGUINotebookCreateChapter(note_book, chapter_name, &callbacks) ;
-
-  if (strcmp(chapter_name, "ZMap") == 0)
-    {
-      addControlPage(chapter, "Test Page 1") ;
-
-      addControlPage(chapter, "Test Page 2") ;
-    }
-  else
-    {
-      addControlPage(chapter, "Test Page 1 for ZMap 2") ;
-
-      addControlPage(chapter, "Test Page 2 for ZMap 2") ;
-    }
-
-
-  return ;
-}
-
-
-
-static void addControlPage(ZMapGuiNotebookChapter chapter, char *page_name)
-{
-  ZMapGuiNotebookPage page ;
-  ZMapGuiNotebookParagraph paragraph ;
-  ZMapGuiNotebookTagValue tag_value ;
-
-  zMapReturnIfFail(chapter) ; 
-
-  page = (ZMapGuiNotebookPage)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_PAGE, page_name) ;
-
-  chapter->pages = g_list_append(chapter->pages, page) ;
-
-  if (strcmp(page_name, "Test Page 1") == 0)
-    {
-      paragraph = (ZMapGuiNotebookParagraph)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_PARAGRAPH, NULL) ;
-      paragraph->display_type = ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE ;
-      page->paragraphs = g_list_append(page->paragraphs, paragraph) ;
-
-      tag_value = (ZMapGuiNotebookTagValue)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_TAGVALUE, "Description") ;
-      tag_value->display_type = ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT ;
-      tag_value->text = g_strdup("A fabulous load of old tosh...................") ;
-      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
-    }
-  else
-    {
-      paragraph = (ZMapGuiNotebookParagraph)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_PARAGRAPH, NULL) ;
-      paragraph->display_type = ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE ;
-      page->paragraphs = g_list_append(page->paragraphs, paragraph) ;
-
-      tag_value = (ZMapGuiNotebookTagValue)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_TAGVALUE, "Align Type") ;
-      tag_value->display_type = ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE ;
-      tag_value->text = g_strdup("Rubbish") ;
-      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
-
-      tag_value = (ZMapGuiNotebookTagValue)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_TAGVALUE, "Query length") ;
-      tag_value->display_type = ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE ;
-      tag_value->text = g_strdup("9999999") ;
-      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
-
-      tag_value = (ZMapGuiNotebookTagValue)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_TAGVALUE, "Query phase") ;
-      tag_value->display_type = ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE ;
-      tag_value->text = g_strdup("Bad phase") ;
-      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
-    }
-
-
-  return ;
-}
-
-
-static void okCB(ZMapGuiNotebookChapter chapter)
-{
-  printf("in ok for chapter: %s\n", g_quark_to_string(chapter->name)) ;
-
-  return ;
-}
-
-
-static void cancelCB(ZMapGuiNotebookChapter chapter)
-{
-  printf("in cancel for chapter: %s\n", g_quark_to_string(chapter->name)) ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data)
 {
   ZMapGuiNotebook note_book = (ZMapGuiNotebook)any_section ;
+  ZMap zmap = (ZMap)user_data ;
 
   zMapGUINotebookDestroyNotebook(note_book) ;
 
-  note_book_G = NULL ;
+  zmap->preferences_note_book = NULL ;
 
   return ;
 }
+
+
+/* Does the work to create a chapter in the preferences notebook for general zmap settings. */
+static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_parent, ZMap zmap)
+{
+  ZMapGuiNotebookChapter chapter = NULL ;
+  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, zmap, NULL, NULL, NULL, NULL} ;
+  ZMapGuiNotebookPage page ;
+  ZMapGuiNotebookSubsection subsection ;
+  ZMapGuiNotebookParagraph paragraph ;
+  ZMapGuiNotebookTagValue tagvalue ;
+
+  chapter = zMapGUINotebookCreateChapter(note_book_parent, CONTROL_CHAPTER, &user_CBs) ;
+
+
+  page = zMapGUINotebookCreatePage(chapter, CONTROL_PAGE) ;
+
+  subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
+
+  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
+					     NULL, NULL) ;
+
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_SHRINKABLE,
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+					   "bool", zmap->shrinkable) ;
+
+  return chapter ;
+}
+
+
+/* User applies the preferences. */
+static void applyCB(ZMapGuiNotebookAny any_section, void *user_data)
+{
+  ZMap zmap = (ZMap)user_data;
+
+  readChapter((ZMapGuiNotebookChapter)any_section, zmap) ;
+
+  return ;
+}
+
+/* User cancels preferences. */
+static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
+{
+  return ;
+}
+
+
+
+/* Set the preferences. */
+static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
+{
+  ZMapGuiNotebookPage page ;
+  gboolean bool_value = FALSE ;
+
+  if ((page = zMapGUINotebookFindPage(chapter, CONTROL_PAGE)))
+    {
+      if (zMapGUINotebookGetTagValue(page, CONTROL_SHRINKABLE, "bool", &bool_value))
+	{
+	  if (zmap->shrinkable != bool_value)
+	    {
+              zmap->shrinkable = bool_value ;
+
+              gtk_window_set_policy(GTK_WINDOW(zmap->toplevel), zmap->shrinkable, TRUE, FALSE ) ;
+	    }
+	}
+    }
+  
+  return ;
+}
+
+

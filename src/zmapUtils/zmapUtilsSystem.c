@@ -1,5 +1,5 @@
-/*  File: zmapWindowScratch_P.h
- *  Author: Roy Storey (rds@sanger.ac.uk)
+/*  File: zmapUtilsSystem.c
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -24,22 +24,50 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Internal header for the window mark package..
+ * Description: Contains routines for various system functions.
  *
+ * Exported functions: See zmapUtils.h
  *-------------------------------------------------------------------
  */
 
-#ifndef ZMAP_WINDOW_MARK_P_H
-#define ZMAP_WINDOW_MARK_P_H
+#include <ZMap/zmap.h>
 
-#include <ZMap/zmapWindow.h>
+#include <sys/utsname.h>
 
-/* Copy the given feature into the scratch column */
-void zmapWindowScratchCopyFeature(ZMapWindow window, ZMapFeature new_feature, FooCanvasItem *item, const double x_pos_in, const double y_pos_in, const gboolean use_subfeature);
-void zmapWindowScratchDeleteFeature(ZMapWindow window, ZMapFeature new_feature, FooCanvasItem *item, const double x_pos_in, const double y_pos_in, const gboolean use_subfeature);
-void zmapWindowScratchUndo(ZMapWindow window);
-void zmapWindowScratchRedo(ZMapWindow window);
-void zmapWindowScratchClear(ZMapWindow window);
-ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window);
+#include <zmapUtils_P.h>
 
-#endif	/* ZMAP_WINDOW_MARK_P_H */
+
+
+
+/*
+ *               External Interface functions
+ */
+
+
+
+/* Check the system type, e.g. Linux, Darwin etc, the string returned is as per
+ * the uname command so you should test it against the string you expect.
+ * The function returns NULL if the uname command failed, otherwise it returns
+ * a string that should be g_free'd by the caller. */
+char *zMapUtilsSysGetSysName(void)
+{
+  char *sys_name = NULL ;
+  struct utsname unamebuf ;
+
+  if (uname(&unamebuf) == 0)
+    {
+      sys_name = g_strdup(unamebuf.sysname) ;
+    }
+
+  return sys_name ;
+}
+
+
+
+
+
+
+/*
+ *               Internal functions
+ */
+

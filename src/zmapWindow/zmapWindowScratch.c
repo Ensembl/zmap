@@ -40,59 +40,6 @@
 #include <zmapWindowScratch_P.h>
 
 
-typedef struct _GetFeaturesetCBDataStruct
-{
-  GQuark set_id;
-  ZMapFeatureSet featureset;
-} GetFeaturesetCBDataStruct, *GetFeaturesetCBData;
-
-
-/*!
- * \brief Callback called on every child in a FeatureAny.
- * 
- * For each featureset, compares its id to the id in the user
- * data and if it matches it sets the result in the user data.
- */
-static ZMapFeatureContextExecuteStatus getFeaturesetFromIdCB(GQuark key,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **err_out)
-{
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  
-  GetFeaturesetCBData cb_data = (GetFeaturesetCBData) user_data ;
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      if (feature_any->unique_id == cb_data->set_id)
-        cb_data->featureset = (ZMapFeatureSet)feature_any;
-      break;
-      
-    default:
-      break;
-    };
-  
-  return status;
-}
-
-
-/*!
- * \brief Find the featureset with the given id in the given window's context
- */
-static ZMapFeatureSet getFeaturesetFromId(ZMapWindow window, GQuark set_id)
-{
-  GetFeaturesetCBDataStruct cb_data = { set_id, NULL };
-  
-  zMapFeatureContextExecute((ZMapFeatureAny)window->feature_context,
-                            ZMAPFEATURE_STRUCT_FEATURESET,
-                            getFeaturesetFromIdCB,
-                            &cb_data);
-
-  return cb_data.featureset ;
-}
-
 
 /*!
  * \brief Get the single featureset that resides in the scratch column
@@ -112,13 +59,77 @@ ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window)
       if (g_list_length(fs_list) > 0)
         {         
           GQuark set_id = (GQuark)(GPOINTER_TO_INT(fs_list->data));
-          feature_set = getFeaturesetFromId(window, set_id);
+          feature_set = zmapFeatureContextGetFeaturesetFromId(window->feature_context, set_id);
         }
     }
   
   return feature_set;
 }
 
+
+static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
+                                     ZMapWindow window,
+                                     ZMapFeature feature, 
+                                     FooCanvasItem *item, 
+                                     const double world_x,
+                                     const double world_y,
+                                     const gboolean use_subfeature)
+{
+  gboolean ok = TRUE ;
+  ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
+ 
+  /* Set up general command field for callback. */
+  scratch_cmd->cmd = command_type ;
+  scratch_cmd->seq_start = 0;
+  scratch_cmd->seq_end = 0;
+  scratch_cmd->subpart = NULL;
+  scratch_cmd->use_subfeature = use_subfeature ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && !use_subfeature)
+    {
+      /* For alignment features, get all of the linked match blocks */
+      scratch_cmd->features = zMapWindowCanvasAlignmentGetAllMatchBlocks(item) ;
+    }
+  else
+    {
+      /* Otherwise just pass the single given feature */
+      scratch_cmd->features = g_list_append(scratch_cmd->features, feature) ;
+    }
+
+  if (feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
+    {
+      /* For sequence features, get the sequence coord that was clicked */
+      zMapWindowItemGetSeqCoord(item, TRUE, world_x, world_y, &scratch_cmd->seq_start, &scratch_cmd->seq_end) ;
+    }
+
+  /* If necessary, find the subfeature and set it in the data. What constitutes a
+   * "subfeature" depends on the feature type: for transcripts, it's an intron/exon. For
+   * alignments, it's a match block, which is actually the whole ZMapFeature (and the
+   * "entire" feature therefore includes the linked match blocks from the same alignment).  */
+  if (use_subfeature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      zMapWindowCanvasItemGetInterval((ZMapWindowCanvasItem)item, world_x, world_y, &scratch_cmd->subpart) ;
+      
+      if (!scratch_cmd->subpart)
+        {
+          ok = FALSE ;
+          zMapWarning("Cannot find subfeature for feature '%s' at position %f,%f", 
+                      g_quark_to_string(feature->original_id), world_x, world_y) ;
+        }
+    }
+
+  if (ok)
+    {
+      /* Call back to the View to update all windows */
+      ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+      (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+    }
+  else
+    {
+      g_free(scratch_cmd) ;
+      scratch_cmd = NULL ;
+    }
+}
 
 /*!
  * \brief Copy the given feature to the scratch column
@@ -139,19 +150,47 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
 {
   if (window && feature)
     {
-      /* Call back to the View to update all windows */
-      ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
-      ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
-      
-      /* Set up general command field for callback. */
-      scratch_cmd->cmd = ZMAPWINDOW_CMD_COPYTOSCRATCH ;
-      scratch_cmd->feature = feature;
-      scratch_cmd->item = item;
-      scratch_cmd->world_x = world_x;
-      scratch_cmd->world_y = world_y;
-      scratch_cmd->use_subfeature = use_subfeature;
-      
-      (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+      doScratchCallbackCommand(ZMAPWINDOW_CMD_COPYTOSCRATCH, 
+                               window,
+                               feature, 
+                               item, 
+                               world_x,
+                               world_y,
+                               use_subfeature) ;
+    }
+  else
+    {
+      zMapWarning("%s", "Error: no feature selected\n");
+    }
+}
+
+
+/*!
+ * \brief Delete the subfeature at the given feature's coords from the scratch column
+ *
+ * \param window
+ * \param feature The new feature to be copied in
+ * \param item The foo canvas item for the new feature
+ * \param world_x The clicked x coord
+ * \param world_y The clicked y coord
+ * \param merge_subfeature If true, just merge the clicked subfeature, otherwise merge the whole feature
+ */
+void zmapWindowScratchDeleteFeature(ZMapWindow window, 
+                                    ZMapFeature feature, 
+                                    FooCanvasItem *item, 
+                                    const double world_x,
+                                    const double world_y,
+                                    const gboolean use_subfeature)
+{
+  if (window && feature)
+    {
+      doScratchCallbackCommand(ZMAPWINDOW_CMD_DELETEFROMSCRATCH, 
+                               window,
+                               feature, 
+                               item, 
+                               world_x,
+                               world_y,
+                               use_subfeature) ;
     }
   else
     {

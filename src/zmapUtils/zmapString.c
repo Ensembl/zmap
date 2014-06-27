@@ -78,14 +78,14 @@ gboolean zMapStringBlank(char *string)
   while (*curr)
     {
       if (!g_ascii_isspace(*curr))
-	{
-	  result = FALSE ;
-	  break ;
-	}
+        {
+          result = FALSE ;
+          break ;
+        }
       else
-	{
-	  curr++ ;
-	}
+        {
+          curr++ ;
+        }
     }
 
   return result ;
@@ -114,39 +114,39 @@ char *zMapStringCompress(char *txt)
 
       /* Remove internal multiple spaces by finding them and then moving
        * the remaining string to overlay them. */
-      len = strlen(compressed_txt) + 1 ;		    /* + 1 to make sure our memcpy's
-							       include the terminating NULL. */
+      len = strlen(compressed_txt) + 1 ;    /* + 1 to make sure our memcpy's
+       include the terminating NULL. */
       curr = compressed_txt ;
       while (*curr)
-	{
-	  if (!g_ascii_isspace(*curr))
-	    {
-	      curr++ ;
-	      len-- ;
-	    }
-	  else
-	    {
-	      char *curr_space, *next_char ;
+        {
+          if (!g_ascii_isspace(*curr))
+            {
+              curr++ ;
+              len-- ;
+            }
+          else
+            {
+              char *curr_space, *next_char ;
+        
+              next_char = curr_space = curr ;
+        
+              /* chug through the space. */
+              while (g_ascii_isspace(*next_char))
+                {
+                  next_char++ ;
+                  len-- ;
+                }
 
-	      next_char = curr_space = curr ;
-
-	      /* chug through the space. */
-	      while (g_ascii_isspace(*next_char))
-		{
-		  next_char++ ;
-		  len-- ;
-		}
-
-	      /* Only do memcpy if there are multiple spaces. */
-	      if (next_char > (curr_space + 1))
-		{
-		  memcpy((curr_space + 1), next_char, len) ;
-		}
-
-	      /* bump us on to char after this space. */
-	      curr = (curr_space + 1) ;
-	    }
-	}
+              /* Only do memcpy if there are multiple spaces. */
+              if (next_char > (curr_space + 1))
+                {
+                  memcpy((curr_space + 1), next_char, len) ;
+                }
+        
+              /* bump us on to char after this space. */
+              curr = (curr_space + 1) ;
+            }
+        }
     }
 
   return compressed_txt ;
@@ -178,48 +178,48 @@ char *zMapStringFlatten(char *query_txt)
   for(i = 0, n = 0 ; i < len ; i++, n++, query_ptr++)
     {
       if (g_ascii_isspace(*query_ptr) || g_ascii_iscntrl(*query_ptr))
-	n++ ;
+        n++ ;
 
       /* Is the replacement a non space? */
       if (n < len && !(g_ascii_isspace(query_txt[n]) || g_ascii_iscntrl(query_txt[n])))
-	{
-	  *query_ptr = query_txt[n];
-
-	  /* should we set the intervening chars to space? */
-	  if (query_ptr != &query_txt[n])
-	    {
-	      char *tmp = query_ptr;
-
-	      query_ptr++;
-
-	      while(query_ptr < &query_txt[n])
-		{
-		  *query_ptr = ' ';
-		  query_ptr++;
-		}
-
-	      query_ptr = tmp;
-	      query_txt[n] = ' ';
-	      n--;
-	    }
-	}
-      else if (n >= len)		/* reached the end? */
-	{
-	  int j ;
-
-	  for (j = i; j < len; j++)
-	    {
-	      query_txt[j] = ' ';
-	    }
-
-	  break;
-	}
+        {
+          *query_ptr = query_txt[n];
+        
+          /* should we set the intervening chars to space? */
+          if (query_ptr != &query_txt[n])
+            {
+              char *tmp = query_ptr;
+        
+              query_ptr++;
+        
+              while(query_ptr < &query_txt[n])
+                {
+                  *query_ptr = ' ';
+                  query_ptr++;
+                }
+        
+              query_ptr = tmp;
+              query_txt[n] = ' ';
+              n--;
+            }
+        }
+      else if (n >= len)/* reached the end? */
+        {
+          int j ;
+        
+          for (j = i; j < len; j++)
+            {
+              query_txt[j] = ' ';
+            }
+        
+          break;
+        }
       else if (i != 0)
-	{
-	  /* Keep the pointer back at the last non-space */
-	  query_ptr--;
-	  n--;
-	}
+        {
+          /* Keep the pointer back at the last non-space */
+          query_ptr--;
+          n--;
+        }
     }
 
   /* Use glib function to strip off trailing space... */
@@ -245,108 +245,108 @@ static int findMatch(char *target, char *query, gboolean caseSensitive)
   while (TRUE)
     {
       switch(*t)
-	{
-	case '\0':
-	  if (!*c)
-	    return  ( s ? 1 + (s - target) : 1) ;
+        {
+        case '\0':
+          if (!*c)
+            return  ( s ? 1 + (s - target) : 1) ;
 
-	  if (!star)
-	    return 0 ;
+          if (!star)
+            return 0 ;
 
-	  /* else not success yet go back in template */
-	  t=ts; c=cs+1;
-	  if(ts == query) s = 0 ;
-	  break ;
+          /* else not success yet go back in template */
+          t=ts; c=cs+1;
+          if(ts == query) s = 0 ;
+          break ;
 
-	case '?':
-	  if (!*c)
-	    return 0 ;
-	  if(!s) s = c ;
-	  t++ ;  c++ ;
-	  break;
+        case '?':
+          if (!*c)
+            return 0 ;
+          if(!s) s = c ;
+          t++ ;  c++ ;
+          break;
 
-	case '*':
-	  ts=t;
-	  while( *t == '?' || *t == '*')
-	    t++;
+        case '*':
+          ts=t;
+          while( *t == '?' || *t == '*')
+            t++;
 
-	  if (!*t)
-	    return s ? 1 + (s-target) : 1 ;
+          if (!*t)
+            return s ? 1 + (s-target) : 1 ;
 
-	  if (!caseSensitive)
-	    {
+          if (!caseSensitive)
+            {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      while (g_ascii_toupper(*c) != g_ascii_toupper(*t))
-		{
-		  if(*c)
-		    c++;
-		  else
-		    return 0 ;
-		}
+              while (g_ascii_toupper(*c) != g_ascii_toupper(*t))
+                {
+                  if(*c)
+                    c++;
+                  else
+                    return 0 ;
+                }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	      while (g_ascii_toupper(*c) != g_ascii_toupper(*t))
-		{
-		  c++;
+              while (g_ascii_toupper(*c) != g_ascii_toupper(*t))
+                {
+                  c++;
+                
+                  if (!(*c))
+                    return 0 ;
+                }
+            }
+          else
+            {
+              while (*c != *t)
+                {
+                  if(*c)
+                    c++;
+                  else
+                    return 0 ;
+                }
+            }
 
-		  if (!(*c))
-		    return 0 ;
-		}
-	    }
-	  else
-	    {
-	      while (*c != *t)
-		{
-		  if(*c)
-		    c++;
-		  else
-		    return 0 ;
-		}
-	    }
+          star=1;
+          cs=c;
+          if(!s) s = c ;
+          break;
+        
+        default:
+          if (!caseSensitive)
+            {      
+              if (g_ascii_toupper(*t++) != g_ascii_toupper(*c++))
+                {
+                  if(!star)
+                    return 0 ;
+                
+                  t=ts; c=cs+1;
+                
+                  if(ts == query)
+                    s = 0 ;
+                }
+              else
+                {
+                  if(!s)
+                    s = c - 1 ;
+                }
+            }
+          else
+            {
+              if (*t++ != *c++)
+                {
+                  if(!star)
+                    return 0 ;
 
-	  star=1;
-	  cs=c;
-	  if(!s) s = c ;
-	  break;
-
-	default:
-	  if (!caseSensitive)
-	    {      
-	      if (g_ascii_toupper(*t++) != g_ascii_toupper(*c++))
-		{
-		  if(!star)
-		    return 0 ;
-
-		  t=ts; c=cs+1;
-
-		  if(ts == query)
-		    s = 0 ;
-		}
-	      else
-		{
-		  if(!s)
-		    s = c - 1 ;
-		}
-	    }
-	  else
-	    {
-	      if (*t++ != *c++)
-		{
-		  if(!star)
-		    return 0 ;
-
-		  t=ts; c=cs+1;
-		  if(ts == query)
-		    s = 0 ;
-		}
-	      else
-		{
-		  if(!s) s = c - 1 ;
-		}
-	    }
-	  break;
-	}
+                  t=ts; c=cs+1;
+                  if(ts == query)
+                    s = 0 ;
+                }
+              else
+                {
+                  if(!s) s = c - 1 ;
+                }
+            }
+          break;
+        }
     }
 
   return result ;

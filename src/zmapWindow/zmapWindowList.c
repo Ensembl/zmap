@@ -829,7 +829,7 @@ static void row_activated_cb(GtkTreeView       *treeView,
 						  window_list->context_to_item,
 						  &iter)))
 	{
-	  zmapWindowFeatureShow(window_list->zmap_window, item) ;
+          zmapWindowFeatureShow(window_list->zmap_window, item, FALSE) ;
 	}
       else
 	{

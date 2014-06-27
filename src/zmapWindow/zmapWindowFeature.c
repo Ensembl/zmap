@@ -570,9 +570,24 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 {
   gboolean event_handled = FALSE ;			    /* By default we _don't_ handle events. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
-  ZMapFeature feature ;
+  static ZMapFeature feature = NULL ;
   static guint32 last_but_release = 0 ;			    /* Used for double clicks... */
   static gboolean second_press = FALSE ;		    /* Used for double clicks... */
+  static gboolean dragging = FALSE ;                        /* Have clicked button 1 but not yet released */
+  static gboolean dnd_in_progress = FALSE ;                 /* Drag and drop is in progress */
+
+  /* Set up targets for drag and drop */
+  static GtkTargetEntry targetentries[] =
+    {
+      { "STRING",        0, TARGET_STRING },
+      { "text/plain",    0, TARGET_STRING },
+      { "text/uri-list", 0, TARGET_URL },
+    };
+
+  static GtkTargetList *targetlist = NULL;
+
+  if (!targetlist)
+    targetlist= gtk_target_list_new(targetentries, 3);
 
 
   if (event->type == GDK_BUTTON_PRESS || event->type == GDK_2BUTTON_PRESS  || event->type == GDK_BUTTON_RELEASE)
@@ -619,7 +634,12 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 	  if (but_event->type == GDK_BUTTON_PRESS)
 	    {
-	      if (but_event->button == 3)
+              if (but_event->button == 1)
+                {
+                  dragging = TRUE ;
+                  dnd_in_progress = FALSE ;
+                }
+              else if (but_event->button == 3)
 		{
 		  /* Pop up an item menu. */
 		  zmapMakeItemMenu(but_event, window, item) ;
@@ -636,6 +656,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	  else						    /* button release */
 	    {
 	      /*                            button release                             */
+              dragging = FALSE ;
+              dnd_in_progress = FALSE ;
 
 	      /* Gdk defines double clicks as occuring within 250 milliseconds of each other
 	       * but unfortunately if on the first click we do a lot of processing,
@@ -647,6 +669,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 	      if (second_press || but_event->time - last_but_release < but_threshold)
 		{
+                  const gchar *style_id = g_quark_to_string(zMapStyleGetID(*feature->style)) ;
+
 		  /* Second click of a double click means show feature details. */
 		  if (but_event->button == 1)
 		    {
@@ -662,8 +686,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                            * user can set some attributes locally in zmap instead. Then from
                            * that dialog, or another option in zmap, they could have the option
                            * to save the feature to the peer. */
-                          const gchar *style_id = g_quark_to_string(zMapStyleGetID(*feature->style)) ;
-
                           if (feature && feature->style && strcmp(style_id, ZMAP_FIXED_STYLE_SCRATCH_NAME) == 0)
                             {
                               callXRemote(window, (ZMapFeatureAny)feature, ZACP_CREATE_FEATURE, highlight_item) ;
@@ -673,7 +695,21 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                               callXRemote(window, (ZMapFeatureAny)feature, ZACP_EDIT_FEATURE, highlight_item) ;
                             }
 			}
-		    }
+                      else
+                        {
+                          /* No xremote peer connected. If the user double clicked the annotation
+                           * column then open the Create Feature dialog to create the feature
+                           * locally. For other columns we may want to do an 'edit' operation - copy the feature to
+                           * the Annotation column ready for editing. This requires a little thought
+                           * though (we probably only want to do this if the Annotation column is
+                           * empty? Or always copy and merge it in... probably with a control key to
+                           * determine whether the entire feature or just the subfeature should be copied). */
+                          if (feature && feature->style && strcmp(style_id, ZMAP_FIXED_STYLE_SCRATCH_NAME) == 0)
+                            {
+                              zmapWindowFeatureShow(window, item, TRUE) ;
+                            }
+                        }
+                    }
 
 		  second_press = FALSE ;
 		}
@@ -698,6 +734,24 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	  if (mouse_debug_G)
 	    fflush(stdout) ;
 	}
+    }
+  else if (event->type == GDK_MOTION_NOTIFY)
+    {
+      /* We initiate drag-and-drop if the user has started dragging a feature that is already
+       * selected. "dragging" indicates that a left-click has happened and not been released yet, and
+       * "dnd_in_progress" means that a drag-and-drop has already been initiated (so there's
+       * nothing left to do). */
+      if (!dnd_in_progress && dragging && item && window)
+        {
+          if (zmapWindowFocusIsItemFocused(window->focus, item))
+            {
+              gtk_drag_begin(GTK_WIDGET(window->canvas), targetlist, 
+                             GDK_ACTION_COPY|GDK_ACTION_MOVE|GDK_ACTION_LINK,
+                             1, (GdkEvent*)event);
+              
+              dnd_in_progress = TRUE ;
+            }
+        }
     }
 
 
@@ -1196,7 +1250,7 @@ static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
 	    }
 	  else if (command_rc == REMOTE_COMMAND_RC_FAILED)
 	    {
-	      zmapWindowFeatureShow(remote_data->window, remote_data->real_item) ;
+              zmapWindowFeatureShow(remote_data->window, remote_data->real_item, FALSE) ;
 	    }
 	}
     }

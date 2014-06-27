@@ -211,6 +211,22 @@ AC_CONFIG_SUBDIRS([<font color="red"><b>AceConn</b></font>])
 
 </pre>
 
+<p>If you need to specify parameters to the ./configure call for just this package then this
+hack just before the AC_CONFIG_SUBDIRS() macro (see 
+<a href="https://github.com/tracebox/tracebox/blob/master/configure.ac">tracebox</a>) will work:</p>
+
+<pre>
+ac_configure_args_pre="$ac_configure_args"
+ac_configure_args_post="$ac_configure_args --enable-static"
+ac_configure_args="$ac_configure_args_post"
+AC_CONFIG_COMMANDS_PRE([ac_configure_args="$ac_configure_args_pre"])
+AC_CONFIG_COMMANDS_POST([ac_configure_args="$ac_configure_args_post"])
+AC_CONFIG_SUBDIRS([<font color="red"><b>AceConn</b></font>])
+</pre>
+
+<p>In this case we are adding '--enable-static' to the list of arguments to ./configure to ensure
+that the static library is built.</p>
+
 
 <h3>Trying Out The Build</h3>
 

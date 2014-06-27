@@ -152,45 +152,45 @@ static gboolean double_to_open(GtkWidget *widget, GdkEventButton *button, gpoint
   if(GTK_IS_PANED(widget))
     {
       switch(button->type)
-	{
-	case GDK_2BUTTON_PRESS:
-	  {
-	    GtkPaned *pane = GTK_PANED(widget);
+        {
+        case GDK_2BUTTON_PRESS:
+          {
+            GtkPaned *pane = GTK_PANED(widget);
+        
+            if (button->window == pane->handle)
+              {
+                ZMap zmap = (ZMap)user_data ;
+                int max_position, cur_position ;
+        
+                max_position = zmapNavigatorGetMaxWidth(zmap->navigator);
+                cur_position = gtk_paned_get_position(pane);
 
-	    if (button->window == pane->handle)
-	      {
-		ZMap zmap = (ZMap)user_data ;
-		int max_position, cur_position ;
+                if(gdk_pointer_is_grabbed())
+                  {
+                    gdk_pointer_ungrab(button->time);
+                    /* have to poke around in here ;( */
+                    pane->in_drag = FALSE;
+                  }
 
-		max_position = zmapNavigatorGetMaxWidth(zmap->navigator);
-		cur_position = gtk_paned_get_position(pane);
-
-		if(gdk_pointer_is_grabbed())
-		  {
-		    gdk_pointer_ungrab(button->time);
-		    /* have to poke around in here ;( */
-		    pane->in_drag = FALSE;
-		  }
-
-		if(cur_position < max_position)
-		  gtk_paned_set_position(pane, max_position);
-		else if(cur_position >= max_position)
-		  gtk_paned_set_position(pane, 0);
+                if(cur_position < max_position)
+                  gtk_paned_set_position(pane, max_position);
+                else if(cur_position >= max_position)
+                  gtk_paned_set_position(pane, 0);
 
 #ifdef DIFFERENCE
-		g_object_set(G_OBJECT(pane),
-			     "position",     max_position,
-			     "position_set", TRUE,
-			     NULL);
+                g_object_set(G_OBJECT(pane),
+                     "position",     max_position,
+                     "position_set", TRUE,
+                     NULL);
 #endif
 
-		handled = TRUE;
-	      }
-	  }
-	  break;
-	default:
-	  break;
-	}
+                handled = TRUE;
+              }
+          }
+          break;
+        default:
+          break;
+        }
     }
 
   return handled;

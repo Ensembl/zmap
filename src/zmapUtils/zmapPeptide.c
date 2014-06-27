@@ -56,12 +56,12 @@
 /* This struct represents a peptide sequence. */
 typedef struct _ZMapPeptideStruct
 {
-  GQuark sequence_name ;				    /* As in the FASTA sense. */
-  GQuark gene_name ;					    /* If peptide is a gene translation. */
-  int start, end ;					    /* e.g. coords of gene in sequence. */
-  gboolean stop_codon ;					    /* TRUE means there is a final stop codon. */
-  gboolean incomplete_final_codon ;			    /* TRUE means the end phase of the translation != 0 */
-  GArray *peptide ;					    /* The peptide string. */
+  GQuark sequence_name ;    /* As in the FASTA sense. */
+  GQuark gene_name ;    /* If peptide is a gene translation. */
+  int start, end ;    /* e.g. coords of gene in sequence. */
+  gboolean stop_codon ;    /* TRUE means there is a final stop codon. */
+  gboolean incomplete_final_codon ;    /* TRUE means the end phase of the translation != 0 */
+  GArray *peptide ;    /* The peptide string. */
 } ZMapPeptideStruct ;
 
 
@@ -92,8 +92,8 @@ typedef struct
 /* This struct represents a genetic code. */
 typedef struct _ZMapGeneticCodeStruct
 {
-  GQuark name ;						    /* Text name of the Genetic code, e.g. mitochondrial. */
-  GArray *table ;					    /* The code table, an array of CodonTranslationStruct. */
+  GQuark name ;    /* Text name of the Genetic code, e.g. mitochondrial. */
+  GArray *table ;    /* The code table, an array of CodonTranslationStruct. */
 } ZMapGeneticCodeStruct ;
 
 
@@ -101,13 +101,13 @@ typedef char (*CodonTranslatorFunc)(char *codon, ZMapGeneticCode genetic_code, i
 
 
 static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboolean include_stop,
-			    gboolean *incomplete_final_codon) ;
+    gboolean *incomplete_final_codon) ;
 static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStrand strand,
-				   ZMapGeneticCode translation_table, gboolean include_stop,
-				   gboolean *incomplete_final_codon) ;
+   ZMapGeneticCode translation_table, gboolean include_stop,
+   gboolean *incomplete_final_codon) ;
 
 static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMapStrand strand,
-				gboolean encode, gboolean include_stop) ;
+gboolean encode, gboolean include_stop) ;
 
 
 static ZMapGeneticCode pepGetTranslationTable(void) ;
@@ -191,7 +191,7 @@ char *zMapPeptideCreateRaw(char *dna, ZMapGeneticCode translation_table, gboolea
 /* Takes a dna string and returns a simple string containing the peptide translation for the given
  * section of dna. */
 char *zMapPeptideCreateRawSegment(char *dna,  int from, int length, ZMapStrand strand,
-				  ZMapGeneticCode translation_table, gboolean include_stop)
+  ZMapGeneticCode translation_table, gboolean include_stop)
 {
   char *peptide_str = NULL ;
   GArray *peptide ;
@@ -202,7 +202,7 @@ char *zMapPeptideCreateRawSegment(char *dna,  int from, int length, ZMapStrand s
     return peptide_str ; 
 
   if ((peptide = translateDNASegment(dna, from, length, strand,
-				     translation_table, include_stop, &incomplete_final_stop)))
+     translation_table, include_stop, &incomplete_final_stop)))
     {
       peptide_str = g_array_free(peptide, FALSE) ;
     }
@@ -214,7 +214,7 @@ char *zMapPeptideCreateRawSegment(char *dna,  int from, int length, ZMapStrand s
 /* Takes a peptide string and lower cases it inplace. */
 gboolean zMapPeptideCanonical(char *peptide)
 {
-  gboolean result = TRUE ;				    /* Nothing to fail currently. */
+  gboolean result = TRUE ;    /* Nothing to fail currently. */
   char *base ;
 
   /* zMapAssert(peptide && *peptide) ; */
@@ -244,20 +244,20 @@ gboolean zMapPeptideValidate(char *peptide)
       aa = peptide ;
       valid = TRUE ;
       while (*aa)
-	{
-	 if (*aa != 'A' && *aa != 'R' && *aa != 'N' && *aa != 'D'
-	     && *aa != 'C' && *aa != 'E' && *aa != 'Q' && *aa != 'G'
-	     && *aa != 'H' && *aa != 'I' && *aa != 'L' && *aa != 'K'
-	     && *aa != 'M' && *aa != 'F' && *aa != 'P' && *aa != 'S'
-	     && *aa != 'T' && *aa != 'W' && *aa != 'Y' && *aa != 'V'
-	     && *aa != 'X')
-	    {
-	      valid = FALSE ;
-	      break ;
-	    }
-	  else
-	    aa++ ;
-	}
+        {
+         if (*aa != 'A' && *aa != 'R' && *aa != 'N' && *aa != 'D'
+             && *aa != 'C' && *aa != 'E' && *aa != 'Q' && *aa != 'G'
+             && *aa != 'H' && *aa != 'I' && *aa != 'L' && *aa != 'K'
+             && *aa != 'M' && *aa != 'F' && *aa != 'P' && *aa != 'S'
+             && *aa != 'T' && *aa != 'W' && *aa != 'Y' && *aa != 'V'
+             && *aa != 'X')
+            {
+              valid = FALSE ;
+              break ;
+            }
+          else
+            aa++ ;
+        }
     }
 
   return valid ;
@@ -272,7 +272,7 @@ gboolean zMapPeptideValidate(char *peptide)
  * the terminating stop codon (assuming the dna ends with a stop codon).
  */
 ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
-			      char *dna, ZMapGeneticCode translation_table, gboolean include_stop)
+      char *dna, ZMapGeneticCode translation_table, gboolean include_stop)
 {
   ZMapPeptide pep = NULL ;
 
@@ -315,7 +315,7 @@ ZMapPeptide zMapPeptideCreateEmpty(char *sequence_name, char *gene_name, char *d
   bases = strlen(dna) ;
   len = bases / 3 ;
 
-  if (bases % 3)					    /* + 1 for 'X' if an incomplete codon. */
+  if (bases % 3)    /* + 1 for 'X' if an incomplete codon. */
     len++ ;
 
   /* Create the array, TRUE param adds a null byte to the end. */
@@ -357,7 +357,7 @@ int zMapPeptideLength(ZMapPeptide peptide)
 {
   int length ;
 
-  length = peptide->peptide->len - 1 ;			    /* Remove trailing NULL. */
+  length = peptide->peptide->len - 1 ;    /* Remove trailing NULL. */
 
   return length ;
 }
@@ -431,8 +431,8 @@ char *zMapPeptideGeneName(ZMapPeptide peptide)
 
 
 gboolean zMapPeptideMatch(char *cp, char *end,
-			  char *template, ZMapStrand strand, ZMapGeneticCode translation_table,
-			  char **start_out, char **end_out, char **match_str)
+  char *template, ZMapStrand strand, ZMapGeneticCode translation_table,
+  char **start_out, char **end_out, char **match_str)
 {
   gboolean result = FALSE ;
   char *match_template ;
@@ -446,14 +446,14 @@ gboolean zMapPeptideMatch(char *cp, char *end,
   /* Do a general string match. */
   if ((i = zMapStringFindMatch(cp, match_template)) != 0)
     {
-      int match_length = strlen(match_template) - 2 ;	    /* remember start/end "*" */
+      int match_length = strlen(match_template) - 2 ;    /* remember start/end "*" */
 
       result = TRUE ;
       *start_out = cp + (i - 1) ;
       *end_out = *start_out + (match_length - 1) ; /* We've gone past the last match so
-								reset. */
+reset. */
       if (match_str)
-	*match_str = g_strndup(*start_out, *end_out - *start_out + 1) ;
+        *match_str = g_strndup(*start_out, *end_out - *start_out + 1) ;
     }
 
   return result ;
@@ -462,10 +462,10 @@ gboolean zMapPeptideMatch(char *cp, char *end,
 
 /* I don't like the need for revcomp'd....something must be wrong ?? */
 GList *zMapPeptideMatchFindAll(char *target, char *query,
-			       gboolean rev_comped,
-			       ZMapStrand orig_strand, ZMapFrame orig_frame,
-			       int from_in, int length,
-			       int max_errors, int max_Ns, gboolean return_matches)
+       gboolean rev_comped,
+       ZMapStrand orig_strand, ZMapFrame orig_frame,
+       int from_in, int length,
+       int max_errors, int max_Ns, gboolean return_matches)
 {
   GList *sites = NULL ;
   int  dna_len, n ;
@@ -504,55 +504,55 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
   if (orig_strand == ZMAPSTRAND_REVERSE || orig_strand == ZMAPSTRAND_NONE)
     {
       switch (orig_frame)
-	{
-	case ZMAPFRAME_0:
-	  frames[frame_num] = -3 ;
-	  frame_num++ ;
-	  break ;
-	case ZMAPFRAME_1:
-	  frames[frame_num] = -2 ;
-	  frame_num++ ;
-	  break ;
-	case ZMAPFRAME_2:
-	  frames[frame_num] = -1 ;
-	  frame_num++ ;
-	  break ;
-	default:
-	  frames[frame_num] = -3 ;
-	  frame_num++ ;
-	  frames[frame_num] = -2 ;
-	  frame_num++ ;
-	  frames[frame_num] = -1 ;
-	  frame_num++ ;
-	  break ;
-	}
+        {
+        case ZMAPFRAME_0:
+          frames[frame_num] = -3 ;
+          frame_num++ ;
+          break ;
+        case ZMAPFRAME_1:
+          frames[frame_num] = -2 ;
+          frame_num++ ;
+          break ;
+        case ZMAPFRAME_2:
+          frames[frame_num] = -1 ;
+          frame_num++ ;
+          break ;
+        default:
+          frames[frame_num] = -3 ;
+          frame_num++ ;
+          frames[frame_num] = -2 ;
+          frame_num++ ;
+          frames[frame_num] = -1 ;
+          frame_num++ ;
+          break ;
+        }
     }
 
   if (orig_strand == ZMAPSTRAND_FORWARD || orig_strand == ZMAPSTRAND_NONE)
     {
       switch (orig_frame)
-	{
-	case ZMAPFRAME_0:
-	  frames[frame_num] = 0 ;
-	  frame_num++ ;
-	  break ;
-	case ZMAPFRAME_1:
-	  frames[frame_num] = 1 ;
-	  frame_num++ ;
-	  break ;
-	case ZMAPFRAME_2:
-	  frames[frame_num] = 2 ;
-	  frame_num++ ;
-	  break ;
-	default:
-	  frames[frame_num] = 0 ;
-	  frame_num++ ;
-	  frames[frame_num] = 1 ;
-	  frame_num++ ;
-	  frames[frame_num] = 2 ;
-	  frame_num++ ;
-	  break ;
-	}
+        {
+        case ZMAPFRAME_0:
+          frames[frame_num] = 0 ;
+          frame_num++ ;
+          break ;
+        case ZMAPFRAME_1:
+          frames[frame_num] = 1 ;
+          frame_num++ ;
+          break ;
+        case ZMAPFRAME_2:
+          frames[frame_num] = 2 ;
+          frame_num++ ;
+          break ;
+        default:
+          frames[frame_num] = 0 ;
+          frame_num++ ;
+          frames[frame_num] = 1 ;
+          frame_num++ ;
+          frames[frame_num] = 2 ;
+          frame_num++ ;
+          break ;
+        }
     }
 
 
@@ -565,22 +565,22 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
       frame = frames[i] ;
 
       if (frame < 0)
-	strand = ZMAPSTRAND_REVERSE ;
+        strand = ZMAPSTRAND_REVERSE ;
       else
-	strand = ZMAPSTRAND_FORWARD ;
+        strand = ZMAPSTRAND_FORWARD ;
 
       if (frame == -3 || frame == 0)
-	zmap_frame = ZMAPFRAME_0 ;
+        zmap_frame = ZMAPFRAME_0 ;
       else if (frame == -2 || frame == 1)
-	zmap_frame = ZMAPFRAME_1 ;
+        zmap_frame = ZMAPFRAME_1 ;
       else
-	zmap_frame = ZMAPFRAME_2 ;
+        zmap_frame = ZMAPFRAME_2 ;
 
       /* must calculate from here so frame is moved for protein translate.... */
       from = from_in + ((frame + 6) % 3) ;
 
       if (from + length > dna_len)
-	length = dna_len - from ;
+        length = dna_len - from ;
 
       /* Sort this out....needs better error handling.... */
       /* zMapAssert(length > 0) ; */
@@ -589,50 +589,50 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
       frame_offset = from - from_in ;
 
       protein = zMapPeptideCreateRawSegment(target, from, length, strand,
-					    NULL, FALSE) ;
+    NULL, FALSE) ;
 
       length = 3 * (length / 3) ;
-      if (length < 3)					    /* This should be done much earlier... */
-	return NULL ;
+      if (length < 3)    /* This should be done much earlier... */
+        return NULL ;
 
       search_start = protein ;
       search_end = search_start + length - 1 ;
       start = end = cp = search_start ;
 
       while (zMapPeptideMatch(cp, search_end, query, strand, NULL,
-			      &start, &end, match_ptr))
-	{
-	  ZMapDNAMatch match ;
-	  int incr ;
+              &start, &end, match_ptr))
+        {
+          ZMapDNAMatch match ;
+          int incr ;
 
-	  /* Record this match but match needs to record if its dna or peptide so coords are
-	   * interpreted correctly.... */
-	  match = g_new0(ZMapDNAMatchStruct, 1) ;
-	  match->match_type = ZMAPSEQUENCE_PEPTIDE ;
-	  match->strand = strand ;
-	  match->frame = zmap_frame ;
+          /* Record this match but match needs to record if its dna or peptide so coords are
+           * interpreted correctly.... */
+          match = g_new0(ZMapDNAMatchStruct, 1) ;
+          match->match_type = ZMAPSEQUENCE_PEPTIDE ;
+          match->strand = strand ;
+          match->frame = zmap_frame ;
 
-	  match->start = start - search_start ;
-	  match->end = end - search_start ;
+          match->start = start - search_start ;
+          match->end = end - search_start ;
 
-	  /* There are routines to do these calculations...find them.... */
-	  /* start/end on reference (dna) sequence. */
-	  if (rev_comped)
-	    incr = -2 ;
-	  else
-	    incr = 0 ;
+          /* There are routines to do these calculations...find them.... */
+          /* start/end on reference (dna) sequence. */
+          if (rev_comped)
+            incr = -2 ;
+          else
+            incr = 0 ;
 
-	  match->ref_start = from_in + ((match->start * 3)  + frame_offset + 1) ;
-	  match->ref_end = from_in + (((match->end * 3) + 2)  + frame_offset + 1) ;
+          match->ref_start = from_in + ((match->start * 3)  + frame_offset + 1) ;
+          match->ref_end = from_in + (((match->end * 3) + 2)  + frame_offset + 1) ;
 
-	  if (return_matches)
-	    match->match = *match_ptr ;
+          if (return_matches)
+            match->match = *match_ptr ;
 
-	  sites = g_list_append(sites, match) ;
+          sites = g_list_append(sites, match) ;
 
-	  /* Move pointers on. */
-	  cp = end + 1 ;
-	}
+          /* Move pointers on. */
+          cp = end + 1 ;
+        }
     }
 
 
@@ -693,7 +693,7 @@ void zMapPeptideDestroy(ZMapPeptide peptide)
 static ZMapGeneticCode pepGetTranslationTable(void)
 {
   ZMapGeneticCode translationTable = NULL ;
-  static GPtrArray *maps = NULL ;			    /* To hold cache of genetic codes...?? */
+  static GPtrArray *maps = NULL ;    /* To hold cache of genetic codes...?? */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   KEY gKey = KEY_UNDEFINED ;
@@ -720,12 +720,12 @@ static ZMapGeneticCode pepGetTranslationTable(void)
       standard_code->table = g_array_sized_new(FALSE, TRUE, sizeof(CodonTranslationStruct), PEP_TOTAL_CODONS) ;
 
       for (i = 0 ; i < PEP_TOTAL_CODONS ; i++)
-	{
-	  CodonTranslation amino = &g_array_index(standard_code->table, CodonTranslationStruct, i) ;
-
-	  amino->amino_acid = STANDARD_GENETIC_CODE[i] ;
-	  amino->alternative_start = amino->alternative_stop = FALSE ;
-	}
+        {
+          CodonTranslation amino = &g_array_index(standard_code->table, CodonTranslationStruct, i) ;
+        
+          amino->amino_acid = STANDARD_GENETIC_CODE[i] ;
+          amino->alternative_start = amino->alternative_stop = FALSE ;
+        }
 
       g_ptr_array_index(maps, 0) = standard_code ;
     }
@@ -756,71 +756,71 @@ static ZMapGeneticCode pepGetTranslationTable(void)
       OBJ obj ;
 
       if ((obj = bsCreate(gKey)))
-	{
-	  char *translation, *start, *stop, *base1, *base2, *base3 ;
-	  char result[4*4*4+1] ;
-	  int x,n ;
+        {
+          char *translation, *start, *stop, *base1, *base2, *base3 ;
+          char result[4*4*4+1] ;
+          int x,n ;
 
-	  /* These fields encode the translation table, they must all be correct. */
-	  if (bsGetData(obj, str2tag("Translation"), _Text, &translation)
-	      && bsGetData(obj, str2tag("Start"), _Text, &start)
-	      && bsGetData(obj, str2tag("Stop"), _Text, &stop)
-	      && bsGetData(obj, str2tag("Base1"), _Text, &base1)
-	      && bsGetData(obj, str2tag("Base2"), _Text, &base2)
-	      && bsGetData(obj, str2tag("Base3"), _Text, &base3)
-	      && strlen(translation) == 64
-	      && strlen(start) == 64
-	      && strlen(stop) == 64
-	      && strlen(base1) == 64
-	      && strlen(base2) == 64
-	      && strlen(base3) == 64)
-	    {
-	      GArray *genetic_code ;
+          /* These fields encode the translation table, they must all be correct. */
+          if (bsGetData(obj, str2tag("Translation"), _Text, &translation)
+              && bsGetData(obj, str2tag("Start"), _Text, &start)
+              && bsGetData(obj, str2tag("Stop"), _Text, &stop)
+              && bsGetData(obj, str2tag("Base1"), _Text, &base1)
+              && bsGetData(obj, str2tag("Base2"), _Text, &base2)
+              && bsGetData(obj, str2tag("Base3"), _Text, &base3)
+              && strlen(translation) == 64
+              && strlen(start) == 64
+              && strlen(stop) == 64
+              && strlen(base1) == 64
+              && strlen(base2) == 64
+              && strlen(base3) == 64)
+            {
+              GArray *genetic_code ;
+        
+              memset(result,0,4*4*4) ;
+              result[4*4*4] = 0 ;
+        
+              genetic_code = arrayCreate(PEP_TOTAL_CODONS, PepTranslateStruct) ;
+        
+              /* walk through the combinations and do the conversion.  I don't
+               * assume that the bases are in a particular order, even though it
+               * looks like it from the database. */
+              for (x = 0 ; x < 64 ; x++)
+                {
+                  char xl[3] ;
+        
+                  xl[0] = base1[x] ;
+                  xl[1] = base2[x] ;
+                  xl[2] = base3[x] ;
 
-	      memset(result,0,4*4*4) ;
-	      result[4*4*4] = 0 ;
+                  n = t_codon_code(xl) ;
+                  if (n >= 0)
+                    {
+                      PepTranslate amino = &g_array_index(genetic_code, PepTranslateStruct, n) ;
+                      result[n] = translation[x] ;
+        
+                      amino->amino_acid = translation[x] ;
+                      if (start[x] == 'M')
+                amino->alternative_start = TRUE ;
+                      else
+                amino->alternative_start = FALSE ;
 
-	      genetic_code = arrayCreate(PEP_TOTAL_CODONS, PepTranslateStruct) ;
+                      if (stop[x] == '*')
+                amino->alternative_stop = TRUE ;
+                      else
+                amino->alternative_stop = FALSE ;
+                    }
+                  else
+                    break ;
+                }
 
-	      /* walk through the combinations and do the conversion.  I don't
-	       * assume that the bases are in a particular order, even though it
-	       * looks like it from the database. */
-	      for (x = 0 ; x < 64 ; x++)
-		{
-		  char xl[3] ;
-
-		  xl[0] = base1[x] ;
-		  xl[1] = base2[x] ;
-		  xl[2] = base3[x] ;
-
-		  n = t_codon_code(xl) ;
-		  if (n >= 0)
-		    {
-		      PepTranslate amino = &g_array_index(genetic_code, PepTranslateStruct, n) ;
-		      result[n] = translation[x] ;
-
-		      amino->amino_acid = translation[x] ;
-		      if (start[x] == 'M')
-			amino->alternative_start = TRUE ;
-		      else
-			amino->alternative_start = FALSE ;
-
-		      if (stop[x] == '*')
-			amino->alternative_stop = TRUE ;
-		      else
-			amino->alternative_stop = FALSE ;
-		    }
-		  else
-		    break ;
-		}
-
-	      /* Must have set all 64 translations for valid genetic code. */
-	      if (x != 64)
-		arrayDestroy(genetic_code) ;
-	      else
-		translationTable = genetic_code ;
-	    }
-	}
+              /* Must have set all 64 translations for valid genetic code. */
+              if (x != 64)
+        arrayDestroy(genetic_code) ;
+              else
+        translationTable = genetic_code ;
+            }
+        }
 
       bsDestroy(obj) ;
     }
@@ -828,10 +828,10 @@ static ZMapGeneticCode pepGetTranslationTable(void)
   if (translationTable)
     {
       if (geneticCodep)
-	*geneticCodep = gKey ;
+        *geneticCodep = gKey ;
 
       if (pep_debug_G)
-	printTranslationTable(gKey, translationTable) ;
+        printTranslationTable(gKey, translationTable) ;
     }
   else
     {
@@ -851,7 +851,7 @@ static ZMapGeneticCode pepGetTranslationTable(void)
  * in order to do the translation the dna needs to be encoded and then decoded back so it
  * stays the same. */
 static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboolean include_stop,
-			    gboolean *incomplete_final_codon)
+    gboolean *incomplete_final_codon)
 {
   GArray *peptide = NULL ;
 
@@ -860,7 +860,7 @@ static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboole
     return peptide ;
 
   peptide = translateDNASegment(dna, 0, -1, TRUE,
-				translation_table, include_stop, incomplete_final_codon) ;
+        translation_table, include_stop, incomplete_final_codon) ;
 
   return peptide ;
 }
@@ -877,8 +877,8 @@ static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboole
  *
  *  */
 static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStrand strand,
-				   ZMapGeneticCode translation_table, gboolean include_stop,
-				   gboolean *incomplete_final_codon)
+   ZMapGeneticCode translation_table, gboolean include_stop,
+   gboolean *incomplete_final_codon)
 {
   GArray *peptide = NULL ;
   char *dna ;
@@ -938,7 +938,7 @@ static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStran
  * The rules for translation are a bit more complex now that alternative start/stop's can be
  * specified. */
 static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMapStrand strand,
-				gboolean encode, gboolean include_stop)
+gboolean encode, gboolean include_stop)
 {
   GArray *pep = NULL ;
   int dna_min, dna_max ;
@@ -966,10 +966,10 @@ static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMa
   bases = dna_max - dna_min + 1 ;
   x = pepmax = bases / 3 ;
 
-  if (bases % 3)					    /* + 1 for 'X' if an incomplete codon. */
+  if (bases % 3)    /* + 1 for 'X' if an incomplete codon. */
     x++ ;
 
-  x++ ;							    /* +1 for the terminating NULL char. */
+  x++ ;    /* +1 for the terminating NULL char. */
 
   pep = g_array_sized_new(TRUE, TRUE, sizeof(char), x) ;
 
@@ -984,7 +984,7 @@ static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMa
       CodonTranslation amino = &g_array_index(code_table->table, CodonTranslationStruct, code_table_index) ;
 
       if (amino->alternative_start)
-	cc = 'M' ;
+        cc = 'M' ;
     }
   g_array_append_val(pep, cc) ;
 
@@ -1012,19 +1012,19 @@ static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMa
   else
     {
       if (cc != 'X' && cc != '*')
-	{
-	  CodonTranslation amino = &g_array_index(code_table->table, CodonTranslationStruct, code_table_index) ;
+        {
+          CodonTranslation amino = &g_array_index(code_table->table, CodonTranslationStruct, code_table_index) ;
 
-	  if (amino->alternative_stop)
-	    {
-	      cc = '*' ;
-
-	      g_array_index(pep, char, x - 1) = cc ;
-	    }
-	}
+          if (amino->alternative_stop)
+            {
+              cc = '*' ;
+        
+              g_array_index(pep, char, x - 1) = cc ;
+            }
+        }
 
       if (!include_stop && cc == '*')
-	pep = g_array_remove_index(pep, pep->len - 1) ;
+        pep = g_array_remove_index(pep, pep->len - 1) ;
     }
 
 
@@ -1097,38 +1097,38 @@ static char E_codon(char *s, ZMapGeneticCode genetic_code, int *index_out)
   for (x=0 ; x < 4 ; x++)
     {
       if (s[0] & (1<<x))
-	{
-	  for (y=0 ; y < 4 ; y++)
-	    {
-	      if (s[1] & (1<<y))
-		{
-		  for (z=0 ; z < 4 ; z++)
-		    {
-		      if (s[2] & (1<<z))
-			{
-			  CodonTranslation amino =
-			    &g_array_index(genetic_code->table, CodonTranslationStruct, ((x<<4)|(y<<2)|z)) ;
+        {
+          for (y=0 ; y < 4 ; y++)
+            {
+              if (s[1] & (1<<y))
+                {
+                  for (z=0 ; z < 4 ; z++)
+                    {
+                      if (s[2] & (1<<z))
+                        {
+                          CodonTranslation amino =
+                            &g_array_index(genetic_code->table, CodonTranslationStruct, ((x<<4)|(y<<2)|z)) ;
+        
+                          if (!it)
+                            {
+                              it = amino->amino_acid ;
+                              index = ((x<<4)|(y<<2)|z) ;
+                            }
 
-			  if (!it)
-			    {
-			      it = amino->amino_acid ;
-			      index = ((x<<4)|(y<<2)|z) ;
-			    }
-
-			  if (amino->amino_acid != it)
-			    {
-			      if (index_out)
-				*index_out = -1 ;
-			      return 'X' ;
-			    }
-			}
-		    }
-		}
-	    }
-	}
+                          if (amino->amino_acid != it)
+                            {
+                              if (index_out)
+                                *index_out = -1 ;
+                              return 'X' ;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
-  if (!it)						    /*  I think this never happens */
+  if (!it)    /*  I think this never happens */
     {
       it = 'X' ;
       index = -1 ;
@@ -1189,7 +1189,7 @@ static void printTranslationTable(KEY genetic_code_key, GArray *translationTable
   for (i = 0 ; i < 64 ; i++)
     {
       printf("%c",
-	     (&g_array_index(translationTable, PepTranslateStruct, i)->alternative_start ? 'M' : '-')) ;
+     (&g_array_index(translationTable, PepTranslateStruct, i)->alternative_start ? 'M' : '-')) ;
     }
   printf("\n") ;
 
@@ -1197,7 +1197,7 @@ static void printTranslationTable(KEY genetic_code_key, GArray *translationTable
   for (i = 0 ; i < 64 ; i++)
     {
       printf("%c",
-	     (&g_array_index(translationTable, PepTranslateStruct, i)->alternative_stop ? '*' : '-')) ;
+     (&g_array_index(translationTable, PepTranslateStruct, i)->alternative_stop ? '*' : '-')) ;
     }
   printf("\n") ;
 

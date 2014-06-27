@@ -323,16 +323,9 @@ printf("dump exent: %d %f,%f %f,%f\n",dump_opts->extent,dump_opts->x1,dump_opts-
 }
 
 
-
-
-
-/* Create the print window for user to select options. */
-static gboolean chooseDump(DumpOptions dump_opts)
+static void add_dump_format_options(GtkWidget *vbox, gpointer user_data)
 {
-  gboolean status = FALSE ;
-  dialogCBStruct cb_data = {NULL} ;
-  char *window_title ;
-  GtkWidget *dialog, *vbox, *frame, *hbox_top, *hbox;
+  GtkWidget *frame = NULL, *hbox_top = NULL, *hbox = NULL;
   ZMapGUIRadioButtonStruct extent_buttons[] = {
     {EXTENT_VISIBLE, "Visible Features", NULL},
     {EXTENT_WHOLE,   "All Features",     NULL},
@@ -356,21 +349,7 @@ static gboolean chooseDump(DumpOptions dump_opts)
     {ASPECT_FITPAGE, "Fit to Page", NULL},
     {-1,             NULL,          NULL}};
 
-  cb_data.dump_opts = dump_opts ;
-
-  window_title = zMapGUIMakeTitleString("Export Window", "Please select options") ;
-  dialog = gtk_file_chooser_dialog_new(window_title,
-				       NULL,
-				       GTK_FILE_CHOOSER_ACTION_SAVE,
-				       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-				       GTK_STOCK_PRINT, GTK_RESPONSE_ACCEPT,
-				       NULL) ;
-  g_free(window_title) ;
-
-
-  vbox = gtk_vbox_new(FALSE, 0) ;
-  gtk_file_chooser_set_extra_widget(GTK_FILE_CHOOSER(dialog), vbox) ;
-
+  dialogCB cb_data = (dialogCB)user_data ;
 
   /* Add extent box. */
   frame = gtk_frame_new(" Extent ") ;
@@ -382,7 +361,7 @@ static gboolean chooseDump(DumpOptions dump_opts)
   zMapGUICreateRadioGroup(hbox,
                           &extent_buttons[0],
                           EXTENT_VISIBLE,
-                          (int *)&(cb_data.dump_opts->extent),
+                          (int *)&(cb_data->dump_opts->extent),
                           NULL, NULL);
 
   gtk_container_set_border_width(GTK_CONTAINER (hbox), 10) ;
@@ -399,11 +378,11 @@ static gboolean chooseDump(DumpOptions dump_opts)
 
   zMapGUICreateRadioGroup(hbox,
                           &type_buttons[0],
-                          DUMP_EPSF, (int *)&(cb_data.dump_opts->format),
-                          setSensitive, &cb_data);
+                          DUMP_EPSF, (int *)&(cb_data->dump_opts->format),
+                          setSensitive, cb_data);
 
   /* Add a format options box. */
-  cb_data.options_frame = frame = gtk_frame_new(" Format Options ") ;
+  cb_data->options_frame = frame = gtk_frame_new(" Format Options ") ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
   gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, TRUE, 0);
 
@@ -425,10 +404,10 @@ static gboolean chooseDump(DumpOptions dump_opts)
   zMapGUICreateRadioGroup(hbox,
                           &custom_buttons[0],
                           CUSTOM_BEST_FIT,
-                          (int *)&(cb_data.dump_opts->customise),
-                          setSensitive, &cb_data);
+                          (int *)&(cb_data->dump_opts->customise),
+                          setSensitive, cb_data);
 
-  cb_data.customise_frame = frame = gtk_frame_new(NULL) ;
+  cb_data->customise_frame = frame = gtk_frame_new(NULL) ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
   gtk_box_pack_start(GTK_BOX(hbox_top), frame, FALSE, TRUE, 0);
 
@@ -449,7 +428,7 @@ static gboolean chooseDump(DumpOptions dump_opts)
   zMapGUICreateRadioGroup(hbox,
                           &orient_buttons[0],
                           ORIENTATION_PORTRAIT,
-                          (int *)&(cb_data.dump_opts->orientation),
+                          (int *)&(cb_data->dump_opts->orientation),
                           NULL, NULL);
 
   frame = gtk_frame_new(" Aspect Ratio ") ;
@@ -463,27 +442,35 @@ static gboolean chooseDump(DumpOptions dump_opts)
   zMapGUICreateRadioGroup(hbox,
                           &aspect_buttons[0],
                           ASPECT_AS_IS,
-                          (int *)&(cb_data.dump_opts->aspect),
+                          (int *)&(cb_data->dump_opts->aspect),
                           NULL, NULL);
 
-  setSensitive(NULL, &cb_data, FALSE) ; /* Set which buttons are active. */
+  setSensitive(NULL, cb_data, FALSE) ; /* Set which buttons are active. */
+}
 
-  gtk_widget_show_all(dialog) ;
 
-  if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+/* Create the print window for user to select options. */
+static gboolean chooseDump(DumpOptions dump_opts)
+{
+  gboolean status = FALSE ;
+  dialogCBStruct cb_data = {NULL} ;
+  char *window_title ;
+
+  cb_data.dump_opts = dump_opts ;
+
+  window_title = zMapGUIMakeTitleString("Export Window", "Please select options") ;
+
+  char *filename = zmapGUIFileChooserFull(NULL, window_title, NULL, NULL,
+                                          add_dump_format_options, &cb_data) ;
+
+  g_free(window_title) ;
+
+  if (filename)
     {
-      char *filename;
-
-      filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER (dialog)) ;
-
       dump_opts->filename = g_strdup(filename) ;
 
       status = TRUE ;
     }
-
-
-  gtk_widget_destroy (dialog);
-
 
   return status ;
 }

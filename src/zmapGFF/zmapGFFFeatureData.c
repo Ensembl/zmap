@@ -56,6 +56,7 @@ ZMapGFFFeatureData zMapGFFFeatureDataCreate()
   pFeatureData->cStrand        = ZMAPSTRAND_NONE ;         /* As parsed from GFF line                      */
   pFeatureData->cPhase         = ZMAPPHASE_NONE ;          /* As parsed from GFF line                      */
   pFeatureData->sAttributes    = NULL ;                    /* As parsed from GFF line (may be NULL)        */
+  pFeatureData->pAttributes    = NULL ;                    /* Array of attribute structs                   */ 
   pFeatureData->pSOIDData      = NULL ;                    /* From auto-generated header                   */
 
   pFeatureData->flags.got_seq        = FALSE ;

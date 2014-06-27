@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Set of file handling utilities.
- *              
+ *
  * Exported functions: See ZMap/zmapUtils.h
  *-------------------------------------------------------------------
  */
@@ -80,17 +80,17 @@ char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir)
   if (stat(directory, &stat_buf) == 0)
     {
       if (S_ISDIR(stat_buf.st_mode) && (stat_buf.st_mode & S_IRWXU))
-	{
-	  status = TRUE ;
-	}
+        {
+          status = TRUE ;
+        }
       /* If this fails we should probably try to change the mode to be rwx for user only. */
     }
   else if (make_dir)
     {
       if (mkdir(directory, S_IRWXU) == 0)
-	{
-	  status = TRUE ;
-	}
+        {
+          status = TRUE ;
+        }
     }
 
   if (!status)
@@ -118,16 +118,16 @@ char *zMapGetPath(char *path_in)
 
 
 /* This functions takes a string like:
- * 
+ *
  * /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/src/build/linux/../../zmapControl/remote/zmapXRemote.c
- * 
+ *
  * and returns a pointer in the _same_ string to the filename at the end, e.g.
- * 
+ *
  * zmapXRemote.c
- * 
+ *
  * Currently we just call g_basename() but this is a glib deprecated function so we may have
  * to do our own version one day....
- * 
+ *
  *  */
 char *zMapGetBasename(char *path_in)
 {
@@ -143,7 +143,7 @@ char *zMapGetBasename(char *path_in)
  * the shell does including "~" expansion. The underlying wordexp()
  * function actually does glob style expansion so could return many values
  * but we assume that the path will be the first one and return that.
- * 
+ *
  * We could put checks in to make sure that path_in does not contain
  * wildcard characters but the onus is on the caller to just be sensible.
  * If no path_in is passed in or path_in contains invalid chars then NULL
@@ -160,15 +160,15 @@ char *zMapExpandFilePath(char *path_in)
 							       to zero it when !WE_DOOFFS */
 
       if (wordexp(path_in, &p, 0) == 0)
-	{
-	  char **w ;
+        {
+          char **w ;
 
-	  w = p.we_wordv;
+          w = p.we_wordv;
 
-	  filepath = g_strdup(w[0]) ;
+          filepath = g_strdup(w[0]) ;
 
-	  wordfree(&p) ;
-	}
+          wordfree(&p) ;
+        }
     }
 
   return filepath ;
@@ -233,26 +233,26 @@ gboolean zMapFileAccess(char *filepath, char *mode)
 {
   gboolean access = FALSE ;
   struct stat stat_buf ;
-  
+
   /* zMapAssert(filepath && *filepath) ; */
-  if (!filepath || !*filepath) 
-    return access ; 
+  if (!filepath || !*filepath)
+    return access ;
 
   if (stat(filepath, &stat_buf) == 0 && S_ISREG(stat_buf.st_mode))
     {
       if (!mode)
-	mode = "rwx" ;
+        mode = "rwx" ;
 
       access = TRUE ;
 
       if (access && strstr(mode, "r") && !(stat_buf.st_mode & S_IRUSR))
-	access = FALSE ;
+        access = FALSE ;
 
       if (access && strstr(mode, "w") && !(stat_buf.st_mode & S_IWUSR))
-	access = FALSE ;
+        access = FALSE ;
 
       if (access && strstr(mode, "x") && !(stat_buf.st_mode & S_IXUSR))
-	access = FALSE ;
+        access = FALSE ;
     }
 
   return access ;
@@ -275,9 +275,9 @@ gboolean zMapFileEmpty(char *filepath)
 
 
 
-/* 
+/*
  *             Internal functions.
- * 
+ *
  */
 
 
@@ -299,17 +299,16 @@ static char *getRelOrAbsPath(char *path_in, gboolean home_relative)
     {
       /* If path is relative to HOME then prepend HOME. */
       if (home_relative)
-	{
-	  base_dir = (char *)g_get_home_dir() ;		    /* glib docs say home_dir string should not
-							       be freed. */
-	  path = g_build_path(ZMAP_SEPARATOR, base_dir, path_in, NULL) ;
-	}
+        {
+          base_dir = (char *)g_get_home_dir() ;		    /* glib docs say home_dir string should not be freed. */
+          path = g_build_path(ZMAP_SEPARATOR, base_dir, path_in, NULL) ;
+        }
       else
-	{
-	  base_dir = g_get_current_dir() ;
-	  path = g_build_path(ZMAP_SEPARATOR, base_dir, path_in, NULL) ;
-	  g_free(base_dir) ;
-	}
+        {
+          base_dir = g_get_current_dir() ;
+          path = g_build_path(ZMAP_SEPARATOR, base_dir, path_in, NULL) ;
+          g_free(base_dir) ;
+        }
     }
 
   return path ;

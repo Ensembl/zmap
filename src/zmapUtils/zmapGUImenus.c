@@ -186,81 +186,80 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
       /* User does not have to set a name for a separator but to make our code more uniform
        * we add one. */
       if (menu_items[i].type == ZMAPGUI_MENU_SEPARATOR)
-	item->path = makeMenuItemName("separator") ;
+        item->path = makeMenuItemName("separator") ;
       else
-	item->path = makeMenuItemName(menu_items[i].name) ;
+        item->path = makeMenuItemName(menu_items[i].name) ;
 
       item->callback = ourCB ;
       item->callback_action = i ;
 
       switch (menu_items[i].type)
-	{
-	case ZMAPGUI_MENU_BRANCH:
-	  {
-	    item->item_type = "<Branch>" ;
-	    item->callback = NULL ;
-	    item->callback_action = -1 ;
-	    break ;
-	  }
-	case ZMAPGUI_MENU_SEPARATOR:
-	  {
-	    item->item_type = "<Separator>" ;
-	    item->callback = NULL ;
-	    item->callback_action = -1 ;
-	    break ;
-	  }
-	case ZMAPGUI_MENU_RADIO:
-	case ZMAPGUI_MENU_RADIOACTIVE:
-	  {
-	    /* If this is the first radio item, remember its title as we need to use it in all
-	     * the subsequent radio buttons as the key to cluster the buttons in a radio group. */
-	    if (!radio_title)
-	      {
-		radio_title = item->path ;
-		item->item_type = "<RadioItem>" ;
+        {
+          case ZMAPGUI_MENU_BRANCH:
+            {
+              item->item_type = "<Branch>" ;
+              item->callback = NULL ;
+              item->callback_action = -1 ;
+              break ;
+            }
+          case ZMAPGUI_MENU_SEPARATOR:
+            {
+              item->item_type = "<Separator>" ;
+              item->callback = NULL ;
+              item->callback_action = -1 ;
+              break ;
+            }
+        case ZMAPGUI_MENU_RADIO:
+        case ZMAPGUI_MENU_RADIOACTIVE:
+          {
+            /* If this is the first radio item, remember its title as we need to use it in all
+            * the subsequent radio buttons as the key to cluster the buttons in a radio group. */
+            if (!radio_title)
+              {
+                radio_title = item->path ;
+                item->item_type = "<RadioItem>" ;
 
-		deactive_radio_buttons = g_list_append(deactive_radio_buttons, item->path) ;
-	      }
-	    else
-	      item->item_type = radio_title ;
+                deactive_radio_buttons = g_list_append(deactive_radio_buttons, item->path) ;
+              }
+            else
+              item->item_type = radio_title ;
 
-	    if (menu_items[i].type == ZMAPGUI_MENU_RADIOACTIVE)
-	      active_radio_buttons = g_list_append(active_radio_buttons, item->path) ;
+            if (menu_items[i].type == ZMAPGUI_MENU_RADIOACTIVE)
+              active_radio_buttons = g_list_append(active_radio_buttons, item->path) ;
 
-	    break ;
-	  }
-	case ZMAPGUI_MENU_TOGGLE:
-	case ZMAPGUI_MENU_TOGGLEACTIVE:
-	  {
+            break ;
+          }
+        case ZMAPGUI_MENU_TOGGLE:
+        case ZMAPGUI_MENU_TOGGLEACTIVE:
+          {
 
-	    /* It doesn't seem to matter which style I use here it still looks cr*p */
+      /* It doesn't seem to matter which style I use here it still looks cr*p */
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    item->item_type = "<ToggleItem>" ;
+            item->item_type = "<ToggleItem>" ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	    item->item_type = "<CheckItem>" ;
+            item->item_type = "<CheckItem>" ;
 
-	    if (menu_items[i].type == ZMAPGUI_MENU_TOGGLEACTIVE)
-	      active_toggle_buttons = g_list_append(active_toggle_buttons, item->path) ;
-	    else
-	      deactive_toggle_buttons = g_list_append(deactive_toggle_buttons, item->path) ;
+            if (menu_items[i].type == ZMAPGUI_MENU_TOGGLEACTIVE)
+              active_toggle_buttons = g_list_append(active_toggle_buttons, item->path) ;
+            else
+              deactive_toggle_buttons = g_list_append(deactive_toggle_buttons, item->path) ;
 
-	    break ;
-	  }
-	default:					    /* ZMAPGUI_MENU_NORMAL */
-	  {
-	    item->item_type = NULL ;
-	    break ;
-	  }
-	}
+            break ;
+          }
+        default:					    /* ZMAPGUI_MENU_NORMAL */
+          {
+            item->item_type = NULL ;
+            break ;
+          }
+      }
 
       /* Reset radio button indicator if we have moved out of the radio button group. */
-      if (radio_title
-	  && (menu_items[i].type != ZMAPGUI_MENU_RADIO
-	      && menu_items[i].type != ZMAPGUI_MENU_RADIOACTIVE))
-	radio_title = NULL ;
+      if (radio_title && (menu_items[i].type != ZMAPGUI_MENU_RADIO
+                      && menu_items[i].type != ZMAPGUI_MENU_RADIOACTIVE))
+        radio_title = NULL ;
 
       if(menu_items[i].accelerator)
-	item->accelerator = menu_items[i].accelerator;
+        item->accelerator = menu_items[i].accelerator;
 
       item++ ;
     }
@@ -337,8 +336,8 @@ void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
   int index ;
 
   /* zMapAssert(menu) ; */
-  if (!menu) 
-    return ; 
+  if (!menu)
+    return ;
 
   if (start_index_inout)
     index = *start_index_inout ;
@@ -348,11 +347,11 @@ void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
   while (menu_item->type != ZMAPGUI_MENU_NONE)
     {
       if (start_index_inout)
-	menu_item->id = index ;
+        menu_item->id = index ;
       if (callback_func)
-	menu_item->callback_func = callback_func ;
+        menu_item->callback_func = callback_func ;
       if (callback_data)
-	menu_item->callback_data = callback_data ;
+        menu_item->callback_data = callback_data ;
 
       menu_item++ ;
     }
@@ -404,10 +403,10 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
        * this before the menu is popped up the GTK menu code segfaults...this is poor because
        * it should be taking its own copy of our data....sigh... */
       for (i = 0, item = our_data->factory_items ; i < our_data->num_factory_items - our_data->num_hide ; i++)
-	{
-	  g_free(item->path) ;
-	  item++ ;
-	}
+        {
+          g_free(item->path) ;
+          item++ ;
+        }
       g_free(our_data->factory_items) ;
 
       /* Now free the callback data struct. */
@@ -434,8 +433,8 @@ static char *makeMenuItemName(char *string)
   char *item_string = NULL;
 
   /* zMapAssert(string && *string) ; */
-  if (!string || !*string) 
-    return item_string ; 
+  if (!string || !*string)
+    return item_string ;
 
   item_string = g_strdup_printf("/%s", string) ;
 
@@ -466,18 +465,18 @@ static char *makeMenuTitleName(char *string, char *escape_chars)
   while (*cp)
     {
       if (*cp == '_' || *cp == '/')
-	{
-	  char prepend_ch = *cp ;
+        {
+          char prepend_ch = *cp ;
 
-	  if (*cp == '/')
-	    prepend_ch = '\\' ;
+          if (*cp == '/')
+            prepend_ch = '\\' ;
 
-	  if (strchr(escape_chars, *cp))
-	    {
-	      tmp = g_string_insert_c(tmp, pos, prepend_ch) ;
-	      pos++ ;
-	    }
-	}
+          if (strchr(escape_chars, *cp))
+            {
+              tmp = g_string_insert_c(tmp, pos, prepend_ch) ;
+              pos++ ;
+            }
+        }
 
       /* Must always reset cp from our position in the string in case string gets relocated. */
       pos++ ;

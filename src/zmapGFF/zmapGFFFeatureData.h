@@ -19,7 +19,7 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- *     	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
@@ -66,7 +66,7 @@ typedef struct ZMapGFFFeatureDataStruct_
     ZMapStrand cStrand ;
     ZMapPhase cPhase ;
     char *sAttributes ;
-    const ZMapGFFAttribute *pAttributes ;
+    ZMapGFFAttribute *pAttributes ;
     unsigned int nAttributes ;
     ZMapSOIDData pSOIDData ;
 

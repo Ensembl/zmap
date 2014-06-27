@@ -98,7 +98,6 @@ typedef struct
   GHashTable *styles ;
   GList *src_feature_set_names;
   GHFunc eachBlock ;
-  int num_features;
 } DoAllAlignBlocksStruct, *DoAllAlignBlocks ;
 
 
@@ -160,7 +159,7 @@ static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
-					  ZMapFeatureContext feature_context_out, int *num_features_out) ;
+                                          ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles,
 						 ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
@@ -388,7 +387,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	{
 	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
 	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-			 "Could open connection because: %s", server->last_err_msg) ;
+                         "Could not open connection because: %s", server->last_err_msg) ;
 	}
     }
 
@@ -808,8 +807,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 
 /* Get features sequence. */
 static ZMapServerResponseType getFeatures(void *server_in,
-					  GHashTable *styles, ZMapFeatureContext feature_context,
-					  int *num_features_out)
+					  GHashTable *styles, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType response = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -825,8 +823,6 @@ static ZMapServerResponseType getFeatures(void *server_in,
   get_features.styles = styles ;
   get_features.src_feature_set_names = NULL;
   get_features.eachBlock = eachBlockSequenceRequest;
-  get_features.num_features = 0;
-
 
   zMapPrintTimer(NULL, "In thread, getting features") ;
 
@@ -877,7 +873,6 @@ static ZMapServerResponseType getFeatures(void *server_in,
   }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  *num_features_out = get_features.num_features ;
   response = get_features.result ;
 
   return response ;
@@ -1514,8 +1509,6 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
 		  get_features->src_feature_set_names =
 		    zMap_g_list_merge(get_features->src_feature_set_names, src_names) ;
-
-		  get_features->num_features += zMapGFFParserGetNumFeatures(parser);
 		}
 	      else
 		{
@@ -2063,6 +2056,7 @@ static gboolean checkServerVersion(AcedbServer server)
 	  char *reply_text = (char *)reply ;
 	  char *scan_text = reply_text ;
 	  char *next_line = NULL ;
+          gboolean found = FALSE ;
 
 	  /* Scan lines for "Version:" and then extract the version, release and update numbers. */
 	  while ((next_line = strtok(scan_text, "\n")))
@@ -2071,6 +2065,8 @@ static gboolean checkServerVersion(AcedbServer server)
 
 	      if (strstr(next_line, "Version:"))
 		{
+                  found = TRUE ;
+
 		  /* Parse this string: "//             Version: ACEDB 4.9.28" */
 		  char *next ;
 
@@ -2087,7 +2083,20 @@ static gboolean checkServerVersion(AcedbServer server)
 	    }
 
 	  g_free(reply) ;
+          
+          if (!found)
+            {
+              setErrMsg(server, g_strdup_printf("Could not get acedb version: 'Version:' text not found in output from command '%s'.", 
+                                                command)) ;
+            }
 	}
+      else
+        {
+          setErrMsg(server, g_strdup_printf("AceConn request '%s' failed with status '%d': %s",
+                                            acedb_request, 
+                                            server->last_err_status, 
+                                            AceConnGetLastErrMsg(server->connection))) ;
+        }
 
       g_free(acedb_request) ;
     }
@@ -2189,6 +2198,14 @@ static gboolean setQuietMode(AcedbServer server)
 	  g_free(reply) ;
 	}
     }
+  else
+    {
+      setErrMsg(server, g_strdup_printf("AceConn request '%s' failed with status '%d': %s",
+                                        acedb_request, 
+                                        server->last_err_status, 
+                                        AceConnGetLastErrMsg(server->connection)));
+    }
+
 
   g_free(acedb_request) ;
 

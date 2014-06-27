@@ -295,9 +295,9 @@ typedef struct ZMapMapBlockStructType
  * doing merges of a context containing the features to be changed with an
  * existing feature context. For a number of reasons this turns out to be
  * the best way to do these operations.
- * 
+ *
  * This struct holds stats about such merges.
- * 
+ *
  * The struct is very bare bones and we can add stuff as needed.
  *  */
 typedef struct ZMapFeatureContextMergeStatsStructType
@@ -919,6 +919,7 @@ ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_set, GQuark f
 gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
 gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
+gboolean zMapFeatureAnyHasChildren(ZMapFeatureAny feature) ;
 gboolean zMapFeaturePrintChildNames(ZMapFeatureAny feature_any) ;
 
 
@@ -1026,6 +1027,7 @@ gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_stri
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
 gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_text, char *feature_text) ;
+gboolean zMapFeatureAddDescription(ZMapFeature feature, char *data ) ;
 void zMapFeatureSortGaps(GArray *gaps) ;
 int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
 void zMapFeatureDestroy(ZMapFeature feature) ;
@@ -1221,12 +1223,13 @@ gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
 					   gpointer                   dump_user_data,
 					   GIOChannel                *dump_file,
 					   GError                   **dump_error_out) ;
-gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
-				   GHashTable *styles,
-				   ZMapFeatureDumpFeatureFunc dump_func,
-				   gpointer                   dump_user_data,
-				   GIOChannel                *dump_file,
-				   GError                   **dump_error_out);
+gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_list,
+                                           GHashTable *styles,
+                                           ZMapFeatureDumpFeatureFunc dump_func,
+                                           gpointer                   dump_user_data,
+                                           GIOChannel                *dump_file,
+                                           GString                   **text_out,
+                                           GError                   **dump_error_out);
 gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func,
 					    GHashTable *styles,
 					    gpointer                   dump_user_data,
@@ -1267,8 +1270,9 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
 								      char **error_out) ;
 
 int zMapFeatureTranscriptGetNumExons(ZMapFeature transcript);
-void zMapFeatureTranscriptMergeExon(ZMapFeature feature, Coord x1, Coord x2);
+gboolean zMapFeatureTranscriptMergeExon(ZMapFeature feature, Coord x1, Coord x2);
 gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript, const int x, ZMapBoundaryType *boundary_inout, GError **error);
+gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature feature, Coord coord);
 
 /* ============================================================== for teh === */
 /* functions in zmapFeatureFormatInput.c */
@@ -1292,6 +1296,8 @@ char *zMapFeatureHomol2Str(ZMapHomolType homol) ;
 gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *score_out);
 
 
+
+gboolean zMapFeatureDNAExists(ZMapFeature feature) ;
 char *zMapFeatureGetDNA(ZMapFeatureAny feature_any, int start, int end, gboolean revcomp) ;
 char *zMapFeatureGetFeatureDNA(ZMapFeature feature) ;
 char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboolean cds_only) ;
@@ -1320,6 +1326,8 @@ gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any);
 ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext context,
 							ZMapFeatureAny from_feature);
 
+ZMapFeatureSet zmapFeatureContextGetFeaturesetFromId(ZMapFeatureContext context, GQuark set_id) ;
+ZMapFeature zmapFeatureContextGetFeatureFromId(ZMapFeatureContext context, GQuark feature_id) ;
 
 GType zMapFeatureDataGetType(void);
 gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,

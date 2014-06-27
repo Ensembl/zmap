@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -66,79 +66,79 @@
  * Use these macros for _ALL_ logging calls/error handling in this code
  * to ensure that messages go to the right place.
  */
-#define REMOTELOGMSG(REMOTE_CONTROL, FORMAT_STR, ...)			\
-  do									\
-    {									\
-      errorMsg((REMOTE_CONTROL),					\
-	       __FILE__,						\
-	       __PRETTY_FUNCTION__,					\
-	       (FORMAT_STR), __VA_ARGS__) ;				\
+#define REMOTELOGMSG(REMOTE_CONTROL, FORMAT_STR, ...)\
+  do\
+    {\
+      errorMsg((REMOTE_CONTROL),\
+       __FILE__,\
+       __PRETTY_FUNCTION__,\
+       (FORMAT_STR), __VA_ARGS__) ;\
     } while (0)
 
 /* Switchable version of remotelogmsg for debugging sessions. */
-#define DEBUGLOGMSG(REMOTE_CONTROL, DEBUG_LEVEL, FORMAT_STR, ...)	\
-  do									\
-    {									\
-      if (remote_debug_G && DEBUG_LEVEL <= remote_debug_G)		\
-        {								\
-	  REMOTELOGMSG((REMOTE_CONTROL),				\
-		       (FORMAT_STR), __VA_ARGS__) ;			\
-	}								\
+#define DEBUGLOGMSG(REMOTE_CONTROL, DEBUG_LEVEL, FORMAT_STR, ...)\
+  do\
+    {\
+      if (remote_debug_G && DEBUG_LEVEL <= remote_debug_G)\
+        {\
+  REMOTELOGMSG((REMOTE_CONTROL),\
+       (FORMAT_STR), __VA_ARGS__) ;\
+}\
     } while (0)
 
 
 /* Messages for common errors in code. */
-#define BADSTATELOGMSG(REMOTE_CONTROL, STATE, FORMAT_STR, ...)		\
-  do									\
-    {									\
-      REMOTELOGMSG((REMOTE_CONTROL),					\
-		   WRONG_STATE_STR FORMAT_STR,				\
-		   remoteState2ExactStr((STATE)),			\
-		   __VA_ARGS__) ;					\
+#define BADSTATELOGMSG(REMOTE_CONTROL, STATE, FORMAT_STR, ...)\
+  do\
+    {\
+      REMOTELOGMSG((REMOTE_CONTROL),\
+   WRONG_STATE_STR FORMAT_STR,\
+   remoteState2ExactStr((STATE)),\
+   __VA_ARGS__) ;\
     } while (0)
 
 
-#define CALL_ERR_HANDLER(REMOTE_CONTROL, ERROR_RC, FORMAT_STR, ...)	\
-  do									\
-    {									\
-      errorHandler((REMOTE_CONTROL),					\
-		   __FILE__,						\
-		   __PRETTY_FUNCTION__,					\
-		   (ERROR_RC),						\
-		   (FORMAT_STR), __VA_ARGS__) ;				\
+#define CALL_ERR_HANDLER(REMOTE_CONTROL, ERROR_RC, FORMAT_STR, ...)\
+  do\
+    {\
+      errorHandler((REMOTE_CONTROL),\
+   __FILE__,\
+   __PRETTY_FUNCTION__,\
+   (ERROR_RC),\
+   (FORMAT_STR), __VA_ARGS__) ;\
     } while (0)
 
-#define CALL_BADSTATE_HANDLER(REMOTE_CONTROL, STATE, FORMAT_STR, ...)	\
-  do									\
-    {									\
-      errorHandler((REMOTE_CONTROL),					\
-		   __FILE__,						\
-		   __PRETTY_FUNCTION__,					\
-		   ZMAP_REMOTECONTROL_RC_BAD_STATE,			\
-		   WRONG_STATE_STR FORMAT_STR,				\
-		   remoteState2ExactStr((STATE)),			\
-		   __VA_ARGS__) ;					\
+#define CALL_BADSTATE_HANDLER(REMOTE_CONTROL, STATE, FORMAT_STR, ...)\
+  do\
+    {\
+      errorHandler((REMOTE_CONTROL),\
+   __FILE__,\
+   __PRETTY_FUNCTION__,\
+   ZMAP_REMOTECONTROL_RC_BAD_STATE,\
+   WRONG_STATE_STR FORMAT_STR,\
+   remoteState2ExactStr((STATE)),\
+   __VA_ARGS__) ;\
     } while (0)
 
 #define CALL_OUTOFBAND_HANDLER(REMOTE_CONTROL, BAD_SIGNAL, EXPECTED_SIGNAL) \
-  do									\
-    {									\
-      errorHandler((REMOTE_CONTROL),					\
-		   __FILE__,						\
-		   __PRETTY_FUNCTION__,					\
-		   ZMAP_REMOTECONTROL_RC_OUT_OF_BAND,			\
-		   OUT_OF_BAND_STR,					\
-		   (BAD_SIGNAL),					\
-		   (EXPECTED_SIGNAL)) ;					\
+  do\
+    {\
+      errorHandler((REMOTE_CONTROL),\
+   __FILE__,\
+   __PRETTY_FUNCTION__,\
+   ZMAP_REMOTECONTROL_RC_OUT_OF_BAND,\
+   OUT_OF_BAND_STR,\
+   (BAD_SIGNAL),\
+   (EXPECTED_SIGNAL)) ;\
     } while (0)
 
 
 /* some useful timeout values... */
 enum
   {
-    NULL_TIMEOUT = 0,					    /* Turns timeouts off. */
-    DEFAULT_TIMEOUT = 10000,				    /* Standard timeout, needs testing. */
-    DEBUG_TIMEOUT = 3600000				    /* Debug timeout of an hour.... */
+    NULL_TIMEOUT = 0,    /* Turns timeouts off. */
+    DEFAULT_TIMEOUT = 10000,    /* Standard timeout, needs testing. */
+    DEBUG_TIMEOUT = 3600000    /* Debug timeout of an hour.... */
   } ;
 
 
@@ -147,37 +147,37 @@ enum
 
 
 static void sendClipboardSendRequestCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-				       guint info, gpointer user_data) ;
+       guint info, gpointer user_data) ;
 static void sendClipboardClearCB(GtkClipboard *clipboard, gpointer user_data) ;
 static void sendReplyWaitClipboardGetCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-					guint info, gpointer user_data) ;
+guint info, gpointer user_data) ;
 static void sendReplyWaitClipboardClearCB(GtkClipboard *clipboard, gpointer user_data) ;
 static void sendGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionData *selection_data, gpointer user_data) ;
 static void sendRequestReceivedClipboardGetCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-					      guint info, gpointer user_data) ;
+      guint info, gpointer user_data) ;
 static void sendRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpointer user_data_or_owner) ;
 
 static void receiveWaitClipboardGetCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-				      guint info, gpointer user_data) ;
+      guint info, gpointer user_data) ;
 static void receiveWaitClipboardClearCB(GtkClipboard *clipboard, gpointer user_data_or_owner) ;
 static void receiveRequestReceivedClipboardGetCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-						 guint info, gpointer user_data) ;
+ guint info, gpointer user_data) ;
 static void receiveRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpointer user_data_or_owner) ;
 static void receiveGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionData *selection_data, gpointer data) ;
 static void receiveAppCB(void *remote_data, gboolean abort, char *reply) ;
 static void receiveClipboardGetReplyCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-				       guint info, gpointer user_data) ;
+       guint info, gpointer user_data) ;
 static void receiveClipboardClearWaitAfterReplyCB(GtkClipboard *clipboard, gpointer user_data) ;
 
 static RemoteIdle createIdle(void) ;
 static RemoteReceive createReceive(GQuark app_id, char *app_str,
-				   ZMapRemoteControlRequestHandlerFunc process_request_func,
-				   gpointer process_request_func_data,
-				   ZMapRemoteControlReplySentFunc reply_sent_func,
-				   gpointer reply_sent_func_data) ;
+   ZMapRemoteControlRequestHandlerFunc process_request_func,
+   gpointer process_request_func_data,
+   ZMapRemoteControlReplySentFunc reply_sent_func,
+   gpointer reply_sent_func_data) ;
 static RemoteSend createSend(char *app_name, char *send_unique_atom_string,
-			     ZMapRemoteControlRequestSentFunc req_sent_func, gpointer req_sent_func_data,
-			     ZMapRemoteControlReplyHandlerFunc process_reply_func, gpointer process_reply_func_data) ;
+     ZMapRemoteControlRequestSentFunc req_sent_func, gpointer req_sent_func_data,
+     ZMapRemoteControlReplyHandlerFunc process_reply_func, gpointer process_reply_func_data) ;
 static void resetIdle(RemoteIdle idle_request) ;
 static void resetReceive(RemoteReceive receive_request) ;
 static void resetSend(RemoteSend send_request) ;
@@ -186,8 +186,8 @@ static void destroyReceive(RemoteReceive client_request) ;
 static void destroySend(RemoteSend server_request) ;
 
 static gboolean clipboardTakeOwnership(ZMapRemoteControl remote_control, GtkClipboard *clipboard,
-				       GtkClipboardGetFunc get_func, GtkClipboardClearFunc clear_func,
-				       gpointer user_data) ;
+       GtkClipboardGetFunc get_func, GtkClipboardClearFunc clear_func,
+       gpointer user_data) ;
 static void resetRemoteToIdle(ZMapRemoteControl remote_control) ;
 static gboolean isClipboardDataValid(GtkSelectionData *selection_data, char *curr_selection, char **err_msg_out) ;
 static char *getClipboardData(GtkSelectionData *selection_data, char **err_msg_out) ;
@@ -200,12 +200,12 @@ static void removeTimeout(ZMapRemoteControl remote_control) ;
 static gboolean timeOutCB(gpointer user_data) ;
 
 static void errorHandler(ZMapRemoteControl remote_control,
-			 const char *file_name, const char *func_name,
-			 ZMapRemoteControlRCType error_rc, char *format_str, ...) ;
+ const char *file_name, const char *func_name,
+ ZMapRemoteControlRCType error_rc, char *format_str, ...) ;
 static void errorMsg(ZMapRemoteControl remote_control,
-		     const char *file_name, const char *func_name, char *format_str, ...) ;
+     const char *file_name, const char *func_name, char *format_str, ...) ;
 static void logMsg(ZMapRemoteControl remote_control,
-		   const char *file_name, const char *func_name, char *format_str, va_list args) ;
+   const char *file_name, const char *func_name, char *format_str, va_list args) ;
 static gboolean stderrOutputCB(gpointer user_data, char *err_msg) ;
 
 
@@ -253,9 +253,9 @@ static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG
  * 
  */
 ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
-					  ZMapRemoteControlErrorHandlerFunc error_func, gpointer error_func_data,
-					  ZMapRemoteControlTimeoutHandlerFunc timeout_func, gpointer timeout_data,
-					  ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data)
+  ZMapRemoteControlErrorHandlerFunc error_func, gpointer error_func_data,
+  ZMapRemoteControlTimeoutHandlerFunc timeout_func, gpointer timeout_data,
+  ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data)
 {
   ZMapRemoteControl remote_control = NULL ;
 
@@ -291,15 +291,15 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
       remote_control->app_timeout_func_data = timeout_data ;
 
       if (err_report_func)
-	{
-	  remote_control->app_err_report_func = err_report_func ;
-	  remote_control->app_err_report_data = err_report_data ;
-	}
+        {
+          remote_control->app_err_report_func = err_report_func ;
+          remote_control->app_err_report_data = err_report_data ;
+        }
       else
-	{
-	  remote_control->app_err_report_func = stderrOutputCB ;
-	  remote_control->app_err_report_data = NULL ;
-	}
+        {
+          remote_control->app_err_report_func = stderrOutputCB ;
+          remote_control->app_err_report_data = NULL ;
+        }
 
       /* can't be earlier as we need app_id and err_report_XX stuff. */
       DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
@@ -318,10 +318,10 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
  * until this is done.
  *  */
 gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control, char *app_unique_str,
-				      ZMapRemoteControlRequestHandlerFunc process_request_func,
-				      gpointer process_request_func_data,
-				      ZMapRemoteControlReplySentFunc reply_sent_func,
-				      gpointer reply_sent_func_data)
+      ZMapRemoteControlRequestHandlerFunc process_request_func,
+      gpointer process_request_func_data,
+      ZMapRemoteControlReplySentFunc reply_sent_func,
+      gpointer reply_sent_func_data)
 {
   gboolean result = FALSE ;
 
@@ -332,38 +332,38 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control, char *ap
   if (remote_control->receive)
    {
      REMOTELOGMSG(remote_control,
-		  "%s",
-		  "Receive interface already initialised.") ;
+                  "%s",
+                  "Receive interface already initialised.") ;
 
      result = FALSE ;
    }
   else if (isInReceiveState(remote_control->state) || remote_control->state != REMOTE_STATE_IDLE)
     {
       REMOTELOGMSG(remote_control,
-		  "%s", "Must be in idle state or non-client state to initialise \"receive\".") ;
+                  "%s", "Must be in idle state or non-client state to initialise \"receive\".") ;
 
       result = FALSE ;
     }
   else if (!app_unique_str || !(*app_unique_str))
     {
       REMOTELOGMSG(remote_control,
-		   "%s",
-		   "Bad Args: no clipboard string, receive interface initialisation failed.") ;
+                   "%s",
+                   "Bad Args: no clipboard string, receive interface initialisation failed.") ;
     }
   else
     {
       remote_control->receive = createReceive(remote_control->app_id, app_unique_str,
-					      process_request_func, process_request_func_data,
-					      reply_sent_func, reply_sent_func_data) ;
+                                              process_request_func, process_request_func_data,
+                                              reply_sent_func, reply_sent_func_data) ;
 
       REMOTELOGMSG(remote_control,
-		   "Receive interface initialised (receive clipboard is \"%s\").",
-		   remote_control->receive->our_atom_string) ;
+                   "Receive interface initialised (receive clipboard is \"%s\").",
+                   remote_control->receive->our_atom_string) ;
       
       result = TRUE ;
     }    
 
-  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;				   
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;   
 
   return result ;
 }
@@ -374,11 +374,11 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control, char *ap
  * peer though can choose how it makes the sting unique but it must be _globally_ unique in
  * context of an X Windows server. */
 gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
-				   char *send_app_name, char *send_unique_string,
-				   ZMapRemoteControlRequestSentFunc req_sent_func,
-				   gpointer req_sent_func_data,
-				   ZMapRemoteControlReplyHandlerFunc process_reply_func,
-				   gpointer process_reply_func_data)
+   char *send_app_name, char *send_unique_string,
+   ZMapRemoteControlRequestSentFunc req_sent_func,
+   gpointer req_sent_func_data,
+   ZMapRemoteControlReplyHandlerFunc process_reply_func,
+   gpointer process_reply_func_data)
 {
   gboolean result = FALSE ;
 
@@ -389,39 +389,39 @@ gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
   if (remote_control->send)
    {
      REMOTELOGMSG(remote_control,
-		  "%s",
-		  "Send interface already initialised.") ;
+                  "%s",
+                  "Send interface already initialised.") ;
 
      result = FALSE ;
    }
   else if (!isInSendState(remote_control->state) && remote_control->state != REMOTE_STATE_IDLE)
     {
       REMOTELOGMSG(remote_control,
-		  "%s", "Must be in idle state or in server state to initialise \"send\".") ;
+                  "%s", "Must be in idle state or in server state to initialise \"send\".") ;
 
       result = FALSE ;
     }
   else if (!send_unique_string || !(*send_unique_string))
     {
       REMOTELOGMSG(remote_control,
-		   "%s",
-		   "Bad Args: no send clipboard string, send interface initialisation failed.") ;
+                   "%s",
+                   "Bad Args: no send clipboard string, send interface initialisation failed.") ;
     }
   else
     {
       remote_control->send = createSend(send_app_name, send_unique_string,
-					req_sent_func,
-					req_sent_func_data,
-					process_reply_func, process_reply_func_data) ;
+                                        req_sent_func,
+                                        req_sent_func_data,
+                                        process_reply_func, process_reply_func_data) ;
 
       REMOTELOGMSG(remote_control,
-		   "Send interface initialised (send clipboard is \"%s\").",
-		   remote_control->send->their_atom_string) ;
+                   "Send interface initialised (send clipboard is \"%s\").",
+                   remote_control->send->their_atom_string) ;
 
       result = TRUE ;
     }
 
-  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;				   
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;   
 
   return result ;
 }
@@ -443,8 +443,8 @@ gboolean zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       BADSTATELOGMSG(remote_control, REMOTE_STATE_IDLE,
-		     "Cannot wait on receive clipboard \"%s\".",
-		     receive->our_atom_string) ;
+                     "Cannot wait on receive clipboard \"%s\".",
+                     receive->our_atom_string) ;
 
 
       result = FALSE ;
@@ -452,31 +452,31 @@ gboolean zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control
   else if (!(remote_control->receive))
     {
       REMOTELOGMSG(remote_control,
-		   "Receive interface is not initialised so cannot wait on our clipboard \"%s\".",
-		   receive->our_atom_string) ;
+                   "Receive interface is not initialised so cannot wait on our clipboard \"%s\".",
+                   receive->our_atom_string) ;
 
       result = FALSE ;
     }
   else
     {
       if ((result = clipboardTakeOwnership(remote_control, receive->our_clipboard,
-					   receiveWaitClipboardGetCB, receiveWaitClipboardClearCB,
-					   remote_control)))
-	{
-	  REMOTELOGMSG(remote_control,
-		       "Waiting (have ownership of) on our clipboard \"%s\").",
-		       receive->our_atom_string) ;
-
-
-	  remote_control->state = REMOTE_STATE_SERVER_WAIT_NEW_REQ ;
-	  remote_control->curr_remote = (RemoteAny)(remote_control->receive) ;
-	}
+                   receiveWaitClipboardGetCB, receiveWaitClipboardClearCB,
+                   remote_control)))
+        {
+          REMOTELOGMSG(remote_control,
+                       "Waiting (have ownership of) on our clipboard \"%s\").",
+                       receive->our_atom_string) ;
+        
+        
+          remote_control->state = REMOTE_STATE_SERVER_WAIT_NEW_REQ ;
+          remote_control->curr_remote = (RemoteAny)(remote_control->receive) ;
+        }
       else
-	{
-	  REMOTELOGMSG(remote_control,
-		       "Cannot become owner of own clipboard \"%s\" so cannot wait for requests.",
-		       receive->our_atom_string) ;
-	}
+        {
+          REMOTELOGMSG(remote_control,
+                       "Cannot become owner of own clipboard \"%s\" so cannot wait for requests.",
+                       receive->our_atom_string) ;
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -498,12 +498,12 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
     {
       /* Can only switch to making requests from "idle" or "waiting for request" states. */
       REMOTELOGMSG(remote_control,
-		   "Current state is %s but must be in %s or %s states to initiate making a requests,"
-		   " command was:\"%s\".",
-		   remoteState2ExactStr(remote_control->state),
-		   remoteState2ExactStr(REMOTE_STATE_IDLE),
-		   remoteState2ExactStr(REMOTE_STATE_SERVER_WAIT_NEW_REQ),
-		   request) ;
+                   "Current state is %s but must be in %s or %s states to initiate making a requests,"
+                   " command was:\"%s\".",
+                   remoteState2ExactStr(remote_control->state),
+                   remoteState2ExactStr(REMOTE_STATE_IDLE),
+                   remoteState2ExactStr(REMOTE_STATE_SERVER_WAIT_NEW_REQ),
+                   request) ;
 
       result = FALSE ;
     }
@@ -511,8 +511,8 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
     {
       /* we have not been given the send id so cannot make requests to it. */
       REMOTELOGMSG(remote_control,
-		   "%s",
-		   "Send interface not initialised so cannot send request.") ;
+                   "%s",
+                   "Send interface not initialised so cannot send request.") ;
 
       result = FALSE ;
     }
@@ -522,7 +522,7 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
 
       /* If we are waiting for requests then reset to idle before making our request. */
       if (remote_control->state == REMOTE_STATE_SERVER_WAIT_NEW_REQ)
-	resetRemoteToIdle(remote_control) ;
+                resetRemoteToIdle(remote_control) ;
 
       /* Try sending a request to our send. */
       send = remote_control->send ;
@@ -532,44 +532,44 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
       remote_control->curr_remote = (RemoteAny)(remote_control->send) ;
 
       REMOTELOGMSG(remote_control, "Taking ownership of peer clipboard \"%s\" to make request: %s",
-		   send->their_atom_string, request) ;
+                   send->their_atom_string, request) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if ((result = gtk_clipboard_set_with_data(send->their_clipboard,
-						clipboard_target_G,
-						TARGET_NUM,
-						sendClipboardSendRequestCB,
-						sendClipboardClearCB,
-						remote_control))) ;
+                                clipboard_target_G,
+                                TARGET_NUM,
+                                sendClipboardSendRequestCB,
+                                sendClipboardClearCB,
+                                remote_control))) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       if ((result = clipboardTakeOwnership(remote_control,
-					   send->their_clipboard,
-					   sendClipboardSendRequestCB,
-					   sendClipboardClearCB,
-					   remote_control)))
-	{
-	  REMOTELOGMSG(remote_control,
-		       "Have ownership of peer clipboard \"%s\", waiting for peer to ask for our request.",
-		       send->their_atom_string) ;
-
-	  remote_control->state = REMOTE_STATE_CLIENT_WAIT_GET ;
-
-	  /* Now we are waiting so set timeout. */
-	  addTimeout(remote_control) ;
-
-	  result = TRUE ;
-	}
+                   send->their_clipboard,
+                   sendClipboardSendRequestCB,
+                   sendClipboardClearCB,
+                   remote_control)))
+        {
+          REMOTELOGMSG(remote_control,
+                       "Have ownership of peer clipboard \"%s\", waiting for peer to ask for our request.",
+                       send->their_atom_string) ;
+        
+          remote_control->state = REMOTE_STATE_CLIENT_WAIT_GET ;
+        
+          /* Now we are waiting so set timeout. */
+          addTimeout(remote_control) ;
+        
+          result = TRUE ;
+        }
       else
-	{
-    	  REMOTELOGMSG(remote_control,
-		       "Cannot set request on peer clipboard \"%s\".",
-		       send->their_atom_string) ;
+        {
+          REMOTELOGMSG(remote_control,
+                       "Cannot set request on peer clipboard \"%s\".",
+                       send->their_atom_string) ;
 
-	  resetRemoteToIdle(remote_control) ;
-
-	  result = FALSE ;
-	}
+          resetRemoteToIdle(remote_control) ;
+        
+          result = FALSE ;
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -627,7 +627,7 @@ gboolean zMapRemoteControlSetTimeout(ZMapRemoteControl remote_control, int timeo
  * to switch routines (e.g. from graphic to terminal or whatever).
  */
 gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
-				     ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data) 
+     ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data) 
 {
   gboolean result = FALSE ;
 
@@ -679,29 +679,29 @@ gboolean zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
   if (remote_control->state == REMOTE_STATE_IDLE)
     {
       if (remote_control->idle)
-	destroyIdle(remote_control->idle) ;
+        destroyIdle(remote_control->idle) ;
       if (remote_control->receive)
-	destroyReceive(remote_control->receive) ;
+        destroyReceive(remote_control->receive) ;
       if (remote_control->send)
-	destroySend(remote_control->send) ;
+        destroySend(remote_control->send) ;
 
       REMOTELOGMSG(remote_control, "%s", "Destroyed RemoteControl object.") ;
     }
   else
     {
       REMOTELOGMSG(remote_control,
-		   "Object cannot be destroyed, must be in %s state but is in %s state.",
-		   remoteState2ExactStr(REMOTE_STATE_IDLE), remoteState2ExactStr(remote_control->state)) ;
+                   "Object cannot be destroyed, must be in %s state but is in %s state.",
+                   remoteState2ExactStr(REMOTE_STATE_IDLE), remoteState2ExactStr(remote_control->state)) ;
     }
 
   /* Make sure this happens whether destroy succeeds or not.... */
-  DEBUGLOGMSG(remote_control,  ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;	/* Latest we can make this call as we 
-							       need remote_control. */
+  DEBUGLOGMSG(remote_control,  ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;/* Latest we can make this call as we 
+                                                                                       need remote_control. */
 
   if (remote_control->state == REMOTE_STATE_IDLE)
     {
-      ZMAP_MAGIC_RESET(remote_control->magic) ;		    /* Before free() reset magic to
-							       invalidate this memory block. */
+      ZMAP_MAGIC_RESET(remote_control->magic) ;    /* Before free() reset magic to
+       invalidate this memory block. */
 
       g_free(remote_control) ;
 
@@ -773,7 +773,7 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(remoteState2ExactStr, RemoteControlState, REMOTE_
 
 /* GtkClipboardGetFunc() called if there is a 'get' request for a clipboards contents. */
 static void sendClipboardSendRequestCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-				       guint info, gpointer user_data)
+       guint info, gpointer user_data)
 {
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
   RemoteSend send ;
@@ -787,49 +787,49 @@ static void sendClipboardSendRequestCB(GtkClipboard *clipboard, GtkSelectionData
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       if (haveTimeout(remote_control))
-	removeTimeout(remote_control) ;
+        removeTimeout(remote_control) ;
 
       send = remote_control->send ;
 
       if (remote_control->state != REMOTE_STATE_CLIENT_WAIT_GET)
-	{
-	  CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_CLIENT_WAIT_GET,
-				"Already servicing a request: \"%s\".",
-				send->our_request) ;
-	}
+        {
+          CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_CLIENT_WAIT_GET,
+                                "Already servicing a request: \"%s\".",
+                                send->our_request) ;
+        }
       else
-	{
-	  target_atom = gtk_selection_data_get_target(selection_data) ;
-	  target_name = gdk_atom_name(target_atom) ;
+        {
+          target_atom = gtk_selection_data_get_target(selection_data) ;
+          target_name = gdk_atom_name(target_atom) ;
 
-	  if (info != TARGET_ID)
-	    {
-	      CALL_ERR_HANDLER(remote_control,
-			       ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
-			       "Unsupported Data Type requested: %s.", target_name) ;
-	    }
-	  else
-	    {
-	      /* All ok so set our request on the peers clipboard. */
-
-	      REMOTELOGMSG(remote_control, "Setting our request on clipboard \"%s\" using property \"%s\","
-			   "request is:\n \"%s\".",
-			   send->their_atom_string,
-			   target_name, send->our_request) ;
-
-	      /* Set the data in the selection data param, N.B. the terminating NULL is not sent. */
-	      gtk_selection_data_set(selection_data,
-				     remote_control->target_atom,
-				     8,
-				     (guchar *)(send->our_request),
-				     (int)(strlen(send->our_request))) ;
-
-	      remote_control->state = REMOTE_STATE_CLIENT_WAIT_REQ_ACK ;
-
-	      /* Now we are waiting so set timeout. */
-	      addTimeout(remote_control) ;
-	    }
-	}
+          if (info != TARGET_ID)
+            {
+              CALL_ERR_HANDLER(remote_control,
+                               ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
+                               "Unsupported Data Type requested: %s.", target_name) ;
+            }
+          else
+            {
+              /* All ok so set our request on the peers clipboard. */
+        
+              REMOTELOGMSG(remote_control, "Setting our request on clipboard \"%s\" using property \"%s\","
+                           "request is:\n \"%s\".",
+                           send->their_atom_string,
+                           target_name, send->our_request) ;
+        
+              /* Set the data in the selection data param, N.B. the terminating NULL is not sent. */
+              gtk_selection_data_set(selection_data,
+                                     remote_control->target_atom,
+                                     8,
+                                     (guchar *)(send->our_request),
+                                     (int)(strlen(send->our_request))) ;
+        
+              remote_control->state = REMOTE_STATE_CLIENT_WAIT_REQ_ACK ;
+        
+              /* Now we are waiting so set timeout. */
+              addTimeout(remote_control) ;
+            }
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -858,60 +858,60 @@ static void sendClipboardClearCB(GtkClipboard *clipboard, gpointer user_data)
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       if (haveTimeout(remote_control))
-	removeTimeout(remote_control) ;
+        removeTimeout(remote_control) ;
 
       send = remote_control->send ;
 
       if (remote_control->state != REMOTE_STATE_CLIENT_WAIT_REQ_ACK)
-	{
-	  CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_CLIENT_WAIT_REQ_ACK,
-				"Already servicing a request: \"%s\".",
-				send->our_request) ;
-	}
+        {
+          CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_CLIENT_WAIT_REQ_ACK,
+                                "Already servicing a request: \"%s\".",
+                                send->our_request) ;
+        }
       else
-	{
-	  REMOTELOGMSG(remote_control,
-		       "Peer has retaken ownership their clipboard \"%s\" to signal they have received our request.",
-		       send->their_atom_string) ;
+        {
+          REMOTELOGMSG(remote_control,
+                       "Peer has retaken ownership their clipboard \"%s\" to signal they have received our request.",
+                       send->their_atom_string) ;
 
 
-	  /* Retake ownership of the peers clipboard to signal that we know they got the request and we
-	   * are now waiting for their reply. */
-	  if (!clipboardTakeOwnership(remote_control, send->their_clipboard,
-				      sendReplyWaitClipboardGetCB, sendReplyWaitClipboardClearCB,
-				      remote_control))
-	    {
-	      CALL_ERR_HANDLER(remote_control,
-			       ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
-			       "Failed to retake ownership of their clipboard \"%s\", aborting request.",
-			       send->their_atom_string) ;
-	    }
-	  else
-	    {
-	      REMOTELOGMSG(remote_control,
-			   "Have retaken ownership of their clipboard \"%s\" to signal they can process the request.",
-			   send->their_atom_string) ;
+          /* Retake ownership of the peers clipboard to signal that we know they got the request and we
+           * are now waiting for their reply. */
+          if (!clipboardTakeOwnership(remote_control, send->their_clipboard,
+                      sendReplyWaitClipboardGetCB, sendReplyWaitClipboardClearCB,
+                      remote_control))
+            {
+              CALL_ERR_HANDLER(remote_control,
+               ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
+               "Failed to retake ownership of their clipboard \"%s\", aborting request.",
+               send->their_atom_string) ;
+            }
+          else
+            {
+              REMOTELOGMSG(remote_control,
+                           "Have retaken ownership of their clipboard \"%s\" to signal they can process the request.",
+                           send->their_atom_string) ;
+                
+              remote_control->state = REMOTE_STATE_CLIENT_WAIT_REPLY ;
 
-	      remote_control->state = REMOTE_STATE_CLIENT_WAIT_REPLY ;
-
-	      /* Optionally call app to signal that peer has received their request. */
-	      if (send->req_sent_func)
-		{
-		  REMOTELOGMSG(remote_control,
-			       "%s", "About to call Apps requestSentCB.") ;
-
-		  (send->req_sent_func)(send->req_sent_func_data) ;
-
-		  REMOTELOGMSG(remote_control,
-			       "%s", "Back from Apps requestSentCB.") ;
-		}
+              /* Optionally call app to signal that peer has received their request. */
+              if (send->req_sent_func)
+                {
+                  REMOTELOGMSG(remote_control,
+                               "%s", "About to call Apps requestSentCB.") ;
+                
+                  (send->req_sent_func)(send->req_sent_func_data) ;
+                
+                  REMOTELOGMSG(remote_control,
+                               "%s", "Back from Apps requestSentCB.") ;
+                }
 
 
-	      /* Now we are waiting so set timeout. */
-	      addTimeout(remote_control) ;
-	    }
-
-	}
+              /* Now we are waiting so set timeout. */
+              addTimeout(remote_control) ;
+            }
+        
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -941,31 +941,31 @@ static void sendReplyWaitClipboardClearCB(GtkClipboard *clipboard, gpointer user
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       if (haveTimeout(remote_control))
-	removeTimeout(remote_control) ;
+        removeTimeout(remote_control) ;
 
       send = remote_control->send ;
 
       if (remote_control->state != REMOTE_STATE_CLIENT_WAIT_REPLY)
-	{
-	  CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_CLIENT_WAIT_REPLY,
-				"Already servicing a request: \"%s\".",
-				send->our_request) ;
-	}
+        {
+          CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_CLIENT_WAIT_REPLY,
+                                "Already servicing a request: \"%s\".",
+                                send->our_request) ;
+        }
       else
-	{
-	  REMOTELOGMSG(remote_control,
-		       "Lost ownership of receive clipboard \"%s\", asking for peers reply to our request.",
-		       send->their_atom_string) ;
+        {
+          REMOTELOGMSG(remote_control,
+                       "Lost ownership of receive clipboard \"%s\", asking for peers reply to our request.",
+                       send->their_atom_string) ;
+        
+          gtk_clipboard_request_contents(clipboard,
+                                         remote_control->target_atom,
+                                         sendGetRequestClipboardCB, remote_control) ;
 
-	  gtk_clipboard_request_contents(clipboard,
-					 remote_control->target_atom,
-					 sendGetRequestClipboardCB, remote_control) ;
+          remote_control->state = REMOTE_STATE_CLIENT_WAIT_SEND ;
 
-	  remote_control->state = REMOTE_STATE_CLIENT_WAIT_SEND ;
-
-	  /* Now we are waiting so set timeout. */
-	  addTimeout(remote_control) ;
-	}
+          /* Now we are waiting so set timeout. */
+          addTimeout(remote_control) ;
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -975,7 +975,7 @@ static void sendReplyWaitClipboardClearCB(GtkClipboard *clipboard, gpointer user
 
 /* GtkClipboardGetFunc() called if someone does a 'get' on the clipboard. */
 static void sendReplyWaitClipboardGetCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-					guint info, gpointer user_data)
+guint info, gpointer user_data)
 {
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
 
@@ -1014,74 +1014,74 @@ static void sendGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionData 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       if (haveTimeout(remote_control))
-	removeTimeout(remote_control) ;
+        removeTimeout(remote_control) ;
 
       send = remote_control->send ;
 
       if (remote_control->state != REMOTE_STATE_CLIENT_WAIT_SEND)
-	{
-	  CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_CLIENT_WAIT_SEND,
-				"Already servicing a request: \"%s\".",
-				send->our_request) ;
-	}
+        {
+          CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_CLIENT_WAIT_SEND,
+                                "Already servicing a request: \"%s\".",
+                                send->our_request) ;
+        }
       else
-	{
-	  char *selection_str ;
-	  char *err_msg = NULL ;
-
-	  REMOTELOGMSG(remote_control,
-		       "Received reply from peer on receive clipboard \"%s\".",
-		       send->their_atom_string) ;
-
-
-	  /* Check and record the reply if all ok, we'll process it when we get a clear from the peer. */
-	  if (!isClipboardDataValid(selection_data, send->their_atom_string, &err_msg))
-	    {
-	      CALL_ERR_HANDLER(remote_control,
-			       ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
-			       "%s", err_msg) ;
-
-	      g_free(err_msg) ;
-	    }
-	  else if (!(selection_str = getClipboardData(selection_data, &err_msg)))
-	    {
-	      CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
-			       "%s", err_msg) ;
-
-	      g_free(err_msg) ;
-	    }	  
-	  else
-	    {
-	      REMOTELOGMSG(remote_control,
-			   "Retrieved peers reply from clipboard \"%s\", reply is:\n \"%s\".",
-			   send->their_atom_string, selection_str) ;
-
-	      send->their_reply = selection_str ;
-
-	      /* Retake ownership so they know we have got reply. */
-	      if (!clipboardTakeOwnership(remote_control, send->their_clipboard,
-					  sendRequestReceivedClipboardGetCB, sendRequestReceivedClipboardClearCB,
-					  remote_control))
-		{
-		  CALL_ERR_HANDLER(remote_control,
-				   ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
-				   "Tried to retake ownership of receive clipboard \"%s\" to signal peer that we have"
-				   " request but this failed, aborting request.",
-				   send->their_atom_string) ;
-		}
-	      else
-		{
-		  REMOTELOGMSG(remote_control,
-			       "Have retaken ownership of receive clipboard \"%s\" to signal peer that we have their reply.",
-			       send->their_atom_string) ;
-
-		  remote_control->state = REMOTE_STATE_CLIENT_WAIT_REPLY_ACK ;
-
-		  /* Now we are waiting so set timeout. */
-		  addTimeout(remote_control) ;
-		}
-	    }
-	}
+        {
+          char *selection_str ;
+          char *err_msg = NULL ;
+        
+          REMOTELOGMSG(remote_control,
+                       "Received reply from peer on receive clipboard \"%s\".",
+                       send->their_atom_string) ;
+        
+        
+          /* Check and record the reply if all ok, we'll process it when we get a clear from the peer. */
+          if (!isClipboardDataValid(selection_data, send->their_atom_string, &err_msg))
+            {
+              CALL_ERR_HANDLER(remote_control,
+                               ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
+                               "%s", err_msg) ;
+        
+              g_free(err_msg) ;
+            }
+          else if (!(selection_str = getClipboardData(selection_data, &err_msg)))
+            {
+              CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
+                               "%s", err_msg) ;
+        
+              g_free(err_msg) ;
+            }  
+          else
+            {
+              REMOTELOGMSG(remote_control,
+                           "Retrieved peers reply from clipboard \"%s\", reply is:\n \"%s\".",
+                           send->their_atom_string, selection_str) ;
+        
+              send->their_reply = selection_str ;
+        
+              /* Retake ownership so they know we have got reply. */
+              if (!clipboardTakeOwnership(remote_control, send->their_clipboard,
+                          sendRequestReceivedClipboardGetCB, sendRequestReceivedClipboardClearCB,
+                          remote_control))
+                {
+                  CALL_ERR_HANDLER(remote_control,
+                                   ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
+                                   "Tried to retake ownership of receive clipboard \"%s\" to signal peer that we have"
+                                   " request but this failed, aborting request.",
+                                   send->their_atom_string) ;
+                }
+              else
+                {
+                  REMOTELOGMSG(remote_control,
+                               "Have retaken ownership of receive clipboard \"%s\" to signal peer that we have their reply.",
+                               send->their_atom_string) ;
+                
+                  remote_control->state = REMOTE_STATE_CLIENT_WAIT_REPLY_ACK ;
+                
+                  /* Now we are waiting so set timeout. */
+                  addTimeout(remote_control) ;
+                }
+            }
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -1113,47 +1113,47 @@ static void sendRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpointe
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       if (haveTimeout(remote_control))
-	removeTimeout(remote_control) ;
+        removeTimeout(remote_control) ;
 
       send = remote_control->send ;
 
       if (remote_control->state != REMOTE_STATE_CLIENT_WAIT_REPLY_ACK)
-	{
-	  CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_CLIENT_WAIT_REPLY_ACK,
-				"Already servicing a request: \"%s\".",
-				send->our_request) ;
-	}
+        {
+          CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_CLIENT_WAIT_REPLY_ACK,
+                                "Already servicing a request: \"%s\".",
+                                send->our_request) ;
+        }
       else
-	{
-	  char *their_reply ;
+        {
+          char *their_reply ;
 
-	  REMOTELOGMSG(remote_control,
-		       "Lost ownership of peer clipboard \"%s\", they now know we have the reply.",
-		       send->their_atom_string) ;
-
-
-
-	  /* Hang on to reply otherwise it will be free'd by reset call. */
-	  their_reply = send->their_reply ;
-	  send->their_reply = NULL ;
+          REMOTELOGMSG(remote_control,
+                       "Lost ownership of peer clipboard \"%s\", they now know we have the reply.",
+                       send->their_atom_string) ;
 
 
-	  /* Reset to idle, app then needs to decide whether to wait again. */
-	  resetRemoteToIdle(remote_control) ;
 
-	  if (send->process_reply_func)
-	    {
-	      REMOTELOGMSG(remote_control, "About to call apps ReplyHandlerFunc callback"
-			   " to process the reply:\n \"%s\"",
-			   their_reply) ;
+          /* Hang on to reply otherwise it will be free'd by reset call. */
+          their_reply = send->their_reply ;
+          send->their_reply = NULL ;
 
-	      /* Call the app callback, this MUST be last because app may make a new call
-	       * to this code causing us to re-enter. */
-	      (send->process_reply_func)(remote_control, their_reply, send->process_reply_func_data) ;
 
-	      REMOTELOGMSG(remote_control, "\"%s\"", "Back from apps ReplyHandlerFunc callback.") ;
-	    }
-	}
+          /* Reset to idle, app then needs to decide whether to wait again. */
+          resetRemoteToIdle(remote_control) ;
+
+          if (send->process_reply_func)
+            {
+              REMOTELOGMSG(remote_control, "About to call apps ReplyHandlerFunc callback"
+                           " to process the reply:\n \"%s\"",
+                           their_reply) ;
+
+              /* Call the app callback, this MUST be last because app may make a new call
+               * to this code causing us to re-enter. */
+              (send->process_reply_func)(remote_control, their_reply, send->process_reply_func_data) ;
+
+              REMOTELOGMSG(remote_control, "\"%s\"", "Back from apps ReplyHandlerFunc callback.") ;
+            }
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -1164,7 +1164,7 @@ static void sendRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpointe
 
 /* GtkClipboardGetFunc() called if there is a 'get' request on the clipboard. */
 static void sendRequestReceivedClipboardGetCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-					      guint info, gpointer user_data)
+      guint info, gpointer user_data)
 {
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
 
@@ -1227,22 +1227,22 @@ static void receiveWaitClipboardClearCB(GtkClipboard *clipboard, gpointer user_d
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       if (remote_control->state == REMOTE_STATE_SERVER_WAIT_NEW_REQ)
-	{
-	  gtk_clipboard_request_contents(clipboard,
-					 remote_control->target_atom,
-					 receiveGetRequestClipboardCB, remote_control) ;
-
-	  remote_control->state = REMOTE_STATE_SERVER_WAIT_REQ_SEND ;
-
-	  /* Now we are waiting so set timeout. */
-	  addTimeout(remote_control) ;
-	}
+        {
+          gtk_clipboard_request_contents(clipboard,
+                                         remote_control->target_atom,
+                                         receiveGetRequestClipboardCB, remote_control) ;
+        
+          remote_control->state = REMOTE_STATE_SERVER_WAIT_REQ_SEND ;
+        
+          /* Now we are waiting so set timeout. */
+          addTimeout(remote_control) ;
+        }
       else
-	{
-	  CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_WAIT_NEW_REQ,
-				"%s",
-				"Supposed to be waiting for next request from peer.") ;
-	}
+        {
+          CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_WAIT_NEW_REQ,
+                                "%s",
+                                "Supposed to be waiting for next request from peer.") ;
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -1255,7 +1255,7 @@ static void receiveWaitClipboardClearCB(GtkClipboard *clipboard, gpointer user_d
  * idle state.
  * This is OUT OF BAND if this gets called in normal operation. */
 static void receiveWaitClipboardGetCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-				      guint info, gpointer user_data)
+      guint info, gpointer user_data)
 {
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
 
@@ -1296,67 +1296,67 @@ static void receiveGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionDa
       receive_request = remote_control->receive ;
 
       if (haveTimeout(remote_control))
-	removeTimeout(remote_control) ;
+        removeTimeout(remote_control) ;
 
       if (remote_control->state != REMOTE_STATE_SERVER_WAIT_REQ_SEND)
-	{
-	  CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_WAIT_REQ_SEND,
-				"%s",
-				"Expected to be waiting for request.") ;
-	}
+        {
+          CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_WAIT_REQ_SEND,
+                                "%s",
+                                "Expected to be waiting for request.") ;
+        }
       else
-	{
-	  char *err_msg = NULL ;
-	  char *selection_str ;
+        {
+          char *err_msg = NULL ;
+          char *selection_str ;
 
-	  REMOTELOGMSG(remote_control,
-		       "Received request from peer on receive clipboard \"%s\".",
-		       receive_request->our_atom_string) ;
+          REMOTELOGMSG(remote_control,
+                       "Received request from peer on receive clipboard \"%s\".",
+                       receive_request->our_atom_string) ;
 
-	  if (!isClipboardDataValid(selection_data, receive_request->our_atom_string, &err_msg))
-	    {
-	      CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
-			       "%s", err_msg) ;
+          if (!isClipboardDataValid(selection_data, receive_request->our_atom_string, &err_msg))
+            {
+              CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
+                               "%s", err_msg) ;
+        
+              g_free(err_msg) ;
+            }
+          else if (!(selection_str = getClipboardData(selection_data, &err_msg)))
+            {
+              CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
+                               "%s", err_msg) ;
+        
+              g_free(err_msg) ;
+            }
+          else
+            {
+              REMOTELOGMSG(remote_control,
+                           "Retrieved peers request from clipboard \"%s\", request is:\n \"%s\".",
+                           receive_request->our_atom_string, selection_str) ;
+        
+              receive_request->their_request = selection_str ;
+        
+              /* Retake ownership so they know we have got request. */
+              if (!clipboardTakeOwnership(remote_control, receive_request->our_clipboard,
+                          receiveRequestReceivedClipboardGetCB, receiveRequestReceivedClipboardClearCB,
+                          remote_control))
+                {
+                  CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
+                                   "Tried to retake ownership of receive clipboard \"%s\" to signal peer that we have"
+                                   " request but this failed, aborting request.",
+                                   receive_request->our_atom_string) ;
+                }
+              else
+                {
+                  remote_control->state = REMOTE_STATE_SERVER_WAIT_REQ_ACK ;
 
-	      g_free(err_msg) ;
-	    }
-	  else if (!(selection_str = getClipboardData(selection_data, &err_msg)))
-	    {
-	      CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
-			       "%s", err_msg) ;
-
-	      g_free(err_msg) ;
-	    }
-	  else
-	    {
-	      REMOTELOGMSG(remote_control,
-			   "Retrieved peers request from clipboard \"%s\", request is:\n \"%s\".",
-			   receive_request->our_atom_string, selection_str) ;
-
-	      receive_request->their_request = selection_str ;
-
-	      /* Retake ownership so they know we have got request. */
-	      if (!clipboardTakeOwnership(remote_control, receive_request->our_clipboard,
-					  receiveRequestReceivedClipboardGetCB, receiveRequestReceivedClipboardClearCB,
-					  remote_control))
-		{
-		  CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
-				   "Tried to retake ownership of receive clipboard \"%s\" to signal peer that we have"
-				   " request but this failed, aborting request.",
-				   receive_request->our_atom_string) ;
-		}
-	      else
-		{
-		  remote_control->state = REMOTE_STATE_SERVER_WAIT_REQ_ACK ;
-
-		  REMOTELOGMSG(remote_control,
-			       "Have retaken ownership of receive clipboard \"%s\" to signal peer that we have their request.",
-			       receive_request->our_atom_string) ;
-
-		  addTimeout(remote_control) ;
-		}
-	    }
-	}
+                  REMOTELOGMSG(remote_control,
+                               "Have retaken ownership of receive clipboard \"%s\" to signal peer that we have their request.",
+                               receive_request->our_atom_string) ;
+                
+                  addTimeout(remote_control) ;
+                }
+            }
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -1388,29 +1388,29 @@ static void receiveRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpoi
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       if (haveTimeout(remote_control))
-	removeTimeout(remote_control) ;
+        removeTimeout(remote_control) ;
 
       if (remote_control->state != REMOTE_STATE_SERVER_WAIT_REQ_ACK)
-	{
-	  CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_WAIT_REQ_ACK,
-				"%s",
-				"Expected to be waiting for request.") ;
-	}
+        {
+          CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_WAIT_REQ_ACK,
+                                "%s",
+                                "Expected to be waiting for request.") ;
+        }
       else
-	{
-	  receive_request = remote_control->receive ;
+        {
+          receive_request = remote_control->receive ;
 
-	  REMOTELOGMSG(remote_control, "Calling apps callback func to process request:\n \"%s\"",
-		       receive_request->their_request) ;
+          REMOTELOGMSG(remote_control, "Calling apps callback func to process request:\n \"%s\"",
+                       receive_request->their_request) ;
+        
+          /* set state here as not sure when app will call us back. */
+          remote_control->state = REMOTE_STATE_SERVER_PROCESS_REQ ;
 
-	  /* set state here as not sure when app will call us back. */
-	  remote_control->state = REMOTE_STATE_SERVER_PROCESS_REQ ;
-
-	  /* Call the app callback....um the second remote_control pointer looks wrong here..... */
-	  (receive_request->process_request_func)(remote_control, receiveAppCB, remote_control,
-						  receive_request->their_request,
-						  receive_request->process_request_func_data) ;
-	}
+          /* Call the app callback....um the second remote_control pointer looks wrong here..... */
+          (receive_request->process_request_func)(remote_control, receiveAppCB, remote_control,
+          receive_request->their_request,
+          receive_request->process_request_func_data) ;
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -1420,7 +1420,7 @@ static void receiveRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpoi
 
 /* A GtkClipboardGetFunc() called if there is a 'get' request on our clipboard. */
 static void receiveRequestReceivedClipboardGetCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-						 guint info, gpointer user_data)
+         guint info, gpointer user_data)
 {
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
   
@@ -1462,55 +1462,55 @@ static void receiveAppCB(void *remote_data, gboolean abort, char *reply)
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       if (remote_control->state != REMOTE_STATE_SERVER_PROCESS_REQ)
-	{
-	  CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_PROCESS_REQ,
-				"%s",
-				"Expected to be waiting for request.") ;
-	}
+        {
+          CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_PROCESS_REQ,
+        "%s",
+        "Expected to be waiting for request.") ;
+        }
       else if (abort)
-	{
-	  CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_APP_ABORT,
-			   "%s",
-			   "App has aborted transaction, see log file for reason.") ;
-	}
+        {
+          CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_APP_ABORT,
+           "%s",
+           "App has aborted transaction, see log file for reason.") ;
+        }
       else
-	{
-	  receive = remote_control->receive ;
-
-	  REMOTELOGMSG(remote_control, "App processing finished, reply is: \"%s\".", reply) ;
-
-	  receive->our_reply = reply ;
-
+        {
+          receive = remote_control->receive ;
+        
+          REMOTELOGMSG(remote_control, "App processing finished, reply is: \"%s\".", reply) ;
+        
+          receive->our_reply = reply ;
+        
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (gtk_clipboard_set_with_data(receive->our_clipboard,
-					  clipboard_target_G,
-					  TARGET_NUM,
-					  receiveClipboardGetReplyCB,
-					  receiveClipboardClearWaitAfterReplyCB,
-					  remote_control)) ;
+          if (gtk_clipboard_set_with_data(receive->our_clipboard,
+                                          clipboard_target_G,
+                                          TARGET_NUM,
+                                          receiveClipboardGetReplyCB,
+                                          receiveClipboardClearWaitAfterReplyCB,
+                                          remote_control)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	  if (clipboardTakeOwnership(remote_control,
-				     receive->our_clipboard,
-				     receiveClipboardGetReplyCB,
-				     receiveClipboardClearWaitAfterReplyCB,
-				     remote_control))
-	    {
-	      REMOTELOGMSG(remote_control,
-			   "Have ownership of peer clipboard \"%s\", waiting for peer to ask for our reply.",
-			   receive->our_atom_string) ;
-
-	      remote_control->state = REMOTE_STATE_SERVER_WAIT_GET ;
-
-	      addTimeout(remote_control) ;
-	    }
-	  else
-	    {
-	      CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
-			       "Cannot set request on peer clipboard \"%s\".",
-			       receive->our_atom_string) ;
-	    }
-	}
+          if (clipboardTakeOwnership(remote_control,
+                                     receive->our_clipboard,
+                                     receiveClipboardGetReplyCB,
+                                     receiveClipboardClearWaitAfterReplyCB,
+                                     remote_control))
+            {
+              REMOTELOGMSG(remote_control,
+                           "Have ownership of peer clipboard \"%s\", waiting for peer to ask for our reply.",
+                           receive->our_atom_string) ;
+        
+              remote_control->state = REMOTE_STATE_SERVER_WAIT_GET ;
+        
+              addTimeout(remote_control) ;
+            }
+          else
+            {
+              CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
+                               "Cannot set request on peer clipboard \"%s\".",
+                               receive->our_atom_string) ;
+            }
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -1530,7 +1530,7 @@ static void receiveAppCB(void *remote_data, gboolean abort, char *reply)
 
 /* GtkClipboardGetFunc() called when peer wants clipboard contents. */
 static void receiveClipboardGetReplyCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-				       guint info, gpointer user_data)
+       guint info, gpointer user_data)
 {
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
   RemoteReceive receive ;
@@ -1544,47 +1544,47 @@ static void receiveClipboardGetReplyCB(GtkClipboard *clipboard, GtkSelectionData
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       if (haveTimeout(remote_control))
-	removeTimeout(remote_control) ;
+        removeTimeout(remote_control) ;
 
       if (remote_control->state != REMOTE_STATE_SERVER_WAIT_GET)
-	{
-	  CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_WAIT_GET,
-				"%s",
-				"Expected to be waiting for request.") ;
-	}
+        {
+          CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_WAIT_GET,
+                                "%s",
+                                "Expected to be waiting for request.") ;
+        }
       else
-	{
-	  receive = remote_control->receive ;
+        {
+          receive = remote_control->receive ;
 
-	  target_atom = gtk_selection_data_get_target(selection_data) ;
-	  target_name = gdk_atom_name(target_atom) ;
+          target_atom = gtk_selection_data_get_target(selection_data) ;
+          target_name = gdk_atom_name(target_atom) ;
 
-	  if (info != TARGET_ID)
-	    {
-	      CALL_ERR_HANDLER(remote_control,
-			       ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
-			       "Unsupported Data Type requested: %s.", target_name) ;
-	    }
-	  else
-	    {
-	      /* All ok so set our request on the peers clipboard. */
-	      REMOTELOGMSG(remote_control, "Setting our reply on clipboard \"%s\" using property \"%s\","
-			   "reply is:\n \"%s\".",
-			   receive->our_atom_string,
-			   target_name, receive->our_reply) ;
-
-	      /* Set the data in the selection data param, N.B. terminating NULL is not sent. */
-	      gtk_selection_data_set(selection_data,
-				     remote_control->target_atom,
-				     8,
-				     (guchar *)(receive->our_reply),
-				     (int)(strlen(receive->our_reply))) ;
-
-	      remote_control->state = REMOTE_STATE_SERVER_WAIT_REPLY_ACK ;
-
-	      addTimeout(remote_control) ;
-	    }
-	}
+          if (info != TARGET_ID)
+            {
+              CALL_ERR_HANDLER(remote_control,
+                               ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,
+                               "Unsupported Data Type requested: %s.", target_name) ;
+            }
+          else
+            {
+              /* All ok so set our request on the peers clipboard. */
+              REMOTELOGMSG(remote_control, "Setting our reply on clipboard \"%s\" using property \"%s\","
+                           "reply is:\n \"%s\".",
+                           receive->our_atom_string,
+                           target_name, receive->our_reply) ;
+        
+              /* Set the data in the selection data param, N.B. terminating NULL is not sent. */
+              gtk_selection_data_set(selection_data,
+                                     remote_control->target_atom,
+                                     8,
+                                     (guchar *)(receive->our_reply),
+                                     (int)(strlen(receive->our_reply))) ;
+        
+              remote_control->state = REMOTE_STATE_SERVER_WAIT_REPLY_ACK ;
+        
+              addTimeout(remote_control) ;
+            }
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -1617,49 +1617,49 @@ static void receiveClipboardClearWaitAfterReplyCB(GtkClipboard *clipboard, gpoin
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       if (haveTimeout(remote_control))
-	removeTimeout(remote_control) ;
+        removeTimeout(remote_control) ;
 
       if (remote_control->state != REMOTE_STATE_SERVER_WAIT_REPLY_ACK)
-	{
-	  CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_WAIT_REPLY_ACK,
-				"%s",
-				"Expected to be waiting for acknowledgement from peer that is has our reply.") ;
-	}
+        {
+          CALL_BADSTATE_HANDLER(remote_control, REMOTE_STATE_SERVER_WAIT_REPLY_ACK,
+                                "%s",
+                                "Expected to be waiting for acknowledgement from peer that is has our reply.") ;
+        }
       else
-	{
-	  receive = remote_control->receive ;
+        {
+          receive = remote_control->receive ;
 
-	  REMOTELOGMSG(remote_control,
-		       "Lost ownership of receive clipboard \"%s\", now we know they have our reply.",
-		       receive->our_atom_string) ;
+          REMOTELOGMSG(remote_control,
+                       "Lost ownership of receive clipboard \"%s\", now we know they have our reply.",
+                       receive->our_atom_string) ;
+        
+          REMOTELOGMSG(remote_control,
+                       "Clearing our clipboard to signal peer we know they got reply on \"%s\").",
+                       receive->our_atom_string) ;
+        
+          gtk_clipboard_clear(receive->our_clipboard) ;
+        
+        
+          REMOTELOGMSG(remote_control,
+               "Resetting to idle as request finished on \"%s\").",
+               receive->our_atom_string) ;
 
-	  REMOTELOGMSG(remote_control,
-		       "Clearing our clipboard to signal peer we know they got reply on \"%s\").",
-		       receive->our_atom_string) ;
+          /* Reset to idle. */
+          resetRemoteToIdle(remote_control) ;
 
-	  gtk_clipboard_clear(receive->our_clipboard) ;
-
-
-	  REMOTELOGMSG(remote_control,
-		       "Resetting to idle as request finished on \"%s\").",
-		       receive->our_atom_string) ;
-
-	  /* Reset to idle. */
-	  resetRemoteToIdle(remote_control) ;
-
-	  /* Optionally call back to app to signal that peer has received reply, must be
-	   * last because app may call this code to go back to waiting for a reply or make its own request. */
-	  if (receive->reply_sent_func)
-	    {
-	      REMOTELOGMSG(remote_control,
-			   "%s", "About to call Apps replySentCB.") ;
-		  
-	      (receive->reply_sent_func)(receive->reply_sent_func_data) ;
-		  
-	      REMOTELOGMSG(remote_control,
-			   "%s", "Back from Apps replySentCB.") ;
-	    }
-	}
+          /* Optionally call back to app to signal that peer has received reply, must be
+           * last because app may call this code to go back to waiting for a reply or make its own request. */
+          if (receive->reply_sent_func)
+            {
+              REMOTELOGMSG(remote_control,
+                           "%s", "About to call Apps replySentCB.") ;
+  
+              (receive->reply_sent_func)(receive->reply_sent_func_data) ;
+  
+              REMOTELOGMSG(remote_control,
+                   "%s", "Back from Apps replySentCB.") ;
+            }
+        }
     }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
@@ -1729,10 +1729,10 @@ static RemoteIdle createIdle(void)
 
 /* Create receive interface struct. */
 static RemoteReceive createReceive(GQuark app_id, char *app_unique_str,
-				   ZMapRemoteControlRequestHandlerFunc process_request_func,
-				   gpointer process_request_func_data,
-				   ZMapRemoteControlReplySentFunc reply_sent_func,
-				   gpointer reply_sent_func_data)
+           ZMapRemoteControlRequestHandlerFunc process_request_func,
+           gpointer process_request_func_data,
+           ZMapRemoteControlReplySentFunc reply_sent_func,
+           gpointer reply_sent_func_data)
 {
   RemoteReceive receive_request ;
 
@@ -1762,8 +1762,8 @@ static RemoteReceive createReceive(GQuark app_id, char *app_unique_str,
 
 /* Create send interface struct. */
 static RemoteSend createSend(char *send_app_name, char *send_unique_atom_string,
-			     ZMapRemoteControlRequestSentFunc req_sent_func, gpointer req_sent_func_data,
-			     ZMapRemoteControlReplyHandlerFunc process_reply_func, gpointer process_reply_func_data)
+             ZMapRemoteControlRequestSentFunc req_sent_func, gpointer req_sent_func_data,
+             ZMapRemoteControlReplyHandlerFunc process_reply_func, gpointer process_reply_func_data)
 {
   RemoteSend send_request ;
 
@@ -1862,8 +1862,8 @@ static void destroySend(RemoteSend send_request)
 /* The send/receive code works asynchronously and if there are errors, state needs to be
  * reset so that the send or receive is aborted. */
 static void errorHandler(ZMapRemoteControl remote_control,
-			 const char *file_name, const char *func_name,
-			 ZMapRemoteControlRCType error_rc, char *format_str, ...)
+         const char *file_name, const char *func_name,
+         ZMapRemoteControlRCType error_rc, char *format_str, ...)
 {
   va_list args1, args2 ;
   int bytes_printed ;
@@ -1886,7 +1886,7 @@ static void errorHandler(ZMapRemoteControl remote_control,
 
 
   full_err_msg = g_strdup_printf("Error code: %s, error: %s", zMapRemoteControlRCType2ExactStr(error_rc),
-				 err_msg) ;
+                                 err_msg) ;
 
 
   /* Reset remote control to idle before calling user error handler, user may want to go
@@ -1900,8 +1900,8 @@ static void errorHandler(ZMapRemoteControl remote_control,
 
   /* we need to call the apps error handler func here..... */
   (remote_control->app_error_func)(remote_control,
-				   error_rc, full_err_msg,
-				   remote_control->app_error_func_data) ;
+                                   error_rc, full_err_msg,
+                                   remote_control->app_error_func_data) ;
 
   REMOTELOGMSG(remote_control, "%s", "Back from apps ZMapRemoteControlErrorHandlerFunc().") ;
 
@@ -1917,8 +1917,8 @@ static void errorHandler(ZMapRemoteControl remote_control,
  * in a standard format.
  *  */
 static void errorMsg(ZMapRemoteControl remote_control,
-		     const char *file_name, const char *func_name, char *format_str, ...)
-{				
+     const char *file_name, const char *func_name, char *format_str, ...)
+{
   va_list args ;
 
   va_start(args, format_str) ;
@@ -1942,13 +1942,13 @@ static void errorMsg(ZMapRemoteControl remote_control,
  * 
  */
 static void logMsg(ZMapRemoteControl remote_control,
-		   const char *file_name, const char *func_name, char *format_str, va_list args)
-{				
+   const char *file_name, const char *func_name, char *format_str, va_list args)
+{
   GString *msg ;
   char *name ;
   gboolean add_time = TRUE ;
   char *time_str = NULL ;
-  gboolean add_filename = FALSE ;			    /* no point currently. */
+  gboolean add_filename = FALSE ;    /* no point currently. */
   const char *curr_clipboard = "<null>";
 
   if (remote_control && remote_control->curr_remote && remote_control->curr_remote->any_atom_string)
@@ -1959,17 +1959,17 @@ static void logMsg(ZMapRemoteControl remote_control,
   if (add_time)
     time_str = zMapGetTimeString(ZMAPTIME_LOG, NULL) ;
 
-  msg = g_string_sized_new(500) ;				
+  msg = g_string_sized_new(500) ;
 
   g_string_append_printf(msg, "%s%s%s:%s%s%s()\tActing as: %s  State: %s  Clipboard: %s\tMessage: ",
-			 (add_time ? time_str : ""),
-			 (add_time ? "\t" : ""),
-			 g_quark_to_string(remote_control->app_id),
-			 (add_filename ? name : ""),
-			 (add_filename ? ":" : ""),
-			 func_name,
-			 remoteType2ExactStr(remote_control->curr_remote->remote_type),
-			 remoteState2ExactStr(remote_control->state),
+                         (add_time ? time_str : ""),
+                         (add_time ? "\t" : ""),
+                         g_quark_to_string(remote_control->app_id),
+                         (add_filename ? name : ""),
+                         (add_filename ? ":" : ""),
+                         func_name,
+                         remoteType2ExactStr(remote_control->curr_remote->remote_type),
+                         remoteState2ExactStr(remote_control->state),
                          curr_clipboard) ;
 
   g_string_append_vprintf(msg, format_str, args) ;
@@ -1977,9 +1977,9 @@ static void logMsg(ZMapRemoteControl remote_control,
   if (time_str)
     g_free(time_str) ;
 
-  (remote_control->app_err_report_func)(remote_control->app_err_report_data, msg->str) ;			
-									
-  g_string_free(msg, TRUE) ;					
+  (remote_control->app_err_report_func)(remote_control->app_err_report_data, msg->str) ;
+
+  g_string_free(msg, TRUE) ;
 
   g_free(name) ;
 
@@ -2056,7 +2056,7 @@ static void removeTimeout(ZMapRemoteControl remote_control)
  *  */
 static gboolean timeOutCB(gpointer user_data)
 {
-  gboolean result = FALSE ;				    /* Returning FALSE removes timer. */
+  gboolean result = FALSE ;    /* Returning FALSE removes timer. */
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
@@ -2072,9 +2072,9 @@ static gboolean timeOutCB(gpointer user_data)
   else
     {
       CALL_ERR_HANDLER(remote_control,
-		       ZMAP_REMOTECONTROL_RC_TIMED_OUT,
-		       "Timed out waiting for peer to reply while in state \"%s\".",
-		       remoteState2ExactStr(remote_control->state)) ;
+       ZMAP_REMOTECONTROL_RC_TIMED_OUT,
+       "Timed out waiting for peer to reply while in state \"%s\".",
+       remoteState2ExactStr(remote_control->state)) ;
 
       /* This callback is removed automatically by gtk so reset the source_id. */
       remote_control->timer_source_id = 0 ;
@@ -2137,8 +2137,8 @@ gboolean isInSendState(RemoteControlState state)
 
 /* Take ownership of a clipboard ready to receive commands. */
 static gboolean clipboardTakeOwnership(ZMapRemoteControl remote_control, GtkClipboard *clipboard,
-				       GtkClipboardGetFunc get_func, GtkClipboardClearFunc clear_func,
-				       gpointer user_data)
+       GtkClipboardGetFunc get_func, GtkClipboardClearFunc clear_func,
+       gpointer user_data)
 {
   gboolean result = FALSE ;
   int i, retrys = 10 ;
@@ -2157,26 +2157,26 @@ static gboolean clipboardTakeOwnership(ZMapRemoteControl remote_control, GtkClip
   for (i = 0 ; i < retrys ; i++)
     {
       if ((result = gtk_clipboard_set_with_data(clipboard,
-						clipboard_target_G,
-						TARGET_NUM,
-						get_func,
-						clear_func,
-						user_data)))
-	{
-	  break ;
-	}
+                clipboard_target_G,
+                TARGET_NUM,
+                get_func,
+                clear_func,
+                user_data)))
+        {
+          break ;
+        }
       else
-	{
-	  REMOTELOGMSG(remote_control,
-		       "Could not take ownership of clipboard after %d retries, about to sleep....", i) ;
+        {
+          REMOTELOGMSG(remote_control,
+                       "Could not take ownership of clipboard after %d retries, about to sleep....", i) ;
 
-	  g_usleep(5000) ;
-	}
+          g_usleep(5000) ;
+        }
     }
 
   if (!result)
     REMOTELOGMSG(remote_control,
-		 "Could not take ownership of clipboard even after %d tries....", retrys) ;
+                 "Could not take ownership of clipboard even after %d tries....", retrys) ;
 
   return result ;
 }
@@ -2201,17 +2201,17 @@ static gboolean isClipboardDataValid(GtkSelectionData *selection_data, char *cur
       target = gdk_atom_name(gtk_selection_data_get_target(selection_data)) ;
 
       if (strcmp(selection, curr_selection) !=0
-	  || strcmp(data_type, ZACP_DATA_TYPE) != 0
-	  || strcmp(target, ZACP_DATA_TYPE) != 0)
-	{
-	  *err_msg_out = g_strdup_printf("Wrong selection/target on clipboard,"
-					 " Clipboard details: selection = \"%s\", data_type = \"%s\", target = \"%s\""
-					 " Expected details: selection = \"%s\", data_type = \"%s\", target = \"%s\"",
-					 selection, data_type, target,
-					 curr_selection, ZACP_DATA_TYPE , ZACP_DATA_TYPE) ;
-
-	  result = FALSE ;
-	}
+                  || strcmp(data_type, ZACP_DATA_TYPE) != 0
+                  || strcmp(target, ZACP_DATA_TYPE) != 0)
+        {
+          *err_msg_out = g_strdup_printf("Wrong selection/target on clipboard,"
+                                         " Clipboard details: selection = \"%s\", data_type = \"%s\", target = \"%s\""
+                                         " Expected details: selection = \"%s\", data_type = \"%s\", target = \"%s\"",
+                                         selection, data_type, target,
+                                         curr_selection, ZACP_DATA_TYPE , ZACP_DATA_TYPE) ;
+        
+          result = FALSE ;
+        }
 
       g_free(selection) ;
       g_free(data_type) ;
@@ -2226,13 +2226,13 @@ static gboolean isClipboardDataValid(GtkSelectionData *selection_data, char *cur
       format = gtk_selection_data_get_format(selection_data) ;
 
       if (format != ZACP_DATA_FORMAT)
-	{
-	  *err_msg_out = g_strdup_printf("Wrong data format on clipboard,"
-					 "expected %d bits/byte but got %d.",
-					 ZACP_DATA_FORMAT, format) ;
-
-	  result = FALSE ;
-	}
+        {
+          *err_msg_out = g_strdup_printf("Wrong data format on clipboard,"
+                                         "expected %d bits/byte but got %d.",
+                                         ZACP_DATA_FORMAT, format) ;
+        
+          result = FALSE ;
+        }
     }
 
   if (result)
@@ -2243,13 +2243,13 @@ static gboolean isClipboardDataValid(GtkSelectionData *selection_data, char *cur
       length = gtk_selection_data_get_length(selection_data) ;
 
       if (length < 0)
-	{
-	  *err_msg_out = g_strdup_printf("Could not retrieve peer data from clipboard, length was \"%d\".",
-					 length) ;
-
-	  result = FALSE ;
-	}
-    }				 
+        {
+          *err_msg_out = g_strdup_printf("Could not retrieve peer data from clipboard, length was \"%d\".",
+                                         length) ;
+        
+          result = FALSE ;
+        }
+    } 
 
   return result ;
 }

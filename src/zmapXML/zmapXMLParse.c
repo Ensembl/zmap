@@ -244,7 +244,7 @@ char *zMapXMLParserGetFullXMLTwig(ZMapXMLParser parser, int offset)
 
 
 gboolean zMapXMLParserParseFile(ZMapXMLParser parser,
-				FILE *file)
+FILE *file)
 {
   int len = 0;
   int done = 0;
@@ -282,17 +282,17 @@ static gboolean parse_xml(XML_Parser expat, char *buffer, int size, enum XML_Sta
       processing_status = XML_Parse(expat, buffer, size, is_final);
       
       switch(processing_status)
-	{
-	case XML_STATUS_ERROR:
-	  suspended = FALSE;
-	  break;
-	case XML_STATUS_SUSPENDED:
-	  suspended = TRUE;
-	  break;
-	default:
-	  suspended = FALSE;
-	  break;
-	}
+        {
+        case XML_STATUS_ERROR:
+          suspended = FALSE;
+          break;
+        case XML_STATUS_SUSPENDED:
+          suspended = TRUE;
+          break;
+        default:
+          suspended = FALSE;
+          break;
+        }
 
       *status_out = processing_status;
     }
@@ -301,7 +301,7 @@ static gboolean parse_xml(XML_Parser expat, char *buffer, int size, enum XML_Sta
 }
 
 static gboolean resume_parse_xml(XML_Parser expat, char *buffer, 
-				 int size, enum XML_Status *status_out)
+ int size, enum XML_Status *status_out)
 {
   int suspended = 0;
 
@@ -341,29 +341,29 @@ static void xml_parse(ZMapXMLParser parser, char *buffer, int size, enum XML_Sta
       int offset = 0, c_size;
 
       while(suspended)
-	{
-	  const char *c;
-	  gboolean ready_to_resume = TRUE;
-
-	  if((parser->suspended_cb))
-	    ready_to_resume = (parser->suspended_cb)(parser->user_data, parser);
-	    
-	  c = XML_GetInputContext(parser->expat, &offset, &c_size);
-
-	  if(ready_to_resume)
-	    suspended = resume_parse_xml(parser->expat, 
-					 buffer + c_size, 
-					 size   - c_size, 
-					 status_out_cp);
-	}
+        {
+          const char *c;
+          gboolean ready_to_resume = TRUE;
+        
+          if((parser->suspended_cb))
+            ready_to_resume = (parser->suspended_cb)(parser->user_data, parser);
+            
+          c = XML_GetInputContext(parser->expat, &offset, &c_size);
+        
+          if(ready_to_resume)
+            suspended = resume_parse_xml(parser->expat, 
+         buffer + c_size, 
+         size   - c_size, 
+         status_out_cp);
+        }
     }
   
   return ;
 }
 
 gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser, 
-				  void *data, 
-				  int size)
+  void *data, 
+  int size)
 {
   gboolean result = TRUE ;
   int isFinal;
@@ -386,46 +386,46 @@ gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser,
     if ((processing_status = XML_Parse(parser->expat, (char *)data, size, isFinal)) != XML_STATUS_OK)
 #endif
       {
-	enum XML_Error error;
-	char *offend = NULL;
+        enum XML_Error error;
+        char *offend = NULL;
 
-	if (parser->last_errmsg)
-	  g_free(parser->last_errmsg);
+        if (parser->last_errmsg)
+          g_free(parser->last_errmsg);
 
-	error = XML_GetErrorCode(parser->expat);
+        error = XML_GetErrorCode(parser->expat);
       
-	if(error == XML_ERROR_ABORTED && parser->error_free_abort)
-	  result = TRUE;
-	else
-	  {                       /* processing_status == XML_STATUS_ERROR */
-	    int line_num, col_num;
+        if(error == XML_ERROR_ABORTED && parser->error_free_abort)
+          result = TRUE;
+        else
+          {                       /* processing_status == XML_STATUS_ERROR */
+            int line_num, col_num;
 
-	    line_num = (int)XML_GetCurrentLineNumber(parser->expat);
-	    col_num  = (int)XML_GetCurrentColumnNumber(parser->expat);
+            line_num = (int)XML_GetCurrentLineNumber(parser->expat);
+            col_num  = (int)XML_GetCurrentColumnNumber(parser->expat);
 
-	    offend = getOffendingXML(parser, ZMAP_XML_ERROR_CONTEXT_SIZE);
-	    switch(error)
-	      {
-	      case XML_ERROR_ABORTED:
-		parser->last_errmsg = g_strdup_printf("[ZMapXMLParse] Parse error line %d column %d\n"
-						      "[ZMapXMLParse] Aborted: %s\n",
-						      line_num, col_num,
-						      parser->aborted_msg);
-		break;
-	      default:
-		parser->last_errmsg = g_strdup_printf("[ZMapXMLParse] Parse error line %d column %d\n"
-						      "[ZMapXMLParse] Expat reports: %s\n"
-						      "[ZMapXMLParse] XML near error <!-- >>>>%s<<<< -->\n",
-						      line_num, col_num,
-						      XML_ErrorString(error),
-						      offend) ;
-		break;
-	      }
-	    result = FALSE ;
-	  }
+            offend = getOffendingXML(parser, ZMAP_XML_ERROR_CONTEXT_SIZE);
+            switch(error)
+              {
+              case XML_ERROR_ABORTED:
+                parser->last_errmsg = g_strdup_printf("[ZMapXMLParse] Parse error line %d column %d\n"
+                      "[ZMapXMLParse] Aborted: %s\n",
+                      line_num, col_num,
+                      parser->aborted_msg);
+                break;
+              default:
+                parser->last_errmsg = g_strdup_printf("[ZMapXMLParse] Parse error line %d column %d\n"
+                      "[ZMapXMLParse] Expat reports: %s\n"
+                      "[ZMapXMLParse] XML near error <!-- >>>>%s<<<< -->\n",
+                      line_num, col_num,
+                      XML_ErrorString(error),
+                      offend) ;
+                break;
+              }
+            result = FALSE ;
+          }
 
-	if(offend)
-	  g_free(offend);
+        if(offend)
+          g_free(offend);
       }
 
 #ifndef ZMAP_USING_EXPAT_1_95_8_OR_ABOVE
@@ -618,9 +618,9 @@ static void freeUpTheQueue(ZMapXMLParser parser)
       gpointer dummy ;
       /* elements are allocated/deallocated elsewhere now. */
       while ((dummy = g_queue_pop_head(parser->elementStack)))
-	{
+        {
           /* g_free(dummy) ; */
-	}
+        }
     }
   g_queue_free(parser->elementStack) ;
   parser->elementStack = NULL;
@@ -808,7 +808,7 @@ static void end_handler(void *userData,
       int depth = g_queue_get_length(parser->elementStack);
 #endif
       for (i = 0; !(current_ele->contents->len) && i < depth; i++)
-      	printf("  ") ;
+      printf("  ") ;
 
       printf("</%s>", el) ;
     }
@@ -828,7 +828,7 @@ static void end_handler(void *userData,
           /* We can free the current_ele and all its children */
           /* First we need to tell the parent that its child is being freed. */
           if(!(zmapXMLElementSignalParentChildFree(current_ele)))
-	    printf("[zmapXMLParser] XML Document free? Memory leak ?\n");
+    printf("[zmapXMLParser] XML Document free? Memory leak ?\n");
 
           zmapXMLElementMarkDirty(current_ele);
         }
@@ -946,10 +946,10 @@ static ZMapXMLAttribute parserFetchNewAttribute(ZMapXMLParser parser,
     {
       /* This is hideous. Ed has a written a zMap_g_array_index, but it auto expands  */
       if (((&(g_array_index(parser->attributes, zmapXMLAttributeStruct, i))))->dirty == TRUE)
-	{
-	  save = i;
-	  break;
-	}
+        {
+          save = i;
+          break;
+        }
     }
 
   if ((save != -1) && (attr = &(g_array_index(parser->attributes, zmapXMLAttributeStruct, save))) != NULL)
@@ -978,10 +978,10 @@ static ZMapXMLElement parserFetchNewElement(ZMapXMLParser parser,
     {
       /* This is hideous. Ed has a written a zMap_g_array_index, but it auto expands  */
       if (((&(g_array_index(parser->elements, zmapXMLElementStruct, i))))->dirty == TRUE)
-	{
-	  save = i;
-	  break;
-	}
+        {
+          save = i;
+          break;
+        }
     }
 
   if((save != -1) && (element = &(g_array_index(parser->elements, zmapXMLElementStruct, save))) != NULL)

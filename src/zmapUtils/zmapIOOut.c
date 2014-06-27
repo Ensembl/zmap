@@ -112,16 +112,16 @@ ZMapIOOut zMapOutCreateFile(char *full_path, char *mode, GError **error_out)
   else if(error)
     {
       if(error_out)
-	*error_out = error;
+        *error_out = error;
     }
   else
     {
       if(error_out)
-	*error_out = g_error_new(zmapOutErrorDomain(),
-				 -1,
-				 "Failed to open file '%s', mode '%s'. "
-				 "No error returned from g_io_channel_new_file!",
-				 full_path, mode);
+        *error_out = g_error_new(zmapOutErrorDomain(),
+                                 -1,
+                                 "Failed to open file '%s', mode '%s'. "
+                                 "No error returned from g_io_channel_new_file!",
+                                 full_path, mode);
     }
   
   return out;
@@ -156,26 +156,26 @@ gboolean zMapOutWrite(ZMapIOOut out, char *text)
     {
     case ZMAPIO_STRING:
       {
-	out->output.string = g_string_append(out->output.string, text) ;
+        out->output.string = g_string_append(out->output.string, text) ;
 
-	result = TRUE ;
-	break ;
+        result = TRUE ;
+        break ;
       }
     case ZMAPIO_FILE:
       {
-	GIOStatus status ;
-	gsize bytes_written ;
+        GIOStatus status ;
+        gsize bytes_written ;
 
-	if ((status = g_io_channel_write_chars(out->output.channel,
-					       text, -1, &bytes_written,
-					       &(out->g_error))) == G_IO_STATUS_NORMAL)
-	  result = TRUE ;
-	break ;
+        if ((status = g_io_channel_write_chars(out->output.channel,
+                                               text, -1, &bytes_written,
+                                               &(out->g_error))) == G_IO_STATUS_NORMAL)
+          result = TRUE ;
+        break ;
       }
     default:
       {
         zMapWarnIfReached() ;
-	break ;
+        break ;
       }
     }
 
@@ -199,43 +199,38 @@ gboolean zMapOutWriteFormat(ZMapIOOut out, char *format, ...)
     case ZMAPIO_STRING:
       {
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	/* I would like to simply use this but it requires glib 2.14 */
-	g_string_append_vprintf(out->output.string, format, args) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+        va_start(args, format) ;
+        msg_string = g_strdup_vprintf(format, args) ;
+        va_end(args) ;
 
-	va_start(args, format) ;
-	msg_string = g_strdup_vprintf(format, args) ;
-	va_end(args) ;
+        out->output.string = g_string_append(out->output.string, msg_string) ;
 
-	out->output.string = g_string_append(out->output.string, msg_string) ;
-
-	g_free(msg_string) ;
-	result = TRUE ;
-	break ;
+        g_free(msg_string) ;
+        result = TRUE ;
+        break ;
       }
     case ZMAPIO_FILE:
       {
-	GIOStatus status ;
-	gsize bytes_written ;
-	char *msg_string ;
+        GIOStatus status ;
+        gsize bytes_written ;
+        char *msg_string ;
 
-	va_start(args, format) ;
-	msg_string = g_strdup_vprintf(format, args) ;
-	va_end(args) ;
+        va_start(args, format) ;
+        msg_string = g_strdup_vprintf(format, args) ;
+        va_end(args) ;
 
-	if ((status = g_io_channel_write_chars(out->output.channel,
-					       msg_string, -1, &bytes_written,
-					       &(out->g_error))) == G_IO_STATUS_NORMAL)
-	  result = TRUE ;
+        if ((status = g_io_channel_write_chars(out->output.channel,
+                                               msg_string, -1, &bytes_written,
+                                               &(out->g_error))) == G_IO_STATUS_NORMAL)
+        result = TRUE ;
 
-	g_free(msg_string) ;
-	break ;
+        g_free(msg_string) ;
+        break ;
       }
     default:
       {
         zMapWarnIfReached() ;
-	break ;
+        break ;
       }
     }
 
@@ -287,26 +282,26 @@ void zMapOutDestroy(ZMapIOOut out)
     {
     case ZMAPIO_STRING:
       {
-	g_string_free(out->output.string, TRUE) ;
-	break ;
+        g_string_free(out->output.string, TRUE) ;
+        break ;
       }
     case ZMAPIO_FILE:
       {
-	/* We use unref here instead of shutdown because shutdown _always_ closes the file
-	 * and we don't always want this, e.g. if file is stdout ! unref will close disk
-	 * files but leave open everything else (sockets, pipes etc) which is what we want. */
-	g_io_channel_unref(out->output.channel) ;
+        /* We use unref here instead of shutdown because shutdown _always_ closes the file
+         * and we don't always want this, e.g. if file is stdout ! unref will close disk
+         * files but leave open everything else (sockets, pipes etc) which is what we want. */
+        g_io_channel_unref(out->output.channel) ;
 
-	/* Free any g_error stuff. */
-	if (out->g_error)
-	  g_clear_error(&(out->g_error)) ;
+/* Free any g_error stuff. */
+        if (out->g_error)
+          g_clear_error(&(out->g_error)) ;
 
-	break ;
+        break ;
       }
     default:
       {
         zMapWarnIfReached() ;
-	break ;
+        break ;
       }
     }
 
@@ -337,7 +332,7 @@ static ZMapIOOut allocIOOut(ZMapIOType type)
 static void deAllocIOOut(ZMapIOOut out)
 {
   out->type = ZMAPIO_INVALID ;
-  out->valid = NULL ;					    /* Mark block as dirty in case reused. */
+  out->valid = NULL ;    /* Mark block as dirty in case reused. */
   g_slice_free1(sizeof(ZMapIOOutStruct), out) ;
 
   return ;

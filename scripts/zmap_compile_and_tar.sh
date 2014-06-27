@@ -41,6 +41,7 @@ if [ $# -gt 0 ]; then
 fi
 
 INSTALL_PREFIX=prefix_root
+SERVER_SCRIPTS_DIR=server
 
 # We know that this is in cvs
 zmap_cd $BASE_DIR
@@ -165,7 +166,8 @@ zmap_message_out "Checking whether to install on /software for $BUILD_PREFIX bui
 if [[ $BUILD_PREFIX == "PRODUCTION" || $BUILD_PREFIX == "RELEASE" || $BUILD_PREFIX == "DEVELOPMENT" ]]
 then
   zmap_message_out "Installing on /software"
-  source_dir=$TAR_TARGET_PATH/$TAR_TARGET_CVS/$INSTALL_PREFIX # where to copy the installed files from
+  source_dir=$TAR_TARGET_PATH/$TAR_TARGET_CVS/$INSTALL_PREFIX      # where to copy the installed files from
+  server_dir=$TAR_TARGET_PATH/$TAR_TARGET_CVS/$SERVER_SCRIPTS_DIR  # where to copy the server scripts from
 
   dev_machine=$TAR_TARGET_HOST          # must be a machine with write access to the project software area
   software_root_dir="/software/noarch"  # root directory for project software
@@ -225,8 +227,13 @@ then
     # Do the copy. (Hack to hard-code path to copy script - can't find it in the
     # local checkout for some reason.)
     copy_script=~zmap/BUILD_CHECKOUT/ZMap_develop/scripts/copy_directory.sh
+
     zmap_message_out "Running: ssh $dev_machine "$copy_script $source_dir $project_area""
     ssh $dev_machine "$copy_script $source_dir $project_area"
+    wait
+
+    zmap_message_out "Running: ssh $dev_machine "$copy_script $server_dir $project_area""
+    ssh $dev_machine "$copy_script $server_dir $project_area"
     wait
   
     # We don't currently build on ubuntu precise because the ubuntu lucid build works there.
@@ -236,6 +243,10 @@ then
     then
       zmap_message_out "Running: ssh $dev_machine $copy_script $source_dir $precise_project_area"
       ssh $dev_machine "$copy_script $source_dir $precise_project_area"
+      wait  
+
+      zmap_message_out "Running: ssh $dev_machine $copy_script $server_dir $precise_project_area"
+      ssh $dev_machine "$copy_script $server_dir $precise_project_area"
       wait  
     fi    
   fi

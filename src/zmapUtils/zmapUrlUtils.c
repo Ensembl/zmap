@@ -63,7 +63,7 @@ so, delete this exception statement from your version.  */
 #endif
 #include <errno.h>
 #ifdef NeXT
-# include <libc.h>		/* for access() */
+# include <libc.h>/* for access() */
 #endif
 #include <fcntl.h>
 #include <assert.h>
@@ -223,18 +223,18 @@ sepstring (const char *s)
   while (*s)
     {
       if (*s == ',')
-	{
-	  res = (char **)xrealloc (res, (i + 2) * sizeof (char *));
-	  res[i] = strdupdelim (p, s);
-	  res[++i] = NULL;
-	  ++s;
-	  /* Skip the blanks following the ','.  */
-	  while (ISSPACE (*s))
-	    ++s;
-	  p = s;
-	}
+        {
+          res = (char **)xrealloc (res, (i + 2) * sizeof (char *));
+          res[i] = strdupdelim (p, s);
+          res[++i] = NULL;
+          ++s;
+          /* Skip the blanks following the ','.  */
+          while (ISSPACE (*s))
+            ++s;
+          p = s;
+        }
       else
-	++s;
+        ++s;
     }
   res = (char **)xrealloc (res, (i + 2) * sizeof (char *));
   res[i] = strdupdelim (p, s);
@@ -317,14 +317,14 @@ match_tail (const char *string, const char *tail, int fold_case_p)
   if (!fold_case_p)
     {
       for (i = strlen (string), j = strlen (tail); i >= 0 && j >= 0; i--, j--)
-	if (string[i] != tail[j])
-	  break;
+        if (string[i] != tail[j])
+          break;
     }
   else
     {
       for (i = strlen (string), j = strlen (tail); i >= 0 && j >= 0; i--, j--)
-	if (TOLOWER (string[i]) != TOLOWER (tail[j]))
-	  break;
+        if (TOLOWER (string[i]) != TOLOWER (tail[j]))
+          break;
     }
 
   /* If the tail was exhausted, the match was succesful.  */
@@ -415,13 +415,13 @@ number_to_string (char *buffer, long number)
   if (n < 0)
     {
       if (n < -INT_MAX)
-	{
-	  /* We cannot print a '-' and assign -n to n because -n would
-	     overflow.  Let sprintf deal with this border case.  */
-	  sprintf (buffer, "%ld", n);
-	  p += strlen (buffer);
-	  return p;
-	}
+        {
+          /* We cannot print a '-' and assign -n to n because -n would
+             overflow.  Let sprintf deal with this border case.  */
+          sprintf (buffer, "%ld", n);
+          p += strlen (buffer);
+          return p;
+        }
 
       *p++ = '-';
       n = -n;
@@ -557,51 +557,51 @@ html_quote_string (const char *s)
   for (i = 0; *s; s++, i++)
     {
       if (*s == '&')
-	i += 4;			/* `amp;' */
+        i += 4;/* `amp;' */
       else if (*s == '<' || *s == '>')
-	i += 3;			/* `lt;' and `gt;' */
+        i += 3;/* `lt;' and `gt;' */
       else if (*s == '\"')
-	i += 5;			/* `quot;' */
+        i += 5;/* `quot;' */
       else if (*s == ' ')
-	i += 4;			/* #32; */
+        i += 4;/* #32; */
     }
   res = (char *)xmalloc (i + 1);
   s = b;
   for (p = res; *s; s++)
     {
       switch (*s)
-	{
-	case '&':
-	  *p++ = '&';
-	  *p++ = 'a';
-	  *p++ = 'm';
-	  *p++ = 'p';
-	  *p++ = ';';
-	  break;
-	case '<': case '>':
-	  *p++ = '&';
-	  *p++ = (*s == '<' ? 'l' : 'g');
-	  *p++ = 't';
-	  *p++ = ';';
-	  break;
-	case '\"':
-	  *p++ = '&';
-	  *p++ = 'q';
-	  *p++ = 'u';
-	  *p++ = 'o';
-	  *p++ = 't';
-	  *p++ = ';';
-	  break;
-	case ' ':
-	  *p++ = '&';
-	  *p++ = '#';
-	  *p++ = '3';
-	  *p++ = '2';
-	  *p++ = ';';
-	  break;
-	default:
-	  *p++ = *s;
-	}
+        {
+        case '&':
+          *p++ = '&';
+          *p++ = 'a';
+          *p++ = 'm';
+          *p++ = 'p';
+          *p++ = ';';
+          break;
+        case '<': case '>':
+          *p++ = '&';
+          *p++ = (*s == '<' ? 'l' : 'g');
+          *p++ = 't';
+          *p++ = ';';
+          break;
+        case '\"':
+          *p++ = '&';
+          *p++ = 'q';
+          *p++ = 'u';
+          *p++ = 'o';
+          *p++ = 't';
+          *p++ = ';';
+          break;
+        case ' ':
+          *p++ = '&';
+          *p++ = '#';
+          *p++ = '3';
+          *p++ = '2';
+          *p++ = ';';
+          break;
+        default:
+          *p++ = *s;
+        }
     }
   *p = '\0';
   return res;

@@ -55,7 +55,7 @@
 #define N_FILE_TYPE (FILE_BIGWIG + 1)
 
 /* number of optional dialog entries for FILE_NONE (is really 8 so i allowed a few spare) */
-#define N_ARGS 16 
+#define N_ARGS 16
 
 
 typedef enum { FILE_NONE, FILE_GFF, FILE_BAM, FILE_BIGWIG } fileType;
@@ -118,7 +118,9 @@ static GtkWidget *makeButtonBox(MainFrame main_frame) ;
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void importFileCB(GtkWidget *widget, gpointer cb_data) ;
+#ifndef __CYGWIN__
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
+#endif
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void sequenceCB(GtkWidget *widget, gpointer cb_data) ;
@@ -144,14 +146,14 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
   GtkWidget *toplevel, *container ;
   gpointer seq_data = NULL ;
 
-  /* if (!user_func) 
+  /* if (!user_func)
     return ; */
-  zMapReturnIfFail(user_func && user_data) ; 
+  zMapReturnIfFail(user_func && user_data) ;
 
   ZMap zmap = (ZMap)user_data;
 
   toplevel = zMapGUIToplevelNew(NULL, "Please choose a file to import.") ;
-  
+
   /* Make sure the dialog is destroyed if the zmap window is closed */
   /*! \todo For some reason this doesn't work and the dialog hangs around
    * after zmap->toplevel is destroyed */
@@ -187,8 +189,8 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
 {
   ZMapImportScript s;
   ZMapConfigIniContext context;
-  fileType file_type = FILE_NONE;
-  char * default_scripts[] = { "", "zmap_get_gff", "zmap_get_bam", "zmap_get_bigwig" };	
+  fileType file_type = FILE_NONE ;
+  static const char * default_scripts[] = { "", "zmap_get_gff", "zmap_get_bam", "zmap_get_bigwig" };
 							    /* in parallel with the filetype enum */
   int i;
   char *tmp_string;
@@ -203,7 +205,7 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
       s->args = NULL;
       s->allocd = NULL;
     }
-  //	scripts[2].args = g_strsplit("--fruit=apple --car=jeep --weather=sunny", " ", 0);
+  /*	scripts[2].args = g_strsplit("--fruit=apple --car=jeep --weather=sunny", " ", 0); */
 
   if ((context = zMapConfigIniContextProvide(config_file)))
     {
@@ -216,28 +218,24 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 				       ZMAPSTANZA_APP_CSVER, &tmp_string))
-	{
-	  if(!g_ascii_strcasecmp(tmp_string,"Otter"))
-	    {
-	      char *chr;
-	      main_frame->is_otter = TRUE;
-	      if(zMapConfigIniContextGetString(context,
-					       ZMAPSTANZA_APP_CONFIG,
-					       ZMAPSTANZA_APP_CONFIG,
-					       ZMAPSTANZA_APP_CHR,
-					       &chr))
-		{
-		  main_frame->chr = chr;
-		}
-	      else
-		{
-		  main_frame->chr = NULL;
-		}
-	    }
-	}
+        {
+          if(!g_ascii_strcasecmp(tmp_string,"Otter"))
+            {
+              char *chr;
+              main_frame->is_otter = TRUE;
+              if(zMapConfigIniContextGetString(context,ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CHR,&chr))
+                {
+                  main_frame->chr = chr;
+                }
+              else
+                {
+                  main_frame->chr = NULL;
+                }
+            }
+        }
 
       if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_IMPORT_CONFIG,&gkf))
-	{
+{
 	  freethis = keys = g_key_file_get_keys(gkf,ZMAPSTANZA_IMPORT_CONFIG,&len,NULL);
 
 	  for(;len--;keys++)
@@ -440,9 +438,9 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 /* Make the option buttons frame. */
 static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int req_start, int req_end)
 {
-  GtkWidget *frame ;
-  GtkWidget *map_seq_button, *config_button;
-  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
+  GtkWidget *frame = NULL ;
+  GtkWidget *map_seq_button = NULL , *config_button = NULL ;
+  GtkWidget *topbox = NULL, *hbox = NULL, *entrybox = NULL, *labelbox = NULL, *entry = NULL, *label = NULL ;
   char *sequence = "", *start = "", *end = "", *file = "" ;
   char *home_dir ;
 
@@ -471,7 +469,9 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   labelbox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), labelbox, FALSE, FALSE, 0) ;
 
-  /* N.B. we use the gtk "built-in" file chooser stuff. */
+#ifndef __CYGWIN__
+  /* N.B. we use the gtk "built-in" file chooser stuff. Create a file-chooser button instead of
+   * placing a label next to the file text-entry box */
   config_button = gtk_file_chooser_button_new("Choose a File to Import", GTK_FILE_CHOOSER_ACTION_OPEN) ;
   gtk_signal_connect(GTK_OBJECT(config_button), "file-set",
 		     GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_frame) ;
@@ -479,6 +479,14 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   home_dir = (char *)g_get_home_dir() ;
   gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(config_button), home_dir) ;
   gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(config_button), TRUE) ;
+#else
+  /* We can't have a file-chooser button, but we already have a text entry
+   * box for the filename anyway, so just create a label for that where the
+   * button would have been */
+  label = gtk_label_new("File ") ;
+  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+#endif
 
   label = gtk_label_new( "Script " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
@@ -702,11 +710,12 @@ static void sequenceCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+#ifndef __CYGWIN__
 /* Called when user chooses a file via the file dialog. */
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 {
   MainFrame main_frame = (MainFrame) user_data ;
-  char *filename ;
+  char *filename = NULL ;
 
   filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget)) ;
 
@@ -714,6 +723,7 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 
   fileChangedCB ( main_frame->file_widg, user_data);
 }
+#endif
 
 
 static void enable_widgets(MainFrame main_frame)
@@ -762,7 +772,7 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
    * problems if we don't exit early here ) */
   if (!zmap->toplevel)
     return;
-  
+
   view = zMapViewGetView(zmap->focus_viewwindow);
 
   filename = (char *) gtk_entry_get_text(GTK_ENTRY(widget)) ;
@@ -876,7 +886,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
   int strand = 0 ;
 
   /* Check that the zmap window hasn't been closed (currently the dialog
-   * isn't closed automatically with it, so we'll have problems if we don't 
+   * isn't closed automatically with it, so we'll have problems if we don't
    * exit early here) */
   if (!zmap->toplevel)
     return;

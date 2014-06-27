@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -53,7 +53,7 @@ typedef struct
 {
   ZMapFeatureAlignFormat format ;
 
-  GArray *align ;					    /* Of AlignStrOpStruct. */
+  GArray *align ;    /* Of AlignStrOpStruct. */
 } AlignStrCanonicalStruct, *AlignStrCanonical ;
 
 
@@ -62,8 +62,8 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
 static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static void alignStrDestroyCanonical(AlignStrCanonical canon) ;
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_strand, ZMapStrand match_strand,
-				    int p_start, int p_end, int c_start, int c_end,
-				    GArray **local_map_out) ;
+    int p_start, int p_end, int c_start, int c_end,
+    GArray **local_map_out) ;
 #if NOT_USED
 static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static gboolean exonerateVerifyVulgar(char *match_str) ;
@@ -97,16 +97,16 @@ ZMAP_ENUM_AS_NAME_STRING_FUNC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlign
 
 /* Adds homology data to a feature which may be empty or may already have partial features. */
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
-				     GQuark clone_id,
-				     double percent_id,
-				     int query_start, int query_end,
-				     ZMapHomolType homol_type,
-				     int query_length,
-				     ZMapStrand query_strand,
-				     ZMapPhase target_phase,
-				     GArray *gaps, unsigned int align_error,
-				     gboolean has_local_sequence, char *sequence)
-				     /* NOTE has_local mean in ACEBD, sequence is from GFF */
+     GQuark clone_id,
+     double percent_id,
+     int query_start, int query_end,
+     ZMapHomolType homol_type,
+     int query_length,
+     ZMapStrand query_strand,
+     ZMapPhase target_phase,
+     GArray *gaps, unsigned int align_error,
+     gboolean has_local_sequence, char *sequence)
+     /* NOTE has_local mean in ACEBD, sequence is from GFF */
 {
   gboolean result = FALSE ;
 
@@ -176,10 +176,10 @@ gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
 
       match_length = (feature->feature.homol.y2 - feature->feature.homol.y1) + 1 ;
       if (feature->feature.homol.type != ZMAPHOMOL_N_HOMOL)
-	match_length *= 3 ;
+        match_length *= 3 ;
 
       if (ref_length != match_length)
-	result = TRUE ;
+        result = TRUE ;
     }
 
   return result ;
@@ -192,9 +192,9 @@ gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
  * Returns TRUE on success with the gaps array returned in gaps_out. The array
  * should be free'd with g_array_free when finished with. */
 gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
-					 ZMapStrand ref_strand, int ref_start, int ref_end,
-					 ZMapStrand match_strand, int match_start, int match_end,
-					 char *align_string, GArray **gaps_out)
+ ZMapStrand ref_strand, int ref_start, int ref_end,
+ ZMapStrand match_strand, int match_start, int match_end,
+ char *align_string, GArray **gaps_out)
 {
   gboolean result = FALSE ;
   AlignStrCanonical canon = NULL ;
@@ -206,9 +206,9 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
       zMapLogWarning("Cannot convert alignment string to canonical format: %s", align_string) ;
     }
   else if (!(result = (alignStrCanon2Homol(canon, ref_strand, match_strand,
-					   ref_start, ref_end,
-					   match_start, match_end,
-					   &gaps))))
+                                           ref_start, ref_end,
+                                           match_start, match_end,
+                                           &gaps))))
     {
       zMapLogWarning("Cannot convert alignment string to gaps array: s", align_string) ;
     }
@@ -216,7 +216,7 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
   if (!result)
     {
       if (canon)
-	alignStrDestroyCanonical(canon) ;
+        alignStrDestroyCanonical(canon) ;
     }
   else
     {
@@ -257,38 +257,38 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
       last_align = &g_array_index(gaps, ZMapAlignBlockStruct, 0) ;
 
       for (i = 1 ; i < gaps->len ; i++)
-	{
-	  int prev_end, curr_start ;
+        {
+          int prev_end, curr_start ;
 
-	  align = &g_array_index(gaps, ZMapAlignBlockStruct, i) ;
-
-
-	  /* The gaps array gets sorted by target coords, this can have the effect of reversing
-	     the order of the query coords if the match is to the reverse strand of the target sequence. */
-	  if (align->q2 < last_align->q1)
-	    {
-	      prev_end = align->q2 ;
-	      curr_start = last_align->q1 ;
-	    }
-	  else
-	    {
-	      prev_end = last_align->q2 ;
-	      curr_start = align->q1 ;
-	    }
+          align = &g_array_index(gaps, ZMapAlignBlockStruct, i) ;
 
 
-	  /* The "- 1" is because the default align_error is zero, i.e. zero _missing_ bases,
-	     which is true when sub alignment follows on directly from the next. */
-	  if ((curr_start - prev_end - 1) <= align_error)
-	    {
-	      last_align = align ;
-	    }
-	  else
-	    {
-	      perfect_align = FALSE ;
-	      break ;
-	    }
-	}
+          /* The gaps array gets sorted by target coords, this can have the effect of reversing
+             the order of the query coords if the match is to the reverse strand of the target sequence. */
+          if (align->q2 < last_align->q1)
+            {
+              prev_end = align->q2 ;
+              curr_start = last_align->q1 ;
+            }
+          else
+            {
+              prev_end = last_align->q2 ;
+              curr_start = align->q1 ;
+            }
+
+
+          /* The "- 1" is because the default align_error is zero, i.e. zero _missing_ bases,
+             which is true when sub alignment follows on directly from the next. */
+          if ((curr_start - prev_end - 1) <= align_error)
+            {
+              last_align = align ;
+            }
+          else
+            {
+              perfect_align = FALSE ;
+              break ;
+            }
+        }
     }
 
   return perfect_align ;
@@ -355,8 +355,8 @@ static void alignStrDestroyCanonical(AlignStrCanonical canon)
  *
  *  */
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_strand, ZMapStrand match_strand,
-				    int p_start, int p_end, int c_start, int c_end,
-				    GArray **local_map_out)
+    int p_start, int p_end, int c_start, int c_end,
+    GArray **local_map_out)
 {
   gboolean result = TRUE ;
   int curr_ref, curr_match ;
@@ -393,77 +393,77 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
       curr_length = op->length ;
 
       switch (op->op)
-	{
+        {
         case 'N':                                           /* Intron */
-	  {
+          {
             if (ref_strand == ZMAPSTRAND_FORWARD)
-	      curr_ref += curr_length ;
-	    else
-	      curr_ref -= curr_length ;
+              curr_ref += curr_length ;
+            else
+              curr_ref -= curr_length ;
 
             boundary_type = ALIGN_BLOCK_BOUNDARY_INTRON ;
-	    break ;
-	  }
-	case 'D':					    /* Deletion in reference sequence. */
-	case 'G':
-	  {
-	    if (ref_strand == ZMAPSTRAND_FORWARD)
-	      curr_ref += curr_length ;
-	    else
-	      curr_ref -= curr_length ;
-
+            break ;
+          }
+        case 'D':    /* Deletion in reference sequence. */
+        case 'G':
+          {
+            if (ref_strand == ZMAPSTRAND_FORWARD)
+              curr_ref += curr_length ;
+            else
+              curr_ref -= curr_length ;
+        
             boundary_type = ALIGN_BLOCK_BOUNDARY_DELETION ;
-	    break ;
-	  }
-	case 'I':					    /* Insertion from match sequence. */
-	  {
-	    if (match_strand == ZMAPSTRAND_FORWARD)
-	      curr_match += curr_length ;
-	    else
-	      curr_match -= curr_length ;
-
+            break ;
+          }
+        case 'I':    /* Insertion from match sequence. */
+          {
+            if (match_strand == ZMAPSTRAND_FORWARD)
+              curr_match += curr_length ;
+            else
+              curr_match -= curr_length ;
+        
             boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ; /* it is shown butted up to the previous align block */
-	    break ;
-	  }
-	case 'M':					    /* Match. */
-	  {
-	    gap.t_strand = ref_strand ;
-	    gap.q_strand = match_strand ;
+            break ;
+          }
+        case 'M':    /* Match. */
+          {
+            gap.t_strand = ref_strand ;
+            gap.q_strand = match_strand ;
             gap.start_boundary = boundary_type ;
             gap.end_boundary = ALIGN_BLOCK_BOUNDARY_EDGE ; /* this may get updated as we parse subsequent operators */
 
-	    if (ref_strand == ZMAPSTRAND_FORWARD)
-	      {
-		gap.t1 = curr_ref ;
-		gap.t2 = (curr_ref += curr_length) - 1 ;
-	      }
-	    else
-	      {
-		gap.t2 = curr_ref ;
-		gap.t1 = (curr_ref -= curr_length) + 1 ;
-	      }
+            if (ref_strand == ZMAPSTRAND_FORWARD)
+              {
+                gap.t1 = curr_ref ;
+                gap.t2 = (curr_ref += curr_length) - 1 ;
+              }
+            else
+              {
+                gap.t2 = curr_ref ;
+                gap.t1 = (curr_ref -= curr_length) + 1 ;
+              }
 
-	    gap.q1 = curr_match ;
-	    if (match_strand == ZMAPSTRAND_FORWARD)
-	      gap.q2 = (curr_match += curr_length) - 1 ;
-	    else
-	      gap.q2 = (curr_match -= curr_length) + 1 ;
-
-	    local_map = g_array_append_val(local_map, gap) ;
-
-	    j++ ;					    /* increment for next gap element. */
-
-            boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ;
-	    break ;
-	  }
-	default:
-	  {
+            gap.q1 = curr_match ;
+            if (match_strand == ZMAPSTRAND_FORWARD)
+              gap.q2 = (curr_match += curr_length) - 1 ;
+            else
+              gap.q2 = (curr_match -= curr_length) + 1 ;
+        
+            local_map = g_array_append_val(local_map, gap) ;
+        
+            j++ ;    /* increment for next gap element. */
+        
+                    boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ;
+            break ;
+          }
+        default:
+          {
             zMapWarning("Unrecognized operator '%c' in align string\n", op->op) ;
             zMapWarnIfReached() ;
 
-	    break ;
-	  }
-	}
+            break ;
+          }
+        }
 
       if (prev_gap)
         prev_gap->end_boundary = boundary_type ;
@@ -539,7 +539,7 @@ static gboolean exonerateVerifyVulgar(char *match_str)
 {
   gboolean result = TRUE ;
   typedef enum {STATE_OP, STATE_SPACE_OP,
-		STATE_NUM1, STATE_SPACE_NUM1, STATE_NUM2, STATE_SPACE_NUM2} VulgarStates ;
+                STATE_NUM1, STATE_SPACE_NUM1, STATE_NUM2, STATE_SPACE_NUM2} VulgarStates ;
   char *cp = match_str ;
   VulgarStates state ;
 
@@ -547,51 +547,51 @@ static gboolean exonerateVerifyVulgar(char *match_str)
   do
     {
       switch (state)
-	{
-	case STATE_OP:
-	  if (*cp == 'M' || *cp == 'C' || *cp == 'G'
-	      || *cp == 'N' || *cp == '5' || *cp == '3'
-	      || *cp == 'I' || *cp == 'S' || *cp == 'F')
-	    state = STATE_SPACE_OP ;
-	  else
-	    result = FALSE ;
-	  break ;
-	case STATE_SPACE_OP:
-	  if (gotoLastSpace(&cp))
-	    state = STATE_NUM1 ;
-	  else
-	    result = FALSE ;
-	  break ;
-	case STATE_NUM1:
-	  if (gotoLastDigit(&cp))
-	    state = STATE_SPACE_NUM1 ;
-	  else
-	    result = FALSE ;
-	  break ;
-	case STATE_SPACE_NUM1:
-	  if (gotoLastSpace(&cp))
-	    state = STATE_NUM2 ;
-	  else
-	    result = FALSE ;
-	  break ;
-	case STATE_NUM2:
-	  if (gotoLastDigit(&cp))
-	    state = STATE_SPACE_NUM2 ;
-	  else
-	    result = FALSE ;
-	  break ;
-	case STATE_SPACE_NUM2:
-	  if (gotoLastSpace(&cp))
-	    state = STATE_OP ;
-	  else
-	    result = FALSE ;
-	  break ;
-	}
+        {
+        case STATE_OP:
+          if (*cp == 'M' || *cp == 'C' || *cp == 'G'
+              || *cp == 'N' || *cp == '5' || *cp == '3'
+              || *cp == 'I' || *cp == 'S' || *cp == 'F')
+            state = STATE_SPACE_OP ;
+          else
+            result = FALSE ;
+          break ;
+        case STATE_SPACE_OP:
+          if (gotoLastSpace(&cp))
+            state = STATE_NUM1 ;
+          else
+            result = FALSE ;
+          break ;
+        case STATE_NUM1:
+          if (gotoLastDigit(&cp))
+            state = STATE_SPACE_NUM1 ;
+          else
+            result = FALSE ;
+          break ;
+        case STATE_SPACE_NUM1:
+          if (gotoLastSpace(&cp))
+            state = STATE_NUM2 ;
+          else
+            result = FALSE ;
+          break ;
+        case STATE_NUM2:
+          if (gotoLastDigit(&cp))
+            state = STATE_SPACE_NUM2 ;
+          else
+            result = FALSE ;
+          break ;
+        case STATE_SPACE_NUM2:
+          if (gotoLastSpace(&cp))
+            state = STATE_OP ;
+          else
+            result = FALSE ;
+          break ;
+        }
 
       if (result)
-	cp++ ;
+        cp++ ;
       else
-	break ;
+        break ;
 
     } while (*cp) ;
 
@@ -619,37 +619,37 @@ static gboolean exonerateVerifyCigar(char *match_str)
   do
     {
       switch (state)
-	{
-	case STATE_OP:
-	  if (*cp == 'M' || *cp == 'D' || *cp == 'I')
-	    state = STATE_SPACE_OP ;
-	  else
-	    result = FALSE ;
-	  break ;
-	case STATE_SPACE_OP:
-	  if (gotoLastSpace(&cp))
-	    state = STATE_NUM ;
-	  else
-	    result = FALSE ;
-	  break ;
-	case STATE_NUM:
-	  if (gotoLastDigit(&cp))
-	    state = STATE_SPACE_NUM ;
-	  else
-	    result = FALSE ;
-	  break ;
-	case STATE_SPACE_NUM:
-	  if (gotoLastSpace(&cp))
-	    state = STATE_OP ;
-	  else
-	    result = FALSE ;
-	  break ;
-	}
+        {
+        case STATE_OP:
+          if (*cp == 'M' || *cp == 'D' || *cp == 'I')
+            state = STATE_SPACE_OP ;
+          else
+            result = FALSE ;
+          break ;
+        case STATE_SPACE_OP:
+          if (gotoLastSpace(&cp))
+            state = STATE_NUM ;
+          else
+            result = FALSE ;
+          break ;
+        case STATE_NUM:
+          if (gotoLastDigit(&cp))
+            state = STATE_SPACE_NUM ;
+          else
+            result = FALSE ;
+          break ;
+        case STATE_SPACE_NUM:
+          if (gotoLastSpace(&cp))
+            state = STATE_OP ;
+          else
+            result = FALSE ;
+          break ;
+        }
 
       if (result)
-	cp++ ;
+        cp++ ;
       else
-	break ;
+        break ;
 
     } while (*cp) ;
 
@@ -678,25 +678,25 @@ static gboolean ensemblVerifyCigar(char *match_str)
   do
     {
       switch (state)
-	{
-	case STATE_NUM:
-	  if (!gotoLastDigit(&cp))
-	    cp-- ;
+        {
+        case STATE_NUM:
+          if (!gotoLastDigit(&cp))
+            cp-- ;
 
-	  state = STATE_OP ;
-	  break ;
-	case STATE_OP:
-	  if (*cp == 'M' || *cp == 'D' || *cp == 'I')
-	    state = STATE_NUM ;
-	  else
-	    result = FALSE ;
-	  break ;
-	}
+          state = STATE_OP ;
+          break ;
+        case STATE_OP:
+          if (*cp == 'M' || *cp == 'D' || *cp == 'I')
+            state = STATE_NUM ;
+          else
+            result = FALSE ;
+          break ;
+        }
 
       if (result)
-	cp++ ;
+        cp++ ;
       else
-	break ;
+        break ;
 
     } while (*cp) ;
 
@@ -725,25 +725,25 @@ static gboolean bamVerifyCigar(char *match_str)
   do
     {
       switch (state)
-	{
-	case STATE_NUM:
-	  if (!gotoLastDigit(&cp))
-	    cp-- ;
+        {
+        case STATE_NUM:
+          if (!gotoLastDigit(&cp))
+            cp-- ;
 
-	  state = STATE_OP ;
-	  break ;
-	case STATE_OP:
-	  if (*cp == 'M' || *cp == 'N' || *cp == 'D' || *cp == 'I' || *cp == 'X' || *cp == 'S' || *cp == 'P')
-	    state = STATE_NUM ;
-	  else
-	    result = FALSE ;
-	  break ;
-	}
+          state = STATE_OP ;
+          break ;
+        case STATE_OP:
+          if (*cp == 'M' || *cp == 'N' || *cp == 'D' || *cp == 'I' || *cp == 'X' || *cp == 'S' || *cp == 'P')
+            state = STATE_NUM ;
+          else
+            result = FALSE ;
+          break ;
+        }
 
       if (result)
-	cp++ ;
+        cp++ ;
       else
-	break ;
+        break ;
 
     } while (*cp) ;
 
@@ -768,12 +768,12 @@ static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
       gotoLastSpace(&cp) ;
       cp++ ;
 
-      op.length = cigarGetLength(&cp) ;			    /* N.B. moves cp on as needed. */
+      op.length = cigarGetLength(&cp) ;    /* N.B. moves cp on as needed. */
 
       gotoLastSpace(&cp) ;
       if (*cp == ' ')
-	cp ++ ;
-
+        cp ++ ;
+        
       canon->align = g_array_append_val(canon->align, op) ;
     } while (*cp) ;
 
@@ -803,9 +803,9 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
       AlignStrOpStruct op = {'\0'} ;
 
       if (g_ascii_isdigit(*cp))
-	op.length = cigarGetLength(&cp) ;		    /* N.B. moves cp on as needed. */
+        op.length = cigarGetLength(&cp) ;    /* N.B. moves cp on as needed. */
       else
-	op.length = 1 ;
+        op.length = 1 ;
 
       op.op =                                               /* EnsEMBL CIGAR interchanges 'D' and
                                                                'I' */
@@ -843,9 +843,9 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
       AlignStrOpStruct op = {'\0'} ;
 
       if (g_ascii_isdigit(*cp))
-	op.length = cigarGetLength(&cp) ;		    /* N.B. moves cp on as needed. */
+        op.length = cigarGetLength(&cp) ;    /* N.B. moves cp on as needed. */
       else
-	op.length = 1 ;
+        op.length = 1 ;
 
       if (*cp == 'H')
         {
@@ -887,7 +887,7 @@ static int cigarGetLength(char **cigar_str)
   if (!errno)
     {
       if (new_cp == old_cp)
-	length = 1 ;
+        length = 1 ;
 
       *cigar_str = new_cp ;
     }
@@ -912,25 +912,25 @@ static char *nextWord(char *str)
       char *cp = str ;
 
       while (*cp)
-	{
-	  if (*cp == ' ')
-	    {
-	      break ;
-	    }
+        {
+          if (*cp == ' ')
+            {
+              break ;
+            }
 
-	  cp++ ;
-	}
+          cp++ ;
+        }
 
       while (*cp)
-	{
-	  if (*cp != ' ')
-	    {
-	      word = cp ;
-	      break ;
-	    }
-
-	  cp++ ;
-	}
+        {
+          if (*cp != ' ')
+            {
+              word = cp ;
+              break ;
+            }
+        
+          cp++ ;
+        }
     }
 
   return word ;
@@ -949,9 +949,9 @@ static gboolean gotoLastDigit(char **cp_inout)
       cp++ ;
 
       while (*cp && g_ascii_isdigit(*cp))
-	cp++ ;
+        cp++ ;
 
-      cp-- ;					    /* position on last digit. */
+      cp-- ;    /* position on last digit. */
 
       *cp_inout = cp ;
       result = TRUE ;
@@ -975,9 +975,9 @@ static gboolean gotoLastSpace(char **cp_inout)
       cp++ ;
 
       while (*cp && *cp == ' ')
-	cp++ ;
+        cp++ ;
 
-      cp-- ;					    /* position on last space. */
+      cp-- ;    /* position on last space. */
 
       *cp_inout = cp ;
       result = TRUE ;

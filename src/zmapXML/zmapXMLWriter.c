@@ -192,11 +192,11 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *eleme
         }
       else
         {
-	  if (!(writer->stack_top_has_content) && full_format)
-	    {
-	      g_string_append(writer->xml_output, ">\n");
-	      writer->stack_top_has_content = TRUE;
-	    }
+  if (!(writer->stack_top_has_content) && full_format)
+    {
+      g_string_append(writer->xml_output, ">\n");
+      writer->stack_top_has_content = TRUE;
+    }
 
           depth = (writer->element_stack->len) * 2;
           for(i=0;i<depth;i++)
@@ -281,7 +281,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
       event = &(g_array_index(events, ZMapXMLWriterEventStruct, i));
 
       zMapDebugPrint(debug, "element: %s, attribute: %s",
-		     g_quark_to_string(event->data.name), g_quark_to_string(event->data.comp.name)) ;
+     g_quark_to_string(event->data.name), g_quark_to_string(event->data.comp.name)) ;
 
       switch(event->type)
         {
@@ -320,22 +320,22 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
                 free_second = FALSE;
               }
             else if (event->data.comp.data == ZMAPXML_EVENT_DATA_INTEGER)
-	      {
-		second = g_strdup_printf("%d", event->data.comp.value.integer);
-	      }
+              {
+                second = g_strdup_printf("%d", event->data.comp.value.integer);
+              }
             else if (event->data.comp.data == ZMAPXML_EVENT_DATA_DOUBLE)
-	      {
-		second = g_strdup_printf("%f", event->data.comp.value.flt);
-	      }
+              {
+                second = g_strdup_printf("%f", event->data.comp.value.flt);
+              }
             else if (event->data.comp.data == ZMAPXML_EVENT_DATA_STRING)
-	      {
-		second = (char *)g_quark_to_string(event->data.comp.value.quark) ;
-		free_second = FALSE;
-	      }
+              {
+                second = (char *)g_quark_to_string(event->data.comp.value.quark) ;
+                free_second = FALSE;
+              }
             else
-	      {
+              {
                 zMapWarnIfReached();
-	      }
+              }
 
             if (second)
               status = zMapXMLWriterAttribute(writer, first, second);
@@ -525,27 +525,27 @@ static void flushToOutput(ZMapXMLWriter writer)
       code = writer->errorCode ;
 
       if (code == ZMAPXMLWRITER_OK && (length2flush = writer->xml_output->len))
-	{
-	  /* Carry on with flushing */
-	  int length_flushed = 0 ;
+        {
+          /* Carry on with flushing */
+          int length_flushed = 0 ;
+        
+          setErrorCode(writer, ZMAPXMLWRITER_INCOMPLETE_FLUSH) ;
+          
+          length_flushed = (writer->output_callback)(writer, 
+             writer->xml_output->str, 
+             length2flush,
+             writer->output_userdata) ;
 
-	  setErrorCode(writer, ZMAPXMLWRITER_INCOMPLETE_FLUSH) ;
-  
-	  length_flushed = (writer->output_callback)(writer, 
-						     writer->xml_output->str, 
-						     length2flush,
-						     writer->output_userdata) ;
-
-	  if (length_flushed == length2flush)
-	    {
-	      g_string_truncate(writer->xml_output, 0) ;
-	      setErrorCode(writer, ZMAPXMLWRITER_OK) ;
-	    }
-	  else
-	    {
-	      setErrorCode(writer, ZMAPXMLWRITER_FAILED_FLUSHING) ;
-	    }
-	}
+          if (length_flushed == length2flush)
+            {
+              g_string_truncate(writer->xml_output, 0) ;
+              setErrorCode(writer, ZMAPXMLWRITER_OK) ;
+            }
+          else
+            {
+              setErrorCode(writer, ZMAPXMLWRITER_FAILED_FLUSHING) ;
+            }
+        }
     }
 
   return ;

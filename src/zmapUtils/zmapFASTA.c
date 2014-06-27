@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -53,7 +53,7 @@ enum {FASTA_CHARS = 50} ;
 
 
 /* This code is modified from acedb code (www.acedb.org)
- * 
+ *
  * Given a sequence name and its dna sequence, will dump the data in FastA
  * format. */
 gboolean zMapFASTAFile(GIOChannel *file, ZMapFASTASeqType seq_type, char *seq_name, int seq_len, char *dna,
@@ -70,8 +70,9 @@ gboolean zMapFASTAFile(GIOChannel *file, ZMapFASTASeqType seq_type, char *seq_na
   int i ;
 
   /* zMapAssert(file && seq_name && seq_len > 0 && dna && error_out) ;*/
-  if (!file || !seq_name || seq_len<=0 || !dna || !error_out) 
-    return result ; 
+  zMapReturnValIfFail(file && seq_name && seq_len>=0 && dna && error_out, result) ;
+  /* if (!file || !seq_name || seq_len<=0 || !dna || !error_out)
+    return result ; */
 
   header = zMapFASTATitle(seq_type, seq_name, molecule_type, gene_name, seq_len) ;
 
@@ -87,32 +88,32 @@ gboolean zMapFASTAFile(GIOChannel *file, ZMapFASTASeqType seq_type, char *seq_na
       chars_left = dna_length % FASTA_CHARS ;
       cp = dna ;
 
-      /* Do the full length lines.                                           */
+      /* Do the full length lines.   */
       if (lines != 0)
-	{
-	  buffer[FASTA_CHARS] = '\n' ;
-	  buffer[FASTA_CHARS + 1] = '\0' ; 
-	  for (i = 0 ; i < lines && result ; i++)
-	    {
-	      memcpy(&buffer[0], cp, FASTA_CHARS) ;
-	      cp += FASTA_CHARS ;
+        {
+          buffer[FASTA_CHARS] = '\n' ;
+          buffer[FASTA_CHARS + 1] = '\0' ;
+          for (i = 0 ; i < lines && result ; i++)
+            {
+              memcpy(&buffer[0], cp, FASTA_CHARS) ;
+              cp += FASTA_CHARS ;
 
-	      if ((status = g_io_channel_write_chars(file, &buffer[0], -1, &bytes_written, error_out))
-		  != G_IO_STATUS_NORMAL)
-		result = FALSE ;
-	    }
-	}
+              if ((status = g_io_channel_write_chars(file, &buffer[0], -1, &bytes_written, error_out))
+                    != G_IO_STATUS_NORMAL)
+                result = FALSE ;
+            }
+        }
 
-      /* Do the last line.                                                   */
+      /* Do the last line. */
       if (chars_left != 0)
-	{
-	  memcpy(&buffer[0], cp, chars_left) ;
-	  buffer[chars_left] = '\n' ;
-	  buffer[chars_left + 1] = '\0' ; 
-	  if ((status = g_io_channel_write_chars(file, &buffer[0], -1, &bytes_written, error_out))
-	      != G_IO_STATUS_NORMAL)
-	    result = FALSE ;
-	}
+        {
+          memcpy(&buffer[0], cp, chars_left) ;
+          buffer[chars_left] = '\n' ;
+          buffer[chars_left + 1] = '\0' ;
+          if ((status = g_io_channel_write_chars(file, &buffer[0], -1, &bytes_written, error_out))
+                   != G_IO_STATUS_NORMAL)
+            result = FALSE ;
+        }
     }
 
   g_free(header) ;
@@ -130,8 +131,8 @@ char *zMapFASTATitle(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_t
   char *title = NULL ;
 
   /* zMapAssert(seq_name && *seq_name && sequence_length > 0) ;*/
-  if (!seq_name || !*seq_name || sequence_length <= 0) 
-    return title ; 
+  if (!seq_name || !*seq_name || sequence_length <= 0)
+    return title ;
 
   /* We should add more info. really.... */
   title = g_strdup_printf(">%s %s %s %d %s\n",
@@ -167,8 +168,8 @@ char *zMapFASTAString(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_
   int true_sequence_length ;
 
   /* zMapAssert(seq_name && sequence_length > 0 && sequence) ;*/
-  if (!seq_name || sequence_length<=0 || !sequence) 
-    return fasta_string ; 
+  if (!seq_name || sequence_length<=0 || !sequence)
+    return fasta_string ;
 
 
   /* We should add more info. really.... */
@@ -194,15 +195,15 @@ char *zMapFASTAString(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_
   if (lines)
     {
       buffer[FASTA_CHARS] = '\n' ;
-      buffer[FASTA_CHARS + 1] = '\0' ; 
+      buffer[FASTA_CHARS + 1] = '\0' ;
       for (i = 0 ; i < lines ; i++)
-	{
-	  /* shame not to do this in one go...probably is some way using formatting.... */
-	  str = g_string_append_len(str, cp, FASTA_CHARS) ;
-	  str = g_string_append(str, "\n") ;
+        {
+          /* shame not to do this in one go...probably is some way using formatting.... */
+          str = g_string_append_len(str, cp, FASTA_CHARS) ;
+          str = g_string_append(str, "\n") ;
 
-	  cp += FASTA_CHARS ;
-	}
+          cp += FASTA_CHARS ;
+        }
     }
 
   /* Do the last line.                                                   */

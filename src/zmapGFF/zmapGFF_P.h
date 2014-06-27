@@ -219,6 +219,7 @@ typedef struct ZMapGFFParserFeatureSetStruct_
                                               ZMapGFFParserState state ;                             \
                                               ZMapGFFClipMode clip_mode ;                            \
                                               ZMapSequenceStruct seq_data ;                          \
+                                              ZMapFeatureTypeStyle locus_set_style;                  \
                                                                                                      \
                                               int features_start,                                    \
                                                   features_end,                                      \
@@ -252,8 +253,6 @@ typedef struct ZMapGFFParserFeatureSetStruct_
                                                          *excluded_features,                         \
                                                          *source_2_feature_set,                      \
                                                          *source_2_sourcedata;                       \
-                                                                                                     \
-                                              ZMapFeatureTypeStyle locus_set_style;                  \
                                                                                                      \
                                               GQuark locus_set_id, error_domain ;                    \
                                                                                                      \

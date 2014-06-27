@@ -47,6 +47,8 @@
 /* Windows are 90% of screen height by default...but normally we automatically set window to fill screen taking
  * into account window manager tool bars etc. */
 #define ZMAPWINDOW_VERT_PROP 0.90
+#define ZMAPWINDOW_HORIZ_PROP 0.90
+
 
 #define USE_REGION	0	/* scroll bar pane on left that does nothing */
 
@@ -98,6 +100,8 @@ typedef struct _ZMapStruct
   /* Widget stuff for the Zmap. */
   GtkWidget       *toplevel ;				    /* top level widget of zmap window. */
 
+  gboolean shrinkable ;                                     /* TRUE => allow user to shrink window to min. */
+
   GtkWidget *menubar ;
 
   /* info panel tooltips to show meaning of info panel fields. */
@@ -141,6 +145,8 @@ typedef struct _ZMapStruct
   /* The navigator. */
   ZMapNavigator    navigator ;
 
+  /* Notebook for preferences, should only be one per zmap. */
+  ZMapGuiNotebook preferences_note_book ;
 
   /* The panes and views and current focus window. */
   GtkWidget *pane_vbox ;				    /* Is the parent of all the panes. */
@@ -158,15 +164,6 @@ typedef struct _ZMapStruct
   GError         *info;                 /* This is an object to hold a code
                                          * and a message as info for the
                                          * remote control simple IPC stuff */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Old stuff...??? */
-  ZMapXRemoteObj xremote_client;
-  ZMapXRemoteObj xremote_server;          /* that we reply to */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 

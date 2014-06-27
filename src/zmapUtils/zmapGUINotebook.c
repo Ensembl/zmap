@@ -162,13 +162,13 @@ static void flagNotebookIgnoreDuplicates(gpointer any, gpointer unused);
 static void translate_string_types_to_gtypes(gpointer list_data, gpointer new_list_data);
 
 static gboolean disallow_empty_strings(ZMapGuiNotebookAny notebook_any,
-				       const char *entry_text, gpointer user_data);
+       const char *entry_text, gpointer user_data);
 
 static GtkWidget *makeNotebookWidget(MakeNotebook make_notebook) ;
 
 
 static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *model, GtkTreePath *path,
-			    gboolean path_currently_selected, gpointer user_data) ;
+    gboolean path_currently_selected, gpointer user_data) ;
 
 static void propogateExpand(GtkWidget *box, GtkWidget *child, GtkWidget *topmost);
 static GtkWidget *notebookNewFrameIn(const char *frame_name, GtkWidget *parent_container);
@@ -198,9 +198,9 @@ static GtkItemFactoryEntry menu_items_G[] =
 /* Controls type of window list created. */
 typedef enum
   {
-    ZMAPWINDOWLIST_FEATURE_TREE,			    /* Show features as clickable "trees". */
-    ZMAPWINDOWLIST_FEATURE_LIST,			    /* Show features as single lines. */
-    ZMAPWINDOWLIST_DNA_LIST,				    /* Show dna matches as single lines. */
+    ZMAPWINDOWLIST_FEATURE_TREE,    /* Show features as clickable "trees". */
+    ZMAPWINDOWLIST_FEATURE_LIST,    /* Show features as single lines. */
+    ZMAPWINDOWLIST_DNA_LIST,    /* Show dna matches as single lines. */
   } ZMapWindowListType ;
 
 
@@ -244,7 +244,7 @@ typedef enum
  * @return                   ZMapGuiNotebook
  */
 ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean editable,
-					      ZMapGUINotebookCallbackFunc cleanup_cb, void *user_cleanup_data)
+      ZMapGUINotebookCallbackFunc cleanup_cb, void *user_cleanup_data)
 {
   ZMapGuiNotebook notebook = NULL ;
 
@@ -272,7 +272,7 @@ ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean edit
  * @return                ZMapGuiNotebookChapter
  */
 ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
-						    char *chapter_name, ZMapGuiNotebookCB user_callbacks)
+    char *chapter_name, ZMapGuiNotebookCB user_callbacks)
 {
   ZMapGuiNotebookChapter chapter = NULL ;
 
@@ -290,7 +290,7 @@ ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
       chapter->user_CBs.edit_func   = user_callbacks->edit_func;
 
       if(chapter->user_CBs.edit_func == NULL)
-	chapter->user_CBs.edit_func = disallow_empty_strings;
+        chapter->user_CBs.edit_func = disallow_empty_strings;
 
       chapter->user_CBs.cancel_data = user_callbacks->cancel_data ;
       chapter->user_CBs.apply_data  = user_callbacks->apply_data ;
@@ -365,9 +365,9 @@ ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage pa
  * @return                ZMapGuiNotebookParagraph
  */
 ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsection subsection,
-							char *paragraph_name,
-							ZMapGuiNotebookParagraphDisplayType display_type,
-							GList *headers, GList *types)
+char *paragraph_name,
+ZMapGuiNotebookParagraphDisplayType display_type,
+GList *headers, GList *types)
 {
   ZMapGuiNotebookParagraph paragraph = NULL ;
 
@@ -379,7 +379,7 @@ ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsectio
       paragraph->compound_titles = headers ;
 
       g_list_foreach(types, translate_string_types_to_gtypes,
-		     &(paragraph->compound_types));
+     &(paragraph->compound_types));
     }
 
   if (subsection)
@@ -412,9 +412,9 @@ ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsectio
  *
  *  */
 ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph paragraph,
-						      char *tag_value_name,
-						      ZMapGuiNotebookTagValueDisplayType display_type,
-						      const gchar *arg_type, ...)
+      char *tag_value_name,
+      ZMapGuiNotebookTagValueDisplayType display_type,
+      const gchar *arg_type, ...)
 {
   ZMapGuiNotebookTagValue tag_value = NULL ;
   va_list args ;
@@ -438,8 +438,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       bool_arg = va_arg(args, gboolean) ;
 
-      tag_value->original_data.bool_value =
-	tag_value->data.bool_value = bool_arg ;
+      tag_value->original_data.bool_value = tag_value->data.bool_value = bool_arg ;
     }
   else if (strcmp(arg_type, "int") == 0)
     {
@@ -447,8 +446,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       int_arg = va_arg(args, int) ;
 
-      tag_value->original_data.int_value =
-	tag_value->data.int_value = int_arg ;
+      tag_value->original_data.int_value = tag_value->data.int_value = int_arg ;
     }
   else if (strcmp(arg_type, "float") == 0)
     {
@@ -456,8 +454,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       double_arg = va_arg(args, double) ;
 
-      tag_value->original_data.float_value =
-	tag_value->data.float_value = double_arg ;
+      tag_value->original_data.float_value = tag_value->data.float_value = double_arg ;
     }
   else if (strcmp(arg_type, "string") == 0)
     {
@@ -465,8 +462,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       string_arg = va_arg(args, char *) ;
 
-      tag_value->data.string_value =
-	tag_value->original_data.string_value = g_strdup(string_arg) ;
+      tag_value->data.string_value = tag_value->original_data.string_value = g_strdup(string_arg) ;
     }
   else if (strcmp(arg_type, "item") == 0)
     {
@@ -514,8 +510,8 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 void zMapGUINotebookAddChapter(ZMapGuiNotebook notebook, ZMapGuiNotebookChapter chapter)
 {
   /* zMapAssert(notebook && chapter) ; */
-  if (!notebook || !chapter ) 
-    return ; 
+  if (!notebook || !chapter )
+    return ;
 
   notebook->chapters = g_list_append(notebook->chapters, chapter) ;
 
@@ -534,8 +530,8 @@ void zMapGUINotebookAddChapter(ZMapGuiNotebook notebook, ZMapGuiNotebookChapter 
 void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage page)
 {
   /* zMapAssert(chapter && page) ;*/
-  if (!chapter || !page ) 
-    return ; 
+  if (!chapter || !page )
+    return ;
 
   chapter->pages = g_list_append(chapter->pages, page) ;
 
@@ -562,8 +558,8 @@ void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage 
 void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new)
 {
   /* zMapAssert(notebook); */
-  if (!notebook || !notebook_new) 
-    return ; 
+  if (!notebook || !notebook_new)
+    return ;
   /* zMapAssert(notebook_new) ; */
 
 /* MH17:
@@ -584,10 +580,10 @@ void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook not
  * WHAT IS RETURNED.... */
 
 /* Create the compound notebook widget from the notebook tree.
- * 
+ *
  * NOTE: returns a vobx containing a notebook widg, use
  * zMapGUINotebookGetNoteBookWidg() to get the actual notebook widget.
- * 
+ *
  *
  * @param notebook_spec  The notebook tree.
  * @return               top container widget of notebook
@@ -598,8 +594,8 @@ GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec)
   GtkWidget *note_widg = NULL ;
 
   /* zMapAssert(notebook_spec) ; */
-  if (!notebook_spec) 
-    return note_widg ; 
+  if (!notebook_spec)
+    return note_widg ;
 
   make_notebook = g_new0(MakeNotebookStruct, 1) ;
 
@@ -645,8 +641,8 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
   MakeNotebook make_notebook  ;
 
   /* zMapAssert(notebook_spec && help_title && *help_title && help_text && *help_text) ;*/
-  if (!notebook_spec || !help_title || !*help_title || !help_text || !*help_text ) 
-    return dialog ; 
+  if (!notebook_spec || !help_title || !*help_title || !help_text || !*help_text )
+    return dialog ;
 
   make_notebook = g_new0(MakeNotebookStruct, 1) ;
 
@@ -720,8 +716,8 @@ ZMapGuiNotebookPage zMapGUINotebookFindPage(ZMapGuiNotebookChapter chapter, cons
   GQuark page_id ;
 
   /* zMapAssert(chapter && page_name && *page_name) ; */
-  if (!chapter || !page_name || !*page_name) 
-    return page ; 
+  if (!chapter || !page_name || !*page_name)
+    return page ;
 
   page_id = g_quark_from_string(page_name) ;
 
@@ -780,15 +776,15 @@ ZMapGuiNotebookChapter zMapGUINotebookFindChapter(ZMapGuiNotebook notebook, cons
  *
  */
 gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagvalue_name,
-				    const char *arg_type, ...)
+    const char *arg_type, ...)
 {
   gboolean result = FALSE ;
   ZMapGuiNotebookTagValue tagvalue ;
 
 
-  /* zMapAssert(page && tagvalue_name && *tagvalue_name && arg_type && *arg_type) ; */ 
-  if (!page || !tagvalue_name || !*tagvalue_name || !arg_type || !*arg_type) 
-    return result ; 
+  /* zMapAssert(page && tagvalue_name && *tagvalue_name && arg_type && *arg_type) ; */
+  if (!page || !tagvalue_name || !*tagvalue_name || !arg_type || !*arg_type)
+    return result ;
 
 
   if ((tagvalue = findTagInPage(page, tagvalue_name)))
@@ -800,60 +796,68 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
       va_start(args, arg_type) ;
 
       if (strcmp(arg_type, "bool") == 0)
-	{
-	  gboolean *bool_arg ;
+        {
+          gboolean *bool_arg ;
 
-	  tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_BOOL ;
+          tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_BOOL ;
 
-	  bool_arg = va_arg(args, gboolean *) ;
+          bool_arg = va_arg(args, gboolean *) ;
 
-	  *bool_arg = tagvalue->data.bool_value ;
-	}
+          *bool_arg = tagvalue->data.bool_value ;
+        }
       else   if (strcmp(arg_type, "int") == 0)
-	{
-	  int *int_arg ;
+        {
+          int *int_arg ;
+          tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT ;
 
-	  tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT ;
+          int_arg = va_arg(args, int *) ;
 
-	  int_arg = va_arg(args, int *) ;
-
-	  *int_arg = tagvalue->data.int_value ;
-	}
+          *int_arg = tagvalue->data.int_value ;
+        }
       else if (strcmp(arg_type, "float") == 0)
-	{
-	  double *double_arg ;
+        {
+          double *double_arg ;
 
-	  tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT ;
+          tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT ;
 
-	  double_arg = va_arg(args, double *) ;
+          double_arg = va_arg(args, double *) ;
 
-	  *double_arg = tagvalue->data.float_value ;
-	}
+          *double_arg = tagvalue->data.float_value ;
+        }
       else if (strcmp(arg_type, "string") == 0)
-	{
-	  char **string_arg ;
+        {
+          char **string_arg ;
 
-	  tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING ;
+          tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING ;
 
-	  string_arg = va_arg(args, char **) ;
-	  /* Return just the pointer. It's the caller's responsibility to copy it and later free it. */
-	  *string_arg = tagvalue->data.string_value;
-	}
+          string_arg = va_arg(args, char **) ;
+          /* Return just the pointer. It's the caller's responsibility to copy it and later free it. */
+          *string_arg = tagvalue->data.string_value;
+        }
       else if (strcmp(arg_type, "item") == 0)
-	{
-	  FooCanvasItem **item_arg ;
+        {
+          FooCanvasItem **item_arg ;
 
-	  tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_ITEM ;
+          tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_ITEM ;
 
-	  item_arg = va_arg(args, FooCanvasItem **) ;
+          item_arg = va_arg(args, FooCanvasItem **) ;
 
-	  *item_arg = tagvalue->data.item_value ;
-	}
+          *item_arg = tagvalue->data.item_value ;
+        }
+      else if (strcmp(arg_type, "compound") == 0)
+        {
+          GList **compound_arg = NULL ;
+
+          tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_COMPOUND ;
+
+          compound_arg = va_arg(args, GList **) ;
+          *compound_arg = tagvalue->data.compound_values;
+        }
       else
-	{
+        {
           result = FALSE ;
           zMapWarnIfReached() ;
-	}
+        }
 
       va_end (args);
     }
@@ -961,24 +965,24 @@ static void freeBookResources(gpointer data, gpointer user_data)
     case ZMAPGUI_NOTEBOOK_SUBSECTION:
     case ZMAPGUI_NOTEBOOK_PARAGRAPH:
       {
-	if (book_any->children)
-	  {
-	    g_list_foreach(book_any->children, freeBookResources, user_data) ;
-	    g_list_free(book_any->children) ;
-	  }
+        if (book_any->children)
+          {
+            g_list_foreach(book_any->children, freeBookResources, user_data) ;
+            g_list_free(book_any->children) ;
+          }
 
-	break ;
+       break ;
       }
 
     case ZMAPGUI_NOTEBOOK_TAGVALUE:
       {
-	ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)book_any ;
+        ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)book_any ;
 
-	if (tag_value->data_type == ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING &&
-	    tag_value->original_data.string_value != NULL)
-	  g_free(tag_value->original_data.string_value) ;
+        if (tag_value->data_type == ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING &&
+                      tag_value->original_data.string_value != NULL)
+          g_free(tag_value->original_data.string_value) ;
 
-	break ;
+        break ;
       }
 
     default:
@@ -986,7 +990,7 @@ static void freeBookResources(gpointer data, gpointer user_data)
       break ;
     }
 
-  book_any->type = ZMAPGUI_NOTEBOOK_INVALID ;		    /* Mark block as invalid. */
+  book_any->type = ZMAPGUI_NOTEBOOK_INVALID ;    /* Mark block as invalid. */
 
   if(book_any_ptr != NULL && *book_any_ptr == book_any)
     {
@@ -1081,9 +1085,9 @@ static void makeChapterCB(gpointer data, gpointer user_data)
   g_object_set_data(G_OBJECT(make_notebook->notebook_vbox), GUI_NOTEBOOK_CURR_SETDATA, notebook_widget) ;
 
   button = gtk_radio_button_new_with_label_from_widget((make_notebook->prev_button
-							? GTK_RADIO_BUTTON(make_notebook->prev_button)
-							: NULL),
-						       g_quark_to_string(chapter->name)) ;
+           ? GTK_RADIO_BUTTON(make_notebook->prev_button)
+           : NULL),
+           g_quark_to_string(chapter->name)) ;
   make_notebook->prev_button = button ;
   g_object_set_data(G_OBJECT(button), GUI_NOTEBOOK_BUTTON_SETDATA, notebook_widget) ;
   gtk_container_add(GTK_CONTAINER(make_notebook->notebook_chooser), button) ;
@@ -1117,7 +1121,7 @@ static void makePageCB(gpointer data, gpointer user_data)
   g_list_foreach(page->subsections, makeSubsectionCB, make_notebook) ;
 
   notebook_index = gtk_notebook_append_page(GTK_NOTEBOOK(make_notebook->curr_notebook),
-					    make_notebook->curr_page_vbox, notebook_label) ;
+    make_notebook->curr_page_vbox, notebook_label) ;
 
   return ;
 }
@@ -1131,7 +1135,7 @@ static void makeSubsectionCB(gpointer data, gpointer user_data)
   GtkWidget *subsection_frame ;
 
   subsection_frame = notebookNewFrameIn(g_quark_to_string(subsection->name),
-					make_notebook->curr_page_vbox);
+                                        make_notebook->curr_page_vbox);
 
   make_notebook->curr_subsection_vbox = gtk_vbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
   gtk_container_add(GTK_CONTAINER(subsection_frame), make_notebook->curr_subsection_vbox) ;
@@ -1152,7 +1156,7 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
   make_notebook->curr_paragraph = paragraph ;
 
   paragraph_frame = notebookNewFrameIn(g_quark_to_string(paragraph->name),
-				       make_notebook->curr_subsection_vbox);
+       make_notebook->curr_subsection_vbox);
 
   make_notebook->curr_paragraph_vbox = gtk_vbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
   gtk_container_add(GTK_CONTAINER(paragraph_frame), make_notebook->curr_paragraph_vbox) ;
@@ -1163,47 +1167,30 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
       make_notebook->curr_paragraph_rows = 0 ;
       make_notebook->curr_paragraph_columns = 2 ;
       make_notebook->curr_paragraph_table = gtk_table_new(make_notebook->curr_paragraph_rows,
-							  make_notebook->curr_paragraph_columns,
-							  FALSE) ;
+                                                          make_notebook->curr_paragraph_columns,
+                                                          FALSE) ;
       gtk_table_set_homogeneous(GTK_TABLE(make_notebook->curr_paragraph_table),
-				(paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS));
+                                (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS));
 
       gtk_table_set_row_spacings(GTK_TABLE(make_notebook->curr_paragraph_table),
-				 GUI_NOTEBOOK_DEFAULT_BORDER);
+                                 GUI_NOTEBOOK_DEFAULT_BORDER);
 
       gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), make_notebook->curr_paragraph_table) ;
 
     }
   else if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE
-	   || paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_HORZ_TABLE
-	   || paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_VERT_TABLE)
+   || paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_HORZ_TABLE
+   || paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_VERT_TABLE)
     {
       GtkWidget *scrolled_window ;
       GtkPolicyType horiz_policy, vert_policy ;
 
       scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* I'd like to do this but either HORZ or VERT result in a blank paragraph..I don't know why. */
-      if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE)
-	{
-	  horiz_policy = vert_policy = GTK_POLICY_AUTOMATIC ;
-	}
-      else if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_HORZ_TABLE)
-	{
-	  horiz_policy = GTK_POLICY_AUTOMATIC ;
-	  vert_policy = GTK_POLICY_NEVER ;
-	}
-      else
-	{
-	  horiz_policy = GTK_POLICY_NEVER ;
-	  vert_policy = GTK_POLICY_AUTOMATIC ;
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       horiz_policy = vert_policy = GTK_POLICY_AUTOMATIC ;
 
       gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-				     horiz_policy, vert_policy) ;
+     horiz_policy, vert_policy) ;
 
       gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), scrolled_window) ;
 
@@ -1211,17 +1198,17 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
       make_notebook->zmap_tree_view = zMapGUITreeViewCreate();
 
       g_object_set(G_OBJECT(make_notebook->zmap_tree_view),
-		   "row-counter-column", TRUE,
-		   "column_count",       g_list_length(paragraph->compound_titles),
-		   "selection-mode",     GTK_SELECTION_SINGLE,
-		   "selection-func",     rowSelectCB,
-		   "selection-data",     NULL,
-		   "column_names_q",     paragraph->compound_titles,
-		   "column_types",       paragraph->compound_types,
-		   "sortable",           TRUE,
-		   "sort-column-index",  0,
-		   "sort-order",         GTK_SORT_ASCENDING,
-		   NULL);
+                   "row-counter-column", TRUE,
+                   "column_count",       g_list_length(paragraph->compound_titles),
+                   "selection-mode",     GTK_SELECTION_SINGLE,
+                   "selection-func",     rowSelectCB,
+                   "selection-data",     NULL,
+                   "column_names_q",     paragraph->compound_titles,
+                   "column_types",       paragraph->compound_types,
+                   "sortable",           TRUE,
+                   "sort-column-index",  0,
+                   "sort-order",         GTK_SORT_ASCENDING,
+                   NULL);
 
       make_notebook->curr_paragraph_treeview = GTK_WIDGET(zMapGUITreeViewGetView(make_notebook->zmap_tree_view));
 
@@ -1234,11 +1221,10 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
 
   g_list_foreach(paragraph->tag_values, makeTagValueCB, make_notebook) ;
 
- if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE)
-   {
-     zMapGUITreeViewAttach(make_notebook->zmap_tree_view);
-     //setModelInView(GTK_TREE_VIEW(make_notebook->curr_paragraph_treeview), make_notebook->curr_paragraph_model) ;
-   }
+  if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE)
+    {
+      zMapGUITreeViewAttach(make_notebook->zmap_tree_view);
+    }
 
   return ;
 }
@@ -1248,7 +1234,7 @@ static gboolean editing_finished_cb(GtkWidget *widget, GdkEventFocus *event, gpo
 {
   GtkEntry *entry = GTK_ENTRY(widget) ;
   ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)user_data ;
-  const char *entry_text ; 
+  const char *entry_text ;
 
   g_signal_handlers_block_by_func (widget, editing_finished_cb, user_data) ;
 
@@ -1263,30 +1249,30 @@ static gboolean editing_finished_cb(GtkWidget *widget, GdkEventFocus *event, gpo
       chapter = (ZMapGuiNotebookChapter)getAnyParent((ZMapGuiNotebookAny)tag_value, ZMAPGUI_NOTEBOOK_CHAPTER) ;
 
       if(chapter->user_CBs.edit_func)
-	edit_allowed = (chapter->user_CBs.edit_func)((ZMapGuiNotebookAny)tag_value, entry_text,
-						     chapter->user_CBs.edit_data) ;
+        edit_allowed = (chapter->user_CBs.edit_func)((ZMapGuiNotebookAny)tag_value, entry_text,
+                    chapter->user_CBs.edit_data) ;
 
       switch(tag_value->data_type)
-	{
-	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING:
-	  if ((tag_value->original_data.string_value))
-	    tag_value_text = g_strdup(tag_value->original_data.string_value);
-	  else
-	    tag_value_text = g_strdup("") ;
-	  break;
-	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT:
-	  tag_value_text = g_strdup_printf("%g", tag_value->original_data.float_value);
-	  break;
-	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT:
-	  tag_value_text = g_strdup_printf("%d", tag_value->original_data.int_value);
-	  break;
-	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_BOOL:
-	  tag_value_text = g_strdup((tag_value->original_data.bool_value ? "true" : "false"));
-	  break;
-	default:
-          zMapWarnIfReached() ;
-          break;
-	}
+        {
+          case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING:
+            if ((tag_value->original_data.string_value))
+              tag_value_text = g_strdup(tag_value->original_data.string_value);
+            else
+              tag_value_text = g_strdup("") ;
+            break;
+          case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT:
+            tag_value_text = g_strdup_printf("%g", tag_value->original_data.float_value);
+            break;
+          case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT:
+            tag_value_text = g_strdup_printf("%d", tag_value->original_data.int_value);
+            break;
+          case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_BOOL:
+            tag_value_text = g_strdup((tag_value->original_data.bool_value ? "true" : "false"));
+            break;
+          default:
+            zMapWarnIfReached() ;
+            break;
+        }
 
       if (tag_value_text)
         {
@@ -1328,196 +1314,138 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 
   switch(tag_value->display_type)
     {
-    case ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX:
-    case ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE:
+      case ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX:
+      case ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE:
       {
-	GtkWidget *tag, *value ;
+        GtkWidget *tag, *value ;
 
-	tag = gtk_label_new(g_quark_to_string(tag_value->tag)) ;
-	gtk_misc_set_alignment(GTK_MISC(tag), 0.0, 0.5);
-	gtk_label_set_justify(GTK_LABEL(tag), GTK_JUSTIFY_RIGHT) ;
+        tag = gtk_label_new(g_quark_to_string(tag_value->tag)) ;
+        gtk_misc_set_alignment(GTK_MISC(tag), 0.0, 0.5);
+        gtk_label_set_justify(GTK_LABEL(tag), GTK_JUSTIFY_RIGHT) ;
 
-	if (tag_value->display_type == ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX)
-	  {
-	    value = gtk_check_button_new() ;
+        if (tag_value->display_type == ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX)
+          {
+            value = gtk_check_button_new() ;
 
-	    if (tag_value->data.bool_value == TRUE)
-	      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(value), TRUE) ;
+            if (tag_value->data.bool_value == TRUE)
+              gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(value), TRUE) ;
 
-	    g_signal_connect(G_OBJECT(value), "toggled", G_CALLBACK(buttonToggledCB), tag_value) ;
-	  }
-	else
-	  {
-	    char *text ;
+            g_signal_connect(G_OBJECT(value), "toggled", G_CALLBACK(buttonToggledCB), tag_value) ;
+          }
+        else
+          {
+            char *text ;
 
-	    if (tag_value->data_type == ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT)
-	      text = g_strdup_printf("%d", tag_value->data.int_value) ;
-	    else if (tag_value->data_type == ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT)
-	      text = g_strdup_printf("%f", tag_value->data.float_value) ;
-	    else
-	      text = g_strdup(tag_value->data.string_value) ;
+            if (tag_value->data_type == ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT)
+              text = g_strdup_printf("%d", tag_value->data.int_value) ;
+            else if (tag_value->data_type == ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT)
+              text = g_strdup_printf("%f", tag_value->data.float_value) ;
+            else
+              text = g_strdup(tag_value->data.string_value) ;
 
-	    value = gtk_entry_new() ;
+            value = gtk_entry_new() ;
 
-	    if(text && *text)
-	      gtk_entry_set_text(GTK_ENTRY(value), text) ;
-#ifdef WARN_OF_EMPTY_TAGS
-	    else
-	      printf("tag '%s' has an empty value.\n", g_quark_to_string(tag_value->tag));
-#endif /* WARN_OF_EMPTY_TAGS */
+            if(text && *text)
+              gtk_entry_set_text(GTK_ENTRY(value), text) ;
+            gtk_entry_set_editable(GTK_ENTRY(value), notebook->editable) ;
 
-	    gtk_entry_set_editable(GTK_ENTRY(value), notebook->editable) ;
+            if(notebook->editable)
+              {
+                /* It appears from RT # 85457 that somehow entry_set_editable(e, FALSE)
+                 * doesn't ensure that activate/changed won't be called... window manager bug?
+                 * Anyway I'm hoping the addition of the conditional will really ensure this. */
+                g_signal_connect(G_OBJECT(value), "activate", G_CALLBACK(entryActivateCB), tag_value) ;
+                g_signal_connect(G_OBJECT(value), "changed", G_CALLBACK(changeCB), tag_value) ;
 
-	    if(notebook->editable)
-	      {
-		/* It appears from RT # 85457 that somehow entry_set_editable(e, FALSE)
-		 * doesn't ensure that activate/changed won't be called... window manager bug?
-		 * Anyway I'm hoping the addition of the conditional will really ensure this. */
-		g_signal_connect(G_OBJECT(value), "activate", G_CALLBACK(entryActivateCB), tag_value) ;
+                /* I'm unsure as to the user friendliness of this code... Could easily be turned off */
+                g_signal_connect(G_OBJECT(value), "focus-out-event", G_CALLBACK(editing_finished_cb), tag_value) ;
+              }
 
-		g_signal_connect(G_OBJECT(value), "changed", G_CALLBACK(changeCB), tag_value) ;
+            g_free(text) ;
+          }
 
-		/* I'm unsure as to the user friendliness of this code... Could easily be turned off */
-		g_signal_connect(G_OBJECT(value), "focus-out-event", G_CALLBACK(editing_finished_cb), tag_value) ;
-	      }
+        if (make_notebook->curr_paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_SIMPLE)
+          {
+          GtkWidget *hbox ;
 
-	    g_free(text) ;
-	  }
+          container = hbox = gtk_hbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
+          gtk_box_pack_start(GTK_BOX(make_notebook->curr_paragraph_vbox), hbox, FALSE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
 
-	if (make_notebook->curr_paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_SIMPLE)
-	  {
-	    GtkWidget *hbox ;
+          gtk_box_pack_start(GTK_BOX(hbox), tag,   TRUE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
+          gtk_box_pack_start(GTK_BOX(hbox), value, TRUE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
+          }
+        else
+          {
+            make_notebook->curr_paragraph_rows++ ;
+            gtk_table_resize(GTK_TABLE(make_notebook->curr_paragraph_table),
+                             make_notebook->curr_paragraph_rows,
+                             make_notebook->curr_paragraph_columns) ;
 
-	    container = hbox = gtk_hbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
-#ifdef BOX_NOT_CONTAINER
-	    gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), container) ;
+            if (make_notebook->curr_paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE
+                     || (make_notebook->curr_paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS
+                         && make_notebook->curr_paragraph_rows == 1))
+              gtk_table_attach(GTK_TABLE(make_notebook->curr_paragraph_table),
+                               tag,
+                               0,
+                               1,
+                               make_notebook->curr_paragraph_rows - 1,
+                               make_notebook->curr_paragraph_rows,
+                               GUI_NOTEBOOK_TABLE_XOPTIONS,
+                               GUI_NOTEBOOK_TABLE_YOPTIONS,
+                               GUI_NOTEBOOK_BOX_PADDING,
+                               GUI_NOTEBOOK_BOX_PADDING) ;
 
-	    gtk_container_add(GTK_CONTAINER(hbox), tag) ;
+            gtk_table_attach(GTK_TABLE(make_notebook->curr_paragraph_table),
+                             value,
+                             1,
+                             2,
+                             make_notebook->curr_paragraph_rows - 1,
+                             make_notebook->curr_paragraph_rows,
+                             GUI_NOTEBOOK_TABLE_XOPTIONS,
+                             GUI_NOTEBOOK_TABLE_YOPTIONS,
+                             GUI_NOTEBOOK_BOX_PADDING,
+                             GUI_NOTEBOOK_BOX_PADDING) ;
+          }
 
-	    gtk_container_add(GTK_CONTAINER(hbox), value) ;
-#endif
-	    gtk_box_pack_start(GTK_BOX(make_notebook->curr_paragraph_vbox), hbox, FALSE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
-
-	    gtk_box_pack_start(GTK_BOX(hbox), tag,   TRUE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
-	    gtk_box_pack_start(GTK_BOX(hbox), value, TRUE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
-	  }
-	else
-	  {
-	    make_notebook->curr_paragraph_rows++ ;
-	    gtk_table_resize(GTK_TABLE(make_notebook->curr_paragraph_table),
-			     make_notebook->curr_paragraph_rows,
-			     make_notebook->curr_paragraph_columns) ;
-
-	    if (make_notebook->curr_paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE
-		|| (make_notebook->curr_paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS
-		    && make_notebook->curr_paragraph_rows == 1))
-	      gtk_table_attach(GTK_TABLE(make_notebook->curr_paragraph_table),
-			       tag,
-			       0,
-			       1,
-			       make_notebook->curr_paragraph_rows - 1,
-			       make_notebook->curr_paragraph_rows,
-			       GUI_NOTEBOOK_TABLE_XOPTIONS,
-			       GUI_NOTEBOOK_TABLE_YOPTIONS,
-			       GUI_NOTEBOOK_BOX_PADDING,
-			       GUI_NOTEBOOK_BOX_PADDING) ;
-
-	    gtk_table_attach(GTK_TABLE(make_notebook->curr_paragraph_table),
-			     value,
-			     1,
-			     2,
-			     make_notebook->curr_paragraph_rows - 1,
-			     make_notebook->curr_paragraph_rows,
-			     GUI_NOTEBOOK_TABLE_XOPTIONS,
-			     GUI_NOTEBOOK_TABLE_YOPTIONS,
-			     GUI_NOTEBOOK_BOX_PADDING,
-			     GUI_NOTEBOOK_BOX_PADDING) ;
-	  }
-
-	break ;
+        break ;
       }
     case ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT:
       {
-	GtkWidget *frame, *scrolled_window, *view ;
-	GtkTextBuffer *buffer ;
+        GtkWidget *frame, *scrolled_window, *view ;
+        GtkTextBuffer *buffer ;
 
-	frame = notebookNewFrameIn(g_quark_to_string(tag_value->tag),
-				   make_notebook->curr_paragraph_vbox);
+        frame = notebookNewFrameIn(g_quark_to_string(tag_value->tag),
+                                   make_notebook->curr_paragraph_vbox);
 
-	scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
-	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-				       GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
-	gtk_container_add(GTK_CONTAINER(frame), scrolled_window) ;
+        scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
+        gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+                                       GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
+        gtk_container_add(GTK_CONTAINER(frame), scrolled_window) ;
 
-	view = gtk_text_view_new() ;
-	gtk_container_add(GTK_CONTAINER(scrolled_window), view) ;
-	gtk_text_view_set_editable(GTK_TEXT_VIEW(view), notebook->editable) ;
-	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view), GTK_WRAP_WORD);
+        view = gtk_text_view_new() ;
+        gtk_container_add(GTK_CONTAINER(scrolled_window), view) ;
+        gtk_text_view_set_editable(GTK_TEXT_VIEW(view), notebook->editable) ;
+        gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view), GTK_WRAP_WORD);
 
-	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view)) ;
-	gtk_text_buffer_set_text(buffer, tag_value->data.string_value, -1) ;
+        buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view)) ;
+        gtk_text_buffer_set_text(buffer, tag_value->data.string_value, -1) ;
 
-	break ;
+        break ;
       }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-      /* REDUNDANT..... */
-
-    case ZMAPGUI_NOTEBOOK_TAGVALUE_ITEM:
-      {
-	GtkWidget *scrolled_window, *treeView ;
-	TreeViewSizeCBData size_data ;
-
-	size_data = g_new0(TreeViewSizeCBDataStruct, 1) ;
-
-	container = size_data->scrolled_window = scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
-	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-				       GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
-	gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), container) ;
-
-	g_signal_connect(GTK_OBJECT(scrolled_window), "size-allocate",
-			 GTK_SIGNAL_FUNC(ScrsizeAllocateCB), size_data) ;
-	g_signal_connect(GTK_OBJECT(scrolled_window), "size-request",
-			 GTK_SIGNAL_FUNC(ScrsizeRequestCB), size_data) ;
-
-	size_data->tree_view = treeView = addFeatureSection(tag_value->data.item_value,
-							    scrolled_window, make_notebook) ;
-
-	gtk_container_add(GTK_CONTAINER(scrolled_window), treeView) ;
-
-	g_signal_connect(GTK_OBJECT(treeView), "size-allocate",
-			 GTK_SIGNAL_FUNC(sizeAllocateCB), size_data) ;
-	g_signal_connect(GTK_OBJECT(treeView), "size-request",
-			 GTK_SIGNAL_FUNC(sizeRequestCB), size_data) ;
-
-	break ;
-      }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
     case ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND:
       {
-	zMapGUITreeViewAddTupleFromColumnData(make_notebook->zmap_tree_view,
-					      tag_value->data.compound_values);
-#ifdef OLD_VERSION
-	addDataToModel(make_notebook->curr_paragraph->num_cols, make_notebook->curr_paragraph->compound_types,
-		       GTK_TREE_MODEL(make_notebook->curr_paragraph_model),
-		       &(make_notebook->curr_paragraph_iter),
-		       tag_value->data.compound_values) ;
-#endif
-	break ;
+        zMapGUITreeViewAddTupleFromColumnData(make_notebook->zmap_tree_view,
+                                              tag_value->data.compound_values);
+        break ;
       }
 
     default:
       {
         zMapWarnIfReached() ;
-	break ;
+        break ;
       }
     }
-
-
 
   return ;
 }
@@ -1542,13 +1470,13 @@ static void changeNotebookCB(GtkWidget *widget, gpointer make_notebook_data)
       notebook_pos = gtk_notebook_page_num(GTK_NOTEBOOK(notebook_stack), notebook) ;
 
       if((chapter_name = gtk_button_get_label(GTK_BUTTON(widget))))
-	{
-	  ZMapGuiNotebookChapter focus_chapter = NULL;
+        {
+          ZMapGuiNotebookChapter focus_chapter = NULL;
 
-	  focus_chapter = zMapGUINotebookFindChapter(make_notebook->notebook_spec, chapter_name);
+          focus_chapter = zMapGUINotebookFindChapter(make_notebook->notebook_spec, chapter_name);
 
-	  make_notebook->current_focus_chapter = focus_chapter;
-	}
+          make_notebook->current_focus_chapter = focus_chapter;
+        }
 
       /* Raise the notebook to the top of the notebooks */
       gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook_stack), notebook_pos) ;
@@ -1650,7 +1578,7 @@ static void callChapterCBs(MakeNotebook make_notebook)
     make_notebook->non_destroy_func = warn_unset_func;
 
   g_list_foreach(make_notebook->notebook_spec->chapters,
-		 make_notebook->non_destroy_func, make_notebook->current_focus_chapter);
+                 make_notebook->non_destroy_func, make_notebook->current_focus_chapter);
 
   make_notebook->non_destroy_func = NULL;
 
@@ -1672,7 +1600,7 @@ static void callCBsAndDestroy(MakeNotebook make_notebook)
 
   if(make_notebook->notebook_spec->cleanup_cb)
     (make_notebook->notebook_spec->cleanup_cb)((ZMapGuiNotebookAny)(make_notebook->notebook_spec),
-					       make_notebook->notebook_spec->user_cleanup_data) ;
+       make_notebook->notebook_spec->user_cleanup_data) ;
   make_notebook->notebook_spec = NULL;
   g_free(make_notebook) ;
 
@@ -1688,7 +1616,7 @@ static void invoke_save_callback(gpointer data, gpointer user_data)
   if(current_chapter == chapter)
     {
       if(chapter->user_CBs.save_func)
-	(chapter->user_CBs.save_func)(notebook_any, chapter->user_CBs.save_data);
+        (chapter->user_CBs.save_func)(notebook_any, chapter->user_CBs.save_data);
 
       chapter->changed = FALSE;
     }
@@ -1725,7 +1653,7 @@ static void invoke_apply_callback(gpointer data, gpointer user_data_unused)
   if (chapter->changed)
     {
       if (chapter->user_CBs.apply_func)
-	chapter->user_CBs.apply_func((ZMapGuiNotebookAny)chapter, chapter->user_CBs.apply_data) ;
+        chapter->user_CBs.apply_func((ZMapGuiNotebookAny)chapter, chapter->user_CBs.apply_data) ;
 
       chapter->changed = FALSE ;
     }
@@ -1787,9 +1715,6 @@ static void changeCB(GtkEntry *entry, gpointer user_data)
   char *text ;
 
   text = (char *)gtk_entry_get_text(entry) ;
-#ifdef RDS_DEBUGGING
-  printf("changedCB called\n");
-#endif /* RDS_DEBUGGING */
   if ((validateTagValue(tag_value, text, FALSE)))
     {
       ZMapGuiNotebookChapter chapter ;
@@ -1866,12 +1791,12 @@ ZMapGuiNotebookAny getAnyParent(ZMapGuiNotebookAny any_child, ZMapGuiNotebookTyp
   if (any_child->type > parent_type)
     {
       while (curr && curr->type > parent_type)
-	{
-	  curr = curr->parent ;
-	}
+        {
+          curr = curr->parent ;
+        }
 
       if (curr)
-	parent = curr ;
+        parent = curr ;
     }
 
   return parent ;
@@ -1881,7 +1806,7 @@ ZMapGuiNotebookAny getAnyParent(ZMapGuiNotebookAny any_child, ZMapGuiNotebookTyp
 
 /* Callback to paste text version of row contents into clipboard each time a row is selected by user. */
 static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *tree_model, GtkTreePath *path,
-			    gboolean path_currently_selected, gpointer unused)
+    gboolean path_currently_selected, gpointer unused)
 {
   gboolean select_row = TRUE ;
   GtkTreeIter iter ;
@@ -1911,55 +1836,52 @@ static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *tree_mode
       GValue *vals  = g_new0(GValue, n_columns);
       gint *columns = g_new0(gint, n_columns);
       for(i=0; i<n_columns;i++){ columns[i]=i; }
-      gtk_tree_model_get_values(tree_model,
-				&iter, n_columns,
-				columns,
-				vals);
+      gtk_tree_model_get_values(tree_model, &iter, n_columns, columns, vals);
       g_free(vals);
       g_free(columns);
 #endif
 
       for(i = 0; i < n_columns; i++)
-	{
-	  GType column_type;
+        {
+          GType column_type;
 
-	  column_type = gtk_tree_model_get_column_type(tree_model, i);
+          column_type = gtk_tree_model_get_column_type(tree_model, i);
 
-	  switch(column_type)
-	    {
-	    case G_TYPE_STRING:
-	      {
-		char *tmp;
-		gtk_tree_model_get(tree_model, &iter, i, &tmp, -1);
-		g_string_append_printf(text, "%s ", tmp);
-	      }
-	      break;
-	    case G_TYPE_INT:
-	      {
-		int tmp;
-		gtk_tree_model_get(tree_model, &iter, i, &tmp, -1);
-		g_string_append_printf(text, "%d ", tmp);
-	      }
-	      break;
-	    case G_TYPE_FLOAT:
-	      {
-		float tmp;
-		gtk_tree_model_get(tree_model, &iter, i, &tmp, -1);
-		g_string_append_printf(text, "%f ", tmp);
-	      }
-	      break;
-	    case G_TYPE_BOOLEAN:
-	      {
-		gboolean tmp;
-		gtk_tree_model_get(tree_model, &iter, i, &tmp, -1);
-		g_string_append_printf(text, "%s ", (tmp ? "true" : "false"));
-	      }
-	      break;
-	    default:
-	      g_string_append_printf(text, "column error idx (%d)", i);
-	      break;
-	    }
-	}
+          switch(column_type)
+            {
+              case G_TYPE_STRING:
+                {
+                  char *tmp;
+                  gtk_tree_model_get(tree_model, &iter, i, &tmp, -1);
+                  g_string_append_printf(text, "%s ", tmp);
+                }
+                break;
+              case G_TYPE_INT:
+                {
+                  int tmp;
+                  gtk_tree_model_get(tree_model, &iter, i, &tmp, -1);
+                  g_string_append_printf(text, "%d ", tmp);
+                }
+                break;
+              case G_TYPE_FLOAT:
+                {
+                  float tmp;
+                  gtk_tree_model_get(tree_model, &iter, i, &tmp, -1);
+                  g_string_append_printf(text, "%f ", tmp);
+                }
+                break;
+              case G_TYPE_BOOLEAN:
+                {
+                  gboolean tmp;
+                  gtk_tree_model_get(tree_model, &iter, i, &tmp, -1);
+                  g_string_append_printf(text, "%s ", (tmp ? "true" : "false"));
+                }
+                break;
+              default:
+                g_string_append_printf(text, "column error idx (%d)", i);
+              break;
+            }
+        }
 
       /* Now paste and then destroy the gstring... */
       tree_view = gtk_tree_selection_get_tree_view(selection) ;
@@ -1981,99 +1903,99 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text, 
 
   switch (tag_value->data_type)
     {
-    case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_BOOL:
-      {
-	gboolean tmp = FALSE ;
+      case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_BOOL:
+        {
+          gboolean tmp = FALSE ;
 
-	if ((status = zMapStr2Bool(text, &tmp)))
-	  {
-	    if(!update_original)
-	      tag_value->data.bool_value = tmp ;
-	    else
-	      tag_value->original_data.bool_value = tag_value->data.bool_value = tmp;
-	    status = TRUE ;
-	  }
-	else
-	  {
-	    zMapWarning("Invalid boolean value: %s", text) ;
-	  }
+          if ((status = zMapStr2Bool(text, &tmp)))
+            {
+              if(!update_original)
+                tag_value->data.bool_value = tmp ;
+              else
+                tag_value->original_data.bool_value = tag_value->data.bool_value = tmp;
+              status = TRUE ;
+            }
+          else
+            {
+              zMapWarning("Invalid boolean value: %s", text) ;
+            }
 
-	break ;
-      }
+          break ;
+        }
     case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT:
       {
-	int tmp = 0 ;
+        int tmp = 0 ;
 
-	if ((status = zMapStr2Int(text, &tmp)))
-	  {
-	    if(!update_original)
-	      tag_value->data.int_value = tmp ;
-	    else
-	      tag_value->original_data.int_value = tag_value->data.int_value = tmp ;
-	    status = TRUE ;
-	  }
-	else if(text && text[0] == '\0')
-	  tag_value->data.int_value = tmp;
-	else
-	  {
-	    zMapWarning("Invalid integer number: %s", text) ;
-	  }
+        if ((status = zMapStr2Int(text, &tmp)))
+        {
+          if(!update_original)
+            tag_value->data.int_value = tmp ;
+          else
+            tag_value->original_data.int_value = tag_value->data.int_value = tmp ;
+          status = TRUE ;
+        }
+        else if(text && text[0] == '\0')
+          tag_value->data.int_value = tmp;
+        else
+          {
+            zMapWarning("Invalid integer number: %s", text) ;
+          }
 
-	break ;
+        break ;
       }
     case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT:
       {
-	double tmp = 0.0 ;
+        double tmp = 0.0 ;
 
-	if ((status = zMapStr2Double(text, &tmp)))
-	  {
-	    if(!update_original)
-	      tag_value->data.float_value = tmp ;
-	    else
-	      tag_value->original_data.float_value = tag_value->data.float_value = tmp;
-	    status = TRUE ;
-	  }
-	else if(text && text[0] == '\0')
-	  tag_value->data.float_value = tmp;
-	else
-	  {
-	    zMapWarning("Invalid float number: %s", text) ;
-	  }
-
-	break ;
+        if ((status = zMapStr2Double(text, &tmp)))
+          {
+            if(!update_original)
+              tag_value->data.float_value = tmp ;
+            else
+              tag_value->original_data.float_value = tag_value->data.float_value = tmp;
+            status = TRUE ;
+          }
+        else if(text && text[0] == '\0')
+          tag_value->data.float_value = tmp;
+        else
+          {
+            zMapWarning("Invalid float number: %s", text) ;
+          }
+    
+        break ;
       }
     case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING:
       {
-	/* There's no point checking here as the text _is_ the pointer from the gtkentry! */
-	/* This means it's automatically updated anyway... */
-	if (text)
-	  {
-	    tag_value->data.string_value = (text && *text ? text : NULL);
+        /* There's no point checking here as the text _is_ the pointer from the gtkentry! */
+        /* This means it's automatically updated anyway... */
+        if (text)
+          {
+            tag_value->data.string_value = (text && *text ? text : NULL);
+      
+            if(update_original && *text)
+              {
+                if(tag_value->original_data.string_value)
+                  g_free(tag_value->original_data.string_value);
+                tag_value->original_data.string_value = g_strdup(text);
+              }
+    
+            if(*text)
+              status = TRUE ;
+          }
+        else
+        {
+          tag_value->data.string_value = NULL;
+          /* This is very bad... */
+          zMapWarning("Invalid string: %s", (text ? "No string" : "NULL string pointer")) ;
+        }
 
-	    if(update_original && *text)
-	      {
-		if(tag_value->original_data.string_value)
-		  g_free(tag_value->original_data.string_value);
-		tag_value->original_data.string_value = g_strdup(text);
-	      }
-
-	    if(*text)
-	      status = TRUE ;
-	  }
-	else
-	  {
-	    tag_value->data.string_value = NULL;
-	    /* This is very bad... */
-	    zMapWarning("Invalid string: %s", (text ? "No string" : "NULL string pointer")) ;
-	  }
-
-	break ;
+        break ;
       }
     default:
       {
         zMapWarning("%s", "Invalid tag data type") ;
         zMapWarnIfReached() ;
-	break ;
+        break ;
       }
     }
 
@@ -2087,11 +2009,11 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text, 
  * and any levels in note_any_new without children are removed. */
 static gboolean mergeAny(ZMapGuiNotebookAny note_any, ZMapGuiNotebookAny note_any_new)
 {
-  gboolean result = FALSE ;				    /* Usused....????? */
+  gboolean result = FALSE ;    /* Usused....????? */
 
   /* zMapAssert(note_any->type == note_any_new->type) ;*/
-  if (!note_any || !note_any_new || note_any->type != note_any_new->type ) 
-    return result ; 
+  if (!note_any || !note_any_new || note_any->type != note_any_new->type )
+    return result ;
 
   /* Now merge the children of note_any_new into the children of note_any */
   if (note_any_new->children)
@@ -2122,9 +2044,11 @@ static void mergeChildren(void *data, void *user_data)
     {
       /* child has no name so merge it with the first child in the list (this allows
        * merging of anonymous items. */
-
-      child = parent->children->data ;
-      mergeAny(child, new_child) ;
+      if (parent->children)
+        {
+          child = parent->children->data ;
+          mergeAny(child, new_child) ;
+        }
     }
   else if ((child = findAnyChild(parent->children, new_child)))
     {
@@ -2135,16 +2059,6 @@ static void mergeChildren(void *data, void *user_data)
   else
     {
       /* child has a name and is not in the list of children so just add it. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* DEBUG.... */
-      char *new_child_name = g_quark_to_string(new_child->name) ;
-      char *parent_name = g_quark_to_string(parent->name) ;
-
-      printf("About to add %s to children of %s\n",
-	     g_quark_to_string(new_child->name),
-	     g_quark_to_string(parent->name)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       parent->children = g_list_append(parent->children, new_child) ;
       new_child->parent->children = g_list_remove(new_child->parent->children, new_child) ;
@@ -2211,15 +2125,15 @@ static void propogateExpand(GtkWidget *box, GtkWidget *child, GtkWidget *topmost
   do
     {
       if(GTK_IS_BOX(box))
-	{
-	  gtk_box_query_child_packing(GTK_BOX(box), child, &expand, &fill, &padding, &pack_type);
+        {
+          gtk_box_query_child_packing(GTK_BOX(box), child, &expand, &fill, &padding, &pack_type);
 
-	  expand = TRUE;
-	  gtk_box_set_child_packing(GTK_BOX(box), child, expand, fill, padding, pack_type);
+          expand = TRUE;
+          gtk_box_set_child_packing(GTK_BOX(box), child, expand, fill, padding, pack_type);
 
-	}
+        }
       if(box == topmost)
-	break;
+        break;
     }
   while((child = box) && (box = gtk_widget_get_parent(child)));
 
@@ -2244,7 +2158,7 @@ static GtkWidget *notebookNewFrameIn(const char *frame_name, GtkWidget *parent_c
   else if(GTK_IS_CONTAINER(parent_container))
     {
       gtk_container_set_border_width(GTK_CONTAINER(parent_container),
-				     GUI_NOTEBOOK_CONTAINER_BORDER);
+     GUI_NOTEBOOK_CONTAINER_BORDER);
 
       gtk_container_add(GTK_CONTAINER(parent_container), frame);
     }

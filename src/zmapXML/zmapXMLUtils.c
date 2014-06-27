@@ -148,9 +148,9 @@ GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsE
  * 
  *  */
 GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
-						   char *element_name, int element_index,
-						   char *attribute_name, char *attribute_value,
-						   ZMapXMLUtilsEventStackStruct *event_stack)
+   char *element_name, int element_index,
+   char *attribute_name, char *attribute_value,
+   ZMapXMLUtilsEventStackStruct *event_stack)
 {
   GArray *result = NULL ;
   ZMapXMLUtilsEventStack input ;
@@ -174,25 +174,25 @@ GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
       zMapDebugPrint(debug_G, "%s\n", zMapXMLWriterEvent2Txt(event)) ;
 
       if (event->type == ZMAPXML_START_ELEMENT_EVENT
-	  && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0)
-	{
-	  int index = i ;				    /* Pass in start of element. */
+          && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0)
+        {
+          int index = i ;    /* Pass in start of element. */
 
-	  if (!attribute_name
-	      || hasAttribute(events_array, index, attribute_name, attribute_value))
-	    {
-	      if (attr_index == element_index)
-		found_element = TRUE ;
-	      else
-		attr_index++ ;
-	    }
-	}
+          if (!attribute_name
+              || hasAttribute(events_array, index, attribute_name, attribute_value))
+            {
+              if (attr_index == element_index)
+                found_element = TRUE ;
+              else
+                attr_index++ ;
+            }
+        }
       else if (found_element && (event->type == ZMAPXML_END_ELEMENT_EVENT
-				 && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0))
-	{
-	  insert_pos = i ;
-	  break ;
-	}
+                 && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0))
+        {
+          insert_pos = i ;
+          break ;
+        }
     }
 
   if (found_element)
@@ -201,15 +201,15 @@ GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
       input = event_stack ;
 
       while (input && input->event_type)
-	{
-	  transfer(input, &single) ;
-
-	  result = g_array_insert_val(result, insert_pos, single) ;
-
-	  insert_pos++ ;
-
-	  input++ ;
-	}
+        {
+          transfer(input, &single) ;
+        
+          result = g_array_insert_val(result, insert_pos, single) ;
+        
+          insert_pos++ ;
+        
+          input++ ;
+        }
     }
 
 
@@ -246,9 +246,9 @@ GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
  * 
  *  */
 GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
-						      char *element_name, int element_index,
-						      char *attribute_name, char *attribute_value,
-						      ZMapXMLUtilsEventStackStruct *event_stack)
+      char *element_name, int element_index,
+      char *attribute_name, char *attribute_value,
+      ZMapXMLUtilsEventStackStruct *event_stack)
 {
   GArray *result = NULL ;
   ZMapXMLUtilsEventStack input ;
@@ -272,27 +272,27 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
       zMapDebugPrint(debug_G, "%s\n", zMapXMLWriterEvent2Txt(event)) ;
 
       if (event->type == ZMAPXML_START_ELEMENT_EVENT
-	  && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0)
-	{
-	  int index = i ;				    /* Pass in start of element. */
+          && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0)
+        {
+          int index = i ;    /* Pass in start of element. */
+        
+          if (!attribute_name
+              || hasAttribute(events_array, index, attribute_name, attribute_value))
+            {
+              if (attr_index == element_index)
+                found_element = TRUE ;
+              else
+                attr_index++ ;
+            }
 
-	  if (!attribute_name
-	      || hasAttribute(events_array, index, attribute_name, attribute_value))
-	    {
-	      if (attr_index == element_index)
-		found_element = TRUE ;
-	      else
-		attr_index++ ;
-	    }
 
-
-	}
+        }
       else if (found_element && (event->type == ZMAPXML_END_ELEMENT_EVENT
-				 && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0))
-	{
-	  insert_pos = i + 1 ;				    /* bump past end element. */
-	  break ;
-	}
+                 && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0))
+        {
+          insert_pos = i + 1 ;    /* bump past end element. */
+          break ;
+        }
     }
 
   if (found_element)
@@ -301,15 +301,15 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
       input = event_stack ;
 
       while (input && input->event_type)
-	{
-	  transfer(input, &single) ;
-
-	  result = g_array_insert_val(result, insert_pos, single) ;
-
-	  insert_pos++ ;
-
-	  input++ ;
-	}
+        {
+          transfer(input, &single) ;
+        
+          result = g_array_insert_val(result, insert_pos, single) ;
+        
+          insert_pos++ ;
+        
+          input++ ;
+        }
     }
 
 
@@ -341,7 +341,7 @@ char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out, gboolean full
       if ((xml_status = zMapXMLWriterProcessEvents(writer, xml_stack, full_format)) != ZMAPXMLWRITER_OK)
         *err_msg_out = g_strdup(zMapXMLWriterErrorMsg(writer)) ;
       else
-	xml_string = g_strdup(zMapXMLWriterGetXMLStr(writer)) ;
+        xml_string = g_strdup(zMapXMLWriterGetXMLStr(writer)) ;
 
       zMapXMLWriterDestroy(writer) ;
     }
@@ -411,12 +411,12 @@ char *zMapXMLWriterEvent2Txt(ZMapXMLWriterEvent event)
 
     case ZMAPXML_EVENT_DATA_QUARK:
       g_string_append(event_str,
-		      ((str = (char *)g_quark_to_string(event->data.comp.value.quark))
-		       ? str : "No Value")) ;
+      ((str = (char *)g_quark_to_string(event->data.comp.value.quark))
+       ? str : "No Value")) ;
       break ;
     case ZMAPXML_EVENT_DATA_STRING:
       g_string_append(event_str,
-		      ((str = event->data.comp.value.s) ? str : "No Value"))  ;
+      ((str = event->data.comp.value.s) ? str : "No Value"))  ;
       break ;
     case ZMAPXML_EVENT_DATA_INTEGER:
       g_string_append_printf(event_str, "%d", event->data.comp.value.integer) ;
@@ -445,7 +445,7 @@ char *zMapXMLUtilsEscapeStr(char *str)
 {
   char *escaped_str = NULL ;
 
-  escaped_str = g_markup_escape_text(str, -1) ;		    /* -1 signals str is null-terminated. */
+  escaped_str = g_markup_escape_text(str, -1) ;    /* -1 signals str is null-terminated. */
 
   return escaped_str ;
 }
@@ -483,14 +483,14 @@ char *zMapXMLUtilsUnescapeStrdup(char *str)
   while (*p)
     {
       if (!g_ascii_strncasecmp(p, "&apos;", 6))
-	{
-	  *p++ = '\'';
-	  strcpy(p, p+5);
-	}
+        {
+          *p++ = '\'';
+          strcpy(p, p+5);
+        }
       else
-	{
-	  p++;
-	}
+        {
+          p++;
+        }
     }
 
   return result ;
@@ -518,29 +518,29 @@ static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest)
 
     case ZMAPXML_ATTRIBUTE_EVENT:
       {
-	dest->data.comp.name = g_quark_from_string(source->name);
-	dest->data.comp.data = data_type = source->data_type;
+        dest->data.comp.name = g_quark_from_string(source->name);
+        dest->data.comp.data = data_type = source->data_type;
 
-	switch (data_type)
-	  {
-	  case ZMAPXML_EVENT_DATA_INTEGER:
-	    dest->data.comp.value.integer = source->value.i;
-	    break ;
-	  case ZMAPXML_EVENT_DATA_DOUBLE:
-	    dest->data.comp.value.flt = source->value.d ;
-	    break ;
-	  case ZMAPXML_EVENT_DATA_QUARK:
-	    dest->data.comp.value.quark = source->value.q ;
-	    break ;
-	  case ZMAPXML_EVENT_DATA_STRING:
-	    dest->data.comp.value.quark = g_quark_from_string(source->value.s) ;
-	    break ;
-	  default:
+        switch (data_type)
+          {
+          case ZMAPXML_EVENT_DATA_INTEGER:
+            dest->data.comp.value.integer = source->value.i;
+            break ;
+          case ZMAPXML_EVENT_DATA_DOUBLE:
+            dest->data.comp.value.flt = source->value.d ;
+            break ;
+          case ZMAPXML_EVENT_DATA_QUARK:
+            dest->data.comp.value.quark = source->value.q ;
+            break ;
+          case ZMAPXML_EVENT_DATA_STRING:
+            dest->data.comp.value.quark = g_quark_from_string(source->value.s) ;
+            break ;
+          default:
             zMapWarnIfReached();
-	    break ;
-	  }
+            break ;
+          }
 
-	break;
+        break;
       }
 
       /* I'M TRYING THIS HERE...SEEMS TO BE MISSING ?? */
@@ -573,23 +573,23 @@ static gboolean hasAttribute(GArray *events_array, int element_index, char *attr
       int i ;
 
       for (i = element_index + 1 ; i < events_array->len ; i++)
-	{
-	  event = &(g_array_index(events_array, ZMapXMLWriterEventStruct, i)) ;
+        {
+          event = &(g_array_index(events_array, ZMapXMLWriterEventStruct, i)) ;
 
-	  zMapDebugPrint(debug_G, "%s\n", zMapXMLWriterEvent2Txt(event)) ;
+          zMapDebugPrint(debug_G, "%s\n", zMapXMLWriterEvent2Txt(event)) ;
 
-	  if (event->type == ZMAPXML_ATTRIBUTE_EVENT
-	      && g_ascii_strcasecmp(g_quark_to_string(event->data.name), attribute_name) == 0
-	      && g_ascii_strcasecmp(g_quark_to_string(event->data.comp.value.quark), attribute_value) == 0)
-	    {
-	      result = TRUE ;
-	      break ;
-	    }
-	  else if (event->type == ZMAPXML_END_ELEMENT_EVENT)
-	    {
-	      break ;
-	    }
-	}
+          if (event->type == ZMAPXML_ATTRIBUTE_EVENT
+              && g_ascii_strcasecmp(g_quark_to_string(event->data.name), attribute_name) == 0
+              && g_ascii_strcasecmp(g_quark_to_string(event->data.comp.value.quark), attribute_value) == 0)
+            {
+              result = TRUE ;
+              break ;
+            }
+          else if (event->type == ZMAPXML_END_ELEMENT_EVENT)
+            {
+              break ;
+            }
+        }
     }
 
   return result ;

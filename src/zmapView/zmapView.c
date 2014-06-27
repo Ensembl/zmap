@@ -60,10 +60,6 @@
 #include <zmapView_P.h>
 
 
-#define ZMAP_NB_CHAPTER_GENERAL  "ZMap"  /* preferences chapter relating to general zmap settings */
-#define ZMAP_NB_PAGE_DISPLAY  "Display"  /* preferences page relating to zmap display settings */
-
-
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
 
@@ -220,6 +216,7 @@ static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *w
 static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void commandCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_data, void *window_data) ;
+static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data);
 static void setZoomStatus(gpointer data, gpointer user_data);
 static void splitMagic(gpointer data, gpointer user_data);
@@ -369,6 +366,7 @@ ZMapWindowCallbacksStruct window_cbs_G =
   viewVisibilityChangeCB,
   commandCB,
   loadedDataCB,
+  mergeNewFeatureCB,
   NULL,
   NULL
 } ;
@@ -883,6 +881,28 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
 
 
+/*!
+ * \brief Returns true if filtered columns should be highlighted
+ */
+gboolean zMapViewGetHighlightFilteredColumns(ZMapView view)
+{
+  return view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS];
+}
+
+
+char *zMapViewGetDataset(ZMapView zmap_view)
+{
+  char *dataset = NULL ;
+
+  if (zmap_view && zmap_view->view_sequence)
+  {
+    dataset = zmap_view->view_sequence->dataset ;
+  }
+
+  return dataset ;
+}
+
+
 
 /* Copies an existing window in a view.
  * Returns the window on success, NULL on failure. */
@@ -1133,6 +1153,63 @@ static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
   return ZMAP_CONTEXT_EXEC_STATUS_OK;
 }
 
+
+ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
+                                          ZMapFeature feature,
+                                          ZMapFeatureSet feature_set,
+                                          GList **feature_list,
+                                          ZMapFeature *feature_copy_out)
+{
+  ZMapFeatureContext context_copy = NULL ;
+
+  g_return_val_if_fail(context && context->master_align && feature && feature_set, NULL) ;
+
+  context_copy = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context) ;
+  context_copy->req_feature_set_names = g_list_append(context_copy->req_feature_set_names, GINT_TO_POINTER(feature_set->unique_id)) ;
+
+  ZMapFeatureAlignment align_copy = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)context->master_align) ;
+  zMapFeatureContextAddAlignment(context_copy, align_copy, FALSE) ;
+
+  ZMapFeatureBlock block = zMap_g_hash_table_nth(context->master_align->blocks, 0) ;
+  g_return_val_if_fail(block, NULL) ;
+
+  ZMapFeatureBlock block_copy = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block) ;
+  zMapFeatureAlignmentAddBlock(align_copy, block_copy) ;
+
+  ZMapFeatureSet feature_set_copy = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)feature_set) ;
+  zMapFeatureBlockAddFeatureSet(block_copy, feature_set_copy) ;
+
+  ZMapFeature feature_copy = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)feature) ;
+  zMapFeatureSetAddFeature(feature_set_copy, feature_copy) ;
+
+  if (feature_list)
+    *feature_list = g_list_append(*feature_list, feature_copy) ;
+
+  if (feature_copy_out)
+    *feature_copy_out = feature_copy ;
+
+  return context_copy ;
+}
+
+void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set)
+{
+  zMapReturnIfFail(view && view->features && feature && feature_set);
+
+  ZMapFeatureContext context = view->features ;
+
+  GList *feature_list = NULL ;
+  ZMapFeature feature_copy = NULL ;
+  ZMapFeatureContext context_copy = zmapViewCopyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
+
+  if (context_copy && feature_list)
+    zmapViewMergeNewFeatures(view, &context_copy, NULL, &feature_list) ;
+
+  if (context_copy && feature_copy)
+    zmapViewDrawDiffContext(view, &context_copy, feature_copy) ;
+
+  if (context_copy)
+    zMapFeatureContextDestroy(context_copy, TRUE) ;
+}
 
 gboolean zmapViewMergeNewFeatures(ZMapView view,
                                   ZMapFeatureContext *context, ZMapFeatureContextMergeStats *merge_stats_out,
@@ -1789,7 +1866,9 @@ static GHashTable *zmapViewGetFeatureSourceHash(GList *sources)
 
             /* add a cononical version */
             q =  zMapFeatureSetCreateID(feature);
-            g_hash_table_insert(hash,GUINT_TO_POINTER(q), (gpointer) src);
+            
+            if (q != g_quark_from_string(feature))
+              g_hash_table_insert(hash,GUINT_TO_POINTER(q), (gpointer) src);
           }
         }
 
@@ -3227,10 +3306,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	      /* Warn the user ! */
 	      if (view_con->show_warning)
-		zMapWarning("Source \"%s\" is being removed, check log for details.", view_con->url) ;
+                zMapWarning("Source is being removed: Error was: %s\n\nSource: %s", (err_msg ? err_msg : "<no error message>"), view_con->url) ;
 
 	      zMapLogCritical("Source \"%s\", cannot access reply from server thread,"
-			      " error was: %s", view_con->url, err_msg) ;
+                              " error was: %s", view_con->url, (err_msg ? err_msg : "<no error message>")) ;
               
 	      thread_has_died = TRUE ;
 	    }
@@ -3404,7 +3483,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 			/* Warn the user ! */
 			if (view_con->show_warning)
-			  zMapWarning("Source \"%s\" is being cancelled, check log for details.", view_con->url) ;
+                          zMapWarning("Source is being cancelled: Error was: %s\n\nSource: %s", (err_msg ? err_msg : "<no error message>"), view_con->url) ;
 
 			THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
 					      "Thread being cancelled because of error \"%s\"",
@@ -3689,7 +3768,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	    }
 
 	  if (err_msg)
-	    g_free(err_msg) ;
+            {
+              g_free(err_msg) ;
+              err_msg = NULL ;
+            }
 
 	  if (thread_has_died)
 	    {
@@ -4923,6 +5005,16 @@ static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_d
 }
 
 
+static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+  ZMapWindowMergeNewFeature merge = (ZMapWindowMergeNewFeature)window_data ;
+  ZMapView view = zMapViewGetView(view_window) ;
+
+  zmapViewMergeNewFeature(view, merge->feature, merge->feature_set) ;
+}
+
+
 /* Sends a message to our peer that all features are now loaded. */
 static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
 {
@@ -5582,7 +5674,14 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
     case ZMAPWINDOW_CMD_COPYTOSCRATCH:
       {
 	ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
-        zmapViewScratchCopyFeature(view, scratch_cmd->feature, scratch_cmd->item, scratch_cmd->world_x, scratch_cmd->world_y, scratch_cmd->use_subfeature);
+        zmapViewScratchCopyFeatures(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end, scratch_cmd->subpart, scratch_cmd->use_subfeature);
+        break;
+      }
+
+    case ZMAPWINDOW_CMD_DELETEFROMSCRATCH:
+      {
+        ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+        zmapViewScratchDeleteFeatures(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end, scratch_cmd->subpart, scratch_cmd->use_subfeature);
         break;
       }
       
@@ -6316,109 +6415,6 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
 }
 
 
-static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
-{
-  ZMapGuiNotebookPage page ;
-  gboolean bool_value = FALSE ;
-
-  if ((page = zMapGUINotebookFindPage(chapter, ZMAP_NB_PAGE_DISPLAY)))
-    {
-      if (zMapGUINotebookGetTagValue(page, "Highlight filtered columns", "bool", &bool_value))
-	{
-	  if (view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] != bool_value)
-	    {
-              view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] = bool_value ;
-              zMapViewUpdateColumnBackground(view);
-	    }
-	}
-    }
-  
-  return ;
-}
-
-
-static void applyCB(ZMapGuiNotebookAny any_section, void *user_data)
-{
-  ZMapView view = (ZMapView)user_data;
-
-  readChapter((ZMapGuiNotebookChapter)any_section, view) ;
-
-  return ;
-}
-
-
-static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
-{
-  return ;
-}
-
-
-/*!
- * \brief Does the work to create a chapter in the preferences notebook for general zmap settings
- */
-static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view)
-{
-  ZMapGuiNotebookChapter chapter = NULL ;
-  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, view, NULL, NULL, NULL, NULL} ;
-  ZMapGuiNotebookPage page ;
-  ZMapGuiNotebookSubsection subsection ;
-  ZMapGuiNotebookParagraph paragraph ;
-  ZMapGuiNotebookTagValue tagvalue ;
-
-  chapter = zMapGUINotebookCreateChapter(note_book_parent, ZMAP_NB_CHAPTER_GENERAL, &user_CBs) ;
-
-
-  page = zMapGUINotebookCreatePage(chapter, ZMAP_NB_PAGE_DISPLAY) ;
-
-  subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
-
-  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
-					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
-					     NULL, NULL) ;
-
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Highlight filtered columns",
-					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-					   "bool", view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS]) ;
-
-  return chapter ;
-}
-
-
-/*!
- * \briefReturns a ZMapGuiNotebookChapter containing all general zmap preferences.
- */
-ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook note_book_parent)
-{
-  ZMapGuiNotebookChapter chapter = NULL ;
-
-  chapter = makeChapter(note_book_parent, view) ;
-
-  return chapter ;
-}
-
-
-/*!
- * \brief Returns true if filtered columns should be highlighted
- */
-gboolean zMapViewGetHighlightFilteredColumns(ZMapView view)
-{
-  return view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS];
-};
-
-
-char *zMapViewGetDataset(ZMapView zmap_view)
-{
-  char *dataset = NULL ;
-
-  if (zmap_view && zmap_view->view_sequence)
-  {
-    dataset = zmap_view->view_sequence->dataset ;
-  }
-
-  return dataset ;
-}
-
-
 /*! 
  * \brief Callback to update the column background for a given item
  *
@@ -6515,3 +6511,8 @@ static void destroyLoadFeatures(LoadFeaturesData loaded_features)
 
   return ;
 }
+
+
+
+
+

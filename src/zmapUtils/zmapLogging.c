@@ -36,8 +36,8 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <sys/param.h>					    /* MAXHOSTNAMLEN */
-#include <unistd.h>					    /* for pid stuff. STDIN_FILENO too. */
+#include <sys/param.h>    /* MAXHOSTNAMLEN */
+#include <unistd.h>    /* for pid stuff. STDIN_FILENO too. */
 #include <glib.h>
 #include <glib/gstdio.h>
 
@@ -65,10 +65,10 @@
 /* Common struct for all log handlers, we use these to turn logging on/off. */
 typedef struct
 {
-  guint cb_id ;						    /* needed by glib to install/uninstall
-							       handler routines. */
-  GLogFunc log_cb ;					    /* handler routine must change to turn
-							       logging on/off. */
+  guint cb_id ;    /* needed by glib to install/uninstall
+       handler routines. */
+  GLogFunc log_cb ;    /* handler routine must change to turn
+       logging on/off. */
 
   /* log file name/file etc. */
   char *log_path ;
@@ -81,15 +81,15 @@ typedef struct
 /* State for the logger as a whole. */
 typedef struct  _ZMapLogStruct
 {
-  GMutex*  log_lock ;					    /* Ensure only single threading in log
-							       handler routine. */
+  GMutex*  log_lock ;    /* Ensure only single threading in log
+       handler routine. */
 
   /* Logging action. */
-  gboolean logging ;					    /* logging on or off ? */
-  zmapLogHandlerStruct active_handler ;			    /* Used when logging is on. */
-  zmapLogHandlerStruct inactive_handler ;		    /* Used when logging is off. */
-  gboolean log_to_file ;				    /* log to file or leave glib to log to
-							       stdout/err ? */
+  gboolean logging ;    /* logging on or off ? */
+  zmapLogHandlerStruct active_handler ;    /* Used when logging is on. */
+  zmapLogHandlerStruct inactive_handler ;    /* Used when logging is off. */
+  gboolean log_to_file ;    /* log to file or leave glib to log to
+       stdout/err ? */
   /* Log record content. */
   gchar *userid ;
   gchar *nodeid ;
@@ -128,11 +128,11 @@ static gboolean closeLogFile(ZMapLog log) ;
 static void writeStartOrStopMessage(gboolean start) ;
 
 static void nullLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
-		       gpointer user_data) ;
+       gpointer user_data) ;
 static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
-		       gpointer user_data) ;
+       gpointer user_data) ;
 static void glibLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
-		       gpointer user_data);
+       gpointer user_data);
 
 #if FOO_LOG
 static void logTime(int what, int how) ;
@@ -171,9 +171,9 @@ gboolean zMapLogCreate(char *logname)
   if (log) 
     return result ; 
 
-#if FOO_LOG	// log timing stats from foo
-		// have to take this out to get xremote to compile for perl
-		// should be ok when we get the new xremote
+#if FOO_LOG// log timing stats from foo
+// have to take this out to get xremote to compile for perl
+// should be ok when we get the new xremote
 
   extern void (*foo_log)(char *x);
 
@@ -250,8 +250,8 @@ void zMapWriteStopMsg(void)
 
 /* Configure the log. */
 gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
-			  gboolean show_process, gboolean show_code, gboolean show_time,
-			  gboolean catch_glib, gboolean echo_glib,
+  gboolean show_process, gboolean show_code, gboolean show_time,
+  gboolean catch_glib, gboolean echo_glib,
                           char *logfile_path, GError **error)
 {
   gboolean result = FALSE ;
@@ -323,31 +323,31 @@ void zMapLogTime(int what, int how, long data, char *string)
   /* THERE IS A WHOLE ENUMS MECHANISM TO AVOID HAVING TO DO THIS....SEE zmapEnum.h */
   /* these mirror the #defines in zmapUtilsDebug.h */
   char *which[] = { "none", "foo-expose", "foo-update",
-		    "foo-draw", "draw_context", "revcomp", "zoom", "bump", "setvis", "load", 0 } ;
+    "foo-draw", "draw_context", "revcomp", "zoom", "bump", "setvis", "load", 0 } ;
 
   if (zmap_timing_G)
     {
       e = zMap_elapsed();
 
       switch(how)
-	{
-	case TIMER_CLEAR:
-	  times[what] = 0;
-	  zMapLogMessage("Timed: %s %s (%ld) Clear",which[what],string,data);
-	  break;
-	case TIMER_START:
-	  when[what] = e;
-	  zMapLogMessage("Timed: %s %s (l%d) Start  %.3f",which[what],string,data,e);
-	  break;
-	case TIMER_STOP:
-	  x = e - when[what];
-	  times[what] += x;
-	  zMapLogMessage("Timed: %s %s (%ld) Stop %.3f = %.3f",which[what],string,data,x,times[what]);
-	  break;
-	case TIMER_ELAPSED:
-	  zMapLogMessage("Timed: %s %s (%ld) Elasped %.3f",which[what],string,data,e);
-	  break;
-	}
+        {
+        case TIMER_CLEAR:
+          times[what] = 0;
+          zMapLogMessage("Timed: %s %s (%ld) Clear",which[what],string,data);
+          break;
+        case TIMER_START:
+          when[what] = e;
+          zMapLogMessage("Timed: %s %s (l%d) Start  %.3f",which[what],string,data,e);
+          break;
+        case TIMER_STOP:
+          x = e - when[what];
+          times[what] += x;
+          zMapLogMessage("Timed: %s %s (%ld) Stop %.3f = %.3f",which[what],string,data,x,times[what]);
+          break;
+        case TIMER_ELAPSED:
+          zMapLogMessage("Timed: %s %s (%ld) Elasped %.3f",which[what],string,data,e);
+          break;
+        }
     }
 
   return ;
@@ -366,9 +366,9 @@ int zMapLogFileSize(void)
   if (log->log_to_file)
     {
       if (g_stat(log->active_handler.log_path, &file_stats) == 0)
-	{
-	  size = file_stats.st_size ;
-	}
+        {
+          size = file_stats.st_size ;
+        }
     }
 
   return size ;
@@ -376,8 +376,8 @@ int zMapLogFileSize(void)
 
 
 void zMapLogMsg(char *domain, GLogLevelFlags log_level,
-		char *file, const char *function, int line,
-		char *format, ...)
+                char *file, const char *function, int line,
+                char *format, ...)
 {
   ZMapLog log = log_G ;
   va_list args ;
@@ -393,14 +393,14 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
   if (!domain || !*domain || !file || !*file || !format || !*format) 
     return ; 
 
-  format_str = g_string_sized_new(2000) ;		    /* Not too many records longer than this. */
+  format_str = g_string_sized_new(2000) ;    /* Not too many records longer than this. */
 
 
   /* include nodeid/pid ? */
   if (log->show_process)
     {
       g_string_append_printf(format_str, "%s[%s:%s:%d]\t",
-			     ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
+     ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
     }
 
   /* If code details are wanted then output them in the log. */
@@ -411,11 +411,11 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
       file_basename = g_path_get_basename(file) ;
 
       g_string_append_printf(format_str, "%s[%s:%s%s:%d]\t",
-			     ZMAPLOG_CODE_TUPLE,
-			     file_basename,
-			     (function ? function : ""),
-			     (function ? "()" : ""),
-			     line) ;
+     ZMAPLOG_CODE_TUPLE,
+     file_basename,
+     (function ? function : ""),
+     (function ? "()" : ""),
+     line) ;
 
       g_free(file_basename) ;
     }
@@ -585,7 +585,7 @@ static ZMapLog createLog(void)
 
   log->userid = g_strdup(g_get_user_name()) ;
 
-  log->nodeid = g_malloc0(MAXHOSTNAMELEN + 2) ;		    /* + 2 for safety, interface not clear. */
+  log->nodeid = g_malloc0(MAXHOSTNAMELEN + 2) ;    /* + 2 for safety, interface not clear. */
   if (gethostname(log->nodeid, (MAXHOSTNAMELEN + 1)) == -1)
     {
       zMapLogCritical("%s", "Cannot retrieve hostname for this computer.") ;
@@ -627,33 +627,33 @@ static gboolean startLogging(ZMapLog log, GError **error)
     {
       /* If logging inactive then remove our inactive handler. */
       if (log->inactive_handler.cb_id)
-	{
-	  g_log_remove_handler(ZMAPLOG_DOMAIN, log->inactive_handler.cb_id) ;
-	  log->inactive_handler.cb_id = 0 ;
-	}
+        {
+          g_log_remove_handler(ZMAPLOG_DOMAIN, log->inactive_handler.cb_id) ;
+          log->inactive_handler.cb_id = 0 ;
+        }
 
       /* Only need to do something if we are logging to a file. */
       if (log->log_to_file)
-	{
+        {
           if (openLogFile(log, &g_error))
-	    {
-	      log->active_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
-							    G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-							    | G_LOG_FLAG_RECURSION,
-							    log->active_handler.log_cb,
-							    (gpointer)log) ;
+            {
+              log->active_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
+                                                            G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
+                                                            | G_LOG_FLAG_RECURSION,
+                                                            log->active_handler.log_cb,
+                                                            (gpointer)log) ;
 
-	      /* try to get the glib critical errors handled */
-	      if (log->catch_glib)
-		g_log_set_default_handler(glibLogger, (gpointer) log);
-	      result = TRUE ;
-	    }
-	}
+              /* try to get the glib critical errors handled */
+              if (log->catch_glib)
+                g_log_set_default_handler(glibLogger, (gpointer) log);
+              result = TRUE ;
+            }
+        }
       else
-	result = TRUE ;
+        result = TRUE ;
 
       if (result)
-	log->logging = TRUE ;
+        log->logging = TRUE ;
     }
 
   if (g_error)
@@ -671,51 +671,51 @@ static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers)
     {
       /* If we are logging to a file then remove our handler routine and close the file. */
       if (log->log_to_file)
-	{
-	  g_log_remove_handler(ZMAPLOG_DOMAIN, log->active_handler.cb_id) ;
-	  log->active_handler.cb_id = 0 ;
+        {
+          g_log_remove_handler(ZMAPLOG_DOMAIN, log->active_handler.cb_id) ;
+          log->active_handler.cb_id = 0 ;
 
-	  /* try to get the glib critical errors handled */
-	  if (log->catch_glib)
-	    g_log_set_default_handler(g_log_default_handler, NULL);
-
-	  /* Need to close the log file here. */
-	  if (!closeLogFile(log))
-	    result = FALSE ;
-	}
+          /* try to get the glib critical errors handled */
+          if (log->catch_glib)
+            g_log_set_default_handler(g_log_default_handler, NULL);
+  
+          /* Need to close the log file here. */
+          if (!closeLogFile(log))
+            result = FALSE ;
+        }
 
 
       /* If we just want to suspend logging then we install our own null handler which does
        * nothing, hence logging stops. If we want to stop all our logging then we do not install
        * our null handler. */
       if (!remove_all_handlers)
-	{
-	  log->inactive_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
-							  G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-							  | G_LOG_FLAG_RECURSION,
-							  log->inactive_handler.log_cb,
-							  (gpointer)log) ;
+        {
+          log->inactive_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
+                                                          G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
+                                                        | G_LOG_FLAG_RECURSION,
+                                                        log->inactive_handler.log_cb,
+                                                        (gpointer)log) ;
 
-	  /* try to get the glib critical errors handled */
-	  if (log->catch_glib)
-	    g_log_set_default_handler(g_log_default_handler, NULL);
-	}
+          /* try to get the glib critical errors handled */
+          if (log->catch_glib)
+            g_log_set_default_handler(g_log_default_handler, NULL);
+        }
 
       if (result)
-	log->logging = FALSE ;
+        log->logging = FALSE ;
     }
   else
     {
       if (remove_all_handlers && log->inactive_handler.cb_id)
-	{
-	  g_log_remove_handler(ZMAPLOG_DOMAIN, log->inactive_handler.cb_id) ;
-	  log->inactive_handler.cb_id = 0 ;
-	  /* try to get the glib critical errors handled */
+        {
+          g_log_remove_handler(ZMAPLOG_DOMAIN, log->inactive_handler.cb_id) ;
+          log->inactive_handler.cb_id = 0 ;
+          /* try to get the glib critical errors handled */
 
-	  if (log->catch_glib)
-	    g_log_set_default_handler(g_log_default_handler, NULL);
-
-	}
+          if (log->catch_glib)
+            g_log_set_default_handler(g_log_default_handler, NULL);
+        
+        }
     }
 
   return result ;
@@ -740,21 +740,21 @@ static gboolean configureLog(ZMapLog log, GError **error)
       log->logging = !(log->logging) ;
 
       if (log->logging)
-	{
-
-	  result = stopLogging(log, FALSE) ;
-	}
+        {
+    
+          result = stopLogging(log, FALSE) ;
+        }
       else
-	{
-	  /* If we are logging to a file then we will log via our own routine,
-	   * otherwise by default glib will log to stdout/err. */
-	  if (log->log_to_file)
-	    {
-	      log->active_handler.log_cb = fileLogger ;
-	    }
+        {
+          /* If we are logging to a file then we will log via our own routine,
+         * otherwise by default glib will log to stdout/err. */
+          if (log->log_to_file)
+            {
+              log->active_handler.log_cb = fileLogger ;
+            }
 
           result = startLogging(log, &g_error) ;
-	}
+        }
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     }
@@ -774,7 +774,7 @@ static gboolean openLogFile(ZMapLog log, GError **error)
 
   /* Must be opened for appending..... */
   if ((log->active_handler.logfile = g_io_channel_new_file(log->active_handler.log_path,
-							   "a", &g_error)))
+   "a", &g_error)))
     {
       result = TRUE ;
     }
@@ -841,7 +841,7 @@ static void writeStartOrStopMessage(int start)
  * output. When we want to restart logging we simply restore the fileLogger() routine as the
  * logging routine. */
 static void nullLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
-		       gpointer user_data)
+       gpointer user_data)
 {
 
 
@@ -854,23 +854,24 @@ static void nullLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
  * does not lock this routine...STUPID...they should have an option to do this if they don't
  * like having it on all the time. */
 static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message_in,
-		       gpointer user_data)
+                       gpointer user_data)
 {
   ZMapLog log = (ZMapLog)user_data ;
   GError *g_error = NULL ;
   gsize bytes_written = 0 ;
+  gchar *message = (gchar *)message_in ;
+  const gchar *bad_char_out = NULL ;
 
-  /* zMapAssert(log->logging) ; */
-  if (!log || !log->logging || !message_in) 
-    return ; 
 
-  /* Must make sure it's UTF8 or g_io_channel_write_chars will crash */
-  gchar *message = message_in;
-  gchar *bad_char = NULL;
+  zMapReturnIfFail((log && log->logging && message_in && *message_in)) ; 
 
-  while (!g_utf8_validate(message_in, -1, &bad_char))
+
+  /* Must make sure it's UTF8 or g_io_channel_write_chars will crash,
+   * for now just replace the bad character with a question mark */
+  while (!g_utf8_validate(message_in, -1, &bad_char_out))
     {
-      /* For now just replace the bad character with a question mark */
+      char *bad_char = (char *)bad_char_out ;
+
       *bad_char='?';
     }
 
@@ -885,7 +886,7 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
       log->active_handler.cb_id = 0 ;
 
       zMapLogCritical("Unable to log to file %s, logging to this file has been turned off.",
-		      log->active_handler.log_path) ;
+      log->active_handler.log_path) ;
     }
 
 
@@ -897,7 +898,7 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 
 
 static void glibLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
-		       gpointer user_data)
+       gpointer user_data)
 {
   log_G->active_handler.log_cb(log_domain,log_level,message,user_data);
   if (log_G->echo_glib)

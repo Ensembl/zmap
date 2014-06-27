@@ -55,7 +55,7 @@ typedef struct _ZMapMemoryBlockStruct
 
 typedef struct _ZMapMemoryHandleStruct
 {
-  GList *blocks ;					    /* list of ZMapMemoryBlock */
+  GList *blocks ;    /* list of ZMapMemoryBlock */
 } ZMapMemoryHandleStruct ;
 
 
@@ -119,7 +119,7 @@ ZMapMemoryHandle zMapMemoryHandleCreateOnHandle(ZMapMemoryHandle memory_handle)
 
   if (memory_handle)
     zMapMemoryHandleAdd(memory_handle,
-			new_handle, handleDestroy, new_handle) ;
+                        new_handle, handleDestroy, new_handle) ;
 
   return new_handle ;
 }
@@ -142,7 +142,7 @@ ZMapMemoryHandle zMapMemoryHandleCreateOnHandle(ZMapMemoryHandle memory_handle)
  * @return   <nothing>
  *  */
 void zMapMemoryHandleAdd(ZMapMemoryHandle memory_handle,
-			 gpointer memory, ZMapMemoryHandleFreeFunc memory_free_func, gpointer user_data)
+           gpointer memory, ZMapMemoryHandleFreeFunc memory_free_func, gpointer user_data)
 {
   ZMapMemoryBlock block ;
 

@@ -87,7 +87,7 @@ static void insert_after(GList *donor, GList *recipient) ;
 
 /* This routine removes all occurences of the given char from the target string,
  * this is done inplace so the returned string will be shorter.
- * 
+ *
  * This is not an efficient implementation, it would be done better by
  * keeping "to" and "from" pointers and simply moving sequentially through
  * the string skipping over the char to be removed and only moving the
@@ -103,18 +103,18 @@ char *zMap_g_remove_char(char *string, char ch)
   while (*cp)
     {
       if (*cp == ch)
-	{
-	  char *cq ;
+        {
+          char *cq ;
 
-	  cq = cp ;
-	  while (*cq)
-	    {
-	      *cq = *(cq + 1) ;
+          cq = cp ;
+          while (*cq)
+            {
+              *cq = *(cq + 1) ;
 
-	      cq++ ;
-	    }
-	  *cq = '\0' ;
-	}
+              cq++ ;
+            }
+          *cq = '\0' ;
+        }
 
       cp++ ;
     }
@@ -143,18 +143,18 @@ gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle)
       c2 = (gint)(guchar) TOLOWER (*needle);
 
       if (c1 == c2)
-	{
-	  if (!match_start)
-	    match_start = (gchar *)haystack ;
-	  haystack++ ;
-	  needle++ ;
-	}
+        {
+          if (!match_start)
+            match_start = (gchar *)haystack ;
+          haystack++ ;
+          needle++ ;
+        }
       else
-	{
-	  match_start = NULL ;
-	  needle = needle_start ;
-	  haystack++ ;
-	}
+        {
+          match_start = NULL ;
+          needle = needle_start ;
+          haystack++ ;
+        }
     }
 
   if ((*needle))
@@ -235,10 +235,10 @@ gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user
       GList *next = list->next ;
 
       if (!((*func)(list->data, user_data)))
-	{
-	  status = FALSE ;
-	  break ;
-	}
+        {
+          status = FALSE ;
+          break ;
+        }
 
       list = next ;
     }
@@ -263,11 +263,11 @@ GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index)
       GList *list_element ;
 
       if ((list_element = g_list_find(list, user_data)))
-	{
-	  new_list = g_list_remove(new_list, user_data) ;
+        {
+          new_list = g_list_remove(new_list, user_data) ;
 
-	  new_list = g_list_insert(new_list, user_data, new_index) ;
-	}
+          new_list = g_list_insert(new_list, user_data, new_index) ;
+        }
     }
 
   return new_list ;
@@ -281,7 +281,7 @@ GList *zMap_g_list_append_unique(GList *list, gpointer data)
   for(l = list; l ; l = l->next)
     {
       if(l->data == data)	/* already there, nothing to do */
-	return list;
+        return list;
       last = l;
     }
 
@@ -302,8 +302,8 @@ GList *zMap_g_list_grep(GList **list_inout, gpointer data, GCompareFunc func)
   GList *loop_list, *tmp, *inout;
 
   /* zMapAssert(list_inout); */
-  if (!list_inout) 
-    return matched ; 
+  if (!list_inout)
+    return matched ;
 
   loop_list = inout = *list_inout;
 
@@ -361,29 +361,29 @@ GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point, 
       && (point >= 0 && point <= (list_length = g_list_length(recipient))))
     {
       if (copy_donor)
-	donor = g_list_copy(donor) ;
+        donor = g_list_copy(donor) ;
 
       if (!recipient)
-	{
-	  recipient = donor ;
-	}
+        {
+          recipient = donor ;
+        }
       else if (!donor)
-	{
-	  ;						    /* nothing to do. */
-	}
+        {
+          ;						    /* nothing to do. */
+        }
       else if (point == 0)
-	{
-	  recipient = g_list_concat(donor, recipient) ;
-	}
+        {
+          recipient = g_list_concat(donor, recipient) ;
+        }
       else if (point == list_length)
-	{
-	  recipient = g_list_concat(recipient, donor) ;
-	}
+        {
+          recipient = g_list_concat(recipient, donor) ;
+        }
       else
-	{
-	  recipient = g_list_nth(recipient, point) ;
-	  insert_after(donor, recipient) ;
-	}
+        {
+          recipient = g_list_nth(recipient, point) ;
+          insert_after(donor, recipient) ;
+        }
 
       complete = g_list_first(recipient);
     }
@@ -477,7 +477,7 @@ GList *zMap_g_list_merge(GList *a, GList *b)
   for(;b;b = b->next)
     {
       if(!g_list_find(a,b->data))
-	a = g_list_prepend(a,b->data);
+        a = g_list_prepend(a,b->data);
     }
   return(a);
 }
@@ -504,8 +504,8 @@ GList *zMap_g_list_merge(GList *a, GList *b)
 void zMap_g_list_quark_print(GList *quark_list, char *list_name, gboolean new_line)
 {
   /* zMapAssert(quark_list) ;*/
-  if (!quark_list) 
-    return ; 
+  if (!quark_list)
+    return ;
 
   if (list_name)
     printf("\"%s\":%s", list_name, (new_line ? "\n" : "\t")) ;
@@ -531,20 +531,19 @@ gchar *zMap_g_list_quark_to_string(GList *l, char *delimiter)
       const gchar *q ;
 
       if (!delimiter)
-	delimiter = " ; " ;
+        delimiter = " ; " ;
 
       quark_str = g_string_new(g_quark_to_string(GPOINTER_TO_UINT(l->data))) ;
       l = l->next ;
 
       while(l)
-	{
-	  q = g_quark_to_string(GPOINTER_TO_UINT(l->data)) ;
+        {
+          q = g_quark_to_string(GPOINTER_TO_UINT(l->data)) ;
 
-	  g_string_append_printf(quark_str, "%s%s",
-				 delimiter,
-				 g_quark_to_string(GPOINTER_TO_UINT(l->data))) ;
-	  l = l->next ;
-	}
+          g_string_append_printf(quark_str, "%s%s", delimiter,
+                                 g_quark_to_string(GPOINTER_TO_UINT(l->data))) ;
+          l = l->next ;
+        }
 
       str = g_string_free(quark_str, FALSE) ;
     }
@@ -558,8 +557,8 @@ GList *zMap_g_list_find_quark(GList *list, GQuark str_quark)
   GList *result = NULL ;
 
   /* zMapAssert(list && str_quark) ; */
-  if (!list || !str_quark) 
-    return result ; 
+  if (!list || !str_quark)
+    return result ;
 
   result = g_list_find_custom(list, GINT_TO_POINTER(str_quark), caseCompareFunc) ;
 
@@ -578,10 +577,10 @@ GList *zMap_g_list_remove_quarks(GList *quark_target_list, GList *quarks)
       quark_list = quark_target_list ;
 
       while(quarks)
-	{
-	  quark_list = g_list_remove(quark_list, quarks->data) ;
-	  quarks = quarks->next ;
-	}
+        {
+          quark_list = g_list_remove(quark_list, quarks->data) ;
+          quarks = quarks->next ;
+        }
     }
 
   return quark_list ;
@@ -607,8 +606,8 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
   gpointer entry = NULL ;
 
   /* zMapAssert(hash_table && nth >= 0) ; */
-  if (!hash_table || nth < 0 ) 
-    return entry ; 
+  if (!hash_table || nth < 0 )
+    return entry ;
 
   if (g_hash_table_size(hash_table) > nth)
     entry = g_hash_table_find(hash_table, getNthHashElement, &nth) ;
@@ -738,13 +737,13 @@ void zMap_g_hashlist_destroy(GHashTable *hashlist)
 
 static void get_key_value(gpointer key, gpointer value, gpointer user)
 {
-      ZMapGHashIter data;
-      GList **list = (GList **) user;
+  ZMapGHashIter data;
+  GList **list = (GList **) user;
 
-      data = g_new0(ZMapGHashIterStruct,1);
-      data->key = key;
-      data->value = value;
-      *list = g_list_prepend(*list,data); // faster than append
+  data = g_new0(ZMapGHashIterStruct,1);
+  data->key = key;
+  data->value = value;
+  *list = g_list_prepend(*list,data); // faster than append
 }
 
 void  zMap_g_hash_table_iter_init(GList **iter, GHashTable *h)
@@ -1025,8 +1024,8 @@ GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string)
   GQuark quark = 0 ;
 
   /* zMapAssert(quark_set && string) ;*/
-  if (!quark_set || !string) 
-    return quark ; 
+  if (!quark_set || !string)
+    return quark ;
 
   quark = GPOINTER_TO_UINT(g_hash_table_lookup(quark_set->g_quark_ht, string)) ;
 
@@ -1047,9 +1046,9 @@ GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string)
   GQuark quark = 0 ;
 
   /* May be too draconian to insist on *string...just remove if so. */
-  /* zMapAssert(quark_set && string && *string) ;*/ 
-  if (!quark_set || !string || !*string) 
-    return quark ; 
+  /* zMapAssert(quark_set && string && *string) ;*/
+  if (!quark_set || !string || !*string)
+    return quark ;
 
   if (!(quark = (gulong) g_hash_table_lookup(quark_set->g_quark_ht, string)))
     quark = g_quark_new(quark_set, g_strdup (string));
@@ -1070,8 +1069,8 @@ gchar *zMap_g_quark_to_string(ZMapQuarkSet quark_set, GQuark quark)
   gchar* result = NULL;
 
   /* zMapAssert(quark_set && quark) ; */
-  if (!quark_set || !quark) 
-    return result ; 
+  if (!quark_set || !quark)
+    return result ;
 
   if (quark > 0 && quark <= quark_set->g_quark_seq_id)
     result = quark_set->g_quarks[quark - 1] ;
@@ -1116,9 +1115,9 @@ void zMap_g_quark_destroy_set(ZMapQuarkSet quark_set)
 /* donor should already not be part of recipient */
 static void insert_after(GList *donor, GList *recipient)
 {
-  /* zMapAssert(recipient && recipient->next && donor);*/ 
-  if (!recipient || !recipient->next || !donor ) 
-    return ; 
+  /* zMapAssert(recipient && recipient->next && donor);*/
+  if (!recipient || !recipient->next || !donor )
+    return ;
 
   /*
    * This next bit of code is confusing so here is a desciption...

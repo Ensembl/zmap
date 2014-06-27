@@ -3020,7 +3020,7 @@ static XRemoteCmdLineArgs process_command_line_args(int argc, char *argv[])
   arg_context->argc = argc ;
   arg_context->argv = argv ;
 
-  arg_context->sequence = XREMOTEARG_DEFAULT_SEQUENCE ;
+  arg_context->sequence = "" ;
 
 
   if (!makeOptionContext(arg_context))

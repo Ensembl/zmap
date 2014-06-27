@@ -32,7 +32,7 @@
 
 #include <ZMap/zmap.h>
 
-#include <string.h>		/* memset */
+#include <string.h>/* memset */
 #include <glib.h>
 
 #include <zmapConfigIni_P.h>
@@ -49,31 +49,31 @@
 
 
 static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
-					  char * stanza_name,
-					  char * key_name,
-					  GValue *value,
-					  GType type,
-					  gboolean merge_files);
+                                          char * stanza_name,
+                                          char * key_name,
+                                          GValue *value,
+                                          GType type,
+                                          gboolean merge_files);
 static gboolean get_merged_key_value(ZMapConfigIni config,
-				     char * stanza_name,
-				     char * key_name,
-				     GValue *value,
-				     GType type);
+                                     char * stanza_name,
+                                     char * key_name,
+                                     GValue *value,
+                                     GType type);
 static gboolean get_value(GKeyFile *key_file,
-			  char *stanza_name,
-			  char *key_name,
-			  GValue *value,
-			  GType type,
-			  gboolean allow_overwrite,
-			  gboolean clear_if_not_exist);
+                          char *stanza_name,
+                          char *key_name,
+                          GValue *value,
+                          GType type,
+                          gboolean allow_overwrite,
+                          gboolean clear_if_not_exist);
 
 
 
 gboolean zMapConfigIniGetUserValue(ZMapConfigIni config,
-				   char * stanza_name,
-				   char * key_name,
-				   GValue **value_out,
-				   GType type)
+                                   char * stanza_name,
+                                   char * key_name,
+                                   GValue **value_out,
+                                   GType type)
 {
   gboolean success = FALSE;
   GValue *value = NULL;
@@ -84,24 +84,24 @@ gboolean zMapConfigIniGetUserValue(ZMapConfigIni config,
     {
       value   = g_value_init(value, type);
       success = zmapConfigIniGetValueFull(config, stanza_name, key_name,
-					  value, type, FALSE);
+                                  value, type, FALSE);
       if(success)
-	*value_out = value;
+        *value_out = value;
       else
-	{
-	  g_value_unset(value);
-	  g_free(value);
-	}
+        {
+          g_value_unset(value);
+          g_free(value);
+        }
     }
 
   return success;
 }
 
 gboolean zMapConfigIniGetValue(ZMapConfigIni config,
-			       char * stanza_name,
-			       char * key_name,
-			       GValue **value_out,
-			       GType type)
+       char * stanza_name,
+       char * key_name,
+       GValue **value_out,
+       GType type)
 {
   gboolean success = FALSE;
   GValue *value = NULL;
@@ -111,14 +111,14 @@ gboolean zMapConfigIniGetValue(ZMapConfigIni config,
     {
       value   = g_value_init(value, type);
       success = zmapConfigIniGetValueFull(config, stanza_name, key_name,
-					  value, type, TRUE);
+                                          value, type, TRUE);
       if(success)
-	*value_out = value;
+        *value_out = value;
       else
-	{
-	  g_value_unset(value);
-	  g_free(value);
-	}
+        {
+          g_value_unset(value);
+          g_free(value);
+        }
     }
 
   return success;
@@ -126,9 +126,9 @@ gboolean zMapConfigIniGetValue(ZMapConfigIni config,
 
 
 void zMapConfigIniSetValue(ZMapConfigIni config,
-			   char *stanza_name,
-			   char *key_name,
-			   GValue *value)
+   char *stanza_name,
+   char *key_name,
+   GValue *value)
 {
   GKeyFile *user_key_file = NULL;
   zMapReturnIfFail(config) ; 
@@ -139,38 +139,38 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
       type = G_VALUE_TYPE(value);
 
       switch(type)
-	{
-	case G_TYPE_STRING:
-	  {
-	    char *string_value = NULL;
-	    string_value = (char *)g_value_get_string(value);
-	    g_key_file_set_string(user_key_file, stanza_name, key_name, string_value);
-	  }
-	  break;
-	case G_TYPE_INT:
-	  {
-	    int int_value = 0;
-	    int_value = g_value_get_int(value);
-	    g_key_file_set_integer(user_key_file, stanza_name, key_name, int_value);
-	  }
-	  break;
-	case G_TYPE_BOOLEAN:
-	  {
-	    gboolean bool_value = FALSE;
-	    bool_value = g_value_get_boolean(value);
-	    g_key_file_set_boolean(user_key_file, stanza_name, key_name, bool_value);
-	  }
-	  break;
-	case G_TYPE_DOUBLE:
-	  {
-	    double double_value = FALSE;
-	    double_value = g_value_get_double(value);
-	    g_key_file_set_double(user_key_file, stanza_name, key_name, double_value);
-	  }
-	  break;
-	default:
-	  break;
-	}
+        {
+        case G_TYPE_STRING:
+          {
+            char *string_value = NULL;
+            string_value = (char *)g_value_get_string(value);
+            g_key_file_set_string(user_key_file, stanza_name, key_name, string_value);
+          }
+          break;
+        case G_TYPE_INT:
+          {
+            int int_value = 0;
+            int_value = g_value_get_int(value);
+            g_key_file_set_integer(user_key_file, stanza_name, key_name, int_value);
+          }
+          break;
+        case G_TYPE_BOOLEAN:
+          {
+            gboolean bool_value = FALSE;
+            bool_value = g_value_get_boolean(value);
+            g_key_file_set_boolean(user_key_file, stanza_name, key_name, bool_value);
+          }
+          break;
+        case G_TYPE_DOUBLE:
+          {
+            double double_value = FALSE;
+            double_value = g_value_get_double(value);
+            g_key_file_set_double(user_key_file, stanza_name, key_name, double_value);
+          }
+          break;
+        default:
+          break;
+        }
     }
 
   return ;
@@ -182,11 +182,11 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
 
 
 static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
-					  char * stanza_name,
-					  char * key_name,
-					  GValue *value,
-					  GType type,
-					  gboolean merge_files)
+  char * stanza_name,
+  char * key_name,
+  GValue *value,
+  GType type,
+  gboolean merge_files)
 {
   gboolean success = FALSE;
 
@@ -213,10 +213,10 @@ static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
    expense of having multiple GKeyFile instances around */
 
 static gboolean get_merged_key_value(ZMapConfigIni config,
-				     char * stanza_name,
-				     char * key_name,
-				     GValue *value,
-				     GType type)
+     char * stanza_name,
+     char * key_name,
+     GValue *value,
+     GType type)
 {
   GKeyFile *files[FILE_COUNT], *important_files[IMPORTANT_COUNT];
   gboolean key_found = FALSE;
@@ -233,16 +233,16 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
       important_files[0] = config->zmap_key_file;
 
       for(i = 0; key_found == FALSE && i < IMPORTANT_COUNT; i++)
-	{
-	  if(important_files[i])
-	    {
-	      if(get_value(important_files[i], stanza_name, key_name, value, type, TRUE, FALSE))
-		key_found = TRUE;
-	    }
-	}
-
+        {
+          if(important_files[i])
+            {
+              if(get_value(important_files[i], stanza_name, key_name, value, type, TRUE, FALSE))
+        key_found = TRUE;
+            }
+        }
+        
       if(important_key)
-	g_free(important_key);
+        g_free(important_key);
     }
 
   if(key_found == FALSE)
@@ -254,25 +254,25 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
       files[4] = config->sys_key_file;
 
       for(i = 0; key_found == FALSE && i < FILE_COUNT; i++)
-	{
-	  if(files[i])
-	    {
-	      if(get_value(files[i], stanza_name, key_name, value, type, TRUE, FALSE))
-		key_found = TRUE;
-	    }
-	}
+        {
+          if(files[i])
+            {
+              if(get_value(files[i], stanza_name, key_name, value, type, TRUE, FALSE))
+                key_found = TRUE;
+            }
+        }
     }
 
   return key_found;
 }
 
 static gboolean get_value(GKeyFile *key_file,
-			  char *stanza_name,
-			  char *key_name,
-			  GValue *value,
-			  GType type,
-			  gboolean allow_overwrite,
-			  gboolean clear_if_not_exist)
+                          char *stanza_name,
+                          char *key_name,
+                          GValue *value,
+                          GType type,
+                          gboolean allow_overwrite,
+                          gboolean clear_if_not_exist)
 {
   char *tmp_string = NULL, **tmp_vector = NULL;
   int tmp_integer;
@@ -287,122 +287,122 @@ static gboolean get_value(GKeyFile *key_file,
   if(key_file)
     {
       switch(type)
-	{
-	case G_TYPE_INT:
-	  tmp_integer = g_key_file_get_integer (key_file,
-						stanza_name,
-						key_name,
-						&error);
-	  break;
-	case G_TYPE_DOUBLE:
-	  tmp_double = g_key_file_get_double (key_file,
-					      stanza_name,
-					      key_name,
-					      &error);
-        if(error && error->code == G_KEY_FILE_ERROR_INVALID_VALUE)
         {
-            // there is a bug in glib that reports an error on -ve values
-            // although the data gets through
-            g_error_free(error);
-            error = NULL;
+        case G_TYPE_INT:
+          tmp_integer = g_key_file_get_integer (key_file,
+        stanza_name,
+        key_name,
+        &error);
+          break;
+        case G_TYPE_DOUBLE:
+          tmp_double = g_key_file_get_double (key_file,
+              stanza_name,
+              key_name,
+              &error);
+                if(error && error->code == G_KEY_FILE_ERROR_INVALID_VALUE)
+                {
+                    // there is a bug in glib that reports an error on -ve values
+                    // although the data gets through
+                    g_error_free(error);
+                    error = NULL;
+                }
+          break;
+        case G_TYPE_BOOLEAN:
+          tmp_bool = g_key_file_get_boolean(key_file,
+            stanza_name,
+            key_name,
+            &error);
+          break;
+        case G_TYPE_POINTER:
+          {
+            gsize vector_length ;
+        
+            tmp_vector = g_key_file_get_string_list(key_file,
+            stanza_name,
+            key_name,
+            &vector_length,
+            &error);
+          }
+          break;
+        
+          /* WOW, CAN THIS POSSIBLY BE SAFE...???? */
+        case G_TYPE_STRING:
+        default:
+          tmp_string = g_key_file_get_value (key_file,
+             stanza_name,
+             key_name,
+             &error);
+          break;
         }
-	  break;
-	case G_TYPE_BOOLEAN:
-	  tmp_bool = g_key_file_get_boolean(key_file,
-					    stanza_name,
-					    key_name,
-					    &error);
-	  break;
-	case G_TYPE_POINTER:
-	  {
-	    gsize vector_length ;
-
-	    tmp_vector = g_key_file_get_string_list(key_file,
-						    stanza_name,
-						    key_name,
-						    &vector_length,
-						    &error);
-	  }
-	  break;
-
-	  /* WOW, CAN THIS POSSIBLY BE SAFE...???? */
-	case G_TYPE_STRING:
-	default:
-	  tmp_string = g_key_file_get_value (key_file,
-					     stanza_name,
-					     key_name,
-					     &error);
-	  break;
-	}
     }
 
   if(error)
     {
       /* handle error correctly */
       switch(error->code)
-	{
-	case G_KEY_FILE_ERROR_KEY_NOT_FOUND: /* a requested key was not found  */
-	case G_KEY_FILE_ERROR_GROUP_NOT_FOUND: /* a requested group was not found  */
-	  {
-	    /* Is this really an error for us? */
-	    if(clear_if_not_exist)
-	      {
-		g_value_reset(value);
-	      }
-	  }
-	  break;
-	case G_KEY_FILE_ERROR_INVALID_VALUE: /* a value could not be parsed  */
-	  {
-	    char *try_again = NULL;
+        {
+        case G_KEY_FILE_ERROR_KEY_NOT_FOUND: /* a requested key was not found  */
+        case G_KEY_FILE_ERROR_GROUP_NOT_FOUND: /* a requested group was not found  */
+          {
+            /* Is this really an error for us? */
+            if(clear_if_not_exist)
+              {
+        g_value_reset(value);
+              }
+          }
+          break;
+        case G_KEY_FILE_ERROR_INVALID_VALUE: /* a value could not be parsed  */
+          {
+            char *try_again = NULL;
 
-	    /* This is reasonably serious, type didn't match in
-	     * the get_string/integer/double */
-	    if(type != G_TYPE_STRING)
-	      try_again = g_key_file_get_value(key_file, stanza_name, key_name, NULL);
-
-	    /* It would be nice to have line numbers here,
-	     * but group and key should be enough I guess. */
+            /* This is reasonably serious, type didn't match in
+             * the get_string/integer/double */
+            if(type != G_TYPE_STRING)
+              try_again = g_key_file_get_value(key_file, stanza_name, key_name, NULL);
+        
+            /* It would be nice to have line numbers here,
+             * but group and key should be enough I guess. */
 #ifdef WITH_LOGGING
-	    zMapLogWarning("Failed reading/converting value '%s' for key '%s' in stanza '%s'. Expected type <>",
-			   (try_again == NULL ? tmp_string : try_again),
-			   key_name, stanza_name);
+            zMapLogWarning("Failed reading/converting value '%s' for key '%s' in stanza '%s'. Expected type <>",
+           (try_again == NULL ? tmp_string : try_again),
+           key_name, stanza_name);
 #endif /* WITH_LOGGING */
-	    if(try_again)
-	      g_free(try_again);
-	  }
-	  break;
-	case G_KEY_FILE_ERROR_UNKNOWN_ENCODING:	/* the text being parsed was in an unknown encoding  */
-	case G_KEY_FILE_ERROR_PARSE: /* document was ill-formed  */
-	case G_KEY_FILE_ERROR_NOT_FOUND: /* the file was not found  */
-	  /* We really shouldn't be getting these here.  */
-	  break;
-	default:
-	  break;
-	}
+            if(try_again)
+              g_free(try_again);
+          }
+          break;
+        case G_KEY_FILE_ERROR_UNKNOWN_ENCODING:/* the text being parsed was in an unknown encoding  */
+        case G_KEY_FILE_ERROR_PARSE: /* document was ill-formed  */
+        case G_KEY_FILE_ERROR_NOT_FOUND: /* the file was not found  */
+          /* We really shouldn't be getting these here.  */
+          break;
+        default:
+          break;
+        }
     }
   else if(allow_overwrite)
     {
       g_value_reset(value);
 
       switch(type)
-	{
-	case G_TYPE_INT:
-	  g_value_set_int(value, tmp_integer);
-	  break;
-	case G_TYPE_DOUBLE:
-	  g_value_set_double(value, tmp_double);
-	  break;
-	case G_TYPE_BOOLEAN:
-	  g_value_set_boolean(value, tmp_bool);
-	  break;
-	case G_TYPE_POINTER:
-	  g_value_set_pointer(value, tmp_vector);
-	  break;
-	case G_TYPE_STRING:
-	default:
-	  g_value_set_string(value, tmp_string);
-	  break;
-	}
+        {
+        case G_TYPE_INT:
+          g_value_set_int(value, tmp_integer);
+          break;
+        case G_TYPE_DOUBLE:
+          g_value_set_double(value, tmp_double);
+          break;
+        case G_TYPE_BOOLEAN:
+          g_value_set_boolean(value, tmp_bool);
+          break;
+        case G_TYPE_POINTER:
+          g_value_set_pointer(value, tmp_vector);
+          break;
+        case G_TYPE_STRING:
+        default:
+          g_value_set_string(value, tmp_string);
+          break;
+        }
 
       value_set = TRUE;
     }

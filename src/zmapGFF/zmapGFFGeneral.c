@@ -537,7 +537,7 @@ static gboolean removeTranscriptFeature(gpointer key, gpointer value, gpointer u
  * Optionally set mappings that are keys from the GFF source to feature set and style names.
  */
 void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
-			       GHashTable *source_2_feature_set, GHashTable *source_2_sourcedata)
+       GHashTable *source_2_feature_set, GHashTable *source_2_sourcedata)
 {
   zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
@@ -556,8 +556,8 @@ void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
       set_data->feature_set_text = g_strdup_printf("Locus IDs") ;
 
       g_hash_table_insert(parser->source_2_feature_set,
-			  GINT_TO_POINTER(parser->locus_set_id),
-			  set_data) ;
+                          GINT_TO_POINTER(parser->locus_set_id),
+                          set_data) ;
 
 
       source_data = g_new0(ZMapFeatureSourceStruct, 1) ;

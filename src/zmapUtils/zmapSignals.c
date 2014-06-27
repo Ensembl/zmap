@@ -68,7 +68,11 @@ void zMapSignalHandler(int sig_no)
   /* ensure we don't get back in here. */
   /* If we return rather than exit, we'll also produce a core file. */
   signal(sig_no, SIG_DFL);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   pid_output = g_strdup_printf("(ZMAP_PID = %ld)", getpid() ) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  pid_output = g_strdup_printf("(ZMAP_PID = %d)", getpid() ) ;
 
   switch(sig_no)
     {

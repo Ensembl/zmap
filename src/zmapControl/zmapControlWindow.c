@@ -43,15 +43,6 @@ static void setTooltips(ZMap zmap) ;
 static void makeStatusTooltips(ZMap zmap) ;
 static GtkWidget *makeStatusPanel(ZMap zmap) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
-
-#ifdef MAXIMIZE_ON_MAP_EVENT
-/*! \todo gb10: I'm not sure if we need to maximise on map-event. I've 
- * removed the code for now but left this here for reference in case we do
- * need it. I've added a call to maximise in zMapControlWindowCreate instead 
- * to fix RT340147 but not 100% sure if that's right. */
-gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_data) ;
-#endif 
-
 static gboolean rotateTextCB(gpointer user_data) ;
 
 
@@ -59,8 +50,6 @@ static gboolean rotateTextCB(gpointer user_data) ;
 /* 
  *                  Globals
  */
-
-static gboolean zmap_shrink_G = FALSE;
 
 
 
@@ -89,23 +78,14 @@ gboolean zmapControlWindowCreate(ZMap zmap)
 
   /* allow shrink for charlie'ss RT 215415, ref to GTK help: it says 'don't allow shrink' */
   if (zMapCmdLineArgsValue(ZMAPARG_SHRINK, &shrink_arg))
-    zmap_shrink_G = shrink_arg.b ;
-  gtk_window_set_policy(GTK_WINDOW(toplevel), zmap_shrink_G, TRUE, FALSE ) ;
-
-#ifdef MAXIMIZE_ON_MAP_EVENT
-  /* We can leave width to default sensibly but height does not because zmap is in a scrolled
-   * window, we try to maximise it to the screen depth but have to do this after window is
-   * mapped. */
-  zmap->map_handler = g_signal_connect(G_OBJECT(toplevel), "map-event",
-				       G_CALLBACK(myWindowMaximize), (gpointer)zmap) ;
-#endif 
+    zmap->shrinkable = shrink_arg.b ;
+  gtk_window_set_policy(GTK_WINDOW(toplevel), zmap->shrinkable, TRUE, FALSE ) ;
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
-		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)zmap) ;
+     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)zmap) ;
 
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
-
 
   zmap->menubar = menubar = zmapControlWindowMakeMenuBar(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
@@ -178,7 +158,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
 {
   char *status_text ;
   static int idle_handle = 0 ;
-  enum {ROTATION_DELAY = 500} ;				    /* delay in microseconds for each text move. */
+  enum {ROTATION_DELAY = 500} ;    /* delay in microseconds for each text move. */
   ZMapViewState view_state = ZMAPVIEW_INIT ;
   char *sources_loading = NULL, *sources_empty = NULL, *sources_failing = NULL ;
 
@@ -188,32 +168,32 @@ void zmapControlWindowSetStatus(ZMap zmap)
     {
     case ZMAP_DYING:
       {
-	status_text = g_strdup("ZMap closing.....") ;
-	break ;
+        status_text = g_strdup("ZMap closing.....") ;
+        break ;
       }
     case ZMAP_VIEWS:
       {
-	ZMapView view ;
-	ZMapWindow window ;
-	char *strand_txt ;
-	int start = 0, end = 0 ;
-	char *coord_txt = "" ;
-	char *tmp ;
+        ZMapView view ;
+        ZMapWindow window ;
+        char *strand_txt ;
+        int start = 0, end = 0 ;
+        char *coord_txt = "" ;
+        char *tmp ;
 
-	view = zMapViewGetView(zmap->focus_viewwindow) ;
-	window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+        view = zMapViewGetView(zmap->focus_viewwindow) ;
+        window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
-	view_state = zMapViewGetStatus(view) ;
+        view_state = zMapViewGetStatus(view) ;
 
-	/* Set strand. */
-	if (zMapViewGetRevCompStatus(view))
-	  strand_txt = " - " ;
-	else
-	  strand_txt = " + " ;
+        /* Set strand. */
+        if (zMapViewGetRevCompStatus(view))
+          strand_txt = " - " ;
+        else
+          strand_txt = " + " ;
         gtk_label_set_text(GTK_LABEL(zmap->status_revcomp), strand_txt) ;
 
 
-	/* Set displayed start/end. */
+        /* Set displayed start/end. */
         if (zmapWindowGetCurrentSpan(window, &start, &end))
           {
             coord_txt = g_strdup_printf(" %d  %d ", start, end) ;
@@ -221,17 +201,17 @@ void zmapControlWindowSetStatus(ZMap zmap)
             g_free(coord_txt) ;
           }
 
-	tmp = zMapViewGetLoadStatusStr(view, &sources_loading, &sources_empty, &sources_failing) ;
-	status_text = g_strdup_printf("%s.......", tmp) ;   /* Add spacing...better for rotating text. */
-	g_free(tmp) ;
+        tmp = zMapViewGetLoadStatusStr(view, &sources_loading, &sources_empty, &sources_failing) ;
+        status_text = g_strdup_printf("%s.......", tmp) ;   /* Add spacing...better for rotating text. */
+        g_free(tmp) ;
 
-	break ;
+        break ;
       }
     case ZMAP_INIT:
     default:
       {
-	status_text = g_strdup("No data.....") ;
-	break ;
+        status_text = g_strdup("No data.....") ;
+        break ;
       }
     }
 
@@ -241,69 +221,69 @@ void zmapControlWindowSetStatus(ZMap zmap)
       /* While we are loading we want the text to rotate but then we stop once
        * we've finished loading. */
       if (view_state == ZMAPVIEW_LOADED || view_state == ZMAPVIEW_LOADING || view_state == ZMAPVIEW_UPDATING)
-	{
-	  if (sources_loading || sources_failing)
-	    {
-	      GString *load_status_str ;
+        {
+          if (sources_loading || sources_failing)
+            {
+              GString *load_status_str ;
+        
+              load_status_str = g_string_new("Selected View\n\n") ;
+        
+              if (sources_loading)
+                g_string_append_printf(load_status_str, "Columns still loading:\n %s\n\n", sources_loading) ;
 
-	      load_status_str = g_string_new("Selected View\n\n") ;
+              if (sources_empty)
+                g_string_append_printf(load_status_str, "Columns empty:\n %s\n\n", sources_empty) ;
 
-	      if (sources_loading)
-		g_string_append_printf(load_status_str, "Columns still loading:\n %s\n\n", sources_loading) ;
+              if (sources_failing)
+                g_string_append_printf(load_status_str, "Columns failed to load:\n %s\n\n", sources_failing) ;
 
-	      if (sources_empty)
-		g_string_append_printf(load_status_str, "Columns empty:\n %s\n\n", sources_empty) ;
+              gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry,
+                                   load_status_str->str,
+                                   "") ;
 
-	      if (sources_failing)
-		g_string_append_printf(load_status_str, "Columns failed to load:\n %s\n\n", sources_failing) ;
-
-	      gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry,
-				   load_status_str->str,
-				   "") ;
-
-	      g_string_free(load_status_str, TRUE) ;
-	      g_free(sources_loading) ;
-	      g_free(sources_empty) ;
-	      g_free(sources_failing) ;
-	    }
-	  else
-	    {
-	      gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry, /* reset. */
-				   "Status of selected view",
-				   "") ;
-	    }
+              g_string_free(load_status_str, TRUE) ;
+              g_free(sources_loading) ;
+              g_free(sources_empty) ;
+              g_free(sources_failing) ;
+            }
+          else
+            {
+              gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry, /* reset. */
+                                   "Status of selected view",
+                                   "") ;
+            }
 
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (view_state == ZMAPVIEW_LOADED)
-	    {
-	      /* hack to stop the timeout...seems to be no way of removing it even though we have a handle..... */
-	      rotateTextCB(zmap) ;
-
-	      idle_handle = 0 ;
-	    }
-	  else if (view_state == ZMAPVIEW_LOADING || view_state == ZMAPVIEW_UPDATING)
-	    {
-	      /* Start the timeout if it's not already going. */
-	      if (!idle_handle)
-		idle_handle = g_timeout_add(ROTATION_DELAY, rotateTextCB, zmap->status_entry) ;
-	    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  /* Start the timeout if it's not already going. */
-	  if ((view_state == ZMAPVIEW_LOADING || view_state == ZMAPVIEW_UPDATING)
-	      && !idle_handle)
-	    {
-		idle_handle = g_timeout_add(ROTATION_DELAY, rotateTextCB, zmap) ;
-	    }
-	}
-      else
-	{
-	  gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry, /* reset. */
-			       "Status of selected view",
-			       "") ;
-	}
+          if (view_state == ZMAPVIEW_LOADED)
+            {
+              /* hack to stop the timeout...seems to be no way of removing it even though we have a handle..... */
+              rotateTextCB(zmap) ;
+        
+              idle_handle = 0 ;
+            }
+          else if (view_state == ZMAPVIEW_LOADING || view_state == ZMAPVIEW_UPDATING)
+            {
+              /* Start the timeout if it's not already going. */
+              if (!idle_handle)
+                idle_handle = g_timeout_add(ROTATION_DELAY, rotateTextCB, zmap->status_entry) ;
+            }
+        #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+        
+          /* Start the timeout if it's not already going. */
+          if ((view_state == ZMAPVIEW_LOADING || view_state == ZMAPVIEW_UPDATING)
+              && !idle_handle)
+            {
+                idle_handle = g_timeout_add(ROTATION_DELAY, rotateTextCB, zmap) ;
+            }
+        }
+              else
+        {
+          gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry, /* reset. */
+                               "Status of selected view",
+                               "") ;
+        }
 
 
     }
@@ -410,16 +390,16 @@ static void makeStatusTooltips(ZMap zmap)
   zMapReturnIfFail(zmap) ; 
 
   gtk_tooltips_set_tip(zmap->tooltips, gtk_widget_get_parent(zmap->status_revcomp),
-		       "\"+\" = forward complement,\n \"-\"  = reverse complement",
-		       "") ;
+                       "\"+\" = forward complement,\n \"-\"  = reverse complement",
+                       "") ;
 
   gtk_tooltips_set_tip(zmap->tooltips, gtk_widget_get_parent(zmap->status_coords),
-		       "start/end coords of displayed sequence",
-		       "") ;
+                       "start/end coords of displayed sequence",
+                       "") ;
 
   gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry,
-		       "Status of selected view",
-		       "") ;
+                       "Status of selected view",
+                       "") ;
 
   return ;
 }
@@ -449,16 +429,25 @@ static void makeStatusTooltips(ZMap zmap)
 void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
 {
   GtkWidget *toplevel = widget ;
-  GdkAtom geometry_atom, workarea_atom, max_atom_vert ;
+  GdkAtom geometry_atom, workarea_atom, max_atom_vert, max_atom_horiz ;
   GdkScreen *screen ;
+  int window_width_guess = 300, window_height_guess = 300 ;
 
+
+  screen = gtk_widget_get_screen(toplevel) ;
+
+  /* If user wants to be able to shrink the window we need to set an initial sensible
+   * guess, otherwise the window width is controlled by our button/info layout and
+   * comes out as a sensible size. */
+  if (zmap->shrinkable)
+    window_width_guess = (int)((float)(gdk_screen_get_width(screen)) * ZMAPWINDOW_HORIZ_PROP) ;
 
   /* Get the atoms for _NET_* properties. */
   geometry_atom = gdk_atom_intern("_NET_DESKTOP_GEOMETRY", FALSE) ;
   workarea_atom = gdk_atom_intern("_NET_WORKAREA", FALSE) ;
   max_atom_vert = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_VERT", FALSE) ;
+  max_atom_horiz = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_HORIZ", FALSE) ;
 
-  screen = gtk_widget_get_screen(toplevel) ;
 
   if (gdk_x11_screen_supports_net_wm_hint(screen, geometry_atom)
       && gdk_x11_screen_supports_net_wm_hint(screen, workarea_atom))
@@ -475,68 +464,67 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
        * come back in 64 bits.
        *
        *  */
-      int window_width_guess = 300, window_height_guess = 300 ;
       gboolean result ;
       GdkWindow *root_window ;
       gulong offset, length ;
-      gint pdelete = FALSE ;				    /* Never delete the property data. */
+      gint pdelete = FALSE ;    /* Never delete the property data. */
       GdkAtom actual_property_type ;
       gint actual_format, actual_length, field_size, num_fields ;
       guchar *data, *curr ;
       guint width, height, left, top, right, bottom ;
 
-      field_size = sizeof(glong) ;			    /* see comment above re. 32 vs. 64 bits. */
+      field_size = sizeof(glong) ;    /* see comment above re. 32 vs. 64 bits. */
 
       root_window = gdk_screen_get_root_window(screen) ;
 
       offset = 0 ;
       num_fields = 2 ;
-      length = num_fields * 4 ;				    /* Get two unsigned ints worth of data. */
+      length = num_fields * 4 ;    /* Get two unsigned ints worth of data. */
       actual_format = actual_length = 0 ;
       data = NULL ;
       result = gdk_property_get(root_window,
-				geometry_atom,
-				GDK_NONE,
-				offset,
-				length,
-				pdelete,
-				&actual_property_type,
-				&actual_format,
-				&actual_length,
-				&data) ;
+                                geometry_atom,
+                                GDK_NONE,
+                                offset,
+                                length,
+                                pdelete,
+                                &actual_property_type,
+                                &actual_format,
+                                &actual_length,
+                                &data) ;
 
       if (num_fields == actual_length/sizeof(glong))
-	{
-	  curr = data ;
-	  memcpy(&width, curr, field_size) ;
-	  memcpy(&height, (curr += field_size), field_size) ;
-	  g_free(data) ;
-	}
+        {
+          curr = data ;
+          memcpy(&width, curr, field_size) ;
+          memcpy(&height, (curr += field_size), field_size) ;
+          g_free(data) ;
+        }
 
       offset = 0 ;
       num_fields = 4 ;
-      length = num_fields * 4 ;				    /* Get four unsigned ints worth of data. */
+      length = num_fields * 4 ;    /* Get four unsigned ints worth of data. */
       actual_format = actual_length = 0 ;
       data = NULL ;
       result = gdk_property_get(root_window,
-				workarea_atom,
-				GDK_NONE,
-				offset,
-				length,
-				pdelete,
-				&actual_property_type,
-				&actual_format,
-				&actual_length,
-				&data) ;
+                                workarea_atom,
+                                GDK_NONE,
+                                offset,
+                                length,
+                                pdelete,
+                                &actual_property_type,
+                                &actual_format,
+                                &actual_length,
+                                &data) ;
 
       if (num_fields == actual_length/sizeof(glong))
-	{
-	  curr = data ;
-	  memcpy(&left, curr, field_size) ;
-	  memcpy(&top, (curr += field_size), field_size) ;
-	  memcpy(&right, (curr += field_size), field_size) ;
-	  memcpy(&bottom, (curr += field_size), field_size) ;
-	  g_free(data) ;
+        {
+          curr = data ;
+          memcpy(&left, curr, field_size) ;
+          memcpy(&top, (curr += field_size), field_size) ;
+          memcpy(&right, (curr += field_size), field_size) ;
+          memcpy(&bottom, (curr += field_size), field_size) ;
+          g_free(data) ;
 
           window_height_guess = bottom - top ;
         }
@@ -546,10 +534,22 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
        * to be. */
       gtk_window_resize(GTK_WINDOW(toplevel), window_width_guess, window_height_guess) ;
     }
-  else if (gdk_x11_screen_supports_net_wm_hint(screen, max_atom_vert))
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I've chopped this out because on the mac this doesn't work cleanly, the window is maximised
+   * in height _and_ width even though we didn't ask for width. I thought detecting when we were
+   * _NOT_ on the mac and doing this would be good but that's doesn't work because
+   * the user may run on a linux box and display on the mac. There is no good way that
+   * I've found to tell what machine the X server is running on.
+   * 
+   * I'm leaving this code in because we may go back to it sometime.
+   *  */
+
+  else if (g_ascii_strcasecmp("darwin", zMapUtilsSysGetSysName()) != 0
+           && gdk_x11_screen_supports_net_wm_hint(screen, max_atom_vert))
     {
       /* This code was taken from following the code through in gtk_maximise_window()
-       * to gdk_window_maximise() etc.
+       * to gdk_window_maximise() to gdk_wmspec_change_state().
        * We construct an event that the window manager will see that will cause it to correctly
        * maximise the window. */
       GtkWindow *gtk_window = GTK_WINDOW(toplevel) ;
@@ -559,9 +559,9 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
       XEvent xev ;
 
       if (gtk_window->frame)
-	window = gtk_window->frame;
+        window = gtk_window->frame;
       else
-	window = toplevel->window ;
+        window = toplevel->window ;
 
       xev.xclient.type = ClientMessage;
       xev.xclient.serial = 0;
@@ -580,42 +580,28 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
       xev.xclient.data.l[4] = 0;
 
       XSendEvent(GDK_WINDOW_XDISPLAY(window),
-		 GDK_WINDOW_XID(root_window),
-		 False,
-		 SubstructureRedirectMask | SubstructureNotifyMask,
-		 &xev) ;
+                 GDK_WINDOW_XID(root_window),
+                 False,
+                 SubstructureRedirectMask | SubstructureNotifyMask,
+                 &xev) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   else
     {
       /* OK, here we just guess some appropriate size, note that the window width is kind
        * of irrelevant, we just set it to be a bit less than it will finally be and the
        * widgets will resize it to the correct width. We don't use gtk_window_set_default_size()
        * because it doesn't seem to work. */
-      int window_width_guess = 300, window_height_guess ;
 
       window_height_guess = (int)((float)(gdk_screen_get_height(screen)) * ZMAPWINDOW_VERT_PROP) ;
 
       gtk_window_resize(GTK_WINDOW(toplevel), window_width_guess, window_height_guess) ;
     }
+
+
+  return ;
 }
-
-
-#ifdef MAXIMIZE_ON_MAP_EVENT
-gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_data)
-{
-  ZMap zmap = (ZMap)user_data ;
-
-  zmapControlWindowMaximize(widget, zmap);
-  
-  /* I think we need to disconnect this now otherwise we reset the window height every time we
-   * are re-mapped. */
-  g_signal_handler_disconnect(zmap->toplevel, zmap->map_handler) ;
-
-
-  return FALSE;
-}
-#endif
-
 
 
 /* Called at intervals and rotates the text in the entry widget given by user_data
@@ -626,14 +612,16 @@ gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_dat
  *  */
 static gboolean rotateTextCB(gpointer user_data)
 {
-  gboolean call_again = TRUE ;				    /* Keep calling us. */
+  gboolean call_again = TRUE ;    /* Keep calling us. */
   ZMap zmap = NULL ; 
+
   zMapReturnValIfFail(user_data, call_again) ; 
+
   zmap = (ZMap)user_data ;
 
   if (zmap->state == ZMAP_DYING)
     {
-      call_again = FALSE ;				    /* Stop calling us. */
+      call_again = FALSE ;    /* Stop calling us. */
     }
   else
     {
@@ -644,7 +632,7 @@ static gboolean rotateTextCB(gpointer user_data)
       char *entry_text ;
 
       if (!buffer)
-	buffer = g_string_sized_new(1000) ;
+        buffer = g_string_sized_new(1000) ;
 
       view = zMapViewGetView(zmap->focus_viewwindow) ;
 
@@ -662,7 +650,7 @@ static gboolean rotateTextCB(gpointer user_data)
             }
 
           if (view_state == ZMAPVIEW_LOADED)
-            call_again = FALSE ;				    /* Stop calling us. */
+            call_again = FALSE ;    /* Stop calling us. */
         }
     }
 

@@ -28,7 +28,7 @@
  *              a master thread.
  *
  * Exported functions: See zmapConn_P.h
- *              
+ *
  *-------------------------------------------------------------------
  */
 
@@ -71,7 +71,7 @@ void *zmapNewThread(void *thread_args)
   TIMESPEC timeout ;
   ZMapThreadRequest signalled_state ;
   ZMapThreadReturnCode slave_response =  ZMAPTHREAD_RETURNCODE_OK;
-  int call_clean = 1 ;   // call the cleanup function on exit?
+  int call_clean = 1 ;
 
 
   ZMAPTHREAD_DEBUG(thread, "%s", "main thread routine starting....") ;
@@ -126,192 +126,141 @@ void *zmapNewThread(void *thread_args)
       pthread_testcancel();
 
       if (signalled_state == ZMAPTHREAD_REQUEST_TIMED_OUT)
-	{
-	  continue ;
-	}
+        {
+          continue ;
+        }
       else if (signalled_state == ZMAPTHREAD_REQUEST_EXECUTE)
-	{
-	  void *reply ;
-	  char *slave_error = NULL ;
+        {
+          void *reply ;
+          char *slave_error = NULL ;
+
+          ZMAPTHREAD_DEBUG(thread, "%s", "calling server to service request....") ;
+
+          zMapPrintTimer(NULL, "In thread, calling handler function") ;
+
+          /* Call the registered slave handler function. */
+          slave_response = (*(thread->handler_func))(&(thread_cb->slave_data), request, &reply, &slave_error) ;
+          zMapPrintTimer(NULL, "In thread, returned from handler function") ;
+
+          ZMAPTHREAD_DEBUG(thread, "returned from server, response was %s....",
+                           zMapThreadReturnCode2ExactStr(slave_response)) ;
 
 
-	  ZMAPTHREAD_DEBUG(thread, "%s", "calling server to service request....") ;
+          /* The handling below is not now correct, if a call fails we need to kill the thread
+           * we can't cope with dangling threads....we will need to set the thread_died flag */
+          switch (slave_response)
+          {
+            case ZMAPTHREAD_RETURNCODE_OK:
+              {
+                ZMAPTHREAD_DEBUG(thread, "%s: %s", zMapThreadReturnCode2ExactStr(slave_response), "got all data....") ;
 
-	  zMapPrintTimer(NULL, "In thread, calling handler function") ;
+                /* Signal that we got some data. */
+                zmapVarSetValueWithData(&(thread->reply), ZMAPTHREAD_REPLY_GOTDATA, request) ;
+                request = NULL ;			    /* Reset, we don't free this data. */
+                break ;
+              }
+	           case ZMAPTHREAD_RETURNCODE_REQFAIL:
+	             {
+                char *error_msg ;
 
-	  /* Call the registered slave handler function. */
-	  slave_response = (*(thread->handler_func))(&(thread_cb->slave_data), request, &reply, &slave_error) ;
+                ZMAPTHREAD_DEBUG(thread, "%s", "request failed....") ;
 
+                error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
+                                            zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
 
+                /* Signal that we failed. */
+                zmapVarSetValueWithErrorAndData(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg, request) ;
 
-	  zMapPrintTimer(NULL, "In thread, returned from handler function") ;
+                request = NULL ;
 
-	  ZMAPTHREAD_DEBUG(thread, "returned from server, response was %s....",
-			   zMapThreadReturnCode2ExactStr(slave_response)) ;
+                break ;
+              }
+            case ZMAPTHREAD_RETURNCODE_TIMEDOUT:
+              {
+                char *error_msg ;
 
+                ZMAPTHREAD_DEBUG(thread, "%s", "request failed....") ;
 
-	  /* The handling below is not now correct, if a call fails we need to kill the thread
-	   * we can't cope with dangling threads....we will need to set the thread_died flag */
+                error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
+                                            zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
 
-	  switch (slave_response)
-	    {
-	    case ZMAPTHREAD_RETURNCODE_OK:
-	      {
-		ZMAPTHREAD_DEBUG(thread, "%s: %s", zMapThreadReturnCode2ExactStr(slave_response), "got all data....") ;
+                /* Signal that we failed. */
+                zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg) ;
 
-		/* Signal that we got some data. */
-		zmapVarSetValueWithData(&(thread->reply), ZMAPTHREAD_REPLY_GOTDATA, request) ;
+                break ;
+              }
+            case ZMAPTHREAD_RETURNCODE_BADREQ:
+              {
+                char *error_msg ;
 
-		request = NULL ;			    /* Reset, we don't free this data. */
+                ZMAPTHREAD_DEBUG(thread, "%s", "bad request....") ;
 
-		break ;
-	      }
-	    case ZMAPTHREAD_RETURNCODE_REQFAIL:
-	      {
-		char *error_msg ;
+                error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
+                                            zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
 
-		ZMAPTHREAD_DEBUG(thread, "%s", "request failed....") ;
+                zMapLogWarning("Bad Request: %s", error_msg) ;
 
-		error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
-					    zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
+                thread_cb->thread_died = TRUE ;
+                thread_cb->initial_error = g_strdup(error_msg) ;
 
-		/* Signal that we failed. */
-		zmapVarSetValueWithErrorAndData(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg, request) ;
+                goto clean_up ;
 
-		request = NULL ;
+                break ;
+              }
+            case ZMAPTHREAD_RETURNCODE_SERVERDIED:
+              {
+                char *error_msg ;
 
-		break ;
-	      }
-	    case ZMAPTHREAD_RETURNCODE_TIMEDOUT:
-	      {
-		char *error_msg ;
+                ZMAPTHREAD_DEBUG(thread, "%s", "server died....") ;
 
-		ZMAPTHREAD_DEBUG(thread, "%s", "request failed....") ;
+                error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
+                                            zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
 
-		error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
-					    zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
+                /* a misnomer, it's the server that the thread talks to */
+                if (!thread_cb->thread_died)
+                  zMapLogWarning("Server died: %s", error_msg) ;
 
-		/* Signal that we failed. */
-		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg) ;
+                thread_cb->thread_died = TRUE ;
+                thread_cb->initial_error = g_strdup(error_msg) ;
 
-		break ;
-	      }
-	    case ZMAPTHREAD_RETURNCODE_BADREQ:
-	      {
-		char *error_msg ;
+                /* must continue on to getStatus if it's in the step list
+                 * zmapServer functions will not run if status is DIED
+                 */
+                zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
 
+                break;
+              }
+            case ZMAPTHREAD_RETURNCODE_QUIT:
+              {
+                char * error_msg = "OK";
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		connection->initial_request = NULL ;	    /* make sure there is explicitly no
-							       data returned. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+                /* this message goes to the otterlace features loaded message
+	              	   and no error gets mangled into a string that says (Server Pipe: - null)
+               		   there's no obvious way to get the real exit status here
+		                 due to the structure of the code and data
+		                 its unfeasably difficult to detect a sucessful server here and we can only report
+		                  "(no error: ( no error ( no error)))"
+                 */
+                error_msg = g_strdup_printf("%s %s - %s (%s)", ZMAPTHREAD_SLAVEREQUEST,
+	                                   				    zMapThreadReturnCode2ExactStr(slave_response), "server terminated", slave_error) ;
+                zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
 
-		ZMAPTHREAD_DEBUG(thread, "%s", "bad request....") ;
+                call_clean = 0 ;
 
-		error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
-					    zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
+                break;
+              }
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		/* Should revisit use of pthread_cancel.....for clearing up.... */
-
-		/* not sure we need to do this...happens in the cleanup routine.... */
-
-		/* Signal that we failed. */
-		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		zMapLogWarning("Bad Request: %s", error_msg) ;
-
-
-		thread_cb->thread_died = TRUE ;
-
-		thread_cb->initial_error = g_strdup(error_msg) ;
-
-		goto clean_up ;
-
-		break ;
-	      }
-
-	    case ZMAPTHREAD_RETURNCODE_SERVERDIED:
-	      {
-		char *error_msg ;
-
-		ZMAPTHREAD_DEBUG(thread, "%s", "server died....") ;
-
-		error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
-					    zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
-
-		/* a misnomer, it's the server that the thread talks to */
-		if (!thread_cb->thread_died)
-		  zMapLogWarning("Server died: %s", error_msg) ;
-
-		thread_cb->thread_died = TRUE ;
-
-		thread_cb->initial_error = g_strdup(error_msg) ;
-
-		/* must continue on to getStatus if it's in the step list
-		 * zmapServer functions will not run if status is DIED
-		 */
-		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
-		//            goto clean_up ;
-
-		/* Try doing this....what used to go wrong ?? */
-//		goto clean_up ;
-
-		break;
-	      }
-
-	    case ZMAPTHREAD_RETURNCODE_QUIT:
-	      {
-		char * error_msg = "OK";
-
-		/* this message goes to the otterlace features loaded message
-		   and no error gets mangled into a string that says (Server Pipe: - null)
-		   there's no obvious way to get the real exit status here
-		   due to the structure of the code and data
-		   its unfeasably difficult to detect a sucessful server here and we can only report
-		   "(no error: ( no error ( no error)))"
-		 */
-		error_msg = g_strdup_printf("%s %s - %s (%s)",
-					    ZMAPTHREAD_SLAVEREQUEST,
-					    zMapThreadReturnCode2ExactStr(slave_response),
-					    "server terminated", slave_error) ;
-		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
-
-		// we've already closed the connection and cleaned up data
-		// but we still want to exit
-		// don't call the cleanup function as it's there as an exception handler
-		call_clean = 0 ;
-
-		break;
-	      }
-
-	    default:
-	      {
+            default:
+              {
                 zMapLogCritical("Data server code has returned an unhandled/bad slave response: %d", slave_response) ;
 
-		break ;
-	      }
+                break ;
+              }
 
-	    }
-	}
-
-
+            }
+        }
       /* pthread_testcancel fix for MACOSX */
-      // mh17: we could end up doing this after a QUIT, but WTH it's a race condition
       pthread_testcancel();
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      else
-	{
-	  /* unknown state......... */
-	  thread_cb->thread_died = TRUE ;
-	  thread_cb->initial_error = g_strdup_printf("Thread received unknown state from GUI: %s",
-						     zMapVarGetRequestString(signalled_state)) ;
-	  goto clean_up ;
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     }
 
@@ -322,10 +271,9 @@ void *zmapNewThread(void *thread_args)
    * Most times we will not get here because we will be pthread_cancel'd and go straight into
    * our clean_up routine. */
 
- clean_up:
+  clean_up:
 
   ZMAPTHREAD_DEBUG(thread, "%s", "main thread routine exitting....") ;
-
 
   /* something about 64 bit pthread needs this at the end. */
   /* cleanup_push and pop are basically fancy open and close braces so
@@ -353,17 +301,7 @@ static void cleanUpThread(void *thread_args)
   ZMapThreadReply reply ;
   gchar *error_msg = NULL ;
 
-
   ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: starting....") ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* I think this is probably a very bad idea isn't it...what if this thread didn't have the lock,
-   * just seems like asking for trouble.... */
-
-  zMapThreadForkUnlock(); // not needed, but play safe. See zmapThread.c
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   if (thread_cb->thread_died)
     {
@@ -372,7 +310,7 @@ static void cleanUpThread(void *thread_args)
       reply = ZMAPTHREAD_REPLY_DIED ;
 
       if (thread_cb->initial_error)
-	error_msg = g_strdup(thread_cb->initial_error) ;
+        error_msg = g_strdup(thread_cb->initial_error) ;
     }
   else
     {
@@ -382,16 +320,15 @@ static void cleanUpThread(void *thread_args)
 
       /* If thread was cancelled we need to ensure it is terminated correctly. */
       if (thread_cb->slave_data)
-	{
-	  ZMapThreadReturnCode slave_response ;
+        {
+          ZMapThreadReturnCode slave_response ;
 
-	  /* Call the registered slave handler function. */
-	  if ((slave_response = (*(thread->terminate_func))(&(thread_cb->slave_data), &error_msg))
-	      != ZMAPTHREAD_RETURNCODE_OK)
-	    {
-	      ZMAPTHREAD_DEBUG(thread, "%s", "Unable to close connection to server cleanly") ;
-	    }
-	}
+          /* Call the registered slave handler function. */
+          if ((slave_response = (*(thread->terminate_func))(&(thread_cb->slave_data), &error_msg)) != ZMAPTHREAD_RETURNCODE_OK)
+            {
+              ZMAPTHREAD_DEBUG(thread, "%s", "Unable to close connection to server cleanly") ;
+            }
+        }
     }
 
   /* Now make sure thread is destroyed correctly. */
@@ -402,11 +339,10 @@ static void cleanUpThread(void *thread_args)
       ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: calling slave terminate function...") ;
 
       /* Call the registered slave handler function. */
-      if ((slave_response = (*(thread->destroy_func))(&(thread_cb->slave_data)))
-	  != ZMAPTHREAD_RETURNCODE_OK)
-	{
-	  ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: Unable to destroy connection") ;
-	}
+      if ((slave_response = (*(thread->destroy_func))(&(thread_cb->slave_data)))!= ZMAPTHREAD_RETURNCODE_OK)
+        {
+          ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: Unable to destroy connection") ;
+        }
     }
 
   g_free(thread_cb) ;

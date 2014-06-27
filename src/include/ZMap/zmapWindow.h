@@ -186,6 +186,12 @@ typedef struct
 } ZMapWindowSelectStruct, *ZMapWindowSelect ;
 
 
+typedef struct
+{
+  ZMapFeature feature ;
+  ZMapFeatureSet feature_set ;
+} ZMapWindowMergeNewFeatureStruct, *ZMapWindowMergeNewFeature ;
+
 
 
 
@@ -219,6 +225,7 @@ typedef enum
     ZMAPWINDOW_CMD_SHOWALIGN,
     ZMAPWINDOW_CMD_REVERSECOMPLEMENT,
     ZMAPWINDOW_CMD_COPYTOSCRATCH,
+    ZMAPWINDOW_CMD_DELETEFROMSCRATCH,
     ZMAPWINDOW_CMD_CLEARSCRATCH,
     ZMAPWINDOW_CMD_UNDOSCRATCH,
     ZMAPWINDOW_CMD_REDOSCRATCH
@@ -324,11 +331,12 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
   ZMapFeatureBlock block ;
 
   /* Scratch specific section. */
-  ZMapFeature feature;  /* clicked feature */
-  FooCanvasItem *item;  /* clicked item */
-  double world_x;       /* clicked x pos in world coords */
-  double world_y;       /* clicked y pos in world coords */
-  gboolean use_subfeature; /* whether use selected a subfeature; false if selected whole feature */
+  GList *features;      /* clicked feature(s) */
+  long seq_start;       /* sequence coordinate that was clicked (sequence features only) */
+  long seq_end;         /* sequence coordinate that was clicked */
+  ZMapFeatureSubPartSpan subpart; /* the subpart to use, if applicable */
+  gboolean use_subfeature; /* if true, use the clicked subfeature; otherwise use the entire
+                              feature */
 } ZMapWindowCallbackCommandScratchStruct, *ZMapWindowCallbackCommandScratch ;
 
 
@@ -356,7 +364,7 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc visibilityChange ;
   ZMapWindowCallbackFunc command ;                          /* Request to exit given command. */
   ZMapWindowLoadCallbackFunc drawn_data ;
-
+  ZMapWindowCallbackFunc merge_new_feature ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* WHAT..... */
@@ -603,5 +611,7 @@ gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type)
 gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
 
 void zMapWindowUpdateColumnBackground(ZMapWindow window, ZMapFeatureSet feature_set, gboolean highlight_column_background);
+
+GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item) ;
 
 #endif /* !ZMAP_WINDOW_H */

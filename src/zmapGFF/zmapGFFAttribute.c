@@ -51,18 +51,18 @@
  */
 static const char *sEscapedComma = "%2C" ;
 static const char *sEscapedEquals = "%3D" ;
-static const char *sEscapedSemicolon = "%3B" ;
-static const char *sEscapedSpace = "%20" ;
+/* static const char *sEscapedSemicolon = "%3B" ; */
+/* static const char *sEscapedSpace = "%20" ; */
 static const char *sComma = "," ;
 static const char *sEquals = "=" ;
-static const char *sSemicolon = ";" ;
-static const char *sSpace = " " ;
+/* static const char *sSemicolon = ";" ; */
+/* static const char *sSpace = " " ; */
 
 /*
  * Array of attribute info objects. Data are as given in the header file.
  */
 static const ZMapGFFAttributeInfoStruct
-	ZMAPGFF_ATTRIBUTE_INFO[ZMAPGFF_NUMBER_ATTRIBUTE_TYPES] =
+ZMAPGFF_ATTRIBUTE_INFO[ZMAPGFF_NUMBER_ATTRIBUTE_TYPES] =
 {
   /*
    * V2 attributes.
@@ -233,8 +233,8 @@ ZMapGFFAttribute zMapGFFCreateAttribute(ZMapGFFAttributeName eTheName)
 gboolean zMapGFFDestroyAttribute(ZMapGFFAttribute pAttribute)
 {
   gboolean bResult = TRUE ;
-	 if (!pAttribute)
-		  return bResult ;
+ if (!pAttribute)
+  return bResult ;
 
   /*
    * Free name and temp strings if allocated.
@@ -525,12 +525,9 @@ ZMapGFFAttribute zMapGFFAttributeListContains( ZMapGFFAttribute* pAtt, unsigned 
   ZMapGFFAttribute pAttribute = NULL ;
   const ZMapGFFAttribute *pAttributes = pAtt ;
   unsigned int iAtt ;
-  if (   !pAttributes
-      || !nAttributes
-      || !sName
-      || !*sName
-     )
-  return pAttribute ;
+  if (!pAttributes || !nAttributes) 
+    return pAttribute ; 
+  zMapReturnValIfFail(sName && *sName, pAttribute) ; 
 
   for (iAtt=0; iAtt<nAttributes; ++iAtt)
     {
@@ -672,17 +669,17 @@ void attribute_test_parse(ZMapGFFParser pParser, char ** pAttributes, unsigned i
    * Loop over attributes and parse each one of them (in a basic way).
    */
   for (iAtt=0; iAtt<nAttributes; ++iAtt)
-  {
-    pAttribute = NULL ;
-    pAttribute = zMapGFFAttributeParse(pParser, pAttributes[iAtt], bRemoveQuotes) ;
-    if (pAttribute != NULL)
     {
-      ++iCount ;
-      printf("%i '%s' '%s' '%s' %i\n", pAttribute->eName, zMapGFFAttributeGetString(pAttribute->eName),
-        zMapGFFAttributeGetNamestring(pAttribute), pAttribute->sTemp, iCount ) ;
-      zMapGFFDestroyAttribute(pAttribute) ;
+      pAttribute = NULL ;
+      pAttribute = zMapGFFAttributeParse(pParser, pAttributes[iAtt], bRemoveQuotes) ;
+      if (pAttribute != NULL)
+        {
+          ++iCount ;
+          printf("%i '%s' '%s' '%s' %i\n", pAttribute->eName, zMapGFFAttributeGetString(pAttribute->eName),
+                                            zMapGFFAttributeGetNamestring(pAttribute), pAttribute->sTemp, iCount ) ;
+          zMapGFFDestroyAttribute(pAttribute) ;
+        }
     }
-  }
 
 }
 
