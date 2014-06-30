@@ -162,12 +162,7 @@ char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
 int zmapMainMakeAppWindow(int argc, char *argv[])
 {
   ZMapAppContext app_context ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  char *peer_name, *peer_clipboard ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   char *peer_socket, *peer_timeout_list ;
-
   GtkWidget *toplevel, *vbox, *menubar, *connect_frame, *manage_frame ;
   GtkWidget *quit_button ;
   int log_size ;
@@ -243,21 +238,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   zMapUtilsConfigDebug(NULL) ;
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Check if a peer program was specified on the command line or in the config file. */
-  peer_name = peer_clipboard = NULL ;
-  peer_retries = peer_timeout_ms = -1 ;
-  if (!checkPeerID(app_context, &peer_name, &peer_clipboard, &peer_retries, &peer_timeout_ms))
-    {
-      /* CAN'T LOG HERE....log has not been init'd.... */
-
-      /* obscure...only an error if just one is specified... */
-      if (!(!peer_name && !peer_clipboard))
-        consoleMsg(TRUE, "No %s name for remote connection specified so remote interface cannot be created.",
-                   (!peer_name ? "peer" : "clipboard")) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   /* Check if a peer program was specified on the command line or in the config file. */
   peer_socket = NULL ;
   peer_timeout_list = NULL ;
@@ -275,15 +255,28 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       app_window_cbs_G.remote_request_func = zmapAppRemoteControlGetRequestCB() ;
       app_window_cbs_G.remote_request_func_data = (void *)app_context ;
 
+      if (zmapAppRemoteControlCreate(app_context, peer_socket, peer_timeout_list))
+        {
+          consoleMsg(TRUE, "ZMAP %s() - %s",
+                     __PRETTY_FUNCTION__,
+                     "Calling remoteInstaller()") ;
+
+          remoteInstaller(app_context) ;
+
+          zmapAppRemoteControlSetExitRoutine(app_context, appExit) ;
+        }
+      else
+        {
+          zMapCritical("%s", "Could not initialise remote control interface.") ;
+        }
+
       remote_control = TRUE ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* not needed now I think.... */
-
-      app_context->defer_hiding = TRUE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     }
+
+  if (peer_socket)
+    g_free(peer_socket) ;
+  if (peer_timeout_list)
+    g_free(peer_timeout_list) ;
 
 
   /* Init manager, must happen just once in application. */
@@ -291,6 +284,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Add the ZMaps manager. */
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
+
 
   /* Set up logging for application....NO LOGGING BEFORE THIS. */
   if (!zMapLogCreate(NULL) || !configureLog(seq_map->config_file, &g_error))
@@ -365,26 +359,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
 
-  /* If there is a peer program then set up remote comms. */
-  if (remote_control)
-    {
-      if (zmapAppRemoteControlCreate(app_context, peer_socket, peer_timeout_list))
-        {
-          consoleMsg(TRUE, "ZMAP %s() - %s",
-                     __PRETTY_FUNCTION__,
-                     "Calling remoteInstaller()") ;
-
-          remoteInstaller(app_context) ;
-
-          zmapAppRemoteControlSetExitRoutine(app_context, appExit) ;
-        }
-      else
-        {
-          zMapCritical("%s", "Could not initialise remote control interface.") ;
-        }
-    }
-
-
   /* Handler for when main window is destroyed (by whichever route). */
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
                      GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)app_context) ;
@@ -411,13 +385,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
   /* We don't always want to show this window, for lace users it is useless.... */
-  if (!(app_context->show_mainwindow)
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      && !(app_context->defer_hiding)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      )
+  if (!(app_context->show_mainwindow))
     {
       consoleMsg(TRUE,  "ZMAP %s() - %s",
                  __PRETTY_FUNCTION__,
