@@ -760,7 +760,7 @@ gboolean zMapRemoteCommandRequestIsCommand(char *request, char *command)
 				  FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				  0, 0, 0, NULL, NULL, NULL,
 				  NULL, -1, NULL, NULL} ;
-  ZMapXMLParser parser;
+  ZMapXMLParser parser ;
 
   parser = zMapXMLParserCreate(&command_data, FALSE, FALSE) ;
 
@@ -774,6 +774,8 @@ gboolean zMapRemoteCommandRequestIsCommand(char *request, char *command)
 	    result = TRUE ;
 	}
     }
+
+  zMapXMLParserDestroy(parser) ;
 
   return result ;
 }
@@ -799,6 +801,8 @@ char *zMapRemoteCommandRequestGetCommand(char *request)
 	command = command_data.command ;
     }
 
+  zMapXMLParserDestroy(parser) ;
+
   return command ;
 }
 
@@ -823,6 +827,8 @@ int zMapRemoteCommandGetPriority(char *request)
 
               break ;
             }
+
+          attrs++ ;
         }
     }
 
@@ -855,6 +861,8 @@ char *zMapRemoteCommandRequestGetEnvelopeAttr(char *request, RemoteEnvelopeAttrT
     {
       env_attr_val = command_data.env_attr_val ;
     }
+
+  zMapXMLParserDestroy(parser) ;
 
   return env_attr_val ;
 }
@@ -926,6 +934,8 @@ gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
       result = TRUE ;
     }
 
+  zMapXMLParserDestroy(parser) ;
+
   return result ;
 }
 
@@ -971,6 +981,8 @@ gboolean zMapRemoteCommandGetAttribute(char *message,
       
       result = TRUE ;
     }
+
+  zMapXMLParserDestroy(parser) ;
 
   return result ;
 }
@@ -1335,6 +1347,8 @@ static gboolean getRequestAttrs(char *xml_request, GQuark *req_version,
       result = TRUE ;
     }
 
+  zMapXMLParserDestroy(parser) ;
+
   return result ;
 }
 
@@ -1372,6 +1386,8 @@ static gboolean getReplyAttrs(char *xml_reply, GQuark *reply_version,
 
       result = TRUE ;
     }
+
+  zMapXMLParserDestroy(parser) ;
 
   return result ;
 }
@@ -1437,6 +1453,8 @@ static RemoteValidateRCType reqReplyValidate(ZMapRemoteControl remote_control,
     {
       result = REMOTE_VALIDATE_RC_OK ;
     }
+
+  zMapXMLParserDestroy(parser) ;
 
   return result ;
 }
