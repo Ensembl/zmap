@@ -4161,7 +4161,17 @@ static void dragDataGetCB(GtkWidget *widget,
         feature_list = zmapWindowFocusGetFeatureList(window->focus) ;
 
       if (feature_list)
-        zMapGFFDumpList(feature_list, window->context_map->styles, NULL, NULL, &result, &tmp_error) ;
+        {
+          /* Swop to other strand..... */
+          if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+            zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+
+          zMapGFFDumpList(feature_list, window->context_map->styles, NULL, NULL, &result, &tmp_error) ;
+
+          /* And swop it back again. */
+          if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+            zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+        }
 
       if (result)
         {

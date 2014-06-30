@@ -705,7 +705,17 @@ static void viewDumpContextToFile(ZMapView view, RequestData request_data)
       format = request_data->format;
 
       if(format && g_ascii_strcasecmp(format, "gff") == 0)
-	result = zMapGFFDump((ZMapFeatureAny)view->features, view->context_map.styles, file, &error);
+        {
+          /* Swop to other strand..... */
+          if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+            zMapFeatureContextReverseComplement(view->features, view->context_map.styles) ;
+
+          result = zMapGFFDump((ZMapFeatureAny)view->features, view->context_map.styles, file, &error);
+
+          /* And swop it back again. */
+          if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+            zMapFeatureContextReverseComplement(view->features, view->context_map.styles) ;
+        }
 
 #ifdef STYLES_PRINT_TO_FILE
       else if(format && g_ascii_strcasecmp(format, "test-style") == 0)
