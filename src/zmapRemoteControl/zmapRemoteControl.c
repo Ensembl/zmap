@@ -1891,7 +1891,7 @@ static void errorHandler(ZMapRemoteControl remote_control,
 
   /* Reset remote control to idle before calling user error handler, user may want to go
    * back to waiting. */
-  REMOTELOGMSG(remote_control, "Resetting to %s state after error.", remoteState2ExactStr(REMOTE_TYPE_IDLE)) ;
+  REMOTELOGMSG(remote_control, "Resetting to %s state after error.", remoteState2ExactStr(REMOTE_STATE_IDLE)) ;
 
   resetRemoteToIdle(remote_control) ;
 
