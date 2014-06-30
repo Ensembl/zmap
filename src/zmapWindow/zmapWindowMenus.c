@@ -3318,6 +3318,10 @@ static void exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureA
   /* Find the block from whatever pointer we are sent...  */
   feature_block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK);
 
+  /* Swop to other strand..... */
+  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+    zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+
   if (!(filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel),
                                       "Feature Export filename ?", NULL, "gff"))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
@@ -3345,6 +3349,9 @@ static void exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureA
         }
     }
 
+  /* And swop it back again. */
+  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+    zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
 
   return ;
 }
