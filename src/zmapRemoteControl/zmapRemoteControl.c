@@ -191,7 +191,9 @@ static void receiveReplyFromAppCB(void *remote_data, gboolean abort, char *reply
 
 static gboolean setToFailed(ZMapRemoteControl remote_control) ;
 
-static char *makeHeader(char *request_type, char *request_id, int retry_num, char *request_time) ;
+static char *headerCreate(char *request_type, char *request_id, int retry_num, char *request_time) ;
+static char *headerSetRetry(char *curr_header, int retry_num) ;
+
 static RemoteZeroMQMessage zeroMQMessageCreate(char *header, char *body) ;
 static void zeroMQMessageDestroy(RemoteZeroMQMessage zeromq_msg) ;
 
@@ -535,7 +537,7 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
         {
           RemoteZeroMQMessage outgoing_request ;
 
-          header = makeHeader(ZACP_REQUEST, request_id, (remote_control->timeout_list_pos + 1), request_time) ;
+          header = headerCreate(ZACP_REQUEST, request_id, (remote_control->timeout_list_pos + 1), request_time) ;
 
           outgoing_request = zeroMQMessageCreate(header, request) ;
 
@@ -946,7 +948,7 @@ static void receiveReplyFromAppCB(void *remote_data, gboolean abort, char *reply
         {
           RemoteZeroMQMessage outgoing_reply ;
 
-          header = makeHeader(ZACP_REPLY, reply_id, (remote_control->timeout_list_pos + 1), reply_time) ;
+          header = headerCreate(ZACP_REPLY, reply_id, (remote_control->timeout_list_pos + 1), reply_time) ;
 
           outgoing_reply = zeroMQMessageCreate(header, reply) ;
 
@@ -1181,6 +1183,12 @@ static gboolean queueMonitorCB(gpointer user_data)
 
                         /* Keep timed out request so we can resend it if we need to. */
                         remote_control->curr_req_raw = reqReplyStealRequest(remote_control->curr_req) ;
+
+                        /* Need to redo header.... */
+                        remote_control->curr_req_raw->header = headerSetRetry(remote_control->curr_req_raw->header,
+                                                                              (remote_control->timeout_list_pos + 1)) ;
+
+
 
                         reqReplyDestroy(remote_control->curr_req) ;
                         remote_control->curr_req = NULL ;
@@ -2844,8 +2852,17 @@ static gboolean timeOutCB(gpointer user_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
-static char *makeHeader(char *request_type, char *request_id, int retry_num, char *request_time)
+/* Creates the header for zeromq messages as a string in the form:
+ * 
+ * "<REQUEST | REPLY> <ID>/<RETRY_NUM> <TIME>"
+ * 
+ * e.g.
+ * 
+ * "REQUEST 1/5  1404129247,412653"
+ * 
+ * Time is seconds,microseconds.
+ *  */
+static char *headerCreate(char *request_type, char *request_id, int retry_num, char *request_time)
 {
   char *header ;
   char *header_type ;
@@ -2860,6 +2877,43 @@ static char *makeHeader(char *request_type, char *request_id, int retry_num, cha
                            header_type, request_id, retry_num, request_time) ;
 
   return header ;
+}
+
+
+/* Takes an existing header and in effect overwrites the retry number
+ * in that header with the new retry number.
+ * 
+ * Note that curr_header is free'd by this function so you should probably use it like this:
+ * 
+ * my_header = headerSetRetry(myheader, 2) ;
+ *  */
+static char *headerSetRetry(char *curr_header, int new_retry_num)
+{
+  char *new_header = NULL ;
+  char **split_string, **split_string_orig ;
+  char *header_type, *request_id, *orig_retry_num, *request_time ;
+
+  split_string_orig = split_string = g_strsplit_set(curr_header, " /", 0) ;
+  header_type = *split_string ;
+  split_string++ ;
+  request_id = *split_string ;
+  split_string++ ;
+  orig_retry_num = *split_string ;                          /* not used...debugging only. */
+  split_string++ ;
+  request_time  = *split_string ;
+  split_string++ ;
+
+  new_header =  g_strdup_printf("%s %s/%d %s",
+                                header_type, request_id, new_retry_num, request_time) ;
+
+  g_strfreev(split_string_orig) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  g_free(curr_header) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return new_header ;
 }
 
 
