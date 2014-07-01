@@ -46,17 +46,19 @@
 /*
  * Escaped strings that need to be removed from attribute strings.
  * These are the url-escaped sequences, and are the only ones allowed
- * GFF3 attributes. Not all of these are used at the moment, but
- * might well be in the future.
+ * GFF3 attributes.
  */
 static const char *sEscapedComma = "%2C" ;
 static const char *sEscapedEquals = "%3D" ;
-/* static const char *sEscapedSemicolon = "%3B" ; */
-/* static const char *sEscapedSpace = "%20" ; */
+static const char *sEscapedSemicolon = "%3B" ;
+static const char *sEscapedSpace = "%20" ;
+
 static const char *sComma = "," ;
 static const char *sEquals = "=" ;
-/* static const char *sSemicolon = ";" ; */
-/* static const char *sSpace = " " ; */
+static const char *sSemicolon = ";" ;
+static const char *sSpace = " " ;
+
+static char* removeAllEscapedCharacters(const char * const sInput ) ;
 
 /*
  * Array of attribute info objects. Data are as given in the header file.
@@ -1290,7 +1292,8 @@ gboolean zMapAttParseURL(ZMapGFFAttribute pAttribute, char** const sOut)
 
   if (strlen(sValue))
     {
-      bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedEquals, sEquals, sOut) ;
+      /* bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedEquals, sEquals, sOut) ; */
+      *sOut = removeAllEscapedCharacters(sValue) ;
       bResult = TRUE ;
     }
   else
@@ -1380,8 +1383,9 @@ gboolean zMapAttParseNote(ZMapGFFAttribute pAttribute, char ** const sOut)
 
   if (strlen(sValue))
     {
-      bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedComma, sComma, sOut) ;
+      /* bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedComma, sComma, sOut) ; */
       /* *sOut = g_strdup(sValue) ; */
+      *sOut = removeAllEscapedCharacters(sValue) ;
       bResult = TRUE ;
     }
   else
@@ -2025,3 +2029,44 @@ gboolean zMapAttParseReadPairID(ZMapGFFAttribute pAttribute, GQuark * const pgqO
 
   return bResult ;
 }
+
+
+
+
+
+
+/*
+ * Remove all of the escaped characters permitted by GFF3 from the
+ * input string and return a newly allocated string containing the
+ * result.
+ */
+static char* removeAllEscapedCharacters(const char * const sInput )
+{
+  char *sResult = NULL, *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
+  gboolean bReplaced = FALSE ;
+  static gboolean bFatHairyFartyBastard = TRUE ;
+
+  bReplaced = zMapGFFStr_substring_replace_n(sInput, sEscapedEquals,    sEquals, &sOut1) ;
+  bReplaced = zMapGFFStr_substring_replace_n(sOut1,  sEscapedComma,     sComma, &sOut2) ;
+  g_free(sOut1) ;
+  bReplaced = zMapGFFStr_substring_replace_n(sOut2,  sEscapedSemicolon, sSemicolon, &sOut3) ;
+  g_free(sOut2) ;
+  bReplaced = zMapGFFStr_substring_replace_n(sOut3,  sEscapedSpace,     sSpace, &sResult) ;
+  g_free(sOut3) ;
+
+  return sResult ;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
