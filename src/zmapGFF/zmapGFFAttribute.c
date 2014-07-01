@@ -2044,7 +2044,6 @@ static char* removeAllEscapedCharacters(const char * const sInput )
 {
   char *sResult = NULL, *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
   gboolean bReplaced = FALSE ;
-  static gboolean bFatHairyFartyBastard = TRUE ;
 
   bReplaced = zMapGFFStr_substring_replace_n(sInput, sEscapedEquals,    sEquals, &sOut1) ;
   bReplaced = zMapGFFStr_substring_replace_n(sOut1,  sEscapedComma,     sComma, &sOut2) ;
