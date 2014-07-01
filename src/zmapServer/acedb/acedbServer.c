@@ -2059,11 +2059,12 @@ static gboolean checkServerVersion(AcedbServer server)
 	{
 	  char *reply_text = (char *)reply ;
 	  char *scan_text = reply_text ;
+          char *curr_pos = NULL ;
 	  char *next_line = NULL ;
           gboolean found = FALSE ;
 
 	  /* Scan lines for "Version:" and then extract the version, release and update numbers. */
-	  while ((next_line = strtok(scan_text, "\n")))
+	  while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	    {
 	      scan_text = NULL ;
 
@@ -2073,10 +2074,11 @@ static gboolean checkServerVersion(AcedbServer server)
 
 		  /* Parse this string: "//             Version: ACEDB 4.9.28" */
 		  char *next ;
+                  char *tag_pos = NULL ;
 
-		  next = strtok(next_line, ":") ;
-		  next = strtok(NULL, " ") ;
-		  next = strtok(NULL, " ") ;
+		  next = strtok_r(next_line, ":", &tag_pos) ;
+		  next = strtok_r(NULL, " ", &tag_pos) ;
+		  next = strtok_r(NULL, " ", &tag_pos) ;
 
                   if (!(result = zMapCompareVersionStings(server->version_str, next, &error)))
                     {
@@ -2142,9 +2144,10 @@ static gboolean findSequence(AcedbServer server, char *sequence_name)
       char *reply_text = (char *)reply ;
       char *scan_text = reply_text ;
       char *next_line = NULL ;
+      char *curr_pos = NULL ;
 
       /* Scan lines for "Found" and then extract the version, release and update numbers. */
-      while ((next_line = strtok(scan_text, "\n")))
+      while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	{
 	  scan_text = NULL ;
 
@@ -2153,10 +2156,11 @@ static gboolean findSequence(AcedbServer server, char *sequence_name)
 	      /* Parse this string: "// Found 1 objects in this class" */
 	      char *next ;
 	      int num_obj ;
+	      char *tag_pos = NULL ;
 
-	      next = strtok(next_line, " ") ;
-	      next = strtok(NULL, " ") ;
-	      next = strtok(NULL, " ") ;
+	      next = strtok_r(next_line, " ", &tag_pos) ;
+	      next = strtok_r(NULL, " ", &tag_pos) ;
+	      next = strtok_r(NULL, " ", &tag_pos) ;
 
 	      num_obj = atoi(next) ;
 
@@ -2509,9 +2513,10 @@ static ZMapServerResponseType findMethods(AcedbServer server, char *search_str, 
        */
       char *scan_text = (char *)reply ;
       char *next_line = NULL ;
+      char *curr_pos = NULL ;
       int num_methods ;
 
-      while ((next_line = strtok(scan_text, "\n")))
+      while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	{
 	  scan_text = NULL ;
 
@@ -4027,10 +4032,11 @@ static ZMapServerResponseType getObjNames(AcedbServer server, GList **style_name
     {
       char *scan_text = (char *)reply ;
       char *next_line = NULL ;
+      char *curr_pos = NULL ;
       gboolean found_method = FALSE ;
       GList *style_names = NULL ;
 
-      while ((next_line = strtok(scan_text, "\n")))
+      while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	{
 	  scan_text = NULL ;
 
@@ -4107,10 +4113,11 @@ int getFoundObj(char *text)
   if (strstr(text, "Found"))
     {
       char *next ;
+      char *curr_pos = NULL ;
 
-      next = strtok(text, " ") ;
-      next = strtok(NULL, " ") ;
-      next = strtok(NULL, " ") ;
+      next = strtok_r(text, " ", &curr_pos) ;
+      next = strtok_r(NULL, " ", &curr_pos) ;
+      next = strtok_r(NULL, " ", &curr_pos) ;
 
       num_obj = atoi(next) ;
     }
@@ -4348,9 +4355,10 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
 	   */
 	  char *scan_text = (char *)reply ;
 	  char *next_line = NULL ;
+          char *curr_pos = NULL ;
 	  int num_objs ;
 
-	  while ((next_line = strtok(scan_text, "\n")))
+	  while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	    {
 	      scan_text = NULL ;
 
