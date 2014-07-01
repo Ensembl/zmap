@@ -1579,34 +1579,43 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
               else
                 {
                   char *columns, *target ;
+                  char *curr_pos = NULL ;
                   gboolean found = TRUE ;
                   int col_ind = 0;
 
                   target = columns = zMapXMLUtilsUnescapeStrdup(zMapXMLAttributeValueToStr(attr) );
 
-                  /* We need to strtok out the titles..... */
+                  /* We need to parse out the titles..... */
                   do
                     {
                       char *new_col ;
 
-                      if ((new_col = strtok(target, "'")))
+                      if ((new_col = strtok_r(target, "'", &curr_pos)))
                         {
+                          target = NULL ;                   /* required for repeated strtok_r calls. */
 
-                          /* HACK TO CHECK strtok'd THING IS NOT BLANK....remove when xml fixed... */
+                          /* HACK TO CHECK THE THING IS NOT BLANK....remove when xml fixed... */
                           if (*new_col == ' ')
                             continue ;
 
                           headers = g_list_append(headers,
                                                   GINT_TO_POINTER(g_quark_from_string(new_col))) ;
-                          target = NULL ;
+
+
+
                           if(show->get_evidence && !g_ascii_strcasecmp(new_col,"Accession.SV"))
                             {
                               show->evidence_column = col_ind;
                             }
+
                           col_ind++;
+
+                          
                         }
                       else
-                        found = FALSE ;
+                        {
+                          found = FALSE ;
+                        }
 
                     } while (found) ;
 
@@ -1658,6 +1667,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
                     {
                       gboolean found = TRUE ;
                       char *target,*columns ;
+                      char *curr_pos = NULL ;
                       GList *column_data = NULL ;
 
                       target = columns = zMapXMLUtilsUnescapeStrdup(zMapXMLAttributeValueToStr(attr) );
@@ -1666,15 +1676,17 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
                         {
                           char *new_col ;
 
-                          if ((new_col = strtok(target, " ")))
+                          if ((new_col = strtok_r(target, " ", &curr_pos)))
                             {
+                              target = NULL ;
+
                               column_data = g_list_append(column_data,
                                                           GINT_TO_POINTER(g_quark_from_string(new_col))) ;
-                              target = NULL ;
                             }
                           else
-                            found = FALSE ;
-
+                            {
+                              found = FALSE ;
+                            }
                         } while (found) ;
 
                       types = column_data ;
@@ -1811,9 +1823,12 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
           do
             {
               char *new_col ;
+              char *curr_pos = NULL ;
 
-              if ((new_col = strtok(target, " ")))
+              if ((new_col = strtok_r(target, " ", &curr_pos)))
                 {
+                  target = NULL ;                           /* For repeat strtok_r calls. */
+
                   if (GPOINTER_TO_INT(type->data) == g_quark_from_string("bool") ||
                       GPOINTER_TO_INT(type->data) == G_TYPE_BOOLEAN)
                     {
@@ -1895,11 +1910,11 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 
                   col_ind++;
                   type = g_list_next(type) ;
-
-                  target = NULL ;
                 }
               else
-                found = FALSE ;
+                {
+                  found = FALSE ;
+                }
 
             } while (found) ;
 

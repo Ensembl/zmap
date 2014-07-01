@@ -876,44 +876,25 @@ void zMapUtilsDebugPrintf(FILE *stream, char *format, ...)
 
 
 
-/*! @} end of zmaputils docs. */
-
-
-
-
 /*
  *                   Internal routines.
  */
 
 
 
-/*
- * (sm23) I have removed the use of strtok(), because it's not thread safe. 
- * In addition, the previous version was assuming a certain order of evaluation inside
- * the if() statement, and I'm not sure this is completely safe. 
+/* Parse out the version, release and update numbers from a string of format
+ * 
+ *                   "vvvv.rrrr.uuuu"
  */
 static gboolean getVersionNumbers(char *version_str,
-  int *version_out, int *release_out, int *update_out)
+                                  int *version_out, int *release_out, int *update_out)
 {
   static const char cDot = '.' ; 
   gboolean result = FALSE ;
   char *next ;
   int version, release, update ;
 
-  /* if (((next = strtok(version_str, "."))
-       && (version = atoi(next)))
-      && ((next = strtok(NULL, "."))
-  && (release = atoi(next)))
-      && ((next = strtok(NULL, "."))
-  && (update = atoi(next))))
-    {
-      result = TRUE ;
-      *version_out = version ;
-      *release_out = release ;
-      *update_out = update ;
-    }*/ 
-
-    if ((version = atoi(version_str)))
+  if ((version = atoi(version_str)))
     {
       if ((next=strchr(version_str, cDot)) && (release=atoi(++next)))
         {
@@ -926,8 +907,6 @@ static gboolean getVersionNumbers(char *version_str,
             }
         }
     } 
-
-
 
   return result ;
 }
