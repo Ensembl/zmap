@@ -1026,6 +1026,10 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
 
               feature_any = zmapWindowItemGetFeatureAny(list->data);
 
+              /* Swop to other strand..... */
+              if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+                zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+
               /* We have to do this as the list is a list of FooCanvasItem * not ZMapFeatureAny. */
 
               if (zMapGFFDumpForeachList(feature_any, window->context_map->styles, file, &error, NULL,
@@ -1037,6 +1041,10 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
                 }
 
               g_list_free(list);        /* free list */
+
+              /* And swop it back again. */
+              if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+                zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
             }
         }
       break;

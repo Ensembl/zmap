@@ -312,9 +312,6 @@ static gboolean resume_parse_xml(XML_Parser expat, char *buffer,
     case XML_STATUS_ERROR:
       suspended = 0;
       break;
-    case XML_ERROR_NOT_SUSPENDED:
-      suspended = 0;
-      break;
     case XML_STATUS_SUSPENDED:
       suspended = 1;
       break;

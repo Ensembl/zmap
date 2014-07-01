@@ -4161,7 +4161,17 @@ static void dragDataGetCB(GtkWidget *widget,
         feature_list = zmapWindowFocusGetFeatureList(window->focus) ;
 
       if (feature_list)
-        zMapGFFDumpList(feature_list, window->context_map->styles, NULL, NULL, &result, &tmp_error) ;
+        {
+          /* Swop to other strand..... */
+          if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+            zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+
+          zMapGFFDumpList(feature_list, window->context_map->styles, NULL, NULL, &result, &tmp_error) ;
+
+          /* And swop it back again. */
+          if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+            zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+        }
 
       if (result)
         {
@@ -5221,44 +5231,52 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
             focus_container = (ZMapWindowContainerFeatureSet)focus_column;
 
-            if (zMapGUITestModifiers(key_event, GDK_SHIFT_MASK))
+            /* Treat the annotation column differently */
+            if (zmapWindowContainerFeatureSetGetColumnId(focus_container) == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
               {
-                GList *hidden_items = NULL ;
-
-                if ((hidden_items = zmapWindowContainerFeatureSetPopHiddenStack(focus_container)))
-                  {
-                    g_list_foreach(hidden_items, unhideItemsCB, window) ;
-                    g_list_free(hidden_items) ;
-                  }
+                zmapWindowScratchClear(window) ;
               }
             else
               {
-                GList *hidden_items = NULL ;
+                if (zMapGUITestModifiers(key_event, GDK_SHIFT_MASK))
+                  {
+                    GList *hidden_items = NULL ;
 
-                zmapWindowFocusHideFocusItems(window->focus, &hidden_items) ;
-
-                /* NOTE that this does not delete any lines joining homols etc...that
-                 * would require a callback into the alignment object code I think... */
-
-                zmapWindowContainerFeatureSetPushHiddenStack(focus_container, hidden_items) ;
-              }
-
-            /* We don't bump here because user may be deleting a series of features so it
-             * be irritating to keep bumping.
-           * MH17: use control key to prevent bump
-           */
-
-          if (!zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
-            {
-                ZMapWindowCompressMode compress_mode;
-
-                if (zmapWindowMarkIsSet(window->mark))
-                  compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
+                    if ((hidden_items = zmapWindowContainerFeatureSetPopHiddenStack(focus_container)))
+                      {
+                        g_list_foreach(hidden_items, unhideItemsCB, window) ;
+                        g_list_free(hidden_items) ;
+                      }
+                  }
                 else
-                  compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
+                  {
+                    GList *hidden_items = NULL ;
 
-                zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(focus_column), ZMAPBUMP_INVALID, compress_mode) ;
-            }
+                    zmapWindowFocusHideFocusItems(window->focus, &hidden_items) ;
+
+                    /* NOTE that this does not delete any lines joining homols etc...that
+                     * would require a callback into the alignment object code I think... */
+
+                    zmapWindowContainerFeatureSetPushHiddenStack(focus_container, hidden_items) ;
+                  }
+
+                /* We don't bump here because user may be deleting a series of features so it
+                 * be irritating to keep bumping.
+                 * MH17: use control key to prevent bump
+                 */
+
+                if (!zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
+                  {
+                    ZMapWindowCompressMode compress_mode;
+
+                    if (zmapWindowMarkIsSet(window->mark))
+                      compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
+                    else
+                      compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
+
+                    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(focus_column), ZMAPBUMP_INVALID, compress_mode) ;
+                  }
+              }
 
             /* Make sure selected features are shown or hidden. */
             zmapWindowFullReposition(window->feature_root_group,TRUE, "key_del") ;
