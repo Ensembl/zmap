@@ -365,17 +365,16 @@ typedef struct ZMapRemoteControlStructType
   int timeout_list_pos ;
   GTimer *timeout_timer ;
 
-  /* App function to call when there is an error, e.g. peer not responding. */
+
+  /* where to send error messages, can be overridden by app, err_report_data enables app to
+   * supply any necessary data for message output. */
+  ZMapRemoteControlErrorReportFunc err_report_func ;
+  gpointer err_report_data ;
+
+
+  /* App callback function to be called if there is an error, timeout etc. */
   ZMapRemoteControlErrorHandlerFunc app_error_func ;
   gpointer app_error_func_data ;
-
-  /* App function to call when there is a timeout. */
-  ZMapRemoteControlTimeoutHandlerFunc app_timeout_func ;
-  gpointer app_timeout_func_data ;
-
-  /* where to send error messages, can be overridden by app. */
-  ZMapRemoteControlErrorReportFunc app_err_report_func ;
-  gpointer app_err_report_data ;
 
 
 } ZMapRemoteControlStruct ;

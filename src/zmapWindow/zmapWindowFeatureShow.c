@@ -290,9 +290,12 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
 				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data) ;
+
 static void getEvidenceReplyFunc(gboolean reply_ok, char *reply_error,
 				 char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				 gpointer reply_handler_func_data) ;
+
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data) ;
 
 static void revcompTransChildCoordsCB(gpointer data, gpointer user_data) ;
 
@@ -2254,7 +2257,8 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   (*(window_cbs_G->remote_request_func))(window_cbs_G->remote_request_func_data,
 					 window,
 					 action, xml_elements,
-					 handler_func, handler_data) ;
+					 handler_func, handler_data,
+                                         remoteReplyErrHandler, handler_data) ;
 
   return ;
 }
@@ -2465,7 +2469,6 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
   zMapReturnIfFail(chapter_feature) ;
 
   GError *error = NULL ;
-  gboolean overwrite = TRUE ;
 
   ZMapWindow window = show->zmapWindow ;
   ZMapStrand strand = ZMAPSTRAND_FORWARD ; /*! \todo Get current Annotation column strand */
@@ -2563,5 +2566,20 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
       g_error_free(error) ;
     }
 }
+
+
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data)
+{
+  /* Don't know what user_data is here...need to find out.... */
+
+
+
+
+
+  return ;
+}
+
+
+
 
 /********************* end of file ********************************/

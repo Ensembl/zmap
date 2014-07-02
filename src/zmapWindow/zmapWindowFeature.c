@@ -102,6 +102,9 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
 			       char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 			       gpointer reply_handler_func_data) ;
+
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data) ;
+
 static void revcompTransChildCoordsCB(gpointer data, gpointer user_data) ;
 
 
@@ -1178,7 +1181,8 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   (*(window_cbs_G->remote_request_func))(window_cbs_G->remote_request_func_data,
 					 window,
 					 command, xml_elements,
-					 handleXRemoteReply, remote_data) ;
+					 handleXRemoteReply, remote_data,
+                                         remoteReplyErrHandler, remote_data) ;
 
   return ;
 }
@@ -1243,4 +1247,17 @@ static void revcompTransChildCoordsCB(gpointer data, gpointer user_data)
 
   return ;
 }
+
+
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data)
+{
+  RemoteData remote_data = (RemoteData)user_data ;
+
+
+
+
+
+  return ;
+}
+
 

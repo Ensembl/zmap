@@ -337,6 +337,11 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
 				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data) ;
 
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data) ;
+
+
+
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -5116,7 +5121,8 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
           (*(view_cbs_G->remote_request_func))(view_cbs_G->remote_request_func_data,
                                                zmap_view,
                                                ZACP_FEATURES_LOADED, &viewloaded[0],
-                                               localProcessReplyFunc, zmap_view) ;
+                                               localProcessReplyFunc, zmap_view,
+                                               remoteReplyErrHandler, zmap_view) ;
 
           free(emsg);                                           /* yes really free() not g_free()-> see zmapUrlUtils.c */
 
@@ -6596,3 +6602,17 @@ static void destroyLoadFeatures(LoadFeaturesData loaded_features)
 
   return ;
 }
+
+
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data)
+{
+  ZMapView zmap_view = (ZMapView)user_data ;
+
+
+
+
+
+  return ;
+}
+
+
