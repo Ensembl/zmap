@@ -361,8 +361,6 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
 static void errorCB(ZMapRemoteControl remote_control,
 		    ZMapRemoteControlRCType error_type, char *err_msg,
 		    void *user_data) ;
-static gboolean timeoutCB(ZMapRemoteControl remote_control,
-			  void *user_data) ;
 
 void processRequest(RemoteData remote_data, char *request,
 		    RemoteCommandRCType *return_code, char **reason_out,
@@ -1001,7 +999,6 @@ static void initRemote(RemoteData remote_data)
 
   if ((remote_data->remote_cntl = zMapRemoteControlCreate(REMOTECONTROL_APPNAME,
                                                           errorCB, remote_data,
-                                                          timeoutCB, remote_data,
                                                           NULL, NULL)))
     result = TRUE ;
 
@@ -1373,69 +1370,6 @@ static void errorCB(ZMapRemoteControl remote_control,
 
   return ;
 }
-
-static gboolean timeoutCB(ZMapRemoteControl remote_control, void *user_data)
-{
-  gboolean result = FALSE ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  RemoteData remote_data = (RemoteData)user_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-  /* NEW CODE NEEDED....... */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* THIS IS ALL WRONG NOW.... */
-  GdkWindow *gdk_window ; 
-  Display *x_display ;
-  Window x_window ;
-
-
-
-  gdk_window = gtk_widget_get_window(remote_data->app_toplevel) ;
-  x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
-
-  x_window = remote_data->peer_x_window_id ;
-
-
-  /* If there is a peer window then we continue to wait by resetting the timeout,
-   * otherwise it's an error and our error handler will be called. */
-  if (x_window)
-    {
-      char *err_msg = NULL ;      
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (!(result = checkPeerWindow(x_display, x_window, &err_msg)))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      /* This is our way of testing to see if the peer application is alive, if the window id
-       * they gave us is still good then we assume they are still alive. */
-      if (!(result = zMapGUIXWindowExists(x_display, x_window, remote_data->peer_unique_id, &err_msg)))
-	{
-	  char *full_err_msg ;
-
-	  full_err_msg = g_strdup_printf("Peer window (\""ZMAP_XWINDOW_FORMAT_STR"\") has gone, stopping remote control because: \"%s\".",
-					 x_window, err_msg) ;
-
-	  zMapLogCritical("%s", full_err_msg) ;
-
-	  zMapCritical("%s", full_err_msg) ;
-
-	  g_free(full_err_msg) ;
-	}
-
-      g_free(err_msg) ;
-    }
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return result ;
-}
-
 
 
 /* Processes all requests from zmap. */
@@ -2575,7 +2509,7 @@ static gboolean xml_peer_start_cb(gpointer user_data, ZMapXMLElement peer_elemen
   RemoteData remote_data = (RemoteData)user_data ;
   GetPeer peer_data = remote_data->peer_cbdata ;
   ZMapXMLAttribute attr ;
-  char *app_id = NULL, *socket_id = NULL ;
+  char *socket_id = NULL ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

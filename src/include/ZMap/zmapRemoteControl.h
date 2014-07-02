@@ -80,10 +80,7 @@ typedef void (*ZMapRemoteControlErrorHandlerFunc)(ZMapRemoteControl remote_contr
 						  ZMapRemoteControlRCType error_type, char *err_msg,
 						  void *user_data) ;
 
-/* Apps callback that remote_control should call to allow app to handle timeouts. */
-typedef gboolean (*ZMapRemoteControlTimeoutHandlerFunc)(ZMapRemoteControl remote_control, void *user_data) ;
-
-/* Apps callback that remote_control should call to output/log errors. */
+/* Apps callback that remote_control can call to output/log errors. */
 typedef gboolean (*ZMapRemoteControlErrorReportFunc)(void *user_data, char *err_msg) ;
 
 
@@ -134,7 +131,6 @@ typedef void (*ZMapRemoteControlReplyHandlerFunc)(ZMapRemoteControl remote_contr
  */
 ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
 					  ZMapRemoteControlErrorHandlerFunc error_func, gpointer error_data,
-					  ZMapRemoteControlTimeoutHandlerFunc timeout_func, gpointer timeout_data,
 					  ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data) ;
 
 gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,

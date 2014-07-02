@@ -128,6 +128,9 @@ static void handlePeerReply(gboolean reply_ok, char *reply_error,
 			    char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 			    gpointer reply_handler_func_data) ;
 
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data) ;
+
+
 static void doViews(gpointer data, gpointer user_data) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -356,7 +359,8 @@ void zmapControlSendViewCreated(ZMap zmap, ZMapView view, ZMapWindow window)
   (*(zmap->zmap_cbs_G->remote_request_func))(zmap->app_data,
 					     view,
 					     ZACP_VIEW_CREATED, view_element,
-					     handlePeerReply, zmap) ;
+					     handlePeerReply, zmap,
+                                             remoteReplyErrHandler, zmap) ;
 
   return ;
 }
@@ -387,7 +391,8 @@ void zmapControlSendViewDeleted(ZMap zmap, GList *destroyed_views)
   (*(zmap->zmap_cbs_G->remote_request_func))(zmap->app_data,
 					     NULL,
 					     ZACP_VIEW_DELETED, &(view_reply[0]),
-					     handlePeerReply, zmap) ;
+					     handlePeerReply, zmap,
+                                             remoteReplyErrHandler, zmap) ;
 
   return ;
 }
@@ -598,4 +603,16 @@ static ZMapXMLUtilsEventStack makeViewElement(ZMapView view)
   return element ;
 }
 
+
+
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data)
+{
+  ZMap zmap = (ZMap)user_data ;
+
+
+
+
+
+  return ;
+}
 
