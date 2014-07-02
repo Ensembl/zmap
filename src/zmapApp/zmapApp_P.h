@@ -209,6 +209,10 @@ typedef struct _ZMapAppRemoteStruct
   ZMapRemoteAppProcessReplyFunc process_reply_func ;
   gpointer process_reply_func_data ;
 
+  /* App function to be called if there was an error in sending the request, e.g. timeout. */
+  ZMapRemoteAppErrorHandlerFunc error_handler_func ;
+  gpointer error_handler_func_data ;
+
 } ZMapAppRemoteStruct, *ZMapAppRemote ;
 
 

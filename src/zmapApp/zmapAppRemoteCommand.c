@@ -93,14 +93,17 @@ typedef struct
 
 
 static void localProcessRemoteRequest(gpointer sub_system,
-      char *command_name, char *request,
-      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+                                      char *command_name, char *request,
+                                      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
-  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
-  gpointer reply_handler_func_data) ;
+                                  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
+                                  gpointer reply_handler_func_data) ;
 static void processRequest(ZMapAppContext app_context,
-   char *command_name, char *request,
-   RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
+                           char *command_name, char *request,
+                           RemoteCommandRCType *command_rc_out, char **reason_out,
+                           ZMapXMLUtilsEventStack *reply_out) ;
+
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data) ;
 
 static ZMapXMLUtilsEventStack createPeerElement(char *socket_id) ;
 static gboolean deferredRequestHandler(gpointer data) ;
@@ -120,7 +123,7 @@ static gboolean deferredRequestHandler(gpointer data) ;
 
 /* Handles all incoming requests to zmap from a peer. */
 void zmapAppProcessAnyRequest(ZMapAppContext app_context,
-      char *request, ZMapRemoteAppReturnReplyFunc replyHandlerFunc)
+                              char *request, ZMapRemoteAppReturnReplyFunc replyHandlerFunc)
 {
   ZMapAppRemote remote = app_context->remote_control ;
   RemoteValidateRCType valid_rc ;
@@ -196,8 +199,8 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
       char *id_str = NULL ;
 
       if (zMapRemoteCommandGetAttribute(remote->curr_peer_request,
-        ZACP_REQUEST, ZACP_VIEWID, &(id_str),
-        &err_msg))
+                                        ZACP_REQUEST, ZACP_VIEWID, &(id_str),
+                                        &err_msg))
         {
           if (zMapAppRemoteViewParseIDStr(id_str, (void **)&view_id))
             {
@@ -243,17 +246,17 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
   if (result)
     {
       if ((strcmp(command_name, ZACP_PING) == 0
-   || strcmp(command_name, ZACP_SHUTDOWN) == 0
-   || strcmp(command_name, ZACP_GOODBYE) == 0))
+           || strcmp(command_name, ZACP_SHUTDOWN) == 0
+           || strcmp(command_name, ZACP_GOODBYE) == 0))
         {
           localProcessRemoteRequest(app_context,
-            command_name, request,
-            replyHandlerFunc, app_context) ;
+                                    command_name, request,
+                                    replyHandlerFunc, app_context) ;
         }
       else if (!(result = zMapManagerProcessRemoteRequest(app_context->zmap_manager,
-          command_name, request,
-          zmap, view_ptr,
-          replyHandlerFunc, app_context)))
+                                                          command_name, request,
+                                                          zmap, view_ptr,
+                                                          replyHandlerFunc, app_context)))
         {
           RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_CMD_UNKNOWN ;
           char *reason = "Command not known !" ;
@@ -290,14 +293,14 @@ void zmapAppProcessAnyReply(ZMapAppContext app_context, char *reply)
 
   /* Need to parse out reply components..... */
   if (!(reply_ok = zMapRemoteCommandReplyGetAttributes(reply,
-       &command,
-       &command_rc, &reason,
-       &reply_body,
-       &error)))
+                                                       &command,
+                                                       &command_rc, &reason,
+                                                       &reply_body,
+                                                       &error)))
     {
       /* Log the problem with the reply. */
       zMapLogCritical("Could not parse peer programs reply because \"%s\", their reply was: \"%s\"",
-      error, reply) ;
+                      error, reply) ;
     }
 
 
@@ -327,9 +330,10 @@ gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context)
   request_body = createPeerElement(remote->app_socket) ;
 
   (request_func)(app_context,
-         NULL,
-         ZACP_HANDSHAKE, request_body,
-         localProcessReplyFunc, app_context) ;
+                 NULL,
+                 ZACP_HANDSHAKE, request_body,
+                 localProcessReplyFunc, app_context,
+                 remoteReplyErrHandler, app_context) ;
 
   return result ;
 }
@@ -344,9 +348,10 @@ gboolean zmapAppRemoteControlPing(ZMapAppContext app_context)
   request_func = zmapAppRemoteControlGetRequestCB() ;
 
   (request_func)(app_context,
-         NULL,
-         ZACP_PING, NULL,
-         localProcessReplyFunc, app_context) ;
+                 NULL,
+                 ZACP_PING, NULL,
+                 localProcessReplyFunc, app_context,
+                 remoteReplyErrHandler, app_context) ;
 
   return result ;
 }
@@ -371,9 +376,10 @@ gboolean zmapAppRemoteControlDisconnect(ZMapAppContext app_context, gboolean app
 
   /* Sets app_context->remote_ok to FALSE if disconnect fails. */
   (request_func)(app_context,
-         NULL,
-         ZACP_GOODBYE, goodbye_type,
-         localProcessReplyFunc, app_context) ;
+                 NULL,
+                 ZACP_GOODBYE, goodbye_type,
+                 localProcessReplyFunc, app_context,
+                 remoteReplyErrHandler, app_context) ;
   result = app_context->remote_ok ;
 
   return result ;
@@ -480,8 +486,8 @@ static gboolean deferredRequestHandler(gpointer data)
 /* This is where we process a command and return the result via the callback which allows
  * for asynch returning of values where needed. */
 static void localProcessRemoteRequest(gpointer local_data,
-      char *command_name, char *request,
-      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
+                                      char *command_name, char *request,
+                                      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)local_data ;
   RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_FAILED ;
@@ -499,8 +505,8 @@ static void localProcessRemoteRequest(gpointer local_data,
 
 /* This is where we process a reply received from a peer. */
 static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
-  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
-  gpointer reply_handler_func_data)
+                                  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
+                                  gpointer reply_handler_func_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)reply_handler_func_data ;
   char *command_err_msg = NULL ;
@@ -514,8 +520,8 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
       if (command_rc != REMOTE_COMMAND_RC_OK)
         {
           command_err_msg = g_strdup_printf("Peer reported error in reply for command \"%s\":"
-            " %s, \"%s\"",
-            command, zMapRemoteCommandRC2Str(command_rc), reason) ;
+                                            " %s, \"%s\"",
+                                            command, zMapRemoteCommandRC2Str(command_rc), reason) ;
         }
 
       if (strcmp(command, ZACP_HANDSHAKE) == 0)
@@ -535,14 +541,14 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
             {
               /* Note...it's legal not to give a window id, we just don't do any window checking. */
               if (!(result = zMapRemoteCommandGetAttribute(reply,
-                   ZACP_PEER, ZACP_WINDOW_ID, &window_id_str,
-                   &xml_err_msg))
+                                                           ZACP_PEER, ZACP_WINDOW_ID, &window_id_str,
+                                                           &xml_err_msg))
                   && (xml_err_msg))
                 {
                   full_err_str = g_strdup_printf("Error in \"%s\" xml: %s", ZACP_PEER, xml_err_msg) ;
         
                   zMapLogWarning("No window_id attribute specified in command %s, reason: %s",
-                         ZACP_HANDSHAKE, full_err_str) ;
+                                 ZACP_HANDSHAKE, full_err_str) ;
         
                   result = TRUE ;
                 }
@@ -565,7 +571,7 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
                     {
                       app_context->remote_control->peer_window = window_id ;
                       app_context->remote_control->peer_window_str
-                                = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, app_context->remote_control->peer_window) ;
+                        = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, app_context->remote_control->peer_window) ;
                 
                       result = TRUE ;
                     }
@@ -605,9 +611,9 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
  * Note that some commands (ping, shutdown) have no arguments do not need parsing.
  *  */
 static void processRequest(ZMapAppContext app_context,
-   char *command_name, char *request,
-   RemoteCommandRCType *command_rc_out, char **reason_out,
-   ZMapXMLUtilsEventStack *reply_out)
+                           char *command_name, char *request,
+                           RemoteCommandRCType *command_rc_out, char **reason_out,
+                           ZMapXMLUtilsEventStack *reply_out)
 {
 
   if (strcmp(command_name, ZACP_SHUTDOWN) == 0)
@@ -619,7 +625,7 @@ static void processRequest(ZMapAppContext app_context,
       if (zMapRemoteCommandGetAttribute(request,
                                         ZACP_SHUTDOWN_TAG, ZACP_SHUTDOWN_TYPE, &shutdown_type,
                                         &err_msg)
-                  && strcmp(shutdown_type, ZACP_ABORT) == 0)
+          && strcmp(shutdown_type, ZACP_ABORT) == 0)
         {
           gtk_exit(EXIT_FAILURE) ;
         }
@@ -660,5 +666,18 @@ static void processRequest(ZMapAppContext app_context,
 }
 
 
+
+
+
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+
+
+
+
+
+  return ;
+}
 
 

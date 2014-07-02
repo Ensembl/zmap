@@ -82,13 +82,12 @@ static void handleZMapRepliesCB(char *command, gboolean abort, RemoteCommandRCTy
 static void handleZMapRequestsCB(gpointer caller_data,
                                  gpointer sub_system_ptr,
                                  char *command, ZMapXMLUtilsEventStack request_body,
-                                 ZMapRemoteAppProcessReplyFunc reply_func, gpointer reply_func_data) ;
+                                 ZMapRemoteAppProcessReplyFunc reply_func, gpointer reply_func_data,
+                                 ZMapRemoteAppErrorHandlerFunc error_handler_func, gpointer error_handler_func_data) ;
 
 static void errorHandlerCB(ZMapRemoteControl remote_control,
                            ZMapRemoteControlRCType error_type, char *err_msg,
                            void *user_data) ;
-static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_data) ;
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void requestBlockingTestAndBlock(void) ;
@@ -177,7 +176,6 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_socke
 
   if ((remote_control = zMapRemoteControlCreate(app_id,
                                                 errorHandlerCB, app_context,
-                                                timeoutHandlerCB, app_context,
                                                 NULL, NULL)))
     {
       ZMapAppRemote remote ;
@@ -192,10 +190,9 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_socke
 
       remote->remote_controller = remote_control ;
 
-      if (peer_timeout_list)
-        zMapRemoteControlSetTimeoutList(remote->remote_controller, peer_timeout_list) ;
-      else
-        zMapRemoteControlSetTimeoutList(remote->remote_controller, ZMAP_WINDOW_TIMEOUT_LIST) ;
+      if (!peer_timeout_list)
+        peer_timeout_list = ZMAP_WINDOW_TIMEOUT_LIST ;
+      zMapRemoteControlSetTimeoutList(remote->remote_controller, peer_timeout_list) ;
 
       /* Only set debug from cmdline the first time around otherwise it overrides what
        * is set dynamically....maybe it should be per remote object ? */
@@ -416,7 +413,9 @@ static void replySentCB(void *user_data)
 static void handleZMapRequestsCB(gpointer caller_data,
                                  gpointer sub_system_ptr,
                                  char *command, ZMapXMLUtilsEventStack request_body,
-                                 ZMapRemoteAppProcessReplyFunc process_reply_func, gpointer process_reply_func_data)
+                                 ZMapRemoteAppProcessReplyFunc process_reply_func, gpointer process_reply_func_data,
+                                 ZMapRemoteAppErrorHandlerFunc error_handler_func,
+                                 gpointer error_handler_func_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)caller_data ;
   ZMapAppRemote remote = app_context->remote_control ;
@@ -483,7 +482,8 @@ static void handleZMapRequestsCB(gpointer caller_data,
               remote->process_reply_func = process_reply_func ;
               remote->process_reply_func_data = process_reply_func_data ;
 
-
+              remote->error_handler_func = error_handler_func ;
+              remote->error_handler_func_data = error_handler_func_data ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
               if (!(result = sendOrQueueRequest(remote, command, request,
@@ -622,142 +622,24 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
 
 
 
-/* 
- *         Called by ZMapRemoteControl: Receives all errors (n.b. only gets timeouts
- *         if timeoutHandlerCB returns FALSE).
- */
+/* Called by ZMapRemoteControl, receives all errors including timeouts. */
 static void errorHandlerCB(ZMapRemoteControl remote_control,
                            ZMapRemoteControlRCType error_type, char *err_msg,
                            void *user_data)
 {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* not used currently. */
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapAppRemote remote = app_context->remote_control ;
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Unblock if we are blocked. */
-  if (requestBlockingIsActive())
-    {
-      zMapDebugPrint(is_active_debug_G, "%s", "error in command/reply processing so unsetting our block.") ;
-      requestBlockingSetInActive() ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* Probably we need to call the level that made the original command request ??
-   * Do we have an error handler for each level...need to do this....
-   *  */
-  
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* and go back to waiting for a request...... */
-  if (!zMapRemoteControlReceiveWaitForRequest(app_context->remote_control->remote_controller))
-    {
-      zMapLogCritical("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
-      zMapWarning("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* Perform the next request in the queue, if there are any */
-  finishAndPerformNextRequest(request_queue_G);
+  if (remote->error_handler_func)
+    (remote->error_handler_func)(error_type, err_msg, remote->error_handler_func_data) ;
+  else
+    zMapLogWarning("%s", err_msg) ;
 
   return ;
 }
 
-
-/* Called by ZMapRemoteControl: Receives all timeouts, returns TRUE if 
- * timeout should be continued, FALSE otherwise.
- * 
- * If FALSE is returned the errorHandlerCB will be called by ZMapRemoteControl.
- */
-static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_data)
-{
-  gboolean result = FALSE ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* OLD STUFF...RECODE... */
-
-
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-  ZMapAppRemote app_remote_control = app_context->remote_control ;
-  Window x_window ;
-
-
-
-  /* If there is a peer window then we continue to wait by resetting the timeout,
-   * otherwise it's an error and our error handler will be called, we only do this
-   * up to a max of ZMAP_WINDOW_RETRIES for each phase of a transaction. */
-  if ((x_window = app_remote_control->peer_window))
-    {
-      if (!(app_remote_control->window_retries_left))
-        {
-          char *full_err_msg ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          full_err_msg = g_strdup_printf("Peer has still not responded after %d timeouts, transaction has timed out (peer clipboard is %s)\n",
-                                         app_remote_control->window_retries_max, 
-                                         (app_remote_control->peer_clipboard ? app_remote_control->peer_clipboard : "null")) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-          full_err_msg = g_strdup_printf("Peer has still not responded after %d timeouts,"
-                                         " transaction has timed out (peer clipboard is %s)\n",
-                                         app_remote_control->window_retries_max, 
-                                         (app_remote_control->peer_socket
-                                          ? app_remote_control->peer_socket : "no peer socket")) ;
-
-
-          zMapLogCritical("%s", full_err_msg) ;
-        
-          zMapCritical("%s", full_err_msg) ;
-
-          g_free(full_err_msg) ;
-        }
-      else
-        {
-          GdkWindow *gdk_window ; 
-          Display *x_display ;
-          char *err_msg = NULL ;      
-        
-          gdk_window = gtk_widget_get_window(app_context->app_widg) ;
-          x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
-        
-        
-          (app_remote_control->window_retries_left)-- ;
-
-
-          /* OK, THIS ALL HAS TO CHANGE........ */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          /* This is our way of testing to see if the peer application is alive, if the window id
-           * they gave us is still good then we assume they are still alive. */
-          if (!(result = zMapGUIXWindowExists(x_display, x_window, app_remote_control->peer_clipboard, &err_msg)))
-            {
-              char *full_err_msg ;
-        
-              full_err_msg = g_strdup_printf("Peer window ("ZMAP_XWINDOW_FORMAT_STR") has gone,"
-                                             " stopping remote control because: \"%s\".", x_window, err_msg) ;
-        
-              zMapLogCritical("%s", full_err_msg) ;
-        
-              zMapCritical("%s", full_err_msg) ;
-
-              g_free(full_err_msg) ;
-            }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-          g_free(err_msg) ;
-        }
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return result ;
-}
 
 
 
