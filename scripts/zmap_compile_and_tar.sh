@@ -232,7 +232,7 @@ then
     ssh $dev_machine "$copy_script $source_dir $project_area"
     wait
 
-    zmap_message_out "Running: ssh $dev_machine "$copy_script $server_dir $project_area""
+    zmap_message_out "Running: ssh $dev_machine "$copy_script $server_dir $project_area/bin""
     ssh $dev_machine "$copy_script $server_dir $project_area"
     wait
   
