@@ -366,7 +366,7 @@ static gboolean scratchMergeBase(ScratchMergeData merge_data)
                   if (cp == '*')
                     {
                       /* Decrement the coord so we don't include the stop codon in the exon */
-                      --merge_coord->operation->seq_start ;
+                      --merge_data->operation->seq_start ;
                       merge_data->operation->boundary = ZMAPBOUNDARY_5_SPLICE ; 
                     }
                   else if (cp == 'M' || cp == 'm')
