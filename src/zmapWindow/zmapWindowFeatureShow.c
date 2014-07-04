@@ -258,8 +258,8 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 static void printWarning(char *element, char *handler) ;
 
 
-static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title) ;
-static GtkWidget *makeMenuBar(ZMapWindowFeatureShow feature_show) ;
+static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title, const gboolean editable) ;
+static GtkWidget *makeMenuBar(ZMapWindowFeatureShow feature_show, const gboolean editable) ;
 
 static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list) ;
 static gboolean windowIsReusable(void) ;
@@ -390,7 +390,7 @@ void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item, const gboolea
         {
           show = featureShowCreate(window, item) ;
 
-          createEditWindow(show, title) ;
+          createEditWindow(show, title, editable) ;
         }
       else
         {
@@ -996,7 +996,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
 /* Create the feature display window, this can get very long if our peer (e.g. otterlace)
  * returns a lot of information so we need scrolling. */
-static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
+static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title, const gboolean editable)
 {
   GtkWidget *scrolled_window, *vbox ;
 
@@ -1023,7 +1023,7 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
   gtk_container_add(GTK_CONTAINER(feature_show->window), vbox) ;
 
 
-  gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(feature_show), FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(feature_show, editable), FALSE, FALSE, 0);
 
 
   /* Annotators asked for an overall scrolled window for feature details. */
@@ -1143,7 +1143,7 @@ static void destroyCB(GtkWidget *widget, gpointer data)
 
 
 /* make the menu from the global defined above ! */
-static GtkWidget *makeMenuBar(ZMapWindowFeatureShow feature_show)
+static GtkWidget *makeMenuBar(ZMapWindowFeatureShow feature_show, const gboolean editable)
 {
   GtkAccelGroup *accel_group;
   GtkItemFactory *item_factory;
@@ -1159,6 +1159,13 @@ static GtkWidget *makeMenuBar(ZMapWindowFeatureShow feature_show)
   gtk_window_add_accel_group(GTK_WINDOW(feature_show->window), accel_group) ;
 
   menubar = gtk_item_factory_get_widget(item_factory, "<main>");
+
+  /* Grey out the Save option if not editable */
+  if (!editable)
+    {
+      GtkWidget *widget = gtk_item_factory_get_widget(item_factory, "/File/Save") ;
+      gtk_widget_set_sensitive(widget, editable) ;
+    }
 
   return menubar ;
 }

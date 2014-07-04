@@ -141,6 +141,13 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
 
 #endif
 
+/* #define DUMP_GFF_TO_FILE 1 */
+
+#ifdef DUMP_GFF_TO_FILE
+static const char * sFilename = "/nfs/users/nfs_s/sm23/Work/dumpfile.txt" ;
+static FILE *pFile = NULL ;
+#endif
+
 /*
  * Parser FSM transitions. Row is current state, columns is line type.
  */
@@ -2168,6 +2175,22 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
     pSOIDData                         = NULL
   ;
 
+#ifdef DUMP_GFF_TO_FILE
+  if (pFile == NULL)
+    {
+      pFile = fopen(sFilename, "w") ;
+      if (pFile == NULL)
+        {
+          fprintf(stderr, "could not open gff dump file.\n") ;
+        }
+    }
+  else
+    {
+      fprintf(pFile, "%s\n", sLine) ;
+      fflush(pFile) ;
+    }
+#endif
+
   /*
    * Cast to concrete type for GFFV3.
    */
@@ -3044,7 +3067,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
                                         ZMapFeatureSet pFeatureSet,
                                         char ** psError)
 {
-  static const char * sReadPair = "read_pair" ;
+  static const char * sRead = "read" ;
   typedef enum {NONE, FIRST, SECOND} CaseToTreat ;
   CaseToTreat cCase = NONE ;
   unsigned int iSOID = 0,
@@ -3066,13 +3089,17 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
     bNewFeatureCreated = FALSE,
     bFeatureAdded = FALSE,
     bParseAttribute = FALSE,
+    bParseAttributeID = FALSE,
+    bParseAttributeTarget = FALSE,
     bDataAdded = FALSE ;
   GArray *pGaps = NULL ;
   GQuark gqTargetID = 0 ;
   ZMapSOIDData pSOIDData = NULL ;
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute *pAttributes = NULL,
-    pAttribute = NULL ;
+    pAttribute = NULL,
+    pAttributeID = NULL,
+    pAttributeTarget = NULL ;
   ZMapStrand cStrand = ZMAPSTRAND_NONE,
     cTargetStrand = ZMAPSTRAND_NONE ;
   ZMapPhase cPhase = ZMAPPHASE_NONE ;
@@ -3129,22 +3156,32 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
   /*
    * We treat two cases:
    * (a) First is an "ordinary" alignment where we are after the "Target" attribute.
-   * (b) Second is a read_pair, where we are interested in the "Target" and the "read_pair_id"
-   *     attributes
+   * (b) Second is a SO_term = "read", where we are interested in the "Target" and the "ID"
+   *     attributes. The "ID" attribute is used to associated the two parts of a read pair.
    *
-   * This may change soon...
    */
 
-  if  (         strcmp(sReadPair, sSOType)
-             && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Target))
-             && zMapAttParseTarget(pAttribute, &gqTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand)
+  if ((pAttributeTarget = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Target)))
+    {
+      bParseAttributeTarget = zMapAttParseTarget(pAttributeTarget, &gqTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
+    }
+
+  if ((pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)))
+    {
+      bParseAttributeID = zMapAttParseID(pAttributeID, &gqTargetID) ;
+    }
+
+
+
+  if  (         !strstr(sRead, sSOType)
+             && bParseAttributeTarget
       )
     {
       cCase = FIRST ;
     }
-  else if (     !strcmp(sReadPair, sSOType)
-             && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_read_pair_id))
-             && zMapAttParseReadPairID(pAttribute, &gqTargetID)
+  else if (     strstr(sRead, sSOType)
+             && bParseAttributeTarget
+             && bParseAttributeID
           )
     {
       cCase = SECOND ;
