@@ -1279,7 +1279,7 @@ gboolean zMapAttParseParent(ZMapGFFAttribute pAttribute, char ** const sOut)
  */
 gboolean zMapAttParseURL(ZMapGFFAttribute pAttribute, char** const sOut)
 {
-  gboolean bResult = FALSE, bReplaced = FALSE ;
+  gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseURL()" ;
   if (!pAttribute)
     return bResult ;
@@ -1292,7 +1292,6 @@ gboolean zMapAttParseURL(ZMapGFFAttribute pAttribute, char** const sOut)
 
   if (strlen(sValue))
     {
-      /* bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedEquals, sEquals, sOut) ; */
       *sOut = removeAllEscapedCharacters(sValue) ;
       bResult = TRUE ;
     }
@@ -1370,7 +1369,7 @@ gboolean zMapAttParseAlleleString(ZMapGFFAttribute pAttribute, char ** const psO
  */
 gboolean zMapAttParseNote(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
-  gboolean bResult = FALSE, bReplaced = FALSE ;
+  gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseNote()" ;
   if (!pAttribute)
     return bResult ;
@@ -1383,8 +1382,6 @@ gboolean zMapAttParseNote(ZMapGFFAttribute pAttribute, char ** const sOut)
 
   if (strlen(sValue))
     {
-      /* bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedComma, sComma, sOut) ; */
-      /* *sOut = g_strdup(sValue) ; */
       *sOut = removeAllEscapedCharacters(sValue) ;
       bResult = TRUE ;
     }
