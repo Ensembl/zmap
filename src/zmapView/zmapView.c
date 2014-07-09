@@ -6606,7 +6606,13 @@ static void destroyLoadFeatures(LoadFeaturesData loaded_features)
 
 static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* UNUSED AT THE MOMENT */
+
   ZMapView zmap_view = (ZMapView)user_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
