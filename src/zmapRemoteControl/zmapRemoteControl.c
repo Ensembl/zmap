@@ -100,6 +100,14 @@ enum
 	       (FORMAT_STR), __VA_ARGS__) ;				\
     } while (0)
 
+
+#define REPORTMSG(REMOTE_CONTROL, MSG, PREFIX)                          \
+  do                                                                    \
+    {                                                                   \
+      REMOTELOGMSG((REMOTE_CONTROL), "%s:\n%s\n%s", (PREFIX), (MSG)->header, (MSG)->body) ; \
+    } while (0)
+
+
 /* Switchable version of remotelogmsg for debugging sessions. */
 #define DEBUGLOGMSG(REMOTE_CONTROL, DEBUG_LEVEL, FORMAT_STR, ...)       \
   do									\
@@ -162,14 +170,6 @@ enum
 
 
 
-#define REPORTMSG(REMOTE_CONTROL, MSG, PREFIX)                          \
-  do                                                                    \
-    {                                                                   \
-      REMOTELOGMSG((REMOTE_CONTROL), "%s:\n%s\n%s", (PREFIX), (MSG)->header, (MSG)->body) ; \
-    } while (0)
-
-
-
 
 
 
@@ -179,7 +179,6 @@ static RemoteReceive createReceive(GQuark app_id,
 				   gpointer process_request_func_data,
 				   ZMapRemoteControlReplySentFunc reply_sent_func,
 				   gpointer reply_sent_func_data) ;
-static void resetReceive(RemoteReceive receive_request) ;
 static void destroyReceive(ZMapRemoteControl remote_control) ;
 static gboolean createSend(ZMapRemoteControl remote_control, char *socket_string,
                            ZMapRemoteControlRequestSentFunc req_sent_func, gpointer req_sent_func_data,
@@ -193,6 +192,7 @@ static gboolean waitForReplyCB(gpointer user_data) ;
 static void receiveReplyFromAppCB(void *remote_data, gboolean abort, char *reply) ;
 
 static gboolean setToFailed(ZMapRemoteControl remote_control) ;
+static gboolean setToInactive(ZMapRemoteControl remote_control) ;
 
 static char *headerCreate(char *request_type, char *request_id, int retry_num, char *request_time) ;
 static char *headerSetRetry(char *curr_header, int retry_num) ;
@@ -209,13 +209,14 @@ static gint higherPriorityCB(gconstpointer a, gconstpointer b, gpointer user_dat
 static RemoteZeroMQMessage queueRemove(GQueue *queue) ;
 static RemoteZeroMQMessage queuePeek(GQueue *queue) ;
 static gboolean queueIsEmpty(GQueue *queue) ;
+static void queueEmpty(GQueue *queue) ;
 static void queueDestroy(GQueue *queue) ;
 static void freeQueueElementCB(gpointer data, gpointer user_data_unused) ;
 
 static gboolean sendRequest(ZMapRemoteControl remote_control, RemoteZeroMQMessage request) ;
-static gboolean receiveReply(ZMapRemoteControl remote_control, RemoteZeroMQMessage reply) ;
+static gboolean passReplyToApp(ZMapRemoteControl remote_control, RemoteZeroMQMessage reply) ;
 
-static gboolean receiveRequest(ZMapRemoteControl remote_control, RemoteZeroMQMessage request) ;
+static gboolean passReceiveToApp(ZMapRemoteControl remote_control, RemoteZeroMQMessage request) ;
 static gboolean sendReply(ZMapRemoteControl remote_control, RemoteZeroMQMessage reply) ;
 
 static ReqReply reqReplyCreate(RemoteZeroMQMessage request, RemoteControlRequestType request_type, char *end_point) ;
@@ -257,26 +258,6 @@ static void errorMsg(ZMapRemoteControl remote_control,
 		     const char *file_name, const char *func_name, char *format_str, ...) ;
 static void logMsg(ZMapRemoteControl remote_control,
 		   const char *file_name, const char *func_name, char *format_str, va_list args) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-gboolean isInReceiveState(RemoteControlState state) ;
-gboolean isInSendState(RemoteControlState state) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-static void resetRemoteToIdle(ZMapRemoteControl remote_control) ; 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void addTimeout(ZMapRemoteControl remote_control) ;
-static gboolean haveTimeout(ZMapRemoteControl remote_control) ;
-static void removeTimeout(ZMapRemoteControl remote_control) ;
-static gboolean timeOutCB(gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
 
@@ -322,7 +303,7 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
 
       remote_control->version = g_quark_from_string(ZACP_VERSION) ;
 
-      remote_control->state = REMOTE_STATE_IDLE ;
+      remote_control->state = REMOTE_STATE_INACTIVE ;
 
       /* Set up our zeroMQ context for talking to our peer. */
       remote_control->zmq_context = zmq_ctx_new() ;
@@ -356,10 +337,6 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
 	  remote_control->err_report_func = stderrOutputCB ;
 	  remote_control->err_report_data = NULL ;
 	}
-
-      /* Set up timer routine to monitor our incoming/outgoing queues. */
-      remote_control->queue_monitor_cb_id = g_timeout_add(QUEUE_WATCH_INTERVAL, queueMonitorCB, remote_control) ;
-
 
       /* can't be earlier as we need app_id and err_report_XX stuff. */
       DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
@@ -395,6 +372,8 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
   TimerData timer_data ;
 
   zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), FALSE) ;
+  zMapReturnValIfFail((remote_control->state != REMOTE_STATE_FAILED && remote_control->state != REMOTE_STATE_DYING),
+                      FALSE) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -417,6 +396,12 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
     }
   else
     {
+      /* Lazy set up of timer routine to monitor our incoming/outgoing queues,
+       * not needed until send or receive is set up. */
+      if (!(remote_control->queue_monitor_cb_id))
+        remote_control->queue_monitor_cb_id = g_timeout_add(QUEUE_WATCH_INTERVAL, queueMonitorCB, remote_control) ;
+
+
       remote_control->receive = createReceive(remote_control->app_id,
                                               process_request_func, process_request_func_data,
                                               reply_sent_func, reply_sent_func_data) ;
@@ -425,12 +410,14 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
       remote_control->receive->zmq_end_point = socket_address ;
       remote_control->receive->timer_data = timer_data ;
 
-      REMOTELOGMSG(remote_control,
-                   "Receive interface initialised on \"%s\".",
-                   remote_control->receive->zmq_end_point) ;
+      remote_control->state = REMOTE_STATE_IDLE ;
 
       if (app_socket_out)
         *app_socket_out = g_strdup(remote_control->receive->zmq_end_point) ;
+
+      REMOTELOGMSG(remote_control,
+                   "Receive interface initialised on \"%s\".",
+                   remote_control->receive->zmq_end_point) ;
 
       result = TRUE ;
     }    
@@ -456,6 +443,8 @@ gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
   char *err_msg = NULL ;
 
   zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), FALSE) ;
+  zMapReturnValIfFail((remote_control->state != REMOTE_STATE_FAILED && remote_control->state != REMOTE_STATE_DYING),
+                      FALSE) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -478,6 +467,13 @@ gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
                       process_reply_func, process_reply_func_data,
                       &err_msg))
     {
+      /* Lazy set up of timer routine to monitor our incoming/outgoing queues,
+       * not needed until send or receive is set up. */
+      if (!(remote_control->queue_monitor_cb_id))
+        remote_control->queue_monitor_cb_id = g_timeout_add(QUEUE_WATCH_INTERVAL, queueMonitorCB, remote_control) ;
+
+      remote_control->state = REMOTE_STATE_IDLE ;
+
       REMOTELOGMSG(remote_control,
                    "Send interface initialised on \"%s\".",
                    remote_control->send->zmq_end_point) ;
@@ -505,6 +501,9 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
   gboolean result = FALSE ;
 
   zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), FALSE) ;
+  zMapReturnValIfFail((remote_control->state != REMOTE_STATE_FAILED && remote_control->state != REMOTE_STATE_DYING),
+                      FALSE) ;
+
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -551,19 +550,27 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
 }
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Resets the remote interface to REMOTE_STATE_IDLE. */
-void zMapRemoteControlReset(ZMapRemoteControl remote_control)
+/* Attempts to completely reset the remotecontrol object, after this call the send/receive
+ * interfaces need to be reinit'd. Returns TRUE if the reset was possible, FALSE otherwise.
+ * Fails if the remote control object is dying. */
+gboolean zMapRemoteControlReset(ZMapRemoteControl remote_control)
 {
-  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
+  gboolean result = TRUE ;
 
-  resetRemoteToIdle(remote_control) ;
+  zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), FALSE) ;
+  zMapReturnValIfFail((remote_control->state != REMOTE_STATE_FAILED && remote_control->state != REMOTE_STATE_DYING),
+                      FALSE) ;
 
-  return ;
+  if (!(result = setToInactive(remote_control)))            /* N.B. sets state to inactive. */
+    {
+      REMOTELOGMSG(remote_control, "%s", "Could not reset remote control cleanly, object has failed.") ;
+
+      remote_control->state = REMOTE_STATE_FAILED ;
+    }
+
+  return result ;
  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* If remote control has failed then no messages can be sent or received.
@@ -573,7 +580,7 @@ gboolean zMapRemoteControlHasFailed(ZMapRemoteControl remote_control)
 {
   gboolean result = FALSE ;
 
-  if (remote_control->state == REMOTE_STATE_FAILED)
+  if (remote_control->state == REMOTE_STATE_FAILED || remote_control->state == REMOTE_STATE_DYING)
     result = TRUE ;
 
   return result ;
@@ -587,6 +594,8 @@ gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, ZMapRemoteC
   gboolean result = TRUE ;
 
   zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), FALSE) ;
+  zMapReturnValIfFail((remote_control->state != REMOTE_STATE_FAILED && remote_control->state != REMOTE_STATE_DYING),
+                      FALSE) ;
 
   remote_debug_G = debug_level ;
 
@@ -603,6 +612,8 @@ gboolean zMapRemoteControlSetTimeoutList(ZMapRemoteControl remote_control, char 
 
   zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), FALSE) ;
   zMapReturnValIfFail((peer_timeout_list || *peer_timeout_list), FALSE) ;
+  zMapReturnValIfFail((remote_control->state != REMOTE_STATE_FAILED && remote_control->state != REMOTE_STATE_DYING),
+                      FALSE) ;
 
   if ((timeouts = g_strsplit(peer_timeout_list, ",", -1)))
     {
@@ -653,6 +664,8 @@ gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
 
   zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), FALSE) ;
   zMapReturnValIfFail((err_report_func), FALSE) ;
+  zMapReturnValIfFail((remote_control->state != REMOTE_STATE_FAILED && remote_control->state != REMOTE_STATE_DYING),
+                      FALSE) ;
 
   remote_control->err_report_func = err_report_func ;
   remote_control->err_report_data = err_report_data ;
@@ -669,6 +682,8 @@ gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control)
   gboolean result = FALSE ;
 
   zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), FALSE) ;
+  zMapReturnValIfFail((remote_control->state != REMOTE_STATE_FAILED && remote_control->state != REMOTE_STATE_DYING),
+                      FALSE) ;
 
   remote_control->err_report_func = stderrOutputCB ;
   remote_control->err_report_data = NULL ;
@@ -677,47 +692,38 @@ gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control)
  }
 
 
-/* READ THIS FROM MICHAEL ABOUT CLEARING UP......
-   Sounds like good progress!
-   A warning: I have just been banging my head all morning against a problem of
-   hanging-on-exit, which I eventually tracked down to zeromq. It is well described
-   here: http://zguide.zeromq.org/page:all#Making-a-Clean-Exit [zguide.zeromq.org]
-
-   You need to close all 0MQ sockets before calling zmq_ctx_destroy().
-
-   Also I'd earlier run across the need to set LINGER to 0 on the ZMQ_REQ socket.
-   In perl: zmq_setsockopt($_zmq_requester, ZMQ_LINGER, 0);
-*/
-
-
 /* Free all resources and destroy the remote control block.
  * 
  *  */
 void zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
 {
-  char *fail_msg = NULL ;
+  char *err_msg ;
 
   zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
   zMapReturnIfFail(remote_control->state != REMOTE_STATE_DYING) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
-  if (remote_control->state != REMOTE_STATE_IDLE && remote_control->state != REMOTE_STATE_FAILED)
+  if (remote_control->state != REMOTE_STATE_INACTIVE
+      && remote_control->state != REMOTE_STATE_IDLE && remote_control->state != REMOTE_STATE_FAILED)
     {
       REMOTELOGMSG(remote_control,
 		   "Remote Control is being destroyed while in %s state, transactions will be lost !",
 		   remoteState2ExactStr(remote_control->state)) ;
     }
 
-  if (remote_control->state != REMOTE_STATE_FAILED)
-    {
-      if (setToFailed(remote_control))                      /* Sets state to REMOTE_STATE_FAILED. */
-        fail_msg = "Destroyed RemoteControl interfaces." ;
-      else
-        fail_msg = "Could not destroy RemoteControl interfaces cleanly." ;
+  if (remote_control->state != REMOTE_STATE_FAILED || remote_control->state != REMOTE_STATE_INACTIVE)
+    setToInactive(remote_control) ;
 
-      REMOTELOGMSG(remote_control, "%s", fail_msg) ;
-    }
+  if (zmq_ctx_term(remote_control->zmq_context) == 0)
+    err_msg = g_strdup("zeroMQ context destroyed cleanly") ;
+  else
+    err_msg = g_strdup_printf("zeroMQ context destroy failed: \"%s\".", g_strerror(errno)) ;
+  REMOTELOGMSG(remote_control,
+               "%s.", err_msg) ;
+  g_free(err_msg) ;
+  remote_control->zmq_context = NULL ;
+
 
   remote_control->state = REMOTE_STATE_DYING ;
 
@@ -728,8 +734,11 @@ void zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
 
   REMOTELOGMSG(remote_control, "%s", "Destroyed request/reply queues.") ;
 
-  if (remote_control->curr_req_raw)
-    zeroMQMessageDestroy(remote_control->curr_req_raw) ;
+  if (remote_control->timeout_list)
+    {
+      g_array_free (remote_control->timeout_list, TRUE) ;
+      remote_control->timeout_list = NULL ;
+    }
 
 
   /* Make sure this happens whether destroy succeeds or not....latest we can
@@ -743,8 +752,6 @@ void zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
 
   return ;
 }
-
-
 
 
 
@@ -815,15 +822,14 @@ static gboolean waitForRequestCB(gpointer user_data)
   char *request = NULL ;
   char *err_msg = NULL ;
 
-  
-
   if ((result = zeroMQSocketFetchMessage(receive->zmq_socket, &header, &request, &err_msg)) == SOCKET_FETCH_FAILED)
     {
+      /* Bad error, disable remote control. */
       REMOTELOGMSG(remote_control, "Error, could not fetch header and request: \"%s\".", err_msg) ;
 
       call_again = FALSE ;
 
-      /* should set state and clear up here ????  YES, WE NEED TO DO THIS...*/
+      setToFailed(remote_control) ;
     }
   else if (result == SOCKET_FETCH_NOTHING)
     {
@@ -840,8 +846,6 @@ static gboolean waitForRequestCB(gpointer user_data)
 
       queueAdd(remote_control->incoming_requests, incoming_request) ;
     }
-
-
 
   return call_again ;
 }
@@ -869,7 +873,7 @@ static gboolean waitForReplyCB(gpointer user_data)
 
       call_again = FALSE ;
 
-      /* should set state and clear up here ????  YES, WE NEED TO DO THIS...*/
+      setToFailed(remote_control) ;
     }
   else if (result == SOCKET_FETCH_NOTHING)
     {
@@ -944,12 +948,30 @@ static void receiveReplyFromAppCB(void *remote_data, gboolean abort, char *reply
 
 
 /* If communication with the peer fails in an unrecoverable way this function is called
- * to set state and clear up.
+ * to set state and clear up, sets state to FAILED so remote control object cannot be
+ * used.
  * 
  * Returns TRUE if clear up done cleanly, FALSE otherwise. */
 static gboolean setToFailed(ZMapRemoteControl remote_control)
 {
   gboolean result = TRUE ;
+
+  result = setToInactive(remote_control) ;
+
+  remote_control->state = REMOTE_STATE_FAILED ;
+
+  return result ;
+}
+
+
+/* Set remote control object to inactive by destroying the send/receive
+ * interfaces (if they exist).
+ * 
+ * Returns TRUE if object could be set inactively cleanly, FALSE otherwise. */
+static gboolean setToInactive(ZMapRemoteControl remote_control)
+{
+  gboolean result = TRUE ;
+  char *msg ;
 
   /* Stop monitoring for new requests/replies in the queues. */
   if ((remote_control->queue_monitor_cb_id) && !g_source_remove(remote_control->queue_monitor_cb_id))
@@ -958,6 +980,13 @@ static gboolean setToFailed(ZMapRemoteControl remote_control)
       result = FALSE ;
     }
   remote_control->queue_monitor_cb_id = 0 ;
+
+  /* Empty the queues. */
+  queueEmpty(remote_control->incoming_requests) ;
+  queueEmpty(remote_control->outgoing_replies) ;
+  queueEmpty(remote_control->outgoing_requests) ;
+  queueEmpty(remote_control->incoming_replies) ;
+
 
   /* Remove request/reply interfaces (includes destroying zmq sockets). */
   if (remote_control->receive)
@@ -972,15 +1001,42 @@ static gboolean setToFailed(ZMapRemoteControl remote_control)
       remote_control->send = NULL ;
     }
 
-  /* Remove zmq context. */
-  if ((remote_control->zmq_context) && zmq_ctx_destroy(remote_control->zmq_context) != 0)
-    {
-      REMOTELOGMSG(remote_control, "Cannot destroy zermoMQ context: \"%s\"", g_strerror(errno)) ;
-      result = FALSE ;
-    }
-  remote_control->zmq_context = NULL ;
 
-  remote_control->state = REMOTE_STATE_FAILED ;
+  /* There are quite a few of these to be dealt with... */
+  if (remote_control->curr_req_raw)
+    {
+      zeroMQMessageDestroy(remote_control->curr_req_raw) ;
+      remote_control->curr_req_raw = NULL ;
+    }
+
+  if (remote_control->curr_req)
+    {
+      reqReplyDestroy(remote_control->curr_req) ; 
+      remote_control->curr_req = NULL ;
+    }
+
+  if (remote_control->prev_incoming_req)
+    {
+      reqReplyDestroy(remote_control->prev_incoming_req) ; 
+      remote_control->prev_incoming_req = NULL ;
+    }
+
+  if (remote_control->stalled_req)
+    {
+      reqReplyDestroy(remote_control->stalled_req) ; 
+      remote_control->stalled_req = NULL ;
+    }
+
+  timeoutResetTimeouts(remote_control) ;
+
+  remote_control->state = REMOTE_STATE_INACTIVE ;
+
+  if (result)
+    msg = "RemoteControl interfaces destroyed cleanly." ;
+  else
+    msg = "Could not destroy RemoteControl interfaces cleanly." ;
+
+  REMOTELOGMSG(remote_control, "%s", msg) ;
 
   return result ;
 }
@@ -992,6 +1048,9 @@ static gboolean setToFailed(ZMapRemoteControl remote_control)
 /* A GSourceFunc() called back by glib every QUEUE_WATCH_INTERVAL ms to monitor and process
  * incoming and outgoing requests.
  * 
+ * This function won't be called until either/both of the receive or send interfaces have
+ * been initialised.
+ * 
  * This is the gatekeeper for ordering and processing of requests, we can only be handling
  * one request at a time and collisions and timeouts are handled here.
  * 
@@ -1002,11 +1061,22 @@ static gboolean queueMonitorCB(gpointer user_data)
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
   gboolean done = FALSE ;
 
+  zMapReturnValIfFail((remote_control->state != REMOTE_STATE_FAILED && remote_control->state != REMOTE_STATE_DYING),
+                      FALSE) ;
 
   while (!done)
     {
       switch (remote_control->state)
         {
+        case REMOTE_STATE_INACTIVE:
+          {
+            BADSTATELOGMSG(remote_control, remote_control->state,
+                           "%s",
+                           "Function should not be called while in inactive state, check log for errors.") ;
+
+            break ;
+          }
+
         case REMOTE_STATE_IDLE:
           {
             DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
@@ -1101,7 +1171,8 @@ static gboolean queueMonitorCB(gpointer user_data)
 
                 if (reqReplyMatch(remote_control, remote_control->curr_req, reply->body, &err_msg))
                   {
-                    result = receiveReply(remote_control, reply) ;
+                    /* Pass the reply back to the application. */
+                    result = passReplyToApp(remote_control, reply) ;
 
                     reqReplyDestroy(remote_control->curr_req) ;
                     remote_control->curr_req = NULL ;
@@ -1179,27 +1250,18 @@ static gboolean queueMonitorCB(gpointer user_data)
                         remote_control->curr_req_raw->header = headerSetRetry(remote_control->curr_req_raw->header,
                                                                               (remote_control->timeout_list_pos + 1)) ;
 
-
-
                         reqReplyDestroy(remote_control->curr_req) ;
                         remote_control->curr_req = NULL ;
 
-                        /* think we may need to redo our send socket....  */
+                        /* Timed out, so recreate our send socket to clean it all up.  */
                         if (!recreateSend(remote_control, &err_msg))
                           {
-                            /* this is actually a disaster and we need to really clean up...
-                             * SORT OUT A FUNCTION TO DO THIS... */
-
+                            /* Disaster, we can't reset the socket so set to fail. */
                             REMOTELOGMSG(remote_control,
                                          "Could not recreate send socket: \"%s\" !",
                                          err_msg) ;
 
-                            zeroMQMessageDestroy(remote_control->curr_req_raw) ;
-                            remote_control->curr_req_raw = NULL ;
- 
-                            timeoutResetTimeouts(remote_control) ;
- 
-                            remote_control->state = REMOTE_STATE_IDLE ;
+                            setToFailed(remote_control) ;
                           }
                         else
                           {
@@ -1257,8 +1319,8 @@ static gboolean queueMonitorCB(gpointer user_data)
             RemoteZeroMQMessage request ;
             char *err_msg = NULL ;
 
-            REMOTELOGMSG(remote_control,
-                         "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
+            DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
+                        "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
 
             request = queueRemove(remote_control->incoming_requests) ;
 
@@ -1266,31 +1328,27 @@ static gboolean queueMonitorCB(gpointer user_data)
                 && reqReplyRequestIsSame(remote_control,
                                          remote_control->prev_incoming_req->request->body, request->body, &err_msg))
               {
+                /* There's a new incoming request but it's the same as the previous one, which
+                 * means that we must have timed out with our reply to the peer so we just send
+                 * the same reply back and throw away the incoming event. */
                 RemoteZeroMQMessage raw_reply ;
-
-                /* OK, HERE WE NEED TO CHECK IF THE INCOMING REQEUST IS THE SAME AS remote_control->prev_incoming_req
-                   (IF THERE IS ONE !!) AND THEN JUST ENSURE WE RETURN THE REPLY FROM THIS....AND THROW AWAY
-                   THE INCOMING EVENT....
-
-                   IF REQUEST IS THE SAME WE NEED TO GET OUR REPLY OUT OF remote_control->prev_incoming_req,
-                   STICK IT BACK ON THE outgoing_replies QUEUE AND MOVE ON TO THE BELOW STATE.... */
 
                 raw_reply = reqReplyStealReply(remote_control->prev_incoming_req) ;
 
                 REPORTMSG(remote_control, raw_reply, "Repeat request, resending original reply") ;
-
                 
                 queueAddFront(remote_control->outgoing_replies, raw_reply) ;
 
                 remote_control->curr_req = remote_control->prev_incoming_req ;
                 remote_control->prev_incoming_req = NULL ;
 
+                zeroMQMessageDestroy(request) ;             /* Get rid of the incoming request. */
 
                 remote_control->state = REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY ;
               }
             else
               {
-                if ((result = receiveRequest(remote_control, request)))
+                if ((result = passReceiveToApp(remote_control, request)))
                   {
                     remote_control->curr_req = reqReplyCreate(request, REQUEST_TYPE_INCOMING,
                                                               receive->zmq_end_point) ;
@@ -1313,18 +1371,16 @@ static gboolean queueMonitorCB(gpointer user_data)
             break ;
           }
 
-
         case REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY:
           {
-            REMOTELOGMSG(remote_control,
-                         "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
-
+            DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
+                        "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
 
             if (queueIsEmpty(remote_control->outgoing_replies))
               {
-                /* add timeout stuff ?? */
+                /* We could add timeout stuff here but we shouldn't need to as the reply is coming
+                 * from our application. */
                 ;
-
               }
             else
               {
@@ -1367,10 +1423,15 @@ static gboolean queueMonitorCB(gpointer user_data)
             break ;
           }
 
-
         default:
           {
+            /* Bad state, set interface to failed. */
             zMapWarnIfReached() ;
+
+            REMOTELOGMSG(remote_control, "Remote control disabled because invalid state encountered: %d",
+                         remote_control->state) ;
+
+            setToFailed(remote_control) ;
 
             break ;
           }
@@ -1399,27 +1460,24 @@ static gboolean sendRequest(ZMapRemoteControl remote_control, RemoteZeroMQMessag
   RemoteSend send = remote_control->send ;
   char *err_msg = NULL ;
 
-  REPORTMSG(remote_control, request, "About to send request") ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, 
+              "About to send request: %s", request->body) ;
 
   if ((result = zeroMQSocketSendMessage(send->zmq_socket, request->header, request->body, &err_msg)))
     {
       REPORTMSG(remote_control, request, "Request sent") ;
 
-      /* Optionally call app to signal that peer has received their request. */
+      /* Optionally call app to signal that peer that request has been sent. */
       if (send->req_sent_func)
         {
-          REMOTELOGMSG(remote_control,
-                       "%s", "About to call Apps requestSentCB.") ;
+          DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
+                      "%s", "About to call Apps requestSentCB.") ;
 
           (send->req_sent_func)(send->req_sent_func_data) ;
 
-          REMOTELOGMSG(remote_control,
-                       "%s", "Back from Apps requestSentCB.") ;
+          DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
+                      "%s", "Back from Apps requestSentCB.") ;
         }
-
-      REMOTELOGMSG(remote_control,
-                   "Now Waiting for a reply on our zeromq socket \"%s\").",
-                   send->zmq_end_point) ;
 
       result = TRUE ;
     }
@@ -1436,23 +1494,27 @@ static gboolean sendRequest(ZMapRemoteControl remote_control, RemoteZeroMQMessag
   return result ;
 }
 
-/* Receive reply from our peer. */
-static gboolean receiveReply(ZMapRemoteControl remote_control, RemoteZeroMQMessage reply)
+
+
+/* Pass our peers reply back to the application. */
+static gboolean passReplyToApp(ZMapRemoteControl remote_control, RemoteZeroMQMessage reply)
 {
   gboolean result = TRUE ;
   RemoteSend send = remote_control->send ;
 
   if (send->process_reply_func)
     {
-      REMOTELOGMSG(remote_control, "About to call apps ReplyHandlerFunc callback"
-                   " to process the reply:\n \"%s\"",
-                   reply->body) ;
+      DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
+                  "About to call apps ReplyHandlerFunc callback"
+                  " to process the reply:\n \"%s\"",
+                  reply->body) ;
 
       /* Call the app callback, this MUST be last because app may make a new call
        * to this code causing us to re-enter. */
       (send->process_reply_func)(remote_control, reply->body, send->process_reply_func_data) ;
 
-      REMOTELOGMSG(remote_control, "\"%s\"", "Back from apps ReplyHandlerFunc callback.") ;
+      DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
+                  "\"%s\"", "Back from apps ReplyHandlerFunc callback.") ;
     }
 
   return result ;
@@ -1462,12 +1524,13 @@ static gboolean receiveReply(ZMapRemoteControl remote_control, RemoteZeroMQMessa
 
 
 /* Receive a request from our peer, bit of a funny function, needs renaming now.... */
-static gboolean receiveRequest(ZMapRemoteControl remote_control, RemoteZeroMQMessage request)
+static gboolean passReceiveToApp(ZMapRemoteControl remote_control, RemoteZeroMQMessage request)
 {
   gboolean result = TRUE ;
   RemoteReceive receive = remote_control->receive ;
 
-  REMOTELOGMSG(remote_control, "Calling apps callback func to process request:\n \"%s\"",
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
+              "Calling apps callback func to process request:\n \"%s\"",
                request->body) ;
 
   /* Call the app callback to process the request, the app will call
@@ -1476,6 +1539,10 @@ static gboolean receiveRequest(ZMapRemoteControl remote_control, RemoteZeroMQMes
   (receive->process_request_func)(remote_control, receiveReplyFromAppCB, remote_control,
                                   request->body,
                                   receive->process_request_func_data) ;
+
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
+              "Returned from apps callback func to process request:\n \"%s\"",
+               request->body) ;
 
   return result ;
 }
@@ -1489,7 +1556,8 @@ static gboolean sendReply(ZMapRemoteControl remote_control, RemoteZeroMQMessage 
   char *err_msg = NULL ;
 
   /* Send the header.... */
-  REPORTMSG(remote_control, reply, "About to send reply") ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
+              "About to send reply: %s", reply->body) ;
 
   if (!(result = zeroMQSocketSendMessage(receive->zmq_socket, reply->header, reply->body, &err_msg)))
     {
@@ -1506,13 +1574,13 @@ static gboolean sendReply(ZMapRemoteControl remote_control, RemoteZeroMQMessage 
       /* Call back to app to signal that peer has been sent reply. */
       if (receive->reply_sent_func)
         {
-          REMOTELOGMSG(remote_control,
-                       "%s", "About to call Apps replySentCB.") ;
+          DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
+                      "%s", "About to call Apps replySentCB.") ;
 		  
           (receive->reply_sent_func)(receive->reply_sent_func_data) ;
 		  
-          REMOTELOGMSG(remote_control,
-                       "%s", "Back from Apps replySentCB.") ;
+          DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
+                      "%s", "Back from Apps replySentCB.") ;
         }
 
       result = TRUE ;
@@ -1733,9 +1801,6 @@ static void queueAddFront(GQueue *queue, RemoteZeroMQMessage req_rep)
   return ;
 }
 
-
-
-
 /* Here high priority commands are shifted to the front of the queue, where two commands
  * have the same priority they are sorted by the time of the request (earliest first). */
 static void queueAddInRequestPriority(GQueue *queue, RemoteZeroMQMessage req_rep, void *user_data)
@@ -1787,8 +1852,6 @@ static RemoteZeroMQMessage queuePeek(GQueue *queue)
   return req_resp ;
 }
 
-
-
 static gboolean queueIsEmpty(GQueue *queue)
 {
   gboolean is_empty ;
@@ -1798,12 +1861,10 @@ static gboolean queueIsEmpty(GQueue *queue)
   return is_empty ;
 }
 
-static void queueDestroy(GQueue *queue)
+static void queueEmpty(GQueue *queue)
 {
   if (!queueIsEmpty(queue))
     g_queue_foreach(queue, freeQueueElementCB, NULL) ;
-
-  g_queue_free(queue) ;
 
   return ;
 }
@@ -1819,6 +1880,16 @@ static void freeQueueElementCB(gpointer data, gpointer user_data_unused)
 
   return ;
 }
+
+static void queueDestroy(GQueue *queue)
+{
+  queueEmpty(queue) ;
+
+  g_queue_free(queue) ;
+
+  return ;
+}
+
 
 
 /* 
@@ -2130,30 +2201,6 @@ static gboolean zeroMQSocketSendFrame(void *zmq_socket, void *msg, int msg_len, 
 /* Peer to peer messages are sent in two frames in the zmq version of the communications, we
  * completely assume that if we get the header then the body should be there. That seems to be
  * part of zmq's guarantee to us, if this fails we do not try to recover but record errors. */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-int64_t more;
-size_t more_size = sizeof more;
-do {
-    /* Create an empty ØMQ message to hold the message part */
-    zmq_msg_t part;
-    int rc = zmq_msg_init (&part);
-    assert (rc == 0);
-    /* Block until a message is available to be received from socket */
-    rc = zmq_msg_recv (&part, socket, 0);
-    assert (rc != -1);
-    /* Determine if more message parts are to follow */
-    rc = zmq_getsockopt (socket, ZMQ_RCVMORE, &more, &more_size);
-    assert (rc == 0);
-    zmq_msg_close (&part); } while (more);
-
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 static SocketFetchRC zeroMQSocketFetchMessage(void *socket, char **header_out, char **body_out, char **err_msg_out)
 {
   SocketFetchRC result = SOCKET_FETCH_FAILED ;
@@ -2356,14 +2403,6 @@ static void errorHandler(ZMapRemoteControl remote_control,
   full_err_msg = g_strdup_printf("Error code: %s, error: %s", zMapRemoteControlRCType2ExactStr(error_rc),
 				 err_msg) ;
 
-
-  /* Reset remote control to idle before calling user error handler, user may want to go
-   * back to waiting. */
-  REMOTELOGMSG(remote_control, "Resetting to %s state after error.", remoteState2ExactStr(REMOTE_STATE_IDLE)) ;
-
-  resetRemoteToIdle(remote_control) ;
-
-
   REMOTELOGMSG(remote_control, "%s", "About to call apps ZMapRemoteControlErrorHandlerFunc().") ;
 
   /* we need to call the apps error handler func here..... */
@@ -2469,43 +2508,6 @@ static void logMsg(ZMapRemoteControl remote_control,
 
 
 
-
-/* UM NO....NEEDS COMPLETELY RECODING..... */
-/* Reset the state of the Remote Control object to idle, freeing all resources. */
-static void resetRemoteToIdle(ZMapRemoteControl remote_control)
-{
-  RemoteControlState curr_state ;
-
-  /* Record current state, needed to decide if we need to clear our clipboard to prevent
-   * further requests being received. */
-  curr_state = remote_control->state ;
-
-  /* Need to set this state so we when we clear the clipboard we don't try and process
-   * the event in our clear clipboard handler routine thinking it's a genuine request. */
-  remote_control->state = REMOTE_STATE_IDLE ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (haveTimeout(remote_control))
-    removeTimeout(remote_control) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  if (remote_control->receive)
-    resetReceive(remote_control->receive) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (remote_control->send)
-    resetSend(remote_control->send) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return ;
-}
-
-
-
 /* 
  * Functions to create/destroy the receive/send interfaces.
  */
@@ -2532,13 +2534,6 @@ static RemoteReceive createReceive(GQuark app_id,
   receive_request->reply_sent_func_data = reply_sent_func_data ;
 
   return receive_request ;
-}
-
-/* Reset receive record. */
-static void resetReceive(RemoteReceive receive_request)
-{
-
-  return ;
 }
 
 /* Destroy receive record. */
@@ -2762,93 +2757,6 @@ static void timeoutGetCurrTimeout(ZMapRemoteControl remote_control, int *timeout
 
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* 
- * The timeout functions, we need a timeout any time we are waiting for the peer to respond
- * otherwise we may deadlock.
- */
-
-static void addTimeout(ZMapRemoteControl remote_control)
-{
-  zMapReturnIfFail(!(remote_control->timer_source_id)) ;
-
-  if ((remote_control->timeout_ms))
-    remote_control->timer_source_id = g_timeout_add(remote_control->timeout_ms, timeOutCB, remote_control) ;
-
-  return ;
-}
-
-
-
-static gboolean haveTimeout(ZMapRemoteControl remote_control)
-{
-  gboolean have_timeout = FALSE ;
-
-  if (remote_control->timer_source_id)
-    have_timeout = TRUE ;
-
-  return have_timeout ;
-}
-
-static void removeTimeout(ZMapRemoteControl remote_control)
-{
-  zMapReturnIfFail((remote_control->timer_source_id)) ;
-
-
-  if ((remote_control->timeout_ms))
-    gtk_timeout_remove(remote_control->timer_source_id) ;
-
-  remote_control->timer_source_id = 0 ;
-
-  return ;
-}
-
-
-
-/* A GSourceFunc() for time outs.
- * 
- * Note that if this function returns FALSE this automatically removes us from gtk so no need
- * to call removeTimeout().
- * 
- * Note that if the application decides to ignore the timeout (returns TRUE) then we 
- * ask gtk to call us again if we timeout again.
- *  */
-static gboolean timeOutCB(gpointer user_data)
-{
-  gboolean result = FALSE ;				    /* Returning FALSE removes timer. */
-  ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
-
-  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
-
-  /* If App returns TRUE then it has decided to ignore the timeout so we return TRUE so gtk
-   * will call us back again if we timeout again, otherwise it's an error and we call the apps
-   * error handler. */
-  if ((remote_control->app_timeout_func)
-      && (remote_control->app_timeout_func)(remote_control, remote_control->app_timeout_func_data))
-    {
-      result = TRUE ;
-    }
-  else
-    {
-      CALL_ERR_HANDLER(remote_control,
-		       ZMAP_REMOTECONTROL_RC_TIMED_OUT,
-		       "Timed out waiting for peer to reply while in state \"%s\".",
-		       remoteState2ExactStr(remote_control->state)) ;
-
-      /* This callback is removed automatically by gtk so reset the source_id. */
-      remote_control->timer_source_id = 0 ;
-
-      result = FALSE ;
-    }
-
-  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
-
-  return result ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 /* Creates the header for zeromq messages as a string in the form:
  * 
  * "<REQUEST | REPLY> <ID>/<RETRY_NUM> <TIME>"
@@ -2906,6 +2814,8 @@ static char *headerSetRetry(char *curr_header, int new_retry_num)
   g_strfreev(split_string_orig) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* test this .....  should work !! */
+
   g_free(curr_header) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -2925,7 +2835,6 @@ static RemoteZeroMQMessage zeroMQMessageCreate(char *header, char *body)
 
   return zeromq_msg ;
 }
-
 
 
 static void zeroMQMessageDestroy(RemoteZeroMQMessage zeromq_msg)
