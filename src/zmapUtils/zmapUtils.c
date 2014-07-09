@@ -355,7 +355,7 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
 gboolean zMapTimeGetTime(char *time_str_in, ZMapTimeFormat format, char *format_str,
                          long int *secs_out, long int *microsecs_out)
 {
-  gboolean result ;
+  gboolean result = FALSE ;
 
   switch(format)
     {
