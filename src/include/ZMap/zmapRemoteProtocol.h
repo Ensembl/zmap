@@ -51,15 +51,6 @@
  *    Data type descriptors for the GtkSelectionData used for passing requests/replies.
  */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Wanted to use our own but lookds like Perl/Tk won't support it.... */
-#define ZACP_DATA_TYPE   "ZACP_COMMAND_STR"
-
-
-#define ZACP_DATA_TYPE   "STRING"
-#define ZACP_DATA_FORMAT 8			    /* Bits per unit. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 /* Protocol "types", describe what type of message it is.
  * 
@@ -132,9 +123,6 @@
 
 /* How are these used ????? */
 #define ZACP_UNIQUE_ID "unique_id"
-#define ZACP_WINDOW_ID "window_id"
-
-
 
 #define ZACP_SEQUENCE_TAG     "sequence"
 #define ZACP_SEQUENCE_NAME    "name"
