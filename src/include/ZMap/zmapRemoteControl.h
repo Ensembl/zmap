@@ -151,7 +151,7 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *pe
 
 
 /* Not too sure about this...this is actually quite complex...better to destroy and recreate. */
-void zMapRemoteControlReset(ZMapRemoteControl remote_control) ;
+gboolean zMapRemoteControlReset(ZMapRemoteControl remote_control) ;
 
 gboolean zMapRemoteControlHasFailed(ZMapRemoteControl remote_control) ;
 
