@@ -51,6 +51,7 @@
 
 
 
+
 enum
   {
     ZMAPCONTROL_REMOTE_INVALID,
@@ -607,7 +608,13 @@ static ZMapXMLUtilsEventStack makeViewElement(ZMapView view)
 
 static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* UNUSED CURRENTLY. */
+
   ZMap zmap = (ZMap)user_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
