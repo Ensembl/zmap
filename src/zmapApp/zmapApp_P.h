@@ -315,6 +315,7 @@ void zmapAppRemoteControlSetExitRoutine(ZMapAppContext app_context, ZMapAppCBFun
 void zmapAppProcessAnyRequest(ZMapAppContext app_context, char *request,
 			      ZMapRemoteAppReturnReplyFunc replyHandlerFunc) ;
 void zmapAppProcessAnyReply(ZMapAppContext app_context, char *reply) ;
+void zmapAppRemoteControlReplySent(ZMapAppContext app_context) ;
 void zmapAppRemoteControlOurRequestEndedCB(void *user_data) ;
 void zmapAppRemoteControlTheirRequestEndedCB(void *user_data) ;
 void zmapAppRemoteControlDestroy(ZMapAppContext app_context) ;
