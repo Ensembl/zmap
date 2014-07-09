@@ -43,6 +43,13 @@
 #include <ZMap/zmapRemoteControl.h>
 
 
+/* Wild card address, used so the bind will "choose" a port for us. */
+#define TCP_WILD_CARD_ADDRESS "tcp://127.0.0.1:*"
+
+/* Must be long enough to hold a zmq style address (as in TCP_WILD_CARD_ADDRESS). */
+#define ZMQ_ADDR_LEN 256
+
+
 /* Timeouts are now a list of values. Change as needed for debugging/production etc. */
 enum {TIMEOUT_LIST_INIT_SIZE = 20} ;                        /* Intial size of timeout array. */
 #define TIMEOUT_DEBUG_LIST "1000000"
@@ -70,54 +77,30 @@ _(REMOTE_TYPE_SERVER,   , "server"   , "Remote is acting as server."   , "")
 ZMAP_DEFINE_ENUM(RemoteType, REMOTE_TYPE_LIST) ;
 
 
-/* unused stuff....
-
-_(REMOTE_STATE_SERVER_WAIT_REQ_SEND,  ,\
-  "server-waiting-for-request-send" , "Server - client has signalled they have a request, waiting for client to send it."  , "") \
-_(REMOTE_STATE_SERVER_WAIT_REQ_ACK,  ,\
-  "server-waiting-for-req-ack" , "Server - told client we have request, waiting for client to acknowledge."  , "") \
-_(REMOTE_STATE_SERVER_WAIT_GET,     ,\
-  "server-waiting-for-reply-get"    , "Server - signalled client we have reply, waiting for client to ask for it."    , "") \
-_(REMOTE_STATE_SERVER_WAIT_REPLY_ACK,     ,\
-  "server-waiting-for-reply-ack"    , "Server - sent reply, waiting for client to acknowledge they have it."    , "") \
-
-*/
-
-
-/* Remote Control state. */
-
-/* THIS IS THE OLD STATE...WE NEED NEW STUFF NOW....
-
-#define REMOTE_STATE_LIST(_)						\
-_(REMOTE_STATE_INVALID,            ,					\
-  "invalid", "Invalid state !"                             , "") \
-_(REMOTE_STATE_IDLE,               ,				\
-  "idle", "Peer - not in client or server state."     , "") \
-_(REMOTE_STATE_DYING,              ,\
-  "dying"             , "Peer - Dying."                        , "") \
-_(REMOTE_STATE_CLIENT_WAIT_GET,     ,\
-  "client-waiting-for-req-get"    , "Client - signalled server we have a request, waiting for server to ask for it."     , "") \
-_(REMOTE_STATE_CLIENT_WAIT_REQ_ACK,	   ,\
-  "client-waiting-for-req-ack"    , "Client - sent request to server, waiting for server to signal they have it.", "") \
-_(REMOTE_STATE_CLIENT_WAIT_REPLY,  ,\
-  "client-waiting-for-reply" , "Client - Server signalled they have request, waiting for server to signal it has a reply to send." , "") \
-_(REMOTE_STATE_CLIENT_WAIT_SEND,  ,\
-  "client-waiting-for-reply-send" , "Client - Server signalled they have a reply, signalled server to send it." , "") \
-_(REMOTE_STATE_CLIENT_WAIT_REPLY_ACK,  ,\
-  "client-waiting-for-reply-ack" , "Client - told server we have reply, waiting for server to acknowledge." , "") \
-_(REMOTE_STATE_SERVER_WAIT_NEW_REQ,  ,\
-  "server-waiting" , "Server - waiting for client to send a new request."  , "") \
-_(REMOTE_STATE_SERVER_PROCESS_REQ,     ,\
-  "server-processing"    , "Server - received request, forwarded it to app for processing."    , "")
-
-  .....END OF OLD STUFF */
-
-/* New stuff.... */
+/* Remote Control state, most states area obvious but here are some notes:
+ * 
+ * REMOTE_STATE_INVALID - the object should never be in this state.
+ * 
+ * REMOTE_STATE_INACTIVE - neither the receive or send interfaces are initialised
+ *                         so messages cannot be handled. This state implies
+ *                         that initialisation has not taken place yet or that
+ *                         the remote control object has been reset by the app.
+ * 
+ * REMOTE_STATE_FAILED - Implies there has been some drastic error, the object
+ *                       can no longer be used and the app should call the destroy
+ *                       method.
+ * 
+ * REMOTE_STATE_DYING - Because of the asynchronous nature of the comms it's possible
+ * 
+ *  note that REMOTE_STATE_FAILED means that
+ *  */
 #define REMOTE_STATE_LIST(_)						\
   _(REMOTE_STATE_INVALID,            ,					\
     "invalid", "Invalid state !"                             , "")      \
+    _(REMOTE_STATE_INACTIVE,               ,				\
+      "inactive", "Receive/Send interfaces not intialised."     , "")   \
     _(REMOTE_STATE_IDLE,               ,				\
-      "idle", "Idle, no requests active."     , "")                     \
+      "idle", "No requests active."     , "")                           \
     _(REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT,     ,                   \
       "outgoing-request-to-be-sent"    , "Have request to send to our peer."     , "") \
     _(REMOTE_STATE_OUTGOING_REQUEST_WAITING_FOR_THEIR_REPLY,     ,      \
@@ -131,13 +114,10 @@ _(REMOTE_STATE_SERVER_PROCESS_REQ,     ,\
     _(REMOTE_STATE_DYING,              ,                                \
       "dying", "Dying, no requests can be accepted.", "")
 
-
-
 ZMAP_DEFINE_ENUM(RemoteControlState, REMOTE_STATE_LIST) ;
 
 
-
-
+/* Result of trying to get data from a zmq socket. */
 #define SOCKET_FETCH_RC_LIST(_)                                            \
 _(SOCKET_FETCH_OK,      , "ok",      "Socket fetch succeeded",     "") \
 _(SOCKET_FETCH_NOTHING, , "nothing", "Nothing to be fetched", "") \
@@ -146,14 +126,17 @@ _(SOCKET_FETCH_FAILED,  , "failed",  "Serious error on socket",      "")
 ZMAP_DEFINE_ENUM(SocketFetchRC, SOCKET_FETCH_RC_LIST) ;
 
 
+/* Type for a request, must be either incoming or outgoing. */
+#define REQUEST_TYPE_LIST(_)						\
+_(REQUEST_TYPE_INVALID,            ,					\
+  "invalid", "Invalid type !"                             , "") \
+_(REQUEST_TYPE_INCOMING,               ,				\
+  "incoming", "Incoming request from peer."     , "") \
+_(REQUEST_TYPE_OUTGOING,              ,\
+  "outgoing", "Outgoing request to peer.."                        , "")
 
+ZMAP_DEFINE_ENUM(RemoteControlRequestType, REQUEST_TYPE_LIST) ;
 
-
-/* Wild card address, used so the bind will "choose" a port for us. */
-#define TCP_WILD_CARD_ADDRESS "tcp://127.0.0.1:*"
-
-/* Must be long enough to hold a zmq style address (as in TCP_WILD_CARD_ADDRESS). */
-#define ZMQ_ADDR_LEN 256
 
 
 /* Data needed by timer functions monitoring request/reply zeromq sockets. */
@@ -175,22 +158,6 @@ typedef struct RemoteZeroMQMessageStructType
   char *header ;
   char *body ;
 } RemoteZeroMQMessageStruct, *RemoteZeroMQMessage ;
-
-
-
-
-
-#define REQUEST_TYPE_LIST(_)						\
-_(REQUEST_TYPE_INVALID,            ,					\
-  "invalid", "Invalid type !"                             , "") \
-_(REQUEST_TYPE_INCOMING,               ,				\
-  "incoming", "Incoming request from peer."     , "") \
-_(REQUEST_TYPE_OUTGOING,              ,\
-  "outgoing", "Outgoing request to peer.."                        , "")
-
-
-ZMAP_DEFINE_ENUM(RemoteControlRequestType, REQUEST_TYPE_LIST) ;
-
 
 
 /* Data required for each request/reply in a queue. Used to represent request/replies
@@ -216,9 +183,6 @@ typedef struct ReqReplyStructType
   int num_retries;
 
 } ReqReplyStruct, *ReqReply ;
-
-
-
 
 
 /* Structs for Send/Receive interfaces */
@@ -313,10 +277,7 @@ typedef struct ZMapRemoteControlStructType
   void *zmq_context ;                                       /* zeroMQ context. */
 
 
-
-
   /* Used in constructing/validating etc. of requests/replies */
-
   GQuark app_id ;					    /* Applications "name", good for debug messages. */
 
   GQuark version ;					    /* Current protocol version. */
@@ -330,7 +291,6 @@ typedef struct ZMapRemoteControlStructType
   /* Queues of incoming requests/outgoing replies and outgoing requests/incoming replies,
    * these are queues of RemoteZeroMQMessage's, i.e. the queues hold messages to be received
    * or sent. */
-
   GQueue *incoming_requests ;
   GQueue *outgoing_replies ;
 
@@ -343,8 +303,7 @@ typedef struct ZMapRemoteControlStructType
 
   /* The current Request/reply taken from the above queues. */
 
-  RemoteZeroMQMessage curr_req_raw ;                        /* Just the header and xml request
-                                                               string. */
+  RemoteZeroMQMessage curr_req_raw ;                        /* Just the header and xml request string. */
 
   ReqReply curr_req ;                                       /* Request/Reply being processed,
                                                                derived from curr_req_raw */
@@ -353,11 +312,6 @@ typedef struct ZMapRemoteControlStructType
                                                                was too slow and peer timed us out. */
 
   ReqReply stalled_req ;                                    /* Request/Reply stalled as a result of a collision. */
-
-
-  /* Do we even use this... */
-  ReqReply timedout_req ;                                   /* Last timedout request. */
-
 
 
   /* Timeouts: timeout list and timer. */
