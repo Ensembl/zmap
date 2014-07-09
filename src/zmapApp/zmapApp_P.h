@@ -80,17 +80,6 @@ enum
 							       zmap to wait to quit, if exceeded we crash out */
     ZMAP_DEFAULT_PING_TIMEOUT = 10,
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    ZMAP_WINDOW_TIMEOUT_MS = 2000,			    /* Length of timeout in milliseconds.  */
-
-    ZMAP_WINDOW_RETRIES = 20,				    /* How many retries of window id when
-							       we timeout for a command. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    
-
-
     ZMAP_APP_REMOTE_TIMEOUT_S = 3600,                       /* How long to wait before warning user that
                                                                zmap has no sequence displayed and has
                                                                had no interaction with its
@@ -101,7 +90,9 @@ enum
                                                              * big (in megabytes). */
   } ;
 
-#define ZMAP_WINDOW_TIMEOUT_LIST "333,1000,3000,9000"
+
+/* Timeout list for remote control for sends. */
+#define ZMAP_WINDOW_REMOTECONTROL_TIMEOUT_LIST "333,1000,3000,9000"
 
 
 /* cols in connection list. */
@@ -129,27 +120,71 @@ typedef void (*ZMapAppCBFunc)(void *cb_data) ;
 /* Struct for zmap's remote control object. */
 typedef struct _ZMapAppRemoteStruct
 {
+
+  /* Peer's names/text etc. */
+  char *peer_name ;
+  char *peer_socket ;
+
   /* Our names/text etc. */
   char *app_id ;					    /* zmap app name. */
   char *app_socket ;
 
+  ZMapRemoteControl remote_controller ;
+
+
+  ZMapAppCBFunc exit_routine ;				    /* Called to exit application after we
+							       have signalled to peer we are going. */
+
+
+  /* Remote Control callback function that we call with our reply to a request. */
+  ZMapRemoteControlReturnReplyFunc return_reply_func ;
+  void *return_reply_func_data ;
+
+
+  /* App function to be called with peer's reply to the request. */
+  ZMapRemoteAppProcessReplyFunc process_reply_func ;
+  gpointer process_reply_func_data ;
+
+  /* App function to be called if there was an error in sending the request, e.g. timeout. */
+  ZMapRemoteAppErrorHandlerFunc error_handler_func ;
+  gpointer error_handler_func_data ;
+
+
+  /* Incoming request FROM a peer. */
+  char *curr_peer_request ;				    /* DO WE NEED TO CACHE THIS ?? */
+  char *curr_peer_command ;
+  ZMapView curr_view_id ;
+
+
+  /* Outgoing request TO a peer */
+  char *curr_zmap_request ;
+
+
+
+  /* There are some requests that can only be serviced _after_ we are sure the peer
+   * has received our reply to their request e.g. "shutdown" where we can't exit
+   * otherwise peer will never receive our reply. */
+  gboolean deferred_action ;
+
+
+
+
+
+  /* When operating with a peer we have an overall timeout time, this allows us to
+   * warn the user if we have no view displayed and there has been no activity with
+   * the peer for a long time. */
+  guint inactive_timeout_interval_s ;                       /* Time out interval. */
+  guint inactive_func_id ;                                  /* glib timeout handler func. id. */
+  time_t last_active_time_s ;                               /* Last remote request, in or out. */
+
+
+
+
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Is any of this needed ? */
-
-  char *app_unique_id ;
-  Window app_window ;
-  char *app_window_str ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-  /* Peer's names/text etc. */
-  char *peer_name ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  char *peer_clipboard ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  char *peer_socket ;
 
   /* If our peer gave us a window id in the handshake then we check that window
    * id to see if it is still there if we have timed out. 
@@ -160,36 +195,7 @@ typedef struct _ZMapAppRemoteStruct
   int window_retries_max ;
   int window_retries_left ;
 
-  /* When operating with a peer we have an overall timeout time, this allows us to
-   * warn the user if we have no view displayed and there has been no activity with
-   * the peer for a long time. */
-  guint inactive_timeout_interval_s ;                       /* Time out interval. */
-  guint inactive_func_id ;                                  /* glib timeout handler func. id. */
-  time_t last_active_time_s ;                               /* Last remote request, in or out. */
 
-
-  /* There are some requests that can only be serviced _after_ we are sure the peer
-   * has received our reply to their request e.g. "shutdown" where we can't exit
-   * otherwise peer will never receive our reply. */
-  gboolean deferred_action ;
-
-  ZMapAppCBFunc exit_routine ;				    /* Called to exit application after we
-							       have signalled to peer we are going. */
-
-  ZMapRemoteControl remote_controller ;
-
-
-  /* Incoming request FROM a peer. */
-
-  char *curr_peer_command ;
-  char *curr_peer_request ;				    /* DO WE NEED TO CACHE THIS ?? */
-
-  ZMapView curr_view_id ;
-
-
-  /* Remote Control callback function that we call with our reply to a request. */
-  ZMapRemoteControlReturnReplyFunc return_reply_func ;
-  void *return_reply_func_data ;
 
 
   /* wrong ??? */
@@ -198,20 +204,13 @@ typedef struct _ZMapAppRemoteStruct
   char *curr_reply ;
 
 
-  /* Outgoing request TO a peer */
+
 
   char *curr_zmap_command ;
-  char *curr_zmap_request ;
 
 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  /* App function to be called with peer's reply to the request. */
-  ZMapRemoteAppProcessReplyFunc process_reply_func ;
-  gpointer process_reply_func_data ;
-
-  /* App function to be called if there was an error in sending the request, e.g. timeout. */
-  ZMapRemoteAppErrorHandlerFunc error_handler_func ;
-  gpointer error_handler_func_data ;
 
 } ZMapAppRemoteStruct, *ZMapAppRemote ;
 
@@ -298,6 +297,7 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMa
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
 gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map,
 			   ZMap *zmap_out, ZMapView *view_out, char **err_msg_out) ;
+void zmapAppDestroy(ZMapAppContext app_context) ;
 void zmapAppExit(ZMapAppContext app_context) ;
 
 void zmapAppPingStart(ZMapAppContext app_context) ;

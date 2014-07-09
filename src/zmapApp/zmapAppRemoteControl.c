@@ -29,10 +29,9 @@
  *              
  *              This code provides the interface between ZMapRemoteControl
  *              and the _whole_ of the rest of ZMap. It doesn't "know"
- *              about the inidividual commands it just ensures that
+ *              about the individual commands it just ensures that
  *              requests and replies get moved between the remote control
- *              code and the various components of zmap (e.g. Control,
- *              View, Window) and back.
+ *              code and ZMap and back.
  *
  * Exported functions: See zmapApp_P.h
  *
@@ -50,24 +49,6 @@
 #include <ZMap/zmapAppRemote.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <zmapApp_P.h>
-
-
-
-/* Data required for each request. Used in the global queue of requests. */
-typedef struct _RequestQueueDataStruct
-{
-  int request_num;
-  ZMapAppRemote remote;
-  char *command;
-  char *request;
-  ZMapRemoteAppProcessReplyFunc process_reply_func;
-  gpointer process_reply_func_data;
-  int num_retries;
-  GtkWidget *widget;
-} RequestQueueData;
-
-
-
 
 
 static void requestHandlerCB(ZMapRemoteControl remote_control,
@@ -88,33 +69,6 @@ static void handleZMapRequestsCB(gpointer caller_data,
 static void errorHandlerCB(ZMapRemoteControl remote_control,
                            ZMapRemoteControlRCType error_type, char *err_msg,
                            void *user_data) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void requestBlockingTestAndBlock(void) ;
-static void requestBlockingSetActive(void) ;
-static void requestBlockingSetInActive(void) ;
-static gboolean requestBlockingIsActive(void) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-static void finishAndPerformNextRequest(GQueue *request_queue);
-static void performNextRequest(GQueue *request_queue);
-
-static gboolean sendRequestCB(GQueue *request_queue) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean sendOrQueueRequest(ZMapAppRemote remote,
-                                   const char *command, const char *request,
-                                   ZMapRemoteAppProcessReplyFunc process_reply_func, gpointer process_reply_func_data,
-                                   int num_retries, GtkWidget *widget) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-static gboolean sendOrQueueRequest(ZMapAppRemote remote,
-                                   const char *command, const char *request) ;
-
-
 static void setDebugLevel(void) ;
 
 
@@ -123,27 +77,11 @@ static void setDebugLevel(void) ;
  *                Globals. 
  */
 
-/* Maintains a lock while a remote request is active. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean is_active_G = FALSE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-static gboolean is_active_debug_G = TRUE ;
-
-/* This maintain a queue of requests so that we can execute them in 
- * the order that they were requested */
-static GQueue *request_queue_G = NULL;
-
-/* Slight hack: we push high priority requests to the start of the 
- * queue (but behind any previous high priority requests). This pointer
- * points to the tail of the high-priority section of the queue. */
-static GList *request_queue_priority_tail_G = NULL ;
-
-static RequestQueueData *current_request_G = NULL ;
 
 /* Set debug level in remote control. */
 static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_OFF ;
+
+
 
 
 
@@ -191,7 +129,7 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_socke
       remote->remote_controller = remote_control ;
 
       if (!peer_timeout_list)
-        peer_timeout_list = ZMAP_WINDOW_TIMEOUT_LIST ;
+        peer_timeout_list = ZMAP_WINDOW_REMOTECONTROL_TIMEOUT_LIST ;
       zMapRemoteControlSetTimeoutList(remote->remote_controller, peer_timeout_list) ;
 
       /* Only set debug from cmdline the first time around otherwise it overrides what
@@ -304,20 +242,12 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
   remote->return_reply_func = return_reply_func ;
   remote->return_reply_func_data = return_reply_func_data ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* not sure why this is happening at this level really..... */
-
-  /* Start of a series of messages with host so set window retries */
-  remote->window_retries_left = ZMAP_WINDOW_RETRIES ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   /* Call the command processing code.... */
   zmapAppProcessAnyRequest(app_context, request, handleZMapRepliesCB) ;
 
   return ;
 }
+
 
 /* Called by any component of ZMap (e.g. control, view etc) which has processed a command
  * and needs to return the reply for sending to the peer program.
@@ -377,23 +307,22 @@ static void handleZMapRepliesCB(char *command,
 
 
 
-/* Called by remote control when peer has signalled that it has received reply,
- * i.e. the transaction has ended.
+/* Called by remote control when the reply has been sent to the peer,
+ * i.e. the transaction has ended. Note that we don't actually know that
+ * the peer receives the reply, this was a design decision with the
+ * switch to zeromq.
  * 
- * In fact with zeromq we don't do this any more but instead call here once
- * the reply is sent. We don't know if the peer has received it.
+ * This function allows us to take any actions necessary after
+ * a reply has been sent.
+ * 
  *  */
 static void replySentCB(void *user_data)
 {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Not used currently. */
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   /* Call function to execute any actions that must occur after
    * the reply is sent to peer. */
-  zmapAppRemoteControlTheirRequestEndedCB(user_data) ;
-
+  zmapAppRemoteControlReplySent(app_context) ;
 
   return ;
 }
@@ -430,7 +359,6 @@ static void handleZMapRequestsCB(gpointer caller_data,
       gboolean result = TRUE ;
       GArray *request_stack ;
       char *request ;
-      char *err_msg = NULL ;
       char *view = NULL ;    /* to be filled in later..... */
       gpointer view_id = NULL ;
 
@@ -455,29 +383,40 @@ static void handleZMapRequestsCB(gpointer caller_data,
 
       if (result)
         {
-          if (!err_msg && !(request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller,
+          char *err_msg = NULL ;
+
+          if (result && !(request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller,
                                                                            command, -1,
                                                                            ZACP_VIEWID, view,
                                                                            (char*)NULL)))
             {
               err_msg = g_strdup_printf("Could not create request for command \"%s\"", command) ;
+
+              result = FALSE ;
+
+              /* for debugging... */
+              request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE) ;
             }
 
-          /* for debugging... */
-          request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE) ;
       
           if (request_body)
             {
-              if (!err_msg && !(request_stack = zMapRemoteCommandAddBody(request_stack, "request", request_body)))
-                err_msg = g_strdup_printf("Could not add request body for command \"%s\"", command) ;
+              if (result && !(request_stack = zMapRemoteCommandAddBody(request_stack, "request", request_body)))
+                {
+                  err_msg = g_strdup_printf("Could not add request body for command \"%s\"", command) ;
+
+                  result = FALSE ;
+                }
             }
         
-          if (!err_msg && !(request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE)))
+          if (result && !(request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE)))
             {
               err_msg = g_strdup_printf("Could not create raw xml from request for command \"%s\"", command) ;
+
+              result = FALSE ;
             }
 
-          if (!err_msg)
+          if (result)
             {
               remote->process_reply_func = process_reply_func ;
               remote->process_reply_func_data = process_reply_func_data ;
@@ -485,25 +424,18 @@ static void handleZMapRequestsCB(gpointer caller_data,
               remote->error_handler_func = error_handler_func ;
               remote->error_handler_func_data = error_handler_func_data ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-              if (!(result = sendOrQueueRequest(remote, command, request,
-                                                process_reply_func, process_reply_func_data,
-                                                10,
-                                                app_context->app_widg)))
+              remote->curr_zmap_request = request ;
+
+              if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, request)))
                 {
                   err_msg = g_strdup_printf("Could not send request to peer: \"%s\"", request) ;
-                }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-              if (!(result = sendOrQueueRequest(remote, command, request)))
-                {
-                  err_msg = g_strdup_printf("Could not send request to peer: \"%s\"", request) ;
-                }
 
-
+                  result = FALSE ;
+                }
             }
 
           /* Serious failure, record that remote is no longer working properly. */
-          if (err_msg)
+          if (!result)
             {
               app_context->remote_ok = FALSE ;
         
@@ -521,19 +453,9 @@ static void handleZMapRequestsCB(gpointer caller_data,
 /* Called by remote control when peer has signalled that it has received request. */
 static void requestSentCB(void *user_data)
 {
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
-
-  /* Next phase of messages with host will start after this so reset window retries */
-
-
-  /* HACKED FOR NOW FOR ZEROMQ REWRITE.... */
-  app_context->remote_control->window_retries_left = ZMAP_WINDOW_RETRIES ;
-
-  app_context->remote_control->window_retries_left = 10 ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }
@@ -548,12 +470,8 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
   gboolean result ;
   char *error_out = NULL ;
 
-
-
-
   /* Again.....is this a good idea....the app callback needs to be called whatever happens
    * to reset state...fine to log a bad message but we still need to call the app func. */
-
   if (!(result = zMapRemoteCommandValidateReply(remote->remote_controller,
                                                 remote->curr_zmap_request, reply, &error_out)))
     {
@@ -564,62 +482,13 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
     }
   else
     {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      remote->reply_done_func = remote_reply_done_func ;
-      remote->reply_done_data = remote_reply_done_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
       /* Call the command processing code, there's no return code here because only the function
        * ultimately handling the problem knows how to handle the error. */
       zmapAppProcessAnyReply(app_context, reply) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* I THINK NOW THAT WE SHOULD NOT BE DOING THIS..... */
-
-      /* We could just call back to remotecontrol from here....alternative is pass functions
-       * right down to reply handler....and have them call back to appcommand level and then
-       * app command level calls back here...needed if asynch....  */
-      (remote_reply_done_func)(remote_reply_done_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* gb10: this was done at the start of this function in case another call needed to be
-   * made from this function. That doesn't seem to ever happen and, anyway, if another call 
-   * needs to be made as part of the reply, it should probably be put in the gtk main loop 
-   * and performed after we've exited this function. */
-  zMapDebugPrint(is_active_debug_G, "%s", "got reply from peer so unsetting our block.") ;
-  requestBlockingSetInActive() ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* I think this is the place to go back to waiting again.... */
-  if (!zMapRemoteControlReceiveWaitForRequest(remote->remote_controller))
-    zMapLogCritical("%s", "Cannot set remote object to waiting for new request.") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Perform the next request in the queue, if there are any */
-  finishAndPerformNextRequest(request_queue_G);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }
-
-
 
 
 /* Called by ZMapRemoteControl, receives all errors including timeouts. */
@@ -638,432 +507,6 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
     zMapLogWarning("%s", err_msg) ;
 
   return ;
-}
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* Old stuff.... */
-
-/* We need to keep a "lock" flag because for some actions, e.g. double click,
- * we can end up trying to send two requests, in this case a "single_select"
- * followed by an "edit" too quickly, i.e. we haven't finished the "single_select"
- * before we try to send the "edit".
- * 
- * So we test this flag and if we are processing we block (but process events)
- * until the previous action is complete.
- * 
- *  */
-static void requestBlockingTestAndBlock(void)
-{
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* turn off for now.... */
-  return ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  zMapDebugPrint(is_active_debug_G, "Entering blocking code: %s",
-                 (is_active_G ? "Request Active" : "No Request Active")) ;
-
-  zMapDebugPrint(is_active_debug_G, "%s",
-                 (is_active_G ? "Request Active, now blocking." : "No Request Active, no blocking")) ;
-
-  while (is_active_G)
-    {
-      gtk_main_iteration() ;
-    }
-
-  zMapDebugPrint(is_active_debug_G, "Leaving blocking code: %s",
-                 (is_active_G ? "Request Active" : "No Request Active")) ;
-
-  return ;
-}
-
-static void requestBlockingSetActive(void)
-{
-  is_active_G = TRUE ;
-
-  zMapDebugPrint(is_active_debug_G, "%s", "Setting Block: Request Active") ;
-
-  return ;
-}
-
-
-static void requestBlockingSetInActive(void)
-{
-  is_active_G = FALSE ;
-
-  zMapDebugPrint(is_active_debug_G, "%s", "Unsetting Block: Request InActive") ;
-
-  return ;
-}
-
-
-static gboolean requestBlockingIsActive(void)
-{
-  return is_active_G ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-/* Finish the current request and perform the next request in the queue, if any. */
-static void finishAndPerformNextRequest(GQueue *request_queue)
-{
-  /* Remove the last request */
-  RequestQueueData *request_data = current_request_G ;
-
-  if (!request_data)
-    {
-      zMapDebugPrint(is_active_debug_G, "%s", "No current request");
-    }
-  else
-    {
-      zMapDebugPrint(is_active_debug_G, "Removing request %d from queue", request_data->request_num) ;
-
-      /* If this is the last request in the priority section of the queue, reset the
-       * pointer to the tail of the priority section */
-      if (request_queue_priority_tail_G && (RequestQueueData*)(request_queue_priority_tail_G->data) == request_data)
-        request_queue_priority_tail_G = NULL ;
-      
-      g_queue_remove(request_queue, request_data) ;
-      //zMapDebugPrint(is_active_debug_G, "Request %d was not found in the queue", request_data->request_num) ;
-
-      g_free(request_data);
-      
-      int priority_queue_len = 0;
-  
-      if (request_queue_priority_tail_G)
-        priority_queue_len = g_queue_index(request_queue, (RequestQueueData*)(request_queue_priority_tail_G->data)) + 1 ;
-
-      zMapDebugPrint(is_active_debug_G, "Priority queue length=%d", priority_queue_len) ;
-      zMapDebugPrint(is_active_debug_G, "Total queue length=%d", g_queue_get_length(request_queue)) ;
-    }
-
-  current_request_G = NULL ;
-  
-  performNextRequest(request_queue);
-}
-
-
-/* Perform the next request in the request queue. This puts the request on the 
- * gtk main loop rather than performing it immediately */
-static void performNextRequest(GQueue *request_queue)
-{
-  /* If no more requests in the queue, there's nothing to do */
-  if (g_queue_get_length(request_queue) < 1)
-    {
-      zMapDebugPrint(is_active_debug_G, "%s", "No more requests in queue") ;
-      return ;
-    }
-  else
-    {
-      RequestQueueData *request_data ;
-
-      /* Get the next request in the queue */
-      request_data = (RequestQueueData*)g_queue_peek_head(request_queue);
-      current_request_G = request_data ;
-      zMapDebugPrint(is_active_debug_G, "Performing request %d", request_data->request_num);
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (first_time)
-        {
-          /* Set up the callback to sendRequestCB. Because we're passing the global
-           * request queue as the data we only need to set this up once. (If we passed
-           * individual request data, we'd need to disconnect and reconnect
-           * the callback each time.) */
-          gtk_signal_connect(GTK_OBJECT(request_data->widget), "client_event",
-                             GTK_SIGNAL_FUNC(sendRequestCB), request_queue_G) ;
-          first_time = FALSE;
-        }
-
-      /* Create a 'send' event to send the command specified in the
-       * given remote_data. We can't do a direct xremote call because we 
-       * must let gtk finish any current communications before sending a new
-       * xremote command. The event will trigger sendRequestCB. */
-  
-      GdkEventClient event ;
-      event.type         = GDK_CLIENT_EVENT ;
-      event.window       = request_data->widget->window ;                     /* no window generates this event. */
-      event.send_event   = TRUE ;                               /* we sent this event. */
-      event.message_type = gdk_atom_intern("zmap_atom", FALSE);             /* This is our id for events. */
-      event.data_format  = 8 ;                      /* Not sure about data format here... */
-  
-      gdk_event_put((GdkEvent *)&event);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    }
-
-
-  sendRequestCB(request_queue_G) ;
-
-  return ;
-}
-
-
-
-/* NOW CALLED DIRECTLY... */
-/* This callback is called from the gtk main loop to send a request */
-static gboolean sendRequestCB(GQueue *request_queue)
-{
-  RequestQueueData *request_data = current_request_G ;
-  ZMapAppRemote remote = request_data->remote ;
-
-  if (g_queue_is_empty(request_queue))
-    {
-      zMapDebugPrint(is_active_debug_G, "%s", "Program error: attempting to send request but request queue is empty");
-    }
-
-
-  if (!request_data)
-    {
-      zMapDebugPrint(is_active_debug_G, "%s", "Tried to send request but current_request is not set") ; 
-      return TRUE ;
-    }
-
-  zMapDebugPrint(is_active_debug_G, "Attempting to send request %d", request_data->request_num) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Test to see if we are processing a remote command.... and then set that we are active. */
-  zMapDebugPrint(is_active_debug_G, "%s", "About to test for blocking.") ;
-  requestBlockingTestAndBlock() ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  if (g_queue_is_empty(request_queue))
-    {
-      zMapDebugPrint(is_active_debug_G, "%s", "Program error: attempting to send request but request queue is empty");
-    }
-
-  request_data = current_request_G ;
-  
-  if (!request_data)
-    {
-      zMapDebugPrint(is_active_debug_G, "%s", "Tried to send request but current_request is not set") ; 
-      return TRUE ;
-    }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMapDebugPrint(is_active_debug_G, "%s", "Setting our own block.") ;
-  requestBlockingSetActive() ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-  zMapDebugPrint(is_active_debug_G, "Executing request %d", request_data->request_num);
-
-  remote = request_data->remote ;
-  
-  /* cache the command and request, need them later. */
-  if (remote->curr_zmap_command)
-    g_free(remote->curr_zmap_command) ;
-  remote->curr_zmap_command = request_data->command ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Crashes on double free... */
-  if (remote->curr_zmap_request)
-    g_free(remote->curr_zmap_request) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  remote->curr_zmap_request = request_data->request ;
-  
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* um...seems messed up.... */
-
-  /* Cache app function to be called when we receive a reply from the peer. */
-  remote->process_reply_func = request_data->process_reply_func ;
-  remote->process_reply_func_data = request_data->process_reply_func_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Start of a series of messages with host so set window retries */
-  remote->window_retries_left = request_data->num_retries ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-  if (!request_data->request || !zMapRemoteControlSendRequest(remote->remote_controller, request_data->request))
-    {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zMapDebugPrint(is_active_debug_G, "%s", "Send request failed so unsetting our block.") ;
-      requestBlockingSetInActive() ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Go back to waiting for a request...... */
-      zMapRemoteControlReceiveWaitForRequest(remote->remote_controller) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      /* Perform the next request in the queue, if there are any */
-      finishAndPerformNextRequest(request_queue_G);
-    }
-
-  return TRUE;  
-}
-
-
-
-/* Determine whether a request is high priority or not */
-static gboolean requestIsHighPriority(RequestQueueData *request_data)
-{
-  gboolean result = FALSE ;
-
-  /* Interactive commands are high priority */
-  if (!request_data || !request_data->command)
-    result = FALSE ;
-  else if (!strcmp(request_data->command, ZACP_SELECT_FEATURE))
-    result = TRUE ;
-  else if (!strcmp(request_data->command, ZACP_EDIT_FEATURE))
-    result = TRUE ;
-  else if (!strcmp(request_data->command, ZACP_CREATE_FEATURE))
-    result = TRUE ;
-  else if (!strcmp(request_data->command, ZACP_DELETE_FEATURE))
-    result = TRUE ;
-  else if (!strcmp(request_data->command, ZACP_SELECT_MULTI_FEATURE))
-    result = TRUE ;
-  else if (!strcmp(request_data->command, ZACP_FIND_FEATURE))
-    result = TRUE ;
-  else if (!strcmp(request_data->command, ZACP_DETAILS_FEATURE))
-    result = TRUE ;
-  else if (!strcmp(request_data->command, ZACP_GOODBYE))
-    result = TRUE ;
-  else if (!strcmp(request_data->command, ZACP_SHUTDOWN))
-    result = TRUE ;
-  else if (!strcmp(request_data->command, ZACP_VIEW_DELETED))
-    result = TRUE ;
-  
-  return result ;
-}
-
-
-/* Add the given request to the request queue. Slight hack: higher priority
- * interactive messages such as single_select and edit are added to the 
- * head of the queue. */
-static void addRequestToQueue(RequestQueueData *request_data)
-{
-  zMapDebugPrint(is_active_debug_G, "Adding request %d to queue:\n%s", request_data->request_num, request_data->request);
-
-  if (requestIsHighPriority(request_data))
-    {
-      /* Add to the start of the queue, BUT after any other high priority 
-       * requests */
-      if (request_queue_priority_tail_G)
-        {
-          g_queue_insert_after(request_queue_G, request_queue_priority_tail_G, request_data) ;
-          request_queue_priority_tail_G = request_queue_priority_tail_G->next ;
-          zMapDebugPrint(is_active_debug_G, "Request %d added to tail of priority queue", request_data->request_num) ;
-        }
-      else
-        {
-          g_queue_push_head(request_queue_G, request_data) ;
-          request_queue_priority_tail_G = request_queue_G->head ;
-          zMapDebugPrint(is_active_debug_G, "Request %d added to head of priority queue", request_data->request_num) ;
-        }
-    }
-  else
-    {
-      /* Just add to the end of the queue */
-      g_queue_push_tail(request_queue_G, request_data) ;
-      zMapDebugPrint(is_active_debug_G, "Request %d added to tail of queue", request_data->request_num) ;
-    }
-
-  int priority_queue_len = 0;
-  
-  if (request_queue_priority_tail_G)
-    priority_queue_len = g_queue_index(request_queue_G, (RequestQueueData*)(request_queue_priority_tail_G->data)) + 1 ;
-
-  zMapDebugPrint(is_active_debug_G, "Priority queue length=%d", priority_queue_len) ;
-  zMapDebugPrint(is_active_debug_G, "Total queue length=%d", g_queue_get_length(request_queue_G)) ;
-}
-
-
-/* Entry point for caller to send a request. The request is either put into
- * a queue (if we're already processing a transaction) or into the gtk main loop.
- * 
- * Note that as soon as one request is sent to the peer, we put the next request from the
- * queue into the gtk main loop. This will probably be processed by gtk before the
- * previous transaction has completed, but that's fine because sendRequestCB will block.
- * The aim of the queueing system is to ensure that we only have one sendRequestCB
- * in the gtk main loop at any one time. (It actually works even if we issue all
- * all commands straight to the gtk loop, because sendRequestCB uses the next request
- * in the queue so it should always process them in the correct order, but I think
- * that makes things more confusing and probably more prone to error.)
- */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean sendOrQueueRequest(ZMapAppRemote remote,
-                                   const char *command,
-                                   const char *request,
-                                   ZMapRemoteAppProcessReplyFunc process_reply_func, 
-                                   gpointer process_reply_func_data,
-                                   int num_retries,
-                                   GtkWidget *widget)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-static gboolean sendOrQueueRequest(ZMapAppRemote remote,
-                                   const char *command,
-                                   const char *request)
-{
-  gboolean result = FALSE ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* request_num is a count that's used to provide a unique id, as well as the order
-   * number, for each request we add to the queue. Note that it doesn't need to be 
-   * the same as the request_id that is used in the xml, but in practice 
-   * it should probably always be the same unless something has gone wrong. */
-  static int request_num = 1; 
-
-
-  RequestQueueData *request_data = g_new0(RequestQueueData, 1);
-  request_data->request_num = request_num;
-  request_data->remote = remote;
-  request_data->command = g_strdup(command);
-  request_data->request = g_strdup(request);
-  request_data->process_reply_func = process_reply_func;
-  request_data->process_reply_func_data = process_reply_func_data;
-  request_data->num_retries = num_retries;
-  request_data->widget = widget;
-
-  ++request_num;
-
-  /* First time round, create the request queue */
-  if (!request_queue_G)
-    request_queue_G = g_queue_new() ;
-
-  /* If the queue is empty, we'll process the new command straight away */
-  gboolean process_now = (g_queue_get_length(request_queue_G) < 1) ;
-        
-  /* Add the request to the queue (even if we're going to perform it
-   * straight away, because it's easiest to pass the global queue as
-   * data to sendRequestCB) */
-  addRequestToQueue(request_data);
-
-  if (process_now)
-    performNextRequest(request_queue_G);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  remote->curr_zmap_request = (char *)request ;
-
-
-  result = zMapRemoteControlSendRequest(remote->remote_controller, (char *)request) ;
-
-
-  return result ;
 }
 
 

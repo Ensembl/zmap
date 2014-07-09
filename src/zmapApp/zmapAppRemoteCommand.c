@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -28,10 +28,7 @@
  *              the "App" level of ZMap.
  *
  * Exported functions: See zmapApp_P.h
- * HISTORY:
- * Last edited: Jun  3 15:46 2013 (edgrif)
- * Created: Mon Jan 16 14:04:43 2012 (edgrif)
- * CVS info:   $Id$
+ * 
  *-------------------------------------------------------------------
  */
 
@@ -246,8 +243,7 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
   if (result)
     {
       if ((strcmp(command_name, ZACP_PING) == 0
-           || strcmp(command_name, ZACP_SHUTDOWN) == 0
-           || strcmp(command_name, ZACP_GOODBYE) == 0))
+           || strcmp(command_name, ZACP_SHUTDOWN) == 0))
         {
           localProcessRemoteRequest(app_context,
                                     command_name, request,
@@ -408,17 +404,14 @@ void zmapAppRemoteControlOurRequestEndedCB(void *user_data)
  * which would leave us with the same problem..big sigh...).
  * 
  */
-void zmapAppRemoteControlTheirRequestEndedCB(void *user_data)
+void zmapAppRemoteControlReplySent(ZMapAppContext app_context)
 {
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-
   if (app_context->remote_control->deferred_action)
     {
       int exit_timeout = 500 ;    /* time in milliseconds. */
 
       g_timeout_add(exit_timeout, deferredRequestHandler, (gpointer)app_context) ;
     }
-
 
   return ;
 }
@@ -465,14 +458,6 @@ static gboolean deferredRequestHandler(gpointer data)
 {
   ZMapAppContext app_context = (ZMapAppContext)data ;
   ZMapAppRemote remote = app_context->remote_control ;
-
-  /* kill remotecontrol first so we don't recurse trying to report our exit back to peer. */
-  if (strcmp(remote->curr_peer_command, ZACP_SHUTDOWN) == 0
-      || strcmp(remote->curr_peer_command, ZACP_GOODBYE) == 0)
-    {
-      zmapAppRemoteControlDestroy(app_context) ;
-    }
-
 
   if (strcmp(remote->curr_peer_command, ZACP_SHUTDOWN) == 0)
     {
@@ -527,9 +512,7 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
       if (strcmp(command, ZACP_HANDSHAKE) == 0)
         {
           gboolean result = FALSE ;
-          char *window_id_str = NULL, *xml_err_msg = NULL ;
           char *full_err_str = NULL ;
-          Window window_id ;
         
           if (command_rc != REMOTE_COMMAND_RC_OK)
             {
@@ -539,43 +522,7 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
             }
           else
             {
-              /* Note...it's legal not to give a window id, we just don't do any window checking. */
-              if (!(result = zMapRemoteCommandGetAttribute(reply,
-                                                           ZACP_PEER, ZACP_WINDOW_ID, &window_id_str,
-                                                           &xml_err_msg))
-                  && (xml_err_msg))
-                {
-                  full_err_str = g_strdup_printf("Error in \"%s\" xml: %s", ZACP_PEER, xml_err_msg) ;
-        
-                  zMapLogWarning("No window_id attribute specified in command %s, reason: %s",
-                                 ZACP_HANDSHAKE, full_err_str) ;
-        
-                  result = TRUE ;
-                }
-              else if (result)
-                {
-                  char *rest_str = NULL ;
-                
-                  errno = 0 ;
-                  if (!(window_id = strtoul(window_id_str, &rest_str, 16)))
-                    {
-                      char *full_err_str ;
-                
-                      full_err_str = g_strdup_printf("Conversion of \"%s = %s\" to X Window id"
-                                                     "failed: %s",
-                                                     ZACP_WINDOW_ID, window_id_str,  g_strerror(errno)) ;
-
-                      result = FALSE ;
-                    }
-                  else
-                    {
-                      app_context->remote_control->peer_window = window_id ;
-                      app_context->remote_control->peer_window_str
-                        = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, app_context->remote_control->peer_window) ;
-                
-                      result = TRUE ;
-                    }
-                }
+              result = TRUE ;
             }
 
           if (!result)
@@ -594,8 +541,7 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
           if (command_rc != REMOTE_COMMAND_RC_OK)
             zMapLogCritical("%s", command_err_msg) ;
         
-          /* Peer has replied to our goodbye message so now we need to exit. */
-          (app_context->remote_control->exit_routine)(app_context) ;
+          zmapAppExit(app_context) ;
         }
 
       if (command_err_msg)
@@ -642,18 +588,6 @@ static void processRequest(ZMapAppContext app_context,
           app_context->remote_control->deferred_action = TRUE ;
         }
     }
-  else if (strcmp(command_name, ZACP_GOODBYE) == 0)
-    {
-      /* Although we return a result here, the shutdown needs to be deferred until our reply gets
-       * through to the peer.  We initiate the shutdown from the remote callback which is called
-       * right at the end of the transaction and get that to work off a timeout routine. */
-      *command_rc_out = REMOTE_COMMAND_RC_OK ;
-      *reason_out = NULL ;
-
-      *reply_out = zMapRemoteCommandMessage2Element("Goodbye !") ;
-
-      app_context->remote_control->deferred_action = TRUE ;
-    }
   else if (strcmp(command_name, ZACP_PING) == 0)
     {
       *command_rc_out = REMOTE_COMMAND_RC_OK ;
@@ -671,7 +605,13 @@ static void processRequest(ZMapAppContext app_context,
 
 static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Unused currently. */
+
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
