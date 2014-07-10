@@ -14,21 +14,37 @@ if [ "x$ECHO" == "x" ]; then
     ECHO=/bin/echo
 fi
 
+if [ "x$zmap_host_name" == "x" ]; then
+    zmap_host_name=$(hostname)
+fi
+
+
+
+
 # message functions
+
+# Make a prefix.
+# Usage your_var=$(zmap_make_prefix) 
+function zmap_make_prefix
+{
+    now=$(date +%H:%M:%S)
+
+    $ECHO "[$zmap_host_name $SCRIPT_NAME ($now)] $@"
+}
+
+
 
 # Usage: zmap_message_out Your Message
 function zmap_message_out
 {
-    now=$(date +%H:%M:%S)
-    $ECHO "[$SCRIPT_NAME ($now)] $@"
+    $ECHO "$(zmap_make_prefix) $@"
 }
+
 
 # Usage: zmap_message_err Your Message
 function zmap_message_err
 {
-    now=$(date +%H:%M:%S)
-    $ECHO "[$SCRIPT_NAME ($now)] $@" >&2
-    
+    $ECHO "$(zmap_make_prefix) $@" >&2
 }
 
 # Usage: zmap_message_exit Your Message
@@ -56,7 +72,7 @@ function zmap_message_file
     if [ "x" != "x$1" ]; then
 	local file=$1
 	shift
-	$ECHO "[$SCRIPT_NAME ($now)] $*" >> $file
+	$ECHO "$(zmap_make_prefix) $*" >> $file
     fi
 }
 
