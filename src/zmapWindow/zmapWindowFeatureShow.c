@@ -2055,7 +2055,7 @@ static void addTagValue(gpointer data, gpointer user_data)
 
   /* Align to col. header: "Strand: Sequence/Match" */
   strand = g_strdup_printf("       %s / %s        ",
-                           zMapFeatureStrand2Str(feature->strand),
+                           zMapFeatureStrand2Str(zmapWindowStrandToDisplay(para_data->window, feature->strand)),
                            zMapFeatureStrand2Str(feature->feature.homol.strand)) ;
   column_data = g_list_append(column_data, strand) ;
 
