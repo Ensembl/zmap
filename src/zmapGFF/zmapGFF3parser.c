@@ -2259,7 +2259,8 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
   /*
    * Tokenize input line. Don't have to worry about quoted delimiter characters here.
    */
-  sTokens = zMapGFFStr_tokenizer(pParser->cDelimBodyLine, sLine, &iFields, bIncludeEmpty, iTokenLimit, g_malloc, g_free) ;
+  sTokens = zMapGFFStr_tokenizer(pParser->cDelimBodyLine, sLine, &iFields, bIncludeEmpty,
+                                 iTokenLimit, g_malloc, g_free, pParser->buffers[ZMAPGFF_BUF_TMP]) ;
 
   /*
    * Check number of tokens found.

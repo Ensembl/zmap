@@ -44,7 +44,7 @@
  * Some string utilities.
  */
 unsigned int *zMapGFFStr_find_unquoted(const char * const, char, char, unsigned int *, void*(*)(size_t), void(*)(void*)) ;
-char** zMapGFFStr_tokenizer(char, const char * const, unsigned int*, gboolean, unsigned int, void*(*)(size_t), void(*)(void*)) ;
+char** zMapGFFStr_tokenizer(char, const char * const, unsigned int*, gboolean, unsigned int, void*(*)(size_t), void(*)(void*), char*) ;
 char** zMapGFFStr_tokenizer02(char, char, const char * const , unsigned int *,  gboolean, void*(*)(size_t), void(*)(void*)) ;
 void zMapGFFStr_array_add_element(char ***, unsigned int *, void*(*)(size_t), void(*)(void*)) ;
 void zMapGFFStr_array_delete(char**, unsigned int, void(*)(void*)) ;
