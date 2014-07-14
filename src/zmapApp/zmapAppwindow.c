@@ -29,6 +29,8 @@
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmap.h>
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -41,10 +43,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include <zmq.h>
-
-
-#include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapCmdLineArgs.h>
@@ -62,7 +60,7 @@
 #define ZMAP_MEMORY_DEBUG
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#define CLEAN_EXIT_MSG "Exit clean - goodbye cruel world !"
+
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
@@ -129,21 +127,11 @@ static void hideMainWindow(ZMapAppContext app_context) ;
 static ZMapManagerCallbacksStruct app_window_cbs_G = {addZMapCB, removeZMapCB, infoSetCB, quitReqCB, NULL} ;
 
 
-/* Why are these here ?? */
-#define ZMAPLOG_FILENAME "zmap.log"
 
 
-char *ZMAP_X_PROGRAM_G  = "ZMap" ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* RESURRECT ?? */
-
-/* Place a copyright notice in the executable. */
-char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
-                                                  ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE,
-                                                  ZMAP_DESCRIPTION) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+/* 
+ *                    External routines.
+ */
 
 
 /* This is the "real" main routine, called by either the C or C++ main
@@ -627,8 +615,15 @@ void removeZMapCB(void *app_data, void *zmap_data)
  *        callbacks that destroy the application
  * 
  * Before changing this you must appreciate that it's complicated because we have
- * to kill exising zmaps if they exist, then disconnect from our peer if we have one
- * and then finally clear up.
+ * to kill zmap views if they exist (widgets, attached threads etc) and that is asynchronous.
+ * Then we have to kill the zmap app window and then disconnect from our peer if we
+ * have one and then finally clear up.
+ * 
+ * Because of different ways that zmap can be run and the different states it
+ * can be in the various destroy routines are called from different places, the
+ * important thing is that although the destroy can be called at different
+ * levels the path down through these levels is constant, i.e. you can only
+ * choose the level at which you enter, not the path through.
  */
 
 
@@ -675,8 +670,6 @@ static void signalAppDestroy(ZMapAppContext app_context)
 }
 
 
-
-
 /* Called when user selects the window manager "close" button or when signalAppDestroy()
  * has been called as this issues a destroy for the top level widget which has
  * the same effect.
@@ -705,6 +698,10 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
  *               exit/cleanup routines.
  */
 
+/* This is the first level of the destroy, if we have zmap view then
+ * they must be killed first, this is asynchronous and we get called
+ * back into remoteLevelDestroy() when all views have gone.
+ * If we don't then we go on directly to the remoteLevelDestroy(). */
 static void topLevelDestroy(ZMapAppContext app_context)
 {
   /* Record we are dying so we know when to quit as last zmap dies. */
@@ -726,6 +723,7 @@ static void topLevelDestroy(ZMapAppContext app_context)
 }
 
 
+/* Signal all views to die (including their widgets). */
 static void killZMaps(ZMapAppContext app_context)
 {
   guint timeout_func_id ;
@@ -759,7 +757,11 @@ static gboolean timeoutHandler(gpointer data)
 }
 
 
-/* Note that this routine is called from several places. */
+/* If we have a remote peer we disconnect from it, this is asychronous
+ * and we get called back into exitApp() once the peer has signalled
+ * that we are saying goodbye.
+ * If we don't then we call exitApp() straight away.
+ */
 static void remoteLevelDestroy(ZMapAppContext app_context)
 {
   gboolean remote_disconnecting = FALSE ;
@@ -783,10 +785,6 @@ static void remoteLevelDestroy(ZMapAppContext app_context)
   return ;
 }
 
-
-/* 
- *  Final exit routines.
- */
 
 /* Called on clean exit of zmap. */
 static void exitApp(ZMapAppContext app_context)
@@ -812,13 +810,12 @@ static void crashExitApp(ZMapAppContext app_context)
 }
 
 
-/* Sends finalise to client if there is one and then signals main window to exit which
- * will then call our final destroy callback. */
+/* By now all asychronous stuff is over and it's a straight forward
+ * freeing/releasing of all the resources. */
 static void contextLevelDestroy(ZMapAppContext app_context, int exit_rc, char *exit_msg)
 {
   app_context->exit_rc = exit_rc ;
   app_context->exit_msg = exit_msg ;
-
 
   /* Destroy the remote control object, note that we have by now already
    * said goodbye to the peer. */
@@ -834,13 +831,7 @@ static void contextLevelDestroy(ZMapAppContext app_context, int exit_rc, char *e
 
 
 
-/* This function gets called whenever there is a gtk_widget_destroy() to the top level
- * widget. Sometimes this is because of window manager action, sometimes one of our exit
- * routines does a gtk_widget_destroy() on the top level widget.
- *
- * It is the final clean up routine for the ZMap application and exits the program.
- *
- *  */
+/* This is the final clean up routine for the ZMap application and exits the program. */
 static void killContext(ZMapAppContext app_context)
 {
   int exit_rc = app_context->exit_rc ;
@@ -863,9 +854,7 @@ static void killContext(ZMapAppContext app_context)
 }
 
 
-
-/*
- * Use this routine to exit the application with a portable (as in POSIX) return
+/* Use this routine to exit the application with a portable (as in POSIX) return
  * code. If exit_code == 0 then application exits with EXIT_SUCCESS, otherwise
  * exits with EXIT_FAILURE.
  *
