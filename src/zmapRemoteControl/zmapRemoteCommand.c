@@ -1715,13 +1715,13 @@ static gboolean xml_request_attrs_cb(gpointer user_data, ZMapXMLElement request_
 	  validate_data->request_time = value ;
 	}
       else
-	{
-	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+        {
+          zMapXMLParserRaiseParsingError(parser, err_msg) ;
+        
+          g_free(err_msg) ;
 
-	  g_free(err_msg) ;
-
-	  result = FALSE ;
-	}
+          result = FALSE ;
+        }
     }
 
   validate_data->req_reply_content = result ;

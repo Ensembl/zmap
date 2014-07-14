@@ -246,8 +246,7 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
                      void*(*local_malloc)(size_t), void(*local_free)(void*))
 {
   static const char cToRemove = ' ';
-  static const unsigned int iBuffLen = 5000;
-  char sBuff[iBuffLen] ;
+  char sBuff[ZMAPGFF_MAX_LINE_LEN] ;
   unsigned int iLength = 0,
     iTokLen = 0,
     iNumTokens = 0 ;
@@ -273,7 +272,7 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
       if (bInclude)
         {
           /* include token here */
-          memset(sBuff, 0, iBuffLen) ;
+          memset(sBuff, 0, ZMAPGFF_MAX_LINE_LEN) ;
           strncpy(sBuff, sPosLast, iTokLen) ;
           zMapGFFStr_remove_char(sBuff, cToRemove) ;
           zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
@@ -295,7 +294,7 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
       if (bInclude)
         {
           /* include token here */
-          memset(sBuff, 0, iBuffLen) ;
+          memset(sBuff, 0, ZMAPGFF_MAX_LINE_LEN) ;
           strncpy(sBuff, sPosLast, iTokLen) ;
           zMapGFFStr_remove_char(sBuff, cToRemove) ;
           zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
