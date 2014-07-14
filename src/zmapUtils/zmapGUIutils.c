@@ -210,6 +210,29 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
 }
 
 
+/* Try to ungrab everything.
+ * 
+ * Use this function when you are trying to breakpoint/stop in the debugger
+ * but when you do the screen is frozen because some preceding code has done
+ * a grab but is now stopped.
+ * 
+ * Just before where you have your breakpoint insert a temporary call to this
+ * function or insert the call just before where the code is crashing.
+ *  */
+void zMapGUIUnGrab(void)
+{
+  GdkDisplay *display ;
+
+  display = gdk_display_get_default() ;
+
+  gdk_display_pointer_ungrab(display, GDK_CURRENT_TIME) ;
+
+  gdk_display_keyboard_ungrab(display, GDK_CURRENT_TIME) ;
+
+  return ;
+}
+
+
 
 /* Given a gdkEventAny, return a string name for the event.
  * 

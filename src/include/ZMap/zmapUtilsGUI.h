@@ -441,7 +441,9 @@ typedef void (*ZMapFileChooserContentAreaCB)(GtkWidget *vbox, gpointer user_data
 
 gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
 
+
 void zMapGUIRaiseToTop(GtkWidget *widget);
+void zMapGUIUnGrab(void) ;
 
 GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget) ;
 gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *peer_clipboard, char **err_msg_out) ;
