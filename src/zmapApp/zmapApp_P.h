@@ -40,6 +40,17 @@
 #include <ZMap/zmapAppServices.h>
 
 
+
+/* 
+ *           App names/resources.
+ */
+
+#define ZMAPLOG_FILENAME "zmap.log"
+
+#define CLEAN_EXIT_MSG "Exit clean - goodbye cruel world !"
+
+
+
 /*
  * We follow glib convention in error domain naming:
  *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
