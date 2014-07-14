@@ -37,6 +37,8 @@
 #include <string.h>
 #include <ZMap/zmapGFF.h>
 
+#include "zmapGFF_P.h"
+
 
 /*
  * Some string utilities.
