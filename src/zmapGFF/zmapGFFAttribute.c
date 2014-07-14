@@ -306,7 +306,7 @@ ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser pParserBase, const char*  c
   static const gboolean bIncludeEmpty = TRUE ;
   ZMapGFFAttributeName eTheName = ZMAPGFF_ATT_UNK ;
   unsigned int iNumTokens = 0, i;
-  char **sTokens = NULL ;
+  char **sTokens = NULL, *sBuff = NULL ;
   ZMapGFFVersion eVersion = ZMAPGFF_VERSION_UNKNOWN ;
   ZMapGFFAttribute pAttribute = NULL ;
 
@@ -325,14 +325,15 @@ ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser pParserBase, const char*  c
    * Cast to "derived" type.
    */
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-
+  sBuff = pParserBase->buffers[ZMAPGFF_BUF_TMP] ;
 
   /*
    * Tokenize the input string; we stop on encountering the first
    * delimiter and therefore should only get two tokens. The delimiter here
    * separates the attribute name from its associated data.
    */
-  sTokens = zMapGFFStr_tokenizer(pParser->cDelimAttValue, sAttribute, &iNumTokens, bIncludeEmpty, iTokenLimit, g_malloc, g_free) ;
+  sTokens = zMapGFFStr_tokenizer(pParser->cDelimAttValue, sAttribute, &iNumTokens,
+                                 bIncludeEmpty, iTokenLimit, g_malloc, g_free, sBuff) ;
   if (iNumTokens > iExpectedTokens )
     {
       for (i=0; i<iNumTokens; ++i)
@@ -452,7 +453,8 @@ ZMapGFFAttribute* zMapGFFAttributeParseList(ZMapGFFParser pParserBase, const cha
    * characters in this process.
    */
   bIncludeEmpty = FALSE ;
-  sTokens = zMapGFFStr_tokenizer02(pParser->cDelimAttributes, pParser->cDelimQuote, sAttributes, pnAttributes, bIncludeEmpty, g_malloc, g_free) ;
+  sTokens = zMapGFFStr_tokenizer02(pParser->cDelimAttributes, pParser->cDelimQuote, sAttributes, pnAttributes,
+                                   bIncludeEmpty, g_malloc, g_free) ;
   if (*pnAttributes == 0)
     return pAttributes ;
 
@@ -1878,7 +1880,7 @@ gboolean zMapAttParseKnownName(ZMapGFFAttribute pAttribute, char ** const sOut)
  *
  */
 gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute pAttribute, char ** const psOut, ZMapStrand * const pcStrandOut,
-                                  int * const piOut, GArray ** const paOut)
+                                  int * const piOut, GArray ** const paOut, char *sBuff)
 {
   gboolean bResult = FALSE ;
   static const char cComma = ',';
@@ -1909,7 +1911,7 @@ gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute pAttribute, char ** const psO
   /*
    * Tokenize on commas; we must have a minimum of 4 fields
    */
-  sTokens = zMapGFFStr_tokenizer(cComma, sValue, &iTokens, bIncludeEmpty, iTokenLimit, g_malloc, g_free) ;
+  sTokens = zMapGFFStr_tokenizer(cComma, sValue, &iTokens, bIncludeEmpty, iTokenLimit, g_malloc, g_free, sBuff) ;
 
   for (i=0; i<iTokens; ++i)
   {
