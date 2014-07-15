@@ -19,9 +19,10 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *         Roy Storey   (Sanger Institute, UK) rds@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
  * Description: Displays a list of features from which the user may select
  *
@@ -194,7 +195,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
  { "/File/Search",        NULL,         searchCB,   0,          NULL,       NULL},
  { "/File/Preserve",      NULL,         preserveCB, 0,          NULL,       NULL},
  { "/File/Export",        NULL,         NULL,       0,          "<Branch>", NULL},
- { "/File/Export/GFF v2", NULL,         exportCB,   WINLISTGFF, NULL,       NULL},
+ { "/File/Export/GFF",    NULL,         exportCB,   WINLISTGFF, NULL,       NULL},
 #ifdef MORE_FORMATS
  { "/File/Export/XFF",    NULL,         exportCB,   WINLISTXFF, NULL,       NULL},
 #endif /* MORE_FORMATS */
@@ -785,7 +786,7 @@ static void destroyCB(GtkWidget *widget, gpointer user_data)
 {
   ZMapWindowList windowList = (ZMapWindowList)user_data ;
 
-  if (!windowList) 
+  if (!windowList)
     return ;
 
   destroyList(windowList) ;
@@ -1018,7 +1019,11 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
           list = invoke_search_func(window,window_list->get_hash_func, window_list->get_hash_data,
                                     window_list->search_hash_func, window_list->search_hash_data) ;
 
-          if(list)
+          /*
+           * (sm23) Note that the list object may exist but contain no data, so list->data
+           * must be tested as well here.
+           */
+          if(list && list->data)
             {
               ExportDataStruct export_data = {NULL};
               GError                *error = NULL;

@@ -22,7 +22,7 @@
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk)
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
  * Description: Dumps the features within a given block as GFF v2
  *
@@ -116,7 +116,7 @@ typedef struct _GFFDumpDataStruct
 } GFFDumpDataStruct;
 
 /* Functions to dump the header section of gff files */
-static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file, 
+static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file,
                                  const char **sequence_in_out, GString **header_string_out, GError **error_out) ;
 static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark key, gpointer data,
   gpointer user_data, char **err_out) ;
@@ -266,7 +266,7 @@ static DumpGFFAttrFunc text_funcs_G_GFF3[] = {
 /*
  * Public interface function to set the version of GFF to output.
  */
-gboolean zMapGFFDumpVersion(ZMapGFFVersion gff_version )
+gboolean zMapGFFDumpVersionSet(ZMapGFFVersion gff_version )
 {
   gboolean result = FALSE ;
 
@@ -274,6 +274,14 @@ gboolean zMapGFFDumpVersion(ZMapGFFVersion gff_version )
   gff_output_version = gff_version ;
 
   return result ;
+}
+
+/*
+ * Return the version of GFF that has been set for output.
+ */
+ZMapGFFVersion zMapGFFDumpVersionGet()
+{
+  return gff_output_version ;
 }
 
 
@@ -300,8 +308,9 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
   const char *sequence = NULL;
   gboolean result = FALSE ;
 
-  if (!file || !dump_set || !error_out)
-    return result ;
+  zMapReturnValIfFail(file && dump_set && error_out, result) ;
+
+
   if ((dump_set->struct_type != ZMAPFEATURE_STRUCT_CONTEXT)
      && (dump_set->struct_type != ZMAPFEATURE_STRUCT_ALIGN)
      && (dump_set->struct_type != ZMAPFEATURE_STRUCT_BLOCK)
@@ -359,16 +368,13 @@ gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, G
   const char *int_sequence = NULL;
   gboolean result = FALSE ;
   GString *header_string = NULL ;
+  ZMapFeatureAny feature_any = NULL ;
 
-  if(dump_list && dump_list->data)
-    {
-      ZMapFeatureAny feature_any;
-
-      feature_any  = (ZMapFeatureAny)(dump_list->data);
-      int_sequence = sequence;
-
-      result       = dump_full_header(feature_any, file, &int_sequence, &header_string, error_out) ;
-    }
+  zMapReturnValIfFail(dump_list && dump_list->data && error_out, result) ;
+  feature_any  = (ZMapFeatureAny)(dump_list->data);
+  zMapReturnValIfFail(feature_any->struct_type != ZMAPFEATURE_STRUCT_INVALID, result ) ;
+  int_sequence = sequence;
+  result       = dump_full_header(feature_any, file, &int_sequence, &header_string, error_out) ;
 
   if (result)
     {
@@ -417,46 +423,49 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles
   gboolean result = FALSE ;
   const char *int_sequence = NULL ;
 
+  zMapReturnValIfFail(first_feature &&
+                      (first_feature->struct_type != ZMAPFEATURE_STRUCT_INVALID) &&
+                      error_out &&
+                      list_func_out &&
+                      list_data_out,
+                                     result ) ;
 
-  if ((list_func_out && list_data_out))
+  int_sequence = sequence;
+
+  if ((result = dump_full_header(first_feature, file, &int_sequence, NULL, error_out)))
     {
-      int_sequence = sequence;
+      GFFDumpData gff_data ;
 
-      if ((result = dump_full_header(first_feature, file, &int_sequence, NULL, error_out)))
+      gff_data = g_new0(GFFDumpDataStruct, 1);
+      gff_data->basic      = NULL ;
+      gff_data->transcript = NULL ;
+      gff_data->homol      = NULL ;
+      gff_data->text       = NULL ;
+      gff_data->styles     = NULL ;
+
+      if (gff_output_version == ZMAPGFF_VERSION_2)
         {
-          GFFDumpData gff_data ;
-
-          gff_data = g_new0(GFFDumpDataStruct, 1);
-          gff_data->basic      = NULL ;
-          gff_data->transcript = NULL ;
-          gff_data->homol      = NULL ;
-          gff_data->text       = NULL ;
-          gff_data->styles     = NULL ;
-
-          if (gff_output_version == ZMAPGFF_VERSION_2)
-            {
-              gff_data->basic      = basic_funcs_G_GFF2;
-              gff_data->transcript = transcript_funcs_G_GFF2;
-              gff_data->homol      = homol_funcs_G_GFF2;
-              gff_data->text       = text_funcs_G_GFF2;
-              gff_data->styles     = styles ;
-            }
-          else if (gff_output_version == ZMAPGFF_VERSION_3)
-            {
-              gff_data->basic      = basic_funcs_G_GFF3;
-              gff_data->transcript = transcript_funcs_G_GFF3;
-              gff_data->homol      = homol_funcs_G_GFF3;
-              gff_data->text       = text_funcs_G_GFF3;
-              gff_data->styles     = styles ;
-            }
-
-          /* This might get overwritten later, but as DumpToFile uses
-           * Subset, there's a chance it wouldn't get set at all */
-          gff_data->gff_sequence = int_sequence;
-
-          result = zMapFeatureListForeachDumperCreate(dump_gff_cb, styles, gff_data,
-                     g_free, file, error_out, list_func_out, list_data_out) ;
+          gff_data->basic      = basic_funcs_G_GFF2;
+          gff_data->transcript = transcript_funcs_G_GFF2;
+          gff_data->homol      = homol_funcs_G_GFF2;
+          gff_data->text       = text_funcs_G_GFF2;
+          gff_data->styles     = styles ;
         }
+      else if (gff_output_version == ZMAPGFF_VERSION_3)
+        {
+          gff_data->basic      = basic_funcs_G_GFF3;
+          gff_data->transcript = transcript_funcs_G_GFF3;
+          gff_data->homol      = homol_funcs_G_GFF3;
+          gff_data->text       = text_funcs_G_GFF3;
+          gff_data->styles     = styles ;
+        }
+
+      /* This might get overwritten later, but as DumpToFile uses
+       * Subset, there's a chance it wouldn't get set at all */
+      gff_data->gff_sequence = int_sequence;
+
+      result = zMapFeatureListForeachDumperCreate(dump_gff_cb, styles, gff_data,
+                 g_free, file, error_out, list_func_out, list_data_out) ;
     }
 
   return result ;
@@ -470,6 +479,8 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file,
 {
   GFFHeaderDataStruct header_data = {NULL};
   char *time_string ;
+
+  zMapReturnValIfFail(feature_any && (feature_any->struct_type != ZMAPFEATURE_STRUCT_INVALID) && file && error_out, FALSE ) ;
 
   /* Dump the standard header lines. */
   time_string = zMapGetTimeString(ZMAPTIME_YMD, NULL) ;
@@ -528,9 +539,11 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file,
 static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark  key, gpointer data,
                                                               gpointer user_data, char **err_out)
 {
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   GFFHeaderData header_data  = (GFFHeaderData)user_data;
+
+  zMapReturnValIfFail(data && user_data && (feature_any->struct_type != ZMAPFEATURE_STRUCT_INVALID), status ) ;
 
   switch(feature_any->struct_type)
     {
@@ -550,6 +563,7 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark  key, gpoin
 
             if(!header_data->gff_sequence)
               header_data->gff_sequence = sequence;
+            status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
           }
         break;
       case ZMAPFEATURE_STRUCT_BLOCK:
@@ -569,12 +583,13 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark  key, gpoin
               g_quark_to_string(feature_any->original_id), start, end,(reversed ? "(reversed)" : "")) ;
             header_data->status = TRUE;
             header_data->cont   = FALSE;
+            status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
           }
         break;
       case ZMAPFEATURE_STRUCT_FEATURESET:
       case ZMAPFEATURE_STRUCT_FEATURE:
       default:
-        status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND;
+        status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
         break;
     }
 
@@ -590,6 +605,8 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
   GFFDumpData gff_data = (GFFDumpData)user_data;
   gboolean result = TRUE;
   ZMapFeatureSet fset;
+
+  zMapReturnValIfFail(feature_any && (feature_any->struct_type != ZMAPFEATURE_STRUCT_INVALID) && gff_data, result ) ;
 
   switch(feature_any->struct_type)
     {
@@ -649,7 +666,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
           gff_data->gff_source = (char *) g_quark_to_string(fset->original_id);
 #endif
 
-          gff_data->gff_feature = g_quark_to_string(feature->SO_accession) ; /* zMapSOAcc2Term(feature->SO_accession) ; */
+          gff_data->gff_feature = (char *) g_quark_to_string(feature->SO_accession) ; /* zMapSOAcc2Term(feature->SO_accession) ; */
           if(!gff_data->gff_feature)
             {
               GQuark gff_ontology;
