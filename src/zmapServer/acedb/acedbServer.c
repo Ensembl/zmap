@@ -2577,7 +2577,7 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
   GetMethodsStyles get_sets = (GetMethodsStyles)user_data ;
   char *name = NULL, *zmap_style = NULL, *col_parent = NULL, *remark = NULL ;
   int obj_lines ;
-
+  char *line_pos ;
 
   /* This should be in parse types really and then parsetypes should move on to next obj. */
   if (!g_str_has_prefix(method_str, "Method : "))
@@ -2585,10 +2585,10 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
 
 
   obj_lines = 0 ;				    /* Used to detect empty objects. */
+  line_pos = NULL ;
   do
     {
       char *tag = NULL ;
-      char *line_pos = NULL ;
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
 	break ;
@@ -2745,6 +2745,7 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
   GList *feature_sets, *method_list, *child_list = NULL ;
   char *name = NULL, *column_parent = NULL, *column_child = NULL, *style = NULL, *remark = NULL ;
   int obj_lines = 0 ;					    /* Used to detect empty objects. */
+  char *line_pos ;
 
 
   if (!g_str_has_prefix(method_str, "Method : "))
@@ -2756,10 +2757,10 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
   feature_sets = get_sets->feature_set_methods ;
   method_list = get_sets->feature_methods ;
 
+  line_pos = NULL ;
   do
     {
       char *tag = NULL ;
-      char *line_pos = NULL ;
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
 	break ;
@@ -2965,16 +2966,17 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   gboolean deferred_flag = FALSE;
   int obj_lines ;
   int between_align_error = 0 ;
+  char *line_pos ;
 
 
   if (!g_str_has_prefix(method_str, "Method : "))
     return style ;
 
   obj_lines = 0 ;				    /* Used to detect empty objects. */
+  line_pos = NULL ;
   do
     {
       char *tag = NULL ;
-      char *line_pos = NULL ;
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
 	break ;
@@ -3418,17 +3420,18 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   double histogram_baseline = 0.0 ;
   gboolean pfetchable = FALSE ;
   ZMapStyleBlixemType blixem_type = ZMAPSTYLE_BLIXEM_INVALID ;
-
+  char *line_pos ;
 
   if (g_ascii_strncasecmp(style_str, "ZMap_style : ", strlen("ZMap_style : ")) != 0)
     return style ;
 
 
   obj_lines = 0 ;				    /* Used to detect empty objects. */
+  line_pos = NULL ;
   do
     {
       char *tag = NULL ;
-      char *line_pos = NULL ;
+
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
 	break ;
