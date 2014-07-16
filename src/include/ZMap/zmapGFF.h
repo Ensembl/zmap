@@ -145,7 +145,8 @@ void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error) ;
 void zMapGFFSetParseOnly(ZMapGFFParser parser, gboolean parse_only) ;
 gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block) ;
 
-gboolean zMapGFFDumpVersion(ZMapGFFVersion gff_version ) ;
+gboolean zMapGFFDumpVersionSet(ZMapGFFVersion gff_version ) ;
+ZMapGFFVersion zMapGFFDumpVersionGet() ;
 gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out);
 gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
 			   ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
