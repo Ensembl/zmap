@@ -91,7 +91,7 @@ static gboolean gotoLastSpace(char **cp_inout) ;
  */
 
 
-ZMAP_ENUM_AS_NAME_STRING_FUNC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat, ZMAP_ALIGN_GAP_FORMAT_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat, ZMAP_ALIGN_GAP_FORMAT_LIST) ;
 
 
 

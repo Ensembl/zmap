@@ -1598,7 +1598,7 @@ ZMapViewState zMapViewGetStatus(ZMapView zmap_view)
 }
 
 /* auto define of function to return view state as a string, see zmapEnum.h. */
-ZMAP_ENUM_AS_NAME_STRING_FUNC(zMapView2Str, ZMapViewState, VIEW_STATE_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapView2Str, ZMapViewState, VIEW_STATE_LIST) ;
 
 
 

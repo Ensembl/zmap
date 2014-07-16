@@ -997,20 +997,20 @@ GType zMapFeatureTypeStyleGetType(void);
 
 
 
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2Mode,            ZMapStyleMode) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColDisplayState, ZMapStyleColumnDisplayState) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr23FrameMode,      ZMapStyle3FrameMode) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GraphMode,       ZMapStyleGraphMode) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2Scale,           ZMapStyleScale) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourType,      ZMapStyleColourType) ;
-//ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ScoreMode,       ZMapStyleScoreMode) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2BumpMode,     ZMapStyleBumpMode) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GlyphStrand,     ZMapStyleGlyphStrand) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2SubFeature,     ZMapStyleSubFeature) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GlyphAlign,     ZMapStyleGlyphAlign) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2BlixemType,     ZMapStyleBlixemType) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2Mode,            ZMapStyleMode) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2ColDisplayState, ZMapStyleColumnDisplayState) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr23FrameMode,      ZMapStyle3FrameMode) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2GraphMode,       ZMapStyleGraphMode) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2Scale,           ZMapStyleScale) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2ColourType,      ZMapStyleColourType) ;
+//ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2ScoreMode,       ZMapStyleScoreMode) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2BumpMode,     ZMapStyleBumpMode) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2GlyphStrand,     ZMapStyleGlyphStrand) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2SubFeature,     ZMapStyleSubFeature) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2GlyphAlign,     ZMapStyleGlyphAlign) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapStyleStr2BlixemType,     ZMapStyleBlixemType) ;
 
 /* Enum -> String function decs: const char *zMapStyleXXXXMode2ExactStr(ZMapStyleXXXXXMode mode);  */
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapStyleMode2ExactStr,            ZMapStyleMode) ;
@@ -1030,7 +1030,7 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleBlixemType2ExactStr,     ZMapStyleBlixemT
 
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleBumpMode2ShortText, ZMapStyleBumpMode) ;
-ZMAP_ENUM_AS_NAME_STRING_DEC(zmapStyleMode2ShortText, ZMapStyleMode) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleMode2ShortText, ZMapStyleMode) ;
 
 
 

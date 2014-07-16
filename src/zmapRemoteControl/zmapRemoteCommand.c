@@ -829,10 +829,10 @@ gboolean zMapRemoteCommandGetAttribute(char *message,
 
 /* Auto "function from macro list" definition, returns short text version of RemoteCommandRCType value,
  * i.e. given REMOTE_COMMAND_RC_BAD_XML, returns "bad_xml" */
-ZMAP_ENUM_AS_NAME_STRING_FUNC(zMapRemoteCommandRC2Str, RemoteCommandRCType, REMOTE_COMMAND_RC_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapRemoteCommandRC2Str, RemoteCommandRCType, REMOTE_COMMAND_RC_LIST) ;
 
 /* The opposite function, given "bad_xml", returns REMOTE_COMMAND_RC_BAD_XML */
-ZMAP_ENUM_FROM_STRING_FUNC(zMapRemoteCommandStr2RC, RemoteCommandRCType, -1, REMOTE_COMMAND_RC_LIST, dummy, dummy) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_FUNC(zMapRemoteCommandStr2RC, RemoteCommandRCType, -1, REMOTE_COMMAND_RC_LIST, dummy, dummy) ;
 
 
 ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapRemoteCommandRC2Desc, RemoteValidateRCType, REMOTE_VALIDATE_RC_LIST) ;

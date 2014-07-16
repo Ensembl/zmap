@@ -134,7 +134,11 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
        const gchar    *first_property_name,
        va_list        var_args);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMAP_ENUM_AS_NAME_STRING_DEC(zmapFeatureDataPropertyName, ZMapFeatureDataProperty);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapFeatureDataPropertyNick, ZMapFeatureDataProperty);
 
 static GParamSpecPool *pspec_pool_G = NULL;
@@ -293,7 +297,7 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
 
       for(i = PROP_DATA_ZERO; i < PROP_DATA_FINAL; i++, table++)
         {
-          name  = zmapFeatureDataPropertyName(i);
+          name  = zmapFeatureDataPropertyNick(i);
           nick  = zmapFeatureDataPropertyNick(i);
 #ifdef RDS_DONT_INCLUDE
           blurb = zmapFeatureDataPropertyBlurb(i);
@@ -760,7 +764,11 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMAP_ENUM_AS_NAME_STRING_FUNC(zmapFeatureDataPropertyName, ZMapFeatureDataProperty, PROP_DATA_PARAM_LIST);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapFeatureDataPropertyNick, ZMapFeatureDataProperty, PROP_DATA_PARAM_LIST);
 
 
