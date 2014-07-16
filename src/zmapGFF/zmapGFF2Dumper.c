@@ -308,15 +308,20 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
   const char *sequence = NULL;
   gboolean result = FALSE ;
 
-  zMapReturnValIfFail(file && dump_set && error_out, result) ;
+  zMapReturnValIfFail(file                                                  &&
+                      dump_set                                              &&
+                      (dump_set->struct_type != ZMAPFEATURE_STRUCT_INVALID) &&
+                      error_out,
+                                  result) ;
 
-
+  /*
   if ((dump_set->struct_type != ZMAPFEATURE_STRUCT_CONTEXT)
      && (dump_set->struct_type != ZMAPFEATURE_STRUCT_ALIGN)
      && (dump_set->struct_type != ZMAPFEATURE_STRUCT_BLOCK)
      && (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURESET)
      && (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURE) )
     return result ;
+  */
 
   result = dump_full_header(dump_set, file, &sequence, NULL, error_out) ;
 
