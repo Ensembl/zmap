@@ -77,8 +77,12 @@
 #define AS_NAME_TEXT(name, dummy0, name_text, dummy1, dummy2) \
     case name: { return name_text; }
 
-#define AS_SHORT_TEXT(name, value, dummy0, short_text, dummy2)		\
+#define AS_SHORT_TEXT(name, value, short_text, dummy0, dummy2)		\
     case name: { return short_text; }
+
+
+#define AS_LONG_TEXT(name, dummy_value, dummy_short_text, long_text, dummy2)		\
+    case name: { return long_text ; }
 
 
 #define ENUM2STR(name, dummy, string, dummy0, dummy1)			\
@@ -135,6 +139,7 @@ const char *fname(type_name n){                               \
 }                                                             \
 SWALLOW_SEMI_COLON
 
+
 /* 
  * Defines enum to short description convertor automatically.
  */
@@ -146,6 +151,23 @@ SWALLOW_SEMI_COLON
     const char* fname(name n) {                \
         switch (n) {                           \
             list(AS_SHORT_TEXT)               \
+            default: return "";                \
+        }                                      \
+    }                                          \
+SWALLOW_SEMI_COLON
+
+
+/* 
+ * Defines enum to long description convertor automatically.
+ */
+#define ZMAP_ENUM_TO_LONG_TEXT_DEC(fname, name)   \
+    const char* fname(name n);                 \
+SWALLOW_SEMI_COLON
+
+#define ZMAP_ENUM_TO_LONG_TEXT_FUNC(fname, name, list) \
+    const char* fname(name n) {                \
+        switch (n) {                           \
+            list(AS_LONG_TEXT)               \
             default: return "";                \
         }                                      \
     }                                          \
