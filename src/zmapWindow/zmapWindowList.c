@@ -186,9 +186,9 @@ static GList *invoke_search_func(ZMapWindow window, ZMapWindowListGetFToIHash ge
 
 static void window_list_truncate(ZMapWindowList window_list);
 static void window_list_populate(ZMapWindowList window_list, GList *item_list);
-static gboolean window_list_selection_first_feature(ZMapWindowList window_list,
-                                                    GList ** p_list_fc_out,
-                                                    GList ** p_list_feature_out);
+static gboolean window_list_selection_get_features(ZMapWindowList window_list,
+                                                   GList ** p_list_fc_out,
+                                                   GList ** p_list_feature_out);
 
 /* menu GLOBAL! */
 static GtkItemFactoryEntry menu_items_G[] = {
@@ -795,11 +795,18 @@ void tree_selection_traversal_function (GtkTreeModel *model,
                                 GtkTreeIter *tree_iterator,
                                 gpointer data)
 {
-  ZMapWindowListTreeConversion conversion_data = (ZMapWindowListTreeConversion) data ;
-  ZMapWindowList window_list = conversion_data->window_list ;
-  zMapReturnIfFail(window_list) ;
+  ZMapWindowListTreeConversion conversion_data = NULL ;
+  ZMapWindowList window_list = NULL ;
   FooCanvasItem *item = NULL;
   ZMapFeatureAny feature_any = NULL ;
+
+  zMapReturnIfFail(model && path && tree_iterator && data) ;
+
+  conversion_data = (ZMapWindowListTreeConversion) data ;
+  window_list = conversion_data->window_list ;
+
+  zMapReturnIfFail(window_list) ;
+
   item = zMapWindowFeatureItemListGetItem(window_list->zmap_window,
                                           window_list->zmap_tv,
                                           window_list->context_to_item,
@@ -815,34 +822,43 @@ void tree_selection_traversal_function (GtkTreeModel *model,
  * apparently), and as a GList of pointers to the features themselves (which _is_
  * useful). For usage, see where this is called in exportCB() below.
  */
-static gboolean window_list_selection_first_feature(ZMapWindowList window_list,
-                                                    GList ** p_list_fc_out,
-                                                    GList ** p_list_feature_out)
+static gboolean window_list_selection_get_features(ZMapWindowList window_list,
+                                                   GList ** p_list_fc_out,
+                                                   GList ** p_list_feature_out)
 {
   gboolean result = FALSE ;
   GtkTreeModel *model = NULL;
   GtkTreeView  *view = NULL;
   GtkTreeSelection *selection = NULL ;
-  zMapReturnValIfFail(window_list, result) ;
+  zMapReturnValIfFail(window_list && window_list->zmap_tv && p_list_fc_out && p_list_feature_out, result) ;
   g_object_get(G_OBJECT(window_list->zmap_tv),
                "tree-view",  &view,
                "tree-model", &model,
                NULL);
-  selection = gtk_tree_view_get_selection(view) ;
+  if (view)
+    {
+      selection = gtk_tree_view_get_selection(view) ;
 
-  /*
-   * Iterate over the selected items and get a foocanvas item corresponding
-   * to each element in the selection.
-   */
-  ZMapWindowListTreeConversionStruct conversion_data ;
-  conversion_data.window_list = window_list ;
-  conversion_data.list_fc = NULL ;
-  conversion_data.list_feature = NULL ;
-  gtk_tree_selection_selected_foreach(selection,
-                                      tree_selection_traversal_function,
-                                      (gpointer)&conversion_data) ;
-  *p_list_fc_out = conversion_data.list_fc ;
-  *p_list_feature_out = conversion_data.list_feature ;
+      if (selection)
+        {
+          /*
+           * Iterate over the selected items and get a foocanvas item corresponding
+           * to each element in the selection.
+           */
+          ZMapWindowListTreeConversionStruct conversion_data ;
+          conversion_data.window_list = window_list ;
+          conversion_data.list_fc = NULL ;
+          conversion_data.list_feature = NULL ;
+          gtk_tree_selection_selected_foreach(selection,
+                                              tree_selection_traversal_function,
+                                              (gpointer)&conversion_data) ;
+          *p_list_fc_out = conversion_data.list_fc ;
+          *p_list_feature_out = conversion_data.list_feature ;
+
+          result = TRUE ;
+
+        }
+    }
 
   return result ;
 }
@@ -989,6 +1005,7 @@ typedef struct
   gpointer data;
 } ExportDataStruct, *ExportData;
 
+/*
 static void invoke_dump_function_cb(gpointer list_data, gpointer user_data)
 {
   FooCanvasItem *item = NULL;
@@ -1011,6 +1028,7 @@ static void invoke_dump_function_cb(gpointer list_data, gpointer user_data)
 
   return ;
 }
+*/
 
 static void add_dump_offset_coord_box(GtkWidget *vbox, gpointer user_data)
 {
@@ -1059,7 +1077,6 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
 {
   ZMapWindow window = NULL ;
   ZMapWindowList window_list = (ZMapWindowList)data;
-  ZMapFeatureAny feature_any = NULL;
   char *filepath = NULL;
   GtkWidget *toplevel = NULL ;
   gpointer feature_out_data = NULL;
@@ -1068,7 +1085,6 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
   gboolean result = FALSE;
   GList *list = NULL,
     *list_feature = NULL ;
-  ExportDataStruct export_data = {NULL};
   GError                *error = NULL;
 
   zMapReturnIfFail(window_list && window_list->zmap_window && window_list->toplevel) ;
@@ -1099,14 +1115,12 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
       if(result)
         {
 
-         window_list_selection_first_feature(window_list, &list, &list_feature) ;
-
           /*
            * (sm23) Note that I am now just taking a list of pointers to features from the
            * tree selection object. The stuff using a linked list of pointers to foo canvas items
            * simply does not work, and from what I can see, never has.
            */
-          if (list_feature)
+          if (window_list_selection_get_features(window_list, &list, &list_feature))
             {
               zMapGFFDumpList(list_feature, window->context_map->styles, NULL, file, NULL, &error) ;
             }
