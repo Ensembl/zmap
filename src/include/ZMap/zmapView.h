@@ -231,7 +231,7 @@ gboolean zMapViewGetHighlightFilteredColumns(ZMapView);
 void zMapViewUpdateColumnBackground(ZMapView view);
 
 
-ZMAP_ENUM_AS_NAME_STRING_DEC(zMapView2Str, ZMapViewState) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapView2Str, ZMapViewState) ;
 
 
 #endif /* !ZMAPVIEW_H */

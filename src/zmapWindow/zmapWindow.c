@@ -1917,7 +1917,6 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.known_name)
         select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.transcript.known_name) ;
 
-
       select.feature_desc.feature_strand = zMapFeatureStrand2Str(zmapWindowStrandToDisplay(window, feature->strand)) ;
 
       if (zMapStyleIsFrameSpecific(style))

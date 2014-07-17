@@ -128,6 +128,8 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
                                                        int *frame_end_out) ;
 
 
+static gboolean newColumnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+
 static gboolean containerDestroyCB(FooCanvasItem *item_in_hash, gpointer data) ;
 
 static void setColours(ZMapWindow window) ;
@@ -2220,7 +2222,17 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 
       g_signal_connect(G_OBJECT(container), "destroy", G_CALLBACK(containerDestroyCB), (gpointer)window) ;
 
-      //      g_signal_connect(G_OBJECT(container), "event", G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Malcolm commented out this...and made it all back to front...... */
+
+      g_signal_connect(G_OBJECT(container), "event", G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      g_signal_connect(G_OBJECT(container), "event", G_CALLBACK(newColumnBoundingBoxEventCB), (gpointer)window) ;
+
 
       g_object_set_data(G_OBJECT(container), ZMAP_WINDOW_POINTER, window) ;
 
@@ -2424,6 +2436,42 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 /*
  *                           Event handlers
  */
+
+
+/* Implements a tooltip window that shows the column name as the pointer enters a column.
+ * 
+ * With the new version of tooltips as of gtk 2.12 you don't need to allocate/deallocate
+ * the tooltip. Tooltips have become "per-widget" and some settings like time before
+ * tooltip is shown have to be made using a whole new "settings" model.
+ *  */
+static gboolean newColumnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
+{
+  gboolean event_handled = FALSE ;
+
+  if (event->type == GDK_ENTER_NOTIFY || event->type == GDK_LEAVE_NOTIFY)
+    {
+      FooCanvas *foo_canvas = item->canvas ;
+      ZMapWindowContainerFeatureSet feature_set_container = (ZMapWindowContainerFeatureSet)item ;
+
+      if (event->type == GDK_ENTER_NOTIFY)
+        {
+          GQuark col_id ;
+          char *col_name ;
+      
+          col_id = zmapWindowContainerFeatureSetColumnDisplayName(feature_set_container) ;
+          col_name = (char *)g_quark_to_string(col_id) ;
+
+          gtk_widget_set_tooltip_text((GtkWidget *)foo_canvas, col_name) ;
+        }
+      else
+        {
+          gtk_widget_set_tooltip_text((GtkWidget *)foo_canvas, NULL) ; /* NULL makes tooltip disappear. */
+        }
+    }
+
+  return event_handled ;
+}
+
 
 
 /* Handles events on a column, currently this is only mouse press/release events for

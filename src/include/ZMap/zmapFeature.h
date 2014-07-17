@@ -1000,7 +1000,7 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
 					 ZMapStrand match_strand, int match_start, int match_end,
 					 char *align_string, GArray **gaps_out) ;
 gboolean zMapFeatureAlignmentMatchForeach(ZMapFeature feature, GFunc function, gpointer user_data);
-ZMAP_ENUM_AS_NAME_STRING_DEC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat) ;
 
 
 gboolean zMapFeatureSequenceSetType(ZMapFeature feature, ZMapSequenceType type) ;

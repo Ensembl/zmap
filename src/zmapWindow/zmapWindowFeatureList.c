@@ -446,14 +446,15 @@ static void feature_strand_to_value(GValue *value, gpointer feature_data)
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
       switch(feature_any->struct_type)
-      {
-      case ZMAPFEATURE_STRUCT_FEATURE:
-        g_value_set_string(value, zMapFeatureStrand2Str(feature_any->strand));
-        break;
-      default:
-        g_value_set_string(value, ".");
-        break;
-      }
+        {
+        case ZMAPFEATURE_STRUCT_FEATURE:
+          g_value_set_string(value, zMapFeatureStrand2Str(zmapWindowStrandToDisplay(add_data->window,
+                                                                                    feature_any->strand))) ;
+          break;
+        default:
+          g_value_set_string(value, ".");
+          break;
+        }
     }
   else
     {
