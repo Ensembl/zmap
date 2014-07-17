@@ -368,7 +368,12 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
 /*!
  * \brief Dump a list of ZMapFeatureAny to a file and/or text buffer. sequence can be NULL
  */
-gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, GIOChannel *file, GString **text_out, GError **error_out)
+gboolean zMapGFFDumpList(GList *dump_list,
+                         GHashTable *styles,
+                         char *sequence,
+                         GIOChannel *file,
+                         GString **text_out,
+                         GError **error_out)
 {
   const char *int_sequence = NULL;
   gboolean result = FALSE ;
