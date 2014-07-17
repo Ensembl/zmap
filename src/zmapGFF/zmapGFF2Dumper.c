@@ -292,7 +292,7 @@ ZMapGFFVersion zMapGFFDumpVersionGet()
  * I think we would need multiple Type and sequence-region comment lines for the different
  * sequences.
  *
- *  */
+ */
 gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out)
 {
   gboolean result = TRUE;
@@ -308,15 +308,20 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
   const char *sequence = NULL;
   gboolean result = FALSE ;
 
-  zMapReturnValIfFail(file && dump_set && error_out, result) ;
+  zMapReturnValIfFail(file                                                  &&
+                      dump_set                                              &&
+                      (dump_set->struct_type != ZMAPFEATURE_STRUCT_INVALID) &&
+                      error_out,
+                                  result) ;
 
-
+  /*
   if ((dump_set->struct_type != ZMAPFEATURE_STRUCT_CONTEXT)
      && (dump_set->struct_type != ZMAPFEATURE_STRUCT_ALIGN)
      && (dump_set->struct_type != ZMAPFEATURE_STRUCT_BLOCK)
      && (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURESET)
      && (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURE) )
     return result ;
+  */
 
   result = dump_full_header(dump_set, file, &sequence, NULL, error_out) ;
 
@@ -363,7 +368,12 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
 /*!
  * \brief Dump a list of ZMapFeatureAny to a file and/or text buffer. sequence can be NULL
  */
-gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, GIOChannel *file, GString **text_out, GError **error_out)
+gboolean zMapGFFDumpList(GList *dump_list,
+                         GHashTable *styles,
+                         char *sequence,
+                         GIOChannel *file,
+                         GString **text_out,
+                         GError **error_out)
 {
   const char *int_sequence = NULL;
   gboolean result = FALSE ;
