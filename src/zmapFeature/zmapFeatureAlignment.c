@@ -411,7 +411,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
               curr_ref += curr_length ;
             else
               curr_ref -= curr_length ;
-        
+
             boundary_type = ALIGN_BLOCK_BOUNDARY_DELETION ;
             break ;
           }
@@ -421,7 +421,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
               curr_match += curr_length ;
             else
               curr_match -= curr_length ;
-        
+
             boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ; /* it is shown butted up to the previous align block */
             break ;
           }
@@ -448,11 +448,11 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
               gap.q2 = (curr_match += curr_length) - 1 ;
             else
               gap.q2 = (curr_match -= curr_length) + 1 ;
-        
+
             local_map = g_array_append_val(local_map, gap) ;
-        
+
             j++ ;    /* increment for next gap element. */
-        
+
                     boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ;
             break ;
           }
@@ -773,7 +773,7 @@ static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
       gotoLastSpace(&cp) ;
       if (*cp == ' ')
         cp ++ ;
-        
+
       canon->align = g_array_append_val(canon->align, op) ;
     } while (*cp) ;
 
@@ -928,7 +928,7 @@ static char *nextWord(char *str)
               word = cp ;
               break ;
             }
-        
+
           cp++ ;
         }
     }

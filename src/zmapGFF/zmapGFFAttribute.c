@@ -1648,7 +1648,7 @@ gboolean zMapAttParseLocus(ZMapGFFAttribute pAttribute, GQuark * const pGQ)
 
 
 /*
- * Parse data from the "Gaps" attribute; we expect to find zero or more comma-seperated groups of 4 integer values.
+ * Parse data from the "gaps" attribute; we expect to find zero or more comma-seperated groups of 4 integer values.
  * The value string of the attribute should be unquoted.
  */
 gboolean zMapAttParseGaps(ZMapGFFAttribute pAttribute, GArray ** const pGaps, ZMapStrand cRefStrand, ZMapStrand cMatchStrand)
@@ -1703,6 +1703,34 @@ gboolean zMapAttParseGaps(ZMapGFFAttribute pAttribute, GArray ** const pGaps, ZM
         ++sValue ;
 
     }
+
+  return bResult ;
+
+}
+
+/*
+ * Parse data from the "Gap" attribute. This is the GFFv3 standard attribute, and is taken to be the same as
+ * cigar_exonerate (according to http://www.sequenceontology.org/resources/gff3.html).
+ */
+gboolean zMapAttParseGap(ZMapGFFAttribute pAttribute , GArray ** const pGaps,
+  ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
+
+{
+  gboolean bResult = FALSE ;
+  static const char *sMyName = "zMapAttParseGap()" ;
+  if (!pAttribute)
+    return bResult ;
+  char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  if (strcmp(sAttributeName_Gap, zMapGFFAttributeGetNamestring(pAttribute)))
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
+
+  bResult = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_EXONERATE,
+                                            cRefStrand, iRefStart, iRefEnd,
+                                            cMatchStrand, iMatchStart, iMatchEnd,
+                                            sValue, pGaps) ;
 
   return bResult ;
 
@@ -2058,6 +2086,42 @@ static char* removeAllEscapedCharacters(const char * const sInput )
 
 
 
+
+/*
+ * Generate a "Gap" attribute string from a ZMap internal feature representation.
+ */
+gboolean zMapAttGenerateGap(char **s_out, ZMapFeature feature)
+{
+  gboolean bResult = FALSE ;
+  GArray *pGapsArray = NULL ;
+  zMapReturnValIfFail(s_out && feature, bResult) ;
+  ZMapHomol pHomol = NULL ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.align)
+    {
+      pHomol = &feature->feature.homol ;
+    }
+
+  return bResult ;
+}
+
+/*
+ * Generates output from the feature of the form:
+ *   Target = <targetID> <start> <end> [<strand>]
+ */
+gboolean zMapAttGenerateTarget(char **s_out, ZMapFeature feature)
+{
+  gboolean bResult = FALSE ;
+  zMapReturnValIfFail(s_out && feature , bResult ) ;
+  ZMapHomol pHomol = NULL ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.align)
+    {
+      pHomol = &feature->feature.homol ;
+    }
+
+  return bResult ;
+}
 
 
 
