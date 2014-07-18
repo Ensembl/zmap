@@ -1079,7 +1079,7 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
   ZMapWindowList window_list = (ZMapWindowList)data;
   char *filepath = NULL;
   GtkWidget *toplevel = NULL ;
-  gpointer feature_out_data = NULL;
+  /* gpointer feature_out_data = NULL; */
   GIOChannel *file = NULL;
   GError *file_error = NULL;
   gboolean result = FALSE;
@@ -1159,8 +1159,8 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
   if (file && !file_error)
     g_io_channel_shutdown(file, TRUE, &file_error);
 
-  if (feature_out_data)
-    zMapFeatureListForeachDumperDestroy(feature_out_data);
+  /* if (feature_out_data)
+    zMapFeatureListForeachDumperDestroy(feature_out_data); */
 
   return ;
 }

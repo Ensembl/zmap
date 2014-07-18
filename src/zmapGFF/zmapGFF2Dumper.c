@@ -425,6 +425,8 @@ gboolean zMapGFFDumpList(GList *dump_list,
   return result ;
 }
 
+
+/*
 gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles,
                                 GIOChannel *file, GError **error_out,
                                 char *sequence, GFunc *list_func_out,
@@ -470,8 +472,6 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles
           gff_data->styles     = styles ;
         }
 
-      /* This might get overwritten later, but as DumpToFile uses
-       * Subset, there's a chance it wouldn't get set at all */
       gff_data->gff_sequence = int_sequence;
 
       result = zMapFeatureListForeachDumperCreate(dump_gff_cb, styles, gff_data,
@@ -480,6 +480,7 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles
 
   return result ;
 }
+*/
 
 /* INTERNALS */
 

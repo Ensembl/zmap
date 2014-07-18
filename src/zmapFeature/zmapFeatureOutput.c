@@ -128,7 +128,7 @@ char *zMapFeatureAsString(ZMapFeature feature)
   feature_str = g_string_sized_new(2048) ;
 
   feature_str = feature2Text(feature_str, feature) ;
-  
+
   feature_text = g_string_free(feature_str, FALSE) ;
 
   return feature_text ;
@@ -210,6 +210,7 @@ gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *file
  *        users can call g_list_foreach() on their list using the returned pointers.
  *        The GFunc expects (ZMapFeatureAny feature, gpointer dumper_data_out)
  */
+/*
 gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func,
     GHashTable                *styles,
     gpointer                   dump_user_data,
@@ -250,18 +251,16 @@ gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func
 
   return result;
 }
+*/
 
 /*!
  * \brief destroy data allocated with zMapFeatureListForeachDumperCreate()
  */
+/*
 gboolean zMapFeatureListForeachDumperDestroy(gpointer dumper_data)
 {
   DumpFeaturesToFile dump_data = (DumpFeaturesToFile)dumper_data;
   gboolean result;
-
-  /* I'm a little cautious about the void nature of the data here, but
-   * it means the DumpFeaturesToFile struct is _really_ private!!! */
-
   result = dump_data->status;
 
   if(result)
@@ -275,15 +274,15 @@ gboolean zMapFeatureListForeachDumperDestroy(gpointer dumper_data)
 
   g_string_free(dump_data->dump_string, TRUE);
 
-  g_free(dump_data->dump_data);/* This is an allocated DumpAny. */
+  g_free(dump_data->dump_data);
 
-  g_free(dump_data);/* The main struct */
+  g_free(dump_data);
 
   dump_data = NULL;
 
   return result;
 }
-
+*/
 
 /* This dumps to the given dump_file if that is non-null, and/or returns the result
  * in text_out, if that is non-null */
@@ -299,7 +298,7 @@ gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_li
   DumpFeaturesToFileStruct dump_data = {FALSE};
   DumpAnyStruct dump_any;
 
-  if (!(dump_file || text_out) || !dump_func || !dump_error_out) 
+  if (!(dump_file || text_out) || !dump_func || !dump_error_out)
     return result ;
 
   dump_any.data_type = DUMP_DATA_ANY;
@@ -347,14 +346,14 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
   DumpFeaturesToFileStruct dump_data = {FALSE};
   DumpAnyStruct dump_any;
 
-  if (!dump_file || !dump_set || !dump_func || !dump_error_out) 
+  if (!dump_file || !dump_set || !dump_func || !dump_error_out)
     return result ;
 
   if ((dump_set->struct_type != ZMAPFEATURE_STRUCT_CONTEXT)    &&
       (dump_set->struct_type != ZMAPFEATURE_STRUCT_ALIGN)      &&
       (dump_set->struct_type != ZMAPFEATURE_STRUCT_BLOCK)      &&
       (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURESET) &&
-      (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURE)) 
+      (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURE))
     return result ;
 
   dump_any.data_type = DUMP_DATA_ANY;
@@ -397,14 +396,14 @@ gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
   DumpFeaturesToFileStruct dump_data = {FALSE};
   DumpWithinRangeStruct range_data;
 
-  if (!dump_file || !dump_set || !dump_func || !dump_error_out) 
+  if (!dump_file || !dump_set || !dump_func || !dump_error_out)
     return result ;
 
   if ((dump_set->struct_type != ZMAPFEATURE_STRUCT_CONTEXT)    &&
       (dump_set->struct_type != ZMAPFEATURE_STRUCT_ALIGN)      &&
       (dump_set->struct_type != ZMAPFEATURE_STRUCT_BLOCK)      &&
       (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURESET) &&
-      (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURE)) 
+      (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURE))
     return result ;
 
   range_data.data_type = DUMP_DATA_RANGE;
@@ -532,7 +531,7 @@ char   **err_out)
             {
               /* what does this mean?  We'll probably get round to the
                * data again, do we need to g_string_erase? */
-              
+
               if(bytes_written != 0)
                 dump_data->dump_string = g_string_erase(dump_data->dump_string, 0, bytes_written);
             }
@@ -651,7 +650,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
                                g_quark_to_string(feature_align->unique_id),
                                feature_align->sequence_span.x1,
                                feature_align->sequence_span.x2);
-        
+
         break;
       }
     case ZMAPFEATURE_STRUCT_BLOCK:
