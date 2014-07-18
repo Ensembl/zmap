@@ -38,6 +38,7 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapSO.h>
 #include <ZMap/zmapGFF.h>
+#include "zmapGFFAttribute.h"
 
 
 /*
@@ -1267,8 +1268,9 @@ static gboolean dump_alignment_target_v3(ZMapFeature feature, gpointer homol_dat
     else
       {
         g_string_append_printf(gff_string, "Target=%s %d %d %s",
-          g_quark_to_string(homol->clone_id),
-          homol->y1, homol->y2, zMapFeatureStrand2Str(homol->strand));
+                               g_quark_to_string(homol->clone_id),
+                               homol->y1, homol->y2,
+                               zMapFeatureStrand2Str(homol->strand));
       }
     result = TRUE ;
   }
@@ -1277,10 +1279,14 @@ static gboolean dump_alignment_target_v3(ZMapFeature feature, gpointer homol_dat
 }
 
 
+/*
+ * This needs to be converted to output GFF3 "Gap" attribute.
+ */
 static gboolean dump_alignment_gaps_v3(ZMapFeature feature, gpointer homol_data,
                                        GString *gff_string, GError **error,
                                        GFFDumpData gff_data)
 {
+  static const char *sGap = "Gap=" ;
   ZMapHomol homol = (ZMapHomol)homol_data;
   GArray *gaps_array = NULL;
   int i;
@@ -1290,7 +1296,7 @@ static gboolean dump_alignment_gaps_v3(ZMapFeature feature, gpointer homol_data,
   {
     has_gaps = TRUE;
 
-    g_string_append_printf(gff_string, "gaps=");
+    g_string_append_printf(gff_string, "%s", sGap);
 
     for(i = 0; i < gaps_array->len; i++)
       {
@@ -1298,13 +1304,10 @@ static gboolean dump_alignment_gaps_v3(ZMapFeature feature, gpointer homol_data,
 
         block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i));
 
-        g_string_append_printf(gff_string, "%d %d %d %d,",
-        block->q1, block->q2,
-        block->t1, block->t2);
+        g_string_append_printf(gff_string, "%d %d %d %d",
+                               block->q1, block->q2,
+                               block->t1, block->t2);
       }
-
-    /* remove the last comma! */
-    g_string_truncate(gff_string, gff_string->len - 1);
   }
 
   return has_gaps;
