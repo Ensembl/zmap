@@ -1198,7 +1198,6 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained);
 ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureLevelType group_type) ;
 char *zMapFeatureName(ZMapFeatureAny any_feature) ;
 char *zMapFeatureCanonName(char *feature_name) ;
-//ZMapFeatureTypeStyle *zMapFeatureGetStyle(ZMapFeatureAny feature) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
 
@@ -1230,6 +1229,8 @@ gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_li
                                            GIOChannel                *dump_file,
                                            GString                   **text_out,
                                            GError                   **dump_error_out);
+
+/*
 gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func,
 					    GHashTable *styles,
 					    gpointer                   dump_user_data,
@@ -1239,11 +1240,11 @@ gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func
 					    GFunc                     *dumper_func_out,
 					    gpointer                  *dumper_data_out);
 gboolean zMapFeatureListForeachDumperDestroy(gpointer dumper_data);
+*/
 
 gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out);
 
 
-//void zMapFeature3FrameTranslationRevComp(ZMapFeatureSet feature_set, RevCompData cb_data); mh17: moved to zmapFeature_P.h
 char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFrame frame);
 void zMapFeature3FrameTranslationPopulate(ZMapFeatureSet feature_set);
 gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
