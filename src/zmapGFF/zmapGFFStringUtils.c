@@ -24,17 +24,22 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
- * Description: Some string handling utilities used in dealing with
- * GFFv3 data; most important thing in here is the tokenizer.
+ * Description: Some string handling utilities originally written for
+ * use with the GFFv3 parser. Most important thing in here is the tokenizer.
  *
  *-------------------------------------------------------------------
  */
 
+
+/*
+ * Standard library includes required for these functions.
+ */
 #include <string.h>
 
+/*
+ * GLib also required.
+ */
 #include <glib.h>
-
-
 
 
 

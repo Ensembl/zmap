@@ -34,6 +34,7 @@
  */
 
 #include <ZMap/zmap.h>
+#include <ZMap/zmapGFFStringUtils.h>
 
 #include <errno.h>
 #include <string.h>

@@ -31,8 +31,19 @@
  */
 
 
-#ifndef HEADER_ZMAP_STRINGUTILS_P
-#define HEADER_ZMAP_STRINGUTILS_P
+#ifndef HEADER_ZMAP_STRINGUTILS_H
+#define HEADER_ZMAP_STRINGUTILS_H
+
+/*
+ * Standard library stuff required for these functions.
+ */
+#include <string.h>
+
+
+/*
+ * GLib also required.
+ */
+#include <glib.h>
 
 
 /*
