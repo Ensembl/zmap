@@ -71,6 +71,8 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
                            void *user_data) ;
 static void setDebugLevel(void) ;
 
+static void setModal(ZMapAppContext app_context, gboolean modal) ;
+static void setCursorCB(ZMap zmap, void *user_data) ;
 
 
 /* 
@@ -245,6 +247,10 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
   /* Call the command processing code.... */
   zmapAppProcessAnyRequest(app_context, request, handleZMapRepliesCB) ;
 
+  /* try modal..... */
+  setModal(app_context, TRUE) ;
+
+
   return ;
 }
 
@@ -319,6 +325,9 @@ static void handleZMapRepliesCB(char *command,
 static void replySentCB(void *user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
+
+  /* try modal..... */
+  setModal(app_context, FALSE) ;
 
   /* Call function to execute any actions that must occur after
    * the reply is sent to peer. */
@@ -453,9 +462,10 @@ static void handleZMapRequestsCB(gpointer caller_data,
 /* Called by remote control when peer has signalled that it has received request. */
 static void requestSentCB(void *user_data)
 {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* try modal..... */
+  setModal(app_context, TRUE) ;
 
   return ;
 }
@@ -469,6 +479,9 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
   ZMapAppRemote remote = app_context->remote_control ;
   gboolean result ;
   char *error_out = NULL ;
+
+  setModal(app_context, FALSE) ;
+
 
   /* Again.....is this a good idea....the app callback needs to be called whatever happens
    * to reset state...fine to log a bad message but we still need to call the app func. */
@@ -532,3 +545,52 @@ static void setDebugLevel(void)
   return ;
 }
 
+
+
+static void setModal(ZMapAppContext app_context, gboolean modal)
+{
+  GdkCursor *curr_cursor ;
+  GtkWindow *window ;
+  gboolean curr_modal ;
+
+  window = GTK_WINDOW(app_context->app_widg) ;
+
+  /* Set modality. */
+  curr_modal = gtk_window_get_modal(window) ;
+
+  if (curr_modal == modal)
+    {
+      char *msg ;
+
+      msg = g_strdup_printf("Trying to set Modal %s but already %s",
+                            (modal ? "ON" : "OFF"), (modal ? "ON" : "OFF")) ;
+
+      zMapLogCritical("%s", msg) ;
+
+      zMapDebugPrintf("%s", msg) ;
+    }
+
+  gtk_window_set_modal(window, modal) ;
+
+  /* Set/reset the cursor on the app window and all ZMap windows below. */
+  curr_cursor = (modal ? app_context->remote_busy_cursor : app_context->normal_cursor) ;
+
+  zMapGUISetCursor(app_context->app_widg, curr_cursor) ;
+
+  zMapManagerForAllZMaps(app_context->zmap_manager, setCursorCB, curr_cursor) ;
+
+
+  zMapLogWarning("Modal - %s", (modal ? "ON" : "OFF")) ;
+
+  return ;
+}
+
+
+static void setCursorCB(ZMap zmap, void *user_data)
+{
+  GdkCursor *cursor = (GdkCursor *)user_data ;
+ 
+  zMapSetCursor(zmap, cursor) ;
+
+  return ;
+}

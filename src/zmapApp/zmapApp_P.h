@@ -249,6 +249,10 @@ typedef struct _ZMapAppContextStruct
 
   GtkWidget *app_widg ;
 
+  /* App level cursors, busy cursors get propagated down through all widgets. */
+  GdkCursor *normal_cursor ;
+  GdkCursor *remote_busy_cursor ;
+
   gboolean abbrev_title_prefix ;			    /* Is window title prefix abbreviated ? */
 
   GtkTreeStore *tree_store_widg ;

@@ -342,6 +342,17 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   g_mem_profile() ;
 #endif
 
+
+  /* Set up app level cursors, the remote one will only be used if we have
+   * a remote peer. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  app_context->normal_cursor = zMapGUICreateCursor("LEFT_PTR") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  app_context->remote_busy_cursor = zMapGUICreateCursor("SB_H_DOUBLE_ARROW") ;
+
+
   app_context->app_widg = toplevel = zMapGUIToplevelNew(NULL, NULL) ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
@@ -369,8 +380,12 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
                      GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(vbox), quit_button, FALSE, FALSE, 0) ;
 
-  /* Always create the widget. */
+
+  /* Always create the widgets, after this point they will all have windows. */
   gtk_widget_show_all(toplevel) ;
+
+  /* Now we have a window we can set the standard cursor. */
+  zMapGUISetCursor(toplevel, app_context->normal_cursor) ;
 
 
   /* We don't always want to show this window, for lace users it is useless.... */
