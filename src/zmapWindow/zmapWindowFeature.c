@@ -1291,7 +1291,13 @@ static void revcompTransChildCoordsCB(gpointer data, gpointer user_data)
 
 static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Unused currently..... */
+
   RemoteData remote_data = (RemoteData)user_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
