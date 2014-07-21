@@ -61,9 +61,15 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
 
 static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static void alignStrDestroyCanonical(AlignStrCanonical canon) ;
-static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_strand, ZMapStrand match_strand,
-    int p_start, int p_end, int c_start, int c_end,
-    GArray **local_map_out) ;
+static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
+                                    ZMapStrand ref_strand, ZMapStrand match_strand,
+                                    int p_start, int p_end, int c_start, int c_end,
+                                    GArray **local_map_out) ;
+static gboolean homol2AlignStrCanon(AlignStrCanonical *canon_out,
+                                    ZMapStrand ref_strand, ZMapStrand match_strand,
+                                    int p_start, int p_end, int c_start, int c_end,
+                                    GArray *gaps) ;
+
 #if NOT_USED
 static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static gboolean exonerateVerifyVulgar(char *match_str) ;
@@ -82,6 +88,18 @@ static gboolean gotoLastDigit(char **cp_inout) ;
 #endif
 
 static gboolean gotoLastSpace(char **cp_inout) ;
+
+/*
+ * These arrays are the allowed operators for various of the format types.
+ * Note that there is no error checking in the parsing of these strings!
+ */
+static const char *operators_cigar_exonerate = "MIDFR" ;
+static const char *operators_gffv3_gap       = "MIDFR" ;
+
+/*
+ * Allowed operators for internal "canonical" representation.
+ */
+static const char *operators_canonical = "MINDG";
 
 
 
@@ -486,6 +504,25 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 
   return result ;
 }
+
+
+
+
+/*
+ * Converts an internal gaps array into the "canonical" string representation.
+ * Opposite operation to the function alignStrCanon2Homol() above.
+ */
+static gboolean homol2AlignStrCanon(AlignStrCanonical *canon_out,
+                                    ZMapStrand ref_strand, ZMapStrand match_strand,
+                                    int p_start, int p_end, int c_start, int c_end,
+                                    GArray *gaps)
+{
+  gboolean result = FALSE ;
+
+  return result ;
+}
+
+
 
 
 
