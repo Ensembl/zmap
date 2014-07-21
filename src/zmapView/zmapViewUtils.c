@@ -77,6 +77,18 @@ typedef struct
 
 
 
+typedef struct ForAllDataStructType
+{
+  ZMapViewForAllCallbackFunc user_func_cb ;
+  void *user_func_data ;
+} ForAllDataStruct, *ForAllData ;
+
+
+
+
+
+
+
 static void cwh_destroy_key(gpointer cwh_data) ;
 static void cwh_destroy_value(gpointer cwh_data) ;
 static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type) ;
@@ -87,6 +99,10 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
 static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view) ;
 static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused) ;
+
+static void forAllCB(void *data, void *user_data) ;
+
+static void setCursorCB(ZMapWindow window, void *user_data) ;
 
 
 /*
@@ -197,13 +213,33 @@ ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook no
 }
 
 
+/* Execute some user function on all child "view windows". Note that the user callback gets called
+ * with a ZMapViewWindow not a ZMapWindow. */
+void zMapViewForAllZMapWindows(ZMapView view, ZMapViewForAllCallbackFunc user_func_cb, void *user_func_data)
+{
+  ForAllDataStruct all_data = {user_func_cb, user_func_data} ;
+
+  g_list_foreach(view->window_list, forAllCB, &all_data) ;
+
+  return ;
+}
+
+
+/* Set the given cursor on all child windows. */
+void zMapViewSetCursor(ZMapView view, GdkCursor *cursor)
+{
+
+  /* zmapView has no widgets of it's own and so is expected to set cursors
+   * on it's all children. */
+  zMapViewForAllZMapWindows(view, setCursorCB, cursor) ;
+
+
+  return ;
+}
 
 
 
 
-/*
- *            ZMapView external package-level functions.
- */
 
 void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const char *function)
 {
@@ -227,6 +263,18 @@ void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const
 
   return ;
 }
+
+
+
+
+
+
+
+
+/*
+ *            ZMapView external package-level functions.
+ */
+
 
 
 /* Not sure where this is used...check this out.... in checkStateConnections() zmapView.c*/
@@ -1032,6 +1080,28 @@ static void applyCB(ZMapGuiNotebookAny any_section, void *user_data)
 
 static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
 {
+  return ;
+}
+
+
+
+static void forAllCB(void *data, void *user_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)data ;
+  ForAllData all_data = (ForAllData)user_data ;
+
+  (all_data->user_func_cb)(view_window->window, all_data->user_func_data) ;
+
+  return ;
+}
+
+
+static void setCursorCB(ZMapWindow window, void *user_data)
+{
+  GdkCursor *cursor = (GdkCursor *)user_data ;
+ 
+  zMapWindowSetCursor(window, cursor) ;
+
   return ;
 }
 

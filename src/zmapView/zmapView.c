@@ -194,7 +194,6 @@ typedef struct FindStylesStructType
 } FindStylesStruct, *FindStyles ;
 
 
-
 static void getIniData(ZMapView view, char *config_str, GList *sources) ;
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets) ;
 static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark featurequark);
@@ -467,7 +466,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   char *view_name ;
   int curr_scr_num, num_screens ;
 
-  /* No callbacks, then no view creation. */
+
   zMapReturnValIfFail((GTK_IS_WIDGET(view_container)), view_window);
   zMapReturnValIfFail((sequence_map->sequence
                        && (sequence_map->start > 0 && sequence_map->start <= sequence_map->end)), view_window) ;
@@ -476,7 +475,8 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
    * in config file and next time they create a view the debugging will go on/off */
   zMapUtilsConfigDebug(sequence_map->config_file) ;
 
-  zMapInitTimer() ; // operates as a reset if already defined
+  zMapInitTimer() ;                                         /* operates as a reset if already
+                                                               defined. */
 
 
   /* I DON'T UNDERSTAND WHY THERE IS A LIST OF SEQUENCES HERE.... */
@@ -1655,6 +1655,7 @@ char *zMapViewGetLoadStatusStr(ZMapView view,
 
   return load_state_str ;
 }
+
 
 
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
@@ -6545,5 +6546,7 @@ static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_
 
   return ;
 }
+
+
 
 
