@@ -82,7 +82,7 @@ typedef enum
 
 
 
-/* ZMap custom cursors that can be returned by zMapGUIGetCursor(), they must all have the "zmap_" prefix. */
+/* ZMap custom cursors that can be returned by zMapGUICreateCursor(), they must all have the "zmap_" prefix. */
 #define ZMAPGUI_CURSOR_PREFIX         "zmap_"
 #define ZMAPGUI_CURSOR_COLOUR_CROSS   "zmap_colour_cross"
 #define ZMAPGUI_CURSOR_CROSS          "zmap_cross"
@@ -472,7 +472,9 @@ char *zMapGUIMakeTitleString(char *window_type, char *message) ;
 void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zmap_win_text) ;
 GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text) ;
 
-GdkCursor *zMapGUIGetCursor(char *cursor_name) ;
+GdkCursor *zMapGUICreateCursor(char *cursor_name) ;
+gboolean zMapGUISetCursor(GtkWidget *widget, GdkCursor *cursor) ;
+GdkCursor *zMapGUIGetCursor(GtkWidget *widget) ;
 
 GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title);
 
