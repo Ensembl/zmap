@@ -3251,7 +3251,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
        */
       if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Gap)))
         {
-          bParseAttribute = FALSE ; /* Not yet implemented. */
+          bParseAttribute = zMapAttParseGap(pAttribute, &pGaps, cStrand, iStart, iEnd, cTargetStrand, iTargetStart, iTargetEnd) ;
         }
       else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_cigar_ensembl)))
         {
