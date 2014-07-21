@@ -37,11 +37,11 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapFeatureLoadDisplay.h>
 #include <ZMap/zmapGLibUtils.h>
-#include <glib.h>
+#include <ZMap/zmapGFFStringUtils.h>
+
 #include "zmapGFFHeader.h"
 #include "zmapGFF_P.h"
 #include "zmapGFF3_P.h"
-#include "zmapGFFStringUtils.h"
 #include "zmapGFFDirective.h"
 #include "zmapGFFAttribute.h"
 #include "zmapGFFFeatureData.h"
@@ -2259,7 +2259,7 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
   /*
    * Tokenize input line. Don't have to worry about quoted delimiter characters here.
    */
-  sTokens = zMapGFFStr_tokenizer(pParser->cDelimBodyLine, sLine, &iFields, bIncludeEmpty,
+  sTokens = zMapGFFStringUtilsTokenizer(pParser->cDelimBodyLine, sLine, &iFields, bIncludeEmpty,
                                  iTokenLimit, g_malloc, g_free, pParser->buffers[ZMAPGFF_BUF_TMP]) ;
 
   /*
@@ -2537,7 +2537,7 @@ return_point:
   /*
    * Clean up dynamically allocated data.
    */
-  zMapGFFStr_array_delete(sTokens, iFields, g_free) ;
+  zMapGFFStringUtilsArrayDelete(sTokens, iFields, g_free) ;
   zMapGFFAttributeDestroyList(pAttributes, nAttributes) ;
   zMapGFFFeatureDataDestroy(pFeatureData) ;
 
