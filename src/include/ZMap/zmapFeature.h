@@ -249,7 +249,8 @@ typedef struct ZMapFullExonStructType
 /* This tells us information about the start boundary of an alignment block */
 typedef enum
 {
-  ALIGN_BLOCK_BOUNDARY_EDGE,                               /* starts at the edge of the feature (i.e. it's the first alignment block) */
+  ALIGN_BLOCK_BOUNDARY_EDGE,                               /* starts at the edge of the feature
+                                                              (i.e. it's the first alignment block) */
   ALIGN_BLOCK_BOUNDARY_DELETION,                           /* abuts a deletion */
   ALIGN_BLOCK_BOUNDARY_INTRON,                             /* abuts an intron */
   ALIGN_BLOCK_BOUNDARY_MATCH                               /* abuts another alignment block */
@@ -261,10 +262,14 @@ typedef struct ZMapAlignBlockStructType
 {
   int q1, q2 ;                                             /* coords in query sequence */
   ZMapStrand q_strand ;
+
   int t1, t2 ;                                             /* coords in target sequence */
   ZMapStrand t_strand ;
-  AlignBlockBoundaryType start_boundary ;                  /* whether the start of this align abuts onto an intron, deletion, etc. */
-  AlignBlockBoundaryType end_boundary ;                    /* whether the end of this align abuts onto an intron, deletion, etc. */
+
+  AlignBlockBoundaryType start_boundary ;                  /* whether the start of this align abuts onto an intron,
+                                                              deletion, etc. */
+  AlignBlockBoundaryType end_boundary ;                    /* whether the end of this align abuts onto an intron,
+                                                              deletion, etc. */
 } ZMapAlignBlockStruct, *ZMapAlignBlock ;
 
 
