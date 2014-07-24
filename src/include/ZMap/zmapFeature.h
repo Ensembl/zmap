@@ -136,6 +136,7 @@ _(ZMAPALIGN_FORMAT_INVALID,          , "invalid",          "invalid mode "      
 _(ZMAPALIGN_FORMAT_CIGAR_EXONERATE,  , "cigar_exonerate",  "invalid mode "                                 , "") \
 _(ZMAPALIGN_FORMAT_CIGAR_ENSEMBL,    , "cigar_ensembl",    "invalid mode "                                 , "") \
 _(ZMAPALIGN_FORMAT_CIGAR_BAM,        , "cigar_bam",        "invalid mode "                                 , "") \
+_(ZMAPALIGN_FORMAT_GAP_GFF3,         , "gap_gff3",         "invalid mode "                                 , "") \
 _(ZMAPALIGN_FORMAT_VULGAR_EXONERATE, , "vulgar_exonerate", "invalid mode "                                 , "") \
 _(ZMAPALIGN_FORMAT_GAPS_ACEDB,       , "gaps_acedb",       "invalid mode "                                 , "")
 
@@ -249,7 +250,8 @@ typedef struct ZMapFullExonStructType
 /* This tells us information about the start boundary of an alignment block */
 typedef enum
 {
-  ALIGN_BLOCK_BOUNDARY_EDGE,                               /* starts at the edge of the feature (i.e. it's the first alignment block) */
+  ALIGN_BLOCK_BOUNDARY_EDGE,                               /* starts at the edge of the feature
+                                                              (i.e. it's the first alignment block) */
   ALIGN_BLOCK_BOUNDARY_DELETION,                           /* abuts a deletion */
   ALIGN_BLOCK_BOUNDARY_INTRON,                             /* abuts an intron */
   ALIGN_BLOCK_BOUNDARY_MATCH                               /* abuts another alignment block */
@@ -261,10 +263,14 @@ typedef struct ZMapAlignBlockStructType
 {
   int q1, q2 ;                                             /* coords in query sequence */
   ZMapStrand q_strand ;
+
   int t1, t2 ;                                             /* coords in target sequence */
   ZMapStrand t_strand ;
-  AlignBlockBoundaryType start_boundary ;                  /* whether the start of this align abuts onto an intron, deletion, etc. */
-  AlignBlockBoundaryType end_boundary ;                    /* whether the end of this align abuts onto an intron, deletion, etc. */
+
+  AlignBlockBoundaryType start_boundary ;                  /* whether the start of this align abuts onto an intron,
+                                                              deletion, etc. */
+  AlignBlockBoundaryType end_boundary ;                    /* whether the end of this align abuts onto an intron,
+                                                              deletion, etc. */
 } ZMapAlignBlockStruct, *ZMapAlignBlock ;
 
 
@@ -994,6 +1000,9 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapPhase target_phase,
 				     GArray *gaps, unsigned int align_error,
 				     gboolean has_local_sequence, char * sequence) ;
+gboolean zMapFeatureAlignmentGetAlignmentString(ZMapFeature feature,
+                                                ZMapFeatureAlignFormat align_format,
+                                                char **p_string_out) ;
 gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature) ;
 gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
 					 ZMapStrand ref_strand, int ref_start, int ref_end,
