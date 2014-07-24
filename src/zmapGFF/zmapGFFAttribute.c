@@ -2088,37 +2088,48 @@ static char* removeAllEscapedCharacters(const char * const sInput )
 
 
 /*
- * Generate a "Gap" attribute string from a ZMap internal feature representation.
+ * Generate a "Gap" attribute string from the feature.
  */
-gboolean zMapAttGenerateGap(char **s_out, ZMapFeature feature)
+gboolean zMapAttGenerateGap(char **p_s_out, ZMapFeature feature)
 {
   gboolean bResult = FALSE ;
-  GArray *pGapsArray = NULL ;
-  zMapReturnValIfFail(s_out && feature, bResult) ;
-  ZMapHomol pHomol = NULL ;
+  char *align_str = NULL ;
+  zMapReturnValIfFail(   p_s_out
+                      && feature
+                      && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT
+                      && feature->feature.homol.align,
+                      bResult) ;
 
-  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.align)
+  if ((bResult = zMapFeatureAlignmentGetAlignmentString(feature,
+                                         ZMAPALIGN_FORMAT_GAP_GFF3,
+                                         &align_str )))
     {
-      pHomol = &feature->feature.homol ;
+      if (align_str)
+        {
+          *p_s_out = g_strdup_printf("Gap = %s", align_str) ;
+          g_free(align_str) ;
+        }
     }
 
   return bResult ;
 }
 
 /*
- * Generates output from the feature of the form:
- *   Target = <targetID> <start> <end> [<strand>]
+ * Generates "Target" attribute from the feature.
  */
-gboolean zMapAttGenerateTarget(char **s_out, ZMapFeature feature)
+gboolean zMapAttGenerateTarget(char **p_s_out, ZMapFeature feature)
 {
   gboolean bResult = FALSE ;
-  zMapReturnValIfFail(s_out && feature , bResult ) ;
-  ZMapHomol pHomol = NULL ;
+  char *target_string = NULL ;
+  ZMapHomol homol = NULL ;
+  zMapReturnValIfFail(p_s_out && feature && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT, bResult ) ;
+  homol = &feature->feature.homol ;
 
-  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.align)
-    {
-      pHomol = &feature->feature.homol ;
-    }
+  target_string = g_strdup_printf("Target = %s %i %i %s",
+                                  g_quark_to_string(homol->clone_id), homol->y1, homol->y2,
+                                  zMapFeatureStrand2Str(homol->strand)) ;
+  *p_s_out = target_string ;
+  bResult = TRUE ;
 
   return bResult ;
 }

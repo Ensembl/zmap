@@ -197,7 +197,7 @@ static gboolean dump_alignment_length(ZMapFeature feature, gpointer homol,
  */
 static gboolean dump_alignment_target_v3(ZMapFeature feature, gpointer homol,
   GString *gff_string, GError **error, GFFDumpData gff_data) ;
-static gboolean dump_alignment_gaps_v3(ZMapFeature feature, gpointer homol_data,
+static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
   GString *gff_string, GError **error, GFFDumpData gff_data) ;
 
 /* utils */
@@ -255,7 +255,7 @@ static DumpGFFAttrFunc transcript_funcs_G_GFF3[] = {
 };
 static DumpGFFAttrFunc homol_funcs_G_GFF3[] = {
   dump_alignment_target_v3,/* Target=<clone_id> <start> <end> <strand> */
-  dump_alignment_gaps_v3,/* Gaps=(<int><int><int><int>)+ */
+  dump_alignment_gap_v3,/* Gaps=(<int><int><int><int>)+ */
   NULL
 };
 static DumpGFFAttrFunc text_funcs_G_GFF3[] = {
@@ -1250,6 +1250,7 @@ static gboolean dump_alignment_target_v3(ZMapFeature feature, gpointer homol_dat
   static const char * read_pair = "read_pair" ;
   ZMapHomol homol = (ZMapHomol)homol_data;
   gboolean result = FALSE ;
+  char *temp_string = NULL ;
 
   /*
    * We need different behaviour here if the
@@ -1264,15 +1265,30 @@ static gboolean dump_alignment_target_v3(ZMapFeature feature, gpointer homol_dat
       {
         g_string_append_printf(gff_string, "read_pair_id=%s",
           g_quark_to_string(homol->clone_id));
+        result = TRUE ;
       }
     else
       {
+        /* old version */
+        /*
         g_string_append_printf(gff_string, "Target=%s %d %d %s",
                                g_quark_to_string(homol->clone_id),
                                homol->y1, homol->y2,
                                zMapFeatureStrand2Str(homol->strand));
+        result = TRUE ;
+        */
+        /* new version */
+        if (zMapAttGenerateTarget(&temp_string, feature))
+          {
+            if (temp_string)
+              {
+                g_string_append_printf(gff_string, "%s", temp_string) ;
+                g_free(temp_string) ;
+                result = TRUE ;
+              }
+          }
+
       }
-    result = TRUE ;
   }
 
   return result ;
@@ -1282,19 +1298,20 @@ static gboolean dump_alignment_target_v3(ZMapFeature feature, gpointer homol_dat
 /*
  * This needs to be converted to output GFF3 "Gap" attribute.
  */
-static gboolean dump_alignment_gaps_v3(ZMapFeature feature, gpointer homol_data,
+static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
                                        GString *gff_string, GError **error,
                                        GFFDumpData gff_data)
 {
+  gboolean result = FALSE;
   static const char *sGap = "Gap=" ;
   ZMapHomol homol = (ZMapHomol)homol_data;
   GArray *gaps_array = NULL;
-  int i;
-  gboolean has_gaps = FALSE;
+  char * temp_string = NULL ;
+  int i = 0;
 
+  /* old method */
   if((gaps_array = homol->align))
   {
-    has_gaps = TRUE;
 
     g_string_append_printf(gff_string, "%s", sGap);
 
@@ -1308,9 +1325,22 @@ static gboolean dump_alignment_gaps_v3(ZMapFeature feature, gpointer homol_data,
                                block->q1, block->q2,
                                block->t1, block->t2);
       }
+
+    result = TRUE ;
   }
 
-  return has_gaps;
+  /* new method */
+  if (zMapAttGenerateGap(&temp_string, feature))
+    {
+      if (temp_string)
+        {
+          g_string_append_printf(gff_string, "%s", temp_string) ;
+          g_free(temp_string) ;
+          result = TRUE ;
+        }
+    }
+
+  return result ;
 }
 
 
