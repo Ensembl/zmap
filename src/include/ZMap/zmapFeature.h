@@ -136,6 +136,7 @@ _(ZMAPALIGN_FORMAT_INVALID,          , "invalid",          "invalid mode "      
 _(ZMAPALIGN_FORMAT_CIGAR_EXONERATE,  , "cigar_exonerate",  "invalid mode "                                 , "") \
 _(ZMAPALIGN_FORMAT_CIGAR_ENSEMBL,    , "cigar_ensembl",    "invalid mode "                                 , "") \
 _(ZMAPALIGN_FORMAT_CIGAR_BAM,        , "cigar_bam",        "invalid mode "                                 , "") \
+_(ZMAPALIGN_FORMAT_GAP_GFF3,         , "gap_gff3",         "invalid mode "                                 , "") \
 _(ZMAPALIGN_FORMAT_VULGAR_EXONERATE, , "vulgar_exonerate", "invalid mode "                                 , "") \
 _(ZMAPALIGN_FORMAT_GAPS_ACEDB,       , "gaps_acedb",       "invalid mode "                                 , "")
 
@@ -999,6 +1000,9 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapPhase target_phase,
 				     GArray *gaps, unsigned int align_error,
 				     gboolean has_local_sequence, char * sequence) ;
+gboolean zMapFeatureAlignmentGetAlignmentString(ZMapFeature feature,
+                                                ZMapFeatureAlignFormat align_format,
+                                                char **p_string_out) ;
 gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature) ;
 gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
 					 ZMapStrand ref_strand, int ref_start, int ref_end,
