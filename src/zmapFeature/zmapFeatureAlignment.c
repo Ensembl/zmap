@@ -39,12 +39,15 @@
 
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
 
 #include <zmapFeature_P.h>
 
-
-/* We get align strings in several variants and then convert them into this common format. */
-typedef struct
+/*
+ * We get align strings in several variants and then convert them
+ * into this common format.
+ */
+typedef struct _AlignStrOpStruct
 {
   char op ;
   int length ;
@@ -126,6 +129,85 @@ static const char *operators_canonical = "MINDG";
 
 
 ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat, ZMAP_ALIGN_GAP_FORMAT_LIST) ;
+
+
+
+
+/*
+ * This is a test function that I'm using to look at formats - at time of writing,
+ * the exonerate cigar parser is incorrect.
+ *
+ * Arguments are:
+ * char *str                    string to operate upon
+ * gboolean bDigitsFirst        if TRUE, digits must be before operators
+ *                              if FALSE, digits must be after operators
+ */
+#define NUM_OPERATOR_LIMIT 1024
+#define NUM_DIGITS_LIMIT 16
+gboolean parseTestFunction(char *str, gboolean bDigitsFirst)
+{
+  gboolean result = FALSE ;
+  size_t iLength = 0 ;
+  char *sTarget = NULL ;
+  GArray* pAlignStrOpArray = NULL ;
+  int i, iOperators = 0 ;
+  char sBuff[NUM_DIGITS_LIMIT] ;
+  char * pArray[NUM_OPERATOR_LIMIT];
+
+  zMapReturnValIfFail(str && *str, result) ;
+  iLength = strlen(str) ;
+  sTarget = str ;
+
+  /*
+   * Operators are defined by one character only each. This step finds their
+   * positions in the input string.
+   */
+  while (*sTarget)
+    {
+      if (isalpha(*sTarget) && (iOperators < NUM_OPERATOR_LIMIT) )
+        {
+          pArray[iOperators] = sTarget ;
+          iOperators++ ;
+        }
+      ++sTarget ;
+    }
+
+  /*
+   * Loop over the operators and determine their type.
+   */
+  pAlignStrOpArray = g_array_new(FALSE, TRUE, sizeof(AlignStrOpStruct)) ;
+  for (i=0; i<iOperators; ++i)
+    {
+      AlignStrOpStruct oAlignStrOp ;
+      oAlignStrOp.op = *pArray[i] ;
+      oAlignStrOp.length = 0 ;
+
+      pAlignStrOpArray = g_array_append_val(pAlignStrOpArray, oAlignStrOp) ;
+    }
+
+  /*
+   * Now inspect various bits of the string to extract the associated digits.
+   */
+  for (i=0; i<iOperators; ++i)
+    {
+      AlignStrOp pAlignStrOp = &(g_array_index(pAlignStrOpArray, AlignStrOpStruct, i)) ;
+
+      /* accumulate digits into sBuff */
+      memset(sBuff, '\0', NUM_DIGITS_LIMIT) ;
+
+      /*
+       * Convert to numbers
+       */
+      pAlignStrOp->length = atoi(sBuff) ;
+    }
+
+  if (pAlignStrOpArray)
+    g_array_free(pAlignStrOpArray, TRUE) ;
+
+  return result ;
+}
+#undef NUM_OPERATOR_LIMIT
+#undef NUM_DIGITS_LIMIT
 
 
 
@@ -242,10 +324,7 @@ gboolean zMapFeatureAlignmentGetAlignmentString(ZMapFeature feature,
   /*
    * Homol to canonical
    */
-  if (result)
-    {
-      result = homol2AlignStrCanonical(&canon, feature) ;
-    }
+  result = homol2AlignStrCanonical(&canon, feature) ;
 
   /*
    * Convert the canonical to the appropriate string format
@@ -304,7 +383,7 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
   AlignStrCanonical canon = NULL ;
   GArray *align = NULL ;
 
- if (!(canon = alignStrMakeCanonical(align_string, align_format)))
+  if (!(canon = alignStrMakeCanonical(align_string, align_format)))
     {
       result = FALSE ;
       zMapLogWarning("Cannot convert alignment string to canonical format: %s", align_string) ;
@@ -484,9 +563,10 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
  * M, I and G (instead of D).
  *
  *  */
-static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_strand, ZMapStrand match_strand,
-    int p_start, int p_end, int c_start, int c_end,
-    GArray **local_map_out)
+static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
+                                    ZMapStrand ref_strand, ZMapStrand match_strand,
+                                    int p_start, int p_end, int c_start, int c_end,
+                                    GArray **local_map_out)
 {
   gboolean result = TRUE ;
   int curr_ref, curr_match ;
@@ -629,6 +709,7 @@ static gboolean homol2AlignStrCanonical(AlignStrCanonical *canon_out, ZMapFeatur
   static const char cM = 'M',
                     cI = 'I',
                     cD = 'D' ;
+  ZMapAlignBlock block = NULL ;
   gboolean result = FALSE ;
   GArray* align = NULL ;
   int i = 0, length = 0 ;
@@ -636,13 +717,15 @@ static gboolean homol2AlignStrCanonical(AlignStrCanonical *canon_out, ZMapFeatur
   zMapReturnValIfFail(  canon_out
                      && feature
                      && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT
-                     &&  feature->feature.homol.align,
+                     && feature->feature.homol.align,
                      result) ;
   align = feature->feature.homol.align ;
   length = align->len ;
 
   for (i=0; i<length; ++i)
     {
+      block = &(g_array_index(align, ZMapAlignBlockStruct, i)) ;
+
 
 
     }
@@ -1048,6 +1131,11 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = TRUE ;
   char *cp ;
+
+  /*
+   * (sm23) This is a test function for parsing cogar/gap strings.
+   */
+  parseTestFunction(match_str, TRUE ) ;
 
   cp = match_str ;
   do

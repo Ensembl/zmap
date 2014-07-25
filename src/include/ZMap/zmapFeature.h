@@ -264,7 +264,7 @@ typedef struct ZMapAlignBlockStructType
   int q1, q2 ;                                             /* coords in query sequence */
   ZMapStrand q_strand ;
 
-  int t1, t2 ;                                             /* coords in target sequence */
+  int t1, t2 ;                                             /* coords in target (reference) sequence */
   ZMapStrand t_strand ;
 
   AlignBlockBoundaryType start_boundary ;                  /* whether the start of this align abuts onto an intron,
