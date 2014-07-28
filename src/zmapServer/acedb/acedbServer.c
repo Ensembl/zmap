@@ -298,6 +298,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout)
 {
   gboolean result = FALSE ;
+  GError *error = NULL ;
   gboolean use_methods = FALSE;
   AcedbServer server ;
 
@@ -314,17 +315,19 @@ static gboolean createConnection(void **server_out,
   /* We need a minimum server version but user can specify a higher one in the config file. */
   if (version_str)
     {
-      if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, version_str))
+      if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, version_str, &error))
 	{
 	  server->version_str = g_strdup(version_str) ;
 	}
       else
 	{
-	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-			 "Requested server version was %s but minimum supported is %s.",
-			 version_str, ACEDB_SERVER_MIN_VERSION) ;
+          ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+                         "Server version error: %s.", (error ? error->message : "(null)")) ;
 	  server->version_str = g_strdup(ACEDB_SERVER_MIN_VERSION) ;
 	}
+      
+      if (error)
+        g_error_free(error) ;
     }
   else
     {
@@ -2039,6 +2042,7 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
 static gboolean checkServerVersion(AcedbServer server)
 {
   gboolean result = FALSE ;
+  GError *error = NULL ;
   char *command = "status -code" ;
   char *acedb_request = NULL ;
   void *reply = NULL ;
@@ -2055,11 +2059,12 @@ static gboolean checkServerVersion(AcedbServer server)
 	{
 	  char *reply_text = (char *)reply ;
 	  char *scan_text = reply_text ;
+          char *curr_pos = NULL ;
 	  char *next_line = NULL ;
           gboolean found = FALSE ;
 
 	  /* Scan lines for "Version:" and then extract the version, release and update numbers. */
-	  while ((next_line = strtok(scan_text, "\n")))
+	  while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	    {
 	      scan_text = NULL ;
 
@@ -2069,15 +2074,21 @@ static gboolean checkServerVersion(AcedbServer server)
 
 		  /* Parse this string: "//             Version: ACEDB 4.9.28" */
 		  char *next ;
+                  char *tag_pos = NULL ;
 
-		  next = strtok(next_line, ":") ;
-		  next = strtok(NULL, " ") ;
-		  next = strtok(NULL, " ") ;
+		  next = strtok_r(next_line, ":", &tag_pos) ;
+		  next = strtok_r(NULL, " ", &tag_pos) ;
+		  next = strtok_r(NULL, " ", &tag_pos) ;
 
-		  if (!(result = zMapCompareVersionStings(server->version_str, next)))
-		    setErrMsg(server,  g_strdup_printf("Server version must be at least %s "
-						       "but this server is %s.",
-						       server->version_str, next)) ;
+                  if (!(result = zMapCompareVersionStings(server->version_str, next, &error)))
+                    {
+                      setErrMsg(server,  g_strdup_printf("Server version error: %s ", 
+                                                         (error ? error->message : "(null)"))) ;
+                    }
+                  
+                  if (error)
+                    g_error_free(error) ;
+
 		  break ;
 		}
 	    }
@@ -2133,9 +2144,10 @@ static gboolean findSequence(AcedbServer server, char *sequence_name)
       char *reply_text = (char *)reply ;
       char *scan_text = reply_text ;
       char *next_line = NULL ;
+      char *curr_pos = NULL ;
 
       /* Scan lines for "Found" and then extract the version, release and update numbers. */
-      while ((next_line = strtok(scan_text, "\n")))
+      while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	{
 	  scan_text = NULL ;
 
@@ -2144,10 +2156,11 @@ static gboolean findSequence(AcedbServer server, char *sequence_name)
 	      /* Parse this string: "// Found 1 objects in this class" */
 	      char *next ;
 	      int num_obj ;
+	      char *tag_pos = NULL ;
 
-	      next = strtok(next_line, " ") ;
-	      next = strtok(NULL, " ") ;
-	      next = strtok(NULL, " ") ;
+	      next = strtok_r(next_line, " ", &tag_pos) ;
+	      next = strtok_r(NULL, " ", &tag_pos) ;
+	      next = strtok_r(NULL, " ", &tag_pos) ;
 
 	      num_obj = atoi(next) ;
 
@@ -2500,9 +2513,10 @@ static ZMapServerResponseType findMethods(AcedbServer server, char *search_str, 
        */
       char *scan_text = (char *)reply ;
       char *next_line = NULL ;
+      char *curr_pos = NULL ;
       int num_methods ;
 
-      while ((next_line = strtok(scan_text, "\n")))
+      while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	{
 	  scan_text = NULL ;
 
@@ -2563,7 +2577,7 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
   GetMethodsStyles get_sets = (GetMethodsStyles)user_data ;
   char *name = NULL, *zmap_style = NULL, *col_parent = NULL, *remark = NULL ;
   int obj_lines ;
-
+  char *line_pos ;
 
   /* This should be in parse types really and then parsetypes should move on to next obj. */
   if (!g_str_has_prefix(method_str, "Method : "))
@@ -2571,10 +2585,10 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
 
 
   obj_lines = 0 ;				    /* Used to detect empty objects. */
+  line_pos = NULL ;
   do
     {
       char *tag = NULL ;
-      char *line_pos = NULL ;
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
 	break ;
@@ -2731,6 +2745,7 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
   GList *feature_sets, *method_list, *child_list = NULL ;
   char *name = NULL, *column_parent = NULL, *column_child = NULL, *style = NULL, *remark = NULL ;
   int obj_lines = 0 ;					    /* Used to detect empty objects. */
+  char *line_pos ;
 
 
   if (!g_str_has_prefix(method_str, "Method : "))
@@ -2742,10 +2757,10 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
   feature_sets = get_sets->feature_set_methods ;
   method_list = get_sets->feature_methods ;
 
+  line_pos = NULL ;
   do
     {
       char *tag = NULL ;
-      char *line_pos = NULL ;
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
 	break ;
@@ -2951,16 +2966,17 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   gboolean deferred_flag = FALSE;
   int obj_lines ;
   int between_align_error = 0 ;
+  char *line_pos ;
 
 
   if (!g_str_has_prefix(method_str, "Method : "))
     return style ;
 
   obj_lines = 0 ;				    /* Used to detect empty objects. */
+  line_pos = NULL ;
   do
     {
       char *tag = NULL ;
-      char *line_pos = NULL ;
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
 	break ;
@@ -3404,17 +3420,18 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   double histogram_baseline = 0.0 ;
   gboolean pfetchable = FALSE ;
   ZMapStyleBlixemType blixem_type = ZMAPSTYLE_BLIXEM_INVALID ;
-
+  char *line_pos ;
 
   if (g_ascii_strncasecmp(style_str, "ZMap_style : ", strlen("ZMap_style : ")) != 0)
     return style ;
 
 
   obj_lines = 0 ;				    /* Used to detect empty objects. */
+  line_pos = NULL ;
   do
     {
       char *tag = NULL ;
-      char *line_pos = NULL ;
+
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
 	break ;
@@ -4018,10 +4035,11 @@ static ZMapServerResponseType getObjNames(AcedbServer server, GList **style_name
     {
       char *scan_text = (char *)reply ;
       char *next_line = NULL ;
+      char *curr_pos = NULL ;
       gboolean found_method = FALSE ;
       GList *style_names = NULL ;
 
-      while ((next_line = strtok(scan_text, "\n")))
+      while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	{
 	  scan_text = NULL ;
 
@@ -4098,10 +4116,11 @@ int getFoundObj(char *text)
   if (strstr(text, "Found"))
     {
       char *next ;
+      char *curr_pos = NULL ;
 
-      next = strtok(text, " ") ;
-      next = strtok(NULL, " ") ;
-      next = strtok(NULL, " ") ;
+      next = strtok_r(text, " ", &curr_pos) ;
+      next = strtok_r(NULL, " ", &curr_pos) ;
+      next = strtok_r(NULL, " ", &curr_pos) ;
 
       num_obj = atoi(next) ;
     }
@@ -4339,9 +4358,10 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
 	   */
 	  char *scan_text = (char *)reply ;
 	  char *next_line = NULL ;
+          char *curr_pos = NULL ;
 	  int num_objs ;
 
-	  while ((next_line = strtok(scan_text, "\n")))
+	  while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	    {
 	      scan_text = NULL ;
 

@@ -46,17 +46,19 @@
 /*
  * Escaped strings that need to be removed from attribute strings.
  * These are the url-escaped sequences, and are the only ones allowed
- * GFF3 attributes. Not all of these are used at the moment, but
- * might well be in the future.
+ * GFF3 attributes.
  */
 static const char *sEscapedComma = "%2C" ;
 static const char *sEscapedEquals = "%3D" ;
-/* static const char *sEscapedSemicolon = "%3B" ; */
-/* static const char *sEscapedSpace = "%20" ; */
+static const char *sEscapedSemicolon = "%3B" ;
+static const char *sEscapedSpace = "%20" ;
+
 static const char *sComma = "," ;
 static const char *sEquals = "=" ;
-/* static const char *sSemicolon = ";" ; */
-/* static const char *sSpace = " " ; */
+static const char *sSemicolon = ";" ;
+static const char *sSpace = " " ;
+
+static char* removeAllEscapedCharacters(const char * const sInput ) ;
 
 /*
  * Array of attribute info objects. Data are as given in the header file.
@@ -304,7 +306,7 @@ ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser pParserBase, const char*  c
   static const gboolean bIncludeEmpty = TRUE ;
   ZMapGFFAttributeName eTheName = ZMAPGFF_ATT_UNK ;
   unsigned int iNumTokens = 0, i;
-  char **sTokens = NULL ;
+  char **sTokens = NULL, *sBuff = NULL ;
   ZMapGFFVersion eVersion = ZMAPGFF_VERSION_UNKNOWN ;
   ZMapGFFAttribute pAttribute = NULL ;
 
@@ -323,14 +325,15 @@ ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser pParserBase, const char*  c
    * Cast to "derived" type.
    */
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-
+  sBuff = pParserBase->buffers[ZMAPGFF_BUF_TMP] ;
 
   /*
    * Tokenize the input string; we stop on encountering the first
    * delimiter and therefore should only get two tokens. The delimiter here
    * separates the attribute name from its associated data.
    */
-  sTokens = zMapGFFStr_tokenizer(pParser->cDelimAttValue, sAttribute, &iNumTokens, bIncludeEmpty, iTokenLimit, g_malloc, g_free) ;
+  sTokens = zMapGFFStr_tokenizer(pParser->cDelimAttValue, sAttribute, &iNumTokens,
+                                 bIncludeEmpty, iTokenLimit, g_malloc, g_free, sBuff) ;
   if (iNumTokens > iExpectedTokens )
     {
       for (i=0; i<iNumTokens; ++i)
@@ -450,7 +453,8 @@ ZMapGFFAttribute* zMapGFFAttributeParseList(ZMapGFFParser pParserBase, const cha
    * characters in this process.
    */
   bIncludeEmpty = FALSE ;
-  sTokens = zMapGFFStr_tokenizer02(pParser->cDelimAttributes, pParser->cDelimQuote, sAttributes, pnAttributes, bIncludeEmpty, g_malloc, g_free) ;
+  sTokens = zMapGFFStr_tokenizer02(pParser->cDelimAttributes, pParser->cDelimQuote, sAttributes, pnAttributes,
+                                   bIncludeEmpty, g_malloc, g_free) ;
   if (*pnAttributes == 0)
     return pAttributes ;
 
@@ -525,9 +529,9 @@ ZMapGFFAttribute zMapGFFAttributeListContains( ZMapGFFAttribute* pAtt, unsigned 
   ZMapGFFAttribute pAttribute = NULL ;
   const ZMapGFFAttribute *pAttributes = pAtt ;
   unsigned int iAtt ;
-  if (!pAttributes || !nAttributes) 
-    return pAttribute ; 
-  zMapReturnValIfFail(sName && *sName, pAttribute) ; 
+  if (!pAttributes || !nAttributes)
+    return pAttribute ;
+  zMapReturnValIfFail(sName && *sName, pAttribute) ;
 
   for (iAtt=0; iAtt<nAttributes; ++iAtt)
     {
@@ -1277,7 +1281,7 @@ gboolean zMapAttParseParent(ZMapGFFAttribute pAttribute, char ** const sOut)
  */
 gboolean zMapAttParseURL(ZMapGFFAttribute pAttribute, char** const sOut)
 {
-  gboolean bResult = FALSE, bReplaced = FALSE ;
+  gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseURL()" ;
   if (!pAttribute)
     return bResult ;
@@ -1290,7 +1294,7 @@ gboolean zMapAttParseURL(ZMapGFFAttribute pAttribute, char** const sOut)
 
   if (strlen(sValue))
     {
-      bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedEquals, sEquals, sOut) ;
+      *sOut = removeAllEscapedCharacters(sValue) ;
       bResult = TRUE ;
     }
   else
@@ -1379,10 +1383,14 @@ gboolean zMapAttParseNote(ZMapGFFAttribute pAttribute, char ** const sOut)
     }
 
   if (strlen(sValue))
-    *sOut = g_strdup(sValue) ;
+    {
+      *sOut = removeAllEscapedCharacters(sValue) ;
+      bResult = TRUE ;
+    }
   else
-    *sOut = NULL ;
-  bResult = TRUE ;
+    {
+      *sOut = NULL ;
+    }
 
   return bResult ;
 }
@@ -1872,7 +1880,7 @@ gboolean zMapAttParseKnownName(ZMapGFFAttribute pAttribute, char ** const sOut)
  *
  */
 gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute pAttribute, char ** const psOut, ZMapStrand * const pcStrandOut,
-                                  int * const piOut, GArray ** const paOut)
+                                  int * const piOut, GArray ** const paOut, char *sBuff)
 {
   gboolean bResult = FALSE ;
   static const char cComma = ',';
@@ -1903,7 +1911,7 @@ gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute pAttribute, char ** const psO
   /*
    * Tokenize on commas; we must have a minimum of 4 fields
    */
-  sTokens = zMapGFFStr_tokenizer(cComma, sValue, &iTokens, bIncludeEmpty, iTokenLimit, g_malloc, g_free) ;
+  sTokens = zMapGFFStr_tokenizer(cComma, sValue, &iTokens, bIncludeEmpty, iTokenLimit, g_malloc, g_free, sBuff) ;
 
   for (i=0; i<iTokens; ++i)
   {
@@ -2020,3 +2028,43 @@ gboolean zMapAttParseReadPairID(ZMapGFFAttribute pAttribute, GQuark * const pgqO
 
   return bResult ;
 }
+
+
+
+
+
+
+/*
+ * Remove all of the escaped characters permitted by GFF3 from the
+ * input string and return a newly allocated string containing the
+ * result.
+ */
+static char* removeAllEscapedCharacters(const char * const sInput )
+{
+  char *sResult = NULL, *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
+  gboolean bReplaced = FALSE ;
+
+  bReplaced = zMapGFFStr_substring_replace_n(sInput, sEscapedEquals,    sEquals, &sOut1) ;
+  bReplaced = zMapGFFStr_substring_replace_n(sOut1,  sEscapedComma,     sComma, &sOut2) ;
+  g_free(sOut1) ;
+  bReplaced = zMapGFFStr_substring_replace_n(sOut2,  sEscapedSemicolon, sSemicolon, &sOut3) ;
+  g_free(sOut2) ;
+  bReplaced = zMapGFFStr_substring_replace_n(sOut3,  sEscapedSpace,     sSpace, &sResult) ;
+  g_free(sOut3) ;
+
+  return sResult ;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

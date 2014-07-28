@@ -48,26 +48,14 @@
 
 
 static gboolean getVersionNumbers(char *version_str,
-  int *version_out, int *release_out, int *update_out) ;
+                                  int *version_out, int *release_out, int *update_out) ;
 
 
-/*! @defgroup zmaputils   zMapUtils: utilities for ZMap
- * @{
- *
- * \brief  Utilities for ZMap.
- *
- * zMapUtils routines provide services such as debugging, testing and logging,
- * string handling, file utilities and GUI functions. They are general routines
- * used by all of ZMap.
- *
- *  */
-
-
-/*! Can be set on/off to turn on/off debugging output via the zMapDebug() macro. */
+/* Can be set on/off to turn on/off debugging output via the zMapDebug() macro. */
 gboolean zmap_debug_G = FALSE ;
 
 
-/*! A global timer used for giving overall timings for zmap operations.
+/* A global timer used for giving overall timings for zmap operations.
  * See the timer macros in zmapUtilsDebug.h */
 GTimer *zmap_global_timer_G = NULL ;
 gboolean zmap_timing_G = FALSE;     // ouput timing info?
@@ -130,26 +118,52 @@ char *zMapGetAppTitle(void)
  * @param test_version           The version string to be tested.
  * @return                       TRUE or FALSE
  *  */
-gboolean zMapCompareVersionStings(char *reference_version, char *test_version)
+gboolean zMapCompareVersionStings(char *reference_version, char *test_version, GError **error)
 {
   gboolean result = FALSE ;
+  GError *tmp_error = NULL ;
   char *ref_str, *test_str ;
   int ref_vers, ref_rel, ref_upd, test_vers, test_rel, test_upd ;
 
   ref_str = g_strdup(reference_version) ;
   test_str = g_strdup(test_version) ;
 
-  if ((result = getVersionNumbers(ref_str, &ref_vers, &ref_rel, &ref_upd))
-      && (result = getVersionNumbers(test_str, &test_vers, &test_rel, &test_upd)))
+  if (getVersionNumbers(ref_str, &ref_vers, &ref_rel, &ref_upd))
     {
-      if (test_vers < ref_vers || test_rel < ref_rel || test_upd < ref_upd)
-        result = FALSE ;
+      if (getVersionNumbers(test_str, &test_vers, &test_rel, &test_upd))
+        {
+          if (test_vers < ref_vers ||
+              (test_vers == ref_vers && test_rel < ref_rel) ||
+              (test_vers == ref_vers && test_rel == ref_rel && test_upd < ref_upd))
+            {
+              g_set_error(&tmp_error, ZMAP_UTILS_ERROR, ZMAPUTILS_ERROR_VERSION_STRING,
+                          "Server version must be at least '%s' but this server is '%s'", 
+                          reference_version, test_version); 
+
+              result = FALSE ;
+            }
+          else
+            {
+              result = TRUE ;
+            }
+        }
       else
-        result = TRUE ;
+        {
+          g_set_error(&tmp_error, ZMAP_UTILS_ERROR, ZMAPUTILS_ERROR_VERSION_STRING,
+                      "Error getting version number from string '%s'", test_version); 
+        }
+    }
+  else
+    {
+      g_set_error(&tmp_error, ZMAP_UTILS_ERROR, ZMAPUTILS_ERROR_VERSION_STRING,
+                  "Error getting version number from string '%s'", reference_version); 
     }
 
   g_free(ref_str) ;
   g_free(test_str) ;
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
 
   return result ;
 }
@@ -690,7 +704,7 @@ gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out)
 int zMapUtilsProcessTerminationStatus(int status, ZMapProcessTerminationType *termination_type_out)
 {
   int exit_rc = EXIT_FAILURE ;
-  ZMapProcessTerminationType termination_type = ZMAP_PROCTERM_OK ;
+  /* ZMapProcessTerminationType termination_type = ZMAP_PROCTERM_OK ;*/
 
   if (WIFEXITED(status))
     {
@@ -806,38 +820,37 @@ void zMapUtilsDebugPrintf(FILE *stream, char *format, ...)
 
 
 
-/*! @} end of zmaputils docs. */
-
-
-
-
 /*
  *                   Internal routines.
  */
 
 
 
-
+/* Parse out the version, release and update numbers from a string of format
+ * 
+ *                   "vvvv.rrrr.uuuu"
+ */
 static gboolean getVersionNumbers(char *version_str,
-  int *version_out, int *release_out, int *update_out)
+                                  int *version_out, int *release_out, int *update_out)
 {
+  static const char cDot = '.' ; 
   gboolean result = FALSE ;
   char *next ;
   int version, release, update ;
 
-  if (((next = strtok(version_str, "."))
-       && (version = atoi(next)))
-      && ((next = strtok(NULL, "."))
-  && (release = atoi(next)))
-      && ((next = strtok(NULL, "."))
-  && (update = atoi(next))))
+  if ((version = atoi(version_str)))
     {
-      result = TRUE ;
-      *version_out = version ;
-      *release_out = release ;
-      *update_out = update ;
-    }
-
+      if ((next=strchr(version_str, cDot)) && (release=atoi(++next)))
+        {
+          if ((next=strchr(next, cDot)) && (update=atoi(++next)))
+            {
+              *version_out = version ;
+              *release_out = release ;
+              *update_out  = update ;
+              result = TRUE ; 
+            }
+        }
+    } 
 
   return result ;
 }

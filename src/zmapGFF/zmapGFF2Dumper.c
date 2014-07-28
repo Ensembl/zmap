@@ -649,7 +649,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
           gff_data->gff_source = (char *) g_quark_to_string(fset->original_id);
 #endif
 
-          gff_data->gff_feature = zMapSOAcc2Term(feature->SO_accession) ;
+          gff_data->gff_feature = g_quark_to_string(feature->SO_accession) ; /* zMapSOAcc2Term(feature->SO_accession) ; */
           if(!gff_data->gff_feature)
             {
               GQuark gff_ontology;

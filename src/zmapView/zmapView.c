@@ -5989,8 +5989,10 @@ static void addAlignments(ZMapFeatureContext context)
 
 #ifdef NOT_REQUIRED_ATM
 
-/* Read list of sequence to server mappings (i.e. which sequences must be fetched from which
- * servers) from the zmap config file. */
+/* 
+ * Read list of sequence to server mappings (i.e. which sequences must be fetched from which
+ * servers) from the zmap config file. 
+ */
 static gboolean getSequenceServers(ZMapView zmap_view, char *config_str)
 {
   gboolean result = FALSE ;
@@ -6000,6 +6002,7 @@ static gboolean getSequenceServers(ZMapView zmap_view, char *config_str)
   char *zmap_stanza_name = ZMAPSTANZA_APP_CONFIG ;
   ZMapConfigStanzaElementStruct zmap_elements[] = {{ZMAPSTANZA_APP_SEQUENCE_SERVERS, ZMAPCONFIG_STRING, {NULL}},
 						   {NULL, -1, {NULL}}} ;
+
 
   if ((config = getConfigFromBufferOrFile(config_str)))
     {
@@ -6020,17 +6023,20 @@ static gboolean getSequenceServers(ZMapView zmap_view, char *config_str)
 		  char *sequence, *server ;
 		  ZMapViewSequence2Server seq_2_server ;
 		  char *search_str ;
+                  char *curr_pos = NULL ;
 
 		  search_str = server_seq_str ;
-		  while ((sequence = strtok(search_str, " ")))
+
+                  while ((sequence = strtok_r(search_str, " ", &curr_pos)))
 		    {
 		      search_str = NULL ;
-		      server = strtok(NULL, " ") ;
+		      server = strtok_r(NULL, " ", &curr_pos) ;
 
 		      seq_2_server = createSeq2Server(sequence, server) ;
 
 		      zmap_view->sequence_2_server = g_list_append(zmap_view->sequence_2_server, seq_2_server) ;
-		    }
+		    } 
+
 		}
 	    }
 
@@ -6118,6 +6124,10 @@ static gint findSequence(gconstpointer a, gconstpointer b)
   return result ;
 }
 #endif /* NOT_REQUIRED_ATM */
+
+
+
+
 
 
 

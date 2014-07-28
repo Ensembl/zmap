@@ -48,8 +48,8 @@
 
 
 static void getVisibleCanvas(ZMapWindow window,
-			     double *screenx1_out, double *screeny1_out,
-			     double *screenx2_out, double *screeny2_out) ;
+                             double *screenx1_out, double *screeny1_out,
+                             double *screenx2_out, double *screeny2_out) ;
 
 
 
@@ -94,8 +94,8 @@ GList *zmapWindowItemListToFeatureList(GList *item_list)
 
   for(;item_list;item_list = item_list->next)
   {
-  	id2c = (ID2Canvas) item_list->data;
-  	feature_list = g_list_append(feature_list,(gpointer) id2c->feature_any);
+          id2c = (ID2Canvas) item_list->data;
+          feature_list = g_list_append(feature_list,(gpointer) id2c->feature_any);
   }
 
   return feature_list;
@@ -115,18 +115,18 @@ GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand)
       feature = (ZMapFeature) id2c->feature_any;
 
       if(expand && feature->children)
-	{
-	  GList * l;
+        {
+          GList * l;
 
-	  for(l = feature->children; l; l = l->next)
-	    {
-	      feature_list = g_list_prepend(feature_list,(gpointer) l->data);
-	    }
-	}
+          for(l = feature->children; l; l = l->next)
+            {
+              feature_list = g_list_prepend(feature_list,(gpointer) l->data);
+            }
+        }
       else
-	{
-	  feature_list = g_list_prepend(feature_list,(gpointer) id2c->feature_any);
-	}
+        {
+          feature_list = g_list_prepend(feature_list,(gpointer) id2c->feature_any);
+        }
     }
 
   return feature_list;
@@ -149,12 +149,12 @@ void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean
   ZMapFrame set_frame = ZMAPFRAME_NONE;
 
   if(zMapStyleIsStrandSpecific(*feature->style))
-	set_strand = feature->strand;
+        set_strand = feature->strand;
   if(zMapStyleIsFrameSpecific(*feature->style) && IS_3FRAME_COLS(window->display_3_frame))
-	set_frame = zmapWindowFeatureFrame(feature);
+        set_frame = zmapWindowFeatureFrame(feature);
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
-						    set_strand, set_frame, feature)))
+                                                    set_strand, set_frame, feature)))
     zmapWindowHighlightObject(window, feature_item, replace, highlight_same_names, FALSE) ;
 
   return ;
@@ -176,7 +176,7 @@ gboolean zMapWindowUnhighlightFeature(ZMapWindow window, ZMapFeature feature)
     set_frame = zmapWindowFeatureFrame(feature);
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
-						    set_strand, set_frame, feature))
+                                                    set_strand, set_frame, feature))
       && feature_item == zmapWindowFocusGetHotItem(window->focus))
     {
       zmapWindowFocusRemoveFocusItem(window->focus, feature_item) ;
@@ -191,7 +191,7 @@ gboolean zMapWindowUnhighlightFeature(ZMapWindow window, ZMapFeature feature)
 
 /* Highlight a feature or list of related features (e.g. all hits for same query sequence). */
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
-			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
+                               gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
 {
   zmapWindowHighlightObject(window, item, replace_highlight_item, highlight_same_names, sub_part) ;
 
@@ -202,7 +202,7 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
-			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
+                               gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
 {
   ZMapWindowCanvasItem canvas_item ;
   ZMapFeature feature ;
@@ -229,34 +229,34 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     {
     case ZMAPSTYLE_MODE_ALIGNMENT:
       {
-	if (highlight_same_names)
-	  {
-	    GList *set_items ;
-	    char *set_strand, *set_frame ;
+        if (highlight_same_names)
+          {
+            GList *set_items ;
+            char *set_strand, *set_frame ;
 
-	    set_strand = set_frame = "*" ;
+            set_strand = set_frame = "*" ;
 
-	    set_items = zmapWindowFToIFindSameNameItems(window,window->context_to_item, set_strand, set_frame, feature) ;
+            set_items = zmapWindowFToIFindSameNameItems(window,window->context_to_item, set_strand, set_frame, feature) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    if (set_items)
-	      zmapWindowFToIPrintList(set_items) ;
+            if (set_items)
+              zmapWindowFToIPrintList(set_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	    zmapWindowFocusAddItems(window->focus, set_items, item) ; // item is the hot one
+            zmapWindowFocusAddItems(window->focus, set_items, item) ; // item is the hot one
 
-	    g_list_free(set_items) ;
-	  }
-	else
-	  {
-	    zmapWindowFocusAddItem(window->focus, item , feature) ;
-	  }
+            g_list_free(set_items) ;
+          }
+        else
+          {
+            zmapWindowFocusAddItem(window->focus, item , feature) ;
+          }
 
-	break ;
+        break ;
       }
     default:
       {
-	/* Try highlighting both the item and its column. */
+        /* Try highlighting both the item and its column. */
         zmapWindowFocusAddItem(window->focus, item, feature);
       }
       break ;
@@ -277,13 +277,13 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     }
   else
     {
-	ZMapFrame frame = ZMAPFRAME_NONE;
-	;
+        ZMapFrame frame = ZMAPFRAME_NONE;
+        ;
       zmapWindowItemHighlightDNARegion(window, TRUE, sub_part, item,
-				       ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
+                                       ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
 
       zmapWindowItemHighlightTranslationRegions(window, TRUE, sub_part, item,
-						ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
+                                                ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
 
 
       /* PROBABLY NEED TO DISABLE THIS UNTIL I CAN GET IT ALL WORKING...... */
@@ -292,15 +292,15 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       /* Not completely happy with this...seems a bit hacky, try it and if users want to do
        * translations non-transcripts then I'll change it. */
       if (ZMAPFEATURE_IS_TRANSCRIPT(feature))
-	zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part, item,
-						     ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
+        zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part, item,
+                                                     ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
       else
-	zmapWindowItemUnHighlightShowTranslations(window, item) ;
+        zmapWindowItemUnHighlightShowTranslations(window, item) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
       zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part, item,
-						   frame, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
+                                                   frame, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
 
 
 
@@ -407,7 +407,7 @@ ZMapFeatureAny zmapWindowItemGetFeatureAny(FooCanvasItem *item)
 }
 
 
-ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureLevelType expected_type)
+ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, const int expected_type)
 {
   ZMapFeatureAny feature_any = NULL ;
   ZMapWindowCanvasItem feature_item ;
@@ -432,11 +432,11 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureL
   if (feature_any && expected_type != -1)
     {
       if (feature_any->struct_type != expected_type)
-	{
-	  zMapLogCritical("Unexpected feature type [%d] (not %d) attached to item [%s]",
-			  feature_any->struct_type, expected_type, G_OBJECT_TYPE_NAME(item)) ;
-	  feature_any = NULL;
-	}
+        {
+          zMapLogCritical("Unexpected feature type [%d] (not %d) attached to item [%s]",
+                          feature_any->struct_type, expected_type, G_OBJECT_TYPE_NAME(item)) ;
+          feature_any = NULL;
+        }
     }
 
   return feature_any ;
@@ -498,8 +498,8 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
       container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
       matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
-						    container->strand, container->frame,
-						    feature) ;
+                                                    container->strand, container->frame,
+                                                    feature) ;
     }
 
   return matching_item ;
@@ -510,7 +510,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
  * usually one from a different window....
  * A feature item child is something like the feature item representing an exon within a transcript. */
 FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvasItem *item,
-						    int child_start, int child_end)
+                                                    int child_start, int child_end)
 {
   FooCanvasItem *matching_item = NULL ;
   ZMapFeature feature ;
@@ -605,18 +605,18 @@ gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboole
   if (completely)
     {
       if (itemx1_out >= screenx1_out && itemx2_out <= screenx2_out
-	  && itemy1_out >= screeny1_out && itemy2_out <= screeny2_out)
-	is_on_screen = TRUE ;
+          && itemy1_out >= screeny1_out && itemy2_out <= screeny2_out)
+        is_on_screen = TRUE ;
       else
-	is_on_screen = FALSE ;
+        is_on_screen = FALSE ;
     }
   else
     {
       if (itemx2_out < screenx1_out || itemx1_out > screenx2_out
-	  || itemy2_out < screeny1_out || itemy1_out > screeny2_out)
-	is_on_screen = FALSE ;
+          || itemy2_out < screeny1_out || itemy1_out > screeny2_out)
+        is_on_screen = FALSE ;
       else
-	is_on_screen = TRUE ;
+        is_on_screen = TRUE ;
     }
 
   return is_on_screen ;
@@ -664,9 +664,9 @@ void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
  */
 
 void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
-				       gboolean alterScrollRegionSize,
-				       double boundaryAroundItem,
-				       double sub_start, double sub_end)
+                                       gboolean alterScrollRegionSize,
+                                       double boundaryAroundItem,
+                                       double sub_start, double sub_end)
 {
   double ix1, ix2, iy1, iy2;
   int cx1, cx2, cy1, cy2;
@@ -692,93 +692,93 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
       /* If the item is a group then we need to use its background to check in long items as the
        * group itself is not a long item. */
       if (FOO_IS_CANVAS_GROUP(item) && zmapWindowContainerUtilsIsValid(FOO_CANVAS_GROUP(item)))
-	{
-	  double height ;
-	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
+        {
+          double height ;
+          foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
 
-	  height = iy2 - iy1 + 1;
-	  if (iy1 > 0)
+          height = iy2 - iy1 + 1;
+          if (iy1 > 0)
 
-	    iy1 = 0 ;
-	  if (iy2 < height)
-	    iy2 = height ;
-	}
+            iy1 = 0 ;
+          if (iy2 < height)
+            iy2 = height ;
+        }
       else
-	{
-	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
-	}
+        {
+          foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
+        }
 #endif
 
 
       /* If sub_part start/end are set then need to centre on that part of an item. */
       if (sub_start != 0.0 || sub_end != 0.0)
-	{
+        {
 #if USING_ITEM_COORDS
-	  iy2 = iy1 ;
-	  iy1 = iy1 + sub_start ;
-	  iy2 = iy2 + sub_end ;
+          iy2 = iy1 ;
+          iy1 = iy1 + sub_start ;
+          iy2 = iy2 + sub_end ;
 #else
-	  iy1 = sub_start;
-	  iy2 = sub_end;
+          iy1 = sub_start;
+          iy2 = sub_end;
 #endif
-	}
+        }
 
 #if USING_ITEM_COORDS
-	/* Fix the item coords to be in world coords for following calculations. */
+        /* Fix the item coords to be in world coords for following calculations. */
       foo_canvas_item_i2w(item, &ix1, &iy1);
       foo_canvas_item_i2w(item, &ix2, &iy2);
 #endif
 
 
       if (boundaryAroundItem > 0.0)
-	{
-	  /* sadly I don't know what PPU stand for.... */
+        {
+          /* sadly I don't know what PPU stand for.... */
 
-	  /* think about PPU for X & Y!! */
-	  ix1 -= boundaryAroundItem;
-	  iy1 -= boundaryAroundItem;
-	  ix2 += boundaryAroundItem;
-	  iy2 += boundaryAroundItem;
-	}
+          /* think about PPU for X & Y!! */
+          ix1 -= boundaryAroundItem;
+          iy1 -= boundaryAroundItem;
+          ix2 += boundaryAroundItem;
+          iy2 += boundaryAroundItem;
+        }
 
 
       if (alterScrollRegionSize)
-	{
-	  /* this doeesn't work. don't know why. */
-	  double sy1, sy2;
-	  sy1 = iy1; sy2 = iy2;
-	  zmapWindowClampSpan(window, &sy1, &sy2);
-	  zMapWindowMove(window, sy1, sy2);
-	}
+        {
+          /* this doeesn't work. don't know why. */
+          double sy1, sy2;
+          sy1 = iy1; sy2 = iy2;
+          zmapWindowClampSpan(window, &sy1, &sy2);
+          zMapWindowMove(window, sy1, sy2);
+        }
       else
-	{
+        {
         double sx1, sx2, sy1, sy2, tmps, tmpi, diff;
-	      /* Get scroll region (clamped to sequence coords) */
-	  zmapWindowGetScrollableArea(window, &sx1, &sy1, &sx2, &sy2);
+              /* Get scroll region (clamped to sequence coords) */
+          zmapWindowGetScrollableArea(window, &sx1, &sy1, &sx2, &sy2);
 
-//	  if (!zmapWindowItemRegionIsVisible(window, item))
-	  if(iy1 < sy1 || iy2 > sy2)	/* as iy1 < iy2 that's all we need to test */
-	    {
+//          if (!zmapWindowItemRegionIsVisible(window, item))
+          if(iy1 < sy1 || iy2 > sy2)        /* as iy1 < iy2 that's all we need to test */
+            {
 
-	      /* we now have scroll region coords */
-	      /* set tmp to centre of regions ... */
-	      tmps = sy1 + ((sy2 - sy1) / 2);
-	      tmpi = iy1 + ((iy2 - iy1) / 2);
+              /* we now have scroll region coords */
+              /* set tmp to centre of regions ... */
+              tmps = sy1 + ((sy2 - sy1) / 2);
+              tmpi = iy1 + ((iy2 - iy1) / 2);
 
-	      /* find difference between centre points */
-	      diff = tmps - tmpi;
+              /* find difference between centre points */
+              diff = tmps - tmpi;
 
-	      /* alter scroll region to match that */
-	      sy1 -= diff; sy2 -= diff;
+              /* alter scroll region to match that */
+              sy1 -= diff; sy2 -= diff;
 
-	      /* clamp in case we've moved outside the sequence */
-	      zmapWindowClampSpan(window, &sy1, &sy2);
+              /* clamp in case we've moved outside the sequence */
+              zmapWindowClampSpan(window, &sy1, &sy2);
 
-	      /* Do the move ... */
+              /* Do the move ... */
               /*! \todo #warning this assumes the scroll region is big enough for the DNA match, but some people have searched for big sequences */
-	      zMapWindowMove(window, sy1, sy2);
-	    }
-	}
+              zMapWindowMove(window, sy1, sy2);
+            }
+        }
 
 
 
@@ -791,19 +791,19 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
       foo_canvas_w2c(item->canvas, ix2, iy2, &cx2, &cy2);
 
       if (debug)
-	{
-	  printf("[zmapWindowItemCentreOnItem] ix1=%f, ix2=%f, iy1=%f, iy2=%f\n", ix1, ix2, iy1, iy2);
-	  printf("[zmapWindowItemCentreOnItem] cx1=%d, cx2=%d, cy1=%d, cy2=%d\n", cx1, cx2, cy1, cy2);
-	}
+        {
+          printf("[zmapWindowItemCentreOnItem] ix1=%f, ix2=%f, iy1=%f, iy2=%f\n", ix1, ix2, iy1, iy2);
+          printf("[zmapWindowItemCentreOnItem] cx1=%d, cx2=%d, cy1=%d, cy2=%d\n", cx1, cx2, cy1, cy2);
+        }
 
       /* This should possibly be a function...YEH, WHAT DOES IT DO.....????? */
       tmpx = cx2 - cx1;
       tmpy = cy2 - cy1;
 
       if(tmpx & 1)
-	tmpx += 1;
+        tmpx += 1;
       if(tmpy & 1)
-	tmpy += 1;
+        tmpy += 1;
 
       final_canvasx = cx1 + (tmpx / 2);
       final_canvasy = cy1 + (tmpy / 2);
@@ -812,9 +812,9 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
       tmpy = GTK_WIDGET(window->canvas)->allocation.height;
 
       if(tmpx & 1)
-	tmpx -= 1;
+        tmpx -= 1;
       if(tmpy & 1)
-	tmpy -= 1;
+        tmpy -= 1;
 
       cwidth = tmpx / 2;
       cheight = tmpy / 2;
@@ -822,12 +822,12 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
       final_canvasy -= cheight;
 
       if(debug)
-	{
-	  printf("[zmapWindowItemCentreOnItem] cwidth=%d  cheight=%d\n", cwidth, cheight);
-	  printf("[zmapWindowItemCentreOnItem] scrolling to"
-		 " canvas x=%d y=%d\n",
-		 final_canvasx, final_canvasy);
-	}
+        {
+          printf("[zmapWindowItemCentreOnItem] cwidth=%d  cheight=%d\n", cwidth, cheight);
+          printf("[zmapWindowItemCentreOnItem] scrolling to"
+                 " canvas x=%d y=%d\n",
+                 final_canvasx, final_canvasy);
+        }
 
       /* Scroll to the item... */
       foo_canvas_scroll_to(window->canvas, final_canvasx, final_canvasy);
@@ -870,13 +870,13 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
       do_x = TRUE ;
 
       if (itemx1_out > screenx2_out)
-	{
-	  x_offset = itemx1_out ;
-	}
+        {
+          x_offset = itemx1_out ;
+        }
       else if (itemx2_out < screenx1_out)
-	{
-	  x_offset = itemx1_out ;
-	}
+        {
+          x_offset = itemx1_out ;
+        }
     }
 
   if (itemy1_out > screeny2_out || itemy2_out < screeny1_out)
@@ -884,13 +884,13 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
       do_y = TRUE ;
 
       if (itemy1_out > screeny2_out)
-	{
-	  y_offset = itemy1_out ;
-	}
+        {
+          y_offset = itemy1_out ;
+        }
       else if (itemy2_out < screeny1_out)
-	{
-	  y_offset = itemy1_out ;
-	}
+        {
+          y_offset = itemy1_out ;
+        }
     }
 
   /* If we need to scroll then do it. */
@@ -914,8 +914,8 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
  * Not so easy, we are poking around in the dark....
  *  */
 gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
-				   double wx1, double wy1, double wx2, double wy2,
-				   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out)
+                                   double wx1, double wy1, double wx2, double wy2,
+                                   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out)
 {
   gboolean result = FALSE ;
   FooCanvasItem *item ;
@@ -929,8 +929,8 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
   if (!item)
     return result ;
 #if 0
-  if(!item)		/* should never be called: legacy code */
-  	item = foo_canvas_get_item_at(window->canvas, mid_x, mid_y);
+  if(!item)                /* should never be called: legacy code */
+          item = foo_canvas_get_item_at(window->canvas, mid_x, mid_y);
 #endif
   if(item)
     {
@@ -940,26 +940,26 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
       /* Getting the block struct as well is a bit belt and braces...we could return it but
        * its redundant info. really. */
       if ((block_container = FOO_CANVAS_GROUP(zmapWindowContainerUtilsItemGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK)))
-	  && (block = zmapWindowItemGetFeatureBlock((FooCanvasItem *)block_container)))
-	{
-	  double offset ;
+          && (block = zmapWindowItemGetFeatureBlock((FooCanvasItem *)block_container)))
+        {
+          double offset ;
 
-	  offset = (double)(block->block_to_sequence.block.x1 - 1) ; /* - 1 for 1 based coord system. */
+          offset = (double)(block->block_to_sequence.block.x1 - 1) ; /* - 1 for 1 based coord system. */
 
-	  my_foo_canvas_world_bounds_to_item(FOO_CANVAS_ITEM(block_container), &wx1, &wy1, &wx2, &wy2) ;
+          my_foo_canvas_world_bounds_to_item(FOO_CANVAS_ITEM(block_container), &wx1, &wy1, &wx2, &wy2) ;
 
-	  if (block_grp_out)
-	    *block_grp_out = block_container ;
+          if (block_grp_out)
+            *block_grp_out = block_container ;
 
-	  if (y1_out)
-	    *y1_out = floor(wy1 + offset + 0.5) ;
-	  if (y2_out)
-	    *y2_out = floor(wy2 + offset + 0.5) ;
+          if (y1_out)
+            *y1_out = floor(wy1 + offset + 0.5) ;
+          if (y2_out)
+            *y2_out = floor(wy2 + offset + 0.5) ;
 
-	  result = TRUE ;
-	}
+          result = TRUE ;
+        }
       else
-	zMapLogWarning("%s", "No Block Container");
+        zMapLogWarning("%s", "No Block Container");
     }
 
   return result ;
@@ -1055,8 +1055,8 @@ gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
  * Returns the _world_ bounds of an item, no function exists in FooCanvas to do this.
  **/
 void my_foo_canvas_item_get_world_bounds(FooCanvasItem *item,
-					 double *rootx1_out, double *rooty1_out,
-					 double *rootx2_out, double *rooty2_out)
+                                         double *rootx1_out, double *rooty1_out,
+                                         double *rootx2_out, double *rooty2_out)
 {
   double rootx1, rootx2, rooty1, rooty2 ;
 
@@ -1093,8 +1093,8 @@ void my_foo_canvas_item_get_world_bounds(FooCanvasItem *item,
  * Returns the given _world_ bounds in the given item coord system, no function exists in FooCanvas to do this.
  **/
 void my_foo_canvas_world_bounds_to_item(FooCanvasItem *item,
-					double *rootx1_inout, double *rooty1_inout,
-					double *rootx2_inout, double *rooty2_inout)
+                                        double *rootx1_inout, double *rooty1_inout,
+                                        double *rootx2_inout, double *rooty2_inout)
 {
   double rootx1, rootx2, rooty1, rooty2 ;
 
@@ -1222,9 +1222,9 @@ void my_foo_canvas_item_goto(FooCanvasItem *item, double *x, double *y)
       foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
 
       if (x)
-	dx = *x - x1 ;
+        dx = *x - x1 ;
       if (y)
-	dy = *y - y1 ;
+        dy = *y - y1 ;
 
       foo_canvas_item_move(item, dx, dy) ;
     }
@@ -1238,8 +1238,8 @@ void my_foo_canvas_item_goto(FooCanvasItem *item, double *x, double *y)
  * the returned coords as there may not be any of our items at the extreme
  * extents of this range (e.g. x = 0.0 !!). */
 void zmapWindowItemGetVisibleWorld(ZMapWindow window,
-				   double *wx1, double *wy1,
-				   double *wx2, double *wy2)
+                                   double *wx1, double *wy1,
+                                   double *wx2, double *wy2)
 {
 
   getVisibleCanvas(window, wx1, wy1, wx2, wy2);
@@ -1268,8 +1268,8 @@ void zmapWindowItemGetVisibleWorld(ZMapWindow window,
 
 /* Get the visible portion of the canvas. */
 static void getVisibleCanvas(ZMapWindow window,
-			     double *screenx1_out, double *screeny1_out,
-			     double *screenx2_out, double *screeny2_out)
+                             double *screenx1_out, double *screeny1_out,
+                             double *screenx2_out, double *screeny2_out)
 {
   GtkAdjustment *v_adjust, *h_adjust ;
   double x1, x2, y1, y2 ;

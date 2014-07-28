@@ -281,6 +281,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     /* Check locale setting, vital for message handling, text parsing and much else. */
     char *default_locale = "POSIX";
     char *locale_in_use, *user_req_locale, *new_locale;
+
     locale_in_use = setlocale(LC_ALL, NULL);
 
     if (!(user_req_locale = app_context->locale))
@@ -555,7 +556,7 @@ static gboolean pingHandler(gpointer data)
   else
     zmapAppRemoteControlPing(app_context) ;
 
-  return TRUE ;
+  return result ;
 }
 
 
@@ -1637,6 +1638,7 @@ static void hideMainWindow(ZMapAppContext app_context)
 {
   gtk_widget_unmap(app_context->app_widg) ;
 
+
   return ;
 }
 
@@ -1663,33 +1665,42 @@ static gboolean remoteInactiveHandler(gpointer data)
     {
       char *msg ;
       long pid, ppid ;
+      char *log_msg ;
 
       pid = getpid() ;
       ppid = getppid() ;
 
-      msg = g_strdup_printf("This zmap (PID = %ld) has been running for more than %d mins"
-                            " with no sequence displayed"
-                            " and without any interaction with its peer \"%s\" (PID = %ld)."
-                            " Do you want to continue ?",
-                            pid, (ZMAP_APP_REMOTE_TIMEOUT_S / 60),
-                            app_context->remote_control->peer_name, ppid) ;
+      log_msg = g_strdup_printf("This zmap (PID = %ld) has been running for more than %d mins"
+                                " with no sequence displayed"
+                                " and without any interaction with its peer \"%s\" (PID = %ld).",
+                                pid, (ZMAP_APP_REMOTE_TIMEOUT_S / 60),
+                                app_context->remote_control->peer_name, ppid) ;
 
       /*
        * (sm23) for debugging this must also be made available to logging and
        * stderr (sent to otterlace log)
        */
-      zMapLogWarning("%s", msg) ;
-      fprintf(stderr, "%s", msg) ;
-      fflush(stderr) ;
+      zMapLogWarning("%s", log_msg) ;
+      zMapDebugPrintf("%s", log_msg) ;
+
+      msg = g_strdup_printf("%s Do you want to continue ?", log_msg) ;
+
 
       if (!zMapGUIMsgGetBoolFull((GtkWindow *)(app_context->app_widg), ZMAP_MSG_WARNING, msg,
                                  "Continue", "Exit"))
         {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          /* This temporary fix means we just exit without trying to tell the peer we are going.
+           * The full fix needs our timeout and error handlers at this level to be redone. */
           zmapAppExit(app_context) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          appExit(app_context) ;
 
           result = FALSE ;
         }
 
+      g_free(log_msg) ;
       g_free(msg) ;
     }
 

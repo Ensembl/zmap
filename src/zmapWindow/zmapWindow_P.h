@@ -1161,7 +1161,7 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 ZMapFeatureBlock zmapWindowItemGetFeatureBlock(FooCanvasItem *item) ;
 ZMapFeature zmapWindowItemGetFeature(FooCanvasItem *item) ;
 ZMapFeatureAny zmapWindowItemGetFeatureAny(FooCanvasItem *item) ;
-ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureLevelType expected_type) ;
+ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, const int expected_type) ;
 
 FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate) ;
@@ -1568,7 +1568,6 @@ gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *
 void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column, FooCanvasItem *item) ;
 FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusDestroy(ZMapWindowFocus focus) ;
-
 
 
 void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items);

@@ -166,13 +166,17 @@ CURLObject CURLObjectNew()
  */
 CURLObjectStatus CURLObjectSet(CURLObject curl_object, const gchar *first_arg_name, ...)
 {
+  CURLObjectStatus status = CURL_STATUS_OK ;
   va_list args;
 
   va_start(args, first_arg_name);
   g_object_set_valist(G_OBJECT(curl_object), first_arg_name, args);
   va_end(args);
 
-  return curl_object->last_easy_status;
+  if (curl_object->last_easy_status != CURLE_OK)
+    status = CURL_STATUS_FAILED ;
+
+  return status;
 }
 
 /*!
@@ -227,6 +231,8 @@ CURLObjectStatus CURLObjectPerform(CURLObject curl_object, gboolean use_multi)
 
 CURLObjectStatus CURLObjectErrorMessage(CURLObject curl_object, char **message)
 {
+  CURLObjectStatus status = CURL_STATUS_OK ;
+
   if(message)
     {
       *message = NULL;
@@ -234,7 +240,10 @@ CURLObjectStatus CURLObjectErrorMessage(CURLObject curl_object, char **message)
 	*message = g_strdup(curl_object->error_message);
     }
 
-  return curl_object->last_easy_status;
+  if (curl_object->last_easy_status != CURLE_OK)
+    status = CURL_STATUS_FAILED ;
+
+  return status ;
 }
 
 /*!

@@ -123,7 +123,7 @@ typedef struct
   BumpProperties bump_properties;
   double         incr ;
   double         offset ;
-  double         width; 	/* this will be removed! */
+  double         width; /* this will be removed! */
   GList          *feature_list ;
   ZMapWindowContainerFeatureSet feature_set ;
 } ComplexColStruct, *ComplexCol ;
@@ -166,7 +166,7 @@ typedef struct
 
 
 static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-				   ZMapContainerLevelType level, gpointer user_data);
+   ZMapContainerLevelType level, gpointer user_data);
 static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                            ZMapContainerLevelType level, gpointer user_data);
 
@@ -212,7 +212,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mod
  * are creating a zmap window.
  *  */
 void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode,
-			       ZMapWindowCompressMode compress_mode)
+       ZMapWindowCompressMode compress_mode)
 {
   BumpColStruct bump_data = {NULL} ;
   ZMapWindowContainerFeatureSet container = NULL;
@@ -223,7 +223,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
   gboolean mark_set;
   int start, end ;
-	//double time;
+//double time;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_return_if_fail(bump_mode != ZMAPBUMP_INVALID);
@@ -339,7 +339,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
           if(!column_features)
             return;
 
-          bump_data.start = start ;	/* NOTE: different struct from previous one */
+          bump_data.start = start ;/* NOTE: different struct from previous one */
           bump_data.end = end ;
           bump_data.mark_set = mark_set;
           bump_data.spacing = zmapWindowContainerFeatureGetBumpSpacing(container) ;
@@ -355,11 +355,11 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
        * in practice w/ heatmaps there will always be room and w/ other features only 1 CanvasFeatureset
        */
       if(ok)
-	zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
+        zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
 
 
-//		time = zMapElapsedSeconds - time;
-//		printf("featureset bump in %.3f seconds\n", time);
+//time = zMapElapsedSeconds - time;
+//printf("featureset bump in %.3f seconds\n", time);
     }
 
   return ;
@@ -373,8 +373,8 @@ void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item)
     {
       /* container execute */
       zmapWindowContainerUtilsExecute(container_strand,
-				      ZMAPCONTAINER_LEVEL_FEATURESET,
-				      invoke_bump_to_initial, NULL);
+      ZMAPCONTAINER_LEVEL_FEATURESET,
+      invoke_bump_to_initial, NULL);
       /* happy days */
 
     }
@@ -405,23 +405,23 @@ void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item)
 
 // (menu item commented out)
 static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-				   ZMapContainerLevelType level, gpointer user_data)
+   ZMapContainerLevelType level, gpointer user_data)
 {
 
   switch(level)
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-	ZMapWindowContainerFeatureSet container_set;
-	ZMapStyleBumpMode default_mode, current_mode, initial_mode;
+        ZMapWindowContainerFeatureSet container_set;
+        ZMapStyleBumpMode default_mode, current_mode, initial_mode;
 
-	container_set = (ZMapWindowContainerFeatureSet)container;
-	current_mode  = zmapWindowContainerFeatureSetGetBumpMode(container_set);
-	default_mode  = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
+        container_set = (ZMapWindowContainerFeatureSet)container;
+        current_mode  = zmapWindowContainerFeatureSetGetBumpMode(container_set);
+        default_mode  = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
 
-	initial_mode  = default_mode;
+        initial_mode  = default_mode;
 
-	zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container), initial_mode, ZMAPWINDOW_COMPRESS_ALL);
+        zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container), initial_mode, ZMAPWINDOW_COMPRESS_ALL);
       }
       break;
     default:
@@ -464,58 +464,58 @@ static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasP
  */
 static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet container,gboolean bump)
 {
-	ZMapFeatureTypeStyle col_style = container->style;
-	GList *l;
-	FooCanvasGroup *column_features;
+  ZMapFeatureTypeStyle col_style = container->style;
+  GList *l;
+  FooCanvasGroup *column_features;
 
 
-	if(col_style->bump_style)
-	{
-//printf("col style: %d %s -> %s\n", bump, g_quark_to_string(col_style->unique_id), g_quark_to_string(col_style->bump_style));
-		if(bump)
-			col_style = g_hash_table_lookup(container->window->context_map->styles,
-					GUINT_TO_POINTER(zMapStyleCreateID( (char *) g_quark_to_string(col_style->bump_style))));
-		if(!col_style)
-			return FALSE;
+  if(col_style->bump_style)
+    {
+      //printf("col style: %d %s -> %s\n", bump, g_quark_to_string(col_style->unique_id), g_quark_to_string(col_style->bump_style));
+      if(bump)
+        col_style = g_hash_table_lookup(container->window->context_map->styles,
+      GUINT_TO_POINTER(zMapStyleCreateID( (char *) g_quark_to_string(col_style->bump_style))));
+      if(!col_style)
+        return FALSE;
 
-		/* get all the features and try it using canvas_item->set_style() */
-		column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
+      /* get all the features and try it using canvas_item->set_style() */
+      column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
 
-      	for(l = column_features->item_list;l;l = l->next)
-      	{
-      		ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) l->data;
-      		ZMapFeatureTypeStyle style;
-      		ZMapFeatureTypeStyle bump_style;
+      for(l = column_features->item_list;l;l = l->next)
+        {
+          ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) l->data;
+          ZMapFeatureTypeStyle style;
+          ZMapFeatureTypeStyle bump_style;
 
-			/* NOTE we are bumping a CanvasFeatureset here and assume there is a feature displayed */
-			if(!item->feature)
-				continue;
-			style = *item->feature->style;
-      		/* NOTE item contains many features but they must all have the same style */
-
-			bump_style = style;
-//printf("item style: %d %s -> %s\n", bump, g_quark_to_string(col_style->unique_id), g_quark_to_string(style->bump_style));
-			if(bump)
-			{
-				bump_style = g_hash_table_lookup(container->window->context_map->styles,
-						GUINT_TO_POINTER(zMapStyleCreateID( (char *) g_quark_to_string(style->bump_style))));
-				if(!bump_style)
-					bump_style = col_style;
-			}
+        /* NOTE we are bumping a CanvasFeatureset here and assume there is a feature displayed */
+        if(!item->feature)
+        continue;
+        style = *item->feature->style;
+      /* NOTE item contains many features but they must all have the same style */
+        
+        bump_style = style;
+        //printf("item style: %d %s -> %s\n", bump, g_quark_to_string(col_style->unique_id), g_quark_to_string(style->bump_style));
+        if(bump)
+          {
+            bump_style = g_hash_table_lookup(container->window->context_map->styles,
+            GUINT_TO_POINTER(zMapStyleCreateID( (char *) g_quark_to_string(style->bump_style))));
+            if(!bump_style)
+            bump_style = col_style;
+          }
                         /*! \todo #warning need to recode simple features alignements & trancripts to handle bump_style */
-// best to remove style from feature and use the one in featureset
-// avoid getting confused with featureset in the feature context and canvasfeatureset = column
-// this all relates to GFF based ZMap and the need to set styles OTF
+          // best to remove style from feature and use the one in featureset
+          // avoid getting confused with featureset in the feature context and canvasfeatureset = column
+          // this all relates to GFF based ZMap and the need to set styles OTF
+  
+          // NOTE this assumes that all features in the column have the same style
+          // orignally this was ok for graph features
+          // extending to basic features only (late aug 2012)
 
-// NOTE this assumes that all features in the column have the same style
-// orignally this was ok for graph features
-// extending to basic features only (late aug 2012)
-
-// NOTE must set the featureset style not the feature
-      		zMapWindowCanvasItemSetStyle(item,bump_style);
-			zMapWindowRequestReposition((FooCanvasItem *) item);
-      	}
-	}
-	return TRUE;
+          // NOTE must set the featureset style not the feature
+          zMapWindowCanvasItemSetStyle(item,bump_style);
+          zMapWindowRequestReposition((FooCanvasItem *) item);
+        }
+    }
+  return TRUE;
 }
 

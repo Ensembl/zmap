@@ -65,8 +65,8 @@ typedef struct _ZMapWindowFocusStruct
 
 
   ZMapWindowContainerFeatureSet focus_column ;
-  FooCanvasItem *hot_item ;				    // current hot focus item or NULL
-  ZMapFeature hot_feature ;				    // from the hot item to allow lookup
+  FooCanvasItem *hot_item ;                                    // current hot focus item or NULL
+  ZMapFeature hot_feature ;                                    // from the hot item to allow lookup
 
   int cache_id ;
 
@@ -121,10 +121,10 @@ typedef struct
  */
 typedef struct _zmapWindowFocusCacheStruct
 {
-  int id;	/* counts from 1 */
-  ZMapWindow window;	/* boringly we need this to set global colours after the window is realised */
+  int id;        /* counts from 1 */
+  ZMapWindow window;        /* boringly we need this to set global colours after the window is realised */
 
-  gulong fill_pixel[N_FOCUS_GROUPS];		/* these are globally set colours */
+  gulong fill_pixel[N_FOCUS_GROUPS];                /* these are globally set colours */
   gboolean fill_set[N_FOCUS_GROUPS];
   gulong outline_pixel[N_FOCUS_GROUPS];
   gboolean outline_set[N_FOCUS_GROUPS];
@@ -136,7 +136,7 @@ typedef struct _zmapWindowFocusCacheStruct
 
 static void focusItemDestroy(ZMapWindowFocusItem list_item);
 static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,FooCanvasItem *item,ZMapFeature feature,
-				      ZMapWindowFocusType type);
+                                      ZMapWindowFocusType type);
 static void freeFocusItems(ZMapWindowFocus focus, ZMapWindowFocusType type);
 static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
 static void hideFocusItemsCB(gpointer data, gpointer user_data) ;
@@ -224,7 +224,7 @@ gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type)
       fl  = (ZMapWindowFocusItem) l->data;
 
       if(fl->flags & focus_group_mask[type])
-	return(TRUE);
+        return(TRUE);
     }
 
   return(FALSE);
@@ -242,7 +242,7 @@ ZMapWindowFocus zmapWindowFocusCreate(ZMapWindow window)
   cache = g_new0(zmapWindowFocusCacheStruct,1);
   if(cache)
     {
-      cache->id = ++focus_cache_id_G;	/* zero means highlight not ever set; global window colours */
+      cache->id = ++focus_cache_id_G;        /* zero means highlight not ever set; global window colours */
 
       focus_cache_G = g_list_prepend(focus_cache_G,cache);
       focus->cache_id = cache->id;
@@ -268,94 +268,94 @@ int zMapWindowFocusCacheGetSelectedColours(int id_flags, gulong *fill, gulong *o
   int ret = 0;
   int cache_id = (id_flags >> 16);
 
-  if(!(id_flags & (WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_ID)))	/* use normal colours */
+  if(!(id_flags & (WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_ID)))        /* use normal colours */
     return 0;
 
   for(l = focus_cache_G; l; l = l->next)
     {
       cache = (ZMapWindowFocusCache) l->data;
       if(cache->id == cache_id || !cache_id)
-	{
+        {
 
-	  if(!cache->done_colours)
-	    {
-	      /* set global selected/ highlight colours if configured */
-	      /* window must be realised first so can only do this when displaying */
-	      ZMapWindow window = cache->window;
-	      GdkColor *gdk;
-	      gulong pixel;
+          if(!cache->done_colours)
+            {
+              /* set global selected/ highlight colours if configured */
+              /* window must be realised first so can only do this when displaying */
+              ZMapWindow window = cache->window;
+              GdkColor *gdk;
+              gulong pixel;
 
-	      if(window->highlights_set.item)
-		{
-		  gdk = &(window->colour_item_highlight);
-		  pixel = zMap_gdk_color_to_rgba(gdk);
-		  cache->fill_pixel[WINDOW_FOCUS_GROUP_FOCUS] = foo_canvas_get_color_pixel(window->canvas, pixel);
-		  cache->fill_set[WINDOW_FOCUS_GROUP_FOCUS] = TRUE;
-		}
+              if(window->highlights_set.item)
+                {
+                  gdk = &(window->colour_item_highlight);
+                  pixel = zMap_gdk_color_to_rgba(gdk);
+                  cache->fill_pixel[WINDOW_FOCUS_GROUP_FOCUS] = foo_canvas_get_color_pixel(window->canvas, pixel);
+                  cache->fill_set[WINDOW_FOCUS_GROUP_FOCUS] = TRUE;
+                }
 
-	      if(window->highlights_set.evidence)
-		{
-		  gdk = &(window->colour_evidence_fill);
-		  pixel = zMap_gdk_color_to_rgba(gdk);
-		  cache->fill_pixel[WINDOW_FOCUS_GROUP_EVIDENCE] = foo_canvas_get_color_pixel(window->canvas, pixel);
-		  cache->fill_set[WINDOW_FOCUS_GROUP_EVIDENCE] = TRUE;
+              if(window->highlights_set.evidence)
+                {
+                  gdk = &(window->colour_evidence_fill);
+                  pixel = zMap_gdk_color_to_rgba(gdk);
+                  cache->fill_pixel[WINDOW_FOCUS_GROUP_EVIDENCE] = foo_canvas_get_color_pixel(window->canvas, pixel);
+                  cache->fill_set[WINDOW_FOCUS_GROUP_EVIDENCE] = TRUE;
 
-		  gdk = &(window->colour_evidence_border);
-		  pixel = zMap_gdk_color_to_rgba(gdk);
-		  cache->outline_pixel[WINDOW_FOCUS_GROUP_EVIDENCE] = foo_canvas_get_color_pixel(window->canvas, pixel);
-		  cache->outline_set[WINDOW_FOCUS_GROUP_EVIDENCE] = TRUE;
-		}
+                  gdk = &(window->colour_evidence_border);
+                  pixel = zMap_gdk_color_to_rgba(gdk);
+                  cache->outline_pixel[WINDOW_FOCUS_GROUP_EVIDENCE] = foo_canvas_get_color_pixel(window->canvas, pixel);
+                  cache->outline_set[WINDOW_FOCUS_GROUP_EVIDENCE] = TRUE;
+                }
 
-	      if(window->highlights_set.masked)
-		{
-		  gdk = &(window->colour_masked_feature_fill);
-		  pixel = zMap_gdk_color_to_rgba(gdk);
-		  cache->fill_pixel[WINDOW_FOCUS_GROUP_MASKED] = foo_canvas_get_color_pixel(window->canvas, pixel);
-		  cache->fill_set[WINDOW_FOCUS_GROUP_MASKED] = TRUE;
+              if(window->highlights_set.masked)
+                {
+                  gdk = &(window->colour_masked_feature_fill);
+                  pixel = zMap_gdk_color_to_rgba(gdk);
+                  cache->fill_pixel[WINDOW_FOCUS_GROUP_MASKED] = foo_canvas_get_color_pixel(window->canvas, pixel);
+                  cache->fill_set[WINDOW_FOCUS_GROUP_MASKED] = TRUE;
 
-		  gdk = &(window->colour_masked_feature_border);
-		  pixel = zMap_gdk_color_to_rgba(gdk);
-		  cache->outline_pixel[WINDOW_FOCUS_GROUP_MASKED] = foo_canvas_get_color_pixel(window->canvas, pixel);
-		  cache->outline_set[WINDOW_FOCUS_GROUP_MASKED] = TRUE;
-		}
+                  gdk = &(window->colour_masked_feature_border);
+                  pixel = zMap_gdk_color_to_rgba(gdk);
+                  cache->outline_pixel[WINDOW_FOCUS_GROUP_MASKED] = foo_canvas_get_color_pixel(window->canvas, pixel);
+                  cache->outline_set[WINDOW_FOCUS_GROUP_MASKED] = TRUE;
+                }
 
-	      if(window->highlights_set.filtered)
-		{
-		  gdk = &(window->colour_filtered_column);
-		  pixel = zMap_gdk_color_to_rgba(gdk);
-		  cache->fill_pixel[WINDOW_FOCUS_GROUP_FILTERED] = foo_canvas_get_color_pixel(window->canvas, pixel);
-		  cache->fill_set[WINDOW_FOCUS_GROUP_FILTERED] = TRUE;
-		}
+              if(window->highlights_set.filtered)
+                {
+                  gdk = &(window->colour_filtered_column);
+                  pixel = zMap_gdk_color_to_rgba(gdk);
+                  cache->fill_pixel[WINDOW_FOCUS_GROUP_FILTERED] = foo_canvas_get_color_pixel(window->canvas, pixel);
+                  cache->fill_set[WINDOW_FOCUS_GROUP_FILTERED] = TRUE;
+                }
 
-	      cache->done_colours = TRUE;
-	    }
+              cache->done_colours = TRUE;
+            }
 
-	  focus_type = id_flags & WINDOW_FOCUS_GROUP_BITMASK;
+          focus_type = id_flags & WINDOW_FOCUS_GROUP_BITMASK;
 
-	  for(i = 0; focus_type; i++, focus_type >>= 1)
-	    {
-	      if(focus_type & 1)
-		{
-		  if(cache->fill_set[i])
-		    {
-		      if(fill)
-			*fill = cache->fill_pixel[i];
-		      ret |= WINDOW_FOCUS_CACHE_FILL;
-		    }
-		  if(cache->outline_set[i])
-		    {
-		      if(outline)
-			*outline = cache->outline_pixel[i];
-		      ret |= WINDOW_FOCUS_CACHE_OUTLINE;
-		    }
+          for(i = 0; focus_type; i++, focus_type >>= 1)
+            {
+              if(focus_type & 1)
+                {
+                  if(cache->fill_set[i])
+                    {
+                      if(fill)
+                        *fill = cache->fill_pixel[i];
+                      ret |= WINDOW_FOCUS_CACHE_FILL;
+                    }
+                  if(cache->outline_set[i])
+                    {
+                      if(outline)
+                        *outline = cache->outline_pixel[i];
+                      ret |= WINDOW_FOCUS_CACHE_OUTLINE;
+                    }
 
-		  if(i < N_FOCUS_GROUPS_FOCUS)
-		    ret |= WINDOW_FOCUS_CACHE_SELECTED;
+                  if(i < N_FOCUS_GROUPS_FOCUS)
+                    ret |= WINDOW_FOCUS_CACHE_SELECTED;
 
-		  return ret;
-		}
-	    }
-	}
+                  return ret;
+                }
+            }
+        }
     }
 
   return 0;
@@ -382,35 +382,35 @@ void zMapWindowFocusDump(char *str)
 
       printf("%s focus dump current item %p %p %p\n",str,hot,canvas->focused_item,canvas->grabbed_item);
       while(hot)
-	{
-	  ZMapWindowCanvasItem z;
-	  ZMapWindowContainerGroup g;
-	  char * name;
-	  int level;
+        {
+          ZMapWindowCanvasItem z;
+          ZMapWindowContainerGroup g;
+          char * name;
+          int level;
 
-	  name = "not ZMWCI";  zMapWindowFocusDump("set focus");
-	  level = 0;
-	  if(ZMAP_IS_CANVAS_ITEM(hot))
-	    {
-	      z = (ZMapWindowCanvasItem) hot;
-	      if(!z->feature)
-		name = "canvas item";
-	      else
-		name = g_quark_to_string(z->feature->unique_id);
-	    }
-	  else if (ZMAP_IS_CONTAINER_GROUP(hot))
-	    {
-	      g = (ZMapWindowContainerGroup) hot;
-	      if(!g->feature_any)
-		name = "group";
-	      else
-		name = g_quark_to_string(g->feature_any->unique_id);
-	      level = (int) g->level;
+          name = "not ZMWCI";  zMapWindowFocusDump("set focus");
+          level = 0;
+          if(ZMAP_IS_CANVAS_ITEM(hot))
+            {
+              z = (ZMapWindowCanvasItem) hot;
+              if(!z->feature)
+                name = "canvas item";
+              else
+                name = g_quark_to_string(z->feature->unique_id);
+            }
+          else if (ZMAP_IS_CONTAINER_GROUP(hot))
+            {
+              g = (ZMapWindowContainerGroup) hot;
+              if(!g->feature_any)
+                name = "group";
+              else
+                name = g_quark_to_string(g->feature_any->unique_id);
+              level = (int) g->level;
 
-	    }
-	  printf("  foo item = %p -> %p %s level %d\n",hot,hot->parent,name,level);
-	  hot = hot->parent;
-	}
+            }
+          printf("  foo item = %p -> %p %s level %d\n",hot,hot->parent,name,level);
+          hot = hot->parent;
+        }
     }
 
   if(!focus_cache_G)
@@ -438,24 +438,24 @@ void zMapWindowFocusDump(char *str)
 
       name = "not ZMWCI";
       if(ZMAP_IS_CANVAS_ITEM(hot))
-	{
-	  z = (ZMapWindowCanvasItem) hot;
-	  if(!z->feature)
-	    name = "canvas item";
-	  else
-	    name = g_quark_to_string(z->feature->unique_id);
-	  level = 0;
-	}
+        {
+          z = (ZMapWindowCanvasItem) hot;
+          if(!z->feature)
+            name = "canvas item";
+          else
+            name = g_quark_to_string(z->feature->unique_id);
+          level = 0;
+        }
       else if (ZMAP_IS_CONTAINER_GROUP(hot))
-	{
-	  g = (ZMapWindowContainerGroup) hot;
-	  if(!g->feature_any)
-	    name = "group";
-	  else
-	    name = g_quark_to_string(g->feature_any->unique_id);
-	  level = (int) g->level;
+        {
+          g = (ZMapWindowContainerGroup) hot;
+          if(!g->feature_any)
+            name = "group";
+          else
+            name = g_quark_to_string(g->feature_any->unique_id);
+          level = (int) g->level;
 
-	}
+        }
       printf("  foo item = %p -> %p %s level %d\n",hot,hot->parent,name,level);
       hot = hot->parent;
     }
@@ -473,7 +473,7 @@ void zMapWindowFocusDump(char *str)
 /* N.B. unless there are no items, then item is added to end of list,
  * it is _not_ the new hot item so we do not reset the focus column for instance. */
 void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item,
-				ZMapFeature feature, ZMapWindowFocusType type)
+                                ZMapFeature feature, ZMapWindowFocusType type)
 {
   if(item)  // in case we add GetHotItem() which could return NULL
     {
@@ -493,7 +493,7 @@ void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasIt
   FooCanvasItem *foo;
   ZMapFeature hotfeature = NULL;
 
-  first = list && list->data;	/* ie is there one? */
+  first = list && list->data;        /* ie is there one? */
 
   for (; list ; list = list->next)
     {
@@ -502,7 +502,7 @@ void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasIt
       id2c = (ID2Canvas) list->data;
       foo = FOO_CANVAS_ITEM(id2c->item);
       if(hot == foo)
-      	hotfeature = (ZMapFeature) id2c->feature_any;
+              hotfeature = (ZMapFeature) id2c->feature_any;
       add_unique(focus,foo,(ZMapFeature) id2c->feature_any,type);
     }
 
@@ -579,7 +579,7 @@ void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, ZMapF
   /* Set the focus item's column as the focus column. */
   column = (FooCanvasGroup *) zmapWindowContainerCanvasItemGetContainer(item) ;
 
-  setFocusColumn(focus, column) ;			    /* N.B. May sort features. */
+  setFocusColumn(focus, column) ;                            /* N.B. May sort features. */
 
   return ;
 }
@@ -613,17 +613,17 @@ void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus)
       ZMapFeatureColumn column = zMapWindowGetColumn(focus->window->context_map,column_id);
 
       if(hot_column && column->style_id)
-	{
-	  ZMapFeatureTypeStyle s = g_hash_table_lookup(focus->window->context_map->styles,GUINT_TO_POINTER(column->style_id));
+        {
+          ZMapFeatureTypeStyle s = g_hash_table_lookup(focus->window->context_map->styles,GUINT_TO_POINTER(column->style_id));
 
-	  if(s)
-	    zMapStyleGetColours(s, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &colour, NULL, NULL);
-	}
+          if(s)
+            zMapStyleGetColours(s, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &colour, NULL, NULL);
+        }
 
       if (!colour)
-	{
-	  colour = &focus->window->colour_column_highlight;
-	}
+        {
+          colour = &focus->window->colour_column_highlight;
+        }
 
       zmapWindowDrawSetGroupBackground(focus->window, hot_column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, colour, NULL);
       foo_canvas_item_request_redraw((FooCanvasItem *) hot_column);
@@ -640,7 +640,7 @@ void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus)
       GdkColor *fill = column->background_fill;
 
       if(column->flags.filtered)
-	zMapWindowGetFilteredColour(focus->window,&fill);
+        zMapWindowGetFilteredColour(focus->window,&fill);
 
       zmapWindowDrawSetGroupBackground(focus->window, column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
       foo_canvas_item_request_redraw((FooCanvasItem *) column);
@@ -683,11 +683,11 @@ FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus)
        * zmapWindowUpdateInfoPanel() and up/downstream functions all; of which meander somewhat
        */
       if ((focus->hot_item) && ZMAP_IS_WINDOW_FEATURESET_ITEM(focus->hot_item))
-	{
-	  zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem)focus->hot_item, focus->hot_feature) ;
+        {
+          zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem)focus->hot_item, focus->hot_feature) ;
 
-	  item = focus->hot_item ;
-	}
+          item = focus->hot_item ;
+        }
     }
 
   return item ;
@@ -708,14 +708,14 @@ GList *zmapWindowFocusGetFocusItemsType(ZMapWindowFocus focus, ZMapWindowFocusTy
         {
           list = (ZMapWindowFocusItem)(lists->data);
           if((list->flags & mask))
-	    {
-	      /* for compatability with FToI search functions we must return this struct, NB no hash table set */
-	      id2c = g_new0(ID2CanvasStruct,1);
-	      id2c->item = list->item;
-	      id2c->feature_any = (ZMapFeatureAny) list->feature;
+            {
+              /* for compatability with FToI search functions we must return this struct, NB no hash table set */
+              id2c = g_new0(ID2CanvasStruct,1);
+              id2c->item = list->item;
+              id2c->feature_any = (ZMapFeatureAny) list->feature;
 
-	      items = g_list_append(items, id2c);
-	    }
+              items = g_list_append(items, id2c);
+            }
           lists = lists->next;
         }
     }
@@ -743,7 +743,7 @@ FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus)
  *
  */
 void zmapWindowFocusForEachFocusItemType(ZMapWindowFocus focus, ZMapWindowFocusType type,
-					 GFunc callback, gpointer user_data)
+                                         GFunc callback, gpointer user_data)
 {
   GList *l;
   ZMapWindowFocusItem list_item;
@@ -752,7 +752,7 @@ void zmapWindowFocusForEachFocusItemType(ZMapWindowFocus focus, ZMapWindowFocusT
     {
       list_item = (ZMapWindowFocusItem) l->data;
       if(type == WINDOW_FOCUS_GROUP_FOCUSSED || (list_item->flags & focus_group_mask[type]))
-	callback((gpointer) list_item,user_data);
+        callback((gpointer) list_item,user_data);
     }
 
   return ;
@@ -795,7 +795,7 @@ void zmapWindowFocusUnhighlightFocusItems(ZMapWindowFocus focus, ZMapWindow wind
 */
 
 void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
-					FooCanvasItem *item, ZMapWindowFocusType type, gboolean unhighlight)
+                                        FooCanvasItem *item, ZMapWindowFocusType type, gboolean unhighlight)
 {
   ZMapWindowFocusItem gonner,data;
   GList *remove,*l;
@@ -808,45 +808,45 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
   if (focus->focus_item_set && item)
     {
       for (remove = focus->focus_item_set;remove; remove = remove->next)
-	{
-	  gonner = (ZMapWindowFocusItem) remove->data;
-	  if (gonner->item == item)
+        {
+          gonner = (ZMapWindowFocusItem) remove->data;
+          if (gonner->item == item)
             {
 
-	      if(type == WINDOW_FOCUS_GROUP_FOCUSSED)
-		gonner->flags &= ~WINDOW_FOCUS_GROUP_FOCUSSED;        // zap the lot
-	      else
-		gonner->flags &= ~focus_group_mask[type];        // remove from this group
+              if(type == WINDOW_FOCUS_GROUP_FOCUSSED)
+                gonner->flags &= ~WINDOW_FOCUS_GROUP_FOCUSSED;        // zap the lot
+              else
+                gonner->flags &= ~focus_group_mask[type];        // remove from this group
 
-	      if (unhighlight)
-		highlightItem(focus->window,gonner);
+              if (unhighlight)
+                highlightItem(focus->window,gonner);
 
-	      if(!(gonner->flags & WINDOW_FOCUS_GROUP_FOCUSSED))   // no groups: remove from list
-		{
-		  focusItemDestroy(gonner);
-		  focus->focus_item_set = g_list_delete_link(focus->focus_item_set,remove);
+              if(!(gonner->flags & WINDOW_FOCUS_GROUP_FOCUSSED))   // no groups: remove from list
+                {
+                  focusItemDestroy(gonner);
+                  focus->focus_item_set = g_list_delete_link(focus->focus_item_set,remove);
                   /* although we are removing the link that gets processed by the for loop
                    * we will break out of it so this is safe
                    */
-		}
-	      break;
+                }
+              break;
 
             }
-	}
+        }
 
       if(item == focus->hot_item && type == WINDOW_FOCUS_GROUP_FOCUS)
-	{
-	  focus->hot_item = NULL;
-	  for(l = focus->focus_item_set;l;l = l->next)
+        {
+          focus->hot_item = NULL;
+          for(l = focus->focus_item_set;l;l = l->next)
             {
-	      data = (ZMapWindowFocusItem) l->data;
-	      if((data->flags & focus_group_mask[WINDOW_FOCUS_GROUP_FOCUS]))
-		{
-		  focus->hot_item = data->item;
-		  break;
-		}
+              data = (ZMapWindowFocusItem) l->data;
+              if((data->flags & focus_group_mask[WINDOW_FOCUS_GROUP_FOCUS]))
+                {
+                  focus->hot_item = data->item;
+                  break;
+                }
             }
-	}
+        }
     }
 
   return ;
@@ -897,10 +897,10 @@ void zmapWindowFocusDestroy(ZMapWindowFocus focus)
 
       cache = (ZMapWindowFocusCache) l->data;
       if(cache->id == focus->cache_id)
-  	{
-	  focus_cache_G = g_list_delete_link(focus_cache_G,l);
-	  break;
-  	}
+          {
+          focus_cache_G = g_list_delete_link(focus_cache_G,l);
+          break;
+          }
     }
 
   focus->focus_column = NULL ;
@@ -925,6 +925,7 @@ void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items)
 
   return ;
 }
+
 
 
 
@@ -1002,19 +1003,19 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
   if((item->flags & WINDOW_FOCUS_GROUP_FOCUSSED))
     {
       if((item->flags & focus_group_mask[WINDOW_FOCUS_GROUP_FOCUS]))
-	{
-	  if(window->highlights_set.item)
-	    fill = &(window->colour_item_highlight);
+        {
+          if(window->highlights_set.item)
+            fill = &(window->colour_item_highlight);
 
-	}
+        }
       else if((item->flags & focus_group_mask[WINDOW_FOCUS_GROUP_EVIDENCE]))
-	{
-	  if(window->highlights_set.evidence)
-	    {
-	      fill = &(window->colour_evidence_fill);
-	      border = &(window->colour_evidence_border);
-	    }
-	}
+        {
+          if(window->highlights_set.evidence)
+            {
+              fill = &(window->colour_evidence_fill);
+              border = &(window->colour_evidence_border);
+            }
+        }
       zMapWindowCanvasItemSetIntervalColours(item->item, item->feature, NULL, ZMAPSTYLE_COLOURTYPE_SELECTED, item->flags, fill, border);
     }
   else
@@ -1027,10 +1028,10 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
       /* find out how many focus items there are in this item's column */
       for(n_focus = 0,l = window->focus->focus_item_set;l;l = l->next)
         {
-	  ZMapWindowFocusItem focus_item = (ZMapWindowFocusItem) l->data;
+          ZMapWindowFocusItem focus_item = (ZMapWindowFocusItem) l->data;
 
-	  if(item->item_column == focus_item->item_column)      /* count includes self */
-	    n_focus++;
+          if(item->item_column == focus_item->item_column)      /* count includes self */
+            n_focus++;
         }
 
     }
@@ -1062,9 +1063,9 @@ static void highlightCB(gpointer list_data, gpointer user_data)
 // add a struct to the list, no duplicates
 // return the list and a pointer to the struct
 static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
-				      FooCanvasItem *item,
-				      ZMapFeature feature,
-				      ZMapWindowFocusType type)
+                                      FooCanvasItem *item,
+                                      ZMapFeature feature,
+                                      ZMapWindowFocusType type)
 {
   GList *gl;
   ZMapWindowFocusItem list_item = NULL;
@@ -1073,7 +1074,7 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
     {
       list_item = (ZMapWindowFocusItem) gl->data;
       if(list_item->item == item && list_item->feature == feature)
-	break;
+        break;
     }
   if(!gl)     // didn't find it
     {
@@ -1120,23 +1121,23 @@ static void freeFocusItems(ZMapWindowFocus focus, ZMapWindowFocusType type)
       l = l->next ;
 
       if(type == WINDOW_FOCUS_GROUP_FOCUSSED)
-	focus_item->flags &= ~WINDOW_FOCUS_GROUP_FOCUSSED ;
+        focus_item->flags &= ~WINDOW_FOCUS_GROUP_FOCUSSED ;
       else
-	focus_item->flags &= ~focus_group_mask[type] ;
+        focus_item->flags &= ~focus_group_mask[type] ;
 
       highlightItem(focus->window, focus_item) ;
 
       if (!(focus_item->flags & WINDOW_FOCUS_GROUP_FOCUSSED))
-	{
-	  if (focus->hot_item == focus_item->item)
-	    focus->hot_item = NULL ;
+        {
+          if (focus->hot_item == focus_item->item)
+            focus->hot_item = NULL ;
 
-	  focusItemDestroy(focus_item) ;
+          focusItemDestroy(focus_item) ;
 
-	  focus->focus_item_set = g_list_delete_link(focus->focus_item_set, del) ;
+          focus->focus_item_set = g_list_delete_link(focus->focus_item_set, del) ;
 
-	  l = focus->focus_item_set ;			    /* shouldn't this be reset !!!! */
-	}
+          l = focus->focus_item_set ;                            /* shouldn't this be reset !!!! */
+        }
     }
 
   return ;
@@ -1153,7 +1154,7 @@ static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column)
   if(ZMAP_IS_CONTAINER_FEATURESET(column))
     {
       if(focus->focus_column)
-	zmapWindowFocusUnHighlightHotColumn(focus);
+        zmapWindowFocusUnHighlightHotColumn(focus);
 
       focus->focus_column = container = (ZMapWindowContainerFeatureSet)column ;
 

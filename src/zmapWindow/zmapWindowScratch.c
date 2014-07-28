@@ -36,7 +36,7 @@
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
-#include <zmapWindow_P.h>	/* ZMapWindow */
+#include <zmapWindow_P.h>        /* ZMapWindow */
 #include <zmapWindowScratch_P.h>
 
 
@@ -67,6 +67,7 @@ ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window)
 }
 
 
+/* Do the callback to the View level for a command on the scratch column */
 static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
                                      ZMapWindow window,
                                      ZMapFeature feature, 
@@ -85,18 +86,20 @@ static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
   scratch_cmd->subpart = NULL;
   scratch_cmd->use_subfeature = use_subfeature ;
 
-  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && !use_subfeature)
+  if (feature && (use_subfeature || !(window && window->focus)))
     {
-      /* For alignment features, get all of the linked match blocks */
-      scratch_cmd->features = zMapWindowCanvasAlignmentGetAllMatchBlocks(item) ;
-    }
-  else
-    {
-      /* Otherwise just pass the single given feature */
+      /* Just use the single feature that the user right-clicked on */
       scratch_cmd->features = g_list_append(scratch_cmd->features, feature) ;
     }
+  else if (window && window->focus)
+    {
+      /* Add all selected features. Note that these may be different to the feature the user
+       * actually right-clicked on! */
+      GList *list = zmapWindowFocusGetFeatureList(window->focus) ;
+      scratch_cmd->features = g_list_concat(scratch_cmd->features, list) ;
+    }
 
-  if (feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
+  if (feature && feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
     {
       /* For sequence features, get the sequence coord that was clicked */
       zMapWindowItemGetSeqCoord(item, TRUE, world_x, world_y, &scratch_cmd->seq_start, &scratch_cmd->seq_end) ;
@@ -106,7 +109,7 @@ static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
    * "subfeature" depends on the feature type: for transcripts, it's an intron/exon. For
    * alignments, it's a match block, which is actually the whole ZMapFeature (and the
    * "entire" feature therefore includes the linked match blocks from the same alignment).  */
-  if (use_subfeature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if (feature && use_subfeature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       zMapWindowCanvasItemGetInterval((ZMapWindowCanvasItem)item, world_x, world_y, &scratch_cmd->subpart) ;
       
@@ -126,6 +129,7 @@ static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
     }
   else
     {
+      g_list_free(scratch_cmd->features) ;
       g_free(scratch_cmd) ;
       scratch_cmd = NULL ;
     }
@@ -148,7 +152,7 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
                                   const double world_y,
                                   const gboolean use_subfeature)
 {
-  if (window && feature)
+  if (window)
     {
       doScratchCallbackCommand(ZMAPWINDOW_CMD_COPYTOSCRATCH, 
                                window,
@@ -157,10 +161,6 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
                                world_x,
                                world_y,
                                use_subfeature) ;
-    }
-  else
-    {
-      zMapWarning("%s", "Error: no feature selected\n");
     }
 }
 
@@ -182,7 +182,7 @@ void zmapWindowScratchDeleteFeature(ZMapWindow window,
                                     const double world_y,
                                     const gboolean use_subfeature)
 {
-  if (window && feature)
+  if (window)
     {
       doScratchCallbackCommand(ZMAPWINDOW_CMD_DELETEFROMSCRATCH, 
                                window,
@@ -191,10 +191,6 @@ void zmapWindowScratchDeleteFeature(ZMapWindow window,
                                world_x,
                                world_y,
                                use_subfeature) ;
-    }
-  else
-    {
-      zMapWarning("%s", "Error: no feature selected\n");
     }
 }
 

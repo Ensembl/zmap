@@ -159,15 +159,17 @@ char * zMapGFFStr_substring(const char* const sS1, const char* const sS2, void*(
  * This function looks for the first occurrence of sToFind in sInput and replaces it with sReplacement.
  * A newly allocated string is returned.
  */
-gboolean zMapGFFStr_substring_replace(const char * const sInput, const char * const sToFind, const char * const sReplacement,
-  char ** sOut )
+gboolean zMapGFFStr_substring_replace(const char * const sInput,
+                                      const char * const sToFind,
+                                      const char * const sReplacement,
+                                      char ** psOut )
 {
   gboolean bResult = FALSE ;
   char *sFirst = NULL,
     *sSecond = NULL,
     *sPos = NULL ;
   size_t iQueryLength ;
-  if (!sInput || !*sInput || !sToFind || !*sToFind || !sReplacement || !*sReplacement )
+  if (!sInput || !*sInput || !sToFind || !*sToFind || !sReplacement || !*sReplacement || !psOut)
     return bResult ;
   iQueryLength = strlen(sToFind) ;
   sPos = strstr(sInput, sToFind) ;
@@ -175,7 +177,7 @@ gboolean zMapGFFStr_substring_replace(const char * const sInput, const char * co
     {
       sFirst = g_strndup(sInput, (size_t)(sPos-sInput)) ;
       sSecond = g_strdup(sPos+iQueryLength) ;
-      *sOut = g_strdup_printf("%s%s%s", sFirst, sReplacement, sSecond) ;
+      *psOut = g_strdup_printf("%s%s%s", sFirst, sReplacement, sSecond) ;
 
       if (sFirst)
         g_free(sFirst) ;
@@ -186,7 +188,7 @@ gboolean zMapGFFStr_substring_replace(const char * const sInput, const char * co
     }
   else
     {
-      *sOut = g_strdup(sInput) ;
+      *psOut = g_strdup(sInput) ;
       bResult = FALSE ;
     }
 
@@ -195,20 +197,18 @@ gboolean zMapGFFStr_substring_replace(const char * const sInput, const char * co
 
 
 /*
- * Replace all occurrences of sToFind with sReplacement.
+ * Replace all occurrences of sToFind with sReplacement. A newly allocated
+ * string is returned.
  */
-gboolean zMapGFFStr_substring_replace_n(const char * const sInput, const char * const sToFind, const char * const sReplacement,
-  char ** psOut)
+gboolean zMapGFFStr_substring_replace_n(const char * const sInput,
+                                        const char * const sToFind,
+                                        const char * const sReplacement,
+                                        char ** psOut)
 {
   gboolean bResult = FALSE, bReplaced = FALSE  ;
-  if (!sInput || !*sInput || !sToFind || !*sToFind || !sReplacement || !*sReplacement )
+  if (!sInput || !*sInput || !sToFind || !*sToFind || !sReplacement || !*sReplacement || !psOut)
     return bResult ;
 
-  //bResult = zMapGFFStr_substring_replace(sInput, sToFind, sReplacement, psOut) ;
-
-  /*
-   * Now, how to do this many times
-   */
   char *sInputTemp = g_strdup(sInput),
     *sOutputTemp = NULL ;
   while (1)
@@ -243,11 +243,10 @@ gboolean zMapGFFStr_substring_replace_n(const char * const sInput, const char * 
 #define NEW_TOKENIZER_METHOD 1
 char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int * piNumTokens,
                      gboolean bIncludeEmpty, unsigned int iTokenLimit,
-                     void*(*local_malloc)(size_t), void(*local_free)(void*))
+                     void*(*local_malloc)(size_t), void(*local_free)(void*), char *sBuff)
 {
   static const char cToRemove = ' ';
-  static const unsigned int iBuffLen = 5000;
-  char sBuff[iBuffLen] ;
+  /* char sBuff[ZMAPGFF_MAX_LINE_LEN] ; */
   unsigned int iLength = 0,
     iTokLen = 0,
     iNumTokens = 0 ;
@@ -273,8 +272,8 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
       if (bInclude)
         {
           /* include token here */
-          memset(sBuff, 0, iBuffLen) ;
           strncpy(sBuff, sPosLast, iTokLen) ;
+          sBuff[iTokLen] = '\0' ;
           zMapGFFStr_remove_char(sBuff, cToRemove) ;
           zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
           sTokens[iNumTokens-1] = g_strdup(sBuff) ;
@@ -295,8 +294,8 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
       if (bInclude)
         {
           /* include token here */
-          memset(sBuff, 0, iBuffLen) ;
           strncpy(sBuff, sPosLast, iTokLen) ;
+          sBuff[iTokLen] = '\0' ;
           zMapGFFStr_remove_char(sBuff, cToRemove) ;
           zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
           sTokens[iNumTokens-1] = g_strdup(sBuff) ;

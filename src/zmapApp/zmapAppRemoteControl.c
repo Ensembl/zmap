@@ -456,7 +456,7 @@ static void handleZMapRequestsCB(gpointer caller_data,
   if (remote)
     {
       gboolean result = TRUE ;
-      GArray *request_stack ;
+      GArray *request_stack = NULL ;
       char *request ;
       char *err_msg = NULL ;
       char *view = NULL ;    /* to be filled in later..... */

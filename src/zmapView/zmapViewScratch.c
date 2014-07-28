@@ -338,6 +338,46 @@ static gboolean scratchMergeBase(ScratchMergeData merge_data)
 {
   gboolean merged = FALSE;
 
+  /* If it's a peptide sequence check if it's a met or stop codon and
+   * set the boundary type accordingly (only do this if the span we're 
+   * looking at is a single base) */
+  GList *feature_list = merge_data->operation->src_features ;
+
+  if (merge_data->operation->seq_end - merge_data->operation->seq_start == 2 &&
+      feature_list &&
+      g_list_length(feature_list) > 0)
+    {
+      ZMapFeature feature = (ZMapFeature)(feature_list->data) ;
+
+      if (feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
+        {
+          ZMapSequence sequence = &feature->feature.sequence ;
+
+          if (sequence->type == ZMAPSEQUENCE_PEPTIDE &&
+              sequence->length > 0)
+            {
+              /* Get 0-based coord and convert from dna to peptide coord */
+              const int index = (merge_data->operation->seq_start - merge_data->view->view_sequence->start) / 3 ;
+              
+              if (index < sequence->length)
+                {
+                  const char cp = sequence->sequence[index] ;
+                  
+                  if (cp == '*')
+                    {
+                      /* Decrement the coord so we don't include the stop codon in the exon */
+                      --merge_data->operation->seq_start ;
+                      merge_data->operation->boundary = ZMAPBOUNDARY_5_SPLICE ; 
+                    }
+                  else if (cp == 'M' || cp == 'm')
+                    {
+                      merge_data->operation->boundary = ZMAPBOUNDARY_3_SPLICE ; 
+                    }
+                }
+            }
+        }
+    }
+
   merged = scratchMergeCoord(merge_data, merge_data->operation->seq_start);
 
   return merged;

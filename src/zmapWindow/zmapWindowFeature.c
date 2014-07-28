@@ -51,7 +51,7 @@
 
 
 
-#define PFETCH_READ_SIZE 80	/* about a line */
+#define PFETCH_READ_SIZE 80        /* about a line */
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
 #define PFETCH_TITLE_FORMAT "ZMap - pfetch \"%s\""
 
@@ -94,14 +94,14 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
                                       gpointer handler_data);
 
 static PFetchStatus pfetch_reader_func(PFetchHandle *handle, char *text, guint *actual_read,
-				       GError *error, gpointer user_data) ;
+                                       GError *error, gpointer user_data) ;
 static PFetchStatus pfetch_closed_func(gpointer user_data) ;
 
 static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
-			char *action, FooCanvasItem *real_item) ;
+                        char *action, FooCanvasItem *real_item) ;
 static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
-			       char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
-			       gpointer reply_handler_func_data) ;
+                               char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
+                               gpointer reply_handler_func_data) ;
 static void revcompTransChildCoordsCB(gpointer data, gpointer user_data) ;
 
 
@@ -127,11 +127,11 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
   FooCanvasItem *feature_item ;
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
-						    feature->strand, ZMAPFRAME_NONE, feature)))
+                                                    feature->strand, ZMAPFRAME_NONE, feature)))
     {
 
       zmapWindowUpdateInfoPanel(window, feature, NULL, feature_item, NULL, 0, 0,  0, 0,
-				NULL, TRUE, FALSE, FALSE, FALSE) ;
+                                NULL, TRUE, FALSE, FALSE, FALSE) ;
       result = TRUE ;
     }
 
@@ -151,32 +151,32 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
       GType pfetch_type = PFETCH_TYPE_HTTP_HANDLE;
 
       if(prefs.mode && strncmp(prefs.mode, "pipe", 4) == 0)
-	pfetch_type = PFETCH_TYPE_PIPE_HANDLE;
+        pfetch_type = PFETCH_TYPE_PIPE_HANDLE;
 
       pfetch_data->pfetch = pfetch = PFetchHandleNew(pfetch_type);
 
       if((pfetch_data->title = g_strdup_printf(PFETCH_TITLE_FORMAT, sequence_name)))
-	{
-	  pfetch_data->dialog = zMapGUIShowTextFull(pfetch_data->title, "pfetching...\n",
-						    FALSE, NULL, &(pfetch_data->text_buffer));
+        {
+          pfetch_data->dialog = zMapGUIShowTextFull(pfetch_data->title, "pfetching...\n",
+                                                    FALSE, NULL, &(pfetch_data->text_buffer));
 
-	  pfetch_data->widget_destroy_handler_id =
-	    g_signal_connect(G_OBJECT(pfetch_data->dialog), "destroy",
-			     G_CALLBACK(handle_dialog_close), pfetch_data);
-	}
+          pfetch_data->widget_destroy_handler_id =
+            g_signal_connect(G_OBJECT(pfetch_data->dialog), "destroy",
+                             G_CALLBACK(handle_dialog_close), pfetch_data);
+        }
 
       PFetchHandleSettings(pfetch,
-			   "debug",       debug_pfetch,
-			   "full",        prefs.full_record,
-			   "pfetch",      prefs.location,
-			   "isoform-seq", TRUE,
-			   NULL);
+                           "debug",       debug_pfetch,
+                           "full",        prefs.full_record,
+                           "pfetch",      prefs.location,
+                           "isoform-seq", TRUE,
+                           NULL);
 
       if(PFETCH_IS_HTTP_HANDLE(pfetch))
-	PFetchHandleSettings(pfetch,
-			     "port",       prefs.port,
-			     "cookie-jar", prefs.cookie_jar,
-			     NULL);
+        PFetchHandleSettings(pfetch,
+                             "port",       prefs.port,
+                             "cookie-jar", prefs.cookie_jar,
+                             NULL);
 
       g_free(prefs.location);
       g_free(prefs.cookie_jar);
@@ -192,15 +192,15 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
       zMapThreadForkLock();   // see zmapThreads.c
 
       if(PFetchHandleFetch(pfetch, sequence_name) == PFETCH_STATUS_FAILED)
-      	zMapWarning("Error fetching sequence '%s'", sequence_name);
+              zMapWarning("Error fetching sequence '%s'", sequence_name);
 
       zMapThreadForkUnlock();
     }
   else
     {
       zMapWarning("%s", "Failed to obtain preferences for pfetch.\n"
-		  "ZMap's config file needs at least pfetch "
-		  "entry in the ZMap stanza.");
+                  "ZMap's config file needs at least pfetch "
+                  "entry in the ZMap stanza.");
     }
 
   return ;
@@ -345,11 +345,11 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature)
 
 /* Called to draw each individual feature. */
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
-				     ZMapFeatureTypeStyle style,
-				     ZMapWindowContainerFeatureSet set_group,
-				     ZMapWindowContainerFeatures set_features,
-				     FooCanvasItem *foo_featureset,
-				     ZMapWindowFeatureStack     feature_stack)
+                                     ZMapFeatureTypeStyle style,
+                                     ZMapWindowContainerFeatureSet set_group,
+                                     ZMapWindowContainerFeatures set_features,
+                                     FooCanvasItem *foo_featureset,
+                                     ZMapWindowFeatureStack     feature_stack)
 {
   FooCanvasItem *new_feature = NULL ;
   ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) set_group;
@@ -386,23 +386,23 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
   if(masked)
     {
       if(container->masked && !window->highlights_set.masked)
-	{
+        {
 #if MH17_REVCOMP_DEBUG
-	  zMapLogWarning("masked","");
+          zMapLogWarning("masked","");
 #endif
 
 
-	  return NULL;
-	}
+          return NULL;
+        }
     }
 
   new_feature = zmapWindowFToIFactoryRunSingle(window->context_to_item,
 #if RUN_SET
-					       NULL,
+                                               NULL,
 #endif
-					       set_group, set_features,
-					       foo_featureset,
-					       feature_stack);
+                                               set_group, set_features,
+                                               foo_featureset,
+                                               feature_stack);
 
   //#warning could make this take a window not a gpointer, would be more readable
   //#warning ideally only call this first time canvasfeatureset is created
@@ -423,9 +423,9 @@ char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set)
   char *description = NULL ;
 
   description = g_strdup_printf("%s  :  %s%s%s", (char *)g_quark_to_string(feature_set->original_id),
-				feature_set->description ? "\"" : "",
-				feature_set->description ? feature_set->description : "<no description available>",
-				feature_set->description ? "\"" : "") ;
+                                feature_set->description ? "\"" : "",
+                                feature_set->description ? feature_set->description : "<no description available>",
+                                feature_set->description ? "\"" : "") ;
 
   return description ;
 }
@@ -494,7 +494,7 @@ char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gb
 
   if((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
      && ((context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-								  ZMAPFEATURE_STRUCT_CONTEXT))))
+                                                                  ZMAPFEATURE_STRUCT_CONTEXT))))
     {
       ZMapPeptide peptide;
       char *dna, *seq_name = NULL, *gene_name = NULL;
@@ -504,25 +504,25 @@ char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gb
       gene_name = (char *)g_quark_to_string(feature->original_id);
 
       if ((dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds_only)))
-	{
-	  /* Adjust for when its known that the start exon is incomplete.... */
-	  if (feature->feature.transcript.flags.start_not_found)
-	    start_incr = feature->feature.transcript.start_not_found - 1 ; /* values are 1 <= start_not_found <= 3 */
+        {
+          /* Adjust for when its known that the start exon is incomplete.... */
+          if (feature->feature.transcript.flags.start_not_found)
+            start_incr = feature->feature.transcript.start_not_found - 1 ; /* values are 1 <= start_not_found <= 3 */
 
-	  peptide = zMapPeptideCreate(seq_name, gene_name, (dna + start_incr), NULL, TRUE) ;
+          peptide = zMapPeptideCreate(seq_name, gene_name, (dna + start_incr), NULL, TRUE) ;
 
-	  /* Note that we do not include the "Stop" in the peptide length, is this the norm ? */
-	  pep_length = zMapPeptideLength(peptide) ;
-	  if (zMapPeptideHasStopCodon(peptide))
-	    pep_length-- ;
+          /* Note that we do not include the "Stop" in the peptide length, is this the norm ? */
+          pep_length = zMapPeptideLength(peptide) ;
+          if (zMapPeptideHasStopCodon(peptide))
+            pep_length-- ;
 
-	  peptide_fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA,
-					  seq_name, "Protein",
-					  gene_name, pep_length,
-					  zMapPeptideSequence(peptide));
+          peptide_fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA,
+                                          seq_name, "Protein",
+                                          gene_name, pep_length,
+                                          zMapPeptideSequence(peptide));
 
-	  g_free(dna) ;
-	}
+          g_free(dna) ;
+        }
     }
 
   return peptide_fasta;
@@ -539,7 +539,7 @@ char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gb
 /* Callback for destroy of feature items... */
 static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
 {
-  gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also get run. */
+  gboolean event_handled = FALSE ;                            /* Make sure any other callbacks also get run. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
 
   if (window->focus)
@@ -568,11 +568,11 @@ static void featureCopySelectedItem(ZMapFeature feature_in, ZMapFeature feature_
  * so the text item code can do highlighting etc. */
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
-  gboolean event_handled = FALSE ;			    /* By default we _don't_ handle events. */
+  gboolean event_handled = FALSE ;                            /* By default we _don't_ handle events. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
   static ZMapFeature feature = NULL ;
-  static guint32 last_but_release = 0 ;			    /* Used for double clicks... */
-  static gboolean second_press = FALSE ;		    /* Used for double clicks... */
+  static guint32 last_but_release = 0 ;                            /* Used for double clicks... */
+  static gboolean second_press = FALSE ;                    /* Used for double clicks... */
   static gboolean dragging = FALSE ;                        /* Have clicked button 1 but not yet released */
   static gboolean dnd_in_progress = FALSE ;                 /* Drag and drop is in progress */
 
@@ -597,88 +597,88 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 
       /* this is absolutely hateful coding.....the canvascolumn event func. should call this
-	 function, not the other way round....... I should do that later......! */
+         function, not the other way round....... I should do that later......! */
 
       if (!zMapWindowCanvasFeaturesetHasPointFeature(item))
-	{
-	  /* click on column not feature */
-	  event_handled = zmapWindowColumnBoundingBoxEventCB(item, event, data) ;
-	}
+        {
+          /* click on column not feature */
+          event_handled = zmapWindowColumnBoundingBoxEventCB(item, event, data) ;
+        }
       else
-	{
-	  zMapDebugPrint(mouse_debug_G, "Start: %s %d",
-			 (event->type == GDK_BUTTON_PRESS ? "button_press"
-			  : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
-			 but_event->button) ;
+        {
+          zMapDebugPrint(mouse_debug_G, "Start: %s %d",
+                         (event->type == GDK_BUTTON_PRESS ? "button_press"
+                          : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
+                         but_event->button) ;
 
-	  if (!ZMAP_IS_CANVAS_ITEM(item))
-	    {
-	      zMapDebugPrint(mouse_debug_G, "Leave (Not canvas item): %s %d - return FALSE",
-			     (event->type == GDK_BUTTON_PRESS ? "button_press"
-			      : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
-			     but_event->button) ;
+          if (!ZMAP_IS_CANVAS_ITEM(item))
+            {
+              zMapDebugPrint(mouse_debug_G, "Leave (Not canvas item): %s %d - return FALSE",
+                             (event->type == GDK_BUTTON_PRESS ? "button_press"
+                              : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
+                             but_event->button) ;
 
-	      return FALSE ;
-	    }
+              return FALSE ;
+            }
 
 
-	  /* freeze composite feature to current coords
-	   * seems a bit more semantic to do this in zMapWindowCanvasItemGetInterval()
-	   * but that's called by handleButton which doesn't do double click
-	   */
-	  if (but_event->button == 1 || but_event->button == 3)
-	    zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, but_event->x, but_event->y);
+          /* freeze composite feature to current coords
+           * seems a bit more semantic to do this in zMapWindowCanvasItemGetInterval()
+           * but that's called by handleButton which doesn't do double click
+           */
+          if (but_event->button == 1 || but_event->button == 3)
+            zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, but_event->x, but_event->y);
 
-	  /* Get the feature attached to the item, checking that its type is valid */
-	  feature = zMapWindowCanvasItemGetFeature(item) ;
+          /* Get the feature attached to the item, checking that its type is valid */
+          feature = zMapWindowCanvasItemGetFeature(item) ;
 
-	  if (but_event->type == GDK_BUTTON_PRESS)
-	    {
+          if (but_event->type == GDK_BUTTON_PRESS)
+            {
               if (but_event->button == 1)
                 {
                   dragging = TRUE ;
                   dnd_in_progress = FALSE ;
                 }
               else if (but_event->button == 3)
-		{
-		  /* Pop up an item menu. */
-		  zmapMakeItemMenu(but_event, window, item) ;
-		}
+                {
+                  /* Pop up an item menu. */
+                  zmapMakeItemMenu(but_event, window, item) ;
+                }
 
-	      event_handled = TRUE ;
-	    }
-	  else if (but_event->type == GDK_2BUTTON_PRESS)
-	    {
-	      second_press = TRUE ;
+              event_handled = TRUE ;
+            }
+          else if (but_event->type == GDK_2BUTTON_PRESS)
+            {
+              second_press = TRUE ;
 
-	      event_handled = TRUE ;
-	    }
-	  else						    /* button release */
-	    {
-	      /*                            button release                             */
+              event_handled = TRUE ;
+            }
+          else                                                    /* button release */
+            {
+              /*                            button release                             */
               dragging = FALSE ;
               dnd_in_progress = FALSE ;
 
-	      /* Gdk defines double clicks as occuring within 250 milliseconds of each other
-	       * but unfortunately if on the first click we do a lot of processing,
-	       * STUPID Gdk no longer delivers the GDK_2BUTTON_PRESS so we have to do this
-	       * hack looking for the difference in time. This can happen if user clicks on
-	       * a very large feature causing us to paste a lot of text to the selection
-	       * buffer. */
-	      guint but_threshold = 500 ;			    /* Separation of clicks in milliseconds. */
+              /* Gdk defines double clicks as occuring within 250 milliseconds of each other
+               * but unfortunately if on the first click we do a lot of processing,
+               * STUPID Gdk no longer delivers the GDK_2BUTTON_PRESS so we have to do this
+               * hack looking for the difference in time. This can happen if user clicks on
+               * a very large feature causing us to paste a lot of text to the selection
+               * buffer. */
+              guint but_threshold = 500 ;                            /* Separation of clicks in milliseconds. */
 
-	      if (second_press || but_event->time - last_but_release < but_threshold)
-		{
+              if (second_press || but_event->time - last_but_release < but_threshold)
+                {
                   const gchar *style_id = g_quark_to_string(zMapStyleGetID(*feature->style)) ;
 
-		  /* Second click of a double click means show feature details. */
-		  if (but_event->button == 1)
-		    {
-		      highlight_item = item;
+                  /* Second click of a double click means show feature details. */
+                  if (but_event->button == 1)
+                    {
+                      highlight_item = item;
 
-		      /* If external client then call them to do editing. */
-		      if (window->xremote_client)
-			{
+                      /* If external client then call them to do editing. */
+                      if (window->xremote_client)
+                        {
                           /* For the scratch column, the feature doesn't exist in the peer.
                            * Ask the peer to create it. */
                           /*! \todo We may wish to change this so that, rather than creating
@@ -694,7 +694,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                             {
                               callXRemote(window, (ZMapFeatureAny)feature, ZACP_EDIT_FEATURE, highlight_item) ;
                             }
-			}
+                        }
                       else
                         {
                           /* No xremote peer connected. If the user double clicked the annotation
@@ -711,29 +711,29 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                         }
                     }
 
-		  second_press = FALSE ;
-		}
-	      else
-		{
+                  second_press = FALSE ;
+                }
+              else
+                {
 
 
-		  event_handled = handleButton(but_event, window, item, feature) ;
-		}
+                  event_handled = handleButton(but_event, window, item, feature) ;
+                }
 
-	      last_but_release = but_event->time ;
+              last_but_release = but_event->time ;
 
-	      event_handled = TRUE ;
-	    }
+              event_handled = TRUE ;
+            }
 
-	  zMapDebugPrint(mouse_debug_G, "Leave: %s %d - return %s",
-			 (event->type == GDK_BUTTON_PRESS ? "button_press"
-			  : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
-			 but_event->button,
-			 event_handled ? "TRUE" : "FALSE") ;
+          zMapDebugPrint(mouse_debug_G, "Leave: %s %d - return %s",
+                         (event->type == GDK_BUTTON_PRESS ? "button_press"
+                          : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
+                         but_event->button,
+                         event_handled ? "TRUE" : "FALSE") ;
 
-	  if (mouse_debug_G)
-	    fflush(stdout) ;
-	}
+          if (mouse_debug_G)
+            fflush(stdout) ;
+        }
     }
   else if (event->type == GDK_MOTION_NOTIFY)
     {
@@ -768,8 +768,8 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
     alt_mask = GDK_MOD1_MASK,
     meta_mask = GDK_META_MASK,
     unwanted_masks = (GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
-		      | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
-		      | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
+                      | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
+                      | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
     locks_mask ;
 
   /* In order to make the modifier only checks work we need to OR in the unwanted masks that might be on.
@@ -803,38 +803,38 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
       sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
 
       if (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*feature->style))
-	highlight_same_names = FALSE ;
+        highlight_same_names = FALSE ;
 
 
       if (zMapGUITestModifiers(but_event, control_mask))
-	{
-	  /* Only highlight the single item user clicked on. */
-	  highlight_same_names = FALSE ;
-	  control = TRUE;
+        {
+          /* Only highlight the single item user clicked on. */
+          highlight_same_names = FALSE ;
+          control = TRUE;
 
-	  /* Annotators say they don't want subparts sub selections + multiple
-	   * selections for alignments. */
-	  if (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT)
-	    {
-	      highlight_item = sub_item ;
+          /* Annotators say they don't want subparts sub selections + multiple
+           * selections for alignments. */
+          if (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT)
+            {
+              highlight_item = sub_item ;
 
-	      /* monkey around to get feature_copy to be the right correct data */
-	      featureCopySelectedItem(feature, &feature_copy, highlight_item);
-	      my_feature = (ZMapFeatureAny) &feature_copy;
-	    }
-	}
+              /* monkey around to get feature_copy to be the right correct data */
+              featureCopySelectedItem(feature, &feature_copy, highlight_item);
+              my_feature = (ZMapFeatureAny) &feature_copy;
+            }
+        }
 
       if (zMapGUITestModifiers(but_event, shift_mask))
-	{
-	  /* multiple selections */
-	  if (zmapWindowFocusIsItemInHotColumn(window->focus, item))      //      && window->multi_select)
-	    {
-	      replace_highlight = FALSE ;
-	    }
-	}
+        {
+          /* multiple selections */
+          if (zmapWindowFocusIsItemInHotColumn(window->focus, item))      //      && window->multi_select)
+            {
+              replace_highlight = FALSE ;
+            }
+        }
 
       if (zMapGUITestModifiers(but_event, alt_mask) || zMapGUITestModifiers(but_event, meta_mask))
-	{
+        {
           display_style.coord_frame = ZMAPWINDOW_COORD_NATURAL ;
           display_style.paste_style = ZMAPWINDOW_PASTE_FORMAT_BROWSER ;
           display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
@@ -842,54 +842,54 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
 
       {
-	/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
-	/* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
-	/* InfoPanel has two sets of coords, but they appear the same in totalview */
-	/* possibly we can hide region selection in the GetInterval call above: we can certainly use the X coordinate ?? */
+        /* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
+        /* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
+        /* InfoPanel has two sets of coords, but they appear the same in totalview */
+        /* possibly we can hide region selection in the GetInterval call above: we can certainly use the X coordinate ?? */
 
-	int start = feature->x1, end = feature->x2;
+        int start = feature->x1, end = feature->x2;
 
-	if (sub_feature)
-	  {
-	    start = sub_feature->start;
-	    end = sub_feature->end;
-	  }
+        if (sub_feature)
+          {
+            start = sub_feature->start;
+            end = sub_feature->end;
+          }
 
-	/* Pass information about the object clicked on back to the application. */
-	zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
+        /* Pass information about the object clicked on back to the application. */
+        zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
                                   NULL, replace_highlight, highlight_same_names, control, &display_style) ;
 
-	/* if we have an active dialog update it: they have to click on a feature not the column */
-	zmapWindowSetStyleFeatureset(window, item, feature);
+        /* if we have an active dialog update it: they have to click on a feature not the column */
+        zmapWindowSetStyleFeatureset(window, item, feature);
 
       }
 
       if (zMapGUITestModifiers(but_event, shift_mask))
-	{
-	  /* multiple selections */
-	  if (zmapWindowFocusIsItemInHotColumn(window->focus, item))      //      && window->multi_select)
-	    {
-	      replace_highlight = FALSE ;
+        {
+          /* multiple selections */
+          if (zmapWindowFocusIsItemInHotColumn(window->focus, item))      //      && window->multi_select)
+            {
+              replace_highlight = FALSE ;
 
-	      if (window->xremote_client)
-		callXRemote(window, my_feature, ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
-	    }
-	  else
-	    {
-	      if (window->xremote_client)
-		callXRemote(window, my_feature, ZACP_SELECT_FEATURE, highlight_item) ;
+              if (window->xremote_client)
+                callXRemote(window, my_feature, ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
+            }
+          else
+            {
+              if (window->xremote_client)
+                callXRemote(window, my_feature, ZACP_SELECT_FEATURE, highlight_item) ;
 
-	      window->multi_select = TRUE ;
-	    }
-	}
+              window->multi_select = TRUE ;
+            }
+        }
       else
-	{
-	  /* single select */
-	  if (window->xremote_client)
-	    callXRemote(window, my_feature, ZACP_SELECT_FEATURE, highlight_item) ;
+        {
+          /* single select */
+          if (window->xremote_client)
+            callXRemote(window, my_feature, ZACP_SELECT_FEATURE, highlight_item) ;
 
-	  window->multi_select = FALSE ;
-	}
+          window->multi_select = FALSE ;
+        }
 
       if (sub_feature)
         g_free(sub_feature) ;
@@ -919,7 +919,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
  */
 
 void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
-			     ZMapFeature feature, ZMapWindowContainerFeatureSet container_set)
+                             ZMapFeature feature, ZMapWindowContainerFeatureSet container_set)
 {
   GList *l;
   ZMapWindowFeatureStackStruct feature_stack = { NULL };
@@ -929,7 +929,7 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
   FooCanvasItem *foo_featureset = NULL;
 
   //printf("\n\nexpand %s\n",g_quark_to_string(feature->original_id));
-  if(feature->population < 2)	/* should not happen */
+  if(feature->population < 2)        /* should not happen */
     return;
 
   /* hide the compressed feature */
@@ -968,7 +968,7 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
 
 
 void zmapWindowFeatureContract(ZMapWindow window, FooCanvasItem *foo,
-			       ZMapFeature feature, ZMapWindowContainerFeatureSet container_set)
+                               ZMapFeature feature, ZMapWindowContainerFeatureSet container_set)
 {
   /* find the daddy feature and un-hide it */
   ZMapFeature daddy = feature->composite;
@@ -1013,7 +1013,7 @@ void zmapWindowFeatureContract(ZMapWindow window, FooCanvasItem *foo,
 
 
 static PFetchStatus pfetch_reader_func(PFetchHandle *handle, char *text, guint *actual_read,
-				       GError *error, gpointer user_data)
+                                       GError *error, gpointer user_data)
 {
   PFetchData pfetch_data = (PFetchData)user_data;
   PFetchStatus status    = PFETCH_STATUS_OK;
@@ -1024,7 +1024,7 @@ static PFetchStatus pfetch_reader_func(PFetchHandle *handle, char *text, guint *
 
       /* clear the buffer the first time... */
       if(pfetch_data->got_response == FALSE)
-	gtk_text_buffer_set_text(text_buffer, "", 0);
+        gtk_text_buffer_set_text(text_buffer, "", 0);
 
       gtk_text_buffer_insert_at_cursor(text_buffer, text, *actual_read);
 
@@ -1039,7 +1039,7 @@ static PFetchStatus pfetch_closed_func(gpointer user_data)
   PFetchStatus status = PFETCH_STATUS_OK;
 #ifdef DEBUG_ONLY
   printf("pfetch closed\n");
-#endif	/* DEBUG_ONLY */
+#endif        /* DEBUG_ONLY */
   return status;
 }
 
@@ -1062,7 +1062,7 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
                                       gpointer handler_data)
 {
   g_signal_connect(GTK_OBJECT(top_item), "destroy",
-		   GTK_SIGNAL_FUNC(canvasItemDestroyCB), handler_data) ;
+                   GTK_SIGNAL_FUNC(canvasItemDestroyCB), handler_data) ;
 
 
   /* the problem with doing this kind of thing is that we also need the canvasItemEventCB to be
@@ -1106,7 +1106,7 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
 /* Called by select and edit code to call xremote with "select", "edit" etc commands
  * for peer. The peers reply is handled in handleXRemoteReply() */
 static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
-			char *command, FooCanvasItem *real_item)
+                        char *command, FooCanvasItem *real_item)
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapXMLUtilsEventStack xml_elements ;
@@ -1125,7 +1125,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
    * AND INSERT NEW CHROMOSOME COORDS...IF WE CAN DO THIS FOR THIS THEN WE
    * CAN HANDLE VIEW FEATURE STUFF IN SAME WAY...... */
   feature_copy = (ZMapFeature)zMapFeatureAnyCopy(feature_any) ;
-  feature_copy->parent = feature_any->parent ;	    /* Copy does not do parents so we fill in. */
+  feature_copy->parent = feature_any->parent ;            /* Copy does not do parents so we fill in. */
 
 
   /* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
@@ -1147,22 +1147,22 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
       zMapUtilsSwop(int, feature_copy->x1, feature_copy->x2) ;
 
       if (feature_copy->strand == ZMAPSTRAND_FORWARD)
-	feature_copy->strand = ZMAPSTRAND_REVERSE ;
+        feature_copy->strand = ZMAPSTRAND_REVERSE ;
       else
-	feature_copy->strand = ZMAPSTRAND_FORWARD ;
+        feature_copy->strand = ZMAPSTRAND_FORWARD ;
 
 
       if (ZMAPFEATURE_IS_TRANSCRIPT(feature_copy))
-	{
-	  if (!zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_EXON,
-						 revcompTransChildCoordsCB, window)
-	      || !zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_INTRON,
-						    revcompTransChildCoordsCB, window))
-	    zMapLogCritical("RemoteControl error revcomping coords for transcript %s",
-			    zMapFeatureName((ZMapFeatureAny)(feature_copy))) ;
+        {
+          if (!zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_EXON,
+                                                 revcompTransChildCoordsCB, window)
+              || !zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_INTRON,
+                                                    revcompTransChildCoordsCB, window))
+            zMapLogCritical("RemoteControl error revcomping coords for transcript %s",
+                            zMapFeatureName((ZMapFeatureAny)(feature_copy))) ;
 
-	  zMapFeatureTranscriptSortExons(feature_copy) ;
-	}
+          zMapFeatureTranscriptSortExons(feature_copy) ;
+        }
     }
 
   /* Streuth...why doesn't this use a 'creator' function...... */
@@ -1209,16 +1209,16 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 
 
   /* Send request to peer program. */
-  remote_data = g_new0(RemoteDataStruct, 1) ;		    /* free'd in handleXRemoteReply() */
+  remote_data = g_new0(RemoteDataStruct, 1) ;                    /* free'd in handleXRemoteReply() */
   remote_data->window = window ;
   remote_data->feature_any = feature_any ;
   remote_data->command = command ;
   remote_data->real_item = real_item ;
 
   (*(window_cbs_G->remote_request_func))(window_cbs_G->remote_request_func_data,
-					 window,
-					 command, xml_elements,
-					 handleXRemoteReply, remote_data) ;
+                                         window,
+                                         command, xml_elements,
+                                         handleXRemoteReply, remote_data) ;
 
   return ;
 }
@@ -1228,8 +1228,8 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 
 /* Handles replies received by zmap from the peer remote program to commands sent from this file. */
 static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
-			       char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
-			       gpointer reply_handler_func_data)
+                               char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
+                               gpointer reply_handler_func_data)
 {
   RemoteData remote_data = (RemoteData)reply_handler_func_data ;
 
@@ -1241,21 +1241,21 @@ static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
   else
     {
       if (g_ascii_strcasecmp(command, ZACP_EDIT_FEATURE) == 0)
-	{
-	  /* If the remote edit command fails then we do our best to show the feature
-	   * locally, this is just display, not editing. */
-	  if (command_rc == REMOTE_COMMAND_RC_OK)
-	    {
-	      /* Don't do anything. */
-	    }
-	  else if (command_rc == REMOTE_COMMAND_RC_FAILED)
-	    {
+        {
+          /* If the remote edit command fails then we do our best to show the feature
+           * locally, this is just display, not editing. */
+          if (command_rc == REMOTE_COMMAND_RC_OK)
+            {
+              /* Don't do anything. */
+            }
+          else if (command_rc == REMOTE_COMMAND_RC_FAILED)
+            {
               zmapWindowFeatureShow(remote_data->window, remote_data->real_item, FALSE) ;
-	    }
-	}
+            }
+        }
     }
 
-  g_free(remote_data) ;					    /* Allocated in callXRemote() */
+  g_free(remote_data) ;                                            /* Allocated in callXRemote() */
 
   return ;
 }

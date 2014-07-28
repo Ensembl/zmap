@@ -446,14 +446,15 @@ static void feature_strand_to_value(GValue *value, gpointer feature_data)
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
       switch(feature_any->struct_type)
-      {
-      case ZMAPFEATURE_STRUCT_FEATURE:
-        g_value_set_string(value, zMapFeatureStrand2Str(feature_any->strand));
-        break;
-      default:
-        g_value_set_string(value, ".");
-        break;
-      }
+        {
+        case ZMAPFEATURE_STRUCT_FEATURE:
+          g_value_set_string(value, zMapFeatureStrand2Str(zmapWindowStrandToDisplay(add_data->window,
+                                                                                    feature_any->strand))) ;
+          break;
+        default:
+          g_value_set_string(value, ".");
+          break;
+        }
     }
   else
     {
@@ -1310,7 +1311,7 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
 
   zmap_tv_feature = ZMAP_WINDOWFEATUREITEMLIST(zmap_tv);
 
-  if((feature))	// = zmapWindowItemGetFeature(item)))
+  if((feature))        // = zmapWindowItemGetFeature(item)))
     {
       if(zmap_tv_feature->feature_type == ZMAPSTYLE_MODE_INVALID &&
        feature->mode != ZMAPSTYLE_MODE_INVALID)

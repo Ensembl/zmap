@@ -81,19 +81,23 @@ case $opsys in
 
 	    # add totalview memory debugging.
 	    if [ "x$TVIEW_MEM" == "x$ZMAP_TRUE" ]; then
-	      LDFLAGS="-L/usr/toolworks/memoryscape.3.2.3-0/linux-x86/lib -ltvheap -Wl,-rpath=/usr/toolworks/memoryscape.3.2.3-0/linux-x86/lib"
+                LDFLAGS="-L/usr/toolworks/memoryscape.3.2.3-0/linux-x86/lib -ltvheap -Wl,-rpath=/usr/toolworks/memoryscape.3.2.3-0/linux-x86/lib"
 	    fi
 
 	    # Add electric fence memory debugging lib.
 	    if [ "x$ELECTRIC_MEM" == "x$ZMAP_TRUE" ]; then
-              LDFLAGS_args="$HOME/downloads/electric-fence-2.1.13/libefence.a $LDFLAGS"
+                LDFLAGS_args="$HOME/downloads/electric-fence-2.1.13/libefence.a $LDFLAGS"
             fi
 
 
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
-              CFLAGS_args="-pg $CFLAGS"
-	      LDFLAGS_args="-pg $LDFLAGS"
+                CFLAGS_args="-pg $CFLAGS"
+                LDFLAGS_args="-pg $LDFLAGS"
 	    fi
+
+            # Stuff rdynamic in.....
+            CFLAGS_args="-rdynamic $CFLAGS"
+            LDFLAGS_args="-rdynamic $LDFLAGS"
 
 
 	    # Now add LDFLAGS to args so they get through to configure.
@@ -109,7 +113,7 @@ case $opsys in
 
     zmap_register_prefix_in_env $GTK_PREFIX
 
-    CFLAGS_args="-Wall -I$GTK_PREFIX/include"
+    CFLAGS_args="-Wall -I$GTK_PREFIX/include -Wno-deprecated-declarations"
 
 
     LDFLAGS_args="$LDFLAGS $LDFLAGS_args"

@@ -71,8 +71,8 @@ typedef struct
   double scroll_x1, scroll_x2;
   double scroll_y1, scroll_y2;
 
-  GtkAdjustment v_adjuster;	/* Be very careful with this! */
-  GtkAdjustment h_adjuster;	/* Be very careful with this! */
+  GtkAdjustment v_adjuster;        /* Be very careful with this! */
+  GtkAdjustment h_adjuster;        /* Be very careful with this! */
 
   int scroll_offset_x, scroll_offset_y;
   gboolean rev_comp_state;
@@ -145,8 +145,8 @@ static void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag
 
 static void lockedDisplaySetScrollRegionCB(gpointer key, gpointer value, gpointer user_data);
 static void set_scroll_region(ZMapWindow window,
-			      double x1, double y1,
-			      double x2, double y2);
+                              double x1, double y1,
+                              double x2, double y2);
 
 ZMAP_MAGIC_NEW(window_state_magic_G, ZMapWindowStateStruct) ;
 
@@ -182,7 +182,7 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
   if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) 
     return ;
 
-  state_copy = *state;		/* n.b. struct copy */
+  state_copy = *state;                /* n.b. struct copy */
   state = &state_copy;
 
   /* So the real requirement of marking the queue as updating is to
@@ -191,17 +191,17 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
 
     {
       if(state->zoom_set)
-	{
-	  double current, target, factor;
-	  current = zMapWindowGetZoomFactor(window);
-	  target  = state->zoom_factor;
-	  factor  = target / current;
-	  zMapWindowZoom(window, factor);
-	}
+        {
+          double current, target, factor;
+          current = zMapWindowGetZoomFactor(window);
+          target  = state->zoom_factor;
+          factor  = target / current;
+          zMapWindowZoom(window, factor);
+        }
       if(state->position_set)
-	{
-	  state_position_restore(window, &(state->position));
-	}
+        {
+          state_position_restore(window, &(state->position));
+        }
     }
 
   if (state->mark_set)
@@ -226,7 +226,7 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
 
   mark_queue_updating(window->history, FALSE);
 
-  zMapWindowRedraw(window);	/* include area off canvas */
+  zMapWindowRedraw(window);        /* include area off canvas */
 
   return ;
 }
@@ -271,27 +271,27 @@ gboolean zmapWindowStateSavePosition(ZMapWindowState state, ZMapWindow window)
       scrolled_window = GTK_SCROLLED_WINDOW(window->scrolled_window);
 
       if((v_adjuster  = gtk_scrolled_window_get_vadjustment(scrolled_window)))
-	{
-	  state->position.v_adjuster = *v_adjuster; /* n.b. struct copy! */
-	}
+        {
+          state->position.v_adjuster = *v_adjuster; /* n.b. struct copy! */
+        }
 
       if((h_adjuster  = gtk_scrolled_window_get_hadjustment(scrolled_window)))
-	{
-	  state->position.h_adjuster = *h_adjuster; /* n.b. struct copy! */
-	}
+        {
+          state->position.h_adjuster = *h_adjuster; /* n.b. struct copy! */
+        }
 
       foo_canvas_get_scroll_offsets(canvas, &(state->position.scroll_offset_x), &(state->position.scroll_offset_y));
 
       foo_canvas_get_scroll_region(canvas,
-				   &(state->position.scroll_x1),
-				   &(state->position.scroll_y1),
-				   &(state->position.scroll_x2),
-				   &(state->position.scroll_y2));
+                                   &(state->position.scroll_x1),
+                                   &(state->position.scroll_y1),
+                                   &(state->position.scroll_x2),
+                                   &(state->position.scroll_y2));
 
       state->rev_comp_state = state->position.rev_comp_state = window->flags[ZMAPFLAG_REVCOMPED_FEATURES];
 
       if(window_state_debug_G)
-	print_position(&(state->position), "save_position");
+        print_position(&(state->position), "save_position");
 
       state->position_set = TRUE;
     }
@@ -320,8 +320,8 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
     {
       /* Always get the world range, so that if feature can not be found on restore, we can still remark. */
       zmapWindowMarkGetWorldRange(mark,
-				  &(state->mark.x1), &(state->mark.y1),
-				  &(state->mark.x2), &(state->mark.y2));
+                                  &(state->mark.x1), &(state->mark.y1),
+                                  &(state->mark.x2), &(state->mark.y2));
 
       state->rev_comp_state = state->mark.rev_comp_state = window->flags[ZMAPFLAG_REVCOMPED_FEATURES];
     }
@@ -353,9 +353,9 @@ gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state, ZMapWindow window)
 
 
 static void get_bumped_columns(ZMapWindowContainerGroup container,
-			       FooCanvasPoints         *unused_points,
-			       ZMapContainerLevelType   level,
-			       gpointer                 user_data)
+                               FooCanvasPoints         *unused_points,
+                               ZMapContainerLevelType   level,
+                               gpointer                 user_data)
 {
   ZMapWindowBumpStateStruct *bump = (ZMapWindowBumpStateStruct *)user_data;
 
@@ -370,24 +370,24 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
       container_set = (ZMapWindowContainerFeatureSet)container;
 
       if((feature_any = (ZMapFeatureAny)zmapWindowContainerFeatureSetRecoverFeatureSet(container_set)))
-	{
-	  bump_data.column.align_id   = feature_any->parent->parent->unique_id;
-	  bump_data.column.block_id   = feature_any->parent->unique_id;
-	  fset = (ZMapFeatureSet) feature_any;
-	  bump_data.column.fset_id    = fset->unique_id;
-    	  bump_data.column.column_id  = container_set->unique_id;
-	  bump_data.column.feature_id = 0;  /* (we are saving the column not the feature) container_set->unique_id; */
-	  bump_data.column.strand     = container_set->strand;
-	  bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandShown(container_set);
-	  bump_data.bump_mode         = zmapWindowContainerFeatureSetGetBumpMode(container_set);
-	  default_bump                = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
+        {
+          bump_data.column.align_id   = feature_any->parent->parent->unique_id;
+          bump_data.column.block_id   = feature_any->parent->unique_id;
+          fset = (ZMapFeatureSet) feature_any;
+          bump_data.column.fset_id    = fset->unique_id;
+              bump_data.column.column_id  = container_set->unique_id;
+          bump_data.column.feature_id = 0;  /* (we are saving the column not the feature) container_set->unique_id; */
+          bump_data.column.strand     = container_set->strand;
+          bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandShown(container_set);
+          bump_data.bump_mode         = zmapWindowContainerFeatureSetGetBumpMode(container_set);
+          default_bump                = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("bump_save %s/%s = %d\n", g_quark_to_string(bump_data.column.column_id),g_quark_to_string(bump_data.column.fset_id),bump_data.bump_mode);
+          printf("bump_save %s/%s = %d\n", g_quark_to_string(bump_data.column.column_id),g_quark_to_string(bump_data.column.fset_id),bump_data.bump_mode);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  bump->style_bump = g_array_append_val(bump->style_bump, bump_data);
-	}
+          bump->style_bump = g_array_append_val(bump->style_bump, bump_data);
+        }
     }
 
   return ;
@@ -405,16 +405,16 @@ gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state, ZMapWindow wind
       ZMapWindowCompressMode compress_mode;
 
       state->bump.style_bump = g_array_new(FALSE, TRUE,
-					   sizeof(StyleBumpModeStruct));
+                                           sizeof(StyleBumpModeStruct));
       zmapWindowContainerUtilsExecute(window->feature_root_group,
-				      ZMAPCONTAINER_LEVEL_FEATURESET,
-				      get_bumped_columns,
-				      &(state->bump));
+                                      ZMAPCONTAINER_LEVEL_FEATURESET,
+                                      get_bumped_columns,
+                                      &(state->bump));
 
       if (zmapWindowMarkIsSet(window->mark))
-	compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
+        compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
       else
-	compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
+        compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
 
       state->bump.compress  = compress_mode;
       state->rev_comp_state = state->bump.rev_comp_state = window->flags[ZMAPFLAG_REVCOMPED_FEATURES];
@@ -426,21 +426,21 @@ gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state, ZMapWindow wind
 }
 
 gboolean zmapWindowStateGetScrollRegion(ZMapWindowState state,
-					double *x1, double *y1,
-					double *x2, double *y2)
+                                        double *x1, double *y1,
+                                        double *x2, double *y2)
 {
   gboolean found_position = FALSE;
   if(state->position_set)
     {
       if(x1)
-	*x1 = state->position.scroll_x1;
+        *x1 = state->position.scroll_x1;
       if(x2)
-	*x2 = state->position.scroll_x2;
+        *x2 = state->position.scroll_x2;
 
       if(y1)
-	*y1 = state->position.scroll_y1;
+        *y1 = state->position.scroll_y1;
       if(y2)
-	*y2 = state->position.scroll_y2;
+        *y2 = state->position.scroll_y2;
 
       found_position = TRUE;
     }
@@ -486,7 +486,7 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 {
   ZMapWindowMarkSerialStruct restore = {} ;
 
-  restore = *serialized ;				    /* n.b. struct copy */
+  restore = *serialized ;                                    /* n.b. struct copy */
 
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] != restore.rev_comp_state)
     {
@@ -513,8 +513,8 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
   restore.x1 = 0.0 ;
 
   zmapWindowMarkSetWorldRange(mark,
-			      restore.x1, restore.y1,
-			      restore.x2, restore.y2) ;
+                              restore.x1, restore.y1,
+                              restore.x2, restore.y2) ;
 
   return ;
 }
@@ -535,45 +535,45 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
       h_adjuster      = gtk_scrolled_window_get_hadjustment(scrolled_window);
       /* I'm copying this, so as not to alter the state->position version. */
       /* Accidentally or otherwise doing a state restore more than once should be ok. */
-      new_position = *position;	/* n.b. struct copy! */
+      new_position = *position;        /* n.b. struct copy! */
 
       if(window_state_debug_G)
-	print_position(position, "state_position_restore input");
+        print_position(position, "state_position_restore input");
 
       if(window->flags[ZMAPFLAG_REVCOMPED_FEATURES] != position->rev_comp_state)
-	{
-	  double tmp;
+        {
+          double tmp;
 
-	  if(window_state_debug_G)
-	    print_position(position, "state_position_restore rev-comp status switched! reversing position...");
+          if(window_state_debug_G)
+            print_position(position, "state_position_restore rev-comp status switched! reversing position...");
 
-	  zmapWindowStateRevCompRegion(window, &(new_position.scroll_y1), &(new_position.scroll_y2));
+          zmapWindowStateRevCompRegion(window, &(new_position.scroll_y1), &(new_position.scroll_y2));
 
 
 #if MH17_REVCOMP_DEBUG
-	  zMapLogWarning("restore scroll: %f,%f -> %f,%f", position->scroll_y1,position->scroll_y2,new_position.scroll_y1,new_position.scroll_y2);
+          zMapLogWarning("restore scroll: %f,%f -> %f,%f", position->scroll_y1,position->scroll_y2,new_position.scroll_y1,new_position.scroll_y2);
 #endif
 
 #ifdef RDS_DONT_INCLUDE
-	  new_position.scroll_y1 = seq_length - position->scroll_y1;
-	  new_position.scroll_y2 = seq_length - position->scroll_y2;
+          new_position.scroll_y1 = seq_length - position->scroll_y1;
+          new_position.scroll_y2 = seq_length - position->scroll_y2;
 
-	  tmp                    = new_position.scroll_y1;
-	  new_position.scroll_y1 = new_position.scroll_y2;
-	  new_position.scroll_y2 = tmp;
+          tmp                    = new_position.scroll_y1;
+          new_position.scroll_y1 = new_position.scroll_y2;
+          new_position.scroll_y2 = tmp;
 #endif
-	  tmp                           = new_position.v_adjuster.value + new_position.v_adjuster.page_size;
-	  new_position.v_adjuster.value = new_position.v_adjuster.upper - tmp;
-	  new_position.scroll_offset_y  = new_position.v_adjuster.upper - tmp;
-	}
+          tmp                           = new_position.v_adjuster.value + new_position.v_adjuster.page_size;
+          new_position.v_adjuster.value = new_position.v_adjuster.upper - tmp;
+          new_position.scroll_offset_y  = new_position.v_adjuster.upper - tmp;
+        }
 
       set_scroll_region(window,
-			new_position.scroll_x1, new_position.scroll_y1,
-			new_position.scroll_x2, new_position.scroll_y2);
+                        new_position.scroll_x1, new_position.scroll_y1,
+                        new_position.scroll_x2, new_position.scroll_y2);
 
 #if 0
       printf("pos restore: %f %f %f %f\n",gtk_adjustment_get_value(v_adjuster), gtk_adjustment_get_value(h_adjuster),
-	     new_position.v_adjuster.value, new_position.h_adjuster.value);
+             new_position.v_adjuster.value, new_position.h_adjuster.value);
       // old is 0, new y is 4000+: prevents expose events to the canvas
 
       //      gtk_adjustment_set_value(v_adjuster, new_position.v_adjuster.value);
@@ -583,7 +583,7 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 #endif
 
       if(window_state_debug_G)
-	print_position(&new_position, "state_position_restore input");
+        print_position(&new_position, "state_position_restore input");
     }
 
   return ;
@@ -592,7 +592,7 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialStruct *serialized)
 {
   ZMapWindowFocusSerialStruct restore = {} ;
-  restore = *serialized ;				    /* n.b. struct copy */
+  restore = *serialized ;                                    /* n.b. struct copy */
 
   if (serialized->item.align_id != 0 && serialized->item.feature_id != 0)
     {
@@ -602,67 +602,67 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
       /* Forming the search correctly when a reverse complement has happened is not trivial
        * because of strand issues. */
       if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] != serialized->rev_comp_state)
-	{
-	  if (restore.item.strand_specific)
-	    restore.item.strand = ZMAPFEATURE_SWOP_STRAND(restore.item.strand) ;
-	}
+        {
+          if (restore.item.strand_specific)
+            restore.item.strand = ZMAPFEATURE_SWOP_STRAND(restore.item.strand) ;
+        }
 
       if ((focus_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-						   restore.item.align_id,
-						   restore.item.block_id,
-						   restore.item.fset_id,
-						   restore.item.strand,
-						   restore.item.frame,
-						   restore.item.feature_id))
-	  && zmapWindowItemIsShown(focus_item))
-	{
+                                                   restore.item.align_id,
+                                                   restore.item.block_id,
+                                                   restore.item.fset_id,
+                                                   restore.item.strand,
+                                                   restore.item.frame,
+                                                   restore.item.feature_id))
+          && zmapWindowItemIsShown(focus_item))
+        {
 
-	  zmapWindowFocusAddItem(window->focus, focus_item, zMapWindowCanvasItemGetFeature(focus_item));
+          zmapWindowFocusAddItem(window->focus, focus_item, zMapWindowCanvasItemGetFeature(focus_item));
 
-	  zmapWindowHighlightFocusItems(window);
-	}
+          zmapWindowHighlightFocusItems(window);
+        }
       else if ((possible_focus_items = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
-								     restore.item.align_id,
-								     restore.item.block_id,
-								     restore.item.column_id,
-								     0,
-								     "*",	/* reverse complement... */
-								     "*",	/* laziness */
-								     restore.item.feature_id,
-								     NULL, NULL)))
-	{
-	  //	  zmapWindowFocusAddItem(window->focus, possible_focus_items->data,NULL);
-	  zmapWindowFocusAddItems(window->focus, possible_focus_items,NULL);
+                                                                     restore.item.align_id,
+                                                                     restore.item.block_id,
+                                                                     restore.item.column_id,
+                                                                     0,
+                                                                     "*",        /* reverse complement... */
+                                                                     "*",        /* laziness */
+                                                                     restore.item.feature_id,
+                                                                     NULL, NULL)))
+        {
+          //          zmapWindowFocusAddItem(window->focus, possible_focus_items->data,NULL);
+          zmapWindowFocusAddItems(window->focus, possible_focus_items,NULL);
 
-	  zmapWindowHighlightFocusItems(window);
+          zmapWindowHighlightFocusItems(window);
 
-	  /* Need single hot item here for focus below.... */
-	}
+          /* Need single hot item here for focus below.... */
+        }
       else
-	{
-	  /* this can happen if something is strand specific and is not shown on the reverse
-	     strand ?? or maybe not...actually we should be checking if something is visible !!!! */
+        {
+          /* this can happen if something is strand specific and is not shown on the reverse
+             strand ?? or maybe not...actually we should be checking if something is visible !!!! */
 
-	  /* Blank the info panel if we can't find the feature. */
-	  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE, FALSE, FALSE) ;
+          /* Blank the info panel if we can't find the feature. */
+          zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE, FALSE, FALSE) ;
 
 
-	  zMapLogWarning("%s", "Failed to find serialized focus item.");
-	}
+          zMapLogWarning("%s", "Failed to find serialized focus item.");
+        }
 
 
       if (focus_item)
-	{
-	  ZMapFeature feature ;
-	  FooCanvasItem *sub_item = focus_item;
-	  gboolean replace_highlight = TRUE, highlight_same_names = FALSE ;
+        {
+          ZMapFeature feature ;
+          FooCanvasItem *sub_item = focus_item;
+          gboolean replace_highlight = TRUE, highlight_same_names = FALSE ;
 
-	  feature = zMapWindowCanvasItemGetFeature(focus_item) ;
+          feature = zMapWindowCanvasItemGetFeature(focus_item) ;
 
-	  /* Pass information about the object clicked on back to the application. */
-	  zmapWindowUpdateInfoPanel(window, feature, NULL, sub_item, NULL, 0, 0, 0, 0,
-				    NULL, replace_highlight, highlight_same_names, FALSE, FALSE) ;
-	}
+          /* Pass information about the object clicked on back to the application. */
+          zmapWindowUpdateInfoPanel(window, feature, NULL, sub_item, NULL, 0, 0, 0, 0,
+                                    NULL, replace_highlight, highlight_same_names, FALSE, FALSE) ;
+        }
     }
 
   return ;
@@ -682,73 +682,73 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
       swap_strand = (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] != serialized->rev_comp_state);
 
       for(i = 0; i < bumped_col_count; i++)
-	{
-	  FooCanvasItem *container;
-	  StyleBumpModeStruct *column_state;
+        {
+          FooCanvasItem *container;
+          StyleBumpModeStruct *column_state;
 
 
-	  column_state = &(g_array_index(bumped_columns, StyleBumpModeStruct, i));
+          column_state = &(g_array_index(bumped_columns, StyleBumpModeStruct, i));
 
-	  if(swap_strand && column_state->strand_specific)
-	    {
-	      if(column_state->column.strand == ZMAPSTRAND_FORWARD)
-		column_state->column.strand = ZMAPSTRAND_REVERSE;
-	      else if(column_state->column.strand == ZMAPSTRAND_REVERSE)
-		column_state->column.strand = ZMAPSTRAND_FORWARD;
-	    }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("bump_restore state fset %s = %d\n",g_quark_to_string(column_state->column.fset_id),column_state->bump_mode);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-	  if((container = zmapWindowFToIFindItemColumn(window,window->context_to_item,
-						       column_state->column.align_id,
-						       column_state->column.block_id,
-						       column_state->column.fset_id,
-						       column_state->column.strand,
-						       column_state->column.frame)))
-	    {
-	      ZMapWindowContainerFeatureSet container_set;
-
-	      container_set = (ZMapWindowContainerFeatureSet)(container);
+          if(swap_strand && column_state->strand_specific)
+            {
+              if(column_state->column.strand == ZMAPSTRAND_FORWARD)
+                column_state->column.strand = ZMAPSTRAND_REVERSE;
+              else if(column_state->column.strand == ZMAPSTRAND_REVERSE)
+                column_state->column.strand = ZMAPSTRAND_FORWARD;
+            }
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      printf("bump restore col %s = %d\n", g_quark_to_string(container_set->original_id),zmapWindowContainerFeatureSetGetBumpMode(container_set));
+          printf("bump_restore state fset %s = %d\n",g_quark_to_string(column_state->column.fset_id),column_state->bump_mode);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-	      /* Only bump if it's different from current.
-	       * This _implicit_ test is the only way to currently check this as
-	       * there's no initial_bump_mode in the style...
-	       */
-	      /* Also if the bump is not different from the current the compress mode
-	       * will almost certainly mean there will be odd results...
-	       */
+          if((container = zmapWindowFToIFindItemColumn(window,window->context_to_item,
+                                                       column_state->column.align_id,
+                                                       column_state->column.block_id,
+                                                       column_state->column.fset_id,
+                                                       column_state->column.strand,
+                                                       column_state->column.frame)))
+            {
+              ZMapWindowContainerFeatureSet container_set;
+
+              container_set = (ZMapWindowContainerFeatureSet)(container);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+              printf("bump restore col %s = %d\n", g_quark_to_string(container_set->original_id),zmapWindowContainerFeatureSetGetBumpMode(container_set));
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+              /* Only bump if it's different from current.
+               * This _implicit_ test is the only way to currently check this as
+               * there's no initial_bump_mode in the style...
+               */
+              /* Also if the bump is not different from the current the compress mode
+               * will almost certainly mean there will be odd results...
+               */
               /*! \todo #warning WRONG_NEED_INITIAL_BUMP_MODE */
-	      if(zmapWindowContainerFeatureSetGetBumpMode(container_set) != column_state->bump_mode)
-		{
+              if(zmapWindowContainerFeatureSetGetBumpMode(container_set) != column_state->bump_mode)
+                {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  printf("bump restore (mark) %d %d",serialized->compress,zmapWindowMarkIsSet(window->mark));
+                  printf("bump restore (mark) %d %d",serialized->compress,zmapWindowMarkIsSet(window->mark));
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-		  if((serialized->compress != ZMAPWINDOW_COMPRESS_MARK ||
-		      (zmapWindowMarkIsSet(window->mark))))
-		    {
-		      zmapWindowColumnBumpRange(container,
-						column_state->bump_mode,
-						serialized->compress);
-		      changed++;
-		    }
-		}
-	    }
-	}
+                  if((serialized->compress != ZMAPWINDOW_COMPRESS_MARK ||
+                      (zmapWindowMarkIsSet(window->mark))))
+                    {
+                      zmapWindowColumnBumpRange(container,
+                                                column_state->bump_mode,
+                                                serialized->compress);
+                      changed++;
+                    }
+                }
+            }
+        }
 
       if(changed)
-	zmapWindowFullReposition(window->feature_root_group,TRUE, "bump state");
+        zmapWindowFullReposition(window->feature_root_group,TRUE, "bump state");
     }
 
   return ;
@@ -759,15 +759,15 @@ static void print_position(ZMapWindowPositionStruct *position, char *from)
   printf("%s: position is\n", from);
 
   printf("\tscroll-region:\t%f, %f, %f, %f\n",
-	 position->scroll_x1, position->scroll_y1,
-	 position->scroll_x2, position->scroll_y2);
+         position->scroll_x1, position->scroll_y1,
+         position->scroll_x2, position->scroll_y2);
 
   printf("\tv-adjuster: value = %f, page-size = %f, lower = %f, upper = %f\n",
-	 position->v_adjuster.value, position->v_adjuster.page_size,
-	 position->v_adjuster.lower, position->v_adjuster.upper);
+         position->v_adjuster.value, position->v_adjuster.page_size,
+         position->v_adjuster.lower, position->v_adjuster.upper);
 
   printf("\tscroll-offsets: x = %d, y = %d\n",
-	 position->scroll_offset_x, position->scroll_offset_y);
+         position->scroll_offset_x, position->scroll_offset_y);
 
   return ;
 }
@@ -836,10 +836,10 @@ ZMapWindowStateQueue zmapWindowStateQueueCreate(void)
     {
       ZMapWindowState head_state;
       if((head_state = zmapWindowStateCreate()))
-	{
-	  head_state->in_state_restore = FALSE;
-	  g_queue_push_head(queue, head_state);
-	}
+        {
+          head_state->in_state_restore = FALSE;
+          g_queue_push_head(queue, head_state);
+        }
     }
 
   return queue;
@@ -872,9 +872,9 @@ gboolean zmapWindowStateGetPrevious(ZMapWindow window, ZMapWindowState *state_ou
   if(zMapWindowHasHistory(window))
     {
       if(pop)
-	state = g_queue_pop_tail(window->history);
+        state = g_queue_pop_tail(window->history);
       else
-	state = g_queue_peek_tail(window->history);
+        state = g_queue_peek_tail(window->history);
     }
 
   if(state_out && state)
@@ -894,14 +894,14 @@ gboolean zmapWindowStateQueueStore(ZMapWindow window, ZMapWindowState state_in, 
   if((stored = !queue_doing_update(queue)) == TRUE)
     {
       if(clear_current)
-	zmapWindowStateQueueClear(queue);
+        zmapWindowStateQueueClear(queue);
 
       g_queue_push_tail(queue, state_in);
     }
 #ifdef RDS_DONT_INCLUDE
   else if(state_restore_copies_G == TRUE &&
-	  stored == FALSE &&
-	  clear_current == TRUE)
+          stored == FALSE &&
+          clear_current == TRUE)
     {
       zmapWindowStateQueueClear(queue);
 
@@ -915,7 +915,7 @@ gboolean zmapWindowStateQueueStore(ZMapWindow window, ZMapWindowState state_in, 
 }
 
 void zmapWindowStateQueueRemove(ZMapWindowStateQueue queue,
-				ZMapWindowState      state_del)
+                                ZMapWindowState      state_del)
 {
   g_queue_remove_all(queue, state_del);
 
@@ -927,7 +927,7 @@ void zmapWindowStateQueueClear(ZMapWindowStateQueue queue)
   ZMapWindowState state = NULL;
 
   while(zmapWindowStateQueueLength(queue) &&
-	(state = g_queue_pop_tail(queue)))
+        (state = g_queue_pop_tail(queue)))
     {
       state = zmapWindowStateDestroy(state);
     }
