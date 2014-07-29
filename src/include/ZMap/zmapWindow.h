@@ -496,9 +496,6 @@ gboolean zMapWindowMarkGetSequenceSpan(ZMapWindow window, int *start, int *end) 
 void zmapWindowMarkPrint(ZMapWindow window, char *title) ;
 gboolean zMapWindowMarkIsSet(ZMapWindow window);
 
-void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
-                               ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
-
 void zMapWindowRequestReposition(FooCanvasItem *foo);
 
 
