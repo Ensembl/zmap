@@ -1201,12 +1201,13 @@ int zMapFeatureColumnOrderNext(void);	/* order of columns L -> R */
 
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
 gboolean zMapFeatureIsValidFull(ZMapFeatureAny any_feature, ZMapFeatureLevelType type) ;
+char *zMapFeatureName(ZMapFeatureAny any_feature) ;
+char *zMapFeatureUniqueName(ZMapFeatureAny any_feature) ;
 gboolean zMapFeatureNameCompare(ZMapFeatureAny any_feature, char *name) ;
 gboolean zMapFeatureTypeIsValid(ZMapFeatureLevelType group_type) ;
 gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained);
 gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained);
 ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureLevelType group_type) ;
-char *zMapFeatureName(ZMapFeatureAny any_feature) ;
 char *zMapFeatureCanonName(char *feature_name) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;

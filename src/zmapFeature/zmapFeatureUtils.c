@@ -382,22 +382,31 @@ void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2)
 
 
 
-/*!
- * Returns the original name of any feature type. The returned string belongs
+/* Returns the original name of any feature type. The returned string belongs
  * to the feature and must _NOT_ be free'd. This function can never return
- * NULL as all features must have valid names.
- *
- * @param   any_feature    The feature.
- * @return  char *         The name of the feature.
- *  */
+ * NULL as all features must have valid names. */
 char *zMapFeatureName(ZMapFeatureAny any_feature)
 {
   char *feature_name = NULL ;
 
-  if (!zMapFeatureIsValid(any_feature))
-    return feature_name ;
+  zMapReturnValIfFail(zMapFeatureIsValid(any_feature), NULL) ;
 
   feature_name = (char *)g_quark_to_string(any_feature->original_id) ;
+
+  return feature_name ;
+}
+
+
+/* Returns the unique name of any feature type. The returned string belongs
+ * to the feature and must _NOT_ be free'd. This function can never return
+ * NULL as all features must have valid unique names. */
+char *zMapFeatureUniqueName(ZMapFeatureAny any_feature)
+{
+  char *feature_name = NULL ;
+
+  zMapReturnValIfFail(zMapFeatureIsValid(any_feature), NULL) ;
+
+  feature_name = (char *)g_quark_to_string(any_feature->unique_id) ;
 
   return feature_name ;
 }
