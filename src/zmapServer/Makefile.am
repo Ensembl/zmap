@@ -11,6 +11,7 @@ zmapServer_P.h \
 zmapServerProtocolHandler.c \
 zmapServerPrototype.h \
 $(NULL)
+
 libZMapServer_la_LIBADD  = 
 libZMapServer_la_CFLAGS  = $(INCLUDE_COMMON)
 libZMapServer_la_LDFLAGS = 
@@ -21,6 +22,7 @@ acedb/libAcedbServer.la \
 pipe/libPipeServer.la   \
 das/libDasServer.la     \
 $(NULL)
+
 libZMapServers_la_CFLAGS  = 
 libZMapServers_la_LDFLAGS = 
 
