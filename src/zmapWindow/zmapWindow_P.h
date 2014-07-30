@@ -1326,7 +1326,14 @@ gboolean zMapWindowContainerSummarise(ZMapWindow window,ZMapFeatureTypeStyle sty
 GList *zMapWindowContainerSummariseSortFeatureSet(ZMapFeatureSet fset);
 
 ZMapFeatureTypeStyle zMapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFeatureSet container);
-gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set, ZMapStyleBumpMode bump_mode);
+gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set,
+                                                  ZMapStyleBumpMode bump_mode);
+
+void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
+                               ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
+
+
+
 
 GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type) ;
 GtkWidget    *zmapWindowFeatureListCreateView(ZMapWindowListType list_type, GtkTreeModel *treeModel,
