@@ -177,7 +177,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
        * so frame and strand are stable NOTE only frame, strand will wobble
        * we save the id here to optimise the code
        */
-      GQuark col_id = zmapWindowContainerFeatureSetGetColumnId(parent_container);
+      GQuark col_id ;
       FooCanvasItem * foo = FOO_CANVAS_ITEM(parent_container);
       GQuark fset_id = feature_stack->set->unique_id;
       char strand = '+';
@@ -185,6 +185,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
       char *x;
       ZMapWindow window ;
       GtkAdjustment *v_adjust ;
+
+      col_id = zmapWindowContainerFeaturesetGetColumnUniqueId(parent_container) ;
 
       window = zMapWindowContainerFeatureSetGetWindow(parent_container) ;
 
