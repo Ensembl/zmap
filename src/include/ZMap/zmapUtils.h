@@ -188,7 +188,6 @@ gboolean zMapLogStop(void) ;
 void zMapLogStack(void);
 void zMapLogDestroy(void) ;
 
-void zMapStackPrint(void) ;
 gboolean zMapStack2fd(unsigned int remove, int fd) ;
 
 void zMapSignalHandler(int sig_no) ;
@@ -239,6 +238,7 @@ gboolean zMapStr2Double(char *str, double *double_out) ;
 
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapProcTerm2ShortText, ZMapProcessTerminationType) ;
+ZMAP_ENUM_TO_LONG_TEXT_DEC(zmapProcTerm2LongText, ZMapProcessTerminationType) ;
 int zMapUtilsProcessTerminationStatus(int status, ZMapProcessTerminationType *termination_type_out) ;
 
 gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out) ;

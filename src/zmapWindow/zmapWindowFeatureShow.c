@@ -1824,13 +1824,13 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
           char *target = columns ;
           GList *column_data = NULL ;
           int col_ind = 0;
+          char *curr_pos = NULL ;
 
           /* Make a list of the names of the columns. */
 
           do
             {
               char *new_col ;
-              char *curr_pos = NULL ;
 
               if ((new_col = strtok_r(target, " ", &curr_pos)))
                 {
@@ -2058,7 +2058,7 @@ static void addTagValue(gpointer data, gpointer user_data)
 
   /* Align to col. header: "Strand: Sequence/Match" */
   strand = g_strdup_printf("       %s / %s        ",
-                           zMapFeatureStrand2Str(feature->strand),
+                           zMapFeatureStrand2Str(zmapWindowStrandToDisplay(para_data->window, feature->strand)),
                            zMapFeatureStrand2Str(feature->feature.homol.strand)) ;
   column_data = g_list_append(column_data, strand) ;
 

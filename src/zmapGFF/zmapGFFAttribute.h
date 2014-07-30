@@ -40,6 +40,7 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <ZMap/zmapFeature.h>
 #include <ZMap/zmapGFF.h>
 #include "zmapGFF3_P.h"
 
@@ -163,9 +164,10 @@ void attribute_test_parse(ZMapGFFParser, char **, unsigned int) ;
 gboolean zMapAttParseAlias(ZMapGFFAttribute, char ** const ) ;
 gboolean zMapAttParseAlign(ZMapGFFAttribute, int * const, int * const, ZMapStrand * const);
 gboolean zMapAttParseAssemblySource(ZMapGFFAttribute, char ** const, char ** const) ;
-gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute, char ** const, ZMapStrand * const , int * const, GArray ** const) ;
+gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute, char ** const, ZMapStrand * const , int * const, GArray ** const, char*) ;
 gboolean zMapAttParseAnyTwoStrings(ZMapGFFAttribute, char ** const, char ** const) ;
 gboolean zMapAttParseClass(ZMapGFFAttribute, ZMapHomolType *const );
+gboolean zMapAttParseGap(ZMapGFFAttribute , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
 gboolean zMapAttParseCigarExonerate(ZMapGFFAttribute , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
 gboolean zMapAttParseCigarEnsembl(ZMapGFFAttribute , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
 gboolean zMapAttParseCigarBam(ZMapGFFAttribute , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
@@ -195,6 +197,12 @@ gboolean zMapAttParseEnsemblVariation(ZMapGFFAttribute, char ** const ) ;
 gboolean zMapAttParseAlleleString(ZMapGFFAttribute, char ** const) ;
 gboolean zMapAttParseReadPairID(ZMapGFFAttribute, GQuark * const) ;
 
-
+/*
+ * Attribute data generation functions. Generate a c-string representation of the
+ * data item of interest. All specific to GFFv3. The pointer string returned is
+ * allocated in the function and must be deleted by the caller.
+ */
+gboolean zMapAttGenerateGap(char **s_out, ZMapFeature feature) ;
+gboolean zMapAttGenerateTarget(char **s_out, ZMapFeature feature) ;
 
 #endif

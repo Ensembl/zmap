@@ -21,7 +21,7 @@
  * originally written by:
  *
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: defines macros allowing a single string/enum definition
  *              to be used to produce enum types, print functions and 
@@ -29,12 +29,15 @@
  *
  *-------------------------------------------------------------------
  */
-
 #ifndef __ZMAP_ENUM_H__
 #define __ZMAP_ENUM_H__
 
-/* Altered code originally from
- * http://alioth.debian.org/snippet/detail.php?type=snippet&id=13 */
+/*
+ * We hereby acknowledge that this code is derived from:
+ * 
+ * http://alioth.debian.org/snippet/detail.php?type=snippet&id=13
+ * 
+ */
 
 /* This program is free software; you can redistribute it and/or    *
  * modify it under the terms of the GNU General Public License as   *
@@ -57,156 +60,240 @@
  *                                                                  *
  *                          */
 
-/* in the main .h (so that it can be re-used). */
-
-/* MACROS have been renamed slightly, addition of func_name arg, and
- * added struct enum_dummy to swallow the semi-colon. G_STMT_START/END
- * uses do{...}while(0) idiom, but that doesn't work here. */
-
-#define ENUM_BODY(name, value, dummy0, dummy1, dummy2)	\
-    name value,
-
-#define AS_STRING_CASE(name, value, dummy0, dummy1, dummy2)		\
-    case name: { return #name; }
-
-#define FROM_STRING_CASE(name, value, dummy)	 \
-    if (strcmp(str, #name) == 0) {       \
-        return name;                     \
-    }
-
-#define AS_NAME_TEXT(name, dummy0, name_text, dummy1, dummy2) \
-    case name: { return name_text; }
-
-#define AS_SHORT_TEXT(name, value, dummy0, short_text, dummy2)		\
-    case name: { return short_text; }
 
 
-#define ENUM2STR(name, dummy, string, dummy0, dummy1)			\
-  {name, string},
+/* The original MACROS have been renamed and altered:
+ * 
+ *    - addition of func_name arg
+ *    - added struct enum_dummy to swallow the semi-colon (note that
+ *      G_STMT_START/END uses do{...}while(0) idiom, but that doesn't
+ *      work here).
+ */
 
+
+/* The basic concept is that the user defines a macro with any name they like
+ * in a standard format that defines a list with the following elements:
+ * 
+ *        enum_term, enum_value, "short string", "long string", unused
+ * 
+ * any of these fields can be omitted if not relevant (as enum_value is below).
+ * 
+ * e.g.
+ * 
+ *  #define ZMAP_PROCTERM_LIST(_)                                                   \
+ *      _(ZMAP_PROCTERM_OK,      , "ok"      , "process exited normally.",     "")  \
+ *      _(ZMAP_PROCTERM_ERROR,   , "error"   , "process returned error code.", "")  \
+ *      _(ZMAP_PROCTERM_SIGNAL,  , "signal"  , "proces terminated by signal.", "")  \
+ *      _(ZMAP_PROCTERM_STOPPED, , "stopped" , "process stopped by signal.",   "")
+ * 
+ * the user can then use standard macros from this header to define an enum 
+ * from the list:
+ *  
+ *  ZMAP_DEFINE_ENUM(ZMapProcessTerminationType, ZMAP_PROCTERM_LIST) ;
+ * 
+ * to define functions from the list:
+ * 
+ * in your header file put
+ * 
+ * ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapProcTerm2ShortText, ZMapProcessTerminationType) ;
+ *
+ * in your code put
+ * 
+ * ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapProcTerm2ShortText, ZMapProcessTerminationType, ZMAP_PROCTERM_LIST) ;
+ * 
+ * to be used like this
+ * 
+ * char *short_string = zmapProcTerm2ShortText(ZMAP_PROCTERM_SIGNAL) ;
+ * 
+ * 
+ *  */
+
+
+
+/* 
+ * Macros used by our enum package...users should have no reason to use these directly.
+ */
+
+#define ENUM_BODY(NAME, VALUE, dummy_short_text, dummy_long_text, dummy_unused)	\
+  NAME VALUE,
+
+#define AS_STRING_CASE(NAME, dummy_value, dummy_short_text, dummy_long_text, dummy_unused)    \
+  case NAME: { return #NAME; }
+
+#define FROM_STRING_CASE(NAME, VALUE, dummy_short_text, dummy_long_text, dummy_unused)    \
+  if (strcmp(str, #NAME) == 0) {                \
+    return NAME;                                \
+  }
+
+#define AS_SHORT_TEXT(NAME, dummy_value, SHORT_TEXT, dummy_long_text, dummy_unused)  \
+  case NAME: { return SHORT_TEXT; }
+
+#define AS_LONG_TEXT(NAME, dummy_value, dummy_short_text, LONG_TEXT, dummy_unused) \
+  case NAME: { return LONG_TEXT ; }
+
+#define ENUM2STR(NAME, dummy_value, STRING, dummy_long_text, dummy_unused)   \
+  {NAME, STRING},
+
+/* Only the ZMAP_xxxxx Functions swallow the semi-colon! */
 #define SWALLOW_SEMI_COLON struct enum_dummy
 
 
 
-/* Only the ZMAP_xxxxx Functions swallow the semi-colon! */
-
 /* 
- * Define enum type automatically.
+ * Macros for use by the user.
  */
-#define ZMAP_DEFINE_ENUM(name, list)     \
-    typedef enum {                       \
-        list(ENUM_BODY)                  \
-    } name;                              \
+
+
+/* Define an enum type automatically. */
+#define ZMAP_DEFINE_ENUM(NAME, LIST)     \
+  typedef enum {                         \
+    LIST(ENUM_BODY)                      \
+  } NAME;                                \
+  SWALLOW_SEMI_COLON
+
+
+/* Defines  enum -> exact string  convertor function for given list,
+ * function is of form:
+ * 
+ * const char *fname(enumtype enum_value) ;
+ * 
+ * e.g. given ZMAP_PROCTERM_OK returns "ZMAP_PROCTERM_OK"
+ * 
+ *  */
+#define ZMAP_ENUM_AS_EXACT_STRING_DEC(FNAME, NAME)      \
+  const char* FNAME(NAME n);                            \
+  SWALLOW_SEMI_COLON
+
+#define ZMAP_ENUM_AS_EXACT_STRING_FUNC(FNAME, NAME, LIST)       \
+  const char* FNAME(NAME n) {                                   \
+    switch (n) {                                                \
+      LIST(AS_STRING_CASE)                                      \
+        default: return "";                                     \
+    }                                                           \
+  }                                                             \
+  SWALLOW_SEMI_COLON
+
+
+/* Defines  exact string -> enum  convertor function, i.e. the
+ * exact opposite of ZMAP_ENUM_AS_EXACT_STRING_NNN, function is
+ * of form:
+ * 
+ * enumtype fname(const char *enum_as_str) ;
+ * 
+ * e.g. given "ZMAP_PROCTERM_OK" returns ZMAP_PROCTERM_OK
+ * 
+ */
+#define ZMAP_ENUM_FROM_EXACT_STRING_DEC(FNAME, NAME)    \
+  NAME FNAME(const char* str);                          \
+  SWALLOW_SEMI_COLON
+
+#define ZMAP_ENUM_FROM_EXACT_STRING_FUNC(FNAME, NAME, LIST)     \
+  NAME FNAME(const char* str) {                                 \
+    LIST(FROM_STRING_CASE)                                      \
+      return 0;                                                 \
+  }                                                             \
+  SWALLOW_SEMI_COLON
+
+
+
+/* Defines  enum -> short description  converter function.
+ *
+ * const char *fname(enumtype enum_value) ;
+ * 
+ * e.g. given ZMAP_PROCTERM_OK returns "ok"
+ * 
+ */
+#define ZMAP_ENUM_TO_SHORT_TEXT_DEC(FNAME, NAME)        \
+  const char* FNAME(NAME n);                            \
+  SWALLOW_SEMI_COLON
+
+#define ZMAP_ENUM_TO_SHORT_TEXT_FUNC(FNAME, NAME, LIST) \
+  const char* FNAME(NAME n) {                           \
+    switch (n) {                                        \
+      LIST(AS_SHORT_TEXT)                               \
+        default: return "";                             \
+    }                                                   \
+  }                                                     \
+  SWALLOW_SEMI_COLON
+
+
+/* Defines  short description -> enum  convertor function, i.e. the
+ * opposite of ZMAP_ENUM_TO_SHORT_TEXT_NNN, with the added function
+ * that the case of "short description" is ignored. Function is of
+ * the form
+ * 
+ * enumtype fname(const char *short_description) ;
+ *
+ * 
+ * e.g. given "ok" or "OK" or "Ok" returns ZMAP_PROCTERM_OK
+ * 
+ */
+#define ZMAP_ENUM_FROM_SHORT_TEXT_DEC(FUNCNAME, TYPE) \
+  TYPE FUNCNAME(const char* str) ;                \
+  SWALLOW_SEMI_COLON
+
+
+#define ZMAP_ENUM_FROM_SHORT_TEXT_FUNC(FNAME, TYPE, INVALID_VALUE, LIST, dummy0, dummy1) \
+  TYPE FNAME(const char* str)                                           \
+  {                                                                     \
+    typedef struct {TYPE enum_value ; char *string ;} TYPE##Enum2StrStruct ; \
+                                                                        \
+    TYPE result = INVALID_VALUE ;                                       \
+    TYPE##Enum2StrStruct values[] =                                     \
+      {                                                                 \
+	LIST(ENUM2STR)                                                  \
+	{INVALID_VALUE, NULL}                                           \
+      } ;                                                               \
+    TYPE##Enum2StrStruct *curr = values ;                               \
+                                                                        \
+    while(curr->string)                                                 \
+      {                                                                 \
+	if (g_ascii_strcasecmp(str, curr->string) == 0)                 \
+	  {                                                             \
+	    result = curr->enum_value ;                                 \
+	    break ;                                                     \
+	  }                                                             \
+                                                                        \
+	curr++ ;                                                        \
+      }                                                                 \
+                                                                        \
+    return result ;                                                     \
+  }                                                                     \
+  SWALLOW_SEMI_COLON
+
+
+
+/* Defines  enum -> long description  convertor function.
+ *
+ * const char *fname(enumtype enum_value) ;
+ * 
+ * e.g. given ZMAP_PROCTERM_OK returns "process exited normally."
+ * 
+ */
+#define ZMAP_ENUM_TO_LONG_TEXT_DEC(FNAME, NAME)   \
+    const char* FNAME(NAME n);                 \
 SWALLOW_SEMI_COLON
 
-
-
-/* 
- * Defines enum to exact string convertor function automatically.
- */
-#define ZMAP_ENUM_AS_EXACT_STRING_DEC(fname, name)   \
-    const char* fname(name n);                 \
-SWALLOW_SEMI_COLON
-
-#define ZMAP_ENUM_AS_EXACT_STRING_FUNC(fname, name, list) \
-    const char* fname(name n) {                \
+#define ZMAP_ENUM_TO_LONG_TEXT_FUNC(FNAME, NAME, LIST) \
+    const char* FNAME(NAME n) {                \
         switch (n) {                           \
-            list(AS_STRING_CASE)               \
+            LIST(AS_LONG_TEXT)               \
             default: return "";                \
         }                                      \
     }                                          \
 SWALLOW_SEMI_COLON
 
 
-/* 
- * Defines enum to name string converter function automatically.
- * name as in style of g_param_spec_TYPE(name, short, blurb, ...)
- */
-#define ZMAP_ENUM_AS_NAME_STRING_DEC(fname, type_name) \
- const char *fname(type_name n);                       \
-SWALLOW_SEMI_COLON
-
-#define ZMAP_ENUM_AS_NAME_STRING_FUNC(fname, type_name, list) \
-const char *fname(type_name n){                               \
-  switch(n) {                                                 \
-    list(AS_NAME_TEXT)                                        \
-    default: return "";                                       \
-  }                                                           \
-}                                                             \
-SWALLOW_SEMI_COLON
-
-/* 
- * Defines enum to short description convertor automatically.
- */
-#define ZMAP_ENUM_TO_SHORT_TEXT_DEC(fname, name)   \
-    const char* fname(name n);                 \
-SWALLOW_SEMI_COLON
-
-#define ZMAP_ENUM_TO_SHORT_TEXT_FUNC(fname, name, list) \
-    const char* fname(name n) {                \
-        switch (n) {                           \
-            list(AS_SHORT_TEXT)               \
-            default: return "";                \
-        }                                      \
-    }                                          \
-SWALLOW_SEMI_COLON
-
-
-/* 
- * Defines exact string to enum convertor function automatically.
- */
-#define ZMAP_ENUM_FROM_EXACT_STRING_DEC(fname, name) \
-    name fname(const char* str);               \
-SWALLOW_SEMI_COLON
-
-#define ZMAP_ENUM_FROM_EXACT_STRING_FUNC(fname, name, list) \
-    name fname(const char* str) {              \
-        list(FROM_STRING_CASE)                 \
-        return 0;                              \
-    }                                          \
-SWALLOW_SEMI_COLON
 
 
 
-/* 
- * Defines given string to enum convertor function automatically.
- */
-#define ZMAP_ENUM_FROM_STRING_DEC(FUNCNAME, TYPE) \
-    TYPE FUNCNAME(const char* str) ;              \
-SWALLOW_SEMI_COLON
-
-
-#define ZMAP_ENUM_FROM_STRING_FUNC(fname, TYPE, INVALID_VALUE, list, dummy0, dummy1) \
-  TYPE fname(const char* str)                  \
-  {					       \
-  typedef struct {TYPE enum_value ; char *string ;} TYPE##Enum2StrStruct ;		\
-                                                     \
-    TYPE result = INVALID_VALUE ;              \
-    TYPE##Enum2StrStruct values[] =                   \
-      {                                        \
-	list(ENUM2STR)                         \
-	{INVALID_VALUE, NULL}                  \
-      } ;				       \
-    TYPE##Enum2StrStruct *curr = values ;                   \
-                                                     \
-    while(curr->string)                        \
-      {                                       \
-	if (g_ascii_strcasecmp(str, curr->string) == 0) \
-	  {                                        \
-	    result = curr->enum_value ;            \
-	    break ;                               \
-	  }                                        \
-                                                     \
-	curr++ ;                               \
-      }                                        \
-                                                     \
-      return result ;		       \
-  }					       \
-SWALLOW_SEMI_COLON
 
 
 
 #ifdef REQUIRE_NON_TYPEDEF_ENUM_FUNCS
+
+/* These macros are currently unused and unexplored...... */
+
 
 /* Additionally gnc_engine_util.h defines these Non typedef enum
  * versions. Again edited slightly... */
@@ -250,6 +337,9 @@ SWALLOW_SEMI_COLON
 SWALLOW_SEMI_COLON
 
 #endif /* REQUIRE_NON_TYPEDEF_ENUM_FUNCS */
+
+
+
 
 
 #ifdef __EXAMPLE_USAGE__
@@ -306,11 +396,13 @@ For BI_WEEKLY, use weekly[2]
     _(BLUE,  = 87)
      */
 
-     /* the _() syntax does NOT mean the strings are translated (why would anyone want to do that?) - it is purely for the macro and the _() does not survive into the pre-processed C code. */
+     /* the _() syntax does NOT mean the strings are translated (why would anyone want to do
+        that?)
+        - it is purely for the macro and the _() does not survive into the pre-processed C code. */
 
-     /* more information?
-https://lists.gnucash.org/pipermail/gnucash-devel/2005-March/012849.html
-     */
+/* more information?
+   https://lists.gnucash.org/pipermail/gnucash-devel/2005-March/012849.html
+*/
 
 #endif /* __EXAMPLE_USAGE__ */
 

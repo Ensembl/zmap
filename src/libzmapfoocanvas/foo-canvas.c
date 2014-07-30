@@ -2981,7 +2981,6 @@ static gint
 foo_canvas_motion (GtkWidget *widget, GdkEventMotion *event)
 {
 	FooCanvas *canvas;
-	GdkEventMotion *mot_event = (GdkEventMotion *)event ;
 
 	g_return_val_if_fail (FOO_IS_CANVAS (widget), FALSE);
 	g_return_val_if_fail (event != NULL, FALSE);
@@ -2992,19 +2991,8 @@ foo_canvas_motion (GtkWidget *widget, GdkEventMotion *event)
 		return FALSE;
 
 	canvas->state = event->state;
-
-	/* Processing all motion events is _very_ slow when there are a lot of items
-	 * on the canvas (e.g. 300k or more), we therefore only process events when
-	 * a modifier key or mouse button is pressed. */
-	if (mot_event->state) {
-		pick_current_item (canvas, (GdkEvent *) event);
-
-		return emit_event (canvas, (GdkEvent *) event);
-	}
-	else {
-		return FALSE;
-	}
-
+	pick_current_item (canvas, (GdkEvent *) event);
+	return emit_event (canvas, (GdkEvent *) event);
 }
 
 /* Key event handler for the canvas */

@@ -31,27 +31,29 @@
  */
 
 
-#ifndef HEADER_ZMAP_STRINGUTILS_P
-#define HEADER_ZMAP_STRINGUTILS_P
+#ifndef HEADER_ZMAP_STRINGUTILS_H
+#define HEADER_ZMAP_STRINGUTILS_H
 
+/*
+ * Standard library stuff required for these functions.
+ */
 #include <string.h>
-#include <ZMap/zmapGFF.h>
 
-#include "zmapGFF_P.h"
+
+/*
+ * GLib also required.
+ */
+#include <glib.h>
 
 
 /*
  * Some string utilities.
  */
-unsigned int *zMapGFFStr_find_unquoted(const char * const, char, char, unsigned int *, void*(*)(size_t), void(*)(void*)) ;
-char** zMapGFFStr_tokenizer(char, const char * const, unsigned int*, gboolean, unsigned int, void*(*)(size_t), void(*)(void*)) ;
-char** zMapGFFStr_tokenizer02(char, char, const char * const , unsigned int *,  gboolean, void*(*)(size_t), void(*)(void*)) ;
-void zMapGFFStr_array_add_element(char ***, unsigned int *, void*(*)(size_t), void(*)(void*)) ;
-void zMapGFFStr_array_delete(char**, unsigned int, void(*)(void*)) ;
-char * zMapGFFStr_substring(const char* const, const char* const, void*(*local_malloc)(size_t)) ;
-void zMapGFFStr_remove_char(char *, char) ;
-gboolean zMapGFFStr_substring_replace(const char * const, const char * const, const char * const, char ** ) ;
-gboolean zMapGFFStr_substring_replace_n(const char * const, const char * const, const char * const, char ** ) ;
+char** zMapGFFStringUtilsTokenizer(char, const char * const, unsigned int*, gboolean, unsigned int, void*(*)(size_t), void(*)(void*), char*) ;
+char** zMapGFFStringUtilsTokenizer02(char, char, const char * const , unsigned int *,  gboolean, void*(*)(size_t), void(*)(void*)) ;
+void zMapGFFStringUtilsArrayDelete(char**, unsigned int, void(*)(void*)) ;
+char * zMapGFFStringUtilsSubstring(const char* const, const char* const, void*(*local_malloc)(size_t)) ;
+gboolean zMapGFFStringUtilsSubstringReplace(const char * const, const char * const, const char * const, char ** ) ;
 
 
 

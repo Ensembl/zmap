@@ -133,8 +133,8 @@ gboolean zMapRemoteCommandGetAttribute(char *message,
 				       char *element, char *attribute, char **attribute_value_out,
 				       char **error_out) ;
 
-ZMAP_ENUM_AS_NAME_STRING_DEC(zMapRemoteCommandRC2Str, RemoteCommandRCType) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapRemoteCommandStr2RC, RemoteCommandRCType) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapRemoteCommandRC2Str, RemoteCommandRCType) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapRemoteCommandStr2RC, RemoteCommandRCType) ;
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapRemoteCommandRC2Desc, RemoteValidateRCType) ;
 

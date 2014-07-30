@@ -923,6 +923,7 @@
 #define ZMAPSTANZA_BLIXEM_FILE_FORMAT      "file-format"
 #define ZMAPSTANZA_BLIXEM_KEEP_TEMP        "keep-tempfiles"
 #define ZMAPSTANZA_BLIXEM_KILL_EXIT        "kill-on-exit"
+#define ZMAPSTANZA_BLIXEM_SLEEP            "sleep"
 #define ZMAPSTANZA_BLIXEM_DNA_FS           "dna-featuresets"
 #define ZMAPSTANZA_BLIXEM_PROT_FS          "protein-featuresets"
 #define ZMAPSTANZA_BLIXEM_FS               "featuresets"

@@ -299,6 +299,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     /* Check locale setting, vital for message handling, text parsing and much else. */
     char *default_locale = "POSIX";
     char *locale_in_use, *user_req_locale, *new_locale;
+
     locale_in_use = setlocale(LC_ALL, NULL);
 
     if (!(user_req_locale = app_context->locale))
@@ -565,7 +566,7 @@ static gboolean pingHandler(gpointer data)
   else
     zmapAppRemoteControlPing(app_context) ;
 
-  return TRUE ;
+  return result ;
 }
 
 
@@ -1698,6 +1699,7 @@ static void consoleMsg(gboolean err_msg, char *format, ...)
 static void hideMainWindow(ZMapAppContext app_context)
 {
   gtk_widget_unmap(app_context->app_widg) ;
+
 
   return ;
 }

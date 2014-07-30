@@ -788,8 +788,12 @@ int zMapUtilsProcessTerminationStatus(int status, ZMapProcessTerminationType *te
   return exit_rc ;
 }
 
-/* auto define function to take a ZMapProcessTerminationType and return a short descriptive string. */
+/* auto defines functions to take a ZMapProcessTerminationType and return short/long descriptive string. */
 ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapProcTerm2ShortText, ZMapProcessTerminationType, ZMAP_PROCTERM_LIST) ;
+ZMAP_ENUM_TO_LONG_TEXT_FUNC(zmapProcTerm2LongText, ZMapProcessTerminationType, ZMAP_PROCTERM_LIST) ;
+
+
+
 
 /* make printing from totalview evaluations a lot easier... */
 void zMapPrintQuark(GQuark quark)

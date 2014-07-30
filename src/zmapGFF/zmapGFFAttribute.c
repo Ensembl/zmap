@@ -31,6 +31,7 @@
 
 #include <ZMap/zmapSO.h>
 #include <ZMap/zmapGFF.h>
+#include <ZMap/zmapGFFStringUtils.h>
 
 #include "zmapGFF_P.h"
 #include "zmapGFF3_P.h"
@@ -39,7 +40,6 @@
 #include "zmapGFFAttribute.h"
 #undef ATTRIBUTE_DEFINITIONS
 
-#include "zmapGFFStringUtils.h"
 
 
 
@@ -306,7 +306,7 @@ ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser pParserBase, const char*  c
   static const gboolean bIncludeEmpty = TRUE ;
   ZMapGFFAttributeName eTheName = ZMAPGFF_ATT_UNK ;
   unsigned int iNumTokens = 0, i;
-  char **sTokens = NULL ;
+  char **sTokens = NULL, *sBuff = NULL ;
   ZMapGFFVersion eVersion = ZMAPGFF_VERSION_UNKNOWN ;
   ZMapGFFAttribute pAttribute = NULL ;
 
@@ -325,14 +325,15 @@ ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser pParserBase, const char*  c
    * Cast to "derived" type.
    */
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-
+  sBuff = pParserBase->buffers[ZMAPGFF_BUF_TMP] ;
 
   /*
    * Tokenize the input string; we stop on encountering the first
    * delimiter and therefore should only get two tokens. The delimiter here
    * separates the attribute name from its associated data.
    */
-  sTokens = zMapGFFStr_tokenizer(pParser->cDelimAttValue, sAttribute, &iNumTokens, bIncludeEmpty, iTokenLimit, g_malloc, g_free) ;
+  sTokens = zMapGFFStringUtilsTokenizer(pParser->cDelimAttValue, sAttribute, &iNumTokens,
+                                 bIncludeEmpty, iTokenLimit, g_malloc, g_free, sBuff) ;
   if (iNumTokens > iExpectedTokens )
     {
       for (i=0; i<iNumTokens; ++i)
@@ -376,7 +377,7 @@ ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser pParserBase, const char*  c
   /*
    * Delete the token array now that we're done.
    */
-  zMapGFFStr_array_delete(sTokens, iNumTokens, g_free) ;
+  zMapGFFStringUtilsArrayDelete(sTokens, iNumTokens, g_free) ;
 
   return pAttribute ;
 }
@@ -452,7 +453,8 @@ ZMapGFFAttribute* zMapGFFAttributeParseList(ZMapGFFParser pParserBase, const cha
    * characters in this process.
    */
   bIncludeEmpty = FALSE ;
-  sTokens = zMapGFFStr_tokenizer02(pParser->cDelimAttributes, pParser->cDelimQuote, sAttributes, pnAttributes, bIncludeEmpty, g_malloc, g_free) ;
+  sTokens = zMapGFFStringUtilsTokenizer02(pParser->cDelimAttributes, pParser->cDelimQuote, sAttributes, pnAttributes,
+                                   bIncludeEmpty, g_malloc, g_free) ;
   if (*pnAttributes == 0)
     return pAttributes ;
 
@@ -493,7 +495,7 @@ ZMapGFFAttribute* zMapGFFAttributeParseList(ZMapGFFParser pParserBase, const cha
   /*
    * Destroy array of token strings.
    */
-  zMapGFFStr_array_delete(sTokens, *pnAttributes, g_free) ;
+  zMapGFFStringUtilsArrayDelete(sTokens, *pnAttributes, g_free) ;
 
   return pAttributes ;
 }
@@ -970,8 +972,8 @@ gboolean zMapAttParseName(ZMapGFFAttribute pAttribute, char** const psOut)
 
   if (strlen(sValue))
     {
-      bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedEquals, sEquals, &sTemp) ;
-      bReplaced = zMapGFFStr_substring_replace_n(sTemp, sEscapedComma, sComma, psOut) ;
+      bReplaced = zMapGFFStringUtilsSubstringReplace(sValue, sEscapedEquals, sEquals, &sTemp) ;
+      bReplaced = zMapGFFStringUtilsSubstringReplace(sTemp, sEscapedComma, sComma, psOut) ;
       bResult = TRUE ;
     }
   else
@@ -1128,8 +1130,8 @@ gboolean zMapAttParseDbxref(ZMapGFFAttribute pAttribute, char ** const sOut1, ch
   /*
    * Find substrings
    */
-  s1 = zMapGFFStr_substring(sValue, pC, g_malloc) ;
-  s2 = zMapGFFStr_substring(pC+1, sEnd, g_malloc) ;
+  s1 = zMapGFFStringUtilsSubstring(sValue, pC, g_malloc) ;
+  s2 = zMapGFFStringUtilsSubstring(pC+1, sEnd, g_malloc) ;
 
   /*
    * If they are both non-empty then copy to output
@@ -1187,8 +1189,8 @@ gboolean zMapAttParseOntology_term(ZMapGFFAttribute pAttribute , char ** const s
   /*
    * Find substrings
    */
-  s1 = zMapGFFStr_substring(sValue, pC, g_malloc) ;
-  s2 = zMapGFFStr_substring(pC+1, sEnd, g_malloc) ;
+  s1 = zMapGFFStringUtilsSubstring(sValue, pC, g_malloc) ;
+  s2 = zMapGFFStringUtilsSubstring(pC+1, sEnd, g_malloc) ;
 
   /*
    * If they are both non-empty then copy to output
@@ -1646,7 +1648,7 @@ gboolean zMapAttParseLocus(ZMapGFFAttribute pAttribute, GQuark * const pGQ)
 
 
 /*
- * Parse data from the "Gaps" attribute; we expect to find zero or more comma-seperated groups of 4 integer values.
+ * Parse data from the "gaps" attribute; we expect to find zero or more comma-seperated groups of 4 integer values.
  * The value string of the attribute should be unquoted.
  */
 gboolean zMapAttParseGaps(ZMapGFFAttribute pAttribute, GArray ** const pGaps, ZMapStrand cRefStrand, ZMapStrand cMatchStrand)
@@ -1701,6 +1703,34 @@ gboolean zMapAttParseGaps(ZMapGFFAttribute pAttribute, GArray ** const pGaps, ZM
         ++sValue ;
 
     }
+
+  return bResult ;
+
+}
+
+/*
+ * Parse data from the "Gap" attribute. This is the GFFv3 standard attribute, and is taken to be the same as
+ * cigar_exonerate (according to http://www.sequenceontology.org/resources/gff3.html).
+ */
+gboolean zMapAttParseGap(ZMapGFFAttribute pAttribute , GArray ** const pGaps,
+  ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
+
+{
+  gboolean bResult = FALSE ;
+  static const char *sMyName = "zMapAttParseGap()" ;
+  if (!pAttribute)
+    return bResult ;
+  char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  if (strcmp(sAttributeName_Gap, zMapGFFAttributeGetNamestring(pAttribute)))
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
+
+  bResult = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_EXONERATE,
+                                            cRefStrand, iRefStart, iRefEnd,
+                                            cMatchStrand, iMatchStart, iMatchEnd,
+                                            sValue, pGaps) ;
 
   return bResult ;
 
@@ -1878,7 +1908,7 @@ gboolean zMapAttParseKnownName(ZMapGFFAttribute pAttribute, char ** const sOut)
  *
  */
 gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute pAttribute, char ** const psOut, ZMapStrand * const pcStrandOut,
-                                  int * const piOut, GArray ** const paOut)
+                                  int * const piOut, GArray ** const paOut, char *sBuff)
 {
   gboolean bResult = FALSE ;
   static const char cComma = ',';
@@ -1909,7 +1939,7 @@ gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute pAttribute, char ** const psO
   /*
    * Tokenize on commas; we must have a minimum of 4 fields
    */
-  sTokens = zMapGFFStr_tokenizer(cComma, sValue, &iTokens, bIncludeEmpty, iTokenLimit, g_malloc, g_free) ;
+  sTokens = zMapGFFStringUtilsTokenizer(cComma, sValue, &iTokens, bIncludeEmpty, iTokenLimit, g_malloc, g_free, sBuff) ;
 
   for (i=0; i<iTokens; ++i)
   {
@@ -1990,7 +2020,7 @@ gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute pAttribute, char ** const psO
   /*
    * Clean up tokens.
    */
-  zMapGFFStr_array_delete(sTokens, iTokens, g_free) ;
+  zMapGFFStringUtilsArrayDelete(sTokens, iTokens, g_free) ;
 
 
   return bResult ;
@@ -2042,12 +2072,12 @@ static char* removeAllEscapedCharacters(const char * const sInput )
   char *sResult = NULL, *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
   gboolean bReplaced = FALSE ;
 
-  bReplaced = zMapGFFStr_substring_replace_n(sInput, sEscapedEquals,    sEquals, &sOut1) ;
-  bReplaced = zMapGFFStr_substring_replace_n(sOut1,  sEscapedComma,     sComma, &sOut2) ;
+  bReplaced = zMapGFFStringUtilsSubstringReplace(sInput, sEscapedEquals,    sEquals, &sOut1) ;
+  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut1,  sEscapedComma,     sComma, &sOut2) ;
   g_free(sOut1) ;
-  bReplaced = zMapGFFStr_substring_replace_n(sOut2,  sEscapedSemicolon, sSemicolon, &sOut3) ;
+  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut2,  sEscapedSemicolon, sSemicolon, &sOut3) ;
   g_free(sOut2) ;
-  bReplaced = zMapGFFStr_substring_replace_n(sOut3,  sEscapedSpace,     sSpace, &sResult) ;
+  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut3,  sEscapedSpace,     sSpace, &sResult) ;
   g_free(sOut3) ;
 
   return sResult ;
@@ -2056,6 +2086,53 @@ static char* removeAllEscapedCharacters(const char * const sInput )
 
 
 
+
+/*
+ * Generate a "Gap" attribute string from the feature.
+ */
+gboolean zMapAttGenerateGap(char **p_s_out, ZMapFeature feature)
+{
+  gboolean bResult = FALSE ;
+  char *align_str = NULL ;
+  zMapReturnValIfFail(   p_s_out
+                      && feature
+                      && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT
+                      && feature->feature.homol.align,
+                      bResult) ;
+
+  if ((bResult = zMapFeatureAlignmentGetAlignmentString(feature,
+                                         ZMAPALIGN_FORMAT_GAP_GFF3,
+                                         &align_str )))
+    {
+      if (align_str)
+        {
+          *p_s_out = g_strdup_printf("Gap = %s", align_str) ;
+          g_free(align_str) ;
+        }
+    }
+
+  return bResult ;
+}
+
+/*
+ * Generates "Target" attribute from the feature.
+ */
+gboolean zMapAttGenerateTarget(char **p_s_out, ZMapFeature feature)
+{
+  gboolean bResult = FALSE ;
+  char *target_string = NULL ;
+  ZMapHomol homol = NULL ;
+  zMapReturnValIfFail(p_s_out && feature && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT, bResult ) ;
+  homol = &feature->feature.homol ;
+
+  target_string = g_strdup_printf("Target = %s %i %i %s",
+                                  g_quark_to_string(homol->clone_id), homol->y1, homol->y2,
+                                  zMapFeatureStrand2Str(homol->strand)) ;
+  *p_s_out = target_string ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
 
 
 

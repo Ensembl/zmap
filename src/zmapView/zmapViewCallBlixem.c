@@ -78,6 +78,7 @@ enum
     BLX_ARGV_SCREEN_FLAG,                                   /* --screen */
     BLX_ARGV_SCREEN_NUM,                                    /* screen num as an int */
 
+
     /* WHY HAVE YOU DONE THIS MALCOLM, EITHER DO ALL OF THEM OR NONE OF THEM...SIGH.... */
 //    BLX_ARGV_CONFIGFILE_FLAG = BLX_ARGV_NETID_PORT_FLAG,   /* -c */
 //    BLX_ARGV_CONFIGFILE = BLX_ARGV_NETID_PORT,             /* [filepath] */
@@ -86,7 +87,9 @@ enum
 #define BLX_ARGV_CONFIGFILE_FLAG BLX_ARGV_NETID_PORT_FLAG   /* -c */
 #define BLX_ARGV_CONFIGFILE  BLX_ARGV_NETID_PORT             /* [filepath] */
 
+
     BLX_ARGV_RM_TMP_FILES,      /* --remove-input-files */
+    BLX_ARGV_SLEEP,             /* -w */
     BLX_ARGV_ABBREV_TITLES,     /* --abbrev-title-on */
     BLX_ARGV_START_FLAG,        /* -s */
     BLX_ARGV_START,             /* [start] */
@@ -179,6 +182,7 @@ typedef struct BlixemDataStruct
   BlixemFileFormat file_format ;
   char          *tmpDir ;
   gboolean      keep_tmpfiles ;
+  gboolean      sleep_on_startup ;
 
   char          *fastAFile ;
   GIOChannel    *fasta_channel;
@@ -255,6 +259,8 @@ typedef struct BlixemConfigDataStructType
     unsigned int homol_max : 1 ;
 
     unsigned int keep_tmpfiles : 1 ;
+
+    unsigned int sleep_on_startup : 1 ;
   } is_set ;
 
 
@@ -278,6 +284,7 @@ typedef struct BlixemConfigDataStructType
 
   BlixemFileFormat file_format ;
   gboolean      keep_tmpfiles ;
+  gboolean      sleep_on_startup ;
 
   /* Not user configurable */
   GList *dna_sets ;
@@ -832,6 +839,10 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
 	file_prefs.keep_tmpfiles = tmp_bool;
 
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+					ZMAPSTANZA_BLIXEM_SLEEP, &tmp_bool))
+	file_prefs.sleep_on_startup = tmp_bool;
+
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 					ZMAPSTANZA_BLIXEM_KILL_EXIT, &tmp_bool))
 	file_prefs.kill_on_exit = tmp_bool;
 
@@ -933,6 +944,9 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
       if (curr_prefs->is_set.keep_tmpfiles)
 	file_prefs.keep_tmpfiles = curr_prefs->keep_tmpfiles ;
 
+      if (curr_prefs->is_set.sleep_on_startup)
+	file_prefs.sleep_on_startup = curr_prefs->sleep_on_startup ;
+
       if (curr_prefs->is_set.kill_on_exit)
 	file_prefs.kill_on_exit = curr_prefs->kill_on_exit ;
     }
@@ -977,6 +991,8 @@ static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
     blixem_data->homol_max = curr_prefs->homol_max ;
 
   blixem_data->keep_tmpfiles = curr_prefs->keep_tmpfiles ;
+
+  blixem_data->sleep_on_startup = curr_prefs->sleep_on_startup ;
 
   blixem_data->kill_on_exit = curr_prefs->kill_on_exit ;
 
@@ -1292,6 +1308,12 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
    * (keep_tempfiles = true in blixem stanza of ZMap file) */
   if (!blixem_data->keep_tmpfiles)
     paramString[BLX_ARGV_RM_TMP_FILES - missed] = g_strdup("--remove-input-files") ;
+  else
+    missed += 1;
+
+  /* For testing purposes tell blixem to sleep on startup. */
+  if (blixem_data->sleep_on_startup)
+    paramString[BLX_ARGV_SLEEP - missed] = g_strdup("-w") ;
   else
     missed += 1;
 
@@ -3415,6 +3437,10 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
 					   "bool", blixem_config_curr_G.keep_tmpfiles) ;
 
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Sleep on Startup",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+					   "bool", blixem_config_curr_G.sleep_on_startup) ;
+
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Kill Blixem on Exit",
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
 					   "bool", blixem_config_curr_G.kill_on_exit) ;
@@ -3553,6 +3579,15 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
 	    }
 	}
 
+      if (zMapGUINotebookGetTagValue(page, "Sleep on Startup", "bool", &bool_value))
+	{
+	  if (blixem_config_curr_G.sleep_on_startup != bool_value)
+	    {
+	      blixem_config_curr_G.sleep_on_startup = bool_value ;
+	      blixem_config_curr_G.is_set.sleep_on_startup = TRUE ;
+	    }
+	}
+
       if (zMapGUINotebookGetTagValue(page, "Kill Blixem on Exit", "bool", &bool_value))
 	{
 	  if (blixem_config_curr_G.kill_on_exit != bool_value)
@@ -3595,6 +3630,9 @@ static void saveUserPrefs(BlixemConfigData prefs)
 
       zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				     ZMAPSTANZA_BLIXEM_KEEP_TEMP, prefs->keep_tmpfiles);
+
+      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				     ZMAPSTANZA_BLIXEM_SLEEP, prefs->sleep_on_startup);
 
       zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
 				     ZMAPSTANZA_BLIXEM_KILL_EXIT, prefs->kill_on_exit);
