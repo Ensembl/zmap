@@ -71,6 +71,7 @@ typedef struct
   ZMapFeatureAlignFormat format ;
 
   GArray *align ;    /* Of AlignStrOpStruct. */
+  int num_operators ;
 } AlignStrCanonicalStruct, *AlignStrCanonical ;
 
 
@@ -78,12 +79,19 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
 
 static AlignStrCanonical alignStrCanonicalCreate(ZMapFeatureAlignFormat align_format) ;
 static void alignStrCanonicalDestroy(AlignStrCanonical canon) ;
+static AlignStrOp alignStrCanonicalGetOperator(AlignStrCanonical canon, int i) ;
+static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct * const op) ;
 static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
                                     ZMapStrand ref_strand, ZMapStrand match_strand,
                                     int p_start, int p_end, int c_start, int c_end,
                                     GArray **local_map_out) ;
 static gboolean homol2AlignStrCanonical(AlignStrCanonical *canon_out, ZMapFeature feature) ;
+static gboolean parse_cigar_general(const char * const str,
+                                    gboolean bDigitsLeft,
+                                    gboolean bMayOmit1,
+                                    gboolean bSpaces,
+                                    GError **error) ;
 
 #if NOT_USED
 static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format) ;
@@ -132,66 +140,6 @@ ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignF
 
 
 
-
-/*
- * Look to left of operator. Arguments are
- *
- * sBuff        buffer to write digit characters into
- * pos          pointer to operator position in target string
- * target       start of target string
- *
- * Function returns TRUE if some digits were copied, otherwise returns false.
- */
-static gboolean parse_look_to_left(char sBuff[], const char * const pos, const char * const target)
-{
-  gboolean result = FALSE ;
-  const char *pos_d = NULL ;
-  size_t i = 0 ;
-  if (pos && target && pos>target && *pos && *target && isalpha(*pos))
-    {
-      pos_d = pos-1 ;
-      while (*pos_d && isdigit(*pos_d) && pos_d >= target)
-        --pos_d ;
-      ++pos_d ;
-      while (pos_d != pos)
-        {
-          sBuff[i] = *pos_d ;
-          ++i ;
-          ++pos_d ;
-        }
-      sBuff[i] = '\0' ;
-      if (i)
-        result = TRUE ;
-    }
-  return result ;
-}
-
-/*
- * As above, but looking to the right of the operator.
- */
-static gboolean parse_look_to_right(char sBuff[], char *pos, const char * const target )
-{
-  gboolean result = FALSE ;
-  char *pos_d = NULL ;
-  size_t i = 0 ;
-  if (pos && target && pos>=target && *pos && *target && isalpha(*pos))
-    {
-      pos_d = ++pos ;
-      while (*pos_d && isdigit(*pos_d))
-        ++pos_d ;
-      while (pos != pos_d)
-        {
-          sBuff[i] = *pos ;
-          ++i ;
-          ++pos ;
-        }
-      sBuff[i] = '\0' ;
-      if (i)
-        result = TRUE ;
-    }
-  return result ;
-}
-
 /*
  * Return the group of characters associated with a given operator.
  * Arguments are:
@@ -209,8 +157,8 @@ static gboolean parse_look_to_right(char sBuff[], char *pos, const char * const 
  * Note: We may return an empty buffer.
  */
 static gboolean parse_get_op_data(int i,
-                                  char * sBuff,
-                                  char ** pArray,
+                                  char * const sBuff,
+                                  const char ** pArray,
                                   int nOp,
                                   const char * const target,
                                   gboolean bLeft)
@@ -265,10 +213,10 @@ static gboolean parse_get_op_data(int i,
  * opt == 2       single space at end, all other characters must be digits
  * return value is pointer to the start of the digits
  */
-static const char * parse_is_valid_number(const char *sBuff, size_t iLen, int opt)
+static char * parse_is_valid_number(char *sBuff, size_t iLen, int opt)
 {
   static const char cSpace = ' ' ;
-  const char * num_pos = NULL ;
+  char * num_pos = NULL, *result = NULL ;
   gboolean bDigits = TRUE ;
 
   if (iLen)
@@ -280,7 +228,7 @@ static const char * parse_is_valid_number(const char *sBuff, size_t iLen, int op
           while (*num_pos && (bDigits = isdigit(*num_pos)))
             ++num_pos ;
           if (bDigits)
-            num_pos = sBuff ;
+            result = sBuff ;
         }
       else if (opt == 1)
         {
@@ -291,24 +239,24 @@ static const char * parse_is_valid_number(const char *sBuff, size_t iLen, int op
               while (*num_pos && (bDigits = isdigit(*num_pos)))
                 ++num_pos ;
               if (bDigits)
-                num_pos = sBuff+1 ;
+                result = sBuff+1 ;
             }
         }
       else if (opt == 2)
         {
           /* single space at end, all other characters must be digits */
-          if (cSpace == *(sBuff+iLen))
+          if (cSpace == *(sBuff+iLen-1))
             {
               num_pos = sBuff ;
-              while (num_pos && (bDigits = isdigit(*num_pos)))
+              while (*num_pos && cSpace!=*num_pos && (bDigits = isdigit(*num_pos)))
                 ++num_pos ;
               if (bDigits)
-                num_pos = sBuff ;
+                result = sBuff ;
             }
         }
     }
 
-  return num_pos ;
+  return result ;
 }
 
 /*
@@ -325,23 +273,26 @@ static const char * parse_is_valid_number(const char *sBuff, size_t iLen, int op
  * described below, then parse the numerical value and return it.
  *
  */
-static int parse_is_valid_op_data(const char * sBuff,
+static int parse_is_valid_op_data(char * sBuff,
                                   gboolean bMayOmit1,
                                   gboolean bLeft,
-                                  gboolean bSpaces)
+                                  gboolean bSpaces,
+                                  gboolean bEnd,
+                                  gboolean bFirst)
 {
   static const char cSpace = ' ' ;
-  const char *num_pos = NULL ;
+  char *num_pos = NULL ;
   int length = 0, num_opt = 0 ;
   size_t iLen = strlen(sBuff) ;
 
   /* Tests:
    *
    * (1) If iLen of the string is zero, and omit1 is true,
-   *     and bSpaces is false, then length = 1
+   *     then length = 1
    * (2) If iLen is 1 and we only have a space, and bSpace is true
-   *     and bOmit1 is true then we have length = 1
-   * (3) If iLen is 1 and we have a digit then parse for length
+   *     and bOmit1 is true then we have length = 1,
+   * (3) If iLen is 1 and we have a digit and bSpace is false
+         then parse for length
    * (4) If iLen is > 1 and bSpaces is true then we must have
    *     one space at the start or end according to bLeft
    * (5) If iLen is > 1 and bSpaces is false, then there must be
@@ -351,15 +302,29 @@ static int parse_is_valid_op_data(const char * sBuff,
 
   if (iLen == 0)
     {
-      if (bMayOmit1 && !bSpaces)
+      if (bMayOmit1)
         length = 1 ;
     }
   else if (iLen == 1)
     {
-      if (sBuff[0]==cSpace && bMayOmit1 && bSpaces)
-        length = 1;
+      if (sBuff[0] == cSpace)
+        {
+          if (bSpaces && bMayOmit1)
+            length = 1 ;
+        }
       else if (isdigit(sBuff[0]))
-        length = atoi(sBuff) ;
+        {
+          if (!bSpaces)
+            length = atoi(sBuff) ;
+          else
+            {
+              if (bEnd)
+                {
+                  if ((bLeft && bFirst) || (!bLeft && !bFirst))
+                    length = atoi(sBuff) ;
+                }
+            }
+        }
     }
   else
     {
@@ -368,13 +333,19 @@ static int parse_is_valid_op_data(const char * sBuff,
           if (bLeft)
             {
               /* there must be one space at the start and all other characters must be digits */
-              num_opt = 1 ;
+              if (bEnd && bFirst)
+                num_opt = 0 ;
+              else
+                num_opt = 1 ;
               num_pos = parse_is_valid_number(sBuff, iLen, num_opt) ;
             }
           else
             {
               /* there must be one space at the end and all other characters must be digits */
-              num_opt = 2 ;
+              if (bEnd && !bFirst)
+                num_opt = 0 ;
+              else
+                num_opt = 2 ;
               num_pos = parse_is_valid_number(sBuff, iLen, num_opt) ;
             }
         }
@@ -398,111 +369,172 @@ static int parse_is_valid_op_data(const char * sBuff,
  *
  * Arguments are:
  * char *str                    string to operate upon
- * gboolean bDigitsFirst        if TRUE, digits must be before operators
+ * gboolean bDigitsLeft         if TRUE, digits must be before operators
  *                              if FALSE, digits must be after operators
- * An absent digit is interpreted as unity for all operators.
+ * bMayOmit1                    is is OK to omit a number, will be assumed to be 1, otherwise
+ *                              numbers must always be included
+ * bSpaces                      operator/number pairs are seperated by one space, otherwise
+ *                              may not be seperated by anything
  */
 #define NUM_OPERATOR_LIMIT 1024
 #define NUM_DIGITS_LIMIT 32
-static gboolean parseTestFunction02(char *str,
+static gboolean parse_cigar_general(const char * const str, /* AlignStrCanonical canon, */
                                     gboolean bDigitsLeft,
                                     gboolean bMayOmit1,
-                                    gboolean bSpaces)
+                                    gboolean bSpaces,
+                                    GError **error)
 {
-  gboolean result = FALSE, data_found = FALSE ;
+  gboolean result = FALSE, data_found = FALSE, bEnd = FALSE, bFirst = FALSE ;
   size_t iLength = 0 ;
-  char *sTarget = NULL ;
+  const char *sTarget = NULL ;
   int i = 0, iOperators = 0 ;
   char * sBuff = NULL ;
-  char ** pArray = NULL ;
+  char const ** pArray = NULL ;
+  char cStart = '\0', cEnd = '\0' ;
   GArray* pAlignStrOpArray = NULL ;
+  AlignStrOp pAlignStrOp = NULL ;
 
-  zMapReturnValIfFail(str && *str, result) ;
-  iLength = strlen(str) ;
+  zMapReturnValIfFail(str && *str && error && (iLength = strlen(str)), result) ;
+  result = TRUE ;
   sTarget = str ;
-
-  sBuff = (char*) g_new0(char, NUM_DIGITS_LIMIT) ;
-  pArray = (char**) g_new0(char*, NUM_OPERATOR_LIMIT) ;
+  cStart = *str ;
+  cEnd = str[iLength-1] ;
 
   /*
-   * Operators are defined by one character only each. This step finds their
-   * positions in the input string.
+   * We do not allow anything other than operator character or
+   * digit at the start or end, regardless of other options.
    */
-  while (*sTarget)
+  if (!isalnum(cStart) && result)
     {
-      if (isalpha(*sTarget) && (iOperators < NUM_OPERATOR_LIMIT) )
+      *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
+                           "target string = '%s', has at non-operator or non-digit character at start", str) ;
+      result = FALSE ;
+    }
+  if (!isalnum(cEnd) && result)
+    {
+      *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
+                           "target string = '%s', has at non-operator and non-digit character at end", str) ;
+      result = FALSE ;
+    }
+
+  /*
+   * If bDigitsLeft, there can be no digits at the end of the string,
+   * and if !bDigitsLeft there can be no digits at the start of the string.
+   */
+  if (bDigitsLeft && result)
+    {
+      if (!isalpha(cEnd))
         {
-          pArray[iOperators] = sTarget ;
-          iOperators++ ;
+          *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
+                               "target string = '%s', has at non-operator character at end", str) ;
+          result = FALSE ;
         }
-      ++sTarget ;
+    }
+  else if (!bDigitsLeft && result)
+    {
+      if (!isalpha(cStart))
+        {
+          *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
+                               "target string = '%s', has non-operator character at start", str) ;
+          result = FALSE ;
+        }
     }
 
   /*
-   * Loop over the operators and determine their type.
+   * Do the main parsing work.
    */
-  pAlignStrOpArray = g_array_new(FALSE, TRUE, sizeof(AlignStrOpStruct)) ;
-  for (i=0; i<iOperators; ++i)
+  if (result)
     {
-      AlignStrOpStruct oAlignStrOp ;
-      oAlignStrOp.op = *pArray[i] ;
-      oAlignStrOp.length = 0 ;
+
+      sBuff = (char*) g_new0(char, NUM_DIGITS_LIMIT) ;
+      pArray = (char const **) g_new0(char*, NUM_OPERATOR_LIMIT) ;
 
       /*
-       *  This should be put into a function
+       * Operators are defined by one character only each. This step finds their
+       * positions in the input string.
        */
-      pAlignStrOpArray = g_array_append_val(pAlignStrOpArray, oAlignStrOp) ;
-    }
-
-  /*
-   * Now inspect various bits of the string to extract the associated digits.
-   */
-  for (i=0; i<iOperators; ++i)
-    {
-      /*
-       * THis should be put into a function
-       */
-      AlignStrOp pAlignStrOp = &(g_array_index(pAlignStrOpArray, AlignStrOpStruct, i)) ;
-
-
-
-
+      while (*sTarget)
+        {
+          if (isalpha(*sTarget) && (iOperators < NUM_OPERATOR_LIMIT) )
+            {
+              pArray[iOperators] = sTarget ;
+              iOperators++ ;
+            }
+          ++sTarget ;
+        }
 
       /*
-       * old method
+       * Loop over the operators and determine their type.
        */
-      sBuff[0] = '\0' ;
-      if (bDigitsLeft)
-        data_found = parse_look_to_left(sBuff, pArray[i], str) ;
-      else
-        data_found = parse_look_to_right(sBuff, pArray[i], str) ;
+      pAlignStrOpArray = g_array_new(FALSE, TRUE, sizeof(AlignStrOpStruct)) ;
+      for (i=0; i<iOperators; ++i)
+        {
+          AlignStrOpStruct oAlignStrOp ;
+          oAlignStrOp.op = *pArray[i] ;
+          oAlignStrOp.length = 0 ;
 
-      if (data_found && (sBuff[0] != '\0'))
-        pAlignStrOp->length = atoi(sBuff) ;
-      else
-        pAlignStrOp->length = 1 ;
-
-
-
+          /*
+           *  This should be put into a function wrapping the AlignStrCanonical
+           */
+          pAlignStrOpArray = g_array_append_val(pAlignStrOpArray, oAlignStrOp) ;
+        }
 
       /*
-       * New method
+       * Now inspect various bits of the string to extract the associated digits.
        */
-      sBuff[0] = '\0' ;
-      data_found = parse_get_op_data(i, sBuff, pArray, iOperators, str, bDigitsLeft ) ;
-      pAlignStrOp->length = parse_is_valid_op_data(sBuff, bMayOmit1, bDigitsLeft, bSpaces) ;
+      for (i=0; i<iOperators; ++i)
+        {
+          bEnd = FALSE ;
+          if ((i==0) || (i==iOperators-1))
+            bEnd = TRUE ;
+          bFirst = !(gboolean)i;
 
+          /*
+           * This should be put into a function wrapping the AlignStrCanonical
+           */
+          pAlignStrOp = &(g_array_index(pAlignStrOpArray, AlignStrOpStruct, i)) ;
 
+          /*
+           * New method
+           */
+          sBuff[0] = '\0' ;
+          data_found = parse_get_op_data(i, sBuff, pArray, iOperators, str, bDigitsLeft ) ;
+          pAlignStrOp->length =
+            parse_is_valid_op_data(sBuff, bMayOmit1, bDigitsLeft, bSpaces, bEnd, bFirst) ;
 
+        }
 
-    }
+      /*
+       * Now run over the data found and check that the operators are alphabetic characters
+       * and that the numbers are all non-zero.
+       */
+      result = TRUE ;
+      for (i=0; i<iOperators; ++i)
+        {
+          pAlignStrOp = &(g_array_index(pAlignStrOpArray, AlignStrOpStruct, i)) ;
+          if (!isalpha(pAlignStrOp->op) || !pAlignStrOp->length)
+            {
+              *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
+                        "target string = '%s', op_index = %i", str, i) ;
+              result = FALSE ;
+              break ;
+            }
+        }
 
-  if (sBuff)
-    g_free(sBuff) ;
-  if (pArray)
-    g_free(pArray) ;
-  if (pAlignStrOpArray)
-    g_array_free(pAlignStrOpArray, TRUE) ;
+      /*
+       * If all is well at this point then replace the AlignStrOp array in the canon
+       * arguemnt with the one that's just been created here.
+       */
+
+      if (sBuff)
+        g_free(sBuff) ;
+      if (pArray)
+        g_free(pArray) ;
+      if (pAlignStrOpArray)
+        g_array_free(pAlignStrOpArray, TRUE) ;
+
+    } /* if (result) */
+
 
   return result ;
 }
@@ -517,81 +549,65 @@ static gboolean parseTestFunction02(char *str,
 #define TEST_STRING_MAX 1024
 static void parseTestFunction01()
 {
-  char *sTest01 = NULL,
-    *sTest02 = NULL,
-    *sTest03 = NULL,
-    *sTest04 = NULL ;
-  gboolean bDigitsLeft,
+  char *sTest01 = NULL ;
+  gboolean bResult = FALSE,
+    bDigitsLeft,
     bMayOmit1,
     bSpaces ;
+  GError *error = NULL ;
 
   sTest01 = (char*) g_new0(char, TEST_STRING_MAX) ;
-  sTest02 = (char*) g_new0(char, TEST_STRING_MAX) ;
-  sTest03 = (char*) g_new0(char, TEST_STRING_MAX) ;
-  sTest04 = (char*) g_new0(char, TEST_STRING_MAX) ;
 
-  sprintf(sTest01, "3M13I52M10I1980MII") ;
+  sprintf(sTest01, "33M13I52M10I1980MII") ;
   bDigitsLeft = TRUE ;
   bMayOmit1 = TRUE ;
   bSpaces = FALSE ;
-  if (parseTestFunction02(sTest01, bDigitsLeft, bMayOmit1, bSpaces))
-    {
-      /* ok */
-    }
-  else
-    {
-      /* no ok */
-    }
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
-  sprintf(sTest02, "M3I13M52I10M1980II") ;
+  sprintf(sTest01, "M3I13M52I10M1980II") ;
   bDigitsLeft = FALSE ;
   bMayOmit1 = TRUE ;
   bSpaces = FALSE ;
-  if (parseTestFunction02(sTest02, bDigitsLeft, bMayOmit1, bSpaces))
-    {
-      /* ok */
-    }
-  else
-    {
-      /* no ok */
-    }
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
-  sprintf(sTest03, "3M 13I 52M 10I 1980M I I") ;
+  sprintf(sTest01, "33M 13I 52M 10I 1980M I I") ;
   bDigitsLeft = TRUE ;
   bMayOmit1 = TRUE ;
   bSpaces = TRUE ;
-  if (parseTestFunction02(sTest03, bDigitsLeft, bMayOmit1, bSpaces))
-    {
-      /* ok */
-    }
-  else
-    {
-      /* no ok */
-    }
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
-  sprintf(sTest02, "M3 I13 M52 I10 M1980 I I") ;
+  sprintf(sTest01, "M33 I13 M52 I10 M1980 I I") ;
   bDigitsLeft = FALSE ;
   bMayOmit1 = TRUE ;
   bSpaces = TRUE;
-  if (parseTestFunction02(sTest02, bDigitsLeft, bMayOmit1, bSpaces))
-    {
-      /* ok */
-    }
-  else
-    {
-      /* no ok */
-    }
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
+  sprintf(sTest01, "33M13I52M10I1980M1I13I") ;
+  bDigitsLeft = TRUE ;
+  bMayOmit1 = FALSE ;
+  bSpaces = FALSE ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
+  sprintf(sTest01, "M3I13M52I10M1980I1I18") ;
+  bDigitsLeft = FALSE ;
+  bMayOmit1 = FALSE ;
+  bSpaces = FALSE ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+
+  sprintf(sTest01, "3M 13I 52M 10I 1980M 1I 200I") ;
+  bDigitsLeft = TRUE ;
+  bMayOmit1 = FALSE ;
+  bSpaces = TRUE ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+
+  sprintf(sTest01, "M31 I13 M52 I10 M1980 I3 I32") ;
+  bDigitsLeft = FALSE ;
+  bMayOmit1 = FALSE ;
+  bSpaces = TRUE ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
   if (sTest01)
     g_free(sTest01) ;
-  if (sTest02)
-    g_free(sTest02) ;
-  if (sTest03)
-    g_free(sTest03) ;
-  if (sTest04)
-    g_free(sTest04) ;
 }
 #undef TEST_STRING_MAX
 
@@ -882,6 +898,7 @@ static AlignStrCanonical alignStrCanonicalCreate(ZMapFeatureAlignFormat align_fo
     {
       canon->format = align_format ;
       canon->align = g_array_new(FALSE, TRUE, sizeof(AlignStrOpStruct)) ;
+      canon->num_operators = 0 ;
     }
 
   return canon ;
@@ -901,6 +918,32 @@ static void alignStrCanonicalDestroy(AlignStrCanonical canon)
 
   return ;
 }
+
+
+static AlignStrOp alignStrCanonicalGetOperator(AlignStrCanonical canon, int i)
+{
+  AlignStrOp op = NULL ;
+  if (canon && canon->align && i<canon->num_operators)
+    {
+       op = &(g_array_index(canon->align, AlignStrOpStruct, i)) ;
+    }
+  return op ;
+}
+
+static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct * const op)
+{
+  gboolean result = FALSE ;
+  if (canon && canon->align)
+    {
+      canon->align = g_array_append_val(canon->align, op) ;
+      ++canon->num_operators ;
+    }
+  return result ;
+}
+
+
+
+
 
 
 
@@ -1391,6 +1434,8 @@ static gboolean bamVerifyCigar(char *match_str)
 
 #endif
 
+
+
 /*
  * Convert AlignStrCanonical to exonerate cigar string.
  */
@@ -1438,11 +1483,17 @@ static gboolean alignStrCanonical2ExonerateVulgar(char ** p_align_str, AlignStrC
 }
 
 
+
 /* Blindly converts, assumes match_str is a valid exonerate cigar string. */
 static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = TRUE ;
-  char *cp ;
+  gboolean result = FALSE ;
+  char *cp = NULL ;
+
+  if ((canon->format != ZMAPALIGN_FORMAT_CIGAR_EXONERATE)|| (canon->num_operators != 0))
+    return result ;
+
+  result = TRUE ;
 
   cp = match_str ;
   do
@@ -1472,6 +1523,8 @@ static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = FALSE ;
 
+  if ((canon->format != ZMAPALIGN_FORMAT_VULGAR_EXONERATE)|| (canon->num_operators != 0))
+    return result ;
 
   return result ;
 }
@@ -1480,8 +1533,13 @@ static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon)
 /* Blindly converts, assumes match_str is a valid ensembl cigar string. */
 static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = TRUE ;
-  char *cp ;
+  gboolean result = FALSE ;
+  char *cp = NULL ;
+
+  if ((canon->format != ZMAPALIGN_FORMAT_CIGAR_ENSEMBL)|| (canon->num_operators != 0))
+    return result ;
+
+  result = TRUE ;
 
   cp = match_str ;
   do
@@ -1520,13 +1578,21 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
  */
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = TRUE ;
-  char *cp ;
+  gboolean result = FALSE ;
+  static const gboolean bDigitsLeft = TRUE,
+    bMayOmit1 = FALSE,
+    bSpaces = FALSE ;
+  char *cp = NULL;
+
+  if ((canon->format != ZMAPALIGN_FORMAT_CIGAR_BAM)|| (canon->num_operators != 0))
+    return result ;
+
+  result = TRUE ;
 
   /*
    * (sm23) This is a test function for parsing cigar/gap strings
    */
-  parseTestFunction01() ;
+  /* parseTestFunction01() ; */
 
   cp = match_str ;
   do
