@@ -40,51 +40,65 @@
 
 typedef struct _zmapWindowContainerFeatureSetClassStruct
 {
-  zmapWindowContainerGroupClass __parent__;
+  zmapWindowContainerGroupClass __parent__ ;
 
-} zmapWindowContainerFeatureSetClassStruct;
+} zmapWindowContainerFeatureSetClassStruct ;
 
 
+
+/* I REALLY DON'T UNDERSTAND WHY THIS IS SEPARATE FROM CanvasFeatureset.c stuff....what's the
+ * point ??? DID IT JUST NOT GET MERGED OR WHAT.....CONFUSING..... */
 
 typedef struct _zmapWindowContainerFeatureSetStruct
 {
-  zmapWindowContainerGroup __parent__;
+  zmapWindowContainerGroup __parent__ ;
 
+  ZMapStyleColumnDisplayState display_state ;
+
+  gboolean                    has_stats ;
 
   ZMapWindow  window;
   ZMapStrand  strand ;
   ZMapFrame   frame ;
-//  GHashTable *style_table ;
-  ZMapFeatureTypeStyle style;       /* column specific style or the one single style for a featureset */
+
+
+
+  /* HOW DO THESE TWO RELATE TO THE STUFF IN THE canvasfeatureset struct which seems to replicate
+   * these fields ???? je ne sais pas..... */
+  /* this is a column setting, the settings struct below is an amalgamation of styles */
+  ZMapStyleBumpMode bump_mode ;
+
+  ZMapFeatureTypeStyle style ;       /* column specific style or the one single style for a featureset */
+
+
+
 
   /* Empty columns are only hidden ATM and as they have no
    * ZMapFeatureSet removing them from the FToI hash becomes difficult
    * without the align, block and set ids. No doubt it'l be true for
    * empty block and align containers too at some point. */
 
-  GQuark      align_id;
-  GQuark      block_id;
-  GQuark      unique_id;
-  GQuark      original_id;
+  GQuark      align_id ;
+  GQuark      block_id ;
+  GQuark      unique_id ;
+  GQuark      original_id ;
 
   /* We keep the features sorted by position and size so we can cursor through them... */
-  gboolean    sorted;
+  gboolean    sorted ;
 
   /* does the column contain featuresets that are maskable? */
-  gboolean    maskable;
+  gboolean    maskable ;
 
   /* does the column contain masked featuresets that have been masked (not displayed)? (default) */
   gboolean    masked;
 
-
-
-  /* which featuresets are displayed in this column */
-  GList *     featuresets;
+  gboolean has_feature_set ;
 
 
 
-  /* this is a column setting, the settings struct below is an amalgamation of styles */
-  ZMapStyleBumpMode bump_mode;
+  /* list of featureset ids displayed in this column */
+  GList *featuresets ;
+
 
   /* Extra items used for displaying colinearity lines and markers, note that we can end up
    * with the colinear markers becoming long items so we need to record them too. */
@@ -92,19 +106,14 @@ typedef struct _zmapWindowContainerFeatureSetStruct
   GList *incomplete_markers ;
   GList *splice_markers ;
 
-  /* Features hidden by user, should stay hidden. */
+  /* Features hidden by user, should stay hidden until unhidden by user. */
   GQueue     *user_hidden_stack ;
 
   /* These fields are used for some of the more exotic column bumping. */
-  gboolean    hidden_bump_features ; /* Features were hidden because they
-				      * are out of the marked range. */
+  gboolean    hidden_bump_features ;                        /* Features were hidden because they
+                                                             * are out of the marked range. *//*  */
 
-
-    gboolean                    has_feature_set;
-    gboolean                    has_stats;
-    ZMapStyleColumnDisplayState display_state;
-
-} zmapWindowContainerFeatureSetStruct;
+} zmapWindowContainerFeatureSetStruct ;
 
 
 
