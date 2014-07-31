@@ -218,6 +218,7 @@ static char * parse_is_valid_number(char *sBuff, size_t iLen, int opt)
   static const char cSpace = ' ' ;
   char * num_pos = NULL, *result = NULL ;
   gboolean bDigits = TRUE ;
+  int nDigits = 0 ;
 
   if (iLen)
     {
@@ -226,8 +227,11 @@ static char * parse_is_valid_number(char *sBuff, size_t iLen, int opt)
           /* all characters must be digits */
           num_pos = sBuff ;
           while (*num_pos && (bDigits = isdigit(*num_pos)))
-            ++num_pos ;
-          if (bDigits)
+            {
+              ++nDigits ;
+              ++num_pos ;
+            }
+          if (bDigits && nDigits==iLen)
             result = sBuff ;
         }
       else if (opt == 1)
@@ -237,8 +241,11 @@ static char * parse_is_valid_number(char *sBuff, size_t iLen, int opt)
             {
               num_pos = sBuff+1;
               while (*num_pos && (bDigits = isdigit(*num_pos)))
-                ++num_pos ;
-              if (bDigits)
+                {
+                  ++nDigits ;
+                  ++num_pos ;
+                }
+              if (bDigits && nDigits==iLen-1)
                 result = sBuff+1 ;
             }
         }
@@ -249,8 +256,11 @@ static char * parse_is_valid_number(char *sBuff, size_t iLen, int opt)
             {
               num_pos = sBuff ;
               while (*num_pos && cSpace!=*num_pos && (bDigits = isdigit(*num_pos)))
-                ++num_pos ;
-              if (bDigits)
+                {
+                  ++nDigits ;
+                  ++num_pos ;
+                }
+              if (bDigits && nDigits==iLen-1)
                 result = sBuff ;
             }
         }
@@ -302,8 +312,21 @@ static int parse_is_valid_op_data(char * sBuff,
 
   if (iLen == 0)
     {
-      if (bMayOmit1)
-        length = 1 ;
+      if (!bSpaces)
+        {
+          if (bMayOmit1)
+            length = 1 ;
+        }
+      else
+        {
+          if (bMayOmit1 && bEnd)
+            {
+              if (bLeft && bFirst)
+                length = 1 ;
+              else if (!bLeft && !bFirst)
+                length = 1 ;
+            }
+        }
     }
   else if (iLen == 1)
     {
@@ -407,13 +430,13 @@ static gboolean parse_cigar_general(const char * const str, /* AlignStrCanonical
   if (!isalnum(cStart) && result)
     {
       *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
-                           "target string = '%s', has at non-operator or non-digit character at start", str) ;
+                           "target string = '%s', has non-operator or non-digit character at start", str) ;
       result = FALSE ;
     }
   if (!isalnum(cEnd) && result)
     {
       *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
-                           "target string = '%s', has at non-operator and non-digit character at end", str) ;
+                           "target string = '%s', has non-operator and non-digit character at end", str) ;
       result = FALSE ;
     }
 
@@ -505,10 +528,11 @@ static gboolean parse_cigar_general(const char * const str, /* AlignStrCanonical
         }
 
       /*
-       * Now run over the data found and check that the operators are alphabetic characters
-       * and that the numbers are all non-zero.
+       * Now run over the data found and check that
+       * (1) We have at least one operator, and
+       * (2) All operators are alphabetic characters and op->length != 0.
        */
-      result = TRUE ;
+      result = iOperators ? TRUE : FALSE ;
       for (i=0; i<iOperators; ++i)
         {
           pAlignStrOp = &(g_array_index(pAlignStrOpArray, AlignStrOpStruct, i)) ;
@@ -558,52 +582,173 @@ static void parseTestFunction01()
 
   sTest01 = (char*) g_new0(char, TEST_STRING_MAX) ;
 
-  sprintf(sTest01, "33M13I52M10I1980MII") ;
+  /*
+   * First one of each group should pass, all others should fail.
+   * 31/07/2014 Current version of functions passes all these tests.
+   */
+
+  /* settings 1 */
   bDigitsLeft = TRUE ;
   bMayOmit1 = TRUE ;
   bSpaces = FALSE ;
+  sprintf(sTest01, "33M13I52M10I1980MII") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, " 33M13I52M10I1980MII") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33 M13I52M10I1980MII") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "3M13I52M10I 1980MII ") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33M13I52$10I1980MII") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "=33M13I52M10I1980MII") ;
   bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
-  sprintf(sTest01, "M3I13M52I10M1980II") ;
+  /* settings 2 */
   bDigitsLeft = FALSE ;
   bMayOmit1 = TRUE ;
   bSpaces = FALSE ;
+  sprintf(sTest01, "M3I13M52I10M1980II") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M3 I13M52I10M1980II") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, " M3I13M52I10M1980II") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M 3I13M52I10M1980II") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M3I13M52I10M1980II1 ") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M3I13M52I10 M1980II") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M3I13M52&10M1980II") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M3I13M52I10M1980I*") ;
   bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
-  sprintf(sTest01, "33M 13I 52M 10I 1980M I I") ;
+  /* settings 3 */
   bDigitsLeft = TRUE ;
   bMayOmit1 = TRUE ;
   bSpaces = TRUE ;
+  sprintf(sTest01, "33M 13I 52M 10I 1980M I I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, " 33M 13I 52M 10I 1980M I I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33M13I 52M 10I 1980M I I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33M 13I 52M 10I 1980MI I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33M 13I 52M 10I 1980M II") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33M 13I 52M 10I 1980M I I1") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33M 13I 52 10I 1980M I I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33M 13I 52M 10I 1980M I=I") ;
   bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
-  sprintf(sTest01, "M33 I13 M52 I10 M1980 I I") ;
+  /* settings 4 */
   bDigitsLeft = FALSE ;
   bMayOmit1 = TRUE ;
   bSpaces = TRUE;
+  sprintf(sTest01, "M33 I13 M52 I10 M1980 I I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M33 I13 M52 I10 M1980 I I ") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M33 I13 M52 I10 M1980 II") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M33 I13 M52I10 M1980 I I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M33 II13 M52 I10 M1980 I I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M33 I13 M52 I10M1980 I I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M33 I13 M52 I10 M1980 I ") ;
   bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
+  /* settings 5 */
+  bDigitsLeft = TRUE ;
+  bMayOmit1 = FALSE ;
+  bSpaces = FALSE ;
   sprintf(sTest01, "33M13I52M10I1980M1I13I") ;
-  bDigitsLeft = TRUE ;
-  bMayOmit1 = FALSE ;
-  bSpaces = FALSE ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33M13I52M10I1980M1I13I ") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M13I52M10I1980M1I13I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33M13I52M10I1980M1II") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33M13I52 M10I1980M1I13I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33M13I52M 10I1980M1I13I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, " 33M13I52M10I1980M1I13I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "33M13I52M10I1980M1I13I ") ;
   bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
+  /* settings 6 */
+  bDigitsLeft = FALSE ;
+  bMayOmit1 = FALSE ;
+  bSpaces = FALSE ;
   sprintf(sTest01, "M3I13M52I10M1980I1I18") ;
-  bDigitsLeft = FALSE ;
-  bMayOmit1 = FALSE ;
-  bSpaces = FALSE ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M3I13M52I10M1980I1I18 ") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M3 I13M52I10M1980I1I18") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, " M3I13M52I10M1980I1I18") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "MI13M52I10M1980I1I18") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M3I13M52I10M1980I1I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M3I13M52I10M1980II18") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M3I13M52 I10M1980I1I18") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M3I13M52I10M19&80I1I18") ;
   bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
-  sprintf(sTest01, "3M 13I 52M 10I 1980M 1I 200I") ;
+  /* settings 7 */
   bDigitsLeft = TRUE ;
   bMayOmit1 = FALSE ;
   bSpaces = TRUE ;
+  sprintf(sTest01, "3M 13I 52M 10I 1980M 1I 200I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M 13I 52M 10I 1980M 1I 200I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "3M13I 52M 10I 1980M 1I 200I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "3M 13I 52M 10I 1980M 1I I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "3M 13I 52M 10I 1980M 1I 200I ") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "3M 13I M 10I 1980M 1I 200I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, " 3M 13I 52M 10I 1980M 1I 200I") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "3M 13I 52M && 10I 1980M 1I 200I") ;
   bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
-  sprintf(sTest01, "M31 I13 M52 I10 M1980 I3 I32") ;
+  /* settings 8 */
   bDigitsLeft = FALSE ;
   bMayOmit1 = FALSE ;
   bSpaces = TRUE ;
+  sprintf(sTest01, "M31 I13 M52 I10 M1980 I3 I32") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M31I13 M52 I10 M1980 I3 I32") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M31 I13 M52 10 M1980 I3 I32") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M31 I13 M52 I10 M1980 I3 I32 ") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, " M31 I13 M52 I10 M1980 I3 I32") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M31 I13 M52 I10 M I3 I32") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "31 I13 M52 I10 M1980 I3 I32") ;
+  bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
+  sprintf(sTest01, "M31 I13 M52 I&10 M1980 I3 I32") ;
   bResult = parse_cigar_general(sTest01, bDigitsLeft, bMayOmit1, bSpaces, &error) ;
 
   if (sTest01)
