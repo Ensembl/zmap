@@ -46,6 +46,9 @@
 /*
  * We get align strings in several variants and then convert them
  * into this common format.
+ *
+ * Operator-length pair. Character to represent the operator and a
+ * positive integer for the length.
  */
 typedef struct _AlignStrOpStruct
 {
@@ -66,6 +69,12 @@ typedef struct _AlignStrOpStruct
  *
  */
 
+/*
+ * An object of this type represents the whole of the alignment data
+ * for the whole feature. We have a format (one of the enum type given
+ * above), an array of AlignStOpStruct objects and an integer value
+ * for the number of operators.
+ */
 typedef struct AlignStrCanonicalStruct_
 {
   ZMapFeatureAlignFormat format ;
@@ -74,6 +83,15 @@ typedef struct AlignStrCanonicalStruct_
   int num_operators ;
 } AlignStrCanonicalStruct, *AlignStrCanonical ;
 
+/*
+ * Represents the various options for text representation of
+ * alignment data.
+ *
+ * bDigitsLeft             digits are on left of operators otherwise on right
+ * bMayOmit1               length 1 operators may omit the number
+ * bSpaces                 one space required between operator-number pairs,
+ *                         otherwise no spaces are allowed
+ */
 typedef struct AlignStrCanonicalPropertiesStruct_
 {
   gboolean bDigitsLeft ;
@@ -93,8 +111,10 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
                                     ZMapStrand ref_strand, ZMapStrand match_strand,
                                     int p_start, int p_end, int c_start, int c_end,
                                     GArray **local_map_out) ;
-static gboolean alignStrCanonicalGetProperties(ZMapFeatureAlignFormat align_format,
-                                               AlignStrCanonicalProperties properties) ;
+static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
+                                       AlignStrCanonicalProperties properties) ;
+static gboolean alignProperties2Format(ZMapFeatureAlignFormat *align_format,
+                                       AlignStrCanonicalProperties properties) ;
 static gboolean homol2AlignStrCanonical(AlignStrCanonical *canon_out, ZMapFeature feature) ;
 static gboolean parse_cigar_general(const char * const str,
                                     AlignStrCanonicalProperties properties,
@@ -150,8 +170,8 @@ ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignF
 /*
  * Convert a format to the appropriate properties flags.
  */
-static gboolean alignStrCanonicalGetProperties(ZMapFeatureAlignFormat align_format,
-                                               AlignStrCanonicalProperties properties)
+static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
+                                       AlignStrCanonicalProperties properties)
 {
   gboolean result = FALSE ;
 
@@ -190,6 +210,22 @@ static gboolean alignStrCanonicalGetProperties(ZMapFeatureAlignFormat align_form
 
   return result ;
 }
+
+/*
+ * Convert a Canonical properties to align format. Unfortunately, this is not 1:1 mapping,
+ * so the choice to favour gffv3 Gap over exonerate is made.
+ */
+static gboolean alignProperties2Format(ZMapFeatureAlignFormat *align_format_out,
+                                       AlignStrCanonicalProperties properties)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureAlignFormat align_format ;
+
+  zMapReturnValIfFail(align_format_out, result) ;
+
+  return result ;
+}
+
 
 
 /*
