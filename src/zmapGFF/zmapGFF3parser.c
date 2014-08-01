@@ -3155,6 +3155,9 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
 
   /*
+   * (sm23) Modified on 01/08/2014 to remove need for ID attribute.
+   *
+   * ************ OLD COMMENT ***************
    * We treat two cases:
    * (a) First is an "ordinary" alignment where we are after the "Target" attribute.
    * (b) Second is a SO_term = "read", where we are interested in the "Target" and the "ID"
@@ -3167,6 +3170,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
       bParseAttributeTarget = zMapAttParseTarget(pAttributeTarget, &gqTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
     }
 
+  /*
   if ((pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)))
     {
       bParseAttributeID = zMapAttParseID(pAttributeID, &gqTargetID) ;
@@ -3187,7 +3191,9 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
     {
       cCase = SECOND ;
     }
+   */
 
+  cCase = FIRST ;
 
   /*
    * Get case dependent information
