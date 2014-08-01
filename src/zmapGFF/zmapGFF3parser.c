@@ -3167,6 +3167,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
       bParseAttributeTarget = zMapAttParseTarget(pAttributeTarget, &gqTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
     }
 
+  /* 
   if ((pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)))
     {
       bParseAttributeID = zMapAttParseID(pAttributeID, &gqTargetID) ;
@@ -3187,6 +3188,10 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
     {
       cCase = SECOND ;
     }
+   */
+
+  if (bParseAttributeTarget) 
+    cCase = FIRST ; 
 
 
   /*
