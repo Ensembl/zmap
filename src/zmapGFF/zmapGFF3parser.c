@@ -141,7 +141,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
 
 #endif
 
-#define DUMP_GFF_TO_FILE 1
+/* #define DUMP_GFF_TO_FILE 1 */
 
 #ifdef DUMP_GFF_TO_FILE
 static const char * sFilename = "/nfs/users/nfs_s/sm23/Work/dumpfile.txt" ;
