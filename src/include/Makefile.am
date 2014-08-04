@@ -24,6 +24,7 @@ ZMap/zmapFASTA.h \
 ZMap/zmapFeature.h \
 ZMap/zmapFeatureLoadDisplay.h \
 ZMap/zmapGFF.h \
+ZMap/zmapGFFStringUtils.h \
 ZMap/zmapGLibUtils.h \
 ZMap/zmapGUITreeView.h \
 ZMap/zmapIO.h \

@@ -1321,7 +1321,7 @@ static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
 
         block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i));
 
-        g_string_append_printf(gff_string, "%d %d %d %d",
+        g_string_append_printf(gff_string, "%d %d %d %d,",
                                block->q1, block->q2,
                                block->t1, block->t2);
       }

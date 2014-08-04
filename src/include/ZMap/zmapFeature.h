@@ -129,6 +129,7 @@ typedef enum {ZMAPHOMOL_NONE = 0, ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMO
 #define ZMAPSTYLE_ALIGNMENT_GAPS   "Gaps"
 #define ZMAPSTYLE_ALIGNMENT_CIGAR  "cigar"
 #define ZMAPSTYLE_ALIGNMENT_VULGAR  "vulgar"
+#define ZMAP_CIGAR_PARSE_ERROR "ZMAP_CIGAR_PARSE_ERROR"
 
 
 #define ZMAP_ALIGN_GAP_FORMAT_LIST(_)					\
@@ -264,7 +265,7 @@ typedef struct ZMapAlignBlockStructType
   int q1, q2 ;                                             /* coords in query sequence */
   ZMapStrand q_strand ;
 
-  int t1, t2 ;                                             /* coords in target sequence */
+  int t1, t2 ;                                             /* coords in target (reference) sequence */
   ZMapStrand t_strand ;
 
   AlignBlockBoundaryType start_boundary ;                  /* whether the start of this align abuts onto an intron,

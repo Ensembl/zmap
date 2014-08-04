@@ -126,6 +126,8 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
   gboolean result = FALSE ;
   FooCanvasItem *feature_item ;
 
+  zMapReturnValIfFail(window && feature, result) ;
+
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
                                                     feature->strand, ZMAPFRAME_NONE, feature)))
     {
@@ -145,6 +147,8 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
   PFetchHandle    pfetch = NULL;
   PFetchUserPrefsStruct prefs = {NULL};
   gboolean  debug_pfetch = FALSE;
+
+  zMapReturnIfFail(window && window->sequence );
 
   if((zmapWindowGetPFetchUserPrefs(window->sequence->config_file, &prefs)) && (prefs.location != NULL))
     {
@@ -230,8 +234,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   gboolean result = FALSE ;
   ZMapFeatureSet feature_set ;
 
-  if (!feature || !zMapFeatureIsValid((ZMapFeatureAny)feature))
-    return result ;
+  zMapReturnValIfFail(zmap_window && feature && zMapFeatureIsValid((ZMapFeatureAny)feature), result) ;
 
   feature_set = (ZMapFeatureSet)(feature->parent) ;
 
@@ -325,7 +328,7 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature)
   //  style = zMapFindStyle(window->context_map.styles, feature->style_id) ;
   style = *feature->style;     // safe failure...
 
-  g_return_val_if_fail(style != NULL, strand);
+  zMapReturnValIfFail(feature && style, strand) ;
 
   if ((!(zMapStyleIsStrandSpecific(style))) ||
       ((feature->strand == ZMAPSTRAND_FORWARD) ||
@@ -354,7 +357,9 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
   FooCanvasItem *new_feature = NULL ;
   ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) set_group;
   gboolean masked;
-  ZMapFeature feature = feature_stack->feature;
+  ZMapFeature feature = NULL ;
+  zMapReturnValIfFail(window && feature_stack, new_feature) ;
+  feature = feature_stack->feature;
 
 #if MH17_REVCOMP_DEBUG
   zMapLogWarning("FeatureDraw %d-%d",feature->x1,feature->x2);
@@ -422,6 +427,8 @@ char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set)
 {
   char *description = NULL ;
 
+  zMapReturnValIfFail(feature_set, description) ;
+
   description = g_strdup_printf("%s  :  %s%s%s", (char *)g_quark_to_string(feature_set->original_id),
                                 feature_set->description ? "\"" : "",
                                 feature_set->description ? feature_set->description : "<no description available>",
@@ -434,6 +441,8 @@ char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set)
 /* Get various aspects of features source... */
 void zmapWindowFeatureGetSourceTxt(ZMapFeature feature, char **source_name_out, char **source_description_out)
 {
+  zMapReturnIfFail(feature) ;
+
   if (feature->source_id)
     *source_name_out = g_strdup(g_quark_to_string(feature->source_id)) ;
 
@@ -448,9 +457,7 @@ char *zmapWindowFeatureDescription(ZMapFeature feature)
 {
   char *description = NULL ;
 
-  if (!zMapFeatureIsValid((ZMapFeatureAny)feature))
-    return description ;
-
+  zMapReturnValIfFail(feature && zMapFeatureIsValid((ZMapFeatureAny)feature), description) ;
 
   if (feature->description)
     {
@@ -464,6 +471,7 @@ char *zmapWindowFeatureDescription(ZMapFeature feature)
 gboolean zMapWindowGetDNAStatus(ZMapWindow window)
 {
   gboolean drawable = FALSE;
+  zMapReturnValIfFail(window && window->context_map, drawable) ;
 
   /* We just need one of the blocks to have DNA.
    * This enables us to turn on this button as we
@@ -490,6 +498,8 @@ char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gb
 {
   char *peptide_fasta = NULL ;
   ZMapFeatureContext context ;
+
+  zMapReturnValIfFail(feature, peptide_fasta ) ;
 
 
   if((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
@@ -745,10 +755,10 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
         {
           if (zmapWindowFocusIsItemFocused(window->focus, item))
             {
-              gtk_drag_begin(GTK_WIDGET(window->canvas), targetlist, 
+              gtk_drag_begin(GTK_WIDGET(window->canvas), targetlist,
                              GDK_ACTION_COPY|GDK_ACTION_MOVE|GDK_ACTION_LINK,
                              1, (GdkEvent*)event);
-              
+
               dnd_in_progress = TRUE ;
             }
         }

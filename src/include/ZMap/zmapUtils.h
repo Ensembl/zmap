@@ -184,7 +184,6 @@ gboolean zMapLogStop(void) ;
 void zMapLogStack(void);
 void zMapLogDestroy(void) ;
 
-void zMapStackPrint(void) ;
 gboolean zMapStack2fd(unsigned int remove, int fd) ;
 
 void zMapSignalHandler(int sig_no) ;

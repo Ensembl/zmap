@@ -812,9 +812,9 @@ ZMapFrame  zmapWindowContainerFeatureSetGetFrame (ZMapWindowContainerFeatureSet 
 {
   ZMapFrame frame = ZMAPFRAME_NONE;
 
-  g_return_val_if_fail(ZMAP_IS_CONTAINER_FEATURESET(container_set), frame);
+  zMapReturnValIfFail(ZMAP_IS_CONTAINER_FEATURESET(container_set), ZMAPFRAME_NONE) ;
 
-  frame = container_set->frame;
+  frame = container_set->frame ;
 
   return frame;
 }

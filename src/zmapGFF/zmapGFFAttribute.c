@@ -1048,7 +1048,7 @@ gboolean zMapAttParseTarget(ZMapGFFAttribute pAttribute, GQuark * const pgqOut, 
 
   if ((iFields = sscanf(sValue, sFormat, sStringBuff, &iStart, &iEnd, &cStrand)) >= iRequiredFields)
     {
-      if (iStart <= iEnd)
+      if ((iStart <= iEnd) && strlen(sStringBuff))
         {
 
           if (iFields == iRequiredFields) /* we did not have strand data */
