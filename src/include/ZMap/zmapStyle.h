@@ -391,20 +391,21 @@ _(ZMAPSTYLE_BLIXEM_X,       , "blixem-x", "Blixem peptide sequence. "   , "")
 ZMAP_DEFINE_ENUM(ZMapStyleBlixemType, ZMAP_STYLE_BLIXEM_LIST) ;
 
 
-/* Specifies how features in columns should be bumpped for compact display. */
+/* Specifies how features in columns should be bumped for compact display. */
 #define ZMAP_STYLE_BUMP_MODE_LIST(_)                                              \
-_(ZMAPBUMP_INVALID,               , "invalid",               "invalid",                       "invalid")					\
-_(ZMAPBUMP_UNBUMP,                , "unbump",                "Unbump",                        "No bumping (default)") \
-_(ZMAPBUMP_OVERLAP,               , "overlap",               "Overlap",                       "Bump any features overlapping each other.") \
-_(ZMAPBUMP_START_POSITION,        , "start-position",        "Start Position",                "Bump if features have same start coord.") \
-_(ZMAPBUMP_ALTERNATING,           , "alternating",           "Alternating",                   "Alternate features between two sub_columns, e.g. to display assemblies.") \
-_(ZMAPBUMP_ALL,                   , "all",                   "Bump All",                      "A sub-column for every feature.") \
-_(ZMAPBUMP_NAME,                  , "name",                  "Name",                          "A sub-column for features with the same name.") \
-_(ZMAPBUMP_NAME_INTERLEAVE,       , "name-interleave",       "Name Interleave",               "All features with same name in a single sub-column but several names interleaved in each sub-column, the most compact display.") \
-_(ZMAPBUMP_NAME_NO_INTERLEAVE,    , "name-no-interleave",    "Name No Interleave",            "Display as for Interleave but no interleaving of different names.") \
-_(ZMAPBUMP_NAME_COLINEAR,         , "name-colinear",         "Name & Colinear", "As for Name but colinear alignments shown.") \
-_(ZMAPBUMP_NAME_BEST_ENDS,        , "name-best-ends",        "Name and Best 5'& 3' Matches",  "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.") \
-_(ZMAPBUMP_STYLE,               , "style",               "Style",                       "Show features using an alternate style.")
+_(ZMAPBUMP_INVALID,            , "invalid",            "invalid mode", "")					\
+_(ZMAPBUMP_UNBUMP,             , "unbump",             "No bumping (default)", "") \
+_(ZMAPBUMP_OVERLAP,            , "overlap",            "Bump any features overlapping each other.", "") \
+_(ZMAPBUMP_START_POSITION,     , "start-position",     "Bump if features have same start coord.", "") \
+_(ZMAPBUMP_ALTERNATING,        , "alternating",        "Alternate features between two sub_columns, e.g. to display assemblies.", "") \
+_(ZMAPBUMP_ALL,                , "all",                "A sub-column for every feature.", "") \
+_(ZMAPBUMP_NAME,               , "name",               "A sub-column for features with the same name.", "") \
+_(ZMAPBUMP_FEATURESET_NAME,    , "featureset-name",    "A sub-column for each featureset in a column.", "") \
+_(ZMAPBUMP_NAME_INTERLEAVE,    , "name-interleave",    "All features with same name in a single sub-column but several names interleaved in each sub-column, the most compact display.", "") \
+_(ZMAPBUMP_NAME_NO_INTERLEAVE, , "name-no-interleave", "Display as for Interleave but no interleaving of different names.", "") \
+_(ZMAPBUMP_NAME_COLINEAR,      , "name-colinear",      "As for Name but colinear alignments shown.", "") \
+_(ZMAPBUMP_NAME_BEST_ENDS,     , "name-best-ends",     "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.", "") \
+_(ZMAPBUMP_STYLE,              , "style",              "Show features using an alternate style.", "")
 
 
 /* We should do this automatically or not at all..... */
