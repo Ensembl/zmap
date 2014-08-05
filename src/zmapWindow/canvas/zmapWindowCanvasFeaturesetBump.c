@@ -504,6 +504,8 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
       
                 featureset->sub_col_list = g_list_append(featureset->sub_col_list, sub_col_data) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                 {
                   char *subcol_name ;
                   double offset, width ;
@@ -514,6 +516,8 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 
                   zMapDebugPrintf("Subcol \"%s\" is at %g with width %g", subcol_name, offset, width) ;
                 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
               }
 
             featureset->bump_width += width + bump_data->spacing ;
