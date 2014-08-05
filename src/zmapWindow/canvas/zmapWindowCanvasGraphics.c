@@ -47,14 +47,17 @@
 
 
 
-//int line_debug = 0;
-
 void linePaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
   int cx1, cy1, cx2, cy2;
-  FooCanvasItem *foo = (FooCanvasItem *) featureset;
-  ZMapWindowCanvasGraphics feat = (ZMapWindowCanvasGraphics) feature;
+  FooCanvasItem *foo = NULL ;
+  ZMapWindowCanvasGraphics feat = NULL ;
   GdkColor c;
+
+  zMapReturnIfFail(featureset && feature );
+
+  foo = (FooCanvasItem *) featureset ;
+  feat = (ZMapWindowCanvasGraphics) feature ;
 
   c.pixel = feat->outline;
   gdk_gc_set_foreground (featureset->gc, &c);
@@ -64,10 +67,7 @@ void linePaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
   foo_canvas_w2c(foo->canvas, feat->x2 + featureset->dx, feat->y2 - featureset->start + featureset->dy,
                  &cx2, &cy2);
 
-  //printf("paint line %d %d %d %d (%1.f %.1f)\n", cx1, cy1, cx2, cy2, feat->y1, feat->y2);
-  //line_debug = 1;
   zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
-  //line_debug = 0;
 
   return ;
 }
@@ -79,10 +79,11 @@ void linePaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
 static void zmapWindowCanvasGraphicsGetPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset)
 {
   /* lazy evaluation of pango renderer */
-  ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
+  ZMapWindowCanvasPango pango = NULL ;
 
-  if(!pango)
-    return;
+  zMapReturnIfFail(featureset && featureset->opt ) ;
+
+  pango = (ZMapWindowCanvasPango) featureset->opt;
 
   if(pango->drawable && pango->drawable != drawable)
     zmapWindowCanvasFeaturesetFreePango(pango);
@@ -121,7 +122,6 @@ void textPaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
 
   foo_canvas_w2c (foo->canvas, gfx->x1 + featureset->dx, (gfx->y1 + gfx->y2) / 2 - featureset->start + featureset->dy, &cx, &cy);
   cy -= pango->text_height / 2;		/* centre text on line */
-  //printf("paint text %d %d (%1.f %1.f) %s\n", cx, cy,gfx->y1,gfx->y2, gfx->text);
 
   pango_renderer_draw_layout (pango->renderer, pango->layout,  cx * PANGO_SCALE , cy * PANGO_SCALE);
 }
