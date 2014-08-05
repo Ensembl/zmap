@@ -68,6 +68,7 @@
 /* Current state of play of this code:
  *
  * Code was originally written by Malcolm and then a load of fixes applied by Ed.
+ * 
  * I (Ed) don't completely understand all of Malcolm's thinking and there are
  * probably some bugs remaining but I don't have the time to fix this any more.
  * The code seems robust and the colouring/filling work except that the fill code draws
@@ -236,11 +237,22 @@ static void graphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable
  * we adjust the extent of the first CanvasAlignment to cover tham all
  * as the first one draws all the colinear lines
  */
+
+/* Agh...is this used for line graphs...I guess it might be....check this....
+ * 
+ * 
+ *  */
 static void graphGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width)
 {
   ZMapWindowCanvasFeature first = feature ;
+  int last_y2 ;
 
   *width = feature->width ;
+  span->x1 = feature->y1 ;
+  span->x2 = last_y2 = feature->y2 ;
+
+
+  /* Needs recoding to work differently for different graph styles...???? */
 
   /* if not joining up same name features they don't need to go in the same column */
   if(!zMapStyleIsUnique(*feature->feature->style))
@@ -261,11 +273,19 @@ static void graphGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span
 	    *width = feature->width ;
 	}
 
-      first->y2 = feature->y2 ;
+      last_y2 = feature->y2 ;
     }
 
-  span->x1 = first->y1 ;
-  span->x2 = first->y2 ;
+
+  if (zMapStyleGraphMode(*feature->feature->style) == ZMAPSTYLE_GRAPH_LINE)
+    {
+      feature->y2 = span->x2 = last_y2 ;
+    }
+  else if (zMapStyleGraphMode(*feature->feature->style) == ZMAPSTYLE_GRAPH_HISTOGRAM)
+    {
+      *width = zMapStyleGetWidth(*feature->feature->style) ;
+    }
+
 
   return ;
 }
@@ -940,7 +960,7 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
   int bases_per_bin;
   int bin_start,bin_end;
   ZMapWindowCanvasFeature src_gs = NULL;                    /* source */
-  ZMapWindowCanvasFeature bin_gs;                           /* re-binned */
+  ZMapWindowCanvasFeature bin_gs = NULL ;                   /* re-binned */
   GList *src,*dest;
   double score;
   double min_feat_score = 0, max_feat_score = 0 ;
