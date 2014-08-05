@@ -173,35 +173,43 @@ GType zMapWindowFeaturesetItemGetType(void) ;
 void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int feature_size, int set_size) ;
 
 
-gboolean zMapWindowCanvasIsFeatureSet(ZMapWindowFeaturesetItem) ;
+gboolean zMapWindowCanvasIsFeatureSet(ZMapWindowFeaturesetItem fi) ;
 
 
 
 /* GDK wrappers to clip features */
 
-void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango, char *family, int size, GdkColor *draw);
-
+void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable,
+                                         ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango,
+                                         char *family, int size, GdkColor *draw);
 void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango);
 
 void zMapWindowCanvasFeaturesetExpose(ZMapWindowFeaturesetItem fi);
 void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom);
 
-
-ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id,
-								     GtkAdjustment *v_adjuster,
-								     int start, int end, ZMapFeatureTypeStyle style,
-								     ZMapStrand strand, ZMapFrame frame, int index, guint layer);
+ZMapWindowFeaturesetItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id,
+                                                                         GtkAdjustment *v_adjuster,
+                                                                         int start, int end,
+                                                                         ZMapFeatureTypeStyle style,
+                                                                         ZMapStrand strand, ZMapFrame frame,
+                                                                         int index, guint layer);
 
 guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset);
+
+GQuark zMapWindowCanvasFeaturesetGetSetIDAtPos(ZMapWindowFeaturesetItem fi, double event_x) ;
+
 void zMapWindowCanvasItemFeaturesetSetVAdjust(ZMapWindowFeaturesetItem featureset, GtkAdjustment *v_adjuster) ;
 
-ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y);
+ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,
+                                                                ZMapFeature feature,double x,double y);
 
 gboolean zMapWindowCanvasFeaturesetHasPointFeature(FooCanvasItem *item) ;
 gboolean zMapWindowCanvasFeaturesetUnsetPointFeature(FooCanvasItem *item) ;
 
-ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type);
-void zmapWindowCanvasFeatureFree(gpointer thing);
+ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type) ;
+gboolean zmapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean complex,
+						    ZMapSpan span, double *width) ;
+void zmapWindowCanvasFeatureFree(gpointer thing) ;
 
 void zMapWindowCanvasFeaturesetSetWidth(ZMapWindowFeaturesetItem featureset, double width);
 double zMapWindowCanvasFeaturesetGetWidth(ZMapWindowFeaturesetItem featureset);
@@ -216,15 +224,23 @@ guint zMapWindowCanvasFeaturesetGetLayer(ZMapWindowFeaturesetItem featureset);
 void zMapWindowCanvasFeaturesetSetLayer(ZMapWindowFeaturesetItem featureset, guint layer);
 
 void zMapWindowFeaturesetSetFeatureWidth(ZMapWindowFeaturesetItem featureset_item, ZMapWindowCanvasFeature feat);
-int zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2);
+int zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset,
+                                         ZMapFeature feature, double y1, double y2);
 
-ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset_item, ZMapFeature feature, double y1, double y2);
+ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset_item,
+                                                       ZMapFeature feature, double y1, double y2);
 int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature);
 
 int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet featureset, gboolean destroy);
 
-ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetItem featureset_item, zmapWindowCanvasFeatureType type, double x1, double y1, double x2, double y2, GdkColor *fill, GdkColor *outline, char *text);
+ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetItem featureset_item,
+                                                         zmapWindowCanvasFeatureType type,
+                                                         double x1, double y1, double x2, double y2,
+                                                         GdkColor *fill, GdkColor *outline, char *text);
 int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item, ZMapWindowCanvasGraphics feat);
+
+
+void zmapWindowCanvasFeaturesetDumpFeatures(ZMapWindowFeaturesetItem feature) ;
 
 
 void zmapWindowFeaturesetItemSetColour(FooCanvasItem *interval,
@@ -235,13 +251,17 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem *interval,
 				       GdkColor              *fill,
 				       GdkColor              *border);
 gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatureTypeStyle style);
-void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, gboolean show, ZMapWindowCanvasFeaturesetHideType how);
+void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo,
+                                      ZMapFeature feature, gboolean show, ZMapWindowCanvasFeaturesetHideType how);
 
 guint32 zMap_gdk_color_to_rgba(GdkColor *color);
-int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, gulong *fill_pixel,gulong *outline_pixel);
+int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset,
+                                         ZMapWindowCanvasFeature feature, gulong *fill_pixel,gulong *outline_pixel);
 void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi);
-gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem featureset, gboolean set, double x, double y, long *start, long *end);
-void zMapWindowCanvasFeaturesetGetFeatureBounds(FooCanvasItem *foo, double *rootx1, double *rooty1, double *rootx2, double *rooty2);
+gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem featureset,
+                                               gboolean set, double x, double y, long *start, long *end);
+void zMapWindowCanvasFeaturesetGetFeatureBounds(FooCanvasItem *foo,
+                                                double *rootx1, double *rooty1, double *rootx2, double *rooty2);
 
 
 
@@ -250,8 +270,6 @@ void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
 					    GdkDrawable *drawable, GdkEventExpose *expose);
 void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 					  GdkDrawable *drawable, GdkEventExpose *expose);
-gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean complex,
-						    ZMapSpan span, double *width);
 
 void zMapWindowCanvasFeaturesetPreZoom(ZMapWindowFeaturesetItem featureset) ;
 void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable);
@@ -261,7 +279,8 @@ void zMapWindowCanvasFeaturesetSetZoomRecalc(ZMapWindowFeaturesetItem featureset
 gulong zMapWindowCanvasFeatureGetHeatColour(gulong a, gulong b, double score);
 gulong zMapWindowCanvasFeatureGetHeatPixel(gulong a, gulong b, double score);
 
-gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem item, ZMapStyleBumpMode bump_mode, int compress_mode, BumpFeatureset bump_data);
+gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem item,
+                                        ZMapStyleBumpMode bump_mode, int compress_mode, BumpFeatureset bump_data);
 
 void zMapWindowCanvasFeaturesetShowHideMasked(FooCanvasItem *foo, gboolean show, gboolean set_colour);
 
