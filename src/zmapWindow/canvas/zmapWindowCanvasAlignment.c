@@ -176,12 +176,16 @@ GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item)
 /* given an alignment sub-feature return the colour or the colinearity line to the next sub-feature */
 static GdkColor *zmapWindowCanvasAlignmentGetFwdColinearColour(ZMapWindowCanvasAlignment align)
 {
-  ZMapWindowCanvasAlignment next = (ZMapWindowCanvasAlignment) align->feature.right;
-  int diff;
-  int start2,end1;
-  int threshold = (int) zMapStyleGetWithinAlignError(*align->feature.feature->style);
+  ZMapWindowCanvasAlignment next = NULL ;
+  int diff = 0;
+  int start2 = 0, end1 = 0;
+  int threshold = 0 ;
   ColinearityType ct = COLINEAR_PERFECT;
   ZMapHomol h1,h2;
+
+  zMapReturnValIfFail(align && align->feature.feature, NULL) ;
+  next = (ZMapWindowCanvasAlignment) align->feature.right ;
+  threshold = (int) zMapStyleGetWithinAlignError(*align->feature.feature->style);
 
   /* apparently this works thro revcomp:
    *
@@ -246,7 +250,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
     col_width = 0.0 ;
 
 
-  zMapReturnIfFail(featureset && feature && drawable && expose) ;
+  zMapReturnIfFail(featureset && feature && feature->feature && drawable && expose) ;
 
   /* Find featureset style. */
   style = *(feature->feature->style) ;
@@ -667,6 +671,8 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 {
   ZMapWindowCanvasFeature first = feature;
 
+  zMapReturnIfFail(feature && feature->feature && width ) ;
+
   *width = feature->width;
 
   if (!zMapStyleIsUnique(*feature->feature->style))
@@ -723,6 +729,8 @@ static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset
 {
   ZMapSkipList sl;
 
+  zMapReturnIfFail(featureset) ;
+
   /* NOTE display index will be null on first call */
 
   /* feature specific eg bumped gapped alignments - adjust gaps display */
@@ -752,7 +760,11 @@ static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset
 static ZMapWindowCanvasFeature zMapWindowCanvasAlignmentAddFeature(ZMapWindowFeaturesetItem featureset,
    ZMapFeature feature, double y1, double y2)
 {
-  ZMapWindowCanvasFeature feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
+  ZMapWindowCanvasFeature feat = NULL ;
+
+  zMapReturnValIfFail(featureset && feature, feat) ;
+
+  feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
 
   zMapWindowFeaturesetSetFeatureWidth(featureset, feat);
 
@@ -791,9 +803,13 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasI
       ZMapFeature feature, double x, double y)
 {
   ZMapFeatureSubPartSpan sub_part = NULL ;
-  ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo ;
+  ZMapWindowFeaturesetItem fi = NULL ;
   ZMapAlignBlock ab, prev_ab ;
-  int i, match_num, gap_num ;
+  int i = 0, match_num = 0, gap_num = 0 ;
+
+  zMapReturnValIfFail(foo && feature, sub_part) ;
+
+  fi = (ZMapWindowFeaturesetItem) foo ;
 
   /* find the gap or match if we are bumped */
   if (!fi->bumped)
@@ -876,7 +892,9 @@ static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeatur
      double local_x, double local_y, double x_off)
 {
   double best = 1.0e36 ;
-  double can_start, can_end ;
+  double can_start = 0.0, can_end = 0.0;
+
+  zMapReturnValIfFail(gs && gs->feature, best ) ;
 
   /* Get feature extent on display. */
   /* NOTE cannot use feature coords as transcript exons all point to the same feature */
@@ -957,8 +975,10 @@ static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeatur
 static gboolean hasNCSplices(ZMapFeature left, ZMapFeature right, gboolean *left_nc, gboolean *right_nc)
 {
   gboolean result = FALSE ;
-  char *ldna, *rdna ;
+  char *ldna = NULL, *rdna = NULL;
   gboolean revcomp = FALSE ;
+
+  zMapReturnValIfFail(left_nc && right_nc, result);
 
 
   /* OH DEAR...THIS SHOULD NOT HAPPEN...SORTING FOR BUMP SHOULD STOP THIS...edgrif */
@@ -1107,7 +1127,7 @@ static void align_gap_free(AlignGap ag)
 static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *foo, gboolean forward)
 {
   int i;
-  AlignGap ag;
+  AlignGap ag = NULL ;
   AlignGap last_box = NULL;
   AlignGap last_ag = NULL;
   AlignGap display_ag = NULL;
@@ -1117,6 +1137,7 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
   int n ;
   gboolean edge;
 
+  zMapReturnValIfFail(foo && feature, display_ag) ;
 
   foo_canvas_w2c(foo->canvas, 0, feature->x1 + offset, NULL, &fy1);
 
