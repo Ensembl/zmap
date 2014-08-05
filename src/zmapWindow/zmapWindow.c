@@ -6598,8 +6598,8 @@ static void canvasSetCursor(ZMapWindow window,
   else
     new_cursor = cursor ;
 
-  if (!cursor || (cursor && cursor->type == GDK_LEFT_PTR))
-    printf("found it\n") ;
+  /* if (!cursor || (cursor && cursor->type == GDK_LEFT_PTR))
+    printf("found it\n") ; */
 
   if (!zMapGUISetCursor(window->toplevel, new_cursor))
     {
