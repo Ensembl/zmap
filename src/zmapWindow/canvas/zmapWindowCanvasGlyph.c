@@ -157,6 +157,8 @@ GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature fe
   char strand = '+' ;
   char alt = 'N' ;
 
+  zMapReturnValIfFail(style && feature, id) ;
+
   if (style && (style->score_mode == ZMAPSCORE_INVALID || style->score_mode == ZMAPSTYLE_SCORE_ALT))
     {
       if ((shape = getGlyphShape(style, which, feature->strand)))
@@ -284,7 +286,11 @@ static void glyphColumnInit(ZMapWindowFeaturesetItem featureset)
 /* Paint 'column' level features. */
 static void glyphSetPaint(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  GlyphAnyColumnData any_glyph_col = (GlyphAnyColumnData)(featureset->per_column_data) ;
+  GlyphAnyColumnData any_glyph_col = NULL ;
+
+  zMapReturnIfFail(featureset) ;
+
+  any_glyph_col = (GlyphAnyColumnData)(featureset->per_column_data) ;
 
   if (any_glyph_col->glyph_type == ZMAP_GLYPH_SHAPE_GFSPLICE)
     {
@@ -357,9 +363,13 @@ static void glyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 			      GdkDrawable *drawable, GdkEventExpose *expose)
 {
   ZMapWindowCanvasGlyph glyph = (ZMapWindowCanvasGlyph)feature ;
-  ZMapFeature feat = feature->feature ;
+  ZMapFeature feat = NULL ;
   double y1 ;
   int i, min_x, max_x, min_y, max_y, curr_x, curr_y ;
+
+  zMapReturnIfFail(featureset && feature && feature->feature) ;
+
+  feat = feature->feature ;
 
   y1 = getGlyphFeaturePos(feat) ;
 
@@ -419,10 +429,14 @@ static void glyphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable
 static ZMapWindowCanvasFeature glyphAddFeature(ZMapWindowFeaturesetItem featureset,
 					       ZMapFeature feature, double y1, double y2)
 {
-  GlyphAnyColumnData any_glyph_col = (GlyphAnyColumnData)(featureset->per_column_data) ;
+  GlyphAnyColumnData any_glyph_col = NULL ;
   ZMapWindowCanvasFeature feat = NULL ;
   ZMapStyleGlyphShape shape ;
   int boundary_type = 0 ;
+
+  zMapReturnValIfFail(featureset && featureset->per_column_data && feature, feat) ;
+
+  any_glyph_col = (GlyphAnyColumnData)(featureset->per_column_data) ;
 
 
   if (any_glyph_col->glyph_type == ZMAP_GLYPH_SHAPE_GFSPLICE)
@@ -498,6 +512,8 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
   double best = 1.0e36 ;
   ZMapWindowCanvasGlyph glyph = (ZMapWindowCanvasGlyph)gs ;
 
+  zMapReturnValIfFail(glyph && glyph->shape, best) ;
+
 
   /* Glyphs only have shape when drawn (I think...) so it's possible when looking for nearby
    * glyphs for the point operation to be looking at glyphs that haven't been drawn and
@@ -561,6 +577,7 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 /* Free the glyph column. */
 static void glyphColumnFree(ZMapWindowFeaturesetItem featureset)
 {
+  zMapReturnIfFail(featureset) ;
   g_free(featureset->per_column_data) ;
 
   featureset->per_column_data = NULL ;
@@ -576,6 +593,8 @@ static void glyphColumnFree(ZMapWindowFeaturesetItem featureset)
 
 static void setGlyphPerColData(ZMapWindowFeaturesetItem featureset)
 {
+  zMapReturnIfFail(featureset) ;
+
   if (zMapStyleIsSpliceStyle(featureset->style))
     {
       /* GF Splice glyphs....derived from acedb representation of genefinder data. */

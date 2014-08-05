@@ -90,7 +90,7 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
   gboolean draw_truncation_glyphs = TRUE,
     truncated_start = FALSE,
     truncated_end = FALSE ;
-  zMapReturnIfFail(featureset && feature && drawable && expose ) ;
+  zMapReturnIfFail(featureset && feature && feature->feature && drawable && expose ) ;
   ZMapFeatureTypeStyle style = *feature->feature->style;
   FooCanvasItem *foo = (FooCanvasItem *) featureset ;
 
