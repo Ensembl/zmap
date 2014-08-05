@@ -22,10 +22,12 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Internal header for class that represents a column
  *              in zmap.
+ *              Note that a column may contain zero or more featuresets,
+ *              each featureset is 
  *
  *-------------------------------------------------------------------
  */
@@ -37,6 +39,8 @@
 #include <zmapWindowContainerFeatureSet.h>
 
 
+/* This all needs renaming to be xxxxColumnxxxxx, not "featureset".... */
+
 
 typedef struct _zmapWindowContainerFeatureSetClassStruct
 {
@@ -45,9 +49,6 @@ typedef struct _zmapWindowContainerFeatureSetClassStruct
 } zmapWindowContainerFeatureSetClassStruct ;
 
 
-
-/* I REALLY DON'T UNDERSTAND WHY THIS IS SEPARATE FROM CanvasFeatureset.c stuff....what's the
- * point ??? DID IT JUST NOT GET MERGED OR WHAT.....CONFUSING..... */
 
 typedef struct _zmapWindowContainerFeatureSetStruct
 {
@@ -61,16 +62,12 @@ typedef struct _zmapWindowContainerFeatureSetStruct
   ZMapStrand  strand ;
   ZMapFrame   frame ;
 
-
-
   /* HOW DO THESE TWO RELATE TO THE STUFF IN THE canvasfeatureset struct which seems to replicate
    * these fields ???? je ne sais pas..... */
   /* this is a column setting, the settings struct below is an amalgamation of styles */
   ZMapStyleBumpMode bump_mode ;
 
   ZMapFeatureTypeStyle style ;       /* column specific style or the one single style for a featureset */
-
-
 
 
   /* Empty columns are only hidden ATM and as they have no
@@ -94,11 +91,8 @@ typedef struct _zmapWindowContainerFeatureSetStruct
 
   gboolean has_feature_set ;
 
-
-
   /* list of featureset ids displayed in this column */
   GList *featuresets ;
-
 
   /* Extra items used for displaying colinearity lines and markers, note that we can end up
    * with the colinear markers becoming long items so we need to record them too. */
