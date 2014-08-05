@@ -1056,6 +1056,7 @@ void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
   GList *features;
 
   zMapReturnIfFail(fi) ;
+
   /*
    * this call has to be here as zMapWindowCanvasFeaturesetIndex() is called from bump,
    * which can happen before we get a paint i tried to move it into alignments
@@ -1433,8 +1434,6 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 {
   ZMapWindowCanvasFeature feat = NULL ;
 
-  zMapReturnValIfFail(featureset_class_G, feat) ;
-
   /* Warning...this code is quite hard to fathom/follow... */
   if (type > FEATURE_INVALID && type < FEATURE_N_TYPE)
     {
@@ -1685,7 +1684,6 @@ GType zMapWindowFeaturesetItemGetType(void)
 
 void zMapWindowCanvasItemFeaturesetSetVAdjust(ZMapWindowFeaturesetItem featureset, GtkAdjustment *v_adjust)
 {
-  zMapReturnIfFail(featureset) ;
   featureset->v_adjuster = v_adjust ;
 
   return ;    
@@ -1694,14 +1692,12 @@ void zMapWindowCanvasItemFeaturesetSetVAdjust(ZMapWindowFeaturesetItem featurese
 
 guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset)
 {
-  zMapReturnValIfFail(featureset, (gint)0) ;
   return(featureset->id);
 }
 
 
 void zMapWindowCanvasFeaturesetSetZoomRecalc(ZMapWindowFeaturesetItem featureset, gboolean recalc)
 {
-  zMapReturnIfFail(featureset) ;
   featureset->recalculate_zoom = recalc ;
 
   return ;
@@ -3301,16 +3297,11 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
 
 
 
-ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetItem featureset_item,
-                                                         zmapWindowCanvasFeatureType type,
-                                                         double x1, double y1, double x2, double y2,
-                                                         GdkColor *fill, GdkColor *outline, char *text)
+ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetItem featureset_item, zmapWindowCanvasFeatureType type, double x1, double y1, double x2, double y2, GdkColor *fill, GdkColor *outline, char *text)
 {
   ZMapWindowCanvasGraphics feat;
   gulong fill_pixel= 0, outline_pixel = 0;
   FooCanvasItem *foo = (FooCanvasItem *) featureset_item;
-
-  zMapReturnValIfFail(featureset_item, feat) ;
 
   if (type == FEATURE_INVALID || type < FEATURE_GRAPHICS)
     return NULL;
@@ -3355,8 +3346,6 @@ ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetIte
 
 int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item, ZMapWindowCanvasGraphics feat)
 {
-
-  zMapReturnValIfFail(featureset_item && feat, 0) ;
 
   /*! \todo #warning zMapWindowFeaturesetRemoveGraphics not implemented */
   /* is this needed? yes: diff struct, yes: gets called on revcomp */
@@ -3616,7 +3605,6 @@ static void featuresetAddToIndex(ZMapWindowFeaturesetItem featureset_item, ZMapW
 
 static void setFeaturesetColours(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature feat)
 {
-  zMapReturnIfFail(fi && feat) ;
 
   if (zmapWindowCanvasFeatureValid(feat) && zMapFeatureIsValid((ZMapFeatureAny)(feat->feature)))
     {
