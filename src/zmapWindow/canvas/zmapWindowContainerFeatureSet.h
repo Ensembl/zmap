@@ -28,11 +28,11 @@
  *
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_CONTAINER_FEATURESET_H
 #define ZMAP_WINDOW_CONTAINER_FEATURESET_H
 
 #include <glib-object.h>
+
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapStyle.h>
 
@@ -54,8 +54,8 @@
 #define ZMAP_CONTAINER_FEATURESET(obj)           ((ZMapWindowContainerFeatureSet) obj)
 #define ZMAP_CONTAINER_FEATURESET_CONST(obj)     ((ZMapWindowContainerFeatureSet const) obj)
 #else
-#define ZMAP_CONTAINER_FEATURESET(obj)	         (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet))
-#define ZMAP_CONTAINER_FEATURESET_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet const))
+#define ZMAP_CONTAINER_FEATURESET(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet))
+#define ZMAP_CONTAINER_FEATURESET_CONST(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet const))
 #endif
 
 #define ZMAP_CONTAINER_FEATURESET_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSetClass))
@@ -68,7 +68,7 @@ typedef struct _zmapWindowContainerFeatureSetStruct  zmapWindowContainerFeatureS
 
 
 /* Class */
-typedef struct _zmapWindowContainerFeatureSetClassStruct  zmapWindowContainerFeatureSetClass, *ZMapWindowContainerFeatureSetClass ;
+typedef struct _zmapWindowContainerFeatureSetClassStruct zmapWindowContainerFeatureSetClass, *ZMapWindowContainerFeatureSetClass ;
 
 
 typedef ColinearityType (*ZMapFeatureCompareFunc)(ZMapFeature feature_a, ZMapFeature feature_b, gpointer user_data);
@@ -77,7 +77,8 @@ typedef ColinearityType (*ZMapFeatureCompareFunc)(ZMapFeature feature_a, ZMapFea
 /* Public funcs */
 GType zmapWindowContainerFeatureSetGetType(void);
 FooCanvasItem *zmapWindowContainerFeatureSetFindCanvasColumn(ZMapWindowContainerGroup group,
-                                                             GQuark align, GQuark block, GQuark set, ZMapStrand strand, ZMapFrame frame) ;
+                                                             GQuark align, GQuark block, GQuark set,
+                                                             ZMapStrand strand, ZMapFrame frame) ;
 ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet container_set,
 								   ZMapWindow window,
 								   GQuark     align_id,
