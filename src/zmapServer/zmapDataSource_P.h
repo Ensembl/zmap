@@ -38,8 +38,10 @@
 /*
  * HTS header. Temporary location.
  */
-#include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/hts.h"
-#include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/sam.h"
+/* #include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/hts.h"
+#include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/sam.h" */
+#include <htslib/hts.h>
+#include <htslib/sam.h>
 
 
 /*

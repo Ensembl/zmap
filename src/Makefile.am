@@ -28,7 +28,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 # ZMAP_SRC_DIRS See configure.ac
 
-SUBDIRS = AceConn libpfetch libcurlobject libzmapfoocanvas include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+SUBDIRS = AceConn libpfetch libcurlobject libzmapfoocanvas htslib-develop include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
 
 CLEANFILES = $(pkgconfig_DATA)
 
@@ -162,7 +162,7 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
-        /nfs/users/nfs_s/sm23/Work/htslib-develop/libhts.a \
+	$(top_builddir)/htslib-develop/libhts.a              \
 	$(top_builddir)/AceConn/src/.libs/libAceConn.a       \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
 	$(GTK_LIBS)			                     \
@@ -170,7 +170,8 @@ zmap_LDADD =                                                 \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
-zmap_LDFLAGS      = /nfs/users/nfs_s/sm23/Work/htslib-develop/libhts.a -lz
+#zmap_LDFLAGS      = /nfs/users/nfs_s/sm23/Work/htslib-develop/libhts.a -lz
+zmap_LDFLAGS      = -lz
 # We need this so as not to have libtool prune out multiple -lZMap so we can resolve our dependency cycle :(
 zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
