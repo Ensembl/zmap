@@ -1579,7 +1579,9 @@ void navigatorRunSet(  ZMapFeatureSet set,
           continue;
       }
 
-      foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, (ZMapWindowContainerFeatureSet) container, features, foo, &feature_stack);
+      foo = zmapWindowFeatureFactoryRunSingle(navigate->ftoi_hash,
+                                              (ZMapWindowContainerFeatureSet)container,
+                                              features, foo, &feature_stack) ;
 
       if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
         factoryItemHandler (foo, &feature_stack, (gpointer) navigate);
