@@ -59,9 +59,7 @@ static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 
 static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window);
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *w);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window);
 static void printCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
@@ -80,21 +78,27 @@ GtkItemFactory *item_factory;
 
 
 static GtkItemFactoryEntry menu_items[] = {
-         { "/_File",                        NULL,         NULL,                  0, "<Branch>" },
-         { "/File/_New Sequence",           NULL,         newSequenceByConfigCB, 2, NULL },
-         { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
-         { "/File/_Import",  "<control>I", importCB, 0, NULL },/* or Read ? */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-        { "/File/_Export",  "<control>E", exportCB, 0, NULL },
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-         { "/File/sep1",                     NULL,         NULL, 0, "<Separator>" },
-         { "/File/_Save screen shot",        NULL,         dumpCB, 0, NULL },
-         { "/File/_Print screen shot",       "<control>P", printCB, 0, NULL },
-         { "/File/sep1",                     NULL,           NULL, 0, "<Separator>" },
-         { "/File/Close",                    "<control>W", closeCB, 0, NULL },
-         { "/File/Quit",                     "<control>Q", quitCB, 0, NULL },
+         { "/_File",                                NULL,                NULL,                  0,  "<Branch>" },
+         { "/File/_New Sequence",                   NULL,                newSequenceByConfigCB, 2,  NULL },
+         { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
+         { "/File/_Import",                         "<control>I",        importCB,              0,  NULL },/* or Read ? */
+         { "/File/_Export",                         NULL,                NULL,                  0,  "<Branch>" },
+         { "/File/Export/_All Features",            NULL,                NULL,                  0,  "<Branch>" },
+         { "/File/Export/All Features/DNA",         NULL,                exportCB,              1,  NULL },
+         { "/File/Export/All Features/Features",    "<control>E",        exportCB,              2,  NULL },
+         { "/File/Export/All Features/Context",     NULL,                exportCB,              3,  NULL },
+         { "/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
+         { "/File/Export/Marked Features/DNA",      NULL,                exportCB,              1,  NULL },
+         { "/File/Export/Marked Features/Features", "<shift><control>E", exportCB,              12, NULL },
+         { "/File/Export/Marked Features/Context",  NULL,                exportCB,              3,  NULL },
+         { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
+         { "/File/_Save screen shot",               NULL,                dumpCB,                0,  NULL },
+         { "/File/_Print screen shot",              "<control>P",        printCB,               0,  NULL },
+         { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
+         { "/File/Close",                           "<control>W",        closeCB,               0,  NULL },
+         { "/File/Quit",                            "<control>Q",        quitCB,                0,  NULL },
 
-         { "/_Edit",                         NULL,         NULL, 0, "<Branch>" },
+         { "/_Edit",                                NULL,                NULL,                  0,  "<Branch>" },
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
          { "/Edit/Cu_t",                     "<control>X", copyPasteCB, 0, NULL },
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -156,20 +160,55 @@ GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Should pop up a dialog box to ask for a file name....e.g. the file chooser. */
 static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
   ZMap zmap = NULL ; 
   zMapReturnIfFail(cb_data) ; 
+  ZMapWindow curr_window = NULL ;
+  GError *error = NULL ;
+  gboolean result = FALSE ;
+  
   zmap = (ZMap)cb_data ;
-  gchar *file = "ZMap.features" ;
+  curr_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
-  zmapViewFeatureDump(zmap->focus_viewwindow, file) ;
+  switch (callback_action)
+    {
+    case 1:
+      /* Export DNA */
+      result = zMapWindowExportFASTA(curr_window, NULL, &error) ;
+      break ;
+
+    case 2:
+      /* Export all features */
+      result = zMapWindowExportFeatures(curr_window, FALSE, NULL, &error) ;
+      break ;
+
+    case 3:
+      /* Export context */
+      result = zMapWindowExportContext(curr_window, &error) ;
+      break ;
+
+    case 12:
+      /* Export featuers for marked region */
+      result = zMapWindowExportFeatures(curr_window, TRUE, NULL, &error) ;
+      break ;
+
+    default:
+      break ;
+    }
+
+  /* We can get result==FALSE if the user cancelled in which case the error is not set, so don't
+   * report an error in that case */
+  if (error)
+    {
+      zMapWarning("Export failed: %s", error->message) ;
+      g_error_free(error) ;
+      error = NULL ;
+    }
 
   return ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 

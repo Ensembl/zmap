@@ -608,4 +608,8 @@ void zMapWindowUpdateColumnBackground(ZMapWindow window, ZMapFeatureSet feature_
 
 GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item) ;
 
+gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_region, ZMapFeatureAny feature_in, GError **error) ;
+gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GError **error) ;
+gboolean zMapWindowExportContext(ZMapWindow window, GError **error) ;
+
 #endif /* !ZMAP_WINDOW_H */

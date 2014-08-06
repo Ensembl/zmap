@@ -309,10 +309,9 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
 
 static FooCanvasGroup *menuDataItemToColumn(FooCanvasItem *item) ;
 
-static void exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *seq, char *seq_name, int seq_len,
-                      char *molecule_name, char *gene_name) ;
-static void exportFeatures(ZMapWindow window, ZMapSpan span, ZMapFeatureAny feature) ;
-static void exportContext(ZMapWindow window) ;
+static gboolean exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *seq, char *seq_name, int seq_len,
+                            char *molecule_name, char *gene_name, GError **error) ;
+static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature_in, GError **error) ;
 
 static void insertSubMenus(GString *branch_point_string,
                            ZMapGUIMenuItem sub_menus,
@@ -1777,6 +1776,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
   char *seq_name, *molecule_type = NULL, *gene_name = NULL ;
   int seq_len ;
   int user_start = 0, user_end = 0 ;
+  GError *error = NULL ;
 
   /* Retrieve feature selected by user. */
   feature = zMapWindowCanvasItemGetFeature(menu_data->item) ;
@@ -1906,13 +1906,19 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
         }
       else
         {
-          exportFASTA(menu_data->window, ZMAPFASTA_SEQTYPE_DNA, dna, seq_name, seq_len, molecule_type, gene_name) ;
+          exportFASTA(menu_data->window, ZMAPFASTA_SEQTYPE_DNA, dna, seq_name, seq_len, molecule_type, gene_name, &error) ;
         }
 
       g_free(dna) ;
     }
 
   g_free(menu_data) ;
+
+  if (error)
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, "%s", error->message) ;
+      g_error_free(error) ;
+    }    
 
   return ;
 }
@@ -1929,7 +1935,7 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
   ZMapFeatureContext context ;
   char *seq_name, *molecule_type = NULL, *gene_name = NULL ;
   int pep_length, start_incr = 0 ;
-
+  GError *error = NULL ;
 
   feature = zMapWindowCanvasItemGetFeature(menu_data->item) ;
   if (feature->mode != ZMAPSTYLE_MODE_TRANSCRIPT)
@@ -1998,7 +2004,7 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
         {
           exportFASTA(menu_data->window, ZMAPFASTA_SEQTYPE_AA,
                     zMapPeptideSequence(peptide), seq_name,
-                    pep_length, molecule_type, gene_name) ;
+                      pep_length, molecule_type, gene_name, &error) ;
         }
 
       zMapPeptideDestroy(peptide) ;
@@ -2008,14 +2014,60 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
 
   g_free(menu_data) ;
 
+  if (error)
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, "%s", error->message) ;
+      g_error_free(error) ;
+    }    
+
   return ;
+}
+
+
+gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GError **error)
+{
+  gboolean result = FALSE ;
+
+  char *sequence = NULL ;
+  char *seq_name = NULL ;
+  int seq_len = 0 ;
+  ZMapFeatureAny feature = feature_in ;
+  ZMapFeatureBlock block = NULL ;
+
+  if (!feature)
+    {
+      /* If no feature is given, use the selected feature (if there is one and only one) */
+      GList *features = zmapWindowFocusGetFeatureList(window->focus) ;
+
+      if (features && g_list_length(features) == 1)
+        feature = (ZMapFeatureAny)(features->data) ;
+    }
+
+
+  if (feature)
+    {
+      block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK);
+      
+      if (zMapFeatureBlockDNA(block, &seq_name, &seq_len, &sequence))
+        result = exportFASTA(window, ZMAPFASTA_SEQTYPE_DNA, sequence, seq_name, seq_len, "DNA", NULL, error) ;
+      else
+        g_set_error(error, g_quark_from_string("ZMap"), 99, "Context contains no DNA") ;
+    }
+  else
+    {
+      g_set_error(error, g_quark_from_string("ZMap"), 99, "Please select a single feature") ;
+    }
+
+  return result ;
 }
 
 
 static void exportMenuCB(int menu_item_id, gpointer callback_data)
 {
+  gboolean result = FALSE ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeatureAny feature ;
+  GError *error = NULL ;
 
   feature = zmapWindowItemGetFeatureAny(menu_data->item);
 
@@ -2023,51 +2075,40 @@ static void exportMenuCB(int menu_item_id, gpointer callback_data)
     {
     case 1:
       {
-        char *sequence = NULL ;
-        char *seq_name = NULL ;
-        int seq_len = 0 ;
-
-        if (zMapFeatureBlockDNA((ZMapFeatureBlock)(feature->parent->parent), &seq_name, &seq_len, &sequence))
-          exportFASTA(menu_data->window, ZMAPFASTA_SEQTYPE_DNA, sequence, seq_name, seq_len, "DNA", NULL) ;
-        else
-          zMapShowMsg(ZMAP_MSG_WARNING, "%s", "Context contains no DNA.") ;
-
+        result = zMapWindowExportFASTA(menu_data->window, feature, &error) ;
         break ;
       }
     case 2:
       {
-        exportFeatures(menu_data->window, NULL, feature) ;
-
+        result = zMapWindowExportFeatures(menu_data->window, FALSE, feature, &error) ;
         break ;
       }
     case 3:
       {
-        exportContext(menu_data->window) ;
-
+        result = zMapWindowExportContext(menu_data->window, &error) ;
         break ;
       }
     case 4:
       {
-      /*    exportConfig(); */
-      break;
+        /* exportConfig(); */
+        break;
       }
     case 12:
       {
-        if(zmapWindowMarkIsSet(menu_data->window->mark))
-          {
-            ZMapSpanStruct mark_region = {0,0};
-
-            zmapWindowMarkGetSequenceRange(menu_data->window->mark, &(mark_region.x1), &(mark_region.x2));
-
-            exportFeatures(menu_data->window, &mark_region, feature);
-          }
+        result = zMapWindowExportFeatures(menu_data->window, TRUE, feature, &error) ;
+        break;
       }
-      break;
     default:
       break ;
     }
 
   g_free(menu_data) ;
+
+  if (error)
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, "%s", error->message) ;
+      g_error_free(error) ;
+    }
 
   return ;
 }
@@ -3254,12 +3295,13 @@ static FooCanvasGroup *menuDataItemToColumn(FooCanvasItem *item)
 
 
 
-static void exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *sequence, char *seq_name, int seq_len,
-                        char *molecule_name, char *gene_name)
+static gboolean exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *sequence, char *seq_name, int seq_len,
+                            char *molecule_name, char *gene_name, GError **error)
 {
+  gboolean result = FALSE ;
   char *filepath = NULL ;
   GIOChannel *file = NULL ;
-  GError *error = NULL ;
+  GError *tmp_error = NULL ;
   char *error_prefix = "FASTA DNA export failed:" ;
   GtkWidget *toplevel ;
 
@@ -3267,20 +3309,18 @@ static void exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *sequ
 
 
   if (!(filepath = zmapGUIFileChooser(toplevel, "FASTA filename ?", NULL, NULL))
-      || !(file = g_io_channel_new_file(filepath, "w", &error))
+      || !(file = g_io_channel_new_file(filepath, "w", &tmp_error))
       || !zMapFASTAFile(file, seq_type, seq_name, seq_len, sequence,
-                        molecule_name, gene_name, &error))
+                        molecule_name, gene_name, &tmp_error))
     {
-      char *err_msg = NULL ;
-
-      if (error)
+      if (tmp_error)
         {
-          err_msg = error->message ;
-
-          zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, err_msg) ;
-
-          g_error_free(error) ;
+          g_propagate_error(error, tmp_error) ;
         }
+    }
+  else
+    {
+      result = TRUE ;
     }
 
 
@@ -3288,11 +3328,11 @@ static void exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *sequ
     {
       GIOStatus status ;
 
-      if ((status = g_io_channel_shutdown(file, TRUE, &error)) != G_IO_STATUS_NORMAL)
+      if ((status = g_io_channel_shutdown(file, TRUE, &tmp_error)) != G_IO_STATUS_NORMAL)
         {
-          zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+          zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, tmp_error->message) ;
 
-          g_error_free(error) ;
+          g_error_free(tmp_error) ;
         }
     }
 
@@ -3300,25 +3340,57 @@ static void exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *sequ
     g_free(filepath) ;
 
 
-  return ;
+  return result ;
 }
 
 
-static void exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature)
+gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_region, ZMapFeatureAny feature_in, GError **error)
 {
+  gboolean result = FALSE ;
+  ZMapFeatureAny feature = feature_in ;
+
+  if (!feature)
+    feature = (ZMapFeatureAny)window->feature_context ;
+
+  if (marked_region)
+    {
+      if (zmapWindowMarkIsSet(window->mark))
+        {
+          ZMapSpanStruct mark_region = {0,0};
+          
+          zmapWindowMarkGetSequenceRange(window->mark, &(mark_region.x1), &(mark_region.x2));
+          
+          result = exportFeatures(window, &mark_region, feature, error) ;
+        }
+      else
+        {
+          g_set_error(error, g_quark_from_string("ZMap"), 99, "The mark is not set") ;
+        }
+    }
+  else
+    {
+      result = exportFeatures(window, NULL, feature, error) ;
+    }
+
+  return result ;
+}
+
+
+static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature_in, GError **error)
+{
+  gboolean result = FALSE ;
   char *filepath = NULL ;
   GIOChannel *file = NULL ;
-  GError *error = NULL ;
+  GError *tmp_error = NULL ;
   char *error_prefix = "Features export failed:" ;
-  ZMapFeatureBlock feature_block ;
+  ZMapFeatureAny feature = feature_in ;
 
-  /* Should extend this any type.... */
-  if (feature->struct_type != ZMAPFEATURE_STRUCT_FEATURESET
-      && feature->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
-    return ;
-
-  /* Find the block from whatever pointer we are sent...  */
-  feature_block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK);
+  if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
+      && feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      /* For features and featuresets, get the parent block */
+      feature = (ZMapFeatureAny)zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK);
+    }
 
   /* Swop to other strand..... */
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
@@ -3326,28 +3398,30 @@ static void exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureA
 
   if (!(filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel),
                                       "Feature Export filename ?", NULL, "gff"))
-      || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapGFFDumpRegion((ZMapFeatureAny)feature_block, window->context_map->styles, region_span, file, &error))
+      || !(file = g_io_channel_new_file(filepath, "w", &tmp_error))
+      || !zMapGFFDumpRegion(feature, window->context_map->styles, region_span, file, &tmp_error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */
-      if (error)
+      if (tmp_error)
         {
-          zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
-
-          g_error_free(error) ;
+          g_propagate_error(error, tmp_error) ;
         }
+    }
+  else
+    {
+      result = TRUE ;
     }
 
   if (file)
     {
       GIOStatus status ;
 
-      if ((status = g_io_channel_shutdown(file, TRUE, &error)) != G_IO_STATUS_NORMAL)
+      if ((status = g_io_channel_shutdown(file, TRUE, &tmp_error)) != G_IO_STATUS_NORMAL)
         {
-          zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+          zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, tmp_error->message) ;
 
-          g_error_free(error) ;
+          g_error_free(tmp_error) ;
         }
     }
 
@@ -3355,7 +3429,7 @@ static void exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureA
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
 
-  return ;
+  return result ;
 }
 
 
@@ -3449,42 +3523,44 @@ void dumpConfig(GHashTable *f2c, GHashTable *f2s)
 
 #endif
 
-static void exportContext(ZMapWindow window)
+gboolean zMapWindowExportContext(ZMapWindow window, GError **error)
 {
+  gboolean result = FALSE ;
   char *filepath = NULL ;
   GIOChannel *file = NULL ;
-  GError *error = NULL ;
+  GError *tmp_error = NULL ;
   char *error_prefix = "Feature context export failed:" ;
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "Context Export filename ?", NULL, "zmap"))
-      || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapFeatureContextDump(window->feature_context, window->context_map->styles, file, &error))
+      || !(file = g_io_channel_new_file(filepath, "w", &tmp_error))
+      || !zMapFeatureContextDump(window->feature_context, window->context_map->styles, file, &tmp_error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */
-      if (error)
+      if (tmp_error)
         {
-          zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
-
-          g_error_free(error) ;
+          g_propagate_error(error, tmp_error) ;
         }
     }
-
+  else
+    {
+      result = TRUE ;
+    }
 
   if (file)
     {
       GIOStatus status ;
 
-      if ((status = g_io_channel_shutdown(file, TRUE, &error)) != G_IO_STATUS_NORMAL)
+      if ((status = g_io_channel_shutdown(file, TRUE, &tmp_error)) != G_IO_STATUS_NORMAL)
         {
-          zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
+          zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, tmp_error->message) ;
 
-          g_error_free(error) ;
+          g_error_free(tmp_error) ;
         }
     }
 
 
-  return ;
+  return result ;
 }
 
 /*
