@@ -126,7 +126,7 @@ void textPaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
   pango_layout_set_text (pango->layout, gfx->text, len);
 
   foo_canvas_w2c (foo->canvas, gfx->x1 + featureset->dx, (gfx->y1 + gfx->y2) / 2 - featureset->start + featureset->dy, &cx, &cy);
-  cy -= pango->text_height / 2;		/* centre text on line */
+  cy -= pango->text_height / 2;                /* centre text on line */
 
   pango_renderer_draw_layout (pango->renderer, pango->layout,  cx * PANGO_SCALE , cy * PANGO_SCALE);
 }
@@ -148,7 +148,7 @@ void graphicsZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 
   zmapWindowCanvasGraphicsGetPango(drawable, featureset);
 
-  text_h = pango->text_height / featureset->zoom;	/* can't use foo_canvas_c2w as it does a scroll offset */
+  text_h = pango->text_height / featureset->zoom;        /* can't use foo_canvas_c2w as it does a scroll offset */
 
   /* strickly speaking we could get away with text/2 as we centre the text on a y coordinate
    * that would be enough to make the lookup work
@@ -181,7 +181,7 @@ void zMapWindowCanvasGraphicsInit(void)
   funcs[FUNC_ZOOM] = graphicsZoomSet;
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPHICS, funcs, 0, sizeof(zmapWindowCanvasPangoStruct));
 
-  funcs[FUNC_ZOOM] = NULL;	/* not needed by the others but no harm done  if it's left in?? */
+  funcs[FUNC_ZOOM] = NULL;        /* not needed by the others but no harm done  if it's left in?? */
 
   funcs[FUNC_PAINT] = linePaint;
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LINE, funcs, 0, 0);

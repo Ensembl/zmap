@@ -265,20 +265,20 @@ static void graphGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span
   if(!zMapStyleIsUnique(*feature->feature->style))
     {
       while(first->left)
-	{
-	  first = first->left ;
+        {
+          first = first->left ;
 
-	  if(first->width > *width)
-	    *width = first->width ;
-	}
+          if(first->width > *width)
+            *width = first->width ;
+        }
 
       while(feature->right)
-	{
-	  feature = feature->right ;
+        {
+          feature = feature->right ;
 
-	  if(feature->width > *width)
-	    *width = feature->width ;
-	}
+          if(feature->width > *width)
+            *width = feature->width ;
+        }
 
       last_y2 = feature->y2 ;
     }
@@ -922,7 +922,7 @@ static double graphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
   zmapWindowFeaturesetS2Ccoords(&can_start, &can_end) ;
 
 
-  if (can_start <= local_y && can_end >= local_y)			    /* overlaps cursor */
+  if (can_start <= local_y && can_end >= local_y)                            /* overlaps cursor */
     {
       double wx ;
       double left, right ;
@@ -930,16 +930,16 @@ static double graphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
       wx = x_off; // - (gs->width / 2) ;
 
       if (fi->bumped)
-	wx += gs->bump_offset ;
+        wx += gs->bump_offset ;
 
       /* get coords within one pixel */
-      left = wx - 1 ;					    /* X coords are on fixed zoom, allow one pixel grace */
+      left = wx - 1 ;                                            /* X coords are on fixed zoom, allow one pixel grace */
       right = wx + gs->width + 1 ;
 
-      if (local_x > left && local_x < right)			    /* item contains cursor */
-	{
-	  best = 0.0;
-	}
+      if (local_x > left && local_x < right)                            /* item contains cursor */
+        {
+          best = 0.0;
+        }
     }
 
   return best ;
@@ -1183,7 +1183,7 @@ static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeS
       if (zMapStyleGetColours(feature_style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                               &fill, &draw, &border))
          zMapStyleSetColours(feature_style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-			     fill, draw, border) ;
+                             fill, draw, border) ;
     }
 
   /* Allocate and cache the draw colours */
