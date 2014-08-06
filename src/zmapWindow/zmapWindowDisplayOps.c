@@ -238,7 +238,7 @@ char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy,
       ZMapFeatureColumn gff ;
       GQuark column_id ;
 
-      column_id = zmapWindowContainerFeatureSetGetColumnId(selected_column) ;
+      column_id = zmapWindowContainerFeaturesetGetColumnUniqueId(selected_column) ;
 
       gff = g_hash_table_lookup(window->context_map->columns, GUINT_TO_POINTER(column_id)) ;
 

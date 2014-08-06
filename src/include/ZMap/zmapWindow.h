@@ -496,9 +496,6 @@ gboolean zMapWindowMarkGetSequenceSpan(ZMapWindow window, int *start, int *end) 
 void zmapWindowMarkPrint(ZMapWindow window, char *title) ;
 gboolean zMapWindowMarkIsSet(ZMapWindow window);
 
-void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
-                               ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
-
 void zMapWindowRequestReposition(FooCanvasItem *foo);
 
 
@@ -552,11 +549,8 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window,
                                  FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature) ;
 
-gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
-
 gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor **fill);
 gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill);
-
 
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
 gboolean zMapWindowCurrWindowPos(ZMapWindow window,

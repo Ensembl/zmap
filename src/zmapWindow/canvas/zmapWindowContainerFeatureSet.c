@@ -433,7 +433,7 @@ gboolean zmapWindowContainerFeatureSetAttachFeatureSet(ZMapWindowContainerFeatur
  * if I keep this function.
  * 
  *  */
-ZMapWindowFeaturesetItem ZMapWindowContainerGetFeatureSetItem(ZMapWindowContainerGroup container)
+ZMapWindowFeaturesetItem zmapWindowContainerGetFeatureSetItem(ZMapWindowContainerFeatureSet container)
 {
   ZMapWindowFeaturesetItem container_feature_list = NULL ;
   FooCanvasGroup *group = (FooCanvasGroup *)container ;
@@ -682,16 +682,6 @@ ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet 
 }
 
 
-GQuark zmapWindowContainerFeatureSetGetColumnId(ZMapWindowContainerFeatureSet container_set)
-{
-  GQuark column_id = 0 ;
-
-  if (ZMAP_IS_CONTAINER_FEATURESET(container_set))
-    column_id = container_set->unique_id ;
-
-  return column_id ;
-}
-
 ZMapFeatureTypeStyle zMapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFeatureSet container)
 {
   return container->style;
@@ -751,16 +741,48 @@ void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet conta
  * \return The quark that represents the current display name.
  */
 
-GQuark zmapWindowContainerFeatureSetColumnDisplayName(ZMapWindowContainerFeatureSet container_set)
+char *zmapWindowContainerFeaturesetGetColumnName(ZMapWindowContainerFeatureSet container_set)
 {
-  GQuark display_id = 0;
+  char *column_name = NULL ;
 
-  display_id = container_set->original_id;
-  if(!display_id)
-    display_id = container_set->unique_id;
+  if (ZMAP_IS_CONTAINER_FEATURESET(container_set))
+    column_name = (char *)g_quark_to_string(container_set->original_id) ;
 
-  return display_id;
+  return column_name ;
 }
+
+GQuark zmapWindowContainerFeaturesetGetColumnId(ZMapWindowContainerFeatureSet container_set)
+{
+  GQuark display_id = 0 ;
+
+  display_id = container_set->original_id ;
+
+  return display_id ;
+}
+
+
+char *zmapWindowContainerFeaturesetGetColumnUniqueName(ZMapWindowContainerFeatureSet container_set)
+{
+  char *column_name = NULL ;
+
+  if (ZMAP_IS_CONTAINER_FEATURESET(container_set))
+    column_name = (char *)g_quark_to_string(container_set->unique_id) ;
+
+  return column_name ;
+}
+
+GQuark zmapWindowContainerFeaturesetGetColumnUniqueId(ZMapWindowContainerFeatureSet container_set)
+{
+  GQuark column_id = 0 ;
+
+  if (ZMAP_IS_CONTAINER_FEATURESET(container_set))
+    column_id = container_set->unique_id ;
+
+  return column_id ;
+}
+
+
+
 
 
 /*!

@@ -79,16 +79,42 @@ static ZMapWindowCanvasGlyph truncation_glyph_transcript_start = NULL ;
 static ZMapWindowCanvasGlyph truncation_glyph_transcript_end = NULL ;
 
 
-/*
+static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
+                                   ZMapWindowCanvasFeature feature,
+                                   GdkDrawable *drawable, GdkEventExpose *expose) ;
+static ZMapWindowCanvasFeature transcriptAddFeature(ZMapWindowFeaturesetItem featureset,
+                                                    ZMapFeature feature, double y1, double y2) ;
+static ZMapFeatureSubPartSpan transcriptGetSubPartSpan(FooCanvasItem *foo,
+                                                       ZMapFeature feature, double x, double y) ;
+static void transcriptGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width) ;
+
+
+
+/* 
  *                    External interface
+ * 
+ * Note some functions have internal linkage but form part of the external interface.
  */
 
+void zMapWindowCanvasTranscriptInit(void)
+{
+  gpointer funcs[FUNC_N_FUNC] = { NULL } ;
 
-static void
-zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
-                                       ZMapWindowCanvasFeature feature,
-                                       GdkDrawable *drawable,
-                                       GdkEventExpose *expose)
+  funcs[FUNC_PAINT] = transcriptPaintFeature;
+  funcs[FUNC_ADD]   = transcriptAddFeature;
+  funcs[FUNC_SUBPART] = transcriptGetSubPartSpan;
+  funcs[FUNC_EXTENT] = transcriptGetFeatureExtent;
+
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, sizeof(zmapWindowCanvasTranscriptStruct), 0) ;
+
+  return ;
+}
+
+
+
+static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
+                                   ZMapWindowCanvasFeature feature,
+                                   GdkDrawable *drawable, GdkEventExpose *expose)
 {
   gulong fill = 0L, outline = 0L ;
   int colours_set = 0, fill_set = 0, outline_set = 0 ;
@@ -358,9 +384,7 @@ zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
 }
 
 
-
-
-static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFeaturesetItem featureset,
+static ZMapWindowCanvasFeature transcriptAddFeature(ZMapWindowFeaturesetItem featureset,
 								    ZMapFeature feature, double y1, double y2)
 {
   ZMapWindowCanvasFeature feat = NULL ;
@@ -474,8 +498,8 @@ static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFe
 
 
 
-static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan(FooCanvasItem *foo,
-                                                                       ZMapFeature feature, double x, double y)
+static ZMapFeatureSubPartSpan transcriptGetSubPartSpan(FooCanvasItem *foo,
+                                                       ZMapFeature feature, double x, double y)
 {
   ZMapFeatureSubPartSpan sub_part = NULL;
 
@@ -597,7 +621,7 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan(FooCanvas
  * which could give incorrect de-overlapping
  * that would be revealed on zoom
  */
-static void zMapWindowCanvasTranscriptGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width)
+static void transcriptGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width)
 {
   ZMapWindowCanvasFeature first = feature;
 
@@ -619,19 +643,9 @@ static void zMapWindowCanvasTranscriptGetFeatureExtent(ZMapWindowCanvasFeature f
 
   span->x1 = first->y1;
   span->x2 = feature->y2;
+
+  return ;
 }
 
 
-
-void zMapWindowCanvasTranscriptInit(void)
-{
-  gpointer funcs[FUNC_N_FUNC] = { NULL };
-
-  funcs[FUNC_PAINT] = zMapWindowCanvasTranscriptPaintFeature;
-  funcs[FUNC_ADD]   = zMapWindowCanvasTranscriptAddFeature;
-  funcs[FUNC_SUBPART] = zmapWindowCanvasTranscriptGetSubPartSpan;
-  funcs[FUNC_EXTENT] = zMapWindowCanvasTranscriptGetFeatureExtent;
-
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, sizeof(zmapWindowCanvasTranscriptStruct), 0);
-}
 

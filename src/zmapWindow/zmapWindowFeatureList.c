@@ -33,11 +33,6 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapBase.h>
 #include <zmapWindowFeatureList_I.h>

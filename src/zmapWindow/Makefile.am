@@ -103,6 +103,8 @@ canvas/zmapWindowCanvasSequence_I.h \
 canvas/zmapWindowCanvasTranscript.c \
 canvas/zmapWindowCanvasTranscript.h \
 canvas/zmapWindowCanvasTranscript_I.h \
+canvas/zmapWindowCanvasUtils.c \
+canvas/zmapWindowCanvasUtils.h \
 canvas/zmapWindowContainerAlignment.h \
 canvas/zmapWindowContainerAlignment_I.h \
 canvas/zmapWindowContainerBlock.h \

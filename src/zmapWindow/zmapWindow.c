@@ -5231,7 +5231,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
             focus_container = (ZMapWindowContainerFeatureSet)focus_column;
 
             /* Treat the annotation column differently */
-            if (zmapWindowContainerFeatureSetGetColumnId(focus_container) == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
+            if (zmapWindowContainerFeaturesetGetColumnId(focus_container) == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
               {
                 zmapWindowScratchClear(window) ;
               }
@@ -6097,7 +6097,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 
       zmapWindowScrollToItem(window, FOO_CANVAS_ITEM(focus_column)) ;
 
-      set_id = zmapWindowContainerFeatureSetGetColumnId(container_set);
+      set_id = zmapWindowContainerFeaturesetGetColumnUniqueId(container_set);
       // why unique_id, why not original_id ??
       select.secondary_text =
       select.feature_desc.feature_set = (char *)g_quark_to_string(set_id) ;

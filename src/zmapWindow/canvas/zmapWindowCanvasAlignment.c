@@ -675,8 +675,8 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 
   *width = feature->width;
 
-  if (!zMapStyleIsUnique(*feature->feature->style))
-    /* if not joining up same name features they don't need to go in the same column */
+  /* if not joining up same name features they don't need to go in the same column */
+  if(!zMapStyleIsUnique(*feature->feature->style))
     {
       while(first->left)
         {
@@ -697,7 +697,10 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 
   span->x1 = first->y1;
   span->x2 = first->y2;
+
+  return ;
 }
+
 
 static void alignmentColumnInit(ZMapWindowFeaturesetItem featureset)
 {
@@ -709,7 +712,6 @@ static void alignmentColumnInit(ZMapWindowFeaturesetItem featureset)
 
 static void zmapWindowCanvasAlignmentPreZoom(ZMapWindowFeaturesetItem featureset)
 {
-
   /* Need to call routine to trigger calculate on zoom for text here... */
   zMapWindowCanvasAlignmentZoomSet(featureset, NULL) ;
 
@@ -758,7 +760,7 @@ static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset
 
 
 static ZMapWindowCanvasFeature zMapWindowCanvasAlignmentAddFeature(ZMapWindowFeaturesetItem featureset,
-   ZMapFeature feature, double y1, double y2)
+                                                                   ZMapFeature feature, double y1, double y2)
 {
   ZMapWindowCanvasFeature feat = NULL ;
 
@@ -800,7 +802,7 @@ static void zMapWindowCanvasAlignmentFreeSet(ZMapWindowFeaturesetItem featureset
 /* Returns a newly-allocated ZMapFeatureSubPartSpan, which the caller must free with g_free,
  * or NULL. */
 static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasItem *foo,
-      ZMapFeature feature, double x, double y)
+                                                                      ZMapFeature feature, double x, double y)
 {
   ZMapFeatureSubPartSpan sub_part = NULL ;
   ZMapWindowFeaturesetItem fi = NULL ;
@@ -888,8 +890,8 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasI
 /* Default function to check if the given x,y coord is within a feature, this
  * function assumes the feature is box-like. */
 static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
-     double item_x, double item_y, int cx, int cy,
-     double local_x, double local_y, double x_off)
+                             double item_x, double item_y, int cx, int cy,
+                             double local_x, double local_y, double x_off)
 {
   double best = 1.0e36 ;
   double can_start = 0.0, can_end = 0.0;

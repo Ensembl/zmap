@@ -14,6 +14,7 @@ zmapDataSource_P.h \
 zmapDataSource.h \
 zmapDataSource.c \
 $(NULL)
+
 libZMapServer_la_LIBADD  = 
 libZMapServer_la_CFLAGS  = $(INCLUDE_COMMON)
 libZMapServer_la_LDFLAGS = 
@@ -25,6 +26,7 @@ pipe/libPipeServer.la   \
 file/libFileServer.la   \
 das/libDasServer.la     \
 $(NULL)
+
 libZMapServers_la_CFLAGS  = 
 libZMapServers_la_LDFLAGS = 
 

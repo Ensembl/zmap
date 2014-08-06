@@ -1864,7 +1864,7 @@ static char *label_text_from_column(FooCanvasGroup *column_group)
   char *label_text;
 
   /* Get hold of the style. */
-  display_id = zmapWindowContainerFeatureSetColumnDisplayName((ZMapWindowContainerFeatureSet)column_group);
+  display_id = zmapWindowContainerFeaturesetGetColumnId((ZMapWindowContainerFeatureSet)column_group) ;
 
   label_text = (char *)(g_quark_to_string(display_id));
 
