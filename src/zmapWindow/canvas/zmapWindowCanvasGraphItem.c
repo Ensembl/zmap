@@ -68,7 +68,7 @@
 /* Current state of play of this code:
  *
  * Code was originally written by Malcolm and then a load of fixes applied by Ed.
- * 
+ *
  * I (Ed) don't completely understand all of Malcolm's thinking and there are
  * probably some bugs remaining but I don't have the time to fix this any more.
  * The code seems robust and the colouring/filling work except that the fill code draws
@@ -138,8 +138,11 @@ void zMapWindowCanvasGraphInit(void)
 /* Initialise the graph object. */
 static void graphInit(ZMapWindowFeaturesetItem featureset)
 {
-  ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+  ZMapWindowCanvasGraph graph_set = NULL ;
   GdkColor *draw = NULL, *fill = NULL, *border = NULL ;
+
+  zMapReturnIfFail(featureset) ;
+  graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
 
   /* Set up default colours to draw with, these may be overwritten later by the features
    * colours. */
@@ -171,6 +174,8 @@ static void graphPreZoom(ZMapWindowFeaturesetItem featureset)
 /* Recalculate the bins if the zoom level changes */
 static void graphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
+  zMapReturnIfFail(featureset);
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* unused currently. */
   ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
@@ -239,13 +244,15 @@ static void graphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable
  */
 
 /* Agh...is this used for line graphs...I guess it might be....check this....
- * 
- * 
+ *
+ *
  *  */
 static void graphGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width)
 {
   ZMapWindowCanvasFeature first = feature ;
   int last_y2 ;
+
+  zMapReturnIfFail(feature && feature->feature) ;
 
   *width = feature->width ;
   span->x1 = feature->y1 ;
@@ -299,10 +306,13 @@ static void graphGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span
 static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                               GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+  ZMapWindowCanvasGraph graph_set = NULL ;
   int cx2 = 0, cy2 = 0 ;                                    /* initialised for LINE mode */
   double x2 = 0, y2 = 0 ;
   FooCanvasItem *item = (FooCanvasItem *)featureset ;
+
+  zMapReturnIfFail(featureset) ;
+  graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
 
 
   if (featureset->featurestyle)
@@ -473,7 +483,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                               GdkDrawable *drawable, GdkEventExpose *expose)
 
 {
-  ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+  ZMapWindowCanvasGraph graph_set = NULL ;
   FooCanvasItem *item = (FooCanvasItem *)featureset ;
   int cx2 = 0, cy2 = 0 ;                                    /* initialised for LINE mode */
   double x1,x2,y2 ;
@@ -481,6 +491,8 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
   gulong fill,outline ;
   int colours_set, fill_set, outline_set ;
 
+  zMapReturnIfFail(featureset) ;
+  graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
 
   switch(zMapStyleGraphMode(featureset->style))
     {
@@ -627,7 +639,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
         x1 = featureset->dx + featureset->x_off; //  + (width * zMapStyleBaseline(di->style)) ;
 
         if (featureset->bumped)
-          x1 += feature->bump_offset ; 
+          x1 += feature->bump_offset ;
 
         if (feature->width < 1)
           x2 = x1 ;
@@ -662,7 +674,10 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                             GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+  ZMapWindowCanvasGraph graph_set = NULL;
+
+  zMapReturnIfFail(featureset) ;
+  graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
 
   /* Currently only lines are drawn in this function. */
   if (zMapStyleGraphMode(featureset->style) == ZMAPSTYLE_GRAPH_LINE)
@@ -891,6 +906,8 @@ static double graphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
   double best = 1.0e36 ;
   double can_start, can_end ;
 
+  zMapReturnValIfFail(gs && gs->feature && fi, best) ;
+
   /* Get feature extent on display. */
   /* NOTE cannot use feature coords as transcript exons all point to the same feature */
   /* alignments have to implement a special function to handle bumped features
@@ -961,11 +978,11 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
   int bin_start,bin_end;
   ZMapWindowCanvasFeature src_gs = NULL;                    /* source */
   ZMapWindowCanvasFeature bin_gs = NULL ;                   /* re-binned */
-  GList *src,*dest;
-  double score;
-  double min_feat_score = 0, max_feat_score = 0 ;
+  GList *src = NULL,*dest = NULL ;
+  double score = 0.0;
+  double min_feat_score = 0.0, max_feat_score = 0.0 ;
 
-
+  zMapReturnValIfFail(di, dest);
 
   /* this is weird given that the feature style may not have been given for the column style yet.... */
   int min_bin = zMapStyleDensityMinBin(di->style);          /* min pixels per bin */
@@ -1123,7 +1140,10 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
  * I copy across the fill mode into the column style to cache it and also the colour stuff. */
 static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeStyle feature_style)
 {
-  ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+  ZMapWindowCanvasGraph graph_set = NULL ;
+
+  zMapReturnIfFail(featureset && feature_style) ;
+  graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
 
   /* Although doing a style merge here is tempting it's not a good idea as some _column_ style
    * settings (e.g. width, bump etc) are made independently by other parts of the code
