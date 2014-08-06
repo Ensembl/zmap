@@ -701,6 +701,8 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuExportOps(NULL, NULL, cbdata)) ;
 
+  if (zmapWindowMarkIsSet(window->mark))
+    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuMarkExportOps(NULL, NULL, cbdata));
 
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
