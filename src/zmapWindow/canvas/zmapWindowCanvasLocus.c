@@ -61,7 +61,7 @@ static double locusPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 
 
 
-/* 
+/*
  *                    External interface routines.
  */
 
@@ -85,7 +85,11 @@ void zMapWindowCanvasLocusInit(void)
 
 void zMapWindowCanvasLocusSetFilter(ZMapWindowFeaturesetItem featureset, GList * filter)
 {
-  ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
+  ZMapWindowCanvasLocusSet lset = NULL ;
+
+  zMapReturnIfFail(featureset) ;
+
+  lset = (ZMapWindowCanvasLocusSet) featureset->opt ;
 
   lset->filter = filter;
 
@@ -96,7 +100,7 @@ void zMapWindowCanvasLocusSetFilter(ZMapWindowFeaturesetItem featureset, GList *
 
 
 
-/* 
+/*
  *                    Internal routines
  */
 
@@ -105,6 +109,9 @@ void zMapWindowCanvasLocusSetFilter(ZMapWindowFeaturesetItem featureset, GList *
 static void zmapWindowCanvasLocusGetPango(GdkDrawable *drawable,
 					  ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasLocusSet lset)
 {
+
+  zMapReturnIfFail(featureset) ;
+
   /* lazy evaluation of pango renderer */
   if(lset)
     {
@@ -133,10 +140,14 @@ static void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featurese
   double x1,x2;
   FooCanvasItem *foo = (FooCanvasItem *) featureset;
   ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) feature;
-  ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
+  ZMapWindowCanvasLocusSet lset = NULL ;
   char *text;
   int len;
   int cx1, cy1, cx2, cy2;
+
+  zMapReturnIfFail(featureset && feature) ;
+
+  lset = (ZMapWindowCanvasLocusSet) featureset->opt;
 
 
   zmapWindowCanvasLocusGetPango(drawable, featureset, lset);
@@ -182,13 +193,15 @@ static double deOverlap(GList *visible,int n_loci, double text_h, double start, 
   LocusGroup group_span = NULL;
   GList *groups = NULL;
   int n_groups = 0;
-  GList *l;
-  double needed = 0.0, spare;
+  GList *l = NULL ;
+  double needed = 0.0, spare = 0.0;
   //	double overlap;
   //	double group_sep;
   //	double item_sep;
-  double cur_y;
-  double longest = 0;
+  double cur_y = 0.0;
+  double longest = 0.0 ;
+
+  zMapReturnIfFail(visible) ;
 
   visible = g_list_sort(visible, zMapFeatureCmp);
 
@@ -332,8 +345,10 @@ static double deOverlap(GList *visible,int n_loci, double text_h, double start, 
 
 static gboolean locusFeatureIsFiltered(GList *filters, char * locus)
 {
-  GList * l;
+  GList * l = NULL ;
   char *prefix;
+
+  zMapReturnIfFail(filters) ;
 
   for(l = filters; l ; l = l->next)
     {
@@ -357,13 +372,17 @@ static gboolean locusFeatureIsFiltered(GList *filters, char * locus)
 static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
   //	ZMapSkipList sl;
-  GList *l;
-  double len, width, f_width = featureset->width;
-  char *text;
+  GList *l = NULL ;
+  double len = 0.0, width = 0.0, f_width = 0.0 ;
+  char *text = NULL ;
   int n_loci = 0;
   GList *visible = NULL;
-  double span = featureset->end - featureset->start + 1.0;
+  double span = 0.0 ;
   //	FooCanvasItem *foo = (FooCanvasItem *) featureset;
+
+  zMapReturnIfFail(featureset) ;
+  f_width = featureset->width ;
+  span = featureset->end - featureset->start + 1.0;
 
   ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
   //printf("locus zoom\n");
@@ -445,7 +464,10 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, Gd
 
 static void zMapWindowCanvasLocusFreeSet(ZMapWindowFeaturesetItem featureset)
 {
-  ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
+  ZMapWindowCanvasLocusSet lset = NULL ;
+
+  zMapReturnIfFail(featureset) ;
+  lset = (ZMapWindowCanvasLocusSet) featureset->opt;
 
   if(lset)
     zmapWindowCanvasFeaturesetFreePango(&lset->pango);
@@ -455,8 +477,11 @@ static void zMapWindowCanvasLocusFreeSet(ZMapWindowFeaturesetItem featureset)
 static ZMapWindowCanvasFeature zMapWindowCanvasLocusAddFeature(ZMapWindowFeaturesetItem featureset,
 							       ZMapFeature feature, double y1, double y2)
 {
-  ZMapWindowCanvasFeature feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
+  ZMapWindowCanvasFeature feat = NULL ;
 
+  zMapReturnValIfFail(featureset, feat);
+
+  feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
   featureset->recalculate_zoom = TRUE;
   //featureset->zoom = 0.0;		/* force recalc of de-overlap: gb10 shouldn't be necessary now we have the recalculate_zoom flag */
   /* force display at all */
@@ -476,8 +501,12 @@ static double locusPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 			 double local_x, double local_y, double x_off)
 {
   double best = 1e36;
-  ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) gs;
-  ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) fi->opt;
+  ZMapWindowCanvasLocus locus = NULL ;
+  ZMapWindowCanvasLocusSet lset = NULL ;
+
+  zMapReturnValIfFail(gs && fi, best) ;
+  locus = (ZMapWindowCanvasLocus) gs;
+  lset = (ZMapWindowCanvasLocusSet) fi->opt;
 
   /* function interface looks too complex, let's just use the feature info */
   double ytext = locus->ytext - lset->text_h / 2 - fi->dy + 1;
