@@ -653,7 +653,7 @@ and insert that list into the user release notes file:
 
            $RELEASE_LOCATION/$ZMAP_USER_DOCS_DIR/$ZMAP_USER_RELEASE_DOC_FILE_NAME
 
-After modifying the file it needs to git committed/pushed but note that in the build
+After modifying the file it needs to be git committed and pushed but note that the build
 is now out of date.
 
 EOF
