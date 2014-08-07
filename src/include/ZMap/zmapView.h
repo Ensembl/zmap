@@ -230,6 +230,8 @@ gboolean zMapViewGetHighlightFilteredColumns(ZMapView);
 
 void zMapViewUpdateColumnBackground(ZMapView view);
 
+const char* zMapViewGetSaveFile(ZMapView view) ;
+void zMapViewSetSaveFile(ZMapView view, const char *filename) ;
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapView2Str, ZMapViewState) ;
 

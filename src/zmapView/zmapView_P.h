@@ -380,6 +380,10 @@ typedef struct _ZMapViewStruct
   GList *edit_list_end ;
   gboolean scratch_start_end_set ;     /* TRUE if the scratch-column forward-strand feature start/end has been set */
 
+  GQuark save_file ;                   /* Filename to use for the Save option in standalone
+                                        * ZMap. Gets set either from the input file or from the
+                                        * first Save As operation.  */
+
 } ZMapViewStruct ;
 
 

@@ -311,7 +311,7 @@ static FooCanvasGroup *menuDataItemToColumn(FooCanvasItem *item) ;
 
 static gboolean exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *seq, char *seq_name, int seq_len,
                             char *molecule_name, char *gene_name, GError **error) ;
-static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature_in, GError **error) ;
+static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature_in, char **filepath_inout, GError **error) ;
 
 static void insertSubMenus(GString *branch_point_string,
                            ZMapGUIMenuItem sub_menus,
@@ -2080,7 +2080,7 @@ static void exportMenuCB(int menu_item_id, gpointer callback_data)
       }
     case 2:
       {
-        result = zMapWindowExportFeatures(menu_data->window, FALSE, feature, &error) ;
+        result = zMapWindowExportFeatures(menu_data->window, FALSE, feature, NULL, &error) ;
         break ;
       }
     case 3:
@@ -2095,7 +2095,7 @@ static void exportMenuCB(int menu_item_id, gpointer callback_data)
       }
     case 12:
       {
-        result = zMapWindowExportFeatures(menu_data->window, TRUE, feature, &error) ;
+        result = zMapWindowExportFeatures(menu_data->window, TRUE, feature, NULL, &error) ;
         break;
       }
     default:
@@ -3344,7 +3344,8 @@ static gboolean exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *
 }
 
 
-gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_region, ZMapFeatureAny feature_in, GError **error)
+gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_region, ZMapFeatureAny feature_in, 
+                                  char **filepath_inout, GError **error)
 {
   gboolean result = FALSE ;
   ZMapFeatureAny feature = feature_in ;
@@ -3360,7 +3361,7 @@ gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_regio
           
           zmapWindowMarkGetSequenceRange(window->mark, &(mark_region.x1), &(mark_region.x2));
           
-          result = exportFeatures(window, &mark_region, feature, error) ;
+          result = exportFeatures(window, &mark_region, feature, filepath_inout, error) ;
         }
       else
         {
@@ -3369,14 +3370,15 @@ gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_regio
     }
   else
     {
-      result = exportFeatures(window, NULL, feature, error) ;
+      result = exportFeatures(window, NULL, feature, filepath_inout, error) ;
     }
 
   return result ;
 }
 
 
-static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature_in, GError **error)
+static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature_in, 
+                               char **filepath_inout, GError **error)
 {
   gboolean result = FALSE ;
   char *filepath = NULL ;
@@ -3384,6 +3386,9 @@ static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeat
   GError *tmp_error = NULL ;
   char *error_prefix = "Features export failed:" ;
   ZMapFeatureAny feature = feature_in ;
+  
+  if (filepath_inout && *filepath_inout)
+    filepath = g_strdup(*filepath_inout) ;
 
   if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
       && feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
@@ -3396,8 +3401,10 @@ static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeat
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
 
-  if (!(filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel),
-                                      "Feature Export filename ?", NULL, "gff"))
+  if (!filepath)
+    filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel), "Feature Export filename ?", NULL, "gff") ;
+
+  if (!filepath
       || !(file = g_io_channel_new_file(filepath, "w", &tmp_error))
       || !zMapGFFDumpRegion(feature, window->context_map->styles, region_span, file, &tmp_error))
     {
@@ -3428,6 +3435,20 @@ static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeat
   /* And swop it back again. */
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+
+  if (filepath)
+    {
+      if (filepath_inout && !*filepath_inout)
+        {
+          /* We've created the filepath in this function so set the output value from it */
+          *filepath_inout = filepath ;
+        }
+      else
+        {
+          /* Return value wasn't requested so free this */
+          g_free(filepath) ;
+        }
+    }
 
   return result ;
 }

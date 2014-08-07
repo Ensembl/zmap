@@ -6523,6 +6523,42 @@ static void destroyLoadFeatures(LoadFeaturesData loaded_features)
 }
 
 
+void getFilename(gpointer key, gpointer value, gpointer data)
+{
+  GQuark filename_quark = GPOINTER_TO_INT(key) ;
+  GQuark *result = (GQuark*)data ;
+  *result = filename_quark ;
+}
 
 
+/* Get the filename of the default file to use for the Save operation. Returns null if it hasn't been set. */
+const char* zMapViewGetSaveFile(ZMapView view)
+{
+  const char *result = NULL ;
+  zMapReturnValIfFail(view && view->view_sequence, result) ;
 
+  result = g_quark_to_string(view->save_file) ;
+
+  /* If it hasn't been set yet, check if there was an input file and use that (but only if there
+   * was one and only one input file) */
+  if (!result)
+    {
+      GHashTable *cached_parsers = view->view_sequence->cached_parsers ;
+      
+      if (g_hash_table_size(cached_parsers) == 1)
+        {
+          g_hash_table_foreach(cached_parsers, getFilename, &view->save_file) ;
+          result = g_quark_to_string(view->save_file) ;
+        }
+    }
+
+  return result ;
+}
+
+
+/* Set the default filename to use for the Save operation. */
+void zMapViewSetSaveFile(ZMapView view, const char *filename)
+{
+  zMapReturnIfFail(view) ;
+  view->save_file = g_quark_from_string(filename) ;
+}

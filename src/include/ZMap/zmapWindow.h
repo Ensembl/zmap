@@ -443,15 +443,7 @@ gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
                                         char *command_name, char *request,
                                         ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
-
-void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
-#ifdef __GNUC__
-#define zMapWindowBusy(WINDOW, BUSY)         \
-  zMapWindowBusyFull((WINDOW), (BUSY), __FILE__, (char *)__PRETTY_FUNCTION__)
-#else
-#define zMapWindowBusy(WINDOW, BUSY)         \
-  zMapWindowBusyFull((WINDOW), (BUSY), __FILE__, NULL)
-#endif
+void zMapWindowSetCursor(ZMapWindow window, GdkCursor *cursor) ;
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
                            ZMapFeatureContext current_features, ZMapFeatureContext new_features,
@@ -495,6 +487,9 @@ gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end) ;
 gboolean zMapWindowMarkGetSequenceSpan(ZMapWindow window, int *start, int *end) ;
 void zmapWindowMarkPrint(ZMapWindow window, char *title) ;
 gboolean zMapWindowMarkIsSet(ZMapWindow window);
+
+void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
+                               ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
 
 void zMapWindowRequestReposition(FooCanvasItem *foo);
 
@@ -549,8 +544,11 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window,
                                  FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature) ;
 
+gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
+
 gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor **fill);
 gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill);
+
 
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
 gboolean zMapWindowCurrWindowPos(ZMapWindow window,
@@ -608,7 +606,7 @@ void zMapWindowUpdateColumnBackground(ZMapWindow window, ZMapFeatureSet feature_
 
 GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item) ;
 
-gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_region, ZMapFeatureAny feature_in, GError **error) ;
+gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_region, ZMapFeatureAny feature_in, char **filepath_inout, GError **error) ;
 gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GError **error) ;
 gboolean zMapWindowExportContext(ZMapWindow window, GError **error) ;
 

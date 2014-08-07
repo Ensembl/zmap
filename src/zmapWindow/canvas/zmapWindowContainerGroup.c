@@ -1344,7 +1344,7 @@ void zMapWindowCanvasItemSetConnected(ZMapWindowCanvasItem  item, gboolean val)
 
 gboolean zMapWindowCanvasItemIsConnected(ZMapWindowCanvasItem item)
 {
-  zMapReturnIfFail(item) ;
+  zMapReturnValIfFail(item, FALSE) ;
   return item->connected;
 }
 
