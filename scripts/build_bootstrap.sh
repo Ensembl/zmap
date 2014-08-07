@@ -563,16 +563,16 @@ zmap_cd $SRC_DIR
 
 
 
-# We need to run bootstrap and configure to set up the makefile to build
+# We need to run autogen.sh and configure to set up the makefile to build
 # the distribution file.
 
-zmap_message_out "Running bootstrap"
-./bootstrap || zmap_message_rm_exit "Failed to bootstrap"
-zmap_message_out "Finished bootstrap"
+zmap_message_out "Running $ZMAP_BOOTSTRAP_SCRIPT"
+./$ZMAP_BOOTSTRAP_SCRIPT || zmap_message_rm_exit "Failed to $ZMAP_BOOTSTRAP_SCRIPT"
+zmap_message_out "Finished $ZMAP_BOOTSTRAP_SCRIPT"
 
-zmap_message_out "Running runconfig"
-./runconfig || zmap_message_rm_exit "Failed to runconfig"
-zmap_message_out "Finished runconfig"
+zmap_message_out "Running $ZMAP_RUNCONFIG_SCRIPT"
+./runconfig || zmap_message_rm_exit "Failed to $ZMAP_RUNCONFIG_SCRIPT"
+zmap_message_out "Finished $ZMAP_RUNCONFIG_SCRIPT"
 
 # make dist
 # put somewhere useful!
