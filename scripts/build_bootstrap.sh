@@ -637,7 +637,7 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 # Mail annotools to tell them to edit the user release notes file.
 #
 #
-cat <<EOF
+(cat <<EOF
 
 ZMap Release Build Finished.
 
@@ -656,7 +656,7 @@ and insert that list into the user release notes file:
 After modifying the file it needs to git committed/pushed but note that in the build
 is now out of date....doh.....
 
-EOF | mailx -s "Release Notes Created - Action Required" $ZMAP_MASTER_NOTIFY_MAIL
+EOF) | mailx -s "Release Notes Created - Action Required" $ZMAP_MASTER_NOTIFY_MAIL
 
 
 
