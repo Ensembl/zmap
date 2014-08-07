@@ -185,7 +185,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mod
   g_return_if_fail(ZMAP_IS_CONTAINER_FEATURESET(column_item));
 
   window = g_object_get_data(G_OBJECT(column_item), ZMAP_WINDOW_POINTER) ;
-  if (!window) 
+  if (!window)
     return ;
 
   if (zmapWindowMarkIsSet(window->mark))
@@ -466,10 +466,13 @@ static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasP
  */
 static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet container,gboolean bump)
 {
-  ZMapFeatureTypeStyle col_style = container->style;
+  ZMapFeatureTypeStyle col_style = NULL ;
   GList *l;
   FooCanvasGroup *column_features;
 
+  zMapReturnValIfFail(container && container->style, FALSE ) ;
+
+  col_style = container->style;
 
   if(col_style->bump_style)
     {
@@ -494,7 +497,7 @@ static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet conta
         continue;
         style = *item->feature->style;
       /* NOTE item contains many features but they must all have the same style */
-        
+
         bump_style = style;
         //printf("item style: %d %s -> %s\n", bump, g_quark_to_string(col_style->unique_id), g_quark_to_string(style->bump_style));
         if(bump)
@@ -508,7 +511,7 @@ static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet conta
           // best to remove style from feature and use the one in featureset
           // avoid getting confused with featureset in the feature context and canvasfeatureset = column
           // this all relates to GFF based ZMap and the need to set styles OTF
-  
+
           // NOTE this assumes that all features in the column have the same style
           // orignally this was ok for graph features
           // extending to basic features only (late aug 2012)
