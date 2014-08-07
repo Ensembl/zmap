@@ -616,7 +616,7 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
     # Make the release notes
     $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $rt_date $CHECKOUT_BASE || \
 	zmap_message_exit "Failed to build release notes from Request Tracker"
-
+fi
 
 # WE ARE NOT DOING THIS JUST NOW....
 #
@@ -637,28 +637,28 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 # Mail annotools to tell them to edit the user release notes file.
 #
 #
-#(cat <<EOF
-#
-#ZMap Release Build Finished.
-#
-#ZMap $ZMAP_RELEASE_VERSION Release notes file needs editing.
-#
-#Compile an abbreviated list of RT bugs fixed and code changes
-#made from:
-#
-#           $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME
-#           $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$GIT_COMMITS.txt
-#
-#and insert that list into the user release notes file:
-#
-#           $RELEASE_LOCATION/$ZMAP_USER_DOCS_DIR/$ZMAP_USER_RELEASE_DOC_FILE_NAME
-#
-#After modifying the file it needs to be git committed and pushed but note that the build
-#is now out of date.
-#
-#EOF
-#       ) | mailx -s "Release Notes Created - Action Required" $ZMAP_MASTER_NOTIFY_MAIL
-#
+(cat <<EOF
+
+ZMap Release Build Finished.
+
+ZMap $ZMAP_RELEASE_VERSION Release notes file needs editing.
+
+Compile an abbreviated list of RT bugs fixed and code changes
+made from:
+
+           $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME
+           $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$GIT_COMMITS.txt
+
+and insert that list into the user release notes file:
+
+           $RELEASE_LOCATION/$ZMAP_USER_DOCS_DIR/$ZMAP_USER_RELEASE_DOC_FILE_NAME
+
+After modifying the file it needs to be git committed and pushed but note that the build
+is now out of date.
+
+EOF
+       ) | mailx -s "Release Notes Created - Action Required" $ZMAP_MASTER_NOTIFY_MAIL
+
 
 
 
