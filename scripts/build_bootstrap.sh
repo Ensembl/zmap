@@ -654,9 +654,10 @@ and insert that list into the user release notes file:
            $RELEASE_LOCATION/$ZMAP_USER_DOCS_DIR/$ZMAP_USER_RELEASE_DOC_FILE_NAME
 
 After modifying the file it needs to git committed/pushed but note that in the build
-is now out of date....doh.....
+is now out of date.
 
-EOF) | mailx -s "Release Notes Created - Action Required" $ZMAP_MASTER_NOTIFY_MAIL
+EOF
+       ) | mailx -s "Release Notes Created - Action Required" $ZMAP_MASTER_NOTIFY_MAIL
 
 
 
