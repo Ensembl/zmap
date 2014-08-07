@@ -201,7 +201,7 @@ static double deOverlap(GList *visible,int n_loci, double text_h, double start, 
   double cur_y = 0.0;
   double longest = 0.0 ;
 
-  zMapReturnIfFail(visible) ;
+  zMapReturnValIfFail(visible, longest) ;
 
   visible = g_list_sort(visible, zMapFeatureCmp);
 
@@ -348,7 +348,7 @@ static gboolean locusFeatureIsFiltered(GList *filters, char * locus)
   GList * l = NULL ;
   char *prefix;
 
-  zMapReturnIfFail(filters) ;
+  zMapReturnValIfFail(filters, FALSE) ;
 
   for(l = filters; l ; l = l->next)
     {
