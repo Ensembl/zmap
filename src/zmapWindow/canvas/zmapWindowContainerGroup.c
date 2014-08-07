@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -161,12 +161,14 @@ static double window_canvas_item_invoke_point (FooCanvasItem *item,
                                                int cx, int cy,
                                                FooCanvasItem **actual_item)
 {
+  double result = 1.0e18;
+  zMapReturnValIfFail(item, result) ;
   /* Calculate x & y in item local coordinates */
 
   if (FOO_CANVAS_ITEM_GET_CLASS (item)->point)
-    return FOO_CANVAS_ITEM_GET_CLASS (item)->point (item, x, y, cx, cy, actual_item);
+    result = FOO_CANVAS_ITEM_GET_CLASS (item)->point (item, x, y, cx, cy, actual_item);
 
-  return 1e18;
+  return result;
 }
 
 
@@ -209,11 +211,13 @@ GType zmapWindowContainerGroupGetType(void)
 /* object impl */
 static void zmap_window_container_group_class_init  (ZMapWindowContainerGroupClass container_class)
 {
-  ZMapWindowContainerGroupClass canvas_class;
-  FooCanvasItemClass *item_class;
-  GtkObjectClass *gtkobject_class;
-  GObjectClass *gobject_class;
-  GParamSpec *param_spec;
+  ZMapWindowContainerGroupClass canvas_class = NULL ;
+  FooCanvasItemClass *item_class = NULL ;
+  GtkObjectClass *gtkobject_class = NULL ;
+  GObjectClass *gobject_class = NULL ;
+  GParamSpec *param_spec = NULL ;
+
+  zMapReturnIfFail(container_class) ;
 
   gtkobject_class = (GtkObjectClass *) container_class;
   gobject_class = (GObjectClass *) container_class;
@@ -259,9 +263,9 @@ static void zmap_window_container_group_set_property(GObject               *obje
                                                      GParamSpec            *pspec)
 
 {
-  ZMapWindowContainerGroup container;
+  ZMapWindowContainerGroup container = NULL ;
 
-  g_return_if_fail(ZMAP_IS_CONTAINER_GROUP(object));
+  zMapReturnIfFail(ZMAP_IS_CONTAINER_GROUP(object));
 
   container = ZMAP_CONTAINER_GROUP(object);
 
@@ -305,7 +309,7 @@ static void zmap_window_container_group_get_property(GObject               *obje
 {
   ZMapWindowContainerGroup container;
 
-  g_return_if_fail(ZMAP_IS_CONTAINER_GROUP(object));
+  zMapReturnIfFail(ZMAP_IS_CONTAINER_GROUP(object));
 
   container = ZMAP_CONTAINER_GROUP(object);
 
@@ -336,6 +340,8 @@ static void zmap_window_container_group_get_property(GObject               *obje
 static void zmap_window_container_group_draw (FooCanvasItem *item, GdkDrawable *drawable,
                                               GdkEventExpose *expose)
 {
+  zMapReturnIfFail(item_parent_class_G) ;
+
   if(item_parent_class_G->draw)
     (item_parent_class_G->draw)(item, drawable, expose) ;
 
@@ -350,8 +356,11 @@ static void zmap_window_container_group_draw (FooCanvasItem *item, GdkDrawable *
 
 static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
 {
-  FooCanvasGroup *canvas_group;
+  FooCanvasGroup *canvas_group = NULL ;
   gboolean item_visible;
+
+  zMapReturnIfFail(item) ;
+
 #define DEBUG   0
 #if DEBUG
   ZMapWindowContainerGroup zg = (ZMapWindowContainerGroup) item;
@@ -495,7 +504,9 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 
 static void zmap_window_container_group_destroy     (GtkObject *gtkobject)
 {
-  GtkObjectClass *gtkobject_class;
+  GtkObjectClass *gtkobject_class = NULL ;
+
+  zMapReturnIfFail(item_parent_class_G) ;
 
   gtkobject_class = (GtkObjectClass *)item_parent_class_G;
 
@@ -745,8 +756,8 @@ ZMapWindowContainerGroup zmapWindowContainerCanvasItemGetContainer(FooCanvasItem
   FooCanvasItem *container_item = NULL;
   FooCanvasItem *parent;
 
-  g_return_val_if_fail(item != NULL, NULL);
-  g_return_val_if_fail(FOO_IS_CANVAS_ITEM(item), NULL);
+  zMapReturnValIfFail(item != NULL, NULL);
+  zMapReturnValIfFail(FOO_IS_CANVAS_ITEM(item), NULL);
 
   if (ZMAP_IS_CONTAINER_GROUP(item))
     {
@@ -787,6 +798,8 @@ gboolean zmapWindowContainerHasFeatures(ZMapWindowContainerGroup container)
   GList *l;
   gint layer;
 
+  zMapReturnValIfFail(container, FALSE) ;
+
   if((features = zmapWindowContainerGetFeatures(container)))
     {
       for (l = ((FooCanvasGroup *)features)->item_list ; l ; l = l->next)
@@ -808,7 +821,9 @@ gboolean zmapWindowContainerHasFeatures(ZMapWindowContainerGroup container)
 
 void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 {
-  GList *list,*l;
+  GList *list = NULL,*l = NULL ;
+
+  zMapReturnIfFail(group) ;
 
   if((list = g_list_first(group->item_list)))
     {
@@ -850,7 +865,7 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item,
                                             GdkColor *border_colour)
 {
   ZMapWindowCanvasItem canvas_item ;
-  GList *item_list, dummy_item = {NULL} ;
+  GList *item_list = NULL, dummy_item = {NULL} ;
   EachIntervalDataStruct interval_data = {NULL};
 
   zMapLogReturnIfFail(FOO_IS_CANVAS_ITEM(item)) ;
@@ -889,7 +904,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
   int cx, cy;
   int small_enough;
 
-  zMapLogReturnValIfFail(ZMAP_IS_CANVAS_ITEM(canvas_item), matching_interval);
+  zMapLogReturnValIfFail(canvas_item && ZMAP_IS_CANVAS_ITEM(canvas_item), matching_interval);
 
   /* The background can be clipped by the long items code, so we
    * need to use the groups position as the background extends
@@ -942,7 +957,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
             zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
         }
     }
-  
+
   return matching_interval;
 }
 
@@ -981,11 +996,15 @@ gboolean zmapWindowContainerGetFeatureAny(ZMapWindowContainerGroup container, ZM
 
 gboolean zMapWindowCanvasItemSetStyle(ZMapWindowCanvasItem item, ZMapFeatureTypeStyle style)
 {
-  ZMapWindowCanvasItemClass class = ZMAP_CANVAS_ITEM_GET_CLASS(item);
+  ZMapWindowCanvasItemClass the_class = NULL ;
   gboolean ret = FALSE;
 
-  if(class->set_style)
-    ret = class->set_style((FooCanvasItem *) item, style);
+  zMapReturnValIfFail(item, ret) ;
+
+  the_class = ZMAP_CANVAS_ITEM_GET_CLASS(item) ;
+
+  if(the_class->set_style)
+    ret = the_class->set_style((FooCanvasItem *) item, style);
 
   return ret;
 }
@@ -1019,7 +1038,9 @@ ZMapWindowContainerGroup zmapWindowContainerUtilsItemGetParentLevel(FooCanvasIte
 ZMapWindowContainerGroup zmapWindowContainerUtilsGetParentLevel(ZMapWindowContainerGroup container_group,
                                                                 ZMapContainerLevelType   level)
 {
-  ZMapContainerLevelType curr_level;
+  ZMapContainerLevelType curr_level ;
+
+  zMapReturnValIfFail(container_group, NULL) ;
 
   while((curr_level = container_group->level) != level)
     {
@@ -1039,7 +1060,7 @@ ZMapWindowContainerGroup zmapWindowContainerUtilsGetParentLevel(ZMapWindowContai
 
 void zmapWindowItemStatsInit(ZMapWindowItemStats stats, GType item_type)
 {
-  MyGObjectInfo object_data ;
+  MyGObjectInfo object_data = NULL ;
 
   if ((object_data = findObjectInfo(item_type)))
     {
@@ -1054,6 +1075,8 @@ void zmapWindowItemStatsInit(ZMapWindowItemStats stats, GType item_type)
 
 void zmapWindowItemStatsIncr(ZMapWindowItemStats stats)
 {
+  zMapReturnIfFail(stats) ;
+
   stats->total++ ;
   stats->curr++ ;
 
@@ -1063,6 +1086,8 @@ void zmapWindowItemStatsIncr(ZMapWindowItemStats stats)
 /* "total" counter is a cumulative total so is not decremented. */
 void zmapWindowItemStatsDecr(ZMapWindowItemStats stats)
 {
+  zMapReturnIfFail(stats) ;
+
   stats->curr-- ;
 
   return ;
@@ -1077,6 +1102,7 @@ void zmapWindowItemStatsDecr(ZMapWindowItemStats stats)
 ZMapWindowContainerGroup zmapWindowContainerChildGetParent(FooCanvasItem *item)
 {
   ZMapWindowContainerGroup container_group = NULL;
+  zMapReturnValIfFail(item, container_group) ;
 
   if (ZMAP_IS_CONTAINER_GROUP(item))
     {
@@ -1090,6 +1116,8 @@ ZMapWindowContainerGroup zmapWindowContainerChildGetParent(FooCanvasItem *item)
 ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item)
 {
   ZMapWindowContainerGroup container_group = NULL;
+
+  zMapReturnValIfFail(item, container_group) ;
 
   if ((container_group = zmapWindowContainerChildGetParent(item)))
     {
@@ -1124,7 +1152,9 @@ ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item)
 FooCanvasItem *zmapWindowContainerGetNthFeatureItem(ZMapWindowContainerGroup container, int nth_item)
 {
   FooCanvasItem *item = NULL ;
-  FooCanvasGroup *features ;
+  FooCanvasGroup *features = NULL ;
+
+  zMapReturnValIfFail(container, item) ;
 
   features = (FooCanvasGroup *)zmapWindowContainerGetFeatures(container) ;
 
@@ -1200,6 +1230,8 @@ FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
 gboolean zMapWindowCanvasItemSetFeaturePointer(ZMapWindowCanvasItem item, ZMapFeature feature)
 {
   int pop = 0;
+
+  zMapReturnValIfFail(item && feature, FALSE) ;
 
   /* collpased features have 0 population, the one that was displayed has the total
    * if we use window search then select a collapsed feature we have to update this
@@ -1306,11 +1338,13 @@ void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent,
 
 void zMapWindowCanvasItemSetConnected(ZMapWindowCanvasItem  item, gboolean val)
 {
+  zMapReturnIfFail(item) ;
   item->connected = val;
 }
 
 gboolean zMapWindowCanvasItemIsConnected(ZMapWindowCanvasItem item)
 {
+  zMapReturnIfFail(item) ;
   return item->connected;
 }
 
@@ -1366,7 +1400,7 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
 
 
 
-/* 
+/*
  *                  Internal routines
  */
 
@@ -1381,6 +1415,8 @@ static void eachContainer(gpointer data, gpointer user_data)
   FooCanvasPoints this_points_data = {NULL}, parent_points_data = {NULL};
   FooCanvasPoints *this_points = NULL, *parent_points = NULL;
   double *bound = NULL, spacing = 0.0, bound_data = 0.0, coords[4] = {0.0, 0.0, 0.0, 0.0};
+
+  zMapReturnIfFail(container) ;
 
   if(!ZMAP_IS_CONTAINER_GROUP(container))       /* now we can have background CanvasFeaturesets in top level groups, just one item list */
     return;
@@ -1429,6 +1465,8 @@ static void setColours(gpointer list_data, gpointer user_data)
   FooCanvasItem *interval        = FOO_CANVAS_ITEM(list_data);
   EachIntervalData interval_data = (EachIntervalData)user_data;
 
+  zMapReturnIfFail(list_data && interval_data) ;
+
   if(interval_data->feature)
     {
       ZMapFeatureSubPartSpan sub_feature = NULL;
@@ -1459,6 +1497,8 @@ static FooCanvasItem *getNextFeatureItem(FooCanvasGroup *group,
   FooCanvasGroup *features ;
   GList *feature_ptr ;
   FooCanvasItem *found_item = NULL ;
+
+  zMapReturnValIfFail(group, item) ;
 
   features = group ;
 

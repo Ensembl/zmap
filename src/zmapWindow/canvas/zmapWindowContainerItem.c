@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -71,23 +71,23 @@ GType zMapWindowCanvasItemGetType (void)
   if (!group_type)
     {
       static const GTypeInfo group_info =
-	{
-	  sizeof (zmapWindowCanvasItemClass),
-	  (GBaseInitFunc) NULL,
-	  (GBaseFinalizeFunc) NULL,
-	  (GClassInitFunc) zmap_window_canvas_item_class_init,
-	  NULL,           /* class_finalize */
-	  NULL,           /* class_data */
-	  sizeof (zmapWindowCanvasItem),
-	  0,              /* n_preallocs */
-	  (GInstanceInitFunc) zmap_window_canvas_item_init,
-	  NULL
-	};
+        {
+          sizeof (zmapWindowCanvasItemClass),
+          (GBaseInitFunc) NULL,
+          (GBaseFinalizeFunc) NULL,
+          (GClassInitFunc) zmap_window_canvas_item_class_init,
+          NULL,           /* class_finalize */
+          NULL,           /* class_data */
+          sizeof (zmapWindowCanvasItem),
+          0,              /* n_preallocs */
+          (GInstanceInitFunc) zmap_window_canvas_item_init,
+          NULL
+        };
 
       group_type = g_type_register_static (foo_canvas_item_get_type (),
-					   ZMAP_WINDOW_CANVAS_ITEM_NAME,
-					   &group_info,
-					   0);
+                                           ZMAP_WINDOW_CANVAS_ITEM_NAME,
+                                           &group_info,
+                                           0);
     }
 
   return group_type;
@@ -98,13 +98,12 @@ GType zMapWindowCanvasItemGetType (void)
 /* Class initialization function for ZMapWindowCanvasItemClass */
 static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window_class)
 {
-  //  GtkObjectClass *object_class;
   GtkObjectClass *object_class;
   FooCanvasItemClass *item_class;
   GType canvas_item_type, parent_type;
-  int make_clickable_bmp_height  = 4;
-  int make_clickable_bmp_width   = 16;
-  char make_clickable_bmp_bits[] =
+  static const int make_clickable_bmp_height  = 4;
+  static const int make_clickable_bmp_width   = 16;
+  static const char make_clickable_bmp_bits[] =
     {
       0x00, 0x00,
       0x00, 0x00,
@@ -112,7 +111,8 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
       0x00, 0x00
     } ;
 
-  //  gobject_class = (GObjectClass *)window_class;
+  zMapReturnIfFail(window_class) ;
+
   object_class  = (GtkObjectClass *)window_class;
   item_class    = (FooCanvasItemClass *)window_class;
 
@@ -127,8 +127,8 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
   window_class->get_style    = zmap_window_canvas_item_get_style;
 
   window_class->fill_stipple = gdk_bitmap_create_from_data(NULL, &make_clickable_bmp_bits[0],
-							   make_clickable_bmp_width,
-							   make_clickable_bmp_height) ;
+                                                           make_clickable_bmp_width,
+                                                           make_clickable_bmp_height) ;
 
   /* init the stats fields. */
   zmapWindowItemStatsInit(&(window_class->stats), ZMAP_TYPE_CANVAS_ITEM) ;
@@ -140,7 +140,9 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
 /* Object initialization function for ZMapWindowCanvasItem */
 static void zmap_window_canvas_item_init (ZMapWindowCanvasItem canvas_item)
 {
-  ZMapWindowCanvasItemClass canvas_item_class ;
+  ZMapWindowCanvasItemClass canvas_item_class = NULL ;
+
+  zMapReturnIfFail(canvas_item) ;
 
   canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
 
@@ -168,9 +170,11 @@ static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasIt
 /* Destroy handler for canvas groups */
 static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
 {
-  ZMapWindowCanvasItem canvas_item;
-  ZMapWindowCanvasItemClass canvas_item_class ;
+  ZMapWindowCanvasItem canvas_item = NULL ;
+  ZMapWindowCanvasItemClass canvas_item_class = NULL ;
   //  int i;
+
+  zMapReturnIfFail(gtkobject) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -196,17 +200,20 @@ static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
 /* like foo but for a ZMap thingy */
 gboolean zMapWindowCanvasItemShowHide(ZMapWindowCanvasItem item, gboolean show)
 {
-  ZMapWindowCanvasItemClass class = ZMAP_CANVAS_ITEM_GET_CLASS(item);
+  ZMapWindowCanvasItemClass the_class = NULL ;
   gboolean ret = FALSE;
 
-  if(class->showhide)
-    ret = class->showhide((FooCanvasItem *) item, show);
+  zMapReturnValIfFail(item, ret) ;
+  the_class = ZMAP_CANVAS_ITEM_GET_CLASS(item);
+
+  if(the_class->showhide)
+    ret = the_class->showhide((FooCanvasItem *) item, show);
   else
     {
       if(show)
-	foo_canvas_item_show(FOO_CANVAS_ITEM(item));
+        foo_canvas_item_show(FOO_CANVAS_ITEM(item));
       else
-	foo_canvas_item_hide(FOO_CANVAS_ITEM(item));
+        foo_canvas_item_hide(FOO_CANVAS_ITEM(item));
     }
 
   return ret;

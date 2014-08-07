@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -39,7 +39,7 @@
 
 
 
-/* 
+/*
  *                   External routines.
  */
 
@@ -62,7 +62,7 @@ gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
   if(!featb)
     {
       if(!feata)
-	return(0);
+        return(0);
       return(1);
     }
   if(!feata)
@@ -98,7 +98,7 @@ gint zMapFeatureFullCmp(gconstpointer a, gconstpointer b)
   if(!featb)
     {
       if(!feata)
-	return(0);
+        return(0);
       return(1);
     }
   else if(!feata)
@@ -113,45 +113,45 @@ gint zMapFeatureFullCmp(gconstpointer a, gconstpointer b)
       real_end = feata->y2 ;
 
       if (feata->type == FEATURE_GLYPH && feata->feature->flags.has_boundary)
-	{
-	  if (feata->feature->boundary_type == ZMAPBOUNDARY_5_SPLICE)
-	    {
-	      real_start = feata->y1 + 0.5 ;
-	      real_end = feata->y2 + 2 ;
-	    }
-	  else if (feata->feature->boundary_type == ZMAPBOUNDARY_3_SPLICE)
-	    {
-	      real_start = feata->y1 - 2 ;
-	      real_end = feata->y2 - 0.5 ;
-	    }
+        {
+          if (feata->feature->boundary_type == ZMAPBOUNDARY_5_SPLICE)
+            {
+              real_start = feata->y1 + 0.5 ;
+              real_end = feata->y2 + 2 ;
+            }
+          else if (feata->feature->boundary_type == ZMAPBOUNDARY_3_SPLICE)
+            {
+              real_start = feata->y1 - 2 ;
+              real_end = feata->y2 - 0.5 ;
+            }
 
 
-	  /* Look for dummy to be completey inside.... */
-	  if (real_start <= featb->y1 && real_end >= featb->y2)
-	    return(0);
+          /* Look for dummy to be completey inside.... */
+          if (real_start <= featb->y1 && real_end >= featb->y2)
+            return(0);
 
-	  if(real_start < featb->y1)
-	    return(-1);
-	  if(real_start > featb->y1)
-	    return(1);
-	  if(real_end > featb->y2)
-	    return(-1);
-	  if(real_end < featb->y2)
-	    return(1);
-	}
+          if(real_start < featb->y1)
+            return(-1);
+          if(real_start > featb->y1)
+            return(1);
+          if(real_end > featb->y2)
+            return(-1);
+          if(real_end < featb->y2)
+            return(1);
+        }
       else
-	{
-	  if(real_start < featb->y1)
-	    return(-1);
-	  if(real_start > featb->y1)
-	    return(1);
+        {
+          if(real_start < featb->y1)
+            return(-1);
+          if(real_start > featb->y1)
+            return(1);
 
-	  if(real_end > featb->y2)
-	    return(-1);
+          if(real_end > featb->y2)
+            return(-1);
 
-	  if(real_end < featb->y2)
-	    return(1);
-	}
+          if(real_end < featb->y2)
+            return(1);
+        }
     }
 
   return(0);
@@ -161,7 +161,7 @@ gint zMapFeatureFullCmp(gconstpointer a, gconstpointer b)
 /* sort by name and the start coord to link same name features,
  * NOTE that we _must_ use the original_id here because the unique_id
  * is different as it incorporates position information.
- * 
+ *
  * note that ultimately we are interested in query coords in a zmapHomol struct
  * but only after getting alignments in order on the genomic sequence
  */
@@ -173,7 +173,7 @@ gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b)
   if(!zmapWindowCanvasFeatureValid(featb))
     {
       if(!zmapWindowCanvasFeatureValid(feata))
-	return(0);
+        return(0);
       return(1);
     }
   if(!zmapWindowCanvasFeatureValid(feata))
@@ -200,17 +200,24 @@ gint zMapFeatureSetNameCmp(gconstpointer a, gconstpointer b)
   gint result = 0 ;
   ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a ;
   ZMapWindowCanvasFeature featb = (ZMapWindowCanvasFeature) b ;
-  ZMapFeature feature_a = feata->feature ;
-  ZMapFeature feature_b = featb->feature ;
-  ZMapFeatureSet featureset_a = (ZMapFeatureSet)(feature_a->parent) ;
-  ZMapFeatureSet featureset_b = (ZMapFeatureSet)(feature_b->parent) ;
+  ZMapFeature feature_a = NULL ;
+  ZMapFeature feature_b = NULL ;
+  ZMapFeatureSet featureset_a = NULL ;
+  ZMapFeatureSet featureset_b = NULL ;
+
+  zMapReturnValIfFail(feata && featb && feata->feature && featb->feature, result ) ;
+
+  feature_a = feata->feature ;
+  feature_b = featb->feature ;
+  featureset_a = (ZMapFeatureSet)(feature_a->parent) ;
+  featureset_b = (ZMapFeatureSet)(feature_b->parent) ;
 
 
   /* Can this really happen ????? */
   if(!zmapWindowCanvasFeatureValid(featb))
     {
       if(!zmapWindowCanvasFeatureValid(feata))
-	return(-1) ;
+        return(-1) ;
 
       return(1) ;
     }
