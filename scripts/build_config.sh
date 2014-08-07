@@ -160,11 +160,28 @@ ZMAP_ACECONN_RELEASE_CONTAINER=$ZMAP_ACEDB_RELEASE_CONTAINER
 ZMAP_ACECONN_RELEASE_DIR=AceConn
 
 
+
+# Not sure which of these are still needed......
+#
 ZMAP_RELEASE_NOTES_TIMESTAMP=LAST_RELEASE_DATE.txt
 ZMAP_VERSION_HEADER=zmapUtils_P.h
 ZMAP_WEBPAGE_HEADER=zmapWebPages.h
-ZMAP_RELEASE_FILE_PREFIX=release_notes
-ZMAP_RELEASE_FILE_SUFFIX=shtml
+
+
+# Report files written for each new release.
+#
+ZMAP_CHANGELOG_FILE_NAME='ChangeLog'
+ZMAP_RELEASE_DOCS_DIR='build/release_docs'
+ZMAP_GIT_COMMITS_FILE_NAME='GIT_COMMITS.txt'
+ZMAP_RT_RESOLVED_FILE_NAME='RT_TICKETS_RESOLVED.txt'
+
+
+# This file must be hand-edited.
+#
+ZMAP_USER_DOCS_DIR='docs/WWW/user'
+ZMAP_USER_RELEASE_DOC_FILE_NAME='release_notes.shtml'
+
+
 
 
 WEBPUBLISH=webpublish
