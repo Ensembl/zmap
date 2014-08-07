@@ -126,7 +126,7 @@ zmap_message_out "Getting tickets for period $RT_PREV_DATE to $RT_CURRENT_DATE."
 if  [ -n "$output_file" ] ; then
     RELEASE_NOTES_OUTPUT="$output_file"
 else
-    RELEASE_NOTES_OUTPUT="$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME"
+    RELEASE_NOTES_OUTPUT="$ZMAP_BASEDIR/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME"
 fi
 
 rm -f $RELEASE_NOTES_OUTPUT || zmap_message_exit "Cannot rm $RELEASE_NOTES_OUTPUT file."
