@@ -5,10 +5,9 @@
 # The rt application is in /software/bin currently.
 #
 #
-# all output from this script goes to the rt ticket file....so send messages
-# to stderr....
+# All output to stdout from this script ends up in the rt ticket file....
+# so probably best to send messages to stderr....
 #
-
 
 
 SCRIPT_NAME=$(basename $0)
@@ -79,7 +78,7 @@ if  [ -z "$OPS_QUEUES" ] ; then
 fi
 
 
-zmap_message_err "Starting to fetch RT tickets for start date $start_date on queues $OPS_QUEUES"
+#zmap_message_err "Starting to fetch RT tickets for start date $start_date on queues $OPS_QUEUES"
 
 
 SingleQueue () {
@@ -116,6 +115,6 @@ echo
 
 done
 
-zmap_message_err "Finished fetching RT tickets."
+#zmap_message_err "Finished fetching RT tickets."
 
 exit 0
