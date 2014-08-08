@@ -662,15 +662,18 @@ EOF
 
 
 
-
-zmap_message_out "Running $SCRIPTS_DIR/zmap_make_docs ..."
-
-$SCRIPTS_DIR/zmap_make_docs.sh  || zmap_message_rm_exit "Failed to successfully run zmap_make_docs.sh"
-
-zmap_message_out "Running $SCRIPTS_DIR/zmap_update_web.sh ..."
-
-$SCRIPTS_DIR/zmap_update_web.sh || zmap_message_rm_exit "Failed to successfully run zmap_update_web.sh"
-
+# I THINK WE DON'T NEED TO DO THIS ANY MORE....
+#
+#
+#zmap_message_out "Running $SCRIPTS_DIR/zmap_make_docs ..."
+#
+#$SCRIPTS_DIR/zmap_make_docs.sh  || zmap_message_rm_exit "Failed to successfully run zmap_make_docs.sh"
+#
+#zmap_message_out "Running $SCRIPTS_DIR/zmap_update_web.sh ..."
+#
+#$SCRIPTS_DIR/zmap_update_web.sh || zmap_message_rm_exit "Failed to successfully run zmap_update_web.sh"
+#
+#
 
 
 zmap_cd $save_root
