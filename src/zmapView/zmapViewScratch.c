@@ -972,6 +972,8 @@ gboolean zmapViewScratchCopyFeatures(ZMapView view,
 {
   if (features)
     {
+      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+
       EditOperation operation = g_new0(EditOperationStruct, 1);
       
       operation->edit_type = ZMAPEDIT_MERGE ;
@@ -1002,6 +1004,8 @@ gboolean zmapViewScratchDeleteFeatures(ZMapView view,
 {
   if (features)
     {
+      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+
       EditOperation operation = g_new0(EditOperationStruct, 1);
       
       operation->edit_type = ZMAPEDIT_DELETE ;
@@ -1032,6 +1036,8 @@ gboolean zmapViewScratchClear(ZMapView view)
   /* Only do anything if we have a visible feature i.e. the operations list is not empty */
   if (view->edit_list_start)
     {
+      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+
       EditOperation operation = g_new0(EditOperationStruct, 1) ;
 
       operation->edit_type = ZMAPEDIT_CLEAR ;
@@ -1051,6 +1057,8 @@ gboolean zmapViewScratchUndo(ZMapView view)
 {
   if (view->edit_list_end)
     {
+      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+
       /* Special treatment if the last operation was a "clear" because clear shifts the start
        * pointer to be the same as the end pointer, so we need to move it back (to the start of
        * the list or to the last "clear" operation, if there is one). */
@@ -1100,6 +1108,7 @@ gboolean zmapViewScratchRedo(ZMapView view)
   /* Move the end pointer forward */
   if (view->edit_list_end && view->edit_list_end->next)
     {
+      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
       view->edit_list_end = view->edit_list_end->next ;
 
       /* For "clear" operations we need to move the start pointer to the same as the end pointer */
@@ -1111,6 +1120,8 @@ gboolean zmapViewScratchRedo(ZMapView view)
     }
   else if (!view->edit_list_end && view->edit_list)
     {
+      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+
       /* If the list exists but start/end pointers are null then we had un-done the entire list,
        * so we just need to set the start/end pointers to the first item in the list */
       view->edit_list_start = view->edit_list_end = view->edit_list ;

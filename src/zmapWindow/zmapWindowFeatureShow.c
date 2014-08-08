@@ -2597,6 +2597,8 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
 
       window->caller_cbs->merge_new_feature(window, window->app_data, &merge) ;
 
+      window->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
+
       /*! \todo Check that feature was saved successfully before reporting back. Also close
        * the feature details dialog now we're finished. */
       zMapMessage("%s", "Feature saved") ;

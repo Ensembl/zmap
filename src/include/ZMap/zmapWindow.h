@@ -81,6 +81,9 @@ typedef enum
   {
     ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
     ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, /* True if filtered columns should be highlighted */
+    ZMAPFLAG_CHANGES_NEED_SAVING,        /* True if changes have been made that have not been saved */
+    ZMAPFLAG_SCRATCH_NEEDS_SAVING,       /* True if changes have been made in the scratch column
+                                          * that have not been "saved" to a real featureset */
     
     ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
   } ZMapFlag;
