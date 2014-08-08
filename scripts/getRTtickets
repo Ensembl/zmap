@@ -5,6 +5,8 @@
 # The rt application is in /software/bin currently.
 #
 #
+# all output from this script goes to the rt ticket file....so send messages
+# to stderr....
 #
 
 
@@ -77,10 +79,8 @@ if  [ -z "$OPS_QUEUES" ] ; then
 fi
 
 
-zmap_message_out "Starting to fetch RT tickets for start date $start_date on queues $OPS_QUEUES"
+zmap_message_err "Starting to fetch RT tickets for start date $start_date on queues $OPS_QUEUES"
 
-
-#echo "STarting first query of RT...gets the ticket numbers"
 
 SingleQueue () {
 for QUEUE in $*
@@ -116,6 +116,6 @@ echo
 
 done
 
-zmap_message_out "Finished fetching RT tickets."
+zmap_message_err "Finished fetching RT tickets."
 
 exit 0

@@ -651,7 +651,7 @@ Use the following procedure to do this:
 2) Compile an abbreviated list of RT bugs fixed and code changes from the files
 
            $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME
-           $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$GIT_COMMITS.txt
+           $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_GIT_COMMITS_FILE_NAME
 
 3) Insert that list at the top of the release notes file
 

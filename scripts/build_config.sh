@@ -171,7 +171,7 @@ ZMAP_WEBPAGE_HEADER=zmapWebPages.h
 # Report files written for each new release.
 #
 ZMAP_CHANGELOG_FILE_NAME='ChangeLog'
-ZMAP_RELEASE_DOCS_DIR='build/release_docs'
+ZMAP_RELEASE_DOCS_DIR='src/build/release_docs'
 ZMAP_GIT_COMMITS_FILE_NAME='GIT_COMMITS.txt'
 ZMAP_RT_RESOLVED_FILE_NAME='RT_TICKETS_RESOLVED.txt'
 
