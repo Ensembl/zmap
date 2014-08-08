@@ -251,6 +251,16 @@ if [ -f $RTERROR ]; then
     fi
 fi
 
+
+# Put tickets where they should be.....
+#
+#
+cat $RTRESULTS >> $RELEASE_NOTES_OUTPUT || zmap_message_exit "Failed to store RT results in $RELEASE_NOTES_OUTPUT"
+
+rm $RTRESULTS
+
+
+
 # Must have succeeded in getting tickets.
 #
 zmap_message_out "Finished getting Request tracker tickets"
