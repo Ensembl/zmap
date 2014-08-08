@@ -46,16 +46,18 @@ function zmap_message_out
 }
 
 
+# Usage: zmap_message_err Your Message
+function zmap_message_err
+{
+    $ECHO "$(zmap_make_prefix) $@" >&2
+}
+
 # Usage: zmap_message_exit Your Message
 function zmap_message_exit
 {
     zmap_message_err "$@"
     exit 1;
 }
-
-
-
-
 
 
 
