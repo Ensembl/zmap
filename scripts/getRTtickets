@@ -13,7 +13,7 @@ SCRIPT_NAME=$(basename $0)
 
 zmap_host_name=$(hostname)
 
-
+ECHO=/bin/echo
 
 RT_BIN='/software/bin/rt'
 
