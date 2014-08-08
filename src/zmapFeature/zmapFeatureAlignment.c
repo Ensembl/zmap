@@ -94,18 +94,19 @@ typedef struct AlignStrCanonicalStruct_
  */
 typedef struct AlignStrCanonicalPropertiesStruct_
 {
-  gboolean bDigitsLeft ;
-  gboolean bMayOmit1 ;
-  gboolean bSpaces ;
+  unsigned int bDigitsLeft : 1 ;
+  unsigned int bMayOmit1   : 1 ;
+  unsigned int bSpaces     : 1 ;
 } AlignStrCanonicalPropertiesStruct, *AlignStrCanonicalProperties ;
 
 
 static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
 
 static AlignStrCanonical alignStrCanonicalCreate(ZMapFeatureAlignFormat align_format) ;
-static void alignStrCanonicalDestroy(AlignStrCanonical canon) ;
+static void alignStrCanonicalDestroy(AlignStrCanonical *canon) ;
 static AlignStrOp alignStrCanonicalGetOperator(AlignStrCanonical canon, int i) ;
 static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct * const op) ;
+static gboolean alignStrCanonicalRemoveOperator(AlignStrCanonical canon, int i) ;
 static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
                                     ZMapStrand ref_strand, ZMapStrand match_strand,
@@ -117,6 +118,7 @@ static gboolean alignProperties2Format(ZMapFeatureAlignFormat *align_format,
                                        AlignStrCanonicalProperties properties) ;
 static gboolean homol2AlignStrCanonical(AlignStrCanonical *canon_out, ZMapFeature feature) ;
 static gboolean parse_cigar_general(const char * const str,
+                                    AlignStrCanonical canon,
                                     AlignStrCanonicalProperties properties,
                                     GError **error) ;
 
@@ -175,8 +177,8 @@ static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
 {
   gboolean result = FALSE ;
 
-  zMapReturnValIfFail(    (align_format != ZMAPALIGN_FORMAT_INVALID)
-                       && &properties,
+  zMapReturnValIfFail( (align_format != ZMAPALIGN_FORMAT_INVALID) &&
+                       properties,
                                        result ) ;
   properties->bDigitsLeft = FALSE ;
   properties->bMayOmit1   = FALSE ;
@@ -219,9 +221,30 @@ static gboolean alignProperties2Format(ZMapFeatureAlignFormat *align_format_out,
                                        AlignStrCanonicalProperties properties)
 {
   gboolean result = FALSE ;
-  ZMapFeatureAlignFormat align_format ;
+  ZMapFeatureAlignFormat align_format = ZMAPALIGN_FORMAT_INVALID;
 
-  zMapReturnValIfFail(align_format_out, result) ;
+  zMapReturnValIfFail(align_format_out && properties, result) ;
+
+  /*
+   * Go through various cases explicitly
+   */
+  if (!properties->bDigitsLeft && !properties->bMayOmit1 && properties->bSpaces)
+    {
+      align_format = ZMAPALIGN_FORMAT_GAP_GFF3 ;
+      result = TRUE ;
+    }
+  else if (properties->bDigitsLeft && !properties->bMayOmit1 && !properties->bSpaces)
+    {
+      align_format = ZMAPALIGN_FORMAT_CIGAR_BAM ;
+      result = TRUE ;
+    }
+  else
+    {
+
+    }
+
+  if (result)
+    *align_format_out = align_format ;
 
   return result ;
 }
@@ -246,6 +269,7 @@ static gboolean alignProperties2Format(ZMapFeatureAlignFormat *align_format_out,
  */
 static gboolean parse_get_op_data(int i,
                                   char * const sBuff,
+                                  size_t buffer_size,
                                   const char ** pArray,
                                   int nOp,
                                   const char * const target,
@@ -256,7 +280,7 @@ static gboolean parse_get_op_data(int i,
     *pEnd = NULL ;
   int j = 0 ;
 
-  if (i < nOp)
+  if ((i>=0) && (i<nOp))
     {
 
       if (bLeft)
@@ -278,7 +302,7 @@ static gboolean parse_get_op_data(int i,
         }
 
       /* copy data */
-      while (pStart < pEnd)
+      while ((pStart<pEnd) && (j<buffer_size))
         {
           sBuff[j] = *pStart ;
           ++pStart ;
@@ -475,6 +499,71 @@ static int parse_is_valid_op_data(char * sBuff,
 
 
 /*
+ * Allocate the operator parsing array
+ */
+char const ** parse_allocate_operator_buffer(size_t operator_buffer_size)
+{
+  char const ** pArray = NULL ;
+  pArray = (char const **) g_new0(char*, operator_buffer_size) ;
+  if (pArray)
+    memset(pArray, '\0', operator_buffer_size) ;
+  return pArray ;
+}
+
+/*
+ * Free the operator parsing array
+ */
+void parse_free_operator_array(char const ***p_array)
+{
+  if (*p_array)
+    g_free(*p_array) ;
+}
+
+/*
+ * This is to resize the operator buffer, by the factor given.
+ */
+void parse_resize_operator_buffer(char const ***p_array, size_t *p_buffer_size)
+{
+  static const size_t factor = 2 ;
+  size_t i = 0 ;
+  char const ** p_new = NULL, ** p_old = NULL ;
+  size_t current_size = 0, new_size = 0 ;
+
+  zMapReturnIfFail(p_array && *p_array && p_buffer_size && *p_buffer_size) ;
+  current_size = *p_buffer_size ;
+  p_old = *p_array ;
+
+  /*
+   * Create new array and initialise to zeros
+   */
+  new_size = factor * *p_buffer_size ;
+  p_new = (char const **) g_new0(char*, new_size) ;
+  memset(p_new, '\0', new_size) ;
+
+  /*
+   * Copy old array into new one
+   */
+  for (i=0; i<*p_buffer_size; ++i)
+    {
+      p_new[i] = p_old[i] ;
+    }
+
+  /*
+   * Free old one
+   */
+  g_free(p_old) ;
+
+  /*
+   * Copy new data back
+   */
+  *p_array = p_new ;
+  *p_buffer_size = new_size ;
+
+  return ;
+}
+
+
+/*
  * This is a test function that I'm using to look at formats - at time of writing,
  * the exonerate cigar parser is incorrect.
  *
@@ -487,34 +576,43 @@ static int parse_is_valid_op_data(char * sBuff,
  * bSpaces                      operator/number pairs are seperated by one space, otherwise
  *                              may not be seperated by anything
  */
-#define NUM_OPERATOR_LIMIT 1024
+#define NUM_OPERATOR_START 10
 #define NUM_DIGITS_LIMIT 32
-static gboolean parse_cigar_general(const char * const str, /* AlignStrCanonical canon, */
+static gboolean parse_cigar_general(const char * const str,
+                                    AlignStrCanonical canon,
                                     AlignStrCanonicalProperties properties,
                                     GError **error)
 {
-  gboolean result = FALSE, data_found = FALSE, bEnd = FALSE, bFirst = FALSE ;
-  size_t iLength = 0 ;
+  gboolean result = FALSE,
+    data_found = FALSE,
+    bEnd = FALSE,
+    bFirst = FALSE ;
+  size_t iLength = 0,
+    num_buffer_size = NUM_DIGITS_LIMIT,
+    operator_buffer_size = NUM_OPERATOR_START ;
   const char *sTarget = NULL ;
   int i = 0, iOperators = 0 ;
   char * sBuff = NULL ;
   char const ** pArray = NULL ;
-  char cStart = '\0', cEnd = '\0' ;
-  GArray* pAlignStrOpArray = NULL ;
+  char cStart = '\0',
+    cEnd = '\0' ;
   gboolean bDigitsLeft = FALSE,
     bMayOmit1 = FALSE,
     bSpaces = FALSE ;
   AlignStrOp pAlignStrOp = NULL ;
 
-  zMapReturnValIfFail(str && *str && error && (iLength = strlen(str)) && &properties, result) ;
+  zMapReturnValIfFail(str && *str &&
+                      canon && canon->align && (canon->num_operators == 0)
+                      && error && properties, result) ;
 
   bDigitsLeft   = properties->bDigitsLeft ;
   bMayOmit1     = properties->bMayOmit1 ;
   bSpaces       = properties->bSpaces ;
-  result = TRUE ;
   sTarget = str ;
   cStart = *str ;
+  iLength = strlen(str) ;
   cEnd = str[iLength-1] ;
+  result = TRUE ;
 
   /*
    * We do not allow anything other than operator character or
@@ -557,13 +655,13 @@ static gboolean parse_cigar_general(const char * const str, /* AlignStrCanonical
     }
 
   /*
-   * Do the main parsing work.
+   * Firstly find the operators and their positions.
    */
   if (result)
     {
 
-      sBuff = (char*) g_new0(char, NUM_DIGITS_LIMIT) ;
-      pArray = (char const **) g_new0(char*, NUM_OPERATOR_LIMIT) ;
+      sBuff = (char*) g_new0(char, num_buffer_size) ;
+      pArray = parse_allocate_operator_buffer(operator_buffer_size) ;
 
       /*
        * Operators are defined by one character only each. This step finds their
@@ -571,64 +669,83 @@ static gboolean parse_cigar_general(const char * const str, /* AlignStrCanonical
        */
       while (*sTarget)
         {
-          if (isalpha(*sTarget) && (iOperators < NUM_OPERATOR_LIMIT) )
+          if (isalpha(*sTarget) )
             {
               pArray[iOperators] = sTarget ;
               iOperators++ ;
+
+              if (iOperators == operator_buffer_size)
+                parse_resize_operator_buffer(&pArray, &operator_buffer_size) ;
             }
           ++sTarget ;
         }
 
+    }
+
+
+  /*
+   * Determine type of operators and add to the canon object.
+   */
+  if (result)
+    {
+
       /*
        * Loop over the operators and determine their type.
        */
-      pAlignStrOpArray = g_array_new(FALSE, TRUE, sizeof(AlignStrOpStruct)) ;
       for (i=0; i<iOperators; ++i)
         {
           AlignStrOpStruct oAlignStrOp ;
           oAlignStrOp.op = *pArray[i] ;
           oAlignStrOp.length = 0 ;
 
-          /*
-           *  This should be put into a function wrapping the AlignStrCanonical
-           */
-          pAlignStrOpArray = g_array_append_val(pAlignStrOpArray, oAlignStrOp) ;
+          if (!alignStrCanonicalAddOperator(canon, &oAlignStrOp) )
+            {
+              result = FALSE ;
+            }
         }
+    }
+
+
+  /*
+   * Extract data from string and parse.
+   */
+  if (result)
+    {
 
       /*
-       * Now inspect various bits of the string to extract the associated digits.
+       * Now inspect various bits of the string to extract digits associated with the operators.
        */
       for (i=0; i<iOperators; ++i)
         {
           bEnd = FALSE ;
-          if ((i==0) || (i==iOperators-1))
+          if ((i==0) || (i==(iOperators-1)))
             bEnd = TRUE ;
           bFirst = !(gboolean)i;
 
           /*
            * This should be put into a function wrapping the AlignStrCanonical
            */
-          pAlignStrOp = &(g_array_index(pAlignStrOpArray, AlignStrOpStruct, i)) ;
+          pAlignStrOp = alignStrCanonicalGetOperator(canon, i) ;
 
           /*
-           * New method
+           * Get data between operators and parse for number
            */
           sBuff[0] = '\0' ;
-          data_found = parse_get_op_data(i, sBuff, pArray, iOperators, str, bDigitsLeft ) ;
+          data_found = parse_get_op_data(i, sBuff, num_buffer_size, pArray, iOperators, str, bDigitsLeft ) ;
           pAlignStrOp->length =
             parse_is_valid_op_data(sBuff, bMayOmit1, bDigitsLeft, bSpaces, bEnd, bFirst) ;
 
         }
 
       /*
-       * Now run over the data found and check that
+       * Now run over all operators and check that
        * (1) We have at least one operator, and
        * (2) All operators are alphabetic characters and op->length != 0.
        */
       result = iOperators ? TRUE : FALSE ;
       for (i=0; i<iOperators; ++i)
         {
-          pAlignStrOp = &(g_array_index(pAlignStrOpArray, AlignStrOpStruct, i)) ;
+          pAlignStrOp = alignStrCanonicalGetOperator(canon, i) ;
           if (!isalpha(pAlignStrOp->op) || !pAlignStrOp->length)
             {
               *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
@@ -638,20 +755,12 @@ static gboolean parse_cigar_general(const char * const str, /* AlignStrCanonical
             }
         }
 
-      /*
-       * If all is well at this point then replace the AlignStrOp array in the canon
-       * arguemnt with the one that's just been created here.
-       */
-
-      if (sBuff)
-        g_free(sBuff) ;
-      if (pArray)
-        g_free(pArray) ;
-      if (pAlignStrOpArray)
-        g_array_free(pAlignStrOpArray, TRUE) ;
-
     } /* if (result) */
 
+  if (sBuff)
+    g_free(sBuff) ;
+  if (pArray)
+    g_free(pArray) ;
 
   return result ;
 }
@@ -667,12 +776,11 @@ static gboolean parse_cigar_general(const char * const str, /* AlignStrCanonical
 static void parseTestFunction01()
 {
   char *sTest01 = NULL ;
-  gboolean bResult = FALSE,
-    bDigitsLeft,
-    bMayOmit1,
-    bSpaces ;
+  gboolean bResult = FALSE ;
   GError *error = NULL ;
   AlignStrCanonicalPropertiesStruct properties ;
+  AlignStrCanonical canon = NULL ;
+  ZMapFeatureAlignFormat align_format = ZMAPALIGN_FORMAT_CIGAR_BAM ;
 
   sTest01 = (char*) g_new0(char, TEST_STRING_MAX) ;
 
@@ -685,165 +793,350 @@ static void parseTestFunction01()
   properties.bDigitsLeft = TRUE ;
   properties.bMayOmit1 = TRUE ;
   properties.bSpaces = FALSE ;
+
   sprintf(sTest01, "33M13I52M10I1980MII") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, " 33M13I52M10I1980MII") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33 M13I52M10I1980MII") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "3M13I52M10I 1980MII ") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33M13I52$10I1980MII") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "=33M13I52M10I1980MII") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
 
   /* settings 2 */
   properties.bDigitsLeft = FALSE ;
   properties.bMayOmit1 = TRUE ;
   properties.bSpaces = FALSE ;
+
   sprintf(sTest01, "M3I13M52I10M1980II") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M3 I13M52I10M1980II") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, " M3I13M52I10M1980II") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M 3I13M52I10M1980II") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M3I13M52I10M1980II1 ") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M3I13M52I10 M1980II") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M3I13M52&10M1980II") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M3I13M52I10M1980I*") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
 
   /* settings 3 */
   properties.bDigitsLeft = TRUE ;
   properties.bMayOmit1 = TRUE ;
   properties.bSpaces = TRUE ;
+
   sprintf(sTest01, "33M 13I 52M 10I 1980M I I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, " 33M 13I 52M 10I 1980M I I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33M13I 52M 10I 1980M I I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33M 13I 52M 10I 1980MI I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33M 13I 52M 10I 1980M II") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33M 13I 52M 10I 1980M I I1") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33M 13I 52 10I 1980M I I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33M 13I 52M 10I 1980M I=I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
 
   /* settings 4 */
   properties.bDigitsLeft = FALSE ;
   properties.bMayOmit1 = TRUE ;
   properties.bSpaces = TRUE;
   sprintf(sTest01, "M33 I13 M52 I10 M1980 I I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M33 I13 M52 I10 M1980 I I ") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M33 I13 M52 I10 M1980 II") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M33 I13 M52I10 M1980 I I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M33 II13 M52 I10 M1980 I I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M33 I13 M52 I10M1980 I I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M33 I13 M52 I10 M1980 I ") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
 
   /* settings 5 */
   properties.bDigitsLeft = TRUE ;
   properties.bMayOmit1 = FALSE ;
   properties.bSpaces = FALSE ;
+
   sprintf(sTest01, "33M13I52M10I1980M1I13I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33M13I52M10I1980M1I13I ") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M13I52M10I1980M1I13I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33M13I52M10I1980M1II") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33M13I52 M10I1980M1I13I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33M13I52M 10I1980M1I13I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, " 33M13I52M10I1980M1I13I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "33M13I52M10I1980M1I13I ") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
 
   /* settings 6 */
   properties.bDigitsLeft = FALSE ;
   properties.bMayOmit1 = FALSE ;
   properties.bSpaces = FALSE ;
+
   sprintf(sTest01, "M3I13M52I10M1980I1I18") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M3I13M52I10M1980I1I18 ") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M3 I13M52I10M1980I1I18") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, " M3I13M52I10M1980I1I18") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "MI13M52I10M1980I1I18") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M3I13M52I10M1980I1I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M3I13M52I10M1980II18") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M3I13M52 I10M1980I1I18") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M3I13M52I10M19&80I1I18") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
 
   /* settings 7 */
   properties.bDigitsLeft = TRUE ;
   properties.bMayOmit1 = FALSE ;
   properties.bSpaces = TRUE ;
+
   sprintf(sTest01, "3M 13I 52M 10I 1980M 1I 200I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M 13I 52M 10I 1980M 1I 200I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "3M13I 52M 10I 1980M 1I 200I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "3M 13I 52M 10I 1980M 1I I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "3M 13I 52M 10I 1980M 1I 200I ") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "3M 13I M 10I 1980M 1I 200I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, " 3M 13I 52M 10I 1980M 1I 200I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "3M 13I 52M && 10I 1980M 1I 200I") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
 
   /* settings 8 */
   properties.bDigitsLeft = FALSE ;
   properties.bMayOmit1 = FALSE ;
   properties.bSpaces = TRUE ;
+
   sprintf(sTest01, "M31 I13 M52 I10 M1980 I3 I32") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M31I13 M52 I10 M1980 I3 I32") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M31 I13 M52 10 M1980 I3 I32") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M31 I13 M52 I10 M1980 I3 I32 ") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, " M31 I13 M52 I10 M1980 I3 I32") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M31 I13 M52 I10 M I3 I32") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "31 I13 M52 I10 M1980 I3 I32") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
+
   sprintf(sTest01, "M31 I13 M52 I&10 M1980 I3 I32") ;
-  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  canon = alignStrCanonicalCreate(align_format) ;
+  bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  alignStrCanonicalDestroy(&canon) ;
 
   if (sTest01)
     g_free(sTest01) ;
@@ -1006,7 +1299,7 @@ gboolean zMapFeatureAlignmentGetAlignmentString(ZMapFeature feature,
 
   if (canon)
     {
-      alignStrCanonicalDestroy(canon) ;
+      alignStrCanonicalDestroy(&canon) ;
     }
 
   return result ;
@@ -1045,7 +1338,7 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
   if (!result)
     {
       if (canon)
-        alignStrCanonicalDestroy(canon) ;
+        alignStrCanonicalDestroy(&canon) ;
     }
   else
     {
@@ -1147,35 +1440,57 @@ static AlignStrCanonical alignStrCanonicalCreate(ZMapFeatureAlignFormat align_fo
 /*
  * Destroy an AlignStrCanonical object.
  */
-static void alignStrCanonicalDestroy(AlignStrCanonical canon)
+static void alignStrCanonicalDestroy(AlignStrCanonical *canon)
 {
-  if (canon)
+  if (*canon)
     {
-      g_array_free(canon->align, TRUE) ;
-      g_free(canon) ;
+      g_array_free((*canon)->align, TRUE) ;
+      g_free(*canon) ;
+      *canon = NULL ;
     }
 
   return ;
 }
 
-
+/*
+ * Return a pointer to the -ith operator in the canonical form.
+ */
 static AlignStrOp alignStrCanonicalGetOperator(AlignStrCanonical canon, int i)
 {
   AlignStrOp op = NULL ;
-  if (canon && canon->align && i<canon->num_operators)
+  if (canon && canon->align && i>= 0 && i<canon->num_operators)
     {
        op = &(g_array_index(canon->align, AlignStrOpStruct, i)) ;
     }
   return op ;
 }
 
+/*
+ * Add an operator to the end of the canonical
+ */
 static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct * const op)
 {
   gboolean result = FALSE ;
-  if (canon && canon->align)
+  if (canon && canon->align && op )
     {
-      canon->align = g_array_append_val(canon->align, op) ;
+      canon->align = g_array_append_val(canon->align, *op) ;
       ++canon->num_operators ;
+      result = TRUE ;
+    }
+  return result ;
+}
+
+/*
+ * Remove the i-th operator from the canonical form
+ */
+static gboolean alignStrCanonicalRemoveOperator(AlignStrCanonical canon, int i)
+{
+  gboolean result = FALSE ;
+  if (canon && canon->align && i>= 0 && i<canon->num_operators)
+    {
+      canon->align = g_array_remove_index(canon->align, i) ;
+      --canon->num_operators ;
+      result = TRUE ;
     }
   return result ;
 }
@@ -1220,7 +1535,7 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
 
   if (!result)
     {
-      alignStrCanonicalDestroy(canon) ;
+      alignStrCanonicalDestroy(&canon) ;
       canon = NULL ;
     }
 
@@ -1818,9 +2133,6 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = FALSE ;
-  static const gboolean bDigitsLeft = TRUE,
-    bMayOmit1 = FALSE,
-    bSpaces = FALSE ;
   char *cp = NULL;
 
   if ((canon->format != ZMAPALIGN_FORMAT_CIGAR_BAM)|| (canon->num_operators != 0))
