@@ -7,6 +7,7 @@
 #
 #
 
+
 RT_BIN='/software/bin/rt'
 
 
@@ -16,6 +17,20 @@ usage=" $0 <date> <list of queues>
 
     queues should be a blank separated list of valid RT queues.
 "
+
+
+
+SCRIPT_NAME=$(basename $0)
+
+INITIAL_DIR=$(pwd)
+
+SCRIPT_DIR=$(dirname $0)
+
+if ! echo $SCRIPT_DIR | egrep -q "(^)/" ; then
+   BASE_DIR=$INITIAL_DIR/$SCRIPT_DIR
+else
+   BASE_DIR=$SCRIPT_DIR
+fi
 
 
 . $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
