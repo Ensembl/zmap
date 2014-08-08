@@ -2,11 +2,13 @@
 #
 # Cribbed from systems who use it to look at tickets.
 #
-# The rt application is currently installed in /software/acedb/bin so 
-# needs to be added to the path.
+# The rt application is in /software/bin currently.
 #
 #
 #
+
+RT_BIN='/software/bin/rt'
+
 
 usage=" $0 <date> <list of queues>
 
@@ -43,7 +45,7 @@ do
 #
 #echo -n -e `rt-3.4 search -i  "(Queue = '$QUEUE') and  ( status='open' or status='new') and created > '-1 week'"`
 
-echo -n -e `rt search -i "(Queue = '$QUEUE') and  (status = 'resolved') and resolved > '$start_date'"`
+echo -n -e `$RT_BIN search -i "(Queue = '$QUEUE') and  (status = 'resolved') and resolved > '$start_date'"`
 echo
 
 done
@@ -61,7 +63,7 @@ do
 #echo $TICKET
 
 # You can add stuff to the -f flag like Created and so on.
-rt show -t ticket -f Queue,Subject,Requestors,Owner,Resolved $TICKET
+$RT_BIN show -t ticket -f Queue,Subject,Requestors,Owner,Resolved $TICKET
 
 echo
 
