@@ -2,11 +2,14 @@
 #
 # Cribbed from systems who use it to look at tickets.
 #
-# The rt application is currently installed in /software/acedb/bin so 
-# needs to be added to the path.
+# The rt application is in /software/bin currently.
 #
 #
 #
+
+
+RT_BIN='/software/bin/rt'
+
 
 usage=" $0 <date> <list of queues>
 
@@ -15,23 +18,49 @@ usage=" $0 <date> <list of queues>
     queues should be a blank separated list of valid RT queues.
 "
 
+
+
+SCRIPT_NAME=$(basename $0)
+
+INITIAL_DIR=$(pwd)
+
+SCRIPT_DIR=$(dirname $0)
+
+if ! echo $SCRIPT_DIR | egrep -q "(^)/" ; then
+   BASE_DIR=$INITIAL_DIR/$SCRIPT_DIR
+else
+   BASE_DIR=$SCRIPT_DIR
+fi
+
+
+. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+
+set -o history
+
+. $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
+
+
+
+
 [ "x$start_date" != "x" ] || start_date=$1
 
 if [ -z "$start_date" ] ; then
-  echo $usage
-  exit 1
+  zmap_message_rm_exit $usage
 fi
+
 shift
 
 # A list of blank separated queues is allowed.
 [ "x$OPS_QUEUES" != "x" ] || OPS_QUEUES="$*"
 if  [ -z "$OPS_QUEUES" ] ; then
-  echo $usage
-  exit 1
+  zmap_message_rm_exit $usage
 fi
 
 
-#echo "STarting first query of RT..."
+zmap_message_out "Starting to fetch RT tickets for start date $start_date on queues $OPS_QUEUES"
+
+
+#echo "STarting first query of RT...gets the ticket numbers"
 
 SingleQueue () {
 for QUEUE in $*
@@ -43,14 +72,14 @@ do
 #
 #echo -n -e `rt-3.4 search -i  "(Queue = '$QUEUE') and  ( status='open' or status='new') and created > '-1 week'"`
 
-echo -n -e `rt search -i "(Queue = '$QUEUE') and  (status = 'resolved') and resolved > '$start_date'"`
+echo -n -e `$RT_BIN search -i "(Queue = '$QUEUE') and  (status = 'resolved') and resolved > '$start_date'"`
 echo
 
 done
 }
 
 
-#echo "STarting second query of RT..."
+#echo "STarting second query of RT...displays the tickets"
 
 #echo "Queues = $OPS_QUEUES"
 
@@ -61,11 +90,12 @@ do
 #echo $TICKET
 
 # You can add stuff to the -f flag like Created and so on.
-rt show -t ticket -f Queue,Subject,Requestors,Owner,Resolved $TICKET
+$RT_BIN show -t ticket -f Queue,Subject,Requestors,Owner,Resolved $TICKET
 
 echo
 
 done
 
+zmap_message_out "Finished fetching RT tickets."
 
 exit 0

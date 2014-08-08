@@ -616,7 +616,7 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
     # Make the release notes
     $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $rt_date $CHECKOUT_BASE || \
 	zmap_message_exit "Failed to build release notes from Request Tracker"
-
+fi
 
 # WE ARE NOT DOING THIS JUST NOW....
 #
@@ -637,39 +637,50 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 # Mail annotools to tell them to edit the user release notes file.
 #
 #
-cat <<EOF
+(cat <<EOF
 
-ZMap Release Build Finished.
+ZMap $ZMAP_RELEASE_VERSION Release Build Finished.
 
-ZMap $ZMAP_RELEASE_VERSION Release notes file needs editing.
+The release notes file for users needs updating by hand. 
 
-Compile an abbreviated list of RT bugs fixed and code changes
-made from:
+Use the following procedure to do this:
+
+
+1) checkout the current release branch ($BRANCH)
+
+2) Compile an abbreviated list of RT bugs fixed and code changes from the files
 
            $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME
            $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$GIT_COMMITS.txt
 
-and insert that list into the user release notes file:
+3) Insert that list at the top of the release notes file
 
            $RELEASE_LOCATION/$ZMAP_USER_DOCS_DIR/$ZMAP_USER_RELEASE_DOC_FILE_NAME
 
-After modifying the file it needs to git committed/pushed but note that in the build
-is now out of date....doh.....
-
-EOF | mailx -s "Release Notes Created - Action Required" $ZMAP_MASTER_NOTIFY_MAIL
+4) git commit and push the changes back to the $BRANCH branch.
 
 
+*** NOTE that the release build will be out of date for these notes but that the notes
+will be propagated automatically into the final production build. ***
+
+EOF
+       ) | mailx -s "Release Notes Created - Action Required" $ZMAP_MASTER_NOTIFY_MAIL
 
 
 
-zmap_message_out "Running $SCRIPTS_DIR/zmap_make_docs ..."
 
-$SCRIPTS_DIR/zmap_make_docs.sh  || zmap_message_rm_exit "Failed to successfully run zmap_make_docs.sh"
-
-zmap_message_out "Running $SCRIPTS_DIR/zmap_update_web.sh ..."
-
-$SCRIPTS_DIR/zmap_update_web.sh || zmap_message_rm_exit "Failed to successfully run zmap_update_web.sh"
-
+# I THINK WE DON'T NEED TO DO THIS ANY MORE....
+#
+#
+#zmap_message_out "Running $SCRIPTS_DIR/zmap_make_docs ..."
+#
+#$SCRIPTS_DIR/zmap_make_docs.sh  || zmap_message_rm_exit "Failed to successfully run zmap_make_docs.sh"
+#
+#zmap_message_out "Running $SCRIPTS_DIR/zmap_update_web.sh ..."
+#
+#$SCRIPTS_DIR/zmap_update_web.sh || zmap_message_rm_exit "Failed to successfully run zmap_update_web.sh"
+#
+#
 
 
 zmap_cd $save_root
