@@ -8,6 +8,13 @@
 #
 
 
+
+SCRIPT_NAME=$(basename $0)
+
+zmap_host_name=$(hostname)
+
+
+
 RT_BIN='/software/bin/rt'
 
 
@@ -20,24 +27,35 @@ usage=" $0 <date> <list of queues>
 
 
 
-SCRIPT_NAME=$(basename $0)
 
-INITIAL_DIR=$(pwd)
+# Make a prefix.
+# Usage your_var=$(zmap_make_prefix) 
+function zmap_make_prefix
+{
+    now=$(date +%H:%M:%S)
 
-SCRIPT_DIR=$(dirname $0)
-
-if ! echo $SCRIPT_DIR | egrep -q "(^)/" ; then
-   BASE_DIR=$INITIAL_DIR/$SCRIPT_DIR
-else
-   BASE_DIR=$SCRIPT_DIR
-fi
+    $ECHO "[$zmap_host_name $SCRIPT_NAME ($now)] $@"
+}
 
 
-. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
 
-set -o history
+# Usage: zmap_message_out Your Message
+function zmap_message_out
+{
+    $ECHO "$(zmap_make_prefix) $@"
+}
 
-. $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
+
+# Usage: zmap_message_exit Your Message
+function zmap_message_exit
+{
+    zmap_message_err "$@"
+    exit 1;
+}
+
+
+
+
 
 
 
@@ -45,7 +63,7 @@ set -o history
 [ "x$start_date" != "x" ] || start_date=$1
 
 if [ -z "$start_date" ] ; then
-  zmap_message_rm_exit $usage
+  zmap_message_exit $usage
 fi
 
 shift
@@ -53,7 +71,7 @@ shift
 # A list of blank separated queues is allowed.
 [ "x$OPS_QUEUES" != "x" ] || OPS_QUEUES="$*"
 if  [ -z "$OPS_QUEUES" ] ; then
-  zmap_message_rm_exit $usage
+  zmap_message_exit $usage
 fi
 
 
