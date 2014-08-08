@@ -609,13 +609,20 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
     zmap_message_out "Finished writing $ZMAP_CHANGELOG_FILE_NAME..."
 
 
-    # Change git date format yyyy-mm-dd to RT format dd/mm/yyyy
+    # Derive RT format dd/mm/yyyy from git date format yyyy-mm-dd 
     array=(${git_date//-/ })
     rt_date="${array[2]}/${array[1]}/${array[0]}"
 
     # Make the release notes
     $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $rt_date $CHECKOUT_BASE || \
 	zmap_message_exit "Failed to build release notes from Request Tracker"
+
+
+    # Get the git commits.
+    $SCRIPTS_DIR/zmap_make_git_release_notes.sh $git_commit "zmap" $CHECKOUT_BASE || \
+	zmap_message_exit "Failed to retrieve git commits for commit $git_commit, repository $git_repository"
+
+
 fi
 
 # WE ARE NOT DOING THIS JUST NOW....
@@ -651,7 +658,7 @@ Use the following procedure to do this:
 2) Compile an abbreviated list of RT bugs fixed and code changes from the files
 
            $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME
-           $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$GIT_COMMITS.txt
+           $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_GIT_COMMITS_FILE_NAME
 
 3) Insert that list at the top of the release notes file
 

@@ -126,7 +126,7 @@ zmap_message_out "Getting tickets for period $RT_PREV_DATE to $RT_CURRENT_DATE."
 if  [ -n "$output_file" ] ; then
     RELEASE_NOTES_OUTPUT="$output_file"
 else
-    RELEASE_NOTES_OUTPUT="$ZMAP_BASEDIR/src/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME"
+    RELEASE_NOTES_OUTPUT="$ZMAP_BASEDIR/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME"
 fi
 
 rm -f $RELEASE_NOTES_OUTPUT || zmap_message_exit "Cannot rm $RELEASE_NOTES_OUTPUT file."
@@ -250,6 +250,16 @@ if [ -f $RTERROR ]; then
 	zmap_message_exit $error
     fi
 fi
+
+
+# Put tickets where they should be.....
+#
+#
+cat $RTRESULTS >> $RELEASE_NOTES_OUTPUT || zmap_message_exit "Failed to store RT results in $RELEASE_NOTES_OUTPUT"
+
+rm $RTRESULTS
+
+
 
 # Must have succeeded in getting tickets.
 #
