@@ -639,22 +639,29 @@ fi
 #
 (cat <<EOF
 
-ZMap Release Build Finished.
+ZMap $ZMAP_RELEASE_VERSION Release Build Finished.
 
-ZMap $ZMAP_RELEASE_VERSION Release notes file needs editing.
+The release notes file for users needs updating by hand. 
 
-Compile an abbreviated list of RT bugs fixed and code changes
-made from:
+Use the following procedure to do this:
+
+
+1) checkout the current release branch ($BRANCH)
+
+2) Compile an abbreviated list of RT bugs fixed and code changes from the files
 
            $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME
            $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$GIT_COMMITS.txt
 
-and insert that list into the user release notes file:
+3) Insert that list at the top of the release notes file
 
            $RELEASE_LOCATION/$ZMAP_USER_DOCS_DIR/$ZMAP_USER_RELEASE_DOC_FILE_NAME
 
-After modifying the file it needs to be git committed and pushed but note that the build
-is now out of date.
+4) git commit and push the changes back to the $BRANCH branch.
+
+
+*** NOTE that the release build will be out of date for these notes but that the notes
+will be propagated automatically into the final production build. ***
 
 EOF
        ) | mailx -s "Release Notes Created - Action Required" $ZMAP_MASTER_NOTIFY_MAIL

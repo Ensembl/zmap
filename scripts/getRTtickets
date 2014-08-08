@@ -17,23 +17,35 @@ usage=" $0 <date> <list of queues>
     queues should be a blank separated list of valid RT queues.
 "
 
+
+. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+
+set -o history
+
+. $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
+
+
+
+
 [ "x$start_date" != "x" ] || start_date=$1
 
 if [ -z "$start_date" ] ; then
-  echo $usage
-  exit 1
+  zmap_message_rm_exit $usage
 fi
+
 shift
 
 # A list of blank separated queues is allowed.
 [ "x$OPS_QUEUES" != "x" ] || OPS_QUEUES="$*"
 if  [ -z "$OPS_QUEUES" ] ; then
-  echo $usage
-  exit 1
+  zmap_message_rm_exit $usage
 fi
 
 
-#echo "STarting first query of RT..."
+zmap_message_out "Starting to fetch RT tickets for start date $start_date on queues $OPS_QUEUES"
+
+
+#echo "STarting first query of RT...gets the ticket numbers"
 
 SingleQueue () {
 for QUEUE in $*
@@ -52,7 +64,7 @@ done
 }
 
 
-#echo "STarting second query of RT..."
+#echo "STarting second query of RT...displays the tickets"
 
 #echo "Queues = $OPS_QUEUES"
 
@@ -69,5 +81,6 @@ echo
 
 done
 
+zmap_message_out "Finished fetching RT tickets."
 
 exit 0
