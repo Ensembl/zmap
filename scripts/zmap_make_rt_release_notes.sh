@@ -109,6 +109,8 @@ fi
 #
 
 
+# Get build directory (parent of $ZMAP_BASEDIR) for logging file.
+build_dir=$(dirname $ZMAP_BASEDIR)
 
 
 # Go to respository directory...
@@ -160,8 +162,8 @@ RTSERVER=tviewsrv
 #RTSERVER=deskpro16113
 RTHTTPSERVER="https://rt.sanger.ac.uk"
 RTUSER=zmap
-RTRESULTS=rt_tickets.out
-RTERROR=rt_error.log
+RTRESULTS="$build_dir/rt_tickets.out"
+RTERROR="$build_dir/rt_error.log"
 RTFAILED=no
 
 #zmap_message_out "pwd =" $(pwd)
@@ -204,8 +206,8 @@ perl -i -lne 'print if !/user/;'   \$RC_FILE
 echo "server $RTHTTPSERVER" >> \$RC_FILE
 echo "user $RTUSER"         >> \$RC_FILE
 
-# Really ensure /software/acedb/bin is in the path
-PATH=/software/acedb/bin:$PATH
+# Ensure /software/bin is in the path for rt command.
+PATH=/software/bin:$PATH
 
 # --- end of addition by $0 ---
 EOF

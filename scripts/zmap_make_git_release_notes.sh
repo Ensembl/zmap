@@ -113,7 +113,7 @@ zmap_cd $ZMAP_BASEDIR
 if  [ -n "$output_file" ] ; then
     GIT_NOTES_OUTPUT="$output_file"
 else
-    GIT_NOTES_OUTPUT="$ZMAP_BASEDIR/src/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_GIT_COMMITS_FILE_NAME"
+    GIT_NOTES_OUTPUT="$ZMAP_BASEDIR/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_GIT_COMMITS_FILE_NAME"
 fi
 
 rm -f $GIT_NOTES_OUTPUT || zmap_message_exit "Cannot rm $GIT_NOTES_OUTPUT file."
@@ -134,8 +134,7 @@ git commits for $git_repository from commit $commit
 
 EOF
 
-
-git log $1 --first-parent --pretty='format:%s' $commit..  \
+git log --first-parent --date=short --pretty='format:%h %ad %s' $commit..  \
     >> $GIT_NOTES_OUTPUT  || zmap_message_exit "Failed to retrieve git commits"
 
 
