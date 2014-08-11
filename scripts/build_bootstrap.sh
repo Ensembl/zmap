@@ -600,8 +600,10 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
     #    "2014-06-27 08:43:16 +0100 | 6a869d3 |  (tag: 0.23.0, origin/production, production)"
     #
     last_tag_details=`git log --tags -1 --simplify-by-decoration --pretty='format:%ai | %h | %d'`
-    read git_date time time_zone sep1 git_commit sep2 tag_stuff <<< $last_tag_details
 
+    zmap_message_out "last tag details: $last_tag_details"
+
+    read git_date time time_zone sep1 git_commit sep2 tag_stuff <<< $last_tag_details
 
     # make the standard change log in the src subdirectory, only gets changes since last release.
     zmap_message_out "Writing $ZMAP_CHANGELOG_FILE_NAME..."
@@ -612,6 +614,8 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
     # Derive RT format dd/mm/yyyy from git date format yyyy-mm-dd 
     array=(${git_date//-/ })
     rt_date="${array[2]}/${array[1]}/${array[0]}"
+
+    zmap_message_out "git date was: $git_date, dervied rt date is: $rt_date"
 
     # Make the release notes
     $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $rt_date $CHECKOUT_BASE || \
