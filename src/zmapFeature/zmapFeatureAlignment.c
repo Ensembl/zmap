@@ -108,6 +108,10 @@ static AlignStrOp alignStrCanonicalGetOperator(AlignStrCanonical canon, int i) ;
 static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct * const op) ;
 static gboolean alignStrCanonicalRemoveOperator(AlignStrCanonical canon, int i) ;
 static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format) ;
+
+static GArray * alignStrOpArrayCreate() ;
+static void alignStrOpArrayDestroy(GArray * const align_array) ;
+
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
                                     ZMapStrand ref_strand, ZMapStrand match_strand,
                                     int p_start, int p_end, int c_start, int c_end,
@@ -147,7 +151,6 @@ static gboolean gotoLastSpace(char **cp_inout) ;
 
 /*
  * These arrays are the allowed operators for various of the format types.
- * Note that there is no error checking in the parsing of these strings!
  */
 static const char *operators_cigar_exonerate = "MIDFR" ;
 static const char *operators_gffv3_gap       = "MIDFR" ;
@@ -157,6 +160,10 @@ static const char *operators_gffv3_gap       = "MIDFR" ;
  */
 static const char *operators_canonical = "MINDG";
 
+/*
+ * Test example
+ */
+static const char *operators_test = "MI" ;
 
 
 
@@ -768,6 +775,47 @@ static gboolean parse_cigar_general(const char * const str,
 #undef NUM_DIGITS_LIMIT
 
 
+/*
+ * This function runs over the canonical form and determines if the operators are present
+ * in the acceptable operators list also passed in. If any are found that are not, then
+ * they are removed. If any are removed, TRUE is returned, otherwise FALSE. The number
+ * removed is also output.
+ */
+static gboolean parse_remove_invalid_operators(AlignStrCanonical canon,
+                                               const char * const operators,
+                                               int * const p_num_removed)
+{
+  gboolean result = FALSE ;
+  int i = 0, num_removed = 0 ;
+  GArray *align_temp = NULL ;
+  AlignStrOp op = NULL ;
+
+  zMapReturnValIfFail(canon &&
+                      canon->align &&
+                      (canon->format!=ZMAPALIGN_FORMAT_INVALID) &&
+                      strlen(operators),          result) ;
+
+  /* align_temp = alignStrOpArrayCreate() ; */
+  for (i=0; i<canon->num_operators; )
+    {
+      op = alignStrCanonicalGetOperator(canon, i) ;
+      if (!strchr(operators, op->op))
+        {
+          alignStrCanonicalRemoveOperator(canon, i) ;
+          ++num_removed ;
+          result = TRUE ;
+        }
+      else
+        {
+          ++i ;
+        }
+    }
+
+  *p_num_removed = num_removed ;
+
+  return result ;
+}
+
 
 /*
  * Test of parsing various kinds of cigar strings...
@@ -776,6 +824,7 @@ static gboolean parse_cigar_general(const char * const str,
 static void parseTestFunction01()
 {
   char *sTest01 = NULL ;
+  int num_removed = 0 ;
   gboolean bResult = FALSE ;
   GError *error = NULL ;
   AlignStrCanonicalPropertiesStruct properties ;
@@ -794,14 +843,16 @@ static void parseTestFunction01()
   properties.bMayOmit1 = TRUE ;
   properties.bSpaces = FALSE ;
 
-  sprintf(sTest01, "33M13I52M10I1980MII") ;
+  sprintf(sTest01, "GT33M13I52M10I1980MII123LKK") ;
   canon = alignStrCanonicalCreate(align_format) ;
   bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  bResult = parse_remove_invalid_operators(canon, operators_test, &num_removed) ;
   alignStrCanonicalDestroy(&canon) ;
 
   sprintf(sTest01, " 33M13I52M10I1980MII") ;
   canon = alignStrCanonicalCreate(align_format) ;
   bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  bResult = parse_remove_invalid_operators(canon, operators_test, &num_removed) ;
   alignStrCanonicalDestroy(&canon) ;
 
   sprintf(sTest01, "33 M13I52M10I1980MII") ;
@@ -953,7 +1004,7 @@ static void parseTestFunction01()
   bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
   alignStrCanonicalDestroy(&canon) ;
 
-  /* settings 5 */
+  /* settings 5 (cigar_bam) */
   properties.bDigitsLeft = TRUE ;
   properties.bMayOmit1 = FALSE ;
   properties.bSpaces = FALSE ;
@@ -1429,7 +1480,7 @@ static AlignStrCanonical alignStrCanonicalCreate(ZMapFeatureAlignFormat align_fo
   if (canon)
     {
       canon->format = align_format ;
-      canon->align = g_array_new(FALSE, TRUE, sizeof(AlignStrOpStruct)) ;
+      canon->align = alignStrOpArrayCreate() ;
       canon->num_operators = 0 ;
     }
 
@@ -1442,14 +1493,32 @@ static AlignStrCanonical alignStrCanonicalCreate(ZMapFeatureAlignFormat align_fo
  */
 static void alignStrCanonicalDestroy(AlignStrCanonical *canon)
 {
-  if (*canon)
+  if (canon && *canon)
     {
-      g_array_free((*canon)->align, TRUE) ;
+      alignStrOpArrayDestroy((*canon)->align) ;
       g_free(*canon) ;
       *canon = NULL ;
     }
 
   return ;
+}
+
+
+/*
+ * Create an align array.
+ */
+static GArray * alignStrOpArrayCreate()
+{
+  return g_array_new(FALSE, TRUE, sizeof(AlignStrOpStruct)) ;
+}
+
+/*
+ * Destroy an align array.
+ */
+static void alignStrOpArrayDestroy(GArray * const align_array)
+{
+  if (align_array)
+    g_array_free(align_array, TRUE) ;
 }
 
 /*
