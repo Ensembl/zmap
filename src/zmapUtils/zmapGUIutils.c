@@ -1405,6 +1405,26 @@ GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char 
 }
 
 
+/*!
+ * Show a message where user must choose whether to Save or not. Has 3 buttons:
+ * OK (to continue without saving), Cancel (to stop), or Save (to save then continue)
+ *
+ * See zMapGUIMsgFull() for complete documentation of parameters.
+ *
+ * @return  char *, users text or NULL if no text.
+ */
+GtkResponseType zMapGUIMsgGetSave(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
+{
+  GtkResponseType result = GTK_RESPONSE_CANCEL ;
+  gboolean modal = TRUE ;
+
+  result = messageFull(parent, "Save changes?", msg, modal, 0,
+                       GTK_STOCK_OK, GTK_STOCK_CANCEL, GTK_STOCK_SAVE,
+                       msg_type, GTK_JUSTIFY_CENTER, NULL) ;
+
+  return result ;
+}
+
 
 
 /*!

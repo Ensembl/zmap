@@ -366,7 +366,6 @@ static ZMapXMLObjTagFunctionsStruct ends_G[] =
  *  */
 
 
-
 /* Displays a feature in a window, will reuse an existing window if it can, otherwise
  * it creates a new one. */
 void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item, const gboolean editable)
@@ -2597,7 +2596,10 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
 
       window->caller_cbs->merge_new_feature(window, window->app_data, &merge) ;
 
+      /* The scratch feature has been saved. However, we have now created a new "real" feature 
+       * which is unsaved. */
       window->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
+      window->flags[ZMAPFLAG_FEATURES_NEED_SAVING] = TRUE ;
 
       /*! \todo Check that feature was saved successfully before reporting back. Also close
        * the feature details dialog now we're finished. */

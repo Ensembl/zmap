@@ -1732,6 +1732,139 @@ void zmapViewFeatureDump(ZMapViewWindow view_window, char *file)
 }
 
 
+/* Check if there have been changes to the scratch column that have not been
+ * saved and if so ask the user if they really want to quit. Returns true to
+ * continue quitting or false to cancel. */
+gboolean zMapViewCheckForUnsavedChanges(ZMapView zmap_view)
+{
+  gboolean result = TRUE ;
+
+  if (zmap_view && zmap_view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING])
+    {
+      GtkWindow *parent = NULL ;
+
+      /* The responses for the 3 button arguments are ok, cancel, close. */
+      GtkResponseType response = zMapGUIMsgGetSave(parent, ZMAP_MSG_WARNING, "There are unsaved changes in the Annotation column - do you really want to quit?") ;
+      
+      if (response == GTK_RESPONSE_OK)
+        {
+          result = TRUE ;
+        }
+      else if (response == GTK_RESPONSE_CANCEL)
+        {
+          result = FALSE ;
+        }
+      else
+        {
+          result = TRUE ;
+
+          ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
+
+          if (feature_set)
+            {
+              ZMapFeature feature = zmapViewScratchGetFeature(feature_set) ;
+                  
+              if (feature)
+                {
+                  /* Loop through each window and save changes */
+                  GList *window_item = zmap_view->window_list ;
+                  GError *error = NULL ;
+
+                  for ( ; window_item ; window_item = window_item->next)
+                    {
+                      ZMapViewWindow view_window = (ZMapViewWindow)(window_item->data) ;
+                      ZMapWindow window = zMapViewGetWindow(view_window) ;
+
+                      //zMapWindowShowFeature(window, item, TRUE) ;
+                      gboolean saved = TRUE ; /*! \todo get response from featureshow dialog */
+              
+                      if (!saved)
+                        {
+                          /* There was a problem saving so don't continue quitting zmap */
+                          result = FALSE ;
+                  
+                          /* If error is null then the user cancelled the save so don't report 
+                           * an error */
+                          if (error)
+                            {
+                              zMapWarning("Save failed: %s", error->message) ;
+                              g_error_free(error) ;
+                              error = NULL ;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+  return result ;
+}
+
+
+/* Check if there are new features that have not been saved and if so ask the
+ * user if they really want to quit. Returns true to continue quitting or false to cancel. */
+gboolean zMapViewCheckForUnsavedFeatures(ZMapView zmap_view)
+{
+  gboolean result = TRUE ;
+
+  if (zmap_view && zmap_view->flags[ZMAPFLAG_FEATURES_NEED_SAVING])
+    {
+      GtkWindow *parent = NULL ;
+
+      /* The responses for the 3 button arguments are ok, cancel, close. */
+      GtkResponseType response = zMapGUIMsgGetSave(parent, ZMAP_MSG_WARNING, "There are unsaved features - do you really want to quit?") ;
+      
+      if (response == GTK_RESPONSE_OK)
+        {
+          result = TRUE ;
+        }
+      else if (response == GTK_RESPONSE_CANCEL)
+        {
+          result = FALSE ;
+        }
+      else
+        {
+          result = TRUE ;
+
+          /* Loop through each window and save changes */
+          GList *window_item = zmap_view->window_list ;
+          GError *error = NULL ;
+
+          for ( ; window_item ; window_item = window_item->next)
+            {
+              ZMapViewWindow view_window = (ZMapViewWindow)(window_item->data) ;
+              ZMapWindow window = zMapViewGetWindow(view_window) ;
+
+              /* If we've already set a save file then use that. (Don't let it default
+               * to the input file though because the user hasn't explicitly asked 
+               * for a Save option rather than Save As...) */
+              const char *file = zMapViewGetSaveFile(zmap_view, FALSE) ;
+              char *filename = g_strdup(file) ;
+              gboolean saved = zMapWindowExportFeatures(window, FALSE, NULL, &filename, &error) ;
+              
+              if (!saved)
+                {
+                  /* There was a problem saving so don't continue quitting zmap */
+                  result = FALSE ;
+                  
+                  /* If error is null then the user cancelled the save so don't report 
+                   * an error */
+                  if (error)
+                    {
+                      zMapWarning("Save failed: %s", error->message) ;
+                      g_error_free(error) ;
+                      error = NULL ;
+                    }
+                }
+            }
+        }
+    }
+
+  return result ;
+}
+
+
 /* Called to kill a view and get the associated threads killed, note that
  * this call just signals everything to die, its the checkConnections() routine
  * that really clears up and when everything has died signals the caller via the
@@ -1749,27 +1882,27 @@ void zMapViewDestroy(ZMapView zmap_view)
       killGUI(zmap_view) ;
 
       if (zmap_view->state <= ZMAPVIEW_MAPPED)
-	{
-	  /* For init we simply need to signal to our parent layer that we have died,
-	   * we will then be cleaned up immediately. */
+        {
+          /* For init we simply need to signal to our parent layer that we have died,
+           * we will then be cleaned up immediately. */
 
-	  zmap_view->state = ZMAPVIEW_DYING ;
-	}
+          zmap_view->state = ZMAPVIEW_DYING ;
+        }
       else
-	{
-	  /* for other states there are threads to kill so they must be cleaned
-	   * up asynchronously. */
+        {
+          /* for other states there are threads to kill so they must be cleaned
+           * up asynchronously. */
 
-	  if (zmap_view->state != ZMAPVIEW_RESETTING)
-	    {
-	      /* If we are resetting then the connections have already being killed. */
-	      killConnections(zmap_view) ;
-	    }
+          if (zmap_view->state != ZMAPVIEW_RESETTING)
+            {
+              /* If we are resetting then the connections have already being killed. */
+              killConnections(zmap_view) ;
+            }
 
-	  /* Must set this as this will prevent any further interaction with the ZMap as
-	   * a result of both the ZMap window and the threads dying asynchronously.  */
-	  zmap_view->state = ZMAPVIEW_DYING ;
-	}
+          /* Must set this as this will prevent any further interaction with the ZMap as
+           * a result of both the ZMap window and the threads dying asynchronously.  */
+          zmap_view->state = ZMAPVIEW_DYING ;
+        }
     }
 
   return ;
@@ -6531,17 +6664,18 @@ void getFilename(gpointer key, gpointer value, gpointer data)
 }
 
 
-/* Get the filename of the default file to use for the Save operation. Returns null if it hasn't been set. */
-const char* zMapViewGetSaveFile(ZMapView view)
+/* Get the filename of the default file to use for the Save operation. Returns null if
+ * it hasn't been set. */
+const char* zMapViewGetSaveFile(ZMapView view, const gboolean use_input_file)
 {
   const char *result = NULL ;
   zMapReturnValIfFail(view && view->view_sequence, result) ;
 
   result = g_quark_to_string(view->save_file) ;
 
-  /* If it hasn't been set yet, check if there was an input file and use that (but only if there
-   * was one and only one input file) */
-  if (!result)
+  /* If it hasn't been set yet, check if there was an input file and use that (but only if 
+   * the flag allows, and if there was one and only one input file) */
+  if (!result && use_input_file)
     {
       GHashTable *cached_parsers = view->view_sequence->cached_parsers ;
       
@@ -6561,4 +6695,5 @@ void zMapViewSetSaveFile(ZMapView view, const char *filename)
 {
   zMapReturnIfFail(view) ;
   view->save_file = g_quark_from_string(filename) ;
+  view->flags[ZMAPFLAG_FEATURES_NEED_SAVING] = FALSE ;
 }

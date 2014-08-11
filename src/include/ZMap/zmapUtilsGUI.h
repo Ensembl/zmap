@@ -485,7 +485,7 @@ gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *ms
                                char* first_button, char *second_button) ;
 GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text,
 				  char **text_out) ;
-
+GtkResponseType zMapGUIMsgGetSave(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
 
 void zMapGUIShowAbout(void) ;
 

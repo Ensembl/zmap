@@ -439,6 +439,28 @@ gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
 }
 
 
+/* Check if there are unsaved items and if so ask the user whether to save or not. Returns
+ * true if we should continue or false if we should cancel. */
+gboolean zMapManagerCheckIfUnsaved(ZMapManager zmaps)
+{
+  gboolean result = TRUE ;
+
+  if (zmaps->zmap_list)
+    {
+      GList *next_zmap ;
+
+      next_zmap = g_list_first(zmaps->zmap_list) ;
+      do
+        {
+          result = zMapCheckIfUnsaved((ZMap)(next_zmap->data)) ;
+        }
+      while (result && (next_zmap = g_list_next(next_zmap))) ;
+    }
+
+  return result ;
+}
+
+
 /* Note the zmap will get removed from managers list once it signals via destroyedCB()
  * that it has died. */
 void zMapManagerKill(ZMapManager zmaps, ZMap zmap)

@@ -210,7 +210,7 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
         /* Save - same as export all features but we pass the existing filename, if there is one;
          * if there isn't then the file chooser will be shown and we'll save the file the user
          * selects for future Save operations. */
-        char *filename = g_strdup(zMapViewGetSaveFile(curr_view)) ;
+        char *filename = g_strdup(zMapViewGetSaveFile(curr_view, TRUE)) ;
         result = zMapWindowExportFeatures(curr_window, FALSE, NULL, &filename, &error) ;
 
         if (result)

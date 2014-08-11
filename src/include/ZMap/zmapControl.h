@@ -87,6 +87,7 @@ gpointer zMapControlFindView(ZMap zmap, gpointer view_id) ;
 gboolean zMapRaise(ZMap zmap);
 char *zMapGetZMapID(ZMap zmap) ;
 char *zMapGetZMapStatus(ZMap zmap) ;
+gboolean zMapCheckIfUnsaved(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
 void zMapDestroy(ZMap zmap, GList **destroyed_views_inout) ;
 

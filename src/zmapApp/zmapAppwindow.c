@@ -694,21 +694,25 @@ static void appExit(void *user_data)
     }
   else
     {
-      guint timeout_func_id ;
-      int interval = app_context->exit_timeout * 1000 ;    /* glib needs time in milliseconds. */
+      /* Check if we need to save anything first */
+      if (zMapManagerCheckIfUnsaved(app_context->zmap_manager))
+        {
+          guint timeout_func_id ;
+          int interval = app_context->exit_timeout * 1000 ;    /* glib needs time in milliseconds. */
 
-      consoleMsg(TRUE, "%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
+          consoleMsg(TRUE, "%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
 
-      /* N.B. we block for 2 seconds here to make sure user can see message. */
-      zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
-                         ZMAP_MSG_EXIT,
-                         GTK_JUSTIFY_CENTER, 2, FALSE) ;
+          /* N.B. we block for 2 seconds here to make sure user can see message. */
+          zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
+                             ZMAP_MSG_EXIT,
+                             GTK_JUSTIFY_CENTER, 2, FALSE) ;
 
-      /* time out func makes sure that we exit if threads fail to report back. */
-      timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
+          /* time out func makes sure that we exit if threads fail to report back. */
+          timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
 
-      /* Tell all our zmaps to die, they will tell all their threads to die. */
-      zMapManagerKillAllZMaps(app_context->zmap_manager) ;
+          /* Tell all our zmaps to die, they will tell all their threads to die. */
+          zMapManagerKillAllZMaps(app_context->zmap_manager) ;
+        }
     }
 
   return ;

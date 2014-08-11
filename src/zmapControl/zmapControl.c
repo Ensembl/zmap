@@ -368,6 +368,28 @@ char *zMapGetZMapStatus(ZMap zmap)
 }
 
 
+/* Check if there are any unsaved changes and if so ask the user whether to save or not.
+ * Returns true if we should continue or false if we should cancel. */
+gboolean zMapCheckIfUnsaved(ZMap zmap)
+{
+  gboolean result = TRUE ;
+  GList *list_item ;
+
+  list_item = zmap->view_list ;
+  do
+    {
+      ZMapView view ;
+
+      view = list_item->data ;
+
+      result = zMapViewCheckForUnsavedFeatures(view) && zMapViewCheckForUnsavedChanges(view);
+    }
+  while (result && (list_item = g_list_next(list_item))) ;
+
+  return result ;
+}
+
+
 /* Called to kill a zmap window and get all associated windows/threads destroyed.
  */
 void zMapDestroy(ZMap zmap, GList **destroyed_views_inout)

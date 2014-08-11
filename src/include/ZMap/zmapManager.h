@@ -88,6 +88,7 @@ gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
 					 ZMap zmap, gpointer view_id,
 					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
+gboolean zMapManagerCheckIfUnsaved(ZMapManager zmaps) ;
 void zMapManagerKill(ZMapManager zmaps, ZMap zmap) ;
 gboolean zMapManagerKillAllZMaps(ZMapManager zmaps);
 gboolean zMapManagerDestroy(ZMapManager zmaps) ;
