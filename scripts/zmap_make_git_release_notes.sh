@@ -134,8 +134,7 @@ git commits for $git_repository from commit $commit
 
 EOF
 
-
-git log $1 --first-parent --pretty='format:%s' $commit..  \
+git log --first-parent --date=short --pretty='format:%h %ad %s' $commit..  \
     >> $GIT_NOTES_OUTPUT  || zmap_message_exit "Failed to retrieve git commits"
 
 
