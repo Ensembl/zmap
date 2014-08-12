@@ -382,7 +382,7 @@ gboolean zMapCheckIfUnsaved(ZMap zmap)
 
       view = list_item->data ;
 
-      result = zMapViewCheckForUnsavedFeatures(view) && zMapViewCheckForUnsavedChanges(view);
+      result = zMapViewCheckIfUnsaved(view);
     }
   while (result && (list_item = g_list_next(list_item))) ;
 

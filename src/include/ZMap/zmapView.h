@@ -233,8 +233,7 @@ void zMapViewUpdateColumnBackground(ZMapView view);
 const char* zMapViewGetSaveFile(ZMapView view, const gboolean use_input_file) ;
 void zMapViewSetSaveFile(ZMapView view, const char *filename) ;
 
-gboolean zMapViewCheckForUnsavedFeatures(ZMapView zmap_view) ;
-gboolean zMapViewCheckForUnsavedChanges(ZMapView zmap_view) ;
+gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view) ;
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapView2Str, ZMapViewState) ;
 

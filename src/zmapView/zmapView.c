@@ -1733,9 +1733,9 @@ void zmapViewFeatureDump(ZMapViewWindow view_window, char *file)
 
 
 /* Check if there have been changes to the scratch column that have not been
- * saved and if so ask the user if they really want to quit. Returns true to
- * continue quitting or false to cancel. */
-gboolean zMapViewCheckForUnsavedChanges(ZMapView zmap_view)
+ * saved and if so ask the user if they really want to quit. Returns OK to
+ * continue quitting or Cancel to stop. */
+static gboolean checkForUnsavedChanges(ZMapView zmap_view)
 {
   gboolean result = TRUE ;
 
@@ -1743,64 +1743,15 @@ gboolean zMapViewCheckForUnsavedChanges(ZMapView zmap_view)
     {
       GtkWindow *parent = NULL ;
 
-      /* The responses for the 3 button arguments are ok, cancel, close. */
-      GtkResponseType response = zMapGUIMsgGetSaveFull(parent, 
-                                                       ZMAP_MSG_WARNING, 
-                                                       "There are unsaved changes in the Annotation column - do you really want to quit?",
-                                                       GTK_STOCK_QUIT,
-                                                       GTK_STOCK_CANCEL,
-                                                       GTK_STOCK_SAVE) ;
-      
-      if (response == GTK_RESPONSE_OK)
-        {
-          result = TRUE ;
-        }
-      else if (response == GTK_RESPONSE_CANCEL)
-        {
-          result = FALSE ;
-        }
-      else
-        {
-          result = TRUE ;
-
-          ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
-
-          if (feature_set)
-            {
-              ZMapFeature feature = zmapViewScratchGetFeature(feature_set) ;
-                  
-              if (feature)
-                {
-                  /* Loop through each window and save changes */
-                  GList *window_item = zmap_view->window_list ;
-                  GError *error = NULL ;
-
-                  for ( ; window_item ; window_item = window_item->next)
-                    {
-                      ZMapViewWindow view_window = (ZMapViewWindow)(window_item->data) ;
-                      ZMapWindow window = zMapViewGetWindow(view_window) ;
-
-                      //zMapWindowShowFeature(window, item, TRUE) ;
-                      gboolean saved = TRUE ; /*! \todo get response from featureshow dialog */
-              
-                      if (!saved)
-                        {
-                          /* There was a problem saving so don't continue quitting zmap */
-                          result = FALSE ;
-                  
-                          /* If error is null then the user cancelled the save so don't report 
-                           * an error */
-                          if (error)
-                            {
-                              zMapWarning("Save failed: %s", error->message) ;
-                              g_error_free(error) ;
-                              error = NULL ;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+      /* The responses for the 2 button arguments are ok or cancel. We could also offer
+       * the option to Save here but that's complicated because we then also need to save
+       * the new feature that is created to file - it's probably more intuitive for
+       * the user to just cancel and then do the save manually */
+      result = zMapGUIMsgGetBoolFull(parent, 
+        ZMAP_MSG_WARNING, 
+        "There are unsaved edits in the Annotation column - do you really want to quit?\n\nNote: double-click the Annotation feature to create a real feature from it, then you can save it to file.",
+        GTK_STOCK_QUIT,
+        GTK_STOCK_CANCEL) ;
     }
 
   return result ;
@@ -1808,35 +1759,25 @@ gboolean zMapViewCheckForUnsavedChanges(ZMapView zmap_view)
 
 
 /* Check if there are new features that have not been saved and if so ask the
- * user if they really want to quit. Returns true to continue quitting or false to cancel. */
-gboolean zMapViewCheckForUnsavedFeatures(ZMapView zmap_view)
+ * user if they really want to quit. Returns OK to quit, Cancel, or Close if we saved. */
+static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
 {
-  gboolean result = TRUE ;
+  GtkResponseType response = GTK_RESPONSE_OK ;
 
   if (zmap_view && zmap_view->flags[ZMAPFLAG_FEATURES_NEED_SAVING])
     {
       GtkWindow *parent = NULL ;
 
       /* The responses for the 3 button arguments are ok, cancel, close. */
-      GtkResponseType response = zMapGUIMsgGetSaveFull(parent, 
-                                                       ZMAP_MSG_WARNING, 
-                                                       "There are unsaved features - do you really want to quit?",
-                                                       GTK_STOCK_QUIT,
-                                                       GTK_STOCK_CANCEL,
-                                                       GTK_STOCK_SAVE) ;
+      response = zMapGUIMsgGetSaveFull(parent, 
+        ZMAP_MSG_WARNING, 
+        "There are unsaved features - do you really want to quit?",
+        GTK_STOCK_QUIT,
+        GTK_STOCK_CANCEL,
+        GTK_STOCK_SAVE) ;
       
-      if (response == GTK_RESPONSE_OK)
+      if (response == GTK_RESPONSE_CLOSE)
         {
-          result = TRUE ;
-        }
-      else if (response == GTK_RESPONSE_CANCEL)
-        {
-          result = FALSE ;
-        }
-      else
-        {
-          result = TRUE ;
-
           /* Loop through each window and save changes */
           GList *window_item = zmap_view->window_list ;
           GError *error = NULL ;
@@ -1856,7 +1797,7 @@ gboolean zMapViewCheckForUnsavedFeatures(ZMapView zmap_view)
               if (!saved)
                 {
                   /* There was a problem saving so don't continue quitting zmap */
-                  result = FALSE ;
+                  response = GTK_RESPONSE_CANCEL ;
                   
                   /* If error is null then the user cancelled the save so don't report 
                    * an error */
@@ -1869,6 +1810,28 @@ gboolean zMapViewCheckForUnsavedFeatures(ZMapView zmap_view)
                 }
             }
         }
+    }
+
+  return response ;
+}
+
+
+/* Check if there are any unsaved changes and if so ask the user what they want to do.
+ * Returns true to continue or false to cancel. */
+gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view)
+{
+  gboolean result = TRUE ;
+  GtkResponseType response = GTK_RESPONSE_NONE ;
+
+  response = checkForUnsavedFeatures(zmap_view) ;
+
+  if (response == GTK_RESPONSE_CANCEL)
+    {
+      result = FALSE ;
+    }
+  else
+    {
+      result = checkForUnsavedChanges(zmap_view) ;
     }
 
   return result ;
