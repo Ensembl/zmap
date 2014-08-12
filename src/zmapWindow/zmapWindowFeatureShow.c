@@ -87,7 +87,6 @@
 #define XML_TAGVALUE_SCROLLED_TEXT "scrolled_text"
 
 
-
 typedef struct AddParaStructName
 {
   ZMapWindow window ;
@@ -587,6 +586,7 @@ static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_noteb
 {
   char *feature_name ;
   GtkWidget *notebook_widg ;
+  GtkWidget *hbuttons, *frame, *button ;
 
   feature_name = (char *)g_quark_to_string(show->feature->original_id) ;
 
@@ -604,6 +604,28 @@ static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_noteb
                                                             G_CALLBACK(switchPageHandler), show) ;
 
       gtk_box_pack_start(GTK_BOX(show->vbox), show->notebook, TRUE, TRUE, 0) ;
+
+
+      /*
+       * Make panel of  usual button stuff.
+       */
+      frame = gtk_frame_new(NULL) ;
+      gtk_box_pack_start(GTK_BOX(show->vbox), frame, FALSE, FALSE, 1) ;
+
+      hbuttons = gtk_hbutton_box_new() ;
+      gtk_container_add(GTK_CONTAINER(frame), hbuttons) ;
+
+      if (editable)
+        {
+          button = gtk_button_new_from_stock(GTK_STOCK_SAVE) ;
+          gtk_container_add(GTK_CONTAINER(hbuttons), button) ;
+          g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(saveCB), show) ;
+        }
+
+      button = gtk_button_new_from_stock(GTK_STOCK_CLOSE) ;
+      gtk_container_add(GTK_CONTAINER(hbuttons), button) ;
+      g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(cancelCB), show) ;
+
 
       gtk_widget_show_all(show->window) ;
 
@@ -1188,30 +1210,35 @@ static void saveMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
   if (show && show->feature_book && show->feature_book->chapters)
     g_list_foreach(show->feature_book->chapters, saveChapterCB, show);
 
+  gtk_widget_destroy(GTK_WIDGET(show->window)) ;
+
   return ;
 }
 
 
 static void applyCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
 {
-  //readChapter((ZMapGuiNotebookChapter)any_section) ;
 
   return ;
 }
 
-static void saveCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
+static void saveCB(ZMapGuiNotebookAny any_section, void *data)
 {
-  //ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)any_section;
+  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)data ;
 
-  //readChapter(chapter);
+  if (show && show->feature_book && show->feature_book->chapters)
+    g_list_foreach(show->feature_book->chapters, saveChapterCB, show);
 
-  //saveChapter(chapter);
+  gtk_widget_destroy(GTK_WIDGET(show->window)) ;
 
   return ;
 }
 
-static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
+static void cancelCB(ZMapGuiNotebookAny any_section, void *data)
 {
+  ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)data;
+
+  gtk_widget_destroy(GTK_WIDGET(feature_show->window)) ;
 
   return ;
 }
@@ -2603,7 +2630,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
 
       /*! \todo Check that feature was saved successfully before reporting back. Also close
        * the feature details dialog now we're finished. */
-      zMapMessage("%s", "Feature saved") ;
+      //zMapMessage("%s", "Feature saved") ;
     }
   else 
     {
