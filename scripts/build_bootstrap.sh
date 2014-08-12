@@ -590,12 +590,21 @@ zmap_message_out "Finished make dist ..."
 
 
 
-# Make all the release associated docs.
+# Make all the release associated docs (git changes, RT tickets resolved).
 #
+# We do this by finding all the commits made since the last tag (relative
+# to the release HEAD). We record the parent commit/date of that commit and 
+# then use the parent commit/date to get all the git changes (via the commit)
+# and all the RT tickets resolved (via the date).
+#
+
 if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 
+    # Slightly complex code aimed at getting the last commit between the release head
+    # and the last tag and then finding the parent commit of that last commit to use
+    # for listing commits and RT tickets fixed.
 
-    # get the date of the last tag commit and ask for stuff since then, git log displays output like:
+    # Get the date/commit of the last tag commit, format displays output in this format:
     #
     #    "2014-06-27 08:43:16 +0100 | 6a869d3 |  (tag: 0.23.0, origin/production, production)"
     #
@@ -603,19 +612,40 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 
     zmap_message_out "last tag details: $last_tag_details"
 
-    read git_date time time_zone sep1 git_commit sep2 tag_stuff <<< $last_tag_details
+    # more than we need but good for debug.
+    read tag_date time time_zone sep1 tag_commit sep2 tag_stuff <<< $last_tag_details
+
+
+    # Use the tag commit to get the earliest commit between release head and the tag,
+    # this is the last record hence the use of tail.
+    # NEED TO INSERT 'release' INTO THE .. BIT !!
+    last_commit_details=$(git log --first-parent --date=short --pretty='format:%h %p %ad' $tag_commit.. | tail -n 1)
+
+    zmap_message_out "last commit details: $last_commit_details"
+
+    read last_commit last_parent_commit last_date <<< $last_commit_details
+
+
+    # Now get the date of the parent commit....
+    parent_details=$(git show --date=short --pretty='format:%h %ad' $last_parent_commit)
+
+    read parent_commit parent_date unwanted_diff <<< $parent_details
+
+    zmap_message_out "parent commit was: $parent_commit, parent date was: $parent_date"
+
+
 
     # make the standard change log in the src subdirectory, only gets changes since last release.
     zmap_message_out "Writing $ZMAP_CHANGELOG_FILE_NAME..."
-    git log --stat --date=short --pretty='format:%ad  %an  <%ae>%n %s' $git_commit.. > $ZMAP_CHANGELOG_FILE_NAME ||  zmap_message_rm_exit "Failed to create $ZMAP_CHANGELOG_FILE_NAME"
+    git log --stat --date=short --pretty='format:%ad  %an  <%ae>%n %s' $tag_commit.. > $ZMAP_CHANGELOG_FILE_NAME ||  zmap_message_rm_exit "Failed to create $ZMAP_CHANGELOG_FILE_NAME"
     zmap_message_out "Finished writing $ZMAP_CHANGELOG_FILE_NAME..."
 
 
     # Derive RT format dd/mm/yyyy from git date format yyyy-mm-dd 
-    array=(${git_date//-/ })
+    array=(${parent_date//-/ })
     rt_date="${array[2]}/${array[1]}/${array[0]}"
 
-    zmap_message_out "git date was: $git_date, dervied rt date is: $rt_date"
+    zmap_message_out "parent git date was: $parent_date, dervied rt date is: $rt_date"
 
     # Make the release notes
     $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $rt_date $CHECKOUT_BASE || \
@@ -623,8 +653,8 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 
 
     # Get the git commits.
-    $SCRIPTS_DIR/zmap_make_git_release_notes.sh $git_commit "zmap" $CHECKOUT_BASE || \
-	zmap_message_exit "Failed to retrieve git commits for commit $git_commit, repository $git_repository"
+    $SCRIPTS_DIR/zmap_make_git_release_notes.sh $tag_commit "zmap" $CHECKOUT_BASE || \
+	zmap_message_exit "Failed to retrieve git commits for commit $tag_commit, repository $git_repository"
 
 
 fi
