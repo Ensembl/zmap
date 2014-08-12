@@ -310,14 +310,14 @@ static GtkItemFactoryEntry menu_items_G[] =
   {
     /* File */
     { "/_File",              NULL,         NULL,       0,          "<Branch>", NULL},
-    { "/File/Preserve",      NULL,         preserveCB, 0,          NULL,       NULL},
-    { "/File/Save",      NULL,         saveMenuCB, 0,          NULL,       NULL},
-    { "/File/Close",         "<control>W", requestDestroyCB, 0,    NULL,       NULL},
+    { "/File/_Preserve",      NULL,         preserveCB, 0,          NULL,       NULL},
+    { "/File/Create _feature",NULL,         saveMenuCB, 0,          NULL,       NULL},
+    { "/File/_Close",         "<control>W", requestDestroyCB, 0,    NULL,       NULL},
 
     /* Help */
     { "/_Help",                NULL, NULL,       0,  "<LastBranch>", NULL},
-    { "/Help/Feature Display", NULL, helpMenuCB, 1,  NULL,           NULL},
-    { "/Help/About ZMap",      NULL, helpMenuCB, 2,  NULL,           NULL}
+    { "/Help/_Feature Display", NULL, helpMenuCB, 1,  NULL,           NULL},
+    { "/Help/_About ZMap",      NULL, helpMenuCB, 2,  NULL,           NULL}
   } ;
 
 
@@ -617,7 +617,7 @@ static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_noteb
 
       if (editable)
         {
-          button = gtk_button_new_from_stock(GTK_STOCK_SAVE) ;
+          button = gtk_button_new_with_mnemonic("Create feature") ;
           gtk_container_add(GTK_CONTAINER(hbuttons), button) ;
           g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(saveCB), show) ;
         }

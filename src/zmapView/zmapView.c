@@ -1744,7 +1744,12 @@ gboolean zMapViewCheckForUnsavedChanges(ZMapView zmap_view)
       GtkWindow *parent = NULL ;
 
       /* The responses for the 3 button arguments are ok, cancel, close. */
-      GtkResponseType response = zMapGUIMsgGetSave(parent, ZMAP_MSG_WARNING, "There are unsaved changes in the Annotation column - do you really want to quit?") ;
+      GtkResponseType response = zMapGUIMsgGetSaveFull(parent, 
+                                                       ZMAP_MSG_WARNING, 
+                                                       "There are unsaved changes in the Annotation column - do you really want to quit?",
+                                                       GTK_STOCK_QUIT,
+                                                       GTK_STOCK_CANCEL,
+                                                       GTK_STOCK_SAVE) ;
       
       if (response == GTK_RESPONSE_OK)
         {
@@ -1813,7 +1818,12 @@ gboolean zMapViewCheckForUnsavedFeatures(ZMapView zmap_view)
       GtkWindow *parent = NULL ;
 
       /* The responses for the 3 button arguments are ok, cancel, close. */
-      GtkResponseType response = zMapGUIMsgGetSave(parent, ZMAP_MSG_WARNING, "There are unsaved features - do you really want to quit?") ;
+      GtkResponseType response = zMapGUIMsgGetSaveFull(parent, 
+                                                       ZMAP_MSG_WARNING, 
+                                                       "There are unsaved features - do you really want to quit?",
+                                                       GTK_STOCK_QUIT,
+                                                       GTK_STOCK_CANCEL,
+                                                       GTK_STOCK_SAVE) ;
       
       if (response == GTK_RESPONSE_OK)
         {
