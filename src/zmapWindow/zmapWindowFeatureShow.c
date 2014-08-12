@@ -176,6 +176,8 @@ typedef struct ZMapWindowFeatureShowStruct_
   GtkWidget *curr_paragraph_table ;
   guint curr_paragraph_rows, curr_paragraph_columns ;
 
+  gboolean save_failed ; /* gets set to true if saving a chapter failed */
+
 } ZMapWindowFeatureShowStruct, *ZMapWindowFeatureShow ;
 
 
@@ -273,7 +275,6 @@ static void saveCB(ZMapGuiNotebookAny any_section, void *user_data_unused);
 static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused);
 
 static void preserveCB(gpointer data, guint cb_action, GtkWidget *widget);
-static void saveMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
 
@@ -311,7 +312,6 @@ static GtkItemFactoryEntry menu_items_G[] =
     /* File */
     { "/_File",              NULL,         NULL,       0,          "<Branch>", NULL},
     { "/File/_Preserve",      NULL,         preserveCB, 0,          NULL,       NULL},
-    { "/File/Create _feature",NULL,         saveMenuCB, 0,          NULL,       NULL},
     { "/File/_Close",         "<control>W", requestDestroyCB, 0,    NULL,       NULL},
 
     /* Help */
@@ -617,7 +617,8 @@ static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_noteb
 
       if (editable)
         {
-          button = gtk_button_new_with_mnemonic("Create feature") ;
+          button = gtk_button_new_from_stock(GTK_STOCK_SAVE) ;
+          gtk_widget_set_tooltip_text(button, "Save the feature to a Feature Set") ;
           gtk_container_add(GTK_CONTAINER(hbuttons), button) ;
           g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(saveCB), show) ;
         }
@@ -810,11 +811,10 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
       if (editable)
         {
-          /* When editing a feature, add an entry to allow the user to set the feature_set. */
+          /* When editing a feature, add an entry to allow the user to set the feature_set.
+           * Leave it empty to start with (the current feature set will be the Annotation column
+           * but we don't want users to save it there). */
           const char *featureset_name = NULL ;
-
-          if (feature->parent && feature->parent->unique_id)
-            featureset_name = g_quark_to_string(feature->parent->unique_id) ;
 
           tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Set",
                                                     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
@@ -1203,18 +1203,6 @@ static void preserveCB(gpointer data, guint cb_action, GtkWidget *widget)
   return ;
 }
 
-static void saveMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
-{
-  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)data ;
-
-  if (show && show->feature_book && show->feature_book->chapters)
-    g_list_foreach(show->feature_book->chapters, saveChapterCB, show);
-
-  gtk_widget_destroy(GTK_WIDGET(show->window)) ;
-
-  return ;
-}
-
 
 static void applyCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
 {
@@ -1227,9 +1215,15 @@ static void saveCB(ZMapGuiNotebookAny any_section, void *data)
   ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)data ;
 
   if (show && show->feature_book && show->feature_book->chapters)
-    g_list_foreach(show->feature_book->chapters, saveChapterCB, show);
+    {
+      show->save_failed = FALSE ;
 
-  gtk_widget_destroy(GTK_WIDGET(show->window)) ;
+      g_list_foreach(show->feature_book->chapters, saveChapterCB, show);
+
+      /* only destroy the dialog if the save succeeded */
+      if (!show->save_failed)
+        gtk_widget_destroy(GTK_WIDGET(show->window)) ;
+    }
 
   return ;
 }
@@ -2485,29 +2479,6 @@ static ZMapFeatureSet getFeaturesetFromName(ZMapWindow window, char *name)
 }
 
 
-/* Check if a transcript already exists with the given feature's details */
-static gboolean transcriptExists(ZMapWindow window, ZMapFeature feature)
-{
-  gboolean result = FALSE ;
-  zMapReturnValIfFail(feature, result) ;
-
-  char *feature_name = g_strdup(g_quark_to_string(feature->original_id)) ;
-
-  GQuark feature_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_TRANSCRIPT,
-                                          feature_name, feature->strand,
-                                          feature->x1, feature->x2, 0, 0) ;
-
-  g_free(feature_name) ;
-  
-  ZMapFeature existing_feature = zmapFeatureContextGetFeatureFromId(window->feature_context, feature_id) ;
-  
-  if (existing_feature)
-    result = TRUE ;
-
-  return result ;
-}
-
-
 /* Create a feature from the details in chapter_feature */
 /*! \todo Check that this is a transcript */
 static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_feature, ZMapWindowFeatureShow show)
@@ -2515,7 +2486,9 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
   zMapReturnIfFail(chapter_feature) ;
 
   GError *error = NULL ;
+  gboolean ok = TRUE ;
 
+  ZMapFeature feature = NULL ;
   ZMapWindow window = show->zmapWindow ;
   ZMapFeatureSet feature_set = getFeaturesetFromName(window, chapter_feature->feature_set) ;
   ZMapFeatureTypeStyle style = NULL ;
@@ -2529,34 +2502,37 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
     }
 
   if (feature_set)
-    style = feature_set->style ;
-
-  /* Create the feature with default values */
-  ZMapFeature feature = zMapFeatureCreateFromStandardData(chapter_feature->feature_name,
-                                                          NULL,
-                                                          NULL,
-                                                          ZMAPSTYLE_MODE_TRANSCRIPT,
-                                                          &style,
-                                                          0, /* start */
-                                                          0, /* end */
-                                                          FALSE,
-                                                          0.0,
-                                                          ZMAPSTRAND_FORWARD);
-
-  /*! \todo If the feature already exists, ask if the user wants to overwrite it (the code to
-   * do this will probably need to delete the original feature first). If we wanted we could have
-   * separate "Save" and "Save As" menu options (where Save would automatically overwrite but Save As 
-   * wouldn't, for example) */
-  if (transcriptExists(window, feature))
     {
-      gboolean ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING,
-                                      "Feature already exists: overwrite?") ;
-      
-      if (!ok)
-        g_set_error(&error, g_quark_from_string("ZMap"), 99, "Save operation cancelled by user") ;
+      style = feature_set->style ;
+    }
+  else
+    {
+      ok = FALSE ;
+      g_set_error(&error, g_quark_from_string("ZMap"), 99, "Please specify a Feature Set") ;
     }
 
-  if (!error)
+  if (ok)
+    {
+      /* Create the feature with default values */
+      feature = zMapFeatureCreateFromStandardData(chapter_feature->feature_name,
+                                                  NULL,
+                                                  NULL,
+                                                  ZMAPSTYLE_MODE_TRANSCRIPT,
+                                                  &style,
+                                                  0, /* start */
+                                                  0, /* end */
+                                                  FALSE,
+                                                  0.0,
+                                                  ZMAPSTRAND_FORWARD);
+
+      /* Check if the feature already exists in the feature set */
+      ZMapFeatureAny existing_feature = zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_set, feature->unique_id) ;
+      
+      if (existing_feature)
+        ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, "Feature already exists: overwrite?") ;
+    }
+
+  if (ok)
     {
       zMapFeatureTranscriptInit(feature);
       //zMapFeatureAddTranscriptStartEnd(feature, chapter_feature->start_not_found, 0, chapter_feature->end_not_found);
@@ -2577,12 +2553,13 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
             }
           else
             {
+              ok = FALSE ;
               g_set_error(&error, g_quark_from_string("ZMap"), 99, "Invalid format in CDS field. Should be: [start],[end]") ;
             }
         }
     }
 
-  if (!error)
+  if (ok)
     {
       GList *item = chapter_feature->exons ;
       for ( ; item; item = item->next)
@@ -2610,12 +2587,13 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
             }
           else
             {
+              ok = FALSE ;
               g_set_error(&error, g_quark_from_string("ZMap"), 99, "Invalid format for exon coords") ;
             }
         }
     }
 
-  if (!error)
+  if (ok)
     {
       zMapFeatureTranscriptRecreateIntrons(feature) ;
 
@@ -2632,10 +2610,15 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
        * the feature details dialog now we're finished. */
       //zMapMessage("%s", "Feature saved") ;
     }
-  else 
+  else
     {
-      zMapWarning("%s", error->message) ;
-      g_error_free(error) ;
+      show->save_failed = TRUE ;
+
+      if (error)
+        {
+          zMapWarning("%s", error->message) ;
+          g_error_free(error) ;
+        }
     }
 }
 
