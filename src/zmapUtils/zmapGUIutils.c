@@ -2304,7 +2304,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
   guint timeout_func_id ;
   int interval = display_timeout * 1000 ;    /* glib needs time in milliseconds. */
-  GtkResponseType first_response = 0, second_response = 0, third_response = 0 ;
+  GtkResponseType first_response = 0, second_response = 0, third_response = 0, default_response = 0 ;
 
 
   /* Set up title. */
@@ -2363,8 +2363,17 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 
   g_free(full_title) ;
 
-
   gtk_container_set_border_width(GTK_CONTAINER(dialog), 5) ;
+
+  /* Set default response to OK, Close, or Cancel (in that order of priority) */
+  if (first_response)
+    default_response = first_response ;
+  else if (third_response)
+    default_response = third_response ;
+  else if (second_response)
+    default_response = second_response ;
+
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), default_response) ;
 
   /* Set up the message text in a button widget so that it can put in the primary
    * selection buffer for cut/paste when user clicks on it. */
@@ -2402,6 +2411,8 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 
   gtk_widget_show_all(dialog) ;
 
+  GtkWidget *default_widget = gtk_dialog_get_widget_for_response(GTK_DIALOG(dialog), default_response) ;
+  gtk_widget_grab_focus(default_widget) ;
 
   /* Note flow of control here: for non-modal/no-data-returned messages simply connect gtk destroy
    * to ensure dialog gets cleaned up and return, for modal/data messages we _block_ waiting
