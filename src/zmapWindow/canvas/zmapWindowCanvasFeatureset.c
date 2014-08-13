@@ -3767,7 +3767,7 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
   ZMapWindowFeaturesetItem fi = NULL ;
   int n_feat = 0 ;
 
-  zMapReturnValIfFail(fi, n_feat) ;
+  zMapReturnValIfFail(foo, n_feat) ;
 
   fi = (ZMapWindowFeaturesetItem) foo ;
   n_feat = fi->n_features ;
