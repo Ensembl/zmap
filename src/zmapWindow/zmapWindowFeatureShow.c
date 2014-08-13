@@ -586,7 +586,6 @@ static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_noteb
 {
   char *feature_name ;
   GtkWidget *notebook_widg ;
-  GtkWidget *hbuttons, *frame, *button ;
 
   feature_name = (char *)g_quark_to_string(show->feature->original_id) ;
 
@@ -604,29 +603,6 @@ static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_noteb
                                                             G_CALLBACK(switchPageHandler), show) ;
 
       gtk_box_pack_start(GTK_BOX(show->vbox), show->notebook, TRUE, TRUE, 0) ;
-
-
-      /*
-       * Make panel of  usual button stuff.
-       */
-      frame = gtk_frame_new(NULL) ;
-      gtk_box_pack_start(GTK_BOX(show->vbox), frame, FALSE, FALSE, 1) ;
-
-      hbuttons = gtk_hbutton_box_new() ;
-      gtk_container_add(GTK_CONTAINER(frame), hbuttons) ;
-
-      if (editable)
-        {
-          button = gtk_button_new_from_stock(GTK_STOCK_SAVE) ;
-          gtk_widget_set_tooltip_text(button, "Save the feature to a Feature Set") ;
-          gtk_container_add(GTK_CONTAINER(hbuttons), button) ;
-          g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(saveCB), show) ;
-        }
-
-      button = gtk_button_new_from_stock(GTK_STOCK_CLOSE) ;
-      gtk_container_add(GTK_CONTAINER(hbuttons), button) ;
-      g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(cancelCB), show) ;
-
 
       gtk_widget_show_all(show->window) ;
 
@@ -1013,6 +989,27 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 }
 
 
+void onResponseDialog(GtkDialog *dialog, gint responseId, gpointer data)
+{
+  gboolean destroy = TRUE;
+  
+  switch (responseId)
+  {
+    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_APPLY:
+      saveCB(NULL, data) ;
+      break;
+      
+    case GTK_RESPONSE_CANCEL:
+    case GTK_RESPONSE_CLOSE:
+    case GTK_RESPONSE_REJECT:
+      cancelCB(NULL, data) ;
+      break;
+      
+    default:
+      break;
+  };
+}
 
 
 /* Create the feature display window, this can get very long if our peer (e.g. otterlace)
@@ -1020,14 +1017,38 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title, const gboolean editable)
 {
   GtkWidget *scrolled_window, *vbox ;
+  GtkWindow *toplevel = NULL ;
 
   /* Create the edit window. */
-  feature_show->window = zMapGUIToplevelNew(NULL, title) ;
+  if (editable)
+    {
+      feature_show->window = gtk_dialog_new_with_buttons(title,
+                                                         toplevel,
+                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                         GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                         GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+                                                         NULL) ;
 
-  g_object_set_data(G_OBJECT(feature_show->window), "zmap_feature_show", feature_show) ;
+      gtk_dialog_set_default_response(GTK_DIALOG(feature_show->window), GTK_RESPONSE_ACCEPT) ;
+    }
+  else
+    {
+      feature_show->window = gtk_dialog_new_with_buttons(title,
+                                                         toplevel,
+                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                         GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE,
+                                                         NULL) ;
+
+      gtk_dialog_set_default_response(GTK_DIALOG(feature_show->window), GTK_RESPONSE_CLOSE) ;
+    }
+
+  vbox = GTK_DIALOG(feature_show->window)->vbox ;
+
   gtk_container_set_border_width(GTK_CONTAINER (feature_show->window), TOP_BORDER_WIDTH) ;
-  g_signal_connect(G_OBJECT(feature_show->window), "destroy",
-                   G_CALLBACK(destroyCB), feature_show) ;
+
+  g_signal_connect(G_OBJECT(feature_show->window), "response", G_CALLBACK(onResponseDialog), feature_show) ;
+  g_object_set_data(G_OBJECT(feature_show->window), "zmap_feature_show", feature_show) ;
+  g_signal_connect(G_OBJECT(feature_show->window), "destroy", G_CALLBACK(destroyCB), feature_show) ;
 
   /* Attach handler to be called when we are displayed, currently this attempts to size
    * the window correctly. */
@@ -1040,10 +1061,6 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title, co
 
   /* Top level vbox containing the menu bar and below it in a scrolled window all
    * the feature details. */
-  vbox = gtk_vbox_new(FALSE, 0) ;
-  gtk_container_add(GTK_CONTAINER(feature_show->window), vbox) ;
-
-
   gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(feature_show, editable), FALSE, FALSE, 0);
 
 
@@ -1101,7 +1118,7 @@ static gboolean mapeventCB(GtkWidget *widget, GdkEvent  *event, gpointer   user_
    * or viewport....and in fact the scrolled window frequently is shown....not sure why,
    * big fudge factor here...seems to require more on the mac than gnu desktop. */
   vbox_width += 60 ;
-  vbox_height += 60 ;
+  vbox_height += 80 ;
 
 
   /* If vbox is a different size than top window then we should expand/contract top window to
@@ -1180,13 +1197,6 @@ static GtkWidget *makeMenuBar(ZMapWindowFeatureShow feature_show, const gboolean
   gtk_window_add_accel_group(GTK_WINDOW(feature_show->window), accel_group) ;
 
   menubar = gtk_item_factory_get_widget(item_factory, "<main>");
-
-  /* Grey out the Save option if not editable */
-  if (!editable)
-    {
-      GtkWidget *widget = gtk_item_factory_get_widget(item_factory, "/File/Save") ;
-      gtk_widget_set_sensitive(widget, editable) ;
-    }
 
   return menubar ;
 }

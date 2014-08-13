@@ -1344,6 +1344,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
               text = g_strdup(tag_value->data.string_value) ;
 
             value = gtk_entry_new() ;
+            gtk_entry_set_activates_default(GTK_ENTRY(value), TRUE);
 
             if(text && *text)
               gtk_entry_set_text(GTK_ENTRY(value), text) ;
