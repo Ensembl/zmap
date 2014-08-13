@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# Fetch git commits since the supplied commit until the release head
+# for the given repository.
+#
 
 SCRIPT_NAME=$(basename $0)
 
@@ -25,7 +29,6 @@ DESCSTRING=`cat <<DESC
 
    -o   specify an alternative output directory for the git change notes.
 
-
 The commit is the short git hash from which you want other commits listed.
 
 The repository is the repository from which to recover the commits.
@@ -39,11 +42,7 @@ ZMAP_BASEDIR=''
 output_file=''
 
 
-zmap_message_out "Starting fetching git commits..."
-
-zmap_message_out "Running in $INITIAL_DIR on $(hostname)"
-
-zmap_message_out "Parsing cmd line options: '$*'"
+zmap_message_out "Starting processing git commits..."
 
 
 while getopts ":o:" opt ;
@@ -102,8 +101,6 @@ fi
 # ok....off we go....
 #
 
-zmap_message_out "Fetching commits for repository $git_repository from commit $commit onwards..."
-
 
 # Go to respository directory...
 zmap_cd $ZMAP_BASEDIR
@@ -124,33 +121,32 @@ zmap_message_out "Using $GIT_NOTES_OUTPUT as git commits output file."
 
 
 
-
-
 # Write header.
 #
 cat >> $GIT_NOTES_OUTPUT <<EOF
 
-git commits for $git_repository from commit $commit 
+Git commits for $git_repository from commit $commit onwards
 
 EOF
 
+zmap_message_out "Fetching commits for repository $git_repository from commit $commit onwards..."
+
 git log --first-parent --date=short --pretty='format:%h %ad %s' $commit..  \
     >> $GIT_NOTES_OUTPUT  || zmap_message_exit "Failed to retrieve git commits"
+
+zmap_message_out "Finished fetching git commits..."
 
 
 # Write footer
 #
 cat >> $GIT_NOTES_OUTPUT <<EOF
 
-
 End of git commits
 
 EOF
 
 
-
-zmap_message_out "Finished fetching git commits..."
-
+zmap_message_out "Finished processing git commits..."
 
 
 exit 0

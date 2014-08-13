@@ -24,12 +24,10 @@ set -o history
 
 
 
-CMDSTRING='[ -o <directory>  -z ] <date> <ZMap directory>'
+CMDSTRING='[ -o <directory> ] <date> <ZMap directory>'
 DESCSTRING=`cat <<DESC
 
    -o   specify an alternative output directory for the release notes.
-
-   -z   only output zmap RT tickets.
 
 The date must be in the format "dd/mm/yyyy"
 
@@ -42,22 +40,17 @@ ZMAP_BASEDIR=''
 output_file=''
 
 
-# Note that the zmap user must have permissions within RT to see and query these queues
+# Note that the zmap user must have permissions within RT to see and query the queue
 # or no data will come back.
-RT_QUEUES="zmap seqtools"
+RT_QUEUES="zmap"
 
 zmap_message_out "Starting processing RT tickets"
 
-zmap_message_out "Running in $INITIAL_DIR on $(hostname)"
 
-zmap_message_out "Parsing cmd line options: '$*'"
-
-
-while getopts ":o:z" opt ;
+while getopts ":o:" opt ;
   do
   case $opt in
       o  ) output_file=$OPTARG ;;
-      z  ) ZMAP_ONLY=yes ;;
       \? ) 
 zmap_message_exit "Bad command line flag
 
@@ -78,11 +71,6 @@ if [ -n "$output_file" ] ; then
 
     echo "output_file = $output_file"
 fi
-
-if [ "x$ZMAP_ONLY" == "xyes" ]; then
-    RT_QUEUES="zmap"
-fi
-
 
 
 # get the date and the ZMap dir - mandatory.
@@ -122,7 +110,7 @@ RT_PREV_DATE=$date
 RT_CURRENT_DATE=$(date "+%d/%m/%Y")
 
 
-zmap_message_out "Getting tickets for period $RT_PREV_DATE to $RT_CURRENT_DATE."
+
 
 
 if  [ -n "$output_file" ] ; then
@@ -145,14 +133,14 @@ zmap_message_out "Using $RELEASE_NOTES_OUTPUT as release notes output file."
 #
 #
 
+zmap_message_out "Getting tickets for period $RT_PREV_DATE to $RT_CURRENT_DATE."
+
 
 # Write header.
 #
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
-Request Tracker Tickets Resolved
-
-This report covers $RT_PREV_DATE to $RT_CURRENT_DATE
+Request Tracker Tickets Resolved from $RT_PREV_DATE to $RT_CURRENT_DATE
 
 EOF
 
@@ -168,7 +156,6 @@ RTFAILED=no
 
 #zmap_message_out "pwd =" $(pwd)
 
-zmap_message_out "Getting Request Tracker tickets using $RTSERVER as node to launch query."
 
 # This looks complicated, but the basic method of action is cat stdin (The HERE
 # doc) and the getRTtickets over the ssh connection to the bash "one-liner" to
@@ -242,6 +229,8 @@ if [ "x$RTFAILED" == "xyes" ]; then
     fi
 fi
 
+zmap_message_out "Finished getting Request tracker tickets"
+
 # Something in the getRTtickets script could have failed
 # without exiting the script. Check this and log it.
 # If it was fatal then the getRTtickets script should
@@ -265,7 +254,7 @@ rm $RTRESULTS
 
 # Must have succeeded in getting tickets.
 #
-zmap_message_out "Finished getting Request tracker tickets"
+
 
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
@@ -274,37 +263,6 @@ End of Request Tracker tickets
 EOF
 
 
-
-# NOT DOING THIS AT THE MOMENT.....
-#
-#
-#zmap_message_out "Now processing RT tickets"
-#
-## Here are the results...good for debugging....
-##
-##zmap_message_out "Here are RT tickets"
-##cat $RTRESULTS
-##zmap_message_out "End of RT tickets"
-#
-#
-## This goes directly into the html file
-#$BASE_DIR/process_rt_tickets_file.pl $RTRESULTS >> $RELEASE_NOTES_OUTPUT || \
-#    zmap_message_exit "Failed processing RT tickets"
-#
-## End of RT tickets
-##
-#cat >> $RELEASE_NOTES_OUTPUT <<EOF
-#
-#<!-- End of tickets  --!>
-#
-#EOF
-#
-#zmap_message_out "Finished processing RT tickets"
-#
-#
-
-
-
-zmap_message_out "Finished processing of RT tickets"
+zmap_message_out "Finished processing RT tickets"
 
 exit 0
