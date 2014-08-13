@@ -669,7 +669,7 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 
     # No we need to git commit these files and push them....quite involved actually,
     # do we have a script...should write one.....
-    $SCRIPTS_DIR/git_commit -p  "ZMap version $ZMAP_RELEASE_VERSION - Update RT and git commit reports" $rt_repo_file $git_repo_file \
+    $SCRIPTS_DIR/git_commit.sh -p  "ZMap version $ZMAP_RELEASE_VERSION - Update RT and git commit reports" $rt_repo_file $git_repo_file \
 	|| zmap_message_exit "Failed to git push  $rt_repo_file $git_repo_file to repository."
     
 fi
