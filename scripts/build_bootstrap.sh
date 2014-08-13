@@ -616,6 +616,7 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 
 
     # HACK FOR TESTING.....
+    git checkout $since
     git checkout $until
     git checkout develop
     git branch
