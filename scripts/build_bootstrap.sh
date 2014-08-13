@@ -641,7 +641,7 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 
 
 
-    # make the standard change log in the src subdirectory, only gets changes since last release.
+    # make the standard change log in the src subdirectory, only record changes since last release.
     zmap_message_out "Writing $ZMAP_CHANGELOG_FILE_NAME..."
     git log --stat --date=short --pretty='format:%ad  %an  <%ae>%n %s' $since..$until > $ZMAP_CHANGELOG_FILE_NAME ||  zmap_message_rm_exit "Failed to create $ZMAP_CHANGELOG_FILE_NAME"
     zmap_message_out "Finished writing $ZMAP_CHANGELOG_FILE_NAME..."
@@ -651,21 +651,27 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
     array=(${parent_date//-/ })
     rt_date="${array[2]}/${array[1]}/${array[0]}"
 
-
     # Make the RT notes
-    $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $rt_date $CHECKOUT_BASE || \
+    rt_repo_file="$CHECKOUT_BASE/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME"
+
+    $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $CHECKOUT_BASE $rt_date $rt_repo_file || \
 	zmap_message_exit "Failed to build release notes from Request Tracker"
 
 
     # Make the git notes.
-    $SCRIPTS_DIR/zmap_make_git_release_notes.sh $since $until "zmap" $CHECKOUT_BASE || \
+    git_repo_file="$CHECKOUT_BASE/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_GIT_COMMITS_FILE_NAME"
+
+    $SCRIPTS_DIR/zmap_make_git_release_notes.sh $CHECKOUT_BASE $since $until $git_repo_file || \
 	zmap_message_exit "Failed to retrieve git commits for commit $tag_commit, repository $git_repository"
+
+
 
 
     # No we need to git commit these files and push them....quite involved actually,
     # do we have a script...should write one.....
-
-
+    $SCRIPTS_DIR/git_commit -p  "ZMap version $ZMAP_RELEASE_VERSION - Update RT and git commit reports" $rt_repo_file $git_repo_file \
+	|| zmap_message_exit "Failed to git push  $rt_repo_file $git_repo_file to repository."
+    
 fi
 
 
