@@ -83,8 +83,12 @@ ZMAP_BASEDIR=$4
 
 
 
-if [ -z "$commit" ] ; then
-    zmap_message_exit 'No commit specified.'
+if [ -z "$since_commit" ] ; then
+    zmap_message_exit 'No since_commit specified.'
+fi
+
+if [ -z "$until_commit" ] ; then
+    zmap_message_exit 'No until_commit specified.'
 fi
 
 if [ -z "$git_repository" ] ; then
@@ -126,13 +130,13 @@ zmap_message_out "Using $GIT_NOTES_OUTPUT as git commits output file."
 #
 cat >> $GIT_NOTES_OUTPUT <<EOF
 
-Git commits for $git_repository from commit $commit onwards
+Git commits for $git_repository from commit $since_commit until $until_commit
 
 EOF
 
 zmap_message_out "Fetching commits for repository $git_repository from commit $commit onwards..."
 
-git log --first-parent --date=short --pretty='format:%h %ad %s' $commit..  \
+git log --first-parent --date=short --pretty='format:%h %ad %s' $since_commit..$until_commit  \
     >> $GIT_NOTES_OUTPUT  || zmap_message_exit "Failed to retrieve git commits"
 
 zmap_message_out "Finished fetching git commits..."
