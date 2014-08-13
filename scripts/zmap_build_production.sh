@@ -28,7 +28,7 @@ if (( $# > 0 )) ; then
   SEQTOOLS_DIR=$1
 fi
 
-./build_run.sh $ERROR_ID -b production -d -m -s $SEQTOOLS_DIR $BUILD_PREFIX || RC=1
+./build_run.sh $ERROR_ID -b production -m -s $SEQTOOLS_DIR $BUILD_PREFIX || RC=1
 
 
 exit $RC

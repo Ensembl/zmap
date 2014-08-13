@@ -36,6 +36,6 @@ if (( $# > 1 )) ; then
   SEQTOOLS_DIR=$2
 fi
 
-./build_run.sh $ERROR_ID -b $FEATURE_BRANCH -d -g -m -s $SEQTOOLS_DIR $BUILD_PREFIX || RC=1
+./build_run.sh $ERROR_ID -b $FEATURE_BRANCH -g -m -s $SEQTOOLS_DIR $BUILD_PREFIX || RC=1
 
 exit $RC
