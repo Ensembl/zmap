@@ -639,12 +639,11 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 
     zmap_message_out "Finding commits and RT tickets since commit $parent_commit, date $parent_date"
 
-
-
     # make the standard change log in the src subdirectory, only record changes since last release.
-    zmap_message_out "Writing $ZMAP_CHANGELOG_FILE_NAME..."
-    git log --stat --date=short --pretty='format:%ad  %an  <%ae>%n %s' $since..$until > $ZMAP_CHANGELOG_FILE_NAME ||  zmap_message_rm_exit "Failed to create $ZMAP_CHANGELOG_FILE_NAME"
-    zmap_message_out "Finished writing $ZMAP_CHANGELOG_FILE_NAME..."
+    changelog_file="$CHECKOUT_BASE/src/$ZMAP_CHANGELOG_FILE_NAME"
+    zmap_message_out "Writing $changelog_file..."
+    git log --stat --date=short --pretty='format:%ad  %an  <%ae>%n %s' $since..$until > $changelog_file ||  zmap_message_rm_exit "Failed to create $changelog_file"
+    zmap_message_out "Finished writing $changelog_file..."
 
 
     # Derive RT format dd/mm/yyyy from git date format yyyy-mm-dd 
@@ -665,12 +664,11 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 	zmap_message_exit "Failed to retrieve git commits for commit $tag_commit, repository $git_repository"
 
 
-
-
     # No we need to git commit these files and push them....quite involved actually,
     # do we have a script...should write one.....
-    $SCRIPTS_DIR/git_commit.sh -p  "ZMap version $ZMAP_RELEASE_VERSION - Update RT and git commit reports" $rt_repo_file $git_repo_file \
-	|| zmap_message_exit "Failed to git push  $rt_repo_file $git_repo_file to repository."
+    $SCRIPTS_DIR/git_commit.sh -p  "ZMap version $ZMAP_RELEASE_VERSION - Update RT and git commit reports" \
+	$changelog_file $rt_repo_file $git_repo_file \
+	|| zmap_message_exit "Failed to git push $changelog_file $rt_repo_file $git_repo_file to repository."
     
 fi
 
