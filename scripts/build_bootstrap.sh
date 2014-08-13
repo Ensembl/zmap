@@ -618,12 +618,14 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
     # HACK FOR TESTING.....
     git checkout $until
     git checkout develop
-
+    git branch
 
 
     # Use the tag commit to get the earliest commit between release head and the tag,
     # this is the last commit listed hence the use of tail.
     # NEED TO INSERT 'release' INTO THE .. BIT !!
+    zmap_message_out "Finding all commits from $since to $until"
+
     last_commit_details=$(git log --first-parent --date=short --pretty='format:%h %p %ad' $since..$until | tail -n 1)
 
     read last_commit last_parent_commit last_date <<< $last_commit_details
