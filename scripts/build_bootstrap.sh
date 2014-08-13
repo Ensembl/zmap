@@ -614,6 +614,13 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
     since='production'
     until='feature/zeroMQ'
 
+
+    # HACK FOR TESTING.....
+    git checkout $until
+    git checkout develop
+
+
+
     # Use the tag commit to get the earliest commit between release head and the tag,
     # this is the last commit listed hence the use of tail.
     # NEED TO INSERT 'release' INTO THE .. BIT !!
