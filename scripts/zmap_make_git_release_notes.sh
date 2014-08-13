@@ -24,17 +24,14 @@ fi
 
 
 
-CMDSTRING='[ -o <directory> ] <since_commit> <until_commit> <repository> <ZMap directory>'
+CMDSTRING='<ZMap dir> <since_commit> <until_commit> <output_file>'
 DESCSTRING=`cat <<DESC
 
-   -o   specify an alternative output directory for the git change notes.
+The ZMap dir gives the git directory containing the zmap code.
 
 since_commit and until_commit give the start/end for listing commits.
 
-The repository is the repository from which to recover the commits.
-
-ZMap directory must be the base ZMap directory of the build directory so that the docs
-and the code match.
+The output file is where the RT release notes should be stored.
 DESC`
 
 ZMAP_ONLY=no
@@ -45,43 +42,37 @@ output_file=''
 zmap_message_out "Starting processing git commits..."
 
 
-while getopts ":o:" opt ;
-  do
-  case $opt in
-      o  ) output_file=$OPTARG ;;
-      \? ) 
-zmap_message_exit "Bad command line flag
-
-Usage:
-
-$0 $CMDSTRING
-
-$DESCSTRING"
-;;
-  esac
-done
-
-
-if [ -n "$output_file" ] ; then
-    tmp_file=`readlink -m $output_file`
-
-    output_file=$tmp_file
-
-    echo "output_file = $output_file"
-fi
+#while getopts ":o:" opt ;
+#  do
+#  case $opt in
+#      o  ) output_file=$OPTARG ;;
+#      \? ) 
+#zmap_message_exit "Bad command line flag
+#
+#Usage:
+#
+#$0 $CMDSTRING
+#
+#$DESCSTRING"
+#;;
+#  esac
+#done
 
 
-# get the commit, repository and the ZMap dir - mandatory.
+# get the ZMap dir, since/until commits and output file - mandatory.
 #
 shift $(($OPTIND - 1))
 
-since_commit=$1
-until_commit=$2
-git_repository=$3
-ZMAP_BASEDIR=$4
+ZMAP_BASEDIR=$1
+since_commit=$2
+until_commit=$3
+output_file=$4
 
 
 
+if [ -z "$ZMAP_BASEDIR" ] ; then
+    zmap_message_exit 'No directory specified.'
+fi
 
 if [ -z "$since_commit" ] ; then
     zmap_message_exit 'No since_commit specified.'
@@ -91,15 +82,9 @@ if [ -z "$until_commit" ] ; then
     zmap_message_exit 'No until_commit specified.'
 fi
 
-if [ -z "$git_repository" ] ; then
-    zmap_message_exit 'No git repository specified.'
+if [ -z "$output_file" ] ; then
+    zmap_message_exit 'No git output file specified.'
 fi
-
-if [ -z "$ZMAP_BASEDIR" ] ; then
-    zmap_message_exit 'No directory specified.'
-fi
-
-
 
 
 #
@@ -111,40 +96,34 @@ fi
 zmap_cd $ZMAP_BASEDIR
 
 
-# sort out the output file.
-if  [ -n "$output_file" ] ; then
-    GIT_NOTES_OUTPUT="$output_file"
-else
-    GIT_NOTES_OUTPUT="$ZMAP_BASEDIR/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_GIT_COMMITS_FILE_NAME"
-fi
+rm -f $output_file || zmap_message_exit "Cannot rm $output_file file."
+touch $output_file || zmap_message_exit "Cannot touch $output_file file."
+chmod u+rw $output_file || zmap_message_exit "Cannot make $output_file r/w"
 
-rm -f $GIT_NOTES_OUTPUT || zmap_message_exit "Cannot rm $GIT_NOTES_OUTPUT file."
-touch $GIT_NOTES_OUTPUT || zmap_message_exit "Cannot touch $GIT_NOTES_OUTPUT file."
-chmod u+rw $GIT_NOTES_OUTPUT || zmap_message_exit "Cannot make $GIT_NOTES_OUTPUT r/w"
-
-zmap_message_out "Using $GIT_NOTES_OUTPUT as git commits output file."
+zmap_message_out "Using $output_file as git commits output file."
 
 
 
 # Write header.
 #
-cat >> $GIT_NOTES_OUTPUT <<EOF
+cat >> $output_file <<EOF
 
-Git commits for $git_repository from commit $since_commit until $until_commit
+Git commits for $git_repository from commit "$since_commit" until commit "$until_commit"
 
 EOF
 
 zmap_message_out "Fetching commits for repository $git_repository from commit $commit onwards..."
 
 git log --first-parent --date=short --pretty='format:%h %ad %s' $since_commit..$until_commit  \
-    >> $GIT_NOTES_OUTPUT  || zmap_message_exit "Failed to retrieve git commits"
+    >> $output_file  || zmap_message_exit "Failed to retrieve git commits"
 
 zmap_message_out "Finished fetching git commits..."
 
 
 # Write footer
 #
-cat >> $GIT_NOTES_OUTPUT <<EOF
+cat >> $output_file <<EOF
+
 
 End of git commits
 

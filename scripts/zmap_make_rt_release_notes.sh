@@ -15,8 +15,6 @@ fi
 
 . $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
 
-set -o history
-
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
@@ -24,15 +22,14 @@ set -o history
 
 
 
-CMDSTRING='[ -o <directory> ] <date> <ZMap directory>'
+CMDSTRING='<ZMap dir> <date> <output_file>'
 DESCSTRING=`cat <<DESC
 
-   -o   specify an alternative output directory for the release notes.
+The ZMap dir gives the git directory containing the zmap code.
 
 The date must be in the format "dd/mm/yyyy"
 
-ZMap directory must be the base ZMap directory of the build directory so that the docs
-and the code match.
+The output file is where the RT release notes should be stored.
 DESC`
 
 ZMAP_ONLY=no
@@ -47,48 +44,42 @@ RT_QUEUES="zmap"
 zmap_message_out "Starting processing RT tickets"
 
 
-while getopts ":o:" opt ;
-  do
-  case $opt in
-      o  ) output_file=$OPTARG ;;
-      \? ) 
-zmap_message_exit "Bad command line flag
-
-Usage:
-
-$0 $CMDSTRING
-
-$DESCSTRING"
-;;
-  esac
-done
-
-
-if [ -n "$output_file" ] ; then
-    tmp_file=`readlink -m $output_file`
-
-    output_file=$tmp_file
-
-    echo "output_file = $output_file"
-fi
+#while getopts ":o:" opt ;
+#  do
+#  case $opt in
+#      o  ) output_file=$OPTARG ;;
+#      \? ) 
+#zmap_message_exit "Bad command line flag
+#
+#Usage:
+#
+#$0 $CMDSTRING
+#
+#$DESCSTRING"
+#;;
+#  esac
+#done
 
 
-# get the date and the ZMap dir - mandatory.
+# get the date and the output file - mandatory.
 #
 shift $(($OPTIND - 1))
 
-date=$1
-ZMAP_BASEDIR=$2
+ZMAP_BASEDIR=$1
+date=$2
+output_file=$3
 
+if [ -z "$ZMAP_BASEDIR" ] ; then
+    zmap_message_exit 'No directory specified.'
+fi
 
 if [ -z "$date" ] ; then
     zmap_message_exit 'No date specified.'
 fi
 
-if [ -z "$date" ] ; then
-    zmap_message_exit 'No directory specified.'
+if [ -z "$output_file" ] ; then
+    zmap_message_exit 'No output file specified.'
 fi
-
 
 
 
@@ -111,19 +102,11 @@ RT_CURRENT_DATE=$(date "+%d/%m/%Y")
 
 
 
+rm -f $output_file || zmap_message_exit "Cannot rm $output_file file."
+touch $output_file || zmap_message_exit "Cannot touch $output_file file."
+chmod u+rw $output_file || zmap_message_exit "Cannot make $output_file r/w"
 
-
-if  [ -n "$output_file" ] ; then
-    RELEASE_NOTES_OUTPUT="$output_file"
-else
-    RELEASE_NOTES_OUTPUT="$ZMAP_BASEDIR/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME"
-fi
-
-rm -f $RELEASE_NOTES_OUTPUT || zmap_message_exit "Cannot rm $RELEASE_NOTES_OUTPUT file."
-touch $RELEASE_NOTES_OUTPUT || zmap_message_exit "Cannot touch $RELEASE_NOTES_OUTPUT file."
-chmod u+rw $RELEASE_NOTES_OUTPUT || zmap_message_exit "Cannot make $RELEASE_NOTES_OUTPUT r/w"
-
-zmap_message_out "Using $RELEASE_NOTES_OUTPUT as release notes output file."
+zmap_message_out "Using $output_file as release notes output file."
 
 
 
@@ -138,7 +121,7 @@ zmap_message_out "Getting tickets for period $RT_PREV_DATE to $RT_CURRENT_DATE."
 
 # Write header.
 #
-cat >> $RELEASE_NOTES_OUTPUT <<EOF
+cat >> $output_file <<EOF
 
 Request Tracker Tickets Resolved from $RT_PREV_DATE to $RT_CURRENT_DATE
 
@@ -246,7 +229,7 @@ fi
 # Put tickets where they should be.....
 #
 #
-cat $RTRESULTS >> $RELEASE_NOTES_OUTPUT || zmap_message_exit "Failed to store RT results in $RELEASE_NOTES_OUTPUT"
+cat $RTRESULTS >> $output_file || zmap_message_exit "Failed to store RT results in $output_file"
 
 rm $RTRESULTS
 
@@ -256,7 +239,7 @@ rm $RTRESULTS
 #
 
 
-cat >> $RELEASE_NOTES_OUTPUT <<EOF
+cat >> $output_file <<EOF
 
 End of Request Tracker tickets
 
