@@ -24,12 +24,12 @@ fi
 
 
 
-CMDSTRING='[ -o <directory> ] <commit> <repository> <ZMap directory>'
+CMDSTRING='[ -o <directory> ] <since_commit> <until_commit> <repository> <ZMap directory>'
 DESCSTRING=`cat <<DESC
 
    -o   specify an alternative output directory for the git change notes.
 
-The commit is the short git hash from which you want other commits listed.
+since_commit and until_commit give the start/end for listing commits.
 
 The repository is the repository from which to recover the commits.
 
@@ -75,9 +75,10 @@ fi
 #
 shift $(($OPTIND - 1))
 
-commit=$1
-git_repository=$2
-ZMAP_BASEDIR=$3
+since_commit=$1
+until_commit=$2
+git_repository=$3
+ZMAP_BASEDIR=$4
 
 
 

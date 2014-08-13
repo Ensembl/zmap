@@ -633,7 +633,7 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 
     # make the standard change log in the src subdirectory, only gets changes since last release.
     zmap_message_out "Writing $ZMAP_CHANGELOG_FILE_NAME..."
-    git log --stat --date=short --pretty='format:%ad  %an  <%ae>%n %s' $tag_commit.. > $ZMAP_CHANGELOG_FILE_NAME ||  zmap_message_rm_exit "Failed to create $ZMAP_CHANGELOG_FILE_NAME"
+    git log --stat --date=short --pretty='format:%ad  %an  <%ae>%n %s' $since..$until > $ZMAP_CHANGELOG_FILE_NAME ||  zmap_message_rm_exit "Failed to create $ZMAP_CHANGELOG_FILE_NAME"
     zmap_message_out "Finished writing $ZMAP_CHANGELOG_FILE_NAME..."
 
 
@@ -648,7 +648,7 @@ if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 
 
     # Make the git notes.
-    $SCRIPTS_DIR/zmap_make_git_release_notes.sh $tag_commit "zmap" $CHECKOUT_BASE || \
+    $SCRIPTS_DIR/zmap_make_git_release_notes.sh $since $until "zmap" $CHECKOUT_BASE || \
 	zmap_message_exit "Failed to retrieve git commits for commit $tag_commit, repository $git_repository"
 
 
