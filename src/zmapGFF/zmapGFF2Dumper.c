@@ -1303,7 +1303,7 @@ static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
                                        GFFDumpData gff_data)
 {
   gboolean result = FALSE;
-  static const char *sGap = "Gap=" ;
+  static const char *sGap = "gaps=" ;
   ZMapHomol homol = (ZMapHomol)homol_data;
   GArray *gaps_array = NULL;
   char * temp_string = NULL ;
