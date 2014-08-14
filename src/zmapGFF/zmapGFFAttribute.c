@@ -2106,7 +2106,7 @@ gboolean zMapAttGenerateGap(char **p_s_out, ZMapFeature feature)
     {
       if (align_str)
         {
-          *p_s_out = g_strdup_printf("Gap = %s", align_str) ;
+          *p_s_out = g_strdup_printf("Gap=%s", align_str) ;
           g_free(align_str) ;
         }
     }
