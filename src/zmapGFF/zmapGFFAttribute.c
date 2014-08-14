@@ -2125,7 +2125,7 @@ gboolean zMapAttGenerateTarget(char **p_s_out, ZMapFeature feature)
   zMapReturnValIfFail(p_s_out && feature && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT, bResult ) ;
   homol = &feature->feature.homol ;
 
-  target_string = g_strdup_printf("Target = %s %i %i %s",
+  target_string = g_strdup_printf("Target=%s %i %i %s",
                                   g_quark_to_string(homol->clone_id), homol->y1, homol->y2,
                                   zMapFeatureStrand2Str(homol->strand)) ;
   *p_s_out = target_string ;
