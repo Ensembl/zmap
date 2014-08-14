@@ -492,7 +492,7 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file,
   GFFHeaderDataStruct header_data = {NULL};
   char *time_string ;
 
-  zMapReturnValIfFail(feature_any && (feature_any->struct_type != ZMAPFEATURE_STRUCT_INVALID) && file && error_out, FALSE ) ;
+  zMapReturnValIfFail(feature_any && (feature_any->struct_type != ZMAPFEATURE_STRUCT_INVALID) && error_out, FALSE ) ;
 
   /* Dump the standard header lines. */
   time_string = zMapGetTimeString(ZMAPTIME_YMD, NULL) ;
