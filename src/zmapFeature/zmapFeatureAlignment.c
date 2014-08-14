@@ -166,10 +166,16 @@ static gboolean gotoLastSpace(char **cp_inout) ;
 
 /*
  * These arrays are the allowed operators for various of the format types.
+ *
+ * Notes:
+ *
+ * (a) According to www.sequenceontology.org gffv3 Gap attribute is the same as
+ *     exonerate cigar. We use the same code for both here.
+ * (b) We do not handle frameshift operators.
  */
 static const char *operators_cigar_bam       = "MIDN" ;
-static const char *operators_cigar_exonerate = "MIDFR" ;
-static const char *operators_gffv3_gap       = "MIDFR" ;
+static const char *operators_cigar_exonerate = "MID" ;
+static const char *operators_cigar_ensembl   = "MID" ;
 
 /*
  * Allowed operators for internal "canonical" representation.
@@ -211,18 +217,19 @@ static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
         result = TRUE ;
         break ;
       case ZMAPALIGN_FORMAT_CIGAR_ENSEMBL:
-        /* properties->bDigitsLeft = FALSE ;
+        properties->bDigitsLeft = TRUE ;
         properties->bMayOmit1   = FALSE ;
         properties->bSpaces     = FALSE ;
-        result = TRUE ; */
+        result = TRUE ;
         break ;
       case ZMAPALIGN_FORMAT_CIGAR_BAM:
         properties->bDigitsLeft = TRUE ;
-        properties->bMayOmit1   = TRUE ;
+        properties->bMayOmit1   = FALSE ;
         properties->bSpaces     = FALSE ;
         result = TRUE ;
         break ;
       case ZMAPALIGN_FORMAT_VULGAR_EXONERATE:
+        break ;
       default:
         break ;
     }
@@ -2120,8 +2127,11 @@ static gboolean alignStrCanonical2ExonerateVulgar(char ** p_align_str, AlignStrC
 /* Blindly converts, assumes match_str is a valid exonerate cigar string. */
 static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = FALSE ;
+  gboolean result = FALSE, canon_edited = FALSE ;
   char *cp = NULL ;
+  int num_removed = 0 ;
+  GError *error = NULL ;
+  AlignStrCanonicalPropertiesStruct properties ;
 
   zMapReturnValIfFail(canon &&
                       canon->align &&
@@ -2130,6 +2140,11 @@ static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
 
   result = TRUE ;
 
+#ifndef USE_NEW_CIGAR_PARSING_CODE
+
+  /*
+   * (sm23) This old stuff is a load of toss and quite clearly has never worked.
+   */
   cp = match_str ;
   do
     {
@@ -2149,6 +2164,21 @@ static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
       canon->align = g_array_append_val(canon->align, op) ;
     } while (*cp) ;
 
+#else
+
+  alignFormat2Properties(canon->format, &properties) ;
+  if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
+    {
+      canon_edited = alignStrCanonicalSubstituteExonerateCigar(canon) ;
+      canon_edited = parse_remove_invalid_operators(canon, operators_cigar_exonerate, &num_removed) ;
+    }
+  if (error)
+    {
+      g_error_free(error) ;
+    }
+
+#endif
+
   return result ;
 }
 
@@ -2167,11 +2197,16 @@ static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon)
 }
 
 
-/* Blindly converts, assumes match_str is a valid ensembl cigar string. */
+/*
+ * Blindly converts, assumes match_str is a valid ensembl cigar string.
+ */
 static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = FALSE ;
+  gboolean result = FALSE, canon_edited = FALSE ;
   char *cp = NULL ;
+  int num_removed = 0 ;
+  GError *error = NULL ;
+  AlignStrCanonicalPropertiesStruct properties ;
 
   zMapReturnValIfFail(canon &&
                       canon->align &&
@@ -2179,6 +2214,8 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
                       (canon->num_operators == 0),                       result) ;
 
   result = TRUE ;
+
+#ifndef USE_NEW_CIGAR_PARSING_CODE
 
   cp = match_str ;
   do
@@ -2201,6 +2238,21 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
       cp++ ;
     } while (*cp) ;
 
+#else
+
+  alignFormat2Properties(canon->format, &properties) ;
+  if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
+    {
+      canon_edited = alignStrCanonicalSubstituteEnsemblCigar(canon) ;
+      canon_edited = parse_remove_invalid_operators(canon, operators_cigar_ensembl, &num_removed) ;
+    }
+  if (error)
+    {
+      g_error_free(error) ;
+    }
+
+#endif
+
   return result ;
 }
 
@@ -2219,6 +2271,9 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = FALSE, canon_edited = FALSE ;
   char *cp = NULL;
+  int num_removed = 0 ;
+  GError *error = NULL ;
+  AlignStrCanonicalPropertiesStruct properties ;
 
   zMapReturnValIfFail(canon &&
                       canon->align &&
@@ -2232,59 +2287,56 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
   cp = match_str ;
   do
     {
-          AlignStrOpStruct op = {'\0'} ;
+      AlignStrOpStruct op = {'\0'} ;
 
-          if (g_ascii_isdigit(*cp))
-            op.length = cigarGetLength(&cp) ;    /* N.B. moves cp on as needed. */
-          else
-            op.length = 1 ;
+      if (g_ascii_isdigit(*cp))
+        op.length = cigarGetLength(&cp) ;    /* N.B. moves cp on as needed. */
+      else
+        op.length = 1 ;
 
-          if (*cp == 'H')
-            {
-              /* We don't handle hard-clipping */
-              result = FALSE ;
-              break ;
-            }
-          else if (*cp == 'P' || *cp == 'S')
-            {
-              /* Padding and soft-clipping: should be fine to ignore these */
-            }
-          else
-            {
-              if (*cp == 'X') /* Mismatch. Treat it like a match. */
-                op.op = 'M' ;
-              else            /* Everything else we handle */
-                op.op = *cp ;
+      if (*cp == 'H')
+        {
+          /* We don't handle hard-clipping */
+          result = FALSE ;
+          break ;
+        }
+      else if (*cp == 'P' || *cp == 'S')
+        {
+          /* Padding and soft-clipping: should be fine to ignore these */
+        }
+      else
+        {
+          if (*cp == 'X') /* Mismatch. Treat it like a match. */
+            op.op = 'M' ;
+          else            /* Everything else we handle */
+            op.op = *cp ;
 
-              canon->align = g_array_append_val(canon->align, op) ;
-              ++canon->num_operators ;
-            }
+          canon->align = g_array_append_val(canon->align, op) ;
+          ++canon->num_operators ;
+        }
 
-          cp++ ;
-        } while (*cp) ;
+      cp++ ;
+    } while (*cp) ;
 
 #else
 
+  /*
+   * Same thing using new approach
+   */
+  alignFormat2Properties(canon->format, &properties) ;
+  if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
+    {
+      canon_edited = alignStrCanonicalSubstituteBamCigar(canon) ;
+      canon_edited = parse_remove_invalid_operators(canon, operators_cigar_bam, &num_removed) ;
+    }
+  if (error)
+    {
       /*
-       * Same thing using new approach
+       * This is a parse error, which could be passed to the caller, but at the moment
+       * there is no facility for handling it, so will be destroyed here.
        */
-      int num_removed = 0 ;
-      GError *error = NULL ;
-      AlignStrCanonicalPropertiesStruct properties ;
-      alignFormat2Properties(canon->format, &properties) ;
-      if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
-        {
-          canon_edited = alignStrCanonicalSubstituteBamCigar(canon) ;
-          canon_edited = parse_remove_invalid_operators(canon, operators_cigar_bam, &num_removed) ;
-        }
-      else if (error)
-        {
-          /*
-           * This is a parse error, which could be passed to the caller, but at the moment
-           * there is no facility for handling it, so will be destroyed here.
-           */
-          g_error_free(error) ;
-        }
+      g_error_free(error) ;
+    }
 
 #endif
 
