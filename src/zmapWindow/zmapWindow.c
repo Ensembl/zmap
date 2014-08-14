@@ -1190,7 +1190,7 @@ gboolean zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature)
   gboolean result = FALSE ;
   FooCanvasItem *feature_item ;
 
-  zMapReturnIfFail(window) ;
+  zMapReturnValIfFail(window, result) ;
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
     feature->strand,
@@ -1263,7 +1263,7 @@ gboolean zMapWindowCurrWindowPos(ZMapWindow window,
   double left, top, right, bottom ;
   double x1, y1, x2, y2 ;
 
-  zMapReturnIfFail(window) ;
+  zMapReturnValIfFail(window, result) ;
 
   h_adjuster =
     gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
@@ -1319,7 +1319,7 @@ gboolean zMapWindowMaxWindowPos(ZMapWindow window,
 {
   gboolean result = TRUE ;
 
-  zMapReturnIfFail(window && window->canvas) ;
+  zMapReturnValIfFail(window && window->canvas, result) ;
 
   /* should I be getting the whole thing here including borders ???? */
 
@@ -3280,7 +3280,7 @@ static gboolean getConfiguration(ZMapWindow window)
   ZMapConfigIniContext context = NULL;
   gboolean result = FALSE ;
 
-  zMapReturnIfFail(window) ;
+  zMapReturnValIfFail(window, result) ;
 
   /* Set default values */
   window->canvas_maxwin_size = ZMAP_WINDOW_MAX_WINDOW;
@@ -5043,9 +5043,9 @@ static void removeLastLockWindow(GHashTable *sibling_locked_windows)
 
 static GtkAdjustment *copyAdjustmentObj(GtkAdjustment *orig_adj)
 {
-  GtkAdjustment *copy_adj ;
+  GtkAdjustment *copy_adj = NULL ;
 
-  zMapReturnIfFail(orig_adj) ;
+  zMapReturnValIfFail(orig_adj, copy_adj) ;
 
   copy_adj = GTK_ADJUSTMENT(gtk_adjustment_new(orig_adj->value,
        orig_adj->lower,
@@ -6873,7 +6873,7 @@ static gboolean within_x_percent(ZMapWindow window, double percent, double y, gb
   double scr_y1, scr_y2, ten_top, ten_bot, range;
   gboolean in_ten = FALSE;
 
-  zMapReturnIfFail(window) ;
+  zMapReturnValIfFail(window, in_ten) ;
 
   foo_canvas_get_scroll_region(window->canvas, NULL, &scr_y1, NULL, &scr_y2);
 
@@ -6935,7 +6935,7 @@ static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out
   int height;
   gboolean moved = FALSE, top_half = FALSE;
 
-  zMapReturnIfFail(window) ;
+  zMapReturnValIfFail(window, moved) ;
 
   foo_canvas_window_to_world(window->canvas,
                              0.0, *event_y_in_out,
