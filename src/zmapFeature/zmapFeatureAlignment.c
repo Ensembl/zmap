@@ -118,8 +118,6 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
                                     GArray **local_map_out) ;
 static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
                                        AlignStrCanonicalProperties properties) ;
-static gboolean alignProperties2Format(ZMapFeatureAlignFormat *align_format,
-                                       AlignStrCanonicalProperties properties) ;
 static gboolean homol2AlignStrCanonical(AlignStrCanonical *canon_out, ZMapFeature feature) ;
 static gboolean parse_cigar_general(const char * const str,
                                     AlignStrCanonical canon,
@@ -141,6 +139,7 @@ static gboolean bamVerifyCigar(char *match_str) ;
 #endif
 
 static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon) ;
+static gboolean gffv3Gap2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon) ;
@@ -155,6 +154,7 @@ static gboolean alignStrCanonical2ExonerateVulgar(char ** align_str, AlignStrCan
 static gboolean alignStrCanonicalSubstituteBamCigar(AlignStrCanonical canon) ;
 static gboolean alignStrCanonicalSubstituteEnsemblCigar(AlignStrCanonical canon) ;
 static gboolean alignStrCanonicalSubstituteExonerateCigar(AlignStrCanonical canon) ;
+static gboolean alignStrCanonicalSubstituteGFFv3Gap(AlignStrCanonical canon) ;
 static gboolean alignStrCanonicalSubstituteExonerateVulgar(AlignStrCanonical canon) ;
 
 #if NOT_USED
@@ -175,6 +175,7 @@ static gboolean gotoLastSpace(char **cp_inout) ;
  */
 static const char *operators_cigar_bam       = "MIDN" ;
 static const char *operators_cigar_exonerate = "MID" ;
+static const char *operators_gffv3_gap       = "MID" ;
 static const char *operators_cigar_ensembl   = "MID" ;
 
 /*
@@ -217,11 +218,6 @@ static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
         result = TRUE ;
         break ;
       case ZMAPALIGN_FORMAT_CIGAR_ENSEMBL:
-        properties->bDigitsLeft = TRUE ;
-        properties->bMayOmit1   = FALSE ;
-        properties->bSpaces     = FALSE ;
-        result = TRUE ;
-        break ;
       case ZMAPALIGN_FORMAT_CIGAR_BAM:
         properties->bDigitsLeft = TRUE ;
         properties->bMayOmit1   = FALSE ;
@@ -236,43 +232,6 @@ static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
 
   return result ;
 }
-
-/*
- * Convert a Canonical properties to align format. Unfortunately, this is not 1:1 mapping,
- * so the choice to favour gffv3 Gap over exonerate is made.
- */
-static gboolean alignProperties2Format(ZMapFeatureAlignFormat *align_format_out,
-                                       AlignStrCanonicalProperties properties)
-{
-  gboolean result = FALSE ;
-  ZMapFeatureAlignFormat align_format = ZMAPALIGN_FORMAT_INVALID;
-
-  zMapReturnValIfFail(align_format_out && properties, result) ;
-
-  /*
-   * Go through various cases explicitly
-   */
-  if (!properties->bDigitsLeft && !properties->bMayOmit1 && properties->bSpaces)
-    {
-      align_format = ZMAPALIGN_FORMAT_GAP_GFF3 ;
-      result = TRUE ;
-    }
-  else if (properties->bDigitsLeft && !properties->bMayOmit1 && !properties->bSpaces)
-    {
-      align_format = ZMAPALIGN_FORMAT_CIGAR_BAM ;
-      result = TRUE ;
-    }
-  else
-    {
-
-    }
-
-  if (result)
-    *align_format_out = align_format ;
-
-  return result ;
-}
-
 
 
 /*
@@ -560,14 +519,14 @@ void parse_resize_operator_buffer(char const ***p_array, size_t *p_buffer_size)
   /*
    * Create new array and initialise to zeros
    */
-  new_size = factor * *p_buffer_size ;
+  new_size = factor * current_size ;
   p_new = (char const **) g_new0(char*, new_size) ;
   memset(p_new, '\0', new_size) ;
 
   /*
    * Copy old array into new one
    */
-  for (i=0; i<*p_buffer_size; ++i)
+  for (i=0; i<current_size; ++i)
     {
       p_new[i] = p_old[i] ;
     }
@@ -1602,6 +1561,8 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
   switch (align_format)
     {
     case ZMAPALIGN_FORMAT_GAP_GFF3:
+      result = gffv3Gap2Canon(match_str, canon) ;
+      break ;
     case ZMAPALIGN_FORMAT_CIGAR_EXONERATE:
       result = exonerateCigar2Canon(match_str, canon) ;
       break ;
@@ -1630,13 +1591,15 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
 
 
 
-/* Convert the canonical "string" to a zmap align array, note that we do this blindly
+/*
+ * Convert the canonical "string" to a zmap align array, note that we do this blindly
  * assuming that everything is ok because we have verified the string....
  *
  * Note that this routine does not support vulgar unless the vulgar string only contains
  * M, I and G (instead of D).
  *
- *  */
+ *
+ */
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
                                     ZMapStrand ref_strand, ZMapStrand match_strand,
                                     int p_start, int p_end, int c_start, int c_end,
@@ -1645,14 +1608,17 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
   gboolean result = TRUE ;
   int curr_ref, curr_match ;
   int i, j ;
-  GArray *local_map = NULL ;
-  GArray *align = canon->align ;
+  GArray *local_map = NULL,
+    *align = NULL ;
   AlignBlockBoundaryType boundary_type = ALIGN_BLOCK_BOUNDARY_EDGE ;
   ZMapAlignBlock prev_gap = NULL ;
+  AlignStrOpStruct *op = NULL ;
 
-  /* is there a call to do this in feature code ??? or is the array passed in...check gff..... */
-  local_map = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), 10) ;
+  zMapReturnValIfFail(canon, FALSE ) ;
+  align = canon->align ;
 
+  /* is there a call to do this in feature code ??? (sm23) there is now... */
+  local_map = zMapAlignBlockArrayCreate() ;
 
   if (ref_strand == ZMAPSTRAND_FORWARD)
     curr_ref = p_start ;
@@ -1665,17 +1631,18 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
     curr_match = c_end ;
 
 
-  for (i = 0, j = 0 ; i < align->len ; i++)
+  for (i = 0, j = 0 ; i < align->len ; ++i)
     {
       /* If you alter this code be sure to notice the += and -= which alter curr_ref and curr_match. */
-      AlignStrOp op = NULL ;
       int curr_length = 0 ;
       ZMapAlignBlockStruct gap = {0} ;
 
-      op = &(g_array_index(align, AlignStrOpStruct, i)) ;
+      op = alignStrCanonicalGetOperator(canon, i) ;
+
+      if (op)
+        {
 
       curr_length = op->length ;
-
       switch (op->op)
         {
         case 'N':                                           /* Intron */
@@ -1733,11 +1700,10 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
             else
               gap.q2 = (curr_match -= curr_length) + 1 ;
 
-            local_map = g_array_append_val(local_map, gap) ;
+            zMapAlignBlockAddBlock(&local_map, &gap) ;
+            ++j ;    /* increment for next gap element. */
 
-            j++ ;    /* increment for next gap element. */
-
-                    boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ;
+            boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ;
             break ;
           }
         default:
@@ -1753,10 +1719,13 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
         prev_gap->end_boundary = boundary_type ;
 
       if (op->op == 'M')
-        prev_gap = &g_array_index(local_map, ZMapAlignBlockStruct, local_map->len - 1) ;
+        prev_gap = zMapAlignBlockArrayGetBlock(local_map, local_map->len-1) ;
       else
         prev_gap = NULL ;
-    }
+
+      } /* if (op) */
+
+    } /* for (i = 0, j = 0 ; i < align->len ; ++i) */
 
   if (local_map && local_map->len == 1)
     {
@@ -2122,9 +2091,47 @@ static gboolean alignStrCanonical2ExonerateVulgar(char ** p_align_str, AlignStrC
   return result ;
 }
 
+/*
+ *
+ */
+static gboolean gffv3Gap2Canon(char *match_str, AlignStrCanonical canon)
+{
+  gboolean result = FALSE, canon_edited = FALSE ;
+  char *cp = NULL ;
+  int num_removed = 0 ;
+  GError *error = NULL ;
+  AlignStrCanonicalPropertiesStruct properties ;
 
+  zMapReturnValIfFail(canon &&
+                      canon->align &&
+                      (canon->format==ZMAPALIGN_FORMAT_GAP_GFF3) &&
+                      (canon->num_operators==0),                           result ) ;
 
-/* Blindly converts, assumes match_str is a valid exonerate cigar string. */
+  result = TRUE ;
+
+#ifndef USE_NEW_CIGAR_PARSING_CODE
+
+#else
+
+  alignFormat2Properties(canon->format, &properties) ;
+  if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
+    {
+      canon_edited = alignStrCanonicalSubstituteGFFv3Gap(canon) ;
+      canon_edited = parse_remove_invalid_operators(canon, operators_gffv3_gap, &num_removed) ;
+    }
+  if (error)
+    {
+      g_error_free(error) ;
+    }
+
+#endif
+
+  return result ;
+}
+
+/*
+ *
+ */
 static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = FALSE, canon_edited = FALSE ;
@@ -2515,6 +2522,14 @@ static gboolean alignStrCanonicalSubstituteExonerateCigar(AlignStrCanonical cano
 {
   gboolean result = FALSE ;
   zMapReturnValIfFail(canon && canon->format == ZMAPALIGN_FORMAT_CIGAR_EXONERATE, result) ;
+  return result ;
+}
+
+
+static gboolean alignStrCanonicalSubstituteGFFv3Gap(AlignStrCanonical canon)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(canon && canon->format == ZMAPALIGN_FORMAT_GAP_GFF3, result) ;
   return result ;
 }
 

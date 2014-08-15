@@ -1348,5 +1348,9 @@ gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,
 			    const gchar           *first_property_name,
 			    ...);
 
+GArray* zMapAlignBlockArrayCreate() ;
+gboolean zMapAlignBlockArrayDestroy(GArray* const) ;
+ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray* const, int index) ;
+gboolean zMapAlignBlockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
 
 #endif /* ZMAP_FEATURE_H */
