@@ -979,7 +979,8 @@ GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback 
 
   zMapGUISetToplevelTitle(dialog, zmap_win_type, zmap_win_text) ;
 
-  g_signal_connect(G_OBJECT(dialog), "response", response_cb_func, response_cb_data) ;
+  if (response_cb_func)
+    g_signal_connect(G_OBJECT(dialog), "response", response_cb_func, response_cb_data) ;
 
   return dialog ;
 }

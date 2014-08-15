@@ -133,9 +133,9 @@ static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void destroyCB(GtkWidget *widget, gpointer data);
 static void changeNotebookCB(GtkWidget *widget, gpointer unused_data) ;
-static void cancelCB(GtkWidget *widget, gpointer user_data) ;
+static void cancelCB(gpointer user_data) ;
 static void invoke_cancel_callback(gpointer data, gpointer user_data) ;
-static void okCB(GtkWidget *widget, gpointer user_data) ;
+static void okCB(gpointer user_data) ;
 static void invoke_apply_callback(gpointer data, gpointer user_data) ;
 static void invoke_save_callback(gpointer data, gpointer user_data) ;
 static void invoke_save_all_callback(gpointer data, gpointer user_data) ;
@@ -628,6 +628,30 @@ GtkWidget *zMapGUINotebookGetCurrChapterWidg(GtkWidget *compound_note_widget)
   return notebook_widg ;
 }
 
+/*!
+ * \brief Handles the response to the notebook dialog 
+ */
+void notebookDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
+{
+  switch (response_id)
+  {
+    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_APPLY:
+    case GTK_RESPONSE_OK:
+      okCB(data) ;
+      break;
+      
+    case GTK_RESPONSE_CANCEL:
+    case GTK_RESPONSE_CLOSE:
+    case GTK_RESPONSE_REJECT:
+      cancelCB(data) ;
+      break;
+      
+    default:
+      break;
+  };
+}
+
 
 /*! Create the compound notebook dialog from the notebook tree.
  *
@@ -637,9 +661,10 @@ GtkWidget *zMapGUINotebookGetCurrChapterWidg(GtkWidget *compound_note_widget)
 GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text)
 {
   GtkWidget *dialog = NULL ;
-  GtkWidget *vbox, *note_widg, *hbuttons, *frame, *button ;
+  GtkWidget *vbox, *note_widg ;
   MakeNotebook make_notebook  ;
-
+  char *title = NULL ;
+  
   /* zMapAssert(notebook_spec && help_title && *help_title && help_text && *help_text) ;*/
   if (!notebook_spec || !help_title || !*help_title || !help_text || !*help_text )
     return dialog ;
@@ -655,17 +680,25 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
   /*
    * Make dialog
    */
-  make_notebook->toplevel = dialog = zMapGUIToplevelNew(NULL, (char *)g_quark_to_string(notebook_spec->name)) ;
+  title = g_strdup(g_quark_to_string(notebook_spec->name)) ;
+  make_notebook->toplevel = dialog = zMapGUIDialogNew(NULL, title, G_CALLBACK(notebookDialogResponseCB), make_notebook) ;
+  g_free(title) ;
+
   gtk_container_set_border_width(GTK_CONTAINER (dialog), 10);
   g_signal_connect(G_OBJECT(dialog), "destroy", G_CALLBACK(destroyCB), make_notebook) ;
+
+  /*
+   * Add the buttons
+   */
+  gtk_dialog_add_button(GTK_DIALOG(dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL) ;
+  gtk_dialog_add_button(GTK_DIALOG(dialog), GTK_STOCK_OK, GTK_RESPONSE_OK) ;
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT) ;
 
   /* Record our state on the dialog widget. */
   g_object_set_data(G_OBJECT(dialog), GUI_NOTEBOOK_SETDATA, make_notebook) ;
 
-  make_notebook->vbox = vbox = gtk_vbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
+  make_notebook->vbox = vbox = GTK_DIALOG(dialog)->vbox ;
   gtk_box_set_spacing(GTK_BOX(vbox), 5) ;
-  gtk_container_add(GTK_CONTAINER(dialog), vbox) ;
-
 
   /*
    * Add a menu bar
@@ -679,23 +712,6 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
   note_widg = makeNotebookWidget(make_notebook) ;
   gtk_box_pack_start(GTK_BOX(vbox), note_widg, FALSE, FALSE, GUI_NOTEBOOK_BOX_PADDING) ;
 
-
-  /*
-   * Make panel of  usual button stuff.
-   */
-  frame = gtk_frame_new(NULL) ;
-  gtk_box_pack_start(GTK_BOX(make_notebook->vbox), frame, FALSE, FALSE, GUI_NOTEBOOK_BOX_PADDING) ;
-
-  hbuttons = gtk_hbutton_box_new() ;
-  gtk_container_add(GTK_CONTAINER(frame), hbuttons) ;
-
-  button = gtk_button_new_from_stock(GTK_STOCK_CANCEL) ;
-  gtk_container_add(GTK_CONTAINER(hbuttons), button) ;
-  g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(cancelCB), make_notebook) ;
-
-  button = gtk_button_new_from_stock(GTK_STOCK_OK) ;
-  gtk_container_add(GTK_CONTAINER(hbuttons), button) ;
-  g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(okCB), make_notebook) ;
 
   gtk_widget_show_all(dialog) ;
 
@@ -1530,7 +1546,7 @@ static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget)
   return ;
 }
 
-static void cancelCB(GtkWidget *widget, gpointer user_data)
+static void cancelCB(gpointer user_data)
 {
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
 
@@ -1541,7 +1557,7 @@ static void cancelCB(GtkWidget *widget, gpointer user_data)
   return ;
 }
 
-static void okCB(GtkWidget *widget, gpointer user_data)
+static void okCB(gpointer user_data)
 {
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
 
