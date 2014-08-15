@@ -991,8 +991,6 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
 void onResponseDialog(GtkDialog *dialog, gint responseId, gpointer data)
 {
-  gboolean destroy = TRUE;
-  
   switch (responseId)
   {
     case GTK_RESPONSE_ACCEPT:
@@ -1014,15 +1012,20 @@ void onResponseDialog(GtkDialog *dialog, gint responseId, gpointer data)
 
 /* Create the feature display window, this can get very long if our peer (e.g. otterlace)
  * returns a lot of information so we need scrolling. */
-static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title, const gboolean editable)
+static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title_in, const gboolean editable)
 {
   GtkWidget *scrolled_window, *vbox ;
   GtkWindow *toplevel = NULL ;
+  char *title = NULL ;
+  char *full_title = NULL ;
 
   /* Create the edit window. */
   if (editable)
     {
-      feature_show->window = gtk_dialog_new_with_buttons(title,
+      title = g_strdup_printf("Create Feature: %s", title_in) ;
+      full_title = zMapGUIMakeTitleString(NULL, title) ;
+
+      feature_show->window = gtk_dialog_new_with_buttons(full_title,
                                                          toplevel,
                                                          GTK_DIALOG_DESTROY_WITH_PARENT,
                                                          GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
@@ -1033,7 +1036,10 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title, co
     }
   else
     {
-      feature_show->window = gtk_dialog_new_with_buttons(title,
+      title = g_strdup_printf("Feature Details: %s", title_in) ;
+      full_title = zMapGUIMakeTitleString(NULL, title) ;
+
+      feature_show->window = gtk_dialog_new_with_buttons(full_title,
                                                          toplevel,
                                                          GTK_DIALOG_DESTROY_WITH_PARENT,
                                                          GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE,
