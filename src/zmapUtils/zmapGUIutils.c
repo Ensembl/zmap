@@ -963,6 +963,27 @@ void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zma
   return ;
 }
 
+
+/* Trivial cover function for creating a new dialog window complete
+ * with the title set as per zMapGUIMakeTitleString above.
+ *
+ * window_type  The sort of window it is, e.g. "feature editor"
+ * message      Very short text, e.g. "Please Reply" or a feature name or....
+ * returns      the toplevel widget.
+ */
+GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data)
+{
+  GtkWidget *dialog = NULL ;
+  
+  dialog = gtk_dialog_new() ;
+
+  zMapGUISetToplevelTitle(dialog, zmap_win_type, zmap_win_text) ;
+
+  g_signal_connect(G_OBJECT(dialog), "response", response_cb_func, response_cb_data) ;
+
+  return dialog ;
+}
+
 /* Trivial cover function for creating a new toplevel window complete
  * with the title set as per zMapGUIMakeTitleString above.
  *

@@ -469,6 +469,7 @@ void zMapGUISetAbbrevTitlePrefix(gboolean abbrev_prefix) ;
 gboolean zMapGUIGetAbbrevTitlePrefix(void) ;
 char *zMapGUIMakeTitleString(char *window_type, char *message) ;
 void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zmap_win_text) ;
+GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data) ;
 GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text) ;
 
 GdkCursor *zMapGUIGetCursor(char *cursor_name) ;

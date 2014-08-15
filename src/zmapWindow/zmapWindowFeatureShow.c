@@ -989,7 +989,8 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 }
 
 
-void onResponseDialog(GtkDialog *dialog, gint responseId, gpointer data)
+/* Handles the response to the feature-show dialog */
+void featureShowDialogResponseCB(GtkDialog *dialog, gint responseId, gpointer data)
 {
   switch (responseId)
   {
@@ -1012,39 +1013,25 @@ void onResponseDialog(GtkDialog *dialog, gint responseId, gpointer data)
 
 /* Create the feature display window, this can get very long if our peer (e.g. otterlace)
  * returns a lot of information so we need scrolling. */
-static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title_in, const gboolean editable)
+static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title, const gboolean editable)
 {
   GtkWidget *scrolled_window, *vbox ;
   GtkWindow *toplevel = NULL ;
-  char *title = NULL ;
-  char *full_title = NULL ;
 
   /* Create the edit window. */
   if (editable)
     {
-      title = g_strdup_printf("Create Feature: %s", title_in) ;
-      full_title = zMapGUIMakeTitleString(NULL, title) ;
-
-      feature_show->window = gtk_dialog_new_with_buttons(full_title,
-                                                         toplevel,
-                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                         GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-                                                         GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-                                                         NULL) ;
-
+      /* Note that we don't use the passed-in title which is the feature name as this is a temp
+       * name and not relevant */
+      feature_show->window = zMapGUIDialogNew("Create Feature", NULL, G_CALLBACK(featureShowDialogResponseCB), feature_show) ;
+      gtk_dialog_add_button(GTK_DIALOG(feature_show->window), GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL) ;
+      gtk_dialog_add_button(GTK_DIALOG(feature_show->window), GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT) ;
       gtk_dialog_set_default_response(GTK_DIALOG(feature_show->window), GTK_RESPONSE_ACCEPT) ;
     }
   else
     {
-      title = g_strdup_printf("Feature Details: %s", title_in) ;
-      full_title = zMapGUIMakeTitleString(NULL, title) ;
-
-      feature_show->window = gtk_dialog_new_with_buttons(full_title,
-                                                         toplevel,
-                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                         GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE,
-                                                         NULL) ;
-
+      feature_show->window = zMapGUIDialogNew("Feature Details", title, G_CALLBACK(featureShowDialogResponseCB), feature_show) ;
+      gtk_dialog_add_button(GTK_DIALOG(feature_show->window), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE) ;
       gtk_dialog_set_default_response(GTK_DIALOG(feature_show->window), GTK_RESPONSE_CLOSE) ;
     }
 
@@ -1052,7 +1039,6 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title_in,
 
   gtk_container_set_border_width(GTK_CONTAINER (feature_show->window), TOP_BORDER_WIDTH) ;
 
-  g_signal_connect(G_OBJECT(feature_show->window), "response", G_CALLBACK(onResponseDialog), feature_show) ;
   g_object_set_data(G_OBJECT(feature_show->window), "zmap_feature_show", feature_show) ;
   g_signal_connect(G_OBJECT(feature_show->window), "destroy", G_CALLBACK(destroyCB), feature_show) ;
 
