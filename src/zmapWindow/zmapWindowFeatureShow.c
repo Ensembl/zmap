@@ -990,9 +990,9 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
 
 /* Handles the response to the feature-show dialog */
-void featureShowDialogResponseCB(GtkDialog *dialog, gint responseId, gpointer data)
+void featureShowDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
 {
-  switch (responseId)
+  switch (response_id)
   {
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_APPLY:
@@ -1016,7 +1016,6 @@ void featureShowDialogResponseCB(GtkDialog *dialog, gint responseId, gpointer da
 static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title, const gboolean editable)
 {
   GtkWidget *scrolled_window, *vbox ;
-  GtkWindow *toplevel = NULL ;
 
   /* Create the edit window. */
   if (editable)
