@@ -108,19 +108,27 @@ static AlignStrOp alignStrCanonicalGetOperator(AlignStrCanonical canon, int i) ;
 static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct * const op) ;
 static gboolean alignStrCanonicalRemoveOperator(AlignStrCanonical canon, int i) ;
 static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format) ;
+
+static GArray * alignStrOpArrayCreate() ;
+static void alignStrOpArrayDestroy(GArray * const align_array) ;
+
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
                                     ZMapStrand ref_strand, ZMapStrand match_strand,
                                     int p_start, int p_end, int c_start, int c_end,
                                     GArray **local_map_out) ;
 static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
                                        AlignStrCanonicalProperties properties) ;
-static gboolean alignProperties2Format(ZMapFeatureAlignFormat *align_format,
-                                       AlignStrCanonicalProperties properties) ;
 static gboolean homol2AlignStrCanonical(AlignStrCanonical *canon_out, ZMapFeature feature) ;
 static gboolean parse_cigar_general(const char * const str,
                                     AlignStrCanonical canon,
                                     AlignStrCanonicalProperties properties,
                                     GError **error) ;
+
+/*
+ * (sm23) I've put in the new code for this within defines in order that
+ * it can be reverted easily if anyone notices a problem.
+ */
+#define USE_NEW_CIGAR_PARSING_CODE 1
 
 #if NOT_USED
 static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format) ;
@@ -129,15 +137,26 @@ static gboolean exonerateVerifyCigar(char *match_str) ;
 static gboolean ensemblVerifyCigar(char *match_str) ;
 static gboolean bamVerifyCigar(char *match_str) ;
 #endif
+
 static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon) ;
+static gboolean gffv3Gap2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon) ;
+
 static int cigarGetLength(char **cigar_str) ;
+
 static gboolean alignStrCanonical2ExonerateCigar(char ** align_str, AlignStrCanonical canon) ;
 static gboolean alignStrCanonical2EnsemblCigar(char ** align_str, AlignStrCanonical canon) ;
 static gboolean alignStrCanonical2BamCigar(char ** align_str, AlignStrCanonical canon) ;
 static gboolean alignStrCanonical2ExonerateVulgar(char ** align_str, AlignStrCanonical canon) ;
+
+static gboolean alignStrCanonicalSubstituteBamCigar(AlignStrCanonical canon) ;
+static gboolean alignStrCanonicalSubstituteEnsemblCigar(AlignStrCanonical canon) ;
+static gboolean alignStrCanonicalSubstituteExonerateCigar(AlignStrCanonical canon) ;
+static gboolean alignStrCanonicalSubstituteGFFv3Gap(AlignStrCanonical canon) ;
+static gboolean alignStrCanonicalSubstituteExonerateVulgar(AlignStrCanonical canon) ;
+
 #if NOT_USED
 static char *nextWord(char *str) ;
 static gboolean gotoLastDigit(char **cp_inout) ;
@@ -147,17 +166,22 @@ static gboolean gotoLastSpace(char **cp_inout) ;
 
 /*
  * These arrays are the allowed operators for various of the format types.
- * Note that there is no error checking in the parsing of these strings!
+ *
+ * Notes:
+ *
+ * (a) According to www.sequenceontology.org gffv3 Gap attribute is the same as
+ *     exonerate cigar. We use the same code for both here.
+ * (b) We do not handle frameshift operators.
  */
-static const char *operators_cigar_exonerate = "MIDFR" ;
-static const char *operators_gffv3_gap       = "MIDFR" ;
+static const char *operators_cigar_bam       = "MIDN" ;
+static const char *operators_cigar_exonerate = "MID" ;
+static const char *operators_gffv3_gap       = "MID" ;
+static const char *operators_cigar_ensembl   = "MID" ;
 
 /*
  * Allowed operators for internal "canonical" representation.
  */
 static const char *operators_canonical = "MINDG";
-
-
 
 
 /*
@@ -194,61 +218,20 @@ static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
         result = TRUE ;
         break ;
       case ZMAPALIGN_FORMAT_CIGAR_ENSEMBL:
-        /* properties->bDigitsLeft = FALSE ;
-        properties->bMayOmit1   = FALSE ;
-        properties->bSpaces     = FALSE ;
-        result = TRUE ; */
-        break ;
       case ZMAPALIGN_FORMAT_CIGAR_BAM:
-        properties->bDigitsLeft = TRUE;
+        properties->bDigitsLeft = TRUE ;
         properties->bMayOmit1   = FALSE ;
         properties->bSpaces     = FALSE ;
         result = TRUE ;
         break ;
       case ZMAPALIGN_FORMAT_VULGAR_EXONERATE:
+        break ;
       default:
         break ;
     }
 
   return result ;
 }
-
-/*
- * Convert a Canonical properties to align format. Unfortunately, this is not 1:1 mapping,
- * so the choice to favour gffv3 Gap over exonerate is made.
- */
-static gboolean alignProperties2Format(ZMapFeatureAlignFormat *align_format_out,
-                                       AlignStrCanonicalProperties properties)
-{
-  gboolean result = FALSE ;
-  ZMapFeatureAlignFormat align_format = ZMAPALIGN_FORMAT_INVALID;
-
-  zMapReturnValIfFail(align_format_out && properties, result) ;
-
-  /*
-   * Go through various cases explicitly
-   */
-  if (!properties->bDigitsLeft && !properties->bMayOmit1 && properties->bSpaces)
-    {
-      align_format = ZMAPALIGN_FORMAT_GAP_GFF3 ;
-      result = TRUE ;
-    }
-  else if (properties->bDigitsLeft && !properties->bMayOmit1 && !properties->bSpaces)
-    {
-      align_format = ZMAPALIGN_FORMAT_CIGAR_BAM ;
-      result = TRUE ;
-    }
-  else
-    {
-
-    }
-
-  if (result)
-    *align_format_out = align_format ;
-
-  return result ;
-}
-
 
 
 /*
@@ -536,14 +519,14 @@ void parse_resize_operator_buffer(char const ***p_array, size_t *p_buffer_size)
   /*
    * Create new array and initialise to zeros
    */
-  new_size = factor * *p_buffer_size ;
+  new_size = factor * current_size ;
   p_new = (char const **) g_new0(char*, new_size) ;
   memset(p_new, '\0', new_size) ;
 
   /*
    * Copy old array into new one
    */
-  for (i=0; i<*p_buffer_size; ++i)
+  for (i=0; i<current_size; ++i)
     {
       p_new[i] = p_old[i] ;
     }
@@ -768,6 +751,46 @@ static gboolean parse_cigar_general(const char * const str,
 #undef NUM_DIGITS_LIMIT
 
 
+/*
+ * This function runs over the canonical form and determines if the operators are present
+ * in the acceptable operators list also passed in. If any are found that are not, then
+ * they are removed. If any are removed, TRUE is returned, otherwise FALSE. The number
+ * removed is also output.
+ */
+static gboolean parse_remove_invalid_operators(AlignStrCanonical canon,
+                                               const char * const operators,
+                                               int * const p_num_removed)
+{
+  gboolean result = FALSE ;
+  int i = 0, num_removed = 0 ;
+  GArray *align_temp = NULL ;
+  AlignStrOp op = NULL ;
+
+  zMapReturnValIfFail(canon &&
+                      canon->align &&
+                      (canon->format!=ZMAPALIGN_FORMAT_INVALID) &&
+                      strlen(operators),          result) ;
+
+  for (i=0; i<canon->num_operators; )
+    {
+      op = alignStrCanonicalGetOperator(canon, i) ;
+      if (!strchr(operators, op->op))
+        {
+          alignStrCanonicalRemoveOperator(canon, i) ;
+          ++num_removed ;
+          result = TRUE ;
+        }
+      else
+        {
+          ++i ;
+        }
+    }
+
+  *p_num_removed = num_removed ;
+
+  return result ;
+}
+
 
 /*
  * Test of parsing various kinds of cigar strings...
@@ -776,6 +799,7 @@ static gboolean parse_cigar_general(const char * const str,
 static void parseTestFunction01()
 {
   char *sTest01 = NULL ;
+  int num_removed = 0 ;
   gboolean bResult = FALSE ;
   GError *error = NULL ;
   AlignStrCanonicalPropertiesStruct properties ;
@@ -794,14 +818,17 @@ static void parseTestFunction01()
   properties.bMayOmit1 = TRUE ;
   properties.bSpaces = FALSE ;
 
-  sprintf(sTest01, "33M13I52M10I1980MII") ;
+  sprintf(sTest01, "GT33M13I52M10I1980MII123LXK") ;
   canon = alignStrCanonicalCreate(align_format) ;
   bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  bResult = alignStrCanonicalSubstituteBamCigar(canon) ;
+  bResult = parse_remove_invalid_operators(canon, operators_cigar_bam, &num_removed) ;
   alignStrCanonicalDestroy(&canon) ;
 
   sprintf(sTest01, " 33M13I52M10I1980MII") ;
   canon = alignStrCanonicalCreate(align_format) ;
   bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
+  bResult = parse_remove_invalid_operators(canon, operators_cigar_bam, &num_removed) ;
   alignStrCanonicalDestroy(&canon) ;
 
   sprintf(sTest01, "33 M13I52M10I1980MII") ;
@@ -953,7 +980,7 @@ static void parseTestFunction01()
   bResult = parse_cigar_general(sTest01, canon, &properties, &error) ;
   alignStrCanonicalDestroy(&canon) ;
 
-  /* settings 5 */
+  /* settings 5 (cigar_bam) */
   properties.bDigitsLeft = TRUE ;
   properties.bMayOmit1 = FALSE ;
   properties.bSpaces = FALSE ;
@@ -1429,7 +1456,7 @@ static AlignStrCanonical alignStrCanonicalCreate(ZMapFeatureAlignFormat align_fo
   if (canon)
     {
       canon->format = align_format ;
-      canon->align = g_array_new(FALSE, TRUE, sizeof(AlignStrOpStruct)) ;
+      canon->align = alignStrOpArrayCreate() ;
       canon->num_operators = 0 ;
     }
 
@@ -1442,14 +1469,32 @@ static AlignStrCanonical alignStrCanonicalCreate(ZMapFeatureAlignFormat align_fo
  */
 static void alignStrCanonicalDestroy(AlignStrCanonical *canon)
 {
-  if (*canon)
+  if (canon && *canon)
     {
-      g_array_free((*canon)->align, TRUE) ;
+      alignStrOpArrayDestroy((*canon)->align) ;
       g_free(*canon) ;
       *canon = NULL ;
     }
 
   return ;
+}
+
+
+/*
+ * Create an align array.
+ */
+static GArray * alignStrOpArrayCreate()
+{
+  return g_array_new(FALSE, TRUE, sizeof(AlignStrOpStruct)) ;
+}
+
+/*
+ * Destroy an align array.
+ */
+static void alignStrOpArrayDestroy(GArray * const align_array)
+{
+  if (align_array)
+    g_array_free(align_array, TRUE) ;
 }
 
 /*
@@ -1516,6 +1561,8 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
   switch (align_format)
     {
     case ZMAPALIGN_FORMAT_GAP_GFF3:
+      result = gffv3Gap2Canon(match_str, canon) ;
+      break ;
     case ZMAPALIGN_FORMAT_CIGAR_EXONERATE:
       result = exonerateCigar2Canon(match_str, canon) ;
       break ;
@@ -1544,13 +1591,15 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
 
 
 
-/* Convert the canonical "string" to a zmap align array, note that we do this blindly
+/*
+ * Convert the canonical "string" to a zmap align array, note that we do this blindly
  * assuming that everything is ok because we have verified the string....
  *
  * Note that this routine does not support vulgar unless the vulgar string only contains
  * M, I and G (instead of D).
  *
- *  */
+ *
+ */
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
                                     ZMapStrand ref_strand, ZMapStrand match_strand,
                                     int p_start, int p_end, int c_start, int c_end,
@@ -1559,14 +1608,17 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
   gboolean result = TRUE ;
   int curr_ref, curr_match ;
   int i, j ;
-  GArray *local_map = NULL ;
-  GArray *align = canon->align ;
+  GArray *local_map = NULL,
+    *align = NULL ;
   AlignBlockBoundaryType boundary_type = ALIGN_BLOCK_BOUNDARY_EDGE ;
   ZMapAlignBlock prev_gap = NULL ;
+  AlignStrOpStruct *op = NULL ;
 
-  /* is there a call to do this in feature code ??? or is the array passed in...check gff..... */
-  local_map = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), 10) ;
+  zMapReturnValIfFail(canon, FALSE ) ;
+  align = canon->align ;
 
+  /* is there a call to do this in feature code ??? (sm23) there is now... */
+  local_map = zMapAlignBlockArrayCreate() ;
 
   if (ref_strand == ZMAPSTRAND_FORWARD)
     curr_ref = p_start ;
@@ -1579,17 +1631,18 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
     curr_match = c_end ;
 
 
-  for (i = 0, j = 0 ; i < align->len ; i++)
+  for (i = 0, j = 0 ; i < align->len ; ++i)
     {
       /* If you alter this code be sure to notice the += and -= which alter curr_ref and curr_match. */
-      AlignStrOp op = NULL ;
       int curr_length = 0 ;
       ZMapAlignBlockStruct gap = {0} ;
 
-      op = &(g_array_index(align, AlignStrOpStruct, i)) ;
+      op = alignStrCanonicalGetOperator(canon, i) ;
+
+      if (op)
+        {
 
       curr_length = op->length ;
-
       switch (op->op)
         {
         case 'N':                                           /* Intron */
@@ -1647,11 +1700,10 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
             else
               gap.q2 = (curr_match -= curr_length) + 1 ;
 
-            local_map = g_array_append_val(local_map, gap) ;
+            zMapAlignBlockAddBlock(&local_map, &gap) ;
+            ++j ;    /* increment for next gap element. */
 
-            j++ ;    /* increment for next gap element. */
-
-                    boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ;
+            boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ;
             break ;
           }
         default:
@@ -1667,10 +1719,13 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
         prev_gap->end_boundary = boundary_type ;
 
       if (op->op == 'M')
-        prev_gap = &g_array_index(local_map, ZMapAlignBlockStruct, local_map->len - 1) ;
+        prev_gap = zMapAlignBlockArrayGetBlock(local_map, local_map->len-1) ;
       else
         prev_gap = NULL ;
-    }
+
+      } /* if (op) */
+
+    } /* for (i = 0, j = 0 ; i < align->len ; ++i) */
 
   if (local_map && local_map->len == 1)
     {
@@ -2036,19 +2091,67 @@ static gboolean alignStrCanonical2ExonerateVulgar(char ** p_align_str, AlignStrC
   return result ;
 }
 
-
-
-/* Blindly converts, assumes match_str is a valid exonerate cigar string. */
-static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
+/*
+ *
+ */
+static gboolean gffv3Gap2Canon(char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = FALSE ;
+  gboolean result = FALSE, canon_edited = FALSE ;
   char *cp = NULL ;
+  int num_removed = 0 ;
+  GError *error = NULL ;
+  AlignStrCanonicalPropertiesStruct properties ;
 
-  if ((canon->format != ZMAPALIGN_FORMAT_CIGAR_EXONERATE)|| (canon->num_operators != 0))
-    return result ;
+  zMapReturnValIfFail(canon &&
+                      canon->align &&
+                      (canon->format==ZMAPALIGN_FORMAT_GAP_GFF3) &&
+                      (canon->num_operators==0),                           result ) ;
 
   result = TRUE ;
 
+#ifndef USE_NEW_CIGAR_PARSING_CODE
+
+#else
+
+  alignFormat2Properties(canon->format, &properties) ;
+  if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
+    {
+      canon_edited = alignStrCanonicalSubstituteGFFv3Gap(canon) ;
+      canon_edited = parse_remove_invalid_operators(canon, operators_gffv3_gap, &num_removed) ;
+    }
+  if (error)
+    {
+      g_error_free(error) ;
+    }
+
+#endif
+
+  return result ;
+}
+
+/*
+ *
+ */
+static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
+{
+  gboolean result = FALSE, canon_edited = FALSE ;
+  char *cp = NULL ;
+  int num_removed = 0 ;
+  GError *error = NULL ;
+  AlignStrCanonicalPropertiesStruct properties ;
+
+  zMapReturnValIfFail(canon &&
+                      canon->align &&
+                      (canon->format==ZMAPALIGN_FORMAT_CIGAR_EXONERATE) &&
+                      (canon->num_operators==0),                           result ) ;
+
+  result = TRUE ;
+
+#ifndef USE_NEW_CIGAR_PARSING_CODE
+
+  /*
+   * (sm23) This old stuff is a load of toss and quite clearly has never worked.
+   */
   cp = match_str ;
   do
     {
@@ -2068,6 +2171,21 @@ static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
       canon->align = g_array_append_val(canon->align, op) ;
     } while (*cp) ;
 
+#else
+
+  alignFormat2Properties(canon->format, &properties) ;
+  if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
+    {
+      canon_edited = alignStrCanonicalSubstituteExonerateCigar(canon) ;
+      canon_edited = parse_remove_invalid_operators(canon, operators_cigar_exonerate, &num_removed) ;
+    }
+  if (error)
+    {
+      g_error_free(error) ;
+    }
+
+#endif
+
   return result ;
 }
 
@@ -2077,23 +2195,34 @@ static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = FALSE ;
 
-  if ((canon->format != ZMAPALIGN_FORMAT_VULGAR_EXONERATE)|| (canon->num_operators != 0))
-    return result ;
+  zMapReturnValIfFail(canon &&
+                      canon->align &&
+                      (canon->format==ZMAPALIGN_FORMAT_VULGAR_EXONERATE) &&
+                      (canon->num_operators==0),                           result) ;
 
   return result ;
 }
 
 
-/* Blindly converts, assumes match_str is a valid ensembl cigar string. */
+/*
+ * Blindly converts, assumes match_str is a valid ensembl cigar string.
+ */
 static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = FALSE ;
+  gboolean result = FALSE, canon_edited = FALSE ;
   char *cp = NULL ;
+  int num_removed = 0 ;
+  GError *error = NULL ;
+  AlignStrCanonicalPropertiesStruct properties ;
 
-  if ((canon->format != ZMAPALIGN_FORMAT_CIGAR_ENSEMBL)|| (canon->num_operators != 0))
-    return result ;
+  zMapReturnValIfFail(canon &&
+                      canon->align &&
+                      (canon->format==ZMAPALIGN_FORMAT_CIGAR_ENSEMBL) &&
+                      (canon->num_operators == 0),                       result) ;
 
   result = TRUE ;
+
+#ifndef USE_NEW_CIGAR_PARSING_CODE
 
   cp = match_str ;
   do
@@ -2105,8 +2234,8 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
       else
         op.length = 1 ;
 
-      op.op =                                               /* EnsEMBL CIGAR interchanges 'D' and
-                                                               'I' */
+      /* EnsEMBL CIGAR interchanges 'D' and 'I' */
+      op.op =
         (*cp == 'D') ? 'I' :
         (*cp == 'I') ? 'D' :
         *cp;
@@ -2115,6 +2244,21 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 
       cp++ ;
     } while (*cp) ;
+
+#else
+
+  alignFormat2Properties(canon->format, &properties) ;
+  if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
+    {
+      canon_edited = alignStrCanonicalSubstituteEnsemblCigar(canon) ;
+      canon_edited = parse_remove_invalid_operators(canon, operators_cigar_ensembl, &num_removed) ;
+    }
+  if (error)
+    {
+      g_error_free(error) ;
+    }
+
+#endif
 
   return result ;
 }
@@ -2132,18 +2276,20 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
  */
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = FALSE ;
+  gboolean result = FALSE, canon_edited = FALSE ;
   char *cp = NULL;
+  int num_removed = 0 ;
+  GError *error = NULL ;
+  AlignStrCanonicalPropertiesStruct properties ;
 
-  if ((canon->format != ZMAPALIGN_FORMAT_CIGAR_BAM)|| (canon->num_operators != 0))
-    return result ;
+  zMapReturnValIfFail(canon &&
+                      canon->align &&
+                      (canon->format==ZMAPALIGN_FORMAT_CIGAR_BAM) &&
+                      (canon->num_operators==0),                     result) ;
 
   result = TRUE ;
 
-  /*
-   * (sm23) This is a test function for parsing cigar/gap strings
-   */
-  /* parseTestFunction01() ; */
+#ifndef USE_NEW_CIGAR_PARSING_CODE
 
   cp = match_str ;
   do
@@ -2173,10 +2319,33 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
             op.op = *cp ;
 
           canon->align = g_array_append_val(canon->align, op) ;
+          ++canon->num_operators ;
         }
 
       cp++ ;
     } while (*cp) ;
+
+#else
+
+  /*
+   * Same thing using new approach
+   */
+  alignFormat2Properties(canon->format, &properties) ;
+  if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
+    {
+      canon_edited = alignStrCanonicalSubstituteBamCigar(canon) ;
+      canon_edited = parse_remove_invalid_operators(canon, operators_cigar_bam, &num_removed) ;
+    }
+  if (error)
+    {
+      /*
+       * This is a parse error, which could be passed to the caller, but at the moment
+       * there is no facility for handling it, so will be destroyed here.
+       */
+      g_error_free(error) ;
+    }
+
+#endif
 
   return result ;
 }
@@ -2295,6 +2464,81 @@ static gboolean gotoLastSpace(char **cp_inout)
   return result ;
 }
 
+
+/*
+ * These functions substitute some operators from one type to another.
+ * For example
+ *
+ * (a) In cigar_bam we replace X with M
+ * (b) In cigar_ensembl replace D with I and I with D
+ *
+ * Return TRUE if one or more substitution is made, FALSE otherwise.
+ */
+static gboolean alignStrCanonicalSubstituteBamCigar(AlignStrCanonical canon)
+{
+  int i = 0 ;
+  AlignStrOp align_op = NULL ;
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(canon && canon->format == ZMAPALIGN_FORMAT_CIGAR_BAM, result ) ;
+
+  for (i=0; i<canon->num_operators; ++i)
+    {
+      align_op = alignStrCanonicalGetOperator(canon, i) ;
+      if (align_op->op == 'X')
+        {
+          align_op->op = 'M' ;
+          result = TRUE ;
+        }
+    }
+  return result ;
+}
+
+static gboolean alignStrCanonicalSubstituteEnsemblCigar(AlignStrCanonical canon)
+{
+  int i = 0 ;
+  AlignStrOp align_op = NULL ;
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(canon && canon->format == ZMAPALIGN_FORMAT_CIGAR_ENSEMBL, result) ;
+
+  for (i=0; i<canon->num_operators; ++i)
+    {
+      align_op = alignStrCanonicalGetOperator(canon, i) ;
+      if (align_op->op == 'D')
+        {
+          align_op->op = 'I' ;
+          result = TRUE ;
+        }
+      else if (align_op->op == 'I')
+        {
+          align_op->op = 'D' ;
+          result = TRUE ;
+        }
+    }
+
+  return result ;
+}
+
+static gboolean alignStrCanonicalSubstituteExonerateCigar(AlignStrCanonical canon)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(canon && canon->format == ZMAPALIGN_FORMAT_CIGAR_EXONERATE, result) ;
+  return result ;
+}
+
+
+static gboolean alignStrCanonicalSubstituteGFFv3Gap(AlignStrCanonical canon)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(canon && canon->format == ZMAPALIGN_FORMAT_GAP_GFF3, result) ;
+  return result ;
+}
+
+static gboolean alignStrCanonicalSubstituteExonerateVulgar(AlignStrCanonical canon)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(canon && canon->format == ZMAPALIGN_FORMAT_VULGAR_EXONERATE, result) ;
+  return result ;
+}
 
 
 

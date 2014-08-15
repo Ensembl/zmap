@@ -492,7 +492,7 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file,
   GFFHeaderDataStruct header_data = {NULL};
   char *time_string ;
 
-  zMapReturnValIfFail(feature_any && (feature_any->struct_type != ZMAPFEATURE_STRUCT_INVALID) && file && error_out, FALSE ) ;
+  zMapReturnValIfFail(feature_any && (feature_any->struct_type != ZMAPFEATURE_STRUCT_INVALID) && error_out, FALSE ) ;
 
   /* Dump the standard header lines. */
   time_string = zMapGetTimeString(ZMAPTIME_YMD, NULL) ;
@@ -1303,7 +1303,7 @@ static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
                                        GFFDumpData gff_data)
 {
   gboolean result = FALSE;
-  static const char *sGap = "Gap=" ;
+  static const char *sGap = "gaps=" ;
   ZMapHomol homol = (ZMapHomol)homol_data;
   GArray *gaps_array = NULL;
   char * temp_string = NULL ;
@@ -1325,11 +1325,13 @@ static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
                                block->q1, block->q2,
                                block->t1, block->t2);
       }
+    g_string_truncate(gff_string, gff_string->len - 1);
 
     result = TRUE ;
   }
 
   /* new method */
+  /*
   if (zMapAttGenerateGap(&temp_string, feature))
     {
       if (temp_string)
@@ -1339,6 +1341,7 @@ static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
           result = TRUE ;
         }
     }
+  */
 
   return result ;
 }

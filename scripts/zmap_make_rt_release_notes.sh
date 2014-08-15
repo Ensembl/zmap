@@ -15,8 +15,6 @@ fi
 
 . $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
 
-set -o history
-
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
@@ -24,17 +22,14 @@ set -o history
 
 
 
-CMDSTRING='[ -o <directory>  -z ] <date> <ZMap directory>'
+CMDSTRING='<ZMap dir> <date> <output_file>'
 DESCSTRING=`cat <<DESC
 
-   -o   specify an alternative output directory for the release notes.
-
-   -z   only output zmap RT tickets.
+The ZMap dir gives the git directory containing the zmap code.
 
 The date must be in the format "dd/mm/yyyy"
 
-ZMap directory must be the base ZMap directory of the build directory so that the docs
-and the code match.
+The output file is where the RT release notes should be stored.
 DESC`
 
 ZMAP_ONLY=no
@@ -42,65 +37,49 @@ ZMAP_BASEDIR=''
 output_file=''
 
 
-# Note that the zmap user must have permissions within RT to see and query these queues
+# Note that the zmap user must have permissions within RT to see and query the queue
 # or no data will come back.
-RT_QUEUES="zmap seqtools"
+RT_QUEUES="zmap"
 
 zmap_message_out "Starting processing RT tickets"
 
-zmap_message_out "Running in $INITIAL_DIR on $(hostname)"
 
-zmap_message_out "Parsing cmd line options: '$*'"
-
-
-while getopts ":o:z" opt ;
-  do
-  case $opt in
-      o  ) output_file=$OPTARG ;;
-      z  ) ZMAP_ONLY=yes ;;
-      \? ) 
-zmap_message_exit "Bad command line flag
-
-Usage:
-
-$0 $CMDSTRING
-
-$DESCSTRING"
-;;
-  esac
-done
+#while getopts ":o:" opt ;
+#  do
+#  case $opt in
+#      o  ) output_file=$OPTARG ;;
+#      \? ) 
+#zmap_message_exit "Bad command line flag
+#
+#Usage:
+#
+#$0 $CMDSTRING
+#
+#$DESCSTRING"
+#;;
+#  esac
+#done
 
 
-if [ -n "$output_file" ] ; then
-    tmp_file=`readlink -m $output_file`
-
-    output_file=$tmp_file
-
-    echo "output_file = $output_file"
-fi
-
-if [ "x$ZMAP_ONLY" == "xyes" ]; then
-    RT_QUEUES="zmap"
-fi
-
-
-
-# get the date and the ZMap dir - mandatory.
+# get the date and the output file - mandatory.
 #
 shift $(($OPTIND - 1))
 
-date=$1
-ZMAP_BASEDIR=$2
+ZMAP_BASEDIR=$1
+date=$2
+output_file=$3
 
+if [ -z "$ZMAP_BASEDIR" ] ; then
+    zmap_message_exit 'No directory specified.'
+fi
 
 if [ -z "$date" ] ; then
     zmap_message_exit 'No date specified.'
 fi
 
-if [ -z "$date" ] ; then
-    zmap_message_exit 'No directory specified.'
+if [ -z "$output_file" ] ; then
+    zmap_message_exit 'No output file specified.'
 fi
-
 
 
 
@@ -122,20 +101,12 @@ RT_PREV_DATE=$date
 RT_CURRENT_DATE=$(date "+%d/%m/%Y")
 
 
-zmap_message_out "Getting tickets for period $RT_PREV_DATE to $RT_CURRENT_DATE."
 
+rm -f $output_file || zmap_message_exit "Cannot rm $output_file file."
+touch $output_file || zmap_message_exit "Cannot touch $output_file file."
+chmod u+rw $output_file || zmap_message_exit "Cannot make $output_file r/w"
 
-if  [ -n "$output_file" ] ; then
-    RELEASE_NOTES_OUTPUT="$output_file"
-else
-    RELEASE_NOTES_OUTPUT="$ZMAP_BASEDIR/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME"
-fi
-
-rm -f $RELEASE_NOTES_OUTPUT || zmap_message_exit "Cannot rm $RELEASE_NOTES_OUTPUT file."
-touch $RELEASE_NOTES_OUTPUT || zmap_message_exit "Cannot touch $RELEASE_NOTES_OUTPUT file."
-chmod u+rw $RELEASE_NOTES_OUTPUT || zmap_message_exit "Cannot make $RELEASE_NOTES_OUTPUT r/w"
-
-zmap_message_out "Using $RELEASE_NOTES_OUTPUT as release notes output file."
+zmap_message_out "Using $output_file as release notes output file."
 
 
 
@@ -145,14 +116,14 @@ zmap_message_out "Using $RELEASE_NOTES_OUTPUT as release notes output file."
 #
 #
 
+zmap_message_out "Getting tickets for period $RT_PREV_DATE to $RT_CURRENT_DATE."
+
 
 # Write header.
 #
-cat >> $RELEASE_NOTES_OUTPUT <<EOF
+cat >> $output_file <<EOF
 
-Request Tracker Tickets Resolved
-
-This report covers $RT_PREV_DATE to $RT_CURRENT_DATE
+Request Tracker Tickets Resolved from $RT_PREV_DATE to $RT_CURRENT_DATE
 
 EOF
 
@@ -168,7 +139,6 @@ RTFAILED=no
 
 #zmap_message_out "pwd =" $(pwd)
 
-zmap_message_out "Getting Request Tracker tickets using $RTSERVER as node to launch query."
 
 # This looks complicated, but the basic method of action is cat stdin (The HERE
 # doc) and the getRTtickets over the ssh connection to the bash "one-liner" to
@@ -242,6 +212,8 @@ if [ "x$RTFAILED" == "xyes" ]; then
     fi
 fi
 
+zmap_message_out "Finished getting Request tracker tickets"
+
 # Something in the getRTtickets script could have failed
 # without exiting the script. Check this and log it.
 # If it was fatal then the getRTtickets script should
@@ -257,7 +229,7 @@ fi
 # Put tickets where they should be.....
 #
 #
-cat $RTRESULTS >> $RELEASE_NOTES_OUTPUT || zmap_message_exit "Failed to store RT results in $RELEASE_NOTES_OUTPUT"
+cat $RTRESULTS >> $output_file || zmap_message_exit "Failed to store RT results in $output_file"
 
 rm $RTRESULTS
 
@@ -265,46 +237,15 @@ rm $RTRESULTS
 
 # Must have succeeded in getting tickets.
 #
-zmap_message_out "Finished getting Request tracker tickets"
 
-cat >> $RELEASE_NOTES_OUTPUT <<EOF
+
+cat >> $output_file <<EOF
 
 End of Request Tracker tickets
 
 EOF
 
 
-
-# NOT DOING THIS AT THE MOMENT.....
-#
-#
-#zmap_message_out "Now processing RT tickets"
-#
-## Here are the results...good for debugging....
-##
-##zmap_message_out "Here are RT tickets"
-##cat $RTRESULTS
-##zmap_message_out "End of RT tickets"
-#
-#
-## This goes directly into the html file
-#$BASE_DIR/process_rt_tickets_file.pl $RTRESULTS >> $RELEASE_NOTES_OUTPUT || \
-#    zmap_message_exit "Failed processing RT tickets"
-#
-## End of RT tickets
-##
-#cat >> $RELEASE_NOTES_OUTPUT <<EOF
-#
-#<!-- End of tickets  --!>
-#
-#EOF
-#
-#zmap_message_out "Finished processing RT tickets"
-#
-#
-
-
-
-zmap_message_out "Finished processing of RT tickets"
+zmap_message_out "Finished processing RT tickets"
 
 exit 0

@@ -1,0 +1,314 @@
+
+Request Tracker Tickets Resolved from 08/05/2014 to 13/08/2014
+
+id: ticket/295898
+Queue: zmap
+Subject: Zmap crashes when run "clear existing alignments" in OTF from new otterlace session.
+Requestors: aeb@sanger.ac.uk, clb@sanger.ac.uk
+Owner: edgrif
+Resolved: Thu Jul 24 15:42:53 2014
+
+id: ticket/303018
+Queue: zmap
+Subject: navigator widget/ scroll width sometime gets stuck
+Requestors: mh17@sanger.ac.uk
+Owner: sm23
+Resolved: Mon May 19 11:42:25 2014
+
+id: ticket/314977
+Queue: zmap
+Subject: infopanel labels can be too long
+Requestors: edgrif@sanger.ac.uk
+Owner: sm23
+Resolved: Fri May 16 14:49:41 2014
+
+id: ticket/319417
+Queue: zmap
+Subject: OTF fails to clear existing features
+Requestors: aeb@sanger.ac.uk, jgrg@sanger.ac.uk, vb1@sanger.ac.uk
+Owner: jgrg
+Resolved: Wed Jun 18 10:10:51 2014
+
+id: ticket/335080
+Queue: zmap
+Subject: locus navigator
+Requestors: vb1@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon May 19 13:12:52 2014
+
+id: ticket/348272
+Queue: zmap
+Subject: ZMap can zoom out too far after H-Split/Unsplit
+Requestors: jh13@sanger.ac.uk, sm23@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon May 19 11:07:52 2014
+
+id: ticket/376407
+Queue: zmap
+Subject: bug with navigator window/panel
+Requestors: sm23@sanger.ac.uk
+Owner: sm23
+Resolved: Mon May 19 15:30:26 2014
+
+id: ticket/377540
+Queue: zmap
+Subject: Zmap crash over night
+Requestors: gm5@sanger.ac.uk
+Owner: edgrif
+Resolved: Thu Jul 24 15:38:08 2014
+
+id: ticket/377547
+Queue: zmap
+Subject: otterlace error: <PLEASE REPLACE WITH SHORT DESCRIPTION>
+Requestors: gm5@sanger.ac.uk
+Owner: edgrif
+Resolved: Thu Jul 24 15:36:16 2014
+
+id: ticket/377968
+Queue: zmap
+Subject: Zmap/Otterlace frozen with timeout error
+Requestors: cas@sanger.ac.uk
+Owner: edgrif
+Resolved: Thu Jul 24 15:40:17 2014
+
+id: ticket/378784
+Queue: zmap
+Subject: solexa coverage columns for zebrafish
+Requestors: gkl@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon May 19 14:36:18 2014
+
+id: ticket/383730
+Queue: zmap
+Subject: Off-by-one base pair redrawing bug
+Requestors: jh13@sanger.ac.uk
+Owner: sm23
+Resolved: Wed May 21 14:17:09 2014
+
+id: ticket/395706
+Queue: zmap
+Subject: zmap leaves zombie process, after filter failure (81.02; 81.05)
+Requestors: mca@sanger.ac.uk
+Owner: edgrif
+Resolved: Tue May 13 10:33:26 2014
+
+id: ticket/396464
+Queue: zmap
+Subject: Zmap view bug?
+Requestors: vb1@sanger.ac.uk
+Owner: edgrif
+Resolved: Wed Jul 16 09:39:43 2014
+
+id: ticket/397438
+Queue: zmap
+Subject: excessively long feature name for a Repeat feature
+Requestors: edgrif@sanger.ac.uk
+Owner: sm23
+Resolved: Fri May 16 13:49:08 2014
+
+id: ticket/398110
+Queue: zmap
+Subject: UI change request: allow user to make zmap window as narrow as desired
+Requestors: lw2@sanger.ac.uk
+Owner: edgrif
+Resolved: Tue May 13 18:51:28 2014
+
+id: ticket/398144
+Queue: zmap
+Subject: feature request: zmap column labeling
+Requestors: lw2@sanger.ac.uk
+Owner: edgrif
+Resolved: Wed Jul 16 09:25:11 2014
+
+id: ticket/398150
+Queue: zmap
+Subject: Blixem not running 
+Requestors: dm4@sanger.ac.uk
+Owner: edgrif
+Resolved: Thu May 08 17:35:16 2014
+
+id: ticket/398151
+Queue: zmap
+Subject: Hunt in zmap - CCDS broken 
+Requestors: dm4@sanger.ac.uk
+Owner: edgrif
+Resolved: Wed Jul 02 15:11:32 2014
+
+id: ticket/398260
+Queue: zmap
+Subject: feature request: direct load BAM data into Zmap from URL
+Requestors: lw2@sanger.ac.uk
+Owner: gb10
+Resolved: Mon Jun 30 11:20:50 2014
+
+id: ticket/399033
+Queue: zmap
+Subject: active panel highlighting gone awol
+Requestors: lw2@sanger.ac.uk
+Owner: edgrif
+Resolved: Wed May 14 12:52:42 2014
+
+id: ticket/399256
+Queue: zmap
+Subject: Option for ZMap to take feature details from GFF
+Requestors: mg13@sanger.ac.uk
+Owner: edgrif
+Resolved: Thu May 15 14:32:54 2014
+
+id: ticket/399370
+Queue: zmap
+Subject: feature request: export in GFF3 format
+Requestors: lw2@sanger.ac.uk
+Owner: sm23
+Resolved: Thu May 15 15:23:19 2014
+
+id: ticket/399506
+Queue: zmap
+Subject: Can't blixem
+Requestors: gdr@sanger.ac.uk
+Owner: edgrif
+Resolved: Fri May 16 11:59:33 2014
+
+id: ticket/399550
+Queue: zmap
+Subject: DNA highlight on gapped alignments
+Requestors: mca@sanger.ac.uk
+Owner: edgrif
+Resolved: Fri May 16 15:07:52 2014
+
+id: ticket/399580
+Queue: zmap
+Subject: EST and mRNA ends not being drawn correctly  - leaves white space
+Requestors: dm4@sanger.ac.uk
+Owner: sm23
+Resolved: Mon May 19 10:54:32 2014
+
+id: ticket/399600
+Queue: zmap
+Subject: "Help > What's new" gone?
+Requestors: mca@sanger.ac.uk
+Owner: gb10
+Resolved: Fri May 16 16:23:59 2014
+
+id: ticket/401041
+Queue: zmap
+Subject: "Server version must be at least 4.9.61 but this server is 4.9.61"
+Requestors: gkl@sanger.ac.uk, mca@sanger.ac.uk
+Owner: edgrif
+Resolved: Tue May 27 17:02:09 2014
+
+id: ticket/402136
+Queue: zmap
+Subject: Hunt in zmap broken since otterlace 81
+Requestors: gb10@sanger.ac.uk
+Owner: sm23
+Resolved: Thu Jun 05 16:57:22 2014
+
+id: ticket/403383
+Queue: zmap
+Subject: feature detail match strand details wrong when zmap revcomp
+Requestors: lw2@sanger.ac.uk
+Owner: edgrif
+Resolved: Fri Jul 11 15:00:13 2014
+
+id: ticket/403452
+Queue: zmap
+Subject: GSlice: failed to allocate 248 bytes  (82.04, 0.22-118-gf2674ec)
+Requestors: mca@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon Jun 09 15:18:19 2014
+
+id: ticket/405181
+Queue: zmap
+Subject: segfault in ZMap 0.22-142-g6c0f436
+Requestors: mca@sanger.ac.uk
+Owner: sm23
+Resolved: Tue Jul 01 09:55:18 2014
+
+id: ticket/405214
+Queue: zmap
+Subject: Peer has still not responded after 10 timeouts, transaction has timed out (peer clipboard is Otterlace_0x360046a_4)
+Requestors: mh19@sanger.ac.uk
+Owner: gb10
+Resolved: Tue Jul 01 10:26:27 2014
+
+id: ticket/406010
+Queue: zmap
+Subject: Problem with "peer has gone, shall I exit?" dialog
+Requestors: dm4@sanger.ac.uk, gm5@sanger.ac.uk, mca@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon Jun 30 16:45:29 2014
+
+id: ticket/406244
+Queue: zmap
+Subject: Select newly created transcripts?
+Requestors: dm4@sanger.ac.uk, mca@sanger.ac.uk
+Owner: mca
+Resolved: Wed Aug 13 12:21:39 2014
+
+id: ticket/406264
+Queue: zmap
+Subject: "peer has gone, shall I exit?" log message not terminated
+Requestors: mca@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon Jun 30 16:13:18 2014
+
+id: ticket/406962
+Queue: zmap
+Subject: ZMap does not un-escape the Note attribute in GFF.
+Requestors: jh13@sanger.ac.uk
+Owner: sm23
+Resolved: Fri Jun 27 16:26:56 2014
+
+id: ticket/407213
+Queue: zmap
+Subject: Insufficient unescaping of the Note attribute
+Requestors: jh13@sanger.ac.uk
+Owner: sm23
+Resolved: Tue Jul 01 12:22:28 2014
+
+id: ticket/407560
+Queue: zmap
+Subject: ZMap segfault early in load_features (0.23.0)
+Requestors: gm5@sanger.ac.uk, mca@sanger.ac.uk
+Owner: sm23
+Resolved: Wed Jul 02 14:17:36 2014
+
+id: ticket/407561
+Queue: zmap
+Subject: GFF dumper: GFF type for pseudogenes is (null)
+Requestors: gb10@sanger.ac.uk
+Owner: sm23
+Resolved: Mon Jul 14 17:02:19 2014
+
+id: ticket/408518
+Queue: zmap
+Subject: otterlace error: <Annotation does not load in zmap>
+Requestors: sb7@sanger.ac.uk
+Owner: edgrif
+Resolved: Thu Jul 10 10:40:55 2014
+
+id: ticket/409573
+Queue: zmap
+Subject: Exon end coords all zero in feature details window
+Requestors: edgrif@sanger.ac.uk
+Owner: edgrif
+Resolved: Tue Jul 15 10:45:31 2014
+
+id: ticket/411497
+Queue: zmap
+Subject: Zmap crashes when loading BAM file
+Requestors: jmg@sanger.ac.uk
+Owner: sm23
+Resolved: Fri Aug 01 14:44:27 2014
+
+id: ticket/412466
+Queue: zmap
+Subject: 454 data - viewing bamfiles
+Requestors: cas@sanger.ac.uk
+Owner: sm23
+Resolved: Fri Aug 01 14:43:28 2014
+
+
+End of Request Tracker tickets
+

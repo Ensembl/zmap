@@ -1,0 +1,1513 @@
+2014-08-13  Steve Miller  <sm23@sanger.ac.uk>
+ update again
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-08-13  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'production' into feature/zeroMQ
+2014-08-13  Steve Miller  <sm23@sanger.ac.uk>
+ small change to assert in zmapWindowCanvasFeatureset.c in function zmapWindowContainerFeatureSetGetFrame (possible bug)
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-08-05  Steve Miller  <sm23@sanger.ac.uk>
+ removed a debug printf() message
+ src/zmapWindow/zmapWindow.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2014-08-05  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'develop' into feature/zeroMQ
+2014-08-04  Steve Miller  <sm23@sanger.ac.uk>
+ adding error handling in zmapWindowCanvasFeatureset.c
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c | 1599 ++++++++++----------
+ 1 files changed, 836 insertions(+), 763 deletions(-)
+
+2014-08-01  Steve Miller  <sm23@sanger.ac.uk>
+ more cigar parsing functions + error checking in zmapWindowCanvasFeatureset.c
+ src/zmapFeature/zmapFeatureAlignment.c             |   44 ++++++-
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |  138 +++++++++++++++----
+ src/zmapWindow/zmapWindowCanvas.c                  |   14 +-
+ src/zmapWindow/zmapWindowFeature.c                 |   28 +++--
+ 4 files changed, 176 insertions(+), 48 deletions(-)
+
+2014-08-01  Steve Miller  <sm23@sanger.ac.uk>
+ remove data dumping from gff3 parser
+ src/zmapGFF/zmapGFF3parser.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-08-01  Steve Miller  <sm23@sanger.ac.uk>
+ some update to parser to catch error in alignment features
+ src/zmapFeature/zmapFeatureAlignment.c |  246 ++++++++++++++++++++------------
+ src/zmapGFF/zmapGFF3parser.c           |    5 +-
+ src/zmapGFF/zmapGFFAttribute.c         |    2 +-
+ 3 files changed, 156 insertions(+), 97 deletions(-)
+
+2014-08-01  Steve Miller  <sm23@sanger.ac.uk>
+ small changes to gff parser
+ src/zmapGFF/zmapGFF3parser.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+2014-07-31  Steve Miller  <sm23@sanger.ac.uk>
+ finish basic cigar parsing function (not yet in use, but checked)
+ src/zmapFeature/zmapFeatureAlignment.c |  187 ++++++++++++++++++++++++++++----
+ 1 files changed, 166 insertions(+), 21 deletions(-)
+
+2014-07-30  Steve Miller  <sm23@sanger.ac.uk>
+ update to some cigar parsing functions (not yet in use)
+ src/include/ZMap/zmapFeature.h         |    1 +
+ src/zmapFeature/zmapFeatureAlignment.c |  470 ++++++++++++++++++--------------
+ 2 files changed, 269 insertions(+), 202 deletions(-)
+
+2014-07-29  Steve Miller  <sm23@sanger.ac.uk>
+ updates to parsing tests
+ src/zmapFeature/zmapFeatureAlignment.c |  415 +++++++++++++++++++++++++++++++-
+ 1 files changed, 403 insertions(+), 12 deletions(-)
+
+2014-07-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'develop' into feature/zeroMQ
+2014-07-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove string utils header, should be in src/include/Makefile.am"
+ src/zmapGFF/Makefile.am |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+2014-07-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'develop' into feature/zeroMQ
+2014-07-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add missing header from Steves work."
+ src/include/Makefile.am |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2014-07-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'develop' into feature/zeroMQ
+2014-07-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'production' into develop
+2014-07-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'release/0.24.0' into develop
+2014-07-28  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove file created by build
+ src/zeromq/src/platform.hpp.in |  270 ----------------------------------------
+ 1 files changed, 0 insertions(+), 270 deletions(-)
+
+2014-07-25  Steve Miller  <sm23@sanger.ac.uk>
+ update with some output/parsing functions in FeatureAlignment
+ src/include/ZMap/zmapFeature.h         |    2 +-
+ src/zmapFeature/zmapFeatureAlignment.c |  112 ++++++++++++++++++++++++++++----
+ src/zmapGFF/zmapGFF2Dumper.c           |    2 +-
+ 3 files changed, 102 insertions(+), 14 deletions(-)
+
+2014-07-24  Steve Miller  <sm23@sanger.ac.uk>
+ filled in some of the output functions
+ src/zmapFeature/zmapFeatureAlignment.c |   99 ++++++++++++++------------------
+ src/zmapGFF/zmapGFF2Dumper.c           |   46 ++++++++++++---
+ src/zmapGFF/zmapGFFAttribute.c         |   49 ++++++++++------
+ 3 files changed, 112 insertions(+), 82 deletions(-)
+
+2014-07-24  Steve Miller  <sm23@sanger.ac.uk>
+ some function stubs for alignment feature output
+ src/include/ZMap/zmapFeature.h         |    4 +
+ src/zmapFeature/zmapFeatureAlignment.c |  241 ++++++++++++++++++++++++++++----
+ 2 files changed, 217 insertions(+), 28 deletions(-)
+
+2014-07-23  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix over long comments."
+ src/include/ZMap/zmapFeature.h |   11 ++++++++---
+ 1 files changed, 8 insertions(+), 3 deletions(-)
+
+2014-07-21  Steve Miller  <sm23@sanger.ac.uk>
+ added string utils to zmapFeatureAlignment.c
+ src/include/ZMap/zmapGFFStringUtils.h  |   15 +++++++++++++--
+ src/zmapFeature/zmapFeatureAlignment.c |    1 +
+ src/zmapGFF/zmapGFFStringUtils.c       |   13 +++++++++----
+ 3 files changed, 23 insertions(+), 6 deletions(-)
+
+2014-07-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "src/zmapWindow/zmapWindowFeature.c"
+ src/zmapWindow/zmapWindowFeature.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+2014-07-21  Steve Miller  <sm23@sanger.ac.uk>
+ rearrangment of gff string utilities
+ src/include/ZMap/zmapGFFStringUtils.h  |   49 ++++
+ src/zmapFeature/zmapFeatureAlignment.c |   43 ++++-
+ src/zmapGFF/zmapGFF3parser.c           |    8 +-
+ src/zmapGFF/zmapGFFAttribute.c         |   34 ++--
+ src/zmapGFF/zmapGFFStringUtils.c       |  381 ++++++++++++++------------------
+ src/zmapGFF/zmapGFFStringUtils.h       |   58 -----
+ 6 files changed, 279 insertions(+), 294 deletions(-)
+
+2014-07-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "tidy up cursor code and fix it to add cursors from app, zmap or view."
+ src/zmapWindow/zmapWindow_P.h |   33 ++++++++++++++++++++++++---------
+ 1 files changed, 24 insertions(+), 9 deletions(-)
+
+2014-07-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "tidy up cursor code and fix it to add cursors from app, zmap or view."
+ src/include/ZMap/zmapWindow.h |   10 +--
+ src/zmapWindow/zmapWindow.c   |  175 +++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 160 insertions(+), 25 deletions(-)
+
+2014-07-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add cursor setting functions. Tidy up code."
+ src/include/ZMap/zmapView.h  |    7 ++++
+ src/zmapView/zmapView.c      |    9 +++--
+ src/zmapView/zmapViewUtils.c |   76 ++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 86 insertions(+), 6 deletions(-)
+
+2014-07-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add funcs to set/get cursors."
+ src/include/ZMap/zmapUtilsGUI.h |    6 +++-
+ src/zmapUtils/zmapGUIutils.c    |   57 ++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 60 insertions(+), 3 deletions(-)
+
+2014-07-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add calls to set a cursor on all zmaps."
+ src/include/ZMap/zmapManager.h |   11 +++++++++--
+ 1 files changed, 9 insertions(+), 2 deletions(-)
+
+2014-07-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add calls to set a cursor on all zmaps."
+ src/zmapManager/zmapManager.c |   51 ++++++++++++++++++++++++++++++++++------
+ 1 files changed, 43 insertions(+), 8 deletions(-)
+
+2014-07-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add calls to set cursors on toplevel of control + all subwindows."
+ src/include/ZMap/zmapControl.h      |   15 ++++++--
+ src/zmapControl/zmapControl.c       |   64 +++++++++++++++++++++++++++++++++-
+ src/zmapControl/zmapControlWindow.c |    6 +++-
+ src/zmapControl/zmapControl_P.h     |    9 ++---
+ 4 files changed, 81 insertions(+), 13 deletions(-)
+
+2014-07-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "Add code to make zmap modal no user input) + set cursor when doing xremote ops."
+ src/zmapApp/zmapAppRemoteControl.c |   66 ++++++++++++++++++++++++++++++++++-
+ src/zmapApp/zmapApp_P.h            |    4 ++
+ src/zmapApp/zmapAppwindow.c        |   17 +++++++++-
+ 3 files changed, 84 insertions(+), 3 deletions(-)
+
+2014-07-21  Steve Miller  <sm23@sanger.ac.uk>
+ put in the Gap attribute parser into alignment feature construction
+ src/zmapGFF/zmapGFF3parser.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-07-18  Steve Miller  <sm23@sanger.ac.uk>
+ add some function stubs for generating attribute data
+ src/zmapFeature/zmapFeatureAlignment.c |   14 +++---
+ src/zmapGFF/zmapGFF2Dumper.c           |   21 ++++++----
+ src/zmapGFF/zmapGFFAttribute.c         |   66 +++++++++++++++++++++++++++++++-
+ src/zmapGFF/zmapGFFAttribute.h         |   10 ++++-
+ 4 files changed, 93 insertions(+), 18 deletions(-)
+
+2014-07-18  Steve Miller  <sm23@sanger.ac.uk>
+ removed some stuff from output/dumping that's no longer used
+ src/include/ZMap/zmapFeature.h      |    5 +++--
+ src/include/ZMap/zmapGFF.h          |    7 +++----
+ src/zmapFeature/zmapFeatureOutput.c |   29 ++++++++++++++---------------
+ src/zmapGFF/zmapGFF2Dumper.c        |    5 +++--
+ src/zmapWindow/zmapWindowList.c     |    6 +++---
+ 5 files changed, 26 insertions(+), 26 deletions(-)
+
+2014-07-17  Steve Miller  <sm23@sanger.ac.uk>
+ added some error checks to previous
+ src/zmapWindow/zmapWindowList.c |   74 +++++++++++++++++++++++----------------
+ 1 files changed, 44 insertions(+), 30 deletions(-)
+
+2014-07-17  Steve Miller  <sm23@sanger.ac.uk>
+ fix for dumping of features from feature-search dialogue
+ src/zmapGFF/zmapGFF2Dumper.c    |    7 ++-
+ src/zmapWindow/zmapWindowList.c |  158 +++++++++++++++++++++++----------------
+ 2 files changed, 98 insertions(+), 67 deletions(-)
+
+2014-07-16  Steve Miller  <sm23@sanger.ac.uk>
+ updates to internals of WindowList (dumping related)
+ src/zmapGFF/zmapGFF2Dumper.c    |    9 ++++-
+ src/zmapWindow/zmapWindowList.c |   72 ++++++++++++++++++++++++++++++++++----
+ 2 files changed, 71 insertions(+), 10 deletions(-)
+
+2014-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add function to ungrab everything, try in debugging."
+ src/include/ZMap/zmapUtilsGUI.h |    1 +
+ src/zmapUtils/zmapGUIutils.c    |   22 ++++++++++++++++++++++
+ 2 files changed, 23 insertions(+), 0 deletions(-)
+
+2014-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "tidy of enum macros, remove redundant ones, clarify others, add comments."
+ src/include/ZMap/zmapEnum.h               |  334 +++++++++++++++++------------
+ src/include/ZMap/zmapFeature.h            |    2 +-
+ src/include/ZMap/zmapRemoteCommand.h      |    4 +-
+ src/include/ZMap/zmapStyle.h              |   30 ++--
+ src/include/ZMap/zmapView.h               |    2 +-
+ src/zmapFeature/zmapFeatureAlignment.c    |    2 +-
+ src/zmapFeature/zmapFeatureData.c         |   10 +-
+ src/zmapFeature/zmapStyleUtils.c          |   30 ++--
+ src/zmapRemoteControl/zmapRemoteCommand.c |    4 +-
+ src/zmapView/zmapView.c                   |    2 +-
+ 10 files changed, 249 insertions(+), 171 deletions(-)
+
+2014-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'release/0.24.0' into develop
+2014-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "make child pid debug messages optional, use long text in process termination message."
+ src/zmapServer/pipe/pipeServer.c |   22 ++++++++++++++--------
+ 1 files changed, 14 insertions(+), 8 deletions(-)
+
+2014-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add processtermination to long text function."
+ src/include/ZMap/zmapUtils.h |    1 +
+ src/zmapUtils/zmapUtils.c    |    6 +++++-
+ 2 files changed, 6 insertions(+), 1 deletions(-)
+
+2014-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix bug in short text enum stuff + add long text macros."
+ src/include/ZMap/zmapEnum.h |   24 +++++++++++++++++++++++-
+ 1 files changed, 23 insertions(+), 1 deletions(-)
+
+2014-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "Add tooltip to give column name when pointer enters column."
+ src/zmapWindow/zmapWindowDrawFeatures.c |   50 ++++++++++++++++++++++++++++++-
+ 1 files changed, 49 insertions(+), 1 deletions(-)
+
+2014-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "Remove code that filters motion events for foocanvas, no longer needed."
+ src/libzmapfoocanvas/foo-canvas.c |   16 ++--------------
+ 1 files changed, 2 insertions(+), 14 deletions(-)
+
+2014-07-16  Steve Miller  <sm23@sanger.ac.uk>
+ some tidying and adding error traps to dumping code
+ src/include/ZMap/zmapGFF.h      |    3 +-
+ src/zmapGFF/zmapGFF2Dumper.c    |  121 ++++++++++++++++++++++-----------------
+ src/zmapWindow/zmapWindowList.c |   17 ++++--
+ 3 files changed, 82 insertions(+), 59 deletions(-)
+
+2014-07-14  Steve Miller  <sm23@sanger.ac.uk>
+ fix for SIRT:407561
+ src/zmapGFF/zmapGFF2Dumper.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-07-14  Steve Miller  <sm23@sanger.ac.uk>
+ update to make previous more efficient (buffer reuse)
+ src/zmapGFF/zmapGFF3parser.c     |    3 ++-
+ src/zmapGFF/zmapGFFAttribute.c   |   14 ++++++++------
+ src/zmapGFF/zmapGFFAttribute.h   |    2 +-
+ src/zmapGFF/zmapGFFStringUtils.c |    8 ++++----
+ src/zmapGFF/zmapGFFStringUtils.h |    2 +-
+ 5 files changed, 16 insertions(+), 13 deletions(-)
+
+2014-07-14  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'develop' into feature/zeroMQ
+2014-07-14  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "tidy up commenting of quit functions."
+ src/zmapApp/zmapAppwindow.c |   69 ++++++++++++++++++-------------------------
+ 1 files changed, 29 insertions(+), 40 deletions(-)
+
+2014-07-14  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add ungrab function of ungrabbing pointer/keyboard."
+ src/include/ZMap/zmapUtilsGUI.h |    2 ++
+ src/zmapUtils/zmapGUIutils.c    |   23 +++++++++++++++++++++++
+ 2 files changed, 25 insertions(+), 0 deletions(-)
+
+2014-07-14  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "minor tidy up of string defines."
+ src/zmapApp/zmapApp_P.h |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+2014-07-04  Steve Miller  <sm23@sanger.ac.uk>
+ bit of a tidy up of alignment feature creation
+ src/zmapGFF/zmapGFF3parser.c   |   59 ++++++++++++++++++++++++++++++++-------
+ src/zmapGFF/zmapGFFAttribute.c |    7 +---
+ 2 files changed, 50 insertions(+), 16 deletions(-)
+
+2014-07-03  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compile error
+ src/zmapView/zmapViewScratch.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-07-01  Gemma Barson  <gb10@sanger.ac.uk>
+ Better handling of stop/met codons in annotation column
+ src/zmapView/zmapViewScratch.c |   40 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 40 insertions(+), 0 deletions(-)
+
+2014-07-01  Gemma Barson  <gb10@sanger.ac.uk>
+ Grey out Save option when feature details not editable
+ src/zmapWindow/zmapWindowFeatureShow.c |   19 +++++++++++++------
+ 1 files changed, 13 insertions(+), 6 deletions(-)
+
+2014-07-03  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix incorrect install location for server scripts
+ scripts/zmap_compile_and_tar.sh |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-07-03  Steve Miller  <sm23@sanger.ac.uk>
+ put mac back in build
+ scripts/build_config.sh |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2014-07-03  Steve Miller  <sm23@sanger.ac.uk>
+ take mac out of build temporarily
+ scripts/build_config.sh |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2014-07-01  Steve Miller  <sm23@sanger.ac.uk>
+ edit of previous
+ src/zmapGFF/zmapGFFAttribute.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+2014-07-01  Steve Miller  <sm23@sanger.ac.uk>
+ update to fix RT:407213
+ src/zmapGFF/zmapGFFAttribute.c   |   61 +++++++++++++++++++++++++++++++++-----
+ src/zmapGFF/zmapGFFStringUtils.c |   28 +++++++++---------
+ 2 files changed, 67 insertions(+), 22 deletions(-)
+
+2014-07-01  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "replace all usage of strtok with thread safe strtok_r."
+ src/zmapServer/acedb/acedbServer.c     |   36 +++++++++++++++++-----------
+ src/zmapUtils/zmapUtils.c              |   31 ++++--------------------
+ src/zmapView/zmapView.c                |   26 +++++++-------------
+ src/zmapWindow/zmapWindowFeatureShow.c |   41 +++++++++++++++++++++----------
+ 4 files changed, 64 insertions(+), 70 deletions(-)
+
+2014-06-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix up small buglets in our exit routine for orphan zmaps."
+ src/zmapApp/zmapAppwindow.c |   21 ++++++++++++---------
+ 1 files changed, 12 insertions(+), 9 deletions(-)
+
+2014-06-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix a bug with exported coords when zmap is revcomped
+ src/zmapView/zmapViewRemoteControl.c |   12 +++++++++++-
+ src/zmapWindow/zmapWindow.c          |   12 +++++++++++-
+ src/zmapWindow/zmapWindowList.c      |    8 ++++++++
+ src/zmapWindow/zmapWindowMenus.c     |    7 +++++++
+ 4 files changed, 37 insertions(+), 2 deletions(-)
+
+2014-06-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler warning with incorrect enum usage
+ src/libcurlobject/libcurlobject.c |   13 +++++++++++--
+ 1 files changed, 11 insertions(+), 2 deletions(-)
+
+2014-06-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Exclude compiler warnings for deprecated functions
+ src/runconfig |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-06-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler warnings where incorrect enum type used
+ src/zmapXML/zmapXMLParse.c |    3 ---
+ 1 files changed, 0 insertions(+), 3 deletions(-)
+
+2014-06-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Make delete key delete the temp feature when the annotation feature is selected
+ src/zmapWindow/zmapWindow.c |   62 ++++++++++++++++++++++++------------------
+ 1 files changed, 35 insertions(+), 27 deletions(-)
+
+2014-06-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Add menu item shortcuts for annotation menu
+ src/zmapWindow/zmapWindowMenus.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
+
+2014-06-27  Steve Miller  <sm23@sanger.ac.uk>
+ fix to RT:406962
+ src/zmapGFF/zmapGFFAttribute.c |   19 ++++++++++++-------
+ 1 files changed, 12 insertions(+), 7 deletions(-)
+
+2014-06-25  Steve Miller  <sm23@sanger.ac.uk>
+ remove strok (possibly unused and not needed anyway) in zmapView.c
+ src/zmapView/zmapView.c |   26 ++++++++++++++++++++++----
+ 1 files changed, 22 insertions(+), 4 deletions(-)
+
+2014-06-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix regression in looking up features caused by 568ff7d
+ src/zmapWindow/zmapWindowItem.c |    4 ++--
+ src/zmapWindow/zmapWindow_P.h   |    2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+2014-06-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler warnings
+ src/zmapApp/zmapAppRemoteControl.c                 |    2 +-
+ src/zmapView/zmapViewRemoteControl.c               |    8 +++++---
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |    2 +-
+ src/zmapWindow/zmapWindowItem.c                    |    2 +-
+ src/zmapWindow/zmapWindowSeqDisp.c                 |    4 ++--
+ 5 files changed, 10 insertions(+), 8 deletions(-)
+
+2014-06-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge abutting exons
+ src/zmapFeature/zmapFeatureTranscript.c |   26 ++++++++++++++++++++++++--
+ 1 files changed, 24 insertions(+), 2 deletions(-)
+
+2014-06-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug merging splice site in end exons
+ src/zmapFeature/zmapFeatureTranscript.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+2014-06-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Allow copying of multiple features to annotation column
+ src/include/ZMap/zmapFeature.h          |    1 +
+ src/zmapFeature/zmapFeatureTranscript.c |   47 +++++++++++++++++++++++++++
+ src/zmapWindow/zmapWindowFocus.c        |    1 +
+ src/zmapWindow/zmapWindowMenus.c        |   54 +++++++++++++++++++-----------
+ src/zmapWindow/zmapWindowScratch.c      |   32 ++++++++----------
+ src/zmapWindow/zmapWindow_P.h           |    1 -
+ 6 files changed, 97 insertions(+), 39 deletions(-)
+
+2014-06-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Tidying (split long function)
+ src/zmapFeature/zmapFeatureTranscript.c |  220 ++++++++++++++++++++-----------
+ 1 files changed, 143 insertions(+), 77 deletions(-)
+
+2014-06-24  Steve Miller  <sm23@sanger.ac.uk>
+ update to remove use of strtok() from zmapUtils.c
+ src/zmapUtils/zmapUtils.c |   28 ++++++++++++++++++++++++----
+ 1 files changed, 24 insertions(+), 4 deletions(-)
+
+2014-06-16  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compile errors with previous acedbserver change
+ src/include/ZMap/zmapUtils.h       |    2 +-
+ src/zmapServer/acedb/acedbServer.c |    6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+2014-06-16  Steve Miller  <sm23@sanger.ac.uk>
+ finishing off file formatting in src/zmapWindow
+ src/zmapWindow/zmapWindowDrawFeatures.c       | 1742 ++++++++++++------------
+ src/zmapWindow/zmapWindowDump.c               |  232 ++--
+ src/zmapWindow/zmapWindowFeature.c            |  490 ++++----
+ src/zmapWindow/zmapWindowFeatureFuncs.c       |  100 +-
+ src/zmapWindow/zmapWindowFeatureList.c        |    2 +-
+ src/zmapWindow/zmapWindowFeatureShow.c        |  972 +++++++-------
+ src/zmapWindow/zmapWindowFocus.c              |  444 ++++----
+ src/zmapWindow/zmapWindowItem.c               |  344 +++---
+ src/zmapWindow/zmapWindowItemDebug.c          |   52 +-
+ src/zmapWindow/zmapWindowItemHash.c           |  788 ++++++------
+ src/zmapWindow/zmapWindowList.c               |  482 ++++----
+ src/zmapWindow/zmapWindowMark.c               |  344 +++---
+ src/zmapWindow/zmapWindowMenus.c              | 1418 ++++++++++----------
+ src/zmapWindow/zmapWindowNavigator.c          |  376 +++---
+ src/zmapWindow/zmapWindowNavigatorMenus.c     |  170 ++--
+ src/zmapWindow/zmapWindowNavigatorWidget.c    |   64 +-
+ src/zmapWindow/zmapWindowPreferences.c        |   14 +-
+ src/zmapWindow/zmapWindowPrint.c              |  258 ++--
+ src/zmapWindow/zmapWindowRemoteControlUtils.c |  138 +-
+ src/zmapWindow/zmapWindowScale.c              |  406 +++---
+ src/zmapWindow/zmapWindowScratch.c            |    2 +-
+ src/zmapWindow/zmapWindowSearch.c             |  346 +++---
+ src/zmapWindow/zmapWindowSeqDisp.c            |  250 ++--
+ src/zmapWindow/zmapWindowState.c              |  384 +++---
+ src/zmapWindow/zmapWindowStats.c              |  118 +-
+ src/zmapWindow/zmapWindowStyle.c              |  560 ++++----
+ src/zmapWindow/zmapWindowUtils.c              |  270 ++--
+ src/zmapWindow/zmapWindowZoomControl.c        |   26 +-
+ 28 files changed, 5396 insertions(+), 5396 deletions(-)
+
+2014-07-14  Steve Miller  <sm23@sanger.ac.uk>
+ fix for tokenizer buffer size
+ src/zmapGFF/zmapGFFStringUtils.c |    7 +++----
+ src/zmapGFF/zmapGFFStringUtils.h |    2 ++
+ 2 files changed, 5 insertions(+), 4 deletions(-)
+
+2014-06-16  Gemma Barson  <gb10@sanger.ac.uk>
+ Better acedb version comparison and warnings
+ src/zmapServer/acedb/acedbServer.c |   25 ++++++++++++++++-------
+ src/zmapUtils/zmapUtils.c          |   38 ++++++++++++++++++++++++++++++-----
+ src/zmapUtils/zmapUtils_P.h        |    3 +-
+ 3 files changed, 51 insertions(+), 15 deletions(-)
+
+2014-06-16  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix spurious warning when pasting in zmap
+ src/zmapControl/zmapControlWindowMenubar.c |   10 +++++++---
+ 1 files changed, 7 insertions(+), 3 deletions(-)
+
+2014-06-16  Steve Miller  <sm23@sanger.ac.uk>
+ update to file formatting
+ src/zmapWindow/zmapWindowColBump.c    |  140 +++---
+ src/zmapWindow/zmapWindowColConfig.c  |  940 ++++++++++++++++----------------
+ src/zmapWindow/zmapWindowColOrder.c   |   68 ++--
+ src/zmapWindow/zmapWindowDNA.c        |  414 ++++++++--------
+ src/zmapWindow/zmapWindowDNAChoose.c  |  148 +++---
+ src/zmapWindow/zmapWindowDNAList.c    |   78 ++--
+ src/zmapWindow/zmapWindowDisplayOps.c |   60 +-
+ src/zmapWindow/zmapWindowDraw.c       |  644 +++++++++++-----------
+ 8 files changed, 1246 insertions(+), 1246 deletions(-)
+
+2014-06-16  Steve Miller  <sm23@sanger.ac.uk>
+ formatting in zmapWindow.c
+ src/zmapWindow/zmapWindow.c | 3526 +++++++++++++++++++++---------------------
+ 1 files changed, 1763 insertions(+), 1763 deletions(-)
+
+2014-06-16  Steve Miller  <sm23@sanger.ac.uk>
+ update to formatting of zmapWindowRemoteControl.c
+ src/zmapWindow/zmapWindowRemoteControl.c |  510 +++++++++++++++---------------
+ 1 files changed, 255 insertions(+), 255 deletions(-)
+
+2014-06-13  Steve Miller  <sm23@sanger.ac.uk>
+ fix to trap case where a transcript subfeature is outside of the parent [start,end]
+ src/zmapGFF/zmapGFF3parser.c |   50 +++++++++++++++++++++++++----------------
+ 1 files changed, 30 insertions(+), 20 deletions(-)
+
+2014-06-13  Steve Miller  <sm23@sanger.ac.uk>
+ minor bug (incorrect int type) in GFFGetVersion
+ src/zmapGFF/zmapGFFUtils.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-06-10  Steve Miller  <sm23@sanger.ac.uk>
+ put mac back into build
+ scripts/build_config.sh |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2014-06-10  Steve Miller  <sm23@sanger.ac.uk>
+ partial fix for hunt problem (RT:403236); remainder requires alteration to otterlace
+ src/zmapWindow/zmapWindow.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+2014-06-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "Fix broken single feature delete, broken by my own fix for OTF deletes."
+ src/include/ZMap/zmapFeature.h |    1 +
+ src/zmapFeature/zmapFeature.c  |   25 +++++++++++++++++++++----
+ 2 files changed, 22 insertions(+), 4 deletions(-)
+
+2014-06-09  Gemma Barson  <gb10@sanger.ac.uk>
+ Update release notes
+ docs/WWW/user/release_notes.shtml |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2014-06-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "Simplify maximising code, either we can get the right height/width or we 90% each way."
+ src/zmapControl/zmapControlWindow.c |   58 +++++++++--------------------------
+ src/zmapControl/zmapControl_P.h     |    4 +-
+ 2 files changed, 17 insertions(+), 45 deletions(-)
+
+2014-06-09  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove mac from builds
+ scripts/build_config.sh |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2014-06-06  Steve Miller  <sm23@sanger.ac.uk>
+ log warning if registration of composite feature IDs fails
+ src/zmapGFF/zmapGFF3parser.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+2014-06-06  Steve Miller  <sm23@sanger.ac.uk>
+ empty composite_features table upon encountering ###
+ src/zmapGFF/zmapGFF3parser.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+2014-06-05  Steve Miller  <sm23@sanger.ac.uk>
+ fix for hunt in zmap (RT:402136)
+ src/zmapGFF/zmapGFF3_P.h     |    5 +-
+ src/zmapGFF/zmapGFF3parser.c |  125 +++++++++++++++++++++---------------------
+ 2 files changed, 65 insertions(+), 65 deletions(-)
+
+2014-06-05  Gemma Barson  <gb10@sanger.ac.uk>
+ Add error messages for acedb server version check failures
+ src/zmapServer/acedb/acedbServer.c |   26 +++++++++++++++++++++++++-
+ 1 files changed, 25 insertions(+), 1 deletions(-)
+
+2014-06-03  Gemma Barson  <gb10@sanger.ac.uk>
+ Better error message when pipe receives empty file
+ src/zmapServer/pipe/pipeServer.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+2014-06-05  Steve Miller  <sm23@sanger.ac.uk>
+ update to functionality of v3 parser
+ src/zmapGFF/zmapGFF2_P.h     |    4 +-
+ src/zmapGFF/zmapGFF3_P.h     |    6 +
+ src/zmapGFF/zmapGFF3parser.c |  214 ++++++++++++++++++++++++------------------
+ src/zmapGFF/zmapGFF_P.h      |    3 +-
+ 4 files changed, 134 insertions(+), 93 deletions(-)
+
+2014-05-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix puzzling bug in feature erase, seemed not to work for whole sets of features."
+ src/zmapFeature/zmapFeature.c |  242 +++++++++++++++++++++++++----------------
+ 1 files changed, 147 insertions(+), 95 deletions(-)
+
+2014-05-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "formatting only."
+ src/zmapView/zmapViewRemoteControl.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+2014-05-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "get rid of annoying text box init."
+ .../remotetest/remotecontroltest.c                 |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-05-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "correct bad format log messages."
+ src/zmapWindow/zmapWindow.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2014-05-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix bug in detecting truly empty gff file/pipe from just an empty header."
+ src/zmapServer/pipe/pipeServer.c |   65 +++++++++++++------------------------
+ 1 files changed, 23 insertions(+), 42 deletions(-)
+
+2014-05-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "Change to use new params in zMapGFFGetVersionFromGIO()."
+ src/zmapApp/zmapAppwindow.c |   40 ++++++++++++++++++++++++----------------
+ 1 files changed, 24 insertions(+), 16 deletions(-)
+
+2014-05-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix bug and change params in zMapGFFGetVersionFromGIO"
+ src/include/ZMap/zmapGFF.h |    3 ++-
+ src/zmapGFF/zmapGFFUtils.c |   24 +++++-------------------
+ 2 files changed, 7 insertions(+), 20 deletions(-)
+
+2014-05-27  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix stupid bug in version testing."
+ src/zmapUtils/zmapUtils.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+2014-05-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug with editing blixem settings
+ src/zmapView/zmapViewCallBlixem.c |   32 +++++++++++++++++---------------
+ 1 files changed, 17 insertions(+), 15 deletions(-)
+
+2014-05-16  Gemma Barson  <gb10@sanger.ac.uk>
+ Drag-and-drop now sends correct data
+ src/include/ZMap/zmapFeature.h      |   13 +++--
+ src/include/ZMap/zmapGFF.h          |    1 +
+ src/zmapFeature/zmapFeatureOutput.c |   97 +++++++++++++++++++---------------
+ src/zmapGFF/zmapGFF2Dumper.c        |   52 ++++++++++++-------
+ src/zmapWindow/zmapWindow.c         |   22 +++++++-
+ src/zmapWindow/zmapWindowFocus.c    |   21 ++++++++
+ src/zmapWindow/zmapWindow_P.h       |    2 +
+ 7 files changed, 137 insertions(+), 71 deletions(-)
+
+2014-05-16  Gemma Barson  <gb10@sanger.ac.uk>
+ WIP: Drag-and-drop mechanism now working
+ src/zmapWindow/zmapWindow.c        |   45 +++++++++++++----------------------
+ src/zmapWindow/zmapWindowFeature.c |   44 +++++++++++++++++++++++++++++++++-
+ src/zmapWindow/zmapWindowFocus.c   |   25 ++++++++++++++++++++
+ src/zmapWindow/zmapWindow_P.h      |    5 ++++
+ 4 files changed, 89 insertions(+), 30 deletions(-)
+
+2014-05-15  Gemma Barson  <gb10@sanger.ac.uk>
+ WIP: implement dragging from zmap
+ src/zmapWindow/zmapWindow.c |  190 ++++++++++++++++++++++++++-----------------
+ 1 files changed, 117 insertions(+), 73 deletions(-)
+
+2014-05-21  Steve Miller  <sm23@sanger.ac.uk>
+ drawing fix for RT:383730
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |   22 +++++++++++++++----
+ 1 files changed, 17 insertions(+), 5 deletions(-)
+
+2014-05-19  Steve Miller  <sm23@sanger.ac.uk>
+ removal unused variables in zmapControl/zmapControlPreferences.c
+ src/zmapControl/zmapControlPreferences.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+2014-05-19  Steve Miller  <sm23@sanger.ac.uk>
+ bug fix for off-by-one error in gapped boxes
+ src/zmapWindow/canvas/zmapWindowCanvasAlignment.c |  252 ++++++++++----------
+ 1 files changed, 126 insertions(+), 126 deletions(-)
+
+2014-05-16  Steve Miller  <sm23@sanger.ac.uk>
+ updates to info panel and corresponding tooltips
+ src/zmapControl/zmapControlWindowInfoPanel.c |   56 ++++++++++++++++---------
+ src/zmapWindow/zmapWindow.c                  |   11 ++---
+ 2 files changed, 40 insertions(+), 27 deletions(-)
+
+2014-05-15  Steve Miller  <sm23@sanger.ac.uk>
+ update to add Note as feature->description
+ src/include/ZMap/zmapFeature.h |    5 +-
+ src/zmapFeature/zmapFeature.c  |   92 +++++++++++++++++++++++----------------
+ src/zmapGFF/zmapGFF3parser.c   |   16 +++++++-
+ 3 files changed, 72 insertions(+), 41 deletions(-)
+
+2014-05-15  Gemma Barson  <gb10@sanger.ac.uk>
+ Update release notes for 0.23.0
+ docs/WWW/user/release_notes.shtml |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2014-05-14  Gemma Barson  <gb10@sanger.ac.uk>
+ ifdef out file-chooser for print dialog on windows
+ src/zmapUtils/zmapGUIutils.c     |   20 +++-------
+ src/zmapWindow/zmapWindowDump.c  |   73 +++++++++++++++----------------------
+ src/zmapWindow/zmapWindowPrint.c |    4 +-
+ 3 files changed, 38 insertions(+), 59 deletions(-)
+
+2014-05-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix shrinkable window initial size and add it to preference window."
+ src/zmapControl/zmapControl.c            |    2 +-
+ src/zmapControl/zmapControlPreferences.c |  182 +++++++++++++-----------------
+ src/zmapControl/zmapControlWindow.c      |   19 ++-
+ src/zmapControl/zmapControl_P.h          |   15 +--
+ 4 files changed, 99 insertions(+), 119 deletions(-)
+
+2014-05-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "more prefs stuff to utils file and sort out strings."
+ src/zmapView/zmapView.c      |  129 +++++++----------------------------------
+ src/zmapView/zmapViewUtils.c |  100 ++++++++++++++++++++++++++++++++-
+ 2 files changed, 121 insertions(+), 108 deletions(-)
+
+2014-05-13  Gemma Barson  <gb10@sanger.ac.uk>
+ Tidying of cygwin stuff
+ src/zmapAppServices/zmapAppSequenceView.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+2014-05-13  Gemma Barson  <gb10@sanger.ac.uk>
+ ifdef out file-chooser code for import dialog on windows
+ src/zmapControl/zmapControlImportFile.c |   24 +++++++++++++++++++-----
+ 1 files changed, 19 insertions(+), 5 deletions(-)
+
+2014-05-13  Gemma Barson  <gb10@sanger.ac.uk>
+ Use plain text entry instead of file chooser for export on windows
+ src/zmapUtils/zmapGUIutils.c |  100 +++++++++++++++++++++++++++++++++++++++--
+ 1 files changed, 95 insertions(+), 5 deletions(-)
+
+2014-05-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix bug where we fail to reap children when our connection terminates before child has exited."
+ src/zmapServer/pipe/pipeServer.c   |  259 +++++++++++++-----------------------
+ src/zmapServer/pipe/pipeServer_P.h |   14 ++-
+ 2 files changed, 105 insertions(+), 168 deletions(-)
+
+2014-05-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "simplify process termination func and add enum to text func for status."
+ src/include/ZMap/zmapUtils.h |   25 +++++++------
+ src/zmapUtils/zmapUtils.c    |   80 +++++++++--------------------------------
+ 2 files changed, 31 insertions(+), 74 deletions(-)
+
+2014-05-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Add installation instructions for windows(cygwin)
+ src/INSTALL.windows |   70 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/Makefile.am     |    1 +
+ src/README          |    6 +++-
+ 3 files changed, 75 insertions(+), 2 deletions(-)
+
+2014-05-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Update release notes for zmap 0.23.0
+ docs/WWW/user/release_notes.shtml |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+2014-05-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix a bug with saving the temp feature when revcompd
+ src/zmapWindow/zmapWindowFeatureShow.c |   41 +++++++++++++++++++++++++-------
+ 1 files changed, 32 insertions(+), 9 deletions(-)
+
+2014-05-12  Steve Miller  <sm23@sanger.ac.uk>
+ remove a bug in src/zmapGFF/zmapGFFAttribute.c that I put in half an hour ago...
+ src/zmapGFF/zmapGFFAttribute.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+2014-05-12  Steve Miller  <sm23@sanger.ac.uk>
+ removal of compiler warnings from src/zmapGFF/zmapGFFStringUtils.c
+ src/zmapGFF/zmapGFFStringUtils.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-05-12  Steve Miller  <sm23@sanger.ac.uk>
+ removal of compiler warnings from src/zmapGFF/zmapGFFFeatureData.c
+ src/zmapGFF/zmapGFFFeatureData.c |    1 +
+ src/zmapGFF/zmapGFFFeatureData.h |    2 +-
+ 2 files changed, 2 insertions(+), 1 deletions(-)
+
+2014-05-12  Steve Miller  <sm23@sanger.ac.uk>
+ removal of compiler warnings from src/zmapGFF/zmapGFFAttribute.c
+ src/zmapGFF/zmapGFFAttribute.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
+
+2014-05-12  Steve Miller  <sm23@sanger.ac.uk>
+ removal of compiler warnings from src/zmapGFF/zmapGFF3parser.c
+ src/zmapGFF/zmapGFF3parser.c |   42 +++++++++++-------------------------------
+ 1 files changed, 11 insertions(+), 31 deletions(-)
+
+2014-05-12  Steve Miller  <sm23@sanger.ac.uk>
+ update to file formatting
+ src/zmapServer/zmapServer.c |  136 +++++++++++++++++++++---------------------
+ 1 files changed, 68 insertions(+), 68 deletions(-)
+
+2014-05-12  Steve Miller  <sm23@sanger.ac.uk>
+ update to file formatting
+ src/zmapRemoteControl/zmapRemoteControlXML.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-05-12  Steve Miller  <sm23@sanger.ac.uk>
+ update to file formatting
+ src/zmapRemoteControl/zmapRemoteCommand.c |  486 ++++++++++++++--------------
+ src/zmapRemoteControl/zmapRemoteControl.c |   37 +--
+ 2 files changed, 261 insertions(+), 262 deletions(-)
+
+2014-05-12  Steve Miller  <sm23@sanger.ac.uk>
+ update to file formatting
+ src/zmapManager/zmapManager.c |  346 ++++++++++++++++++++--------------------
+ 1 files changed, 173 insertions(+), 173 deletions(-)
+
+2014-05-12  Steve Miller  <sm23@sanger.ac.uk>
+ update to file formatting
+ src/zmapGFF/zmapGFF3parser.c     |   28 ++++++++++++++--------------
+ src/zmapGFF/zmapGFFAttribute.c   |   31 +++++++++++++------------------
+ src/zmapGFF/zmapGFFDirective.h   |    2 +-
+ src/zmapGFF/zmapGFFFeatureData.h |    2 +-
+ src/zmapGFF/zmapGFFGeneral.c     |    6 +++---
+ 5 files changed, 32 insertions(+), 37 deletions(-)
+
+2014-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add tip for how to add ./configure args for autoconf'd package."
+ docs/IntWeb/Development/build_files.shtml |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
+
+2014-05-12  Steve Miller  <sm23@sanger.ac.uk>
+ update to formatting of files
+ src/zmapGFF/gffparser.c      |   64 +-
+ src/zmapGFF/zmapGFF2Dumper.c |   56 +-
+ src/zmapGFF/zmapGFF2parser.c | 1923 ++++++++++++++++++++---------------------
+ 3 files changed, 998 insertions(+), 1045 deletions(-)
+
+2014-07-10  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add hostname to message prefix + rationalise prefix setting."
+ scripts/zmap_functions.sh |   28 ++++++++++++++++++++++------
+ 1 files changed, 22 insertions(+), 6 deletions(-)
+
+2014-07-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "further exiting tidy up."
+ src/zmapApp/zmapApp_P.h     |    1 +
+ src/zmapApp/zmapAppwindow.c |  164 +++++++++++++++++++++++--------------------
+ 2 files changed, 88 insertions(+), 77 deletions(-)
+
+2014-07-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix compile error."
+ src/zmapView/zmapView.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+2014-07-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix stupid bug in time routine."
+ src/zmapUtils/zmapUtils.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-07-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix compile error."
+ src/zmapControl/zmapControlRemoteControl.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+2014-07-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "tidy up state and other left bits."
+ src/zmapRemoteControl/zmapRemoteControl_P.h |  122 ++++++++------------------
+ 1 files changed, 38 insertions(+), 84 deletions(-)
+
+2014-07-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix several state changes, fix when we start queue monitoring, fix logging - too verbose."
+ src/zmapRemoteControl/zmapRemoteControl.c |  537 ++++++++++++-----------------
+ 1 files changed, 223 insertions(+), 314 deletions(-)
+
+2014-07-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix bugs in the exit routines and simplify/unify it."
+ src/zmapApp/zmapAppRemoteCommand.c |   84 +----
+ src/zmapApp/zmapAppRemoteControl.c |  633 +++---------------------------------
+ src/zmapApp/zmapApp_P.h            |  110 +++---
+ src/zmapApp/zmapAppmenubar.c       |    2 +-
+ src/zmapApp/zmapAppwindow.c        |  265 +++++++++------
+ 5 files changed, 267 insertions(+), 827 deletions(-)
+
+2014-07-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "change prototype for reset call to return boolean."
+ src/include/ZMap/zmapRemoteControl.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-07-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove redundant defines from old xremote."
+ src/include/ZMap/zmapRemoteProtocol.h |   12 ------------
+ 1 files changed, 0 insertions(+), 12 deletions(-)
+
+2014-07-02  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove timer callback, not needed."
+ src/include/ZMap/zmapRemoteControl.h               |    6 +--
+ src/zmapControl/zmapControlRemoteControl.c         |   21 ++++++-
+ .../remotetest/remotecontroltest.c                 |   68 +-------------------
+ 3 files changed, 21 insertions(+), 74 deletions(-)
+
+2014-07-02  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add error handling func per send request."
+ src/zmapRemoteControl/zmapRemoteControl.c   |  109 +++++++++++++--------------
+ src/zmapRemoteControl/zmapRemoteControl_P.h |   17 ++--
+ src/zmapView/zmapView.c                     |   22 +++++-
+ src/zmapWindow/zmapWindowFeature.c          |   19 +++++-
+ src/zmapWindow/zmapWindowFeatureShow.c      |   22 +++++-
+ 5 files changed, 120 insertions(+), 69 deletions(-)
+
+2014-07-02  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add error handling func per send request."
+ src/include/ZMap/zmapAppRemote.h   |   16 ++++-
+ src/zmapApp/zmapAppRemoteCommand.c |  107 +++++++++++++++-----------
+ src/zmapApp/zmapAppRemoteControl.c |  150 ++++--------------------------------
+ src/zmapApp/zmapApp_P.h            |    4 +
+ 4 files changed, 97 insertions(+), 180 deletions(-)
+
+2014-06-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix bug, not setting retry counter in message header."
+ src/zmapRemoteControl/zmapRemoteControl.c |   64 ++++++++++++++++++++++++++--
+ 1 files changed, 59 insertions(+), 5 deletions(-)
+
+2014-06-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix dreadful memory leak in my code...not freeing xml parser."
+ src/zmapRemoteControl/zmapRemoteCommand.c |   20 +++++++++++++++++++-
+ 1 files changed, 19 insertions(+), 1 deletions(-)
+
+2014-06-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "start removing Gemma's queueing stuff as it's now in remote control."
+ src/zmapApp/zmapAppRemoteControl.c |  285 +++++++++++++++---------------------
+ 1 files changed, 120 insertions(+), 165 deletions(-)
+
+2014-06-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove setting up of remote from X windows related code. No longer necessary."
+ src/zmapApp/zmapAppwindow.c |   72 ++++++++++++-------------------------------
+ 1 files changed, 20 insertions(+), 52 deletions(-)
+
+2014-06-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "improve timeout handling and failure handling."
+ src/include/ZMap/zmapRemoteControl.h        |    5 +
+ src/zmapRemoteControl/zmapRemoteControl.c   |  167 +++++++++++++++++++--------
+ src/zmapRemoteControl/zmapRemoteControl_P.h |   32 +++---
+ 3 files changed, 141 insertions(+), 63 deletions(-)
+
+2014-06-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix rubbish bug in attribute checking."
+ src/zmapRemoteControl/zmapRemoteCommand.c |    9 ++++-----
+ 1 files changed, 4 insertions(+), 5 deletions(-)
+
+2014-06-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "hack fix for double free, code needs to be removed anyway."
+ src/zmapApp/zmapAppRemoteControl.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+2014-06-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ add timeout handling for incoming requests.
+ src/zmapRemoteControl/zmapRemoteControl_P.h |   67 +++++++++++++++------------
+ 1 files changed, 38 insertions(+), 29 deletions(-)
+
+2014-06-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ fix bugs in test prog.
+ .../remotetest/remotecontroltest.c                 |   60 +++++++++-----------
+ 1 files changed, 26 insertions(+), 34 deletions(-)
+
+2014-06-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add timeout handling for incoming requests."
+ src/include/ZMap/zmapRemoteCommand.h      |    6 +-
+ src/zmapRemoteControl/zmapRemoteCommand.c |   68 ++++--
+ src/zmapRemoteControl/zmapRemoteControl.c |  344 ++++++++++++++++-------------
+ 3 files changed, 240 insertions(+), 178 deletions(-)
+
+2014-06-11  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove idle debug message...too much output."
+ src/zmapRemoteControl/zmapRemoteControl.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+2014-06-10  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix buglet in removing timer function at remote control destroy."
+ src/zmapRemoteControl/zmapRemoteControl.c   |  591 ++++++++++++---------------
+ src/zmapRemoteControl/zmapRemoteControl_P.h |    2 +-
+ 2 files changed, 253 insertions(+), 340 deletions(-)
+
+2014-06-10  Ed Griffiths  <edgrif@sanger.ac.uk>
+ latest version of unfinished zeromq code.
+ src/include/ZMap/zmapCmdLineArgs.h                 |    7 +
+ src/include/ZMap/zmapConfigStrings.h               |   19 +-
+ src/include/ZMap/zmapRemoteCommand.h               |   21 +-
+ src/include/ZMap/zmapRemoteControl.h               |   16 +-
+ src/include/ZMap/zmapRemoteProtocol.h              |   19 +-
+ src/include/ZMap/zmapUtils.h                       |    8 +-
+ src/zmapApp/zmapAppRemoteCommand.c                 |   18 +-
+ src/zmapApp/zmapAppRemoteControl.c                 |  414 ++-
+ src/zmapApp/zmapApp_P.h                            |   26 +-
+ src/zmapApp/zmapAppwindow.c                        |  189 +-
+ src/zmapConfig/zmapConfigLoader.c                  |   11 +
+ .../remotetest/remotecontroltest.c                 |  227 +-
+ src/zmapRemoteControl/zmapRemoteCommand.c          |  429 +++-
+ src/zmapRemoteControl/zmapRemoteControl.c          | 3162 ++++++++++++--------
+ src/zmapRemoteControl/zmapRemoteControl_P.h        |  256 ++-
+ src/zmapRemoteControl/zmapRemoteControl_P.orig.h   |  252 ++
+ src/zmapUtils/zmapCmdLineArgs.c                    |   29 +-
+ src/zmapUtils/zmapCmdLineArgs_P.h                  |   14 +
+ src/zmapUtils/zmapUtils.c                          |  166 +-
+ 19 files changed, 3393 insertions(+), 1890 deletions(-)
+
+2014-06-04  Michael Gray  <mg13@sanger.ac.uk>
+ zeromq_remote.shtml: fix typo and clarify timeout handling sequence.
+ docs/IntWeb/Design/xremote/zeromq_remote.shtml |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2014-05-23  Michael Gray  <mg13@sanger.ac.uk>
+ zeromq_remote.shtml: exponential back-off for timeouts.
+ docs/IntWeb/Design/xremote/zeromq_remote.shtml |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+2014-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add generated file entries to be ignored."
+ src/AceConn/.gitignore |    3 +++
+ src/zeromq/.gitignore  |    1 +
+ 2 files changed, 4 insertions(+), 0 deletions(-)
+
+2014-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add specific ignores for this directory."
+ src/.gitignore |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+2014-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "dummy...we need to remove this file from git...but it does need to be in the import."
+ src/zeromq/src/platform.hpp.in |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+2014-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add test call to zeromq"
+ src/zmapRemoteControl/zmapRemoteControl.c |   70 +++++++++++++----------------
+ 1 files changed, 31 insertions(+), 39 deletions(-)
+
+2014-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add platform.hpp.in to ignored files."
+ src/zeromq/.gitignore |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2014-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix remotecontrol build to work with zeromq."
+ src/Makefile.am |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+2014-05-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add missing header file."
+ src/zeromq/src/config.hpp |   87 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 87 insertions(+), 0 deletions(-)
+
+2014-05-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix incorrect config exclude."
+ .gitignore |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-05-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ add all the zeromq files
+ src/Makefile.common                                |    1 +
+ src/zeromq/.gitignore                              |  261 +
+ src/zeromq/AUTHORS                                 |  124 +
+ src/zeromq/COPYING                                 |  674 +
+ src/zeromq/COPYING.LESSER                          |  181 +
+ src/zeromq/ChangeLog                               |35197 ++++++++++++++++++++
+ src/zeromq/INSTALL                                 |  246 +
+ src/zeromq/MAINTAINERS                             |   56 +
+ src/zeromq/Makefile.am                             |   40 +
+ src/zeromq/NEWS                                    |  527 +
+ src/zeromq/acinclude.m4                            |  930 +
+ src/zeromq/autogen.sh                              |   45 +
+ src/zeromq/builds/msvc/Makefile.am                 |   36 +
+ .../builds/msvc/c_local_lat/c_local_lat.vcproj     |  176 +
+ .../builds/msvc/c_local_lat/c_local_lat.vcxproj    |   87 +
+ .../builds/msvc/c_local_thr/c_local_thr.vcproj     |  178 +
+ .../builds/msvc/c_local_thr/c_local_thr.vcxproj    |  107 +
+ .../builds/msvc/c_remote_lat/c_remote_lat.vcproj   |  176 +
+ .../builds/msvc/c_remote_lat/c_remote_lat.vcxproj  |   87 +
+ .../builds/msvc/c_remote_thr/c_remote_thr.vcproj   |  178 +
+ .../builds/msvc/c_remote_thr/c_remote_thr.vcxproj  |  107 +
+ src/zeromq/builds/msvc/errno.cpp                   |   32 +
+ src/zeromq/builds/msvc/errno.hpp                   |   56 +
+ .../builds/msvc/inproc_lat/inproc_lat.vcproj       |  176 +
+ .../builds/msvc/inproc_lat/inproc_lat.vcxproj      |  106 +
+ .../builds/msvc/inproc_thr/inproc_thr.vcproj       |  176 +
+ .../builds/msvc/inproc_thr/inproc_thr.vcxproj      |  106 +
+ src/zeromq/builds/msvc/libzmq/libzmq.vcproj        |  997 +
+ src/zeromq/builds/msvc/libzmq/libzmq.vcxproj       |  328 +
+ .../builds/msvc/libzmq/libzmq.vcxproj.filters      |  467 +
+ src/zeromq/builds/msvc/msvc.sln                    |   95 +
+ src/zeromq/builds/msvc/msvc10.sln                  |  150 +
+ src/zeromq/builds/msvc/platform.hpp                |   32 +
+ src/zeromq/builds/msvc/properties/Common.props     |   21 +
+ src/zeromq/builds/msvc/properties/Debug.props      |   19 +
+ src/zeromq/builds/msvc/properties/Dynamic.props    |   20 +
+ src/zeromq/builds/msvc/properties/Executable.props |   19 +
+ .../builds/msvc/properties/Precompiled.props       |   14 +
+ src/zeromq/builds/msvc/properties/Release.props    |   22 +
+ src/zeromq/builds/msvc/properties/Static.props     |   15 +
+ src/zeromq/builds/msvc/properties/Win32.props      |   12 +
+ .../builds/msvc/properties/Win32_Release.props     |   17 +
+ .../builds/msvc/properties/WithOpenPGM.props       |   12 +
+ src/zeromq/builds/msvc/properties/ZeroMQ.props     |   22 +
+ .../builds/msvc/properties/ZeroMQ_Static.props     |   23 +
+ src/zeromq/builds/msvc/properties/x64.props        |   12 +
+ src/zeromq/builds/redhat/zeromq.spec.in            |  161 +
+ src/zeromq/configure.ac                            |  487 +
+ src/zeromq/doc/Makefile.am                         |   53 +
+ src/zeromq/doc/asciidoc.conf                       |   56 +
+ src/zeromq/doc/zmq.7                               |  258 +
+ src/zeromq/doc/zmq.html                            | 1129 +
+ src/zeromq/doc/zmq.txt                             |  260 +
+ src/zeromq/doc/zmq_bind.3                          |  194 +
+ src/zeromq/doc/zmq_bind.html                       |  956 +
+ src/zeromq/doc/zmq_bind.txt                        |  102 +
+ src/zeromq/doc/zmq_close.3                         |   70 +
+ src/zeromq/doc/zmq_close.html                      |  825 +
+ src/zeromq/doc/zmq_close.txt                       |   52 +
+ src/zeromq/doc/zmq_connect.3                       |  171 +
+ src/zeromq/doc/zmq_connect.html                    |  938 +
+ src/zeromq/doc/zmq_connect.txt                     |  100 +
+ src/zeromq/doc/zmq_ctx_destroy.3                   |  126 +
+ src/zeromq/doc/zmq_ctx_destroy.html                |  853 +
+ src/zeromq/doc/zmq_ctx_destroy.txt                 |   67 +
+ src/zeromq/doc/zmq_ctx_get.3                       |   82 +
+ src/zeromq/doc/zmq_ctx_get.html                    |  838 +
+ src/zeromq/doc/zmq_ctx_get.txt                     |   72 +
+ src/zeromq/doc/zmq_ctx_new.3                       |   55 +
+ src/zeromq/doc/zmq_ctx_new.html                    |  806 +
+ src/zeromq/doc/zmq_ctx_new.txt                     |   50 +
+ src/zeromq/doc/zmq_ctx_set.3                       |  118 +
+ src/zeromq/doc/zmq_ctx_set.html                    |  883 +
+ src/zeromq/doc/zmq_ctx_set.txt                     |   87 +
+ src/zeromq/doc/zmq_ctx_term.3                      |  126 +
+ src/zeromq/doc/zmq_ctx_term.html                   |  853 +
+ src/zeromq/doc/zmq_ctx_term.txt                    |   67 +
+ src/zeromq/doc/zmq_curve.7                         |   93 +
+ src/zeromq/doc/zmq_curve.html                      |  847 +
+ src/zeromq/doc/zmq_curve.txt                       |   92 +
+ src/zeromq/doc/zmq_curve_keypair.3                 |   69 +
+ src/zeromq/doc/zmq_curve_keypair.html              |  825 +
+ src/zeromq/doc/zmq_curve_keypair.txt               |   56 +
+ src/zeromq/doc/zmq_disconnect.3                    |   97 +
+ src/zeromq/doc/zmq_disconnect.html                 |  854 +
+ src/zeromq/doc/zmq_disconnect.txt                  |   67 +
+ src/zeromq/doc/zmq_epgm.7                          |  200 +
+ src/zeromq/doc/zmq_epgm.html                       |  934 +
+ src/zeromq/doc/zmq_epgm.txt                        |  163 +
+ src/zeromq/doc/zmq_errno.3                         |   67 +
+ src/zeromq/doc/zmq_errno.html                      |  814 +
+ src/zeromq/doc/zmq_errno.txt                       |   50 +
+ src/zeromq/doc/zmq_getsockopt.3                    | 1645 +
+ src/zeromq/doc/zmq_getsockopt.html                 | 2872 ++
+ src/zeromq/doc/zmq_getsockopt.txt                  |  641 +
+ src/zeromq/doc/zmq_init.3                          |   62 +
+ src/zeromq/doc/zmq_init.html                       |  816 +
+ src/zeromq/doc/zmq_init.txt                        |   52 +
+ src/zeromq/doc/zmq_inproc.7                        |  103 +
+ src/zeromq/doc/zmq_inproc.html                     |  847 +
+ src/zeromq/doc/zmq_inproc.txt                      |   85 +
+ src/zeromq/doc/zmq_ipc.7                           |  147 +
+ src/zeromq/doc/zmq_ipc.html                        |  876 +
+ src/zeromq/doc/zmq_ipc.txt                         |   95 +
+ src/zeromq/doc/zmq_msg_close.3                     |   70 +
+ src/zeromq/doc/zmq_msg_close.html                  |  828 +
+ src/zeromq/doc/zmq_msg_close.txt                   |   56 +
+ src/zeromq/doc/zmq_msg_copy.3                      |   84 +
+ src/zeromq/doc/zmq_msg_copy.html                   |  836 +
+ src/zeromq/doc/zmq_msg_copy.txt                    |   57 +
+ src/zeromq/doc/zmq_msg_data.3                      |   65 +
+ src/zeromq/doc/zmq_msg_data.html                   |  813 +
+ src/zeromq/doc/zmq_msg_data.txt                    |   48 +
+ src/zeromq/doc/zmq_msg_get.3                       |   91 +
+ src/zeromq/doc/zmq_msg_get.html                    |  849 +
+ src/zeromq/doc/zmq_msg_get.txt                     |   73 +
+ src/zeromq/doc/zmq_msg_init.3                      |   99 +
+ src/zeromq/doc/zmq_msg_init.html                   |  838 +
+ src/zeromq/doc/zmq_msg_init.txt                    |   65 +
+ src/zeromq/doc/zmq_msg_init_data.3                 |  130 +
+ src/zeromq/doc/zmq_msg_init_data.html              |  869 +
+ src/zeromq/doc/zmq_msg_init_data.txt               |   85 +
+ src/zeromq/doc/zmq_msg_init_size.3                 |   86 +
+ src/zeromq/doc/zmq_msg_init_size.html              |  836 +
+ src/zeromq/doc/zmq_msg_init_size.txt               |   58 +
+ src/zeromq/doc/zmq_msg_more.3                      |   75 +
+ src/zeromq/doc/zmq_msg_more.html                   |  825 +
+ src/zeromq/doc/zmq_msg_more.txt                    |   65 +
+ src/zeromq/doc/zmq_msg_move.3                      |   68 +
+ src/zeromq/doc/zmq_msg_move.html                   |  825 +
+ src/zeromq/doc/zmq_msg_move.txt                    |   52 +
+ src/zeromq/doc/zmq_msg_recv.3                      |  161 +
+ src/zeromq/doc/zmq_msg_recv.html                   |  933 +
+ src/zeromq/doc/zmq_msg_recv.txt                    |  124 +
+ src/zeromq/doc/zmq_msg_send.3                      |  179 +
+ src/zeromq/doc/zmq_msg_send.html                   |  951 +
+ src/zeromq/doc/zmq_msg_send.txt                    |  125 +
+ src/zeromq/doc/zmq_msg_set.3                       |   56 +
+ src/zeromq/doc/zmq_msg_set.html                    |  811 +
+ src/zeromq/doc/zmq_msg_set.txt                     |   46 +
+ src/zeromq/doc/zmq_msg_size.3                      |   65 +
+ src/zeromq/doc/zmq_msg_size.html                   |  813 +
+ src/zeromq/doc/zmq_msg_size.txt                    |   48 +
+ src/zeromq/doc/zmq_null.7                          |   40 +
+ src/zeromq/doc/zmq_null.html                       |  783 +
+ src/zeromq/doc/zmq_null.txt                        |   27 +
+ src/zeromq/doc/zmq_pgm.7                           |  200 +
+ src/zeromq/doc/zmq_pgm.html                        |  934 +
+ src/zeromq/doc/zmq_pgm.txt                         |  163 +
+ src/zeromq/doc/zmq_plain.7                         |   43 +
+ src/zeromq/doc/zmq_plain.html                      |  794 +
+ src/zeromq/doc/zmq_plain.txt                       |   37 +
+ src/zeromq/doc/zmq_poll.3                          |  177 +
+ src/zeromq/doc/zmq_poll.html                       |  928 +
+ src/zeromq/doc/zmq_poll.txt                        |  128 +
+ src/zeromq/doc/zmq_proxy.3                         |   89 +
+ src/zeromq/doc/zmq_proxy.html                      |  854 +
+ src/zeromq/doc/zmq_proxy.txt                       |   98 +
+ src/zeromq/doc/zmq_recv.3                          |  122 +
+ src/zeromq/doc/zmq_recv.html                       |  895 +
+ src/zeromq/doc/zmq_recv.txt                        |   90 +
+ src/zeromq/doc/zmq_recvmsg.3                       |  175 +
+ src/zeromq/doc/zmq_recvmsg.html                    |  937 +
+ src/zeromq/doc/zmq_recvmsg.txt                     |  121 +
+ src/zeromq/doc/zmq_send.3                          |  153 +
+ src/zeromq/doc/zmq_send.html                       |  924 +
+ src/zeromq/doc/zmq_send.txt                        |  102 +
+ src/zeromq/doc/zmq_send_const.3                    |  153 +
+ src/zeromq/doc/zmq_send_const.html                 |  925 +
+ src/zeromq/doc/zmq_send_const.txt                  |  103 +
+ src/zeromq/doc/zmq_sendmsg.3                       |  193 +
+ src/zeromq/doc/zmq_sendmsg.html                    |  953 +
+ src/zeromq/doc/zmq_sendmsg.txt                     |  119 +
+ src/zeromq/doc/zmq_setsockopt.3                    | 1874 ++
+ src/zeromq/doc/zmq_setsockopt.html                 | 3173 ++
+ src/zeromq/doc/zmq_setsockopt.txt                  |  776 +
+ src/zeromq/doc/zmq_socket.3                        | 1016 +
+ src/zeromq/doc/zmq_socket.html                     | 1886 ++
+ src/zeromq/doc/zmq_socket.txt                      |  444 +
+ src/zeromq/doc/zmq_socket_monitor.3                |  241 +
+ src/zeromq/doc/zmq_socket_monitor.html             | 1025 +
+ src/zeromq/doc/zmq_socket_monitor.txt              |  259 +
+ src/zeromq/doc/zmq_strerror.3                      |   67 +
+ src/zeromq/doc/zmq_strerror.html                   |  816 +
+ src/zeromq/doc/zmq_strerror.txt                    |   56 +
+ src/zeromq/doc/zmq_tcp.7                           |  179 +
+ src/zeromq/doc/zmq_tcp.html                        |  886 +
+ src/zeromq/doc/zmq_tcp.txt                         |  103 +
+ src/zeromq/doc/zmq_term.3                          |  126 +
+ src/zeromq/doc/zmq_term.html                       |  853 +
+ src/zeromq/doc/zmq_term.txt                        |   66 +
+ src/zeromq/doc/zmq_unbind.3                        |   92 +
+ src/zeromq/doc/zmq_unbind.html                     |  846 +
+ src/zeromq/doc/zmq_unbind.txt                      |   65 +
+ src/zeromq/doc/zmq_version.3                       |   67 +
+ src/zeromq/doc/zmq_version.html                    |  814 +
+ src/zeromq/doc/zmq_version.txt                     |   54 +
+ src/zeromq/doc/zmq_z85_decode.3                    |   64 +
+ src/zeromq/doc/zmq_z85_decode.html                 |  809 +
+ src/zeromq/doc/zmq_z85_decode.txt                  |   50 +
+ src/zeromq/doc/zmq_z85_encode.3                    |   69 +
+ src/zeromq/doc/zmq_z85_encode.html                 |  816 +
+ src/zeromq/doc/zmq_z85_encode.txt                  |   57 +
+ src/zeromq/foreign/openpgm/Makefile.am             |    8 +
+ .../foreign/openpgm/libpgm-5.2.122~dfsg.tar.gz     |  Bin 0 -> 951536 bytes
+ src/zeromq/include/zmq.h                           |  416 +
+ src/zeromq/include/zmq_utils.h                     |  105 +
+ src/zeromq/perf/Makefile.am                        |   22 +
+ src/zeromq/perf/inproc_lat.cpp                     |  231 +
+ src/zeromq/perf/inproc_thr.cpp                     |  241 +
+ src/zeromq/perf/local_lat.cpp                      |  107 +
+ src/zeromq/perf/local_thr.cpp                      |  131 +
+ src/zeromq/perf/remote_lat.cpp                     |  120 +
+ src/zeromq/perf/remote_thr.cpp                     |   98 +
+ src/zeromq/src/Makefile.am                         |  190 +
+ src/zeromq/src/address.cpp                         |   77 +
+ src/zeromq/src/address.hpp                         |   51 +
+ src/zeromq/src/array.hpp                           |  153 +
+ src/zeromq/src/atomic_counter.hpp                  |  205 +
+ src/zeromq/src/atomic_ptr.hpp                      |  202 +
+ src/zeromq/src/blob.hpp                            |  129 +
+ src/zeromq/src/clock.cpp                           |  201 +
+ src/zeromq/src/clock.hpp                           |   59 +
+ src/zeromq/src/command.hpp                         |  153 +
+ src/zeromq/src/ctx.cpp                             |  497 +
+ src/zeromq/src/ctx.hpp                             |  204 +
+ src/zeromq/src/curve_client.cpp                    |  410 +
+ src/zeromq/src/curve_client.hpp                    |  109 +
+ src/zeromq/src/curve_server.cpp                    |  629 +
+ src/zeromq/src/curve_server.hpp                    |  120 +
+ src/zeromq/src/dbuffer.hpp                         |  134 +
+ src/zeromq/src/dealer.cpp                          |  125 +
+ src/zeromq/src/dealer.hpp                          |   78 +
+ src/zeromq/src/decoder.hpp                         |  173 +
+ src/zeromq/src/devpoll.cpp                         |  193 +
+ src/zeromq/src/devpoll.hpp                         |  105 +
+ src/zeromq/src/dist.cpp                            |  196 +
+ src/zeromq/src/dist.hpp                            |  104 +
+ src/zeromq/src/encoder.hpp                         |  180 +
+ src/zeromq/src/epoll.cpp                           |  181 +
+ src/zeromq/src/epoll.hpp                           |  101 +
+ src/zeromq/src/err.cpp                             |  289 +
+ src/zeromq/src/err.hpp                             |  158 +
+ src/zeromq/src/fd.hpp                              |   44 +
+ src/zeromq/src/fq.cpp                              |  138 +
+ src/zeromq/src/fq.hpp                              |   72 +
+ src/zeromq/src/i_decoder.hpp                       |   51 +
+ src/zeromq/src/i_encoder.hpp                       |   51 +
+ src/zeromq/src/i_engine.hpp                        |   55 +
+ src/zeromq/src/i_poll_events.hpp                   |   45 +
+ src/zeromq/src/io_object.cpp                       |  106 +
+ src/zeromq/src/io_object.hpp                       |   79 +
+ src/zeromq/src/io_thread.cpp                       |  102 +
+ src/zeromq/src/io_thread.hpp                       |   89 +
+ src/zeromq/src/ip.cpp                              |  150 +
+ src/zeromq/src/ip.hpp                              |   44 +
+ src/zeromq/src/ipc_address.cpp                     |  106 +
+ src/zeromq/src/ipc_address.hpp                     |   66 +
+ src/zeromq/src/ipc_connecter.cpp                   |  265 +
+ src/zeromq/src/ipc_connecter.hpp                   |  127 +
+ src/zeromq/src/ipc_listener.cpp                    |  211 +
+ src/zeromq/src/ipc_listener.hpp                    |   98 +
+ src/zeromq/src/kqueue.cpp                          |  214 +
+ src/zeromq/src/kqueue.hpp                          |  113 +
+ src/zeromq/src/lb.cpp                              |  150 +
+ src/zeromq/src/lb.hpp                              |   78 +
+ src/zeromq/src/libzmq.pc.in                        |   10 +
+ src/zeromq/src/likely.hpp                          |   32 +
+ src/zeromq/src/mailbox.cpp                         |   84 +
+ src/zeromq/src/mailbox.hpp                         |   80 +
+ src/zeromq/src/mechanism.cpp                       |  163 +
+ src/zeromq/src/mechanism.hpp                       |  101 +
+ src/zeromq/src/msg.cpp                             |  319 +
+ src/zeromq/src/msg.hpp                             |  160 +
+ src/zeromq/src/mtrie.cpp                           |  430 +
+ src/zeromq/src/mtrie.hpp                           |   91 +
+ src/zeromq/src/mutex.hpp                           |  157 +
+ src/zeromq/src/null_mechanism.cpp                  |  282 +
+ src/zeromq/src/null_mechanism.hpp                  |   65 +
+ src/zeromq/src/object.cpp                          |  419 +
+ src/zeromq/src/object.hpp                          |  137 +
+ src/zeromq/src/options.cpp                         |  634 +
+ src/zeromq/src/options.hpp                         |  149 +
+ src/zeromq/src/own.cpp                             |  205 +
+ src/zeromq/src/own.hpp                             |  144 +
+ src/zeromq/src/pair.cpp                            |  119 +
+ src/zeromq/src/pair.hpp                            |   62 +
+ src/zeromq/src/pgm_receiver.cpp                    |  296 +
+ src/zeromq/src/pgm_receiver.hpp                    |  142 +
+ src/zeromq/src/pgm_sender.cpp                      |  239 +
+ src/zeromq/src/pgm_sender.hpp                      |  119 +
+ src/zeromq/src/pgm_socket.cpp                      |  706 +
+ src/zeromq/src/pgm_socket.hpp                      |  121 +
+ src/zeromq/src/pipe.cpp                            |  485 +
+ src/zeromq/src/pipe.hpp                            |  216 +
+ src/zeromq/src/plain_mechanism.cpp                 |  482 +
+ src/zeromq/src/plain_mechanism.hpp                 |   88 +
+ src/zeromq/src/poll.cpp                            |  179 +
+ src/zeromq/src/poll.hpp                            |  105 +
+ src/zeromq/src/poller.hpp                          |   80 +
+ src/zeromq/src/poller_base.cpp                     |   99 +
+ src/zeromq/src/poller_base.hpp                     |   85 +
+ src/zeromq/src/precompiled.cpp                     |   20 +
+ src/zeromq/src/precompiled.hpp                     |   46 +
+ src/zeromq/src/proxy.cpp                           |  149 +
+ src/zeromq/src/proxy.hpp                           |   31 +
+ src/zeromq/src/pub.cpp                             |   43 +
+ src/zeromq/src/pub.hpp                             |   52 +
+ src/zeromq/src/pull.cpp                            |   62 +
+ src/zeromq/src/pull.hpp                            |   64 +
+ src/zeromq/src/push.cpp                            |   62 +
+ src/zeromq/src/push.hpp                            |   63 +
+ src/zeromq/src/random.cpp                          |   51 +
+ src/zeromq/src/random.hpp                          |   36 +
+ src/zeromq/src/raw_decoder.cpp                     |   63 +
+ src/zeromq/src/raw_decoder.hpp                     |   66 +
+ src/zeromq/src/raw_encoder.cpp                     |   40 +
+ src/zeromq/src/raw_encoder.hpp                     |   60 +
+ src/zeromq/src/reaper.cpp                          |  127 +
+ src/zeromq/src/reaper.hpp                          |   84 +
+ src/zeromq/src/rep.cpp                             |  123 +
+ src/zeromq/src/rep.hpp                             |   63 +
+ src/zeromq/src/req.cpp                             |  279 +
+ src/zeromq/src/req.hpp                             |  110 +
+ src/zeromq/src/router.cpp                          |  410 +
+ src/zeromq/src/router.hpp                          |  124 +
+ src/zeromq/src/select.cpp                          |  219 +
+ src/zeromq/src/select.hpp                          |  126 +
+ src/zeromq/src/session_base.cpp                    |  549 +
+ src/zeromq/src/session_base.hpp                    |  163 +
+ src/zeromq/src/signaler.cpp                        |  488 +
+ src/zeromq/src/signaler.hpp                        |   80 +
+ src/zeromq/src/socket_base.cpp                     | 1271 +
+ src/zeromq/src/socket_base.hpp                     |  253 +
+ src/zeromq/src/stdint.hpp                          |   62 +
+ src/zeromq/src/stream.cpp                          |  257 +
+ src/zeromq/src/stream.hpp                          |   97 +
+ src/zeromq/src/stream_engine.cpp                   |  844 +
+ src/zeromq/src/stream_engine.hpp                   |  197 +
+ src/zeromq/src/sub.cpp                             |   80 +
+ src/zeromq/src/sub.hpp                             |   54 +
+ src/zeromq/src/tcp.cpp                             |  151 +
+ src/zeromq/src/tcp.hpp                             |   42 +
+ src/zeromq/src/tcp_address.cpp                     |  602 +
+ src/zeromq/src/tcp_address.hpp                     |   95 +
+ src/zeromq/src/tcp_connecter.cpp                   |  324 +
+ src/zeromq/src/tcp_connecter.hpp                   |  121 +
+ src/zeromq/src/tcp_listener.cpp                    |  304 +
+ src/zeromq/src/tcp_listener.hpp                    |   89 +
+ src/zeromq/src/thread.cpp                          |  105 +
+ src/zeromq/src/thread.hpp                          |   77 +
+ src/zeromq/src/trie.cpp                            |  334 +
+ src/zeromq/src/trie.hpp                            |   76 +
+ src/zeromq/src/v1_decoder.cpp                      |  148 +
+ src/zeromq/src/v1_decoder.hpp                      |   57 +
+ src/zeromq/src/v1_encoder.cpp                      |   65 +
+ src/zeromq/src/v1_encoder.hpp                      |   49 +
+ src/zeromq/src/v2_decoder.cpp                      |  142 +
+ src/zeromq/src/v2_decoder.hpp                      |   57 +
+ src/zeromq/src/v2_encoder.cpp                      |   67 +
+ src/zeromq/src/v2_encoder.hpp                      |   49 +
+ src/zeromq/src/v2_protocol.hpp                     |   39 +
+ src/zeromq/src/windows.hpp                         |  179 +
+ src/zeromq/src/wire.hpp                            |   98 +
+ src/zeromq/src/xpub.cpp                            |  191 +
+ src/zeromq/src/xpub.hpp                            |   94 +
+ src/zeromq/src/xsub.cpp                            |  228 +
+ src/zeromq/src/xsub.hpp                            |   92 +
+ src/zeromq/src/ypipe.hpp                           |  209 +
+ src/zeromq/src/ypipe_base.hpp                      |   44 +
+ src/zeromq/src/ypipe_conflate.hpp                  |  127 +
+ src/zeromq/src/yqueue.hpp                          |  195 +
+ src/zeromq/src/zmq.cpp                             | 1038 +
+ src/zeromq/src/zmq_utils.cpp                       |  200 +
+ src/zeromq/tests/Makefile.am                       |  104 +
+ src/zeromq/tests/test_abstract_ipc.cpp             |   57 +
+ src/zeromq/tests/test_conflate.cpp                 |   72 +
+ src/zeromq/tests/test_connect_resolve.cpp          |   53 +
+ src/zeromq/tests/test_ctx_destroy.cpp              |   90 +
+ src/zeromq/tests/test_ctx_options.cpp              |   52 +
+ src/zeromq/tests/test_disconnect_inproc.cpp        |  125 +
+ src/zeromq/tests/test_fork.cpp                     |   81 +
+ src/zeromq/tests/test_hwm.cpp                      |  299 +
+ src/zeromq/tests/test_immediate.cpp                |  228 +
+ src/zeromq/tests/test_inproc_connect.cpp           |  339 +
+ src/zeromq/tests/test_invalid_rep.cpp              |   88 +
+ src/zeromq/tests/test_iov.cpp                      |  106 +
+ src/zeromq/tests/test_issue_566.cpp                |   85 +
+ src/zeromq/tests/test_last_endpoint.cpp            |   56 +
+ src/zeromq/tests/test_many_sockets.cpp             |   90 +
+ src/zeromq/tests/test_monitor.cpp                  |  272 +
+ src/zeromq/tests/test_msg_flags.cpp                |   79 +
+ src/zeromq/tests/test_pair_inproc.cpp              |   71 +
+ src/zeromq/tests/test_pair_ipc.cpp                 |   50 +
+ src/zeromq/tests/test_pair_tcp.cpp                 |   50 +
+ src/zeromq/tests/test_probe_router.cpp             |   72 +
+ src/zeromq/tests/test_req_correlate.cpp            |  177 +
+ src/zeromq/tests/test_req_relaxed.cpp              |  116 +
+ src/zeromq/tests/test_reqrep_device.cpp            |  135 +
+ src/zeromq/tests/test_reqrep_inproc.cpp            |   50 +
+ src/zeromq/tests/test_reqrep_ipc.cpp               |   50 +
+ src/zeromq/tests/test_reqrep_tcp.cpp               |   50 +
+ src/zeromq/tests/test_router_mandatory.cpp         |   81 +
+ src/zeromq/tests/test_router_raw_empty.cpp         |   65 +
+ src/zeromq/tests/test_security_curve.cpp           |  212 +
+ src/zeromq/tests/test_security_null.cpp            |  148 +
+ src/zeromq/tests/test_security_plain.cpp           |  150 +
+ src/zeromq/tests/test_shutdown_stress.cpp          |   80 +
+ src/zeromq/tests/test_spec_dealer.cpp              |  254 +
+ src/zeromq/tests/test_spec_pushpull.cpp            |  293 +
+ src/zeromq/tests/test_spec_rep.cpp                 |  155 +
+ src/zeromq/tests/test_spec_req.cpp                 |  253 +
+ src/zeromq/tests/test_spec_router.cpp              |  204 +
+ src/zeromq/tests/test_stream.cpp                   |  227 +
+ src/zeromq/tests/test_sub_forward.cpp              |   91 +
+ src/zeromq/tests/test_system.cpp                   |   82 +
+ src/zeromq/tests/test_term_endpoint.cpp            |  104 +
+ src/zeromq/tests/test_timeo.cpp                    |   75 +
+ src/zeromq/tests/testutil.hpp                      |  279 +
+ src/zeromq/tools/Makefile.am                       |    9 +
+ src/zeromq/tools/curve_keygen.c                    |   58 +
+ src/zeromq/version.sh                              |   21 +
+ src/zeromq/zeromq.spec                             |  161 +
+ src/zmapApp/zmapAppwindow.c                        |   23 +
+ src/zmapWindow/Makefile.am                         |    5 +-
+ 425 files changed, 144200 insertions(+), 1 deletions(-)
+
+2014-05-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "probably shouldn't be in git but tricky."
+ src/zeromq/src/platform.hpp.in |  267 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 267 insertions(+), 0 deletions(-)
+
+2014-05-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add a token bit of test code for zeromq"
+ src/zmapRemoteControl/zmapRemoteControl.c |   40 +++++++++++++++++++++++++++++
+ 1 files changed, 40 insertions(+), 0 deletions(-)
+
+2014-05-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add zeromq to the build."
+ src/Makefile.am  |   10 +++++++---
+ src/bootstrap    |   17 ++++++++++++++++-
+ src/configure.ac |   21 +++++++++++++++++----
+ 3 files changed, 40 insertions(+), 8 deletions(-)

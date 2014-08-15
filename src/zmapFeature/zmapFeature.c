@@ -3233,3 +3233,55 @@ static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any)
 
   return ;
 }
+
+/*
+ * Create a GArray to store elements of type ZMapAlignBlockStruct
+ */
+GArray* zMapAlignBlockArrayCreate()
+{
+  GArray* align_block_array = NULL ;
+  align_block_array = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), 10) ;
+  return align_block_array ;
+}
+
+/*
+ * Destroy a GArray storing elements of type ZMapAlignBlockStruct
+ */
+gboolean zMapAlignBlockArrayDestroy(GArray* const align_block_array)
+{
+  gboolean result = FALSE ;
+   if (align_block_array)
+    {
+      g_array_free(align_block_array, TRUE) ;
+      result = TRUE ;
+    }
+  return result ;
+}
+
+/*
+ *
+ */
+ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray*const align_block_array, int index)
+{
+  ZMapAlignBlock block = NULL ;
+  if (align_block_array && index>=0)
+    {
+      block = &g_array_index(align_block_array, ZMapAlignBlockStruct, index) ;
+    }
+  return NULL ;
+}
+
+gboolean zMapAlignBlockAddBlock(GArray** p_align_block_array, const ZMapAlignBlockStruct * const block)
+{
+  gboolean result = FALSE ;
+  GArray *align_block_array = NULL ;
+  if (p_align_block_array && (align_block_array = *p_align_block_array) && block)
+    {
+      align_block_array = g_array_append_val(align_block_array, *block) ;
+      *p_align_block_array = align_block_array ;
+      result = TRUE ;
+    }
+  return result ;
+}
+
+

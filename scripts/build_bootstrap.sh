@@ -40,13 +40,6 @@ FILES_TO_REMOVE=
 # Load common functions, can't use zmap_message etc. until this is done.
 . $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
 
-
-# I assume this is turned on to give extra information over and above our own log file
-# and that it is turned on here as this is the first point at which the script
-# really starts to issue commands.
-set -o history
-
-
 # Set up the build environment, e.g. build machine list, config package paths etc.
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
@@ -59,6 +52,7 @@ zmap_message_out "Start of build bootstrap, running in $PWD"
 zmap_message_out "About to parse options: $*"
 
 usage="$0 -b <branch> -d -f <zmap feature dir> -g -p <build_prefix> -r -s <seqtools directory> -t -u VARIABLE=VALUE"
+
 while getopts ":b:df:gp:rs:u" opt ; do
     case $opt in
 	b  ) BRANCH=$OPTARG ;;
@@ -132,12 +126,10 @@ cat <<'EOF'
 ECHO=echo
 
 CVS_MODULE=ZMap
-CVS_ROOT=":ext:cvs.internal.sanger.ac.uk:/repos/cvs/zmap"
-CVS_RSH="ssh"
 
 BRANCH='develop'
 
-export CVS_ROOT CVS_RSH
+export CVS_RSH
 
 if [ "x$SCRIPT_NAME" == "x" ]; then
     SCRIPT_NAME=$(basename $0)
@@ -549,6 +541,7 @@ if [ $HOSTS_FAILED == $HOSTS_RUN ]; then
     zmap_message_rm_exit "Build failed on _all_ hosts!"
 fi
 
+# ================== END OF FARMED OFF BUILDS ==================
 
 
 
@@ -562,9 +555,10 @@ zmap_message_out "Path is" $PATH
 zmap_cd $SRC_DIR
 
 
-
-# We need to run autogen.sh and configure to set up the makefile to build
-# the distribution file.
+# Make the distribution file for zmap.
+#
+# To do this we need to do all the autoconf stuff so we can run the "make dist" target.
+#
 
 zmap_message_out "Running $ZMAP_BOOTSTRAP_SCRIPT"
 ./$ZMAP_BOOTSTRAP_SCRIPT || zmap_message_rm_exit "Failed to $ZMAP_BOOTSTRAP_SCRIPT"
@@ -590,54 +584,93 @@ zmap_message_out "Finished make dist ..."
 
 
 
-# Make all the release associated docs.
+# Make all the release associated docs (git changes, RT tickets resolved).
 #
+# We do this by finding all the commits made since the last tag (relative
+# to the release HEAD). We record the parent commit/date of that commit and 
+# then use the parent commit/date to get all the git changes (via the commit)
+# and all the RT tickets resolved (via the date).
+#
+
 if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
 
+    # Slightly complex code aimed at getting the last commit between the release head
+    # and the last tag and then finding the parent commit of that last commit to use
+    # for listing commits and RT tickets fixed.
 
-    # get the date of the last tag commit and ask for stuff since then, git log displays output like:
+    # Get the date/commit of the last tag commit, format displays output in this format:
     #
     #    "2014-06-27 08:43:16 +0100 | 6a869d3 |  (tag: 0.23.0, origin/production, production)"
     #
-    last_tag_details=`git log --tags -1 --simplify-by-decoration --pretty='format:%ai | %h | %d'`
-    read git_date time time_zone sep1 git_commit sep2 tag_stuff <<< $last_tag_details
+    #last_tag_details=`git log --tags -1 --simplify-by-decoration --pretty='format:%ai | %h | %d'`
+
+    #zmap_message_out "last tag details: $last_tag_details"
+
+    # more than we need but good for debug.
+    #read tag_date time time_zone sep1 tag_commit sep2 tag_stuff <<< $last_tag_details
 
 
-    # make the standard change log in the src subdirectory, only gets changes since last release.
-    zmap_message_out "Writing $ZMAP_CHANGELOG_FILE_NAME..."
-    git log --stat --date=short --pretty='format:%ad  %an  <%ae>%n %s' $git_commit.. > $ZMAP_CHANGELOG_FILE_NAME ||  zmap_message_rm_exit "Failed to create $ZMAP_CHANGELOG_FILE_NAME"
-    zmap_message_out "Finished writing $ZMAP_CHANGELOG_FILE_NAME..."
+    # we should use this....     production..release but I can test using feature/zeroMQ
+    since='production'
+    until='feature/zeroMQ'
+
+
+    # HACK FOR TESTING.....
+    git checkout $since
+    git checkout $until
+    git checkout develop
+    git branch
+
+
+    # Use the tag commit to get the earliest commit between release head and the tag,
+    # this is the last commit listed hence the use of tail.
+    # NEED TO INSERT 'release' INTO THE .. BIT !!
+    zmap_message_out "Finding all commits from $since to $until"
+
+    last_commit_details=$(git log --first-parent --date=short --pretty='format:%h %p %ad' $since..$until | tail -n 1)
+
+    read last_commit last_parent_commit last_date <<< $last_commit_details
+
+
+    # Now get the date of the parent commit....
+    parent_details=$(git show --date=short --pretty='format:%h %ad' $last_parent_commit)
+
+    read parent_commit parent_date unwanted_diff <<< $parent_details
+
+    zmap_message_out "Finding commits and RT tickets since commit $parent_commit, date $parent_date"
+
+    # make the standard change log in the src subdirectory, only record changes since last release.
+    changelog_file="$CHECKOUT_BASE/src/$ZMAP_CHANGELOG_FILE_NAME"
+    zmap_message_out "Writing $changelog_file..."
+    git log --stat --date=short --pretty='format:%ad  %an  <%ae>%n %s' $since..$until > $changelog_file ||  zmap_message_rm_exit "Failed to create $changelog_file"
+    zmap_message_out "Finished writing $changelog_file..."
 
 
     # Derive RT format dd/mm/yyyy from git date format yyyy-mm-dd 
-    array=(${git_date//-/ })
+    array=(${parent_date//-/ })
     rt_date="${array[2]}/${array[1]}/${array[0]}"
 
-    # Make the release notes
-    $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $rt_date $CHECKOUT_BASE || \
+    # Make the RT notes
+    rt_repo_file="$CHECKOUT_BASE/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME"
+
+    $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $CHECKOUT_BASE $rt_date $rt_repo_file || \
 	zmap_message_exit "Failed to build release notes from Request Tracker"
 
 
-    # Get the git commits.
-    $SCRIPTS_DIR/zmap_make_git_release_notes.sh $git_commit "zmap" $CHECKOUT_BASE || \
-	zmap_message_exit "Failed to retrieve git commits for commit $git_commit, repository $git_repository"
+    # Make the git notes.
+    git_repo_file="$CHECKOUT_BASE/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_GIT_COMMITS_FILE_NAME"
+
+    $SCRIPTS_DIR/zmap_make_git_release_notes.sh $CHECKOUT_BASE $since $until $git_repo_file || \
+	zmap_message_exit "Failed to retrieve git commits for commit $tag_commit, repository $git_repository"
 
 
+    # No we need to git commit these files and push them....quite involved actually,
+    # do we have a script...should write one.....
+    $SCRIPTS_DIR/git_commit.sh -p  "ZMap version $ZMAP_RELEASE_VERSION - Update RT and git commit reports" \
+	$changelog_file $rt_repo_file $git_repo_file \
+	|| zmap_message_exit "Failed to git push $changelog_file $rt_repo_file $git_repo_file to repository."
+    
 fi
-
-# WE ARE NOT DOING THIS JUST NOW....
-#
-#    # We need to copy the changed web header into the master directory from the directory it was run in.
-#    # $SCRIPTS_DIR looks like /var/tmp/zmap.<rand>/ZMap/scripts and will edit the header found in there.
-#    # We do it here as it doesn't seem to be the responsibility of zmap_build_rt_release_notes.sh
-#    PATH_TO_MODIFIED_WEB_HEADER=$(find $ZMAP_BUILD_CONTAINER/$CVS_MODULE -name $ZMAP_WEBPAGE_HEADER | grep -v CVS)
-#
-#    PATH_TO_MASTER_WEB_HEADER=$(find $ZMAP_BUILD_CONTAINER/$MASTER_SRC_DIR -name $ZMAP_WEBPAGE_HEADER | grep -v CVS)
-#
-#    chmod u+w $PATH_TO_MASTER_WEB_HEADER || zmap_message_err  "Failed to chmod $PATH_TO_MASTER_WEB_HEADER"
-#    rm -f $PATH_TO_MASTER_WEB_HEADER     || zmap_message_exit "Failed to remove $PATH_TO_MASTER_WEB_HEADER"
-#    cp $PATH_TO_MODIFIED_WEB_HEADER $PATH_TO_MASTER_WEB_HEADER || zmap_message_exit "Failed to cp web header"
-#
 
 
 
