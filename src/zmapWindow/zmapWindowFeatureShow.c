@@ -107,7 +107,9 @@ typedef struct ZMapWindowFeatureShowStruct_
 {
   ZMapWindow zmapWindow ;
 
-  gboolean reusable ;                                            /* Can this window be reused for a new feature. */
+  gboolean reusable ;                                            /* Can this window be reused for
+                                                                    a new feature. */
+  gboolean editable ;                                            /* Is the window data editable. */
 
   FooCanvasItem *item;                                            /* The item the user called us on  */
   ZMapFeature feature;                                            /* Feature from item. */
@@ -208,18 +210,17 @@ typedef struct ChapterFeatureStructType {
 
 
 static void remoteShowFeature(ZMapWindowFeatureShow show) ;
-static void localShowFeature(ZMapWindowFeatureShow show, const gboolean editable) ;
-static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_notebook, const gboolean editable) ;
+static void localShowFeature(ZMapWindowFeatureShow show) ;
+static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_notebook) ;
 static void replyShowFeature(ZMapWindow window, gpointer user_data,
                              char *command, RemoteCommandRCType command_rc,
                              char *reason, char *reply) ;
 
-static ZMapWindowFeatureShow featureShowCreate(ZMapWindow window, FooCanvasItem *item) ;
+static ZMapWindowFeatureShow featureShowCreate(ZMapWindow window, FooCanvasItem *item, const gboolean editable) ;
 static void featureShowReset(ZMapWindowFeatureShow show, ZMapWindow window, char *title) ;
 static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
                                          ZMapFeature feature, FooCanvasItem *item,
-                                         ZMapGuiNotebook extras_notebook,
-                                         const gboolean editable) ;
+                                         ZMapGuiNotebook extras_notebook) ;
 
 /* xml event callbacks */
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element,
@@ -259,10 +260,10 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 static void printWarning(char *element, char *handler) ;
 
 
-static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title, const gboolean editable) ;
-static GtkWidget *makeMenuBar(ZMapWindowFeatureShow feature_show, const gboolean editable) ;
+static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title) ;
+static GtkWidget *makeMenuBar(ZMapWindowFeatureShow feature_show) ;
 
-static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list) ;
+static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list, const gboolean editable) ;
 static gboolean windowIsReusable(void) ;
 static ZMapFeature getFeature(FooCanvasItem *item) ;
 
@@ -378,7 +379,7 @@ void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item, const gboolea
       char *feature_name ;
 
       /* Look for a reusable window, if we find one then that gets used. */
-      show = findReusableShow(window->feature_show_windows) ;
+      show = findReusableShow(window->feature_show_windows, editable) ;
 
       feature_name = (char *)g_quark_to_string(feature->original_id) ;
 
@@ -386,9 +387,9 @@ void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item, const gboolea
 
       if (!show)
         {
-          show = featureShowCreate(window, item) ;
+          show = featureShowCreate(window, item, editable) ;
 
-          createEditWindow(show, title, editable) ;
+          createEditWindow(show, title) ;
         }
       else
         {
@@ -411,7 +412,7 @@ void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item, const gboolea
         }
       else
         {
-          localShowFeature(show, editable) ;
+          localShowFeature(show) ;
         }
     }
 
@@ -506,7 +507,7 @@ static void replyShowFeature(ZMapWindow window, gpointer user_data,
         {
           /* command may legitimately fail as peer may not have any extra feature details in which
            * case we do the best we can. */
-          localShowFeature(show, FALSE) ;
+          localShowFeature(show) ;
         }
       else
         {
@@ -545,7 +546,7 @@ static void replyShowFeature(ZMapWindow window, gpointer user_data,
         }
       else
         {
-          showFeature(show, show->xml_curr_notebook, FALSE) ;
+          showFeature(show, show->xml_curr_notebook) ;
         }
 
       /* Free the parser!!! */
@@ -556,7 +557,7 @@ static void replyShowFeature(ZMapWindow window, gpointer user_data,
 }
 
 
-static void localShowFeature(ZMapWindowFeatureShow show, const gboolean editable)
+static void localShowFeature(ZMapWindowFeatureShow show)
 {
   ZMapGuiNotebook extras_notebook = NULL ;
 
@@ -566,7 +567,7 @@ static void localShowFeature(ZMapWindowFeatureShow show, const gboolean editable
     case ZMAPSTYLE_MODE_TRANSCRIPT:
       {
         /* For transcripts add exons and other local stuff. */
-        extras_notebook = makeTranscriptExtras(show->zmapWindow, show->feature, editable) ;
+        extras_notebook = makeTranscriptExtras(show->zmapWindow, show->feature, show->editable) ;
         break ;
       }
     default:
@@ -575,14 +576,14 @@ static void localShowFeature(ZMapWindowFeatureShow show, const gboolean editable
       }
     }
 
-  showFeature(show, extras_notebook, editable) ;
+  showFeature(show, extras_notebook) ;
 
   return ;
 }
 
 
 
-static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_notebook, const gboolean editable)
+static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_notebook)
 {
   char *feature_name ;
   GtkWidget *notebook_widg ;
@@ -590,7 +591,7 @@ static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_noteb
   feature_name = (char *)g_quark_to_string(show->feature->original_id) ;
 
   /* Make the notebook. */
-  show->feature_book = createFeatureBook(show, feature_name, show->feature, show->item, extras_notebook, editable) ;
+  show->feature_book = createFeatureBook(show, feature_name, show->feature, show->item, extras_notebook) ;
 
   if (show->feature_book)
     {
@@ -629,13 +630,14 @@ static ZMapFeature getFeature(FooCanvasItem *item)
 }
 
 
-static ZMapWindowFeatureShow featureShowCreate(ZMapWindow window, FooCanvasItem *item)
+static ZMapWindowFeatureShow featureShowCreate(ZMapWindow window, FooCanvasItem *item, const gboolean editable)
 {
   ZMapWindowFeatureShow show = NULL ;
 
   show = g_new0(ZMapWindowFeatureShowStruct, 1) ;
   show->reusable = windowIsReusable() ;
   show->zmapWindow = window ;
+  show->editable = editable ;
 
   return show ;
 }
@@ -688,8 +690,7 @@ static gboolean windowIsReusable(void)
 
 static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
                                          ZMapFeature feature, FooCanvasItem *item,
-                                         ZMapGuiNotebook extras_notebook,
-                                         const gboolean editable)
+                                         ZMapGuiNotebook extras_notebook)
 {
   ZMapGuiNotebook feature_book = NULL ;
   ZMapGuiNotebookChapter dummy_chapter = NULL ;
@@ -708,7 +709,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
 
 
-  feature_book = zMapGUINotebookCreateNotebook(name, editable, cleanUp, NULL) ;
+  feature_book = zMapGUINotebookCreateNotebook(name, show->editable, cleanUp, NULL) ;
 
   /* The feature fundamentals page. */
   switch(feature->mode)
@@ -765,7 +766,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
   if (feature_book && chapter_title && page_title)
     {
-      ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, NULL, NULL, NULL, (editable ? saveCB : NULL), NULL} ;
+      ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, NULL, NULL, NULL, (show->editable ? saveCB : NULL), NULL} ;
       dummy_chapter = zMapGUINotebookCreateChapter(feature_book, chapter_title, &user_CBs) ;
       page = zMapGUINotebookCreatePage(dummy_chapter, page_title) ;
       subsection = zMapGUINotebookCreateSubsection(page, "Feature") ;
@@ -785,7 +786,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
                                                 "string", g_strdup(g_quark_to_string(feature->original_id)),
                                                 NULL) ;
 
-      if (editable)
+      if (show->editable)
         {
           /* When editing a feature, add an entry to allow the user to set the feature_set.
            * Leave it empty to start with (the current feature set will be the Annotation column
@@ -922,7 +923,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
            * then show them so the user can set them */
           if (feature->feature.transcript.flags.cds
               || feature->feature.transcript.flags.start_not_found || feature->feature.transcript.flags.end_not_found
-              || editable)
+              || show->editable)
             {
               subsection = zMapGUINotebookCreateSubsection(page, "Properties") ;
 
@@ -1013,12 +1014,12 @@ void featureShowDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer d
 
 /* Create the feature display window, this can get very long if our peer (e.g. otterlace)
  * returns a lot of information so we need scrolling. */
-static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title, const gboolean editable)
+static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
 {
   GtkWidget *scrolled_window, *vbox ;
 
   /* Create the edit window. */
-  if (editable)
+  if (feature_show->editable)
     {
       /* Note that we don't use the passed-in title which is the feature name as this is a temp
        * name and not relevant */
@@ -1052,7 +1053,7 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title, co
 
   /* Top level vbox containing the menu bar and below it in a scrolled window all
    * the feature details. */
-  gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(feature_show, editable), FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(feature_show), FALSE, FALSE, 0);
 
 
   /* Annotators asked for an overall scrolled window for feature details. */
@@ -1172,7 +1173,7 @@ static void destroyCB(GtkWidget *widget, gpointer data)
 
 
 /* make the menu from the global defined above ! */
-static GtkWidget *makeMenuBar(ZMapWindowFeatureShow feature_show, const gboolean editable)
+static GtkWidget *makeMenuBar(ZMapWindowFeatureShow feature_show)
 {
   GtkAccelGroup *accel_group;
   GtkItemFactory *item_factory;
@@ -1288,7 +1289,7 @@ static void cleanUp(ZMapGuiNotebookAny any_section, void *user_data)
 
 /* Find a show window in the list of show windows currently displayed that
  * is marked as reusable. */
-static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list)
+static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list, const gboolean editable)
 {
   ZMapWindowFeatureShow reusable_window = NULL ;
   int i ;
@@ -1302,7 +1303,7 @@ static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list)
 
           show_widg = (GtkWidget *)g_ptr_array_index(window_list, i) ;
           show = g_object_get_data(G_OBJECT(show_widg), "zmap_feature_show") ;
-          if (show->reusable)
+          if (show->reusable && show->editable == editable)
             {
               reusable_window = show ;
               break ;
