@@ -1032,6 +1032,7 @@ void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_i
 
 ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
 ZMapFrame zMapFeatureFrameFromCoords(int block, int feature);
+ZMapPhase zMapFeaturePhase(ZMapFeature feature) ;
 
 gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_string) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;

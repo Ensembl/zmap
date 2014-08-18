@@ -443,6 +443,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
                           ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
                           ZMapWindowLockType window_locking) ;
 
+void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
+
 gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
                                         char *command_name, char *request,
                                         ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
