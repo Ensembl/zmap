@@ -2448,6 +2448,8 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
     }
   else
     {
+      gboolean destroy = TRUE ; /* whether to destroy the dialog */
+
       /* block waiting for user to answer dialog, for modal we can use straight gtk call,
        * for non-modal must use our home-grown (and probably buggy) version. */
       if (modal)
@@ -2458,8 +2460,6 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
       /* Return any data that was requested by caller according to which button they click. */
       if (user_data)
         {
-          gboolean destroy = TRUE ; /* whether to destroy the dialog */
-
           switch (result)
             {
               case GTK_RESPONSE_OK:
@@ -2523,10 +2523,10 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
               zMapWarnIfReached() ;
               break ;
           }
-
-          if (destroy)
-            gtk_widget_destroy(dialog) ;
       }
+
+      if (destroy)
+        gtk_widget_destroy(dialog) ;
   }
 
 
