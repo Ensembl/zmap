@@ -2526,12 +2526,6 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
                                                   FALSE,
                                                   0.0,
                                                   ZMAPSTRAND_FORWARD);
-
-      /* Check if the feature already exists in the feature set */
-      ZMapFeatureAny existing_feature = zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_set, feature->unique_id) ;
-      
-      if (existing_feature)
-        ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, "Feature already exists: overwrite?") ;
     }
 
   if (ok)
@@ -2598,9 +2592,11 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
   if (ok)
     {
       zMapFeatureTranscriptRecreateIntrons(feature) ;
+    }
 
-      ZMapWindowMergeNewFeatureStruct merge = {feature, feature_set} ;
-
+  if (ok)
+    {
+      ZMapWindowMergeNewFeatureStruct merge = {feature, feature_set, NULL} ;
       window->caller_cbs->merge_new_feature(window, window->app_data, &merge) ;
 
       /* The scratch feature has been saved. However, we have now created a new "real" feature 

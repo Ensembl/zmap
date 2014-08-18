@@ -193,6 +193,7 @@ typedef struct
 {
   ZMapFeature feature ;
   ZMapFeatureSet feature_set ;
+  GError *error ;
 } ZMapWindowMergeNewFeatureStruct, *ZMapWindowMergeNewFeature ;
 
 

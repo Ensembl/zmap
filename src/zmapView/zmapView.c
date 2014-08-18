@@ -5116,6 +5116,25 @@ static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
   ZMapWindowMergeNewFeature merge = (ZMapWindowMergeNewFeature)window_data ;
   ZMapView view = zMapViewGetView(view_window) ;
+  gboolean ok = TRUE ;
+
+  /* If the feature already exists in the feature set ask if we should overwrite it. If
+   * so, we'll delete the old feature before creating the new one. */
+  ZMapFeatureAny existing_feature = zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)merge->feature_set, merge->feature->unique_id) ;
+
+  if (existing_feature)
+    {
+      ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, "Feature already exists: overwrite?") ;
+
+      GList *feature_list = NULL ;
+      ZMapFeatureContext context_copy = zmapViewCopyContextAll(view->features, (ZMapFeature)existing_feature, merge->feature_set, &feature_list, NULL) ;
+
+      if (context_copy && feature_list)
+        zmapViewEraseFeatures(view, context_copy, &feature_list) ;
+
+      if (context_copy)
+        zMapFeatureContextDestroy(context_copy, TRUE) ;
+    }
 
   zmapViewMergeNewFeature(view, merge->feature, merge->feature_set) ;
 }
