@@ -2458,6 +2458,8 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
       /* Return any data that was requested by caller according to which button they click. */
       if (user_data)
         {
+          gboolean destroy = TRUE ; /* whether to destroy the dialog */
+
           switch (result)
             {
               case GTK_RESPONSE_OK:
@@ -2487,9 +2489,17 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
                       }
                   }
 
+
                 break ;
               }
-            default:
+
+            case GTK_RESPONSE_DELETE_EVENT: 
+              /* Esc key. Same as cancel but we don't destroy as this is done automatically */
+              destroy = FALSE ;
+              /* fall through */
+            case GTK_RESPONSE_CLOSE: 
+              /* fall through */
+            case GTK_RESPONSE_CANCEL: 
               {
                 switch (user_data->type)
                   {
@@ -2508,10 +2518,15 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 
                 break ;
               }
-          }
-      }
 
-      gtk_widget_destroy(dialog) ;
+            default:
+              zMapWarnIfReached() ;
+              break ;
+          }
+
+          if (destroy)
+            gtk_widget_destroy(dialog) ;
+      }
   }
 
 
