@@ -1748,11 +1748,17 @@ static gboolean checkForUnsavedChanges(ZMapView zmap_view)
        * the option to Save here but that's complicated because we then also need to save
        * the new feature that is created to file - it's probably more intuitive for
        * the user to just cancel and then do the save manually */
+      char *msg = 
+        g_strdup_printf("There are unsaved edits in the Annotation column for sequence '%s' - do you really want to quit?.",
+                        zmap_view->view_sequence ? zmap_view->view_sequence->sequence : "<null>") ;
+
       result = zMapGUIMsgGetBoolFull(parent, 
         ZMAP_MSG_WARNING, 
-        "There are unsaved edits in the Annotation column - do you really want to quit?\n\nNote: double-click the Annotation feature to create a real feature from it, then you can save it to file.",
+        msg,
         GTK_STOCK_QUIT,
         GTK_STOCK_CANCEL) ;
+      
+      g_free(msg) ;
     }
 
   return result ;
@@ -1770,12 +1776,18 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
       GtkWindow *parent = NULL ;
 
       /* The responses for the 3 button arguments are ok, cancel, close. */
+      char *msg = 
+        g_strdup_printf("There are unsaved features for sequence '%s' - do you really want to quit?",
+                        zmap_view->view_sequence ? zmap_view->view_sequence->sequence : "<null>") ;
+
       response = zMapGUIMsgGetSaveFull(parent, 
         ZMAP_MSG_WARNING, 
-        "There are unsaved features - do you really want to quit?",
+        msg,
         GTK_STOCK_QUIT,
         GTK_STOCK_CANCEL,
         GTK_STOCK_SAVE) ;
+      
+      g_free(msg) ;
       
       if (response == GTK_RESPONSE_CLOSE)
         {
