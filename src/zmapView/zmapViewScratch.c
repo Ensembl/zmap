@@ -1036,7 +1036,8 @@ gboolean zmapViewScratchClear(ZMapView view)
   /* Only do anything if we have a visible feature i.e. the operations list is not empty */
   if (view->edit_list_start)
     {
-      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+      /* There will be nothing in the scratch column now so nothing needs saving */
+      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1) ;
 
