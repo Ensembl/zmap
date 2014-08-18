@@ -118,7 +118,8 @@
 #define SCRATCH_COPY_THIS_MATCH    "Copy this match"
 #define SCRATCH_COPY_THIS_FEATURE  "Copy this feature"
 #define SCRATCH_COPY_THIS_COORD    "Copy this coord"
-#define SCRATCH_DELETE_SUBFEATURE  "Delete this subfeature"
+#define SCRATCH_DELETE_SUBFEATURE  "Delete subfeature"
+#define SCRATCH_SAVE               "Save"
 #define SCRATCH_UNDO               "Undo"
 #define SCRATCH_REDO               "Redo"
 #define SCRATCH_CLEAR              "Clear"
@@ -189,6 +190,7 @@ enum
     ITEM_MENU_COPY_TO_SCRATCH,
     ITEM_MENU_COPY_SUBPART_TO_SCRATCH,
     ITEM_MENU_DELETE_FROM_SCRATCH,
+    ITEM_MENU_SAVE_SCRATCH_FEATURE,
     ITEM_MENU_CLEAR_SCRATCH,
     ITEM_MENU_UNDO_SCRATCH,
     ITEM_MENU_REDO_SCRATCH,
@@ -850,25 +852,18 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
   GList *selected_features = zmapWindowFocusGetFeatureList(menu_data->window->focus) ;
 
   /* add in menu options for clicked feature */
-  if (menu_data->feature)
+  /* Add options NOT applicable to annotation column first */
+  if (menu_data->feature && menu_data->feature_set && 
+      menu_data->feature_set->unique_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
     {
-      if (menu_data->feature_set && menu_data->feature_set->unique_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
-        {
-          /* Add options not applicable to annotation column */
-          if (menu_data->feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_THIS_EXON, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
-          else if (menu_data->feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
-            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_THIS_MATCH, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
-          else if (menu_data->feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
-            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_THIS_COORD, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
-          else
-            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_THIS_FEATURE, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
-        }
+      if (menu_data->feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_THIS_EXON, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
+      else if (menu_data->feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_THIS_MATCH, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
+      else if (menu_data->feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
+        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_THIS_COORD, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
       else
-        {
-          /* add in annotation menu options */
-          addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_DELETE_SUBFEATURE, ITEM_MENU_DELETE_FROM_SCRATCH, itemMenuCB, NULL);
-        }
+        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_THIS_FEATURE, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
     }
 
   /* add in menu options for selected features */
@@ -892,6 +887,14 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
   addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_UNDO, ITEM_MENU_UNDO_SCRATCH, itemMenuCB, "<Ctrl>Z");
   addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_REDO, ITEM_MENU_REDO_SCRATCH, itemMenuCB, "<Ctrl>Y");
   addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_CLEAR, ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
+
+  /* add in annotation menu options */
+  if (menu_data->feature && menu_data->feature_set && 
+      menu_data->feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
+    {
+      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_DELETE_SUBFEATURE, ITEM_MENU_DELETE_FROM_SCRATCH, itemMenuCB, NULL);
+      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_SAVE, ITEM_MENU_SAVE_SCRATCH_FEATURE, itemMenuCB, NULL);
+    }
 
   menu[i].type = ZMAPGUI_MENU_NONE;
 
@@ -926,6 +929,10 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
     case ITEM_MENU_DELETE_FROM_SCRATCH:
       zmapWindowScratchDeleteFeature(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, TRUE);
+      break ;
+
+    case ITEM_MENU_SAVE_SCRATCH_FEATURE:
+      zmapWindowFeatureShow(menu_data->window, menu_data->item, TRUE) ;
       break ;
 
     case ITEM_MENU_UNDO_SCRATCH:
