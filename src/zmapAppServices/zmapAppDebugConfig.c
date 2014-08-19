@@ -222,7 +222,7 @@ void zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error)
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                                 ZMAPSTANZA_APP_DATASET, &tmp_string))
         {
-  /* if not supplied needs to appear in all the pipe script URLs */
+          /* if not supplied needs to appear in all the pipe script URLs */
           if (!seq_map->dataset)
             {
               seq_map->dataset = tmp_string;
@@ -233,7 +233,7 @@ void zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error)
                           "Dataset '%s' in the config file does not match the set dataset '%s'",
                           tmp_string, seq_map->dataset) ;
             }
-}
+        }
 
       if (!tmp_error && 
           zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,

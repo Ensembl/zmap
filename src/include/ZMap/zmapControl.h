@@ -72,6 +72,7 @@ ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap sequence_map) ;
 int zMapNumViews(ZMap zmap) ;
 gboolean zMapSetSessionColour(ZMap zmap, GdkColor *session_colour) ;
 ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
+ZMapView zMapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout) ;

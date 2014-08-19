@@ -691,7 +691,7 @@ void zmapControlResetCB(ZMap zmap)
  * and an error message in err_msg which the caller should free with g_free.
  * Note this call only creates the window and tells the view to connect, the connection
  * may fail some time later resulting in the view being removed. */
-ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg)
+ZMapView zMapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg)
 {
   ZMapView view = NULL ;
   ZMapViewWindow view_window ;
