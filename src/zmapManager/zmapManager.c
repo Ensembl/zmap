@@ -215,12 +215,12 @@ OOPS...THIS ALL DOESN'T WORK LIKE THAT NOW....
  * 
  *  */
 ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
-    ZMap *zmap_inout, ZMapView *view_out)
+                                    ZMap *zmap_inout, ZMapView *view_out, GError **error)
 {
   ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
   ZMap zmap = *zmap_inout ;
   ZMapView view = NULL ;
-
+  GError *tmp_error = NULL ;
 
   if (!zmap && !(zmap = zMapCreate((void *)(zmaps->gui_data), sequence_map)))
     zMapLogWarning("%s", "Cannot create zmap.") ;
@@ -234,7 +234,8 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
         zMapSetSessionColour(zmap, &(app_context->session_colour)) ;
 
       /* Try to load the sequence. */
-      if ((view_window = zMapAddView(zmap, sequence_map)) && zMapConnectView(zmap, zMapViewGetView(view_window)))
+      if ((view_window = zMapAddView(zmap, sequence_map, &tmp_error)) && 
+          zMapConnectView(zmap, zMapViewGetView(view_window), &tmp_error))
         {
           result = ZMAPMANAGER_ADD_OK ;
         }
@@ -257,6 +258,9 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 
       (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;
     }
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
 
   return result ;
 }
@@ -794,9 +798,9 @@ static ZMapManagerAddResult addNewView(ZMapManager zmaps,
           ZMapViewWindow view_window ;
 
           /* Try to load the sequence. */
-          if ((view_window = zMapAddView(zmap, sequence_map))
+          if ((view_window = zMapAddView(zmap, sequence_map, NULL))
                       && (view = zMapViewGetView(view_window))
-                      && zMapConnectView(zmap, view))
+              && zMapConnectView(zmap, view, NULL))
             {
               window = zMapViewGetWindow(view_window) ;
 

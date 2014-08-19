@@ -157,7 +157,7 @@ ZMapViewWindow zMapViewGetDefaultViewWindow(ZMapView view) ;
 ZMapViewWindow zMapViewRemoveWindow(ZMapViewWindow view_window) ;
 
 void zMapViewRedraw(ZMapViewWindow view_window) ;
-gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view, char *config_str) ;
+gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view, char *config_str, GError **error) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;

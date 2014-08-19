@@ -594,17 +594,17 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
  *
  *
  *  */
-gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view, char *config_str)
+gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view, char *config_str, GError **error)
 {
   gboolean result = TRUE ;
   char *stylesfile = NULL;
+  GError *tmp_error = NULL ;
 
   if (zmap_view->state > ZMAPVIEW_MAPPED)        // && zmap_view->state != ZMAPVIEW_LOADED)
 
     {
-      /* Probably we should indicate to caller what the problem was here....
-       * e.g. if we are resetting then say we are resetting etc.....again we need g_error here. */
       zMapLogCritical("GUI: %s", "cannot connect because not in initial state.") ;
+      g_set_error(&tmp_error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_STATE, "Cannot connect because not in initial state") ;
 
       result = FALSE ;
     }
@@ -847,15 +847,18 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 	  while ((settings_list = g_list_next(settings_list)));
 
 
-	  /* Ought to return a gerror here........ */
 	  if (!zmap_view->sources_loading)
-	    result = FALSE ;
+            {
+              result = FALSE ;
+              g_set_error(&tmp_error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_SOURCES_LOADING, "Sources failed to load") ;
+            }
 
 	  zMapConfigSourcesFreeList(free_this_list);
 	}
       else
 	{
 	  result = FALSE;
+          g_set_error(&tmp_error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_SERVERS, "No sources found") ;
 	}
 
 
@@ -875,6 +878,8 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
   //  if(stylesfile)
   //    g_free(stylesfile);
 
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
 
   return result ;
 }

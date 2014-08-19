@@ -419,13 +419,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
          {
            ZMap zmap = NULL ;
            ZMapView view = NULL ;
-           char *err_msg = NULL ;
 
-           if (!zmapAppCreateZMap(app_context, app_context->default_sequence, &zmap, &view, &err_msg))
-             {
-               zMapWarning("%s", err_msg) ;
-             }
-           else if (num_views > 1)
+           if (zmapAppCreateZMap(app_context, app_context->default_sequence, &zmap, &view) &&
+               num_views > 1)
              {
                /* There is more than one sequence map. We've added the first already but add
                 * subsequence ones as new Views. */
@@ -444,7 +440,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
                        g_free(err_msg) ;
                      }
                  }
-            }
+             }
         }
     }
 
@@ -913,7 +909,7 @@ static void checkForCmdLineStartEndArg(int argc, char *argv[], const char *seque
   if (got_start && got_end && !sequence)
     {
       g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_NO_SEQUENCE,
-                  "The coords were specified on the command line but the sequence name missing: must specify all or none of start/end/sequence") ;
+                  "The coords were specified on the command line but the sequence name missing: must specify all or none of sequence/start/end") ;
     }
   else if (got_start && got_end)
     {
@@ -1416,12 +1412,14 @@ static ZMapFeatureSequenceMap createSequenceMap(char *sequence, int start, int e
 }
 
 
-/* Check the given file to see if we can extract sequence details */
+/* Check the given file to see if we can extract sequence details. allow_multiple means that
+ * multiple seq_maps are allowed so if the new details do not match the existing seq_map(s) then
+ * we can create a new seq_map; otherwise the new details must match or we set the error. */
 static void checkInputFileForSequenceDetails(const char* const filename,
                                              char *config_file,
                                              char *styles_file,
                                              GList **seq_maps_inout,
-                                             const gboolean merge_details,
+                                             const gboolean allow_multiple,
                                              GError **error)
 {
   gboolean result = FALSE ;
@@ -1528,23 +1526,30 @@ static void checkInputFileForSequenceDetails(const char* const filename,
         {
           seq_map = (ZMapFeatureSequenceMap)(seq_map_item->data) ;
 
-          zMapAppMergeSequenceName(seq_map, sequence, merge_details, &tmp_error) ;
+          zMapAppMergeSequenceName(seq_map, sequence, allow_multiple, &tmp_error) ;
 
           if (!tmp_error)
-            zMapAppMergeSequenceCoords(seq_map, start, end, FALSE, merge_details, &tmp_error) ;
+            zMapAppMergeSequenceCoords(seq_map, start, end, FALSE, allow_multiple, &tmp_error) ;
 
-          if (!tmp_error)
+          if (tmp_error && allow_multiple)
             {
-              /* We successfully merged, so we've found our seq_map and we're done */
+              /* The error indicates we failed to merge with this seq_map but multiple seq_maps
+               * are allowed so reset the error and result and continue to the next seq_map. If we 
+               * don't find one then we'll create a new seq_map. */
+              g_error_free(tmp_error) ;
+              tmp_error = NULL ;
+              seq_map = NULL ;
+            }
+          else if (tmp_error)
+            {
+              /* We failed to match this seq_map and multiple seq_maps are not allowed so 
+               * this is an error. */
               break ;
             }
           else
             {
-              seq_map = NULL ;
-
-              /* The error just indicates we failed to merge so reset it before trying the next one */
-              g_error_free(tmp_error) ;
-              tmp_error = NULL ;
+              /* We successfully found a suitable seq_map (and merged if applicable), so we're done */
+              break ;
             }
         }
 
@@ -1593,22 +1598,25 @@ static void checkInputFiles(char *config_file, char *styles_file, GList **seq_ma
   char **file_list = zMapCmdLineFinalArg() ;
   ZMapFeatureSequenceMap seq_map = NULL ;
 
-  if (seq_maps_inout && *seq_maps_inout)
-    seq_map = (ZMapFeatureSequenceMap)g_list_first(*seq_maps_inout) ;
+  if (seq_maps_inout && *seq_maps_inout && g_list_length(*seq_maps_inout) > 0)
+    seq_map = (ZMapFeatureSequenceMap)((*seq_maps_inout)->data) ;
 
   if (file_list)
     {
       /* If details have been set by the command line or config file then take those as absolute
-       * and don't merge the ranges from the input files - just check that they are valid. If
-       * they are not already set, merge the ranges from the input files to get the full extent. */
-      const gboolean merge_details = (seq_map && !seq_map->sequence && !seq_map->start && !seq_map->end);
+       * and don't allow multiple seq_maps to be created - just validate for each file that the
+       * sequence details match those already set. If the sequence details are not already set, 
+       * we allow multiple seq_maps to be created for different input sequences/regions and 
+       * we also allow the range for a single sequence to be expanded if there are multiple
+       * requested regions that overlap. */
+      const gboolean allow_multiple = (seq_map && !seq_map->sequence && !seq_map->start && !seq_map->end);
 
       /* Loop through the input files */
       char **file = file_list ;
 
       for (; file && *file; ++file)
         {
-          checkInputFileForSequenceDetails(*file, config_file, styles_file, seq_maps_inout, merge_details, &tmp_error) ;
+          checkInputFileForSequenceDetails(*file, config_file, styles_file, seq_maps_inout, allow_multiple, &tmp_error) ;
 
           if (tmp_error)
             {

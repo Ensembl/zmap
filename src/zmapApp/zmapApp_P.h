@@ -272,7 +272,7 @@ GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context) ;
 GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
 gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map,
-			   ZMap *zmap_out, ZMapView *view_out, char **err_msg_out) ;
+                           ZMap *zmap_out, ZMapView *view_out) ;
 void zmapAppExit(ZMapAppContext app_context) ;
 
 void zmapAppPingStart(ZMapAppContext app_context) ;

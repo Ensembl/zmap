@@ -39,6 +39,23 @@
 #include <ZMap/zmapWindowNavigator.h>
 
 
+/*
+ * We follow glib convention in error domain naming:
+ *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
+ */
+#define ZMAP_VIEW_ERROR g_quark_from_string("ZMAP_VIEW_ERROR")
+
+/*
+ * Some error types for use in the view
+ */
+typedef enum
+{
+  ZMAPVIEW_ERROR_STATE,
+  ZMAPVIEW_ERROR_SOURCES_LOADING,
+  ZMAPVIEW_ERROR_SERVERS,
+} ZMapViewError ;
+
+
 
 /* IF WE REFACTORED VIEW TO HAVE NO WINDOWS ETC THEN THIS COULD GO.... */
 /* We have this because it enables callers to call on a window but us to get the corresponding view. */
