@@ -403,32 +403,45 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Only show default sequence if we are _not_ controlled via XRemote */
   if (!remote_control)
      {
-      ZMap zmap = NULL ;
-      ZMapView view = NULL ;
-      char *err_msg = NULL ;
+       gboolean ok = TRUE ;
+       int num_views = seq_maps ? g_list_length(seq_maps) : 0 ;
 
-      if (!zmapAppCreateZMap(app_context, app_context->default_sequence, &zmap, &view, &err_msg))
-        {
-          zMapWarning("%s", err_msg) ;
-        }
-      else if (g_list_length(seq_maps) > 1)
-        {
-          /* There is more than one sequence map. We've added the first already but add
-           * subsequence ones as new Views. */
-          GList *seq_map_item = seq_maps->next ;
+       if (num_views > 2)
+         {
+           ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING,
+                                  "There are %d different sequences/regions in the input sources. This will create %d views in ZMap. Are you sure you want to continue?",
+                                  num_views, num_views) ;
+         }
 
-          for ( ; seq_map_item; seq_map_item = seq_map_item->next)
-            {
-              ZMapFeatureSequenceMap seq_map = (ZMapFeatureSequenceMap)(seq_map_item->data) ;
-              char *err_msg = NULL ;
+       if (ok)
+         {
+           ZMap zmap = NULL ;
+           ZMapView view = NULL ;
+           char *err_msg = NULL ;
 
-              zMapControlInsertView(zmap, seq_map, &err_msg) ;
+           if (!zmapAppCreateZMap(app_context, app_context->default_sequence, &zmap, &view, &err_msg))
+             {
+               zMapWarning("%s", err_msg) ;
+             }
+           else if (num_views > 1)
+             {
+               /* There is more than one sequence map. We've added the first already but add
+                * subsequence ones as new Views. */
+               GList *seq_map_item = seq_maps->next ;
 
-              if (err_msg)
-                {
-                  zMapWarning("%s", err_msg) ;
-                  g_free(err_msg) ;
-                }
+               for ( ; seq_map_item; seq_map_item = seq_map_item->next)
+                 {
+                   ZMapFeatureSequenceMap seq_map = (ZMapFeatureSequenceMap)(seq_map_item->data) ;
+                   char *err_msg = NULL ;
+
+                   zMapControlInsertView(zmap, seq_map, &err_msg) ;
+
+                   if (err_msg)
+                     {
+                       zMapWarning("%s", err_msg) ;
+                       g_free(err_msg) ;
+                     }
+                 }
             }
         }
     }
