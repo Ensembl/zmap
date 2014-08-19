@@ -65,7 +65,7 @@
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out, GError **error) ;
-static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout, GError **error) ;
+static void checkForCmdLineStartEndArg(int argc, char *argv[], const char *sequence, int *start_inout, int *end_inout, GError **error) ;
 static void checkConfigDir(char **config_file_out, char **styles_file_out) ;
 static gboolean checkSequenceArgs(int argc, char *argv[],
                                   char *config_file, char *styles_file,
@@ -408,9 +408,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
        if (num_views > 2)
          {
-           ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING,
-                                  "There are %d different sequences/regions in the input sources. This will create %d views in ZMap. Are you sure you want to continue?",
-                                  num_views, num_views) ;
+           char *msg = g_strdup_printf("There are %d different sequences/regions in the input sources. This will create %d views in ZMap. Are you sure you want to continue?",
+                                       num_views, num_views) ;
+
+           ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, msg) ;
+           g_free(msg) ;
          }
 
        if (ok)
@@ -899,7 +901,7 @@ static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_ou
 
 
 /* Did user specify seqence/start/end on command line. */
-static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout, GError **error)
+static void checkForCmdLineStartEndArg(int argc, char *argv[], const char *sequence, int *start_inout, int *end_inout, GError **error)
 {
   GError *tmp_error = NULL ;
   ZMapCmdLineArgsType start_value ;
@@ -908,7 +910,12 @@ static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout,
   gboolean got_start = zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_START, &start_value) ;
   gboolean got_end = zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_END, &end_value) ;
 
-  if (got_start && got_end)
+  if (got_start && got_end && !sequence)
+    {
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_NO_SEQUENCE,
+                  "The coords were specified on the command line but the sequence name missing: must specify all or none of start/end/sequence") ;
+    }
+  else if (got_start && got_end)
     {
       *start_inout = start_value.i ;
       *end_inout = end_value.i ;
@@ -1691,7 +1698,7 @@ static gboolean checkSequenceArgs(int argc, char *argv[],
 
   /* Check for coords on command-line */
   if (!tmp_error)
-    checkForCmdLineStartEndArg(argc, argv, &start, &end, &tmp_error) ;
+    checkForCmdLineStartEndArg(argc, argv, sequence, &start, &end, &tmp_error) ;
 
   /* Create the sequence map from the details so far (this is blank if none given) */
   if (!tmp_error)
