@@ -533,7 +533,9 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
         {
           RemoteZeroMQMessage outgoing_request ;
 
-          header = headerCreate(ZACP_REQUEST, request_id, (remote_control->timeout_list_pos + 1), request_time) ;
+          header = headerCreate(ZACP_REQUEST, request_id, 1, request_time) ;
+
+          zMapLogWarning("Creating header/request: [ %s ] %s", header, request) ;
 
           outgoing_request = zeroMQMessageCreate(header, request) ;
 
@@ -931,7 +933,9 @@ static void receiveReplyFromAppCB(void *remote_data, gboolean abort, char *reply
         {
           RemoteZeroMQMessage outgoing_reply ;
 
-          header = headerCreate(ZACP_REPLY, reply_id, (remote_control->timeout_list_pos + 1), reply_time) ;
+          header = headerCreate(ZACP_REPLY, reply_id, 1, reply_time) ;
+
+          zMapLogWarning("Creating header/reply: [ %s ] %s", header, reply) ;
 
           outgoing_reply = zeroMQMessageCreate(header, reply) ;
 
@@ -1265,6 +1269,9 @@ static gboolean queueMonitorCB(gpointer user_data)
                           }
                         else
                           {
+                            zMapLogWarning("Recreating header/request: [ %s ] %s",
+                                           remote_control->curr_req_raw->header, remote_control->curr_req_raw->body) ;
+
                             if (timeout_type == TIMEOUT_NOT_FINAL)
                               {
                                 REMOTELOGMSG(remote_control,
@@ -1277,7 +1284,6 @@ static gboolean queueMonitorCB(gpointer user_data)
                                              timeout_s,
                                              remote_control->curr_req_raw->header,
                                              remote_control->curr_req_raw->body) ;
-
 
                                 /* must readd to our queue... */
                                 queueAddFront(remote_control->outgoing_requests, remote_control->curr_req_raw) ;
@@ -2789,7 +2795,7 @@ static char *headerCreate(char *request_type, char *request_id, int retry_num, c
  * 
  * Note that curr_header is free'd by this function so you should probably use it like this:
  * 
- * my_header = headerSetRetry(myheader, 2) ;
+ * my_header = headerSetRetry(my_header, 2) ;
  *  */
 static char *headerSetRetry(char *curr_header, int new_retry_num)
 {
