@@ -1303,14 +1303,14 @@ static gboolean compareRequests(ZMapRemoteControl remote_control,
 
       if (!(result = (request_1_version == request_2_version)))
         *error_out = g_strdup_printf("%s protocol versions: %s vs %s", prefix,
-                                     g_quark_to_string(req_version), g_quark_to_string(reply_version)) ;
+                                     g_quark_to_string(request_1_version), g_quark_to_string(request_2_version)) ;
       else if (!(result = (request_1_app_id == request_2_app_id)))
-        *error_out = g_strdup_printf("%s socket ids: %s vs %s", prefix,
-                                     g_quark_to_string(req_socket_id), g_quark_to_string(reply_socket_id)) ;
+        *error_out = g_strdup_printf("%s app ids: %s vs %s", prefix,
+                                     g_quark_to_string(request_1_app_id), g_quark_to_string(request_2_app_id)) ;
       else if (!(result = (g_ascii_strcasecmp(request_1_request_id, request_2_id) == 0)))
-        *error_out = g_strdup_printf("%s request ids: %s vs %s", prefix, req_request_id, reply_id) ;
+        *error_out = g_strdup_printf("%s request ids: %s vs %s", prefix, request_1_request_id, request_2_id) ;
       else if (!(result = (g_ascii_strcasecmp(request_1_command, request_2_command) == 0)))
-        *error_out = g_strdup_printf("%s commands: %s vs %s", prefix, req_command, reply_command) ;
+        *error_out = g_strdup_printf("%s commands: %s vs %s", prefix, request_1_command, request_2_command) ;
       else
         result = TRUE ;
     }
