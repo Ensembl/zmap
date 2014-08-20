@@ -532,8 +532,11 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data)
           /* If any of the features fail to merge, error and exit */
           if (!merged)
             {
-              g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, 
-                          "Failed to merge feature '%s'.\n", g_quark_to_string(feature->original_id));
+              if (*merge_data->error == NULL)
+                {
+                  g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, 
+                              "Failed to merge feature '%s'.\n", g_quark_to_string(feature->original_id));
+                }
               break ;
             }
         }
@@ -628,6 +631,14 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
 
   /* Create the exons */
   scratchFeatureRecreateExons(zmap_view, feature) ;
+
+  /* Update the feature ID because the coords may have changed */
+  feature->unique_id = zMapFeatureCreateID(feature->mode,
+                                           (char *)g_quark_to_string(feature->original_id),
+                                           feature->strand,
+                                           feature->x1,
+                                           feature->x2,
+                                           0, 0);
 
   return feature ;
 }

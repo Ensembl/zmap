@@ -2580,6 +2580,14 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
                 }
 
               zMapFeatureAddTranscriptExonIntron(feature, exon, NULL) ;
+
+              /* Update the feature ID because the coords may have changed */
+              feature->unique_id = zMapFeatureCreateID(feature->mode,
+                                                       (char *)g_quark_to_string(feature->original_id),
+                                                       feature->strand,
+                                                       feature->x1,
+                                                       feature->x2,
+                                                       0, 0);
             }
           else
             {
