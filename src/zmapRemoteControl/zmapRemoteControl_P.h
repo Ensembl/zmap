@@ -179,13 +179,14 @@ typedef struct ReqReplyStructType
 
   RemoteZeroMQMessage reply ;
 
-
-  int num_retries;
-
 } ReqReplyStruct, *ReqReply ;
 
 
-/* Structs for Send/Receive interfaces */
+
+
+/* 
+ *                    Structs for Send/Receive interfaces
+ */
 
 /* Usual common struct, all the below structs must have the same members as these first. */
 typedef struct RemoteAnyStructType
@@ -259,7 +260,10 @@ typedef struct RemoteSendStructName
 
 
 
-/* The main remote control struct which contains the self and peer interfaces. */
+/* 
+ *     The main remote control struct which contains the send and receive interfaces.
+ */
+
 typedef struct ZMapRemoteControlStructType
 {
   /* We keep a magic pointer because these structs are handed to us by external callers
