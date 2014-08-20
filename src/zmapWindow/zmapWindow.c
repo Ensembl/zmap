@@ -2390,7 +2390,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* OK...I'M NOT SURE WE SHOULD BE DOING THIS....THERE MUST BE A BETTER MECHANISM.... */
 
-  /* IS THIS OUR PROBLEM WITH FREEZING.... */
+  /* IS THIS OUR PROBLEM WITH FREEZING....NO, IT'S NOT !! */
 
   /* We want the canvas to be the focus widget of its "window" otherwise keyboard input
    * (i.e. short cuts) will be delivered to some other widget. We do this here because
@@ -3112,7 +3112,7 @@ static void sendClientEvent(ZMapWindow window, FeatureSetsState feature_sets, gp
 }
 
 
-/* Called to service the event sent by sendClientEvent(), this seems ocntorted but we need
+/* Called to service the event sent by sendClientEvent(), this seems contorted but we need
  * to be sure drawing of features occurs as part of the normal stream of events so that we
  * don't draw before the window has been displayed for instance. This routine calls
  * the data display routines of ZMap.
