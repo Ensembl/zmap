@@ -54,7 +54,7 @@ typedef enum {ZMAPEDIT_MERGE, ZMAPEDIT_DELETE, ZMAPEDIT_CLEAR} ZMapEditType ;
 typedef struct _EditOperationStruct
 {
   ZMapEditType edit_type;      /* the type of edit operation */
-  GList *src_features;         /* the new feature(s) to be merged in, i.e. the source for the merge */
+  GList *src_feature_ids;      /* the IDs of the feature(s) to be merged in, i.e. the source for the merge */
   long seq_start;              /* sequence coord (sequence features only) */
   long seq_end;                /* sequence coord (sequence features only) */
   ZMapFeatureSubPartSpan subpart; /* the subpart to use, if applicable */
@@ -73,6 +73,13 @@ typedef struct _ScratchMergeDataStruct
 
   EditOperation operation;               /* details about the operation being performed */
 } ScratchMergeDataStruct, *ScratchMergeData;
+
+
+typedef struct _FeatureSearchStruct
+{
+  GQuark search_id ;          /* feature id to search for */
+  ZMapFeature found_feature ; /* the feature we found */
+} FeatureSearchStruct, *FeatureSearch ;
 
 
 /* Local function declarations */
@@ -280,6 +287,45 @@ void zmapViewScratchRemoveFeatures(ZMapView view, GList *feature_list)
 }
 
 
+static ZMapFeatureContextExecuteStatus findFeatureById(GQuark key,
+                                                       gpointer data,
+                                                       gpointer user_data,
+                                                       char **error_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+
+  ZMapFeatureAny any = (ZMapFeatureAny)data ;
+  FeatureSearch search_data = (FeatureSearch)user_data ;
+  
+  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE && 
+      ((ZMapFeature)any)->unique_id == search_data->search_id)
+    {
+      search_data->found_feature = (ZMapFeature)any ;
+      status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ; /* stop searching */
+    }
+  
+  return status ;
+}
+
+
+ZMapFeature getFeature(ZMapView view, GList *list_item)
+{
+  ZMapFeature result = NULL ;
+  zMapReturnValIfFailSafe(list_item, result) ;
+
+  GQuark feature_id = GPOINTER_TO_INT(list_item->data) ;
+  FeatureSearchStruct search_data = {feature_id, NULL} ;
+
+  zMapFeatureContextExecute((ZMapFeatureAny)(view->features),
+                            ZMAPFEATURE_STRUCT_FEATURE,
+                            findFeatureById,
+                            &search_data);
+  
+  result = search_data.found_feature ;
+  
+  return result ;
+}
+
 /*!
  * \brief For a ZMapFeature item from a list, remove the feature from the scratch column. Does
  * nothing if the features are not used in the construction of the scratch feature.
@@ -295,18 +341,19 @@ void scratchRemoveFeature(gpointer list_data, gpointer user_data)
   for (; operation_item; operation_item = operation_item->next)
     {
       EditOperation operation = (EditOperation)(operation_item->data) ;
-      GList *feature_item = operation->src_features ;
+      GList *feature_item = operation->src_feature_ids ;
 
       while (feature_item)
         {
-          ZMapFeature feature = (ZMapFeature)(feature_item->data) ;
+          ZMapFeature feature = getFeature(view, feature_item) ;
 
           /* Increment pointer before removing from list because that will invalidate the iterator */
+          GList *cur_item = feature_item ;
           feature_item = feature_item->next ;
 
-          if (feature->unique_id == search_feature->unique_id)
+          if (!feature || (feature && feature->unique_id == search_feature->unique_id))
             {
-              operation->src_features = g_list_remove(operation->src_features, feature) ;
+              operation->src_feature_ids = g_list_remove(operation->src_feature_ids, cur_item) ;
               changed = TRUE ;
               char *msg = g_strdup_printf("Feature '%s' is no longer valid and has been removed from the Annotation column.\n", 
                                           g_quark_to_string(feature->original_id)) ;
@@ -396,15 +443,15 @@ static gboolean scratchMergeBase(ScratchMergeData merge_data)
   /* If it's a peptide sequence check if it's a met or stop codon and
    * set the boundary type accordingly (only do this if the span we're 
    * looking at is a single base) */
-  GList *feature_list = merge_data->operation->src_features ;
+  GList *feature_list = merge_data->operation->src_feature_ids ;
 
   if (merge_data->operation->seq_end - merge_data->operation->seq_start == 2 &&
       feature_list &&
       g_list_length(feature_list) > 0)
     {
-      ZMapFeature feature = (ZMapFeature)(feature_list->data) ;
+      ZMapFeature feature = getFeature(merge_data->view, feature_list) ;
 
-      if (feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
+      if (feature && feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
         {
           ZMapSequence sequence = &feature->feature.sequence ;
 
@@ -544,11 +591,11 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data)
   else
     {
       /* Loop through each feature in the list */
-      GList *item = operation->src_features ;
+      GList *item = operation->src_feature_ids ;
 
       for ( ; item ; item = item->next)
         {
-          ZMapFeature feature = (ZMapFeature)(item->data) ;
+          ZMapFeature feature = getFeature(merge_data->view, item) ;
 
           /* If the start/end is not set, set it now from the feature extent */
           if (!scratchGetStartEndFlag(merge_data->view))
@@ -557,49 +604,52 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data)
               merge_data->dest_feature->x2 = feature->x2;
             }
 
-          switch (feature->mode)
+          if (feature)
             {
-            case ZMAPSTYLE_MODE_ALIGNMENT:      /* fall through */
-            case ZMAPSTYLE_MODE_BASIC:
-              merged = scratchMergeBasic(merge_data, feature);
-              break;
-            case ZMAPSTYLE_MODE_TRANSCRIPT:
-              merged = scratchMergeTranscript(merge_data, feature);
-              break;
-            case ZMAPSTYLE_MODE_SEQUENCE:
-              merged = scratchMergeBase(merge_data);
-              break;
-            case ZMAPSTYLE_MODE_GLYPH:
-              merged = scratchMergeSplice(merge_data, feature);
-              break;
-
-            case ZMAPSTYLE_MODE_ASSEMBLY_PATH: /* fall through */
-            case ZMAPSTYLE_MODE_TEXT:          /* fall through */
-            case ZMAPSTYLE_MODE_GRAPH:         /* fall through */
-            case ZMAPSTYLE_MODE_PLAIN:         /* fall through */
-            case ZMAPSTYLE_MODE_META:          /* fall through */
-              g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Copy of feature of type %d is not implemented.\n", feature->mode);
-              break;
-
-            case ZMAPSTYLE_MODE_INVALID:
-              g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Tried to merge a feature that has been deleted.\n");
-              break ;
-
-            default:
-              g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Unexpected feature type %d.\n", feature->mode);
-              break ;
-            };
-
-          /* If any of the features fail to merge, exit */
-          if (!merged)
-            {
-              /* If the error is not already set, set it now .*/
-              if (*merge_data->error == NULL)
+              switch (feature->mode)
                 {
-                  g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, 
-                              "Failed to merge feature '%s'.\n", g_quark_to_string(feature->original_id));
+                case ZMAPSTYLE_MODE_ALIGNMENT:      /* fall through */
+                case ZMAPSTYLE_MODE_BASIC:
+                  merged = scratchMergeBasic(merge_data, feature);
+                  break;
+                case ZMAPSTYLE_MODE_TRANSCRIPT:
+                  merged = scratchMergeTranscript(merge_data, feature);
+                  break;
+                case ZMAPSTYLE_MODE_SEQUENCE:
+                  merged = scratchMergeBase(merge_data);
+                  break;
+                case ZMAPSTYLE_MODE_GLYPH:
+                  merged = scratchMergeSplice(merge_data, feature);
+                  break;
+
+                case ZMAPSTYLE_MODE_ASSEMBLY_PATH: /* fall through */
+                case ZMAPSTYLE_MODE_TEXT:          /* fall through */
+                case ZMAPSTYLE_MODE_GRAPH:         /* fall through */
+                case ZMAPSTYLE_MODE_PLAIN:         /* fall through */
+                case ZMAPSTYLE_MODE_META:          /* fall through */
+                  g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Copy of feature of type %d is not implemented.\n", feature->mode);
+                  break;
+
+                case ZMAPSTYLE_MODE_INVALID:
+                  g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Tried to merge a feature that has been deleted.\n");
+                  break ;
+
+                default:
+                  g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Unexpected feature type %d.\n", feature->mode);
+                  break ;
+                };
+
+              /* If any of the features fail to merge, exit */
+              if (!merged)
+                {
+                  /* If the error is not already set, set it now .*/
+                  if (*merge_data->error == NULL)
+                    {
+                      g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, 
+                                  "Failed to merge feature '%s'.\n", g_quark_to_string(feature->original_id));
+                    }
+                  break ;
                 }
-              break ;
             }
         }
     }
@@ -1034,6 +1084,23 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
 
 
 /*!
+ * \brief Utility to convert a GList of ZMapFeatures to a GList of quarks to store in the
+ * operation .
+ */
+static void operationAddFeatureList(EditOperation operation, GList *features)
+{
+  /* Add the feature IDs to our list. We don't store pointers to the actual features because
+   * these can become invalidated e.g. on revcomp */
+  GList *feature_item = features ;
+
+  for ( ; feature_item; feature_item = feature_item->next)
+    {
+      ZMapFeature feature = (ZMapFeature)(feature_item->data) ;
+      operation->src_feature_ids = g_list_append(operation->src_feature_ids, GINT_TO_POINTER(feature->unique_id)) ;
+    }
+}
+
+/*!
  * \brief Copy the given feature(s) into the scratch column
  */
 gboolean zmapViewScratchCopyFeatures(ZMapView view,
@@ -1050,12 +1117,13 @@ gboolean zmapViewScratchCopyFeatures(ZMapView view,
       EditOperation operation = g_new0(EditOperationStruct, 1);
       
       operation->edit_type = ZMAPEDIT_MERGE ;
-      operation->src_features = features;
       operation->seq_start = seq_start;
       operation->seq_end = seq_end;
       operation->subpart = subpart ;
       operation->use_subfeature = use_subfeature ;
       operation->boundary = ZMAPBOUNDARY_NONE;
+
+      operationAddFeatureList(operation, features) ;
 
       /* Add this operation to the list and recreate the scratch feature. */
       scratchAddOperation(view, operation);
@@ -1082,12 +1150,13 @@ gboolean zmapViewScratchDeleteFeatures(ZMapView view,
       EditOperation operation = g_new0(EditOperationStruct, 1);
       
       operation->edit_type = ZMAPEDIT_DELETE ;
-      operation->src_features = features;
       operation->seq_start = seq_start;
       operation->seq_end = seq_end;
       operation->subpart = subpart ;
       operation->use_subfeature = use_subfeature ;
       operation->boundary = ZMAPBOUNDARY_NONE;
+
+      operationAddFeatureList(operation, features) ;
 
       /* Add this operation to the list and recreate the scratch feature. */
       scratchAddOperation(view, operation);
