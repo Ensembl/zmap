@@ -518,20 +518,27 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data)
               merged = scratchMergeSplice(merge_data, feature);
               break;
 
-            case ZMAPSTYLE_MODE_INVALID:       /* fall through */
             case ZMAPSTYLE_MODE_ASSEMBLY_PATH: /* fall through */
             case ZMAPSTYLE_MODE_TEXT:          /* fall through */
             case ZMAPSTYLE_MODE_GRAPH:         /* fall through */
             case ZMAPSTYLE_MODE_PLAIN:         /* fall through */
             case ZMAPSTYLE_MODE_META:          /* fall through */
-            default:
-              g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "copy of feature of type %d is not implemented.\n", feature->mode);
+              g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Copy of feature of type %d is not implemented.\n", feature->mode);
               break;
+
+            case ZMAPSTYLE_MODE_INVALID:
+              g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Tried to merge a feature that has been deleted.\n");
+              break ;
+
+            default:
+              g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Unexpected feature type %d.\n", feature->mode);
+              break ;
             };
 
-          /* If any of the features fail to merge, error and exit */
+          /* If any of the features fail to merge, exit */
           if (!merged)
             {
+              /* If the error is not already set, set it now .*/
               if (*merge_data->error == NULL)
                 {
                   g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, 
@@ -551,9 +558,9 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data)
   if (merge_data->error && *(merge_data->error))
     {
       if (merged)
-        zMapWarning("Warning while copying feature: %s", (*(merge_data->error))->message);
+        zMapWarning("Warning while adding feature to Annotation column: %s", (*(merge_data->error))->message);
       else
-        zMapCritical("Error copying feature: %s", (*(merge_data->error))->message);
+        zMapCritical("Error adding feature to Annotation column: %s", (*(merge_data->error))->message);
 
       g_error_free(*(merge_data->error));
       merge_data->error = NULL;
