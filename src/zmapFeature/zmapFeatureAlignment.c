@@ -105,6 +105,7 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
 static AlignStrCanonical alignStrCanonicalCreate(ZMapFeatureAlignFormat align_format) ;
 static void alignStrCanonicalDestroy(AlignStrCanonical *canon) ;
 static AlignStrOp alignStrCanonicalGetOperator(AlignStrCanonical canon, int i) ;
+static char alignStrCanonicalGetOperatorChar(AlignStrCanonical canon, int i) ;
 static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct * const op) ;
 static gboolean alignStrCanonicalRemoveOperator(AlignStrCanonical canon, int i) ;
 static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format) ;
@@ -123,6 +124,21 @@ static gboolean parse_cigar_general(const char * const str,
                                     AlignStrCanonical canon,
                                     AlignStrCanonicalProperties properties,
                                     GError **error) ;
+static gboolean parse_get_op_data(int i,
+                                  char * const sBuff,
+                                  size_t buffer_size,
+                                  const char ** pArray,
+                                  int nOp,
+                                  const char * const target,
+                                  gboolean bLeft) ;
+static char * parse_is_valid_number(char *sBuff, size_t iLen, int opt) ;
+static int parse_is_valid_op_data(char * sBuff,
+                                  gboolean bMayOmit1,
+                                  gboolean bLeft,
+                                  gboolean bSpaces,
+                                  gboolean bEnd,
+                                  gboolean bFirst) ;
+static gboolean parse_canon_valid(AlignStrCanonical canon) ;
 
 /*
  * (sm23) I've put in the new code for this within defines in order that
@@ -788,6 +804,42 @@ static gboolean parse_remove_invalid_operators(AlignStrCanonical canon,
 
   *p_num_removed = num_removed ;
 
+  return result ;
+}
+
+/*
+ * Perform any other tests that are not covered by any other
+ * functions involved in cigar parsing.
+ *
+ * Currently these are:
+ *
+ * (a) Check that the first and last operators are M for all
+ *     cases of ZMapFeatureAlignFormat.
+ */
+static gboolean parse_canon_valid(AlignStrCanonical canon)
+{
+  gboolean result = FALSE ;
+  char cOp = '\0' ;
+  static const char cM = 'M' ;
+  zMapReturnValIfFail(canon &&
+                      (canon->format!=ZMAPALIGN_FORMAT_INVALID), result ) ;
+  result = TRUE ;
+  if (canon->num_operators == 0)
+    {
+      result = FALSE ;
+    }
+  else if (canon->num_operators >= 1)
+    {
+      cOp = alignStrCanonicalGetOperatorChar(canon, 0) ;
+      if (cOp != cM )
+        result = FALSE ;
+      if (result && canon->num_operators > 1)
+        {
+          cOp = alignStrCanonicalGetOperatorChar(canon, canon->num_operators-1) ;
+          if (cOp != cM)
+            result = FALSE ;
+        }
+    }
   return result ;
 }
 
@@ -1511,6 +1563,20 @@ static AlignStrOp alignStrCanonicalGetOperator(AlignStrCanonical canon, int i)
 }
 
 /*
+ * Return the character associated with the i-th operator.
+ */
+static char alignStrCanonicalGetOperatorChar(AlignStrCanonical canon, int i)
+{
+  char cOp = '\0' ;
+  AlignStrOp op = alignStrCanonicalGetOperator(canon, i) ;
+  if (op)
+    {
+      cOp = op->op ;
+    }
+  return cOp ;
+}
+
+/*
  * Add an operator to the end of the canonical
  */
 static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct * const op)
@@ -1547,8 +1613,10 @@ static gboolean alignStrCanonicalRemoveOperator(AlignStrCanonical canon, int i)
 
 
 
-/* Takes a match string and format and converts that string into a canonical form
- * for further processing. */
+/*
+ * Takes a match string and format and converts that string into a canonical form
+ * for further processing.
+ */
 static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format)
 {
   AlignStrCanonical canon = NULL ;
@@ -1579,6 +1647,11 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
       zMapWarnIfReached() ;
       break ;
     }
+
+  /*
+   * final test of validity
+   */
+  result = parse_canon_valid(canon) ;
 
   if (!result)
     {
