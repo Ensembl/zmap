@@ -78,6 +78,7 @@ typedef struct _ScratchMergeDataStruct
 /* Local function declarations */
 static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature feature) ;
 static void scratchFeatureRecreate(ZMapView view) ;
+void scratchRemoveFeature(gpointer list_data, gpointer user_data) ;
 
 
 /*!
@@ -267,9 +268,7 @@ ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set)
 }
 
 
-/*!
- * \brief Utility to find a feature from a glist item which is the feature's unique_id.
- */
+/* Utility to get a feature from a feature ID in a GList item */
 ZMapFeature getFeature(ZMapView view, GList *list_item)
 {
   ZMapFeature result = NULL ;
@@ -288,6 +287,61 @@ ZMapFeature getFeature(ZMapView view, GList *list_item)
     }
 
   return result ;
+}
+
+
+/*!
+ * \brief Remove the features in the given list from the scratch column. Does nothing if the
+ * features are not used in the construction of the scratch feature.
+ */
+void zmapViewScratchRemoveFeatures(ZMapView view, GList *feature_list)
+{
+  zMapReturnIfFailSafe(view && feature_list) ;
+
+  g_list_foreach(feature_list, scratchRemoveFeature, view) ;
+}
+
+
+/*!
+ * \brief For a ZMapFeature item from a list, remove the feature from the scratch column. Does
+ * nothing if the features are not used in the construction of the scratch feature.
+ */
+void scratchRemoveFeature(gpointer list_data, gpointer user_data)
+{
+  ZMapFeature search_feature = (ZMapFeature)list_data ;
+  ZMapView view = (ZMapView)user_data ;
+  gboolean changed = FALSE ;
+
+  GList *operation_item = view->edit_list ;
+
+  for (; operation_item; operation_item = operation_item->next)
+    {
+      EditOperation operation = (EditOperation)(operation_item->data) ;
+      GList *feature_item = operation->src_feature_ids ;
+
+      while (feature_item)
+        {
+          ZMapFeature feature = getFeature(view, feature_item) ;
+
+          /* Increment pointer before removing from list because that will invalidate the iterator */
+          GList *cur_item = feature_item ;
+          feature_item = feature_item->next ;
+
+          if (!feature || (feature && feature->unique_id == search_feature->unique_id))
+            {
+              operation->src_feature_ids = g_list_remove(operation->src_feature_ids, cur_item) ;
+              changed = TRUE ;
+              char *msg = g_strdup_printf("Feature '%s' is no longer valid and has been removed from the Annotation column.\n", 
+                                          g_quark_to_string(feature->original_id)) ;
+              zMapWarning("%s", msg) ;
+              g_free(msg) ;
+            }
+        }
+    }
+  
+  /* If we've changed the list of source features we need to recreate the scratch feature */
+  if (changed)
+    scratchFeatureRecreate(view);
 }
 
 
