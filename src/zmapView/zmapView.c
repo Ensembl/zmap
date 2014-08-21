@@ -1386,12 +1386,6 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 	zMapLogTime(TIMER_REVCOMP,TIMER_ELAPSED,0,"");
       zmapViewBusy(zmap_view, FALSE);
 
-
-      /* Clear any features in the scratch column (only required because
-       * its undo/redo stack has pointers to features which will become
-       * invalidated after the revcomp) */
-      zmapViewScratchClear(zmap_view);
-
       result = TRUE ;
     }
     
