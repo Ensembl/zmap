@@ -518,6 +518,7 @@ gboolean zmapViewScratchRedo(ZMapView zmap_view);
 gboolean zmapViewScratchClear(ZMapView zmap_view);
 ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view);
 ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set);
+void zmapViewScratchRemoveFeatures(ZMapView view, GList *feature_list) ;
 
 
 #ifdef LOTS_OF_EXONS
