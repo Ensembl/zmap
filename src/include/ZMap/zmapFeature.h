@@ -922,7 +922,8 @@ typedef gboolean (*ZMapFeatureDumpFeatureFunc)(ZMapFeatureAny feature_any,
 ZMapFeatureAny zMapFeatureAnyCreate(ZMapStyleMode feature_type) ;
 ZMapFeatureAny zMapFeatureAnyCopy(ZMapFeatureAny orig_feature_any) ;
 gboolean zMapFeatureAnyFindFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
-ZMapFeatureAny zMapFeatureParentGetFeatureByID(ZMapFeatureAny feature_set, GQuark feature_id) ;
+ZMapFeatureAny zMapFeatureParentGetFeatureByID(ZMapFeatureAny feature_parent, GQuark feature_id) ;
+ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_any, GQuark feature_id, ZMapFeatureLevelType struct_type) ;
 gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
 gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;

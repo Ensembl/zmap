@@ -75,13 +75,6 @@ typedef struct _ScratchMergeDataStruct
 } ScratchMergeDataStruct, *ScratchMergeData;
 
 
-typedef struct _FeatureSearchStruct
-{
-  GQuark search_id ;          /* feature id to search for */
-  ZMapFeature found_feature ; /* the feature we found */
-} FeatureSearchStruct, *FeatureSearch ;
-
-
 /* Local function declarations */
 static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature feature) ;
 static void scratchFeatureRecreate(ZMapView view) ;
@@ -273,30 +266,6 @@ ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set)
   return feature;
 }
 
-/*! 
- * \brief Callback used to determine whether the current feature has the id in the user data and
- * if so to set the result in the user data.
- */
-static ZMapFeatureContextExecuteStatus findFeatureById(GQuark key,
-                                                       gpointer data,
-                                                       gpointer user_data,
-                                                       char **error_out)
-{
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
-
-  ZMapFeatureAny any = (ZMapFeatureAny)data ;
-  FeatureSearch search_data = (FeatureSearch)user_data ;
-  
-  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE && 
-      ((ZMapFeature)any)->unique_id == search_data->search_id)
-    {
-      search_data->found_feature = (ZMapFeature)any ;
-      status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ; /* stop searching */
-    }
-  
-  return status ;
-}
-
 
 /*!
  * \brief Utility to find a feature from a glist item which is the feature's unique_id.
@@ -307,15 +276,17 @@ ZMapFeature getFeature(ZMapView view, GList *list_item)
   zMapReturnValIfFailSafe(list_item, result) ;
 
   GQuark feature_id = GPOINTER_TO_INT(list_item->data) ;
-  FeatureSearchStruct search_data = {feature_id, NULL} ;
 
-  zMapFeatureContextExecute((ZMapFeatureAny)(view->features),
-                            ZMAPFEATURE_STRUCT_FEATURE,
-                            findFeatureById,
-                            &search_data);
+  if (feature_id)
+    {
+      ZMapFeatureAny feature_any = zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)view->features, 
+                                                                feature_id, 
+                                                                ZMAPFEATURE_STRUCT_FEATURE) ;
   
-  result = search_data.found_feature ;
-  
+      if (feature_any && feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+        result = (ZMapFeature)feature_any ;
+    }
+
   return result ;
 }
 

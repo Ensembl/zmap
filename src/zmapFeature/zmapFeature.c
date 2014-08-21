@@ -127,6 +127,14 @@ typedef struct
 } FindFeaturesRangeStruct, *FindFeaturesRange ;
 
 
+/* Utility struct to store a feature id to search for and the resultant feature that is found */
+typedef struct _FeatureSearchStruct
+{
+  GQuark search_id ;             /* feature id to search for */
+  ZMapFeatureAny found_feature ; /* the feature we found */
+} FeatureSearchStruct, *FeatureSearch ;
+
+
 void print_loaded(GList *l,char *fred);
 
 static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureLevelType feature_type,
@@ -243,6 +251,53 @@ ZMapFeatureAny zMapFeatureParentGetFeatureByID(ZMapFeatureAny feature_parent, GQ
   zMapReturnValIfFail(feature_parent, feature) ;
 
   feature = g_hash_table_lookup(feature_parent->children, GINT_TO_POINTER(feature_id)) ;
+
+  return feature ;
+}
+
+
+/*! 
+ * \brief Callback used to determine whether the current feature has the id in the user data and
+ * if so to set the result in the user data.
+ */
+static ZMapFeatureContextExecuteStatus find_feature_by_id(GQuark key,
+                                                          gpointer data,
+                                                          gpointer user_data,
+                                                          char **error_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+
+  ZMapFeatureAny any = (ZMapFeatureAny)data ;
+  FeatureSearch search_data = (FeatureSearch)user_data ;
+  
+  if (any->unique_id == search_data->search_id)
+    {
+      search_data->found_feature = any ;
+      status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ; /* stop searching */
+    }
+  
+  return status ;
+}
+
+
+/* Looks up a feature_id in ANY level of the child features of feature_any. Returns the feature if
+ * found, NULL otherwise. If you know that feature_any is a direct parent of the feature you're
+ * looking for use zMapFeatureParentGetFeatureByID instead as that is more effcient. */
+ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_any, 
+                                            GQuark feature_id, 
+                                            ZMapFeatureLevelType struct_type)
+{
+  ZMapFeatureAny feature = NULL ;
+  zMapReturnValIfFail(feature_any && feature_id, feature) ;
+
+  FeatureSearchStruct search_data = {feature_id, NULL} ;
+
+  zMapFeatureContextExecute(feature_any,
+                            struct_type,
+                            find_feature_by_id,
+                            &search_data);
+  
+  feature = search_data.found_feature ;
 
   return feature ;
 }
