@@ -3268,7 +3268,7 @@ ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray*const align_block_array, int i
     {
       block = &g_array_index(align_block_array, ZMapAlignBlockStruct, index) ;
     }
-  return NULL ;
+  return block ;
 }
 
 gboolean zMapAlignBlockAddBlock(GArray** p_align_block_array, const ZMapAlignBlockStruct * const block)
