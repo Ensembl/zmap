@@ -273,7 +273,10 @@ ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set)
   return feature;
 }
 
-
+/*! 
+ * \brief Callback used to determine whether the current feature has the id in the user data and
+ * if so to set the result in the user data.
+ */
 static ZMapFeatureContextExecuteStatus findFeatureById(GQuark key,
                                                        gpointer data,
                                                        gpointer user_data,
@@ -295,6 +298,9 @@ static ZMapFeatureContextExecuteStatus findFeatureById(GQuark key,
 }
 
 
+/*!
+ * \brief Utility to find a feature from a glist item which is the feature's unique_id.
+ */
 ZMapFeature getFeature(ZMapView view, GList *list_item)
 {
   ZMapFeature result = NULL ;

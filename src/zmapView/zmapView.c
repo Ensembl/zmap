@@ -5132,7 +5132,7 @@ static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window
 
   /* If the feature already exists in the feature set ask if we should overwrite it. If
    * so, we'll delete the old feature before creating the new one. */
-  ZMapFeatureAny existing_feature = zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)merge->feature_set, merge->feature->unique_id) ;
+  ZMapFeatureAny existing_feature = zMapFeatureParentGetFeatureByID((ZMapFeatureAny)merge->feature_set, merge->feature->unique_id) ;
 
   if (existing_feature)
     {
