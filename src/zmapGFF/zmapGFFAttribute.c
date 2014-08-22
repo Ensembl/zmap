@@ -2096,8 +2096,7 @@ gboolean zMapAttGenerateGap(char **p_s_out, ZMapFeature feature)
   char *align_str = NULL ;
   zMapReturnValIfFail(   p_s_out
                       && feature
-                      && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT
-                      && feature->feature.homol.align,
+                      && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT,
                       bResult) ;
 
   if ((bResult = zMapFeatureAlignmentGetAlignmentString(feature,

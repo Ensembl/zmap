@@ -1310,6 +1310,7 @@ static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
   int i = 0;
 
   /* old method */
+  /*
   if((gaps_array = homol->align))
   {
 
@@ -1329,9 +1330,11 @@ static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
 
     result = TRUE ;
   }
+  */
 
-  /* new method */
   /*
+   * new method
+   */
   if (zMapAttGenerateGap(&temp_string, feature))
     {
       if (temp_string)
@@ -1341,7 +1344,6 @@ static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
           result = TRUE ;
         }
     }
-  */
 
   return result ;
 }

@@ -119,7 +119,10 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
                                     GArray **local_map_out) ;
 static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
                                        AlignStrCanonicalProperties properties) ;
-static gboolean homol2AlignStrCanonical(AlignStrCanonical *canon_out, ZMapFeature feature) ;
+static AlignStrCanonical homol2AlignStrCanonical(ZMapFeature feature, ZMapFeatureAlignFormat align_format) ;
+static gboolean alignStrCanonical2string(char ** p_string,
+                                         AlignStrCanonicalProperties properties,
+                                         AlignStrCanonical canon) ;
 static gboolean parse_cigar_general(const char * const str,
                                     AlignStrCanonical canon,
                                     AlignStrCanonicalProperties properties,
@@ -162,10 +165,11 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 
 static int cigarGetLength(char **cigar_str) ;
 
-static gboolean alignStrCanonical2ExonerateCigar(char ** align_str, AlignStrCanonical canon) ;
-static gboolean alignStrCanonical2EnsemblCigar(char ** align_str, AlignStrCanonical canon) ;
-static gboolean alignStrCanonical2BamCigar(char ** align_str, AlignStrCanonical canon) ;
-static gboolean alignStrCanonical2ExonerateVulgar(char ** align_str, AlignStrCanonical canon) ;
+//static gboolean alignStrCanonical2GFFv3Gap(char ** align_str, AlignStrCanonical canon) ;
+//static gboolean alignStrCanonical2ExonerateCigar(char ** align_str, AlignStrCanonical canon) ;
+//static gboolean alignStrCanonical2EnsemblCigar(char ** align_str, AlignStrCanonical canon) ;
+//static gboolean alignStrCanonical2BamCigar(char ** align_str, AlignStrCanonical canon) ;
+//static gboolean alignStrCanonical2ExonerateVulgar(char ** align_str, AlignStrCanonical canon) ;
 
 static gboolean alignStrCanonicalSubstituteBamCigar(AlignStrCanonical canon) ;
 static gboolean alignStrCanonicalSubstituteEnsemblCigar(AlignStrCanonical canon) ;
@@ -1667,48 +1671,43 @@ gboolean zMapFeatureAlignmentGetAlignmentString(ZMapFeature feature,
                                                 char **p_string_out)
 {
   gboolean result = FALSE ;
-  char *align_str = NULL ;
+  char *temp_string = NULL ;
   AlignStrCanonical canon = NULL ;
+  AlignStrCanonicalPropertiesStruct properties ;
 
   /*
    * Test feature type and other errors
    */
-  zMapReturnValIfFail(feature && (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT), result) ;
+  zMapReturnValIfFail(feature &&
+                      (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT) &&
+                      p_string_out, result) ;
 
   /*
    * Homol to canonical
    */
-  result = homol2AlignStrCanonical(&canon, feature) ;
+  result = (canon = homol2AlignStrCanonical(feature, align_format)) ? TRUE : FALSE ;
 
   /*
-   * Convert the canonical to the appropriate string format
+   * Get string properties for this alignment type.
    */
-  if (result)
+  if (alignFormat2Properties(canon->format, &properties))
     {
 
-      switch (align_format)
+      /*
+       * This function loops over operators and converts to string representation
+       */
+      if ((result = alignStrCanonical2string(&temp_string, &properties, canon)))
         {
-          case ZMAPALIGN_FORMAT_GAP_GFF3:
-          case ZMAPALIGN_FORMAT_CIGAR_EXONERATE:
-            result = alignStrCanonical2ExonerateCigar(&align_str, canon) ;
-            break ;
-          case ZMAPALIGN_FORMAT_CIGAR_ENSEMBL:
-            result = alignStrCanonical2EnsemblCigar(&align_str, canon) ;
-            break ;
-          case ZMAPALIGN_FORMAT_CIGAR_BAM:
-            result = alignStrCanonical2BamCigar(&align_str, canon) ;
-            break ;
-          case ZMAPALIGN_FORMAT_VULGAR_EXONERATE:
-            result = alignStrCanonical2ExonerateVulgar(&align_str, canon) ;
-            break ;
-          default:
-            zMapWarnIfReached() ;
-            break ;
+          if (temp_string)
+            {
+              *p_string_out = temp_string ;
+              result = TRUE ;
+            }
         }
-
-      if (result)
+      else
         {
-          *p_string_out = align_str ;
+          if (temp_string)
+            g_free(temp_string) ;
         }
     }
 
@@ -2158,37 +2157,159 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
 
 
 /*
- * Converts an internal align array into the "canonical" string representation.
- * Opposite operation to the function alignStrCanon2Homol() above.
+ * Converts an internal align array into the AlignStrCanonical representation.
+ * We only handle MID operators. As if that's not bad enough.
  */
-static gboolean homol2AlignStrCanonical(AlignStrCanonical *canon_out, ZMapFeature feature)
+static AlignStrCanonical homol2AlignStrCanonical(ZMapFeature feature, ZMapFeatureAlignFormat align_format)
 {
+  typedef enum {TYPE_NONE, TYPE_I, TYPE_D} OperatorCase ;
   static const char cM = 'M',
                     cI = 'I',
                     cD = 'D' ;
-  ZMapAlignBlock block = NULL ;
-  gboolean result = FALSE ;
+  ZMapAlignBlock this_block = NULL, last_block = NULL ;
+  AlignStrCanonical canon = NULL ;
   GArray* align = NULL ;
   int i = 0, length = 0 ;
+  OperatorCase the_case = TYPE_NONE ;
 
-  zMapReturnValIfFail(  canon_out
-                     && feature
-                     && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT
-                     && feature->feature.homol.align,
-                     result) ;
+  zMapReturnValIfFail(  feature &&
+                        feature->mode == ZMAPSTYLE_MODE_ALIGNMENT &&
+                        align_format != ZMAPALIGN_FORMAT_INVALID, canon) ;
   align = feature->feature.homol.align ;
-  length = align->len ;
+  canon = alignStrCanonicalCreate(align_format) ;
 
-  for (i=0; i<length; ++i)
+  if (align != NULL )
+    length = align->len ;
+
+  if (length == 0)
     {
-      block = &(g_array_index(align, ZMapAlignBlockStruct, i)) ;
+      /*
+       * Assume there is only one operator that covers the whole object and
+       * is taken to be <n>M where n = end-start-1.
+       */
+      AlignStrOpStruct op ;
+      op.op = cM ;
+      op.length = feature->feature.homol.y2 - feature->feature.homol.y1 + 1 ;
+
+      alignStrCanonicalAddOperator(canon, &op) ;
+    }
+  else
+    {
+
+      /*
+       * Loop over align blocks.
+       */
+      for (i=0; i<length; ++i)
+        {
+          /*
+           * Identify the current block.
+           */
+          this_block = zMapAlignBlockArrayGetBlock(align, i) ;
+
+          /*
+           * Create I or D to represent whatever is between last_block and
+           * this_block.
+           */
+          if (i>0)
+            {
+              if (last_block && this_block)
+                {
+                  AlignStrOpStruct op ;
+
+                  if ((last_block->q2+1 == this_block->q1) && (last_block->t2+1 < this_block->t1))
+                    {
+                      /* this is a D operator */
+                      op.op = cD ;
+                      op.length = this_block->t1-last_block->t2-1 ;
+                      if (op.length >= 1)
+                        alignStrCanonicalAddOperator(canon, &op) ;
+                    }
+                  else if ((last_block->q2+1 < this_block->q1) && (last_block->t2+1 == this_block->t1))
+                    {
+                      /* this is a I operator */
+                      op.op = cI ;
+                      op.length = this_block->q1-last_block->q2-1 ;
+                      if (op.length >= 1)
+                        alignStrCanonicalAddOperator(canon, &op) ;
+                    }
+
+                }
+            }
+
+          /*
+           * Create M operator for current block and add to canon.
+           */
+          AlignStrOpStruct op ;
+          op.op = cM ;
+          op.length = this_block->q2 - this_block->q1 + 1 ;
+          if (op.length >= 1)
+            alignStrCanonicalAddOperator(canon, &op) ;
+
+          /*
+           * End of iteration
+           */
+          last_block = this_block ;
+        }
+
+    }
+
+  /*
+   *
+   */
+
+  return canon ;
+}
 
 
+/*
+ * This function converts the canon item to a string but does nothing else.
+ */
+static gboolean alignStrCanonical2string(char ** p_string,
+                                         AlignStrCanonicalProperties properties,
+                                         AlignStrCanonical canon)
+{
+  gboolean result = FALSE ;
+  int i = 0 ;
+  AlignStrOp op = NULL ;
+  char *temp_string = NULL, *buff = NULL ;
+  gboolean bDigitsLeft = FALSE,
+    bSpaces = FALSE ;
 
+  zMapReturnValIfFail(p_string &&
+                      canon &&
+                      canon->align &&
+                      (canon->format!=ZMAPALIGN_FORMAT_INVALID) &&
+                      properties,  result) ;
+
+  bDigitsLeft = properties->bDigitsLeft ;
+  bSpaces = properties->bSpaces ;
+
+  if (canon->num_operators)
+    {
+      op = alignStrCanonicalGetOperator(canon, 0) ;
+      temp_string = bDigitsLeft ?
+        g_strdup_printf("i%c", op->length, op->op) : g_strdup_printf("%c%i", op->op, op->length) ;
+
+      for (i=1; i<canon->num_operators; ++i)
+        {
+          op = alignStrCanonicalGetOperator(canon, i) ;
+          buff = temp_string ;
+          if (bSpaces)
+            temp_string = bDigitsLeft ?
+              g_strdup_printf("%s %i%c", buff, op->length, op->op) : g_strdup_printf("%s %c%i", buff, op->op, op->length);
+          else
+            temp_string = bDigitsLeft ?
+              g_strdup_printf("%s%i%c", buff, op->length, op->op) : g_strdup_printf("%s%c%i", buff, op->op, op->length);
+          g_free(buff) ;
+        }
+
+      *p_string = temp_string ;
+      result = TRUE ;
     }
 
   return result ;
 }
+
 
 
 
@@ -2456,54 +2577,6 @@ static gboolean bamVerifyCigar(char *match_str)
 }
 
 #endif
-
-
-
-/*
- * Convert AlignStrCanonical to exonerate cigar string.
- */
-static gboolean alignStrCanonical2ExonerateCigar(char ** p_align_str, AlignStrCanonical canon)
-{
-  gboolean result = FALSE ;
-  char* temp_string ;
-
-  temp_string = g_strdup_printf("%s", "Mi Dj F R123123 etc") ;
-
-  return result ;
-}
-
-/*
- * Convert AlignStrCanonical to ensembl cigar string.
- *              NOT IMPLEMENTED
- */
-static gboolean alignStrCanonical2EnsemblCigar(char ** p_align_str, AlignStrCanonical canon)
-{
-  gboolean result = FALSE ;
-
-  return result ;
-}
-
-/*
- * Convert AlignStrCanonical to bam cigar string.
- *              NOT IMPLEMENTED
- */
-static gboolean alignStrCanonical2BamCigar(char ** p_align_str, AlignStrCanonical canon)
-{
-  gboolean result = FALSE ;
-
-  return result ;
-}
-
-/*
- * Convert AlignStrCanonical to exonerate vulgar string.
- *              NOT IMPLEMENTED
- */
-static gboolean alignStrCanonical2ExonerateVulgar(char ** p_align_str, AlignStrCanonical canon)
-{
-  gboolean result = FALSE ;
-
-  return result ;
-}
 
 /*
  *
