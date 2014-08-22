@@ -153,6 +153,21 @@ void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value)
   zMapReturnIfFail(view && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS) ;
 
   view->flags[flag] = value ;
+
+  /* Perform any updates required for the particular flag that was set */
+  switch (flag)
+    {
+    case ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS:
+      zMapViewUpdateColumnBackground(view);
+      break ;
+      
+    case ZMAPFLAG_ENABLE_ANNOTATION:
+      zMapViewToggleScratchColumn(view, value, TRUE) ;
+      break ;
+      
+    default:
+      break ;
+    } ;
 }
 
 gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag)

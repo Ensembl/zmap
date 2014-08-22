@@ -1061,8 +1061,6 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
         }
       while ((list_item = g_list_next(list_item))) ;
     }
-
-
 }
 
 

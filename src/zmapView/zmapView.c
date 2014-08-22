@@ -6585,7 +6585,7 @@ static ZMapFeatureContextExecuteStatus updateColumnBackgroundCB(GQuark key,
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
         ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any;        
-        gboolean highlight_filtered_columns = view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] ;
+        gboolean highlight_filtered_columns = zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS) ;
         GList *list_item = g_list_first(view->window_list);
         
         for ( ; list_item; list_item = g_list_next(list_item))

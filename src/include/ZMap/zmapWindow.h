@@ -84,6 +84,8 @@ typedef enum
     ZMAPFLAG_FEATURES_NEED_SAVING,       /* True if there are new features that have not been saved */
     ZMAPFLAG_SCRATCH_NEEDS_SAVING,       /* True if changes have been made in the scratch column
                                           * that have not been "saved" to a real featureset */
+    ZMAPFLAG_ENABLE_ANNOTATION,          /* True if we should enable editing via the annotation column */
+    ZMAPFLAG_ENABLE_ANNOTATION_INIT,     /* False until the enable-annotation flag has been initialised */
     
     ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
   } ZMapFlag;

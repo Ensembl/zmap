@@ -861,4 +861,3 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
   return chapter;
 }
 
-

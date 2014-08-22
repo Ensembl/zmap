@@ -42,6 +42,7 @@
 #define CONTROL_PAGE "Window"
 #define CONTROL_SHRINKABLE "Shrinkable Window"
 #define CONTROL_FILTERED "Highlight Filtered Columns"
+#define CONTROL_ANNOTATION "Enable Annotation"
 
 
 
@@ -171,6 +172,10 @@ static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_p
                                            ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
                                            "bool", zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS)) ;
 
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_ANNOTATION,
+                                           ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                           "bool", zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION)) ;
+
   return chapter ;
 }
 
@@ -215,10 +220,13 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
       if (zMapGUINotebookGetTagValue(page, CONTROL_FILTERED, "bool", &bool_value))
         {
           if (zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS) != bool_value)
-            {
-              zMapViewSetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, bool_value) ;
-              zMapViewUpdateColumnBackground(view);
-            }
+            zMapViewSetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, bool_value) ;
+        }
+
+      if (zMapGUINotebookGetTagValue(page, CONTROL_ANNOTATION, "bool", &bool_value))
+        {
+          if (zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION) != bool_value)
+            zMapViewSetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION, bool_value) ;
         }
 
     }
