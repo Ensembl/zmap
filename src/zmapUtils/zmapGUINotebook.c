@@ -392,11 +392,11 @@ GList *headers, GList *types)
 }
 
 
-
 /*! Create a tagvalue within a paragraph.
  *
  * @param paragraph            If non-NULL, the tagvalue is added to this paragraph.
  * @param tag_value_name  The "tag" string, displayed on the left of the tag value fields.
+ * @param tooltip         The "tooltip" string, displayed when you hover over the tag value fields.
  * @param display_type    The type of tag-value (e.g. checkbox, simple, scrolled)
  * @param arg_type        The type of the data to be used for the current value of the value field.
  * @return                ZMapGuiNotebookTagValue
@@ -404,7 +404,7 @@ GList *headers, GList *types)
  *
  * This function uses the va_arg mechanism to allow caller to say something like:
  *
- * zMapGUINotebookCreateTagValue(paragraph, "some name", ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+ * zMapGUINotebookCreateTagValue(paragraph, "some name", "some tooltip", ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
  *                               "string", string_ptr) ;
  *
  * Valid arg_types are currently "bool", "int", "float", "string" or "compound". Note that no checking of args
@@ -413,6 +413,7 @@ GList *headers, GList *types)
  *  */
 ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph paragraph,
       char *tag_value_name,
+      char *tooltip,
       ZMapGuiNotebookTagValueDisplayType display_type,
       const gchar *arg_type, ...)
 {
@@ -426,6 +427,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
   GList *compound_arg ;
 
   tag_value = (ZMapGuiNotebookTagValue)createSectionAny(ZMAPGUI_NOTEBOOK_TAGVALUE, tag_value_name) ;
+  tag_value->tooltip = g_quark_from_string(tooltip) ;
   tag_value->display_type = display_type ;
 
 
@@ -1424,6 +1426,9 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
                              GUI_NOTEBOOK_BOX_PADDING) ;
           }
 
+        gtk_widget_set_tooltip_text(GTK_WIDGET(tag), g_quark_to_string(tag_value->tooltip)) ;
+        gtk_widget_set_tooltip_text(GTK_WIDGET(value), g_quark_to_string(tag_value->tooltip)) ;
+
         break ;
       }
     case ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT:
@@ -1446,6 +1451,8 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 
         buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view)) ;
         gtk_text_buffer_set_text(buffer, tag_value->data.string_value, -1) ;
+
+        gtk_widget_set_tooltip_text(GTK_WIDGET(view), g_quark_to_string(tag_value->tooltip)) ;
 
         break ;
       }

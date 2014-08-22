@@ -761,20 +761,20 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
                                              ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
                                              NULL, NULL);
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "canvas_maxbases",
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "canvas_maxbases", NULL,
                                            ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                            "int", window->canvas_maxwin_bases);
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "column_spacing",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "column_spacing", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "float", window->config.column_spacing);
 #if USE_STRAND
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "strand_spacing",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "strand_spacing", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "float", window->config.strand_spacing);
 #endif
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "keep_empty_columns",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "keep_empty_columns", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
                                              "bool", window->keep_empty_cols);
 
@@ -788,15 +788,15 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
                                               ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
                                               NULL, NULL);
 #ifdef I_DONT_THINK_SO
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_root",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_root", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", "red");
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_alignment",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_alignment", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", "orange");
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_block",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_block", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", "yellow");
 #endif /* I_DONT_THINK_SO */
@@ -805,37 +805,37 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
                                     ZMAPSTANZA_WINDOW_SEPARATOR, &colour))
     colour   = ZMAP_WINDOW_STRAND_DIVIDE_COLOUR;
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_separator",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_separator", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", colour);
 
 #ifdef I_DONT_THINK_SO
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_forward",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_forward", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", "blue");
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_reverse",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_reverse", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", "indigo");
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_forward",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_forward", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", "violet");
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_reverse",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_reverse", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", "apple");
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_forwardcol",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_forwardcol", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", "pear");
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_reversecol",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_reversecol", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", "banana");
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_forwardcol",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_forwardcol", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", "cherry");
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_reversecol",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_reversecol", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", "kiwi");
 #endif /* I_DONT_THINK_SO... */
@@ -844,7 +844,7 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
                                     ZMAPSTANZA_WINDOW_ITEM_HIGH, &colour))
     colour   = ZMAP_WINDOW_COLUMN_HIGHLIGHT;
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_item_highlight",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_item_highlight", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", colour);
 
@@ -852,7 +852,7 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
                                     ZMAPSTANZA_WINDOW_COL_HIGH, &colour))
     colour   = ZMAP_WINDOW_COLUMN_HIGHLIGHT;
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_column_highlight",
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_column_highlight", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", colour);
 

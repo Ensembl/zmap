@@ -164,15 +164,15 @@ static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_p
 					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
 					     NULL, NULL) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_SHRINKABLE,
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_SHRINKABLE, "Make the ZMap window shrinkable beyond the default minimum size",
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
 					   "bool", zmap->shrinkable) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_FILTERED,
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_FILTERED, "Highlight the background of columns that have features that are not visible due to filtering",
                                            ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
                                            "bool", zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS)) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_ANNOTATION,
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_ANNOTATION, "Enable feature editing within ZMap via the Annotation column. This enables the Annotation sub-menu when you right-click a feature.",
                                            ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
                                            "bool", zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION)) ;
 
