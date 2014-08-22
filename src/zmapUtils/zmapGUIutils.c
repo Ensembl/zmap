@@ -2433,8 +2433,11 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 
   gtk_widget_show_all(dialog) ;
 
-  GtkWidget *default_widget = gtk_dialog_get_widget_for_response(GTK_DIALOG(dialog), default_response) ;
-  gtk_widget_grab_focus(default_widget) ;
+  if (default_response)
+    {
+      GtkWidget *default_widget = gtk_dialog_get_widget_for_response(GTK_DIALOG(dialog), default_response) ;
+      gtk_widget_grab_focus(default_widget) ;
+    }
 
   /* Note flow of control here: for non-modal/no-data-returned messages simply connect gtk destroy
    * to ensure dialog gets cleaned up and return, for modal/data messages we _block_ waiting
