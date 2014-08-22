@@ -1244,6 +1244,10 @@ gboolean zmapViewMergeNewFeatures(ZMapView view,
 
 void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list)
 {
+  /* If any of the features are used in the scratch column they must be removed because they'll
+   * become invalid */
+  zmapViewScratchRemoveFeatures(view, *feature_list) ;
+
   zmapViewEraseFromContext(view, context);
 
   zMapFeatureContextExecute((ZMapFeatureAny)(context),

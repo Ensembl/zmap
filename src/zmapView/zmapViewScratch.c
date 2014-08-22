@@ -312,33 +312,40 @@ void scratchRemoveFeature(gpointer list_data, gpointer user_data)
   ZMapView view = (ZMapView)user_data ;
   gboolean changed = FALSE ;
 
-  GList *operation_item = view->edit_list ;
+  /* Check the search feature is not the annotation feature itself (i.e. its parent is the
+   * annotation featureset) */
+  GQuark annotation_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME) ;
 
-  for (; operation_item; operation_item = operation_item->next)
+  if (search_feature && !(search_feature->parent && search_feature->parent->unique_id == annotation_quark))
     {
-      EditOperation operation = (EditOperation)(operation_item->data) ;
-      GList *feature_item = operation->src_feature_ids ;
+      GList *operation_item = view->edit_list ;
 
-      while (feature_item)
+      for (; operation_item; operation_item = operation_item->next)
         {
-          ZMapFeature feature = getFeature(view, feature_item) ;
+          EditOperation operation = (EditOperation)(operation_item->data) ;
+          GList *feature_item = operation->src_feature_ids ;
 
-          /* Increment pointer before removing from list because that will invalidate the iterator */
-          GList *cur_item = feature_item ;
-          feature_item = feature_item->next ;
-
-          if (!feature || (feature && feature->unique_id == search_feature->unique_id))
+          while (feature_item)
             {
-              operation->src_feature_ids = g_list_remove(operation->src_feature_ids, cur_item) ;
-              changed = TRUE ;
-              char *msg = g_strdup_printf("Feature '%s' is no longer valid and has been removed from the Annotation column.\n", 
-                                          g_quark_to_string(feature->original_id)) ;
-              zMapWarning("%s", msg) ;
-              g_free(msg) ;
+              ZMapFeature feature = getFeature(view, feature_item) ;
+
+              /* Increment pointer before removing from list because that will invalidate the iterator */
+              GList *cur_item = feature_item ;
+              feature_item = feature_item->next ;
+
+              if (feature && feature->unique_id == search_feature->unique_id)
+                {
+                  operation->src_feature_ids = g_list_delete_link(operation->src_feature_ids, cur_item) ;
+                  changed = TRUE ;
+                  char *msg = g_strdup_printf("Feature '%s' is no longer valid and has been removed from the Annotation column.\n", 
+                                              g_quark_to_string(feature->original_id)) ;
+                  zMapWarning("%s", msg) ;
+                  g_free(msg) ;
+                }
             }
         }
     }
-  
+ 
   /* If we've changed the list of source features we need to recreate the scratch feature */
   if (changed)
     scratchFeatureRecreate(view);
