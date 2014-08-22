@@ -41,11 +41,12 @@
 #define CONTROL_CHAPTER "Display"
 #define CONTROL_PAGE "Window"
 #define CONTROL_SHRINKABLE "Shrinkable Window"
+#define CONTROL_FILTERED "Highlight Filtered Columns"
 
 
 
 static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data) ;
-static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_parent, ZMap zmap) ;
+static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_parent, ZMap zmap, ZMapView view) ;
 static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused) ;
 static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap) ;
@@ -103,10 +104,7 @@ void zmapControlShowPreferences(ZMap zmap)
       ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
 
       /* Add prefs for control. */
-      addControlPrefsChapter(note_book, zmap) ;
-
-      /* Add general view prefs. */
-      zMapViewGetPrefsChapter(zmap_view, note_book);
+      addControlPrefsChapter(note_book, zmap, zmap_view) ;
       
       /* Add blixmem view prefs. */
       zMapViewBlixemGetConfigChapter(zmap_view, note_book) ;
@@ -145,7 +143,7 @@ static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data)
 
 
 /* Does the work to create a chapter in the preferences notebook for general zmap settings. */
-static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_parent, ZMap zmap)
+static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_parent, ZMap zmap, ZMapView view)
 {
   ZMapGuiNotebookChapter chapter = NULL ;
   ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, zmap, NULL, NULL, NULL, NULL} ;
@@ -168,6 +166,10 @@ static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_p
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_SHRINKABLE,
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
 					   "bool", zmap->shrinkable) ;
+
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_FILTERED,
+                                           ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                           "bool", zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS)) ;
 
   return chapter ;
 }
@@ -196,6 +198,7 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
 {
   ZMapGuiNotebookPage page ;
   gboolean bool_value = FALSE ;
+  ZMapView view = zMapViewGetView(zmap->focus_viewwindow);
 
   if ((page = zMapGUINotebookFindPage(chapter, CONTROL_PAGE)))
     {
@@ -208,6 +211,16 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
               gtk_window_set_policy(GTK_WINDOW(zmap->toplevel), zmap->shrinkable, TRUE, FALSE ) ;
 	    }
 	}
+
+      if (zMapGUINotebookGetTagValue(page, CONTROL_FILTERED, "bool", &bool_value))
+        {
+          if (zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS) != bool_value)
+            {
+              zMapViewSetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, bool_value) ;
+              zMapViewUpdateColumnBackground(view);
+            }
+        }
+
     }
   
   return ;

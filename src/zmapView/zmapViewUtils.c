@@ -38,11 +38,6 @@
 #include <zmapView_P.h>
 
 
-/* preferences strings. */
-#define VIEW_CHAPTER "Features"
-#define VIEW_PAGE "Display"
-#define VIEW_FILTERED "Highlight filtered columns"
-
 
 
 typedef struct
@@ -83,10 +78,6 @@ static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_l
 static void stepDestroy(gpointer data, gpointer user_data) ;
 static void formatSession(gpointer data, gpointer user_data) ;
 
-static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view) ;
-static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view) ;
-static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
-static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused) ;
 
 
 /*
@@ -157,6 +148,22 @@ void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource s
   return ;
 }
 
+void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value)
+{
+  zMapReturnIfFail(view && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS) ;
+
+  view->flags[flag] = value ;
+}
+
+gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(view && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS, result) ;
+
+  result = view->flags[flag] ;
+
+  return result ;
+}
 
 
 /* Return, as text, details of all data connections for this view. Interface is not completely
@@ -179,21 +186,6 @@ gboolean zMapViewSessionGetAsText(ZMapViewWindow view_window, GString *session_d
     }
 
   return result ;
-}
-
-
-
-
-/*!
- * \briefReturns a ZMapGuiNotebookChapter containing all general zmap preferences.
- */
-ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook note_book_parent)
-{
-  ZMapGuiNotebookChapter chapter = NULL ;
-
-  chapter = makeChapter(note_book_parent, view) ;
-
-  return chapter ;
 }
 
 
@@ -963,77 +955,5 @@ static void formatSession(gpointer data, gpointer user_data)
 
   return ;
 }
-
-
-
-
-/*!
- * \brief Does the work to create a chapter in the preferences notebook for general zmap settings
- */
-static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view)
-{
-  ZMapGuiNotebookChapter chapter = NULL ;
-  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, view, NULL, NULL, NULL, NULL} ;
-  ZMapGuiNotebookPage page ;
-  ZMapGuiNotebookSubsection subsection ;
-  ZMapGuiNotebookParagraph paragraph ;
-  ZMapGuiNotebookTagValue tagvalue ;
-
-
-  chapter = zMapGUINotebookCreateChapter(note_book_parent, VIEW_CHAPTER, &user_CBs) ;
-
-
-  page = zMapGUINotebookCreatePage(chapter, VIEW_PAGE) ;
-
-  subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
-
-  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
-					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
-					     NULL, NULL) ;
-
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, VIEW_FILTERED,
-					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-					   "bool", view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS]) ;
-
-  return chapter ;
-}
-
-
-static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
-{
-  ZMapGuiNotebookPage page ;
-  gboolean bool_value = FALSE ;
-
-  if ((page = zMapGUINotebookFindPage(chapter, VIEW_PAGE)))
-    {
-      if (zMapGUINotebookGetTagValue(page, VIEW_FILTERED, "bool", &bool_value))
-	{
-	  if (view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] != bool_value)
-	    {
-              view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] = bool_value ;
-              zMapViewUpdateColumnBackground(view);
-	    }
-	}
-    }
-  
-  return ;
-}
-
-
-static void applyCB(ZMapGuiNotebookAny any_section, void *user_data)
-{
-  ZMapView view = (ZMapView)user_data;
-
-  readChapter((ZMapGuiNotebookChapter)any_section, view) ;
-
-  return ;
-}
-
-
-static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
-{
-  return ;
-}
-
 
 
