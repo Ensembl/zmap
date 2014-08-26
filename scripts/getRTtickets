@@ -89,8 +89,8 @@ do
 #
 # queries can be very complex:
 #
-#echo -n -e `rt-3.4 search -i  "(Queue = '$QUEUE') and  ( status='open' or status='new') and created > '-1 week'"`
-
+#  `rt search -i  "(Queue = '$QUEUE') and  ( status='open' or status='new') and created > '-1 week'"`
+#
 echo -n -e `$RT_BIN search -i "(Queue = '$QUEUE') and  (status = 'resolved') and resolved > '$start_date'"`
 echo
 
@@ -98,7 +98,7 @@ done
 }
 
 
-#echo "STarting second query of RT...displays the tickets"
+#echo "Starting second query of RT...displays the tickets"
 
 #echo "Queues = $OPS_QUEUES"
 
@@ -115,6 +115,5 @@ echo
 
 done
 
-#zmap_message_err "Finished fetching RT tickets."
 
 exit 0

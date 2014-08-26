@@ -44,22 +44,6 @@ RT_QUEUES="zmap"
 zmap_message_out "Starting processing RT tickets"
 
 
-#while getopts ":o:" opt ;
-#  do
-#  case $opt in
-#      o  ) output_file=$OPTARG ;;
-#      \? ) 
-#zmap_message_exit "Bad command line flag
-#
-#Usage:
-#
-#$0 $CMDSTRING
-#
-#$DESCSTRING"
-#;;
-#  esac
-#done
-
 
 # get the date and the output file - mandatory.
 #
