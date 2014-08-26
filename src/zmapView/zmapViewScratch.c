@@ -1093,6 +1093,14 @@ gboolean zmapViewScratchCopyFeatures(ZMapView view,
 {
   if (features)
     {
+      /* If the Annotation column is disabled then enable it. Usually we will not get here if
+         the Annotation column is disabled, but we can if the user uses a shortcut key to copy a
+         feature. We could disallow this, but actually the user is unlikely to use this shortcut
+         unless they want to enable the column so allowing it makes this a very quick and easy way
+         for the user to enable the column (since it is disabled by default). */
+      if (!zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
+        zMapViewSetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION, TRUE) ;
+
       view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1);
@@ -1124,7 +1132,10 @@ gboolean zmapViewScratchDeleteFeatures(ZMapView view,
                                        ZMapFeatureSubPartSpan subpart,
                                        const gboolean use_subfeature)
 {
-  if (features)
+  /* Disallow this operation if the Annotation column is not enabled. (Should only happen after a
+   * key press event so should be fine to ignore this without user feedback as the Annotation
+   * column keys have no effect if the column is disabled.) */
+  if (features && zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
     {
       view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
 
@@ -1156,18 +1167,24 @@ gboolean zmapViewScratchDeleteFeatures(ZMapView view,
  */
 gboolean zmapViewScratchClear(ZMapView view)
 {
-  /* Only do anything if we have a visible feature i.e. the operations list is not empty */
-  if (view->edit_list_start)
+  /* Disallow this operation if the Annotation column is not enabled. (Should only happen after a
+   * key press event so should be fine to ignore this without user feedback as the Annotation
+   * column keys have no effect if the column is disabled.) */
+  if (zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
     {
-      /* There will be nothing in the scratch column now so nothing needs saving */
-      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
+      /* Only do anything if we have a visible feature i.e. the operations list is not empty */
+      if (view->edit_list_start)
+        {
+          /* There will be nothing in the scratch column now so nothing needs saving */
+          view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
 
-      EditOperation operation = g_new0(EditOperationStruct, 1) ;
+          EditOperation operation = g_new0(EditOperationStruct, 1) ;
 
-      operation->edit_type = ZMAPEDIT_CLEAR ;
+          operation->edit_type = ZMAPEDIT_CLEAR ;
 
-      /* Add this feature to the list of merged features and recreate the scratch feature. */
-      scratchAddOperation(view, operation);
+          /* Add this feature to the list of merged features and recreate the scratch feature. */
+          scratchAddOperation(view, operation);
+        }
     }
 
   return TRUE;
@@ -1179,45 +1196,51 @@ gboolean zmapViewScratchClear(ZMapView view)
  */
 gboolean zmapViewScratchUndo(ZMapView view)
 {
-  if (view->edit_list_end)
+  /* Disallow this operation if the Annotation column is not enabled. (Should only happen after a
+   * key press event so should be fine to ignore this without user feedback as the Annotation
+   * column keys have no effect if the column is disabled.) */
+  if (zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
     {
-      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
-
-      /* Special treatment if the last operation was a "clear" because clear shifts the start
-       * pointer to be the same as the end pointer, so we need to move it back (to the start of
-       * the list or to the last "clear" operation, if there is one). */
-      EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
-
-      if (operation->edit_type == ZMAPEDIT_CLEAR)
+      if (view->edit_list_end)
         {
-          while (view->edit_list_start && view->edit_list_start->prev)
+          view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+
+          /* Special treatment if the last operation was a "clear" because clear shifts the start
+           * pointer to be the same as the end pointer, so we need to move it back (to the start of
+           * the list or to the last "clear" operation, if there is one). */
+          EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
+
+          if (operation->edit_type == ZMAPEDIT_CLEAR)
             {
-              EditOperation prev_operation = (EditOperation)(view->edit_list_end->prev->data) ;
+              while (view->edit_list_start && view->edit_list_start->prev)
+                {
+                  EditOperation prev_operation = (EditOperation)(view->edit_list_end->prev->data) ;
               
-              if (prev_operation->edit_type == ZMAPEDIT_CLEAR)
-                break ;
+                  if (prev_operation->edit_type == ZMAPEDIT_CLEAR)
+                    break ;
 
-              view->edit_list_start = view->edit_list_start->prev ;
+                  view->edit_list_start = view->edit_list_start->prev ;
+                }
             }
-        }
 
-      /* In all cases, move the end pointer back one place */
-      view->edit_list_end = view->edit_list_end->prev ;
+          /* In all cases, move the end pointer back one place */
+          view->edit_list_end = view->edit_list_end->prev ;
       
-      /* If we have no operations left in the list, null the start pointer too */
-      if (view->edit_list_end == NULL)
-        view->edit_list_start = NULL ;
+          /* If we have no operations left in the list, null the start pointer too */
+          if (view->edit_list_end == NULL)
+            view->edit_list_start = NULL ;
 
-      if (view->edit_list_start)
-        {
+          if (view->edit_list_start)
+            {
           
-        }
+            }
       
-      scratchFeatureRecreate(view);
-    }
-  else
-    {
-      zMapWarning("%s", "No operations to undo\n");
+          scratchFeatureRecreate(view);
+        }
+      else
+        {
+          zMapWarning("%s", "No operations to undo\n");
+        }
     }
 
   return TRUE;
@@ -1229,37 +1252,43 @@ gboolean zmapViewScratchUndo(ZMapView view)
  */
 gboolean zmapViewScratchRedo(ZMapView view)
 {
-  /* Move the end pointer forward */
-  if (view->edit_list_end && view->edit_list_end->next)
+  /* Disallow this operation if the Annotation column is not enabled. (Should only happen after a
+   * key press event so should be fine to ignore this without user feedback as the Annotation
+   * column keys have no effect if the column is disabled.) */
+  if (zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
     {
-      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
-      view->edit_list_end = view->edit_list_end->next ;
+      /* Move the end pointer forward */
+      if (view->edit_list_end && view->edit_list_end->next)
+        {
+          view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+          view->edit_list_end = view->edit_list_end->next ;
 
-      /* For "clear" operations we need to move the start pointer to the same as the end pointer */
-      EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
-      if (operation->edit_type == ZMAPEDIT_CLEAR)
-        view->edit_list_start = view->edit_list_end ;
+          /* For "clear" operations we need to move the start pointer to the same as the end pointer */
+          EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
+          if (operation->edit_type == ZMAPEDIT_CLEAR)
+            view->edit_list_start = view->edit_list_end ;
 
-      scratchFeatureRecreate(view);
-    }
-  else if (!view->edit_list_end && view->edit_list)
-    {
-      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+          scratchFeatureRecreate(view);
+        }
+      else if (!view->edit_list_end && view->edit_list)
+        {
+          view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
 
-      /* If the list exists but start/end pointers are null then we had un-done the entire list,
-       * so we just need to set the start/end pointers to the first item in the list */
-      view->edit_list_start = view->edit_list_end = view->edit_list ;
+          /* If the list exists but start/end pointers are null then we had un-done the entire list,
+           * so we just need to set the start/end pointers to the first item in the list */
+          view->edit_list_start = view->edit_list_end = view->edit_list ;
 
-      /* For "clear" operations we need to move the start pointer to the same as the end pointer */
-      EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
-      if (operation->edit_type == ZMAPEDIT_CLEAR)
-        view->edit_list_start = view->edit_list_end ;
+          /* For "clear" operations we need to move the start pointer to the same as the end pointer */
+          EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
+          if (operation->edit_type == ZMAPEDIT_CLEAR)
+            view->edit_list_start = view->edit_list_end ;
 
-      scratchFeatureRecreate(view);
-    }
-  else
-    {
-      zMapWarning("%s", "No operations to redo\n");
+          scratchFeatureRecreate(view);
+        }
+      else
+        {
+          zMapWarning("%s", "No operations to redo\n");
+        }
     }
 
   return TRUE;
