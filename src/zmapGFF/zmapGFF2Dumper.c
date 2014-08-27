@@ -1344,7 +1344,6 @@ static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
           result = TRUE ;
         }
     }
-  */
 
   return result ;
 }
