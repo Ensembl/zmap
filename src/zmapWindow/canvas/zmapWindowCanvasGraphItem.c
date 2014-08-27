@@ -46,6 +46,7 @@
 #include <ZMap/zmapUtilsLog.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasDraw.h>
+#include <zmapWindowCanvasUtils.h>
 #include <zmapWindowCanvasFeatureset.h>
 #include <zmapWindowCanvasGraphItem_I.h>
 
@@ -67,6 +68,7 @@
 /* Current state of play of this code:
  *
  * Code was originally written by Malcolm and then a load of fixes applied by Ed.
+ *
  * I (Ed) don't completely understand all of Malcolm's thinking and there are
  * probably some bugs remaining but I don't have the time to fix this any more.
  * The code seems robust and the colouring/filling work except that the fill code draws
@@ -78,6 +80,7 @@
 
 
 static void graphInit(ZMapWindowFeaturesetItem featureset) ;
+static void graphGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width) ;
 static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                             GdkDrawable *drawable, GdkEventExpose *expose);
 static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
@@ -86,6 +89,10 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                               GdkDrawable *drawable, GdkEventExpose *expose) ;
 static void graphPreZoom(ZMapWindowFeaturesetItem featureset) ;
 static void graphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
+static double graphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
+                         double item_x, double item_y, int cx, int cy,
+                         double local_x, double local_y, double x_off) ;
+
 static GList *densityCalcBins(ZMapWindowFeaturesetItem di) ;
 static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeStyle feature_style) ;
 
@@ -113,11 +120,13 @@ void zMapWindowCanvasGraphInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
 
   funcs[FUNC_SET_INIT] = graphInit ;
+  funcs[FUNC_EXTENT] = graphGetFeatureExtent ;
   funcs[FUNC_PREPARE] = graphPaintPrepare ;
   funcs[FUNC_PAINT] = graphPaintFeature ;
   funcs[FUNC_FLUSH] = graphPaintFlush ;
   funcs[FUNC_PRE_ZOOM] = graphPreZoom ;
   funcs[FUNC_ZOOM] = graphZoom ;
+  funcs[FUNC_POINT] = graphPoint ;
 
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPH, funcs, 0, sizeof(ZMapWindowCanvasGraphStruct)) ;
 
@@ -129,8 +138,11 @@ void zMapWindowCanvasGraphInit(void)
 /* Initialise the graph object. */
 static void graphInit(ZMapWindowFeaturesetItem featureset)
 {
-  ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+  ZMapWindowCanvasGraph graph_set = NULL ;
   GdkColor *draw = NULL, *fill = NULL, *border = NULL ;
+
+  zMapReturnIfFail(featureset) ;
+  graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
 
   /* Set up default colours to draw with, these may be overwritten later by the features
    * colours. */
@@ -162,6 +174,8 @@ static void graphPreZoom(ZMapWindowFeaturesetItem featureset)
 /* Recalculate the bins if the zoom level changes */
 static void graphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
+  zMapReturnIfFail(featureset);
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* unused currently. */
   ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
@@ -219,15 +233,86 @@ static void graphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable
 }
 
 
+/* get sequence extent of compound alignment (for bumping) */
+/* NB: canvas coords could overlap due to sub-pixel base pairs
+ * which could give incorrect de-overlapping
+ * that would be revealed on Zoom
+ */
+/*
+ * we adjust the extent of the first CanvasAlignment to cover tham all
+ * as the first one draws all the colinear lines
+ */
+
+/* Agh...is this used for line graphs...I guess it might be....check this....
+ *
+ *
+ *  */
+static void graphGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width)
+{
+  ZMapWindowCanvasFeature first = feature ;
+  int last_y2 ;
+
+  zMapReturnIfFail(feature && feature->feature) ;
+
+  *width = feature->width ;
+  span->x1 = feature->y1 ;
+  span->x2 = last_y2 = feature->y2 ;
+
+
+  /* Needs recoding to work differently for different graph styles...???? */
+
+  /* if not joining up same name features they don't need to go in the same column */
+  if(!zMapStyleIsUnique(*feature->feature->style))
+    {
+      while(first->left)
+        {
+          first = first->left ;
+
+          if(first->width > *width)
+            *width = first->width ;
+        }
+
+      while(feature->right)
+        {
+          feature = feature->right ;
+
+          if(feature->width > *width)
+            *width = feature->width ;
+        }
+
+      last_y2 = feature->y2 ;
+    }
+
+
+  if (zMapStyleGraphMode(*feature->feature->style) == ZMAPSTYLE_GRAPH_LINE)
+    {
+      feature->y2 = span->x2 = last_y2 ;
+    }
+  else if (zMapStyleGraphMode(*feature->feature->style) == ZMAPSTYLE_GRAPH_HISTOGRAM)
+    {
+      *width = zMapStyleGetWidth(*feature->feature->style) ;
+    }
+
+
+  return ;
+}
+
+
+
+
+
 
 /* There may not be a feature so that may mean graph stuff is not set up properly....?? */
 static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                               GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+  ZMapWindowCanvasGraph graph_set = NULL ;
   int cx2 = 0, cy2 = 0 ;                                    /* initialised for LINE mode */
   double x2 = 0, y2 = 0 ;
   FooCanvasItem *item = (FooCanvasItem *)featureset ;
+
+  zMapReturnIfFail(featureset) ;
+  graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
 
 
   if (featureset->featurestyle)
@@ -398,7 +483,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                               GdkDrawable *drawable, GdkEventExpose *expose)
 
 {
-  ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+  ZMapWindowCanvasGraph graph_set = NULL ;
   FooCanvasItem *item = (FooCanvasItem *)featureset ;
   int cx2 = 0, cy2 = 0 ;                                    /* initialised for LINE mode */
   double x1,x2,y2 ;
@@ -406,6 +491,8 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
   gulong fill,outline ;
   int colours_set, fill_set, outline_set ;
 
+  zMapReturnIfFail(featureset) ;
+  graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
 
   switch(zMapStyleGraphMode(featureset->style))
     {
@@ -542,24 +629,34 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
     default:
     case ZMAPSTYLE_GRAPH_HISTOGRAM:
       {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          /* old code.... */
+
         x1 = featureset->dx + featureset->x_off;
         x2 = x1 + feature->width - 1;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+        x1 = featureset->dx + featureset->x_off; //  + (width * zMapStyleBaseline(di->style)) ;
+
+        if (featureset->bumped)
+          x1 += feature->bump_offset ;
+
+        if (feature->width < 1)
+          x2 = x1 ;
+        else
+          x2 = x1 + feature->width - 1;
 
         /* If the baseline is not zero then we can end up with x2 being less than x1
          * so we mst swap these round.
          */
         if(x1 > x2)
-          {
-            double x = x1;
-            x1 = x2;
-            x2 = x;
-          }
+          zMapUtilsSwop(double, x1, x2) ;
 
         colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
         fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
         outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
-        break;
+        break ;
       }
     }
 
@@ -577,7 +674,10 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                             GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+  ZMapWindowCanvasGraph graph_set = NULL;
+
+  zMapReturnIfFail(featureset) ;
+  graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
 
   /* Currently only lines are drawn in this function. */
   if (zMapStyleGraphMode(featureset->style) == ZMAPSTYLE_GRAPH_LINE)
@@ -797,6 +897,58 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
 
 
 
+/* Function to check if the given x,y coord is within a feature, this
+ * function assumes the feature is box-like. */
+static double graphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
+                         double item_x, double item_y, int cx, int cy,
+                         double local_x, double local_y, double x_off)
+{
+  double best = 1.0e36 ;
+  double can_start, can_end ;
+
+  zMapReturnValIfFail(gs && gs->feature && fi, best) ;
+
+  /* Get feature extent on display. */
+  /* NOTE cannot use feature coords as transcript exons all point to the same feature */
+  /* alignments have to implement a special function to handle bumped features
+   *  - the first exon gets expanded to cover the whole */
+  /* when we get upgraded to vulgar strings these can be like transcripts...
+   * except that there's a performance problem due to volume */
+  /* perhaps better to add  extra display/ search coords to ZMapWindowCancasFeature ?? */
+
+
+  can_start = gs->feature->x1 ;
+  can_end = gs->feature->x2 ;
+  zmapWindowFeaturesetS2Ccoords(&can_start, &can_end) ;
+
+
+  if (can_start <= local_y && can_end >= local_y)                            /* overlaps cursor */
+    {
+      double wx ;
+      double left, right ;
+
+      wx = x_off; // - (gs->width / 2) ;
+
+      if (fi->bumped)
+        wx += gs->bump_offset ;
+
+      /* get coords within one pixel */
+      left = wx - 1 ;                                            /* X coords are on fixed zoom, allow one pixel grace */
+      right = wx + gs->width + 1 ;
+
+      if (local_x > left && local_x < right)                            /* item contains cursor */
+        {
+          best = 0.0;
+        }
+    }
+
+  return best ;
+}
+
+
+
+
+
 
 /*
  *                      Internal routines.
@@ -825,12 +977,12 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
   int bases_per_bin;
   int bin_start,bin_end;
   ZMapWindowCanvasFeature src_gs = NULL;                    /* source */
-  ZMapWindowCanvasFeature bin_gs;                           /* re-binned */
-  GList *src,*dest;
-  double score;
-  double min_feat_score = 0, max_feat_score = 0 ;
+  ZMapWindowCanvasFeature bin_gs = NULL ;                   /* re-binned */
+  GList *src = NULL,*dest = NULL ;
+  double score = 0.0;
+  double min_feat_score = 0.0, max_feat_score = 0.0 ;
 
-
+  zMapReturnValIfFail(di, dest);
 
   /* this is weird given that the feature style may not have been given for the column style yet.... */
   int min_bin = zMapStyleDensityMinBin(di->style);          /* min pixels per bin */
@@ -988,7 +1140,10 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
  * I copy across the fill mode into the column style to cache it and also the colour stuff. */
 static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeStyle feature_style)
 {
-  ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+  ZMapWindowCanvasGraph graph_set = NULL ;
+
+  zMapReturnIfFail(featureset && feature_style) ;
+  graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
 
   /* Although doing a style merge here is tempting it's not a good idea as some _column_ style
    * settings (e.g. width, bump etc) are made independently by other parts of the code
@@ -1028,7 +1183,7 @@ static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeS
       if (zMapStyleGetColours(feature_style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                               &fill, &draw, &border))
          zMapStyleSetColours(feature_style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-			     fill, draw, border) ;
+                             fill, draw, border) ;
     }
 
   /* Allocate and cache the draw colours */

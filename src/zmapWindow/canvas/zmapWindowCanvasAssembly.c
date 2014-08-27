@@ -51,6 +51,8 @@ void zMapWindowCanvasAssemblyPaintFeature(ZMapWindowFeaturesetItem featureset, Z
   int colours_set, fill_set, outline_set;
   double x1,x2;
 
+  zMapReturnIfFail(featureset && feature && drawable && expose) ;
+
   /* draw a box */
 
   /* colours are not defined for the CanvasFeatureSet

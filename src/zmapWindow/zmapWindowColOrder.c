@@ -224,8 +224,9 @@ static GQuark columnFSNid(gconstpointer col_data)
 #else
   ZMapWindowContainerFeatureSet container  = (ZMapWindowContainerFeatureSet) col_data;
 
-  id = zmapWindowContainerFeatureSetGetColumnId(container);
+  id = zmapWindowContainerFeaturesetGetColumnUniqueId(container) ;
 #endif
+
   return id;
 }
 

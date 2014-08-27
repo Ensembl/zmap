@@ -24,11 +24,11 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Private header for featuresets (== columns).
+ * Description: Private header for featuresets, a featureset
+ *              is contained within a column.
  *
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_FEATURESET_ITEM_I_H
 #define ZMAP_WINDOW_FEATURESET_ITEM_I_H
 
@@ -55,6 +55,7 @@
 #define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED		/* any focus flag will map to selected */
 #define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED		/* eg masked */
 #define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE)		/* includes masking (EST) */
+
 #define FEATURE_HIDDEN		0x0100		/* not always false, set for hidden rather than visible to make flag twiddling easier */
 #define FEATURE_USER_HIDE	0x0200		/* hidden by user request */
 #define FEATURE_MARK_HIDE	0x0400		/* hidden by bump from mark */
@@ -125,6 +126,32 @@ typedef struct _zmapWindowCanvasGraphicsStruct
 
 
 
+
+
+/* Foocanvas positions are doubles and foocanvas does not define one of these. */
+typedef struct ZMapWindowCanvasCanvasSpanStructType
+{
+  double start, end ;
+} ZMapWindowCanvasCanvasSpanStruct, *ZMapWindowCanvasCanvasSpan ;
+
+
+
+/* Data about displayed subcols. When bumped the features in a column may be
+ * displayed as separate subcolumns. */
+typedef struct ZMapWindowCanvasSubColStructType
+{
+  GQuark subcol_id ;                                        /* "name" of subcol. */
+
+  double offset ;                                           /* subcol offset in column. */
+
+  double width ;                                            /* subcol width. */
+
+} ZMapWindowCanvasSubColStruct, *ZMapWindowCanvasSubCol ;
+
+
+
+
+
 /*
  * minimal data struct to define a feature
  * handle boxes as y1,y2 + width
@@ -158,6 +185,24 @@ typedef struct _zmapWindowCanvasFeatureStruct
 
 } zmapWindowCanvasFeatureStruct;
 
+
+
+/*
+ * module generic text interface, initially used by sequence and locus feature types
+ * is used to paint single line text things at given x,y
+ * highlighting is done with coloured boxes behind the text
+ */
+
+typedef struct _zmapWindowCanvasPangoStruct
+{
+  GdkDrawable *drawable;		/* used to tell if a new window has been created and our pango is not valid */
+
+  PangoRenderer *renderer;	/* we use one per column to draw each line seperatly */
+  PangoContext *context;
+  PangoLayout *layout;
+
+  int text_height, text_width;
+} zmapWindowCanvasPangoStruct ;
 
 
 /* used for featureset summarise to prevent display of invisible features */
@@ -223,18 +268,20 @@ typedef struct zmapWindowFeaturesetItemClassStructType
 
 
 
-/* NOTE this class/ structure is used for all types of columns
+/* THIS IS A CHILD OF THE COLUMN GROUP CREATED ELSEWHERE....IN ESSENCE IT HOLDS THE
+ * FEATURES THOUGH THESE ARE NO LONGER OBJECTS.
+ * 
+ * NOTE this class/ structure is used for all types of columns
  * it is not inherited and various optional functions have been squeezed in
  * eg:
  * -- graph density feature get re-binned before display (and we have two lists of feature database)
  * -- gapped alignments are recalulated for display when zoom changes (extra data per feature, one list)
  */
-
 typedef struct _zmapWindowFeaturesetItemStruct
 {
   zmapWindowCanvasItemStruct __parent__;		/* itself derived from FooCanvasItem */
 
-  GQuark id;
+  GQuark id;                                                /* original or unique id ?? */
 
   ZMapFeatureTypeStyle style;				    /* column style: NB could have several
 							       featuresets mapped into this by virtualisation */
@@ -287,7 +334,14 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean highlight_sideways;/* temp bodge to allow old code to drive this */
   /* transcripts do alignments don't they get highlit by calling code */
 
-  GList *features;		/* we add features to a simple list and create the index on demand when we get an expose */
+
+  /* Some columns can be bumped to have sub-cols, this is a list of ZMapWindowCanvasSubCol
+   * giving offsets, names etc for subcols. */
+  GList *sub_col_list ;
+
+
+  /* we add features to a simple list and create the index on demand when we get an expose */
+  GList *features;
   /* NOTE elsewhere we don't use GList as we get a 30% performance improvement
    * but we need to sort features so GList is more convenient */
 
@@ -305,6 +359,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   gboolean bumped;		/* using bumped X or not */
   ZMapStyleBumpMode bump_mode;	/* if set */
+
 
   int set_index;			/* for staggered columns (heatmaps) */
 
@@ -366,23 +421,6 @@ typedef struct _zmapWindowFeaturesetItemStruct
 } ZMapWindowFeaturesetItemStruct ;
 
 
-
-/*
- * module generic text interface, initially used by sequence and locus feature types
- * is used to paint single line text things at given x,y
- * highlighting is done with coloured boxes behind the text
- */
-
-typedef struct _zmapWindowCanvasPangoStruct
-{
-  GdkDrawable *drawable;		/* used to tell if a new window has been created and our pango is not valid */
-
-  PangoRenderer *renderer;	/* we use one per column to draw each line seperatly */
-  PangoContext *context;
-  PangoLayout *layout;
-
-  int text_height, text_width;
-} zmapWindowCanvasPangoStruct ;
 
 
 

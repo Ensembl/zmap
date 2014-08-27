@@ -1008,12 +1008,6 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateWithBackground(FooCanvasG
 
 GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id);
 
-FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
-					      ZMapWindowContainerFeatureSet parent_container,
-					      ZMapWindowContainerFeatures features_container,
-					      FooCanvasItem * foo_featureset,
-                                              ZMapWindowFeatureStack     feature_stack);
-
 GHashTable *zmapWindowFToICreate(void) ;
 gboolean zmapWindowFToIAddRoot(GHashTable *feature_to_context_hash, FooCanvasGroup *root_group) ;
 gboolean zmapWindowFToIRemoveRoot(GHashTable *feature_to_context_hash) ;
@@ -1158,6 +1152,9 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  ZMapWindowAlignSetType requested_homol_set,
 			  ZMapFeatureSet feature_set, GList *source,
 			  double x_pos, double y_pos) ;
+
+
+gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 
 ZMapFeatureBlock zmapWindowItemGetFeatureBlock(FooCanvasItem *item) ;
 ZMapFeature zmapWindowItemGetFeature(FooCanvasItem *item) ;
@@ -1327,7 +1324,14 @@ gboolean zMapWindowContainerSummarise(ZMapWindow window,ZMapFeatureTypeStyle sty
 GList *zMapWindowContainerSummariseSortFeatureSet(ZMapFeatureSet fset);
 
 ZMapFeatureTypeStyle zMapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFeatureSet container);
-gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set, ZMapStyleBumpMode bump_mode);
+gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set,
+                                                  ZMapStyleBumpMode bump_mode);
+
+void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
+                               ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
+
+
+
 
 GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type) ;
 GtkWidget    *zmapWindowFeatureListCreateView(ZMapWindowListType list_type, GtkTreeModel *treeModel,
@@ -1498,11 +1502,16 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
 
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle style,
-				     	ZMapWindowContainerFeatureSet set_group,
-				      ZMapWindowContainerFeatures set_features,
-					FooCanvasItem *foo_featureset,
-					ZMapWindowFeatureStack feature_stack) ;
-
+                                     ZMapWindowContainerFeatureSet set_group,
+                                     ZMapWindowContainerFeatures set_features,
+                                     FooCanvasItem *foo_featureset,
+                                     GCallback featureset_callback_func,
+                                     ZMapWindowFeatureStack feature_stack) ;
+FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
+                                                 ZMapWindowContainerFeatureSet parent_container,
+                                                 ZMapWindowContainerFeatures features_container,
+                                                 FooCanvasItem * foo_featureset,
+                                                 ZMapWindowFeatureStack     feature_stack);
 void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset);
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;

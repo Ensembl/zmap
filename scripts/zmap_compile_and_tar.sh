@@ -70,12 +70,16 @@ zmap_cd $CVS_MODULE_LOCAL/src
 
 zmap_message_out "PATH =" $PATH
 
-zmap_message_out "Running bootstrap"
-./bootstrap  || zmap_message_exit $(hostname) "Failed Running bootstrap"
+zmap_message_out "Running $ZMAP_BOOTSTRAP_SCRIPT"
+./$ZMAP_BOOTSTRAP_SCRIPT  || zmap_message_exit $(hostname) "Failed Running $ZMAP_BOOTSTRAP_SCRIPT"
+zmap_message_out "Finished $ZMAP_BOOTSTRAP_SCRIPT"
 
-zmap_message_out "Running runconfig"
-./runconfig --prefix=$CVS_CHECKOUT_DIR/$CVS_MODULE_LOCAL/$INSTALL_PREFIX || \
-    zmap_message_exit $(hostname) "Failed Running runconfig"
+
+zmap_message_out "Running $ZMAP_RUNCONFIG_SCRIPT"
+./$ZMAP_RUNCONFIG_SCRIPT --prefix=$CVS_CHECKOUT_DIR/$CVS_MODULE_LOCAL/$INSTALL_PREFIX || \
+    zmap_message_exit $(hostname) "Failed Running $ZMAP_RUNCONFIG_SCRIPT"
+zmap_message_out "Finished $ZMAP_RUNCONFIG_SCRIPT"
+
 
 if [ "x$ZMAP_MAKE" == "x$ZMAP_TRUE" ]; then
     zmap_message_out "Running make"

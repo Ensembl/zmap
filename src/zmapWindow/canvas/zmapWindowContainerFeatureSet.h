@@ -22,19 +22,22 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Header for class representing a column in zmap.
  *
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_CONTAINER_FEATURESET_H
 #define ZMAP_WINDOW_CONTAINER_FEATURESET_H
 
 #include <glib-object.h>
+
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapStyle.h>
+
+
+/* This absolutely should NOT be in here..... */
 #include <ZMap/zmapWindow.h>	/* ZMapWindow type */
 
 
@@ -51,8 +54,8 @@
 #define ZMAP_CONTAINER_FEATURESET(obj)           ((ZMapWindowContainerFeatureSet) obj)
 #define ZMAP_CONTAINER_FEATURESET_CONST(obj)     ((ZMapWindowContainerFeatureSet const) obj)
 #else
-#define ZMAP_CONTAINER_FEATURESET(obj)	         (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet))
-#define ZMAP_CONTAINER_FEATURESET_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet const))
+#define ZMAP_CONTAINER_FEATURESET(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet))
+#define ZMAP_CONTAINER_FEATURESET_CONST(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet const))
 #endif
 
 #define ZMAP_CONTAINER_FEATURESET_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSetClass))
@@ -65,7 +68,7 @@ typedef struct _zmapWindowContainerFeatureSetStruct  zmapWindowContainerFeatureS
 
 
 /* Class */
-typedef struct _zmapWindowContainerFeatureSetClassStruct  zmapWindowContainerFeatureSetClass, *ZMapWindowContainerFeatureSetClass ;
+typedef struct _zmapWindowContainerFeatureSetClassStruct zmapWindowContainerFeatureSetClass, *ZMapWindowContainerFeatureSetClass ;
 
 
 typedef ColinearityType (*ZMapFeatureCompareFunc)(ZMapFeature feature_a, ZMapFeature feature_b, gpointer user_data);
@@ -74,7 +77,8 @@ typedef ColinearityType (*ZMapFeatureCompareFunc)(ZMapFeature feature_a, ZMapFea
 /* Public funcs */
 GType zmapWindowContainerFeatureSetGetType(void);
 FooCanvasItem *zmapWindowContainerFeatureSetFindCanvasColumn(ZMapWindowContainerGroup group,
-                                                             GQuark align, GQuark block, GQuark set, ZMapStrand strand, ZMapFrame frame) ;
+                                                             GQuark align, GQuark block, GQuark set,
+                                                             ZMapStrand strand, ZMapFrame frame) ;
 ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet container_set,
 								   ZMapWindow window,
 								   GQuark     align_id,
@@ -86,13 +90,17 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
 								   ZMapFrame  frame);
 gboolean zmapWindowContainerFeatureSetAttachFeatureSet(ZMapWindowContainerFeatureSet container_set,
 						       ZMapFeatureSet feature_set_to_attach);
+
+ZMapWindowFeaturesetItem zmapWindowContainerGetFeatureSetItem(ZMapWindowContainerFeatureSet container_set) ;
+
+/* This function is kind of useless as there may be more than one feature set !!! */
 ZMapFeatureSet zmapWindowContainerFeatureSetRecoverFeatureSet(ZMapWindowContainerFeatureSet container_set);
+
 #ifdef blah
 ZMapWindowStats zmapWindowContainerFeatureSetRecoverStats(ZMapWindowContainerFeatureSet container_set);
 #endif
 
 GList *zmapWindowContainerFeatureSetGetFeatureSets(ZMapWindowContainerFeatureSet container_set);
-
 gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet container);
 
 /* Style lookup */
@@ -100,8 +108,11 @@ ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromStyle(ZMapWindowConta
 								 ZMapFeatureTypeStyle         style2copy);
 ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContainerFeatureSet container_set,
 							      GQuark                       style_unique_id);
-GQuark               zmapWindowContainerFeatureSetColumnDisplayName(ZMapWindowContainerFeatureSet container_set);
-GQuark zmapWindowContainerFeatureSetGetColumnId(ZMapWindowContainerFeatureSet container_set);
+
+char *zmapWindowContainerFeaturesetGetColumnName(ZMapWindowContainerFeatureSet container_set) ;
+GQuark zmapWindowContainerFeaturesetGetColumnId(ZMapWindowContainerFeatureSet container_set) ;
+char *zmapWindowContainerFeaturesetGetColumnUniqueName(ZMapWindowContainerFeatureSet container_set) ;
+GQuark zmapWindowContainerFeaturesetGetColumnUniqueId(ZMapWindowContainerFeatureSet container_set) ;
 
 /* style properties for the whole column,  */
 ZMapStrand zmapWindowContainerFeatureSetGetStrand(ZMapWindowContainerFeatureSet container_set);
@@ -157,7 +168,7 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 					       gint direction);
 
 gboolean zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatureSet container_set,
-            ZMapWindowCanvasItem item,int n_focus,int direction);
+                                                        ZMapWindowCanvasItem item,int n_focus,int direction);
 
 void zMapWindowContainerFeatureSetMarkUnsorted(ZMapWindowContainerFeatureSet container_set);
 

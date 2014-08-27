@@ -541,7 +541,7 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
  but we can patch up from the [ZMap] columns list
       */
       /* gb10: made this check use the lowercase unique id to fix the acedb bug */
-      if(zmapWindowContainerFeatureSetGetColumnId(container) == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
+      if(zmapWindowContainerFeaturesetGetColumnId(container) == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
         {
           if (IS_3FRAME_TRANS(window->display_3_frame))
             displayed = TRUE ;
@@ -1076,24 +1076,24 @@ static void preZoomCB(ZMapWindowContainerGroup container, FooCanvasPoints *point
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-        ZMapWindow window = (ZMapWindow)user_data;
-        ZMapWindowFeaturesetItem cfs = NULL ;
-        FooCanvasItem *item = (FooCanvasItem *)container ;
+	ZMapWindow window = (ZMapWindow)user_data;
+	ZMapWindowFeaturesetItem cfs = NULL ;
+	FooCanvasItem *item = (FooCanvasItem *)container ;
 
-        if (zmapWindowContainerFeatureSetGetDisplay((ZMapWindowContainerFeatureSet)container)
-            == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
-          zmapWindowColumnSetMagState(window, (FooCanvasGroup *)container) ;
+	if (zmapWindowContainerFeatureSetGetDisplay((ZMapWindowContainerFeatureSet)container)
+	    == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
+	  zmapWindowColumnSetMagState(window, (FooCanvasGroup *)container) ;
 
-        /* Get the feature set item and set the canvas zoom and call any col. functions
-         * needed to prepare for zooming (e.g. to set text width etc. */
-        if ((cfs = ZMapWindowContainerGetFeatureSetItem(container)))
-          {
-            zMapWindowCanvasFeaturesetSetZoomY(cfs, item->canvas->pixels_per_unit_y) ;
-        
-            zMapWindowCanvasFeaturesetPreZoom(cfs) ;
-          }
+	/* Get the feature set item and set the canvas zoom and call any col. functions
+	 * needed to prepare for zooming (e.g. to set text width etc. */
+	if ((cfs = zmapWindowContainerGetFeatureSetItem((ZMapWindowContainerFeatureSet)container)))
+	  {
+	    zMapWindowCanvasFeaturesetSetZoomY(cfs, item->canvas->pixels_per_unit_y) ;
 
-        break ;
+	    zMapWindowCanvasFeaturesetPreZoom(cfs) ;
+	  }
+
+	break ;
       }
 
     default:

@@ -1727,7 +1727,7 @@ gboolean zMapAttParseGap(ZMapGFFAttribute pAttribute , GArray ** const pGaps,
       return bResult ;
     }
 
-  bResult = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_EXONERATE,
+  bResult = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_GAP_GFF3,
                                             cRefStrand, iRefStart, iRefEnd,
                                             cMatchStrand, iMatchStart, iMatchEnd,
                                             sValue, pGaps) ;
@@ -2096,8 +2096,7 @@ gboolean zMapAttGenerateGap(char **p_s_out, ZMapFeature feature)
   char *align_str = NULL ;
   zMapReturnValIfFail(   p_s_out
                       && feature
-                      && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT
-                      && feature->feature.homol.align,
+                      && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT,
                       bResult) ;
 
   if ((bResult = zMapFeatureAlignmentGetAlignmentString(feature,
