@@ -1163,6 +1163,19 @@ static void makeSubsectionCB(gpointer data, gpointer user_data)
   return ;
 }
 
+/* The user_data is the new text set in the cell renderer. We convert it to an int. */
+static void cellEditedCB(GValue *value, gpointer user_data)
+{
+  zMapReturnIfFail(value && user_data) ;
+
+  char *new_text = (char*)user_data ;
+  int result = atoi(new_text) ;
+
+  g_value_set_int(value, result) ;
+
+  return ;
+}
+
 
 /* A GFunc() to build paragraphs within subsections. */
 static void makeParagraphCB(gpointer data, gpointer user_data)
@@ -1170,6 +1183,7 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
   ZMapGuiNotebookParagraph paragraph = (ZMapGuiNotebookParagraph)data ;
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
   GtkWidget *paragraph_frame ;
+  GList *column_funcs = NULL ;
 
   make_notebook->curr_paragraph = paragraph ;
 
@@ -1189,7 +1203,6 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
                                                           FALSE) ;
       gtk_table_set_homogeneous(GTK_TABLE(make_notebook->curr_paragraph_table),
                                 (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS));
-
       gtk_table_set_row_spacings(GTK_TABLE(make_notebook->curr_paragraph_table),
                                  GUI_NOTEBOOK_DEFAULT_BORDER);
 
@@ -1215,6 +1228,10 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
 
       make_notebook->zmap_tree_view = zMapGUITreeViewCreate();
 
+      /* Create a list of the functions to update the start/end values. */
+      column_funcs = g_list_append(column_funcs, cellEditedCB) ;
+      column_funcs = g_list_append(column_funcs, cellEditedCB) ;
+
       g_object_set(G_OBJECT(make_notebook->zmap_tree_view),
                    "row-counter-column", TRUE,
                    "column_count",       g_list_length(paragraph->compound_titles),
@@ -1223,9 +1240,11 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
                    "selection-data",     NULL,
                    "column_names_q",     paragraph->compound_titles,
                    "column_types",       paragraph->compound_types,
+                   "editable",           make_notebook->notebook_spec->editable,
                    "sortable",           TRUE,
                    "sort-column-index",  0,
                    "sort-order",         GTK_SORT_ASCENDING,
+                   "column-funcs",       column_funcs,
                    NULL);
 
       make_notebook->curr_paragraph_treeview = GTK_WIDGET(zMapGUITreeViewGetView(make_notebook->zmap_tree_view));

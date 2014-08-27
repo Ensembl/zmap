@@ -95,6 +95,8 @@ typedef struct _zmapGUITreeViewStruct
   GtkTreeIterCompareFunc sort_func;
   gpointer               sort_func_data;
   GDestroyNotify         sort_destroy;
+
+  GList *tag_values_lists;
 } zmapGUITreeViewStruct;
 
 
