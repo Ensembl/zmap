@@ -3068,7 +3068,6 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
                                         ZMapFeatureSet pFeatureSet,
                                         char ** psError)
 {
-  static const char * sRead = "read" ;
   typedef enum {NONE, FIRST, SECOND} CaseToTreat ;
   CaseToTreat cCase = NONE ;
   unsigned int iSOID = 0,
@@ -3090,7 +3089,6 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
     bNewFeatureCreated = FALSE,
     bFeatureAdded = FALSE,
     bParseAttribute = FALSE,
-    bParseAttributeID = FALSE,
     bParseAttributeTarget = FALSE,
     bDataAdded = FALSE ;
   GArray *pGaps = NULL ;
@@ -3099,7 +3097,6 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute *pAttributes = NULL,
     pAttribute = NULL,
-    pAttributeID = NULL,
     pAttributeTarget = NULL ;
   ZMapStrand cStrand = ZMAPSTRAND_NONE,
     cTargetStrand = ZMAPSTRAND_NONE ;

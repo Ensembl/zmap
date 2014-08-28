@@ -139,7 +139,9 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 static guint32 gdk_color_to_rgba(GdkColor *color) ;
 
 static void itemLinkSideways(ZMapWindowFeaturesetItem fi) ;
+#if NOT_USED
 static gint setNameCmp(gconstpointer a, gconstpointer b) ;
+#endif
 
 static void printCanvasFeature(void *data, void *user_data_unused) ;
 
@@ -3998,6 +4000,7 @@ static guint32 gdk_color_to_rgba(GdkColor *color)
 
 
 /* Sort on unique (== canonicalised) name. */
+#if NOT_USED
 static gint setNameCmp(gconstpointer a, gconstpointer b)
 {
   int result ;
@@ -4013,7 +4016,7 @@ static gint setNameCmp(gconstpointer a, gconstpointer b)
 
   return result ;
 }
-
+#endif
 
 
 
