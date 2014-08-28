@@ -161,7 +161,7 @@ AC_ARG_ENABLE(debug,
         AS_HELP_STRING(--enable-debug,enable debug info compilation (no)),
         deb=$enableval, deb=no)
 
-AC_ARG_ENABLE(profile,_
+AC_ARG_ENABLE(profile,
         AS_HELP_STRING(--enable-profile,enable profiling debug info compilation (no)),
         prof=$enableval, prof=no)
 
