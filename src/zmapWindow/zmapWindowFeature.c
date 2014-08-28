@@ -1408,6 +1408,17 @@ static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
               zmapWindowFeatureShow(remote_data->window, remote_data->real_item, FALSE) ;
             }
         }
+      else if (g_ascii_strcasecmp(command, ZACP_CREATE_FEATURE) == 0)
+        {
+          if (command_rc == REMOTE_COMMAND_RC_OK)
+            {
+              /* Reset the unsaved-changes flag. Really we should wait until the feature has
+               * actually been created but the peer may change any of the feature details before
+               * creating and sending it back to us so we have no way of knowing when the correct 
+               * feature has been created. */
+              remote_data->window->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
+            }
+        }
     }
 
   g_free(remote_data) ;                                            /* Allocated in callXRemote() */

@@ -211,11 +211,19 @@ gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest
     {
       dest_feature->feature.transcript.flags.cds = src_feature->feature.transcript.flags.cds ;
 
-      if (src_feature->feature.transcript.cds_start < dest_feature->feature.transcript.cds_start)
-        dest_feature->feature.transcript.cds_start = src_feature->feature.transcript.cds_start ;
+      /* We only use the src coords if it means the CDS region will expand. However, 0 means 
+       * unset so always use the src coord if the current one is unset. */
+      if (dest_feature->feature.transcript.cds_start == 0 || 
+          src_feature->feature.transcript.cds_start < dest_feature->feature.transcript.cds_start)
+        {
+          dest_feature->feature.transcript.cds_start = src_feature->feature.transcript.cds_start ;
+        }
 
-      if (src_feature->feature.transcript.cds_end > dest_feature->feature.transcript.cds_end)
-        dest_feature->feature.transcript.cds_end = src_feature->feature.transcript.cds_end ;
+      if (dest_feature->feature.transcript.cds_end == 0 ||
+          src_feature->feature.transcript.cds_end > dest_feature->feature.transcript.cds_end)
+        {
+          dest_feature->feature.transcript.cds_end = src_feature->feature.transcript.cds_end ;
+        }
 
       result = TRUE ;
     }

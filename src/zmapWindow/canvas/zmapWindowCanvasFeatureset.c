@@ -1818,7 +1818,7 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmp
 								      ZMapWindowFeaturesetItem fi,
 								      double y1, double y2)
 {
-  ZMapSkipList sl;
+  ZMapSkipList sl = NULL;
   zmapWindowCanvasFeatureStruct search;
   double extra = 0.0;
   zMapReturnValIfFail(fi, sl) ;
@@ -1858,7 +1858,7 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmp
 static ZMapSkipList zmap_window_canvas_featureset_find_feature_index(ZMapWindowFeaturesetItem fi,ZMapFeature feature)
 {
   ZMapWindowCanvasFeature gs;
-  ZMapSkipList sl;
+  ZMapSkipList sl = NULL ;
 
   zMapReturnValIfFail(feature, sl) ;
 

@@ -785,8 +785,6 @@ static BCR calcBumpNoOverlapFeatureSet(ZMapWindowFeaturesetItem featureset, ZMap
     }
   else
     {
-      ZMapWindowCanvasSubCol sub_col_data ;
-
       if (last)
         new_range->column = last->column + 1 ;
 

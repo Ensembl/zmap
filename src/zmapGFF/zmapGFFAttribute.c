@@ -2094,7 +2094,7 @@ gboolean zMapAttGenerateGap(char **p_s_out, ZMapFeature feature)
 {
   gboolean bResult = FALSE ;
   char *align_str = NULL ;
-  zMapReturnValIfFail(   p_s_out
+  zMapReturnValIfFailSafe(   p_s_out
                       && feature
                       && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT,
                       bResult) ;

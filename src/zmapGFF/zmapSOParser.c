@@ -156,7 +156,7 @@ char *       zMapSOIDDataName2SOAcc(const char * const pData)
   unsigned int iID = 0 ;
   gboolean bFound = FALSE ;
   int i = 0 ;
-  zMapReturnValIfFail(pData, sResult ) ;
+  zMapReturnValIfFailSafe(pData, sResult ) ;
 
   for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
     {

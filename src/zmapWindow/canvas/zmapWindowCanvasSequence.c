@@ -815,7 +815,7 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
   long seq_y, seq_x;
   ZMapWindowCanvasPango pango = NULL;
 
-  zMapReturnIfFail(featureset) ;
+  zMapReturnValIfFail(featureset, FALSE) ;
   pango = (ZMapWindowCanvasPango) featureset->opt;
 
   if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(featureset))

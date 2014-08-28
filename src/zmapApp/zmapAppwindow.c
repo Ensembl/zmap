@@ -65,11 +65,12 @@
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out, GError **error) ;
-static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout, GError **error) ;
-static void checkConfigDir(ZMapFeatureSequenceMap seq_map) ;
+static void checkForCmdLineStartEndArg(int argc, char *argv[], const char *sequence, int *start_inout, int *end_inout, GError **error) ;
+static void checkConfigDir(char **config_file_out, char **styles_file_out) ;
 static gboolean checkSequenceArgs(int argc, char *argv[],
-                                  ZMapFeatureSequenceMap seq_map_inout, GError **error) ;
-static gboolean checkPeerID(ZMapAppContext app_context,
+                                  char *config_file, char *styles_file,
+                                  GList **seq_maps_inout, GError **error) ;
+static gboolean checkPeerID(char *config_file,
     char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms) ;
 
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
@@ -77,7 +78,7 @@ static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
 
 
 static void initGnomeGTK(int argc, char *argv[]) ;
-static gboolean getConfiguration(ZMapAppContext app_context) ;
+static gboolean getConfiguration(ZMapAppContext app_context, char *config_file) ;
 
 static ZMapAppContext createAppContext(void) ;
 static void destroyAppContext(ZMapAppContext app_context) ;
@@ -156,10 +157,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GtkWidget *quit_button ;
   int log_size ;
   int sleep_seconds = 0 ;
-  ZMapFeatureSequenceMap seq_map;
+  GList *seq_maps = NULL ;
   gboolean remote_control = FALSE ;
   GError *g_error = NULL ;
-
+  char *config_file = NULL ;
+  char *styles_file = NULL ;
 
 
 #ifdef ZMAP_MEMORY_DEBUG
@@ -215,12 +217,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context = createAppContext() ;
 
 
-  /* default sequence to display -> if not run via XRemote (window_ID in cmd line args) */
-  seq_map = app_context->default_sequence =  g_new0(ZMapFeatureSequenceMapStruct, 1) ;
-
-
   /* Set up configuration directory/files */
-  checkConfigDir(seq_map) ;
+  checkConfigDir(&config_file, &styles_file) ;
 
 
   /* Set any global debug flags from config file. */
@@ -230,7 +228,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Check if a peer program was specified on the command line or in the config file. */
   peer_name = peer_clipboard = NULL ;
   peer_retries = peer_timeout_ms = -1 ;
-  if (!checkPeerID(app_context, &peer_name, &peer_clipboard, &peer_retries, &peer_timeout_ms))
+  if (!checkPeerID(config_file, &peer_name, &peer_clipboard, &peer_retries, &peer_timeout_ms))
     {
       /* CAN'T LOG HERE....log has not been init'd.... */
 
@@ -258,7 +256,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
 
   /* Set up logging for application....NO LOGGING BEFORE THIS. */
-  if (!zMapLogCreate(NULL) || !configureLog(seq_map->config_file, &g_error))
+  if (!zMapLogCreate(NULL) || !configureLog(config_file, &g_error))
     {
       consoleMsg(TRUE, "Error creating log file: %s", (g_error ? g_error->message : "<no error message>")) ;
       doTheExit(EXIT_FAILURE) ;
@@ -274,7 +272,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     }
 
   /* Get general zmap configuration from config. file. */
-  getConfiguration(app_context) ;
+  getConfiguration(app_context, config_file) ;
 
 
   {
@@ -298,7 +296,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Check for sequence/start/end on command line or in config. file, must be
    * either completely correct or not specified. */
-  if (!checkSequenceArgs(argc, argv, seq_map, &g_error))
+  if (!checkSequenceArgs(argc, argv, config_file, styles_file, &seq_maps, &g_error))
     {
       if (g_error)
         {
@@ -315,6 +313,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
       doTheExit(EXIT_FAILURE) ;
     }
+
+  /* Use the first sequence map as the default sequence */
+  if (seq_maps && g_list_length(seq_maps) > 0)
+    app_context->default_sequence = (ZMapFeatureSequenceMap)(seq_maps->data) ;
 
 
   /*             GTK initialisation              */
@@ -367,7 +369,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   menubar = zmapMainMakeMenuBar(app_context) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
 
-  connect_frame = zmapMainMakeConnect(app_context, seq_map) ;
+  connect_frame = zmapMainMakeConnect(app_context, app_context->default_sequence) ;
   gtk_box_pack_start(GTK_BOX(vbox), connect_frame, TRUE, TRUE, 0);
 
   manage_frame = zmapMainMakeManage(app_context) ;
@@ -401,12 +403,45 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Only show default sequence if we are _not_ controlled via XRemote */
   if (!remote_control)
      {
-      ZMap zmap = NULL ;
-      ZMapView view = NULL ;
-      char *err_msg = NULL ;
+       gboolean ok = TRUE ;
+       int num_views = seq_maps ? g_list_length(seq_maps) : 0 ;
 
-      if (!zmapAppCreateZMap(app_context, seq_map, &zmap, &view, &err_msg))
-        zMapWarning("%s", err_msg) ;
+       if (num_views > 2)
+         {
+           char *msg = g_strdup_printf("There are %d different sequences/regions in the input sources. This will create %d views in ZMap. Are you sure you want to continue?",
+                                       num_views, num_views) ;
+
+           ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, msg) ;
+           g_free(msg) ;
+         }
+
+       if (ok)
+         {
+           ZMap zmap = NULL ;
+           ZMapView view = NULL ;
+
+           if (zmapAppCreateZMap(app_context, app_context->default_sequence, &zmap, &view) &&
+               num_views > 1)
+             {
+               /* There is more than one sequence map. We've added the first already but add
+                * subsequence ones as new Views. */
+               GList *seq_map_item = seq_maps->next ;
+
+               for ( ; seq_map_item; seq_map_item = seq_map_item->next)
+                 {
+                   ZMapFeatureSequenceMap seq_map = (ZMapFeatureSequenceMap)(seq_map_item->data) ;
+                   char *err_msg = NULL ;
+
+                   zMapControlInsertView(zmap, seq_map, &err_msg) ;
+
+                   if (err_msg)
+                     {
+                       zMapWarning("%s", err_msg) ;
+                       g_free(err_msg) ;
+                     }
+                 }
+             }
+        }
     }
 
 
@@ -694,21 +729,25 @@ static void appExit(void *user_data)
     }
   else
     {
-      guint timeout_func_id ;
-      int interval = app_context->exit_timeout * 1000 ;    /* glib needs time in milliseconds. */
+      /* Check if we need to save anything first */
+      if (zMapManagerCheckIfUnsaved(app_context->zmap_manager))
+        {
+          guint timeout_func_id ;
+          int interval = app_context->exit_timeout * 1000 ;    /* glib needs time in milliseconds. */
 
-      consoleMsg(TRUE, "%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
+          consoleMsg(TRUE, "%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
 
-      /* N.B. we block for 2 seconds here to make sure user can see message. */
-      zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
-                         ZMAP_MSG_EXIT,
-                         GTK_JUSTIFY_CENTER, 2, FALSE) ;
+          /* N.B. we block for 2 seconds here to make sure user can see message. */
+          zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
+                             ZMAP_MSG_EXIT,
+                             GTK_JUSTIFY_CENTER, 2, FALSE) ;
 
-      /* time out func makes sure that we exit if threads fail to report back. */
-      timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
+          /* time out func makes sure that we exit if threads fail to report back. */
+          timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
 
-      /* Tell all our zmaps to die, they will tell all their threads to die. */
-      zMapManagerKillAllZMaps(app_context->zmap_manager) ;
+          /* Tell all our zmaps to die, they will tell all their threads to die. */
+          zMapManagerKillAllZMaps(app_context->zmap_manager) ;
+        }
     }
 
   return ;
@@ -858,7 +897,7 @@ static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_ou
 
 
 /* Did user specify seqence/start/end on command line. */
-static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout, GError **error)
+static void checkForCmdLineStartEndArg(int argc, char *argv[], const char *sequence, int *start_inout, int *end_inout, GError **error)
 {
   GError *tmp_error = NULL ;
   ZMapCmdLineArgsType start_value ;
@@ -867,7 +906,12 @@ static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout,
   gboolean got_start = zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_START, &start_value) ;
   gboolean got_end = zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_END, &end_value) ;
 
-  if (got_start && got_end)
+  if (got_start && got_end && !sequence)
+    {
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_NO_SEQUENCE,
+                  "The coords were specified on the command line but the sequence name missing: must specify all or none of sequence/start/end") ;
+    }
+  else if (got_start && got_end)
     {
       *start_inout = start_value.i ;
       *end_inout = end_value.i ;
@@ -948,7 +992,7 @@ static int checkForCmdLineSleep(int argc, char *argv[])
 
 /* Did user specify a config directory and/or config file within that directory on the command
  * line. Also check for the stylesfile on the command line or in the config dir. */
-static void checkConfigDir(ZMapFeatureSequenceMap seq_map)
+static void checkConfigDir(char **config_file_out, char **styles_file_out)
 {
   ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE}, stylesfile = {FALSE} ;
 
@@ -958,24 +1002,24 @@ static void checkConfigDir(ZMapFeatureSequenceMap seq_map)
 
   if (zMapConfigDirCreate(dir.s, file.s))
     {
-      seq_map->config_file = zMapConfigDirGetFile() ;
+      *config_file_out = zMapConfigDirGetFile() ;
 
       /* If the stylesfile is a relative path, look for it in the config dir. If it
        * was not given on the command line, check if there's one with the default name */
       if (stylesfile.s)
-        seq_map->stylesfile = zMapConfigDirFindFile(stylesfile.s) ;
+        *styles_file_out = zMapConfigDirFindFile(stylesfile.s) ;
       else
-        seq_map->stylesfile = zMapConfigDirFindFile("styles.ini") ;
+        *styles_file_out = zMapConfigDirFindFile("styles.ini") ;
     }
   else if (stylesfile.s)
     {
-      seq_map->stylesfile = stylesfile.s;
+      *styles_file_out = stylesfile.s;
     }
 }
 
 
 /* Did caller specify a peer program id on the command line or in a config file. */
-static gboolean checkPeerID(ZMapAppContext app_context,
+static gboolean checkPeerID(char *config_file,
     char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms)
 {
   gboolean result = FALSE ;
@@ -994,7 +1038,7 @@ static gboolean checkPeerID(ZMapAppContext app_context,
         }
     }
 
-  if ((context = zMapConfigIniContextProvide(app_context->default_sequence->config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file)))
     {
       char *tmp_string  = NULL;
       int tmp_int = 0;
@@ -1077,7 +1121,7 @@ static void infoSetCB(void *app_data, void *zmap_data)
 
 
 /* Read ZMap application defaults. */
-static gboolean getConfiguration(ZMapAppContext app_context)
+static gboolean getConfiguration(ZMapAppContext app_context, char *config_file)
 {
   gboolean result = FALSE ;
   ZMapConfigIniContext context;
@@ -1085,7 +1129,7 @@ static gboolean getConfiguration(ZMapAppContext app_context)
   app_context->show_mainwindow = TRUE;
   app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
 
-  if ((context = zMapConfigIniContextProvide(app_context->default_sequence->config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file)))
     {
       gboolean tmp_bool = FALSE;
       char *tmp_string  = NULL;
@@ -1350,10 +1394,32 @@ static gboolean configureLog(char *config_file, GError **error)
 }
 
 
-/* Check the given file to see if we can extract sequence details */
+static ZMapFeatureSequenceMap createSequenceMap(char *sequence, int start, int end, 
+                                                char *config_file, char *styles_file, 
+                                                GList **seq_maps_inout)
+{
+  ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct, 1) ;
+
+  seq_map->sequence = sequence ;
+  seq_map->start = start ;
+  seq_map->end = end ;
+  seq_map->config_file = config_file ;
+  seq_map->stylesfile = styles_file ;
+
+  *seq_maps_inout = g_list_append(*seq_maps_inout, seq_map) ;
+
+  return seq_map ;
+}
+
+
+/* Check the given file to see if we can extract sequence details. allow_multiple means that
+ * multiple seq_maps are allowed so if the new details do not match the existing seq_map(s) then
+ * we can create a new seq_map; otherwise the new details must match or we set the error. */
 static void checkInputFileForSequenceDetails(const char* const filename,
-                                             ZMapFeatureSequenceMap seq_map_inout,
-                                             const gboolean merge_details,
+                                             char *config_file,
+                                             char *styles_file,
+                                             GList **seq_maps_inout,
+                                             const gboolean allow_multiple,
                                              GError **error)
 {
   gboolean result = FALSE ;
@@ -1445,25 +1511,67 @@ static void checkInputFileForSequenceDetails(const char* const filename,
         }
     }
 
-  if (result)
+  if (result && !tmp_error)
     {
-      /* Cache the sequence details */
-      if (!tmp_error)
-        zMapAppMergeSequenceName(seq_map_inout, zMapGFFGetSequenceName(parser), merge_details, &tmp_error) ;
+      /* Cache the sequence details in a sequence map - merge with an existing sequence map if
+       * possible, otherwise create a new one. */
+      char *sequence = zMapGFFGetSequenceName(parser) ;
+      int start = zMapGFFGetFeaturesStart(parser) ;
+      int end = zMapGFFGetFeaturesEnd(parser) ;
+      ZMapFeatureSequenceMap seq_map = NULL ;
 
-      if (!tmp_error)
-        zMapAppMergeSequenceCoords(seq_map_inout, zMapGFFGetFeaturesStart(parser), zMapGFFGetFeaturesEnd(parser), FALSE, merge_details, &tmp_error) ;
+      GList *seq_map_item = seq_maps_inout ? g_list_first(*seq_maps_inout) : NULL ;
 
-      /* Cache the parser state */
+      for ( ; seq_map_item; seq_map_item = seq_map_item->next)
+        {
+          seq_map = (ZMapFeatureSequenceMap)(seq_map_item->data) ;
+
+          zMapAppMergeSequenceName(seq_map, sequence, allow_multiple, &tmp_error) ;
+
+          if (!tmp_error)
+            zMapAppMergeSequenceCoords(seq_map, start, end, FALSE, allow_multiple, &tmp_error) ;
+
+          if (tmp_error && allow_multiple)
+            {
+              /* The error indicates we failed to merge with this seq_map but multiple seq_maps
+               * are allowed so reset the error and result and continue to the next seq_map. If we 
+               * don't find one then we'll create a new seq_map. */
+              g_error_free(tmp_error) ;
+              tmp_error = NULL ;
+              seq_map = NULL ;
+            }
+          else if (tmp_error)
+            {
+              /* We failed to match this seq_map and multiple seq_maps are not allowed so 
+               * this is an error. */
+              break ;
+            }
+          else
+            {
+              /* We successfully found a suitable seq_map (and merged if applicable), so we're done */
+              break ;
+            }
+        }
+
       if (!tmp_error)
         {
-          seq_map_inout->cached_parsers = g_hash_table_new(NULL, NULL) ;
+          /* If we didn't manage to merge with an existing seq map, create a new one. Use the 
+           * config/styles file if given because we want to inherit all of the config 
+           * apart from the sequence details */
+          if (!seq_map)
+            seq_map = createSequenceMap(sequence, start, end, config_file, styles_file, seq_maps_inout) ;
+
+          /* Cache the filename and parser state */
+          seq_map->file_list = g_slist_append(seq_map->file_list, g_strdup(filename)) ;
+
           ZMapFeatureParserCache parser_cache = g_new0(ZMapFeatureParserCacheStruct, 1) ;
           parser_cache->parser = (gpointer)parser ;
           parser_cache->line = gff_line ;
           parser_cache->pipe = gff_pipe ;
           parser_cache->pipe_status = status ;
-          g_hash_table_insert(seq_map_inout->cached_parsers, GINT_TO_POINTER(g_quark_from_string(filename)), parser_cache) ;
+
+          seq_map->cached_parsers = g_hash_table_new(NULL, NULL) ;
+          g_hash_table_insert(seq_map->cached_parsers, GINT_TO_POINTER(g_quark_from_string(filename)), parser_cache) ;
         }
     }
   else if (!tmp_error)
@@ -1484,26 +1592,31 @@ static void checkInputFileForSequenceDetails(const char* const filename,
 
 /* Check the input file(s) on the command line, if any. Checks the sequence details are valid and/or
  * sets the sequence details if they are not already set. */
-static void checkInputFiles(ZMapFeatureSequenceMap seq_map_inout, GError **error)
+static void checkInputFiles(char *config_file, char *styles_file, GList **seq_maps_inout, GError **error)
 {
-  zMapReturnIfFailSafe(seq_map_inout) ;
-
   GError *tmp_error = NULL ;
   char **file_list = zMapCmdLineFinalArg() ;
+  ZMapFeatureSequenceMap seq_map = NULL ;
+
+  if (seq_maps_inout && *seq_maps_inout && g_list_length(*seq_maps_inout) > 0)
+    seq_map = (ZMapFeatureSequenceMap)((*seq_maps_inout)->data) ;
 
   if (file_list)
     {
       /* If details have been set by the command line or config file then take those as absolute
-       * and don't merge the ranges from the input files - just check that they are valid. If
-       * they are not already set, merge the ranges from the input files to get the full extent. */
-      const gboolean merge_details = (!seq_map_inout->sequence && !seq_map_inout->start && !seq_map_inout->end);
+       * and don't allow multiple seq_maps to be created - just validate for each file that the
+       * sequence details match those already set. If the sequence details are not already set, 
+       * we allow multiple seq_maps to be created for different input sequences/regions and 
+       * we also allow the range for a single sequence to be expanded if there are multiple
+       * requested regions that overlap. */
+      const gboolean allow_multiple = (seq_map && !seq_map->sequence && !seq_map->start && !seq_map->end);
 
       /* Loop through the input files */
       char **file = file_list ;
 
       for (; file && *file; ++file)
         {
-          checkInputFileForSequenceDetails(*file, seq_map_inout, merge_details, &tmp_error) ;
+          checkInputFileForSequenceDetails(*file, config_file, styles_file, seq_maps_inout, allow_multiple, &tmp_error) ;
 
           if (tmp_error)
             {
@@ -1512,11 +1625,6 @@ static void checkInputFiles(ZMapFeatureSequenceMap seq_map_inout, GError **error
               consoleMsg(TRUE, "Cannot open file '%s': %s", *file, tmp_error->message) ;
               g_error_free(tmp_error) ;
               tmp_error = NULL ;
-            }
-          else
-            {
-              /* All ok so add the file to the cached list */
-              seq_map_inout->file_list = g_slist_append(seq_map_inout->file_list, g_strdup(*file)) ;
             }
         }
 
@@ -1529,37 +1637,44 @@ static void checkInputFiles(ZMapFeatureSequenceMap seq_map_inout, GError **error
 
 
 /* Validate the sequence details set in the sequence map. Sets the error if there is a problem. */
-static gboolean validateSequenceDetails(ZMapFeatureSequenceMap seq_map, GError **error)
+static gboolean validateSequenceDetails(GList *seq_maps, GError **error)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
   GError *tmp_error = NULL ;
+  
+  GList *seq_map_item = seq_maps ;
 
-  /* The sequence name, start and end must all be specified, or none of them. */
-  if ((seq_map->sequence && seq_map->start && seq_map->end)
-      || (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end)))
+  for ( ; seq_map_item && !tmp_error; seq_map_item = seq_map_item->next)
     {
-      /* We must have a config file or some files on the command line (otherwise we have no
-       * sources) */
-      if (seq_map->config_file || seq_map->file_list)
+      ZMapFeatureSequenceMap seq_map = (ZMapFeatureSequenceMap)(seq_map_item->data) ;
+
+      /* The sequence name, start and end must all be specified, or none of them. */
+      if ((seq_map->sequence && seq_map->start && seq_map->end)
+          || (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end)))
         {
-          result = TRUE ;
+          /* We must have a config file or some files on the command line (otherwise we have no
+           * sources) */
+          if (seq_map->config_file || seq_map->file_list)
+            {
+
+            }
+          else
+            {
+              result = FALSE ;
+
+              g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_NO_SOURCES,
+                          "No data sources - you must specify a config file, or pass data in GFF files on the command line") ;
+            }
         }
       else
         {
           result = FALSE ;
 
-          g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_NO_SOURCES,
-                      "No data sources - you must specify a config file, or pass data in GFF files on the command line") ;
+          g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_BAD_SEQUENCE_DETAILS,
+                      "Bad sequence args: must set all or none of sequence name, start and end. Got: %s, %d, %d",
+                      (!seq_map->sequence ? "<no sequence name>" : seq_map->sequence),
+                      seq_map->start, seq_map->end) ;
         }
-    }
-  else
-    {
-      result = FALSE ;
-
-      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_BAD_SEQUENCE_DETAILS,
-                  "Bad sequence args: must set all or none of sequence name, start and end. Got: %s, %d, %d",
-                  (!seq_map->sequence ? "<no sequence name>" : seq_map->sequence),
-                  seq_map->start, seq_map->end) ;
     }
 
   if (tmp_error)
@@ -1574,31 +1689,42 @@ static gboolean validateSequenceDetails(ZMapFeatureSequenceMap seq_map, GError *
  * wrong. If FALSE an error message is returned in err_msg_out which should
  * be g_free'd by caller. */
 static gboolean checkSequenceArgs(int argc, char *argv[],
-                                  ZMapFeatureSequenceMap seq_map_inout, GError **error)
+                                  char *config_file, char *styles_file,
+                                  GList **seq_maps_inout, GError **error)
 {
   gboolean result = FALSE ;
   GError *tmp_error = NULL ;
+  char *dataset = NULL ;
+  char *sequence = NULL ;
+  int start = 0 ;
+  int end = 0 ;
+  ZMapFeatureSequenceMap seq_map = NULL ;
 
   /* Check for sequence on command-line */
   if (!tmp_error)
-    checkForCmdLineSequenceArg(argc, argv, &seq_map_inout->dataset, &seq_map_inout->sequence, &tmp_error) ;
+    checkForCmdLineSequenceArg(argc, argv, &dataset, &sequence, &tmp_error) ;
 
   /* Check for coords on command-line */
   if (!tmp_error)
-    checkForCmdLineStartEndArg(argc, argv, &seq_map_inout->start, &seq_map_inout->end, &tmp_error) ;
+    checkForCmdLineStartEndArg(argc, argv, sequence, &start, &end, &tmp_error) ;
+
+  /* Create the sequence map from the details so far (this is blank if none given) */
+  if (!tmp_error)
+    seq_map = createSequenceMap(sequence, start, end, config_file, styles_file, seq_maps_inout) ;
 
   /* Check for sequence details in the config file, if one was given. If the sequence details
    * are already set then this just validates the config file values against the existing ones. */
   if (!tmp_error)
-    zMapAppGetSequenceConfig(seq_map_inout, &tmp_error) ;
+    zMapAppGetSequenceConfig(seq_map, &tmp_error) ;
 
-  /* Next check any input file(s) */
+  /* Next check any input file(s). If there are multiple files for different sequences/regions
+   * then we end up with multiple sequence maps */
   if (!tmp_error)
-    checkInputFiles(seq_map_inout, &tmp_error) ;
+    checkInputFiles(config_file, styles_file, seq_maps_inout, &tmp_error) ;
 
   /* If details were set, check that they are valid. */
   if (!tmp_error)
-    result = validateSequenceDetails(seq_map_inout, &tmp_error) ;
+    result = validateSequenceDetails(*seq_maps_inout, &tmp_error) ;
 
   if (tmp_error)
     g_propagate_error(error, tmp_error) ;
