@@ -61,6 +61,7 @@ typedef enum
 {
   ZMAPAPP_ERROR_BAD_SEQUENCE_DETAILS,
   ZMAPAPP_ERROR_BAD_COORDS,
+  ZMAPAPP_ERROR_NO_SEQUENCE,
   ZMAPAPP_ERROR_GFF_HEADER,
   ZMAPAPP_ERROR_GFF_PARSER,
   ZMAPAPP_ERROR_GFF_VERSION,
@@ -311,7 +312,7 @@ GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context) ;
 GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
 gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map,
-			   ZMap *zmap_out, ZMapView *view_out, char **err_msg_out) ;
+                           ZMap *zmap_out, ZMapView *view_out) ;
 void zmapAppDestroy(ZMapAppContext app_context) ;
 void zmapAppExit(ZMapAppContext app_context) ;
 

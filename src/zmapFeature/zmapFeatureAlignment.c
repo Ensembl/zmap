@@ -163,7 +163,9 @@ static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon) 
 static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 
+#if NOT_USED
 static int cigarGetLength(char **cigar_str) ;
+#endif
 
 //static gboolean alignStrCanonical2GFFv3Gap(char ** align_str, AlignStrCanonical canon) ;
 //static gboolean alignStrCanonical2ExonerateCigar(char ** align_str, AlignStrCanonical canon) ;
@@ -175,14 +177,13 @@ static gboolean alignStrCanonicalSubstituteBamCigar(AlignStrCanonical canon) ;
 static gboolean alignStrCanonicalSubstituteEnsemblCigar(AlignStrCanonical canon) ;
 static gboolean alignStrCanonicalSubstituteExonerateCigar(AlignStrCanonical canon) ;
 static gboolean alignStrCanonicalSubstituteGFFv3Gap(AlignStrCanonical canon) ;
-static gboolean alignStrCanonicalSubstituteExonerateVulgar(AlignStrCanonical canon) ;
 
 #if NOT_USED
+static gboolean alignStrCanonicalSubstituteExonerateVulgar(AlignStrCanonical canon) ;
 static char *nextWord(char *str) ;
 static gboolean gotoLastDigit(char **cp_inout) ;
-#endif
-
 static gboolean gotoLastSpace(char **cp_inout) ;
+#endif
 
 /*
  * These arrays are the allowed operators for various of the format types.
@@ -201,7 +202,9 @@ static const char *operators_cigar_ensembl   = "MID" ;
 /*
  * Allowed operators for internal "canonical" representation.
  */
+#if NOT_USED
 static const char *operators_canonical = "MINDG";
+#endif
 
 
 /*
@@ -783,7 +786,6 @@ static gboolean parse_remove_invalid_operators(AlignStrCanonical canon,
 {
   gboolean result = FALSE ;
   int i = 0, num_removed = 0 ;
-  GArray *align_temp = NULL ;
   AlignStrOp op = NULL ;
 
   zMapReturnValIfFail(canon &&
@@ -2170,7 +2172,6 @@ static AlignStrCanonical homol2AlignStrCanonical(ZMapFeature feature, ZMapFeatur
   AlignStrCanonical canon = NULL ;
   GArray* align = NULL ;
   int i = 0, length = 0 ;
-  OperatorCase the_case = TYPE_NONE ;
 
   zMapReturnValIfFail(  feature &&
                         feature->mode == ZMAPSTYLE_MODE_ALIGNMENT &&
@@ -2288,7 +2289,7 @@ static gboolean alignStrCanonical2string(char ** p_string,
     {
       op = alignStrCanonicalGetOperator(canon, 0) ;
       temp_string = bDigitsLeft ?
-        g_strdup_printf("i%c", op->length, op->op) : g_strdup_printf("%c%i", op->op, op->length) ;
+        g_strdup_printf("i%c", op->length) : g_strdup_printf("%c%i", op->op, op->length) ;
 
       for (i=1; i<canon->num_operators; ++i)
         {
@@ -2584,7 +2585,6 @@ static gboolean bamVerifyCigar(char *match_str)
 static gboolean gffv3Gap2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = FALSE, canon_edited = FALSE ;
-  char *cp = NULL ;
   int num_removed = 0 ;
   GError *error = NULL ;
   AlignStrCanonicalPropertiesStruct properties ;
@@ -2622,7 +2622,6 @@ static gboolean gffv3Gap2Canon(char *match_str, AlignStrCanonical canon)
 static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = FALSE, canon_edited = FALSE ;
-  char *cp = NULL ;
   int num_removed = 0 ;
   GError *error = NULL ;
   AlignStrCanonicalPropertiesStruct properties ;
@@ -2697,7 +2696,6 @@ static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon)
 static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = FALSE, canon_edited = FALSE ;
-  char *cp = NULL ;
   int num_removed = 0 ;
   GError *error = NULL ;
   AlignStrCanonicalPropertiesStruct properties ;
@@ -2764,7 +2762,6 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = FALSE, canon_edited = FALSE ;
-  char *cp = NULL;
   int num_removed = 0 ;
   GError *error = NULL ;
   AlignStrCanonicalPropertiesStruct properties ;
@@ -2842,6 +2839,7 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 
 
 /* Returns -1 if string could not be converted to number. */
+#if NOT_USED
 static int cigarGetLength(char **cigar_str)
 {
   int length = -1 ;
@@ -2860,6 +2858,7 @@ static int cigarGetLength(char **cigar_str)
 
   return length ;
 }
+#endif
 
 
 #if NOT_USED
@@ -2927,7 +2926,6 @@ static gboolean gotoLastDigit(char **cp_inout)
   return result ;
 }
 
-#endif
 
 
 /* If looking at a character in a string which is a space move to the last space of those spaces.  */
@@ -2952,6 +2950,9 @@ static gboolean gotoLastSpace(char **cp_inout)
 
   return result ;
 }
+
+#endif
+
 
 
 /*
@@ -3022,13 +3023,14 @@ static gboolean alignStrCanonicalSubstituteGFFv3Gap(AlignStrCanonical canon)
   return result ;
 }
 
+#ifdef NOT_USED
 static gboolean alignStrCanonicalSubstituteExonerateVulgar(AlignStrCanonical canon)
 {
   gboolean result = FALSE ;
   zMapReturnValIfFail(canon && canon->format == ZMAPALIGN_FORMAT_VULGAR_EXONERATE, result) ;
   return result ;
 }
-
+#endif
 
 
 

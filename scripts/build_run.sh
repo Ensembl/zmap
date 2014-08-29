@@ -59,7 +59,6 @@ SLEEP=15
 TAG_RELEASE_BUILD=no
 INC_REL_VERSION=''
 INC_UPDATE_VERSION=''
-RT_TO_CVS=''
 ERASE_SUBDIRS=''
 INPUT_DIR=''
 OUTPUT_DIR=''
@@ -123,7 +122,6 @@ while getopts ":a:b:cdegi:mo:rs:u" opt ; do
 	e  ) ERASE_SUBDIRS='yes' ;;
 	g  ) GIT_FEATURE_INFO='-g' ;;
 	i  ) INPUT_DIR=$OPTARG ;;
-	m  ) RT_TO_CVS='no' ;;
 	o  ) OUTPUT_DIR=$OPTARG ;;
 	r  ) INC_REL_VERSION='-r'    ;;
 	s  ) SEQTOOLS_DIR=$OPTARG ;;
@@ -263,13 +261,6 @@ fi
 CMD_OPTIONS="$CMD_OPTIONS ZMAP_RELEASES_DIR=$PARENT_BUILD_DIR"
 
 CMD_OPTIONS="$CMD_OPTIONS ZMAP_LINK_NAME=$LINK_NAME"
-
-
-if [ -n "$RT_TO_CVS" ] ; then
-
-  CMD_OPTIONS="$CMD_OPTIONS ZMAP_MASTER_RT_TO_CVS=$RT_TO_CVS"
-
-fi
 
 
 if [ -n "$ZMAP_BUILD_RELEASE_DOCS" ] ; then

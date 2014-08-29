@@ -81,6 +81,11 @@ typedef enum
   {
     ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
     ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, /* True if filtered columns should be highlighted */
+    ZMAPFLAG_FEATURES_NEED_SAVING,       /* True if there are new features that have not been saved */
+    ZMAPFLAG_SCRATCH_NEEDS_SAVING,       /* True if changes have been made in the scratch column
+                                          * that have not been "saved" to a real featureset */
+    ZMAPFLAG_ENABLE_ANNOTATION,          /* True if we should enable editing via the annotation column */
+    ZMAPFLAG_ENABLE_ANNOTATION_INIT,     /* False until the enable-annotation flag has been initialised */
     
     ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
   } ZMapFlag;
@@ -190,6 +195,7 @@ typedef struct
 {
   ZMapFeature feature ;
   ZMapFeatureSet feature_set ;
+  GError *error ;
 } ZMapWindowMergeNewFeatureStruct, *ZMapWindowMergeNewFeature ;
 
 
@@ -439,6 +445,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
                           ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
                           ZMapWindowLockType window_locking) ;
 
+void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
+
 gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
                                         char *command_name, char *request,
                                         ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
@@ -487,6 +495,9 @@ gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end) ;
 gboolean zMapWindowMarkGetSequenceSpan(ZMapWindow window, int *start, int *end) ;
 void zmapWindowMarkPrint(ZMapWindow window, char *title) ;
 gboolean zMapWindowMarkIsSet(ZMapWindow window);
+
+void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
+                               ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
 
 void zMapWindowRequestReposition(FooCanvasItem *foo);
 
@@ -541,8 +552,11 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window,
                                  FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature) ;
 
+gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
+
 gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor **fill);
 gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill);
+
 
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
 gboolean zMapWindowCurrWindowPos(ZMapWindow window,
@@ -599,5 +613,9 @@ gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, Gd
 void zMapWindowUpdateColumnBackground(ZMapWindow window, ZMapFeatureSet feature_set, gboolean highlight_column_background);
 
 GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item) ;
+
+gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_region, ZMapFeatureAny feature_in, char **filepath_inout, GError **error) ;
+gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GError **error) ;
+gboolean zMapWindowExportContext(ZMapWindow window, GError **error) ;
 
 #endif /* !ZMAP_WINDOW_H */

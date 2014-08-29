@@ -75,7 +75,7 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMa
  *
  *  */
 gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map,
-   ZMap *zmap_out, ZMapView *view_out, char **err_msg_out)
+                           ZMap *zmap_out, ZMapView *view_out)
 {
   gboolean result = FALSE ;
   ZMap zmap = *zmap_out ;
@@ -102,17 +102,14 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
           (!sequence_map->sequence ? "no sequence name"
            : (sequence_map->start <= 1 ? "start less than 1" : "end less than start"))) ;
     }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  else if ((!app_context->xremote_client) && (!(sequence_map->sequence) && !(sequence_map->start) && !(sequence_map->end)))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   else if ((!(sequence_map->sequence) && !(sequence_map->start) && !(sequence_map->end)))
     {
       result = TRUE ;
     }
   else
     {
-      add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap, &view) ;
+      add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap, &view, &tmp_error) ;
+
       if (add_result == ZMAPMANAGER_ADD_DISASTER)
         {
           zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
@@ -120,9 +117,9 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
         }
       else if (add_result == ZMAPMANAGER_ADD_FAIL)
         {
-          zMapWarning("%s", "Failed to create ZMap") ;
-          /* DO WE NEED THIS ERR_MSG_OUT STUFF....CHECK.... */
-          *err_msg_out = g_strdup_printf("Bad start/end coords: %d, %d", sequence_map->start, sequence_map->end) ;
+          zMapWarning("Failed to create ZMap for sequence '%s' [%d, %d]: %s", 
+                      sequence_map->sequence, sequence_map->start, sequence_map->end, 
+                      (tmp_error ? tmp_error->message : "<no error message>")) ;
         }
       else
         {
@@ -165,10 +162,8 @@ static void createThreadCB(ZMapFeatureSequenceMap sequence_map, gpointer user_da
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
   ZMap zmap = NULL ;
   ZMapView view = NULL ;
-  char *err_msg = NULL ;
 
-  if (!zmapAppCreateZMap(app_context, sequence_map, &zmap, &view, &err_msg))
-    zMapWarning("%s", err_msg) ;
+  zmapAppCreateZMap(app_context, sequence_map, &zmap, &view) ;
 
   return ;
 }

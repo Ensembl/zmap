@@ -38,11 +38,6 @@
 #include <zmapView_P.h>
 
 
-/* preferences strings. */
-#define VIEW_CHAPTER "Features"
-#define VIEW_PAGE "Display"
-#define VIEW_FILTERED "Highlight filtered columns"
-
 
 
 typedef struct
@@ -95,10 +90,6 @@ static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_l
 static void stepDestroy(gpointer data, gpointer user_data) ;
 static void formatSession(gpointer data, gpointer user_data) ;
 
-static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view) ;
-static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view) ;
-static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
-static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused) ;
 
 static void forAllCB(void *data, void *user_data) ;
 
@@ -173,6 +164,37 @@ void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource s
   return ;
 }
 
+void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value)
+{
+  zMapReturnIfFail(view && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS) ;
+
+  view->flags[flag] = value ;
+
+  /* Perform any updates required for the particular flag that was set */
+  switch (flag)
+    {
+    case ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS:
+      zMapViewUpdateColumnBackground(view);
+      break ;
+      
+    case ZMAPFLAG_ENABLE_ANNOTATION:
+      zMapViewToggleScratchColumn(view, value, TRUE) ;
+      break ;
+      
+    default:
+      break ;
+    } ;
+}
+
+gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(view && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS, result) ;
+
+  result = view->flags[flag] ;
+
+  return result ;
+}
 
 
 /* Return, as text, details of all data connections for this view. Interface is not completely
@@ -236,8 +258,6 @@ void zMapViewSetCursor(ZMapView view, GdkCursor *cursor)
 
   return ;
 }
-
-
 
 
 

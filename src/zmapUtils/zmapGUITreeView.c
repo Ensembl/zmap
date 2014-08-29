@@ -72,6 +72,9 @@ enum
     ZMAP_GUITV_SELECT_FUNC_DATA,
     ZMAP_GUITV_SELECT_FUNC_DESTROY,
 
+    /* editing values in the columns */
+    ZMAP_GUITV_EDITABLE,
+
     /* sorting columns... */
     ZMAP_GUITV_SORTABLE,
     ZMAP_GUITV_SORT_COLUMN_NAME,
@@ -87,6 +90,14 @@ enum
     ZMAP_GUITV_COUNTER_COLUMN_INDEX,
     ZMAP_GUITV_DATA_PTR_COLUMN_INDEX,
   };
+
+
+/* This struct holds data to pass to the cell_edited_cb function */
+typedef struct _CellEditedCBDataStruct
+{
+  ZMapGUITreeView zmap_tv ;
+  int column_index ;
+} CellEditedCBDataStruct, *CellEditedCBData;
 
 
 static void zmap_guitreeview_class_init(ZMapGUITreeViewClass zmap_tv_class);
@@ -117,6 +128,7 @@ static void set_column_quarks(gpointer list_data, gpointer user_data);
 static void set_column_types (gpointer list_data, gpointer user_data);
 static void set_column_funcs (gpointer list_data, gpointer user_data);
 static void set_column_flags (gpointer list_data, gpointer user_data);
+static void set_editable_flag(ZMapGUITreeView zmap_tv, const gboolean editable) ;
 
 static void tuple_no_to_model     (GValue *value, gpointer user_data);
 static void tuple_pointer_to_model(GValue *value, gpointer user_data);
@@ -391,7 +403,7 @@ void zMapGUITreeViewUpdateTuple(ZMapGUITreeView zmap_tv, GtkTreeIter *iter, gpoi
 
   store = GTK_LIST_STORE(zmap_tv->tree_model);
 
-  update_tuple_data(zmap_tv, store, iter, FALSE, user_data);
+  update_tuple_data_list(zmap_tv, store, iter, FALSE, user_data);
 
   return ;
 }
@@ -515,6 +527,12 @@ static void zmap_guitreeview_class_init(ZMapGUITreeViewClass zmap_tv_class)
                           g_param_spec_pointer("selection-destroy", "selection-destroy",
                                            "A GDestroyNotify called on removal of selection-func",
                                            ZMAP_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+                          ZMAP_GUITV_EDITABLE,
+                          g_param_spec_boolean("editable", "editable",
+                                           "Whether the tree view/model is editable",
+                                           FALSE, ZMAP_PARAM_STATIC_RW));
 
   /* Sort functionality... */
   g_object_class_install_property(gobject_class,
@@ -909,6 +927,9 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 
       progressive_set_selection(zmap_tv);
       break;
+    case ZMAP_GUITV_EDITABLE:
+      set_editable_flag(zmap_tv, g_value_get_boolean(value)) ;
+      break;
       /* sorting columns... */
     case ZMAP_GUITV_SORTABLE:
       zmap_tv->sortable = g_value_get_boolean(value);
@@ -1070,6 +1091,8 @@ static void zmap_guitreeview_simple_add_values(ZMapGUITreeView zmap_tv,
       gtk_list_store_append(store, &iter);
 
       update_tuple_data_list(zmap_tv, store, &iter, TRUE, tmp);
+
+      zmap_tv->tag_values_lists = g_list_append(zmap_tv->tag_values_lists, values_list) ;
     }
 
   return ;
@@ -1195,6 +1218,20 @@ static void set_column_flags(gpointer list_data, gpointer user_data)
   return ;
 }
 
+static void set_editable_flag(ZMapGUITreeView zmap_tv, const gboolean editable)
+{
+  int column = 0 ;
+
+  for ( ; column < zmap_tv->column_count; ++column)
+    {
+      ColumnFlagsStruct *flags = &(zmap_tv->column_flags[column]);
+
+      flags->named.editable  = editable ;
+    }
+
+  return ;
+}
+
 static void tuple_no_to_model(GValue *value, gpointer user_data)
 {
   ZMapGUITreeView zmap_tv = ZMAP_GUITREEVIEW(user_data);
@@ -1212,6 +1249,114 @@ static void tuple_pointer_to_model(GValue *value, gpointer user_data)
   return ;
 }
 
+/* Called after the value of a cell has been edited */
+static void cell_edited_cb(GtkCellRendererText *renderer,
+                           gchar *path,
+                           gchar *new_text,
+                           gpointer user_data)
+{
+  CellEditedCBData edited_data = (CellEditedCBData)user_data ;
+  
+  zMapReturnIfFail(edited_data && edited_data->zmap_tv) ;
+  
+  ZMapGUITreeView zmap_tv = edited_data->zmap_tv ;
+  GtkTreeView *tree_view = zMapGUITreeViewGetView(zmap_tv) ;
+  GtkTreeModel *tree_model = zMapGUITreeViewGetModel(zmap_tv) ;
+
+  zMapReturnIfFail(zmap_tv && tree_view && tree_model) ;
+
+  GtkTreeIter iter ;
+  GValue *column_value;
+  GType column_type ;
+  GList *tag_value = NULL ;
+  int index = edited_data->column_index ;
+  int tag_values_index = index ;
+
+  /* The index includes the fixed columns but the values_list list doesn't, so subtract those
+   * columns to get the index into the values_list */
+  if(zmap_tv->tuple_counter)
+    --tag_values_index ;
+
+  if(zmap_tv->add_data_ptr)
+    --tag_values_index ;
+
+  /* If the index is less than zero that means it's one of the fixed columns. We don't handle
+   * updating those here so ignore them. */
+  if (tag_values_index >= 0)
+    {
+      /* Update the value in the original values_list that we set the column_values from. This is a
+       * list (per row) of lists of values (per column). */
+      int row = atoi(path) ;
+      GList *values_list = (GList*)g_list_nth_data(zmap_tv->tag_values_lists, row) ;
+      if (values_list)
+        tag_value = g_list_nth(values_list, tag_values_index) ;
+  
+      /* Update the column_values */
+      column_type  = zmap_tv->column_types[index];
+      column_value = &(zmap_tv->column_values[index]);
+
+      g_value_reset(column_value);
+
+      if(column_type == G_VALUE_TYPE(column_value))
+        {
+          if(column_type == G_TYPE_INT)
+            {
+              int new_value = atoi(new_text) ;
+              g_value_set_int(column_value, new_value) ;
+              if (tag_value)
+                tag_value->data = GINT_TO_POINTER(new_value) ;
+            }
+          else if(column_type == G_TYPE_STRING)
+            {
+              g_value_set_string(column_value, new_text);
+              if (tag_value)
+                tag_value->data = new_text ;
+            }
+          else if(column_type == G_TYPE_BOOLEAN)
+            {
+              gboolean new_value = FALSE ;
+              if (!strncasecmp(new_text, "true", 4))
+                new_value = TRUE ;
+              g_value_set_boolean(column_value, new_value);
+            }
+          else if(column_type == G_TYPE_FLOAT)
+            {
+              int fint = atof(new_text) ;
+              float ffloat;
+
+              memcpy(&ffloat, &fint, 4); /* Let's hope float is 4  bytes */
+
+              g_value_set_float(column_value, ffloat);
+            }
+          else if(column_type == G_TYPE_POINTER)
+            {
+              GtkTreeViewColumn *hide_column = NULL;
+              hide_column = gtk_tree_view_get_column(zmap_tv->tree_view, index);
+              g_object_set(G_OBJECT(hide_column),
+                           "visible", FALSE,
+                           NULL);
+              g_value_set_pointer(column_value, new_text);
+            }
+          else
+            zMapWarnIfReached(); /* v. unexpected! */
+        }
+      else
+        {
+          g_warning("%s", "Bad column type");
+        }
+
+      /* Send the value off to the store... */
+      gtk_tree_model_get_iter_from_string(tree_model, &iter, path) ;
+
+      if (GTK_IS_LIST_STORE(tree_model))
+        {
+          GtkListStore *store = GTK_LIST_STORE(tree_model);
+          gtk_list_store_set_value(store, &iter, index, column_value);
+        }
+    }
+}
+
+/* Called when the user clicks a column header */
 static void column_clicked_cb(GtkTreeViewColumn *column_clicked,
                         gpointer user_data)
 {
@@ -1298,10 +1443,11 @@ static void column_clicked_cb(GtkTreeViewColumn *column_clicked,
 }
 
 static void view_add_column(GtkTreeView       *tree_view,
-                      GQuark            *column_name_ptr,
-                      GType             *column_type_ptr,
-                      ColumnFlagsStruct *column_flags_ptr,
-                      gpointer           clicked_cb_data)
+                            GQuark            *column_name_ptr,
+                            GType             *column_type_ptr,
+                            ColumnFlagsStruct *column_flags_ptr,
+                            gpointer           clicked_cb_data,
+                            gpointer           edited_cb_data)
 {
   GtkTreeViewColumn *new_column;
   GtkCellRenderer *renderer;
@@ -1345,8 +1491,13 @@ static void view_add_column(GtkTreeView       *tree_view,
     g_signal_connect(G_OBJECT(new_column), "clicked",
                  G_CALLBACK(column_clicked_cb), clicked_cb_data);
 
+  if(column_flags_ptr->named.editable)
+    g_signal_connect(G_OBJECT(renderer), "edited",
+                     G_CALLBACK(cell_edited_cb), edited_cb_data);
+
   return ;
 }
+
 
 static GtkTreeView *createView(ZMapGUITreeView zmap_tv)
 {
@@ -1383,11 +1534,16 @@ static GtkTreeView *createView(ZMapGUITreeView zmap_tv)
 
       for(index = 0; index < zmap_tv->column_count; index++, column_name_ptr++, column_type_ptr++, column_flags_ptr++)
       {
+        CellEditedCBData edited_cb_data = g_new0(CellEditedCBDataStruct, 1) ;
+        edited_cb_data->zmap_tv = zmap_tv ;
+        edited_cb_data->column_index = index ;
+
         view_add_column(tree_view,
-                    column_name_ptr,
-                    column_type_ptr,
-                    column_flags_ptr,
-                    zmap_tv);
+                        column_name_ptr,
+                        column_type_ptr,
+                        column_flags_ptr,
+                        zmap_tv,
+                        edited_cb_data);
       }
 
       selection = gtk_tree_view_get_selection(tree_view);

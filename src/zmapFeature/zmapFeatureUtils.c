@@ -1385,12 +1385,11 @@ ZMapFrame zMapFeatureFrame(ZMapFeature feature)
   return frame ;
 }
 
+
 ZMapFrame zMapFeatureFrameFromCoords(int block, int feature)
 {
 return feature_frame_coords(block, feature);
 }
-
-
 
 
 ZMapFrame zMapFeatureSubPartFrame(ZMapFeature feature, int coord)
@@ -1426,6 +1425,19 @@ ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature)
   return frame;
 }
 
+
+ZMapPhase zMapFeaturePhase(ZMapFeature feature)
+{
+  ZMapPhase result = ZMAPPHASE_NONE ;
+  
+  if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT &&
+      feature->feature.transcript.flags.start_not_found)
+    {
+      result = feature->feature.transcript.start_not_found ;
+    }
+
+  return result ;
+}
 
 
 char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
