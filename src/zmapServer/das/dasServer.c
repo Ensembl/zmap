@@ -1449,10 +1449,9 @@ static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
   else
     {
       /* No group information for this feature */
-      /* gb10: group_id was uninitialised so I've initialised it at the top to 0 but
-       * I'm not sure what the intent was. */
-      #warning Code looks up a feature based on an uninitialised group_id - need to work out what was intended here
-      if(!(new_feature = g_hash_table_lookup(feature_set->features, GINT_TO_POINTER(group_id))))
+      feature_id = g_quark_from_string(feature_name);
+
+      if(!(new_feature = g_hash_table_lookup(feature_set->features, GINT_TO_POINTER(feature_id))))
         {
           new_feature = zMapFeatureCreateEmpty();
 

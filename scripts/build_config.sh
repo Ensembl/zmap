@@ -113,9 +113,6 @@ ZMAP_MASTER_RUN_TEST_SUITE=no
 ZMAP_MASTER_REMOVE_FOLDER=yes
 ZMAP_MASTER_NOTIFY_MAIL=annotools@sanger.ac.uk
 
-ZMAP_MASTER_BUILD_DIST=no
-ZMAP_MASTER_BUILD_CANVAS_DIST=no
-
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 
 # tviewsrv and lucid-dev64 are now ubuntu....

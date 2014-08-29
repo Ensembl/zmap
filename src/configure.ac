@@ -161,7 +161,7 @@ AC_ARG_ENABLE(debug,
         AS_HELP_STRING(--enable-debug,enable debug info compilation (no)),
         deb=$enableval, deb=no)
 
-AC_ARG_ENABLE(profile,_
+AC_ARG_ENABLE(profile,
         AS_HELP_STRING(--enable-profile,enable profiling debug info compilation (no)),
         prof=$enableval, prof=no)
 
@@ -217,7 +217,7 @@ PKG_CHECK_MODULES([GTK], [${GTK2_MODULES}])
 
 
 # canvas_choice compilation is disabled for now, it should be moved
-# out of the src dir into it's own dir. It does not fit in with
+# out of the src dir into its own dir. It does not fit in with
 # doing a dist build.
 #
 #CANVAS_TESTING=""
@@ -406,7 +406,7 @@ AC_SUBST(ZMAP_SRC_DIRS_DOXYGEN)
 
 
 # canvas_choice compilation is disabled for now, it should be moved
-# out of the src dir into it's own dir. It does not fit in with
+# out of the src dir into its own dir. It does not fit in with
 # doing a dist build.
 #
 #AC_CONFIG_FILES([Makefile

@@ -480,7 +480,6 @@ gboolean zMapFeatureContextGetDNAStatus(ZMapFeatureContext context)
 
 
 
-
 /* 
  *                      Internal functions
  */

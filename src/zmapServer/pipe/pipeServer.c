@@ -809,7 +809,9 @@ static ZMapServerResponseType destroyConnection(void *server_in)
    * _only_ reaps the child and nothing else, this will be called sometime later when
    * the child dies. (no point in recording watch id for reap callback
    * as once we exit here this connection no longer exists. */
-  g_source_remove(server->child_watch_id) ;
+  if (server->child_watch_id)
+    g_source_remove(server->child_watch_id) ;
+
   server->child_watch_id = 0 ;
   g_child_watch_add(server->child_pid, childReapOnlyCB, server) ;
 

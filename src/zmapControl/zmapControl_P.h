@@ -216,7 +216,6 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **dest
 void zmapControlCloseFull(ZMap zmap, ZMapView view) ;
 
 
-ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg) ;
 ZMapViewWindow zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 void zmapControlRemoveView(ZMap zmap, ZMapView view, GList **destroyed_views_inout) ;
 ZMapViewWindow zmapControlFindViewWindow(ZMap zmap, ZMapView view) ;

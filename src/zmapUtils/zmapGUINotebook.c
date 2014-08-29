@@ -133,9 +133,9 @@ static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void destroyCB(GtkWidget *widget, gpointer data);
 static void changeNotebookCB(GtkWidget *widget, gpointer unused_data) ;
-static void cancelCB(GtkWidget *widget, gpointer user_data) ;
+static void cancelCB(gpointer user_data) ;
 static void invoke_cancel_callback(gpointer data, gpointer user_data) ;
-static void okCB(GtkWidget *widget, gpointer user_data) ;
+static void okCB(gpointer user_data) ;
 static void invoke_apply_callback(gpointer data, gpointer user_data) ;
 static void invoke_save_callback(gpointer data, gpointer user_data) ;
 static void invoke_save_all_callback(gpointer data, gpointer user_data) ;
@@ -392,11 +392,11 @@ GList *headers, GList *types)
 }
 
 
-
 /*! Create a tagvalue within a paragraph.
  *
  * @param paragraph            If non-NULL, the tagvalue is added to this paragraph.
  * @param tag_value_name  The "tag" string, displayed on the left of the tag value fields.
+ * @param tooltip         The "tooltip" string, displayed when you hover over the tag value fields.
  * @param display_type    The type of tag-value (e.g. checkbox, simple, scrolled)
  * @param arg_type        The type of the data to be used for the current value of the value field.
  * @return                ZMapGuiNotebookTagValue
@@ -404,7 +404,7 @@ GList *headers, GList *types)
  *
  * This function uses the va_arg mechanism to allow caller to say something like:
  *
- * zMapGUINotebookCreateTagValue(paragraph, "some name", ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+ * zMapGUINotebookCreateTagValue(paragraph, "some name", "some tooltip", ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
  *                               "string", string_ptr) ;
  *
  * Valid arg_types are currently "bool", "int", "float", "string" or "compound". Note that no checking of args
@@ -413,6 +413,7 @@ GList *headers, GList *types)
  *  */
 ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph paragraph,
       char *tag_value_name,
+      char *tooltip,
       ZMapGuiNotebookTagValueDisplayType display_type,
       const gchar *arg_type, ...)
 {
@@ -426,6 +427,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
   GList *compound_arg ;
 
   tag_value = (ZMapGuiNotebookTagValue)createSectionAny(ZMAPGUI_NOTEBOOK_TAGVALUE, tag_value_name) ;
+  tag_value->tooltip = g_quark_from_string(tooltip) ;
   tag_value->display_type = display_type ;
 
 
@@ -628,6 +630,30 @@ GtkWidget *zMapGUINotebookGetCurrChapterWidg(GtkWidget *compound_note_widget)
   return notebook_widg ;
 }
 
+/*!
+ * \brief Handles the response to the notebook dialog 
+ */
+void notebookDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
+{
+  switch (response_id)
+  {
+    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_APPLY:
+    case GTK_RESPONSE_OK:
+      okCB(data) ;
+      break;
+      
+    case GTK_RESPONSE_CANCEL:
+    case GTK_RESPONSE_CLOSE:
+    case GTK_RESPONSE_REJECT:
+      cancelCB(data) ;
+      break;
+      
+    default:
+      break;
+  };
+}
+
 
 /*! Create the compound notebook dialog from the notebook tree.
  *
@@ -637,9 +663,10 @@ GtkWidget *zMapGUINotebookGetCurrChapterWidg(GtkWidget *compound_note_widget)
 GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text)
 {
   GtkWidget *dialog = NULL ;
-  GtkWidget *vbox, *note_widg, *hbuttons, *frame, *button ;
+  GtkWidget *vbox, *note_widg ;
   MakeNotebook make_notebook  ;
-
+  char *title = NULL ;
+  
   /* zMapAssert(notebook_spec && help_title && *help_title && help_text && *help_text) ;*/
   if (!notebook_spec || !help_title || !*help_title || !help_text || !*help_text )
     return dialog ;
@@ -655,17 +682,25 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
   /*
    * Make dialog
    */
-  make_notebook->toplevel = dialog = zMapGUIToplevelNew(NULL, (char *)g_quark_to_string(notebook_spec->name)) ;
+  title = g_strdup(g_quark_to_string(notebook_spec->name)) ;
+  make_notebook->toplevel = dialog = zMapGUIDialogNew(NULL, title, G_CALLBACK(notebookDialogResponseCB), make_notebook) ;
+  g_free(title) ;
+
   gtk_container_set_border_width(GTK_CONTAINER (dialog), 10);
   g_signal_connect(G_OBJECT(dialog), "destroy", G_CALLBACK(destroyCB), make_notebook) ;
+
+  /*
+   * Add the buttons
+   */
+  gtk_dialog_add_button(GTK_DIALOG(dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL) ;
+  gtk_dialog_add_button(GTK_DIALOG(dialog), GTK_STOCK_OK, GTK_RESPONSE_OK) ;
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT) ;
 
   /* Record our state on the dialog widget. */
   g_object_set_data(G_OBJECT(dialog), GUI_NOTEBOOK_SETDATA, make_notebook) ;
 
-  make_notebook->vbox = vbox = gtk_vbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
+  make_notebook->vbox = vbox = GTK_DIALOG(dialog)->vbox ;
   gtk_box_set_spacing(GTK_BOX(vbox), 5) ;
-  gtk_container_add(GTK_CONTAINER(dialog), vbox) ;
-
 
   /*
    * Add a menu bar
@@ -679,23 +714,6 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
   note_widg = makeNotebookWidget(make_notebook) ;
   gtk_box_pack_start(GTK_BOX(vbox), note_widg, FALSE, FALSE, GUI_NOTEBOOK_BOX_PADDING) ;
 
-
-  /*
-   * Make panel of  usual button stuff.
-   */
-  frame = gtk_frame_new(NULL) ;
-  gtk_box_pack_start(GTK_BOX(make_notebook->vbox), frame, FALSE, FALSE, GUI_NOTEBOOK_BOX_PADDING) ;
-
-  hbuttons = gtk_hbutton_box_new() ;
-  gtk_container_add(GTK_CONTAINER(frame), hbuttons) ;
-
-  button = gtk_button_new_from_stock(GTK_STOCK_CANCEL) ;
-  gtk_container_add(GTK_CONTAINER(hbuttons), button) ;
-  g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(cancelCB), make_notebook) ;
-
-  button = gtk_button_new_from_stock(GTK_STOCK_OK) ;
-  gtk_container_add(GTK_CONTAINER(hbuttons), button) ;
-  g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(okCB), make_notebook) ;
 
   gtk_widget_show_all(dialog) ;
 
@@ -1145,6 +1163,19 @@ static void makeSubsectionCB(gpointer data, gpointer user_data)
   return ;
 }
 
+/* The user_data is the new text set in the cell renderer. We convert it to an int. */
+static void cellEditedCB(GValue *value, gpointer user_data)
+{
+  zMapReturnIfFail(value && user_data) ;
+
+  char *new_text = (char*)user_data ;
+  int result = atoi(new_text) ;
+
+  g_value_set_int(value, result) ;
+
+  return ;
+}
+
 
 /* A GFunc() to build paragraphs within subsections. */
 static void makeParagraphCB(gpointer data, gpointer user_data)
@@ -1152,6 +1183,7 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
   ZMapGuiNotebookParagraph paragraph = (ZMapGuiNotebookParagraph)data ;
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
   GtkWidget *paragraph_frame ;
+  GList *column_funcs = NULL ;
 
   make_notebook->curr_paragraph = paragraph ;
 
@@ -1171,7 +1203,6 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
                                                           FALSE) ;
       gtk_table_set_homogeneous(GTK_TABLE(make_notebook->curr_paragraph_table),
                                 (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS));
-
       gtk_table_set_row_spacings(GTK_TABLE(make_notebook->curr_paragraph_table),
                                  GUI_NOTEBOOK_DEFAULT_BORDER);
 
@@ -1197,6 +1228,10 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
 
       make_notebook->zmap_tree_view = zMapGUITreeViewCreate();
 
+      /* Create a list of the functions to update the start/end values. */
+      column_funcs = g_list_append(column_funcs, cellEditedCB) ;
+      column_funcs = g_list_append(column_funcs, cellEditedCB) ;
+
       g_object_set(G_OBJECT(make_notebook->zmap_tree_view),
                    "row-counter-column", TRUE,
                    "column_count",       g_list_length(paragraph->compound_titles),
@@ -1205,9 +1240,11 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
                    "selection-data",     NULL,
                    "column_names_q",     paragraph->compound_titles,
                    "column_types",       paragraph->compound_types,
+                   "editable",           make_notebook->notebook_spec->editable,
                    "sortable",           TRUE,
                    "sort-column-index",  0,
                    "sort-order",         GTK_SORT_ASCENDING,
+                   "column-funcs",       column_funcs,
                    NULL);
 
       make_notebook->curr_paragraph_treeview = GTK_WIDGET(zMapGUITreeViewGetView(make_notebook->zmap_tree_view));
@@ -1344,6 +1381,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
               text = g_strdup(tag_value->data.string_value) ;
 
             value = gtk_entry_new() ;
+            gtk_entry_set_activates_default(GTK_ENTRY(value), TRUE);
 
             if(text && *text)
               gtk_entry_set_text(GTK_ENTRY(value), text) ;
@@ -1407,6 +1445,9 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
                              GUI_NOTEBOOK_BOX_PADDING) ;
           }
 
+        gtk_widget_set_tooltip_text(GTK_WIDGET(tag), g_quark_to_string(tag_value->tooltip)) ;
+        gtk_widget_set_tooltip_text(GTK_WIDGET(value), g_quark_to_string(tag_value->tooltip)) ;
+
         break ;
       }
     case ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT:
@@ -1429,6 +1470,8 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 
         buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view)) ;
         gtk_text_buffer_set_text(buffer, tag_value->data.string_value, -1) ;
+
+        gtk_widget_set_tooltip_text(GTK_WIDGET(view), g_quark_to_string(tag_value->tooltip)) ;
 
         break ;
       }
@@ -1529,7 +1572,7 @@ static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget)
   return ;
 }
 
-static void cancelCB(GtkWidget *widget, gpointer user_data)
+static void cancelCB(gpointer user_data)
 {
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
 
@@ -1540,7 +1583,7 @@ static void cancelCB(GtkWidget *widget, gpointer user_data)
   return ;
 }
 
-static void okCB(GtkWidget *widget, gpointer user_data)
+static void okCB(gpointer user_data)
 {
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
 

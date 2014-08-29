@@ -115,19 +115,19 @@ typedef struct MainFrameStruct_
 
 
 
-static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
-                            ZMapControlImportFileCB user_func, gpointer user_data,
-                            ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
+static MainFrame makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
+                      ZMapControlImportFileCB user_func, gpointer user_data,
+                      ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
 static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeOptionsBox(MainFrame main_frame, char *seq, int start, int end);
-static GtkWidget *makeButtonBox(MainFrame main_frame) ;
+static void makeButtonBox(GtkWidget *toplevel, MainFrame main_frame) ;
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
-static void importFileCB(GtkWidget *widget, gpointer cb_data) ;
+static void importFileCB(gpointer cb_data) ;
 #ifndef __CYGWIN__
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 #endif
-static void closeCB(GtkWidget *widget, gpointer cb_data) ;
+static void closeCB(gpointer cb_data) ;
 
 static void sequenceCB(GtkWidget *widget, gpointer cb_data) ;
 
@@ -143,14 +143,38 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data);
 
 
 
+/* \brief Handles the response to the import dialog */
+void importDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
+{
+  switch (response_id)
+  {
+    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_APPLY:
+    case GTK_RESPONSE_OK:
+      importFileCB(data) ;
+      break;
+      
+    case GTK_RESPONSE_CANCEL:
+    case GTK_RESPONSE_CLOSE:
+    case GTK_RESPONSE_REJECT:
+      closeCB(data) ;
+      break;
+      
+    default:
+      break;
+  };
+}
+
+
 /* Display a dialog to get from the reader a file to be displayed
  * with a optional start/end and various mapping parameters
  */
 void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data,
 			    ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
 {
-  GtkWidget *toplevel, *container ;
+  GtkWidget *toplevel ;
   gpointer seq_data = NULL ;
+  MainFrame main_frame = NULL ;
 
   /* if (!user_func)
     return ; */
@@ -158,7 +182,7 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
 
   ZMap zmap = (ZMap)user_data;
 
-  toplevel = zMapGUIToplevelNew(NULL, "Please choose a file to import.") ;
+  toplevel = zMapGUIDialogNew(NULL, "Please choose a file to import.", NULL, NULL) ;
 
   /* Make sure the dialog is destroyed if the zmap window is closed */
   /*! \todo For some reason this doesn't work and the dialog hangs around
@@ -169,9 +193,10 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
-  container = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map, req_start, req_end) ;
+  main_frame = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map, req_start, req_end) ;
 
-  gtk_container_add(GTK_CONTAINER(toplevel), container) ;
+  g_signal_connect(G_OBJECT(toplevel), "response", G_CALLBACK(importDialogResponseCB), main_frame) ;
+
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
 
@@ -288,14 +313,16 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
 
 
 /* Make the whole panel returning the top container of the panel. */
-static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
-			    ZMapControlImportFileCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
+static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
+                           ZMapControlImportFileCB user_func, gpointer user_data,
+                           ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
 {
-  GtkWidget *frame = NULL ;
-  GtkWidget *vbox, *main_frame, *button_box, *options_box;
+  GtkWidget *vbox, *main_frame, *options_box;
   MainFrame main_data ;
   char *sequence = "";
+  GtkDialog *dialog = GTK_DIALOG(toplevel) ;
+
+  vbox = dialog->vbox ;
 
   main_data = g_new0(MainFrameStruct, 1) ;
 
@@ -310,12 +337,6 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
       *our_data = main_data ;
     }
 
-  frame = gtk_frame_new(NULL) ;
-  gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
-
-  vbox = gtk_vbox_new(FALSE, 0) ;
-  gtk_container_add(GTK_CONTAINER(frame), vbox) ;
-
   main_frame = makeMainFrame(main_data, sequence_map) ;
   gtk_box_pack_start(GTK_BOX(vbox), main_frame, TRUE, TRUE, 0) ;
 
@@ -326,11 +347,9 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   options_box = makeOptionsBox(main_data, sequence, req_start, req_end) ;
   gtk_box_pack_start(GTK_BOX(vbox), options_box, TRUE, TRUE, 0) ;
 
-
-  button_box = makeButtonBox(main_data) ;
-  gtk_box_pack_start(GTK_BOX(vbox), button_box, TRUE, TRUE, 0) ;
-
-  return frame ;
+  makeButtonBox(toplevel, main_data) ;
+  
+  return main_data ;
 }
 
 
@@ -387,18 +406,21 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
 
   main_frame->sequence_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), sequence) ;
   //  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
   gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
 
   main_frame->start_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), start) ;
   //  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
   gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
 
   main_frame->end_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), end) ;
   //  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
@@ -546,6 +568,7 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
 
   main_frame->file_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), file) ;
   gtk_signal_connect(GTK_OBJECT(entry), "changed",
 		     GTK_SIGNAL_FUNC(fileChangedCB), (gpointer)main_frame) ;
@@ -553,6 +576,7 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
 
   /*
   main_frame->script_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_signal_connect(GTK_OBJECT(entry), "changed",
 		     GTK_SIGNAL_FUNC(scriptChangedCB), (gpointer)main_frame) ;
@@ -561,31 +585,38 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
 
   /*
   main_frame->args_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
   */
 
   main_frame->req_sequence_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), sequence) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
 
   main_frame->req_start_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), start) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
   main_frame->req_end_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), end) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
   main_frame->strand_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
   main_frame->source_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
 
   main_frame->style_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
 
@@ -594,10 +625,12 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   gtk_box_pack_start(GTK_BOX(entrybox), map_seq_button, FALSE, TRUE, 0) ;
 
   main_frame->offset_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
 
   main_frame->assembly_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
 
@@ -614,17 +647,22 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
 
 
 /* Make the action buttons frame. */
-static GtkWidget *makeButtonBox(MainFrame main_frame)
+static void makeButtonBox(GtkWidget *toplevel, MainFrame main_frame)
 {
-  GtkWidget *frame ;
-  GtkWidget *button_box, *create_button, *close_button ;
 
-  frame = gtk_frame_new(NULL) ;
-  gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
+ GtkDialog *dialog = GTK_DIALOG(toplevel) ;
 
-  button_box = gtk_hbutton_box_new() ;
-  gtk_container_border_width(GTK_CONTAINER(button_box), 5) ;
-  gtk_container_add (GTK_CONTAINER (frame), button_box) ;
+  gtk_dialog_add_button(dialog, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL) ;
+  gtk_dialog_add_button(dialog, GTK_STOCK_OPEN, GTK_RESPONSE_OK) ;
+
+  gtk_dialog_set_default_response(dialog, GTK_RESPONSE_OK) ;
+
+
+  /* 
+  GtkDialog *dialog = GTK_DIALOG(toplevel) ;
+
+  gtk_dialog_add_button(dialog, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL) ;
+  gtk_dialog_add_button(dialog, GTK_STOCK_OPEN, GTK_RESPONSE_OK) ;
 
   create_button = gtk_button_new_with_label("Import File") ;
   gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
@@ -632,20 +670,19 @@ static GtkWidget *makeButtonBox(MainFrame main_frame)
   gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
 
 
-  /* Only add a close button and set a default button if this is a standalone dialog. */
   if (main_frame->toplevel)
     {
       close_button = gtk_button_new_with_label("Close") ;
       gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
-                         GTK_SIGNAL_FUNC(closeCB), (gpointer)main_frame) ;
+			 GTK_SIGNAL_FUNC(closeCB), (gpointer)main_frame) ;
       gtk_box_pack_start(GTK_BOX(button_box), close_button, FALSE, TRUE, 0) ;
 
-      /* set create button as default. */
       GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
       gtk_window_set_default(GTK_WINDOW(main_frame->toplevel), create_button) ;
     }
 
   return frame ;
+  */ 
 }
 
 
@@ -673,7 +710,7 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* Kill the dialog. */
-static void closeCB(GtkWidget *widget, gpointer cb_data)
+static void closeCB(gpointer cb_data)
 {
   MainFrame main_frame = (MainFrame)cb_data ;
 
@@ -905,7 +942,7 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
  *       config file (which contains sequence, start, end)
  *
  *  */
-static void importFileCB(GtkWidget *widget, gpointer cb_data)
+static void importFileCB(gpointer cb_data)
 {
   gboolean status = TRUE,
     map_seq = FALSE ;

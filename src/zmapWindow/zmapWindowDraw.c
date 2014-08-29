@@ -291,13 +291,15 @@ gboolean zmapWindowGetColumnVisibility(ZMapWindow window,FooCanvasGroup *column_
 void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
       ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_needed)
 {
-  ZMapWindowContainerFeatureSet container;
+  ZMapWindowContainerFeatureSet container = NULL ;
+  ZMapWindowContainerGroup group = NULL ;
   ZMapStyleColumnDisplayState curr_col_state ;
   gboolean cur_visible,new_visible;
 
   zMapLogTime(TIMER_SETVIS,TIMER_START,0,"");
 
   container = (ZMapWindowContainerFeatureSet)column_group;
+  group = (ZMapWindowContainerGroup) column_group;
 
   curr_col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
   //printf("set state %s\n",g_quark_to_string(container->unique_id));
@@ -314,8 +316,6 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
         }
       else
         {
-          ZMapWindowContainerGroup group = (ZMapWindowContainerGroup) column_group;
-
           cur_visible = group->flags.visible; /* actual current state */
         }
 
@@ -343,10 +343,19 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
             }
         }
 
-      /* Only do redraw if it was requested _and_ state change needs it. */
-      if (redraw_if_needed && redraw)
+      if (redraw)
         {
-          zmapWindowFullReposition(window->feature_root_group,TRUE, "set state") ;
+          /* If this is the annotation column, update the preferences flag to enable annotation */
+          if (group->feature_any->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
+            {
+              window->flags[ZMAPFLAG_ENABLE_ANNOTATION] = new_visible ;
+            }
+
+          /* Only do redraw if it was requested _and_ state change needs it. */
+          if (redraw_if_needed)
+            {
+              zmapWindowFullReposition(window->feature_root_group,TRUE, "set state") ;
+            }
         }
     }
   zMapLogTime(TIMER_SETVIS,TIMER_STOP,0,"");

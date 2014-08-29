@@ -157,7 +157,7 @@ ZMapViewWindow zMapViewGetDefaultViewWindow(ZMapView view) ;
 ZMapViewWindow zMapViewRemoveWindow(ZMapViewWindow view_window) ;
 
 void zMapViewRedraw(ZMapViewWindow view_window) ;
-gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view, char *config_str) ;
+gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view, char *config_str, GError **error) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;
@@ -192,6 +192,8 @@ gpointer zMapViewFindView(ZMapView view, gpointer view_id) ;
 ZMapFeatureSequenceMap zMapViewGetSequenceMap(ZMapView zmap_view);
 ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id);
 void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src);
+void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value) ;
+gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag) ;
 GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfile);
 
 gboolean zMapViewRequestServer(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
@@ -230,6 +232,10 @@ gboolean zMapViewGetHighlightFilteredColumns(ZMapView);
 
 void zMapViewUpdateColumnBackground(ZMapView view);
 
+const char* zMapViewGetSaveFile(ZMapView view, const gboolean use_input_file) ;
+void zMapViewSetSaveFile(ZMapView view, const char *filename) ;
+
+gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view) ;
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapView2Str, ZMapViewState) ;
 
