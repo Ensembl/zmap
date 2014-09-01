@@ -227,6 +227,9 @@ if [ "x$gen_checkout_script" != "x" ]; then
     _checkout_message_out "Running git clone of zmap.git, branch $BRANCH, into $MASTER_SRC_DIR"
     git clone -b $BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
+    # get the production branch (but don't check it out)
+    git branch production origin/production
+
 #    _checkout_message_out "Forcing branch to 'production'"
 #    BRANCH='production'
 
@@ -583,24 +586,6 @@ zmap_message_out "Finished make dist ..."
 
 
 
-# Make all the release associated docs (git changes, RT tickets resolved).
-#
-# We do this by finding all the commits made since the production HEAD
-# until the current release HEAD.
-# We use the date of the parent commit/date for when the current release
-# was created to get all the RT tickets resolved in the same period as the commits.
-#
-
-if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
-    $RELEASE_NOTES_FILE = $RELEASE_LOCATION/$ZMAP_USER_DOCS_DIR/$ZMAP_USER_RELEASE_DOC_FILE_NAME
-    zmap_message_out "Calling $ANNOTOOLS_BIN/make_release_notes.sh $CHECKOUT_BASE zmap ZMap $GIT_VERSION_INFO $RELEASE_NOTES_FILE"
-
-    $ANNOTOOLS_BIN/make_release_notes.sh  $CHECKOUT_BASE "zmap" "ZMap" $GIT_VERSION_INFO $RELEASE_NOTES_FILE || \
-        zmap_message_exit "Failed to make release notes"
-fi
-
-
-
 # I THINK WE DON'T NEED TO DO THIS ANY MORE....IS MAKE DOCS MALCOLM'S STUFF ??
 #
 #
@@ -672,6 +657,24 @@ zmap_edit_variable_del FILES_TO_REMOVE $TAR_FILE
 
 
 # N.B. We now have no $SCRIPTS_DIR
+
+
+# Make all the release associated docs (git changes, RT tickets resolved).
+#
+# We do this by finding all the commits made since the production HEAD
+# until the current release HEAD.
+# We use the date of the parent commit/date for when the current release
+# was created to get all the RT tickets resolved in the same period as the commits.
+#
+
+if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
+    $RELEASE_NOTES_FILE = $RELEASE_LOCATION/$ZMAP_USER_DOCS_DIR/$ZMAP_USER_RELEASE_DOC_FILE_NAME
+    zmap_message_out "Calling $ANNOTOOLS_BIN/make_release_notes.sh $CHECKOUT_BASE zmap ZMap $GIT_VERSION_INFO $RELEASE_NOTES_FILE"
+
+    $ANNOTOOLS_BIN/make_release_notes.sh $RELEASE_LOCATION/ZMap/src "zmap" "ZMap" $GIT_VERSION_INFO $RELEASE_NOTES_FILE || \
+        zmap_message_exit "Failed to make release notes"
+fi
+
 
 
 # Looks like success... Checking versions match (non-fatal errors)
