@@ -547,7 +547,7 @@ fi
 
 # ================== START MASTER BUILD TASKS ==================
 
-zmap_message_out "Starting Master build tasks. Create $ZMAP_CHANGELOG_FILE_NAME, make docs, dist etc..."
+zmap_message_out "Starting Master build tasks. Create changelog, make docs, dist etc..."
 
 zmap_message_out "Path is" $PATH
 
@@ -592,98 +592,11 @@ zmap_message_out "Finished make dist ..."
 #
 
 if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
+    $RELEASE_NOTES_FILE = $RELEASE_LOCATION/$ZMAP_USER_DOCS_DIR/$ZMAP_USER_RELEASE_DOC_FILE_NAME
 
-
-    # should use this....     'production..release'  but can test using feature/zeroMQ or develop
-    since='production'
-    until='release'
-
-    zmap_message_out "Finding all commits from $since to $until"
-
-    # Make sure that both branches are checked out.
-    git checkout $since || zmap_message_exit "Failed to check out branch $since"
-    git checkout $until || zmap_message_exit "Failed to check out branch $until"
-
-
-    # Get the earliest commit on release branch.
-    last_commit_details=$(git log --first-parent --date=short --pretty='format:%h %p %ad' $since..$until | tail -n 1)
-    read last_commit last_parent_commit last_date <<< $last_commit_details
-
-
-    # Now get the date of the parent commit....creation of the release branch was the
-    # next thing that happened.
-    parent_details=$(git show --date=short --pretty='format:%h %ad' $last_parent_commit)
-    read parent_commit parent_date unwanted_diff <<< $parent_details
-
-
-    zmap_message_out "Finding commits and RT tickets since commit $parent_commit, date $parent_date"
-
-    # make the standard change log in the src subdirectory, only record changes since last release.
-    changelog_file="$CHECKOUT_BASE/src/$ZMAP_CHANGELOG_FILE_NAME"
-    zmap_message_out "Writing $changelog_file..."
-    git log --stat --date=short --pretty='format:%ad  %an  <%ae>%n %s' $since..$until > $changelog_file ||  zmap_message_rm_exit "Failed to create $changelog_file"
-    zmap_message_out "Finished writing $changelog_file..."
-
-
-    # Derive RT format dd/mm/yyyy from git date format yyyy-mm-dd 
-    array=(${parent_date//-/ })
-    rt_date="${array[2]}/${array[1]}/${array[0]}"
-
-    # Make the RT notes
-    rt_repo_file="$CHECKOUT_BASE/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME"
-
-    $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $CHECKOUT_BASE $rt_date $rt_repo_file || \
-	zmap_message_exit "Failed to build release notes from Request Tracker"
-
-
-    # Make the git notes.
-    git_repo_file="$CHECKOUT_BASE/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_GIT_COMMITS_FILE_NAME"
-
-    $SCRIPTS_DIR/zmap_make_git_release_notes.sh $CHECKOUT_BASE $since $until $git_repo_file || \
-	zmap_message_exit "Failed to retrieve git commits for commit $tag_commit, repository $git_repository"
-
-
-    # Now we need to git commit these files and push them....
-    $SCRIPTS_DIR/git_commit.sh -p  "ZMap version $ZMAP_RELEASE_VERSION - Update RT and git commit reports" \
-	$changelog_file $rt_repo_file $git_repo_file \
-	|| zmap_message_exit "Failed to git push $changelog_file $rt_repo_file $git_repo_file to repository."
-    
+    $ANNOTOOLS_BIN/make_release_notes.sh  $CHECKOUT_BASE "zmap" "ZMap" $GIT_VERSION_INFO $RELEASE_NOTE_FILE || \
+        zmap_message_exit "Failed to make release notes"
 fi
-
-
-
-# Mail annotools to tell them to edit the user release notes file.
-#
-#
-(cat <<EOF
-
-ZMap $ZMAP_RELEASE_VERSION Release Build Finished.
-
-The release notes file for users needs updating by hand. 
-
-Use the following procedure to do this:
-
-
-1) checkout the current release branch ($BRANCH)
-
-2) Compile an abbreviated list of RT bugs fixed and code changes from the files
-
-           $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_RT_RESOLVED_FILE_NAME
-           $RELEASE_LOCATION/$ZMAP_RELEASE_DOCS_DIR/$ZMAP_GIT_COMMITS_FILE_NAME
-
-3) Insert that list at the top of the release notes file
-
-           $RELEASE_LOCATION/$ZMAP_USER_DOCS_DIR/$ZMAP_USER_RELEASE_DOC_FILE_NAME
-
-4) git commit and push the changes back to the $BRANCH branch.
-
-
-*** NOTE that the release build will be out of date for these notes but that the notes
-will be propagated automatically into the final production build. ***
-
-EOF
-       ) | mailx -s "Release Notes Created - Action Required" $ZMAP_MASTER_NOTIFY_MAIL
-
 
 
 

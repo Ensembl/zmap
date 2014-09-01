@@ -165,14 +165,6 @@ ZMAP_VERSION_HEADER=zmapUtils_P.h
 ZMAP_WEBPAGE_HEADER=zmapWebPages.h
 
 
-# Report files written for each new release.
-#
-ZMAP_CHANGELOG_FILE_NAME='ChangeLog'
-ZMAP_RELEASE_DOCS_DIR='src/build/release_docs'
-ZMAP_GIT_COMMITS_FILE_NAME='GIT_COMMITS.txt'
-ZMAP_RT_RESOLVED_FILE_NAME='RT_TICKETS_RESOLVED.txt'
-
-
 # This file must be hand-edited.
 #
 ZMAP_USER_DOCS_DIR='docs/WWW/user'
@@ -246,6 +238,8 @@ UNIVERSAL_BUILD=no
 PKG_CONFIG=$GTK_PREFIX/bin/pkg-config
 ACLOCAL_FLAGS="-I $GTK_PREFIX/share/aclocal"
 
+# The annotools bin directory on /software
+ANNOTOOLS_BIN=/software/annotools/bin
 
 # Now source host specific variables/values
 # First we source host type specific ones
