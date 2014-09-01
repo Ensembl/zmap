@@ -29,6 +29,8 @@
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmap.h>
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -41,8 +43,6 @@
 #include <string.h>
 #include <errno.h>
 
-
-#include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapCmdLineArgs.h>
@@ -60,7 +60,7 @@
 #define ZMAP_MEMORY_DEBUG
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#define CLEAN_EXIT_MSG "Exit clean - goodbye cruel world !"
+
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
@@ -71,11 +71,10 @@ static gboolean checkSequenceArgs(int argc, char *argv[],
                                   char *config_file, char *styles_file,
                                   GList **seq_maps_inout, GError **error) ;
 static gboolean checkPeerID(char *config_file,
-    char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms) ;
+                            char **peer_socket_out, char **peer_timeout_list) ;
 
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
-
 
 static void initGnomeGTK(int argc, char *argv[]) ;
 static gboolean getConfiguration(ZMapAppContext app_context, char *config_file) ;
@@ -86,22 +85,28 @@ static void destroyAppContext(ZMapAppContext app_context) ;
 static void addZMapCB(void *app_data, void *zmap) ;
 static void removeZMapCB(void *app_data, void *zmap) ;
 static void infoSetCB(void *app_data, void *zmap) ;
-static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 
 void quitReqCB(void *app_data, void *zmap_data_unused) ;
-static void toplevelDestroyCB(GtkWidget *widget, gpointer data) ;
+static void quitCB(GtkWidget *widget, gpointer cb_data) ;
+static void remoteExitCB(void *user_data) ;
+static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 
-static void appExit(void *user_data) ;
+static void signalAppDestroy(ZMapAppContext app_context) ;
+static void topLevelDestroy(ZMapAppContext app_context) ;
+static void killZMaps(ZMapAppContext app_context) ;
 static gboolean timeoutHandler(gpointer data) ;
-static void signalFinalCleanUp(ZMapAppContext app_context, int exit_rc, char *exit_msg) ;
+static void remoteLevelDestroy(ZMapAppContext app_context) ;
 static void exitApp(ZMapAppContext app_context) ;
 static void crashExitApp(ZMapAppContext app_context) ;
-static void finalCleanUp(ZMapAppContext app_context) ;
+static void contextLevelDestroy(ZMapAppContext app_context, int exit_rc, char *exit_msg) ;
+static void killContext(ZMapAppContext app_context) ;
 static void doTheExit(int exit_code) ;
 
 static void setupSignalHandlers(void);
 
-static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer app_context_data) ;
+
+
+static void remoteInstaller(ZMapAppContext app_context) ;
 static gboolean remoteInactiveHandler(gpointer data) ;
 static gboolean pingHandler(gpointer data) ;
 
@@ -109,6 +114,7 @@ static gboolean configureLog(char *config_file, GError **error) ;
 static void consoleMsg(gboolean err_msg, char *format, ...) ;
 
 static void hideMainWindow(ZMapAppContext app_context) ;
+
 
 
 
@@ -121,21 +127,11 @@ static void hideMainWindow(ZMapAppContext app_context) ;
 static ZMapManagerCallbacksStruct app_window_cbs_G = {addZMapCB, removeZMapCB, infoSetCB, quitReqCB, NULL} ;
 
 
-/* Why are these here ?? */
-#define ZMAPLOG_FILENAME "zmap.log"
 
 
-char *ZMAP_X_PROGRAM_G  = "ZMap" ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* RESURRECT ?? */
-
-/* Place a copyright notice in the executable. */
-char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
-  ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE,
-  ZMAP_DESCRIPTION) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+/* 
+ *                    External routines.
+ */
 
 
 /* This is the "real" main routine, called by either the C or C++ main
@@ -151,8 +147,7 @@ char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
 int zmapMainMakeAppWindow(int argc, char *argv[])
 {
   ZMapAppContext app_context ;
-  char *peer_name, *peer_clipboard ;
-  int peer_retries, peer_timeout_ms ;
+  char *peer_socket, *peer_timeout_list ;
   GtkWidget *toplevel, *vbox, *menubar, *connect_frame, *manage_frame ;
   GtkWidget *quit_button ;
   int log_size ;
@@ -190,10 +185,14 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 #endif
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Make sure glib threading is supported and initialised. */
   g_thread_init(NULL) ;
   if (!g_thread_supported())
     g_thread_init(NULL);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* Set up stack tracing for when we get killed by a signal. */
@@ -222,20 +221,18 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
   /* Set any global debug flags from config file. */
-  zMapUtilsConfigDebug(NULL) ;
+  zMapUtilsConfigDebug(config_file) ;
 
 
   /* Check if a peer program was specified on the command line or in the config file. */
-  peer_name = peer_clipboard = NULL ;
-  peer_retries = peer_timeout_ms = -1 ;
-  if (!checkPeerID(config_file, &peer_name, &peer_clipboard, &peer_retries, &peer_timeout_ms))
+  peer_socket = peer_timeout_list = NULL ;
+  if (!checkPeerID(config_file, &peer_socket, &peer_timeout_list))
     {
       /* CAN'T LOG HERE....log has not been init'd.... */
 
-      /* obscure...only an error if just one is specified... */
-      if (!(!peer_name && !peer_clipboard))
-        consoleMsg(TRUE, "No %s name for remote connection specified so remote interface cannot be created.",
-           (!peer_name ? "peer" : "clipboard")) ;
+      if (!peer_socket && peer_timeout_list)
+        consoleMsg(TRUE, "%s",
+                   "timeout list specified but no peer socket so remote interface cannot be created.") ;
     }
   else
     {
@@ -244,9 +241,28 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       app_window_cbs_G.remote_request_func = zmapAppRemoteControlGetRequestCB() ;
       app_window_cbs_G.remote_request_func_data = (void *)app_context ;
 
+      if (zmapAppRemoteControlCreate(app_context, peer_socket, peer_timeout_list))
+        {
+          consoleMsg(TRUE, "ZMAP %s() - %s",
+                     __PRETTY_FUNCTION__,
+                     "Calling remoteInstaller()") ;
+
+          remoteInstaller(app_context) ;
+
+          zmapAppRemoteControlSetExitRoutine(app_context, remoteExitCB) ;
+        }
+      else
+        {
+          zMapCritical("%s", "Could not initialise remote control interface.") ;
+        }
+
       remote_control = TRUE ;
-      app_context->defer_hiding = TRUE ;
     }
+
+  if (peer_socket)
+    g_free(peer_socket) ;
+  if (peer_timeout_list)
+    g_free(peer_timeout_list) ;
 
 
   /* Init manager, must happen just once in application. */
@@ -254,6 +270,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Add the ZMaps manager. */
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
+
 
   /* Set up logging for application....NO LOGGING BEFORE THIS. */
   if (!zMapLogCreate(NULL) || !configureLog(config_file, &g_error))
@@ -327,41 +344,26 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   g_mem_profile() ;
 #endif
 
+
+  /* Set up app level cursors, the remote one will only be used if we have
+   * a remote peer. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  app_context->normal_cursor = zMapGUICreateCursor("LEFT_PTR") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  app_context->remote_busy_cursor = zMapGUICreateCursor("SB_H_DOUBLE_ARROW") ;
+
+
   app_context->app_widg = toplevel = zMapGUIToplevelNew(NULL, NULL) ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
 
-  /* If there is a peer program then set up xremote comms. */
-  if (remote_control)
-    {
-      if (zmapAppRemoteControlCreate(app_context, peer_name, peer_clipboard, peer_retries, peer_timeout_ms))
-        {
-          /* Rest of initialisation requires a window so code is in a map callback
-           * where we are guaranteed to have a window. */
-
-          consoleMsg(TRUE, "ZMAP %s() - %s",
-                     __PRETTY_FUNCTION__,
-                     "Setting up remoteInstaller() as callback on \"map-event\"") ;
-
-          app_context->mapCB_id = g_signal_connect(G_OBJECT(toplevel), "map-event",
-           G_CALLBACK(remoteInstaller),
-           (gpointer)app_context) ;
-
-
-          zmapAppRemoteControlSetExitRoutine(app_context, appExit) ;
-        }
-      else
-        {
-          zMapCritical("%s", "Could not initialise remote control interface.") ;
-        }
-    }
-
-
   /* Handler for when main window is destroyed (by whichever route). */
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
-     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)app_context) ;
+                     GTK_SIGNAL_FUNC(destroyCB), (gpointer)app_context) ;
 
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
@@ -377,15 +379,19 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   quit_button = gtk_button_new_with_label("Quit") ;
   gtk_signal_connect(GTK_OBJECT(quit_button), "clicked",
-     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
+                     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(vbox), quit_button, FALSE, FALSE, 0) ;
 
-  /* Always create the widget. */
+
+  /* Always create the widgets, after this point they will all have windows. */
   gtk_widget_show_all(toplevel) ;
+
+  /* Now we have a window we can set the standard cursor. */
+  zMapGUISetCursor(toplevel, app_context->normal_cursor) ;
 
 
   /* We don't always want to show this window, for lace users it is useless.... */
-  if (!(app_context->show_mainwindow) && !(app_context->defer_hiding))
+  if (!(app_context->show_mainwindow))
     {
       consoleMsg(TRUE,  "ZMAP %s() - %s",
                  __PRETTY_FUNCTION__,
@@ -459,29 +465,32 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
 
-void zmapAppExit(ZMapAppContext app_context)
+
+
+/* NEW VERSION THAT WILL ACTUALLY DO A WIDGET DESTROY ON THE TOP LEVEL...
+ * 
+ * DO NOT CALL FROM A DESTROY CALLBACK AS THIS CALL WILL RESULT IN THE DESTROY
+ * CALLBACK BEING CALLED AGAIN.
+ * 
+ *  */
+void zmapAppDestroy(ZMapAppContext app_context)
 {
-  gboolean remote_disconnecting = FALSE ;
+  /* Need warning if app_widg is NULL */
 
-  /* Record we are dying so we know when to quit as last zmap dies. */
-  app_context->state = ZMAPAPP_DYING ;
-
-  /* If we have a remote client we need to tell them we are going and wait
-   * for their reply, otherwise we can just get on with it. */
-  if (app_context->remote_control)
-    {
-      gboolean app_exit = TRUE ;
-
-      remote_disconnecting = zmapAppRemoteControlDisconnect(app_context, app_exit) ;
-    }
-
-  if (!(app_context->remote_control) || !remote_disconnecting)
-    {
-      appExit(app_context) ;
-    }
+  signalAppDestroy(app_context) ;
 
   return ;
 }
+
+
+void zmapAppExit(ZMapAppContext app_context)
+{
+
+  exitApp(app_context) ;
+
+  return ;
+}
+
 
 
 void zmapAppPingStart(ZMapAppContext app_context)
@@ -522,7 +531,7 @@ static void initGnomeGTK(int argc, char *argv[])
       zMapLogCritical("%s", err_msg) ;
       zMapExitMsg("%s", err_msg) ;
 
-      gtk_exit(EXIT_FAILURE) ;
+      doTheExit(EXIT_FAILURE) ;
     }
 
   if ((rc_dir = zMapConfigDirGetDir()))
@@ -605,22 +614,22 @@ void addZMapCB(void *app_data, void *zmap_data)
   /* Update our list of zmaps.... */
   gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
   gtk_tree_store_set (app_context->tree_store_widg, &iter1,
-      ZMAPID_COLUMN, zMapGetZMapID(zmap),
-      ZMAPSEQUENCE_COLUMN,"<dummy>" ,
-      ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
-      ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
-      ZMAPDATA_COLUMN, (gpointer)zmap,
-      -1);
+                      ZMAPID_COLUMN, zMapGetZMapID(zmap),
+                      ZMAPSEQUENCE_COLUMN,"<dummy>" ,
+                      ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
+                      ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
+                      ZMAPDATA_COLUMN, (gpointer)zmap,
+                      -1);
 
   return ;
 }
 
 
 
-/* UM...I'M NOT SURE THIS COMMENT IS CORRECT....SHOULD BE CALLED WHEN
- * USER CLOSES A WINDOW OR QUITS....NEED TO DISTINGUISH WHICH.... */
-/* Called when user clicks the big "Quit" button in the main window.
- * Called every time a zmap window signals that it has gone. */
+
+/* Called every time a zmap window signals that it has gone, this might be because
+ * the user clicked the close button for that window or because the user clicked
+ * quit/close on the app window which leads to all zmap windows being closed. */
 void removeZMapCB(void *app_data, void *zmap_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_data ;
@@ -638,13 +647,10 @@ void removeZMapCB(void *app_data, void *zmap_data)
   if (app_context->selected_zmap == zmap)
     app_context->selected_zmap = NULL ;
 
-
-
-  /* UMMM....THIS EXITING HERE DOESN'T LOOK RIGHT TO ME.......... */
-
-  /* When the last zmap has gone and we are dying then exit. */
+  /* If we have been signalled to die and the last zmap has gone then call
+   * the next stage to close the remote control and so on. */
   if (app_context->state == ZMAPAPP_DYING && ((zMapManagerCount(app_context->zmap_manager)) == 0))
-    exitApp(app_context) ;
+    remoteLevelDestroy(app_context) ;
 
   return ;
 }
@@ -657,40 +663,82 @@ void removeZMapCB(void *app_data, void *zmap_data)
 
 /*
  *        callbacks that destroy the application
+ * 
+ * Before changing this you must appreciate that it's complicated because we have
+ * to kill zmap views if they exist (widgets, attached threads etc) and that is asynchronous.
+ * Then we have to kill the zmap app window and then disconnect from our peer if we
+ * have one and then finally clear up.
+ * 
+ * Because of different ways that zmap can be run and the different states it
+ * can be in the various destroy routines are called from different places, the
+ * important thing is that although the destroy can be called at different
+ * levels the path down through these levels is constant, i.e. you can only
+ * choose the level at which you enter, not the path through.
  */
 
-/* Called when user selects "quit2 button in main window. */
+
+
+/* Called when user selects ZMap app window "quit" button or Cntl-Q. */
 static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  zmapAppExit(app_context) ;
+  signalAppDestroy(app_context) ;
 
   return ;
 }
+
 
 /* Called from layers below when they want zmap to exit. */
 void quitReqCB(void *app_data, void *zmap_data_unused)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_data ;
 
-  zmapAppExit(app_context) ;
+  signalAppDestroy(app_context) ;
 
   return ;
 }
 
-/* This function gets called whenever there is a gtk_widget_destroy() to the top level
- * widget. Sometimes this is because of window manager action, sometimes one of our exit
- * routines does a gtk_widget_destroy() on the top level widget.
- *
- * It is the final clean up routine for the ZMap application and exits the program.
- *
+/* Called by app remote control when we've finished saying goodbye to a peer
+ * and can clear up and exit. */
+static void remoteExitCB(void *user_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+
+  signalAppDestroy(app_context) ;
+
+  return ;
+}
+
+
+/* Calling this function will trigger the destroyCB() function which will kill the zmap app. */
+static void signalAppDestroy(ZMapAppContext app_context)
+{
+  gtk_widget_destroy(app_context->app_widg) ;
+
+  return ;
+}
+
+
+/* Called when user selects the window manager "close" button or when signalAppDestroy()
+ * has been called as this issues a destroy for the top level widget which has
+ * the same effect.
+ * 
+ * NOTE that at this point the top level (app_widg) widget is no longer valid having
+ * been destroyed by gtk prior to calling this routine so we set it to NULL
+ * to avoid illegal attempts to use it.
  *  */
-static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
+static void destroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  finalCleanUp(app_context) ;    /* exits program. */
+  app_context->app_widg = NULL ;
+
+  /* Check if user has unsaved changes, gives them a chance to bomb out... */
+  if (zMapManagerCheckIfUnsaved(app_context->zmap_manager))
+    topLevelDestroy(app_context) ;
+  else
+    zMapWarning("%s", "Unsaved changes so cancelling exit." ) ;
 
   return ;
 }
@@ -698,7 +746,61 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 
 
 
-/* A GSourceFunc, called if we take too long to exit, in which case we force the exit. */
+
+
+/*
+ *               exit/cleanup routines.
+ */
+
+/* This is the first level of the destroy, if we have zmap view then
+ * they must be killed first, this is asynchronous and we get called
+ * back into remoteLevelDestroy() when all views have gone.
+ * If we don't then we go on directly to the remoteLevelDestroy(). */
+static void topLevelDestroy(ZMapAppContext app_context)
+{
+  /* Record we are dying so we know when to quit as last zmap dies. */
+  app_context->state = ZMAPAPP_DYING ;
+
+  /* If there zmaps left then clear them up, when the last one has gone then
+   * get called back to remoteLevelDestroy().
+   * Otherwise if there is a remote control then call remoteLevelDestroy(). */
+  if ((zMapManagerCount(app_context->zmap_manager)))
+    {
+      killZMaps(app_context) ;
+    }
+  else
+    {
+      remoteLevelDestroy(app_context) ;
+    }
+
+  return ;
+}
+
+
+/* Signal all views to die (including their widgets). */
+static void killZMaps(ZMapAppContext app_context)
+{
+  guint timeout_func_id ;
+  int interval = app_context->exit_timeout * 1000 ;    /* glib needs time in milliseconds. */
+
+  consoleMsg(TRUE, "%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
+
+  /* N.B. we block for 2 seconds here to make sure user can see message. */
+  zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
+                     ZMAP_MSG_EXIT,
+                     GTK_JUSTIFY_CENTER, 2, FALSE) ;
+
+  /* time out func makes sure that we exit if threads fail to report back. */
+  timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
+
+  /* Tell all our zmaps to die, they will tell all their threads to die, once they
+   * are all gone we will be called back to exit. */
+  zMapManagerKillAllZMaps(app_context->zmap_manager) ;
+
+  return ;
+}
+
+/* A GSourceFunc, called if we take too long to kill zmaps in which case we force the exit. */
 static gboolean timeoutHandler(gpointer data)
 {
   ZMapAppContext app_context = (ZMapAppContext)data ;
@@ -709,62 +811,43 @@ static gboolean timeoutHandler(gpointer data)
 }
 
 
-
-
-/*
- *               exit/cleanup routines.
+/* If we have a remote peer we disconnect from it, this is asychronous
+ * and we get called back into exitApp() once the peer has signalled
+ * that we are saying goodbye.
+ * If we don't then we call exitApp() straight away.
  */
-
-
-static void appExit(void *user_data)
+static void remoteLevelDestroy(ZMapAppContext app_context)
 {
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+  gboolean remote_disconnecting = FALSE ;
 
-
-  /* If there are no zmaps left we can exit here, otherwise we must signal all the zmaps
-   * to die and wait for them to signal they have died or timeout and exit. */
-  if (!(zMapManagerCount(app_context->zmap_manager)))
+  /* If we have a remote client then disconnect, we will be called back
+   * in exitApp().
+   * Otherwise call exitApp() to exit. */
+  if (app_context->remote_control)
     {
-      signalFinalCleanUp(app_context, EXIT_SUCCESS, CLEAN_EXIT_MSG) ;
+      gboolean app_exit = TRUE ;
+
+      remote_disconnecting = zmapAppRemoteControlDisconnect(app_context, app_exit) ;
     }
-  else
+
+  /* If the disconnect didn't happen or failed or there is no remote then exit. */
+  if (!(app_context->remote_control) || !remote_disconnecting)
     {
-      /* Check if we need to save anything first */
-      if (zMapManagerCheckIfUnsaved(app_context->zmap_manager))
-        {
-          guint timeout_func_id ;
-          int interval = app_context->exit_timeout * 1000 ;    /* glib needs time in milliseconds. */
-
-          consoleMsg(TRUE, "%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
-
-          /* N.B. we block for 2 seconds here to make sure user can see message. */
-          zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
-                             ZMAP_MSG_EXIT,
-                             GTK_JUSTIFY_CENTER, 2, FALSE) ;
-
-          /* time out func makes sure that we exit if threads fail to report back. */
-          timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
-
-          /* Tell all our zmaps to die, they will tell all their threads to die. */
-          zMapManagerKillAllZMaps(app_context->zmap_manager) ;
-        }
+      exitApp(app_context) ;
     }
 
   return ;
 }
 
 
-
-
-
 /* Called on clean exit of zmap. */
 static void exitApp(ZMapAppContext app_context)
 {
-/* This must be done here as manager checks to see if all its zmaps have gone. */
+  /* This must be done here as manager checks to see if all its zmaps have gone. */
   if (app_context->zmap_manager)
     zMapManagerDestroy(app_context->zmap_manager) ;
 
-  signalFinalCleanUp(app_context, EXIT_SUCCESS, CLEAN_EXIT_MSG) ;    /* exits app. */
+  contextLevelDestroy(app_context, EXIT_SUCCESS, CLEAN_EXIT_MSG) ;    /* exits app. */
 
   return ;
 }
@@ -775,33 +858,35 @@ static void crashExitApp(ZMapAppContext app_context)
 {
   char *exit_msg = "Exit timed out - WARNING: Zmap clean up of threads timed out, exit has been forced !" ;
 
-  signalFinalCleanUp(app_context, EXIT_FAILURE, exit_msg) ;    /* exits app. */
+  contextLevelDestroy(app_context, EXIT_FAILURE, exit_msg) ;    /* exits app. */
 
   return ;
 }
 
-/* Sends finalise to client if there is one and then signals main window to exit which
- * will then call our final destroy callback. */
-static void signalFinalCleanUp(ZMapAppContext app_context, int exit_rc, char *exit_msg)
+
+/* By now all asychronous stuff is over and it's a straight forward
+ * freeing/releasing of all the resources. */
+static void contextLevelDestroy(ZMapAppContext app_context, int exit_rc, char *exit_msg)
 {
   app_context->exit_rc = exit_rc ;
   app_context->exit_msg = exit_msg ;
 
-  /* **NEW XREMOTE** destroy, Note that at this point we have already told the peer
-   * that we are quitting so now we just need to clear up. */
+  /* Destroy the remote control object, note that we have by now already
+   * said goodbye to the peer. */
   if (app_context->remote_control)
     {
       zmapAppRemoteControlDestroy(app_context) ;
     }
 
-  /* Causes the destroy callback to be invoked which then calls the final clean up. */
-  gtk_widget_destroy(app_context->app_widg);
+  killContext(app_context) ;
 
   return ;
 }
 
-/* Cleans up and exits. */
-static void finalCleanUp(ZMapAppContext app_context)
+
+
+/* This is the final clean up routine for the ZMap application and exits the program. */
+static void killContext(ZMapAppContext app_context)
 {
   int exit_rc = app_context->exit_rc ;
   char *exit_msg = app_context->exit_msg ;
@@ -811,8 +896,8 @@ static void finalCleanUp(ZMapAppContext app_context)
 
   if (exit_rc)
     zMapLogCritical("%s", exit_msg) ;
-  else
-    consoleMsg(TRUE, "%s", exit_msg) ;
+
+  consoleMsg(TRUE, "%s", exit_msg) ;
 
   zMapWriteStopMsg() ;
   zMapLogDestroy() ;
@@ -823,8 +908,7 @@ static void finalCleanUp(ZMapAppContext app_context)
 }
 
 
-/*
- * Use this routine to exit the application with a portable (as in POSIX) return
+/* Use this routine to exit the application with a portable (as in POSIX) return
  * code. If exit_code == 0 then application exits with EXIT_SUCCESS, otherwise
  * exits with EXIT_FAILURE.
  *
@@ -845,6 +929,9 @@ static void doTheExit(int exit_code)
 
   return ;    /* we never get here. */
 }
+
+
+
 
 
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
@@ -886,11 +973,11 @@ static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_ou
               *dataset_out = sequence;
               *delim++ = 0;
               sequence = delim;
-          }
-      }
+            }
+        }
 
-    *sequence_out = sequence ;
-  }
+      *sequence_out = sequence ;
+    }
 
   return ;
 }
@@ -1018,64 +1105,44 @@ static void checkConfigDir(char **config_file_out, char **styles_file_out)
 }
 
 
-/* Did caller specify a peer program id on the command line or in a config file. */
+/* Did caller specify a peer socket id on the command line or in a config file. */
 static gboolean checkPeerID(char *config_file,
-    char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms)
+                            char **peer_socket_out, char **peer_timeout_list)
 {
   gboolean result = FALSE ;
-  ZMapCmdLineArgsType name_value = {FALSE}, clipboard_value = {FALSE} ;
+  ZMapCmdLineArgsType socket_value = {FALSE} ;
   ZMapConfigIniContext context ;
 
 
   /* Command line params override config file. */
-  if (zMapCmdLineArgsValue(ZMAPARG_PEER_NAME, &name_value)
-      && zMapCmdLineArgsValue(ZMAPARG_PEER_CLIPBOARD, &clipboard_value))
+  if (zMapCmdLineArgsValue(ZMAPARG_PEER_SOCKET, &socket_value) && socket_value.s)
     {
-      if (name_value.s && clipboard_value.s)
-        {
-          *peer_name_out = g_strdup(name_value.s) ;
-          *peer_clipboard_out = g_strdup(clipboard_value.s) ;
-        }
+      *peer_socket_out = g_strdup(socket_value.s) ;
     }
 
   if ((context = zMapConfigIniContextProvide(config_file)))
     {
-      char *tmp_string  = NULL;
-      int tmp_int = 0;
+      char *tmp_string = NULL ;
 
       /* If peer app name/clipboard not set then look in the config file... */
-      if (!(*peer_name_out))
+      if (!(*peer_socket_out))
         {
           if (zMapConfigIniContextGetString(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
-                                            ZMAPSTANZA_PEER_NAME, &tmp_string))
-            *peer_name_out = g_strdup(tmp_string) ;
-
-        
-          /* peer unique id to use in remote control. */
-          if (zMapConfigIniContextGetString(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
-                                            ZMAPSTANZA_PEER_CLIPBOARD, &tmp_string))
-            *peer_clipboard_out = g_strdup(tmp_string) ;
+                                            ZMAPSTANZA_PEER_SOCKET, &tmp_string))
+            *peer_socket_out = g_strdup(tmp_string) ;
         }
 
-
-      /* How many times to retry the peer on timeout. */
-      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
-                                     ZMAPSTANZA_PEER_RETRIES, &tmp_int))
-*peer_retries = tmp_int ;
-
-
-      /* How long to wait in ms before timeout waiting for peer. */
-      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
-                                     ZMAPSTANZA_PEER_TIMEOUT, &tmp_int))
-        *peer_timeout_ms = tmp_int ;
-
+      if (*peer_socket_out)
+        {
+          if (zMapConfigIniContextGetString(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
+                                            ZMAPSTANZA_PEER_TIMEOUT_LIST, &tmp_string))
+            *peer_timeout_list = g_strdup(tmp_string) ;
+        }
 
       zMapConfigIniContextDestroy(context);
     }
 
-
-  /* Both must be specified...... */
-  if (*peer_name_out && *peer_clipboard_out)
+  if (*peer_socket_out)
     result = TRUE ;
 
   return result ;
@@ -1149,7 +1216,7 @@ static gboolean getConfiguration(ZMapAppContext app_context, char *config_file)
 
       /* How long to wait when closing, before timeout */
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                             ZMAPSTANZA_APP_EXIT_TIMEOUT, &tmp_int))
+                                     ZMAPSTANZA_APP_EXIT_TIMEOUT, &tmp_int))
         app_context->exit_timeout = tmp_int ;
 
       if (app_context->exit_timeout < 0)
@@ -1217,44 +1284,34 @@ static void setupSignalHandlers(void)
 
 
 
+
+/* THIS NOW NEEDS TO BE A STRAIGHT FORWARD FUNCTION CALL...DO NOT NEED MAPPING BIT... */
 /* **NEW XREMOTE**
  *
  * create the new xremote object.
  */
-static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+static void remoteInstaller(ZMapAppContext app_context)
 {
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
 
   consoleMsg(TRUE, "ZMAP %s() - %s",
              __PRETTY_FUNCTION__,
              "In remoteInstaller, about init RemoteControl.") ;
 
-  /* Stop ourselves being called again. */
-  g_signal_handler_disconnect(app_context->app_widg, app_context->mapCB_id) ;
-  app_context->mapCB_id = 0 ;
-
   /* Set up our remote handler. */
   if (zmapAppRemoteControlInit(app_context))
     {
       if (!zmapAppRemoteControlConnect(app_context))
-        zMapCritical("Failed to connect to peer %s using clipboard %s.",
-     app_context->remote_control->peer_name,
-     app_context->remote_control->peer_clipboard) ;
+        zMapCritical("Failed to connect to peer using socket %s.",
+                     app_context->remote_control->peer_socket) ;
     }
   else
     {
       zMapLogCritical("%s", "Cannot initialise zmap remote control interface.") ;
     }
 
-
-
   consoleMsg(TRUE, "ZMAP %s() - %s",
              __PRETTY_FUNCTION__,
              "In remoteInstaller, about to hide main window.") ;
-
-  /* Hide main window if required. */
-  if (!(app_context->show_mainwindow) && app_context->defer_hiding)
-    hideMainWindow(app_context) ;
 
   /* Set an inactivity timeout, so we can warn the user if nothing happens for a long time in case
    * zmap has become disconnected from the peer. (note timeout is in milliseconds) */
@@ -1815,13 +1872,7 @@ static gboolean remoteInactiveHandler(gpointer data)
       if (!zMapGUIMsgGetBoolFull((GtkWindow *)(app_context->app_widg), ZMAP_MSG_WARNING, msg,
                                  "Continue", "Exit"))
         {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          /* This temporary fix means we just exit without trying to tell the peer we are going.
-           * The full fix needs our timeout and error handlers at this level to be redone. */
-          zmapAppExit(app_context) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-          appExit(app_context) ;
+          zmapAppDestroy(app_context) ;
 
           result = FALSE ;
         }
@@ -1832,5 +1883,4 @@ static gboolean remoteInactiveHandler(gpointer data)
 
   return result ;
 }
-
 

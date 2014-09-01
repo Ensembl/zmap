@@ -82,7 +82,7 @@ typedef enum
 
 
 
-/* ZMap custom cursors that can be returned by zMapGUIGetCursor(), they must all have the "zmap_" prefix. */
+/* ZMap custom cursors that can be returned by zMapGUICreateCursor(), they must all have the "zmap_" prefix. */
 #define ZMAPGUI_CURSOR_PREFIX         "zmap_"
 #define ZMAPGUI_CURSOR_COLOUR_CROSS   "zmap_colour_cross"
 #define ZMAPGUI_CURSOR_CROSS          "zmap_cross"
@@ -442,6 +442,7 @@ typedef void (*ZMapFileChooserContentAreaCB)(GtkWidget *vbox, gpointer user_data
 
 gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
 
+
 void zMapGUIRaiseToTop(GtkWidget *widget);
 void zMapGUIUnGrab(void) ;
 
@@ -473,7 +474,9 @@ void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zma
 GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data) ;
 GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text) ;
 
-GdkCursor *zMapGUIGetCursor(char *cursor_name) ;
+GdkCursor *zMapGUICreateCursor(char *cursor_name) ;
+gboolean zMapGUISetCursor(GtkWidget *widget, GdkCursor *cursor) ;
+GdkCursor *zMapGUIGetCursor(GtkWidget *widget) ;
 
 GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title);
 

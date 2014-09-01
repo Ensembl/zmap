@@ -233,6 +233,7 @@ void zMapGUIUnGrab(void)
 }
 
 
+
 /* Given a gdkEventAny, return a string name for the event.
  * 
  * NOTE, the other event masks need filling in, I've only done the ones I'm interested in...
@@ -2186,7 +2187,7 @@ void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gp
  * If cursor name begins with "zmap_" then look in list of custom cursors
  * otherwise look in list of standard X Windows cursors.
  */
-GdkCursor *zMapGUIGetCursor(char *cursor_name)
+GdkCursor *zMapGUICreateCursor(char *cursor_name)
 {
   GdkCursor *cursor = NULL ;
 
@@ -2201,6 +2202,61 @@ GdkCursor *zMapGUIGetCursor(char *cursor_name)
 
   return cursor ;
 }
+
+
+/* Set the cursor for a widget, returns TRUE if widget has a window and
+ * so a cursor can be set, FALSE otherwise. The cursor can be NULL which
+ * will cause the widget to inherit its parents cursor.
+ * 
+ * NOTE WELL that not all GtkWidgets have windows (e.g. labels), for these
+ * widgets trying to set the cursor will have no effect. If you want a cursor
+ * for this kind of widget you have to make its parent an EventBox and set
+ * the cursor on that instead...deep, deep, sigh.....
+ *  */
+gboolean zMapGUISetCursor(GtkWidget *widget, GdkCursor *cursor)
+{
+  gboolean result = TRUE ;
+  GdkWindow *gdk_window ;
+
+  zMapReturnValIfFail((GTK_IS_WIDGET(widget)), FALSE) ;
+
+  if ((gdk_window = gtk_widget_get_window(widget)))
+    {
+      gdk_window_set_cursor(gdk_window, cursor) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+/* Gets the current cursor of a widget. 
+ * 
+ * Can return NULL for 2 reasons (apart from a bad widget):
+ * 
+ * - the widget has no window (as per zMapGUISetCursor())
+ * 
+ * - the widget has a window but no cursor has been set in
+ *   which case it inherits its parent's cursor.
+ * 
+ *  */
+GdkCursor *zMapGUIGetCursor(GtkWidget *widget)
+{
+  GdkCursor *cursor = NULL ;
+  GdkWindow *gdk_window ;
+
+  zMapReturnValIfFail((GTK_IS_WIDGET(widget)), NULL) ;
+
+  if ((gdk_window = gtk_widget_get_window(widget)))
+    {
+      cursor = gdk_window_get_cursor(gdk_window) ;
+    }
+
+  return cursor ;
+}
+
+
+
+
 
 
 

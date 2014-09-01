@@ -244,8 +244,13 @@ static void makeContext(int argc, char *argv[])
   arg_context->version = ZMAPARG_INVALID_BOOL;
   arg_context->serial = ZMAPARG_INVALID_BOOL;
   arg_context->remote_debug = ZMAPARG_INVALID_STR ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   arg_context->peer_name  = ZMAPARG_INVALID_STR ;
   arg_context->peer_clipboard  = ZMAPARG_INVALID_STR ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  arg_context->peer_socket  = ZMAPARG_INVALID_STR ;
+
   arg_context->start   = ZMAPARG_INVALID_INT;
   arg_context->end     = ZMAPARG_INVALID_INT ;
   arg_context->config_file_path = arg_context->config_dir = ZMAPARG_INVALID_STR;
@@ -328,9 +333,13 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 
     { ZMAPARG_REMOTE_DEBUG, 0, 0, G_OPTION_ARG_STRING, NULL, ZMAPARG_REMOTE_DEBUG_DESC, ZMAPARG_REMOTE_DEBUG_ARG },
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     { ZMAPARG_PEER_NAME, 0, 0, G_OPTION_ARG_STRING, NULL, ZMAPARG_PEER_NAME_DESC, ZMAPARG_PEER_NAME_ARG },
 
     { ZMAPARG_PEER_CLIPBOARD, 0, 0, G_OPTION_ARG_STRING, NULL, ZMAPARG_PEER_CLIPBOARD_DESC, ZMAPARG_PEER_CLIPBOARD_ARG },
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    { ZMAPARG_PEER_SOCKET, 0, 0, G_OPTION_ARG_STRING, NULL, ZMAPARG_PEER_SOCKET_DESC, ZMAPARG_PEER_SOCKET_ARG },
 
     { ZMAPARG_SEQUENCE_START, 0, 0, G_OPTION_ARG_INT, NULL, ZMAPARG_SEQUENCE_START_DESC, ZMAPARG_COORD_ARG },
 
@@ -366,10 +375,16 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
       i++ ;
       entries[i].arg_data = &(arg_context->remote_debug) ;
       i++ ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       entries[i].arg_data = &(arg_context->peer_name) ;
       i++ ;
       entries[i].arg_data = &(arg_context->peer_clipboard) ;
       i++ ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      entries[i].arg_data = &(arg_context->peer_socket) ;
+      i++ ;
+
       entries[i].arg_data = &(arg_context->start) ;
       i++ ;
       entries[i].arg_data = &(arg_context->end) ;
@@ -405,12 +420,20 @@ static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
     { ZMAPARG_REMOTE_DEBUG, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_REMOTE_DEBUG_DESC, ZMAPARG_REMOTE_DEBUG_ARG },
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     { ZMAPARG_PEER_NAME, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_PEER_NAME_DESC, ZMAPARG_PEER_NAME_ARG },
     { ZMAPARG_PEER_CLIPBOARD, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_PEER_CLIPBOARD_DESC, ZMAPARG_PEER_CLIPBOARD_ARG },
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    { ZMAPARG_PEER_SOCKET, 0, 0,
+      G_OPTION_ARG_STRING, NULL,
+      ZMAPARG_PEER_SOCKET_DESC, ZMAPARG_PEER_SOCKET_ARG },
+
+
     { ZMAPARG_STYLES_FILE, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_STYLES_FILE_DESC, ZMAPARG_STYLES_FILE_ARG },
@@ -423,9 +446,13 @@ static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
       entries[1].arg_data = &(arg_context->config_dir);
       entries[2].arg_data = &(arg_context->window);
       entries[3].arg_data = &(arg_context->remote_debug);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       entries[4].arg_data = &(arg_context->peer_name);
       entries[5].arg_data = &(arg_context->peer_clipboard);
-      entries[6].arg_data = &(arg_context->styles_file);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      entries[4].arg_data = &(arg_context->peer_socket);
+      entries[5].arg_data = &(arg_context->styles_file);
     }
 
   return &entries[0];

@@ -35,8 +35,14 @@
 #include <glib.h>
 
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapUtilsGUI.h>
 #include <zmapView_P.h>
 
+
+/* preferences strings. */
+#define VIEW_CHAPTER "Features"
+#define VIEW_PAGE "Display"
+#define VIEW_FILTERED "Highlight filtered columns"
 
 
 
@@ -72,12 +78,32 @@ typedef struct
 
 
 
+typedef struct ForAllDataStructType
+{
+  ZMapViewForAllCallbackFunc user_func_cb ;
+  void *user_func_data ;
+} ForAllDataStruct, *ForAllData ;
+
+
+
+
+
+
+
 static void cwh_destroy_key(gpointer cwh_data) ;
 static void cwh_destroy_value(gpointer cwh_data) ;
 static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type) ;
 static void stepDestroy(gpointer data, gpointer user_data) ;
 static void formatSession(gpointer data, gpointer user_data) ;
 
+static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view) ;
+static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view) ;
+static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
+static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused) ;
+
+static void forAllCB(void *data, void *user_data) ;
+
+static void setCursorCB(ZMapWindow window, void *user_data) ;
 
 
 /*
@@ -206,11 +232,44 @@ gboolean zMapViewSessionGetAsText(ZMapViewWindow view_window, GString *session_d
 
 
 
-
-
-/*
- *            ZMapView external package-level functions.
+/*!
+ * \briefReturns a ZMapGuiNotebookChapter containing all general zmap preferences.
  */
+ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook note_book_parent)
+{
+  ZMapGuiNotebookChapter chapter = NULL ;
+
+  chapter = makeChapter(note_book_parent, view) ;
+
+  return chapter ;
+}
+
+
+/* Execute some user function on all child "view windows". Note that the user callback gets called
+ * with a ZMapViewWindow not a ZMapWindow. */
+void zMapViewForAllZMapWindows(ZMapView view, ZMapViewForAllCallbackFunc user_func_cb, void *user_func_data)
+{
+  ForAllDataStruct all_data = {user_func_cb, user_func_data} ;
+
+  g_list_foreach(view->window_list, forAllCB, &all_data) ;
+
+  return ;
+}
+
+
+/* Set the given cursor on all child windows. */
+void zMapViewSetCursor(ZMapView view, GdkCursor *cursor)
+{
+
+  /* zmapView has no widgets of it's own and so is expected to set cursors
+   * on it's all children. */
+  zMapViewForAllZMapWindows(view, setCursorCB, cursor) ;
+
+
+  return ;
+}
+
+
 
 void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const char *function)
 {
@@ -234,6 +293,18 @@ void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const
 
   return ;
 }
+
+
+
+
+
+
+
+
+/*
+ *            ZMapView external package-level functions.
+ */
+
 
 
 /* Not sure where this is used...check this out.... in checkStateConnections() zmapView.c*/
@@ -970,5 +1041,100 @@ static void formatSession(gpointer data, gpointer user_data)
 
   return ;
 }
+
+
+
+
+/*!
+ * \brief Does the work to create a chapter in the preferences notebook for general zmap settings
+ */
+static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view)
+{
+  ZMapGuiNotebookChapter chapter = NULL ;
+  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, view, NULL, NULL, NULL, NULL} ;
+  ZMapGuiNotebookPage page ;
+  ZMapGuiNotebookSubsection subsection ;
+  ZMapGuiNotebookParagraph paragraph ;
+  ZMapGuiNotebookTagValue tagvalue ;
+
+
+  chapter = zMapGUINotebookCreateChapter(note_book_parent, VIEW_CHAPTER, &user_CBs) ;
+
+
+  page = zMapGUINotebookCreatePage(chapter, VIEW_PAGE) ;
+
+  subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
+
+  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
+					     NULL, NULL) ;
+
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, VIEW_FILTERED,
+                                           NULL,
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+					   "bool", view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS]) ;
+
+  return chapter ;
+}
+
+
+static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
+{
+  ZMapGuiNotebookPage page ;
+  gboolean bool_value = FALSE ;
+
+  if ((page = zMapGUINotebookFindPage(chapter, VIEW_PAGE)))
+    {
+      if (zMapGUINotebookGetTagValue(page, VIEW_FILTERED, "bool", &bool_value))
+	{
+	  if (view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] != bool_value)
+	    {
+              view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] = bool_value ;
+              zMapViewUpdateColumnBackground(view);
+	    }
+	}
+    }
+  
+  return ;
+}
+
+
+static void applyCB(ZMapGuiNotebookAny any_section, void *user_data)
+{
+  ZMapView view = (ZMapView)user_data;
+
+  readChapter((ZMapGuiNotebookChapter)any_section, view) ;
+
+  return ;
+}
+
+
+static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
+{
+  return ;
+}
+
+
+
+static void forAllCB(void *data, void *user_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)data ;
+  ForAllData all_data = (ForAllData)user_data ;
+
+  (all_data->user_func_cb)(view_window->window, all_data->user_func_data) ;
+
+  return ;
+}
+
+
+static void setCursorCB(ZMapWindow window, void *user_data)
+{
+  GdkCursor *cursor = (GdkCursor *)user_data ;
+ 
+  zMapWindowSetCursor(window, cursor) ;
+
+  return ;
+}
+
 
 

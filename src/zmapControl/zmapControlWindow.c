@@ -60,7 +60,7 @@ static gboolean rotateTextCB(gpointer user_data) ;
 
 
 /* Makes the toplevel window and control panels for an individual zmap. */
-gboolean zmapControlWindowCreate(ZMap zmap)
+gboolean zmapControlWindowCreate(ZMap zmap, GdkCursor *normal_cursor)
 {
   gboolean result = FALSE ; 
   GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box, *status_box,
@@ -114,6 +114,10 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   gtk_box_pack_start(GTK_BOX(vbox), zmap->navview_frame, TRUE, TRUE, 0);
 
   gtk_widget_show_all(toplevel) ;
+
+  /* Now we can set the cursor. */
+  zMapGUISetCursor(toplevel, normal_cursor) ;
+
 
   /* Tooltips can only be added to widgets after the widgets have been "shown". */
   setTooltips(zmap) ;

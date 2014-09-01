@@ -45,8 +45,13 @@
 #define ZMAPARG_SINGLE_SCREEN_DESC  "Force zmap to open tools like blixem on the same screen that it is running on."
 #define ZMAPARG_WINDOW_ID_DESC      "Window ID of the controlling application."
 #define ZMAPARG_REMOTE_DEBUG_DESC   "Set RemoteControl debug level."
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #define ZMAPARG_PEER_NAME_DESC      "Peer Remote Control app name."
 #define ZMAPARG_PEER_CLIPBOARD_DESC "Peer Remote Control clipboard name."
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#define ZMAPARG_PEER_SOCKET_DESC "Peer Remote Control socket name."
+
 #define ZMAPARG_SEQUENCE_DESC       "Sequence name."
 #define ZMAPARG_SERIAL_DESC         "Operate pipe servers in serial on startup"
 #define ZMAPARG_TIMING_DESC         "switch on timing functions"
@@ -61,8 +66,13 @@
 #define ZMAPARG_WINID_ARG           "0x0000000"
 #define ZMAPARG_SEQUENCE_ARG        "<sequence name>"
 #define ZMAPARG_REMOTE_DEBUG_ARG    "debug level: off | normal | verbose"
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #define ZMAPARG_PEER_NAME_ARG       "peer app name"
 #define ZMAPARG_PEER_CLIPBOARD_ARG  "peer clipboard unique id"
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#define ZMAPARG_PEER_SOCKET_ARG  "peer socket unique id"
+
 #define ZMAPARG_SERIAL_ARG          "<none>"
 #define ZMAPARG_FILES_ARG      "<file(s)>"
 
@@ -102,8 +112,12 @@ typedef struct _ZMapCmdLineArgsStruct
   char *styles_file ;
 
   char *remote_debug ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   char *peer_name ;
   char *peer_clipboard ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  char *peer_socket ;
 
   gboolean shrink ;
 

@@ -66,9 +66,12 @@ gboolean zmap_development_G = FALSE;    // switch on/off features while testing
 
 
 
+/* 
+ *                    External interface routines.
+ */
 
-/*!
- * Returns a string which is the name of the ZMap application.
+
+/* Returns a string which is the name of the ZMap application.
  *
  * @param   void  None.
  * @return        The applications name as a string.
@@ -306,7 +309,7 @@ char *zMapGetCompileString(void)
  * (N.B. just gets the current time, but could be altered to more generally get any time
  * and the time now by default.)
  *
- * format =   ZMAPTIME_STANDARD || ZMAPTIME_YMD || ZMAPTIME_LOG || ZMAPTIME_USERFORMAT
+ * format =   ZMAPTIME_STANDARD || ZMAPTIME_YMD || ZMAPTIME_LOG || ZMAPTIME_SEC_MICROSEC ||  ZMAPTIME_USERFORMAT
  * format_str = Format string in strftime() time format or NULL.
  * 
  * returns  Time according to format parameter or NULL on error.
@@ -314,53 +317,103 @@ char *zMapGetCompileString(void)
 char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
 {
   char *time_str = NULL ;
+  enum {MAX_TIMESTRING = 1024} ;
+  struct timeval tv;
+  char *format_str ;
+  char buffer[MAX_TIMESTRING] = {0} ;
+  size_t buf_size = MAX_TIMESTRING ;
+  time_t curtime ;
 
-  if (format == ZMAPTIME_STANDARD || format == ZMAPTIME_YMD || format == ZMAPTIME_LOG
-      || (format == ZMAPTIME_USERFORMAT && format_str_in && *format_str_in))
+  zMapReturnValIfFail(((format == ZMAPTIME_STANDARD || format == ZMAPTIME_YMD
+                        || format == ZMAPTIME_LOG || format == ZMAPTIME_SEC_MICROSEC)
+                       || (format == ZMAPTIME_USERFORMAT && format_str_in && *format_str_in)), NULL) ;
+
+
+  /* Get time of day as secs & microsecs. */
+  gettimeofday(&tv, NULL) ; 
+  curtime = tv.tv_sec ;
+
+  switch(format)
     {
-      enum {MAX_TIMESTRING = 1024} ;
-      struct timeval tv;
-      char *format_str ;
-      char buffer[MAX_TIMESTRING] = {0} ;
-      size_t buf_size = MAX_TIMESTRING ;
-      time_t curtime ;
+    case ZMAPTIME_STANDARD:
+      /* e.g. "Thu Sep 30 10:05:27 2004" */
+      format_str = "%a %b %d %X %Y" ;
+      break ;
+    case ZMAPTIME_YMD:
+      /* e.g. "1997-11-08" */
+      format_str = "%Y-%m-%d" ;
+      break ;
+    case ZMAPTIME_LOG:
+      /* e.g. "2013/06/11 13:18:27.021129", i.e. includes milliseconds. */
+      format_str = "%Y/%m/%d %T," ;
+      break ;
+    case ZMAPTIME_USERFORMAT:
+      /* User provides format string which must be in strftime() format. */
+      format_str = format_str_in ;
+      break ;
+    case ZMAPTIME_SEC_MICROSEC:
+      format_str = "%ld" ZMAPTIME_SEC_MICROSEC_SEPARATOR "%ld" ;
+      break ;
+    default:
+      zMapWarnIfReached() ;
+      break ;
+    }
 
-      /* Get time of day as secs & microsecs. */
-      gettimeofday(&tv, NULL) ; 
-      curtime = tv.tv_sec ;
-
-      switch(format)
-        {
-        case ZMAPTIME_STANDARD:
-          /* e.g. "Thu Sep 30 10:05:27 2004" */
-          format_str = "%a %b %d %X %Y" ;
-          break ;
-        case ZMAPTIME_YMD:
-          /* e.g. "1997-11-08" */
-          format_str = "%Y-%m-%d" ;
-          break ;
-        case ZMAPTIME_LOG:
-          /* e.g. "2013/06/11 13:18:27.021129", i.e. includes milliseconds. */
-          format_str = "%Y/%m/%d %T," ;
-          break ;
-        case ZMAPTIME_USERFORMAT:
-          /* User provides format string which must be in strftime() format. */
-          format_str = format_str_in ;
-          break ;
-        }
-
-      /* format the secs and then tack on the microsecs. */
-      if ((strftime(&(buffer[0]), buf_size, format_str, localtime(&curtime))) > 0)
-        {
-          if (format == ZMAPTIME_LOG)
-            time_str = g_strdup_printf("%s%06ld", buffer, (long int)(tv.tv_usec)) ; /* pad to make sure we don't miss leading 0's */
-          else
-            time_str = g_strdup(buffer) ;
-        }
+  if (format == ZMAPTIME_SEC_MICROSEC)
+    {
+      time_str = g_strdup_printf(format_str, (long int)tv.tv_sec, (long int)(tv.tv_usec)) ;
+    }
+  else if ((strftime(&(buffer[0]), buf_size, format_str, localtime(&curtime))) > 0)
+    {
+      /* format the secs and then tack on the microsecs, pad to make sure we don't miss leading 0's */
+      if (format == ZMAPTIME_LOG)
+        time_str = g_strdup_printf("%s%06ld", buffer, (long int)(tv.tv_usec)) ;
+      else
+        time_str = g_strdup(buffer) ;
     }
 
   return time_str ;
 }
+
+/* Opposite of zMapGetTimeString(), kind of...as it operates not on current time
+ * but the supplied time string. Currently only supports ZMAPTIME_SEC_MICROSEC, rest would need
+ * to be added */
+gboolean zMapTimeGetTime(char *time_str_in, ZMapTimeFormat format, char *format_str,
+                         long int *secs_out, long int *microsecs_out)
+{
+  gboolean result = FALSE ;
+
+  switch(format)
+    {
+    case ZMAPTIME_SEC_MICROSEC:
+      {
+        gchar **time_substrs ;
+        long int secs = 0, microsecs = 0 ;
+
+        if ((time_substrs = g_strsplit(time_str_in, ZMAPTIME_SEC_MICROSEC_SEPARATOR, 3)))
+          {
+            if (zMapStr2LongInt(time_substrs[0], &secs)
+                && zMapStr2LongInt(time_substrs[1], &microsecs))
+              {
+                *secs_out = secs ;
+                *microsecs_out = microsecs ;
+                result = TRUE ;
+              }
+
+            g_strfreev(time_substrs) ;
+          }
+
+        break ;
+      }
+    default:
+      zMapWarnIfReached() ;
+      break ;
+    }
+
+
+ return result ;
+}
+
 
 
 /* Get raw microseconds time......here's what is returned to us:
@@ -373,9 +426,9 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
  *
  * We just use seconds.
  */
-guint zMapUtilsGetRawTime(void)
+long int zMapUtilsGetRawTime(void)
 {
-  guint rawtime = 0 ;
+  long int rawtime = 0 ;
   struct timeval tv = {0, 0} ;
 
   if (!gettimeofday(&tv, NULL))
@@ -383,6 +436,9 @@ guint zMapUtilsGetRawTime(void)
 
   return rawtime ;
 }
+
+
+
 
 
 

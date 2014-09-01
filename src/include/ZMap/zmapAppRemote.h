@@ -64,6 +64,17 @@
  */
 
 
+
+/* Function that sub-system can provide to be called on error.
+ * When remotecontrol detects an error in transmitting/receiving messages it calls
+ * the sub-system with the type of error and an error message for display or logging.
+ * user_data enables the sub-system to pass through any data it needs to handle
+ * the error. */
+typedef void (*ZMapRemoteAppErrorHandlerFunc)(ZMapRemoteControlRCType error_type,
+                                              char *err_msg,
+                                              void *user_data) ;
+
+
 /* 
  *  Functions that sub-systems must provide/call to _RESPOND_ to requests from a peer.
  */
@@ -124,8 +135,9 @@ typedef void (*ZMapRemoteAppMakeRequestFunc)(gpointer caller_data,
 					     gpointer sub_system_ptr,
 					     char *command, ZMapXMLUtilsEventStack request_body,
 					     ZMapRemoteAppProcessReplyFunc reply_handler_func,
-					     gpointer reply_handler_func_data) ;
-
+					     gpointer reply_handler_func_data,
+                                             ZMapRemoteAppErrorHandlerFunc error_handler_func,
+                                             gpointer error_handler_func_data) ;
 
 
 
