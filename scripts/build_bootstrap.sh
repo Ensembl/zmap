@@ -594,7 +594,7 @@ zmap_message_out "Finished make dist ..."
 if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
     $RELEASE_NOTES_FILE = $RELEASE_LOCATION/$ZMAP_USER_DOCS_DIR/$ZMAP_USER_RELEASE_DOC_FILE_NAME
 
-    $ANNOTOOLS_BIN/make_release_notes.sh  $CHECKOUT_BASE "zmap" "ZMap" $GIT_VERSION_INFO $RELEASE_NOTE_FILE || \
+    $ANNOTOOLS_BIN/make_release_notes.sh  $CHECKOUT_BASE "zmap" "ZMap" $GIT_VERSION_INFO $RELEASE_NOTES_FILE || \
         zmap_message_exit "Failed to make release notes"
 fi
 
