@@ -35,8 +35,14 @@
 #include <glib.h>
 
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapUtilsGUI.h>
 #include <zmapView_P.h>
 
+
+/* preferences strings. */
+#define VIEW_CHAPTER "Features"
+#define VIEW_PAGE "Display"
+#define VIEW_FILTERED "Highlight filtered columns"
 
 
 
@@ -90,6 +96,10 @@ static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_l
 static void stepDestroy(gpointer data, gpointer user_data) ;
 static void formatSession(gpointer data, gpointer user_data) ;
 
+static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view) ;
+static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view) ;
+static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
+static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused) ;
 
 static void forAllCB(void *data, void *user_data) ;
 
@@ -1060,6 +1070,7 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
 					     NULL, NULL) ;
 
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, VIEW_FILTERED,
+                                           NULL,
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
 					   "bool", view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS]) ;
 
