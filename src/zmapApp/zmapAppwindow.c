@@ -70,7 +70,7 @@ static void checkConfigDir(char **config_file_out, char **styles_file_out) ;
 static gboolean checkSequenceArgs(int argc, char *argv[],
                                   char *config_file, char *styles_file,
                                   GList **seq_maps_inout, GError **error) ;
-static gboolean checkPeerID(ZMapAppContext app_context,
+static gboolean checkPeerID(char *config_file,
                             char **peer_socket_out, char **peer_timeout_list) ;
 
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
@@ -221,12 +221,12 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
   /* Set any global debug flags from config file. */
-  zMapUtilsConfigDebug(NULL) ;
+  zMapUtilsConfigDebug(config_file) ;
 
 
   /* Check if a peer program was specified on the command line or in the config file. */
   peer_socket = peer_timeout_list = NULL ;
-  if (!checkPeerID(app_context, &peer_socket, &peer_timeout_list))
+  if (!checkPeerID(config_file, &peer_socket, &peer_timeout_list))
     {
       /* CAN'T LOG HERE....log has not been init'd.... */
 
@@ -1106,7 +1106,7 @@ static void checkConfigDir(char **config_file_out, char **styles_file_out)
 
 
 /* Did caller specify a peer socket id on the command line or in a config file. */
-static gboolean checkPeerID(ZMapAppContext app_context,
+static gboolean checkPeerID(char *config_file,
                             char **peer_socket_out, char **peer_timeout_list)
 {
   gboolean result = FALSE ;
