@@ -228,7 +228,7 @@ if [ "x$gen_checkout_script" != "x" ]; then
     git clone -b $BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
     # check the branch exists in the new repository
-    cd $MASTER_SRC_DIR ; git show-branch "$BRANCH" > /dev/null 2>&1 || _checkout_message_exit "Branch $BRANCH does not exist"
+    cd $MASTER_SRC_DIR ; git show-branch "$BRANCH" || _checkout_message_exit "Branch $BRANCH does not exist"
 
 #    _checkout_message_out "Forcing branch to 'production'"
 #    BRANCH='production'
