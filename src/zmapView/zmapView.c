@@ -789,7 +789,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
 		}
 #if 0
-	/* featuresets are absolutley not required as if so we could not autoconfigure
+	/* featuresets are absolutely not required as if so we could not autoconfigure
 	 * a file server without reading the whole file first
 	 * which would require us to read it twice
 	 * NOTE also that some other code assumes that we know what featuresets
