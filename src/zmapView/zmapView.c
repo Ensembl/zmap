@@ -641,7 +641,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
        * read styles from file
        * the idea is that we can create a new view with new styles without restarting ZMap
        * but as that involves re-requesting data there's little gain.
-       * Maybe you could have views of two sequences and you wan tot change a style in one ?
+       * Maybe you could have views of two sequences and you want to change a style in one ?
        *
        * each server can have it's own styles file, but was always use the same for each
        * and ACE can provide it's own styles. w/otterlace we use that same styles file
