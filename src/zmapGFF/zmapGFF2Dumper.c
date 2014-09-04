@@ -180,7 +180,8 @@ static gboolean dump_transcript_subpart_v3(ZMapFeature feature, gpointer transcr
 static gboolean dump_transcript_foreach_subpart_v3(ZMapFeature feature, GString *buffer,
   GError **error_out, GArray *subparts, GFFDumpData gff_data) ;
 static gboolean dump_transcript_foreach_subpart_v3_cds(ZMapFeature feature, GString *buffer,
-  GError **error_out, GArray *subparts, GFFDumpData gff_data) ;
+                                                       GError **error_out, ZMapTranscript transcript,
+                                                       GFFDumpData gff_data) ;
 
 
 /* alignments */
@@ -1003,7 +1004,8 @@ static gboolean dump_transcript_subpart_v3(ZMapFeature feature, gpointer transcr
   }
 
   /*
-   * Output all introns.
+   * Output all introns. Don't really need these, but will leave it in for
+   * the time being.
    */
   if(result && transcript->introns)
   {
@@ -1033,8 +1035,8 @@ static gboolean dump_transcript_subpart_v3(ZMapFeature feature, gpointer transcr
     g_string_append_printf(gff_string, "\t") ;
     result = dump_transcript_parent_v3(feature, transcript, gff_string, error, gff_data);
 
-    //result = dump_transcript_foreach_subpart_v3_cds(feature, gff_string, error,
-    //                                                transcript->exons, gff_data) ;
+    result = dump_transcript_foreach_subpart_v3_cds(feature, gff_string, error,
+                                                    transcript, gff_data) ;
   }
 
   return result;
@@ -1053,33 +1055,38 @@ static gboolean dump_transcript_foreach_subpart_v3(ZMapFeature feature, GString 
   gboolean result = TRUE ;
   int i = 0 ;
 
-  for (i = 0 ; i < subparts->len && result ; i++)
-  {
-    ZMapSpanStruct span = g_array_index(subparts, ZMapSpanStruct, i) ;
-    ZMapPhase phase = ZMAPPHASE_NONE ;
+  for (i = 0 ; i < subparts->len; ++i)
+    {
+      ZMapSpanStruct span = g_array_index(subparts, ZMapSpanStruct, i) ;
+      ZMapPhase phase = ZMAPPHASE_NONE ;
 
-    g_string_append_printf(buffer, "\n" GFF_OBLIGATORY_NOSCORE,
-                           gff_data->gff_sequence,
-                           gff_data->gff_source,
-                           gff_data->gff_feature,
-                           span.x1, span.x2,
-                           '.', /* no score */
-                           strand2Char(feature->strand),
-                           phase2Char(phase)) ;
-    g_string_append_printf(buffer, "\t") ;
+      g_string_append_printf(buffer, "\n" GFF_OBLIGATORY_NOSCORE,
+                             gff_data->gff_sequence,
+                             gff_data->gff_source,
+                             gff_data->gff_feature,
+                             span.x1, span.x2,
+                             '.', /* no score */
+                             strand2Char(feature->strand),
+                             phase2Char(phase)) ;
+      g_string_append_printf(buffer, "\t") ;
 
-    result = dump_transcript_parent_v3(feature, &(feature->feature.transcript), buffer, error_out, gff_data);
-  }
+      result = dump_transcript_parent_v3(feature, &(feature->feature.transcript), buffer, error_out, gff_data);
+    }
 
   return result ;
 }
 
 static gboolean dump_transcript_foreach_subpart_v3_cds(ZMapFeature feature, GString *buffer,
-                                                       GError **error_out, GArray *subparts, GFFDumpData gff_data)
+                                                       GError **error_out, ZMapTranscript transcript,
+                                                       GFFDumpData gff_data)
 {
   gboolean result = TRUE ;
   int i = 0 ;
 
+  for (i=0; i<transcript->exons->len; ++i)
+    {
+      ZMapSpanStruct span = g_array_index(transcript->exons, ZMapSpanStruct, i) ;
+    }
 
 
   return result ;
