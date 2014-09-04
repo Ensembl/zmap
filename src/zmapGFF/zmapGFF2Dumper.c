@@ -1020,21 +1020,6 @@ static gboolean dump_transcript_subpart_v3(ZMapFeature feature, gpointer transcr
    */
   if(result && transcript->flags.cds)
   {
-    /*
-    gff_data->gff_feature = "CDS";
-    g_string_append_printf(gff_string,
-                           "\n" GFF_OBLIGATORY_NOSCORE,
-                           gff_data->gff_sequence,
-                           gff_data->gff_source,
-                           gff_data->gff_feature,
-                           transcript->cds_start,
-                           transcript->cds_end,
-                           '.',
-                           strand2Char(feature->strand),
-                           phase2Char(transcript->phase)) ;
-    g_string_append_printf(gff_string, "\t") ;
-    result = dump_transcript_parent_v3(feature, transcript, gff_string, error, gff_data);
-    */
     gff_data->gff_feature = "CDS";
     result = dump_transcript_foreach_subpart_v3_cds(feature, gff_string, error,
                                                     transcript, gff_data) ;
@@ -1045,10 +1030,7 @@ static gboolean dump_transcript_subpart_v3(ZMapFeature feature, gpointer transcr
 
 
 /*
- * Note that this should impose some constraints upon the data:
- *
- * (1) non-cds should have phase = '.'
- * (2) cds must have phase != '.'
+ * Dump transcript subparts.
  */
 static gboolean dump_transcript_foreach_subpart_v3(ZMapFeature feature,
                                                    GString *buffer,
