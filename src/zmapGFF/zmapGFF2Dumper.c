@@ -179,6 +179,8 @@ static gboolean dump_transcript_subpart_v3(ZMapFeature feature, gpointer transcr
   GString *gff_string, GError **error, GFFDumpData gff_data) ;
 static gboolean dump_transcript_foreach_subpart_v3(ZMapFeature feature, GString *buffer,
   GError **error_out, GArray *subparts, GFFDumpData gff_data) ;
+static gboolean dump_transcript_foreach_subpart_v3_cds(ZMapFeature feature, GString *buffer,
+  GError **error_out, GArray *subparts, GFFDumpData gff_data) ;
 
 
 /* alignments */
@@ -702,10 +704,14 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 
           g_string_append_printf(gff_string, GFF_SEP_STRAND, strand2Char(feature->strand)) ;
 
-          g_string_append_printf(gff_string, GFF_SEP_PHASE,
-              ((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds)
-                  ? phase2Char(feature->feature.transcript.start_not_found)
-                : '.')) ;
+          /*
+           * Not sure why this was done in the first place; the only
+           * SO term that can have a phase\neq '.' is CDS anyway.
+           */
+          g_string_append_printf(gff_string, GFF_SEP_STRAND, '.');
+          //g_string_append_printf(gff_string, GFF_SEP_PHASE,
+          //    ((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds)
+          //        ? phase2Char(feature->feature.transcript.phase) : '.')) ;
 
           /* Now to the attribute fields, and any subparts... */
 
@@ -983,48 +989,69 @@ static gboolean dump_transcript_subpart_v3(ZMapFeature feature, gpointer transcr
 {
   ZMapTranscript transcript = (ZMapTranscript)transcript_data;
   gboolean result = TRUE;
+  if (!transcript)
+    return result ;
 
+  /*
+   * Output all exons.
+   */
   if(result && transcript->exons)
   {
     gff_data->gff_feature = "exon";
     result = dump_transcript_foreach_subpart_v3(feature, gff_string, error,
-      transcript->exons, gff_data);
+                                                transcript->exons, gff_data);
   }
 
+  /*
+   * Output all introns.
+   */
   if(result && transcript->introns)
   {
     gff_data->gff_feature = "intron";
     result = dump_transcript_foreach_subpart_v3(feature, gff_string, error,
-      transcript->introns, gff_data);
+                                                transcript->introns, gff_data);
   }
 
+  /*
+   * This is where the special treatment of the cds as multiple part
+   * should be inserted. Probably modify the foreach function used above.
+   */
   if(result && transcript->flags.cds)
   {
     gff_data->gff_feature = "CDS";
     g_string_append_printf(gff_string,
-      "\n" GFF_OBLIGATORY_NOSCORE,
-      gff_data->gff_sequence,
-      gff_data->gff_source,
-      gff_data->gff_feature,
-      transcript->cds_start,
-      transcript->cds_end,
-      '.',
-      strand2Char(feature->strand),
-      phase2Char(transcript->start_not_found)) ;
+                           "\n" GFF_OBLIGATORY_NOSCORE,
+                           gff_data->gff_sequence,
+                           gff_data->gff_source,
+                           gff_data->gff_feature,
+                           transcript->cds_start,
+                           transcript->cds_end,
+                           '.',
+                           strand2Char(feature->strand),
+                           phase2Char(transcript->phase)) ;
+
     g_string_append_printf(gff_string, "\t") ;
-    result = dump_transcript_parent_v3(feature, transcript,
-      gff_string, error, gff_data);
+    result = dump_transcript_parent_v3(feature, transcript, gff_string, error, gff_data);
+
+    //result = dump_transcript_foreach_subpart_v3_cds(feature, gff_string, error,
+    //                                                transcript->exons, gff_data) ;
   }
 
   return result;
 }
 
 
+/*
+ * Note that this should impose some constraints upon the data:
+ *
+ * (1) non-cds should have phase = '.'
+ * (2) cds must have phase != '.'
+ */
 static gboolean dump_transcript_foreach_subpart_v3(ZMapFeature feature, GString *buffer,
-  GError **error_out, GArray *subparts, GFFDumpData gff_data)
+                                                   GError **error_out, GArray *subparts, GFFDumpData gff_data)
 {
   gboolean result = TRUE ;
-  int i ;
+  int i = 0 ;
 
   for (i = 0 ; i < subparts->len && result ; i++)
   {
@@ -1032,21 +1059,33 @@ static gboolean dump_transcript_foreach_subpart_v3(ZMapFeature feature, GString 
     ZMapPhase phase = ZMAPPHASE_NONE ;
 
     g_string_append_printf(buffer, "\n" GFF_OBLIGATORY_NOSCORE,
-      gff_data->gff_sequence,
-      gff_data->gff_source,
-      gff_data->gff_feature,
-      span.x1, span.x2,
-      '.', /* no score */
-      strand2Char(feature->strand),
-      phase2Char(phase)) ;
+                           gff_data->gff_sequence,
+                           gff_data->gff_source,
+                           gff_data->gff_feature,
+                           span.x1, span.x2,
+                           '.', /* no score */
+                           strand2Char(feature->strand),
+                           phase2Char(phase)) ;
     g_string_append_printf(buffer, "\t") ;
 
-    result = dump_transcript_parent_v3(feature, &(feature->feature.transcript),
-      buffer, error_out, gff_data);
+    result = dump_transcript_parent_v3(feature, &(feature->feature.transcript), buffer, error_out, gff_data);
   }
 
   return result ;
 }
+
+static gboolean dump_transcript_foreach_subpart_v3_cds(ZMapFeature feature, GString *buffer,
+                                                       GError **error_out, GArray *subparts, GFFDumpData gff_data)
+{
+  gboolean result = TRUE ;
+  int i = 0 ;
+
+
+
+  return result ;
+}
+
+
 
 
 
