@@ -1020,6 +1020,7 @@ static gboolean dump_transcript_subpart_v3(ZMapFeature feature, gpointer transcr
    */
   if(result && transcript->flags.cds)
   {
+    /*
     gff_data->gff_feature = "CDS";
     g_string_append_printf(gff_string,
                            "\n" GFF_OBLIGATORY_NOSCORE,
@@ -1031,10 +1032,10 @@ static gboolean dump_transcript_subpart_v3(ZMapFeature feature, gpointer transcr
                            '.',
                            strand2Char(feature->strand),
                            phase2Char(transcript->phase)) ;
-
     g_string_append_printf(gff_string, "\t") ;
     result = dump_transcript_parent_v3(feature, transcript, gff_string, error, gff_data);
-
+    */
+    gff_data->gff_feature = "CDS";
     result = dump_transcript_foreach_subpart_v3_cds(feature, gff_string, error,
                                                     transcript, gff_data) ;
   }
@@ -1049,13 +1050,16 @@ static gboolean dump_transcript_subpart_v3(ZMapFeature feature, gpointer transcr
  * (1) non-cds should have phase = '.'
  * (2) cds must have phase != '.'
  */
-static gboolean dump_transcript_foreach_subpart_v3(ZMapFeature feature, GString *buffer,
-                                                   GError **error_out, GArray *subparts, GFFDumpData gff_data)
+static gboolean dump_transcript_foreach_subpart_v3(ZMapFeature feature,
+                                                   GString *buffer,
+                                                   GError **error_out,
+                                                   GArray *subparts,
+                                                   GFFDumpData gff_data)
 {
   gboolean result = TRUE ;
   int i = 0 ;
 
-  for (i = 0 ; i < subparts->len; ++i)
+  for (i=0; i < subparts->len; ++i)
     {
       ZMapSpanStruct span = g_array_index(subparts, ZMapSpanStruct, i) ;
       ZMapPhase phase = ZMAPPHASE_NONE ;
@@ -1069,23 +1073,76 @@ static gboolean dump_transcript_foreach_subpart_v3(ZMapFeature feature, GString 
                              strand2Char(feature->strand),
                              phase2Char(phase)) ;
       g_string_append_printf(buffer, "\t") ;
-
       result = dump_transcript_parent_v3(feature, &(feature->feature.transcript), buffer, error_out, gff_data);
     }
 
   return result ;
 }
 
-static gboolean dump_transcript_foreach_subpart_v3_cds(ZMapFeature feature, GString *buffer,
-                                                       GError **error_out, ZMapTranscript transcript,
+/*
+ * This dumps a CDS but uses a seperate line for each part of the CDS that overlaps
+ * with each exon.
+ */
+static gboolean dump_transcript_foreach_subpart_v3_cds(ZMapFeature feature,
+                                                       GString *buffer,
+                                                       GError **error_out,
+                                                       ZMapTranscript transcript,
                                                        GFFDumpData gff_data)
 {
-  gboolean result = TRUE ;
-  int i = 0 ;
+  gboolean result = FALSE,
+    start_within = FALSE,
+    end_within = FALSE,
+    exon_within = FALSE ;
+  int i = 0,
+    exon_start = 0,
+    exon_end = 0,
+    cds_start = 0,
+    cds_end = 0,
+    start = 0,
+    end = 0 ;
+  ZMapPhase phase = ZMAPPHASE_NONE ;
 
-  for (i=0; i<transcript->exons->len; ++i)
+  cds_start = transcript->cds_start ;
+  cds_end = transcript->cds_end ;
+
+  phase = transcript->phase ;
+  if (phase == ZMAPPHASE_NONE)
+    return result ;
+  result = TRUE ;
+
+  for (i=0; i<transcript->exons->len && result; ++i)
     {
+      start_within = FALSE ;
+      end_within = FALSE ;
+      exon_within = FALSE ;
       ZMapSpanStruct span = g_array_index(transcript->exons, ZMapSpanStruct, i) ;
+
+      exon_start = span.x1 ;
+      exon_end = span.x2 ;
+
+      if (cds_start>=exon_start && cds_start<=exon_end)
+        start_within = TRUE ;
+      if (cds_end>=exon_start && cds_end<=exon_end)
+        end_within = TRUE ;
+      if (cds_start<exon_start && cds_end>exon_end)
+        exon_within = TRUE ;
+
+      if (start_within || end_within || exon_within)
+        {
+          start = cds_start > exon_start ? cds_start : exon_start ;
+          end = cds_end < exon_end ? cds_end : exon_end ;
+
+          g_string_append_printf(buffer, "\n" GFF_OBLIGATORY_NOSCORE,
+                                 gff_data->gff_sequence,
+                                 gff_data->gff_source,
+                                 gff_data->gff_feature,
+                                 start, end, '.',
+                                 strand2Char(feature->strand),
+                                 phase2Char(phase) );
+          g_string_append_printf(buffer, "\t") ;
+          result = dump_transcript_parent_v3(feature, transcript, buffer, error_out, gff_data);
+
+        }
     }
 
 
