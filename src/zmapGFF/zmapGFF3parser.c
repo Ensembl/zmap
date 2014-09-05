@@ -112,7 +112,7 @@ static gboolean compositeFeaturesInsert(ZMapGFF3Parser const pParser, GQuark fea
 /*
  * See comments with function.
  */
-static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
+static gboolean hack_SpecialColumnToSOTerm(const char * const, char * const ) ;
 
 /*
  * These alternatives are in place temporarily until we have
@@ -2380,7 +2380,7 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
   /*
    * Deal with hack to source -> SO term mapping
    */
-  hack_SpecialColumnToSOTerm(sSource, &sType ) ;
+  hack_SpecialColumnToSOTerm(sSource, sType ) ;
 
   /*
    * sType must be either an accession number or a valid name from the
@@ -3671,7 +3671,7 @@ static gboolean clipFeatureLogic_General(ZMapGFF3Parser  pParser, ZMapGFFFeature
  * for the affected columns.
  *
  */
-static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** const psType )
+static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char * const sType )
 {
   /*
    * List of special source names to be treated by this function.
@@ -3682,26 +3682,26 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
   static const char *sCol06 = "das_ChromSig" ;
   gboolean bResult = FALSE ;
 
-  zMapReturnValIfFail(sSource && *sSource && psType && *psType, bResult ) ;
+  zMapReturnValIfFail(sSource && *sSource && sType, bResult ) ;
 
   if (!strcmp(sSource, sCol01))
     {
-      *psType = "transcript" ;
+      strcpy(sType, "transcript" );
       bResult = TRUE ;
     }
   else if (strstr(sSource, sCol02)) /* several sources start with the string "das_phastCons" */
     {
-      *psType = "das_phastCons" ;
+      strcpy(sType, "das_phastCons") ;
       bResult = TRUE ;
     }
   else if (strstr(sSource, sCol05)) /* several sources start with the string "solexa_coverage" */
     {
-      *psType = "solexa_coverage" ;
+      strcpy(sType, "solexa_coverage") ;
       bResult = TRUE ;
     }
   else if (!strcmp(sSource, sCol06))
     {
-      *psType = "transcript" ;
+      strcpy(sType, "transcript") ;
     }
 
   return bResult ;
