@@ -2334,8 +2334,8 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
   sErrText = NULL ;
   if (g_ascii_strcasecmp(sSequence, ".") == 0)
     sErrText = g_strdup("sSequence cannot be '.'") ;
-  else if (g_ascii_strcasecmp(sSource, ".") == 0)
-    sErrText = g_strdup("sSource cannot be '.'") ;
+  //else if (g_ascii_strcasecmp(sSource, ".") == 0)
+  //  sErrText = g_strdup("sSource cannot be '.'") ;
   else if (g_ascii_strcasecmp(sType, ".") == 0)
     sErrText = g_strdup("sType cannot be '.'") ;
   else if (!zMapFeatureFormatType(pParser->SO_compliant, pParser->default_to_basic, sType, &cType))
@@ -2411,6 +2411,21 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
       cType = zMapSOSetGetStyleModeFromName(pParser->cSOSetInUse, sType ) ;
       cHomol = zMapSOSetGetHomolFromID(pParser->cSOSetInUse, iSOID) ;
       pSOIDData = zMapSOIDDataCreateFromData(iSOID, sType, cType, cHomol ) ;
+    }
+
+  /*
+   * Now this is a hack to deal with cases where the source was not specified.
+   * We need a different source name for every different possible style mode
+   * at least. In this case I choose to create a name for every different SO term,
+   * which will accomodate that possibility (and more).
+   */
+  if (!strcmp(sSource, "."))
+    {
+      char *sTemp = NULL ;
+      sTemp = g_strdup_printf("anon_source (%s type)", zmapStyleMode2ShortText(zMapSOIDDataGetStyleMode(pSOIDData))) ;
+      strcpy(sSource, sTemp) ;
+      if (sTemp)
+        g_free(sTemp) ;
     }
 
   /*
@@ -3167,7 +3182,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
       bParseAttributeTarget = zMapAttParseTarget(pAttributeTarget, &gqTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
     }
 
-  /* 
+  /*
   if ((pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)))
     {
       bParseAttributeID = zMapAttParseID(pAttributeID, &gqTargetID) ;
