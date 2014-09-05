@@ -381,7 +381,8 @@ typedef struct _ZMapCanvasDataStruct
 /* Names of config stanzas. */
 #define ZMAP_WINDOW_CONFIG "ZMapWindow"
 
-#define DEFAULT_CURSOR "LEFT_PTR"
+
+/* Default busy cursor. */
 #define BUSY_CURSOR    "WATCH"
 
 
@@ -673,10 +674,10 @@ typedef struct _ZMapWindowStruct
   gboolean xremote_client ;
 
 
-  /* Handle cursor changes showing when zmap is busy. */
+  /* Handle cursor changes when zmap is busy. */
   GdkCursor *normal_cursor ;
-  GdkCursor *busy_cursor ;
   GdkCursor *window_busy_cursor ;
+  GdkCursor *external_cursor ;
   int cursor_busy_count ;
 
 
@@ -1469,14 +1470,28 @@ void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
                                           double *x2_out, double *y2_out);
 
 
-void zmapWindowBusyInternal(ZMapWindow window,  gboolean external_call,
-			    gboolean busy, const char *file, const char *func) ;
+void zmapWindowBusyInternal(ZMapWindow window,
+                            gboolean external_cursor, GdkCursor *cursor,
+			    const char *file, const char *func) ;
+
 #ifdef __GNUC__
-#define zmapWindowBusy(WINDOW, BUSY)         \
-  zmapWindowBusyInternal((WINDOW), FALSE, (BUSY), __FILE__, (char *)__PRETTY_FUNCTION__)
+#define zmapWindowBusy(WINDOW, BUSY)                            \
+  zmapWindowBusyInternal((WINDOW),                              \
+                         FALSE,                                 \
+                         ((BUSY)                                \
+                          ? (WINDOW)->window_busy_cursor        \
+                          : (WINDOW)->normal_cursor),           \
+                         __FILE__,                              \
+                         (char *)__PRETTY_FUNCTION__)                    
 #else
-#define zmapWindowBusy(WINDOW, BUSY)         \
-  zmapWindowBusyInternal((WINDOW),  FALSE, (BUSY), __FILE__, NULL)
+#define zmapWindowBusy(WINDOW, BUSY)                            \
+  zmapWindowBusyInternal((WINDOW),                              \
+                         FALSE,                                 \
+                         ((BUSY)                                \
+                          ? (WINDOW)->window_busy_cursor        \
+                          : (WINDOW)->normal_cursor),           \
+                         __FILE__,                              \
+                         NULL)
 #endif
 
 

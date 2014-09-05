@@ -104,7 +104,7 @@ static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  zmapAppExit(app_context) ;
+  zmapAppDestroy(app_context) ;
 
   return ;
 }

@@ -194,7 +194,6 @@ typedef struct FindStylesStructType
 } FindStylesStruct, *FindStyles ;
 
 
-
 static void getIniData(ZMapView view, char *config_str, GList *sources) ;
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets) ;
 static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark featurequark);
@@ -333,6 +332,11 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
 				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data) ;
 
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data) ;
+
+
+
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -462,7 +466,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   char *view_name ;
   int curr_scr_num, num_screens ;
 
-  /* No callbacks, then no view creation. */
+
   zMapReturnValIfFail((GTK_IS_WIDGET(view_container)), view_window);
   zMapReturnValIfFail((sequence_map->sequence
                        && (sequence_map->start > 0 && sequence_map->start <= sequence_map->end)), view_window) ;
@@ -471,7 +475,8 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
    * in config file and next time they create a view the debugging will go on/off */
   zMapUtilsConfigDebug(sequence_map->config_file) ;
 
-  zMapInitTimer() ; // operates as a reset if already defined
+  zMapInitTimer() ;                                         /* operates as a reset if already
+                                                               defined. */
 
 
   /* I DON'T UNDERSTAND WHY THERE IS A LIST OF SEQUENCES HERE.... */
@@ -636,7 +641,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
        * read styles from file
        * the idea is that we can create a new view with new styles without restarting ZMap
        * but as that involves re-requesting data there's little gain.
-       * Maybe you could have views of two sequences and you wan tot change a style in one ?
+       * Maybe you could have views of two sequences and you want to change a style in one ?
        *
        * each server can have it's own styles file, but was always use the same for each
        * and ACE can provide it's own styles. w/otterlace we use that same styles file
@@ -784,7 +789,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
 		}
 #if 0
-	/* featuresets are absolutley not required as if so we could not autoconfigure
+	/* featuresets are absolutely not required as if so we could not autoconfigure
 	 * a file server without reading the whole file first
 	 * which would require us to read it twice
 	 * NOTE also that some other code assumes that we know what featuresets
@@ -1654,6 +1659,7 @@ char *zMapViewGetLoadStatusStr(ZMapView view,
 
   return load_state_str ;
 }
+
 
 
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
@@ -5275,7 +5281,8 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
           (*(view_cbs_G->remote_request_func))(view_cbs_G->remote_request_func_data,
                                                zmap_view,
                                                ZACP_FEATURES_LOADED, &viewloaded[0],
-                                               localProcessReplyFunc, zmap_view) ;
+                                               localProcessReplyFunc, zmap_view,
+                                               remoteReplyErrHandler, zmap_view) ;
 
           free(emsg);                                           /* yes really free() not g_free()-> see zmapUrlUtils.c */
 
@@ -6664,12 +6671,30 @@ static void destroyLoadFeatures(LoadFeaturesData loaded_features)
 }
 
 
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data)
+{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* UNUSED AT THE MOMENT */
+
+  ZMapView zmap_view = (ZMapView)user_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+
+  return ;
+}
+
 void getFilename(gpointer key, gpointer value, gpointer data)
 {
   GQuark filename_quark = GPOINTER_TO_INT(key) ;
   GQuark *result = (GQuark*)data ;
   *result = filename_quark ;
 }
+
 
 
 /* Get the filename of the default file to use for the Save operation. Returns null if

@@ -42,6 +42,12 @@
 
 
 
+typedef struct ForAllDataStructType
+{
+  ZMapControlForAllCallbackFunc user_func_cb ;
+  void *user_func_data ;
+} ForAllDataStruct, *ForAllData ;
+
 
 static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map) ;
 static void destroyZMap(ZMap zmap) ;
@@ -61,6 +67,9 @@ static void viewKilledCB(ZMapView view, void *app_data, void *view_data) ;
 static void infoPanelLabelsHashCB(gpointer labels_data);
 static void removeView(ZMap zmap, ZMapView view, unsigned long xwid) ;
 
+static void forAllCB(void *data, void *user_data) ;
+
+static void setCursorCB(ZMapView view, void *user_data) ;
 
 /* These variables holding callback routine information are static because they are
  * set just once for the lifetime of the process. */
@@ -131,7 +140,7 @@ void zMapInit(ZMapCallbacks callbacks)
 
 /* Create a new zmap which is blank with no views. Returns NULL on failure.
  * Note how I casually assume that none of this can fail. */
-ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map)
+ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map, GdkCursor *normal_cursor)
 {
   ZMap zmap = NULL ;
 
@@ -143,7 +152,7 @@ ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map)
   zmap = createZMap(app_data, seq_map) ;
 
   /* Make the main/toplevel window for the ZMap. */
-  zmapControlWindowCreate(zmap) ;
+  zmapControlWindowCreate(zmap, normal_cursor) ;
 
   zmap->state = ZMAP_INIT ;
 
@@ -173,6 +182,20 @@ gboolean zMapRaise(ZMap zmap)
 }
 
 
+/* Set cursor on this zmap but also on all child widgets. */
+void zMapSetCursor(ZMap zmap, GdkCursor *cursor)
+{
+
+  zMapGUISetCursor(GTK_WIDGET(zmap->toplevel), cursor) ;
+
+  zMapControlForAllZMapViews(zmap, setCursorCB, cursor) ;
+
+  return ;
+}
+
+
+
+
 gboolean zMapSetSessionColour(ZMap zmap, GdkColor *session_colour)
 {
   gboolean result = FALSE ;
@@ -186,6 +209,19 @@ gboolean zMapSetSessionColour(ZMap zmap, GdkColor *session_colour)
 
   return result ;
 }
+
+
+
+void zMapControlForAllZMapViews(ZMap zmap, ZMapControlForAllCallbackFunc user_func_cb, void *user_func_data)
+{
+  ForAllDataStruct all_data = {user_func_cb, user_func_data} ;
+
+  g_list_foreach(zmap->view_list, forAllCB, &all_data) ;
+
+  return ;
+}
+
+
 
 /* Noddy function to return number of current views. */
 int zMapNumViews(ZMap zmap)
@@ -1336,3 +1372,27 @@ static void removeView(ZMap zmap, ZMapView view, unsigned long xwid)
   return ;
 }
 
+
+
+
+static void forAllCB(void *data, void *user_data)
+{
+  ZMapView view = (ZMapView)data ;
+  ForAllData all_data = (ForAllData)user_data ;
+
+  (all_data->user_func_cb)(view, all_data->user_func_data) ;
+
+  return ;
+}
+
+
+
+
+static void setCursorCB(ZMapView view, void *user_data)
+{
+  GdkCursor *cursor = (GdkCursor *)user_data ;
+ 
+  zMapViewSetCursor(view, cursor) ;
+
+  return ;
+}

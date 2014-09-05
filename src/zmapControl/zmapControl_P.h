@@ -190,12 +190,12 @@ typedef struct
 
 
 /* Functions internal to zmapControl. */
-gboolean   zmapControlWindowCreate     (ZMap zmap) ;
+gboolean zmapControlWindowCreate (ZMap zmap, GdkCursor *normal_cursor) ;
 GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap, ZMapInfoPanelLabels labels) ;
-GtkWidget *zmapControlWindowMakeFrame  (ZMap zmap) ;
-void       zmapControlWindowDestroy    (ZMap zmap) ;
+GtkWidget *zmapControlWindowMakeFrame (ZMap zmap) ;
+void zmapControlWindowDestroy (ZMap zmap) ;
 
 void zmapControlButtonTooltips(ZMap zmap) ;
 void zmapControlInfoPanelTooltips(ZMap zmap, ZMapFeatureDesc feature_desc) ;
@@ -212,10 +212,9 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
 				ZMapControlSplitOrder window_order,
 				char *view_title) ;
 void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **destroyed_views_inout) ;
-
 void zmapControlCloseFull(ZMap zmap, ZMapView view) ;
 
-
+ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg) ;
 ZMapViewWindow zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 void zmapControlRemoveView(ZMap zmap, ZMapView view, GList **destroyed_views_inout) ;
 ZMapViewWindow zmapControlFindViewWindow(ZMap zmap, ZMapView view) ;
@@ -223,7 +222,6 @@ int zmapControlNumViews(ZMap zmap) ;
 
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config);
 void zmapControlShowPreferences(ZMap zmap) ;
-
 
 gboolean zmapControlWindowDoTheZoom(ZMap zmap, double zoom) ;
 void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status) ;

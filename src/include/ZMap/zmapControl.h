@@ -66,9 +66,13 @@ typedef struct _ZMapCallbacksStruct
 } ZMapCallbacksStruct, *ZMapCallbacks ;
 
 
+/* Callback function prototype for zMapControlForAllViews() */
+typedef void (*ZMapControlForAllCallbackFunc)(ZMapView view, void *user_data) ;
+
+
 
 void zMapInit(ZMapCallbacks callbacks) ;
-ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap sequence_map) ;
+ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap sequence_map, GdkCursor *normal_cursor) ;
 int zMapNumViews(ZMap zmap) ;
 gboolean zMapSetSessionColour(ZMap zmap, GdkColor *session_colour) ;
 ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, GError **error) ;
@@ -88,6 +92,8 @@ gpointer zMapControlFindView(ZMap zmap, gpointer view_id) ;
 gboolean zMapRaise(ZMap zmap);
 char *zMapGetZMapID(ZMap zmap) ;
 char *zMapGetZMapStatus(ZMap zmap) ;
+void zMapSetCursor(ZMap zmap, GdkCursor *cursor) ;
+void zMapControlForAllZMapViews(ZMap zmap, ZMapControlForAllCallbackFunc user_func_cb, void *user_func_data) ;
 gboolean zMapCheckIfUnsaved(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
 void zMapDestroy(ZMap zmap, GList **destroyed_views_inout) ;
@@ -95,9 +101,10 @@ void zMapDestroy(ZMap zmap, GList **destroyed_views_inout) ;
 gboolean zMapControlProcessRemoteRequest(ZMap zmap,
 					 char *command_name, char *request, gpointer view_id,
 					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
-
 void zMapAddClient(ZMap zmap, void *client);
 char *zMapControlRemoteReceiveAccepts(ZMap zmap);
+gboolean zMapReset(ZMap zmap) ;
+void zMapDestroy(ZMap zmap, GList **destroyed_views_inout) ;
 
 
 #endif /* !ZMAP_CONTROL_H */

@@ -145,8 +145,12 @@ typedef enum
     ZMAPTIME_STANDARD,					    /* "Thu Sep 30 10:05:27 2004" */
     ZMAPTIME_YMD,					    /* "1997-11-08" */
     ZMAPTIME_LOG,					    /* "2013/06/11 13:18:27.121129" */
+    ZMAPTIME_SEC_MICROSEC,                                  /* "sssss.mmmmmm" (secs and micro secs)  */
     ZMAPTIME_USERFORMAT					    /* Users provides format string. */
   } ZMapTimeFormat ;
+
+#define ZMAPTIME_SEC_MICROSEC_SEPARATOR ","
+
 
 
 /* Gives process termination type. */
@@ -212,8 +216,10 @@ gboolean zMapUtilsConfigDebug(char *config_file) ;
 
 char *zMapMakeUniqueID(char *prefix) ;
 
-guint zMapUtilsGetRawTime(void) ;
+long int zMapUtilsGetRawTime(void) ;
 char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in) ;
+gboolean zMapTimeGetTime(char *time_str_in, ZMapTimeFormat format, char *format_str,
+                         long int *secs_out, long int *microsecs_out) ;
 
 const char *zMapUtilsPtr2Str(void *ptr) ;
 void *zMapUtilsStr2Ptr(char *ptr_str) ;

@@ -73,6 +73,13 @@ typedef struct
 } RequestDataStruct, *RequestData ;
 
 
+typedef struct ForAllDataStructType
+{
+  ZMapManagerForAllCallbackFunc user_func_cb ;
+  void *user_func_data ;
+} ForAllDataStruct, *ForAllData ;
+
+
 
 
 static void addedCB(ZMap zmap, void *cb_data) ;
@@ -103,6 +110,9 @@ static void closeZMap(ZMapManager app, ZMap zmap, gpointer view_id,
       RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 
 static gboolean getSessionColourConfiguration(char *config_file, GdkColor *session_colour) ;
+
+static void forAllCB(void *data, void *user_data) ;
+
 
 
 
@@ -220,14 +230,15 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
   ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
   ZMap zmap = *zmap_inout ;
   ZMapView view = NULL ;
+  ZMapAppContext app_context = (ZMapAppContext)(zmaps->gui_data) ;
   GError *tmp_error = NULL ;
 
-  if (!zmap && !(zmap = zMapCreate((void *)(zmaps->gui_data), sequence_map)))
+  if (!zmap && !(zmap = zMapCreate((void *)(zmaps->gui_data), sequence_map,
+                                   app_context->normal_cursor)))
     zMapLogWarning("%s", "Cannot create zmap.") ;
 
   if (zmap)
     {
-      ZMapAppContext app_context = (ZMapAppContext)(zmaps->gui_data) ;
       ZMapViewWindow view_window ;
 
       if (app_context->session_colour_set)
@@ -442,6 +453,15 @@ gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
   return result ;
 }
 
+
+void zMapManagerForAllZMaps(ZMapManager manager, ZMapManagerForAllCallbackFunc user_func_cb, void *user_func_data)
+{
+  ForAllDataStruct all_data = {user_func_cb, user_func_data} ;
+
+  g_list_foreach(manager->zmap_list, forAllCB, &all_data) ;
+
+  return ;
+}
 
 /* Check if there are unsaved items and if so ask the user whether to save or not. Returns
  * true if we should continue or false if we should cancel. */
@@ -748,14 +768,13 @@ static void closeZMap(ZMapManager manager, ZMap zmap, gpointer view_id,
  * if sequence is NULL a blank zmap is created.
  *  */
 static ZMapManagerAddResult addNewView(ZMapManager zmaps,
-       ZMap zmap_in,
-       ZMapFeatureSequenceMap sequence_map,
-       ZMapView *view_out)
+                                       ZMap zmap_in, ZMapFeatureSequenceMap sequence_map, ZMapView *view_out)
 {
   ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
   ZMap zmap ;
   ZMapView view = NULL ;
   ZMapWindow window = NULL ;
+  ZMapAppContext app_context = (ZMapAppContext)(zmaps->gui_data) ;
 
 
   zmap = zmap_in ;
@@ -763,7 +782,7 @@ static ZMapManagerAddResult addNewView(ZMapManager zmaps,
   if (!zmap)
     {
       /* Not adding to existing zmap so make a new one. */
-      if (!(zmap = zMapCreate((void *)(zmaps->gui_data), sequence_map)))
+      if (!(zmap = zMapCreate((void *)(zmaps->gui_data), sequence_map, app_context->normal_cursor)))
         {
           result = ZMAPMANAGER_ADD_FAIL ;
   
@@ -967,3 +986,12 @@ static gboolean getSessionColourConfiguration(char *config_file, GdkColor *sessi
 }
 
 
+static void forAllCB(void *data, void *user_data)
+{
+  ZMap zmap = (ZMap)data ;
+  ForAllData all_data = (ForAllData)user_data ;
+
+  (all_data->user_func_cb)(zmap, all_data->user_func_data) ;
+
+  return ;
+}

@@ -27,8 +27,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 
 # ZMAP_SRC_DIRS See configure.ac
-
-SUBDIRS = AceConn libpfetch libcurlobject libzmapfoocanvas htslib-develop include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+SUBDIRS = AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
 
 CLEANFILES = $(pkgconfig_DATA)
 
@@ -164,16 +163,20 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libPFetch.a                    \
 	$(top_builddir)/htslib-develop/libhts.a              \
 	$(top_builddir)/AceConn/src/.libs/libAceConn.a       \
+	$(top_builddir)/zeromq/src/.libs/libzmq.a            \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
 	$(GTK_LIBS)			                     \
 	$(LIBCURL) -lexpat                                   \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
-#zmap_LDFLAGS      = /nfs/users/nfs_s/sm23/Work/htslib-develop/libhts.a -lz
 zmap_LDFLAGS      = -lz
-# We need this so as not to have libtool prune out multiple -lZMap so we can resolve our dependency cycle :(
-zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+
+# zeromq is C++ so we need to link with g++, not gcc.
+#zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+#zmap_LINK         = g++ $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+zmap_LINK         = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+
 zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
 # MACOSX_UNIVERSAL_FILE was also in LDFLAGS...
@@ -207,7 +210,7 @@ remotecontrol_LDFLAGS      =
 remotecontrol_LDADD        = $(zmap_LDADD)
 remotecontrol_DEPENDENCIES = $(noinst_LTLIBRARIES)
 remotecontrol_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
-
+remotecontrol_LINK         = $(CXX)  $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
 #
 # OH GOSH ALL THIS TEST STUFF IS CURRENTLY UNUSED AND THEREFORE USELESS.....

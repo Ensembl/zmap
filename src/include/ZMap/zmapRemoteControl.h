@@ -47,11 +47,7 @@
 
 /* Opaque type representing a single peer-peer pair. There must be one of these for each pair
  * of peers that wish to communicate. */
-typedef struct ZMapRemoteControlStructName *ZMapRemoteControl ;
-
-
-
-/* Using the XXX_LIST macros to declare enums means we get lots of enum functions for free (see zmapEnum.h). */
+typedef struct ZMapRemoteControlStructType *ZMapRemoteControl ;
 
 
 
@@ -61,7 +57,7 @@ _(ZMAP_REMOTECONTROL_RC_OK,            , "ok",             "No error.",         
 _(ZMAP_REMOTECONTROL_RC_TIMED_OUT,     , "timed_out",      "Timed out, peer not replying in time.", "") \
 _(ZMAP_REMOTECONTROL_RC_APP_ABORT,     , "app_abort",      "Application has aborted transaction.",  "") \
 _(ZMAP_REMOTECONTROL_RC_OUT_OF_BAND,   , "out_of_band",    "Peer is out of synch.",                 "") \
-_(ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD, , "bad_clipboard",  "Clipboard error.",                      "") \
+_(ZMAP_REMOTECONTROL_RC_BAD_SOCKET,    , "bad_socket",     "Socket error.",                         "") \
 _(ZMAP_REMOTECONTROL_RC_BAD_STATE,     , "bad_state",      "Internal error, bad state detected.",   "")
 
 ZMAP_DEFINE_ENUM(ZMapRemoteControlRCType, ZMAP_REMOTECONTROL_RC_LIST) ;
@@ -84,10 +80,7 @@ typedef void (*ZMapRemoteControlErrorHandlerFunc)(ZMapRemoteControl remote_contr
 						  ZMapRemoteControlRCType error_type, char *err_msg,
 						  void *user_data) ;
 
-/* Apps callback that remote_control should call to allow app to handle timeouts. */
-typedef gboolean (*ZMapRemoteControlTimeoutHandlerFunc)(ZMapRemoteControl remote_control, void *user_data) ;
-
-/* Apps callback that remote_control should call to output/log errors. */
+/* Apps callback that remote_control can call to output/log errors. */
 typedef gboolean (*ZMapRemoteControlErrorReportFunc)(void *user_data, char *err_msg) ;
 
 
@@ -138,17 +131,16 @@ typedef void (*ZMapRemoteControlReplyHandlerFunc)(ZMapRemoteControl remote_contr
  */
 ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
 					  ZMapRemoteControlErrorHandlerFunc error_func, gpointer error_data,
-					  ZMapRemoteControlTimeoutHandlerFunc timeout_func, gpointer timeout_data,
 					  ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data) ;
 
 gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
-				      char *app_str,
+                                      char **app_socket_out,
 				      ZMapRemoteControlRequestHandlerFunc request_handler_func,
 				      gpointer request_handler_func_data,
 				      ZMapRemoteControlReplySentFunc reply_sent_func,
 				      gpointer reply_sent_func_data) ;
 gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
-				   char *send_app_name, char *peer_unique_str,
+                                   char *peer_socket,
 				   ZMapRemoteControlRequestSentFunc req_sent_func,
 				   gpointer req_sent_func_data,
 				   ZMapRemoteControlReplyHandlerFunc reply_handler_func,
@@ -157,14 +149,19 @@ gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
 gboolean zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control) ;
 gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *peer_xml_request) ;
 
-void zMapRemoteControlReset(ZMapRemoteControl remote_control) ;
+
+/* Not too sure about this...this is actually quite complex...better to destroy and recreate. */
+gboolean zMapRemoteControlReset(ZMapRemoteControl remote_control) ;
+
+gboolean zMapRemoteControlHasFailed(ZMapRemoteControl remote_control) ;
+
 gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, ZMapRemoteControlDebugLevelType debug_level) ;
-gboolean zMapRemoteControlSetTimeout(ZMapRemoteControl remote_control, int timeout_ms) ;
+gboolean zMapRemoteControlSetTimeoutList(ZMapRemoteControl remote_control, char *peer_timeout_list) ;
 gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
 				     ZMapRemoteControlErrorReportFunc err_func, gpointer err_data) ;
 gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control) ;
 
-gboolean zMapRemoteControlDestroy(ZMapRemoteControl remote_control) ;
+void zMapRemoteControlDestroy(ZMapRemoteControl remote_control) ;
 
 
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapRemoteControlRCType2ExactStr, ZMapRemoteControlRCType) ;

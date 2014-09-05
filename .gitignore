@@ -1,6 +1,6 @@
 *CMarshal.*
 */build/*
-config.*
+./config.*
 configure
 decomp
 install-sh

@@ -72,6 +72,15 @@ ZMAP_DEFINE_ENUM(RemoteValidateRCType, REMOTE_VALIDATE_RC_LIST) ;
 
 
 
+/* Types used for asking for certain attributes from the message envelope. */
+#define REMOTE_ENVELOPE_ATTR_LIST(_)                                                                     \
+_(REMOTE_ENVELOPE_ATTR_INVALID,    , "invalid",    "Invalid attribute.",                "") \
+_(REMOTE_ENVELOPE_ATTR_COMMAND,    , "command",    "Command attribute of envelope.",    "") \
+_(REMOTE_ENVELOPE_ATTR_REQUEST_ID, , "request_id", "Request id attribute of envelope.", "") \
+_(REMOTE_ENVELOPE_ATTR_TIMESTAMP,  , "timestamp",  "Timestamp attribute of envelope.",  "")
+
+ZMAP_DEFINE_ENUM(RemoteEnvelopeAttrType, REMOTE_ENVELOPE_ATTR_LIST) ;
+
 
 
 GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
@@ -92,16 +101,28 @@ GArray *zMapRemoteCommandAddBody(GArray *request_in_out, char *req_or_reply,
 				 ZMapXMLUtilsEventStack request_body) ;
 char *zMapRemoteCommandStack2XML(GArray *xml_stack, char **error_out) ;
 
+const char *zMapRemoteCommandGetCurrCommand(ZMapRemoteControl remote_control) ;
+
 RemoteValidateRCType zMapRemoteCommandValidateEnvelope(ZMapRemoteControl remote_control,
 						       char *xml_request, char **error_out) ;
 RemoteValidateRCType zMapRemoteCommandValidateRequest(ZMapRemoteControl remote_control,
 						      char *request, char **error_out) ;
-RemoteValidateRCType zMapRemoteCommandValidateReply(ZMapRemoteControl remote_control,
-						    char *original_request, char *reply, char **error_out) ;
+gboolean zMapRemoteCommandValidateReply(ZMapRemoteControl remote_control,
+                                        char *original_request, char *reply, char **error_out) ;
+gboolean zMapRemoteCommandRequestsIdentical(ZMapRemoteControl remote_control,
+                                            char *request_1, char *request_2, char **error_out) ;
 gboolean zMapRemoteCommandRequestIsCommand(char *request, char *command) ;
 char *zMapRemoteCommandRequestGetCommand(char *request) ;
+int zMapRemoteCommandGetPriority(char *request) ;
+char *zMapRemoteCommandRequestGetEnvelopeAttr(char *request, RemoteEnvelopeAttrType attr) ;
 
-const char *zMapRemoteCommandGetCurrCommand(ZMapRemoteControl remote_control) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+char *zMapRemoteCommandRequestGetRequestID(char *request) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
 					     char **command_out,

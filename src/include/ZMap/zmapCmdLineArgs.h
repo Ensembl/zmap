@@ -67,8 +67,15 @@ typedef union
 
 /* Developer or programmer args. */
 #define ZMAPARG_REMOTE_DEBUG   "remote-debug"
+
+/* These will go.... */
 #define ZMAPARG_PEER_NAME      "peer-name"
 #define ZMAPARG_PEER_CLIPBOARD "peer-clipboard"
+
+#define ZMAPARG_PEER_SOCKET    "peer-socket"
+
+
+
 #define ZMAPARG_SERIAL         "serial"
 #define ZMAPARG_SLEEP          "sleep"
 #define ZMAPARG_TIMING         "timing"

@@ -138,6 +138,8 @@ AC_SUBST(ZMAP_DOXY_HTML_FOOTER)
 
 dnl Disable shared libs so foocanvas is bound in to zmap.
 AC_DISABLE_SHARED
+AC_ENABLE_STATIC
+
 
 AC_PROG_LIBTOOL
 AM_INIT_AUTOMAKE
@@ -451,16 +453,27 @@ dotZMap:dotZmap.in
 #
 
 
-
+# Build the aceconn package.
+#
 AC_CONFIG_SUBDIRS([AceConn])
 
 
+# Build the zeromq package, complicated because we need to tell it to build the
+# static library as well as the dynamic. I got this recipe from:
+#         https://github.com/tracebox/tracebox/blob/master/configure.ac
+#
+ac_configure_args_pre="$ac_configure_args"
+ac_configure_args_post="$ac_configure_args --enable-static"
+ac_configure_args="$ac_configure_args_post"
+AC_CONFIG_COMMANDS_PRE([ac_configure_args="$ac_configure_args_pre"])
+AC_CONFIG_COMMANDS_POST([ac_configure_args="$ac_configure_args_post"])
+AC_CONFIG_SUBDIRS([zeromq])
+
+
+
+# Finish up.
+#
 AC_OUTPUT
-
-
-
-
-
 
 echo \
 "---------------------------------------------------------------------
