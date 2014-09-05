@@ -112,7 +112,7 @@ static gboolean compositeFeaturesInsert(ZMapGFF3Parser const pParser, GQuark fea
 /*
  * See comments with function.
  */
-static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
+static gboolean hack_SpecialColumnToSOTerm(const char * const, char * const ) ;
 
 /*
  * These alternatives are in place temporarily until we have
@@ -2334,8 +2334,8 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
   sErrText = NULL ;
   if (g_ascii_strcasecmp(sSequence, ".") == 0)
     sErrText = g_strdup("sSequence cannot be '.'") ;
-  else if (g_ascii_strcasecmp(sSource, ".") == 0)
-    sErrText = g_strdup("sSource cannot be '.'") ;
+  //else if (g_ascii_strcasecmp(sSource, ".") == 0)
+  //  sErrText = g_strdup("sSource cannot be '.'") ;
   else if (g_ascii_strcasecmp(sType, ".") == 0)
     sErrText = g_strdup("sType cannot be '.'") ;
   else if (!zMapFeatureFormatType(pParser->SO_compliant, pParser->default_to_basic, sType, &cType))
@@ -2380,7 +2380,7 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
   /*
    * Deal with hack to source -> SO term mapping
    */
-  hack_SpecialColumnToSOTerm(sSource, &sType ) ;
+  hack_SpecialColumnToSOTerm(sSource, sType ) ;
 
   /*
    * sType must be either an accession number or a valid name from the
@@ -2411,6 +2411,21 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
       cType = zMapSOSetGetStyleModeFromName(pParser->cSOSetInUse, sType ) ;
       cHomol = zMapSOSetGetHomolFromID(pParser->cSOSetInUse, iSOID) ;
       pSOIDData = zMapSOIDDataCreateFromData(iSOID, sType, cType, cHomol ) ;
+    }
+
+  /*
+   * Now this is a hack to deal with cases where the source was not specified.
+   * We need a different source name for every different possible style mode
+   * at least. In this case I choose to create a name for every different SO term,
+   * which will accomodate that possibility (and more).
+   */
+  if (!strcmp(sSource, "."))
+    {
+      char *sTemp = NULL ;
+      sTemp = g_strdup_printf("anon_source (%s type)", zmapStyleMode2ShortText(zMapSOIDDataGetStyleMode(pSOIDData))) ;
+      strcpy(sSource, sTemp) ;
+      if (sTemp)
+        g_free(sTemp) ;
     }
 
   /*
@@ -3167,7 +3182,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
       bParseAttributeTarget = zMapAttParseTarget(pAttributeTarget, &gqTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
     }
 
-  /* 
+  /*
   if ((pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)))
     {
       bParseAttributeID = zMapAttParseID(pAttributeID, &gqTargetID) ;
@@ -3656,7 +3671,7 @@ static gboolean clipFeatureLogic_General(ZMapGFF3Parser  pParser, ZMapGFFFeature
  * for the affected columns.
  *
  */
-static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** const psType )
+static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char * const sType )
 {
   /*
    * List of special source names to be treated by this function.
@@ -3667,26 +3682,26 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
   static const char *sCol06 = "das_ChromSig" ;
   gboolean bResult = FALSE ;
 
-  zMapReturnValIfFail(sSource && *sSource && psType && *psType, bResult ) ;
+  zMapReturnValIfFail(sSource && *sSource && sType, bResult ) ;
 
   if (!strcmp(sSource, sCol01))
     {
-      *psType = "transcript" ;
+      strcpy(sType, "transcript" );
       bResult = TRUE ;
     }
   else if (strstr(sSource, sCol02)) /* several sources start with the string "das_phastCons" */
     {
-      *psType = "das_phastCons" ;
+      strcpy(sType, "das_phastCons") ;
       bResult = TRUE ;
     }
   else if (strstr(sSource, sCol05)) /* several sources start with the string "solexa_coverage" */
     {
-      *psType = "solexa_coverage" ;
+      strcpy(sType, "solexa_coverage") ;
       bResult = TRUE ;
     }
   else if (!strcmp(sSource, sCol06))
     {
-      *psType = "transcript" ;
+      strcpy(sType, "transcript") ;
     }
 
   return bResult ;
