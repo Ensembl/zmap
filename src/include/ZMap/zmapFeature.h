@@ -1063,6 +1063,7 @@ void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int end) ;
 GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark original_id) ;
+GList *zMapFeatureSetGetNamedFeaturesForStrand(ZMapFeatureSet feature_set, GQuark original_id, ZMapStrand strand) ;
 
 ZMapFeatureSet zMapFeatureSetCopy(ZMapFeatureSet feature_set);
 

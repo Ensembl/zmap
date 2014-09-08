@@ -124,6 +124,7 @@ typedef struct
   GQuark original_id ;
   int start, end ;
   GList *feature_list ;
+  ZMapStrand strand ;
 } FindFeaturesRangeStruct, *FindFeaturesRange ;
 
 
@@ -182,6 +183,7 @@ static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any) ;
 
 static void findFeaturesRangeCB(gpointer key, gpointer value, gpointer user_data) ;
 static void findFeaturesNameCB(gpointer key, gpointer value, gpointer user_data) ;
+static void findFeaturesNameStrandCB(gpointer key, gpointer value, gpointer user_data) ;
 
 static ZMapFeatureContextExecuteStatus addEmptySets(GQuark key,
                                                   gpointer data,
@@ -1007,6 +1009,7 @@ GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int
   find_data.start = start ;
   find_data.end = end ;
   find_data.feature_list = NULL ;
+  find_data.strand = ZMAPSTRAND_NONE ;
 
   g_hash_table_foreach(feature_set->features, findFeaturesRangeCB, &find_data) ;
 
@@ -1035,6 +1038,7 @@ GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark origina
 
   find_data.original_id = original_id ;
   find_data.feature_list = NULL ;
+  find_data.strand = ZMAPSTRAND_NONE ;
 
   g_hash_table_foreach(feature_set->features, findFeaturesNameCB, &find_data) ;
 
@@ -1043,13 +1047,43 @@ GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark origina
   return feature_list ;
 }
 
-/* A GHFunc() to add a feature to a list if it within a given range */
+/* A GHFunc() to add a feature to a list if it has the given name */
 static void findFeaturesNameCB(gpointer key, gpointer value, gpointer user_data)
 {
   FindFeaturesRange find_data = (FindFeaturesRange)user_data ;
   ZMapFeature feature = (ZMapFeature)value ;
 
   if (feature->original_id == find_data->original_id)
+    find_data->feature_list = g_list_append(find_data->feature_list, feature) ;
+
+  return ;
+}
+
+
+/* Return a list of all features with the given name and strand */
+GList *zMapFeatureSetGetNamedFeaturesForStrand(ZMapFeatureSet feature_set, GQuark original_id, ZMapStrand strand)
+{
+  GList *feature_list = NULL ;
+  FindFeaturesRangeStruct find_data = {0} ;
+
+  find_data.original_id = original_id ;
+  find_data.feature_list = NULL ;
+  find_data.strand = strand ;
+
+  g_hash_table_foreach(feature_set->features, findFeaturesNameStrandCB, &find_data) ;
+
+  feature_list = find_data.feature_list ;
+
+  return feature_list ;
+}
+
+/* A GHFunc() to add a feature to a list if it has the given name and strand */
+static void findFeaturesNameStrandCB(gpointer key, gpointer value, gpointer user_data)
+{
+  FindFeaturesRange find_data = (FindFeaturesRange)user_data ;
+  ZMapFeature feature = (ZMapFeature)value ;
+
+  if (feature->original_id == find_data->original_id && feature->strand == find_data->strand)
     find_data->feature_list = g_list_append(find_data->feature_list, feature) ;
 
   return ;

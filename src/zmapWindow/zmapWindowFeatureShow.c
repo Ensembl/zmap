@@ -792,9 +792,11 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
       if (show->editable)
         {
           /* When editing a feature, add an entry to allow the user to set the feature_set.
-           * Leave it empty to start with (the current feature set will be the Annotation column
-           * but we don't want users to save it there). */
-          const char *featureset_name = NULL ;
+           * By default it is the Annotation column but note that if the user saves back to 
+           * the annotation column then a new feature is NOT created - rather the temp feature
+           * in the annotation column is overwritten. This allows the user to edit things such
+           * as the CDS or exon coords of the temp feature. */
+          const char *featureset_name = ZMAP_FIXED_STYLE_SCRATCH_NAME ;
 
           tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Set", "Please specify the Feature Set that you would like to save the feature to",
                                                     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
