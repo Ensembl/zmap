@@ -256,17 +256,20 @@ ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set)
 {
   ZMapFeature feature = NULL;
 
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)feature_set;
-
-  GHashTableIter iter;
-  gpointer key, value;
-
-  g_hash_table_iter_init (&iter, feature_any->children);
-
-  /* Should only be one, so just get the first */
-  while (g_hash_table_iter_next (&iter, &key, &value) && !feature)
+  if (feature_set)
     {
-      feature = (ZMapFeature)(value);
+      ZMapFeatureAny feature_any = (ZMapFeatureAny)feature_set;
+
+      GHashTableIter iter;
+      gpointer key, value;
+
+      g_hash_table_iter_init (&iter, feature_any->children);
+
+      /* Should only be one, so just get the first */
+      while (g_hash_table_iter_next (&iter, &key, &value) && !feature)
+        {
+          feature = (ZMapFeature)(value);
+        }
     }
 
   return feature;
@@ -1146,6 +1149,39 @@ static void operationAddFeatureList(EditOperation operation, GList *features)
 }
 
 /*!
+ * \brief Return true if two features are exactly the same, as far as we care for
+ * constructing the scratch feature.
+ */
+static gboolean featuresEqual(ZMapFeature feature1, ZMapFeature feature2)
+{
+  gboolean result = FALSE ;
+
+  if (feature1 && feature2)
+    {
+      if (feature1->mode == feature2->mode &&
+          feature1->strand == feature2->strand &&
+          feature1->x1 == feature2->x1 &&
+          feature1->x2 == feature2->x2)
+        {
+          if (feature1->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+            {
+              result = zMapFeatureTranscriptsEqual(feature1, feature2, NULL) ;
+            }
+          else
+            {
+              /* shouldn't get here because scratch feature is a transcript */
+              zMapWarnIfReached() ;
+              result = TRUE ; 
+            }
+        }
+          
+    }
+
+  return result ;
+}
+
+
+/*!
  * \brief Copy the given feature(s) into the scratch column
  */
 gboolean zmapViewScratchCopyFeatures(ZMapView view,
@@ -1278,12 +1314,21 @@ gboolean zmapViewScratchUndo(ZMapView view)
             {
               while (view->edit_list_start && view->edit_list_start->prev)
                 {
-                  EditOperation prev_operation = (EditOperation)(view->edit_list_end->prev->data) ;
+                  EditOperation prev_operation = (EditOperation)(view->edit_list_start->prev->data) ;
               
-                  if (prev_operation->edit_type == ZMAPEDIT_CLEAR || prev_operation->edit_type == ZMAPEDIT_SAVE)
+                  /* If the previous operaition is a clear then leave the start at the current
+                   * operation (i.e. the one after the clear, which is where the feature
+                   * construction starts). */
+                  if (prev_operation->edit_type == ZMAPEDIT_CLEAR)
                     break ;
 
+                  /* Move the start back to the prev operation */
                   view->edit_list_start = view->edit_list_start->prev ;
+
+                  /* If the operation is a save then stop here (unlike "clear" we want this to be
+                   * the current start operation because the save operation constructs the feature) */
+                  if (prev_operation->edit_type == ZMAPEDIT_SAVE)
+                    break ;
                 }
             }
 
@@ -1370,16 +1415,24 @@ gboolean zmapViewScratchSave(ZMapView view, ZMapFeature feature)
 {
   if (zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION) && feature)
     {
-      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+      /* If the new feature is exactly the same as the existing one then we don't
+       * need to do anything. */
+      ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(view) ;
+      ZMapFeature old_feature = zmapViewScratchGetFeature(feature_set) ;
 
-      /* Now create the save operation */
-      EditOperation operation = g_new0(EditOperationStruct, 1);
+      if (!featuresEqual(old_feature, feature))
+        {
+          view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+
+          /* Now create the save operation */
+          EditOperation operation = g_new0(EditOperationStruct, 1);
       
-      operation->edit_type = ZMAPEDIT_SAVE ;
-      operation->src_feature = feature ;
+          operation->edit_type = ZMAPEDIT_SAVE ;
+          operation->src_feature = feature ;
 
-      /* Add this operation to the list and recreate the scratch feature. */
-      scratchAddOperation(view, operation) ;
+          /* Add this operation to the list and recreate the scratch feature. */
+          scratchAddOperation(view, operation) ;
+        }
     }
 
   return TRUE;

@@ -1289,6 +1289,7 @@ gboolean zMapFeatureTranscriptMergeIntron(ZMapFeature feature, Coord x1, Coord x
 gboolean zMapFeatureTranscriptMergeExon(ZMapFeature feature, Coord x1, Coord x2);
 gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript, const int x, ZMapBoundaryType *boundary_inout, GError **error);
 gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature feature, Coord coord);
+gboolean zMapFeatureTranscriptsEqual(ZMapFeature feature1, ZMapFeature feature2, GError **error) ;
 
 /* ============================================================== for teh === */
 /* functions in zmapFeatureFormatInput.c */

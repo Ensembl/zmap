@@ -1035,6 +1035,51 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
 }
 
 
+/*!
+ * \brief Determine if two transcripts are equal i.e. have the same exons and cds
+ *
+ * \return TRUE if equal, FALSE if not
+ */
+gboolean zMapFeatureTranscriptsEqual(ZMapFeature feature1, ZMapFeature feature2, GError **error)
+{
+  gboolean result = FALSE ;
+  GError *tmp_error = NULL ;
+
+  if (!feature1 || !feature2)
+    g_set_error(&tmp_error, g_quark_from_string("ZMap"), 99, "Feature is null");
+
+  if (feature1->mode != ZMAPSTYLE_MODE_TRANSCRIPT || feature2->mode != ZMAPSTYLE_MODE_TRANSCRIPT)
+    g_set_error(&tmp_error, g_quark_from_string("ZMap"), 99, "Feature is not a transcript");
+
+  if (!tmp_error &&
+      feature1->feature.transcript.flags.cds == feature2->feature.transcript.flags.cds &&
+      feature1->feature.transcript.cds_start == feature2->feature.transcript.cds_start &&
+      feature1->feature.transcript.cds_end == feature2->feature.transcript.cds_end)
+    {
+      /* Loop through exons and check start/end */
+      GArray *exons1 = feature1->feature.transcript.exons;
+      GArray *exons2 = feature2->feature.transcript.exons;
+
+      if (exons1->len == exons2->len)
+        {
+          /* now assume true but set result to false if we find an exon mismatch */
+          result = TRUE ;
+          int i = 0 ;
+
+          for ( ; result && i < exons1->len; ++i)
+            {
+              ZMapSpan span1 = &(g_array_index(exons1, ZMapSpanStruct, i));
+              ZMapSpan span2 = &(g_array_index(exons2, ZMapSpanStruct, i));
+                          
+              if (span1->x1 != span2->x1 || span1->x2 != span2->x2)
+                result = FALSE ;
+            }
+        }
+    }
+
+  return result ;
+}
+
 
 
 /*
