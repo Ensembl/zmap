@@ -155,7 +155,7 @@ gboolean zMapGFFFeatureDataSet(ZMapGFFFeatureData pFeatureData,
                                const char* const sAttributes,
                                ZMapGFFAttribute *pAttributes,
                                unsigned int nAttributes,
-                               const ZMapSOIDData const pSOID
+                               const ZMapSOIDData pSOID
                                )
 {
   gboolean bResult = FALSE ;

@@ -3343,7 +3343,7 @@ static ZMapFeature makeFeatureAssemblyPath(ZMapGFFFeatureData pFeatureData,
  * Default feature creation function.
  */
 static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData pFeatureData,
-  const ZMapFeatureSet const pFeatureSet, char **psError)
+  const ZMapFeatureSet pFeatureSet, char **psError)
 {
   char *sName = NULL,
     *sFeatureName = NULL,
