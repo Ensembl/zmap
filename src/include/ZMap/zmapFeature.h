@@ -1063,6 +1063,7 @@ void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int end) ;
 GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark original_id) ;
+GList *zMapFeatureSetGetNamedFeaturesForStrand(ZMapFeatureSet feature_set, GQuark original_id, ZMapStrand strand) ;
 
 ZMapFeatureSet zMapFeatureSetCopy(ZMapFeatureSet feature_set);
 
@@ -1288,6 +1289,7 @@ gboolean zMapFeatureTranscriptMergeIntron(ZMapFeature feature, Coord x1, Coord x
 gboolean zMapFeatureTranscriptMergeExon(ZMapFeature feature, Coord x1, Coord x2);
 gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript, const int x, ZMapBoundaryType *boundary_inout, GError **error);
 gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature feature, Coord coord);
+gboolean zMapFeatureTranscriptsEqual(ZMapFeature feature1, ZMapFeature feature2, GError **error) ;
 
 /* ============================================================== for teh === */
 /* functions in zmapFeatureFormatInput.c */
