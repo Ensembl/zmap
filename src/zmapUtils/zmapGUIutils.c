@@ -1399,7 +1399,6 @@ gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *ms
 }
 
 
-
 /*!
  * Show a message where user must enter some text, caller should use
  * g_free() to release text when finished with.
@@ -1423,6 +1422,26 @@ GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char 
                             GTK_STOCK_CLOSE, NULL, NULL, msg_type, GTK_JUSTIFY_CENTER, &user_data))
       == GTK_RESPONSE_OK)
     *text_out = user_data.data.text ;
+
+  return result ;
+}
+
+
+/*!
+ * Show a message where user must choose Yes/No/Cancel. 
+ *
+ * See zMapGUIMsgFull() for complete documentation of parameters.
+ *
+ * @return  char *, users text or NULL if no text.
+ */
+GtkResponseType zMapGUIMsgGetYesNoCancel(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
+{
+  GtkResponseType result = GTK_RESPONSE_CANCEL ;
+  gboolean modal = TRUE ;
+
+  result = messageFull(parent, "Save changes?", msg, modal, 0,
+                       GTK_STOCK_YES, GTK_STOCK_CANCEL, GTK_STOCK_NO,
+                       msg_type, GTK_JUSTIFY_CENTER, NULL) ;
 
   return result ;
 }

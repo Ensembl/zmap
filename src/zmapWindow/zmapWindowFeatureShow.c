@@ -2611,8 +2611,12 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
   if (ok)
     {
       ZMapWindowMergeNewFeatureStruct merge = {feature, feature_set, NULL} ;
-      window->caller_cbs->merge_new_feature(window, window->app_data, &merge) ;
 
+      ok = window->caller_cbs->merge_new_feature(window, window->app_data, &merge) ;
+    }
+
+  if (ok)
+    {
       /* The scratch feature has been saved. However, we have now created a new "real" feature 
        * which is unsaved. */
       window->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
