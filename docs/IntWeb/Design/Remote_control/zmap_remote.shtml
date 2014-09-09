@@ -191,12 +191,6 @@ exposing new functionality.
 </blockquote>
 </p>
 
-<p>It would be helpful to have read the preface of
-the <a href="http://zguide.zeromq.org/page:all">ZeroMQ Guide</a> and the
-first few sections of chapter 1, up to and
-including <em><a href="http://zguide.zeromq.org/page:all#Ask-and-Ye-Shall-Receive">Ask
-and Ye Shall Receive</a></em>.</p>
-
 <a name="zmq_socket"></a>
 <p>The ZeroMQ API uses ZeroMQ sockets, which are not the same as
 traditional Unix or TCP sockets. To avoid confusion, henceforth the
@@ -523,31 +517,6 @@ serialisation.</p>
 
 <p>See <a href="#references">References section</a> for further ZeroMQ information.</p>
 
-
-
-
-NEW FORMAT...YIKES...MANY CHANGES....
-<zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381">
-  <request command="feature_loading_complete" view_id="0x8567f38">
-    <featureset names="DNA" start="881371" end="1468734"/>
-    <status value="1" features_loaded="1">
-      <message>1&#32;features&#32;loaded      </message>
-    </status>
-    <exit_code value="0"/>
-    <stderr value=""/>
-  </request>
-</zmap>
-
-
-<zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592">
- <reply command="feature_loading_complete" return_code="ok">
- <message>
- got features loaded...thanks !
- </message>
- </reply>
- </zmap>'
-
-&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
 
 
 
