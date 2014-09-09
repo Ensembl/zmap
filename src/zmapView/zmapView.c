@@ -215,7 +215,7 @@ static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *w
 static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void commandCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_data, void *window_data) ;
-static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window_data) ;
+static gboolean mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data);
 static void setZoomStatus(gpointer data, gpointer user_data);
 static void splitMagic(gpointer data, gpointer user_data);
@@ -5133,19 +5133,17 @@ static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_d
 }
 
 
-static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window_data)
+static gboolean mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window_data)
 {
+  gboolean result = TRUE ;
+
+  GtkResponseType response = GTK_RESPONSE_CANCEL ;
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
   ZMapWindowMergeNewFeature merge = (ZMapWindowMergeNewFeature)window_data ;
   ZMapView view = zMapViewGetView(view_window) ;
-  gboolean ok = TRUE ;
   GQuark annotation_column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
 
-  if (merge->feature_set->unique_id == annotation_column_id)
-    {
-      zmapViewScratchSave(view, merge->feature) ;
-    }
-  else
+  if (merge->feature_set->unique_id != annotation_column_id)
     {
       /* If the feature already exists in the feature set ask if we should overwrite it. If
        * so, we'll delete the old feature before creating the new one. We want to check if a
@@ -5167,28 +5165,48 @@ static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window
                                           zMapFeatureStrand2Str(merge->feature->strand),
                                           g_quark_to_string(merge->feature_set->original_id)) ;
 
-              ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, msg) ;
+              response = zMapGUIMsgGetYesNoCancel(NULL, ZMAP_MSG_WARNING, msg) ;
               g_free(msg) ;
 
-              GList *feature_list = NULL ;
-              ZMapFeatureContext context_copy = zmapViewCopyContextAll(view->features, (ZMapFeature)existing_feature, merge->feature_set, &feature_list, NULL) ;
+              /* The response is OK for Yes, Close for No or Cancel for Cancel */
+              if (response == GTK_RESPONSE_OK)
+                {
+                  /* OK means Yes, overwrite the existing feature, so delete it first */
+                  GList *feature_list = NULL ;
+                  ZMapFeatureContext context_copy = zmapViewCopyContextAll(view->features, (ZMapFeature)existing_feature, merge->feature_set, &feature_list, NULL) ;
 
-              if (context_copy && feature_list)
-                zmapViewEraseFeatures(view, context_copy, &feature_list) ;
+                  if (context_copy && feature_list)
+                    zmapViewEraseFeatures(view, context_copy, &feature_list) ;
 
-              if (context_copy)
-                zMapFeatureContextDestroy(context_copy, TRUE) ;
+                  if (context_copy)
+                    zMapFeatureContextDestroy(context_copy, TRUE) ;
+                }
+              else if (response == GTK_RESPONSE_CANCEL)
+                {
+                  /* Cancel: don't save at all */
+                  result = FALSE ;
+                }
             }
           else if (g_list_length(existing_features) > 1)
             {
               /*! \todo More than one feature that we could overwrite: pop up dialog listing them and
-               * asking which (if any) the user wants to overwrite. */
-          
+               * asking which (if any) the user wants to overwrite. Not sure it's worth doing
+               * this so just create a new feature for now. */
             }
         }
     }
 
-  zmapViewMergeNewFeature(view, merge->feature, merge->feature_set) ;
+  if (result)
+    {
+      /* Save the new feature to the annotation column (so the temp feature is updated with the
+       * same info as the new feature we've created)  */
+      zmapViewScratchSave(view, merge->feature) ;
+
+      /* Now create the new feature */
+      zmapViewMergeNewFeature(view, merge->feature, merge->feature_set) ;
+    }
+
+  return result ;
 }
 
 
