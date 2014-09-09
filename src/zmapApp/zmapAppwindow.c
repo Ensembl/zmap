@@ -694,7 +694,11 @@ void quitReqCB(void *app_data, void *zmap_data_unused)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_data ;
 
-  signalAppDestroy(app_context) ;
+  /* Check if user has unsaved changes, gives them a chance to bomb out... */
+  if (zMapManagerCheckIfUnsaved(app_context->zmap_manager))
+    signalAppDestroy(app_context) ;
+  else
+    zMapLogMessage("%s", "Unsaved changes so cancelling exit." ) ;
 
   return ;
 }
@@ -734,11 +738,7 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 
   app_context->app_widg = NULL ;
 
-  /* Check if user has unsaved changes, gives them a chance to bomb out... */
-  if (zMapManagerCheckIfUnsaved(app_context->zmap_manager))
-    topLevelDestroy(app_context) ;
-  else
-    zMapWarning("%s", "Unsaved changes so cancelling exit." ) ;
+  topLevelDestroy(app_context) ;
 
   return ;
 }
