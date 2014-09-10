@@ -2657,7 +2657,8 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
   unsigned int iSOID = 0,
     nAttributes = 0 ;
   int iStart = 0,
-    iEnd = 0 ;
+    iEnd = 0,
+    iStartNotFound = 0 ;
   char * sSOType = NULL,
     *sFeatureName = NULL,
     *sFeatureNameID = NULL,
@@ -2674,7 +2675,9 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
     bIsIntron = FALSE,
     bIsCDS = FALSE,
     bIsComponent = FALSE,
-    bWithinParent = FALSE ;
+    bWithinParent = FALSE,
+    bStartNotFound = FALSE,
+    bEndNotFound = FALSE ;
   GQuark gqThisID = 0 , gqLocusID = 0, gqThisUniqueID = 0 ;
   ZMapFeature pFeature = NULL ;
   ZMapSOIDData pSOIDData = NULL ;
@@ -2682,7 +2685,8 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
   ZMapGFFAttribute *pAttributes = NULL,
     pAttributeParent = NULL,
     pAttributeID = NULL,
-    pAttributeLocus = NULL ;  ;
+    pAttributeLocus = NULL,
+    pAttribute = NULL ;
   ZMapSpanStruct cSpanItem = {0},
     *pSpanItem = NULL ;
   ZMapStrand cStrand = ZMAPSTRAND_NONE ;
@@ -2857,8 +2861,16 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
           else if (bIsCDS)
             {
               /*
-               * Should we also include start_not_found, end_not_found if present?
+               * CDS data; also include start_not_found and end_not_found.
                */
+              if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_start_not_found)))
+                {
+                  bStartNotFound = zMapAttParseCDSStartNotFound(pAttribute, &iStartNotFound) ;
+                }
+              if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_end_not_found)))
+                {
+                  bEndNotFound = zMapAttParseCDSEndNotFound(pAttribute) ;
+                }
               bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd, cPhase) ;
             }
         }
