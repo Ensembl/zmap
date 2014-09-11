@@ -2871,7 +2871,8 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
                 {
                   bEndNotFound = zMapAttParseCDSEndNotFound(pAttribute) ;
                 }
-              bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd, cPhase) ;
+              bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd, cPhase,
+                                                              bStartNotFound, bEndNotFound, iStartNotFound) ;
             }
         }
 

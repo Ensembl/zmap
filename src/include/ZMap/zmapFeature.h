@@ -975,7 +975,8 @@ gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name) ;
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
 gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature) ;
 gboolean zMapFeatureTranscriptInit(ZMapFeature feature) ;
-gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase) ;
+gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase,
+                                            gboolean, gboolean, int) ;
 gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature, gboolean cds, Coord cds_start, Coord cds_end) ;
 gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest_feature);
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
