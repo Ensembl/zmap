@@ -237,6 +237,7 @@ static void fillHashTable(GHashTable *acc2SO)
       {SO_ACC_POLYA_SITE, "polyA_site"},
       {SO_ACC_SEQ_ALT, "sequence_alteration"},
       {SO_ACC_SNP, "SNP"},
+      {SO_ACC_SNV, "SNV"},
       {SO_ACC_MUTATION, "sequence_variant_obs"},
       {SO_ACC_SUBSTITUTION, "substitution"},
       {SO_ACC_TRANSCRIPT, "transcript"},

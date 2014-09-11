@@ -22,20 +22,15 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapWindow_P.h
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
@@ -43,17 +38,22 @@
 #include <zmapWindowContainers.h>
 
 
-typedef struct
+
+typedef struct OrderColumnsDataStructType
 {
   ZMapWindow window;            /* The window */
 
   ZMapStrand strand;            /* which strand group we're sorting...
                                  * direction of window->feature_set_names */
-//  GList *names_list;
+  //  GList *names_list;
   GHashTable *names_hash;      // featureset unique id -> position
+
   int three_frame_position;
+
   int n_names;
 } OrderColumnsDataStruct, *OrderColumnsData;
+
+
 
 static void orderPositionColumns(ZMapWindow window);
 static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
@@ -62,9 +62,20 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
 static gboolean isFrameSensitive(gconstpointer col_data);
 //static int columnFSNListPosition(gconstpointer col_data, GList *feature_set_names);
 
+static void printCB(gpointer data, gpointer user_data) ;
 
 
-static gboolean order_debug_G = FALSE;
+/* 
+ *                Globals
+ */
+
+static gboolean order_debug_G = TRUE ;
+
+
+
+/* 
+ *                Package routines
+ */
 
 
 /* void zmapWindowColOrderColumns(ZMapWindow window)
@@ -78,7 +89,11 @@ void zmapWindowColOrderColumns(ZMapWindow window)
 }
 
 
-/* INTERNALS */
+
+
+/* 
+ *               Internal routines
+ */
 
 static void orderPositionColumns(ZMapWindow window)
 {
@@ -93,28 +108,30 @@ static void orderPositionColumns(ZMapWindow window)
   if(order_debug_G)
     printf("%s: starting column ordering\n", __PRETTY_FUNCTION__);
 
-      // make a hash table of positions for easy lookup
+  // make a hash table of positions for easy lookup
   order_data.names_hash = g_hash_table_new(NULL,NULL);
   threeframe = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME);
 
-  for(names = window->feature_set_names,i = 1;names;names = names->next,i++)  // start at 1 to let us catch 0 == not found
-  {
+  // start at 1 to let us catch 0 == not found
+  for(names = window->feature_set_names,i = 1;names;names = names->next,i++)
+    {
       GQuark id = zMapFeatureSetCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(names->data)));
 
       g_hash_table_insert(order_data.names_hash,GUINT_TO_POINTER(id), GUINT_TO_POINTER(i));
       if(id == threeframe)
-            order_data.three_frame_position = i;
+        order_data.three_frame_position = i;
 
       if(order_debug_G)
-            printf("WFSN %s = %d\n",g_quark_to_string(GPOINTER_TO_UINT(names->data)),i);
-  }
+        printf("WFSN %s = %d\n",g_quark_to_string(GPOINTER_TO_UINT(names->data)),i);
+    }
+
   // empty columns to the end as we can't find them
   g_hash_table_insert(order_data.names_hash,GUINT_TO_POINTER(0), GUINT_TO_POINTER(i));
   order_data.n_names = i;
 
 
   if(!order_data.three_frame_position)
-      order_data.three_frame_position = i;           // off the end
+    order_data.three_frame_position = i;           // off the end
 
 
   zmapWindowContainerUtilsExecuteFull(window->feature_root_group,
@@ -128,11 +145,12 @@ static void orderPositionColumns(ZMapWindow window)
 
   g_hash_table_destroy(order_data.names_hash);
 
-  if(order_debug_G)
-    printf("%s: columns should now be in order\n", __PRETTY_FUNCTION__);
+  if (order_debug_G)
+    {
+      printf("%s: columns should now be in order\n", __PRETTY_FUNCTION__);
+    }
 
   return ;
-
 }
 
 static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
@@ -147,42 +165,52 @@ static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *
     {
       /* Get Features */
       container_features = zmapWindowContainerGetFeatures(container);
+
       /* Cast to FooCanvasGroup */
       features_group = (FooCanvasGroup *) container_features;
 
-        zMapWindowContainerGroupSortByLayer((FooCanvasGroup *) container_features);
+      zMapWindowContainerGroupSortByLayer((FooCanvasGroup *) container_features);
 
 #if 1
-        /* hack: background appears at the front of the list and we don't implement overlay on block
-           so trim the front, sort and put it back together
-         */
+      /* hack: background appears at the front of the list and we don't implement overlay on block
+         so trim the front, sort and put it back together
+      */
+      {
+        GList *back, *feat;
+
+        back = feat = features_group->item_list;
+        while(feat && !ZMAP_IS_CONTAINER_GROUP(feat->data))
           {
-            GList *back, *feat;
+            feat = feat->next;
+          }
 
-            back = feat = features_group->item_list;
-            while(feat && !ZMAP_IS_CONTAINER_GROUP(feat->data))
-              {
-                feat = feat->next;
-              }
+        if(back != feat && feat)
+          {
+            feat->prev->next = NULL;
+            feat->prev = NULL;
+          }
+        else
+          {
+            back = NULL;
+          }
 
-            if(back != feat && feat)
-              {
-                feat->prev->next = NULL;
-                feat->prev = NULL;
-              }
-            else
-              {
-                back = NULL;
-              }
+        feat = g_list_sort_with_data(feat, qsortColumnsCB, order_data) ;
 
-            feat = g_list_sort_with_data(feat, qsortColumnsCB, order_data);
+        if (order_debug_G)
+          {
+            printf("order of columns:\n") ;
 
-            features_group->item_list = feat;;
-            if(back)
-              features_group->item_list = g_list_concat(back,feat);
-        }
+            g_list_foreach(feat, printCB, NULL) ;
+          }
+
+
+        features_group->item_list = feat ;
+
+        if (back)
+          features_group->item_list = g_list_concat(back, feat) ;
+      }
 #else
-        features_group->item_list = g_list_sort_with_data(features_group->item_list, qsortColumnsCB, order_data);
+      features_group->item_list = g_list_sort_with_data(features_group->item_list, qsortColumnsCB, order_data);
 #endif
 
 
@@ -220,7 +248,7 @@ static GQuark columnFSNid(gconstpointer col_data)
   ZMapFeatureAny feature_any;
 
   if((feature_any = zmapWindowItemGetFeatureAny(col_group)))
-      id = feature_any->unique_id;
+    id = feature_any->unique_id;
 #else
   ZMapWindowContainerFeatureSet container  = (ZMapWindowContainerFeatureSet) col_data;
 
@@ -231,30 +259,38 @@ static GQuark columnFSNid(gconstpointer col_data)
 }
 
 
-/*
+
+/* Sort so reverse strand columns come first and then forward strand cols, within
+ * cols the order is given by that specified in the config file but note that
+ * for reverse strand the order is reversed so that cols are a mirror image of
+ * forward strand.
+ * 
+ * 
  * -1 if a is before b
  * +1 if a is after  b
  *  0 if equal
  */
 static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user_data)
 {
-  OrderColumnsData order_data = (OrderColumnsData)user_data;
-  ZMapFrame frame_a, frame_b;
-  ZMapStrand strand_a, strand_b;
-  int pos_a, pos_b;
-  gboolean sens_a, sens_b;
-  gint order = 0;
-  GQuark idA,idB;
+  gint order = 0 ;
+  OrderColumnsData order_data = (OrderColumnsData)user_data ;
+  ZMapFrame frame_a, frame_b ;
+  ZMapStrand strand_a, strand_b ;
+  int pos_a, pos_b ;
+  gboolean sens_a, sens_b ;
+  GQuark idA, idB ;
 
   if(colA == colB)
-    return order;
+    return order ;
 
-  strand_a = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet) colA);
-  strand_b = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet) colB);
+  strand_a = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet)colA) ;
+  strand_b = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet)colB) ;
+
   if(strand_a < strand_b)/* these are right to left */
-  return(1);
+    return(1) ;
+
   if(strand_a > strand_b)/* these are right to left */
-  return(-1);
+    return(-1) ;
 
   idA = columnFSNid(colA);
   idB = columnFSNid(colB);
@@ -270,27 +306,27 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
       pos_a = idA;
       pos_b = idB;
     }
-    // else put unknown columns at the end
+  // else put unknown columns at the end
   else if(!pos_a)
-      pos_a = order_data->n_names + 1;
+    pos_a = order_data->n_names + 1;
   else if(!pos_b)
-      pos_b = order_data->n_names + 1;
+    pos_b = order_data->n_names + 1;
 
-  if(order_debug_G)
+  if (order_debug_G)
     printf("compare %s/%d=%d %s/%d=%d", g_quark_to_string(idA),(int) sens_a,pos_a, g_quark_to_string(idB),(int) sens_b, pos_b);
 
 
-  if(sens_a && sens_b)
+  if (sens_a && sens_b)
     {
       /* Both are frame sensitive */
       frame_a = zmapWindowContainerFeatureSetGetFrame((ZMapWindowContainerFeatureSet) colA);
       frame_b = zmapWindowContainerFeatureSetGetFrame((ZMapWindowContainerFeatureSet) colB);
     }
 
-  if(sens_a && sens_b)
+  if (sens_a && sens_b)
     {
       /* If frames are equal rely on position */
-      if(frame_a == frame_b)
+      if (frame_a == frame_b)
         {
           if(pos_a > pos_b)
             order = 1;
@@ -311,19 +347,19 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
         }
     }
   else
-   {
-      if(sens_a)
-      {
-        /* only a is frame sensitive. Does b come before or after the 3 Frame section */
-        pos_a = order_data->three_frame_position;
-      }
+    {
+      if (sens_a)
+        {
+          /* only a is frame sensitive. Does b come before or after the 3 Frame section */
+          pos_a = order_data->three_frame_position;
+        }
       else if(sens_b)
-      {
-        /* only b is frame sensitive. Does a come before or after the 3 Frame section */
-        pos_b = order_data->three_frame_position;
-      }
+        {
+          /* only b is frame sensitive. Does a come before or after the 3 Frame section */
+          pos_b = order_data->three_frame_position;
+        }
 
-      if(pos_a > pos_b)
+      if (pos_a > pos_b)
         order = 1;
       else if(pos_a < pos_b)
         order = -1;
@@ -331,8 +367,38 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
         order = 0;
     }
 
+  /* reverse strand needs to be reverse order so cols are mirror image of forward strand. */
+  if (strand_a == strand_b && strand_a == ZMAPSTRAND_REVERSE)
+    {
+      if (order == 1)
+        order = -1 ;
+      else if (order == -1)
+        order = 1 ;
+    }
+
+
   if(order_debug_G)
     printf("order=  %d\n", order);
 
   return order;
+}
+
+
+
+
+
+static void printCB(gpointer data, gpointer user_data)
+{
+  ZMapWindowContainerFeatureSet featureset = (ZMapWindowContainerFeatureSet)data ;
+  char *col_name ;
+  ZMapStrand strand ;
+
+  col_name = zmapWindowContainerFeaturesetGetColumnName(featureset) ;
+  strand = zmapWindowContainerFeatureSetGetStrand(featureset) ;
+
+  printf("col strand/name: %c %s\n",
+         (strand == ZMAPSTRAND_REVERSE ? '-' : '+'),
+         col_name) ;
+
+  return ;
 }

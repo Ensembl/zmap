@@ -826,12 +826,12 @@ gboolean zMapAttParseAlign(ZMapGFFAttribute pAttribute, int * const piStart, int
  * Parse the "start_not_found" attribute. We are just after an integer value; but it must be
  * within a certain numerical range.
  */
-gboolean zMapAttParseCDSStartNotFound(ZMapGFFAttribute pAttribute, gboolean * const pbOut, int * const piOut)
+gboolean zMapAttParseCDSStartNotFound(ZMapGFFAttribute pAttribute, int * const piOut)
 {
   static const char *sMyName = "zMapAttParseCDSStartNotFound()" ;
   static const unsigned int iExpectedFields = 1;
   static const char *sFormat = "%d %*s" ;
-  int iTemp ;
+  int iTemp = 0 ;
   gboolean bResult = FALSE ;
   if (!pAttribute )
     return bResult ;
@@ -846,7 +846,6 @@ gboolean zMapAttParseCDSStartNotFound(ZMapGFFAttribute pAttribute, gboolean * co
     {
       if (iTemp >= 1 && iTemp <= 3)
         {
-          *pbOut = TRUE ;
           *piOut = iTemp ;
           bResult = TRUE ;
         }
@@ -859,7 +858,7 @@ gboolean zMapAttParseCDSStartNotFound(ZMapGFFAttribute pAttribute, gboolean * co
  * Parse the "end_not_found" attribute. All we have to do here is check that the type of the attribute
  * is correct.
  */
-gboolean zMapAttParseCDSEndNotFound(ZMapGFFAttribute pAttribute, gboolean * const pbOut)
+gboolean zMapAttParseCDSEndNotFound(ZMapGFFAttribute pAttribute)
 {
   static const char *sMyName = "zMapAttParseCDSEndNotFound()" ;
   gboolean bResult = FALSE ;
@@ -871,7 +870,7 @@ gboolean zMapAttParseCDSEndNotFound(ZMapGFFAttribute pAttribute, gboolean * cons
       return bResult ;
     }
 
-  *pbOut = bResult = TRUE ;
+  bResult = TRUE ;
 
   return bResult ;
 }

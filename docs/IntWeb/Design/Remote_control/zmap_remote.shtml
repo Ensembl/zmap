@@ -36,14 +36,17 @@ legend{ font-weight: bold }
 <h1 align="center">ZMap Remote Control Interface</h1>
 
 
-<h2>Contents</h2>
+<h2>Main Contents</h2>
 
 <ul>
   <li><a href="#protocol"><b>The Request/Reply Transport Protocol</b></a></li>
   <li><a href="#request_reply_format"><b>The Request/Reply Message Format</b></a></li>
-  <li><a href="#commands"><b>ZMap Command Interface</b></a></li>
+  <li><a href="#commands"><b>The Remote Command Interface</b></a></li>
   <li><a href="#c_interface"><b>C Programming Interface</b></a></li>
-  <li><a href="#zmap_xremote"><b>Remote Control in ZMap</b></a></li>
+  <li><a href="#zmap_xremote"><b>Implementation of Remote Control in ZMap</b></a></li>
+  <li><a href="#design"><b>Design Internals of the Remote Control C code</b></a></li>
+  <li><a href="#appendices"><b>Appendices</b></a></li>
+  <li><a href="#references"><b>References</b></a></li>
 </ul>
 
 
@@ -73,7 +76,7 @@ number of operations increases it is likely that there will need to be some
 rationalisation and reordering.</p>
 
 
-<p>The document is organised into the following sections:</p>
+<p>The document is organised into the following major sections:</p>
 
 <ul>
   <li><a href="#protocol"><b>The Request/Reply Transport Protocol:</b></a>
@@ -86,6 +89,12 @@ rationalisation and reordering.</p>
  <li><a href="#c_interface"><b>C Programming Interface:</b></a>
      describes how to use the ZMapRemoteControl and ZMapRemoteCommand functions
      that form the C interface for the ZMapRemote package.</li>
+ <li><a href="#Code_design"><b>Internal Code Design:</b></a>
+     describes how the Remote Control package was coded and something about the design
+     decisions made.</li>
+ <li><a href="#appendices"><b>Appendices:</b></a>
+     The appendices cover material such as extensions to the protocol that were
+     deemed as possible but unnecessary at this stage, and other matters.</li>
 </ul>
 
 
@@ -98,7 +107,25 @@ has an introduction and references.</p>
 <a name="protocol"></a>
 <h2>The Request/Reply Transport Protocol</h2>
 
+<h3>Section Contents</h3>
 
+<ul>
+  <li><a href="#overview"><b>Overview</b></a></li>
+  <li><a href="#zeromq"><b>ZeroMQ Introduction</b></a></li>
+  <li><a href="#protocol_zmq"><b>The Request/Reply Transport Protocol using ZeroMQ</b></a></li>
+  <li><a href="#problems"><b>Bootstrapping, Collisions, Synchronisation and Hanging</b><a></li>
+  <li><a href="#collisions"><b>Collision Protocol</b></a></li>
+  <li><a href="#timeouts"><b>Timeout Handling</b></a></li>
+  <li><a href="#state"><b>State</b></a></li>
+  <li><a href="#header"><b>Message Header</b></a></li>
+  <li><a href="#references"><b>ZeroMQ References</b></a></li>
+  <li><a href="#otterlace_zmap">Appendix: Otterlace &amp; ZMap</a></li>
+  <li><a href="#collisions_abort">Appendix: Collision Protocol with abort</a></li>
+</ul>
+
+
+
+<a name="overview"></a>
 <h3>Overview</h3>
 
 <p>This protocol essentially corresponds to the "Transport" layer in the OSI
@@ -126,420 +153,373 @@ need to fufil a simple set of rules:</p>
 </ol>
 
 </fieldset>
-<br />
 
+<p>This document describes how the <a
+href="zmap_remote.shtml#protocol">Request/Reply Transport Protocol</a> was
+implemented using the <a href="http://zeromq.org">ZeroMQ</a> networking
+library.</p>
+
+<p>It would be helpful to have read the preface of the <a
+href="http://zguide.zeromq.org/page:all">ZeroMQ Guide</a> and the first few
+sections of chapter 1, up to and including <em><a
+href="http://zguide.zeromq.org/page:all#Ask-and-Ye-Shall-Receive">Ask and Ye
+Shall Receive</a></em>.</p>
+
+
+<a name="zeromq"></a>
+<h3>ZeroMQ Introduction</h3>
+
+<p>
+From the <a href="http://zguide.zeromq.org/page:all">ZeroMQ Guide</a>:
+<blockquote>
+&Oslash;MQ (also known as ZeroMQ, 0MQ, or zmq) looks like an embeddable
+networking library but acts like a concurrency framework. It gives you
+sockets that carry atomic messages across various transports like
+in-process, inter-process, TCP, and multicast.
+</blockquote>
+<blockquote>
+The &Oslash; in &Oslash;MQ is all about tradeoffs.
+<br />
+...
+<br />
+Originally the zero in &Oslash;MQ was meant as "zero broker" and (as close
+to) "zero latency" (as possible). Since then, it has come to encompass
+different goals: zero administration, zero cost, zero waste. More
+generally, "zero" refers to the culture of minimalism that permeates
+the project. We add power by removing complexity rather than by
+exposing new functionality.
+</blockquote>
+</p>
+
+<a name="zmq_socket"></a>
+<p>The ZeroMQ API uses ZeroMQ sockets, which are not the same as
+traditional Unix or TCP sockets. To avoid confusion, henceforth the
+term <em>zmq_socket</em> is used to refer to a ZeroMQ socket.
+</p>
+
+
+<a name="protocol_zmq"></a>
+<h3>The Request/Reply Transport Protocol using ZeroMQ</h3>
 
 
 <a name="peer_state"></a>
-<h3>Peer States in the Request/Reply cycle</h3>
+<h4>Peer States in the Request/Reply cycle:</h4>
 
-<p>Both peers will cycle through various states as they both receive requests they
-must service and reply to but also make their own requests. The essential state
-changes are:</p>
+<p>The state changes are simple, ignoring collision detection and handling for the moment:</p>
 
-<img src="./Clipboard_Request_Response_state.png" align="center">
+<img src="./ZeroMQ_Request_Response_state.png" align="center">
 
-<p>Note that the "INACTIVE" state is used to make the transition from
-being in a "client" state to being in a "server" state and that for any
-one request/reply one peer will be cycling through the "server" states
-while the other is cycling through the "client" states.</p>
+<h4>ZeroMQ Endpoints</h4>
 
-<p>In textual form the meaning of the states is:</p>
+<p>Connections are identified by a ZeroMQ endpoint address at each
+end. Since there will usually be a pair of connections to allow for
+bidirectional communications, each peer will have one server endpoint
+and one client endpoint.</p>
 
-<pre><code>
-Client/Server States:
+<p>ZeroMQ endpoint addresses can either be TCP sockets bound to the
+local interface (for single-machine operation) or Unix domain sockets
+bound to a temporary file path.</p>
 
-INACTIVE           /* No request/reponse being serviced. */
+<p>
+Examples:
+<dl>
+ <dt>TCP:</dt><dd><code>tcp://127.0.0.1:59924</code></dd>
+ <dt>Unix:</dt><dd><code>ipc:///tmp/otter_spqr12/2344223/0mq_zmap</code></dd>
+</dl>
+</p>
 
-CLIENT_SENDING     /* Peer is client and is sending a request. */
+<h4>ZeroMQ Request/Reply cycle</h4>
 
-CLIENT_WAITING     /* Peer is client and is waiting for a reply. */
+<p>The following is simplified by ignoring the setting up of a ZeroMQ
+context, and does not describe ZeroMQ message structure management.</p>
 
-CLIENT_RETRIEVING  /* Peer is client and is retrieving reply. */
+<img src="./ZeroMQ_Request_Reply.png" align="center">
 
-SERVER_WAITING     /* Peer is server and is waiting for a new request. */
-
-SERVER_RETRIEVING  /* Peer is server and is retrieving a request. */
-
-SERVER_PROCESSING  /* Peer is server and is processing a request. */
-
-SERVER_SENDING     /* Peer is server and is sending a reply. */
-
-</code></pre>
-
-<p>Peers will need to maintain state as it is particularly required in error situations
-such as avoiding <a href="#hanging">application hanging</a> and <a href="#synchro">synchronisation</a>
-of requests with replies.</p>
-
-<p>When errors occur then peers must abandon the current request or reply, clean up
-resources and reset themselves to waiting for the next request. It may be that in
-order to do this a peer has to have an intermediate 'ERROR" state while it clears up.</p>
-
-
-<h3>"Detectable" Message Passing</h3>
-
-<p>Making message passing between peers ultra-reliable will make the implementation
-too onerous and is not warranted as the purpose is to provide interactivity initiated
-by users not to provide a bullet-proof system. The user can after all simply issue
-their operation again. What is required though is to provide a mechanism where each
-peer can be sure the other has received the request or reply if all has worked. This
-is complicated by two main factors:</p>
-
-<ul>
-  <li>The request/reply must be sent between processes and is therefore
-      asynchronous and inherently unpredictable, e.g. network time delays.
-  <li>Servicing of requests may itself rely on asychronous processing and
-      the associated uncertainty of request completion.
-</ul>
-
-<p>To deal with this we borrow from TCP protocols and specify that in normal
-processing requests and replies proceed in a series of steps all of which are
-acknowledged (known as an "ACK" in TCP terms). With TCP a single request by the application
-generally results in a number of TCP messages a good example being when
-a peer says "goodbye" which in fact results in 4 TCP messages:</p>
-
-<img src="./Clipboard_TCP_goodbye.png" align="center">
-
-<p>The 4 messages are the minimum required to ensure that both peers know that the other
-has said goodbye in an orderly fashion.</p>
-
-
-<p>On receiving a Request or a Reply the ACK must be sent immediately before
-any other processing is undertaken so that the peer will know that
-the request or reply was received:</p>
-
-<img src="./Clipboard_Request_Response_ok.png" align="center">
-
-
-<p>While this is fine when everything works, what happens when one or the
-other peer encounters some problem that either causes it to respond
-after a very long delay or perhaps not even at all ? How will the peer
-waiting for the response know how long to wait ? Once again we borrow
-from TCP experience, peers must set a timeout in all situations where
-they are waiting for a reply:</p>
-
-<img src="./Clipboard_Timeout.png" align="center">
-
-<p>Peers set timeouts in all the functions where they will be waiting for some
-form of reply ("wait" in the above diagram). The precise timeout mechanism will
-depend on the programming environment but probably the timeout will be in the
-form of a callback function which will be called if the specified time is
-exceeded. On entering the timeout function the peer must abandon the current
-request ignoring all further messages for the request from the other peer,
-reset it's state and return to waiting for the next request.</p>
-
-<p>Note that because the peer that timed out does not reply to any further
-messages for the aborted request this will cause the other peer to timeout
-as well and reset itself in the same way. Now both peers are ready to repeat
-the aborted request or receive a new request. This requires both peers
-to keep enough state to reset themselves.</p>
-
-
-<p>This forms the bare bones of the communication of requests and replies between two
-peers.</p>
-
-
-
-
-<h3>X Clipboard Basics</h3>
-
-<p>The ZMap xremote protocol uses the X Windows Cliboard mechanism to implement
-passing of requests and their replies in a controlled way between two peers.
-Pairs of communicating peer processes must each have a Clipboard that is used
-only with the other peer. This clipboard must be unique to the X Server which
-the peers are using to communicate with each other to avoid namespace clashes
-with other peer pairs using the server.</p>
-
-<p>X Windows Clipboards provide a good mechanism for
-implementing the Request/Reply protocol because the X Server provides:</p>
+<h4>Preparation for communications:</h4>
 
 <ol>
-  <li>A completely network independent mechanism for communicating.
-  <li>A simple way to make requests that requires only that two processes
-      know the string representing each others clipboard ids in order to make
-      and receive requests and replies.
-  <li>Centralised event handling via the X server which avoids synchronisation
-      problems when accessing any one clipboard.
-  <li>A completely callback-based mechanism in which applications simply register
-      callback functions with no need to process raw X events.
-  <li>A mechanism that can be used to listen for a request but then
-      ignore further requests until the current one terminates.
+  <li><p>Peer 1 creates a <tt>ZMQ_REQ</tt> client zmq_socket and connects it
+  to Peer 2's endpoint via <tt>zmq_connect()</tt>.</p></li>
+
+  <li><p>Peer 2 creates a <tt>ZMQ_REP</tt> server zmq_socket and binds this
+  to its own endpoint via <tt>zmq_bind()</tt>. Peer 2 then arranges a
+  callback on receive events for this zmq_socket.</p></li>
 </ol>
 
-<p>The following sections show how requests/replies are passed using the
-X Windows Clipboard mechanism which itself uses the X Selection mechanism
-to implement this more generalisd interprocess communication mechanism.
-Note that to make the explanations easier to follow the
-peer making the request is referred to as the "client" and the peer servicing
-that request as the "server". Peers act as both clients and servers.</p>
+<p>Note that ZeroMQ permits steps 1 and 2 to happen in either order.
 
+<h4>Request and reply:</h4>
 
-
-
-<p>X Clipboards provide a very simple set of operations, essentially to
-"set" and "get" the contents of a clipboard, note that
-operations like "clear" or "take ownership" are just variations of these.
-This simplicity hides a somewhat more complicated programming interface that
-the application must use:</p>
-
-<img src="./Clipboard_basics.png" align="center">
-
-<p>In this scenario we assume that Peer2 has created a clipboard and
-initially has ownership of that clipboard and that Peer 1 wants to
-put some data (e.g. a request) on that clipboard. The diagram shows
-the minimum number of steps for Peer 1 to put the data on the
-clipboard and Peer 2 to retrieve that data and retake ownership
-of the its clipboard:</p>
-
-<ol>
-  <li><p>Peer 1 takes ownership of Peer 2's clipboard to signal
-      that it has data to tranfer.</p>
-  <li><p>Peer 2 receives notification from the X server that
-      another process has taken ownership of its clipboard
-      because it has data. Peer 2 requests the data.</p>
-  <li><p>Peer 1 receives notification from the X server that
-      another process wants its data and puts the data on to the clipboard.</p>
-  <li><p>Peer 2 receives notification that the data has been
-      put on to the clipboard and receives that data.</p>
+<ol start="3">
+  <li><p>Peer 1 creates a request and sends it via its client zmq_socket by
+  calling <tt>zmq_send()</tt>.</p></li>
+  <li><p>Peer 2's server zmq_socket callback is fired, and
+  uses <tt>zmq_recv</tt> to fetch the request.</p></li>
+  <li><p>Peer 1 polls for, or arranges a callback on, a reply on its
+  client zmq_socket. (A callback could be set up at any stage after the
+  zmq_socket has been connected.)</p></li>
+  <li><p>Peer 2 does some processing on the request (this should be
+  brief).</p></li>
+  <li><p>Peer 2 creates a reply and sends it via its server zmq_socket by
+  calling <tt>zmq_send()</tt>.</p></li>
+  <li><p>Peer 1's client zmq_socket callback or poll is fired, and
+  uses <tt>zmq_recv()</tt> to fetch the reply.</p></li>
+  <li><p>The request-reply sequence is complete, and can be repeated
+  from step 3 when next required.</p></li>
 </ol>
 
-<p>This operation forms the basis of the ZMap Request/Reply protocol.</p>
-
-
-
-<h3>X Clipboard Data Formats</h3>
-
-<p>X clipboards support any number of different formats allowing applications
-to define their own. X clipboards require the applications that access
-the data to define two properties for any one datatype, a unique type
-indentifier and a data format quantifier which must be the number of
-bits per "unit" of data, e.g. if the data was in 16-bit lumps then the
-data format would be "16".</p>
-
-<p>The ZMap clipboard protocol defines these properties as:</p>
-
-<pre class="code">
-Clipboard data type   "STRING"
-
-Clipboard data format 8			    /* Bits per unit. */
-</pre>
-
-<p><i>In an ideal world the protocol would define its own data type,
-e.g. "ZACP_COMMAND_STR", but not all Peer programming interfaces allow
-this so the standard X Selection data type of "STRING" is used.</i></p>
-
-<p>The clipboard data used to support the protocol is a string but note that
-the string has <b>no</b> terminating character so programming interfaces
-(e.g. the C language) must be sure not to add one but instead give the
-length of the string.</p>
-
-<p>Applications implementing the protocol must be sure to support this
-type and format.</p>
-
-
-<h3>The Request/Reply X Windows Clipboard Implementation</h3>
-
-<p>Simple clipboard processing is fairly straight forward but in order to
-ensure that peers issue and acknowledge requests/replies clipboard
-ownership must switch in the correct sequence so clipboard calls need to be made
-in the right order. The following example illustrates this for any transfer
-of data whether request or reply (note that it is arbitrary whether Peer 1 or Peer
-2 initiates the signalling):</p>
-
-
-<img src="./Clipboard_transaction.png" align="center">
-
-<ol>
-  <li><p>Peer 2 has ownership of its clipboard and is waiting
-      to be contacted by Peer 1.
-  <li><p>Peer 1 wants to send data to Peer 2 and takes ownership
-      of Peer 2's clipboard to signal this.</p>
-  <li><p>Peer 2 receives notification from the X server that
-      Peer 1 has taken ownership of its clipboard and requests the data.</p>
-  <li><p>Peer 1 receives notification that Peer 2 wants its data and puts the data on to the
-      clipboard.</p>
-  <li><p>Peer 2 receives notification that the data has been
-      put on to the clipboard and receives that data and then retakes
-      ownership of its clipboard.</p>
-  <li><p>Peer 1 receives notification that
-      Peer 2 has taken ownership of the clipboard and 
-      now retakes ownership of the clipboard to wait for a reply.</p>
-  <li><p>Peer 2 receives notification that 
-      Peer 1 has retaken ownership of its clipboard 
-      and now processes the data.</p>
-  <li><p>Peer 1 waits on Peer 2's clipboard for a reply.</p>
-</ol>
-
-<p>Note how in this cycle both peers receive notification at each stage
-of passing the data and in particular by taking and retaking ownership
-of the clipboard at the states 5 and 6 the "contents received" is signalled
-by Peer 2 enabling Peer 1 to say "I'm ready and waiting for the reply" by retaking
-ownership once again.</p>
-
-<p>At the end of each cycle clipboard ownership is transferred
-from one peer to the other and as will be seen in the next section
-this flip-flopping of ownership is crucial to the full request/reply cycle.</p>
-
-
-<a name="full_protocol"></a>
-<h3>The Full Request/Reply Protocol</h3>
-
-<p>This section describes a complete transaction for a request and reply.</p>
-
-<p>At the start of a request/reply transaction both peers are waiting to
-receieve a request, Peer 1 then makes a request to Peer 2:</p>
-
-<img src="./Clipboard_Request_Reply.png" align="center">
-
-<p>There is a flow of messages about and ownership of the clipboard from one peer
-to another as the request is signalled, sent, retrieved and the same is done
-for the reply:</p>
-
-<ol>
-  <li><p>Peer 1 needs to make a request and starts by relinquishing ownership
-      of its own clipboard to avoid receiving a simultaneous request from Peer 2.</p></li>
-  <li><p>Peer 1 takes ownership of Peer 2's clipboard to signal that it has a request to make.</p></li>
-  <li><p>Peer 2 loses ownership of its clipboard and requests its clipboard contents
-      to receive Peer 1's request.</p></li>
-  <li><p>Peer 1 receives the request for contents and puts its request on Peer 2's clipboard.</p></li>
-  <li><p>Peer 2 receives the contents and then reclaims ownership of its clipboard to signal
-      to Peer 1 that it has received the request.</p></li>
-  <li><p>Peer 1 loses ownership of Peer 2's clipboard so it now knows Peer 2 has the request, Peer 1
-      then retakes ownership of Peer 2's clipboard to wait for Peer 2 to signal that it has a reply to send.</p></li>
-  <li><p>Peer 2 loses ownership of its clipboard and goes ahead and processes the request. Once
-      it has a reply it puts it on its clipboard.</p></li>
-  <li><p>Peer 1 loses ownership of Peer 2's clipboard which signals that Peer 2 has a reply to send,
-      Peer 1 requests the contents of Peer 2's clipboard.</p></li>
-  <li><p>Peer 2 receives the request for contents and puts the reply on its clipboard.</p></li>
-  <li><p>Peer 1 receives the contents and takes ownership of Peer 2's clipboard.</p></li>
-  <li><p>Peer 2 loses ownership which signals that Peer 1 has the reply, Peer 2 retakes
-      ownership of its clipboard.</p></li>
-  <li><p>Peer 1 loses ownership of Peer 2's clipboard which signals to Peer 1 that Peer 2 knows that Peer 1 has
-      the reply.</p></li>
-  <li><p>The Request/Reply transaction is now complete so Peer 1 now retakes
-      ownership of its own clipboard to wait for the next request.</p></li>
-</ol>
-
-<p>In particular note how at the start ownership of the target clipboard is with the server but
-then once the request is sent the client owns the clipboard so that it can be signalled by the
-server that the reply is ready to be sent. Once the reply is sent the server retakes ownership
-of its clipboard to wait for the next request.</p>
-
-
+<a name="problems"></a>
 <h3>Bootstrapping, Collisions, Synchronisation and Hanging</h3>
-
-<p>As well as implementing "detectable" transactions the protocol must deal with the following
-fundamental problems:</p>
-
-<ul>
-  <li><p><b>Bootstrapping:</b> How do peers initially find out the id of each others clipboards ?</p></li>
-  <li><p><b>Collisions:</b> What happens when two peers simultaneously make a request
-      to each other ?</p></li>
-  <li><p><b>Synchronisation:</b> What happens if two peers get "out of step" and the wrong request
-      gets interleaved with the wrong reply ?</p></li>
-  <li><p><b>Hanging:</b> What happens if during a request one or the other peer stops
-      responding for some reason ? </p></li>
-</ul>
-
-
 
 <h4>Bootstrapping</h4>
 
-<p>The methods by which processes discover each other are essentially:</p>
-
-<ol>
-  <li><p>The peers simply tell each other their ids at start up or in some
-      predefined way once running. This implies that at least one of the
-      peers must know the others id or they must both know some common
-      way to find out the others id.</p>
-  <li><p>There is some discovery register where all such peers go to find out
-      what other peers are available (e.g. the DAS registry).</p>
-</ol>
-
-<p>This protocol is aimed at providing communication between two programs
-that interact closely together and form part of a common "system", therefore
-the first method is appropriate.</p>
-
-<p>The following mechanism is used to connect two peer programs:</p>
-
-
-<fieldset>
-<legend>Bootstrapping</legend>
-
-<ol>
-  <li><p>Peer 1 starts up and contructs an id for its clipboard.</p></li>
-  <li><p>Peer 1 starts up Peer 2 passing it as a command line parameter (or in some
-      other way, e.g. config file) its clipboard id and then waits on its clipboard
-      for Peer 2 to contact it.</p></li>
-  <li><p>Peer 2 retrieves Peer 1's clipboard id from the command line (or wherever)
-      and then contacts Peer 1 passing its own clipboard id as a "handshake" request.</p></li>
-  <li><p>Peer 1 replies acknowledging the "handshake" so now both peers know each others
-      clipboard ids.</p></li>
-</ol>
-
-</fieldset>
-<br />
-
-<p>Which program is "Peer 1" and which "Peer 2" depends on which program will be running first,
-e.g. in the case of ZMap and otterlace, otterlace is "Peer 1" and ZMap "Peer 2", in the case of
-ZMap and blixem, ZMap is "Peer 1" and Blixem "Peer 2".</p>
-
-<p>The "handshake" request and other commands will be covered in more detail in the
-<a href="#request_reply_format">Command Interface</a> section.</p>
-
+<p>Bootstrapping is needed to allow each of a pair of processes to
+know the other's server endpoint address. The initiator passes its
+server endpoint to its peer as a command line parameter, which
+responds with its own server endpoint in a handshake request
+message back to the initiator.</p>
 
 <h4>Collisions</h4>
 
-<p>If both peers follow the sequence of actions given in the description of the
-full <a href="#full_protocol">Request Reply protocol</a> then if they both make
-requests at the same time neither will see the other's request as they will
-already have given up ownership of their own clipboards. In this instance both
-peers will time out waiting for a response and should report the error and reset
-themselves.</p>
+<p>Provided that when sending, the client also monitors its server
+zmq_socket whilst waiting for a reply, collision detection should be
+straightforward.</p>
 
-<p>This does assume though that the underlying code providing the clipboard
-interface will cancel clipboard notifications synchronously (immediately) a
-peer requests this. Peers may therefore also need to keep state which enables
-them to detect an incoming request when they are in the process of making their
-initiating their own request and once again reset themselves.</p>
+<p>The simplified state diagram reduces the likelihood and
+impact of collisions. None-the-less,
+the <a href="#collisions">collision protocol</a> below allows safe
+resolution.</p>
 
-<a name="synchro"></a>
+<h4>Timeouts and errors</h4>
+
+<p>Timeouts and errors are handled by each client implementing
+the <a href="http://zguide.zeromq.org/page:all#toc89">Lazy Pirate
+Pattern</a>. See <a href="#timeouts">Timeout Handling</a> below.</p>
+
+<p>The implications of the resulting likelihood of client
+retries are discussed in the 'Synchronisation' sub-section.</p>
+
 <h4>Synchronisation</h4>
 
-<p>Although unlikely it is possible through programming error and perhaps
-unusual communication delays that requests and replies could become out of
-synch. To deal with this all request/reply pairs must have a unique id which
-allows verification that a particular reply belongs to a particular
-request. This id should be unique within the context of requests and replies
-from <b>both</b> peers, one easy way to do this is to include the clipboard
-id in the request id as well as some kind of counter for each new request.</p>
+<p>The client knows for certain that the server has received its
+request when it receives the ZeroMQ reply.</p>
 
-
-<a name="hanging"></a>
-<h4>Hanging</h4>
-
-
-<p>To avoid peers going into deadlock waiting for requests and/or replies which
-are for one reason or another not satisfied in a timely way they must deal
-gracefully with the situation where they have to abort a request/reply
-transaction. To prevent waiting forever each peer must set a timeout after
-which it will abort the current transaction.  The timeout should be tuneable to
-take account of slow networks or machines.</p>
-
-<p>On timing out the action either peer should take is the same whether
-it is functioning as the client or server:</p>
+<p>The server does not know for certain that its ZeroMQ reply has
+reached the client. This is an acceptable tradeoff compared with the
+likely complexity of more handshaking, but leads to the following
+alternative scenarios:</p>
 
 <ul>
-  <li><p>Reqlinquish ownership of its own clipboard to ignore requests made
-      while resetting.<p></li>
-  <li><p>Free all resources associated with the cancelled transaction.</p></li>
-  <li><p>Report the cancelled transaction.</p></li>
-  <li><p>Return to waiting for the next request.</p></li>
+  <li><p>If server actions are idempotent, or else can be repeated at
+  acceptable cost without resulting in an erroneous application state,
+  then no special measures are required.</p></li>
+  <li>
+    <p>Otherwise, the latest reply message should be cached and the
+    server should resend it if the current request's sequence number
+    matches that of the cached reply.</p>
+    <p>Note that this will require the transport / connection layer to
+    process the message sequence numbers. This is best handled by
+    using multipart ZeroMQ messages
+    (<a href="http://zguide.zeromq.org/page:all#toc36">http://zguide.zeromq.org/page:all#toc36</a>)
+    to preserve and pass the XML from the higher layers, unchanged and
+    not inspected by the transport layer.</p>
+  </li>
 </ul>
 
-<p>Depending on the transaction resetting may not be trivial and may even involve
-a peer in aborting, in general though peers should be written to recover from
-this situation in a seemless way.</p>
+<a name="collisions"></a>
+<h3>Collision Protocol</h3>
+
+<p>The state diagram including collision detection, from the perspective of peer one:</p>
+
+<img src="./ZeroMQ_Collision_state.png" align="center">
+
+<h4>Detection and arbitration</h4>
+
+<ol>
+  <li><p>Peer 1 sends a request, and then monitors for a reply, whilst
+  also monitoring for an inbound request. <em>[Peer 2: also event 1]</em></p></li>
+  <li>
+    <p>Peer 2 sends a simultaneous request, which peer 1 detects and
+    receives as a colliding request.</p>
+    <p>Peer 1 compares the timestamp of the received request against
+    its cached timestamp for its sent request.</p>
+    <ul>
+      <li><p>If peer 1 sent <em>before</em> peer 2, it wins the
+      collision. (Continue at step 3.)</p></li>
+      <li><p>If peer 1 sent <em>after</em> peer 2, it loses the
+      collision. (Continue at step 10.)</p></li>
+      <li><p>In the unlikely event that both timestamps are identical,
+      the master wins, where the master is the peer which originally
+      sent its endpoint address via the commandline to the
+      slave.</p></li>
+    </ul>
+    <p><em>[Peer 2: also event 2]</em></p>
+  </li>
+</ol>
+
+<h4>Collision winner</h4>
+
+<p>Peer 1 wins.</p>
+
+<ol start="3">
+  <li><p>The winner's request stands, so the winner waits for a
+  reply. <em>[Peer 2: event 10]</em></p></li>
+  <li><p>The reply is received from the loser. <em>[Peer 2: event
+  11]</em></p></li>
+  <li><p>The losing request is now processed by the winner
+  as usual. <em>[Peer 2: CLIENT_WAITING/normal]</em></p></li>
+  <li><p>The winner replies to the losing request as normal.
+         <em>[Peer 2: event 12.]</em></p></li>
+</ol>
+
+<img src="./ZeroMQ_Req_Rep_coll_win.png" align="center">
+
+<h4>Collision loser</h4>
+
+<p>Peer 1 loses.</p>
+
+<ol start="10">
+  <li><p>The loser cancels timeouts on its request (but leaves the
+  request pending) and then processes the winning request as
+  usual. <em>[Peer 2: event 3, CLIENT_WAITING/collision_win.]</em>
+  </p></li>
+  <li><p>The reply to the winning request is returned
+  normally. <em>[Peer 2: event 4.]</em></p></li>
+  <li><p>The loser now waits for the reply to its losing request as
+  usual, restarting its request timeout from 0.
+  <em>[Peer 2: event 5.]</em></p></li>
+  <li><p>The winner replies to the losing request as normal.
+      <em>[Peer 2: event 6.]</em></p></li>
+</ol>
+
+<a name="timeouts"></a>
+<h3>Timeout Handling</h3>
+
+<p>The sequence diagram including a client timeout, from the perspective of peer one:</p>
+
+<img src="./ZeroMQ_Req_Rep_timeout.png" align="center">
+
+<ol>
+  <li><p>Peer 1 makes a new request with sequence id 203. It keeps a
+  copy of the request in case of problems.</p></li>
+  <li><p>Peer 2 receives request 203. At this stage it can discard
+  response 202. It starts to process the new request.</p></li>
+  <li><p>Peer 2 has finished processing request 203 and has created
+  response 203. It keeps a copy of response 203 in case of
+  problems.</p></li>
+  <li><p>Peer 2 replies with its response.</p></li>
+  <li><p>Unfortunately peer 2's processing has been too slow, so peer
+  1 has timed out. Peer 1 tears down and recreates its ZeroMQ REQ/REP
+  connection to peer 2, and resends request 203.</p></li>
+  <li><p>ZeroMQ discards the original reply.</p></li>
+  <li><p>Peer 2 receives the repeat request 203.</p></li>
+  <li><p>As it has kept a copy, there is no need to repeat the
+  original processing.</p></li>
+  <li><p>Peer 2 replies with its stored copy of response 203.</p></li>
+  <li><p>Peer 1 receives the response. At this stage it can mark
+  request 203 as acknowledged and can discard the stored
+  request.</p></li>
+</ol>
+
+<h4>Notes</h4>
+
+<ul>
+  <li><p>If request processing involves returning to the event loop,
+  the server (peer 2 in the example above) should suspend callbacks on
+  its <code>ZQM_REP</code> server zmq_socket whilst it is processing the
+  request, to prevent nested requests. ZeroMQ will buffer any incoming
+  requests. Once the process-and-reply sequence is complete, the
+  callback should be reinstated.</p></li>
+  <li><p>Collison processing is not shown here but should proceed as
+  normal. If the server has issued a new request which clashes with
+  the client's resend, the resend will win as its timestamp will be as
+  for the original request.</p></li>
+  <li><p>To allow for the situation where the remote peer is busy
+  processing, without requiring too many timeout and rety attempts,
+  successive timeout intervals should increase exponentially. The
+  proposed intervals are:
+    <blockquote>
+      333ms, 1000ms, 3000ms, 9000ms, <em>FAIL</em>
+    </blockquote>
+  giving a total grace period or 'processing window' to the remote
+  peer of about 13 seconds.
+  </p></li>
+</ul>
+
+
+<a name="state"></a>
+<h3>State</h3>
+
+<p>The server is required to keep:
+<ul>
+  <li><p>the request ID for the last request</p></li>
+  <li><p>a copy of the reply to the last request</p></li>
+</ul>
+until a new request (with incremented request ID) is received.</p>
+
+<p>This allows the server to reply to repeat requests issued as a
+result of the client's timeout handling, without needing to re-process
+the request.</p>
+
+<p>Repeat requests for earlier requests are not expected and will not
+be handled. (To do so would require a sliding window system.)</p>
+
+
+<a name="header"></a>
+<h3>Message header</h3>
+
+<h4>Header fields</h4>
+
+<p>The minimum set of fields for the message header is:</p>
+<dl>
+  <dt><em>Request-id</em></dt>
+  <dd>The id of this request. Should be unique for each request, and
+  should be incremented after each successful or aborted request.</dd>
+
+  <dt><em>Request-attempt</em></dt>
+  <dd>The retransmit attempt for this request. Should start at 1 and
+  should be incremented on each retransmission.</dd>
+
+  <dt><em>Clock-sec</em></dt>
+  <dd>The whole-seconds portion of the system clock at the time the
+  request was <b>first issued</b>.</dd>
+
+  <dt><em>Clock-usec</em></dt>
+  <dd>The microseconds portion of the system clock at the time the
+  request was <b>first issued</b>.<br />
+  Could be combined with <em>Clock-sec</em> to create a floating
+  point <em>Clock</em> field, or a pure microseconds field.</dd>
+</dl>
+
+
+<h4>Header serialisation format</h4>
+
+<p>Serialisation of the header does not warrant XML. ZeroMQ partitions
+the header into a separate frame, which can use any appropriate
+serialisation.</p>
+
+<p>
+  The single-line format is:<br />
+  <code>&lt;Type&gt; &lt;Request-id&gt;/&lt;Request-attempt&gt; &lt;Clock-sec&gt;,&lt;Clock-usec&gt;</code>
+</p>
+
+<p><code>&lt;Type&gt;</code> is <code>REQUEST</code> or <code>REPLY</code>.</p>
+
+<p>
+  For example, for
+  <em>Type: REQUEST, Request-id: 334, Request-attempt: 1, Clock:
+  1145.232507</em><br /> the header is:<br />
+  <code>REQUEST 334/1 1145,232507</code>
+</p>
+
+
+<h4>References</h4>
+
+<p>See <a href="#references">References section</a> for further ZeroMQ information.</p>
+
+
+
+
 
 
 <a name="request_reply_format"></a>
@@ -555,7 +535,7 @@ the request/reply envelope and body format and the commands available in the int
 <p>All messages have an envelope with the following format:</p>
 
 <pre>
-&lt;zmap version="V.R" type=["request" | "reply"] app_id="XXXX" clipboard_id="YYYY" request_id="ZZZZ"&gt;
+&lt;zmap version="V.R" type=["request" | "reply"] app_id="WWWW" socket_id="XXXX" request_id="YYYY" request_time="ZZZZ"&gt;
          .
          .
 &lt;/zmap&gt;
@@ -567,10 +547,11 @@ the request/reply envelope and body format and the commands available in the int
      <b>version:</b> protocol version given as "Version.Release" numbers where a new version represents
               an incompatibility with a previous version and a release change means the addition of new commands.
               Peers must check that they support the given version of the protocol.
-        <b>type:</b> indicates whether a message is a request or a reply.
-      <b>app_id:</b> the name of the application that sent the request or reply.
-<b>clipboard_id:</b> the name of the clipboard to or from which the request/replies were sent/retrieved.
-  <b>request_id:</b> Each request is assigned a unique id and the reply to this request <b>must</b> have the same id.
+     <b>type:</b> indicates whether a message is a request or a reply.
+     <b>app_id:</b> the name of the application that sent the request/reply.
+     <b>socket_id:</b> the zeromq socket by which request/reply(s) are sent.
+     <b>request_id:</b> Each request is assigned a unique id and the reply to this request <b>must</b> have the same id.
+     <b>request_time:</b>the time the original request was sent.
 </pre>
 
 
@@ -580,7 +561,7 @@ the request/reply envelope and body format and the commands available in the int
 <p>Requests have an additional "request" element and a body:</p>
 
 <pre class="request">
-&lt;zmap version="N.N" type="request" app_id="XXXX" clipboard_id="XXXX" request_id="YYYY"&gt;
+&lt;zmap version="N.N" type="request" app_id="XXXX" socket_id="XXXX" request_id="YYYY" request_time="ZZZZ"&gt;
   &lt;request command="ZZZZ" [view="view_id"]&gt;
          .
         body
@@ -611,7 +592,7 @@ reply will contain further elements that form the "body" of the reply
 and are the result of the command:</p>
 
 <pre class="reply">
-&lt;zmap version="N.N" type="request" app_id="XXXX" clipboard_id="XXXX" request_id="YYYY"&gt;
+&lt;zmap version="N.N" type="request" app_id="XXXX" socket_id="XXXX" request_id="YYYY" request_time="ZZZZ"&gt;
   &lt;reply command="ZZZZ"  return_code="ok"&gt;
           .
          body
@@ -624,7 +605,7 @@ and are the result of the command:</p>
 no body:</p>
 
 <pre class="reply">
-&lt;zmap version="N.N" type="request" app_id="XXXX" clipboard_id="XXXX" request_id="YYYY"&gt;
+&lt;zmap version="N.N" type="request" app_id="XXXX" socket_id="XXXX" request_id="YYYY" request_time="ZZZZ"&gt;
   &lt;reply command="ZZZZ" return_code="ok" reason="short error description"/&gt;
 &lt;/zmap&gt;
 </pre>
@@ -671,7 +652,7 @@ parseable format. They are likely to be refined as the interface is more widely 
 
 
 <a name="commands"></a>
-<h2>Commands</h2>
+<h2>The Remote Command Interface</h2>
 
 <p>The following sections give details of all the available commands issued
 either by ZMap or by its peer:</p>
@@ -712,13 +693,13 @@ the peer receiving a handshake command might send a ping after replying to the
 handshake as a "belt and braces" check that two-way communication has been established.</p>
 
 <pre class="request">
-&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="1"&gt;
+&lt; type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="ping"/&gt;
 &lt;/zmap&gt;
 </pre>
 
 <pre class="reply">
-&lt;zmap version="2.0" type="reply" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="1"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="ping" return_code="ok"&gt;
     &lt;message&gt; ping ok !&lt;/message&gt;
   &lt;/reply&gt;
@@ -727,8 +708,6 @@ handshake as a "belt and braces" check that two-way communication has been estab
 
 </fieldset>
 <br />
-
-
 
 
 
@@ -749,7 +728,7 @@ handshake as a "belt and braces" check that two-way communication has been estab
 <p>Used to tell the other peer to terminate in an orderly way:</p>
 
 <pre class="request">
-&lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="4"&gt;
+&lt; type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="shutdown"/&gt;
 &lt;/zmap&gt;
 </pre>
@@ -758,7 +737,7 @@ handshake as a "belt and braces" check that two-way communication has been estab
 to abort:</p>
 
 <pre class="request">
-&lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="4"&gt;
+&lt; type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="shutdown"/&gt;
     &lt;shutdown type=["clean" | "abort"]/&gt;
   &lt;/request&gt;
@@ -766,7 +745,7 @@ to abort:</p>
 </pre>
 
 <pre class="reply">
-&lt;zmap version="2.0" type="reply" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="4"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="shutdown" return_code="ok"&gt;
     &lt;message&gt;zmap shutting down now !&lt;/message&gt;
   &lt;/reply&gt;
@@ -802,8 +781,7 @@ for a reply.</p>
 in zmap (known as a "view"):</p>
 
 <pre class="request">
-
-&lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
+&lt; type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="new_view"&gt;
     &lt;sequence name="clone_X" start="2000" end="3000" config_file="/config/file/path"/&gt;
   &lt;/request&gt;
@@ -812,7 +790,7 @@ in zmap (known as a "view"):</p>
 
 <pre class="reply">
 
-&lt;zmap version="2.0" type="reply" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="new_view" return_code="ok"&gt;
     &lt;view view_id="YYYY"/&gt;
   &lt;/reply&gt;
@@ -843,7 +821,7 @@ in the same zmap window as a currently displayed view:</p>
 
 <pre class="request">
 
-&lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
+&lt; type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="add_to_view" view="NNNNN"&gt;
     &lt;sequence name="clone_X" start="2000" end="3000" config_file="/config/file/path"/&gt;
   &lt;/request&gt;
@@ -853,7 +831,7 @@ in the same zmap window as a currently displayed view:</p>
 
 <pre class="reply">
 
-&lt;zmap version="2.0" type="reply" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="add_to_view" return_code="ok"&gt;
     &lt;view view_id="YYYY"/&gt;
   &lt;/reply&gt;
@@ -883,14 +861,14 @@ attribute.</p>
 
 <pre class="request">
 
-&lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="3"&gt;
+&lt; type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="close_view" view="NNNNN"/&gt;
 &lt;/zmap&gt;
 </pre>
 
 <pre class="reply">
 
-&lt;zmap version="2.0" type="reply" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="3"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="close_view" return_code="ok"&gt;
     &lt;message&gt; View closed.&lt;/message&gt;
   &lt;/reply&gt;
@@ -914,7 +892,7 @@ just that view is removed from the window.</p>
 
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-27331-1339141750" request_id="2"&gt;
+&lt; type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="load_features" view="NNNNN"&gt;
     &lt;featureset name="genomic_canonical"/&gt;
   &lt;/request&gt;
@@ -926,7 +904,7 @@ request, <b>not</b> that the features are loaded yet (see
 "features_loaded").</p>
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-27331-1339141750" request_id="2"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="load_features" return_code="ok"/&gt;
 &lt;/zmap&gt;
 </pre>
@@ -945,7 +923,7 @@ view, <b>note</b> that all windows of that view will be reverse complemented:</p
 
 <pre class="request">
 
-&lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
+&lt; type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="reverse_complement"  view="NNNNN"/&gt;
 &lt;/zmap&gt;
 
@@ -953,7 +931,7 @@ view, <b>note</b> that all windows of that view will be reverse complemented:</p
 
 <pre class="reply">
 
-&lt;zmap version="2.0" type="reply" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="reverse_complement" return_code="ok"&gt;
     &lt;message&gt;Reverse complemented view.&lt;/message&gt;
   &lt;/reply&gt;
@@ -974,13 +952,13 @@ view, <b>note</b> that all windows of that view will be reverse complemented:</p
 <p>Sent to zmap to find out if a mark is sent and what the top/bottom coordinates of the mark are.</p>
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="4"&gt;
+&lt; type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="get_mark" view="NNNNN"/&gt;
 &lt;/zmap&gt;
 </pre>
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-31378-1339077671" request_id="4"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="get_mark" return_code="ok"&gt;
     &lt;mark start="5056" end="6309"/&gt;
   &lt;/reply&gt;
@@ -1005,7 +983,7 @@ view, <b>note</b> that all windows of that view will be reverse complemented:</p
 <p>Sent to zmap to request that zmap zooms in to a particular feature as described.</p>
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="3"&gt;
+&lt; type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="zoom_to" view="NNNNN"&gt;
     &lt;featureset name="GenePairs"&gt;
       &lt;feature name="sjj_AH6.2" start="5113" end="6276" strand="+"&gt;
@@ -1016,7 +994,7 @@ view, <b>note</b> that all windows of that view will be reverse complemented:</p
 </pre>
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-31378-1339077671" request_id="3"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="zoom_to" return_code="ok"&gt;
     &lt;message&gt;Zoom to feature sjj_AH6.2 ok    &lt;/message&gt;
   &lt;/reply&gt;
@@ -1040,7 +1018,7 @@ at the specified position with the given attributes.</p>
 
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="6"&gt;
+&lt; type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="create_feature" view="NNNNN"&gt;
     &lt;featureset name="history"&gt;
       &lt;feature name="eds_feature" start="5000" end="6000" strand="+"&gt;
@@ -1054,7 +1032,7 @@ at the specified position with the given attributes.</p>
 recognised then zmap creates and displays the feature.</p>
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-31378-1339077671" request_id="6"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="create_feature" return_code="ok"/&gt;
 &lt;/zmap&gt;</pre>
 
@@ -1074,7 +1052,7 @@ including its parent featureset.</p>
 
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="6"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="replace_feature" view="NNNNN"&gt;
     &lt;featureset name="history"&gt;
       &lt;feature name="eds_feature" start="5000" end="6000" strand="+"&gt;
@@ -1094,7 +1072,7 @@ featureset exists and all the attributes are recognised then zmap replaces the
 existing feature with the new one.</p>
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-31378-1339077671" request_id="6"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="replace_feature" return_code="ok"/&gt;
 &lt;/zmap&gt;</pre>
 
@@ -1112,7 +1090,7 @@ existing feature with the new one.</p>
 
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-5068-1339084012" request_id="2"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="find_feature" view="NNNNN"&gt;
     &lt;featureset name="Orfeome"&gt;
       &lt;feature name="mv_AH6.5" start="11524" end="13305" strand="+"&gt;
@@ -1123,7 +1101,7 @@ existing feature with the new one.</p>
 </pre>
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-5068-1339084012" request_id="2"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="find_feature" return_code="ok"/&gt;
 &lt;/zmap&gt;
 </pre>
@@ -1141,12 +1119,10 @@ existing feature with the new one.</p>
 
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="7"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="delete_feature" view="NNNNN"&gt;
     &lt;featureset name="history"&gt;
-      &lt;feature name="eds_feature" start="5000" end="6000" strand="+"&gt;
-        &lt;subfeature start="0" end="0" ontology="(null)"/&gt;
-      &lt;/feature&gt;
+      &lt;feature name="eds_feature" start="5000" end="6000" strand="+"\&gt;
     &lt;/featureset&gt;
   &lt;/request&gt;
 &lt;/zmap&gt;
@@ -1156,7 +1132,7 @@ existing feature with the new one.</p>
 feature is deleted.</p>
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-31378-1339077671" request_id="7"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="delete_feature" return_code="ok"/&gt;
 &lt;/zmap&gt;
 </pre>
@@ -1187,7 +1163,7 @@ clipboard id to that peer so they can start two-way communication.</p>
 
 
 <pre class="request">
-&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="remotecontrol-10469-1366038532" request_id="1"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="handshake"&gt;
     &lt;peer app_id="ZMap" unique_id="ZMap-15853-1327414674"/&gt;
   &lt;/request&gt;
@@ -1200,7 +1176,7 @@ back an "ok" return code and its own id which the first peer can use as a "belt
 and braces" check that all is well:</p> 
 
 <pre class="reply">
-&lt;zmap version="2.0" type="reply" app_id="peer_app" clipboard_id="remotecontrol-10469-1366038532" request_id="1"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="handshake" return_code="ok"&gt;
     &lt;message&gt; Handshake successful with peer "ZMap", id "ZMap-15853-1327414674".&lt;/message&gt;
   &lt;/reply&gt;
@@ -1220,7 +1196,7 @@ and braces" check that all is well:</p>
 <p>Used to tell the other peer that you are closing the connection to them:</p>
 
 <pre class="request">
-&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="4"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="goodbye"/&gt;
 &lt;/zmap&gt;
 </pre>
@@ -1229,7 +1205,7 @@ and braces" check that all is well:</p>
 received their reply to the command or that you are simply closing the connection:</p>
 
 <pre class="request">
-&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="4"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="goodbye"&gt;
     &lt;goodbye type=[ "close" | "exit" ]/&gt;
   &lt;/request command&gt;
@@ -1237,7 +1213,7 @@ received their reply to the command or that you are simply closing the connectio
 </pre>
 
 <pre class="reply">
-&lt;zmap version="2.0" type="reply" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="4"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="goodbye" return_code="ok"&gt;
     &lt;message&gt;goodbye received, goodbye !&lt;/message&gt;
   &lt;/reply&gt;
@@ -1264,19 +1240,19 @@ the opposite of the "handshake" request and is the default "goodbye" action.</p>
 
 <p><b>Sender: zmap</b></p>
 
-<p>brief description</p>
-
+<p>Sent by peer to request that zmap deletes the named view.</p>
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="19"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="view_deleted" view="NNNNN"/&gt;
 &lt;/zmap&gt;
 </pre>
 
-<p>description of params, reply etc. </p>
+<p>The only parameter the peer needs to set is the view id which must be the
+same string as the peer was passed by zmap when the view was created.</p>
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="19"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="view_deleted" return_code="ok"&gt;
     &lt;message&gt;view deleted...thanks !    &lt;/message&gt;
   &lt;/reply&gt;
@@ -1292,13 +1268,11 @@ the opposite of the "handshake" request and is the default "goodbye" action.</p>
 
 <p><b>Sender: zmap</b></p>
 
-<p><b>FORMAT OF THIS COMMAND IS LIKELY TO CHANGE.</b></p>
-
 <p>Sent by zmap to its peer to signal that it has loaded all requested features.</p>
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-27328-1339141746" request_id="8"&gt;
-  &lt;request command="features_loaded" view="NNNNN"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
+  &lt;request command="feature_loading_complete" view="NNNNN"&gt;
     &lt;featureset names="genomic_canonical" start="1" end="37801"/&gt;
     &lt;status value="1" features_loaded="1"&gt;
       &lt;message&gt;"1&#32;feature&#32;loaded"&gt;&lt;/message&gt;
@@ -1314,7 +1288,7 @@ were loaded is given as well as the total number of features loaded. When there 
 are also given.</p>
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-27328-1339141746" request_id="8"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="features_loaded" return_code="ok"&gt;
     &lt;message&gt;got features loaded...thanks !    &lt;/message&gt;
   &lt;/reply&gt;
@@ -1344,7 +1318,7 @@ the user selected or wishes to edit.</p>
 
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="7"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="single_select" view="NNNNN"&gt;
     &lt;featureset name="curated"&gt;
       &lt;feature name="AH6.5" start="11613" end="13307" strand="+"&gt;
@@ -1370,7 +1344,7 @@ the user selected or wishes to edit.</p>
 <p>zmap sends full details of the feature back to the peer for display or processing.</p>
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="7"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;reply command="single_select" return_code="ok"&gt;
     &lt;message&gt;single select received..thanks !    &lt;/message&gt;
   &lt;/reply&gt;
@@ -1392,7 +1366,7 @@ peer an arbitrary number of selected features, e.g. alignments for building a pr
 
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="11"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="multiple_select" view="NNNNN"&gt;
     &lt;featureset name="Gene"&gt;
       &lt;feature name="WBGene00003231" start="11604" end="13798" strand="+"/&gt;
@@ -1407,7 +1381,7 @@ select the first feature this will be sent as as a "single_select" while
 subsequent selections will be sent as a "multiple_select".
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="15"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="multiple_select" return_code="ok"&gt;
     &lt;message&gt;single select received..thanks !    &lt;/message&gt;
   &lt;/reply&gt;
@@ -1431,7 +1405,7 @@ it has about the feature to enable the peer to identify the feature but also if 
 to pass complete details to the peer.</p>
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="17"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="edit" view="NNNNN"&gt;
     &lt;featureset name="curated"&gt;
       &lt;feature name="AH6.5" start="11613" end="13307" strand="+"&gt;
@@ -1457,7 +1431,7 @@ to pass complete details to the peer.</p>
 <p>zmap sends full details of the feature back to the peer for display or processing.</p>
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="15"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="edit" return_code="ok"&gt;
     &lt;message&gt;edit received..thanks !    &lt;/message&gt;
   &lt;/reply&gt;
@@ -1481,7 +1455,7 @@ so the peer can identify it. In response the peer sends back extra information i
 zmap then incorporates into it's "notebook" style display of feature information.</p>
 
 <pre class="request">
-&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="18"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="feature_details" view="NNNNN"&gt;
     &lt;featureset name="curated"&gt;
       &lt;feature name="AH6.5" start="11613" end="13307" strand="+"&gt;
@@ -1507,7 +1481,7 @@ zmap then incorporates into it's "notebook" style display of feature information
 <p>zmap sends full details of the feature to the peer so it can identify the feature.</p>
 
 <pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="18"&gt;
+&lt;zmap type="reply" version="3.0" app_id="Otterlace_0x4e002b4" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863.100592"&gt;
   &lt;reply command="feature_details" return_code="ok"&gt;
     &lt;notebook&gt;
       &lt;chapter&gt;
@@ -1650,7 +1624,7 @@ otherwise.</p>
 it's own clipboard (ZMap-15853-1327414674 in this case):</p>
 
 <pre class="request">
-&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="1"&gt;
+&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;
   &lt;request command="handshake"&gt;
     &lt;peer app_id="ZMap" unique_id="ZMap-15853-1327414674"/&gt;
   &lt;/request&gt;
@@ -1727,7 +1701,7 @@ by the system linker, for instance:</p>
 receiving of messages between peers. The package is implemented using Remote
 Control objects and there must be one of these objects for each peer that the
 application wishes to communicate with. Each object can essentially be in one
-of three main states: "idle",  "receiving" or "sending", the object cannot both
+of three main states: "inactive",  "receiving" or "sending", the object cannot both
 send and receive requests at the same time. The package provides 6 main
 functions:</p>
 
@@ -1741,7 +1715,7 @@ functions:</p>
 
 zMapRemoteControlReceiveWaitForRequest()       Set the object to wait for requests
 
-          zMapRemoteControlSendRequest()       Get the object to send a request
+          zMapRemoteControlSendRequest()       Tell the object to send a request
 
               zMapRemoteControlDestroy()       Destroy a Remote Control object
 
@@ -1757,39 +1731,35 @@ request or when it has received a reply to a request or there is an error, e.g.<
 
 <pre>
 gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
-				      char *app_str,
-				      ZMapRemoteControlRequestHandlerFunc process_request_func,
-				      gpointer process_request_func_data) ;
+                                      char **app_socket_out,
+				      ZMapRemoteControlRequestHandlerFunc request_handler_func,
+				      gpointer request_handler_func_data,
+				      ZMapRemoteControlReplySentFunc reply_sent_func,
+				      gpointer reply_sent_func_data) ;
 </pre>
 
 <p>To initialise the interface to wait for requests, the application must
 register a function that the Remote Control interface can call when it receives
 a request. The application can also register a pointer to data that it needs
-access to in the callback function. Other functions have similar callback
-routine arguments.</p>
+access to in the callback function. The application can also register a
+function to be called when the reply has been sent to the peer with a data
+pointer.  Other functions have similar callback routine arguments.</p>
 
 <p>The following diagram summarises when the RemoteControl package calls the various callbacks:</p>
 
-<img src="./Clipboard_callbacks.png" align="center">
-
-<p><i>Note that in this diagram the internal Remote Control calls have been stripped
-down to the minimum required to show the interactions between Remote Control and
-the application
-(see <a href="#full_protocol">Request Reply protocol</a> for the full description).</i></p>
+<img src="./Application_callbacks.png" align="center">
 
 <p>The sequence of actions and callbacks is:</p>
 
 <ol>
   <li>Application1 calls its RemoteControl with a request, RemoteControl sends the request to Application2.</li>
-  <li>RemoteControl in Application2 receives the request and sends an acknowledgement back,
-      this results in a callback to Application1 to notify it that the request
+  <li>RemoteControl in Application1 calls Application1 back to notify it that the request
       has been received.</li>
   <li>RemoteControl in Application2 then calls Application2 passing it the request.</li>
   <li>Application2 processes the request and then calls its RemoteControl with the reply,
       RemoteControl sends the reply to Application1.</li>
-  <li>RemoteControl in Application1 receives the reply and acknowledges it which results in a
-      callback to Application2 to notify it that the reply has been received.</li>
-  <li>RemoteControl in Application1 then calls Application1 passing it the reply.</li>
+  <li>RemoteControl in Application1 receives the reply.</li>
+  <li>RemoteControl in Application1 then calls back to Application1 passing it the reply.</li>
 </ol>
 
 <p>Hence there are 4 potential callbacks for each transaction, "potential" because only the
@@ -1797,9 +1767,9 @@ RequestCB and ReplyCB callbacks are mandatory. The diagram shows the order in wh
 callbacks are likely to be called but in the cases of "2" vs. "3" and also "5" vs. "6"
 this order cannot be relied on as it is subject to network and other delays.</p>
 
-<p>In essence these callbacks allow the sender of a request to receive notification from the peer
-that it has received the request and then to receive the reply, correspondingly the receiver of the
-request will receive notification when its reply has reached the other peer.</p>
+<p>In essence these callbacks allow the sender of a request to receive notification when the request
+has been sent and then to receive the reply, correspondingly the receiver of the
+request will receive notification when its reply has been sent to the other peer.</p>
 
 
 
@@ -1840,21 +1810,17 @@ function is optional and simply allows the application to redirect error
 messages from Remote Control to somewhere other than the default of stderr. If
 mandatory parameters are omitted the create call returns NULL.</p>
 
-<p>The destroy call will free all resources allocated by the remote control object and finally free
-the object itself. This function must not be called while either waiting for, making or receiving a request
-and will return FALSE and take no action if it is.</p>
+<p>The destroy call will free all resources allocated by the remote control
+object and finally free the object itself.</p>
 
-<p>It is safe to call zMapRemoteControlDestroy() in the following situatins:
+<p>Note that if this function is called while either waiting for, making or
+receiving a request then transactions and data may be lost. It is the
+applications responsibility to make the call at the right time.</p>
 
-<ul>
-  <li>before a zMapRemoteControlReceiveWaitForRequest() or zMapRemoteControlSendRequest() call
-  <li>from the ZMapRemoteControlReplySentFunc() or ZMapRemoteControlReplyHandlerFunc() functions
-  <li>from the ZMapRemoteControlErrorHandlerFunc() function.
-</ul>
-
-<p>If the application needs to abort a transaction it should call
-zMapRemoteControlReset(), keep state that it has done this and then call
-zMapRemoteControlDestroy() from one of these approved places.</p>
+<p>If an application detects a serious problem it can call
+zMapRemoteControlReset() to reset it's remote control object to a pre-initialisation
+state and then redo the initialisation states and try to re-establish contact with
+the peer.</p>
 
 
 
@@ -1872,16 +1838,23 @@ and callback functions:</p>
 <pre class="code">
 
 gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
-				      char *clipboard_id,
-				      ZMapRemoteControlRequestHandlerFunc request_handler_func, gpointer request_handler_func_data,
-				      ZMapRemoteControlReplySentFunc reply_sent_func, gpointer reply_sent_func_data) ;
-
+                                      char **app_socket_out,
+				      ZMapRemoteControlRequestHandlerFunc request_handler_func,
+				      gpointer request_handler_func_data,
+				      ZMapRemoteControlReplySentFunc reply_sent_func,
+				      gpointer reply_sent_func_data) ;
 gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
-				   char *send_app_name, char *peer_clipboard_id,
-				   ZMapRemoteControlRequestSentFunc req_sent_func, gpointer req_sent_func_data,
-				   ZMapRemoteControlReplyHandlerFunc reply_handler_func, gpointer reply_handler_func_data) ;
+                                   char *peer_socket,
+				   ZMapRemoteControlRequestSentFunc req_sent_func,
+				   gpointer req_sent_func_data,
+				   ZMapRemoteControlReplyHandlerFunc reply_handler_func,
+				   gpointer reply_handler_func_data) ;
 
 </pre>
+
+<p>Once the Remote Control interfaces have been initialised the application can
+wait for incoming requests and send its own requests to its peer.</p>
+
 
 <p>The Receive interface requires the following callbacks:</p>
 
@@ -1902,7 +1875,7 @@ request_handler_func registered by the application passing it the request for
 processing. Once the application has processed the request and passed its reply
 to Remote Control then Remote Control will send the reply to the peer and can
 optionally call the application's reply_sent_func to signal that the reply has
-been received by the peer.</p>
+been sent to the peer.</p>
 
 
 <p>The Send interface requires the following callbacks:</p>
@@ -1921,7 +1894,7 @@ ZMapRemoteControlReplyHandlerFunc reply_handler_func
 
 <p>The application passes a request to Remote Control, Remote Control passes the
 request to the peer and can optionally call the application's req_sent_func to
-signal that the peer has received the request. When the peer returns the reply
+signal that the request was sent to the peer. When the peer returns the reply
 to Remote Control then Remote Control calls the application's 
 reply_handler_func to return the reply to the application.</p>
 
@@ -1929,26 +1902,7 @@ reply_handler_func to return the reply to the application.</p>
 two-way communication with its peer as described in the following sections.</p>
 
 
-<h4>Receiving Requests</h4>
-
-<p>Once the Remote Control interfaces have been initialised the application can
-wait for incoming requests and send its own requests to its peer. To wait for
-incoming requests the application calls the following routine:</p>
-
-
-<pre class="code">
-
-zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control) ;
-
-</pre>
-
-<p>This function is non-blocking, control is returned to the application and
-the Remote Control object is now set to monitor its clipboard for requests.
-When a request arrives Remote Control will call the applications
-request_handler_func callback routine passing it the request.</p>
-
-
-<h4>Making Requests</h4>
+<h4>Sending a Requests</h4>
 
 <p>To make a request the application calls Remote Control passing it the
 request:</p>
@@ -1959,7 +1913,7 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *pe
 
 </pre>
 
-<p>Once again the function is non-blocking and control is returned to the
+<p>This function is non-blocking and control is returned to the
 application directly. Remote Control then passes the request to the peer
 program when the peer signals that it wants it.</p>
 
@@ -2003,7 +1957,7 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
                            ZMapRemoteControlRCType error_type, char *err_msg,
                            void *user_data) ;
 static void requestHandlerCB(ZMapRemoteControl remote_control,
-			     ZMapRemoteControlReturnReplyFunc remote_reply_func, void *remote_reply_data,
+			     ZMapRemoteControlReturnReplyFunc remote_reply_func, void *return_reply_func_data,
 			     char *request, void *user_data) ;
 static void replySentCB(void *user_data) ;
 static void requestSentCB(void *user_data) ;
@@ -2030,7 +1984,11 @@ ZMapRemoteControl createRemoteObj(char *app_id, AppContext app_context)
 
       /* Perhaps set "no timeout" if testing ? */
       if (testing)
-        zMapRemoteControlSetTimeout(remote_control, 0) ;
+        {
+          char *debug_timeout_list = "99999,999999,99999,999999,99999,999999," ;
+
+          zMapRemoteControlSetTimeout(remote_control, debug_timeout_list) ;
+        }
     }
 
   return remote_control ;
@@ -2090,13 +2048,13 @@ to user input and other events.</p>
 
 <h4>Waiting for Requests - Request Received</h4>
 
-<p>When a request is received on the clipboard the remote control object will
-call the applications requestHandlerCB() function passing it the request and
-the user data that the application registered when the received interface was
-initialised. The application can then either process the request immediately
-and return the reply to remote control immediately or by caching the
-return_reply_func and return_reply_func_data can process the request and return
-the reply some time later (perhaps asynchronously).</p>
+<p>When a request is received from the zeroMQ connection to the peer the remote
+control object will call the applications requestHandlerCB() function passing
+it the request and the user data that the application registered when the
+received interface was initialised. The application can then either process the
+request immediately and return the reply to remote control immediately or by
+caching the return_reply_func and return_reply_func_data can process the
+request and return the reply some time later (perhaps asynchronously).</p>
 
 <pre class="code">
 /* 
@@ -2132,22 +2090,17 @@ The peer will then also timeout and abort.</p>
 calling the ZMapRemoteControlReturnReplyFunc function passed by remote control.
 The application may then need to take some action once that reply has reached
 the peer. If the application registered a ZMapRemoteControlReplySentFunc routine
-then remote control will call it as the last action it takes after receiving
-notification that the reply has reached the peer. One obvious reason for
-having such a function is to call remote control to go back to waiting for
-another request:</p>
+then remote control will call it as the last action it takes after sending
+the reply to the peer.</p>
 
 <pre class="code">
-/* Called by remote control when peer has signalled that it has received reply,
+/* Called by remote control when reply has been sent to peer,
  * i.e. the transaction has ended. */
 static void replySentCB(void *user_data)
 {
   gboolean result ;
   AppContext app_context = (AppContext)user_data ;
   ZMapRemoteControl remote_control = app_context->remote_control ;
-
-  /* Return to waiting for new requests. */
-  result = zMapRemoteControlReceiveWaitForRequest(remote_control) ;
 
   return ;
 }
@@ -2171,9 +2124,8 @@ gboolean sendRequest((AppContext app_context, char *request)
 }
 </pre>
 
-<p>Note that the application must not be in the process of either already
-sending or receiving a request,  zMapRemoteControlSendRequest() will return
-FALSE otherwise.</p>
+<p>Note that the application must not be already sending or receiving a
+request, zMapRemoteControlSendRequest() will return FALSE otherwise.</p>
 
 
 
@@ -2216,10 +2168,7 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
   gboolean result ;
 
 
-/* Application can now process the reply. */
-
-  /* And go back to waiting for a new request. */
-  result = zMapRemoteControlReceiveWaitForRequest(remote->remote_controller) :
+  /* Application can now process the reply. */
 
   return ;
 }
@@ -2243,10 +2192,10 @@ identifies the type of error and a text error message explaining the error:</p>
 <pre class="code">
 typedef enum
 {
-  ZMAP_REMOTECONTROL_RC_INVALID,
+  ZMAP_REMOTECONTROL_RC_OK,
   ZMAP_REMOTECONTROL_RC_TIMED_OUT,       /* "timed_out, peer not replying in time." */
-  ZMAP_REMOTECONTROL_RC_OUT_OF_BAND,     /* "out_of_band, peer is out of synch." */
-  ZMAP_REMOTECONTROL_RC_BAD_CLIPBOARD,   /* "bad_clipboard, clipboard error." */
+  ZMAP_REMOTECONTROL_RC_APP_ABORT,       /* "Application has aborted transaction." */
+  ZMAP_REMOTECONTROL_RC_BAD_SOCKET,      /* "Socket error." */
   ZMAP_REMOTECONTROL_RC_BAD_STATE        /* "bad_state, internal error or bad state detected." */
 } ZMapRemoteControlRCType ;
 
@@ -2262,12 +2211,12 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
   AppContext app_context = (AppContext)user_data ;
 
   /* Application decides what to do with error perhaps like this: */
-  if (error_type == ZMAP_REMOTECONTROL_RC_TIMED_OUT || error_type == ZMAP_REMOTECONTROL_RC_OUT_OF_BAND)
+  if (error_type == ZMAP_REMOTECONTROL_RC_TIMED_OUT)
     {
       gboolean result ;
 
-      /* Go back to waiting for a request...... */
-      result = zMapRemoteControlReceiveWaitForRequest(remote_control) ;
+      /* Log the error and return to waiting..... */
+
     }
   else
     {
@@ -2323,7 +2272,7 @@ retrieve and process the main parts of the zmap messages:</p>
 
 <pre>
 
-<font color=red>&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-4173-1331313055" request_id="1"&gt;</font>
+<font color=red>&lt;zmap type="request" version="3.0" app_id="ZMap" socket_id="tcp://127.0.0.1:49783" request_id="2" request_time="1409577863,79381"&gt;</font>
 
   <font color=green>&lt;request command="handshake"&gt;</font>
 
@@ -2691,11 +2640,11 @@ to the peer.</p>
 <p>ZMap is a reasonably complex program that is composed of several distinct
 sub-systems each of which must respond to requests and return responses. The
 remote control code in ZMap sits in the "ZMapApp" layer and handles all
-communication with the peer program via xremote. Therefore there needs to be a
-way for the remote control code to send requests to and receive responses from
-the rest of ZMap. The interface that supports this cannot be synchronous as
-some of the requests will result in actions where the response will come back
-"some time later" so it must be based on a callback interface.</p>
+communication with the peer program. Therefore there needs to be a way for the
+remote control code to send requests to and receive responses from the rest of
+ZMap. The interface that supports this cannot be synchronous as some of the
+requests will result in actions where the response will come back "some time
+later" so it must be based on callbacks.</p>
 
 <p>There are essentially three parts to the request/reply processing in
 zmap:</p>
@@ -2705,7 +2654,7 @@ zmap:</p>
       requests and transmits all replies.</li>
   <li><b>ZMapAppRemote</b> forms an interface between RemoteControl and the
       rest of ZMap.</li>
-  <li><b>ZMap Subsystems</b> all have common code that deserialise/serialise
+  <li><b>ZMap Subcomponents</b> all have common code that deserialise/serialise
       requests/replies from/to zMapAppRemote.</li>
 </ul>
 
@@ -2713,20 +2662,10 @@ zmap:</p>
 layers but are via callbacks on the return because this is likely to be asynchronous. The
 layers are summarised in this diagram:</p>
 
-<img src="./Clipboard_zmap_implementation.png" align="center">
+<img src="./Application_zmap_implementation.png" align="center">
 
 
-<h3>Start Up</h3>
-
-<p>RemoteControl works off selections and in essence selections need a window
-to operate from because the selection has to be delivered somewhere. In Zmap
-the ZMap main application window is used as it is always created (though it may
-be hidden from the user). In ZMap a "map-event" handler is set for the main
-window and this is called once the app window has been mapped, this routine
-then initialises RemoteControl.</p>
-
-
-<h3>The Remote Control Layers</h3>
+<h3>The ZMap/Remote Control Layers</h3>
 
 <p>The RemoteControl code receives all peer requests and makes all replies to
 the peer, it handles all basic errors in message passing, ensuring that each
@@ -2737,27 +2676,28 @@ ZMapAppRemote layer which has the following purposes:</p>
 <ul>
   <li>validation of the request or reply from a peer, n.b. envelope and format validation only.</li>
   <li>extracting of the command and the request or reply section from the message to pass these
-      on to the zmap subsystems in a "canonical" format.</li>
+      on to the zmap subcomponents in a "canonical" format.</li>
   <li>Setting of the default target "view" (see section XXXX for view description).</li>
-  <li>creating a valid reply from the internal "canonical" reply of a zmap subsystem and passing it back
+  <li>creating a valid reply from the internal "canonical" reply of a zmap subcomponent and passing it back
       to RemoteControl.</li>
 </ul>
 
 <p>The ZMapAppRemote layer passes requests to and receives requests from the
-various zmap subsystems, internally these subsystems form a tree which relates
-directly to the on screen windows displayed to the user:</p>
+various zmap subcomponents, internally these subcomponents form a tree which relates
+directly to the on screen windows displayed to the user and to the internal logical
+constructs of zmap:</p>
 
-<img src="./Clipboard_zmap_structure.png" align="center">
+<img src="./Application_zmap_structure.png" align="center">
 
-<p>Each command within a request is only relevant to one of the subsystems and
-therefore must in some way be directed to that subsystem and then the reply
-from that subsystem must come back to ZMapAppRemote. To avoid over complicated
+<p>Each command within a request is only relevant to one of the subcomponents and
+therefore must in some way be directed to that subcomponent and then the reply
+from that subcomponent must come back to ZMapAppRemote. To avoid over complicated
 management of request processing commands are passed from sub-system to
-subsystem until either the command is processed or the not recognised and an
-error returned. Each subsystem knows only about the commands that it can process, if
-it doesn't recognise a command it tries to pass the command to each of it's children
+subcomponent until either the command is processed or not recognised and an
+error returned. Each subcomponent knows only about the commands that it can process, if
+it doesn't recognise a command it tries to pass the command to each of its children
 (who in turn try to pass it to each of their children). The design goal here is to
-ensure that when commands are added, modified or deleted only the subsystem that
+ensure that when commands are added, modified or deleted only the subcomponent that
 processes that command need be changed.</p>
 
 
@@ -2766,7 +2706,7 @@ processes that command need be changed.</p>
 <pre class="code">
 
 
-boolean ProcessRequest(Subsystem subsystem,
+boolean ProcessRequest(Subcomponent subcomponent,
                        char *command_name, ZMapAppRemoteViewID view_id, char *request,
 		       ZMapRemoteAppReturnReplyFunc reply_func, gpointer reply_data)
 {
@@ -2778,7 +2718,7 @@ boolean ProcessRequest(Subsystem subsystem,
 
       result = TRUE ;
     }
-  else if (subsystem->child_list)
+  else if (subcomponent->child_list)
     {
       GList *next_zmap ;
       gboolean zmap_found = FALSE ;
@@ -2825,9 +2765,287 @@ boolean ProcessRequest(Subsystem subsystem,
 
 
 
-<p>access to its children it can with each one either processing the request itself or passing it on to the next
-subsystem. If the last subsystem does not recognise the request a "request
-unknown" reply is made to the peer. When the subsystem</p>
+<p>Each level has access to its children and passes the command to each one
+with each child either processing the request itself or passing it on to the
+next subcomponent. If the lowest level of subcomponent does not recognise the request
+a "request unknown" reply is made to the peer.</p>
+
+
+
+<a name="design"></a>
+<h2>Design Internals of the Remote Control C code</h2>
+
+
+<p>Please note that ZeroMQ uses the abstraction of a ZeroMQ "socket" as the
+vehicle by which messages are sent from peer to peer. This socket should not be
+confused with the standard Unix socket, it is a layer of abstraction above the
+actual mechanism used to pass messages which might be Unix domain sockets or
+TCP/IP sockets or some other mechanism. In the following text "socket" means
+ZeroMQ socket unless otherwise stated.</p>
+
+
+<h3>Interfacing to ZeroMQ "sockets"</h3>
+
+<p>The C/C++ language interface to ZeroMQ allows non-blocking reads
+from the socket but does not offer any kind of "callback" based mechanism so
+the application has to do the work of polling the socket.</p>
+
+<p>My initial stab at this was to try to use the GLib GIO package to set up a
+GIO callback on the socket but this does not work because the application
+gets called back for every single message that passes through the socket and
+some of these messages are "house-keeping" messages for ZeroMQ.</p>
+
+<p>I therefore set up a GSource timer callback functions from where I could test
+the sockets to see if there was data. This works well enough and it is simply
+a matter of setting the timeouts to some sensible level for polling the socket.<p>
+
+
+<h3>Handling Requests</h3>
+
+<p>Handling requests/replies is complicated by the fact that both incoming
+requests/replies from the peer and outgoing request/repliess from various parts
+of zmap are asynchronous and only one request/reply can be handled at a
+time.</p>
+
+<p>Remote Control handles this asynchronicity by maintaining 4 separate queues
+for incoming requests/outgoing replies and outgoing requests/incoming replies.
+Callback functions handle queuing the requests/replies while a separate
+"monitor" routine periodically checks the queues and processes
+requests/replies.  The queue monitor is implemented as a state machine to
+facilitate processing only one request/reply at a time.  The flow of
+processing is summarised in the following diagram:</p>
+
+<img src="./Queuing_control.png" align="center">
+
+<p>The red sections show the flow for a request coming from the peer and then
+zmap replying, the green sections show zmap making a request to the peer and
+the peer replying. The numbers show the order of the flow of control.</p>
+
+<p>Where the diagram leads to a "ZMap subcomponent" box this indicates that
+control has either passed to or returned from one of the subcomponents using
+the mechanism described in the <a href="#zmap_xremote">previous section</a>.</p>
+
+
+<h3>Request/Reply Data Structs</h3>
+
+<p>The requests and replies that are sent over the ZeroMQ sockets are sent in
+two parts as a <a href="#header">header and a body</a>. In the Remote Control
+code these two parts are stored as single structs in the 4 queues:</p>
+
+
+<pre class="code">
+
+/* This is the message struct that gets queued and dequeued.... */
+
+typedef struct RemoteZeroMQMessageStructType
+{
+  char *header ;
+  char *body ;
+} RemoteZeroMQMessageStruct, *RemoteZeroMQMessage ;
+
+</pre>
+
+<p>When a request is to be processed (whether incoming from the peer or outgoing
+from the application itself), the request is dequeued and used to construct
+a new request/reply struture:</p>
+
+
+<pre class="code">
+
+/* Data required for each request/reply in a queue. Used to represent request/replies
+ * in the queues of requests/replies. */
+
+typedef struct ReqReplyStructType
+{
+  RemoteControlRequestType request_type ;
+
+  char *end_point ;
+
+  RemoteZeroMQMessage request ;
+
+  /* derived from "request" */
+  char *request_id ;
+  char *command ;
+
+  int req_time_s ;
+  int req_time_ms ;
+
+  RemoteZeroMQMessage reply ;
+
+} ReqReplyStruct, *ReqReply ;
+
+</pre>
+
+<p>The extra information in this structure is required to manage <a href="#timeouts">timeouts</a>
+and <a href="#collisions">collisions</a> for the request and reply sending
+which needs both the time of the latest attempt to send the request or reply
+but also copies of those requests or replies so they can be resent.</p>
+
+<p>The sequences of queuing/dequeuing are different for incoming and outgoing requests:</p>
+
+<p><b>Incoming request:</b></p>
+
+<ol>
+  <li>The request received from the peer is deserialised into a RemoteZeroMQMessage struct and
+      placed in the "Peer Request" queue.</li>
+  <li>Queue monitor removes the request from the "Peer Request" queue and uses
+      it to make a ReqReply struct and passes
+      the body to application code for processing.</li>
+  <li>When the application returns the reply this reply is used to create a RemoteZeroMQMessage struct
+      which is placed in the "ZMap Reply" queue.</li>
+  <li>Queue monitor then removes the reply from the "ZMap Reply" queue,
+      adds it to the RemoteZeroMQMessage struct and sends it to
+      the peer using the information in the struct.</li>
+  <li>Once the reply has been successfully sent or abandonned the RemoteZeroMQMessage struct is
+      freed.</li>
+</ol>
+
+
+<p><b>Incoming request:</b></p>
+
+<ol>
+  <li>The request received from the application is deserialised into a RemoteZeroMQMessage struct and
+      placed in the "ZMap Request" queue.</li>
+  <li>Queue monitor removes the request from the"ZMap Request" queue and uses
+      it to make a ReqReply struct and then sends the
+      request to the peer using the information in the struct.</li>
+  <li>When the peer returns the reply it is deserialised into a RemoteZeroMQMessage struct and
+      placed in the "Peer Reply" queue.</li>
+  <li>Queue monitor removes the reply from the "Peer Reply" queue and inserts it into the
+      ReqReply struct and returns the reply to the application reply handling code.</li>
+  <li>Once the reply has been successfully returned the RemoteZeroMQMessage struct is
+      freed.</li>
+</ol>
+
+<p>The separation of the code that queues request/replies from the request/reply handling code
+has a number of benefits:</p>
+
+<ul>
+  <li>the asynchronous queuing code is separated from the request/reply code that must
+      enforce the handling of a single request/reply at a time.</li>
+  <li>makes it easy to prioritise requests by inserting them into the request queues using
+      a "sorted" insert.</li>
+  <li>simplifies the resending of requests or replies that timed out to a matter of requeuing
+      them.</li>
+</ul>   
+
+
+
+<a name="appendices"></a>
+<h2>Appendices</h2>
+
+
+<a name="otterlace_zmap"></a>
+<h3>Appendix 1: Unix domain Socket names</h3>
+
+<p>Appropriate paths for Unix domain zmq_sockets would be:</p>
+<ul>
+  <li><code>/var/tmp/otter_${USER}/${NUMBER}/0mq_{otter,zmap}</code></li>
+</ul>
+
+<p>Thanks to Matthew for this suggestion.</p>
+
+
+<a name="collisions_abort"></a>
+<h3>Appendix 2: Collision Protocol with abort</h3>
+
+<p>It is possible that the loser in a collision, having processed the
+winner's request, changes state sufficiently that it now wishes to
+retract its losing request. The following modifications allow for
+this, although it is not proposed to implement the modified system
+unless proved to be required.</p>
+
+<p>The state diagram including collision detection and abort handling,
+from the perspective of peer one:</p>
+
+<img src="./ZeroMQ_Collision_state_abort.png" align="center">
+
+<h4>Detection and arbitration</h4>
+
+<ol>
+  <li><p>Peer 1 send a request, and then monitors for a reply, whilst
+  also monitoring for an inbound request. <em>[Peer 2: also event 1]</em></p></li>
+  <li>
+    <p>Peer 2 sends a simultaneous request, which peer 1 detects and
+    receives as a colliding request.</p>
+    <p>Peer 1 compares the timestamp of the received request against
+    its cached timestamp for its sent request.</p>
+    <ul>
+      <li><p>If peer 1 sent <em>before</em> peer 2, it wins the
+      collision. (Continue at step 3.)</p></li>
+      <li><p>If peer 1 sent <em>after</em> peer 2, it loses the
+      collision. (Continue at step 10.)</p></li>
+      <li><p>In the unlikely event that both timestamps are identical,
+      the master wins, where the master is the peer which originally
+      sent its endpoint address via the commandline to the
+      slave.</p></li>
+    </ul>
+    <p><em>[Peer 2: also event 2]</em></p>
+  </li>
+</ol>
+
+<h4>Collision winner (with abort handling)</h4>
+
+<p>Peer 1 wins.</p>
+
+<ol start="3">
+  <li><p>The winner's request stands, so the winner waits for a
+  reply. <em>[Peer 2: events 10, 11]</em></p></li>
+  <li><p>Once the reply is received, the winner examines the header to
+  see if the loser wants to abort its colliding request.</p></li>
+  <li><p>Assuming no abort, the losing request is now processed
+  as usual. <em>[Peer 2: event 12, CLIENT_WAITING/normal]</em></p></li>
+  <li>
+    <p>The winner replies to the losing request as normal. <em>[Peer
+    2: event 13.]</em></p>
+    <p><em>or</em></p>
+  </li>
+  <li><p>If the loser has signalled abort, the winner does not reply
+  and returns directly to INACTIVE. <em>[Peer 2: event
+  14.]</em></p></li>
+</ol>
+
+<img src="./ZeroMQ_Req_Rep_coll_win_abort.png" align="center">
+
+<h4>Collision loser (with abort handling)</h4>
+
+<p>Peer 1 loses.</p>
+
+<ol start="10">
+  <li><p>The loser cancels timeouts on its request (but leaves the
+  request pending) and then processes the winning request as
+  usual. <em>[Peer 2: event 3,
+  CLIENT_WAITING/collision_win.]</em></p></li>
+  <li><p>The loser can optionally, on the basis of processing the
+  winning request, decide to abort its losing request. It indicates
+  this in the header of its reply to the winning request, which is
+  otherwise returned normally. <em>[Peer 2: event 4.]</em></p></li>
+  <li><p>Assuming the loser is not aborting its request, it now waits for
+  the reply to its losing request as usual, restarting its request
+  timeout from 0. <em>[Peer 2: event 5.]</em></p></li>
+  <li>
+    <p>The winner replies to the losing request as normal. <em>[Peer
+    2: event 6.]</em></p>
+    <p><em>or</em></p>
+  </li>
+  <li><p>If the loser is aborting its request, it closes and reopens its
+  client zmq_socket (which would otherwise be awaiting a reply), and
+  returns directly to INACTIVE. <em>[Peer 2: event 7.]</em></p></li>
+</ol>
+
+
+
+
+<a name="references"></a>
+<h2>References</h2>
+
+<ul>
+  <li><a href="http://zeromq.org/">ZeroMQ</a></li>
+  <li><a href="http://zguide.zeromq.org/page:all">ZeroMQ Guide</a></li>
+  <li><a href="https://metacpan.org/pod/ZMQ::LibZMQ3">ZMQ::LibZMQ3 perl module</a></li>
+</ul>
+
+
 
 
 

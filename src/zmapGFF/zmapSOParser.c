@@ -909,7 +909,7 @@ gboolean zMapSOTermIsValid(ZMapSOTerm pTerm)
 /*
  * Return the SOID stored in the term.
  */
-ZMapSOID zMapSOTermGetID(const ZMapSOTerm const pTerm )
+ZMapSOID zMapSOTermGetID(const ZMapSOTerm pTerm )
 {
   if (!pTerm)
     return NULL ;
@@ -922,7 +922,7 @@ ZMapSOID zMapSOTermGetID(const ZMapSOTerm const pTerm )
  * Return pointer to internally stored name string.
  * New memory is NOT allocated for the return value.
  */
-char * zMapSOTermGetName(const ZMapSOTerm const pTerm)
+char * zMapSOTermGetName(const ZMapSOTerm pTerm)
 {
   if (!pTerm)
     return NULL ;
@@ -933,7 +933,7 @@ char * zMapSOTermGetName(const ZMapSOTerm const pTerm)
 /*
  * Copy the second argument to the first.
  */
-gboolean zMapSOTermCopy(ZMapSOTerm const pLHS, const ZMapSOTerm const pRHS)
+gboolean zMapSOTermCopy(ZMapSOTerm const pLHS, const ZMapSOTerm pRHS)
 {
   gboolean bResult = FALSE ;
   unsigned int iLength = 0 ;
@@ -973,7 +973,7 @@ gboolean zMapSOTermCopy(ZMapSOTerm const pLHS, const ZMapSOTerm const pRHS)
 /*
  * Test to see if the two arguments are equal.
  */
-gboolean zMapSOTermEquals(const ZMapSOTerm const pLHS, const ZMapSOTerm const pRHS)
+gboolean zMapSOTermEquals(const ZMapSOTerm pLHS, const ZMapSOTerm pRHS)
 {
   gboolean bResult = FALSE;
   if (   !pLHS
@@ -1042,7 +1042,7 @@ unsigned int zMapSOCollectionGetNumTerms(ZMapSOCollection pCollection)
  * Add an SOTerm to the SOCollection object. Return false if it was present
  * already. THis is done by copying the pointer value, not creating a new object.
  */
-gboolean zMapSOCollectionAddSOTerm(ZMapSOCollection pCollection, const ZMapSOTerm const pTerm)
+gboolean zMapSOCollectionAddSOTerm(ZMapSOCollection pCollection, const ZMapSOTerm pTerm)
 {
   gboolean bResult = FALSE ;
   ZMapSOTerm *pTerms = NULL ;
@@ -1110,7 +1110,7 @@ gboolean zMapSOCollectionDestroy(ZMapSOCollection pCollection)
  * Query a SO Collection to see if a term is present.
  * Check is made on numerical and string IDs.
  */
-gboolean zMapSOCollectionIsTermPresent(ZMapSOCollection pCollection, const ZMapSOTerm const pTerm)
+gboolean zMapSOCollectionIsTermPresent(ZMapSOCollection pCollection, const ZMapSOTerm pTerm)
 {
   gboolean bResult = FALSE ;
   unsigned int iTerm ;
@@ -1662,7 +1662,7 @@ static gboolean zMapSOParseName(ZMapSOParser const pParser)
 /*
  * Return the line type stored by the parser.
  */
-static ZMapSOParserLineType zMapSOParserGetLineType(const ZMapSOParser const pParser)
+static ZMapSOParserLineType zMapSOParserGetLineType(const ZMapSOParser pParser)
 {
   if (!pParser)
     return ZMAPSO_LINE_UNK ;
@@ -1763,7 +1763,7 @@ gboolean zMapSOParseLine(ZMapSOParser const pParser, const char * const sLine)
 /*
  * Return pointer to error.
  */
-GError *zMapSOParserGetError(const ZMapSOParser const pParser)
+GError *zMapSOParserGetError(const ZMapSOParser pParser)
 {
   if (!pParser)
     return NULL ;
@@ -1773,7 +1773,7 @@ GError *zMapSOParserGetError(const ZMapSOParser const pParser)
 /*
  * Return the parser line counter.
  */
-unsigned int zMapSOParserGetLineCount(const ZMapSOParser const pParser )
+unsigned int zMapSOParserGetLineCount(const ZMapSOParser pParser )
 {
   if (!pParser)
     return 0 ;
@@ -1798,7 +1798,7 @@ gboolean zMapSOParserSetStopOnError(ZMapSOParser const pParser, gboolean bValue)
 /*
  * Is the parser terminated?
  */
-gboolean zMapSOParserTerminated(const ZMapSOParser const pParser)
+gboolean zMapSOParserTerminated(const ZMapSOParser pParser)
 {
   gboolean bResult = FALSE ;
   if (!pParser)

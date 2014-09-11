@@ -679,9 +679,15 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
             break;
 
           gff_data->gff_source = (char *) g_quark_to_string(fset->original_id);
+          if (strstr(gff_data->gff_source, "anon_source"))
+            {
+              gff_data->gff_source = "." ;
+            }
 #endif
 
           gff_data->gff_feature = (char *) g_quark_to_string(feature->SO_accession) ; /* zMapSOAcc2Term(feature->SO_accession) ; */
+
+          /*
           if(!gff_data->gff_feature)
             {
               GQuark gff_ontology;
@@ -689,6 +695,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
               gff_ontology = zMapStyleGetGFFFeature(style);
               gff_data->gff_feature = (char *) g_quark_to_string(gff_ontology);
             }
+          */
 
           g_string_append_printf(gff_string,
             GFF_SEQ_SOURCE_FEAT_START_END,
@@ -733,23 +740,23 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
                   gff_data->link_term    = gff_data->gff_feature;
 
                   result = dump_attributes(gff_data->transcript, feature,
-                    &(feature->feature.transcript),
-                    gff_string, error, gff_data);
+                                           &(feature->feature.transcript),
+                                           gff_string, error, gff_data);
 
                 }
                 break;
               case ZMAPSTYLE_MODE_ALIGNMENT:
                 {
                   result = dump_attributes(gff_data->homol, feature,
-                    &(feature->feature.homol),
-                    gff_string, error, gff_data);
+                                           &(feature->feature.homol),
+                                           gff_string, error, gff_data);
                 }
                 break;
               case ZMAPSTYLE_MODE_TEXT:
                 {
                   result = dump_attributes(gff_data->text, feature,
-                    NULL, /* this needs to be &(feature->feature.text) */
-                    gff_string, error, gff_data);
+                                           NULL, /* this needs to be &(feature->feature.text) */
+                                           gff_string, error, gff_data);
                 }
                 break;
               default:

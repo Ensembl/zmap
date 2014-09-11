@@ -354,6 +354,7 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
 /* Callback functions that can be registered with ZMapWindow, functions are registered all in one.
  * go via the ZMapWindowCallbacksStruct. */
 typedef void (*ZMapWindowCallbackFunc)(ZMapWindow window, void *caller_data, void *window_data) ;
+typedef gboolean (*ZMapWindowBoolCallbackFunc)(ZMapWindow window, void *caller_data, void *window_data) ;
 typedef void (*ZMapWindowLoadCallbackFunc)(ZMapWindow window,
                                            void *caller_data, gpointer load_cb_data, void *window_data) ;
 
@@ -370,7 +371,7 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc visibilityChange ;
   ZMapWindowCallbackFunc command ;                          /* Request to exit given command. */
   ZMapWindowLoadCallbackFunc drawn_data ;
-  ZMapWindowCallbackFunc merge_new_feature ;
+  ZMapWindowBoolCallbackFunc merge_new_feature ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* WHAT..... */

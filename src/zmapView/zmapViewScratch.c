@@ -47,14 +47,18 @@
 #define SCRATCH_FEATURE_NAME "temp_feature"
 
 
-typedef enum {ZMAPEDIT_MERGE, ZMAPEDIT_DELETE, ZMAPEDIT_CLEAR} ZMapEditType ;
+typedef enum {ZMAPEDIT_MERGE, ZMAPEDIT_DELETE, ZMAPEDIT_CLEAR, ZMAPEDIT_SAVE} ZMapEditType ;
 
 
 /* Data about each edit operation in the Scratch column */
 typedef struct _EditOperationStruct
 {
   ZMapEditType edit_type;      /* the type of edit operation */
-  GList *src_feature_ids;      /* the IDs of the feature(s) to be merged in, i.e. the source for the merge */
+  GList *src_feature_ids;      /* the IDs of the feature(s) to be merged in, i.e. the source for
+                                * the merge */
+  ZMapFeature src_feature;     /* A manually-edited feature to be merged in. This is used for the
+                                * Save operation where the feature doesn't exist in a featureset
+                                * so we take ownership of it. */
   long seq_start;              /* sequence coord (sequence features only) */
   long seq_end;                /* sequence coord (sequence features only) */
   ZMapFeatureSubPartSpan subpart; /* the subpart to use, if applicable */
@@ -207,9 +211,10 @@ static void scratchAddOperation(ZMapView view, EditOperation operation)
                                  the original end pointer! */
     }
 
-  /* For "clear" operations we set the start pointer to the end of the list, so that all of the
-   * features are ignored (but they're still there so we can undo the operation) */
-  if (operation->edit_type == ZMAPEDIT_CLEAR)
+  /* For "clear" and "save" operations we set the start pointer to the end of the list, 
+   * so that all of the operations before this are ignored (but they're still there
+   * so we can undo the operation) */
+  if (operation->edit_type == ZMAPEDIT_CLEAR || operation->edit_type == ZMAPEDIT_SAVE)
     {
       view->edit_list_start = view->edit_list_end ;
     }
@@ -251,17 +256,20 @@ ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set)
 {
   ZMapFeature feature = NULL;
 
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)feature_set;
-
-  GHashTableIter iter;
-  gpointer key, value;
-
-  g_hash_table_iter_init (&iter, feature_any->children);
-
-  /* Should only be one, so just get the first */
-  while (g_hash_table_iter_next (&iter, &key, &value) && !feature)
+  if (feature_set)
     {
-      feature = (ZMapFeature)(value);
+      ZMapFeatureAny feature_any = (ZMapFeatureAny)feature_set;
+
+      GHashTableIter iter;
+      gpointer key, value;
+
+      g_hash_table_iter_init (&iter, feature_any->children);
+
+      /* Should only be one, so just get the first */
+      while (g_hash_table_iter_next (&iter, &key, &value) && !feature)
+        {
+          feature = (ZMapFeature)(value);
+        }
     }
 
   return feature;
@@ -518,26 +526,68 @@ static gboolean scratchMergeTranscript(ScratchMergeData merge_data, ZMapFeature 
 }
 
 
-/*!
- * \brief Delete a feature from the scratch column
+/*! 
+ * \brief Add/merge a feature to the scratch column
  */
-static gboolean scratchDoDeleteOperation(ScratchMergeData merge_data)
+static gboolean scratchMergeFeature(ScratchMergeData merge_data, ZMapFeature feature)
 {
   gboolean merged = FALSE ;
-  zMapReturnValIfFail(merge_data, merged) ;
+  zMapReturnValIfFail(feature, merged) ;
 
-  EditOperation operation = merge_data->operation;
+  /* If the start/end is not set, set it now from the feature extent */
+  if (!scratchGetStartEndFlag(merge_data->view))
+    {
+      merge_data->dest_feature->x1 = feature->x1;
+      merge_data->dest_feature->x2 = feature->x2;
+    }
 
-  if (operation->subpart)
+  if (feature)
     {
-      merged = zMapFeatureTranscriptDeleteSubfeatureAtCoord(merge_data->dest_feature, operation->subpart->start);
-    }
-  else
-    {
-      g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
-                  "Program error: a subfeature is required to delete an intron/exon.") ;
-    }
-  
+      switch (feature->mode)
+        {
+        case ZMAPSTYLE_MODE_ALIGNMENT:      /* fall through */
+        case ZMAPSTYLE_MODE_BASIC:
+          merged = scratchMergeBasic(merge_data, feature);
+          break;
+        case ZMAPSTYLE_MODE_TRANSCRIPT:
+          merged = scratchMergeTranscript(merge_data, feature);
+          break;
+        case ZMAPSTYLE_MODE_SEQUENCE:
+          merged = scratchMergeBase(merge_data);
+          break;
+        case ZMAPSTYLE_MODE_GLYPH:
+          merged = scratchMergeSplice(merge_data, feature);
+          break;
+
+        case ZMAPSTYLE_MODE_ASSEMBLY_PATH: /* fall through */
+        case ZMAPSTYLE_MODE_TEXT:          /* fall through */
+        case ZMAPSTYLE_MODE_GRAPH:         /* fall through */
+        case ZMAPSTYLE_MODE_PLAIN:         /* fall through */
+        case ZMAPSTYLE_MODE_META:          /* fall through */
+          g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Copy of feature of type %d is not implemented.\n", feature->mode);
+          break;
+
+        case ZMAPSTYLE_MODE_INVALID:
+          g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Tried to merge a feature that has been deleted.\n");
+          break ;
+
+        default:
+          g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Unexpected feature type %d.\n", feature->mode);
+          break ;
+        };
+
+      /* If any of the features fail to merge, exit */
+      if (!merged)
+        {
+          /* If the error is not already set, set it now .*/
+          if (*merge_data->error == NULL)
+            {
+              g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, 
+                          "Failed to merge feature '%s'.\n", g_quark_to_string(feature->original_id));
+            }
+        }
+    }  
+
   return merged ;
 }
 
@@ -579,61 +629,11 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data)
       for ( ; item ; item = item->next)
         {
           ZMapFeature feature = getFeature(merge_data->view, item) ;
-
-          /* If the start/end is not set, set it now from the feature extent */
-          if (!scratchGetStartEndFlag(merge_data->view))
-           {
-              merge_data->dest_feature->x1 = feature->x1;
-              merge_data->dest_feature->x2 = feature->x2;
-            }
-
-          if (feature)
-            {
-              switch (feature->mode)
-                {
-                case ZMAPSTYLE_MODE_ALIGNMENT:      /* fall through */
-                case ZMAPSTYLE_MODE_BASIC:
-                  merged = scratchMergeBasic(merge_data, feature);
-                  break;
-                case ZMAPSTYLE_MODE_TRANSCRIPT:
-                  merged = scratchMergeTranscript(merge_data, feature);
-                  break;
-                case ZMAPSTYLE_MODE_SEQUENCE:
-                  merged = scratchMergeBase(merge_data);
-                  break;
-                case ZMAPSTYLE_MODE_GLYPH:
-                  merged = scratchMergeSplice(merge_data, feature);
-                  break;
-
-                case ZMAPSTYLE_MODE_ASSEMBLY_PATH: /* fall through */
-                case ZMAPSTYLE_MODE_TEXT:          /* fall through */
-                case ZMAPSTYLE_MODE_GRAPH:         /* fall through */
-                case ZMAPSTYLE_MODE_PLAIN:         /* fall through */
-                case ZMAPSTYLE_MODE_META:          /* fall through */
-                  g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Copy of feature of type %d is not implemented.\n", feature->mode);
-                  break;
-
-                case ZMAPSTYLE_MODE_INVALID:
-                  g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Tried to merge a feature that has been deleted.\n");
-                  break ;
-
-                default:
-                  g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Unexpected feature type %d.\n", feature->mode);
-                  break ;
-                };
-
-              /* If any of the features fail to merge, exit */
-              if (!merged)
-                {
-                  /* If the error is not already set, set it now .*/
-                  if (*merge_data->error == NULL)
-                    {
-                      g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, 
-                                  "Failed to merge feature '%s'.\n", g_quark_to_string(feature->original_id));
-                    }
-                  break ;
-                }
-            }
+          
+          merged = scratchMergeFeature(merge_data, feature) ;
+          
+          if (!merged)
+            break ;
         }
     }
 
@@ -655,6 +655,64 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data)
     }
 
   return merged;
+}
+
+
+/*!
+ * \brief Delete a feature from the scratch column
+ */
+static gboolean scratchDoDeleteOperation(ScratchMergeData merge_data)
+{
+  gboolean merged = FALSE ;
+  zMapReturnValIfFail(merge_data, merged) ;
+
+  EditOperation operation = merge_data->operation;
+
+  if (operation->subpart)
+    {
+      merged = zMapFeatureTranscriptDeleteSubfeatureAtCoord(merge_data->dest_feature, operation->subpart->start);
+    }
+  else
+    {
+      g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
+                  "Program error: a subfeature is required to delete an intron/exon.") ;
+    }
+  
+  return merged ;
+}
+
+
+/*!
+ * \brief Clear the scratch column
+ */
+static gboolean scratchDoClearOperation(ScratchMergeData merge_data)
+{
+  gboolean merged = TRUE ;
+  return merged ;
+}
+
+
+/*!
+ * \brief Save a manually-edited feature.
+ */
+static gboolean scratchDoSaveOperation(ScratchMergeData merge_data)
+{
+  gboolean merged = FALSE ;
+  EditOperation operation = merge_data->operation;
+
+  zMapReturnValIfFail(merge_data && operation, merged) ;
+
+  if (operation->src_feature)
+    {
+      merged = scratchMergeFeature(merge_data, operation->src_feature) ;
+    }
+  else
+    {
+      g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
+                  "Program error: no feature specified for Save operation.") ;
+    }
+  
+  return merged ;
 }
 
 
@@ -843,14 +901,23 @@ static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_featu
       merge_data.operation = operation;
 
       /* Do the operation */
-      if (operation->edit_type == ZMAPEDIT_CLEAR)
-        merged = TRUE ;                                   /* nothing to do */
-      else if (operation->edit_type == ZMAPEDIT_MERGE)
-        merged = scratchDoMergeOperation(&merge_data) ;
-      else if (operation->edit_type == ZMAPEDIT_DELETE)
-        merged = scratchDoDeleteOperation(&merge_data) ;
-      else
-        zMapLogWarning("Program error: edit operation of type '%d' is not supported", operation->edit_type) ;
+      switch (operation->edit_type)
+        {
+          case ZMAPEDIT_MERGE:
+            merged = scratchDoMergeOperation(&merge_data) ;
+            break ;
+          case ZMAPEDIT_DELETE:
+            merged = scratchDoDeleteOperation(&merge_data) ;
+            break ;
+          case ZMAPEDIT_CLEAR:
+            merged = scratchDoClearOperation(&merge_data) ;
+            break ;
+          case ZMAPEDIT_SAVE:
+            merged = scratchDoSaveOperation(&merge_data) ;
+            break ;
+          default:
+            zMapLogWarning("Program error: edit operation of type '%d' is not supported", operation->edit_type) ;
+        }
 
       GList *next_item = list_item->next;
 
@@ -1082,6 +1149,39 @@ static void operationAddFeatureList(EditOperation operation, GList *features)
 }
 
 /*!
+ * \brief Return true if two features are exactly the same, as far as we care for
+ * constructing the scratch feature.
+ */
+static gboolean featuresEqual(ZMapFeature feature1, ZMapFeature feature2)
+{
+  gboolean result = FALSE ;
+
+  if (feature1 && feature2)
+    {
+      if (feature1->mode == feature2->mode &&
+          feature1->strand == feature2->strand &&
+          feature1->x1 == feature2->x1 &&
+          feature1->x2 == feature2->x2)
+        {
+          if (feature1->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+            {
+              result = zMapFeatureTranscriptsEqual(feature1, feature2, NULL) ;
+            }
+          else
+            {
+              /* shouldn't get here because scratch feature is a transcript */
+              zMapWarnIfReached() ;
+              result = TRUE ; 
+            }
+        }
+          
+    }
+
+  return result ;
+}
+
+
+/*!
  * \brief Copy the given feature(s) into the scratch column
  */
 gboolean zmapViewScratchCopyFeatures(ZMapView view,
@@ -1205,21 +1305,30 @@ gboolean zmapViewScratchUndo(ZMapView view)
         {
           view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
 
-          /* Special treatment if the last operation was a "clear" because clear shifts the start
+          /* Special treatment if the last operation was a "clear" or "save" because these shift the start
            * pointer to be the same as the end pointer, so we need to move it back (to the start of
-           * the list or to the last "clear" operation, if there is one). */
+           * the list or to the last clear/save operation, if there is one). */
           EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
 
-          if (operation->edit_type == ZMAPEDIT_CLEAR)
+          if (operation->edit_type == ZMAPEDIT_CLEAR || operation->edit_type == ZMAPEDIT_SAVE)
             {
               while (view->edit_list_start && view->edit_list_start->prev)
                 {
-                  EditOperation prev_operation = (EditOperation)(view->edit_list_end->prev->data) ;
+                  EditOperation prev_operation = (EditOperation)(view->edit_list_start->prev->data) ;
               
+                  /* If the previous operaition is a clear then leave the start at the current
+                   * operation (i.e. the one after the clear, which is where the feature
+                   * construction starts). */
                   if (prev_operation->edit_type == ZMAPEDIT_CLEAR)
                     break ;
 
+                  /* Move the start back to the prev operation */
                   view->edit_list_start = view->edit_list_start->prev ;
+
+                  /* If the operation is a save then stop here (unlike "clear" we want this to be
+                   * the current start operation because the save operation constructs the feature) */
+                  if (prev_operation->edit_type == ZMAPEDIT_SAVE)
+                    break ;
                 }
             }
 
@@ -1263,9 +1372,9 @@ gboolean zmapViewScratchRedo(ZMapView view)
           view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
           view->edit_list_end = view->edit_list_end->next ;
 
-          /* For "clear" operations we need to move the start pointer to the same as the end pointer */
+          /* For clear/save operations we need to move the start pointer to the same as the end pointer */
           EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
-          if (operation->edit_type == ZMAPEDIT_CLEAR)
+          if (operation->edit_type == ZMAPEDIT_CLEAR || operation->edit_type == ZMAPEDIT_SAVE)
             view->edit_list_start = view->edit_list_end ;
 
           scratchFeatureRecreate(view);
@@ -1278,9 +1387,10 @@ gboolean zmapViewScratchRedo(ZMapView view)
            * so we just need to set the start/end pointers to the first item in the list */
           view->edit_list_start = view->edit_list_end = view->edit_list ;
 
-          /* For "clear" operations we need to move the start pointer to the same as the end pointer */
+          /* For "clear" and "save" operations we need to move the start pointer to the 
+           * same as the end pointer */
           EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
-          if (operation->edit_type == ZMAPEDIT_CLEAR)
+          if (operation->edit_type == ZMAPEDIT_CLEAR || operation->edit_type == ZMAPEDIT_SAVE)
             view->edit_list_start = view->edit_list_end ;
 
           scratchFeatureRecreate(view);
@@ -1293,3 +1403,39 @@ gboolean zmapViewScratchRedo(ZMapView view)
 
   return TRUE;
 }
+
+
+/*!
+ * \brief Called when the user saves manual edits to the scratch feature.
+ * 
+ * The given feature is the feature that has been constructed from the manual information
+ * but this feature does not exist in any featureset etc. so we take ownership of it.
+ */
+gboolean zmapViewScratchSave(ZMapView view, ZMapFeature feature)
+{
+  if (zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION) && feature)
+    {
+      /* If the new feature is exactly the same as the existing one then we don't
+       * need to do anything. */
+      ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(view) ;
+      ZMapFeature old_feature = zmapViewScratchGetFeature(feature_set) ;
+
+      if (!featuresEqual(old_feature, feature))
+        {
+          view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+
+          /* Now create the save operation */
+          EditOperation operation = g_new0(EditOperationStruct, 1);
+      
+          operation->edit_type = ZMAPEDIT_SAVE ;
+          operation->src_feature = feature ;
+
+          /* Add this operation to the list and recreate the scratch feature. */
+          scratchAddOperation(view, operation) ;
+        }
+    }
+
+  return TRUE;
+}
+
+
