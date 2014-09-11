@@ -2780,12 +2780,17 @@ static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data)
   char *source_name ;
   static BasicFeatureDumpStruct dumpers[] =
     {
+      {SO_ACC_CNV, formatVariant},
       {SO_ACC_DELETION, formatVariant},
       {SO_ACC_INSERTION,  formatVariant},
+      {SO_ACC_POLYA_JUNC, formatPolyA},
+      {SO_ACC_POLYA_SEQ, formatPolyA},
       {SO_ACC_POLYA_SIGNAL, formatPolyA},
       {SO_ACC_POLYA_SITE, formatPolyA},
       {SO_ACC_SEQ_ALT, formatVariant},
       {SO_ACC_SNP, formatVariant},
+      {SO_ACC_SNV,  formatVariant},
+      {SO_ACC_MUTATION, formatVariant},
       {SO_ACC_SUBSTITUTION, formatVariant},
       {NULL, NULL}
     } ;
@@ -2803,7 +2808,7 @@ static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data)
   curr = dumpers ;
   while (curr->source_name)
     {
-      if (g_ascii_strcasecmp(g_quark_to_string(feature->SO_accession), curr->source_name) == 0)
+      if (feature->SO_accession == zMapSOAcc2TermID(g_quark_from_string(curr->source_name)))
 	break ;
       else
 	curr++ ;
@@ -2844,7 +2849,7 @@ static gboolean formatPolyA(GFFFormatData gff_data, GString *line,
 
   g_string_append_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t.%s%s\n",
 			 ref_name, source_name,
-			 zMapSOAcc2Term(feature->SO_accession),
+                         g_quark_to_string(feature->SO_accession),
 			 feature->x1, feature->x2,
 			 (feature->strand == ZMAPSTRAND_REVERSE ? '-' : '+'),
 			 (id_str ? "\t" : ""),
@@ -2861,7 +2866,7 @@ static gboolean formatVariant(GFFFormatData gff_data, GString *line,
 
   /* do mandatory fields */
   g_string_append_printf(line, "%s\t%s\t%s\t%d\t%d\t.\t%c\t.",
-			 ref_name, source_name, zMapSOAcc2Term(feature->SO_accession),
+                         ref_name, source_name, g_quark_to_string(feature->SO_accession),
 			 feature->x1, feature->x2,
 			 (feature->strand == ZMAPSTRAND_REVERSE ? '-' : '+')) ;
 
