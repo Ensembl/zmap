@@ -65,15 +65,15 @@ static gboolean isFrameSensitive(gconstpointer col_data);
 static void printCB(gpointer data, gpointer user_data) ;
 
 
-/* 
+/*
  *                Globals
  */
 
-static gboolean order_debug_G = TRUE ;
+static gboolean order_debug_G = FALSE ;
 
 
 
-/* 
+/*
  *                Package routines
  */
 
@@ -91,7 +91,7 @@ void zmapWindowColOrderColumns(ZMapWindow window)
 
 
 
-/* 
+/*
  *               Internal routines
  */
 
@@ -264,8 +264,8 @@ static GQuark columnFSNid(gconstpointer col_data)
  * cols the order is given by that specified in the config file but note that
  * for reverse strand the order is reversed so that cols are a mirror image of
  * forward strand.
- * 
- * 
+ *
+ *
  * -1 if a is before b
  * +1 if a is after  b
  *  0 if equal
