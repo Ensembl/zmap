@@ -191,6 +191,12 @@ exposing new functionality.
 </blockquote>
 </p>
 
+<p>
+There is a useful <a href="http://aosabook.org/en/zeromq.html">chapter
+on ZeroMQ</a> in Volume 2 of "The Architecture of Open Source
+Applications", written by one of the principal ZeroMQ designers.
+</p>
+
 <a name="zmq_socket"></a>
 <p>The ZeroMQ API uses ZeroMQ sockets, which are not the same as
 traditional Unix or TCP sockets. To avoid confusion, henceforth the
