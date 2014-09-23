@@ -85,11 +85,8 @@ typedef enum
     DISPLAY_3FRAME_NONE     = 0x0U,			    /* No 3 frame at all. */
     DISPLAY_3FRAME_ON       = 0x1U,			    /* 3 frame display is on. */
     DISPLAY_3FRAME_TRANS    = 0x2U,			    /* Translations displayed when 3 frame on. */
-    DISPLAY_3FRAME_TRANS_ON = 0x3U,
     DISPLAY_3FRAME_COLS     = 0x4U,			    /* All other cols displayed when 3 frame on. */
-    DISPLAY_3FRAME_COLS_ON  = 0x5U,
-    DISPLAY_3FRAME_ALL      = 0x6U,			    /* Everything on. */
-    DISPLAY_3FRAME_ALL_ON   = 0x7U
+    DISPLAY_3FRAME_ALL      = 0x6U			    /* Everything on. */
   } Display3FrameMode ;
 
 #define IS_3FRAME_TRANS(FRAME_MODE) \
