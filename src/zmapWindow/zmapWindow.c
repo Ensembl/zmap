@@ -5365,7 +5365,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
             focus_container = (ZMapWindowContainerFeatureSet)focus_column;
 
             /* Treat the annotation column differently */
-            if (zmapWindowContainerFeaturesetGetColumnId(focus_container) == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
+            if (zmapWindowContainerFeaturesetGetColumnUniqueId(focus_container)
+                == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
               {
                 zmapWindowScratchClear(window) ;
               }
