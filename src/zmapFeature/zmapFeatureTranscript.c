@@ -173,12 +173,12 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
 
   if (bStartNotFound)
     {
-      feature->feature.transcript.flags.start_not_found = TRUE ;
+      feature->feature.transcript.flags.start_not_found = 1 ;
       feature->feature.transcript.start_not_found = iStartNotFound ;
     }
   if (bEndNotFound)
     {
-      feature->feature.transcript.flags.end_not_found = TRUE ;
+      feature->feature.transcript.flags.end_not_found = 1 ;
     }
 
   return result ;
