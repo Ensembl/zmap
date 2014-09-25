@@ -6,6 +6,13 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 1.0.0</h4>
+<ul>
+  <li>Implementation of zeroMQ transport layer for the remote communications protocol. Note that this is incompatible with previous versions of the protocol. Fixes several bugs including RT347901.
+  <li>There is now a tooltip to give the name of a column when mouse pointer enters it (RT398144).
+  <li>Fixed a bug with dumping features from the feature-search dialog.
+</ul>
+
 <h4>Version 0.23.0</h4>
 <ul>
   <li>Temporary features can now be edited and saved in standalone ZMap, and exported back to GFF.
