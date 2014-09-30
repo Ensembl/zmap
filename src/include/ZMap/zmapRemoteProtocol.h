@@ -51,23 +51,14 @@
  *    Data type descriptors for the GtkSelectionData used for passing requests/replies.
  */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Wanted to use our own but lookds like Perl/Tk won't support it.... */
-#define ZACP_DATA_TYPE   "ZACP_COMMAND_STR"
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-#define ZACP_DATA_TYPE   "STRING"
-#define ZACP_DATA_FORMAT 8			    /* Bits per unit. */
-
-
 
 /* Protocol "types", describe what type of message it is.
  * 
- * This is version 2 of the protocol because there will be some incompatible changes
+ * This is version 3 of the protocol because there will be some incompatible changes
  * from version 1.
  *  */
 #define ZACP_TAG "zmap"
-#define ZACP_VERSION  "2.0"
+#define ZACP_VERSION  "3.0"
 
 
 
@@ -78,12 +69,16 @@
 #define ZACP_TYPE          "type"
 #define ZACP_VERSION_ID    "version"
 #define ZACP_APP_ID        "app_id"
-#define ZACP_CLIPBOARD_ID  "clipboard_id"
+
+#define ZACP_SOCKET_ID  "socket_id"
+
 #define ZACP_REQUEST_ID    "request_id"
 
+#define ZACP_REQUEST_TIME  "request_time"
 
 
-/* Commands, attributes and values. */
+
+/* Attributes and values including commands and so on. */
 #define ZACP_CMD "command"
 
 #define ZACP_HANDSHAKE     "handshake"
@@ -119,15 +114,15 @@
 #define ZACP_SHUTDOWN      "shutdown"
 
 
+
 #define ZACP_VIEWID  "view_id"
 #define ZACP_TIMEOUT "timeout"
 
 #define ZACP_PEER      "peer"
 #define ZACP_APP_ID    "app_id"
+
+/* How are these used ????? */
 #define ZACP_UNIQUE_ID "unique_id"
-#define ZACP_WINDOW_ID "window_id"
-
-
 
 #define ZACP_SEQUENCE_TAG     "sequence"
 #define ZACP_SEQUENCE_NAME    "name"

@@ -155,6 +155,10 @@ PipeArgStruct zmap_args[] =
   };
 
 
+/* Turn on/off child pid debugging. */
+static gboolean child_pid_debug_G = FALSE ;
+
+
 
 /*
  *              External interface routines
@@ -797,8 +801,8 @@ static ZMapServerResponseType destroyConnection(void *server_in)
   PipeServer server = (PipeServer)server_in ;
 
 
-  /* temp logging.... */
-  zMapLogWarning("Child pid %d destroying server connection.", server->child_pid) ;
+  if (child_pid_debug_G)
+    zMapLogWarning("Child pid %d destroying server connection.", server->child_pid) ;
 
   /* Slightly tricky here, we can be requested to destroy the connection _before_ the
    * child has died so we need to replace the standard child watch routine with one that
@@ -1028,8 +1032,8 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
       /* Set a callback to be called when child exits. */
       server->child_watch_id = g_child_watch_add(server->child_pid, childFullReapCB, server) ;
 
-      /* temp logging.... */
-      zMapLogWarning("Child pid %d created.", server->child_pid) ;
+      if (child_pid_debug_G)
+        zMapLogWarning("Child pid %d created.", server->child_pid) ;
     }
   else
     {
@@ -1632,13 +1636,14 @@ static void childFullReapCB(GPid child_pid, gint child_status, gpointer user_dat
 
       exit_msg = g_strdup_printf("Child pid %d exited with status %d because: \"%s\"",
                                  child_pid, server->child_exit_status, 
-                                 zmapProcTerm2ShortText(termination_type)) ;
+                                 zmapProcTerm2LongText(termination_type)) ;
 
       setErrMsg(server, exit_msg) ;
     }
 
-  zMapLogWarning("Child pid %d in full-reap callback will now be reaped: \"%s\".",
-                 child_pid, exit_msg) ;
+  if (child_pid_debug_G || server->exit_code == EXIT_FAILURE)
+    zMapLogWarning("Child pid %d in full-reap callback will now be reaped: \"%s\".",
+                   child_pid, exit_msg) ;
 
   g_free(exit_msg) ;
 
@@ -1655,7 +1660,8 @@ static void childFullReapCB(GPid child_pid, gint child_status, gpointer user_dat
  * so no result can be returned. */
 static void childReapOnlyCB(GPid child_pid, gint child_status, gpointer user_data)
 {
-  zMapLogWarning("Child pid %d in reap-only callback will now be reaped.", child_pid) ;
+  if (child_pid_debug_G)
+    zMapLogWarning("Child pid %d in reap-only callback will now be reaped.", child_pid) ;
 
   /* Clean up the child process. */
   g_spawn_close_pid(child_pid) ;

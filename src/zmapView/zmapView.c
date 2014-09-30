@@ -194,7 +194,6 @@ typedef struct FindStylesStructType
 } FindStylesStruct, *FindStyles ;
 
 
-
 static void getIniData(ZMapView view, char *config_str, GList *sources) ;
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets) ;
 static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark featurequark);
@@ -333,6 +332,11 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
 				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data) ;
 
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data) ;
+
+
+
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -462,7 +466,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   char *view_name ;
   int curr_scr_num, num_screens ;
 
-  /* No callbacks, then no view creation. */
+
   zMapReturnValIfFail((GTK_IS_WIDGET(view_container)), view_window);
   zMapReturnValIfFail((sequence_map->sequence
                        && (sequence_map->start > 0 && sequence_map->start <= sequence_map->end)), view_window) ;
@@ -471,7 +475,8 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
    * in config file and next time they create a view the debugging will go on/off */
   zMapUtilsConfigDebug(sequence_map->config_file) ;
 
-  zMapInitTimer() ; // operates as a reset if already defined
+  zMapInitTimer() ;                                         /* operates as a reset if already
+                                                               defined. */
 
 
   /* I DON'T UNDERSTAND WHY THERE IS A LIST OF SEQUENCES HERE.... */
@@ -1598,7 +1603,7 @@ ZMapViewState zMapViewGetStatus(ZMapView zmap_view)
 }
 
 /* auto define of function to return view state as a string, see zmapEnum.h. */
-ZMAP_ENUM_AS_NAME_STRING_FUNC(zMapView2Str, ZMapViewState, VIEW_STATE_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapView2Str, ZMapViewState, VIEW_STATE_LIST) ;
 
 
 
@@ -1650,6 +1655,7 @@ char *zMapViewGetLoadStatusStr(ZMapView view,
 
   return load_state_str ;
 }
+
 
 
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
@@ -5134,7 +5140,8 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
           (*(view_cbs_G->remote_request_func))(view_cbs_G->remote_request_func_data,
                                                zmap_view,
                                                ZACP_FEATURES_LOADED, &viewloaded[0],
-                                               localProcessReplyFunc, zmap_view) ;
+                                               localProcessReplyFunc, zmap_view,
+                                               remoteReplyErrHandler, zmap_view) ;
 
           free(emsg);                                           /* yes really free() not g_free()-> see zmapUrlUtils.c */
 
@@ -6522,6 +6529,23 @@ static void destroyLoadFeatures(LoadFeaturesData loaded_features)
   return ;
 }
 
+
+static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data)
+{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* UNUSED AT THE MOMENT */
+
+  ZMapView zmap_view = (ZMapView)user_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+
+  return ;
+}
 
 
 

@@ -20,9 +20,10 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
  * Description: Functions to manipulate alignment features.
  *
@@ -34,36 +35,91 @@
  */
 
 #include <ZMap/zmap.h>
+#include <ZMap/zmapGFFStringUtils.h>
 
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
 
 #include <zmapFeature_P.h>
 
-
-/* We get align strings in several variants and then convert them into this common format. */
-typedef struct
+/*
+ * We get align strings in several variants and then convert them
+ * into this common format.
+ *
+ * Operator-length pair. Character to represent the operator and a
+ * positive integer for the length.
+ */
+typedef struct _AlignStrOpStruct
 {
   char op ;
   int length ;
 } AlignStrOpStruct, *AlignStrOp ;
 
+/*
+ * Note that the possible values of ZMapFeatureAlignFormat are:
+ *
+ * ZMAPALIGN_FORMAT_INVALID
+ * ZMAPALIGN_FORMAT_CIGAR_EXONERATE
+ * ZMAPALIGN_FORMAT_CIGAR_ENSEMBL
+ * ZMAPALIGN_FORMAT_CIGAR_BAM
+ * ZMAPALIGN_FORMAT_GAP_GFF3
+ * ZMAPALIGN_FORMAT_VULGAR_EXONERATE
+ * ZMAPALIGN_FORMAT_GAPS_ACEDB
+ *
+ */
 
-typedef struct
+/*
+ * An object of this type represents the whole of the alignment data
+ * for the whole feature. We have a format (one of the enum type given
+ * above), an array of AlignStOpStruct objects and an integer value
+ * for the number of operators.
+ */
+typedef struct AlignStrCanonicalStruct_
 {
   ZMapFeatureAlignFormat format ;
 
   GArray *align ;    /* Of AlignStrOpStruct. */
+  int num_operators ;
 } AlignStrCanonicalStruct, *AlignStrCanonical ;
+
+/*
+ * Represents the various options for text representation of
+ * alignment data.
+ *
+ * bDigitsLeft             digits are on left of operators otherwise on right
+ * bMayOmit1               length 1 operators may omit the number
+ * bSpaces                 one space required between operator-number pairs,
+ *                         otherwise no spaces are allowed
+ */
+typedef struct AlignStrCanonicalPropertiesStruct_
+{
+  gboolean bDigitsLeft ;
+  gboolean bMayOmit1 ;
+  gboolean bSpaces ;
+} AlignStrCanonicalPropertiesStruct, *AlignStrCanonicalProperties ;
 
 
 static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
 
+static AlignStrCanonical alignStrCanonicalCreate(ZMapFeatureAlignFormat align_format) ;
+static void alignStrCanonicalDestroy(AlignStrCanonical canon) ;
+static AlignStrOp alignStrCanonicalGetOperator(AlignStrCanonical canon, int i) ;
+static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct * const op) ;
 static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format) ;
-static void alignStrDestroyCanonical(AlignStrCanonical canon) ;
-static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_strand, ZMapStrand match_strand,
-    int p_start, int p_end, int c_start, int c_end,
-    GArray **local_map_out) ;
+static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
+                                    ZMapStrand ref_strand, ZMapStrand match_strand,
+                                    int p_start, int p_end, int c_start, int c_end,
+                                    GArray **local_map_out) ;
+static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
+                                       AlignStrCanonicalProperties properties) ;
+static gboolean alignProperties2Format(ZMapFeatureAlignFormat *align_format,
+                                       AlignStrCanonicalProperties properties) ;
+static gboolean homol2AlignStrCanonical(AlignStrCanonical *canon_out, ZMapFeature feature) ;
+static gboolean parse_cigar_general(const char * const str,
+                                    AlignStrCanonicalProperties properties,
+                                    GError **error) ;
+
 #if NOT_USED
 static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static gboolean exonerateVerifyVulgar(char *match_str) ;
@@ -76,12 +132,28 @@ static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon) 
 static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 static int cigarGetLength(char **cigar_str) ;
+static gboolean alignStrCanonical2ExonerateCigar(char ** align_str, AlignStrCanonical canon) ;
+static gboolean alignStrCanonical2EnsemblCigar(char ** align_str, AlignStrCanonical canon) ;
+static gboolean alignStrCanonical2BamCigar(char ** align_str, AlignStrCanonical canon) ;
+static gboolean alignStrCanonical2ExonerateVulgar(char ** align_str, AlignStrCanonical canon) ;
 #if NOT_USED
 static char *nextWord(char *str) ;
 static gboolean gotoLastDigit(char **cp_inout) ;
 #endif
 
 static gboolean gotoLastSpace(char **cp_inout) ;
+
+/*
+ * These arrays are the allowed operators for various of the format types.
+ * Note that there is no error checking in the parsing of these strings!
+ */
+static const char *operators_cigar_exonerate = "MIDFR" ;
+static const char *operators_gffv3_gap       = "MIDFR" ;
+
+/*
+ * Allowed operators for internal "canonical" representation.
+ */
+static const char *operators_canonical = "MINDG";
 
 
 
@@ -91,7 +163,697 @@ static gboolean gotoLastSpace(char **cp_inout) ;
  */
 
 
-ZMAP_ENUM_AS_NAME_STRING_FUNC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat, ZMAP_ALIGN_GAP_FORMAT_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat, ZMAP_ALIGN_GAP_FORMAT_LIST) ;
+
+
+
+/*
+ * Convert a format to the appropriate properties flags.
+ */
+static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
+                                       AlignStrCanonicalProperties properties)
+{
+  gboolean result = FALSE ;
+
+  zMapReturnValIfFail(    (align_format != ZMAPALIGN_FORMAT_INVALID)
+                       && &properties,
+                                       result ) ;
+  properties->bDigitsLeft = FALSE ;
+  properties->bMayOmit1   = FALSE ;
+  properties->bSpaces     = FALSE ;
+
+  switch (align_format)
+    {
+      case ZMAPALIGN_FORMAT_GAP_GFF3:
+      case ZMAPALIGN_FORMAT_CIGAR_EXONERATE:
+        properties->bDigitsLeft = FALSE ;
+        properties->bMayOmit1   = FALSE ;
+        properties->bSpaces     = TRUE ;
+        result = TRUE ;
+        break ;
+      case ZMAPALIGN_FORMAT_CIGAR_ENSEMBL:
+        /* properties->bDigitsLeft = FALSE ;
+        properties->bMayOmit1   = FALSE ;
+        properties->bSpaces     = FALSE ;
+        result = TRUE ; */
+        break ;
+      case ZMAPALIGN_FORMAT_CIGAR_BAM:
+        properties->bDigitsLeft = TRUE;
+        properties->bMayOmit1   = FALSE ;
+        properties->bSpaces     = FALSE ;
+        result = TRUE ;
+        break ;
+      case ZMAPALIGN_FORMAT_VULGAR_EXONERATE:
+      default:
+        break ;
+    }
+
+  return result ;
+}
+
+/*
+ * Convert a Canonical properties to align format. Unfortunately, this is not 1:1 mapping,
+ * so the choice to favour gffv3 Gap over exonerate is made.
+ */
+static gboolean alignProperties2Format(ZMapFeatureAlignFormat *align_format_out,
+                                       AlignStrCanonicalProperties properties)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureAlignFormat align_format ;
+
+  zMapReturnValIfFail(align_format_out, result) ;
+
+  return result ;
+}
+
+
+
+/*
+ * Return the group of characters associated with a given operator.
+ * Arguments are:
+ *
+ * i            index of operator desired [0, nOp-1] as usual
+ * sBuff        buffer to copy them into
+ * pArray       positions of the operators in the target string
+ * nOp          number of operators
+ * target       original target string
+ * bLeft        if TRUE we look to the left of operator i, otherwise right
+ *              ie
+ *
+ * Returns TRUE if the operation succeeded.
+ *
+ * Note: We may return an empty buffer.
+ */
+static gboolean parse_get_op_data(int i,
+                                  char * const sBuff,
+                                  const char ** pArray,
+                                  int nOp,
+                                  const char * const target,
+                                  gboolean bLeft)
+{
+  gboolean result = FALSE ;
+  const char *pStart = NULL,
+    *pEnd = NULL ;
+  int j = 0 ;
+
+  if (i < nOp)
+    {
+
+      if (bLeft)
+        {
+          if (i == 0)
+            pStart = target ;
+          else
+            pStart = pArray[i-1]+1;
+         pEnd = pArray[i];
+        }
+      else
+        {
+          pStart = pArray[i]+1;
+
+          if (i < nOp-1)
+            pEnd = pArray[i+1];
+          else
+            pEnd = target + strlen(target) ;
+        }
+
+      /* copy data */
+      while (pStart < pEnd)
+        {
+          sBuff[j] = *pStart ;
+          ++pStart ;
+          ++j ;
+        }
+      sBuff[j] = '\0' ;
+      result = TRUE ;
+
+
+    }
+
+  return result ;
+}
+
+/*
+ * Accepts a string and determines if it is a valid number from a cigar string.
+ * It must have length at least unity, and there are three options:
+ * opt == 0       all characters must be digits
+ * opt == 1       single space at start, all other characters must be digits
+ * opt == 2       single space at end, all other characters must be digits
+ * return value is pointer to the start of the digits
+ */
+static char * parse_is_valid_number(char *sBuff, size_t iLen, int opt)
+{
+  static const char cSpace = ' ' ;
+  char * num_pos = NULL, *result = NULL ;
+  gboolean bDigits = TRUE ;
+  int nDigits = 0 ;
+
+  if (iLen)
+    {
+      if (opt == 0)
+        {
+          /* all characters must be digits */
+          num_pos = sBuff ;
+          while (*num_pos && (bDigits = isdigit(*num_pos)))
+            {
+              ++nDigits ;
+              ++num_pos ;
+            }
+          if (bDigits && nDigits==iLen)
+            result = sBuff ;
+        }
+      else if (opt == 1)
+        {
+          /* single space at start, all other characters must be digits */
+          if (cSpace == *sBuff)
+            {
+              num_pos = sBuff+1;
+              while (*num_pos && (bDigits = isdigit(*num_pos)))
+                {
+                  ++nDigits ;
+                  ++num_pos ;
+                }
+              if (bDigits && nDigits==iLen-1)
+                result = sBuff+1 ;
+            }
+        }
+      else if (opt == 2)
+        {
+          /* single space at end, all other characters must be digits */
+          if (cSpace == *(sBuff+iLen-1))
+            {
+              num_pos = sBuff ;
+              while (*num_pos && cSpace!=*num_pos && (bDigits = isdigit(*num_pos)))
+                {
+                  ++nDigits ;
+                  ++num_pos ;
+                }
+              if (bDigits && nDigits==iLen-1)
+                result = sBuff ;
+            }
+        }
+    }
+
+  return result ;
+}
+
+/*
+ * Inpects the buffer to determine if it contains a valid piece of numerical data
+ * for the size of an operator.
+ *
+ * Arguments are:
+ * sBuff                             buffer (may be empty)
+ * bMayOmit1                         TRUE if ommitting "1" from operator size is OK
+ * bLeft                             TRUE if the number was to the left of the operator
+ * bSpaces                           TRUE if the op/number pairs are space seperated
+ *
+ * First perform some tests to see if the data item was valid according to criteria
+ * described below, then parse the numerical value and return it.
+ *
+ */
+static int parse_is_valid_op_data(char * sBuff,
+                                  gboolean bMayOmit1,
+                                  gboolean bLeft,
+                                  gboolean bSpaces,
+                                  gboolean bEnd,
+                                  gboolean bFirst)
+{
+  static const char cSpace = ' ' ;
+  char *num_pos = NULL ;
+  int length = 0, num_opt = 0 ;
+  size_t iLen = strlen(sBuff) ;
+
+  /* Tests:
+   *
+   * (1) If iLen of the string is zero, and omit1 is true,
+   *     then length = 1
+   * (2) If iLen is 1 and we only have a space, and bSpace is true
+   *     and bOmit1 is true then we have length = 1,
+   * (3) If iLen is 1 and we have a digit and bSpace is false
+         then parse for length
+   * (4) If iLen is > 1 and bSpaces is true then we must have
+   *     one space at the start or end according to bLeft
+   * (5) If iLen is > 1 and bSpaces is false, then there must be
+   *     no spaces,
+   *  then parse for number
+   */
+
+  if (iLen == 0)
+    {
+      if (!bSpaces)
+        {
+          if (bMayOmit1)
+            length = 1 ;
+        }
+      else
+        {
+          if (bMayOmit1 && bEnd)
+            {
+              if (bLeft && bFirst)
+                length = 1 ;
+              else if (!bLeft && !bFirst)
+                length = 1 ;
+            }
+        }
+    }
+  else if (iLen == 1)
+    {
+      if (sBuff[0] == cSpace)
+        {
+          if (bSpaces && bMayOmit1)
+            length = 1 ;
+        }
+      else if (isdigit(sBuff[0]))
+        {
+          if (!bSpaces)
+            length = atoi(sBuff) ;
+          else
+            {
+              if (bEnd)
+                {
+                  if ((bLeft && bFirst) || (!bLeft && !bFirst))
+                    length = atoi(sBuff) ;
+                }
+            }
+        }
+    }
+  else
+    {
+      if (bSpaces)
+        {
+          if (bLeft)
+            {
+              /* there must be one space at the start and all other characters must be digits */
+              if (bEnd && bFirst)
+                num_opt = 0 ;
+              else
+                num_opt = 1 ;
+              num_pos = parse_is_valid_number(sBuff, iLen, num_opt) ;
+            }
+          else
+            {
+              /* there must be one space at the end and all other characters must be digits */
+              if (bEnd && !bFirst)
+                num_opt = 0 ;
+              else
+                num_opt = 2 ;
+              num_pos = parse_is_valid_number(sBuff, iLen, num_opt) ;
+            }
+        }
+      else
+        {
+          /* all characters must be digits */
+          num_opt = 0 ;
+          num_pos = parse_is_valid_number(sBuff, iLen, num_opt) ;
+        }
+      if (num_pos)
+        length = atoi(num_pos) ;
+    }
+
+  return length ;
+}
+
+
+/*
+ * This is a test function that I'm using to look at formats - at time of writing,
+ * the exonerate cigar parser is incorrect.
+ *
+ * Arguments are:
+ * char *str                    string to operate upon
+ * gboolean bDigitsLeft         if TRUE, digits must be before operators
+ *                              if FALSE, digits must be after operators
+ * bMayOmit1                    is is OK to omit a number, will be assumed to be 1, otherwise
+ *                              numbers must always be included
+ * bSpaces                      operator/number pairs are seperated by one space, otherwise
+ *                              may not be seperated by anything
+ */
+#define NUM_OPERATOR_LIMIT 1024
+#define NUM_DIGITS_LIMIT 32
+static gboolean parse_cigar_general(const char * const str, /* AlignStrCanonical canon, */
+                                    AlignStrCanonicalProperties properties,
+                                    GError **error)
+{
+  gboolean result = FALSE, data_found = FALSE, bEnd = FALSE, bFirst = FALSE ;
+  size_t iLength = 0 ;
+  const char *sTarget = NULL ;
+  int i = 0, iOperators = 0 ;
+  char * sBuff = NULL ;
+  char const ** pArray = NULL ;
+  char cStart = '\0', cEnd = '\0' ;
+  GArray* pAlignStrOpArray = NULL ;
+  gboolean bDigitsLeft = FALSE,
+    bMayOmit1 = FALSE,
+    bSpaces = FALSE ;
+  AlignStrOp pAlignStrOp = NULL ;
+
+  zMapReturnValIfFail(str && *str && error && (iLength = strlen(str)) && &properties, result) ;
+
+  bDigitsLeft   = properties->bDigitsLeft ;
+  bMayOmit1     = properties->bMayOmit1 ;
+  bSpaces       = properties->bSpaces ;
+  result = TRUE ;
+  sTarget = str ;
+  cStart = *str ;
+  cEnd = str[iLength-1] ;
+
+  /*
+   * We do not allow anything other than operator character or
+   * digit at the start or end, regardless of other options.
+   */
+  if (!isalnum(cStart) && result)
+    {
+      *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
+                           "target string = '%s', has non-operator or non-digit character at start", str) ;
+      result = FALSE ;
+    }
+  if (!isalnum(cEnd) && result)
+    {
+      *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
+                           "target string = '%s', has non-operator and non-digit character at end", str) ;
+      result = FALSE ;
+    }
+
+  /*
+   * If bDigitsLeft, there can be no digits at the end of the string,
+   * and if !bDigitsLeft there can be no digits at the start of the string.
+   */
+  if (bDigitsLeft && result)
+    {
+      if (!isalpha(cEnd))
+        {
+          *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
+                               "target string = '%s', has at non-operator character at end", str) ;
+          result = FALSE ;
+        }
+    }
+  else if (!bDigitsLeft && result)
+    {
+      if (!isalpha(cStart))
+        {
+          *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
+                               "target string = '%s', has non-operator character at start", str) ;
+          result = FALSE ;
+        }
+    }
+
+  /*
+   * Do the main parsing work.
+   */
+  if (result)
+    {
+
+      sBuff = (char*) g_new0(char, NUM_DIGITS_LIMIT) ;
+      pArray = (char const **) g_new0(char*, NUM_OPERATOR_LIMIT) ;
+
+      /*
+       * Operators are defined by one character only each. This step finds their
+       * positions in the input string.
+       */
+      while (*sTarget)
+        {
+          if (isalpha(*sTarget) && (iOperators < NUM_OPERATOR_LIMIT) )
+            {
+              pArray[iOperators] = sTarget ;
+              iOperators++ ;
+            }
+          ++sTarget ;
+        }
+
+      /*
+       * Loop over the operators and determine their type.
+       */
+      pAlignStrOpArray = g_array_new(FALSE, TRUE, sizeof(AlignStrOpStruct)) ;
+      for (i=0; i<iOperators; ++i)
+        {
+          AlignStrOpStruct oAlignStrOp ;
+          oAlignStrOp.op = *pArray[i] ;
+          oAlignStrOp.length = 0 ;
+
+          /*
+           *  This should be put into a function wrapping the AlignStrCanonical
+           */
+          pAlignStrOpArray = g_array_append_val(pAlignStrOpArray, oAlignStrOp) ;
+        }
+
+      /*
+       * Now inspect various bits of the string to extract the associated digits.
+       */
+      for (i=0; i<iOperators; ++i)
+        {
+          bEnd = FALSE ;
+          if ((i==0) || (i==iOperators-1))
+            bEnd = TRUE ;
+          bFirst = !(gboolean)i;
+
+          /*
+           * This should be put into a function wrapping the AlignStrCanonical
+           */
+          pAlignStrOp = &(g_array_index(pAlignStrOpArray, AlignStrOpStruct, i)) ;
+
+          /*
+           * New method
+           */
+          sBuff[0] = '\0' ;
+          data_found = parse_get_op_data(i, sBuff, pArray, iOperators, str, bDigitsLeft ) ;
+          pAlignStrOp->length =
+            parse_is_valid_op_data(sBuff, bMayOmit1, bDigitsLeft, bSpaces, bEnd, bFirst) ;
+
+        }
+
+      /*
+       * Now run over the data found and check that
+       * (1) We have at least one operator, and
+       * (2) All operators are alphabetic characters and op->length != 0.
+       */
+      result = iOperators ? TRUE : FALSE ;
+      for (i=0; i<iOperators; ++i)
+        {
+          pAlignStrOp = &(g_array_index(pAlignStrOpArray, AlignStrOpStruct, i)) ;
+          if (!isalpha(pAlignStrOp->op) || !pAlignStrOp->length)
+            {
+              *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
+                        "target string = '%s', op_index = %i", str, i) ;
+              result = FALSE ;
+              break ;
+            }
+        }
+
+      /*
+       * If all is well at this point then replace the AlignStrOp array in the canon
+       * arguemnt with the one that's just been created here.
+       */
+
+      if (sBuff)
+        g_free(sBuff) ;
+      if (pArray)
+        g_free(pArray) ;
+      if (pAlignStrOpArray)
+        g_array_free(pAlignStrOpArray, TRUE) ;
+
+    } /* if (result) */
+
+
+  return result ;
+}
+#undef NUM_OPERATOR_LIMIT
+#undef NUM_DIGITS_LIMIT
+
+
+
+/*
+ * Test of parsing various kinds of cigar strings...
+ */
+#define TEST_STRING_MAX 1024
+static void parseTestFunction01()
+{
+  char *sTest01 = NULL ;
+  gboolean bResult = FALSE,
+    bDigitsLeft,
+    bMayOmit1,
+    bSpaces ;
+  GError *error = NULL ;
+  AlignStrCanonicalPropertiesStruct properties ;
+
+  sTest01 = (char*) g_new0(char, TEST_STRING_MAX) ;
+
+  /*
+   * First one of each group should pass, all others should fail.
+   * 31/07/2014 Current version of functions passes all these tests.
+   */
+
+  /* settings 1 */
+  properties.bDigitsLeft = TRUE ;
+  properties.bMayOmit1 = TRUE ;
+  properties.bSpaces = FALSE ;
+  sprintf(sTest01, "33M13I52M10I1980MII") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, " 33M13I52M10I1980MII") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33 M13I52M10I1980MII") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "3M13I52M10I 1980MII ") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33M13I52$10I1980MII") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "=33M13I52M10I1980MII") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+
+  /* settings 2 */
+  properties.bDigitsLeft = FALSE ;
+  properties.bMayOmit1 = TRUE ;
+  properties.bSpaces = FALSE ;
+  sprintf(sTest01, "M3I13M52I10M1980II") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M3 I13M52I10M1980II") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, " M3I13M52I10M1980II") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M 3I13M52I10M1980II") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M3I13M52I10M1980II1 ") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M3I13M52I10 M1980II") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M3I13M52&10M1980II") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M3I13M52I10M1980I*") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+
+  /* settings 3 */
+  properties.bDigitsLeft = TRUE ;
+  properties.bMayOmit1 = TRUE ;
+  properties.bSpaces = TRUE ;
+  sprintf(sTest01, "33M 13I 52M 10I 1980M I I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, " 33M 13I 52M 10I 1980M I I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33M13I 52M 10I 1980M I I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33M 13I 52M 10I 1980MI I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33M 13I 52M 10I 1980M II") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33M 13I 52M 10I 1980M I I1") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33M 13I 52 10I 1980M I I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33M 13I 52M 10I 1980M I=I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+
+  /* settings 4 */
+  properties.bDigitsLeft = FALSE ;
+  properties.bMayOmit1 = TRUE ;
+  properties.bSpaces = TRUE;
+  sprintf(sTest01, "M33 I13 M52 I10 M1980 I I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M33 I13 M52 I10 M1980 I I ") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M33 I13 M52 I10 M1980 II") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M33 I13 M52I10 M1980 I I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M33 II13 M52 I10 M1980 I I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M33 I13 M52 I10M1980 I I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M33 I13 M52 I10 M1980 I ") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+
+  /* settings 5 */
+  properties.bDigitsLeft = TRUE ;
+  properties.bMayOmit1 = FALSE ;
+  properties.bSpaces = FALSE ;
+  sprintf(sTest01, "33M13I52M10I1980M1I13I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33M13I52M10I1980M1I13I ") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M13I52M10I1980M1I13I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33M13I52M10I1980M1II") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33M13I52 M10I1980M1I13I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33M13I52M 10I1980M1I13I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, " 33M13I52M10I1980M1I13I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "33M13I52M10I1980M1I13I ") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+
+  /* settings 6 */
+  properties.bDigitsLeft = FALSE ;
+  properties.bMayOmit1 = FALSE ;
+  properties.bSpaces = FALSE ;
+  sprintf(sTest01, "M3I13M52I10M1980I1I18") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M3I13M52I10M1980I1I18 ") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M3 I13M52I10M1980I1I18") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, " M3I13M52I10M1980I1I18") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "MI13M52I10M1980I1I18") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M3I13M52I10M1980I1I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M3I13M52I10M1980II18") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M3I13M52 I10M1980I1I18") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M3I13M52I10M19&80I1I18") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+
+  /* settings 7 */
+  properties.bDigitsLeft = TRUE ;
+  properties.bMayOmit1 = FALSE ;
+  properties.bSpaces = TRUE ;
+  sprintf(sTest01, "3M 13I 52M 10I 1980M 1I 200I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M 13I 52M 10I 1980M 1I 200I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "3M13I 52M 10I 1980M 1I 200I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "3M 13I 52M 10I 1980M 1I I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "3M 13I 52M 10I 1980M 1I 200I ") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "3M 13I M 10I 1980M 1I 200I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, " 3M 13I 52M 10I 1980M 1I 200I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "3M 13I 52M && 10I 1980M 1I 200I") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+
+  /* settings 8 */
+  properties.bDigitsLeft = FALSE ;
+  properties.bMayOmit1 = FALSE ;
+  properties.bSpaces = TRUE ;
+  sprintf(sTest01, "M31 I13 M52 I10 M1980 I3 I32") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M31I13 M52 I10 M1980 I3 I32") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M31 I13 M52 10 M1980 I3 I32") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M31 I13 M52 I10 M1980 I3 I32 ") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, " M31 I13 M52 I10 M1980 I3 I32") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M31 I13 M52 I10 M I3 I32") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "31 I13 M52 I10 M1980 I3 I32") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+  sprintf(sTest01, "M31 I13 M52 I&10 M1980 I3 I32") ;
+  bResult = parse_cigar_general(sTest01, &properties, &error) ;
+
+  if (sTest01)
+    g_free(sTest01) ;
+}
+#undef TEST_STRING_MAX
+
+
+
+
+
 
 
 
@@ -104,14 +866,13 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
      int query_length,
      ZMapStrand query_strand,
      ZMapPhase target_phase,
-     GArray *gaps, unsigned int align_error,
+     GArray *align, unsigned int align_error,
      gboolean has_local_sequence, char *sequence)
      /* NOTE has_local mean in ACEBD, sequence is from GFF */
 {
   gboolean result = FALSE ;
 
-  if (!feature || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT))
-    return result ;
+  zMapReturnValIfFail(feature && (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT), result);
 
   result = TRUE ;
 
@@ -144,11 +905,11 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
   feature->feature.homol.sequence = sequence ;
 
 
-  if (gaps)
+  if (align)
     {
-      zMapFeatureSortGaps(gaps) ;
+      zMapFeatureSortGaps(align) ;
 
-      feature->feature.homol.align = gaps ;
+      feature->feature.homol.align = align ;
 
       feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align, align_error) ;
     }
@@ -186,21 +947,89 @@ gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
 }
 
 
+/*
+ * This function takes a feature as argument, and converts it's homol data into
+ * a string of the specified format. This is done in two stages:
+ *
+ * (1) First convert the feature data into the canonical form above (AlignStrCanonical), then
+ * (2) Convert the canonical form into the appropriate string for output.
+ */
+gboolean zMapFeatureAlignmentGetAlignmentString(ZMapFeature feature,
+                                                ZMapFeatureAlignFormat align_format,
+                                                char **p_string_out)
+{
+  gboolean result = FALSE ;
+  char *align_str = NULL ;
+  AlignStrCanonical canon = NULL ;
+
+  /*
+   * Test feature type and other errors
+   */
+  zMapReturnValIfFail(feature && (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT), result) ;
+
+  /*
+   * Homol to canonical
+   */
+  result = homol2AlignStrCanonical(&canon, feature) ;
+
+  /*
+   * Convert the canonical to the appropriate string format
+   */
+  if (result)
+    {
+
+      switch (align_format)
+        {
+          case ZMAPALIGN_FORMAT_GAP_GFF3:
+          case ZMAPALIGN_FORMAT_CIGAR_EXONERATE:
+            result = alignStrCanonical2ExonerateCigar(&align_str, canon) ;
+            break ;
+          case ZMAPALIGN_FORMAT_CIGAR_ENSEMBL:
+            result = alignStrCanonical2EnsemblCigar(&align_str, canon) ;
+            break ;
+          case ZMAPALIGN_FORMAT_CIGAR_BAM:
+            result = alignStrCanonical2BamCigar(&align_str, canon) ;
+            break ;
+          case ZMAPALIGN_FORMAT_VULGAR_EXONERATE:
+            result = alignStrCanonical2ExonerateVulgar(&align_str, canon) ;
+            break ;
+          default:
+            zMapWarnIfReached() ;
+            break ;
+        }
+
+      if (result)
+        {
+          *p_string_out = align_str ;
+        }
+    }
+
+  if (canon)
+    {
+      alignStrCanonicalDestroy(canon) ;
+    }
+
+  return result ;
+}
 
 
-/* Constructs a gaps array from an alignment string such as CIGAR, VULGAR etc.
+
+
+/*
+ * Constructs a gaps array from an alignment string such as CIGAR, VULGAR etc.
  * Returns TRUE on success with the gaps array returned in gaps_out. The array
- * should be free'd with g_array_free when finished with. */
+ * should be free'd with g_array_free when finished with.
+ */
 gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
- ZMapStrand ref_strand, int ref_start, int ref_end,
- ZMapStrand match_strand, int match_start, int match_end,
- char *align_string, GArray **gaps_out)
+                                         ZMapStrand ref_strand, int ref_start, int ref_end,
+                                         ZMapStrand match_strand, int match_start, int match_end,
+                                         char *align_string, GArray **align_out)
 {
   gboolean result = FALSE ;
   AlignStrCanonical canon = NULL ;
-  GArray *gaps = NULL ;
+  GArray *align = NULL ;
 
- if (!(canon = alignStrMakeCanonical(align_string, align_format)))
+  if (!(canon = alignStrMakeCanonical(align_string, align_format)))
     {
       result = FALSE ;
       zMapLogWarning("Cannot convert alignment string to canonical format: %s", align_string) ;
@@ -208,19 +1037,19 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
   else if (!(result = (alignStrCanon2Homol(canon, ref_strand, match_strand,
                                            ref_start, ref_end,
                                            match_start, match_end,
-                                           &gaps))))
+                                           &align))))
     {
-      zMapLogWarning("Cannot convert alignment string to gaps array: s", align_string) ;
+      zMapLogWarning("Cannot convert alignment string to align array: s", align_string) ;
     }
 
   if (!result)
     {
       if (canon)
-        alignStrDestroyCanonical(canon) ;
+        alignStrCanonicalDestroy(canon) ;
     }
   else
     {
-      *gaps_out = gaps ;
+      *align_out = align ;
     }
 
   return result ;
@@ -295,6 +1124,68 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
 }
 
 
+/*
+ * Create an AlignStrCanonical object.
+ */
+static AlignStrCanonical alignStrCanonicalCreate(ZMapFeatureAlignFormat align_format)
+{
+  AlignStrCanonical canon = NULL ;
+  zMapReturnValIfFail(align_format != ZMAPALIGN_FORMAT_INVALID, canon) ;
+
+  canon = g_new0(AlignStrCanonicalStruct, 1) ;
+  if (canon)
+    {
+      canon->format = align_format ;
+      canon->align = g_array_new(FALSE, TRUE, sizeof(AlignStrOpStruct)) ;
+      canon->num_operators = 0 ;
+    }
+
+  return canon ;
+}
+
+
+/*
+ * Destroy an AlignStrCanonical object.
+ */
+static void alignStrCanonicalDestroy(AlignStrCanonical canon)
+{
+  if (canon)
+    {
+      g_array_free(canon->align, TRUE) ;
+      g_free(canon) ;
+    }
+
+  return ;
+}
+
+
+static AlignStrOp alignStrCanonicalGetOperator(AlignStrCanonical canon, int i)
+{
+  AlignStrOp op = NULL ;
+  if (canon && canon->align && i<canon->num_operators)
+    {
+       op = &(g_array_index(canon->align, AlignStrOpStruct, i)) ;
+    }
+  return op ;
+}
+
+static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct * const op)
+{
+  gboolean result = FALSE ;
+  if (canon && canon->align)
+    {
+      canon->align = g_array_append_val(canon->align, op) ;
+      ++canon->num_operators ;
+    }
+  return result ;
+}
+
+
+
+
+
+
+
 
 /* Takes a match string and format and converts that string into a canonical form
  * for further processing. */
@@ -303,12 +1194,13 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
   AlignStrCanonical canon = NULL ;
   gboolean result = FALSE ;
 
-  canon = g_new0(AlignStrCanonicalStruct, 1) ;
-  canon->format = align_format ;
-  canon->align = g_array_new(FALSE, TRUE, sizeof(AlignStrOpStruct)) ;
+  zMapReturnValIfFail(match_str && *match_str, canon) ;
+
+  canon = alignStrCanonicalCreate(align_format) ;
 
   switch (align_format)
     {
+    case ZMAPALIGN_FORMAT_GAP_GFF3:
     case ZMAPALIGN_FORMAT_CIGAR_EXONERATE:
       result = exonerateCigar2Canon(match_str, canon) ;
       break ;
@@ -328,22 +1220,12 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
 
   if (!result)
     {
-      alignStrDestroyCanonical(canon) ;
+      alignStrCanonicalDestroy(canon) ;
       canon = NULL ;
     }
 
   return canon ;
 }
-
-
-static void alignStrDestroyCanonical(AlignStrCanonical canon)
-{
-  g_array_free(canon->align, TRUE) ;
-  g_free(canon) ;
-
-  return ;
-}
-
 
 
 
@@ -354,9 +1236,10 @@ static void alignStrDestroyCanonical(AlignStrCanonical canon)
  * M, I and G (instead of D).
  *
  *  */
-static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_strand, ZMapStrand match_strand,
-    int p_start, int p_end, int c_start, int c_end,
-    GArray **local_map_out)
+static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
+                                    ZMapStrand ref_strand, ZMapStrand match_strand,
+                                    int p_start, int p_end, int c_start, int c_end,
+                                    GArray **local_map_out)
 {
   gboolean result = TRUE ;
   int curr_ref, curr_match ;
@@ -411,7 +1294,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
               curr_ref += curr_length ;
             else
               curr_ref -= curr_length ;
-        
+
             boundary_type = ALIGN_BLOCK_BOUNDARY_DELETION ;
             break ;
           }
@@ -421,7 +1304,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
               curr_match += curr_length ;
             else
               curr_match -= curr_length ;
-        
+
             boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ; /* it is shown butted up to the previous align block */
             break ;
           }
@@ -448,11 +1331,11 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
               gap.q2 = (curr_match += curr_length) - 1 ;
             else
               gap.q2 = (curr_match -= curr_length) + 1 ;
-        
+
             local_map = g_array_append_val(local_map, gap) ;
-        
+
             j++ ;    /* increment for next gap element. */
-        
+
                     boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ;
             break ;
           }
@@ -486,6 +1369,44 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 
   return result ;
 }
+
+
+
+
+/*
+ * Converts an internal align array into the "canonical" string representation.
+ * Opposite operation to the function alignStrCanon2Homol() above.
+ */
+static gboolean homol2AlignStrCanonical(AlignStrCanonical *canon_out, ZMapFeature feature)
+{
+  static const char cM = 'M',
+                    cI = 'I',
+                    cD = 'D' ;
+  ZMapAlignBlock block = NULL ;
+  gboolean result = FALSE ;
+  GArray* align = NULL ;
+  int i = 0, length = 0 ;
+
+  zMapReturnValIfFail(  canon_out
+                     && feature
+                     && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT
+                     && feature->feature.homol.align,
+                     result) ;
+  align = feature->feature.homol.align ;
+  length = align->len ;
+
+  for (i=0; i<length; ++i)
+    {
+      block = &(g_array_index(align, ZMapAlignBlockStruct, i)) ;
+
+
+
+    }
+
+  return result ;
+}
+
+
 
 
 
@@ -752,11 +1673,66 @@ static gboolean bamVerifyCigar(char *match_str)
 
 #endif
 
+
+
+/*
+ * Convert AlignStrCanonical to exonerate cigar string.
+ */
+static gboolean alignStrCanonical2ExonerateCigar(char ** p_align_str, AlignStrCanonical canon)
+{
+  gboolean result = FALSE ;
+  char* temp_string ;
+
+  temp_string = g_strdup_printf("%s", "Mi Dj F R123123 etc") ;
+
+  return result ;
+}
+
+/*
+ * Convert AlignStrCanonical to ensembl cigar string.
+ *              NOT IMPLEMENTED
+ */
+static gboolean alignStrCanonical2EnsemblCigar(char ** p_align_str, AlignStrCanonical canon)
+{
+  gboolean result = FALSE ;
+
+  return result ;
+}
+
+/*
+ * Convert AlignStrCanonical to bam cigar string.
+ *              NOT IMPLEMENTED
+ */
+static gboolean alignStrCanonical2BamCigar(char ** p_align_str, AlignStrCanonical canon)
+{
+  gboolean result = FALSE ;
+
+  return result ;
+}
+
+/*
+ * Convert AlignStrCanonical to exonerate vulgar string.
+ *              NOT IMPLEMENTED
+ */
+static gboolean alignStrCanonical2ExonerateVulgar(char ** p_align_str, AlignStrCanonical canon)
+{
+  gboolean result = FALSE ;
+
+  return result ;
+}
+
+
+
 /* Blindly converts, assumes match_str is a valid exonerate cigar string. */
 static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = TRUE ;
-  char *cp ;
+  gboolean result = FALSE ;
+  char *cp = NULL ;
+
+  if ((canon->format != ZMAPALIGN_FORMAT_CIGAR_EXONERATE)|| (canon->num_operators != 0))
+    return result ;
+
+  result = TRUE ;
 
   cp = match_str ;
   do
@@ -773,7 +1749,7 @@ static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
       gotoLastSpace(&cp) ;
       if (*cp == ' ')
         cp ++ ;
-        
+
       canon->align = g_array_append_val(canon->align, op) ;
     } while (*cp) ;
 
@@ -786,6 +1762,8 @@ static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = FALSE ;
 
+  if ((canon->format != ZMAPALIGN_FORMAT_VULGAR_EXONERATE)|| (canon->num_operators != 0))
+    return result ;
 
   return result ;
 }
@@ -794,8 +1772,13 @@ static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon)
 /* Blindly converts, assumes match_str is a valid ensembl cigar string. */
 static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = TRUE ;
-  char *cp ;
+  gboolean result = FALSE ;
+  char *cp = NULL ;
+
+  if ((canon->format != ZMAPALIGN_FORMAT_CIGAR_ENSEMBL)|| (canon->num_operators != 0))
+    return result ;
+
+  result = TRUE ;
 
   cp = match_str ;
   do
@@ -834,8 +1817,21 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
  */
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = TRUE ;
-  char *cp ;
+  gboolean result = FALSE ;
+  static const gboolean bDigitsLeft = TRUE,
+    bMayOmit1 = FALSE,
+    bSpaces = FALSE ;
+  char *cp = NULL;
+
+  if ((canon->format != ZMAPALIGN_FORMAT_CIGAR_BAM)|| (canon->num_operators != 0))
+    return result ;
+
+  result = TRUE ;
+
+  /*
+   * (sm23) This is a test function for parsing cigar/gap strings
+   */
+  /* parseTestFunction01() ; */
 
   cp = match_str ;
   do
@@ -928,7 +1924,7 @@ static char *nextWord(char *str)
               word = cp ;
               break ;
             }
-        
+
           cp++ ;
         }
     }

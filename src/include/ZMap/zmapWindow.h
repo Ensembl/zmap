@@ -443,15 +443,7 @@ gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
                                         char *command_name, char *request,
                                         ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
-
-void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
-#ifdef __GNUC__
-#define zMapWindowBusy(WINDOW, BUSY)         \
-  zMapWindowBusyFull((WINDOW), (BUSY), __FILE__, (char *)__PRETTY_FUNCTION__)
-#else
-#define zMapWindowBusy(WINDOW, BUSY)         \
-  zMapWindowBusyFull((WINDOW), (BUSY), __FILE__, NULL)
-#endif
+void zMapWindowSetCursor(ZMapWindow window, GdkCursor *cursor) ;
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
                            ZMapFeatureContext current_features, ZMapFeatureContext new_features,

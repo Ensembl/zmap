@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -39,7 +39,7 @@
 
 
 
-/* 
+/*
  *                   Package routines.
  */
 
@@ -48,7 +48,7 @@
  * visible one and a larger window which can be scrolled past the smaller one.
  * This function returns the sizes of these windows in pixels, the bin window is the
  * larger/background one. */
-gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas, 
+gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas,
                                        int *layout_win_width, int *layout_win_height,
                                        int *layout_binwin_width, int *layout_binwin_height)
 {
@@ -73,7 +73,7 @@ gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas,
 
       result = TRUE ;
     }
-  
+
   return result ;
 }
 
@@ -90,7 +90,9 @@ void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double
 /* Change the pixel/zoom for the window and update the cached sizes of the canvas/layout window. */
 void zmapWindowSetPixelxy(ZMapWindow window, double pixels_per_unit_x, double pixels_per_unit_y)
 {
-  FooCanvas *canvas = FOO_CANVAS(window->canvas) ;
+  FooCanvas *canvas = NULL ;
+  zMapReturnIfFail(window) ;
+  canvas = FOO_CANVAS(window->canvas) ;
 
   foo_canvas_set_pixels_per_unit_xy(canvas, pixels_per_unit_x, pixels_per_unit_y) ;
 

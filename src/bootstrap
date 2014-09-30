@@ -128,17 +128,32 @@ if [ -n "$run_autoupdate" ] ; then
 fi
 
 
+
+# zeromq should not be built using its own autogen.sh because this does not produce the right
+# set up for the build to be run as part of the zmap build. However this means we need
+# to create a config sub-directory so that its ./configure will run.
+zeromq_dir='zeromq/config'
+mkdir $zeromq_dir  || zmap_message_exit "Cannot make $zeromq_dir for zeromq build."
+
+
+
+
 # Use autoreconf to run the autotools chain in the right order with
 # the right args.
 #
 zmap_message_out "About to run autoreconf to bootstrap autotools and our build system"
 zmap_message_out "-------------------------------------------------------------------"
+
 autoreconf $verbose $install_missing -I ./ || zmap_message_exit "Failed running autoreconf"
 
-# finished !
 zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "Finished running autoreconf for bootstrap"
+
+
+
+# finished !
 zmap_message_out "bootstrap finished...."
 zmap_message_out "-------------------------------------------------------------------"
+
 
 exit $RC

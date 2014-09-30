@@ -125,6 +125,9 @@ typedef struct
 
 
 
+/* Callback function prototype for zMapViewForAllWindows() */
+typedef void (*ZMapViewForAllCallbackFunc)(ZMapWindow window, void *user_data) ;
+
 
 /* Holds structs/strings describing the selected item, this data actually comes from the
  * zmapWindow layer and is just passed on through view. */
@@ -162,6 +165,8 @@ gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;
 
+void zMapViewSetCursor(ZMapView view, GdkCursor *cursor) ;
+
 gboolean zMapViewSessionGetAsText(ZMapViewWindow view_window, GString *session_data_inout) ;
 
 void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom) ;
@@ -183,6 +188,8 @@ int zMapViewNumWindows(ZMapViewWindow view_window) ;
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
 void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
 char *zMapViewGetDataset(ZMapView zmap_view) ;
+
+void zMapViewForAllZMapWindows(ZMapView view, ZMapViewForAllCallbackFunc user_func_cb, void *user_func_data) ;
 
 gboolean zMapViewProcessRemoteRequest(ZMapViewWindow view_window,
 				      char *command_name, char *request,
@@ -231,7 +238,7 @@ gboolean zMapViewGetHighlightFilteredColumns(ZMapView);
 void zMapViewUpdateColumnBackground(ZMapView view);
 
 
-ZMAP_ENUM_AS_NAME_STRING_DEC(zMapView2Str, ZMapViewState) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapView2Str, ZMapViewState) ;
 
 
 #endif /* !ZMAPVIEW_H */

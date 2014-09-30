@@ -56,6 +56,11 @@
 
 
 
+
+#define TIMEOUT_LIST "100000,100000,1000000"
+
+
+
 /* appname we want to report. */
 #define REMOTECONTROL_APPNAME "remotecontrol"
 
@@ -156,6 +161,19 @@ enum
   };
 
 
+typedef struct RemoteDataStructName *RemoteData ;
+
+
+/* Callback used  */
+typedef struct GetPeerStructName
+{
+  RemoteData remote_data ;
+
+  char *app_id ;
+
+  char *socket_id ;
+
+} GetPeerStruct, *GetPeer ;
 
 
 
@@ -211,24 +229,34 @@ typedef struct RemoteDataStructName
   GtkWidget *send_init, *receive_init ;
   GtkWidget *idle, *waiting, *sending, *receiving ;
 
-  gulong mapCB_id ;
-
   ReqRespTextStruct our_req ;
   ReqRespTextStruct zmap_req ;
 
-  char *app_name ;
+
+  /* How much do we need of this ????? */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   char *unique_atom_str ;
   Atom unique_atom_id ;
   Window x_window_id ;
   char *x_window_id_str ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   char *peer_app_id ;
   char *peer_unique_id ;
   Window peer_x_window_id ;
   char *peer_x_window_id_str ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+  char *our_app_name ;
+  char *our_socket_str ;
+
+  char *peer_app_name ;
+  char *peer_socket_str ;
 
   ZMapRemoteControl remote_cntl ;
+  gboolean send_interface_init ;                            /* Have we init'd the send interface. */
 
 
   char *curr_request ;
@@ -240,13 +268,10 @@ typedef struct RemoteDataStructName
   char *reply_txt ;
 
 
-
-
-
   char *error ;
 
   ZMapXMLParser parser;
-  gpointer parse_cbdata ;
+  GetPeer peer_cbdata ;
 
   /* NOT NEEDED ?? */
   char *window_id ;
@@ -266,20 +291,7 @@ typedef struct RemoteDataStructName
   ZMapConfigIniContext config_context ;
 
   GQueue *queue ;
-} RemoteDataStruct, *RemoteData ;
-
-
-
-typedef struct GetPeerStructName
-{
-  RemoteData remote_data ;
-  char *app_id ;
-  char *unique_id ;
-  char *window_id ;
-} GetPeerStruct, *GetPeer ;
-
-
-
+} RemoteDataStruct ;
 
 
 
@@ -329,7 +341,7 @@ static void addTextArea(RemoteData remote_data, GtkBox *parent_box, char *text_t
 			GtkWidget **text_area_out, GtkTextBuffer **text_buffer_out) ;
 static GtkWidget *makeStateBox(RemoteData remote_data) ;
 
-static void mapCB(GtkWidget *widget, GdkEvent *event, gpointer user_data) ;
+static void initRemote(RemoteData remote_data) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -349,8 +361,6 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
 static void errorCB(ZMapRemoteControl remote_control,
 		    ZMapRemoteControlRCType error_type, char *err_msg,
 		    void *user_data) ;
-static gboolean timeoutCB(ZMapRemoteControl remote_control,
-			  void *user_data) ;
 
 void processRequest(RemoteData remote_data, char *request,
 		    RemoteCommandRCType *return_code, char **reason_out,
@@ -597,8 +607,13 @@ int main(int argc, char *argv[])
   remote_data->app_toplevel = makeTestWindow(remote_data) ;
 
   /* Set up remote communication with zmap. */
-  remote_data->app_name = g_path_get_basename(argv[0]) ;
-  remote_data->unique_atom_str = zMapMakeUniqueID(REMOTECONTROL_APPNAME) ;
+  remote_data->our_app_name = g_path_get_basename(argv[0]) ;
+
+
+  /* Only after map-event are we guaranteed that there's a window for us to work with. */
+  initRemote(remote_data) ;
+
+
 
   gtk_widget_show_all(remote_data->app_toplevel) ;
 
@@ -627,9 +642,6 @@ static GtkWidget *makeTestWindow(RemoteData remote_data)
 
   toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
 
-  /* Only after map-event are we guaranteed that there's a window for us to work with. */
-  remote_data->mapCB_id = g_signal_connect(G_OBJECT(toplevel), "map-event",
-					   G_CALLBACK(mapCB), remote_data) ;
   g_signal_connect(G_OBJECT(toplevel), "destroy",
 		   G_CALLBACK(quitCB), (gpointer)remote_data) ;
 
@@ -980,66 +992,45 @@ static void installPropertyNotify(GtkWidget *widget, GdkEvent *event, gpointer u
 
 
 
-/* Called when main window mapped, this is where we init our remote control object. */
-static void mapCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+/* Init remote control. */
+static void initRemote(RemoteData remote_data)
 {
-  RemoteData remote_data = (RemoteData)user_data ;
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  /* Stop us being called multiple times. */
-  g_signal_handler_disconnect(remote_data->app_toplevel, remote_data->mapCB_id) ;
-  remote_data->mapCB_id = 0 ;
-
-  if (result)
-    result = ((remote_data->remote_cntl = zMapRemoteControlCreate(REMOTECONTROL_APPNAME,
-								  errorCB, remote_data,
-								  timeoutCB, remote_data,
-								  NULL, NULL)) != NULL) ;
+  if ((remote_data->remote_cntl = zMapRemoteControlCreate(REMOTECONTROL_APPNAME,
+                                                          errorCB, remote_data,
+                                                          NULL, NULL)))
+    result = TRUE ;
 
   if (result)
-    {
-      GdkWindow *gdk_window ;
-      Window x_window ;
-
-      if ((gdk_window = gtk_widget_get_window(remote_data->app_toplevel))
-	  && (x_window = GDK_WINDOW_XID(gdk_window)))
-	{
-	  remote_data->x_window_id = x_window ;
-	  remote_data->x_window_id_str = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, remote_data->x_window_id) ;
-
-	  result = TRUE ;
-	}
-      else
-	{
-	  zMapLogCritical("%s",
-			  "Could not retrieve X Window of app_window, remote control initialisation has failed.") ;
-
-	  result = FALSE ;
-	}
-    }
-
-
+    zMapRemoteControlSetTimeoutList(remote_data->remote_cntl, TIMEOUT_LIST) ;
 
 
 
   if (result)
     {
       if ((result = zMapRemoteControlReceiveInit(remote_data->remote_cntl,
-						 remote_data->unique_atom_str,
+                                                 &(remote_data->our_socket_str),
 						 requestHandlerCB, remote_data,
 						 replySentCB, remote_data)))
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->receive_init), TRUE) ;
+        {
+          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->receive_init), TRUE) ;
+        }
     }
 
   if (result)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if ((result = zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl)))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->waiting), TRUE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      toggleAndUpdate(remote_data->waiting) ;
 
+      /* Needs to change to reflect state... */
+      toggleAndUpdate(remote_data->waiting) ;
     }
 
   if (!result)
@@ -1152,10 +1143,13 @@ static void replySentCB(void *user_data)
 
   toggleAndUpdate(remote_data->idle) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Need to return to waiting here..... */
   if (!zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl))
     zMapCritical("%s", "Cannot set remote controller to wait for requests.") ;
   else
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     toggleAndUpdate(remote_data->waiting) ;
 
 
@@ -1331,10 +1325,13 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
 
       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->idle), TRUE) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Need to return to waiting here..... */
       if (!zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl))
 	zMapCritical("%s", "Cannot set remote controller to wait for requests.") ;
       else
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->waiting), TRUE) ;
 
 
@@ -1359,10 +1356,13 @@ static void errorCB(ZMapRemoteControl remote_control,
   zMapDebugPrint(debug_G, "%s", "Enter...") ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* NOTE QUITE SURE WE ARE GOING BACK TO WAITING HERE.......... */
   if (!zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl))
     zMapWarning("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
   else
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->waiting), TRUE) ;
 
 
@@ -1370,51 +1370,6 @@ static void errorCB(ZMapRemoteControl remote_control,
 
   return ;
 }
-
-static gboolean timeoutCB(ZMapRemoteControl remote_control, void *user_data)
-{
-  gboolean result = FALSE ;
-  RemoteData remote_data = (RemoteData)user_data ;
-  GdkWindow *gdk_window ; 
-  Display *x_display ;
-  Window x_window ;
-
-  gdk_window = gtk_widget_get_window(remote_data->app_toplevel) ;
-  x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
-
-  x_window = remote_data->peer_x_window_id ;
-
-  /* If there is a peer window then we continue to wait by resetting the timeout,
-   * otherwise it's an error and our error handler will be called. */
-  if (x_window)
-    {
-      char *err_msg = NULL ;      
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (!(result = checkPeerWindow(x_display, x_window, &err_msg)))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      /* This is our way of testing to see if the peer application is alive, if the window id
-       * they gave us is still good then we assume they are still alive. */
-      if (!(result = zMapGUIXWindowExists(x_display, x_window, remote_data->peer_unique_id, &err_msg)))
-	{
-	  char *full_err_msg ;
-
-	  full_err_msg = g_strdup_printf("Peer window (\""ZMAP_XWINDOW_FORMAT_STR"\") has gone, stopping remote control because: \"%s\".",
-					 x_window, err_msg) ;
-
-	  zMapLogCritical("%s", full_err_msg) ;
-
-	  zMapCritical("%s", full_err_msg) ;
-
-	  g_free(full_err_msg) ;
-	}
-
-      g_free(err_msg) ;
-    }
-
-  return result ;
-}
-
 
 
 /* Processes all requests from zmap. */
@@ -1615,21 +1570,18 @@ static gboolean handleHandshake(char *command_text, RemoteData remote_data)
       {"peer",    xml_peer_end_cb},
       {NULL, NULL}
     };
-  GetPeerStruct peer_data = {NULL} ;
   static ZMapXMLUtilsEventStackStruct
     result_message[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_MESSAGE, ZMAPXML_EVENT_DATA_NONE,    {0}},
 			{ZMAPXML_CHAR_DATA_EVENT,     NULL,       ZMAPXML_EVENT_DATA_STRING,  {0}},
 			{ZMAPXML_END_ELEMENT_EVENT,   ZACP_MESSAGE, ZMAPXML_EVENT_DATA_NONE,    {0}},
 			{0}},
     peer[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_PEER,      ZMAPXML_EVENT_DATA_NONE,    {0}},
-	      {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_APP_ID,    ZMAPXML_EVENT_DATA_QUARK,   {0}},
-	      {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_UNIQUE_ID, ZMAPXML_EVENT_DATA_QUARK, {0}},
-	      {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_WINDOW_ID, ZMAPXML_EVENT_DATA_QUARK, {0}},
+	      {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_SOCKET_ID,    ZMAPXML_EVENT_DATA_QUARK,   {0}},
 	      {ZMAPXML_END_ELEMENT_EVENT,   ZACP_PEER,      ZMAPXML_EVENT_DATA_NONE,    {0}},
 	      {0}} ;
+  GetPeerStruct peer_data = {NULL} ;
 
-
-  remote_data->parse_cbdata = &peer_data ;
+  remote_data->peer_cbdata = &peer_data ;
 
   zMapXMLParserSetMarkupObjectTagHandlers(remote_data->parser, &starts[0], &ends[0]) ;
 
@@ -1640,47 +1592,47 @@ static gboolean handleHandshake(char *command_text, RemoteData remote_data)
 	{
 	  char *message ;
 
-	  /* Need to init peer interface........ */
-	  if (zMapRemoteControlSendInit(remote_data->remote_cntl,
-					peer_data.app_id, peer_data.unique_id,
-					requestSentCB, remote_data,
-					replyHandlerCB, remote_data))
+
+          if (!remote_data->send_interface_init)
+            {
+              /* Need to init peer interface........ */
+              if (zMapRemoteControlSendInit(remote_data->remote_cntl,
+                                            remote_data->peer_cbdata->socket_id,
+                                            requestSentCB, remote_data,
+                                            replyHandlerCB, remote_data))
+                {
+                  remote_data->send_interface_init = TRUE ;
+                }
+              else
+                {
+                  remote_data->error = g_strdup_printf("Disaster, could not init send interface during"
+                                                       " handshake for peer \"%s\", id \"%s\".",
+                                                       peer_data.app_id, peer_data.socket_id) ;
+
+                  zMapWarning("%s", remote_data->error) ;
+
+                  remote_data->reply_rc = REMOTE_COMMAND_RC_FAILED ;
+                }
+            }
+
+          if (remote_data->reply_rc != REMOTE_COMMAND_RC_FAILED)
 	    {
 	      GArray *reply_array ;
 	      char *error_text = NULL ;
 
-	      remote_data->peer_app_id = g_strdup(peer_data.app_id) ;
-	      remote_data->peer_unique_id = g_strdup(peer_data.unique_id) ;
-
-	      if (peer_data.window_id)
-		{
-		  char *rest_str = NULL ;
+	      remote_data->peer_app_name = g_strdup(peer_data.app_id) ;
+	      remote_data->peer_socket_str = g_strdup(peer_data.socket_id) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  /* should error check here.... */
-		  errno = 0 ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		  remote_data->peer_x_window_id = strtoul(peer_data.window_id, &rest_str, 16) ;
-
-		  remote_data->peer_x_window_id_str = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR,
-								      remote_data->peer_x_window_id) ;
-		}
-
-
-
-	      message = g_strdup_printf("Handshake successful with peer \"%s\", id \"%s\".",
-					peer_data.app_id, peer_data.unique_id) ;
+	      message = g_strdup_printf("Handshake successful with peer \"%s\", socket id \"%s\".",
+					peer_data.app_id, peer_data.socket_id) ;
 
 	      /* Need to add this....
-		 <peer app_id="otterlace" unique_id="otterlace-15853-1327414674" window_id="0x5042d5d"/>
+		 <peer socket_id="tcp://127.0.0.1:9999"/>
 	      */
 
 	      result_message[1].value.s = message ;
-	      peer[1].value.q = g_quark_from_string(remote_data->app_name) ;
-	      peer[2].value.q = g_quark_from_string(remote_data->unique_atom_str) ;
-	      peer[3].value.q = g_quark_from_string(remote_data->x_window_id_str) ;
+	      peer[1].value.q = g_quark_from_string(remote_data->peer_socket_str) ;
 
 	      reply_array = zMapXMLUtilsCreateEventsArray() ;
 
@@ -1697,15 +1649,6 @@ static gboolean handleHandshake(char *command_text, RemoteData remote_data)
 	      remote_data->reply_rc = REMOTE_COMMAND_RC_OK ;
 
 	      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->send_init), TRUE) ;
-	    }
-	  else
-	    {
-	      remote_data->error = g_strdup_printf("Handshake failed for peer \"%s\", id \"%s\".",
-						   peer_data.app_id, peer_data.unique_id) ;
-
-	      zMapCritical("%s", remote_data->error) ;
-
-	      remote_data->reply_rc = REMOTE_COMMAND_RC_FAILED ;
 	    }
 	}
     }
@@ -2564,9 +2507,13 @@ static gboolean xml_peer_start_cb(gpointer user_data, ZMapXMLElement peer_elemen
 {
   gboolean result = TRUE ;
   RemoteData remote_data = (RemoteData)user_data ;
-  GetPeer peer_data = (GetPeer)(remote_data->parse_cbdata) ;
+  GetPeer peer_data = remote_data->peer_cbdata ;
   ZMapXMLAttribute attr ;
-  char *app_id = NULL, *unique_id = NULL , *window_id = NULL ;
+  char *socket_id = NULL ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Need to get this from the wrapper now... */
 
   if (result && (attr = zMapXMLElementGetAttributeByName(peer_element, ZACP_APP_ID)) != NULL)
     {
@@ -2578,29 +2525,30 @@ static gboolean xml_peer_start_cb(gpointer user_data, ZMapXMLElement peer_elemen
       remote_data->reply_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       result = FALSE ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  if (result && (attr  = zMapXMLElementGetAttributeByName(peer_element, ZACP_UNIQUE_ID)) != NULL)
+
+  if (result && (attr  = zMapXMLElementGetAttributeByName(peer_element, ZACP_SOCKET_ID)) != NULL)
     {
-      unique_id = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
+      socket_id = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
     }
   else
     {
-      zMapXMLParserRaiseParsingError(parser, "\""ZACP_UNIQUE_ID"\" is a required attribute for the \""
+      zMapXMLParserRaiseParsingError(parser, "\""ZACP_SOCKET_ID"\" is a required attribute for the \""
 				     ZACP_PEER"\" element.") ;
       remote_data->reply_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       result = FALSE ;
     }
-
-  if (result && (attr  = zMapXMLElementGetAttributeByName(peer_element, ZACP_WINDOW_ID)) != NULL)
-    {
-      window_id = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
-    }
-
   if (result)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* add later..... */
       peer_data->app_id = g_strdup(app_id) ;
-      peer_data->unique_id = g_strdup(unique_id) ;
-      peer_data->window_id = g_strdup(window_id) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      peer_data->socket_id = g_strdup(socket_id) ;
+
       remote_data->reply_rc = REMOTE_COMMAND_RC_OK ;
     }
 
@@ -3366,6 +3314,8 @@ static gboolean start_zmap_cb(gpointer remote_data_data)
       if (remote_debug)
 	g_string_append_printf(cmd_str, " --remote-debug=%s", remote_debug) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       g_string_append_printf(cmd_str, " --%s=%s",
 			     ZMAPARG_PEER_NAME,
 			     remote_data->app_name) ;
@@ -3373,6 +3323,13 @@ static gboolean start_zmap_cb(gpointer remote_data_data)
       g_string_append_printf(cmd_str, " --%s=%s",
 			     ZMAPARG_PEER_CLIPBOARD,
 			     remote_data->unique_atom_str) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      g_string_append_printf(cmd_str, " --%s=%s",
+			     ZMAPARG_PEER_SOCKET,
+			     remote_data->our_socket_str) ;
+
+
+
 
       if (remote_data->cmd_line_args->zmap_config_file)
 	{
@@ -3604,10 +3561,14 @@ static void toggleAndUpdate(GtkWidget *toggle_button)
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(toggle_button), TRUE) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   while (gtk_events_pending())
     {
       gtk_main_iteration () ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }

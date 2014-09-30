@@ -294,9 +294,9 @@ static void fc_draw_background_cb(FooCanvas *canvas, int x, int y, int width, in
 static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data);
 #endif
 
-static void canvas_set_busy_cursor(ZMapWindow window, gboolean external_call, const char *file, const char *func) ;
-static void canvas_unset_busy_cursor(ZMapWindow window, const char *file, const char *func) ;
-
+static void canvasSetCursor(ZMapWindow window,
+                            gboolean external_cursor, GdkCursor *cursor,
+                            const char *file, const char *func) ;
 
 static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_data) ;
 static void setupRuler(ZMapWindow       window,
@@ -550,15 +550,39 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
 
 
 
+
 /* This function shouldn't be called directly, instead use the macro zMapWindowBusy()
  * defined in the public header zmapWindow.h */
 void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func)
 {
+  GdkCursor *cursor ;
 
-  zmapWindowBusyInternal(window, TRUE, busy, file, func) ;
+  if (busy)
+    cursor = window->window_busy_cursor ;
+  else
+    cursor = window->normal_cursor ;
+
+  zmapWindowBusyInternal(window, FALSE, cursor, file, func) ;
 
   return ;
 }
+
+
+
+
+void zMapWindowSetCursor(ZMapWindow window, GdkCursor *cursor)
+{
+#ifdef __GNUC__
+  zmapWindowBusyInternal(window,  TRUE, cursor,__FILE__, (char *)__PRETTY_FUNCTION__) ;
+#else
+  zmapWindowBusyInternal(window, TRUE, cursor, __FILE__, NULL) ;
+#endif
+
+  return ;
+}
+
+
+
 
 
 /* This routine is called by the code in zmapView.c that manages the slave threads.
@@ -1426,17 +1450,29 @@ void zMapWindowDestroy(ZMapWindow window)
 
 /* This function shouldn't be called directly, instead use the macro zMapWindowBusy()
  * defined in the public header zmapWindow.h */
-void zmapWindowBusyInternal(ZMapWindow window, gboolean external_call,
-    gboolean busy, const char *file, const char *func)
+void zmapWindowBusyInternal(ZMapWindow window,
+                            gboolean external_cursor, GdkCursor *cursor,
+                            const char *file, const char *func)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (busy)
     {
-      canvas_set_busy_cursor(window, external_call, file, func) ;
+      canvas_set_busy_cursor(window, external_cursor, file, func) ;
     }
   else
     {
       canvas_unset_busy_cursor(window, file, func) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  if (!cursor)
+    cursor = window->normal_cursor ;
+
+  canvasSetCursor(window,
+                  external_cursor, cursor,
+                  file, func) ;
 
   return ;
 }
@@ -2261,6 +2297,12 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   /* Init mark stuff. */
   window->mark = zmapWindowMarkCreate(window) ;
 
+  /* Set up cursor stuff, note that user can set a normal cursor in the config file
+   * but that otherwise we will default to the parent's widget. */
+  window->window_busy_cursor = zMapGUICreateCursor(BUSY_CURSOR) ;
+  window->cursor_busy_count = 0 ;
+
+
   /* Set up a scrolled widget to hold the canvas. NOTE that this is our toplevel widget. */
   window->scrolled_window = gtk_scrolled_window_new(hadjustment, vadjustment) ;
   gtk_container_add(GTK_CONTAINER(window->parent_widget), window->toplevel) ;
@@ -2342,17 +2384,22 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
   gtk_widget_show_all(window->parent_widget) ;
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* OK...I'M NOT SURE WE SHOULD BE DOING THIS....THERE MUST BE A BETTER MECHANISM.... */
+
+  /* IS THIS OUR PROBLEM WITH FREEZING....NO, IT'S NOT !! */
+
   /* We want the canvas to be the focus widget of its "window" otherwise keyboard input
    * (i.e. short cuts) will be delivered to some other widget. We do this here because
    * I think we may need a widget window to exist for this call to work. */
   gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  if (!(window->normal_cursor))
-    window->normal_cursor = zMapGUIGetCursor(DEFAULT_CURSOR) ;
-  window->busy_cursor = zMapGUIGetCursor(BUSY_CURSOR) ;
-  window->window_busy_cursor = zMapGUIGetCursor("zmap_noentry") ;
 
-  window->cursor_busy_count = 0 ;
+
 
 
 
@@ -3065,7 +3112,7 @@ static void sendClientEvent(ZMapWindow window, FeatureSetsState feature_sets, gp
 }
 
 
-/* Called to service the event sent by sendClientEvent(), this seems ocntorted but we need
+/* Called to service the event sent by sendClientEvent(), this seems contorted but we need
  * to be sure drawing of features occurs as part of the normal stream of events so that we
  * don't draw before the window has been displayed for instance. This routine calls
  * the data display routines of ZMap.
@@ -3243,7 +3290,7 @@ static gboolean getConfiguration(ZMapWindow window)
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
                                        ZMAPSTANZA_WINDOW_CURSOR, &tmp_str))
-        window->normal_cursor = zMapGUIGetCursor(tmp_str) ;
+        window->normal_cursor = zMapGUICreateCursor(tmp_str) ;
 
       if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
                                     ZMAPSTANZA_WINDOW_MAXSIZE, &tmp_int))
@@ -6376,8 +6423,10 @@ static void revCompRequest(ZMapWindow window)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Busy cursor stuff.....we should also really block interaction with the canvas.... */
-static void canvas_set_busy_cursor(ZMapWindow window, gboolean external_call, const char *file, const char *func)
+static void canvas_set_busy_cursor(ZMapWindow window, GdkCursor *external_cursor, const char *file, const char *func)
 {
   char *file_name ;
   GdkCursor *busy_cursor ;
@@ -6386,8 +6435,8 @@ static void canvas_set_busy_cursor(ZMapWindow window, gboolean external_call, co
   file_name = g_path_get_basename(file) ;    /* Clip full pathname for shorter debug messages. */
 
 
-  if (external_call)
-    busy_cursor = window->busy_cursor ;
+  if (external_cursor)
+    busy_cursor = external_cursor  = window->window_external_cursor ;
   else
     busy_cursor = window->window_busy_cursor ;
 
@@ -6406,6 +6455,7 @@ static void canvas_set_busy_cursor(ZMapWindow window, gboolean external_call, co
   else
     {
       gdk_window_set_cursor(window->toplevel->window, busy_cursor) ;
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* There is a problem with getting the new cursor shown in a timely way, seems
@@ -6486,7 +6536,14 @@ static void canvas_unset_busy_cursor(ZMapWindow window, const char *file, const 
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          /* TESTING...... */
+
+
           gdk_window_set_cursor(window->toplevel->window, window->normal_cursor) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -6507,6 +6564,92 @@ static void canvas_unset_busy_cursor(ZMapWindow window, const char *file, const 
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* Cursor setting....we should also really block interaction with the canvas....
+ * 
+ * Use zmapWindowBusy() macro to call this function in all internal code.
+ *
+ * Use zMapWindowSetCursor() for all external calls to set cursor.
+ * 
+ * Note that if cursor is NULL then this "unsets" the existing cursor. For 
+ * internal cursors we reset to whatever the windows normal cursor was
+ * (see zmapWindowBusy() macro stuff).
+ * 
+ * 
+ * 
+ */
+static void canvasSetCursor(ZMapWindow window,
+                            gboolean external_cursor, GdkCursor *cursor,
+                            const char *file, const char *func)
+{
+  char *file_name ;
+  GdkCursor *new_cursor ;
+
+
+  /* We should detect when the cursor type is the same and just not set it..... */
+
+
+  file_name = g_path_get_basename(file) ;    /* Clip full pathname for shorter debug messages. */
+
+  if (external_cursor)
+    new_cursor= window->external_cursor = cursor ;
+  else
+    new_cursor = cursor ;
+
+  /* if (!cursor || (cursor && cursor->type == GDK_LEFT_PTR))
+    printf("found it\n") ; */
+
+  if (!zMapGUISetCursor(window->toplevel, new_cursor))
+    {
+      zMapLogWarning("%s", "Cannot set cursor at ZMapWindow top level, top level has no window.") ;
+
+      zMapDebugPrint(busy_debug_G, "%s - %s: window %p cursor NOT SET, no window",
+             file_name, func, window) ;
+    }
+  else if (!external_cursor)
+    {
+      if (new_cursor == window->window_busy_cursor)
+        {
+          window->cursor_busy_count++ ;
+
+          zMapDebugPrint(busy_debug_G, "%s - %s: window %p busy cursor %s, %d",
+                         file_name, func,
+                         window,
+                         (window->cursor_busy_count == 1 ? "turned ON" : "incremented"),
+                         window->cursor_busy_count) ;
+        }
+      else
+        {
+          window->cursor_busy_count-- ;
+
+          if (window->cursor_busy_count < 0)
+            {
+              zMapDebugPrint(busy_debug_G, "%s - %s: window %p, bad cursor busy count (%d)!",
+                             file_name, func, window, window->cursor_busy_count) ;
+
+              zMapLogWarning("bad cursor busy count (%d), count reset to zero !", window->cursor_busy_count) ;
+
+              window->cursor_busy_count = 0 ;
+            }
+
+          zMapDebugPrint(busy_debug_G, "%s - %s: window %p busy cursor %s, %d",
+                         file_name, func,
+                         window,
+                         (window->cursor_busy_count == 0 ? "turned OFF" : "decremented"),
+                         window->cursor_busy_count) ;
+        }
+
+    }
+
+
+  g_free(file_name) ;
+
+  return ;
+}
+
+
 
 
 #if ZOOM_SCROLL
