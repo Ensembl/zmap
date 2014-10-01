@@ -1337,7 +1337,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
   ZMapFeatureSet         feature_set = NULL ;
   ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID ;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  //  int start,end;
+
 
   feature_type = feature_any->struct_type;
 
@@ -1559,13 +1559,19 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         int frame_start, frame_end;
         ZMapFeatureTypeStyle style;
 
+        char *name, *unique_name ;
+
+        name = g_quark_to_string(feature_any->original_id) ;
+        unique_name = g_quark_to_string(feature_any->unique_id) ;
+
 
         /* record the full_context current block, not the diff block which will get destroyed! */
         canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block, feature_any->unique_id);
 
         if (!canvas_data->curr_set)
           {
-            char *x = g_strdup_printf("cannot find set %s, available are: ", g_quark_to_string(feature_any->unique_id));
+            char *x = g_strdup_printf("cannot find set %s, available are: ",
+                                      g_quark_to_string(feature_any->unique_id));
             {
               GList *l;
               char *x;
@@ -1678,6 +1684,9 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
                         zMapStartTimer("DrawFeatureSet",g_quark_to_string(feature_set->unique_id));
 
+                        zMapDebugPrintf("About to draw set: \"%s\" (\"%s\") for frame %d",
+                                        name, unique_name, canvas_data->current_frame) ;
+
                         canvas_data->feature_count += zmapWindowDrawFeatureSet(window,
                                                                                //                                                window->context_map->styles,
                                                                                feature_set,
@@ -1685,6 +1694,9 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
                                                                                tmp_reverse,
                                                                                canvas_data->current_frame, FALSE);
                         // causes screen refresh thrash: canvas_data->frame_mode_change) ;
+
+                        zMapDebugPrintf("Finished drawing set: \"%s\" (\"%s\") for frame %d",
+                                        name, unique_name, canvas_data->current_frame) ;
 
                         zMapStopTimer("DrawFeatureSet", g_quark_to_string(feature_set->unique_id));
                       }

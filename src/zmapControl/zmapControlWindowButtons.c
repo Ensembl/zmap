@@ -1108,12 +1108,12 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
 	  || menu_item_id == SHOW_3FT || menu_item_id == HIDE_3ALL
 	  || menu_item_id == SHOW_3ALL)
 	{
-          ZMapWindow3FrameMode frame_mode = ZMAP_WINDOW_3FRAME_INVALID ;
+          ZMapWindow3FrameMode frame_mode = ZMAP_WINDOW_3FRAME_OFF ;
 
 	  switch(menu_item_id)
 	    {
 	    case HIDE_3ALL:
-	      frame_mode = ZMAP_WINDOW_3FRAME_INVALID ;
+	      frame_mode = ZMAP_WINDOW_3FRAME_OFF ;
 	      break;
 	    case SHOW_3FEATURES:
 	      frame_mode = ZMAP_WINDOW_3FRAME_COLS ;

@@ -71,10 +71,10 @@ typedef enum {ZMAP_WINLOCK_NONE, ZMAP_WINLOCK_VERTICAL, ZMAP_WINLOCK_HORIZONTAL}
 /* Controls display of 3 frame translations and/or 3 frame columns when 3 frame mode is selected. */
 typedef enum
   {
-    ZMAP_WINDOW_3FRAME_INVALID,
+    ZMAP_WINDOW_3FRAME_OFF,                                 /* No 3 frame display. */
     ZMAP_WINDOW_3FRAME_TRANS,                               /* 3 frame translation display. */
-    ZMAP_WINDOW_3FRAME_COLS,                                /* 3 frame other cols display. */
-    ZMAP_WINDOW_3FRAME_ALL                                  /* All 3 frame cols. */
+    ZMAP_WINDOW_3FRAME_COLS,                                /* 3 frame cols display. */
+    ZMAP_WINDOW_3FRAME_ALL                                  /* 3 frame cols and translation display. */
   } ZMapWindow3FrameMode ;
 
 typedef enum 

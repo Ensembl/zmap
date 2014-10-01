@@ -133,7 +133,7 @@ void zMapWindow3FrameToggle(ZMapWindow window)
   ZMapWindow3FrameMode mode = ZMAP_WINDOW_3FRAME_TRANS ;
 
   if (IS_3FRAME(window->display_3_frame))
-    mode = ZMAP_WINDOW_3FRAME_INVALID ;
+    mode = ZMAP_WINDOW_3FRAME_OFF ;
 
   myWindowSet3FrameMode(window, mode) ;
 
@@ -535,22 +535,7 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
 
   if (frame_specific)
     {
-#if MH17_NOT_USED
-      ZMapFrame set_frame;
-      ZMapStrand set_strand;
-
-      set_strand = zmapWindowContainerFeatureSetGetStrand(container) ;
-      set_frame  = zmapWindowContainerFeatureSetGetFrame(container) ;
-#endif
-
-
-      /* MH17: acedb only gives us lower cased names
- previously capitalised name came from req_featuresets ???
- if(container->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
- but we can patch up from the [ZMap] columns list
-      */
-      /* gb10: made this check use the lowercase unique id to fix the acedb bug */
-      if(zmapWindowContainerFeaturesetGetColumnId(container) == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
+      if (zmapWindowContainerFeaturesetGetColumnUniqueId(container) == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
         {
           if (IS_3FRAME_TRANS(window->display_3_frame))
             displayed = TRUE ;
@@ -560,6 +545,7 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
           displayed = TRUE ;
         }
     }
+
 
   return displayed ;
 }
@@ -1015,7 +1001,7 @@ static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
 {
   switch (frame_mode)
     {
-    case ZMAP_WINDOW_3FRAME_INVALID:
+    case ZMAP_WINDOW_3FRAME_OFF:
       {
         ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;    /* comment out to remember selection */
         ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
