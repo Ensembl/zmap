@@ -1684,19 +1684,13 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
                         zMapStartTimer("DrawFeatureSet",g_quark_to_string(feature_set->unique_id));
 
-                        zMapDebugPrintf("About to draw set: \"%s\" (\"%s\") for frame %d",
-                                        name, unique_name, canvas_data->current_frame) ;
-
                         canvas_data->feature_count += zmapWindowDrawFeatureSet(window,
-                                                                               //                                                window->context_map->styles,
+                                                                               //window->context_map->styles,
                                                                                feature_set,
                                                                                tmp_forward,
                                                                                tmp_reverse,
                                                                                canvas_data->current_frame, FALSE);
                         // causes screen refresh thrash: canvas_data->frame_mode_change) ;
-
-                        zMapDebugPrintf("Finished drawing set: \"%s\" (\"%s\") for frame %d",
-                                        name, unique_name, canvas_data->current_frame) ;
 
                         zMapStopTimer("DrawFeatureSet", g_quark_to_string(feature_set->unique_id));
                       }
