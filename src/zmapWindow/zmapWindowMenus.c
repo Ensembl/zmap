@@ -2548,6 +2548,8 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
       {
         ZMapWindowContainerFeatureSet container = NULL;
 
+        /* Christ...what's all this internal data structs stuff..... */
+
         if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
           {
             ZMapFeatureTypeStyle style ;
@@ -2557,7 +2559,7 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
             /*zmapWindowStyleTableForEach(container->style_table, show_all_styles_cb, NULL);*/
             style = container->style ;
             zmapWindowShowStyle(style) ;
-              }
+          }
         else if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
           {
             container = (ZMapWindowContainerFeatureSet)(menu_data->item->parent) ;
