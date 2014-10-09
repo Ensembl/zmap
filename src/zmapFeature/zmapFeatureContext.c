@@ -694,7 +694,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
         if (feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
           {
             cb_data->translation_fs = feature_set;
-            zMapFeature3FrameTranslationSetRevComp(feature_set, cb_data->block_start, cb_data->block_end) ;
+            zmapFeature3FrameTranslationSetRevComp(feature_set, cb_data->block_start, cb_data->block_end) ;
           }
 
         break;
@@ -742,7 +742,7 @@ static ZMapFeatureContextExecuteStatus revCompORFFeaturesCB(GQuark key,
         feature_set = (ZMapFeatureSet)feature_any;
 
         if (feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_ORF_NAME))
-          zMapFeatureORFSetRevComp(feature_set, cb_data->translation_fs);
+          zmapFeatureORFSetRevComp(feature_set, cb_data->translation_fs);
 
 
         break;
