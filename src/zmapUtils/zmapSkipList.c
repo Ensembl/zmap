@@ -71,55 +71,27 @@
 
 #define N_SKIP_LIST_ALLOC 1000
 
+static ZMapSkipList allocSkipList(void);
+static void freeSkipList(ZMapSkipList sl);
+
+
+/* 
+ *                     Globals.
+ */
+
+static ZMapSkipList skip_list_free_G = NULL;
+
 static long n_block_alloc = 0;
 static long n_skip_alloc = 0;
 static long n_skip_free = 0;
 
-static ZMapSkipList allocSkipList(void);
-static void freeSkipList(ZMapSkipList sl);
-
-static ZMapSkipList skip_list_free_G = NULL;
-
-static ZMapSkipList allocSkipList(void)
-{
-      ZMapSkipList sl;
-
-      if(!skip_list_free_G)
-      {
-            int i;
-            sl = g_new(zmapSkipListStruct,N_SKIP_LIST_ALLOC);
-
-            for(i = 0;i < N_SKIP_LIST_ALLOC;i++)
-                  freeSkipList(sl++);
-
-            n_block_alloc++;
-      }
-
-      sl = skip_list_free_G;
-      if(sl)
-      {
-        skip_list_free_G = sl->next;
-
-        /* these can get re-allocated so must zero */
-        memset((gpointer) sl,0,sizeof(zmapSkipListStruct));
-      }
-
-      n_skip_alloc++;
-      return(sl);
-}
-
-
-/* need to be a ZMapSkipListFreeFunc for use as a callback */
-static void freeSkipList(ZMapSkipList sl)
-{
-      sl->next = skip_list_free_G;
-      skip_list_free_G = sl;
-
-n_skip_free++;
-}
-
 #endif
 
+
+
+/* 
+ *                    External interface routines.
+ */
 
 
 ZMapSkipList zMapSkipListCreate(GList *data_in, GCompareFunc cmp)
@@ -209,8 +181,12 @@ int zMapSkipListCount(ZMapSkipList head)
   int i;
 
   head = zMapSkipListFirst(head);
-    for(i = 0; head; i++)
-  head = head->next;
+
+  for(i = 0; head; i++)
+    {
+      head = head->next;
+    }
+
   return(i);
 }
 
@@ -413,4 +389,55 @@ void zMapSkipListDestroy(ZMapSkipList skip_list, ZMapSkipListFreeFunc free_func)
 
         /* printf("skip list: %ld %ld %ld\n", n_block_alloc, n_skip_alloc, n_skip_free); */
 }
+
+
+
+
+/* 
+ *                     Internal routines
+ */
+
+
+
+#ifndef SLOW_BUT_EASY
+
+static ZMapSkipList allocSkipList(void)
+{
+      ZMapSkipList sl;
+
+      if(!skip_list_free_G)
+      {
+            int i;
+            sl = g_new(zmapSkipListStruct,N_SKIP_LIST_ALLOC);
+
+            for(i = 0;i < N_SKIP_LIST_ALLOC;i++)
+                  freeSkipList(sl++);
+
+            n_block_alloc++;
+      }
+
+      sl = skip_list_free_G;
+      if(sl)
+      {
+        skip_list_free_G = sl->next;
+
+        /* these can get re-allocated so must zero */
+        memset((gpointer) sl,0,sizeof(zmapSkipListStruct));
+      }
+
+      n_skip_alloc++;
+      return(sl);
+}
+
+
+/* need to be a ZMapSkipListFreeFunc for use as a callback */
+static void freeSkipList(ZMapSkipList sl)
+{
+      sl->next = skip_list_free_G;
+      skip_list_free_G = sl;
+
+n_skip_free++;
+}
+
+#endif
 

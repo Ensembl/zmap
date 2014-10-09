@@ -68,7 +68,8 @@ typedef struct _zmapWindowContainerFeatureSetStruct  zmapWindowContainerFeatureS
 
 
 /* Class */
-typedef struct _zmapWindowContainerFeatureSetClassStruct zmapWindowContainerFeatureSetClass, *ZMapWindowContainerFeatureSetClass ;
+typedef struct _zmapWindowContainerFeatureSetClassStruct
+zmapWindowContainerFeatureSetClass, *ZMapWindowContainerFeatureSetClass ;
 
 
 typedef ColinearityType (*ZMapFeatureCompareFunc)(ZMapFeature feature_a, ZMapFeature feature_b, gpointer user_data);
@@ -79,15 +80,15 @@ GType zmapWindowContainerFeatureSetGetType(void);
 FooCanvasItem *zmapWindowContainerFeatureSetFindCanvasColumn(ZMapWindowContainerGroup group,
                                                              GQuark align, GQuark block, GQuark set,
                                                              ZMapStrand strand, ZMapFrame frame) ;
-ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet container_set,
-								   ZMapWindow window,
-								   GQuark     align_id,
-								   GQuark     block_id,
-								   GQuark     feature_set_unique_id,
-								   GQuark     feature_set_original_id, /* unused! */
-								   ZMapFeatureTypeStyle style,
-								   ZMapStrand strand,
-								   ZMapFrame  frame);
+void zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet container_set,
+                                          ZMapWindow window,
+                                          GQuark     align_id,
+                                          GQuark     block_id,
+                                          GQuark     feature_set_unique_id,
+                                          GQuark     feature_set_original_id, /* unused! */
+                                          ZMapFeatureTypeStyle style,
+                                          ZMapStrand strand,
+                                          ZMapFrame  frame);
 gboolean zmapWindowContainerFeatureSetAttachFeatureSet(ZMapWindowContainerFeatureSet container_set,
 						       ZMapFeatureSet feature_set_to_attach);
 
@@ -101,6 +102,7 @@ ZMapWindowStats zmapWindowContainerFeatureSetRecoverStats(ZMapWindowContainerFea
 #endif
 
 GList *zmapWindowContainerFeatureSetGetFeatureSets(ZMapWindowContainerFeatureSet container_set);
+
 gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet container);
 
 /* Style lookup */
@@ -116,13 +118,17 @@ GQuark zmapWindowContainerFeaturesetGetColumnUniqueId(ZMapWindowContainerFeature
 
 /* style properties for the whole column,  */
 ZMapStrand zmapWindowContainerFeatureSetGetStrand(ZMapWindowContainerFeatureSet container_set);
-ZMapFrame  zmapWindowContainerFeatureSetGetFrame (ZMapWindowContainerFeatureSet container_set);
-double     zmapWindowContainerFeatureSetGetWidth(ZMapWindowContainerFeatureSet container_set);
-double     zmapWindowContainerFeatureGetBumpSpacing(ZMapWindowContainerFeatureSet container_set);
-gboolean   zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet container_set,
-						     double *min_mag_out, double *max_mag_out);
+ZMapFrame zmapWindowContainerFeatureSetGetFrame (ZMapWindowContainerFeatureSet container_set);
+double zmapWindowContainerFeatureSetGetWidth(ZMapWindowContainerFeatureSet container_set);
+double zmapWindowContainerFeatureGetBumpSpacing(ZMapWindowContainerFeatureSet container_set);
+gboolean zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet container_set,
+                                                   double *min_mag_out, double *max_mag_out);
 ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpUnmarked(ZMapWindowContainerFeatureSet container_set) ;
 
+gboolean zmapWindowContainerFeatureSetDoSpliceHighlight(ZMapWindowContainerFeatureSet container_set) ;
+gboolean zmapWindowContainerFeatureSetSpliceHighlightFeatures(ZMapWindowContainerFeatureSet container_set,
+                                                              GList *splice_highlight_features) ;
+gboolean zmapWindowContainerFeatureSetSpliceUnhighlightFeatures(ZMapWindowContainerFeatureSet container_set) ;
 
 ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowContainerFeatureSet container_set);
 void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet container_set,

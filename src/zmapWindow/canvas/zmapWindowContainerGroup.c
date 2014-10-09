@@ -1375,7 +1375,7 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
         }
 
       zMapStyleGetColours(style, colour_target, colour_type,
-                          fill, draw, outline);
+                          fill, draw, outline) ;
     }
 
   colour_target = STYLE_PROP_COLOURS;
@@ -1395,6 +1395,8 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
       if(border)
         *outline = border;
     }
+
+  return ;
 }
 
 
