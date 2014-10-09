@@ -147,7 +147,7 @@ static void printCanvasFeature(void *data, void *user_data_unused) ;
 
 static void findNameAtPosCB(gpointer data, gpointer user_data) ;
 
-
+static void freeSplicePosCB(gpointer data, gpointer user_data_unused) ;
 
 
 /*
@@ -304,21 +304,6 @@ ZMapWindowFeaturesetItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanv
 
       featureset_item = (ZMapWindowFeaturesetItem)foo ;
       featureset_item->id = id ;
-
-
-      {
-        /* DEBUG.... */
-	ZMapWindowContainerFeatureSet col = (ZMapWindowContainerFeatureSet)(foo->parent) ;
-        char *col_id ;
-        char *featureset_id ;
-
-        col_id = zmapWindowContainerFeaturesetGetColumnName(col) ;
-        featureset_id = (char *)g_quark_to_string(featureset_item->id) ;
-
-        zMapLogMessage("Created: \"%s\" column %p <- \"%s\" featuresetitem %p, layer %x",
-                       col_id, col, featureset_id, featureset_item, layer) ;
-      }
-
 
       g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
 
@@ -859,6 +844,60 @@ gboolean zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featurese
 }
 
 
+ZMapFeature zmapWindowCanvasFeatureGetFeature(ZMapWindowCanvasFeature feature_item)
+{
+  ZMapFeature feature = NULL ;
+
+  if (feature_item->feature)
+    feature = feature_item->feature ;
+
+  return feature ;
+}
+
+
+/* Add/remove splice positions to a feature, these can be displayed/highlighted
+ * to the user.
+ * 
+ * These positions probably indicate where the feature splices match some other
+ * feature  selected by the user. */
+void zmapWindowCanvasFeatureAddSplicePos(ZMapWindowCanvasFeature feature_item,
+                                         int feature_pos, ZMapBoundaryType boundary_type)
+{
+  ZMapSplicePosition splice_pos ;
+
+  splice_pos = g_new0(ZMapSplicePositionStruct, 1) ;
+  splice_pos->boundary_type = boundary_type ;
+
+  if (boundary_type == ZMAPBOUNDARY_5_SPLICE)
+    {
+      splice_pos->start = feature_pos - 3 ;
+      splice_pos->end = feature_pos - 1 ;
+    }
+  else
+    {
+      splice_pos->start = feature_pos + 1 ;
+      splice_pos->end = feature_pos + 3 ;
+    }
+
+  feature_item->splice_positions = g_list_append(feature_item->splice_positions, splice_pos) ;
+
+  return ;
+}
+
+void zmapWindowCanvasFeatureRemoveSplicePos(ZMapWindowCanvasFeature feature_item)
+{
+  g_list_foreach(feature_item->splice_positions, freeSplicePosCB, NULL) ;
+
+  g_list_free(feature_item->splice_positions) ;
+
+  feature_item->splice_positions = NULL ;
+
+  return ;
+}
+
+
+
+
 /* if a featureset has any allocated data free it */
 void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
 {
@@ -1363,6 +1402,37 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset,
 
   return ret;
 }
+
+
+/* HACK WHILE I GET SPLICE STUFF WORKING....NEED TO ADD SPLICE IN PROPERLY...TO STYLE AND EVERYTHING... */
+gboolean zMapWindowCanvasFeaturesetGetSpliceColour(ZMapWindowFeaturesetItem featureset, gulong *splice_pixel)
+{
+  gboolean result = FALSE ;
+  static splice_allocated = FALSE ;
+  static GdkColor splice_colour ;
+
+  if (!splice_allocated)
+    {
+      if ((result = gdk_color_parse("red", &splice_colour))
+          && (result = gdk_colormap_alloc_color(gdk_colormap_get_system(), &splice_colour, FALSE, TRUE)))
+        {
+          splice_allocated = TRUE ;
+        }
+    }
+
+  if (splice_allocated)
+    {
+      *splice_pixel = splice_colour.pixel ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+
+
 
 
 /* show / hide all masked features in the CanvasFeatureset
@@ -2103,18 +2173,15 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
 }
 
 
-/*
- * return the foo canvas item under the lassoo, and a list of more features if included
+/* return the foo canvas item under the lassoo, and a list of more features if included
  * we restrict the features to one column as previously multi-select was restricted to one column
  * the column is defined by the centre of the lassoo and we include features inside not overlapping
  * NOTE we implement this for CanvasFeatureset only, not old style foo
  * NOTE due to happenstance (sic) transcripts are selected if they overlap
- */
-
-/*
+ *
  * coordinates are canvas not world, we have to compare with foo bounds for each canvasfeatureset
  */
-GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, double y2, double x1, double x2)
+GList *zMapWindowFeaturesetFindItemAndFeatures(FooCanvasItem **item, double y1, double y2, double x1, double x2)
 {
   GList *feature_list = NULL ;
   ZMapWindowFeaturesetItem fset ;
@@ -2123,7 +2190,7 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
   double mid_x = (x1 + x2) / 2 ;
   GList *l, *lx ;
 
-  zMapReturnValIfFail(item && *item, feature_list) ;
+  zMapReturnValIfFail(item && *item, NULL) ;
 
   zMap_g_hash_table_get_data(&lx, featureset_class_G->featureset_items) ;
 
@@ -2232,6 +2299,144 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 
   return feature_list ;
 }
+
+
+/* THIS NEEDS TO BE COMBINED WITH THE ROUTINE ABOVE...BUT FOR NOW LET'S JUST GET ON.... */
+
+GList *zMapWindowFeaturesetFindFeatures(ZMapWindowFeaturesetItem featureset_item, double y1, double y2)
+{
+  GList *feature_list = NULL ;
+  ZMapSkipList sl ;
+
+  zMapReturnValIfFail((featureset_item || (featureset_item->start < y1 || featureset_item->end > y2)), NULL) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMap_g_hash_table_get_data(&lx, featureset_class_G->featureset_items) ;
+
+  for (l = lx ; l ; l = l->next)
+    {
+      foo = (FooCanvasItem *)(l->data) ;
+
+      if (foo->canvas != (*item)->canvas)	/* on another window ? */
+	continue;
+
+      if (!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+	continue;
+
+      fset = (ZMapWindowFeaturesetItem)foo ;
+
+      /* feature set must surround the given coords and must be features and not
+       * some graphics. */
+      if ((foo->x1 < mid_x && foo->x2 > mid_x)
+	  && (fset->start < y1 && fset->end > y2)
+	  && (fset->type == FEATURE_BASIC || fset->type == FEATURE_ALIGN || fset->type == FEATURE_TRANSCRIPT))
+	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* Keeping this in for debugging.....original bug was that we picked up a feature set
+	   * that was graphics or the wrong type or..... */
+
+	  char *fset_name ;
+
+	  fset_name = g_quark_to_string(fset->id) ;
+
+	  printf("%s\n", fset_name) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  break;
+	}
+    }
+
+  if (lx)
+    g_list_free(lx) ;
+
+  if (!l || !foo)
+    return(NULL) ;
+
+
+  {
+    char *fset_name ;
+
+    fset_name = (char *)g_quark_to_string(fset->id) ;
+
+    printf("%s\n", fset_name) ;
+
+  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+  if ((featureset_item->type == FEATURE_BASIC || featureset_item->type == FEATURE_ALIGN
+       || featureset_item->type == FEATURE_TRANSCRIPT))
+    {
+      sl = zmap_window_canvas_featureset_find_feature_coords(NULL, featureset_item, y1, y2) ;
+
+      for( ; sl ; sl = sl->next)
+        {
+          ZMapWindowCanvasFeature gs;
+
+          gs = sl->data;
+
+          if(gs->flags & FEATURE_HIDDEN)	/* we are setting focus on visible features ! */
+            continue;
+
+          if(gs->y1 > y2)
+            break;
+
+          /* ADDING A TEST FOR NON-OVERLAPPING AT THE START, REMOVING OVERLAPS AS WE NEED THEM, 
+           * MAKE THE LATTER INTO A FUNCTION PARAMETER ?? */
+          if (gs->y2 < y1)
+            continue ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          /* reject overlaps as we can add to the selection but not subtract from it */
+          if(gs->y1 < y1)
+            continue;
+          if(gs->y2 > y2)
+            continue;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+          if(!feature_list)
+            {
+              zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem)featureset_item, gs->feature) ;
+
+              /* rather boringly these could get revived later and overwrite the canvas item feature ?? */
+              /* NOTE probably not, the bug was a missing * in the line above */
+              featureset_item->point_feature = gs->feature;
+              featureset_item->point_canvas_feature = gs;
+            }
+
+          //     else	// why? item has the first one and feature list is the others if present
+          // mh17: always include the first in the list to filter duplicates eg transcript exons
+          {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+            feature_list = zMap_g_list_append_unique(feature_list, gs->feature);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+            /* ok...let's return the canvasfeature instead..... */
+            feature_list = zMap_g_list_append_unique(feature_list, gs) ;
+
+          }
+        }
+    }
+
+
+  return feature_list ;
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2357,7 +2562,7 @@ gboolean zmapWindowFeaturesetGetDefaultColours(ZMapWindowFeaturesetItem feature_
         *fill = &(featureset_class->fill) ;
       if (draw)
         *draw = &(featureset_class->draw) ;
-      if (fill)
+      if (border)
         *fill = &(featureset_class->border) ;
 
       result = FALSE ;
@@ -3299,7 +3504,10 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
 
 
 
-ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetItem featureset_item, zmapWindowCanvasFeatureType type, double x1, double y1, double x2, double y2, GdkColor *fill, GdkColor *outline, char *text)
+ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetItem featureset_item,
+                                                         zmapWindowCanvasFeatureType type,
+                                                         double x1, double y1, double x2, double y2,
+                                                         GdkColor *fill, GdkColor *outline, char *text)
 {
   ZMapWindowCanvasGraphics feat;
   gulong fill_pixel= 0, outline_pixel = 0;
@@ -3531,6 +3739,8 @@ void zMapWindowCanvasFeaturesetGetFeatureBounds(FooCanvasItem *foo,
     *rooty1 = item->feature->x1;
   if(rooty2)
     *rooty2 = item->feature->x2;
+
+  return ;
 }
 
 
@@ -4059,4 +4269,17 @@ static void findNameAtPosCB(gpointer data, gpointer user_data)
 
   return ;
 }
+
+
+static void freeSplicePosCB(gpointer data, gpointer user_data_unused)
+{
+  ZMapSplicePosition splice_pos = (ZMapSplicePosition)data ; /* for debugging. */
+
+  g_free(splice_pos) ;
+
+  return ;
+}
+
+  
+
 

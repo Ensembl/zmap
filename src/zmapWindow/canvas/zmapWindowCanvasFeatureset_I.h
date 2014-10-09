@@ -44,7 +44,7 @@
 
 
 
-/* Default colours !! - should be in more public header ?? */
+/* Default feature colours, suitably boring to prompt user to set their own. */
 #define CANVAS_DEFAULT_COLOUR_FILL   "grey"
 #define CANVAS_DEFAULT_COLOUR_BORDER "black"
 #define CANVAS_DEFAULT_COLOUR_DRAW   "white"
@@ -52,32 +52,22 @@
 
 
 /* Enums ???? */
-#define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED		/* any focus flag will map to selected */
-#define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED		/* eg masked */
-#define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE)		/* includes masking (EST) */
+#define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED /* any focus flag will map to selected */
+#define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED  /* eg masked */
+#define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE) /* includes masking (EST) */
 
-#define FEATURE_HIDDEN		0x0100		/* not always false, set for hidden rather than visible to make flag twiddling easier */
-#define FEATURE_USER_HIDE	0x0200		/* hidden by user request */
-#define FEATURE_MARK_HIDE	0x0400		/* hidden by bump from mark */
-#define FEATURE_SUMMARISED	0x0800		/* hidden by summarise */
-#define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
-#define FEATURE_HIDE_FILTER	0x2000		/* filtered by score or something else eg locus prefix */
-#define FEATURE_HIDE_COMPOSITE	0x4000	/* squashed or collapsed */
-#define FEATURE_HIDE_EXPAND	0x8000		/* compressed feature got bumped */
-#define FEATURE_HIDE_REASON	0xfe00		/* NOTE: update this if you add a reason */
+#define FEATURE_HIDDEN		0x0100                      /* not always false, set for hidden rather than
+                                                               visible to make flag twiddling easier */
+#define FEATURE_USER_HIDE	0x0200                      /* hidden by user request */
+#define FEATURE_MARK_HIDE	0x0400                      /* hidden by bump from mark */
+#define FEATURE_SUMMARISED	0x0800                      /* hidden by summarise */
+#define FEATURE_MASK_HIDE	0x1000                      /* masked feature hidden by user */
+#define FEATURE_HIDE_FILTER	0x2000                      /* filtered by score or something else eg locus prefix */
+#define FEATURE_HIDE_COMPOSITE	0x4000                      /* squashed or collapsed */
+#define FEATURE_HIDE_EXPAND	0x8000                      /* compressed feature got bumped */
+#define FEATURE_HIDE_REASON	0xfe00                      /* NOTE: update this if you add a reason */
 
 #define FEATURE_FOCUS_ID	WINDOW_FOCUS_ID
-
-
-/* CHECK IF THIS IS EVER USED AND DELETE IF NOT... */
-#if 0
-#define FEATURE_SQUASHED_START	0x10000
-#define FEATURE_SQUASHED_END		0x20000
-#define FEATURE_SQUASHED		0x30000
-
-  GArray *gaps;					/* alternate gaps array for alignments if squashed */
-#endif
-
 
 #define WCG_FILL_SET		1
 #define WCG_OUTLINE_SET		2
@@ -122,9 +112,6 @@ typedef struct _zmapWindowCanvasGraphicsStruct
 
 } zmapWindowCanvasGraphicsStruct;
 
-/* NOTE see featureset_init_funcs() for a relevant Assert */
-
-
 
 
 
@@ -152,11 +139,7 @@ typedef struct ZMapWindowCanvasSubColStructType
 
 
 
-/*
- * minimal data struct to define a feature
- * handle boxes as y1,y2 + width
- */
-
+/* minimal data struct to define a feature handle boxes as y1,y2 + width */
 typedef struct _zmapWindowCanvasFeatureStruct
 {
 #if NEED_TO_REWRITE_SHED_LOADS_OF_CODE
@@ -167,11 +150,12 @@ typedef struct _zmapWindowCanvasFeatureStruct
   double y1, y2;    	/* top, bottom of item (box or line) */
 #endif
 
-  ZMapFeature feature;
+  ZMapFeature feature ;
+
   //  GList *from;		/* the list node that holds the feature */
   /* refer to comment above zmapWindowCanvasFeatureset.c/zMapWindowFeaturesetItemRemoveFeature() */
 
-  double score;		/* determines feature width */
+  double score ;                                            /* determines feature width */
 
   /* ideally these could be ints but the canvas works with doubles */
   double width;
@@ -182,6 +166,11 @@ typedef struct _zmapWindowCanvasFeatureStruct
   long flags;				/* non standard display option eg selected */
 
   ZMapWindowCanvasFeature left,right;	/* for exons and alignments, NULL for simple features */
+
+  /* NULL if splice highlighting is off, contains positions of all places highlights
+   * need to be drawn within feature if highlighting is on. */
+  GList *splice_positions ;
+
 
 } zmapWindowCanvasFeatureStruct;
 
@@ -269,7 +258,7 @@ typedef struct zmapWindowFeaturesetItemClassStructType
 
 
 /* THIS IS A CHILD OF THE COLUMN GROUP CREATED ELSEWHERE....IN ESSENCE IT HOLDS THE
- * FEATURES THOUGH THESE ARE NO LONGER OBJECTS.
+ * FEATURES THOUGH THESE ARE NO LONGER FOOCANVAS OBJECTS.
  * 
  * NOTE this class/ structure is used for all types of columns
  * it is not inherited and various optional functions have been squeezed in
@@ -294,9 +283,13 @@ typedef struct _zmapWindowFeaturesetItemStruct
   ZMapStrand strand;
   ZMapFrame frame;
 
+
+  /* Should the next two fields really be in the containerfeatureset struct ? */
+
   /* Points to data that is needed on a per column basis and is assigned by the functions
    * that handle that data. */
   gpointer per_column_data ;
+
 
   /* Glyph data, this is held separately because as well as glyph columns there are columns
    * e.g. alignments, that also need glyph data. */
@@ -366,6 +359,10 @@ typedef struct _zmapWindowFeaturesetItemStruct
   /* I'm not sure what this is ? */
   double x_off;
 
+  double width;                 /* column width */
+  double bump_width;
+
+
   /* graphics context for all contained features
    * each one has its own colours that we set on draw (eg for heatmaps)
    * foo_canvas_rect also has stipples but we don't use then ATM
@@ -382,23 +379,30 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   gpointer deferred;		  /* buffer for deferred paints, eg constructed polyline */
 
-  /* WHEN ARE THESE USED....DUH..... */
+
+
+  /* Feature colours....Gosh...all seems a mish-mash....... */
+
+  /* Bitfield ???? */
+  gboolean fill_set ;                                       /* Is fill color set? */
+  gboolean outline_set ;                                    /* Is outline color set? */
+  gboolean background_set ;                                 /* Is background set ? */
+  gboolean border_set ;                                     /* Is border set ? */
+  gboolean splice_set ;
+
   gulong fill_colour;           /* Fill color, RGBA */
-  gulong outline_colour;        /* Outline color, RGBA */
   gulong fill_pixel;            /* Fill color */
+
+  gulong outline_colour;        /* Outline color, RGBA */
   gulong outline_pixel;         /* Outline color */
 
   gulong background;		  /* eg for 3FT or strand separator */
   GdkBitmap *stipple;
+
   gulong border;			  /* eg for navigator locator */
 
-  double width;                 /* column width */
-  double bump_width;
-
-  gboolean fill_set;    	/* Is fill color set? */
-  gboolean outline_set;	 	/* Is outline color set? */
-  gboolean background_set;	/* Is background set ? */
-  gboolean border_set;		/* Is border set ? */
+  gulong splice_colour ;                                    /* Fill color, RGBA */
+  gulong splice_pixel ;                                     /* Fill color */
 
 
   ZMapFeature point_feature;	/* set by cursor movement */
