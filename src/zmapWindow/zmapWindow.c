@@ -873,8 +873,9 @@ void zMapWindowStats(ZMapWindow window, GString *text)
     return ;
 
   zmapWindowContainerUtilsExecute(window->feature_root_group,
-  ZMAPCONTAINER_LEVEL_FEATURESET,
-  printStats, text);
+                                  ZMAPCONTAINER_LEVEL_FEATURESET,
+                                  printStats, text);
+
   return ;
 }
 
@@ -4033,7 +4034,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                             if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2)))
                               {
                                 /* only finds features in a canvas featureset, old foo gives nothing */
-                                feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+                                feature_list = zMapWindowFeaturesetFindItemAndFeatures(&item,
+                                                                                       rooty1, rooty2, rootx1, rootx2);
                               }
 
 
@@ -5275,6 +5277,10 @@ void zmapWindowFetchData(ZMapWindow window,
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 {
   gboolean event_handled = FALSE ;
+  static FooCanvasGroup *focus_column_G = NULL ;            /* Used for flip-flopping focus. */
+  static FooCanvasItem *focus_item_G = NULL ;
+  static ZMapFeature focus_feature_G = NULL ;
+
 
   zMapReturnValIfFail(key_event, event_handled) ;
 
@@ -5610,26 +5616,106 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 #endif
 
     case GDK_h:
+    case GDK_H:
       {
-        /* Flip flop highlighting.... */
-        FooCanvasGroup *focus_column ;
-        FooCanvasItem *focus_item ;
-
-        /* NOTE this does not reset the focus item but only unhighlights it
-         * so it doesn-t really toggle the highlight
-         */
-        if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
-            || (focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+        if (key_event->keyval == GDK_h)
           {
-            zmapWindowUnHighlightFocusItems(window) ;
+            /* Flip flop highlighting.... */
+            FooCanvasGroup *focus_column ;
+            FooCanvasItem *focus_item ;
+
+            if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
+                || (focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+              {
+                /* If something is focussed then un-focus it. */
+
+                zmapWindowUnHighlightFocusItems(window) ;
+              }
+            else
+              {
+                if (focus_column_G)
+                  {
+                    if (focus_feature_G)
+                      {
+                        /* If there's a recorded focus then use that. */
+                        gboolean replace_highlight = TRUE, highlight_same_names = TRUE ;
+                        ZMapFeatureSubPartSpan sub_feature = NULL ;
+                        int start = focus_feature_G->x1, end = focus_feature_G->x2;
+                        gboolean control = FALSE;
+                        ZMapWindowDisplayStyleStruct display_style = {ZMAPWINDOW_COORD_ONE_BASED,
+                                                                      ZMAPWINDOW_PASTE_FORMAT_OTTERLACE,
+                                                                      ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS} ;
+
+                        /* refocus on existing highlight group..... */
+                        if (focus_feature_G->mode != ZMAPSTYLE_MODE_ALIGNMENT
+                            || zMapStyleIsUnique(*focus_feature_G->style))
+                          highlight_same_names = FALSE ;
+
+                        /* Pass information about the object clicked on back to the application. */
+                        zmapWindowUpdateInfoPanel(window, focus_feature_G, NULL, focus_item_G, sub_feature,
+                                                  start, end, start, end,
+                                                  NULL, replace_highlight, highlight_same_names, control, &display_style) ;
+                      }
+                    else
+                      {
+                        zmapWindowFocusSetHotColumn(window->focus, focus_column_G, NULL) ;
+
+                        zmapWindowFocusHighlightHotColumn(window->focus) ;
+                      }
+                  }
+                else
+                  {
+                    /* A bit cruddy really, hightlight the first forward strand column. */
+
+                    focus_column = getFirstColumn(window, ZMAPSTRAND_FORWARD) ;
+
+                    zmapWindowFocusSetHotColumn(window->focus, focus_column, NULL) ;
+
+                    zmapWindowFocusHighlightHotColumn(window->focus) ;
+
+
+
+
+                  }
+              }
           }
         else
           {
-            focus_column = getFirstColumn(window, ZMAPSTRAND_FORWARD) ;
+            /* If there isn't a global one we could set the current focus one ?? */
+            if (!focus_item_G)
+              {
+                FooCanvasGroup *focus_column = NULL ;
+                FooCanvasItem *focus_item = NULL  ;
+                ZMapFeature feature = NULL ;
 
-            zmapWindowFocusSetHotColumn(window->focus, focus_column, NULL) ;
+                if ((focus_column = zmapWindowFocusGetHotColumn(window->focus))
+                    || (focus_column && (focus_item = zmapWindowFocusGetHotItem(window->focus)))
+                    || (focus_item && (focus_feature_G = zMapWindowCanvasItemGetFeature(focus_item))))
+                  {
+                    focus_column_G = focus_column ;
+                    focus_item_G = focus_item ;
+                    focus_feature_G = feature ;
+                  }
+              }
+            else
+              {
+                gboolean replace_highlight = TRUE, highlight_same_names = TRUE ;
+                ZMapFeatureSubPartSpan sub_feature = NULL ;
+                int start = focus_feature_G->x1, end = focus_feature_G->x2;
+                gboolean control = FALSE;
+                ZMapWindowDisplayStyleStruct display_style = {ZMAPWINDOW_COORD_ONE_BASED,
+                                                              ZMAPWINDOW_PASTE_FORMAT_OTTERLACE,
+                                                              ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS} ;
 
-            zmapWindowFocusHighlightHotColumn(window->focus) ;
+                /* refocus on existing highlight group..... */
+                if (focus_feature_G->mode != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*focus_feature_G->style))
+                  highlight_same_names = FALSE ;
+
+                /* Pass information about the object clicked on back to the application. */
+                zmapWindowUpdateInfoPanel(window, focus_feature_G, NULL, focus_item_G, sub_feature,
+                                          start, end, start, end,
+                                          NULL, replace_highlight, highlight_same_names, control, &display_style) ;
+              }
           }
 
         break;
@@ -5733,9 +5819,73 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_s:
     case GDK_S:
       {
-            /* show/hide masked features (not implemented - use the RC menu) */
+        /* If user presses 's' we redo splice highlight based on currently highlighted feature,
+         * if they pressed 'S' then we remove splice highlighting. */
+        static gboolean highlight = FALSE ;
+        GList *splice_highlight_features = NULL ;
+        FooCanvasGroup *focus_column ;
+        FooCanvasItem *focus_item  ;
+
+        if (highlight == TRUE)
+          {
+            gboolean result ;
+            ZMapWindowContainerFeatureSet focus_container ;
+
+            if ((focus_column = zmapWindowFocusGetHotColumn(window->focus))
+                || (focus_column = getFirstColumn(window, ZMAPSTRAND_FORWARD)))
+              {
+                focus_container = (ZMapWindowContainerFeatureSet)focus_column ;
+
+                if ((result = zmapWindowContainerFeatureSetSpliceUnhighlightFeatures(focus_container)))
+                  {
+                    zmapWindowFullReposition(window->feature_root_group, TRUE, "key S") ;
+                  }
+                else
+                  {
+                    zMapWarning("%s", "No columns configured to show splice highlights.") ;
+                  }
+
+                highlight = FALSE ;
+              }
+          }
+        else
+          {
+            if ((focus_column = zmapWindowFocusGetHotColumn(window->focus))
+                && (focus_item = zmapWindowFocusGetHotItem(window->focus))
+                && (splice_highlight_features = zmapWindowFocusGetFeatureList(window->focus)))
+              {
+                ZMapWindowContainerFeatureSet focus_container ;
+                gboolean result ;
+                ZMapWindowCanvasItem canvas_feature ;
+
+                /* Record the current hot item. */
+                focus_column_G = focus_column ;
+                focus_item_G = focus_item ;
+                focus_feature_G = zMapWindowCanvasItemGetFeature(focus_item) ;
+
+
+                focus_container = (ZMapWindowContainerFeatureSet)focus_column ;
+
+                if ((result = zmapWindowContainerFeatureSetSpliceHighlightFeatures(focus_container,
+                                                                                   splice_highlight_features)))
+                  {
+                    zmapWindowFullReposition(window->feature_root_group, TRUE, "key s") ;
+                  }
+                else
+                  {
+                    zMapWarning("%s", "No columns configured to show splice highlights.") ;
+                  }
+
+                highlight = TRUE ;
+              }
+            else
+              {
+                zMapMessage("%s", "No features selected.") ;
+              }
+          }
+
+        break;
       }
-      break;
 
     case GDK_t:
     case GDK_T:
@@ -5750,6 +5900,10 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
               zmapWindowItemShowTranslation(window, focus_item);
             else
               zmapWindowItemShowTranslationRemove(window, focus_item);
+          }
+        else
+          {
+            zMapMessage("%s", "No feature selected.") ;
           }
 
         break;
@@ -6091,7 +6245,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 
 
       if ((focus_item = zmapWindowContainerGetNextFeatureItem(focus_item, direction, TRUE,
-      checkItem, GINT_TO_POINTER(TRUE))))
+                                                              checkItem, GINT_TO_POINTER(TRUE))))
         {
           move_focus = TRUE ;
           highlight_item = TRUE ;
@@ -6298,14 +6452,16 @@ static FooCanvasGroup *getFirstColumn(ZMapWindow window, ZMapStrand strand)
   zMapReturnValIfFail(window, NULL ) ;
 
   strand_data.strand = strand ;
+
   zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_BLOCK,
-  getFirstForwardCol, &strand_data) ;
+                                  getFirstForwardCol, &strand_data) ;
+
   return strand_data.first_column ;
 }
 
 
 static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoints *container_points,
-       ZMapContainerLevelType container_level, gpointer func_data)
+                               ZMapContainerLevelType container_level, gpointer func_data)
 {
   StrandCol strand_data = (StrandCol)func_data ;
 
