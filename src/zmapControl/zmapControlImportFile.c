@@ -62,17 +62,14 @@ typedef enum
     FILE_BIGWIG
   } fileType;
 
-static const char * default_scripts[] = /* { "", "zmap_get_gff", "zmap_get_bam", "zmap_get_bigwig" }; */
-  {
-    "bam_get"
-  } ;
+/* #define N_FILE_TYPE (FILE_BIGWIG + 1) */
 
-#define N_FILE_TYPE (FILE_BIGWIG + 1)
+/*
+static const char * default_scripts[] = { "", "zmap_get_gff", "zmap_get_bam", "zmap_get_bigwig" };
+*/
 
 /*
  * was used for input script description, args etc
- *
- *
  */
 typedef struct
 {
@@ -98,6 +95,7 @@ typedef struct MainFrameStruct_
   GtkWidget *req_end_widg ;
   GtkWidget *source_widg;
   GtkWidget *assembly_widg;
+  GtkWidget *strand_widg ;
 
 
   fileType file_type;
@@ -140,8 +138,6 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data);
 /*
  *                   External interface routines.
  */
-
-
 
 /* \brief Handles the response to the import dialog */
 void importDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
@@ -439,11 +435,11 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
   gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
 
-
+  /*
   ZMap zmap = (ZMap) main_frame->user_data;
   ZMapWindow window = zMapViewGetWindow(zmap->focus_viewwindow);
 
-  /*if(zMapWindowMarkIsSet(window))
+  if(zMapWindowMarkIsSet(window))
     {
       hbox = gtk_hbox_new(FALSE, 0) ;
       gtk_container_border_width(GTK_CONTAINER(hbox), 0);
@@ -556,11 +552,11 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
-  /*label = gtk_label_new( "Strand " ) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;*/
-
   label = gtk_label_new( "Source " ) ;
+  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
+  label = gtk_label_new( "Strand (+/-)" ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
@@ -625,15 +621,16 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
 
-  /*main_frame->strand_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;*/
-
   main_frame->source_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+
+  main_frame->strand_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
+  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+  gtk_widget_set_sensitive(main_frame->strand_widg, FALSE );
 
   /*main_frame->style_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
@@ -793,14 +790,24 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 }
 #endif
 
-
+/*
+ * Special cases:
+ *
+ * (1) Require strand if wre have a bigwig file
+ * (2) Do _not_ specify source if we have a GFF file
+ */
 static void enable_widgets(MainFrame main_frame)
 {
-  gboolean is_gff = main_frame->file_type == FILE_GFF;
-  gboolean is_bam = main_frame->file_type == FILE_BAM || main_frame->file_type == FILE_BIGWIG;
+  if (!main_frame)
+    return ;
 
-  /*gtk_widget_set_sensitive(main_frame->strand_widg, main_frame->file_type == FILE_NONE || main_frame->file_type == FILE_BIGWIG );*/
-  /*gtk_widget_set_sensitive(main_frame->source_widg, !is_gff);*/
+  /*gboolean is_gff = main_frame->file_type == FILE_GFF ;*/
+  /*gboolean is_bam = main_frame->file_type == FILE_BAM ;*/
+
+  gtk_widget_set_sensitive(main_frame->strand_widg, main_frame->file_type == FILE_BIGWIG );
+  gtk_widget_set_sensitive(main_frame->source_widg, main_frame->file_type != FILE_GFF ) ;
+  gtk_widget_set_sensitive(main_frame->assembly_widg, main_frame->file_type != FILE_GFF ) ;
+
   /*gtk_widget_set_sensitive(main_frame->style_widg,  !is_gff); */
 
   /*gtk_widget_set_sensitive(main_frame->args_widg, main_frame->file_type == FILE_NONE ); */
@@ -838,9 +845,9 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
   fileType file_type = FILE_NONE ;
   char *source_txt = NULL;
   char *style_txt = NULL;
-  ZMapFeatureSource src;
+  /*ZMapFeatureSource src;
   ZMapView view;
-  ZMap zmap = (ZMap) main_frame->user_data;
+  ZMap zmap = (ZMap) main_frame->user_data;*/
 
   /*
   char *args_txt = "";
@@ -851,13 +858,13 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
    * the import dialog isn't closed with it, which will cause
    * problems if we don't exit early here )
    */
-  if (!zmap->toplevel)
+  /*if (!zmap->toplevel)
     return;
-
-  view = zMapViewGetView(zmap->focus_viewwindow);
+  view = zMapViewGetView(zmap->focus_viewwindow);*/
 
   /*
    * Inspect the file extension to determine type.
+   * Case is ignored.
    */
   filename = (char *) gtk_entry_get_text(GTK_ENTRY(widget)) ;
   extent = filename + strlen(filename);
@@ -878,12 +885,19 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
    */
   main_frame->file_type = file_type;
 
+  gtk_entry_set_text(GTK_ENTRY(main_frame->strand_widg), "")  ;
+  gtk_entry_set_text(GTK_ENTRY(main_frame->source_widg), "")  ;
+  gtk_entry_set_text(GTK_ENTRY(main_frame->assembly_widg), "")  ;
+
   /*
-   * Have a stab at deriving a source name from the
-   * file name.
+   *Try to get a source name for non-GFF types.
    */
-  //if(main_frame->file_type != FILE_GFF)
-    //{
+  if (main_frame->file_type == FILE_GFF)
+    {
+      gtk_entry_set_text(GTK_ENTRY(main_frame->source_widg), "") ;
+    }
+  else
+    {
       char *name = extent;
       while(name > filename && *name != '/')
         name--;
@@ -891,7 +905,7 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
         name++;
       source_txt = g_strdup_printf("%.*s", (int)(extent - name), name) ;
       gtk_entry_set_text(GTK_ENTRY(main_frame->source_widg), source_txt) ;
-    //}
+    }
 
   /* add featureset_2_style entry to the view */
   /*
@@ -913,25 +927,23 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
    * Have a go at extracting the strand from the file name
    * in the case of bigwig type.
    */
-  /*
   if(main_frame->file_type == FILE_BIGWIG)
     {
-      GQuark f_id;
-      char * strand_txt;
+      /*GQuark f_id;*/
+      char * strand_txt = NULL ;
 
-      f_id = zMapFeatureSetCreateID("bigWig");
+      /*f_id = zMapFeatureSetCreateID("bigWig");
       src = zMapViewGetFeatureSetSource(view, f_id);
       if(src)
         {
           style_txt = g_strdup_printf("%s",g_quark_to_string(src->style_id));
           gtk_entry_set_text(GTK_ENTRY(main_frame->style_widg), style_txt) ;
-        }
+        }*/
 
       strand_txt = g_strstr_len(filename,-1,"inus") ? "-" : "+";
       gtk_entry_set_text(GTK_ENTRY(main_frame->strand_widg), strand_txt) ;
 
     }
-  */
 
   enable_widgets(main_frame);
 
@@ -947,41 +959,44 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
  *
  *       config file (which contains sequence, start, end)
  *
- * (sm23) I am modifying this to do the following:
- * (a) We will attempt to import only GFF or BAM sources.
- * (b) bam file or ftp/http will call with url = pipe:///bam_get?
- * (c) gff file will call with url = file:///<local_file>
- * (d) all other possibilities are ignored for the moment
- *  */
+ * (sm23)  One more thing remains after what's just been done, that is,
+ * to deal with the "assembly" argument to the scripts being optional,
+ * it should be omitted when no assembly is given by the user, and no
+ * remapping should be done.
+ *
+ */
 static void importFileCB(gpointer cb_data)
 {
-  gboolean status = TRUE,
-    map_seq = FALSE ;
-  MainFrame main_frame = (MainFrame)cb_data ;
+  static const char * string_zmap = "[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\n" ;
+  static const char * format_string_gff = "%surl=file:///%s" ;
+  static const char * format_string_bam =
+    "%surl=pipe:///bam_get?--chr=%s&--csver_remote=%s&--dataset=%s&--start=%i&--end=%i&--gff_seqname=%s&--file=%s&--gff_source=%s&--gff_version=3" ;
+  static const char * format_string_bigwig =
+    "%surl=pipe:///bigwig_get?--chr=%s&--csver_remote=%s&--dataset=%s&--start=%i&--end=%i&--gff_seqname=%s&--file=%s&--gff_source=%s&--strand=%i&--gff_version=3" ;
+  gboolean status = TRUE ;
+  MainFrame main_frame = NULL ;
   char *err_msg = NULL,
-    *sequence = "",
-    *dataset = NULL,
+    *sequence_txt = NULL,
+    *dataset_txt = NULL,
     *start_txt = NULL,
     *end_txt = NULL,
     *file_txt = NULL,
     *req_start_txt= NULL,
     *req_end_txt = NULL,
-    //*offset_txt = NULL,
     *source_txt = NULL,
-    //*style_txt = NULL,
-    //*strand_txt = NULL,
+    *strand_txt = NULL,
     *assembly_txt = NULL,
-    *req_sequence = NULL ;
-  int start = 1,
+    *req_sequence_txt = NULL ;
+  int start = 0,
     end = 0,
-    seq_offset = 0,
     req_start = 0,
     req_end = 0,
     strand = 0 ;
   fileType file_type = FILE_NONE ;
-  ZMapView view;
+  ZMapView view = NULL ;
   ZMap zmap = NULL ;
 
+  main_frame = (MainFrame)cb_data ;
   zMapReturnIfFail(main_frame) ;
   file_type = main_frame->file_type;
   zmap = (ZMap) main_frame->user_data;
@@ -996,20 +1011,18 @@ static void importFileCB(gpointer cb_data)
   view = zMapViewGetView(zmap->focus_viewwindow);
 
   /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
-  sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->sequence_widg)) ;
-  dataset = (char*) gtk_entry_get_text(GTK_ENTRY(main_frame->dataset_widg)) ;
+  sequence_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->sequence_widg)) ;
+  dataset_txt = (char*) gtk_entry_get_text(GTK_ENTRY(main_frame->dataset_widg)) ;
   start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->start_widg)) ;
   end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->end_widg)) ;
 
   file_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->file_widg)) ;
-  req_sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_sequence_widg)) ;
+  req_sequence_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_sequence_widg)) ;
   req_start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_start_widg)) ;
   req_end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_end_widg)) ;
   source_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->source_widg)) ;
-  /*style_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->style_widg)) ;*/
-
-  /*offset_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->offset_widg)) ;*/
   assembly_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->assembly_widg)) ;
+  strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg)) ;
 
   if (status)
     {
@@ -1022,7 +1035,7 @@ static void importFileCB(gpointer cb_data)
 
   if (status)
     {
-      if (*sequence && *start_txt && *end_txt)
+      if (*sequence_txt && *start_txt && *end_txt)
         {
           if (!zMapStr2Int(start_txt, &start) || start < 1)
             {
@@ -1037,22 +1050,41 @@ static void importFileCB(gpointer cb_data)
         }
     }
 
+  /*
+   * Firstly, we can only read in non-GFF data if we are
+   * hooked up to otter.
+   */
+  if (file_type!=FILE_GFF)
+    {
+      if (!main_frame->is_otter)
+        {
+          status = FALSE ;
+          err_msg = "Cannot read that file type without otterlace." ;
+        }
+    }
+
+  /*
+   * We must have a valid dataset if the file types are non-gff.
+   */
   if (status)
     {
-      if (*dataset)
+      if (*dataset_txt)
         {
 
         }
       else
         {
-          status = FALSE ;
-          err_msg = "Invalid dataset specified." ;
+          if (file_type!=FILE_GFF)
+            {
+              status = FALSE ;
+              err_msg = "Dataset is required." ;
+            }
         }
     }
 
   if (status)
     {
-      if (*req_sequence && *req_start_txt && *req_end_txt)
+      if (*req_sequence_txt && *req_start_txt && *req_end_txt)
         {
           if (!zMapStr2Int(req_start_txt, &req_start) || req_start < 1)
             {
@@ -1074,16 +1106,44 @@ static void importFileCB(gpointer cb_data)
 
   if (status)
     {
-      if (*assembly_txt)
+      if (main_frame->file_type == FILE_GFF)
         {
-
+          if (*source_txt)
+            {
+              status = FALSE ;
+              err_msg = "Source should not be specified for GFF file." ;
+            }
         }
       else
         {
-          status = FALSE ;
-          err_msg = "Request sequence assembly is required." ;
+          if (!*source_txt)
+            {
+              status = FALSE ;
+              err_msg = "Source must be specified for this type." ;
+            }
         }
     }
+
+  if (status)
+    {
+      if (main_frame->file_type == FILE_GFF)
+        {
+          if (*assembly_txt)
+            {
+              status = FALSE ;
+              err_msg = "Assembly should not be specified for GFF file." ;
+            }
+        }
+      else
+        {
+          if (!*assembly_txt)
+            {
+              status = FALSE ;
+              err_msg = "Assembly must be specified for this type." ;
+            }
+        }
+    }
+
 
   /*
   if (status)
@@ -1106,24 +1166,24 @@ static void importFileCB(gpointer cb_data)
   */
 
   /* NOTE this is not +/- as presented to the user but 1 or -1. */
-  /*
-  if (status)
+  if (status && (file_type == FILE_BIGWIG))
     {
       if ((strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg))) && *strand_txt)
         {
-
-          if ((strchr(strand_txt, '+')))
-            strand = 1 ;
-          else if ((strchr(strand_txt, '-')))
-            strand = -1 ;
-          else
+          if (strlen(strand_txt) == 1)
             {
-              status = FALSE ;
-              err_msg = "Strand must be + or -";
+              if ((strchr(strand_txt, '+')))
+                strand = 1 ;
+              else if ((strchr(strand_txt, '-')))
+                strand = -1 ;
+              else
+                {
+                  status = FALSE ;
+                  err_msg = "Strand must be + or -";
+                }
             }
         }
     }
-  */
 
 
   if (!status)
@@ -1132,14 +1192,18 @@ static void importFileCB(gpointer cb_data)
     }
   else
     {
-      char *config_str;
-      GList * servers;
-      ZMapConfigSource server;
-      GList *req_featuresets = NULL;
+      char *config_str = NULL ;
+      GList * servers = NULL ;
+      ZMapConfigSource server = NULL ;
+      GList *req_featuresets = NULL ;
 
-      if (main_frame->sequence_map && (seq_offset || map_seq))
-        seq_offset += main_frame->sequence_map->start;
+      /*if (main_frame->sequence_map && (seq_offset || map_seq))
+        seq_offset += main_frame->sequence_map->start;*/
 
+      /*
+       * (sm23) In the original version, this was only done for non-GFF
+       * sources. No idea why!
+       */
       if (file_type != FILE_GFF)
         {
           /* add featureset_2_style entry to the view */
@@ -1160,30 +1224,54 @@ static void importFileCB(gpointer cb_data)
           src->is_seq = TRUE;
         }
 
-      /* version for a gff source */
-      /* config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\nurl=file:///%s", file_txt) ; */
 
-      /* version for a bam source */
-      config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\nurl=pipe:///bam_get?--chr=%s&--csver_remote=%s&--dataset=%s&--start=%i&--end=%i&--gff_seqname=%s&--file=%s&--gff_source=%s&--gff_version=3",
-                                  sequence,
-                                  assembly_txt,
-                                  dataset,
-                                  req_start, req_end,
-                                  req_sequence,
-                                  file_txt, source_txt);
+      if (file_type == FILE_GFF)
+        {
+          config_str = g_strdup_printf(format_string_gff, string_zmap, file_txt) ;
+        }
+      else if (file_type == FILE_BAM)
+        {
+          config_str = g_strdup_printf(format_string_bam,
+                                       string_zmap,
+                                       sequence_txt,
+                                       assembly_txt,
+                                       dataset_txt,
+                                       req_start,
+                                       req_end,
+                                       req_sequence_txt,
+                                       file_txt,
+                                       source_txt) ;
+        }
+      else if (file_type == FILE_BIGWIG)
+        {
+          config_str = g_strdup_printf(format_string_bigwig,
+                                       string_zmap,
+                                       sequence_txt,
+                                       assembly_txt,
+                                       dataset_txt,
+                                       req_start,
+                                       req_end,
+                                       req_sequence_txt,
+                                       file_txt,
+                                       source_txt,
+                                       strand) ;
+        }
 
-      servers = zmapViewGetIniSources(NULL, config_str, NULL) ;
+      if (*config_str)
+        {
+          servers = zmapViewGetIniSources(NULL, config_str, NULL) ;
 
-      server = (ZMapConfigSource) servers->data ;
+          server = (ZMapConfigSource) servers->data ;
 
-      if (zMapViewRequestServer(view, NULL, req_featuresets, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
-        zMapViewShowLoadStatus(view);
-      else
-        zMapWarning("could not request %s",file_txt);
+          if (zMapViewRequestServer(view, NULL, req_featuresets, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
+            zMapViewShowLoadStatus(view);
+          else
+            zMapWarning("could not request %s",file_txt);
 
-      zMapConfigSourcesFreeList(servers);
+          zMapConfigSourcesFreeList(servers);
 
-      g_free(config_str);
+          g_free(config_str);
+        }
     }
 
   return ;
