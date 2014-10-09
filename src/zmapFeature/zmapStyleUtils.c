@@ -439,6 +439,10 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 
   PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_DIRECTIONAL_ENDS), directional_end, "Directional Ends", "%s", PRINTBOOL) ;
 
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_SPLICE_HIGHLIGHT), splice_highlight, "Splice Highlight", "%s", PRINTBOOL) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_SPLICE_HIGHLIGHT_TOLERANCE), splice_highlight_tolerance, "Splice Highlight Tolerance", "%d", (unsigned int)) ;
+
+
 
   switch(style->mode)
     {
