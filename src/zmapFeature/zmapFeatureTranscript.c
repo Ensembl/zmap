@@ -774,6 +774,58 @@ gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature transcript, Co
 }
 
 
+
+
+
+/* 
+ *            Package routines.
+ */
+
+/* Do boundary_start/boundary_end match the start/end of the transcript or any of the
+ * exons within the transcript. */
+gboolean zmapFeatureTranscriptHasMatchingBoundary(ZMapFeature feature,
+                                                  int boundary_start, int boundary_end,
+                                                  int *boundary_start_out, int *boundary_end_out)
+{
+  gboolean result = FALSE ;
+  int slop ;
+  GArray *array = feature->feature.transcript.exons;
+  int i ;
+  int match_start, match_end ;
+
+  zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
+
+  slop = zMapStyleSpliceHighlightTolerance(*(feature->style)) ;
+
+  for ( i = 0 ; i < array->len; ++i)
+    {
+      ZMapSpan exon = &(g_array_index(array, ZMapSpanStruct, i)) ;
+
+      if (zmapFeatureCoordsMatch(slop, boundary_start, boundary_end,
+                                 exon->x1, exon->x2,
+                                 &match_start, &match_end))
+        {
+          result = TRUE ;
+
+          if (boundary_start_out && match_start)
+            *boundary_start_out = match_start ;
+
+          if (boundary_end_out && match_end)
+            *boundary_end_out = match_end ;
+        }
+    }
+
+  return result ;
+}
+
+
+
+/* 
+ *           Internal routines
+ */
+
+
+
 /*!
  * \brief Ask the user whether to trim the start/end of the given exon
  * or, if in_intron is true, the previous intron.
