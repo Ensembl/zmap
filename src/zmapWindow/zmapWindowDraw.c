@@ -289,7 +289,7 @@ gboolean zmapWindowGetColumnVisibility(ZMapWindow window,FooCanvasGroup *column_
  * new_col_state = NULL if new (empty) column
  *  */
 void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
-      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_needed)
+                              ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_needed)
 {
   ZMapWindowContainerFeatureSet container = NULL ;
   ZMapWindowContainerGroup group = NULL ;
@@ -733,6 +733,7 @@ void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, ch
     }
 
   g_free(poscol);
+
   return ;
 }
 
