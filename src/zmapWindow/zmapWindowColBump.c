@@ -389,13 +389,12 @@ void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item)
   ZMapWindowContainerGroup container_strand;
 
   if((container_strand = zmapWindowContainerUtilsItemGetParentLevel(column_item, ZMAPCONTAINER_LEVEL_BLOCK)))
-   {
-      /* container execute */
+    {
+     /* container execute */
       zmapWindowContainerUtilsExecute(container_strand,
-                              ZMAPCONTAINER_LEVEL_FEATURESET,
-                              invoke_bump_to_unbump, NULL);
+                                      ZMAPCONTAINER_LEVEL_FEATURESET,
+                                      invoke_bump_to_unbump, NULL) ;
       /* happy days */
-
     }
 
   return ;
@@ -407,7 +406,7 @@ void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item)
 
 // (menu item commented out)
 static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-   ZMapContainerLevelType level, gpointer user_data)
+                                   ZMapContainerLevelType level, gpointer user_data)
 {
 
   switch(level)
