@@ -135,20 +135,18 @@ bump-spacing=3.000000\n\
 \n\
 [style-alignment]\n\
 description=default alignment style\n\
-sub-features=homology:homology-glyph ; non-concensus-splice:nc-splice-glyph\n\
 alignment-show-gaps=true\n\
 alignment-parse-gaps=true\n\
 mode=alignment\n\
+default-bump-mode=overlap\n\
 strand-specific=true\n\
-alignment-pfetchable=true\n\
+alignment-pfetchable=false\n\
 colours=normal fill pink ; normal border #97737a\n\
-default-bump-mode=all\n\
 parent-style=root\n\
 show-reverse-strand=true\n\
 directional-ends=true\n\
 max-score=100.000000\n\
-min-score=70.000000\n\
-score-mode=percent\n\
+min-score=1.000000\n\
 \n\
 \n\
 [style-basic]\n\

@@ -27,8 +27,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 
 # ZMAP_SRC_DIRS See configure.ac
-
-SUBDIRS = AceConn zeromq libpfetch libcurlobject libzmapfoocanvas include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+SUBDIRS = AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
 
 CLEANFILES = $(pkgconfig_DATA)
 
@@ -119,7 +118,7 @@ libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
 # Programs we're going to compile.
 
 #bin_PROGRAMS = zmap gffparser xml_writer xremote_gui remotecontrol
-bin_PROGRAMS = zmap gffparser xml_writer remotecontrol
+bin_PROGRAMS = zmap xml_writer remotecontrol
 
 
 # I am perturbed by the fact that the x libs are before the gtk libs....
@@ -162,6 +161,7 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
+	$(top_builddir)/htslib-develop/libhts.a              \
 	$(top_builddir)/AceConn/src/.libs/libAceConn.a       \
 	$(top_builddir)/zeromq/src/.libs/libzmq.a            \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
@@ -170,7 +170,7 @@ zmap_LDADD =                                                 \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
-zmap_LDFLAGS      = 
+zmap_LDFLAGS      = -lz
 
 # zeromq is C++ so we need to link with g++, not gcc.
 #zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -183,11 +183,11 @@ zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
 
 
 # gffparser - program to parse gff...
-gffparser_SOURCES      = $(top_srcdir)/zmapGFF/gffparser.c
-gffparser_LDFLAGS      =
-gffparser_LDADD        = $(zmap_LDADD)
-gffparser_DEPENDENCIES = $(noinst_LTLIBRARIES)
-gffparser_CPPFLAGS     = $(AM_CPPFLAGS)
+#gffparser_SOURCES      = $(top_srcdir)/zmapGFF/gffparser.c
+#gffparser_LDFLAGS      =
+#gffparser_LDADD        = $(zmap_LDADD)
+#gffparser_DEPENDENCIES = $(noinst_LTLIBRARIES)
+#gffparser_CPPFLAGS     = $(AM_CPPFLAGS)
 
 # test program to write xml...
 xml_writer_SOURCES      = $(top_srcdir)/zmapXML/example_xml_writer.c

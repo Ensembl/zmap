@@ -38,6 +38,7 @@
 
 
 static void zMapServerSetErrorMsg(ZMapServer server,char *message);
+static gboolean server_functions_valid(ZMapServerFuncs serverfuncs ) ;
 
 
 /* We need matching serverInit and serverCleanup functions that are only called once
@@ -77,13 +78,14 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
       dasGetServerFuncs(serverfuncs);
       break;
 
-    case SCHEME_FILE:     // DAS only: file gets handled by pipe
-      if(url->params)
+    case SCHEME_FILE:     // file only now...
+      /* if(url->params)
         {
           dasGetServerFuncs(serverfuncs);
           break;
-        }
-      // fall through for real files
+        } */
+      fileGetServerFuncs(serverfuncs) ;
+      break ;
 
     case SCHEME_PIPE:
       pipeGetServerFuncs(serverfuncs);
@@ -95,21 +97,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
     }
 
   /* All functions MUST be specified. */
-  if ((serverfuncs->global_init
-       && serverfuncs->create
-       && serverfuncs->open
-       && serverfuncs->get_info
-       && serverfuncs->feature_set_names
-       && serverfuncs->get_styles
-       && serverfuncs->have_modes
-       && serverfuncs->get_sequence
-       && serverfuncs->set_context
-        && serverfuncs->get_features
-       && serverfuncs->get_context_sequences
-       && serverfuncs->errmsg
-       && serverfuncs->get_status
-       && serverfuncs->close
-       && serverfuncs->destroy))
+  if (server_functions_valid(serverfuncs))
     {
       /* Call the global init function. */
       result = (serverfuncs->global_init)() ;
@@ -123,6 +111,26 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 
 
   return result ;
+}
+
+static gboolean server_functions_valid(ZMapServerFuncs serverfuncs )
+{
+  return (gboolean)
+            (serverfuncs->global_init
+          && serverfuncs->create
+          && serverfuncs->open
+          && serverfuncs->get_info
+          && serverfuncs->feature_set_names
+          && serverfuncs->get_styles
+          && serverfuncs->have_modes
+          && serverfuncs->get_sequence
+          && serverfuncs->set_context
+          && serverfuncs->get_features
+          && serverfuncs->get_context_sequences
+          && serverfuncs->errmsg
+          && serverfuncs->get_status
+          && serverfuncs->close
+          && serverfuncs->destroy ) ;
 }
 
 

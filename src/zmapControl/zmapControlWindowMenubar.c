@@ -115,7 +115,7 @@ static GtkItemFactoryEntry menu_items[] = {
 
          { "/_View",         NULL,         NULL, 0, "<Branch>" },
          { "/View/Session Details", NULL,  showSessionCB, 0, NULL },
-        
+
 #ifdef ALLOW_POPOUT_PANEL
          { "/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL },
 #endif/* ALLOW_POPOUT_PANEL */
@@ -144,7 +144,7 @@ GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
   GtkWidget *menubar = NULL ;
   GtkAccelGroup *accel_group ;
   gint nmenu_items = sizeof (menu_items) / sizeof (menu_items[0]) ;
-  zMapReturnValIfFail(zmap, menubar) ; 
+  zMapReturnValIfFail(zmap, menubar) ;
 
   accel_group = gtk_accel_group_new() ;
 
@@ -163,13 +163,13 @@ GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
 /* Should pop up a dialog box to ask for a file name....e.g. the file chooser. */
 static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   ZMapWindow curr_window = NULL ;
   ZMapView curr_view = NULL ;
   GError *error = NULL ;
   gboolean result = FALSE ;
-  
+
   zmap = (ZMap)cb_data ;
   curr_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
   curr_view = zMapViewGetView(zmap->focus_viewwindow) ;
@@ -204,7 +204,7 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
         break ;
       }
 
-    case 22: 
+    case 22:
       {
         /* Save - same as export all features but we pass the existing filename, if there is one;
          * if there isn't then the file chooser will be shown and we'll save the file the user
@@ -221,7 +221,7 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
         break ;
       }
 
-    case 23: 
+    case 23:
       {
         /* Save As - same as export all features but we save the filename for the next Save operation */
         char *filename = NULL ;
@@ -229,7 +229,7 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
         if (result)
           zMapViewSetSaveFile(curr_view, filename) ;
-        
+
         if (filename)
           g_free(filename) ;
 
@@ -267,13 +267,13 @@ static void controlImportFileCB(gpointer user_data)
 
 static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = (ZMap)cb_data ; 
+  ZMap zmap = (ZMap)cb_data ;
   ZMapViewWindow vw ;
   ZMapFeatureSequenceMap map ;
   ZMapFeatureSequenceMap view_seq ;
   int start, end ;
 
-  zMapReturnIfFail(zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
 
   vw = zmap->focus_viewwindow ;
 
@@ -284,6 +284,7 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   map->start = view_seq->start;
   map->end = view_seq->end;
   map->sequence = view_seq->sequence;
+  map->dataset = view_seq->dataset ;
   map->config_file = view_seq->config_file;
 
   /* limit to mark if set */
@@ -313,10 +314,10 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
-  zMapReturnIfFail(zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
   ZMapWindow window ;
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
@@ -329,10 +330,10 @@ static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 
 static void printCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
-  zMapReturnIfFail(zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
   ZMapWindow window ;
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
@@ -346,10 +347,10 @@ static void printCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 /* Causes currently focussed zmap window to redraw itself. */
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
-  zMapReturnIfFail(zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
 
   zMapViewRedraw(zmap->focus_viewwindow) ;
 
@@ -360,8 +361,8 @@ static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 /* Shows preference edit window. */
 static void preferencesCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
 
   zmapControlShowPreferences(zmap) ;
@@ -373,8 +374,8 @@ static void preferencesCB(gpointer cb_data, guint callback_action, GtkWidget *wi
 /* Shows developer status dialog window. */
 static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
   char *passwd = NULL ;
   GtkResponseType result ;
@@ -396,8 +397,8 @@ static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *wind
 /* Display session data, this is a mixture of machine and per view data. */
 static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
   GString *session_text ;
 
@@ -514,7 +515,7 @@ static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 /* Kill the whole zmap application. */
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
-  ZMap zmap = (ZMap)cb_data ; 
+  ZMap zmap = (ZMap)cb_data ;
 
   /* Call the application exit callback to get everything killed...including this zmap. */
   (*(zmap->zmap_cbs_G->quit_req))(zmap, zmap->app_data) ;
@@ -530,7 +531,7 @@ static void copyPasteCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   EditActionType action = (EditActionType)callback_action ;
   ZMapWindow curr_window ;
 
-  zMapReturnIfFail(zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
 
   curr_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
@@ -583,8 +584,8 @@ static void handle_option( gpointer data, guint callback_action, GtkWidget *w )
 static void popout_panel( gpointer data, guint callback_action, GtkWidget *w )
 {
   GtkWidget *toplevel;
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(data) ;
   zmap = (ZMap)data;
 
   if((toplevel = zMapGUIPopOutWidget(zmap->button_info_box, zmap->zmap_id)))
@@ -598,8 +599,8 @@ static void popout_panel( gpointer data, guint callback_action, GtkWidget *w )
 /* Load a new sequence by config file into a zmap. */
 static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
 
   zMapAppGetSequenceView(makeSequenceViewCB, zmap, zmap->default_sequence, FALSE) ;
