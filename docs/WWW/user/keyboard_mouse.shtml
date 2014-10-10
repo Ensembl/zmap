@@ -134,7 +134,14 @@ the selected zmap and zmap will then automatically zoom to those coordinates.</p
   </tr>
   <tr>
     <td><b>h</b></td>
-    <td>Toggles <b>h</b>ighlighting (good for screen shots).</td>
+    <td>Toggles <b>h</b>ighlighting off/on. When toggling on the currently stored feature
+        is reselected or if there isn't one then highlights the first forward strand column.
+        Useful in screen shots where it can be good to have no highlighting.</td>
+  </tr>
+  <tr>
+    <td><b>H</b></td>
+    <td>Reselects the currently stored feature, useful for restoring focus after operations
+        like bumping another column. Has no effect if there is no currently stored feature.</td>
   </tr>
   <tr>
     <td><b>m</b></td>
@@ -157,6 +164,12 @@ the selected zmap and zmap will then automatically zoom to those coordinates.</p
     <td><b>r</b></td>
     <td><b>r</b>everse complement current view, complement is done for all windows of
 	current view.</td>
+  </tr>
+  <tr>
+    <td><b>s or S</b></td>
+    <td>Toggles <b>s</b>plice highlighting, highlights start/ends for all features
+        splice-aware columns that match the selected feature. Also sets the currently
+        selected feature which can be recalled with <b>H</b>.</td>
   </tr>
   <tr>
     <td><b>t or T</b></td>

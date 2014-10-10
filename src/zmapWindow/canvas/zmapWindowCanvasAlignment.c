@@ -47,6 +47,7 @@
 
 #define DEBUG_SPLICE 0
 
+
 static void alignmentColumnInit(ZMapWindowFeaturesetItem featureset) ;
 static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featureset,
   ZMapWindowCanvasFeature feature,
@@ -396,7 +397,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
     }
   else
     {
-
       /*
        * Note: we only enter this section on bump event with gapped item present in the featureset
        */
@@ -508,6 +508,15 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
     }
 
 
+
+  /* Highlight all splice positions if they exist, do this bumped or unbumped otherwise user
+   * has to bump column to see common splices. */
+  if (feature->splice_positions)
+    {
+      zMapCanvasFeaturesetDrawSpliceHighlights(featureset, feature, drawable, x1, x2) ;
+    }
+
+
 #ifdef INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT
   /*
    * Reset to cached values before attempting anything else.
@@ -532,7 +541,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
           FooCanvasItem *foo = (FooCanvasItem *) featureset;
 
           /* cache the colours for colinear lines */
-          for(i = 1; i < COLINEARITY_N_TYPE; i++)
+          for (i = 1; i < COLINEARITY_N_TYPE; i++)
             {
               gdk_color_parse(colours[i],&colour);
               pixel = zMap_gdk_color_to_rgba(&colour);
@@ -591,6 +600,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
               /* design by guesswork: this is not well documented */
               ZMapHomol homol = &feature->feature->feature.homol;
               double score = homol->length - homol->y2;
+
               if (feature->feature->strand != homol->strand)
                 score = homol->y1 - 1;
 
@@ -644,6 +654,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
                 break;
             } /* for (feat = feature ; feat->right ; feat = feat->right) */
         }
+
 
       /* all features: add glyphs if present */
       if (align->glyph5)

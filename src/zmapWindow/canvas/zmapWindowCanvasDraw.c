@@ -38,6 +38,32 @@
 #include <zmapWindowCanvasDraw.h>
 
 
+/* For highlighting of common splices across columns. */
+typedef struct HighlightDataStructType
+{
+  ZMapWindowFeaturesetItem featureset ;
+  ZMapWindowCanvasFeature feature ;
+  GdkDrawable *drawable ;
+
+  ZMapBoundaryType boundary_type ;                          /* 5' or 3' */
+  double x1, x2 ;
+
+  gulong splice_pixel ;                                    /* splice colour. */
+
+} HighlightDataStruct, *HighlightData ;
+
+
+
+static void highlightSplice(gpointer data, gpointer user_data) ;
+
+
+
+
+
+/* 
+ *                External routines
+ */
+
 
 
 /* Calculates the left/right (x1, x2) coords of a feature. */
@@ -148,7 +174,8 @@ int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
 
 
 /* these are less common than solid lines */
-int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
+int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
+                          gint cx1, gint cy1, gint cx2, gint cy2)
 {
   int ret = 0 ;
   zMapReturnValIfFail(featureset && drawable, ret);
@@ -214,7 +241,7 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
 
   else
     {
-      /* Fill rectangles get drawn one smaller in each dimension so correct for this. */
+      /* Fill rectangles get drawn by X one smaller in each dimension so correct for this. */
       if (fill)
 	{
 	  cx2++ ;
@@ -289,7 +316,7 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
             c.pixel = fill ;
 
           gdk_gc_set_foreground(featureset->gc, &c) ;
-          gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2) ;
+          gdk_draw_line(drawable, featureset->gc, cx1, cy1, cx2, cy2) ;
         }
       else
         {
@@ -343,6 +370,49 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
     }
 
   return result ;
+}
+
+
+
+/* Given the featureset, drawable etc., display all the splices for the given feature. */
+void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                              GdkDrawable *drawable, double x1, double x2)
+{
+  HighlightDataStruct highlight_data ;
+
+  highlight_data.featureset = featureset ;
+  highlight_data.feature = feature ;
+  highlight_data.drawable = drawable ;
+  highlight_data.x1 = x1 ;
+  highlight_data.x2 = x2 ;
+
+  zMapWindowCanvasFeaturesetGetSpliceColour(featureset, &(highlight_data.splice_pixel)) ;
+
+  g_list_foreach(feature->splice_positions, highlightSplice, &highlight_data) ;
+
+  return ;
+}
+
+
+
+
+
+/* 
+ *             Internal routines
+ */
+
+
+static void highlightSplice(gpointer data, gpointer user_data)
+{
+  ZMapSplicePosition splice_pos = (ZMapSplicePosition)data ;
+  HighlightData highlight_data = (HighlightData)user_data ;
+
+  zMapCanvasFeaturesetDrawBoxMacro(highlight_data->featureset, highlight_data->x1, highlight_data->x2,
+                                   splice_pos->start, splice_pos->end,
+                                   highlight_data->drawable,
+                                   TRUE, TRUE, highlight_data->splice_pixel, highlight_data->splice_pixel) ;
+
+  return ;
 }
 
 

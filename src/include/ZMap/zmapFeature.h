@@ -197,16 +197,25 @@ typedef struct ZMapSequenceStruct_
 } ZMapSequenceStruct, *ZMapSequence ;
 
 
+/* A splice. */
+typedef struct ZMapSplicePositionStructType
+{
+  ZMapBoundaryType boundary_type ;                          /* 5' or 3' */
 
-/* Could represent anything that has a span. */
-typedef struct
+  Coord start, end ;                                        /* base positions either side of splice. */
+} ZMapSplicePositionStruct, *ZMapSplicePosition ;
+
+
+
+/* Anything that has a span. */
+typedef struct ZMapSpanStructType
 {
   Coord x1, x2 ;
 } ZMapSpanStruct, *ZMapSpan ;
 
 
-/* We have had this but would like to have a simple "span" sort....as below... */
-typedef struct
+/* An exon span...do we really need this ? pointless.... */
+typedef struct ZMapExonStructType
 {
   Coord x1, x2 ;
 } ZMapExonStruct, *ZMapExon ;
@@ -754,12 +763,9 @@ typedef struct ZMapFeatureStructType
   GQuark SO_accession ;
 
 
-  /* style id tp be removed when style fully working */
-  /* GQuark style_id ;	*/ /* Style defining how this feature is processed (use Styles _unique_ id.) */
-
-  ZMapFeatureTypeStyle *style;                             /* pointer to the style structure held by
-the
-                                                            * featureset in the context NOTE we can have
+  /* Style defining how this feature is processed (use Styles _unique_ id.) */
+  ZMapFeatureTypeStyle *style;                             /* pointer to the style structure held
+                                                              by the featureset in the context NOTE we can have
                                                             * mixed styles in a column/ virtual featureset */
 
 
@@ -917,7 +923,9 @@ typedef gboolean (*ZMapFeatureDumpFeatureFunc)(ZMapFeatureAny feature_any,
 
 
 
-/* FeatureAny funcs. */
+/*
+ * FeatureAny funcs.
+ */
 
 ZMapFeatureAny zMapFeatureAnyCreate(ZMapStyleMode feature_type) ;
 ZMapFeatureAny zMapFeatureAnyCopy(ZMapFeatureAny orig_feature_any) ;
@@ -929,23 +937,19 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny 
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
 gboolean zMapFeatureAnyHasChildren(ZMapFeatureAny feature) ;
 gboolean zMapFeaturePrintChildNames(ZMapFeatureAny feature_any) ;
+gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
+gboolean zMapFeatureIsValidFull(ZMapFeatureAny any_feature, ZMapFeatureLevelType type) ;
+char *zMapFeatureName(ZMapFeatureAny any_feature) ;
+char *zMapFeatureUniqueName(ZMapFeatureAny any_feature) ;
+gboolean zMapFeatureNameCompare(ZMapFeatureAny any_feature, char *name) ;
+gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained);
+ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureLevelType group_type) ;
+gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
 
 
-
-
-
-
-void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
-
-
-void zMapFeatureAddStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type);
-
-
-
-/* ***************
- * FEATURE METHODS
+/*
+ * Feature funcs
  */
-
 
 char *zMapFeatureCreateName(ZMapStyleMode feature_type,
                             char *feature_name,
@@ -973,6 +977,11 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 				    ZMapStrand strand) ;
 gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name) ;
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
+
+gboolean zMapFeatureHasMatchingBoundary(ZMapFeature feature,
+                                        int boundary_start_in, int boundary_end_in,
+                                        int *boundary_start_out, int *boundary_end_out) ;
+
 gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature) ;
 gboolean zMapFeatureTranscriptInit(ZMapFeature feature) ;
 gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase,
@@ -1046,8 +1055,8 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
 void zMapFeatureDestroy(ZMapFeature feature) ;
 
 
-/* *******************
- * FEATURE SET METHODS
+/*
+ * FeatureSet funcs
  */
 GQuark zMapFeatureSetCreateID(char *feature_set_name) ;
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GHashTable *features) ;
@@ -1071,10 +1080,8 @@ ZMapFeatureSet zMapFeatureSetCopy(ZMapFeatureSet feature_set);
 gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block, GQuark unique_id,int start, int end);
 
 
-
-
-/* *********************
- * FEATURE BLOCK METHODS
+/*
+ * FeatureBlock funcs
  */
 GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_strand,
                                 int non_start, int non_end, ZMapStrand non_strand);
@@ -1099,8 +1106,8 @@ gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
                              char **seq_name, int *seq_len, char **sequence) ;
 
 
-/* *************************
- * FEATURE ALIGNMENT METHODS
+/* 
+ * FeatureAlignment funcs
  */
 GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean master_alignment) ;
 ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment) ;
@@ -1116,10 +1123,9 @@ gboolean zMapFeatureAlignmentRemoveBlock(ZMapFeatureAlignment feature_align,
 void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_data) ;
 
 
-/* ***********************
- * FEATURE CONTEXT METHODS
+/*
+ * FeatureContext funcs
  */
-
 
 ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end, GList *feature_set_names) ;
 ZMapFeatureContext zMapFeatureContextCreateEmptyCopy(ZMapFeatureContext feature_context);
@@ -1187,34 +1193,30 @@ void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
 					gpointer data);
 
 
-
-
-
-/* UTILITY METHODS */
+/*
+ * Utils funcs
+ */
 
 int zmapFeatureRevCompCoord(int coord, int start, int end);
-
 void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2) ;
-
-
 void zMapGetFeatureExtent(ZMapFeature feature, gboolean complex, ZMapSpan span);
-
+void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 
 int zMapFeatureColumnOrderNext(void);	/* order of columns L -> R */
 
 
-gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
-gboolean zMapFeatureIsValidFull(ZMapFeatureAny any_feature, ZMapFeatureLevelType type) ;
-char *zMapFeatureName(ZMapFeatureAny any_feature) ;
-char *zMapFeatureUniqueName(ZMapFeatureAny any_feature) ;
-gboolean zMapFeatureNameCompare(ZMapFeatureAny any_feature, char *name) ;
+/* ????? Impossible to understand why this is here ?? */
+void zMapFeatureAddStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type);
+
 gboolean zMapFeatureTypeIsValid(ZMapFeatureLevelType group_type) ;
-gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained);
+
+
 gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained);
-ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureLevelType group_type) ;
+
+
 char *zMapFeatureCanonName(char *feature_name) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
-gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
+
 
 
 /* Probably should be merged at some time.... */
@@ -1292,9 +1294,6 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript, const int x, ZM
 gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature feature, Coord coord);
 gboolean zMapFeatureTranscriptsEqual(ZMapFeature feature1, ZMapFeature feature2, GError **error) ;
 
-/* ============================================================== for teh === */
-/* functions in zmapFeatureFormatInput.c */
-/* ================================================================= */
 
 gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
                                char *feature_type, ZMapStyleMode *type_out);

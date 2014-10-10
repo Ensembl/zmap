@@ -1208,10 +1208,6 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
           web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_RELEASE_NOTES) ;
           break ;
 
-        case ZMAPGUI_HELP_WHATS_NEW:
-          web_page = g_strdup_printf("%s",ZMAP_INTERNAL_WEB_WHATSNEW);/* a temporary fix via the internal wiki */
-          break;
-
         default:
           zMapWarning("menu choice (%d) temporarily unavailable",help_contents);
           /* this used to assert: why crash? */

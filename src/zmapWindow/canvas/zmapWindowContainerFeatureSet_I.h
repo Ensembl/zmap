@@ -62,12 +62,25 @@ typedef struct _zmapWindowContainerFeatureSetStruct
   ZMapStrand  strand ;
   ZMapFrame   frame ;
 
+
+  /* style & bump_mode are both used by it's not clear for what.... */
+
+
   /* HOW DO THESE TWO RELATE TO THE STUFF IN THE canvasfeatureset struct which seems to replicate
    * these fields ???? je ne sais pas..... */
   /* this is a column setting, the settings struct below is an amalgamation of styles */
   ZMapStyleBumpMode bump_mode ;
 
-  ZMapFeatureTypeStyle style ;       /* column specific style or the one single style for a featureset */
+  ZMapFeatureTypeStyle style ;       /* column specific style or the one single style for a
+                                        featureset */
+
+
+  /* Does this column respond to splice highlighting ? If so we then look in the featuresets
+   * within this column to see if they do and if they have a tolerance set.
+   * Any features highlighted are recorded here for efficiency in unhighlighting. */
+  gboolean splice_highlight ;
+  GList *splice_highlighted_features ;                      /* list of zmapWindowCanvasFeature. */
+
 
 
   /* Empty columns are only hidden ATM and as they have no
@@ -80,32 +93,51 @@ typedef struct _zmapWindowContainerFeatureSetStruct
   GQuark      unique_id ;
   GQuark      original_id ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* We keep the features sorted by position and size so we can cursor through them... */
   gboolean    sorted ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* does the column contain featuresets that are maskable? */
-  gboolean    maskable ;
+  gboolean maskable ;
 
   /* does the column contain masked featuresets that have been masked (not displayed)? (default) */
-  gboolean    masked;
+  gboolean masked ;
+
+
 
   gboolean has_feature_set ;
 
-  /* list of featureset ids displayed in this column */
+
+  /* list of featureset ids displayed in this column
+   * 
+   * HORRIFICALLY THIS IS ACCESSED DIRECTLY AND POPULATED IN zmapWindowDrawFeatures.c....
+   *  */
   GList *featuresets ;
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Extra items used for displaying colinearity lines and markers, note that we can end up
    * with the colinear markers becoming long items so we need to record them too. */
   GList *colinear_markers ;
   GList *incomplete_markers ;
   GList *splice_markers ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* THESE ARE ALSO ACCESSED DIRECTLY FROM zmapWindowFeatureList.c, oh dear.... */
 
   /* Features hidden by user, should stay hidden until unhidden by user. */
-  GQueue     *user_hidden_stack ;
+  GQueue *user_hidden_stack ;
 
   /* These fields are used for some of the more exotic column bumping. */
-  gboolean    hidden_bump_features ;                        /* Features were hidden because they
+  gboolean hidden_bump_features ;                           /* Features were hidden because they
                                                              * are out of the marked range. *//*  */
+
 
 } zmapWindowContainerFeatureSetStruct ;
 

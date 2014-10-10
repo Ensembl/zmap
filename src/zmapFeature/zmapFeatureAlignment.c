@@ -216,6 +216,270 @@ ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignF
 
 
 
+/* Adds homology data to a feature which may be empty or may already have partial features. */
+gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
+     GQuark clone_id,
+     double percent_id,
+     int query_start, int query_end,
+     ZMapHomolType homol_type,
+     int query_length,
+     ZMapStrand query_strand,
+     ZMapPhase target_phase,
+     GArray *align, unsigned int align_error,
+     gboolean has_local_sequence, char *sequence)
+     /* NOTE has_local mean in ACEBD, sequence is from GFF */
+{
+  gboolean result = FALSE ;
+
+  zMapReturnValIfFail(feature && (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT), result);
+
+  result = TRUE ;
+
+  if (clone_id)
+    {
+      feature->feature.homol.flags.has_clone_id = TRUE ;
+      feature->feature.homol.clone_id = clone_id ;
+    }
+
+  if (percent_id)
+    feature->feature.homol.percent_id = (float) percent_id ;
+
+  feature->feature.homol.type = homol_type ;
+  feature->feature.homol.strand = query_strand ;
+  feature->feature.homol.target_phase = target_phase ;
+
+  if (query_start > query_end)
+    {
+      int tmp;
+
+      tmp = query_start ;
+      query_start = query_end ;
+      query_end = tmp ;
+    }
+
+  feature->feature.homol.y1 = query_start ;
+  feature->feature.homol.y2 = query_end ;
+  feature->feature.homol.length = query_length ;
+  feature->feature.homol.flags.has_sequence = has_local_sequence ;
+  feature->feature.homol.sequence = sequence ;
+
+
+  if (align)
+    {
+      zMapFeatureSortGaps(align) ;
+
+      feature->feature.homol.align = align ;
+
+      feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align, align_error) ;
+    }
+
+  return result ;
+}
+
+
+
+/* Returns TRUE if alignment is gapped, FALSE otherwise. NOTE that sometimes
+ * we are passed data for an alignment feature which must represent a gapped
+ * alignment but we are not passed the gap data. This tests all this. */
+gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+
+  if (!zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE))
+    return result ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+    {
+      int ref_length, match_length ;
+
+      ref_length = (feature->x2 - feature->x1) + 1 ;
+
+      match_length = (feature->feature.homol.y2 - feature->feature.homol.y1) + 1 ;
+      if (feature->feature.homol.type != ZMAPHOMOL_N_HOMOL)
+        match_length *= 3 ;
+
+      if (ref_length != match_length)
+        result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+/*
+ * This function takes a feature as argument, and converts it's homol data into
+ * a string of the specified format. This is done in two stages:
+ *
+ * (1) First convert the feature data into the canonical form above (AlignStrCanonical), then
+ * (2) Convert the canonical form into the appropriate string for output.
+ */
+gboolean zMapFeatureAlignmentGetAlignmentString(ZMapFeature feature,
+                                                ZMapFeatureAlignFormat align_format,
+                                                char **p_string_out)
+{
+  gboolean result = FALSE ;
+  char *temp_string = NULL ;
+  AlignStrCanonical canon = NULL ;
+  AlignStrCanonicalPropertiesStruct properties ;
+
+  /*
+   * Test feature type and other errors
+   */
+  zMapReturnValIfFail(feature &&
+                      (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT) &&
+                      p_string_out, result) ;
+
+  /*
+   * Homol to canonical
+   */
+  result = (canon = homol2AlignStrCanonical(feature, align_format)) ? TRUE : FALSE ;
+
+  /*
+   * Get string properties for this alignment type.
+   */
+  if (alignFormat2Properties(canon->format, &properties))
+    {
+
+      /*
+       * This function loops over operators and converts to string representation
+       */
+      if ((result = alignStrCanonical2string(&temp_string, &properties, canon)))
+        {
+          if (temp_string)
+            {
+              *p_string_out = temp_string ;
+              result = TRUE ;
+            }
+        }
+      else
+        {
+          if (temp_string)
+            g_free(temp_string) ;
+        }
+    }
+
+  if (canon)
+    {
+      alignStrCanonicalDestroy(&canon) ;
+    }
+
+  return result ;
+}
+
+
+
+
+/*
+ * Constructs a gaps array from an alignment string such as CIGAR, VULGAR etc.
+ * Returns TRUE on success with the gaps array returned in gaps_out. The array
+ * should be free'd with g_array_free when finished with.
+ */
+gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
+                                         ZMapStrand ref_strand, int ref_start, int ref_end,
+                                         ZMapStrand match_strand, int match_start, int match_end,
+                                         char *align_string, GArray **align_out)
+{
+  gboolean result = FALSE ;
+  AlignStrCanonical canon = NULL ;
+  GArray *align = NULL ;
+
+  if (!(canon = alignStrMakeCanonical(align_string, align_format)))
+    {
+      result = FALSE ;
+      zMapLogWarning("Cannot convert alignment string to canonical format: %s", align_string) ;
+    }
+  else if (!(result = (alignStrCanon2Homol(canon, ref_strand, match_strand,
+                                           ref_start, ref_end,
+                                           match_start, match_end,
+                                           &align))))
+    {
+      zMapLogWarning("Cannot convert canonical format to align array: s", align_string) ;
+    }
+
+  /*
+   * The canonical object should be destroyed even if
+   * the above conversions succeed.
+   */
+  if (canon)
+    alignStrCanonicalDestroy(&canon) ;
+
+  if (result)
+    {
+      *align_out = align ;
+    }
+  else
+    {
+      *align_out = NULL ;
+    }
+
+  return result ;
+}
+
+
+
+
+/* 
+ *            Package routines.
+ */
+
+/* Do boundary_start/boundary_end match the start/end of the alignment or any of th
+ * gapped blocks (if there are any) within the alignment. */
+gboolean zmapFeatureAlignmentHasMatchingBoundary(ZMapFeature feature,
+                                                 int boundary_start, int boundary_end,
+                                                 int *boundary_start_out, int *boundary_end_out)
+{
+  gboolean result = FALSE ;
+  int slop ;
+
+  zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
+
+  slop = zMapStyleSpliceHighlightTolerance(*(feature->style)) ;
+
+  if (!(feature->feature.homol.align))
+    {
+      result = zmapFeatureCoordsMatch(slop, boundary_start, boundary_end,
+                                      feature->x1, feature->x2,
+                                      boundary_start_out, boundary_end_out) ;
+    }
+  else
+    {
+      GArray *gaps_array = feature->feature.homol.align ;
+      int i ;
+      int match_start, match_end ;
+
+      for (i = 0 ; i < gaps_array->len ; i++)
+        {
+          ZMapAlignBlock block = NULL ;
+
+          block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i)) ;
+
+          if (zmapFeatureCoordsMatch(slop, boundary_start, boundary_end,
+                                     block->t1, block->t2,
+                                     &match_start, &match_end))
+            {
+              result = TRUE ;
+
+              if (boundary_start_out && match_start)
+                *boundary_start_out = match_start ;
+
+              if (boundary_end_out && match_end)
+                *boundary_end_out = match_end ;
+            }
+        }
+    }
+
+  return result ;
+}
+
+
+
+
+
+/* 
+ *            Internal routines.
+ */
+
+
 /*
  * Convert a format to the appropriate properties flags.
  */
@@ -1563,222 +1827,6 @@ static void parseTestFunction01()
     g_free(sTest01) ;
 }
 #undef TEST_STRING_MAX
-
-
-
-
-
-
-
-
-/* Adds homology data to a feature which may be empty or may already have partial features. */
-gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
-     GQuark clone_id,
-     double percent_id,
-     int query_start, int query_end,
-     ZMapHomolType homol_type,
-     int query_length,
-     ZMapStrand query_strand,
-     ZMapPhase target_phase,
-     GArray *align, unsigned int align_error,
-     gboolean has_local_sequence, char *sequence)
-     /* NOTE has_local mean in ACEBD, sequence is from GFF */
-{
-  gboolean result = FALSE ;
-
-  zMapReturnValIfFail(feature && (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT), result);
-
-  result = TRUE ;
-
-  if (clone_id)
-    {
-      feature->feature.homol.flags.has_clone_id = TRUE ;
-      feature->feature.homol.clone_id = clone_id ;
-    }
-
-  if (percent_id)
-    feature->feature.homol.percent_id = (float) percent_id ;
-
-  feature->feature.homol.type = homol_type ;
-  feature->feature.homol.strand = query_strand ;
-  feature->feature.homol.target_phase = target_phase ;
-
-  if (query_start > query_end)
-    {
-      int tmp;
-
-      tmp = query_start ;
-      query_start = query_end ;
-      query_end = tmp ;
-    }
-
-  feature->feature.homol.y1 = query_start ;
-  feature->feature.homol.y2 = query_end ;
-  feature->feature.homol.length = query_length ;
-  feature->feature.homol.flags.has_sequence = has_local_sequence ;
-  feature->feature.homol.sequence = sequence ;
-
-
-  if (align)
-    {
-      zMapFeatureSortGaps(align) ;
-
-      feature->feature.homol.align = align ;
-
-      feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align, align_error) ;
-    }
-
-  return result ;
-}
-
-
-
-/* Returns TRUE if alignment is gapped, FALSE otherwise. NOTE that sometimes
- * we are passed data for an alignment feature which must represent a gapped
- * alignment but we are not passed the gap data. This tests all this. */
-gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
-{
-  gboolean result = FALSE ;
-
-  if (!zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE))
-    return result ;
-
-  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
-    {
-      int ref_length, match_length ;
-
-      ref_length = (feature->x2 - feature->x1) + 1 ;
-
-      match_length = (feature->feature.homol.y2 - feature->feature.homol.y1) + 1 ;
-      if (feature->feature.homol.type != ZMAPHOMOL_N_HOMOL)
-        match_length *= 3 ;
-
-      if (ref_length != match_length)
-        result = TRUE ;
-    }
-
-  return result ;
-}
-
-
-/*
- * This function takes a feature as argument, and converts it's homol data into
- * a string of the specified format. This is done in two stages:
- *
- * (1) First convert the feature data into the canonical form above (AlignStrCanonical), then
- * (2) Convert the canonical form into the appropriate string for output.
- */
-gboolean zMapFeatureAlignmentGetAlignmentString(ZMapFeature feature,
-                                                ZMapFeatureAlignFormat align_format,
-                                                char **p_string_out)
-{
-  gboolean result = FALSE ;
-  char *temp_string = NULL ;
-  AlignStrCanonical canon = NULL ;
-  AlignStrCanonicalPropertiesStruct properties ;
-
-  /*
-   * Test feature type and other errors
-   */
-  zMapReturnValIfFail(feature &&
-                      (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT) &&
-                      p_string_out, result) ;
-
-  /*
-   * Homol to canonical
-   */
-  result = (canon = homol2AlignStrCanonical(feature, align_format)) ? TRUE : FALSE ;
-
-  /*
-   * Get string properties for this alignment type.
-   */
-  if (alignFormat2Properties(canon->format, &properties))
-    {
-
-      /*
-       * This function loops over operators and converts to string representation
-       */
-      if ((result = alignStrCanonical2string(&temp_string, &properties, canon)))
-        {
-          if (temp_string)
-            {
-              *p_string_out = temp_string ;
-              result = TRUE ;
-            }
-        }
-      else
-        {
-          if (temp_string)
-            g_free(temp_string) ;
-        }
-    }
-
-  if (canon)
-    {
-      alignStrCanonicalDestroy(&canon) ;
-    }
-
-  return result ;
-}
-
-
-
-
-/*
- * Constructs a gaps array from an alignment string such as CIGAR, VULGAR etc.
- * Returns TRUE on success with the gaps array returned in gaps_out. The array
- * should be free'd with g_array_free when finished with.
- */
-gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
-                                         ZMapStrand ref_strand, int ref_start, int ref_end,
-                                         ZMapStrand match_strand, int match_start, int match_end,
-                                         char *align_string, GArray **align_out)
-{
-  gboolean result = FALSE ;
-  AlignStrCanonical canon = NULL ;
-  GArray *align = NULL ;
-
-  if (!(canon = alignStrMakeCanonical(align_string, align_format)))
-    {
-      result = FALSE ;
-      zMapLogWarning("Cannot convert alignment string to canonical format: %s", align_string) ;
-    }
-  else if (!(result = (alignStrCanon2Homol(canon, ref_strand, match_strand,
-                                           ref_start, ref_end,
-                                           match_start, match_end,
-                                           &align))))
-    {
-      zMapLogWarning("Cannot convert canonical format to align array: s", align_string) ;
-    }
-
-  /*
-   * The canonical object should be destroyed even if
-   * the above conversions succeed.
-   */
-  if (canon)
-    alignStrCanonicalDestroy(&canon) ;
-
-  if (result)
-    {
-      *align_out = align ;
-    }
-  else
-    {
-      *align_out = NULL ;
-    }
-
-  return result ;
-}
-
-
-
-
-
-
-
-/*
- *               Internal functions.
- */
 
 
 /* Returns TRUE if the target blocks match coords are within align_error bases of each other, if

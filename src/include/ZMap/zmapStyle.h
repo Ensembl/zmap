@@ -104,6 +104,9 @@ typedef enum
     STYLE_PROP_SHOW_ONLY_IN_SEPARATOR,
     STYLE_PROP_DIRECTIONAL_ENDS,
 
+    STYLE_PROP_SPLICE_HIGHLIGHT,
+    STYLE_PROP_SPLICE_HIGHLIGHT_TOLERANCE,
+
 #if MH17_NO_DEFERRED
     STYLE_PROP_DEFERRED,
     STYLE_PROP_LOADED,
@@ -246,6 +249,10 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_HIDE_FORWARD_STRAND    "hide-forward-strand"
 #define ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR "show-only-in-separator"
 #define ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS       "directional-ends"
+
+#define ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT            "splice-highlight"
+#define ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT_TOLERANCE  "splice-highlight-tolerance"
+
 /* ... frame sensitivity */
 #define ZMAPSTYLE_PROPERTY_FRAME_MODE             "frame-mode"
 /* ... deferred loading */
@@ -371,8 +378,10 @@ _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling disp
 /* NOTE x-ref to feature_types[] in zmapWindowCanvasFeatureset.c if you change this */
 
 ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
+
 #define N_STYLE_MODE	(ZMAPSTYLE_MODE_META)
 #define N_STYLE_FEATURE_MODE	ZMAPSTYLE_MODE_PLAIN
+
 
 #define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                                      \
 _(ZMAPSTYLE_COLDISPLAY_INVALID,   , "invalid"  , "invalid mode  "                        , "") \
@@ -919,8 +928,8 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean showText;                    /*!< Should feature text be displayed. */
 
-    /*! Strand, show reverse and frame are all linked: something that is frame specific must be
-     * strand specific as well.... */
+  /* Strand, show reverse and frame are all linked: something that is frame specific must be
+   * strand specific as well.... */
   gboolean strand_specific;                   /*!< Feature that is on one strand of the dna. */
   gboolean show_rev_strand;                   /*!< Only display the feature on the
                                                  reverse strand if this is set. */
@@ -929,6 +938,11 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean directional_end;                   /*!< Display pointy ends on exons etc. */
 
+  gboolean splice_highlight ;                               /* TRUE => highlight matching splices. */
+  guint splice_highlight_tolerance ;                        /* Highlight if within this tolerance (bases). */
+
+
+  /* IS THIS USED ????? SEE IF WE CAN REMOVE IT...... */
   gboolean foo;
 
   gboolean filter;		/* can filter by score */
@@ -938,10 +952,12 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean loaded;             /* flag to say if we're loaded */
 #endif
-	/* these flags are not set by config */
-  gboolean inherited;         /* style has inherited it's parents */
+
+  /* these flags are not set by config */
+  gboolean inherited;                                       /* style has inherited it's parents */
   gboolean is_default;
   gboolean overridden;
+
 
   /*! Mode specific fields, see docs for individual structs. */
   union
@@ -1215,6 +1231,10 @@ gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 
 
 
+/* 
+ * the trouble with all these macros is that they do not test the "is_set" flag.... which
+ * is not very smart....
+ */
 
 //gboolean zMapStyleIsDirectionalEnd(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsDirectionalEnd(style)   ((style)->directional_end)
@@ -1245,6 +1265,9 @@ gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 //gboolean zMapStyleIsFrameOneColumn(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsFrameOneColumn(style)   ((style)->frame_mode == ZMAPSTYLE_3_FRAME_ONLY_1)
 #define zMapStyleGetFrameMode(style)      ((style)->frame_mode)
+
+#define zMapStyleIsSpliceHighlight(style)   ((style)->splice_highlight)
+#define zMapStyleSpliceHighlightTolerance(style) ((style)->splice_highlight_tolerance)
 
 //double zMapStyleBaseline(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGraphFill(style)   ((style)->mode_data.graph.fill)

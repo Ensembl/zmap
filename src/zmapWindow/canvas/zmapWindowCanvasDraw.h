@@ -46,7 +46,7 @@
  * then querying its size, you should find this is the max. window size you can have.
  *
  * BUT....you can't really make use of a window this size _because_ when positioning
- * anything (other windows, lines etc.), the coordinates are given via _signed_ ints.
+ * anything (other windows, lines etc.), the coordinates are given via _signed_ shorts.
  * This means that the maximum position you can specify must in the range -32768
  * to 32767. In a way this makes sense because it means that you can have a window
  * that covers this entire span and so position things anywhere inside it. In a way
@@ -83,6 +83,8 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
                                           double x1, double x2, double y1, double y2,
                                           GdkDrawable *drawable,
                                           gboolean fill_set, gboolean outline_set, gulong fill, gulong outline) ;
+void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                              GdkDrawable *drawable, double x1, double x2) ;
 
 
 

@@ -262,6 +262,14 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     "directional-ends", "Display pointy \"short sides\"",
     offsetof(zmapFeatureTypeStyleStruct, directional_end),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
+  { STYLE_PROP_SPLICE_HIGHLIGHT, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT,
+    "splice highlighting", "Show Splice Highlighting",
+    offsetof(zmapFeatureTypeStyleStruct, splice_highlight), ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
+  { STYLE_PROP_SPLICE_HIGHLIGHT_TOLERANCE, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT_TOLERANCE,
+    "splice tolerance", "Tolerance allowable in coords match with splice.",
+    offsetof(zmapFeatureTypeStyleStruct, splice_highlight_tolerance), ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
+
+
   { STYLE_PROP_FOO, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_FOO,
     "as Foo Canvas Items", "use old technology",
     offsetof(zmapFeatureTypeStyleStruct, foo),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},

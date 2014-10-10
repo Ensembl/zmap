@@ -1529,6 +1529,44 @@ gboolean zMapFeaturePrintChildNames(ZMapFeatureAny feature_any)
 
 
 
+/*
+ *              Package routines.
+ */
+
+/* Checks to see if boundary_start/boundary_end match start/end within +- slop,
+ * if either does returns TRUE and returns start/end in match_start_out/match_end_out. 
+ * 
+ * Boundaries are not compared if < 1.
+ * 
+ */
+gboolean zmapFeatureCoordsMatch(int slop, int boundary_start, int boundary_end,
+                                int start, int end, int *match_start_out, int *match_end_out)
+{
+  gboolean result = FALSE ;
+  int match_start = 0, match_end = 0 ;
+
+  if (boundary_start > 0 && abs(start - boundary_start) <= slop)
+    match_start = start ;
+
+  if (boundary_end > 0 && abs(end - boundary_end) <= slop)
+    match_end = end ;
+
+  if (match_start || match_end)
+    {
+      if (match_start_out)
+        *match_start_out = match_start ;
+
+      if (match_end_out)
+        *match_end_out = match_end ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
 
 
 
