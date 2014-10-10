@@ -8,7 +8,31 @@
 <h2 id="overview">Overview</h2>
 
 <p>ZMap has a fairly complex display and this document describes the user interface
-and how to make use of ZMap to look at sequence data.
+and how to make use of ZMap to look at sequence data.</p>
+
+
+<h3>The Focus Feature</h3>
+
+<p>The focus column and/or feature is generally set by the user clicking on a
+feature or column. The column or feature is highlighted in a user-defined
+colour generally chosen to contrast with all other colours. The focus column or
+feature are used by a number of operations/options in zmap, e.g. "zoom to
+feature" zooms to the focus feature or does nothing if there isn't one.</p>
+
+<p>Note that when a feature is selected the column containing that feature is
+automatically selected.</p>
+
+<p>The current focus column/feature can be turned off and on using the
+<b>'h'</b> shortcut key. The code does this by storing a record of the selected
+feature/column when you first press the 'h' key, the feature is then reselected
+when you press the 'h' key again.</p>
+
+<p>As well as the 'h' key the 's' key (<a href="#splice_highlighting">see
+splice highlighting</a>) also stores the currently selected feature and in both
+cases you can reselect this feature by simply pressing <b>&lt;shift&gt;-h</b>.
+This can be useful if you had a feature selected but then needed to bump a
+column (which has the side effect of selecting that column). It's then easy to
+restore your previously selected feature using <b>&lt;shift&gt;-h</b>.</p>
 
 
 <h3>The Focus Feature vs. the Marked Feature</h3>
@@ -19,14 +43,14 @@ as pressing "b" to bump it. If you click on a feature then that feature
 becomes the "focus" feature and similarly you can do various
 short cut operations on it such as zooming in to it. (Note when
 you select a feature then its column automatically becomes the
-focus column.)
+focus column.)</p>
 
 <p>While the focus facility is useful the focus changes every time you
 click on a new feature. Sometimes you want to more permanently select
 a "working" feature or area, to do this you can "mark" the feature or area and it will
-stay "marked" until you unmark it.
+stay "marked" until you unmark it.</p>
 
-<p>Marking can be done in one of two ways:
+<p>Marking can be done in one of two ways:</p>
 
 <p><b>To mark a feature:</b>
 <ol>
@@ -43,7 +67,7 @@ stay "marked" until you unmark it.
 </ol>
 
 <p>In either case the "marked" area is left clear while the unmarked
-area above and below is marked with a blue overlay.
+area above and below is marked with a blue overlay.</p>
 
 <p><b>Unmarking is by:</b>
 
@@ -54,13 +78,13 @@ area above and below is marked with a blue overlay.
 
 <p>Feature marking behaves differently according to the type of feature you
 highlighted prior to marking and according to whether you press "m" or "M" to do
-the marking:
+the marking:</p>
 
 
 <p><b>Pressing "m":</b>
 
 <P>The mark is made around all features you have highlighted, e.g. a whole transcript,
-a single exon, several HSPs.
+a single exon, several HSPs.</p>
 
 
 <p><b>Pressing "M":</b>
@@ -75,25 +99,25 @@ a single exon, several HSPs.
 
 
 <p>If no feature is selected but an area was selected using the left button rubberband
-then that area is marked.
+then that area is marked.</p>
 
 <p>If no feature or area is selected then the visible screen area minus a small top/bottom
-margin is marked.
+margin is marked.</p>
 
 
 
 
 <h3>Zooming to a feature</h3>
 
-<p>Zooming can be done in different ways depending on the type of feature selected:
+<p>Zooming can be done in different ways depending on the type of feature selected:</p>
 
 <p><b>Pressing "z":</b>
 
 <P>Zooms to the extent of all features you have highlighted, e.g. a whole transcript,
-a single exon, several HSPs.
+a single exon, several HSPs.</p>
 
 
-<p><b>Pressing "Z":</b>
+<p><b>Pressing "Z":</b></p>
 <ul>
   <li><b>Intron or Exon:</b> zooms to the whole transcript.
   <li><b>HSP(s):</b> zooms to the extent of all HSPs of the same sequence.
@@ -101,12 +125,12 @@ a single exon, several HSPs.
 </ul>
 
 <p>If no feature is selected but an area was selected using the left button rubberband
-then that area is zoomed to.
+then that area is zoomed to.</p>
 
 
 
 
-<p><hr>
+<p><hr></p>
 <h2 id="efficient_use">Making Good Use Of ZMap</h3>
 
 <p>In general zmap will be faster for zooming, bumping etc if you make good use of the
@@ -185,6 +209,60 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
       join up mulitple hits you can click on the hit _or_ the bar.
   <li>Remove the selected features by pressing Delete and restore them by pressing Shift-Delete
       (Note on the Mac you need to press Fn-Delete and Shift-Fn-Delete.)
+</ul>
+
+
+
+
+
+
+
+
+<h3 id="splice_highlighting">Splice Highlighting</h3>
+
+<p>You can select a feature and then by pressing 's' you will see highlighted
+in red all the start/ends of features in other columns that match the
+highlighted features start/ends, e.g. highlight a transcript, press 's' and you
+will be able to see all the EST's, mRNA's etc that line up with the transcript.</p>
+
+<p>The below images show before and afer highlighting:</p>
+
+<img src="Splice_highlight_off.png" class="img" alt="splice highlighting off">
+<img src="Splice_highlight_on.png" class="img" alt="splice highlighting on">
+
+<p>The highlighted feature is a protein coding primary transcript and the splice
+highlighted features are BLAT EST alignments.</p>
+
+<p>Some notes:</p>
+
+<ul>
+<li>currently the highlighting only works on the "box-like" features, it does
+not include graph or heatmap data, let us know if you would like us to expand
+highlighting to other types of feature.</li>
+
+<li>you can select any box-like feature in any column and use the highlighting
+so you can select a transcript and see which EST's match it or conversely
+select an EST and see which transcripts match it and so on.</li>
+
+<li>the 's' key toggles the highlighting on/off and you may find it useful to
+flick it on/off as it makes it easier to spot the highlights as they blink,
+this is particularly so if you are zoomed right out.</li>
+
+<li>the highlights are drawn in columns whether they are bumped or not but of
+course to actually see which features are highlighted you will need to bump
+the relevant column.</li>
+
+<li>if you have selected a feature, pressed 's' and now find that you want to
+bump a column follow this procedure:</li>
+
+    <ol>
+      <li>select the column and bump it, you will see all the splices</li>
+
+      <li>restore the feature you originally had selected feature by pressing
+	  shift-h (as described in 1) above)</li>
+
+      <li>now you can continue to press 's' with the reselected feature</li>
+    </ol>
 </ul>
 
 
