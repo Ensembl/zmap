@@ -664,12 +664,16 @@ typedef struct ZMapTranscriptStructType
   GArray *exons ;                                          /* Of ZMapSpanStruct. */
   GArray *introns ;                                        /* Of ZMapSpanStruct. */
 
+  GList *variations ;                                      /* List of variations to apply to this
+                                                            * transcript's sequence */
+
   struct
   {
     unsigned int cds : 1 ;
     unsigned int start_not_found : 1 ;
     unsigned int end_not_found : 1 ;
   } flags ;
+
 
 } ZMapTranscriptStruct, *ZMapTranscript ;
 
@@ -994,6 +998,7 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 					  gboolean end_not_found_flag) ;
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
+gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, ZMapFeature variation) ;
 void zMapFeatureRemoveExons(ZMapFeature feature);
 void zMapFeatureRemoveIntrons(ZMapFeature feature);
 void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature);

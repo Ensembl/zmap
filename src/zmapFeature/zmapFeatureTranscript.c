@@ -304,6 +304,22 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 }
 
 
+/* Add a variation to a transcript feature. Stores the variation as metadata which is used
+ * to modify the transcript sequence. */
+gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, ZMapFeature variation)
+{
+  gboolean result = FALSE ;
+
+  zMapReturnValIfFail(feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT, result) ;
+  zMapReturnValIfFail(variation && variation->mode == ZMAPSTYLE_MODE_BASIC, result) ;
+
+  feature->feature.transcript.variations = g_list_append(feature->feature.transcript.variations, variation) ;
+
+  result = TRUE ;
+  return result ;
+}
+
+
 /* Removes all exons */
 void zMapFeatureRemoveExons(ZMapFeature feature)
 {

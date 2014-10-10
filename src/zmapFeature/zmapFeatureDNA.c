@@ -39,6 +39,8 @@
 #include <zmapFeature_P.h>
 
 
+#define VARIATION_SEPARATOR_CHAR '/'
+
 
 typedef struct FeatureSeqFetcherStructType
 {
@@ -125,6 +127,202 @@ char *zMapFeatureGetFeatureDNA(ZMapFeature feature)
 }
 
 
+static gboolean variationIsMulti(const char *variation_str)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(variation_str && *variation_str != 0, result) ;
+
+  /* If the string contains more than one separator, it is a multiple variation */
+  char *cp = strchr(variation_str, VARIATION_SEPARATOR_CHAR) ;
+
+  if (cp)
+    {
+
+      cp = strchr(cp + 1, VARIATION_SEPARATOR_CHAR) ;
+
+      if (cp)
+        result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+/* Get the sections before and after the separator in a variation string. Note that at the moment
+ * this ignores anything after the second separator, if there is one. (This function could be
+ * modified to return a list of new strings if we want to return all of the alternatives.) */
+static void variationGetSections(const char *variation_str, char **old_str_out, char **new_str_out)
+{
+  zMapReturnIfFail(variation_str && *variation_str != 0) ;
+
+  const char *separator_pos = strchr(variation_str, VARIATION_SEPARATOR_CHAR) ;
+  const int len = strlen(variation_str) ;
+
+  if (separator_pos)
+    {
+      /* The end of the replacement string is at another separator or the end of the string */
+      const char *end = strchr(separator_pos + 1, VARIATION_SEPARATOR_CHAR) ;
+
+      if (!end)
+        end = variation_str + len - 1 ;
+
+      int old_len = separator_pos - variation_str ;
+      int new_len = end - separator_pos ;
+      
+      if (old_str_out && old_len > 0)
+        *old_str_out = g_strndup(variation_str, old_len) ;
+
+      if (new_str_out && new_len > 0)
+        *new_str_out = g_strndup(separator_pos + 1, new_len) ;
+    }
+}
+
+
+/* Applies a variation to the result string. */
+static void dnaApplyVariation(GString *dna_str, const int dna_start, const int dna_end, ZMapFeature variation)
+{
+  zMapReturnIfFail(dna_str) ;
+  zMapReturnIfFail(variation && variation->mode == ZMAPSTYLE_MODE_BASIC && variation->feature.basic.variation_str) ;
+
+  char *variation_str = variation->feature.basic.variation_str ;
+  char *old_str = NULL ;
+  char *new_str = NULL ;
+
+  /* Get 0-based start/end coords of the variation in the dna string */
+  const int start = variation->x1 - dna_start ;
+  const int end = variation->x2 - dna_start ;
+
+  variationGetSections(variation_str, &old_str, &new_str) ;
+
+  /* We must have something before and after the separator or it's an invalid format */
+  if (old_str && new_str)
+    {
+      int old_len = strlen(old_str) ;
+      int new_len = strlen(new_str) ;
+
+      const int replacement_len = end - start + 1 ;
+
+      const gboolean insertion = strcmp(old_str, "-") == 0 ;
+      const gboolean deletion = strcmp(new_str, "-") == 0 ;
+
+      if (insertion && deletion)
+        {
+          /* Nothing to do if it's an insertion and a deletion ! */
+          zMapWarning("Invalid variation string '%s'\n", variation_str) ;
+        }
+      else if (insertion)
+        {
+          old_len = 0 ;
+
+          /* Check that the coords agree with the string length we want to replace. Note that for
+           * an insertion the given coords are the base either side of the insertion point so the
+           * length should be 2. */
+          if (replacement_len == 2)
+            {
+              g_string_insert(dna_str, start + 1, new_str) ;
+            }
+          else
+            {
+              zMapWarning("Expected 2-coord position for insertion '%s' but got %d,%d\n", 
+                          variation_str, start, end) ;
+            }
+        }
+      else if (deletion)
+        {
+          new_len = 0 ;
+
+          /* Check that the coords agree with the string length we want to replace.  */
+          if (replacement_len == old_len)
+            {
+              g_string_erase(dna_str, start, old_len) ;
+            }
+          else
+            {
+              zMapWarning("Expected length for deletion '%s' to be %d but got %d [%d,%d]\n", 
+                          variation_str, old_len, replacement_len, start, end) ;
+            }
+        }
+      else
+        {
+          /* Replace old_str with new_str. new_str can be a different length to old_str, but
+           * check that the length of old_str matches the coord range we should be replacing. */
+          if (replacement_len == old_len)
+            {
+              g_string_erase(dna_str, start, old_len) ;
+              g_string_insert(dna_str, start, new_str) ;
+            }
+          else
+            {
+              zMapWarning("Expected original length for variation to be '%s' to be %d but got %d [%d,%d]\n",
+                          variation_str, old_len, replacement_len, start, end) ;
+            }
+        }
+    }
+  else
+    {
+      zMapWarning("Invalid string format for variation '%s'\n", variation_str) ;
+    }
+
+  if (old_str)
+    g_free(old_str) ;
+
+  if (new_str)
+    g_free(new_str) ;
+}
+
+
+/* Apply the variation to the given dna string. Returns a new string. The given
+ * coords are the start/end coords of the input dna string. */
+static void zmapFeatureDNAApplyVariation(GString *result_str, const int dna_start, const int dna_end, ZMapFeature variation)
+{
+  zMapReturnIfFail(result_str) ;
+  zMapReturnIfFail(variation && variation->mode == ZMAPSTYLE_MODE_BASIC && variation->feature.basic.variation_str) ;
+
+  const char *variation_str = variation->feature.basic.variation_str ;
+
+  /* Only apply the variation if it's within range */
+  if ((variation->x1 >= dna_start && variation->x1 <= dna_end) ||
+      (variation->x2 >= dna_start && variation->x2 <= dna_end))
+    {
+      /* For variations with multiple alternatives, we could just apply the first alternative
+       * or ask the user what they want to do. Disallow for now. */
+      if (variationIsMulti(variation_str))
+        {
+          zMapWarning("Cannot apply multiple variations to transcript sequence: %s", variation_str) ;
+        }
+      else
+        {
+          dnaApplyVariation(result_str, dna_start, dna_end, variation) ;
+        }
+    }
+}
+
+
+/* Apply the given list of variations to the given dna string. Updates the input string. The given
+ * coords are the start/end coords of the input dna string. */
+static void zmapFeatureDNAApplyVariations(char **dna_inout, const int dna_start, const int dna_end, GList *variations)
+{
+  zMapReturnIfFail(dna_inout && *dna_inout) ;
+
+  if (variations)
+    {
+      char *dna = *dna_inout ;
+      GString *result_str = g_string_new(dna) ;
+      GList *variation_item = variations ;
+  
+      for ( ; variation_item; variation_item = variation_item->next)
+        {
+          ZMapFeature feature = (ZMapFeature)(variation_item->data) ;
+          zmapFeatureDNAApplyVariation(result_str, dna_start, dna_end, feature) ;
+        }
+
+      g_free(dna) ;
+      dna = g_string_free(result_str, FALSE) ;
+      *dna_inout = dna ;
+    }
+}
+
+
 /* Get a transcripts DNA, this is done by getting the unspliced DNA and then snipping
  * out the exons, CDS.
  *
@@ -140,7 +338,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
       && ZMAPFEATURE_IS_TRANSCRIPT(transcript)
       && (!cds_only || (cds_only && transcript->feature.transcript.flags.cds)))
     {
-      char *tmp = NULL ;
+      char *block_dna = NULL ;
       GArray *exons ;
       gboolean revcomp = FALSE ;
       ZMapFeatureBlock block = NULL ;
@@ -153,9 +351,19 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
       if (transcript->strand == ZMAPSTRAND_REVERSE)
         revcomp = TRUE ;
 
-      if ((tmp = fetchBlockDNAPtr((ZMapFeatureAny)transcript, &block)) && coordsInBlock(block, &start, &end)
-                  && (dna = getFeatureBlockDNA((ZMapFeatureAny)transcript, start, end, revcomp)))
+      if ((block_dna = fetchBlockDNAPtr((ZMapFeatureAny)transcript, &block)) 
+          && coordsInBlock(block, &start, &end)
+          && (dna = getFeatureBlockDNA((ZMapFeatureAny)transcript, start, end, revcomp)))
         {
+          /* If the transcript has any variations, apply them now to the dna string */
+          zmapFeatureDNAApplyVariations(&dna, start, end, transcript->feature.transcript.variations) ;
+
+          block_dna = g_strdup(block_dna) ;
+          zmapFeatureDNAApplyVariations(&block_dna, 
+                                        block->block_to_sequence.block.x1, 
+                                        block->block_to_sequence.block.x2, 
+                                        transcript->feature.transcript.variations) ;
+
           if (!spliced || !exons)
             {
               int i, offset, length;
@@ -168,7 +376,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
                     {
                       int exon_start, exon_end ;
                 
-                      tmp = dna ;
+                      block_dna = dna ;
                 
                       for (i = 0 ; i < exons->len ; i++)
                         {
@@ -181,12 +389,12 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
                         
                           if (zMapCoordsClamp(start, end, &exon_start, &exon_end))
                             {
-                              offset  = dna - tmp ;
+                              offset  = dna - block_dna ;
                               offset += exon_start - transcript->x1 ;
-                              tmp    += offset ;
+                              block_dna += offset ;
                               length  = exon_end - exon_start + 1 ;
                         
-                              strupDNA(tmp, length) ;
+                              strupDNA(block_dna, length) ;
                             }
                         }
                     }
@@ -209,7 +417,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
                 {
                   int seq_length = 0 ;
         
-                  seq_fetcher.dna_in  = tmp ;
+                  seq_fetcher.dna_in  = block_dna ;
                   seq_fetcher.dna_start = block->block_to_sequence.block.x1 ;
                   seq_fetcher.start = start ;
                   seq_fetcher.end = end ;
@@ -230,6 +438,10 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
                 }
             }
         }
+
+      if (block_dna)
+        g_free(block_dna) ;
+
     }
 
   return dna ;
@@ -489,7 +701,7 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
 {
   ZMapSpan exon_span = (ZMapSpan)exon_data;
   FeatureSeqFetcher seq_fetcher = (FeatureSeqFetcher)user_data;
-  int offset, length, start, end ;
+  int offset = 0, length = 0, start = 0, end = 0, dna_len = 0 ;
 
   start = exon_span->x1;
   end = exon_span->x2;
@@ -501,9 +713,19 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
 
       length = end - start + 1 ;
 
-      seq_fetcher->dna_out = g_string_append_len(seq_fetcher->dna_out,
-                                                 (seq_fetcher->dna_in + offset),
-                                                 length) ;
+      if (seq_fetcher->dna_in)
+        dna_len = strlen(seq_fetcher->dna_in) ;
+
+      if (dna_len > offset)
+        {
+          seq_fetcher->dna_out = g_string_append_len(seq_fetcher->dna_out,
+                                                     (seq_fetcher->dna_in + offset),
+                                                     length) ;
+        }
+      else
+        {
+          zMapWarning("Failed to fetch exon sequence: DNA length %d is less than offset %d\n", dna_len, offset) ;
+        }
     }
 
   return ;

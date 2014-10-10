@@ -526,6 +526,21 @@ static gboolean scratchMergeTranscript(ScratchMergeData merge_data, ZMapFeature 
 }
 
 
+/*!
+ * \brief Add/merge a variation to the scratch column
+ */
+static gboolean scratchMergeVariation(ScratchMergeData merge_data, ZMapFeature feature)
+{
+  gboolean merged = TRUE;
+
+  /* Copying a variation means that we use the variation to modify the sequence of 
+   * the transcript (rather than it modifying the exon coords as for other features). */
+  zMapFeatureAddTranscriptVariation(merge_data->dest_feature, feature) ;
+
+  return merged;
+}
+
+
 /*! 
  * \brief Add/merge a feature to the scratch column
  */
@@ -547,7 +562,10 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data, ZMapFeature fea
         {
         case ZMAPSTYLE_MODE_ALIGNMENT:      /* fall through */
         case ZMAPSTYLE_MODE_BASIC:
-          merged = scratchMergeBasic(merge_data, feature);
+          if (feature->feature.basic.variation_str)
+            merged = scratchMergeVariation(merge_data, feature);
+          else
+            merged = scratchMergeBasic(merge_data, feature);
           break;
         case ZMAPSTYLE_MODE_TRANSCRIPT:
           merged = scratchMergeTranscript(merge_data, feature);
