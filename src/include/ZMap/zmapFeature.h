@@ -1362,4 +1362,10 @@ ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray* const, int index) ;
 gboolean zMapAlignBlockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
 gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
 
+gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
+
+gboolean zMapFeatureHasMatchingBoundary(ZMapFeature feature,
+                                        int boundary_start, int boundary_end,
+                                        int *boundary_start_out, int *boundary_end_out) ;
+
 #endif /* ZMAP_FEATURE_H */
