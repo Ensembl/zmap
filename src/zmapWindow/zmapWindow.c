@@ -5555,7 +5555,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                 else if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
                   spliced = FALSE ;
 
-                dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds) ;
+                dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds, FALSE) ;
               }
             else
               {

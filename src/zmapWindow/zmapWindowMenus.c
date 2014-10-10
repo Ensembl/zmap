@@ -1847,7 +1847,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
     }
   else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
-      dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds) ;
+      dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds, FALSE) ;
     }
   else
     {
@@ -1977,7 +1977,7 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
   molecule_type = "Protein" ;
   gene_name = (char *)g_quark_to_string(feature->original_id) ;
 
-  if ((dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds)))
+  if ((dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds, FALSE)))
     {
       /* Adjust for when its known that the start exon is incomplete.... */
       if (feature->feature.transcript.flags.start_not_found)
@@ -3784,7 +3784,7 @@ static GList *getTranscriptTextAttrs(ZMapFeature feature, gboolean spliced, gboo
   GList *text_attrs = NULL ;
   GList *exon_list = NULL ;
 
-  if (zMapFeatureAnnotatedExonsCreate(feature, FALSE, &exon_list))
+  if (zMapFeatureAnnotatedExonsCreate(feature, FALSE, FALSE, &exon_list))
     {
       MakeTextAttrStruct text_data ;
 

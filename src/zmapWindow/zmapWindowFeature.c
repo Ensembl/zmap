@@ -844,7 +844,7 @@ char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gb
       seq_name  = (char *)g_quark_to_string(context->original_id);
       gene_name = (char *)g_quark_to_string(feature->original_id);
 
-      if ((dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds_only)))
+      if ((dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds_only, FALSE)))
         {
           /* Adjust for when its known that the start exon is incomplete.... */
           if (feature->feature.transcript.flags.start_not_found)

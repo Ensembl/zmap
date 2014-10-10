@@ -442,7 +442,7 @@ gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature)
  * see the ZMapFullExon struct.
  *
  */
-gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein,
+gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, gboolean pad, 
  GList **exon_regions_list_out)
 {
   gboolean result = FALSE ;
@@ -481,7 +481,7 @@ gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_p
         {
           int real_length;
 
-          full_data.translation = zMapFeatureTranslation(feature, &real_length);
+          full_data.translation = zMapFeatureTranslation(feature, &real_length, pad);
         }
 
 

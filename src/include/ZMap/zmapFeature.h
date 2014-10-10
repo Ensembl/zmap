@@ -1288,7 +1288,7 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
 gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 			     int exon_start, int exon_end,
 			     int *exon_cds_start, int *exon_cds_end, int *phase_out) ;
-gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, GList **exon_list_out) ;
+gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, gboolean pad, GList **exon_list_out) ;
 void zMapFeatureAnnotatedExonsDestroy(GList *exon_list) ;
 
 ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key,
@@ -1326,7 +1326,7 @@ gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *s
 gboolean zMapFeatureDNAExists(ZMapFeature feature) ;
 char *zMapFeatureGetDNA(ZMapFeatureAny feature_any, int start, int end, gboolean revcomp) ;
 char *zMapFeatureGetFeatureDNA(ZMapFeature feature) ;
-char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboolean cds_only) ;
+char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboolean cds_only, gboolean pad) ;
 char *zMapFeatureDNAFeatureName(ZMapFeatureBlock block);
 GQuark zMapFeatureDNAFeatureID(ZMapFeatureBlock block);
 gboolean zMapFeatureDNACreateFeatureSet(ZMapFeatureBlock block, ZMapFeatureSet *feature_set_out);
@@ -1342,8 +1342,8 @@ void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureType
 
 
 
-char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length) ;
-char *zMapFeatureTranslation(ZMapFeature feature, int *length) ;
+char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length, gboolean pad) ;
+char *zMapFeatureTranslation(ZMapFeature feature, int *length, gboolean pad) ;
 gboolean zMapFeatureShowTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out) ;
 void zMapFeatureShowTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 

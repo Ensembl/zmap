@@ -396,7 +396,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
        */
 
       /* Get the exon descriptions from the feature. */
-      zMapFeatureAnnotatedExonsCreate(feature, TRUE, &trans_feature->feature.sequence.exon_list) ;
+      zMapFeatureAnnotatedExonsCreate(feature, TRUE, TRUE, &trans_feature->feature.sequence.exon_list) ;
 
       /* Get first/last members and set background of whole transcript to '-' */
       GList *exon_list = trans_feature->feature.sequence.exon_list;
@@ -693,7 +693,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
               frame = ZMAPFRAME_0 ;
 
             /* Get positions/translation etc of all exons. */
-            if (!zMapFeatureAnnotatedExonsCreate(seed_feature, TRUE, &exon_list))
+            if (!zMapFeatureAnnotatedExonsCreate(seed_feature, TRUE, TRUE, &exon_list))
               {
                 zMapLogWarning("Could not find exons/introns in transcript %s", zMapFeatureName((ZMapFeatureAny) seed_feature)) ;
                 break;

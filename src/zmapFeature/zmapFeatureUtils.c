@@ -1480,7 +1480,7 @@ ZMapPhase zMapFeaturePhase(ZMapFeature feature)
 }
 
 
-char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
+char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length, gboolean pad)
 {
   char *pep_str = NULL ;
   ZMapFeatureContext context ;
@@ -1490,7 +1490,7 @@ char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
   context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
    ZMAPFEATURE_STRUCT_CONTEXT));
 
-  if ((dna_str = zMapFeatureGetTranscriptDNA(feature, TRUE, feature->feature.transcript.flags.cds)))
+  if ((dna_str = zMapFeatureGetTranscriptDNA(feature, TRUE, feature->feature.transcript.flags.cds, pad)))
     {
       free_me = dna_str;    /* as we potentially move ptr. */
       name    = (char *)g_quark_to_string(feature->original_id);
@@ -1517,13 +1517,13 @@ char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
   return pep_str ;
 }
 
-char *zMapFeatureTranslation(ZMapFeature feature, int *length)
+char *zMapFeatureTranslation(ZMapFeature feature, int *length, gboolean pad)
 {
   char *seq;
 
   if(feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
-      seq = zMapFeatureTranscriptTranslation(feature, length);
+      seq = zMapFeatureTranscriptTranslation(feature, length, pad);
     }
   else
     {
