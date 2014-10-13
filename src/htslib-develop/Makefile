@@ -247,12 +247,13 @@ test/test-vcf-api.o: test/test-vcf-api.c $(htslib_hts_h) $(htslib_vcf_h) htslib/
 test/test-vcf-sweep.o: test/test-vcf-sweep.c $(htslib_vcf_sweep_h)
 
 
-install: installdirs install-$(SHLIB_FLAVOUR)
-	$(INSTALL_PROGRAM) $(BUILT_PROGRAMS) $(DESTDIR)$(bindir)
-	$(INSTALL_DATA) htslib/*.h $(DESTDIR)$(includedir)/htslib
-	$(INSTALL_DATA) libhts.a $(DESTDIR)$(libdir)/libhts.a
-	$(INSTALL_DATA) *.1 $(DESTDIR)$(man1dir)
-	$(INSTALL_DATA) *.5 $(DESTDIR)$(man5dir)
+#install: installdirs install-$(SHLIB_FLAVOUR)
+#	$(INSTALL_PROGRAM) $(BUILT_PROGRAMS) $(DESTDIR)$(bindir)
+#	$(INSTALL_DATA) htslib/*.h $(DESTDIR)$(includedir)/htslib
+#	$(INSTALL_DATA) libhts.a $(DESTDIR)$(libdir)/libhts.a
+#	$(INSTALL_DATA) *.1 $(DESTDIR)$(man1dir)
+#	$(INSTALL_DATA) *.5 $(DESTDIR)$(man5dir)
+install: lib-static lib-shared $(BUILT_PROGRAMS) $(BUILT_TEST_PROGRAMS)
 
 installdirs:
 	mkdir -p $(DESTDIR)$(bindir) $(DESTDIR)$(includedir)/htslib $(DESTDIR)$(libdir) $(DESTDIR)$(man1dir) $(DESTDIR)$(man5dir)
