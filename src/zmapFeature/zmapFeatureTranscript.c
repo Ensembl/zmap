@@ -305,7 +305,7 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 
 
 /* Add a variation to a transcript feature. Stores the variation as metadata which is used
- * to modify the transcript sequence. */
+ * to modify the transcript sequence. Only applies the variation if it lies within an exon. */
 gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, ZMapFeature variation)
 {
   gboolean result = FALSE ;
@@ -313,9 +313,36 @@ gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, ZMapFeature vari
   zMapReturnValIfFail(feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT, result) ;
   zMapReturnValIfFail(variation && variation->mode == ZMAPSTYLE_MODE_BASIC, result) ;
 
-  feature->feature.transcript.variations = g_list_append(feature->feature.transcript.variations, variation) ;
+  /* Find which exon the variation lies in */
+  GArray *exons = feature->feature.transcript.exons;
+  int i = 0 ;
 
-  result = TRUE ;
+  for ( ; i < exons->len; ++i)
+    {
+      ZMapSpan exon = &(g_array_index(exons, ZMapSpanStruct, i)) ;
+
+      if (variation->x1 >= exon->x1 && variation->x2 <= exon->x2)
+        {
+          /* Ok, found the exon. Add the variation to the transcript. */
+          feature->feature.transcript.variations = g_list_append(feature->feature.transcript.variations, variation) ;
+
+          /* We need to adjust the coords of the exon affected by this variation if it adds or removes
+           * bases */
+          int old_len = 0 ;
+          int new_len = 0 ;
+
+          variationGetSections(variation->feature.basic.variation_str, NULL, NULL, &old_len, &new_len) ;
+
+          int diff = new_len - old_len ;
+          exon->x2 += diff ;
+
+          zMapFeatureTranscriptRecreateIntrons(feature) ;
+
+          result = TRUE ;
+          break ;
+        }
+    }
+
   return result ;
 }
 

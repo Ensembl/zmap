@@ -396,7 +396,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
        */
 
       /* Get the exon descriptions from the feature. */
-      zMapFeatureAnnotatedExonsCreate(feature, TRUE, TRUE, &trans_feature->feature.sequence.exon_list) ;
+      zMapFeatureAnnotatedExonsCreate(feature, TRUE, FALSE, &trans_feature->feature.sequence.exon_list) ;
 
       /* Get first/last members and set background of whole transcript to '-' */
       GList *exon_list = trans_feature->feature.sequence.exon_list;

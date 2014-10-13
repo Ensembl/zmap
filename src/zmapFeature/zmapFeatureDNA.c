@@ -40,7 +40,7 @@
 
 
 #define VARIATION_SEPARATOR_CHAR '/'
-#define VARIATION_PADDING_CHAR ' '
+#define VARIATION_PADDING_CHAR '-'
 
 
 typedef struct FeatureSeqFetcherStructType
@@ -152,7 +152,9 @@ static gboolean variationIsMulti(const char *variation_str)
 /* Get the sections before and after the separator in a variation string. Note that at the moment
  * this ignores anything after the second separator, if there is one. (This function could be
  * modified to return a list of new strings if we want to return all of the alternatives.) */
-static void variationGetSections(const char *variation_str, char **old_str_out, char **new_str_out)
+void variationGetSections(const char *variation_str, 
+                          char **old_str_out, char **new_str_out, 
+                          int *old_len_out, int *new_len_out)
 {
   zMapReturnIfFail(variation_str && *variation_str != 0) ;
 
@@ -169,131 +171,161 @@ static void variationGetSections(const char *variation_str, char **old_str_out, 
 
       int old_len = separator_pos - variation_str ;
       int new_len = end - separator_pos - 1 ;
-      
+
+      char *old_str = NULL ;
+      char *new_str = NULL ;
+
+      if (old_len > 0)
+        {
+          old_str = g_strndup(variation_str, old_len) ;
+          
+          if (strcmp(old_str, "-") == 0) /* insertion */
+            old_len = 0 ;
+        }
+
+      if (new_len > 0)
+        {
+          new_str = g_strndup(separator_pos + 1, new_len) ;
+          
+          if (strcmp(new_str, "-") == 0) /* deletion */
+            new_len = 0 ;
+        }
+
+      /* Assign output variables */
+      if (old_len_out)
+        *old_len_out = old_len ;
+
+      if (new_len_out)
+        *new_len_out = new_len ;
+
       if (old_str_out && old_len > 0)
-        *old_str_out = g_strndup(variation_str, old_len) ;
+        *old_str_out = old_str ;
+      else
+        g_free(old_str) ;
 
       if (new_str_out && new_len > 0)
-        *new_str_out = g_strndup(separator_pos + 1, new_len) ;
+        *new_str_out = new_str ;
+      else
+        g_free(new_str) ;
     }
 }
 
 
-/* Applies a variation to the result string. */
-static void dnaApplyVariation(GString *dna_str,
-                              const int dna_start,
-                              const int dna_end, 
-                              ZMapFeature variation,
-                              const gboolean pad)
+/* Applies a variation to the result string. Returns the diff in length of the new string to the
+ * old (a negative value means the new string is shorter, positive means longer). */
+static int dnaApplyVariation(GString *dna_str,
+                             const int dna_start,
+                             const int dna_end, 
+                             ZMapFeature variation,
+                             const gboolean pad)
 {
-  zMapReturnIfFail(dna_str) ;
-  zMapReturnIfFail(variation && variation->mode == ZMAPSTYLE_MODE_BASIC && variation->feature.basic.variation_str) ;
-
-  char *variation_str = variation->feature.basic.variation_str ;
-  char *old_str = NULL ;
-  char *new_str = NULL ;
+  int diff = 0 ;
+  zMapReturnValIfFail(dna_str, diff) ;
+  zMapReturnValIfFail(variation && variation->mode == ZMAPSTYLE_MODE_BASIC && variation->feature.basic.variation_str, diff) ;
 
   /* Get 0-based start/end coords of the variation in the dna string */
   const int start = variation->x1 - dna_start ;
   const int end = variation->x2 - dna_start ;
 
-  variationGetSections(variation_str, &old_str, &new_str) ;
+  const int replacement_len = end - start + 1 ;
+
+  char *variation_str = variation->feature.basic.variation_str ;
+  char *old_str = NULL ;
+  char *new_str = NULL ;
+  int old_len = 0 ;
+  int new_len = 0 ;
+
+  variationGetSections(variation_str, &old_str, &new_str, &old_len, &new_len) ;
 
   /* We must have something before and after the separator or it's an invalid format */
-  if (old_str && new_str)
+  if (!old_str && !new_str)
     {
-      int old_len = strlen(old_str) ;
-      int new_len = strlen(new_str) ;
+      /* Nothing to do ! */
+      zMapWarning("Invalid variation string '%s'\n", variation_str) ;
+    }
+  else if (!old_str)
+    {
+      /* Insertion */
 
-      const int replacement_len = end - start + 1 ;
-
-      const gboolean insertion = strcmp(old_str, "-") == 0 ;
-      const gboolean deletion = strcmp(new_str, "-") == 0 ;
-
-      if (insertion && deletion)
+      /* Check that the coords agree with the string length we want to replace. Note that for
+       * an insertion the given coords are the base either side of the insertion point so the
+       * length should be 2. */
+      if (replacement_len == 2)
         {
-          /* Nothing to do if it's an insertion and a deletion ! */
-          zMapWarning("Invalid variation string '%s'\n", variation_str) ;
+          if (!pad)
+            diff = new_len - old_len ;
+
+          /* If padding that means it needs to align against the reference sequence, so we
+           * can't show insertions because they won't fit; therefore leave it out. */
+          if (!pad)
+            g_string_insert(dna_str, start + 1, new_str) ;
         }
-      else if (insertion)
+      else
         {
-          old_len = 0 ;
-
-          /* Check that the coords agree with the string length we want to replace. Note that for
-           * an insertion the given coords are the base either side of the insertion point so the
-           * length should be 2. */
-          if (replacement_len == 2)
-            {
-              /* If padding that means it needs to align against the reference sequence, so we
-               * can't show insertions because they won't fit; therefore leave it out. */
-              if (!pad)
-                g_string_insert(dna_str, start + 1, new_str) ;
-            }
-          else
-            {
-              zMapWarning("Expected 2-coord position for insertion '%s' but got %d,%d\n", 
-                          variation_str, start, end) ;
-            }
+          zMapWarning("Expected 2-coord position for insertion '%s' but got %d,%d\n", 
+                      variation_str, start, end) ;
         }
-      else if (deletion)
+    }
+  else if (!new_str)
+    {
+      /* Deletion */
+
+      /* Check that the coords agree with the string length we want to replace.  */
+      if (replacement_len == old_len)
         {
-          new_len = 0 ;
+          if (!pad)
+            diff = new_len - old_len ;
 
-          /* Check that the coords agree with the string length we want to replace.  */
-          if (replacement_len == old_len)
-            {
-              g_string_erase(dna_str, start, old_len) ;
+          g_string_erase(dna_str, start, old_len) ;
 
-              if (pad)
-                {
-                  /* Replace the deleted chars with padding */
-                  char *padding = g_strnfill(old_len, VARIATION_PADDING_CHAR) ;
-                  g_string_insert(dna_str, start, padding) ;
-                  g_free(padding) ;
-                }
-            }
-          else
+          if (pad)
             {
-              zMapWarning("Expected length for deletion '%s' to be %d but got %d [%d,%d]\n", 
-                          variation_str, old_len, replacement_len, start, end) ;
+              /* Replace the deleted chars with padding */
+              char *padding = g_strnfill(old_len, VARIATION_PADDING_CHAR) ;
+              g_string_insert(dna_str, start, padding) ;
+              g_free(padding) ;
             }
         }
       else
         {
-          /* Replace old_str with new_str. new_str can be a different length to old_str, but
-           * check that the length of old_str matches the coord range we should be replacing. */
-          if (replacement_len == old_len)
-            {
-              g_string_erase(dna_str, start, old_len) ;
-
-              /* If padding, we must insert the same number of chars as we deleted. Trim it
-               * if the new one is longer or pad it if it is shorter */
-              if (pad && new_len > old_len)
-                {
-                  new_str[old_len] = '\0' ;
-                }
-              else if (pad && new_len < old_len)
-                {
-                  char *padding = g_strnfill(old_len - new_len, VARIATION_PADDING_CHAR) ;
-                  char *new_str_padded = g_strdup_printf("%s%s", new_str, padding) ;
-                  g_free(padding) ;
-
-                  g_free(new_str) ;
-                  new_str = new_str_padded ;
-                }
-
-              g_string_insert(dna_str, start, new_str) ;
-            }
-          else
-            {
-              zMapWarning("Expected original length for variation to be '%s' to be %d but got %d [%d,%d]\n",
-                          variation_str, old_len, replacement_len, start, end) ;
-            }
+          zMapWarning("Expected length for deletion '%s' to be %d but got %d [%d,%d]\n", 
+                      variation_str, old_len, replacement_len, start, end) ;
         }
     }
   else
     {
-      zMapWarning("Invalid string format for variation '%s'\n", variation_str) ;
+      /* Replace old_str with new_str. new_str can be a different length to old_str, but
+       * check that the length of old_str matches the coord range we should be replacing. */
+      if (replacement_len == old_len)
+        {
+          if (!pad)
+            diff = new_len - old_len ;
+
+          g_string_erase(dna_str, start, old_len) ;
+
+          /* If padding, we must insert the same number of chars as we deleted. Trim it
+           * if the new one is longer or pad it if it is shorter */
+          if (pad && new_len > old_len)
+            {
+              new_str[old_len] = '\0' ;
+            }
+          else if (pad && new_len < old_len)
+            {
+              char *padding = g_strnfill(old_len - new_len, VARIATION_PADDING_CHAR) ;
+              char *new_str_padded = g_strdup_printf("%s%s", new_str, padding) ;
+              g_free(padding) ;
+
+              g_free(new_str) ;
+              new_str = new_str_padded ;
+            }
+
+          g_string_insert(dna_str, start, new_str) ;
+        }
+      else
+        {
+          zMapWarning("Expected original length for variation to be '%s' to be %d but got %d [%d,%d]\n",
+                      variation_str, old_len, replacement_len, start, end) ;
+        }
     }
 
   if (old_str)
@@ -301,6 +333,8 @@ static void dnaApplyVariation(GString *dna_str,
 
   if (new_str)
     g_free(new_str) ;
+
+  return diff ;
 }
 
 
@@ -322,7 +356,7 @@ static void zmapFeatureDNAApplyVariation(GString *result_str,
       (variation->x2 >= dna_start && variation->x2 <= dna_end))
     {
       /* For variations with multiple alternatives, we could just apply the first alternative
-       * or ask the user what they want to do. Disallow for now. */
+       * or ask the user what they want to do. Disallow for now? */
       if (0)//variationIsMulti(variation_str))
         {
           zMapWarning("Cannot apply multiple variations to transcript sequence: %s", variation_str) ;
@@ -361,7 +395,7 @@ static void zmapFeatureDNAApplyVariations(char **dna_inout,
       dna = g_string_free(result_str, FALSE) ;
       *dna_inout = dna ;
     }
-}
+  }
 
 
 /* Get a transcripts DNA, this is done by getting the unspliced DNA and then snipping
@@ -400,6 +434,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
           zmapFeatureDNAApplyVariations(&dna, start, end, transcript->feature.transcript.variations, pad) ;
 
           block_dna = g_strdup(block_dna) ;
+
           zmapFeatureDNAApplyVariations(&block_dna, 
                                         block->block_to_sequence.block.x1, 
                                         block->block_to_sequence.block.x2, 
