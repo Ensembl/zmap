@@ -304,9 +304,32 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 }
 
 
+/* Returns a variation in the list that overlaps the given variation (or null if none) */
+static ZMapFeature findOverlappingVariation(ZMapFeature variation, GList *compare_list)
+{
+  ZMapFeature result = NULL ;
+
+  GList *compare_item = compare_list ;
+
+  for ( ; compare_item && !result; compare_item = compare_item->next)
+    {
+      ZMapFeature compare_feature = (ZMapFeature)(compare_item->data) ;
+      if ((compare_feature->x1 >= variation->x1 && compare_feature->x1 <= variation->x2) ||
+          (compare_feature->x2 >= variation->x1 && compare_feature->x2 <= variation->x2))
+        {
+          result = compare_feature ;
+        }
+    }
+  
+  return result ;
+}
+
+
 /* Add a variation to a transcript feature. Stores the variation as metadata which is used
  * to modify the transcript sequence. Only applies the variation if it lies within an exon. */
-gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, ZMapFeature variation)
+gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, 
+                                           ZMapFeature variation,
+                                           GError **error)
 {
   gboolean result = FALSE ;
 
@@ -323,14 +346,34 @@ gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, ZMapFeature vari
 
       if (variation->x1 >= exon->x1 && variation->x2 <= exon->x2)
         {
-          /* Ok, found the exon. Add the variation to the transcript. */
-          /*! \todo We should disallow addition of overlapping variations here. */
-          feature->feature.transcript.variations = 
-            g_list_insert_sorted(feature->feature.transcript.variations, 
-                                 variation,
-                                 zMapFeatureCmp) ;
+          /* Ok, found the exon. Add the variation to the transcript (but
+           * disallow adding of overlapping variations). */
+          ZMapFeature overlapping_variation = findOverlappingVariation(variation, feature->feature.transcript.variations) ;
 
-          result = TRUE ;
+          if (!overlapping_variation)
+            {
+              feature->feature.transcript.variations = 
+                g_list_insert_sorted(feature->feature.transcript.variations, 
+                                     variation,
+                                     zMapFeatureCmp) ;
+              
+              result = TRUE ;
+            }
+          else if (overlapping_variation->mode == ZMAPSTYLE_MODE_BASIC &&
+                   overlapping_variation->feature.basic.variation_str)
+            {
+              g_set_error(error, g_quark_from_string("ZMap"), 99, 
+                          "Cannot add variation '%s' because it overlaps existing variation '%s'",
+                          variation->feature.basic.variation_str,
+                          overlapping_variation->feature.basic.variation_str) ;
+            }
+          else
+            {
+              g_set_error(error, g_quark_from_string("ZMap"), 99, 
+                          "Cannot add variation '%s' because it overlaps existing variation '<invalid type>'",
+                          variation->feature.basic.variation_str) ;
+            }
+
           break ;
         }
     }
@@ -1388,7 +1431,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
   if (full_exon_cds)
     {
-      int pep_start = 0, pep_end = 0, pep_length = 0, variation_diff1 = 0, variation_diff2 ;
+      int pep_start = 0, pep_end = 0, pep_length = 0, variation_diff1 = 0, variation_diff2 = 0 ;
       char *peptide = NULL ;
 
       pep_start = (full_exon_cds->cds_span.x1 / 3) + 1 ;

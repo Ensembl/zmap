@@ -535,7 +535,7 @@ static gboolean scratchMergeVariation(ScratchMergeData merge_data, ZMapFeature f
 
   /* Copying a variation means that we use the variation to modify the sequence of 
    * the transcript (rather than it modifying the exon coords as for other features). */
-  zMapFeatureAddTranscriptVariation(merge_data->dest_feature, feature) ;
+  merged = zMapFeatureAddTranscriptVariation(merge_data->dest_feature, feature, merge_data->error) ;
 
   return merged;
 }
