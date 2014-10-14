@@ -1408,7 +1408,7 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset,
 gboolean zMapWindowCanvasFeaturesetGetSpliceColour(ZMapWindowFeaturesetItem featureset, gulong *splice_pixel)
 {
   gboolean result = FALSE ;
-  static splice_allocated = FALSE ;
+  static gboolean splice_allocated = FALSE ;
   static GdkColor splice_colour ;
 
   if (!splice_allocated)

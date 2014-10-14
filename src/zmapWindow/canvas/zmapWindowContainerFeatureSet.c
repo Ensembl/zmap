@@ -1118,8 +1118,6 @@ gboolean zmapWindowContainerFeatureSetSpliceHighlightFeatures(ZMapWindowContaine
                                                                      ZMAPCONTAINER_LEVEL_BLOCK)))
     {
       SpliceHighlightStruct splice_data = {FALSE, NULL, NULL, INT_MAX, 0, NULL} ;
-      ZMapContainerUtilsExecFunc exe_func ;
-
       splice_data.selected_container_set = container_set ;
 
       /* Unhighlight first, this wastes some CPU cycles if highlighting is not on. */
@@ -1153,7 +1151,6 @@ gboolean zmapWindowContainerFeatureSetSpliceUnhighlightFeatures(ZMapWindowContai
                                                                      ZMAPCONTAINER_LEVEL_BLOCK)))
     {
       SpliceHighlightStruct splice_data = {FALSE, NULL, NULL, INT_MAX, 0, NULL} ;
-      ZMapContainerUtilsExecFunc exe_func ;
 
       /* Unhighlight all existing splice highlights. */
       zmapWindowContainerUtilsExecute(container_strand,
@@ -1420,7 +1417,6 @@ static void unhighlightFeatures(ZMapWindowContainerGroup container, FooCanvasPoi
 static void unhighlightFeatureCB(gpointer data, gpointer user_data)
 {
   ZMapWindowCanvasFeature feature_item = (ZMapWindowCanvasFeature)data ;
-
 
   zmapWindowCanvasFeatureRemoveSplicePos(feature_item) ;
 
