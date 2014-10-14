@@ -87,7 +87,6 @@ typedef struct MainFrameStruct_
   GtkWidget *start_widg ;
   GtkWidget *end_widg ;
   /*GtkWidget *whole_widg ;*/
-  /*GtkWidget *mark_widg ;*/
   GtkWidget *file_widg ;
   GtkWidget *dataset_widg;
   GtkWidget *req_sequence_widg ;
@@ -96,6 +95,7 @@ typedef struct MainFrameStruct_
   GtkWidget *source_widg;
   GtkWidget *assembly_widg;
   GtkWidget *strand_widg ;
+  GtkWidget *map_widg ;
 
 
   fileType file_type;
@@ -489,7 +489,7 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
         end = g_strdup_printf("%d", req_end) ;
     }
 
-  frame = gtk_frame_new("Request Sequence") ;
+  frame = gtk_frame_new("Import data") ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
 
   topbox = gtk_vbox_new(FALSE, 5) ;
@@ -556,7 +556,7 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
-  label = gtk_label_new( "Strand (+/-)" ) ;
+  label = gtk_label_new( "Strand (+/-) " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
@@ -564,9 +564,9 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;*/
 
-  /*label = gtk_label_new( "Map Sequence " ) ;
+  label = gtk_label_new( "Map Features " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;*/
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
   /*label = gtk_label_new( "Sequence Offset " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
@@ -628,6 +628,7 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
 
   main_frame->strand_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
+  gtk_entry_set_max_length(GTK_ENTRY(entry), (gint)1) ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
   gtk_widget_set_sensitive(main_frame->strand_widg, FALSE );
@@ -638,8 +639,8 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ; */
 
 
-  /*main_frame->map_widg = map_seq_button = gtk_check_button_new () ;
-  gtk_box_pack_start(GTK_BOX(entrybox), map_seq_button, FALSE, TRUE, 0) ;*/
+  main_frame->map_widg = map_seq_button = gtk_check_button_new () ;
+  gtk_box_pack_start(GTK_BOX(entrybox), map_seq_button, FALSE, TRUE, 0) ;
 
   /*main_frame->offset_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
@@ -969,11 +970,18 @@ static void importFileCB(gpointer cb_data)
 {
   static const char * string_zmap = "[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\n" ;
   static const char * format_string_gff = "%surl=file:///%s" ;
-  static const char * format_string_bam =
+  static const char * format_string_bam01 =
     "%surl=pipe:///bam_get?--chr=%s&--csver_remote=%s&--dataset=%s&--start=%i&--end=%i&--gff_seqname=%s&--file=%s&--gff_source=%s&--gff_version=3" ;
-  static const char * format_string_bigwig =
+  static const char * format_string_bam02 =
+    "%surl=pipe:///bam_get?--chr=%ss&--start=%i&--end=%i&--gff_seqname=%s&--file=%s&--gff_source=%s&--gff_version=3" ;
+  static const char * format_string_bigwig01 =
     "%surl=pipe:///bigwig_get?--chr=%s&--csver_remote=%s&--dataset=%s&--start=%i&--end=%i&--gff_seqname=%s&--file=%s&--gff_source=%s&--strand=%i&--gff_version=3" ;
-  gboolean status = TRUE ;
+  static const char * format_string_bigwig02 =
+    "%surl=pipe:///bigwig_get?--chr=%s&--start=%i&--end=%i&--gff_seqname=%s&--file=%s&--gff_source=%s&--strand=%i&--gff_version=3" ;
+  gboolean status = TRUE,
+    have_dataset = FALSE,
+    have_assembly = FALSE,
+    remap_features = TRUE ;
   MainFrame main_frame = NULL ;
   char *err_msg = NULL,
     *sequence_txt = NULL,
@@ -1051,37 +1059,8 @@ static void importFileCB(gpointer cb_data)
     }
 
   /*
-   * Firstly, we can only read in non-GFF data if we are
-   * hooked up to otter.
+   * Request sequence name, start and end.
    */
-  if (file_type!=FILE_GFF)
-    {
-      if (!main_frame->is_otter)
-        {
-          status = FALSE ;
-          err_msg = "Cannot read that file type without otterlace." ;
-        }
-    }
-
-  /*
-   * We must have a valid dataset if the file types are non-gff.
-   */
-  if (status)
-    {
-      if (*dataset_txt)
-        {
-
-        }
-      else
-        {
-          if (file_type!=FILE_GFF)
-            {
-              status = FALSE ;
-              err_msg = "Dataset is required." ;
-            }
-        }
-    }
-
   if (status)
     {
       if (*req_sequence_txt && *req_start_txt && *req_end_txt)
@@ -1104,88 +1083,123 @@ static void importFileCB(gpointer cb_data)
         }
     }
 
+  /*
+   * Error conditions and data combinations are complex enough here to be treated
+   * seperately for each data type.
+   */
   if (status)
     {
-      if (main_frame->file_type == FILE_GFF)
+
+      if (file_type == FILE_GFF)
         {
-          if (*source_txt)
+          /* we do not want the source for a gff file */
+          if (status && *source_txt)
             {
               status = FALSE ;
               err_msg = "Source should not be specified for GFF file." ;
             }
+
+          /* we do not want the assembly for a gff file */
+          if (status && (*assembly_txt))
+            {
+              status = FALSE ;
+              err_msg = "Assembly should not be specified for GFF file." ;
+            }
+
         }
-      else
+      else if (main_frame->is_otter && ((file_type == FILE_BAM) || (file_type == FILE_BIGWIG)))
         {
+          /* note that we must be hooked up to otter to do these types,
+             hence "main_frame->is_otter" is required */
+
+          /* we must have a source for these data types */
           if (!*source_txt)
             {
               status = FALSE ;
               err_msg = "Source must be specified for this type." ;
             }
-        }
-    }
 
-  if (status)
-    {
-      if (main_frame->file_type == FILE_GFF)
-        {
+          /*
+           * actually this needs to be modified to require neither
+           * or both of assembly and dataset...
+           */
           if (*assembly_txt)
-            {
-              status = FALSE ;
-              err_msg = "Assembly should not be specified for GFF file." ;
-            }
-        }
-      else
-        {
-          if (!*assembly_txt)
+            have_assembly = TRUE ;
+          if (*dataset_txt)
+            have_dataset = TRUE ;
+
+          /* we must have an assembly for these data types */
+          /*if (status && (!*assembly_txt))
             {
               status = FALSE ;
               err_msg = "Assembly must be specified for this type." ;
-            }
-        }
-    }
+            }*/
 
-
-  /*
-  if (status)
-    {
-      if ((*offset_txt) && !zMapStr2Int(offset_txt, &seq_offset))
-        {
-          status = FALSE ;
-          err_msg = "Invalid offset specified." ;
-        }
-    }
-  */
-
-  /*
-   * This was used to get the "mapping" flag.
-   */
-  /*if (status)
-    {
-      map_seq = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(main_frame->map_widg));
-    }
-  */
-
-  /* NOTE this is not +/- as presented to the user but 1 or -1. */
-  if (status && (file_type == FILE_BIGWIG))
-    {
-      if ((strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg))) && *strand_txt)
-        {
-          if (strlen(strand_txt) == 1)
+          /* we require a dataset for these data types */
+          /*if (status && (!*dataset_txt))
             {
-              if ((strchr(strand_txt, '+')))
-                strand = 1 ;
-              else if ((strchr(strand_txt, '-')))
-                strand = -1 ;
+              status = FALSE ;
+              err_msg = "Dataset must be specified for this type." ;
+            }*/
+
+          if (have_assembly && have_dataset)
+            {
+              remap_features =  TRUE ;
+            }
+          else if ((!have_assembly) && (!have_dataset))
+            {
+              remap_features = FALSE ;
+            }
+          else
+            {
+              status = FALSE ;
+              err_msg = "Either _both_ or _neither_ of 'assembly' and 'dataset' must be specified." ;
+            }
+
+          /* strand is required for bigwig only */
+          if (status && (file_type == FILE_BIGWIG))
+            {
+              if (strlen(strand_txt) == 1)
+                {
+                  if ((strchr(strand_txt, '+')))
+                    strand = 1 ;
+                  else if ((strchr(strand_txt, '-')))
+                    strand = -1 ;
+                  else
+                    {
+                      status = FALSE ;
+                      err_msg = "Strand must be + or -";
+                    }
+                }
               else
                 {
                   status = FALSE ;
-                  err_msg = "Strand must be + or -";
+                  err_msg = "Invalid value for strand.";
                 }
             }
+          else if (status && (file_type == FILE_BAM))
+            {
+              if (strlen(strand_txt) != 0)
+                {
+                  status = FALSE ;
+                  err_msg = "Strand should not be specified for this type." ;
+                }
+            }
+
         }
-    }
+      else
+        {
+          status = FALSE ;
+          err_msg = "Unknown file type." ;
+        }
+
+    } /* if (status) */
 
 
+  /*
+   * If we got this far, then attempt to do something.
+   *
+   */
   if (!status)
     {
       zMapWarning("Error: \"%s\"", err_msg) ;
@@ -1231,30 +1245,59 @@ static void importFileCB(gpointer cb_data)
         }
       else if (file_type == FILE_BAM)
         {
-          config_str = g_strdup_printf(format_string_bam,
-                                       string_zmap,
-                                       sequence_txt,
-                                       assembly_txt,
-                                       dataset_txt,
-                                       req_start,
-                                       req_end,
-                                       req_sequence_txt,
-                                       file_txt,
-                                       source_txt) ;
+          if (remap_features)
+            {
+              config_str = g_strdup_printf(format_string_bam01,
+                                           string_zmap,
+                                           sequence_txt,
+                                           assembly_txt,
+                                           dataset_txt,
+                                           req_start,
+                                           req_end,
+                                           req_sequence_txt,
+                                           file_txt,
+                                           source_txt) ;
+            }
+          else
+            {
+              config_str = g_strdup_printf(format_string_bam02,
+                                           string_zmap,
+                                           sequence_txt,
+                                           req_start,
+                                           req_end,
+                                           req_sequence_txt,
+                                           file_txt,
+                                           source_txt) ;
+            }
         }
       else if (file_type == FILE_BIGWIG)
         {
-          config_str = g_strdup_printf(format_string_bigwig,
-                                       string_zmap,
-                                       sequence_txt,
-                                       assembly_txt,
-                                       dataset_txt,
-                                       req_start,
-                                       req_end,
-                                       req_sequence_txt,
-                                       file_txt,
-                                       source_txt,
-                                       strand) ;
+          if (remap_features)
+            {
+              config_str = g_strdup_printf(format_string_bigwig01,
+                                           string_zmap,
+                                           sequence_txt,
+                                           assembly_txt,
+                                           dataset_txt,
+                                           req_start,
+                                           req_end,
+                                           req_sequence_txt,
+                                           file_txt,
+                                           source_txt,
+                                           strand) ;
+            }
+          else
+            {
+              config_str = g_strdup_printf(format_string_bigwig02,
+                                           string_zmap,
+                                           sequence_txt,
+                                           req_start,
+                                           req_end,
+                                           req_sequence_txt,
+                                           file_txt,
+                                           source_txt,
+                                           strand) ;
+            }
         }
 
       if (*config_str)
@@ -1276,5 +1319,27 @@ static void importFileCB(gpointer cb_data)
 
   return ;
 }
+
+
+
+  /*
+  if (status)
+    {
+      if ((*offset_txt) && !zMapStr2Int(offset_txt, &seq_offset))
+        {
+          status = FALSE ;
+          err_msg = "Invalid offset specified." ;
+        }
+    }
+  */
+
+  /*
+   * This was used to get the "mapping" flag.
+   */
+  /*if (status)
+    {
+      map_seq = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(main_frame->map_widg));
+    }
+  */
 
 
