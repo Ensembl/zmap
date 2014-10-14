@@ -3373,4 +3373,33 @@ gboolean zMapAlignBlockAddBlock(GArray** p_align_block_array, const ZMapAlignBlo
   return result ;
 }
 
+/* sort by genomic coordinate */
+/* start coord then end coord reversed */
+gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
+{
+  ZMapFeature feata = (ZMapFeature) a;
+  ZMapFeature featb = (ZMapFeature) b;
+
+  if(!featb)
+    {
+      if(!feata)
+        return(0);
+      return(1);
+    }
+  if(!feata)
+    return(-1);
+
+  if(feata->x1 < featb->x1)
+    return(-1);
+  if(feata->x1 > featb->x1)
+    return(1);
+
+  if(feata->x2 > featb->x2)
+    return(-1);
+
+  if(feata->x2 < featb->x2)
+    return(1);
+
+  return(0);
+}
 

@@ -35,8 +35,8 @@
 
 
 
-gint zMapFeatureCmp(gconstpointer a, gconstpointer b) ;
-gint zMapFeatureFullCmp(gconstpointer a, gconstpointer b) ;
+gint zMapWindowFeatureCmp(gconstpointer a, gconstpointer b) ;
+gint zMapWindowFeatureFullCmp(gconstpointer a, gconstpointer b) ;
 gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b) ;
 gint zMapFeatureSetNameCmp(gconstpointer a, gconstpointer b) ;
 

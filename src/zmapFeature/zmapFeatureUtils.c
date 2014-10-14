@@ -1490,7 +1490,7 @@ char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length, gboolea
   context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
    ZMAPFEATURE_STRUCT_CONTEXT));
 
-  if ((dna_str = zMapFeatureGetTranscriptDNA(feature, TRUE, feature->feature.transcript.flags.cds, pad)))
+  if ((dna_str = zMapFeatureGetTranscriptDNA(feature, TRUE, feature->feature.transcript.flags.cds)))
     {
       free_me = dna_str;    /* as we potentially move ptr. */
       name    = (char *)g_quark_to_string(feature->original_id);

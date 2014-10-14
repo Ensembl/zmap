@@ -541,6 +541,27 @@ static gboolean scratchMergeVariation(ScratchMergeData merge_data, ZMapFeature f
 }
 
 
+static gboolean featureIsVariation(ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+
+  if (feature && feature->mode == ZMAPSTYLE_MODE_BASIC &&
+      feature->feature.basic.variation_str)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+/* Some features (just variations at present) need to be added as additional metadata rather than
+ * being used to modify the feature itself. This function returns true if the given feature is
+ * metadata type. */
+static gboolean featureIsMetadata(ZMapFeature feature)
+{
+  return featureIsVariation(feature) ;
+}
+
+
 /*! 
  * \brief Add/merge a feature to the scratch column
  */
@@ -550,7 +571,7 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data, ZMapFeature fea
   zMapReturnValIfFail(feature, merged) ;
 
   /* If the start/end is not set, set it now from the feature extent */
-  if (!scratchGetStartEndFlag(merge_data->view))
+  if (!scratchGetStartEndFlag(merge_data->view) && !featureIsMetadata(feature))
     {
       merge_data->dest_feature->x1 = feature->x1;
       merge_data->dest_feature->x2 = feature->x2;
@@ -562,7 +583,7 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data, ZMapFeature fea
         {
         case ZMAPSTYLE_MODE_ALIGNMENT:      /* fall through */
         case ZMAPSTYLE_MODE_BASIC:
-          if (feature->feature.basic.variation_str)
+          if (featureIsVariation(feature))
             merged = scratchMergeVariation(merge_data, feature);
           else
             merged = scratchMergeBasic(merge_data, feature);

@@ -997,7 +997,7 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
 
 
   if (!di->features_sorted)
-    di->features = g_list_sort(di->features, zMapFeatureCmp) ;
+    di->features = g_list_sort(di->features, zMapWindowFeatureCmp) ;
 
   di->features_sorted = TRUE ;
 

@@ -324,19 +324,11 @@ gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, ZMapFeature vari
       if (variation->x1 >= exon->x1 && variation->x2 <= exon->x2)
         {
           /* Ok, found the exon. Add the variation to the transcript. */
-          feature->feature.transcript.variations = g_list_append(feature->feature.transcript.variations, variation) ;
-
-          /* We need to adjust the coords of the exon affected by this variation if it adds or removes
-           * bases */
-          int old_len = 0 ;
-          int new_len = 0 ;
-
-          variationGetSections(variation->feature.basic.variation_str, NULL, NULL, &old_len, &new_len) ;
-
-          int diff = new_len - old_len ;
-          exon->x2 += diff ;
-
-          zMapFeatureTranscriptRecreateIntrons(feature) ;
+          /*! \todo We should disallow addition of overlapping variations here. */
+          feature->feature.transcript.variations = 
+            g_list_insert_sorted(feature->feature.transcript.variations, 
+                                 variation,
+                                 zMapFeatureCmp) ;
 
           result = TRUE ;
           break ;
@@ -1396,15 +1388,24 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
   if (full_exon_cds)
     {
-      int pep_start, pep_end, pep_length ;
-      char *peptide ;
+      int pep_start = 0, pep_end = 0, pep_length = 0, variation_diff = 0 ;
+      char *peptide = NULL ;
 
       pep_start = (full_exon_cds->cds_span.x1 / 3) + 1 ;
       pep_end = full_exon_cds->cds_span.x2 / 3 ;
 
+      /* If there are any variations in this exon they may affect its length */
+      if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+        {
+          variation_diff = 
+            zmapFeatureDNACalculateVariationDiff(exon_span->x1,
+                                                 exon_span->x2, 
+                                                 feature->feature.transcript.variations) ;
+        }
+
       full_exon_cds->pep_span.x1 = pep_start ;
       full_exon_cds->pep_span.x2 = pep_end ;
-      pep_length = pep_end - pep_start + 1 ;
+      pep_length = pep_end - pep_start + 1 + (variation_diff / 3) ;
 
       if (full_data->translation)
         {

@@ -52,7 +52,7 @@
 /* sort by genomic coordinate for display purposes */
 /* start coord then end coord reversed, mainly for summarise function */
 /* also used by collapse code and locus de-overlap  */
-gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
+gint zMapWindowFeatureCmp(gconstpointer a, gconstpointer b)
 {
   ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a;
   ZMapWindowCanvasFeature featb = (ZMapWindowCanvasFeature) b;
@@ -83,12 +83,12 @@ gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 }
 
 
-/* Fuller version of zMapFeatureCmp() which handles special glyph code where
+/* Fuller version of zMapWindowFeatureCmp() which handles special glyph code where
  * positions to be compared can be greater than the feature coords.
  *
  * NOTE that featb is a 'dummy' just used for coords.
  *  */
-gint zMapFeatureFullCmp(gconstpointer a, gconstpointer b)
+gint zMapWindowFeatureFullCmp(gconstpointer a, gconstpointer b)
 {
   ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a ;
   ZMapWindowCanvasFeature featb = (ZMapWindowCanvasFeature) b ;
@@ -189,7 +189,7 @@ gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b)
   if(feata->feature->original_id > featb->feature->original_id)
     return(1);
 
-  return(zMapFeatureCmp(a,b));
+  return(zMapWindowFeatureCmp(a,b));
 }
 
 
@@ -246,7 +246,7 @@ gint zMapFeatureSetNameCmp(gconstpointer a, gconstpointer b)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-  result = zMapFeatureCmp(a,b) ;
+  result = zMapWindowFeatureCmp(a,b) ;
 
   return result ;
 }

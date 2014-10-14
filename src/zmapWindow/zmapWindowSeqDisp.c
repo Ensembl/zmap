@@ -331,8 +331,8 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       int len ;
       GList *exon_list_member;
       ZMapFullExon current_exon ;
-      char *pep_ptr ;
-      int pep_start = 0, pep_end = 0 ;
+      char *dest_ptr = NULL ;
+      int dest_start = 0, dest_end = 0 ;
       double seq_start;
       ZMapWindowFeaturesetItem fset;
       gboolean found_cds = FALSE ;
@@ -409,7 +409,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
               current_exon->region_type == EXON_SPLIT_CODON_5 ||
               current_exon->region_type == EXON_SPLIT_CODON_3)
             {
-              pep_start = current_exon->sequence_span.x1 - seq_start + 1;
+              dest_start = current_exon->sequence_span.x1 - seq_start + 1;
               found_cds = TRUE ; /* sanity check that a CDS exists */
               break ;
             }
@@ -431,7 +431,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
                   current_exon->region_type == EXON_SPLIT_CODON_5 ||
                   current_exon->region_type == EXON_SPLIT_CODON_3)
                 {
-                  pep_end = current_exon->sequence_span.x2 - seq_start + 1;
+                  dest_end = current_exon->sequence_span.x2 - seq_start + 1;
 
                   break ;
                 }
@@ -440,12 +440,12 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 
           if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
-            zMapFeature2BlockCoords(block, &pep_start, &pep_end) ;
+            zMapFeature2BlockCoords(block, &dest_start, &dest_end) ;
 
-          pep_start = (pep_start + 2) / 3 ;        /* we assume frame 1, bias other frames backwards */
-          pep_end = (pep_end + 2) / 3 ;
+          dest_start = (dest_start + 2) / 3 ;        /* we assume frame 1, bias other frames backwards */
+          dest_end = (dest_end + 2) / 3 ;
 
-          memset(((seq + pep_start) - 1), (int)SHOW_TRANS_INTRON, ((pep_end - pep_start))) ;
+          memset(((seq + dest_start) - 1), (int)SHOW_TRANS_INTRON, ((dest_end - dest_start))) ;
 
           /* Now memcpy peptide strings into appropriate places, remember to divide seq positions
            * by 3 !!!!!! */
@@ -467,40 +467,88 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
                 {
                   int tmp = 0 ;
 
-                  pep_start = current_exon->sequence_span.x1 - seq_start + 1 ;
+                  dest_start = current_exon->sequence_span.x1 - seq_start + 1 ;
 
                   if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
-                    zMapFeature2BlockCoords(block, &pep_start, &tmp) ;
+                    zMapFeature2BlockCoords(block, &dest_start, &tmp) ;
 
-                  pep_start = (pep_start + 2) / 3 ;
+                  dest_start = (dest_start + 2) / 3 ;
 
-#ifdef GB10_TEMP
-              int factor = ZMAPFRAME_2;
-              int frame = pep_start % factor;
-
-              if (frame < ZMAPFRAME_0)
-                frame += factor;
-              
-	      pep_start = (pep_start + factor - 1) / factor;
-
-              /* How many chars/bases overlap there is on either side of the peptide char
-               * (in practice this is always 1) */
-              int overlap = (factor - 1) / 2;
-              
-              /* The difference between the current frame and the display frame (always display in frame 1) */
-              int display_frame = ZMAPFRAME_0; 
-              int diff = frame - display_frame;
-
-              /* Shift our sequence so that it overlaps the corresponding peptide in 
-               * the display frame (in practice all this does is +1 when we're in 
-               * frame 3, because the difference then is 2 and the overlap is 1). */
-              pep_start += diff - overlap;
-#endif
-
-                  pep_ptr = (seq + pep_start) - 1 ;
+                  dest_ptr = (seq + dest_start) - 1 ;
 
                   if (current_exon->peptide)
-                    memcpy(pep_ptr, current_exon->peptide, strlen(current_exon->peptide)) ;
+                    {
+                      /* Set the pointer to the src string to copy into dest_ptr. This is just the
+                       * entire exon peptide unless there are variations that we need to apply */
+                      char *src_ptr = current_exon->peptide ;
+
+
+                      if (feature->feature.transcript.variations)
+                        {
+                          const int exon_start = current_exon->sequence_span.x1 ;
+                          const int exon_end = current_exon->sequence_span.x2 ;
+                          int src_start = exon_start ;
+
+                          /* Make sure variations are sorted by position */
+                          feature->feature.transcript.variations = 
+                            g_list_sort(feature->feature.transcript.variations, zMapFeatureCmp) ;
+                          
+                          /* Loop through each variation and apply any that are within this
+                           * exon's range */
+                          GList *variation_item = feature->feature.transcript.variations ;
+                          for ( ; variation_item; variation_item = variation_item->next)
+                            {
+                              ZMapFeature variation = (ZMapFeature)(variation_item->data) ;
+
+                              /* If outside the max end of the exon, then none of the variations
+                                 can apply, so break. */
+                              if (variation->x2 > exon_end)
+                                break ;
+
+                              /* If not inside this exon then continue to the next variation */
+                              if (variation->x1 < exon_start)
+                                continue ;
+
+                              /* Get the difference in length in DNA bases caused by this
+                               * variation */
+                              int diff = zMapFeatureVariationGetSections(variation->feature.basic.variation_str,
+                                                                         NULL, NULL, NULL, NULL) ;
+
+                              if (diff != 0)
+                                {
+                                  /* Deletion or insertion. Copy everything before the
+                                     variation (including  any partial codon). */
+                                  int len_to_copy = (variation->x1 - src_start + 2) / 3 ;
+
+                                  memcpy(dest_ptr, src_ptr, len_to_copy) ;
+
+                                  src_start = variation->x2 + 1 ;
+                                      
+                                  if (diff < 0)
+                                    {
+                                      /* Deletion. Increment the position in the source string
+                                       * to the next base. Skip over the deleted bases in the
+                                       * dest string. Note that we need to make diff positive
+                                       * to get the absolute number of bases. */
+                                      src_ptr += len_to_copy ;
+                                      diff *= -1 ;
+                                      dest_ptr += len_to_copy + (diff / 3) ;
+                                    }
+                                  else
+                                    {
+                                      /* Insertion. Increment the position in the dest
+                                       * string but skip over the inserted bases in the src string */
+                                      dest_ptr += len_to_copy ;
+                                      src_ptr += len_to_copy + (diff / 3) ;
+                                    }
+                                }
+                            }
+                        }
+
+                      /* Copy the remaining exon sequence to the destination position. (This will
+                       * be the entire exon peptide if there were no variations.) */
+                      memcpy(dest_ptr, src_ptr, strlen(src_ptr)) ;
+                    }
                 }
             }
           while ((exon_list_member = g_list_next(exon_list_member))) ;

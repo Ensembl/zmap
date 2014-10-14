@@ -83,9 +83,9 @@ void zmapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet transla
 gboolean zmapFeatureCoordsMatch(int slop, int boundary_start, int boundary_end,
                                 int start, int end, int *match_start_out, int *match_end_out) ;
 
-void variationGetSections(const char *variation_str, 
-                          char **old_str_out, char **new_str_out, 
-                          int *old_len_out, int *new_len_out) ;
+int zmapFeatureDNACalculateVariationDiff(const int start, 
+                                         const int end,
+                                         GList *variations) ;
 
 
 #endif /* !ZMAP_FEATURE_P_H */

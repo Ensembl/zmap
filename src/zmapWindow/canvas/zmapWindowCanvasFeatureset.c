@@ -1114,7 +1114,7 @@ void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
   if (!fi->features_sorted)
     {
       //printf("sort index\n");
-      fi->features = g_list_sort(fi->features, zMapFeatureCmp) ;
+      fi->features = g_list_sort(fi->features, zMapWindowFeatureCmp) ;
       fi->features_sorted = TRUE;
     }
 
@@ -1901,7 +1901,7 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmp
   extra = fi->longest;
 
   if (!compare_func)
-    compare_func = zMapFeatureCmp;
+    compare_func = zMapWindowFeatureCmp;
 
   search.y1 = y1;
   search.y2 = y2;
@@ -2926,7 +2926,7 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
 
       /* NOTE there is a flake in world coords at low zoom */
       /* NOTE close_enough is zero */
-      sl = zmap_window_canvas_featureset_find_feature_coords(zMapFeatureFullCmp, fi, y1, y2) ;
+      sl = zmap_window_canvas_featureset_find_feature_coords(zMapWindowFeatureFullCmp, fi, y1, y2) ;
 
 
       /* AGH....HATEFUL....STOP RETURNING FROM THE MIDDLE OF STUFF..... */
@@ -3808,7 +3808,7 @@ static void featuresetAddToIndex(ZMapWindowFeaturesetItem featureset_item, ZMapW
      * Worth considering and also timing this,
      */
     featureset_item->display_index =
-      zMapSkipListAdd(featureset_item->display_index, zMapFeatureCmp, feat);
+      zMapSkipListAdd(featureset_item->display_index, zMapWindowFeatureCmp, feat);
     /* NOTE need to fix linked_sideways */
 
   }

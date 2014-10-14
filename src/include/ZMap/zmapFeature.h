@@ -1326,7 +1326,7 @@ gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *s
 gboolean zMapFeatureDNAExists(ZMapFeature feature) ;
 char *zMapFeatureGetDNA(ZMapFeatureAny feature_any, int start, int end, gboolean revcomp) ;
 char *zMapFeatureGetFeatureDNA(ZMapFeature feature) ;
-char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboolean cds_only, gboolean pad) ;
+char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboolean cds_only) ;
 char *zMapFeatureDNAFeatureName(ZMapFeatureBlock block);
 GQuark zMapFeatureDNAFeatureID(ZMapFeatureBlock block);
 gboolean zMapFeatureDNACreateFeatureSet(ZMapFeatureBlock block, ZMapFeatureSet *feature_set_out);
@@ -1372,5 +1372,12 @@ gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_
 gboolean zMapFeatureHasMatchingBoundary(ZMapFeature feature,
                                         int boundary_start, int boundary_end,
                                         int *boundary_start_out, int *boundary_end_out) ;
+
+int zMapFeatureVariationGetSections(const char *variation_str, 
+                                    char **old_str_out, char **new_str_out, 
+                                    int *old_len_out, int *new_len_out) ;
+
+
+gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
 #endif /* ZMAP_FEATURE_H */
