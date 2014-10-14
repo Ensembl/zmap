@@ -3904,7 +3904,10 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
             {
               if (zMapAttParseURL(pAttribute, &sURL))
                 {
-                  zMapFeatureAddURL(pFeature, sURL) ;
+                  if (*sURL)
+                    {
+                      zMapFeatureAddURL(pFeature, sURL) ;
+                    }
                 }
             }
 
@@ -3915,7 +3918,10 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
             {
               if (zMapAttParseEnsemblVariation(pAttribute, &sVariation))
                 {
-                  zMapFeatureAddVariationString(pFeature, sVariation) ;
+                  if (*sVariation)
+                    {
+                      zMapFeatureAddVariationString(pFeature, sVariation) ;
+                    }
                 }
             }
 
@@ -3926,7 +3932,10 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
             {
               if (zMapAttParseNote(pAttribute, &sNote))
                 {
-                  zMapFeatureAddDescription(pFeature, sNote) ;
+                  if (*sNote)
+                    {
+                      zMapFeatureAddDescription(pFeature, sNote) ;
+                    }
                 }
             }
 
