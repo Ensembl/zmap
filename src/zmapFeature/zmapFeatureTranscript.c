@@ -1388,7 +1388,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
   if (full_exon_cds)
     {
-      int pep_start = 0, pep_end = 0, pep_length = 0, variation_diff = 0 ;
+      int pep_start = 0, pep_end = 0, pep_length = 0, variation_diff1 = 0, variation_diff2 ;
       char *peptide = NULL ;
 
       pep_start = (full_exon_cds->cds_span.x1 / 3) + 1 ;
@@ -1397,19 +1397,24 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
       /* If there are any variations in this exon they may affect its length */
       if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
-          variation_diff = 
-            zmapFeatureDNACalculateVariationDiff(exon_span->x1,
-                                                 exon_span->x2, 
-                                                 feature->feature.transcript.variations) ;
+          GList *variations = feature->feature.transcript.variations ;
+
+          variation_diff1 = zmapFeatureDNACalculateVariationDiff(1,
+                                                                exon_span->x1, 
+                                                                variations) ;
+
+          variation_diff2 = zmapFeatureDNACalculateVariationDiff(exon_span->x1,
+                                                                exon_span->x2, 
+                                                                variations) ;
         }
 
       full_exon_cds->pep_span.x1 = pep_start ;
       full_exon_cds->pep_span.x2 = pep_end ;
-      pep_length = pep_end - pep_start + 1 + (variation_diff / 3) ;
+      pep_length = pep_end - pep_start + 1 + (variation_diff2 / 3) ;
 
       if (full_data->translation)
         {
-          peptide = full_data->translation + (pep_start - 1) ;
+          peptide = full_data->translation + (pep_start - 1 + (variation_diff1 / 3)) ;
           full_exon_cds->peptide = g_strndup(peptide, pep_length) ;
         }
 
