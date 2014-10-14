@@ -25,7 +25,7 @@ The styles file controls the visual appearance of features. This document descri
 controls the configuration of data sources and various other options for customizing the behaviour ZMap.</p>
 
 ZMap configuration is via command line options and a number of resource files
-read during intitialisation and during subsequent processing.
+read during initialisation and during subsequent processing.
 This section describes the various ways ZMap can be configured. Note however that ZMap can 
 also be run standalone without any configuration at all!
 
