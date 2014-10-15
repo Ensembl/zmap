@@ -120,7 +120,9 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 #endif
 static void closeCB(gpointer cb_data) ;
 
+#ifdef NOT_USED
 static void sequenceCB(GtkWidget *widget, gpointer cb_data) ;
+#endif
 
 static void fileChangedCB(GtkWidget *widget, gpointer user_data);
 

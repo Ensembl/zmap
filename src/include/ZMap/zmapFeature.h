@@ -1356,5 +1356,6 @@ GArray* zMapAlignBlockArrayCreate() ;
 gboolean zMapAlignBlockArrayDestroy(GArray* const) ;
 ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray* const, int index) ;
 gboolean zMapAlignBlockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
+gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
 
 #endif /* ZMAP_FEATURE_H */

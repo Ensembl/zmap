@@ -80,5 +80,9 @@ GList *zmapFeatureGetSubparts(ZMapFeature feature) ;
 void zmapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int block_start, int block_end) ;
 void zmapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet translation_fs) ;
 
+gboolean zmapFeatureCoordsMatch(int slop, int boundary_start, int boundary_end,
+                                int start, int end, int *match_start_out, int *match_end_out) ;
+
+
 
 #endif /* !ZMAP_FEATURE_P_H */
