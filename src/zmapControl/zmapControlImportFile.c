@@ -62,12 +62,6 @@ typedef enum
     FILE_BIGWIG
   } fileType;
 
-/* #define N_FILE_TYPE (FILE_BIGWIG + 1) */
-
-/*
-static const char * default_scripts[] = { "", "zmap_get_gff", "zmap_get_bam", "zmap_get_bigwig" };
-*/
-
 /*
  * was used for input script description, args etc
  */
@@ -99,7 +93,6 @@ typedef struct MainFrameStruct_
 
 
   fileType file_type;
-  /* ZMapImportScriptStruct scripts[N_FILE_TYPE]; */
 
   gboolean is_otter;
   char *chr;
@@ -130,7 +123,6 @@ static void closeCB(gpointer cb_data) ;
 static void sequenceCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void fileChangedCB(GtkWidget *widget, gpointer user_data);
-/* static void scriptChangedCB(GtkWidget *widget, gpointer user_data); */
 
 
 
@@ -640,6 +632,7 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
 
 
   main_frame->map_widg = map_seq_button = gtk_check_button_new () ;
+  gtk_toggle_button_set_active((GtkToggleButton*)map_seq_button, FALSE) ;
   gtk_box_pack_start(GTK_BOX(entrybox), map_seq_button, FALSE, TRUE, 0) ;
 
   /*main_frame->offset_widg = entry = gtk_entry_new() ;
@@ -802,14 +795,19 @@ static void enable_widgets(MainFrame main_frame)
   if (!main_frame)
     return ;
 
-  /*gboolean is_gff = main_frame->file_type == FILE_GFF ;*/
-  /*gboolean is_bam = main_frame->file_type == FILE_BAM ;*/
+  gboolean is_gff = main_frame->file_type == FILE_GFF,
+    is_bam = main_frame->file_type == FILE_BAM,
+    is_big = main_frame->file_type == FILE_BIGWIG,
+    is_otter = main_frame->is_otter ;
 
-  gtk_widget_set_sensitive(main_frame->strand_widg, main_frame->file_type == FILE_BIGWIG );
-  gtk_widget_set_sensitive(main_frame->source_widg, main_frame->file_type != FILE_GFF ) ;
-  gtk_widget_set_sensitive(main_frame->assembly_widg, main_frame->file_type != FILE_GFF ) ;
-
-  /*gtk_widget_set_sensitive(main_frame->style_widg,  !is_gff); */
+  /*
+   * We only allow some of the widgets to be set under the
+   * following conditions.
+   */
+  gtk_widget_set_sensitive(main_frame->strand_widg, is_big );
+  gtk_widget_set_sensitive(main_frame->source_widg, !is_gff ) ;
+  gtk_widget_set_sensitive(main_frame->assembly_widg, !is_gff && is_otter ) ;
+  gtk_widget_set_sensitive(main_frame->map_widg, (is_bam || is_big) && is_otter) ;
 
   /*gtk_widget_set_sensitive(main_frame->args_widg, main_frame->file_type == FILE_NONE ); */
 
@@ -819,21 +817,6 @@ static void enable_widgets(MainFrame main_frame)
   /*gtk_widget_set_sensitive(main_frame->assembly_widg, (main_frame->is_otter));*/
 }
 
-/*
- * (sm23) I have changed this to do nothing because the files will
- * be read directly without any other processing; no scripts will
- * be necessary.
- *
- * Callback for when the "script" text is changed.
- */
-/*
-static void scriptChangedCB(GtkWidget *widget, gpointer user_data)
-{
-  MainFrame main_frame = (MainFrame) user_data ;
-
-  enable_widgets(main_frame);
-}
-*/
 
 /*
  * Callback for when the "file" text is changed.
@@ -889,6 +872,8 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
   gtk_entry_set_text(GTK_ENTRY(main_frame->strand_widg), "")  ;
   gtk_entry_set_text(GTK_ENTRY(main_frame->source_widg), "")  ;
   gtk_entry_set_text(GTK_ENTRY(main_frame->assembly_widg), "")  ;
+
+  gtk_toggle_button_set_active((GtkToggleButton*)main_frame->map_widg, FALSE) ;
 
   /*
    *Try to get a source name for non-GFF types.
@@ -973,7 +958,7 @@ static void importFileCB(gpointer cb_data)
   static const char * format_string_bam01 =
     "%surl=pipe:///bam_get?--chr=%s&--csver_remote=%s&--dataset=%s&--start=%i&--end=%i&--gff_seqname=%s&--file=%s&--gff_source=%s&--gff_version=3" ;
   static const char * format_string_bam02 =
-    "%surl=pipe:///bam_get?--chr=%ss&--start=%i&--end=%i&--gff_seqname=%s&--file=%s&--gff_source=%s&--gff_version=3" ;
+    "%surl=pipe:///bam_get?--chr=%s&--start=%i&--end=%i&--gff_seqname=%s&--file=%s&--gff_source=%s&--gff_version=3" ;
   static const char * format_string_bigwig01 =
     "%surl=pipe:///bigwig_get?--chr=%s&--csver_remote=%s&--dataset=%s&--start=%i&--end=%i&--gff_seqname=%s&--file=%s&--gff_source=%s&--strand=%i&--gff_version=3" ;
   static const char * format_string_bigwig02 =
@@ -1031,6 +1016,7 @@ static void importFileCB(gpointer cb_data)
   source_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->source_widg)) ;
   assembly_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->assembly_widg)) ;
   strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg)) ;
+  remap_features = gtk_toggle_button_get_active((GtkToggleButton*)main_frame->map_widg) ;
 
   if (status)
     {
@@ -1128,32 +1114,23 @@ static void importFileCB(gpointer cb_data)
           if (*dataset_txt)
             have_dataset = TRUE ;
 
-          /* we must have an assembly for these data types */
-          /*if (status && (!*assembly_txt))
+          /*
+           * Some error checking of conditions for remapping. If we request remapping
+           * then there must be a dataset and assembly given. Then the call to
+           * the scripts with remapping data can be done. Otherwise these data are
+           * to be ignored.
+           */
+          if (remap_features)
             {
-              status = FALSE ;
-              err_msg = "Assembly must be specified for this type." ;
-            }*/
-
-          /* we require a dataset for these data types */
-          /*if (status && (!*dataset_txt))
-            {
-              status = FALSE ;
-              err_msg = "Dataset must be specified for this type." ;
-            }*/
-
-          if (have_assembly && have_dataset)
-            {
-              remap_features =  TRUE ;
-            }
-          else if ((!have_assembly) && (!have_dataset))
-            {
-              remap_features = FALSE ;
+              if ((!have_assembly) || (!have_dataset))
+                {
+                  status = FALSE ;
+                  err_msg = "Both the 'assembly' and 'dataset' are required for remapping." ;
+                }
             }
           else
             {
-              status = FALSE ;
-              err_msg = "Either _both_ or _neither_ of 'assembly' and 'dataset' must be specified." ;
+
             }
 
           /* strand is required for bigwig only */
