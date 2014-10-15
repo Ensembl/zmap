@@ -440,35 +440,49 @@ void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item, const gboolea
 void zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
                                   ZMapWindowGetEvidenceCB evidence_cb, gpointer evidence_cb_data)
 {
-  GetEvidenceData evidence_data ;
-  ZMapWindowFeatureShow show ;
+  zMapReturnIfFail(window && feature && evidence_cb) ;
 
-  show = g_new0(ZMapWindowFeatureShowStruct, 1) ;
-  show->reusable = windowIsReusable() ;
-  show->zmapWindow = window ;
+  if (feature->parent && feature->parent->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
+    {
+      /* The scratch column is a special case because it exists only in zmap */
+      zmapWindowScratchFeatureGetEvidence(window, feature, evidence_cb, evidence_cb_data) ;
+    }
+  else
+    {
+      /* Use xremote to get the data from the peer */
+      /*! \todo We should check that a peer exists and if not warn the user we cannot get the
+       * data. In the longer term for standalone zmap we may store evidence internally so would
+       * need to use that. */
+      GetEvidenceData evidence_data ;
+      ZMapWindowFeatureShow show ;
 
-  show->xml_parsing_status = TRUE ;
-  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
-  show->xml_curr_chapter = NULL ;
-  show->xml_curr_page = NULL ;
-  show->item = NULL;  /* is not used anyway */
+      show = g_new0(ZMapWindowFeatureShowStruct, 1) ;
+      show->reusable = windowIsReusable() ;
+      show->zmapWindow = window ;
 
-  show->get_evidence = WANT_EVIDENCE;
-  show->evidence_column = -1;     /* invalid */
-  show->evidence = NULL;
+      show->xml_parsing_status = TRUE ;
+      show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
+      show->xml_curr_chapter = NULL ;
+      show->xml_curr_page = NULL ;
+      show->item = NULL;  /* is not used anyway */
 
-  evidence_data = g_new0(GetEvidenceDataStruct, 1) ;
-  evidence_data->show = show ;
-  evidence_data->evidence_cb = evidence_cb ;
-  evidence_data->evidence_cb_data = evidence_cb_data ;
-  evidence_data->starts = starts_G ;
-  evidence_data->ends = ends_G ;
+      show->get_evidence = WANT_EVIDENCE;
+      show->evidence_column = -1;     /* invalid */
+      show->evidence = NULL;
 
-  callXRemote(show->zmapWindow,
-              (ZMapFeatureAny)feature,
-              ZACP_DETAILS_FEATURE,
-              show->item,
-              getEvidenceReplyFunc, evidence_data) ;
+      evidence_data = g_new0(GetEvidenceDataStruct, 1) ;
+      evidence_data->show = show ;
+      evidence_data->evidence_cb = evidence_cb ;
+      evidence_data->evidence_cb_data = evidence_cb_data ;
+      evidence_data->starts = starts_G ;
+      evidence_data->ends = ends_G ;
+
+      callXRemote(show->zmapWindow,
+                  (ZMapFeatureAny)feature,
+                  ZACP_DETAILS_FEATURE,
+                  show->item,
+                  getEvidenceReplyFunc, evidence_data) ;
+    }
 
   return ;
 }
@@ -2297,16 +2311,21 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   /* HERE VIEW IS CALLED WHICH IS FINE.....BUT.....WE NOW NEED ANOTHER CALL WHERE
      WINDOW CALLS REMOTE TO MAKE THE REQUEST.....BECAUSE VIEW WILL NO LONGER BE
      DOING THIS...*/
-  (*(window->caller_cbs->select))(window, window->app_data, &select) ;
-
+  if (window && window->caller_cbs && window->caller_cbs->select)
+    {
+      (*(window->caller_cbs->select))(window, window->app_data, &select) ;
+    }
 
 
   /* Send request to peer program. */
-  (*(window_cbs_G->remote_request_func))(window_cbs_G->remote_request_func_data,
-					 window,
-					 action, xml_elements,
-					 handler_func, handler_data,
-                                         remoteReplyErrHandler, handler_data) ;
+  if (window_cbs_G && window_cbs_G->remote_request_func)
+    {
+      (*(window_cbs_G->remote_request_func))(window_cbs_G->remote_request_func_data,
+                                             window,
+                                             action, xml_elements,
+                                             handler_func, handler_data,
+                                             remoteReplyErrHandler, handler_data) ;
+    }
 
   return ;
 }

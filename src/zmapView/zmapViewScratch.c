@@ -1490,3 +1490,33 @@ gboolean zmapViewScratchSave(ZMapView view, ZMapFeature feature)
 }
 
 
+/*!
+ * \brief Called when the user selects to show evidence. Constructs a list of evidence and then
+ * calls the given callback (usually to highlight the evidence).
+ */
+void zmapViewScratchFeatureGetEvidence(ZMapView view, ZMapWindowGetEvidenceCB evidence_cb, gpointer evidence_cb_data)
+{
+  zMapReturnIfFail(view && evidence_cb) ;
+
+  GList *evidence_list = NULL ;
+
+  /* Loop through each edit operation and append the feature name(s) to the evidence list */
+  GList *operation_item = view->edit_list_start ;
+
+  while (operation_item)
+    {
+      EditOperation operation = (EditOperation)(operation_item->data) ;
+
+      /* Append the feature ids from the operation to the result list. Note that concat takes
+       * ownership of the second list so make a copy of it first. */
+      GList *tmp = g_list_copy(operation->src_feature_ids) ;
+      evidence_list = g_list_concat(evidence_list, tmp) ;
+
+      if (operation_item == view->edit_list_end)
+        break ;
+
+      operation_item = operation_item->next ;
+    }
+
+  evidence_cb(evidence_list, evidence_cb_data) ;
+}

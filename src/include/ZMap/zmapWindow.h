@@ -234,7 +234,8 @@ typedef enum
     ZMAPWINDOW_CMD_DELETEFROMSCRATCH,
     ZMAPWINDOW_CMD_CLEARSCRATCH,
     ZMAPWINDOW_CMD_UNDOSCRATCH,
-    ZMAPWINDOW_CMD_REDOSCRATCH
+    ZMAPWINDOW_CMD_REDOSCRATCH,
+    ZMAPWINDOW_CMD_GETEVIDENCE
   } ZMapWindowCommandType ;
 
 
@@ -329,6 +330,9 @@ typedef struct
 } ZMapWindowCallbackCommandRevCompStruct, *ZMapWindowCallbackCommandRevComp ;
 
 
+typedef void (*ZMapWindowGetEvidenceCB)(GList *evidence, gpointer user_data) ;
+
+
 typedef struct ZMapWindowCallbackCommandScratchStructName
 {
   /* Common section. */
@@ -343,6 +347,9 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
   ZMapFeatureSubPartSpan subpart; /* the subpart to use, if applicable */
   gboolean use_subfeature; /* if true, use the clicked subfeature; otherwise use the entire
                               feature */
+
+  ZMapWindowGetEvidenceCB evidence_cb; /* callback to call for get-evidence */
+  gpointer evidence_cb_data;
 } ZMapWindowCallbackCommandScratchStruct, *ZMapWindowCallbackCommandScratch ;
 
 

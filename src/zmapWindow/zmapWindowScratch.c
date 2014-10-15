@@ -311,3 +311,23 @@ void zmapWindowScratchRedo(ZMapWindow window)
     }
 }
 
+
+/*!
+ * \brief Get evidence feature names from the scratch column and call the given callback with them.
+ */
+void zmapWindowScratchFeatureGetEvidence(ZMapWindow window, ZMapFeature feature, 
+                                         ZMapWindowGetEvidenceCB evidence_cb, gpointer evidence_cb_data)
+{
+  zMapReturnIfFail(window && feature && evidence_cb) ;
+
+  /* Call the callback to the view */
+  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+  ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
+  
+  /* Set up general command field for callback. */
+  scratch_cmd->cmd = ZMAPWINDOW_CMD_GETEVIDENCE ;
+  scratch_cmd->evidence_cb = evidence_cb ;
+  scratch_cmd->evidence_cb_data = evidence_cb_data ;
+  
+  (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+}

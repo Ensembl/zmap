@@ -930,8 +930,6 @@ typedef void (*ZMapWindowStyleTableCallback)(ZMapFeatureTypeStyle style, gpointe
 typedef GHashTable * (*ZMapWindowListGetFToIHash)(gpointer user_data);
 typedef GList * (*ZMapWindowListSearchHashFunc)(ZMapWindow widnow, GHashTable *hash_table, gpointer user_data);
 
-typedef void (*ZMapWindowGetEvidenceCB)(GList *evidence, gpointer user_data) ;
-
 
 
 
