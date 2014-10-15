@@ -300,21 +300,24 @@ void zmapWindowItemShowTranslationRemove(ZMapWindow window, FooCanvasItem *featu
   return ;
 }
 
-
-
 void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate)
 {
   ZMapFeature feature ;
 
   feature = zMapWindowCanvasItemGetFeature(feature_to_translate);
 
+  zmapWindowFeatureShowTranslation(window, feature) ;
+}
+
+void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
+{
   if (!(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_HAS_CDS(feature) && ZMAPFEATURE_FORWARD(feature)))
     {
       zMapWarning("%s %s",
                   zMapFeatureName((ZMapFeatureAny)feature),
-                  (!ZMAPFEATURE_IS_TRANSCRIPT(feature) ? "is not a transcript."
-                   : (!ZMAPFEATURE_HAS_CDS(feature) ? "has no cds."
-                      : "must be on the forward strand."))) ;
+                  (!ZMAPFEATURE_IS_TRANSCRIPT(feature) ? "is not a transcript.\n"
+                   : (!ZMAPFEATURE_HAS_CDS(feature) ? "has no cds.\n"
+                      : "must be on the forward strand.\n"))) ;
     }
   else
     {
@@ -366,6 +369,10 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       if(!trans_set)
         return;
 
+      
+      /* Remember the featureset we called show-translation for */
+      if (feature && feature->parent)
+        window->show_translation_featureset_id = feature->parent->unique_id ;
 
       trans_id2c = (ID2Canvas)(trans_set->data) ;
 

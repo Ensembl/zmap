@@ -518,7 +518,7 @@ gboolean zmapViewScratchRedo(ZMapView zmap_view);
 gboolean zmapViewScratchClear(ZMapView zmap_view);
 gboolean zmapViewScratchSave(ZMapView zmap_view, ZMapFeature feature);
 ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view);
-ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set);
+ZMapFeature zmapViewScratchGetFeature(ZMapView view);
 void zmapViewScratchRemoveFeatures(ZMapView view, GList *feature_list) ;
 
 

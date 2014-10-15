@@ -252,9 +252,10 @@ ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view)
  *
  * \returns The ZMapFeature, or NULL if there was a problem
  */
-ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set)
+ZMapFeature zmapViewScratchGetFeature(ZMapView view)
 {
-  ZMapFeature feature = NULL;
+  ZMapFeature feature = NULL ;
+  ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(view);
 
   if (feature_set)
     {
@@ -776,7 +777,7 @@ static void scratchEraseFeature(ZMapView zmap_view)
   ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
   g_return_if_fail(feature_set) ;
 
-  ZMapFeature feature = zmapViewScratchGetFeature(feature_set) ;
+  ZMapFeature feature = zmapViewScratchGetFeature(zmap_view) ;
   g_return_if_fail(feature) ;
 
   /* Delete the exons and introns */
@@ -1456,8 +1457,7 @@ gboolean zmapViewScratchSave(ZMapView view, ZMapFeature feature)
     {
       /* If the new feature is exactly the same as the existing one then we don't
        * need to do anything. */
-      ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(view) ;
-      ZMapFeature old_feature = zmapViewScratchGetFeature(feature_set) ;
+      ZMapFeature old_feature = zmapViewScratchGetFeature(view) ;
 
       if (!featuresEqual(old_feature, feature))
         {

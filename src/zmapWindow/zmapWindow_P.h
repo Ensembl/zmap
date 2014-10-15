@@ -872,6 +872,9 @@ typedef struct _ZMapWindowStruct
   Display3FrameMode display_3_frame ;
   gboolean show_3_frame_reverse ;			  /* 3 frame displayed on reverse col ? */
 
+  /* Remember the last featureset we calculated the translation for. (If it's the scratch
+   * featureset then we need to recalculate the translation after any edit operation.)  */
+  GQuark show_translation_featureset_id ;
 
 } ZMapWindowStruct ;
 
@@ -1159,6 +1162,7 @@ ZMapFeatureAny zmapWindowItemGetFeatureAny(FooCanvasItem *item) ;
 ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, const int expected_type) ;
 
 FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item) ;
+void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature) ;
 void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate) ;
 void zmapWindowItemShowTranslationRemove(ZMapWindow window, FooCanvasItem *feature_item);
 
