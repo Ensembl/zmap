@@ -1395,9 +1395,6 @@ static void unhighlightFeatures(ZMapWindowContainerGroup container, FooCanvasPoi
         /* Are there any features to be unhighlighted ? */
         if (container_set->splice_highlight && container_set->splice_highlighted_features)
           {
-            GList *feature_list ;
-            ZMapWindowFeaturesetItem featureset_item ;
-
             /* Record that there was at least one splice-aware column. */
             splice_data->found_splice_cols = TRUE ;
 
@@ -1423,7 +1420,6 @@ static void unhighlightFeatures(ZMapWindowContainerGroup container, FooCanvasPoi
 static void unhighlightFeatureCB(gpointer data, gpointer user_data)
 {
   ZMapWindowCanvasFeature feature_item = (ZMapWindowCanvasFeature)data ;
-  SpliceHighlight splice_data = (SpliceHighlight)user_data ;
 
 
   zmapWindowCanvasFeatureRemoveSplicePos(feature_item) ;

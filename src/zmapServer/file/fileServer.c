@@ -823,7 +823,6 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
 static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  char * sequence = NULL ;
   zMapReturnValIfFail(server->data_source->type == ZMAPDATASOURCE_TYPE_HTS, result) ;
 
   /*

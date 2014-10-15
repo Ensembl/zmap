@@ -206,11 +206,8 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
  * so this all has to be allocated */
 static void importGetConfig(MainFrame main_frame, char *config_file)
 {
-  ZMapImportScript s;
   ZMapConfigIniContext context;
-  fileType file_type = FILE_NONE ;
   /* in parallel with the filetype enum */
-  int i;
   char *tmp_string;
   /*ZMapImportScript scripts = main_frame->scripts;*/
 
@@ -229,9 +226,7 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
     {
       GKeyFile *gkf;
       gchar ** keys,**freethis;
-      gchar **args, **argp;
       char *arg_str;
-      char *ft;
       gsize len;
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
@@ -347,7 +342,7 @@ static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
 static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map)
 {
   GtkWidget *frame ;
-  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label, *button ;
+  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
   char *sequence = "", *start = "", *end = "", *dataset = "" ;
 
   if (sequence_map)
@@ -699,8 +694,8 @@ static void makeButtonBox(GtkWidget *toplevel, MainFrame main_frame)
  */
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
-  MainFrame main_frame = (MainFrame)cb_data ;
-  int i;
+  /*MainFrame main_frame = (MainFrame)cb_data ;
+    int i;*/
 
   /*for(i = 0; i < N_FILE_TYPE;i++)
     {
@@ -728,10 +723,11 @@ static void closeCB(gpointer cb_data)
 
 
 /* set start, end as requested */
+#ifdef NOT_USED
 static void sequenceCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_frame = (MainFrame)cb_data ;
-  int start, end;
+  int start = 0, end = 0;
   char buf[32];
 
   /* NOTE we get -fsd coords from this function if revcomped */
@@ -767,6 +763,8 @@ static void sequenceCB(GtkWidget *widget, gpointer cb_data)
   sprintf(buf,"%d",end);
   gtk_entry_set_text(GTK_ENTRY( main_frame->req_end_widg),   buf) ;
 }
+#endif
+
 
 
 #ifndef __CYGWIN__
@@ -828,7 +826,6 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
   char *extent;
   fileType file_type = FILE_NONE ;
   char *source_txt = NULL;
-  char *style_txt = NULL;
   /*ZMapFeatureSource src;
   ZMapView view;
   ZMap zmap = (ZMap) main_frame->user_data;*/

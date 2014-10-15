@@ -1559,7 +1559,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         int frame_start, frame_end;
         ZMapFeatureTypeStyle style;
 
-        char *name, *unique_name ;
+        const char *name, *unique_name ;
 
         name = g_quark_to_string(feature_any->original_id) ;
         unique_name = g_quark_to_string(feature_any->unique_id) ;
