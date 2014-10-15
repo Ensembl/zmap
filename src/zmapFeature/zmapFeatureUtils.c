@@ -1402,14 +1402,17 @@ ZMapFrame zMapFeatureFrameAtCoord(ZMapFeature feature, int coord)
 
   if (exon)
     {
-      int offset = (coord == exon->sequence_span.x1 ? exon->start_phase : 0) ;
-      int x = exon->sequence_span.x1 - offset ;
-      int fval = x % 3 ;
-      
-      if (fval < ZMAPFRAME_0)
-        fval += 3 ;
-      
-      frame = (ZMapFrame)fval ;
+      const int phase_offset = (coord == exon->sequence_span.x1 ? exon->start_phase : 0) ;
+      int x = exon->sequence_span.x1 - phase_offset ;
+      int block_offset = 0 ;
+
+      if (feature && feature->parent->parent)
+        {
+          ZMapFeatureBlock block = (ZMapFeatureBlock)(feature->parent->parent);
+          block_offset = block->block_to_sequence.block.x1;   /* start of block in sequence/parent */
+        }
+
+      frame = feature_frame_coords(block_offset, x) ;
     }
   
   return frame ;
@@ -1735,7 +1738,7 @@ static ZMapFullExon feature_find_closest_exon_at_coord(ZMapFeature feature, int 
           if (y >= x1 && y <= x2)
             {
               /* Inside the exon - done */
-              zMapDebugPrintf("Coord %d found in exon %d,%d", y, x1, x2) ;
+              //zMapDebugPrintf("Coord %d found in exon %d,%d", y, x1, x2) ;
               result = current_exon ;
               found = TRUE ;
               break ;
@@ -1765,11 +1768,14 @@ static ZMapFullExon feature_find_closest_exon_at_coord(ZMapFeature feature, int 
         }
     }
 
-  if (!result)
-    zMapDebugPrintf("Could not find exon at coordinate %d", coord);
-  else if (!found)
-    zMapDebugPrintf("Coord %d nearest exon is %d,%d (dist=%d)", coord, result->sequence_span.x1, result->sequence_span.x2, closest_dist);
-  
+//  if (feature->feature.sequence.exon_list)
+//    {
+//      if (!result)
+//        zMapDebugPrintf("Could not find exon at coordinate %d", coord);
+//      else if (!found)
+//        zMapDebugPrintf("Coord %d nearest exon is %d,%d (dist=%d)", coord, result->sequence_span.x1, result->sequence_span.x2, closest_dist);
+//    }
+
   return result ;
 }
 

@@ -567,8 +567,6 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
       //if(sequence->frame == ZMAPFRAME_2) zMapDebugPrintf("3FT paint dna %s @ %ld = %d (%ld)\n",seq->text, y_paint, cy, seq->offset);
 
-      int offset = seq->offset;
-      
       pango_renderer_draw_layout(pango->renderer, pango->layout,
                                  cx * PANGO_SCALE, (cy + seq->offset) * PANGO_SCALE) ;
 

@@ -518,7 +518,7 @@ gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature)
  *
  */
 gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, gboolean pad, 
- GList **exon_regions_list_out)
+                                         GList **exon_regions_list_out)
 {
   gboolean result = FALSE ;
   gboolean exon_debug = FALSE ;
