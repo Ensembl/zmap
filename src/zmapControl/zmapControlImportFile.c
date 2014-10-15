@@ -978,7 +978,8 @@ static void importFileCB(gpointer cb_data)
     *source_txt = NULL,
     *strand_txt = NULL,
     *assembly_txt = NULL,
-    *req_sequence_txt = NULL ;
+    *req_sequence_txt = NULL,
+    *pos = NULL ;
   int start = 0,
     end = 0,
     req_start = 0,
@@ -1003,7 +1004,7 @@ static void importFileCB(gpointer cb_data)
   view = zMapViewGetView(zmap->focus_viewwindow);
 
   /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
-  sequence_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->sequence_widg)) ;
+  sequence_txt = g_strdup((char *)gtk_entry_get_text(GTK_ENTRY(main_frame->sequence_widg))) ;
   dataset_txt = (char*) gtk_entry_get_text(GTK_ENTRY(main_frame->dataset_widg)) ;
   start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->start_widg)) ;
   end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->end_widg)) ;
@@ -1126,10 +1127,14 @@ static void importFileCB(gpointer cb_data)
                   status = FALSE ;
                   err_msg = "Both the 'assembly' and 'dataset' are required for remapping." ;
                 }
+
             }
           else
             {
-
+              if ((pos = strchr(sequence_txt, '-')))
+                {
+                  *pos = '\0' ;
+                }
             }
 
           /* strand is required for bigwig only */
@@ -1292,6 +1297,9 @@ static void importFileCB(gpointer cb_data)
           g_free(config_str);
         }
     }
+
+  if (*sequence_txt)
+    g_free(sequence_txt) ;
 
   return ;
 }
