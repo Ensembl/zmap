@@ -998,6 +998,7 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 					  gboolean end_not_found_flag) ;
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
+gboolean zMapFeatureRemoveTranscriptVariations(ZMapFeature feature, GError **error) ;
 gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, ZMapFeature variation, GError **error) ;
 void zMapFeatureRemoveExons(ZMapFeature feature);
 void zMapFeatureRemoveIntrons(ZMapFeature feature);

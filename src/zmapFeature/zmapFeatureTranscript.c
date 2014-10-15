@@ -324,6 +324,19 @@ static ZMapFeature findOverlappingVariation(ZMapFeature variation, GList *compar
   return result ;
 }
 
+/* Remove all the variation metadata in a transcript. */
+gboolean zMapFeatureRemoveTranscriptVariations(ZMapFeature feature, 
+                                               GError **error)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT, result) ;
+  
+  g_list_free(feature->feature.transcript.variations) ;
+  feature->feature.transcript.variations = NULL ;
+
+  return TRUE ;
+}
+
 
 /* Add a variation to a transcript feature. Stores the variation as metadata which is used
  * to modify the transcript sequence. Only applies the variation if it lies within an exon. */

@@ -768,6 +768,15 @@ static void scratchDeleteFeatureExons(ZMapView view, ZMapFeature feature, ZMapFe
 }
 
 
+/*!
+ * \brief Utility to delete all metadata from the given feature
+ */
+static void scratchDeleteFeatureMetadata(ZMapFeature feature)
+{
+  zMapFeatureRemoveTranscriptVariations(feature, NULL) ;
+}
+
+
 static void scratchEraseFeature(ZMapView zmap_view)
 {
   g_return_if_fail(zmap_view && zmap_view->features) ;
@@ -782,6 +791,9 @@ static void scratchEraseFeature(ZMapView zmap_view)
 
   /* Delete the exons and introns */
   scratchDeleteFeatureExons(zmap_view, feature, feature_set);
+
+  /* Delete any metadata we've added */
+  scratchDeleteFeatureMetadata(feature) ;
 
   /* Reset the start-/end-set flag */
   scratchSetStartEndFlag(zmap_view, FALSE);
