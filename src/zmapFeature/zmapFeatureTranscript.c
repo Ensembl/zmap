@@ -376,14 +376,14 @@ gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature,
                    overlapping_variation->feature.basic.variation_str)
             {
               g_set_error(error, g_quark_from_string("ZMap"), 99, 
-                          "Cannot add variation '%s' because it overlaps existing variation '%s'",
+                          "Cannot add variation '%s' because it overlaps existing variation '%s'\n",
                           variation->feature.basic.variation_str,
                           overlapping_variation->feature.basic.variation_str) ;
             }
           else
             {
               g_set_error(error, g_quark_from_string("ZMap"), 99, 
-                          "Cannot add variation '%s' because it overlaps existing variation '<invalid type>'",
+                          "Cannot add variation '%s' because it overlaps existing variation '<invalid type>'\n",
                           variation->feature.basic.variation_str) ;
             }
 
