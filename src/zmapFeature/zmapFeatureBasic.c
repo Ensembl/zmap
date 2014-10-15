@@ -38,6 +38,7 @@
 #include <glib.h>
 
 #include <ZMap/zmapFeature.h>
+#include <zmapFeature_P.h>
 
 
 
