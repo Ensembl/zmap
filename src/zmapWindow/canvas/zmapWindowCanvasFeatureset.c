@@ -635,6 +635,7 @@ void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
 {
   void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 		GdkDrawable *drawable, GdkEventExpose *expose) = NULL;
+
   zMapReturnIfFail(feature) ;
 
 
@@ -1245,7 +1246,6 @@ static void zmap_window_featureset_item_item_draw(FooCanvasItem *item, GdkDrawab
   if(!fi->display_index)
     return ;
 
-
   //if(zMapStyleDisplayInSeparator(fi->style)) debug = TRUE;
 
   sl = zmap_window_canvas_featureset_find_feature_coords(NULL, fi, y1, y2);
@@ -1282,7 +1282,12 @@ static void zmap_window_featureset_item_item_draw(FooCanvasItem *item, GdkDrawab
     {
       feat = (ZMapWindowCanvasFeature) sl->data;
 
-      //      if(debug && feat->feature) printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags, feat->y1,feat->y2);
+      /*
+        if(debug && feat->feature)
+        printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags,
+        feat->y1,feat->y2);
+      */
+
       if(!is_line && (feat->y1-y2 > 1.0)) //feat->y1 > y2)		/* for lines we have to do one more */
 	break;	/* finished */
 
