@@ -1402,8 +1402,7 @@ ZMapFrame zMapFeatureFrameAtCoord(ZMapFeature feature, int coord)
 
   if (exon)
     {
-      const int phase_offset = (coord == exon->sequence_span.x1 ? exon->start_phase : 0) ;
-      int x = exon->sequence_span.x1 - phase_offset ;
+      int x = exon->sequence_span.x1 - exon->start_phase ;
       int block_offset = 0 ;
 
       if (feature && feature->parent->parent)
