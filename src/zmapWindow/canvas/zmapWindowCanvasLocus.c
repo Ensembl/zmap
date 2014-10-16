@@ -381,23 +381,19 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, Gd
   //        FooCanvasItem *foo = (FooCanvasItem *) featureset;
 
   zMapReturnIfFail(featureset) ;
+
+
   f_width = featureset->width ;
   span = featureset->end - featureset->start + 1.0;
 
   ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
+
   //printf("locus zoom\n");
   zmapWindowCanvasLocusGetPango(drawable, featureset, lset);
 
   featureset->width = 0.0;
 
   lset->text_h = lset->pango.text_height / featureset->zoom;        /* can't use foo_canvas_c2w as it does a scroll offset */
-
-
-  if(featureset->display_index)                /* make sure it gets re-created if we've been run before */
-    {
-      zMapSkipListDestroy(featureset->display_index, NULL);
-      featureset->display_index = NULL;
-    }
 
 
   /* but normally we get called before the index is created */
