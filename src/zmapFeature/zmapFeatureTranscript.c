@@ -1463,22 +1463,39 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
         {
           GList *variations = feature->feature.transcript.variations ;
 
+          /* Get the total offset caused by variations before this exon (this will affect the
+           * length of previous exons so will therefore affect the start index in the transcript's
+           * peptide sequence where this exon starts). */
           variation_diff1 = zmapFeatureDNACalculateVariationDiff(1,
                                                                 exon_span->x1, 
                                                                 variations) ;
 
+          /* Get the total offset caused by variations within this exon (this will affect the
+           * exon length) */
           variation_diff2 = zmapFeatureDNACalculateVariationDiff(exon_span->x1,
                                                                 exon_span->x2, 
                                                                 variations) ;
+
+          /* Convert to peptide coords. Round up to include any partial codon (but note we need
+           * to round the absolute value up, so round down for negative numbers) */
+          if (variation_diff1 < 0)
+            variation_diff1 = (variation_diff1 - 2) / 3;
+          else
+            variation_diff1 = (variation_diff1 + 2) / 3;
+
+          if (variation_diff2 < 0)
+            variation_diff2 = (variation_diff2) / 3;
+          else
+            variation_diff2 = (variation_diff2) / 3;
         }
 
       full_exon_cds->pep_span.x1 = pep_start ;
       full_exon_cds->pep_span.x2 = pep_end ;
-      pep_length = pep_end - pep_start + 1 + (variation_diff2 / 3) ;
+      pep_length = pep_end - pep_start + 1 + variation_diff2 ;
 
       if (full_data->translation)
         {
-          peptide = full_data->translation + (pep_start - 1 + (variation_diff1 / 3)) ;
+          peptide = full_data->translation + (pep_start - 1 + variation_diff1) ;
           full_exon_cds->peptide = g_strndup(peptide, pep_length) ;
         }
 
