@@ -309,6 +309,121 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
   zmapWindowFeatureShowTranslation(window, feature) ;
 }
 
+
+/* Copy a section from src_ptr to dest_ptr from the start of src_ptr up to the coord of the given
+ * variation. src_coord gives the initial coord that src_ptr points to. After the copy, the 
+ * pointers are moved so that they point to the start of the next section after this variation. */
+static void copyExonPeptideSequenceSection(ZMapFeature variation, int *src_coord, char **src_ptr, char **dest_ptr)
+{
+  zMapReturnIfFail(variation && variation->feature.basic.variation_str) ;
+  zMapReturnIfFail(src_coord && src_ptr && *src_ptr && dest_ptr && *dest_ptr) ;
+
+  /* Get the difference in length in DNA bases caused by this variation */
+  const int diff = zMapFeatureVariationGetSections(variation->feature.basic.variation_str,
+                                                   NULL, NULL, NULL, NULL) ;
+
+  if (diff != 0)
+    {
+      /* Deletion or insertion. Copy everything before the variation. Convert to peptide
+       * coords, and round up so it's inclusive of any partial codon. */
+      const int len_to_copy = (variation->x1 - *src_coord + 2) / 3 ;
+
+      memcpy(*dest_ptr, *src_ptr, len_to_copy) ;
+
+      /* Set src_coord to point to the next coord after this variation. */
+      *src_coord = variation->x2 + 1 ;
+
+      if (diff < 0)
+        {
+          /* Deletion. Increase the position in the source string to the next
+           * base after those we've copied. */
+          *src_ptr += len_to_copy ;
+
+          /* Skip over the deleted bases in the dest string. Note that we need 
+           * to multiply diff by -1 to get the absolute number of bases. Note also that we don't
+           * round up in the conversion to peptides here so we exclude any partial codon (because
+           * that was already included in the length we copied). */
+          *dest_ptr += len_to_copy + ((diff * -1) / 3) ;
+        }
+      else
+        {
+          /* Insertion. Increase the position in the dest string to the next base 
+           * after those we've copied. */
+          *dest_ptr += len_to_copy ;
+
+          /* Skip over the inserted bases in the src string. Note that we don't round up the in
+           * the conversion to peptides here so we exclude any partial codon (because that was
+           * already included in the length we copied). */
+          *src_ptr += len_to_copy + (diff / 3) ;
+        }
+    }
+}
+
+
+/* Given an exon peptide sequence that contains variations, copy it into dest_ptr, aligning the
+ * result to the reference sequence. To do this, insertions are skipped and deletions are
+ * marked with dashes. */
+static void copyExonPeptideSequenceVariations(ZMapFeature feature, ZMapFullExon exon, char **dest_ptr)
+{
+  zMapReturnIfFail(feature && exon && dest_ptr && *dest_ptr && feature && feature->feature.transcript.variations) ;
+
+  /* src_ptr will point to the current start position in the peptide that we want to copy from */
+  char *src_ptr = exon->peptide ;
+
+  /* src_coord stores the coordinate of the peptide that src_ptr currently points to */
+  int src_coord = exon->sequence_span.x1 ;
+
+  /* Make sure variations are sorted by position (they should be already but the list
+   * shouldn't be long so no harm in making sure). */
+  feature->feature.transcript.variations = 
+    g_list_sort(feature->feature.transcript.variations, zMapFeatureCmp) ;
+
+  /* Loop through each variation */
+  GList *variation_item = feature->feature.transcript.variations ;
+
+  for ( ; variation_item; variation_item = variation_item->next)
+    {
+      ZMapFeature variation = (ZMapFeature)(variation_item->data) ;
+
+      /* If outside the max end of the exon, then none of the variations
+       * can apply, so stop. */
+      if (variation->x2 > exon->sequence_span.x2)
+        break ;
+
+      /* If not inside this exon then continue to the next variation */
+      if (variation->x1 < exon->sequence_span.x1)
+        continue ;
+
+      /* Copy the section up to this variation and increment the pointers to point to the section
+       * after this variation */
+      copyExonPeptideSequenceSection(variation, &src_coord, &src_ptr, dest_ptr) ;
+    }
+
+  /* Copy the remaining section of the peptide (i.e. the section from the last variation to the end) */
+  memcpy(*dest_ptr, src_ptr, strlen(src_ptr)) ;
+}
+
+
+/* Copy the exon peptide sequence from src_ptr to dest_ptr. The result is aligned to the reference
+ * sequence even if it contains variations. */
+static void copyExonPeptideSequence(ZMapFeature feature, ZMapFullExon exon, char **dest_ptr)
+{
+  zMapReturnIfFail(dest_ptr && *dest_ptr) ;
+  zMapReturnIfFailSafe(exon && exon->peptide) ;
+
+  if (feature && feature->feature.transcript.variations)
+    {
+      /* Copy the sequence, aligning it according to the variations */
+      copyExonPeptideSequenceVariations(feature, exon, dest_ptr) ;
+    }
+  else
+    {
+      /* Just copy the entire peptide sequence to dest */
+      memcpy(*dest_ptr, exon->peptide, strlen(exon->peptide)) ;
+    }
+}
+
+
 void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
 {
   if (!(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_HAS_CDS(feature) && ZMAPFEATURE_FORWARD(feature)))
@@ -396,12 +511,6 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
           trans_feature->feature.sequence.exon_list = NULL;
         }
       
-      /* NOTE
-       * to display exons well we need to offset the the phse in each one at high zoom
-       * however, this code is not set up to do that so we are stuck with frame 1
-       * unless we do a rewrite
-       */
-
       /* Get the exon descriptions from the feature. */
       zMapFeatureAnnotatedExonsCreate(feature, TRUE, FALSE, &trans_feature->feature.sequence.exon_list) ;
 
@@ -483,79 +592,10 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
 
                   dest_ptr = (seq + dest_start) - 1 ;
 
-                  if (current_exon->peptide)
-                    {
-                      /* Set the pointer to the src string to copy into dest_ptr. This is just the
-                       * entire exon peptide unless there are variations that we need to apply */
-                      char *src_ptr = current_exon->peptide ;
-
-
-                      if (feature->feature.transcript.variations)
-                        {
-                          const int exon_start = current_exon->sequence_span.x1 ;
-                          const int exon_end = current_exon->sequence_span.x2 ;
-                          int src_start = exon_start ;
-
-                          /* Make sure variations are sorted by position */
-                          feature->feature.transcript.variations = 
-                            g_list_sort(feature->feature.transcript.variations, zMapFeatureCmp) ;
-                          
-                          /* Loop through each variation and apply any that are within this
-                           * exon's range */
-                          GList *variation_item = feature->feature.transcript.variations ;
-                          for ( ; variation_item; variation_item = variation_item->next)
-                            {
-                              ZMapFeature variation = (ZMapFeature)(variation_item->data) ;
-
-                              /* If outside the max end of the exon, then none of the variations
-                                 can apply, so break. */
-                              if (variation->x2 > exon_end)
-                                break ;
-
-                              /* If not inside this exon then continue to the next variation */
-                              if (variation->x1 < exon_start)
-                                continue ;
-
-                              /* Get the difference in length in DNA bases caused by this
-                               * variation */
-                              int diff = zMapFeatureVariationGetSections(variation->feature.basic.variation_str,
-                                                                         NULL, NULL, NULL, NULL) ;
-
-                              if (diff != 0)
-                                {
-                                  /* Deletion or insertion. Copy everything before the
-                                     variation (including  any partial codon). */
-                                  int len_to_copy = (variation->x1 - src_start + 2) / 3 ;
-
-                                  memcpy(dest_ptr, src_ptr, len_to_copy) ;
-
-                                  src_start = variation->x2 + 1 ;
-                                      
-                                  if (diff < 0)
-                                    {
-                                      /* Deletion. Increment the position in the source string
-                                       * to the next base. Skip over the deleted bases in the
-                                       * dest string. Note that we need to make diff positive
-                                       * to get the absolute number of bases. */
-                                      src_ptr += len_to_copy ;
-                                      diff *= -1 ;
-                                      dest_ptr += len_to_copy + (diff / 3) ;
-                                    }
-                                  else
-                                    {
-                                      /* Insertion. Increment the position in the dest
-                                       * string but skip over the inserted bases in the src string */
-                                      dest_ptr += len_to_copy ;
-                                      src_ptr += len_to_copy + (diff / 3) ;
-                                    }
-                                }
-                            }
-                        }
-
-                      /* Copy the remaining exon sequence to the destination position. (This will
-                       * be the entire exon peptide if there were no variations.) */
-                      memcpy(dest_ptr, src_ptr, strlen(src_ptr)) ;
-                    }
+                  /* Copy the src sequence to the dest sequence. Note that this function
+                   * takes care of making sure it is aligned correctly if there are
+                   * variations */
+                  copyExonPeptideSequence(feature, current_exon, &dest_ptr) ;
                 }
             }
           while ((exon_list_member = g_list_next(exon_list_member))) ;
