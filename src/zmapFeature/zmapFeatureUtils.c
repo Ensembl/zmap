@@ -1411,6 +1411,17 @@ ZMapFrame zMapFeatureFrameAtCoord(ZMapFeature feature, int coord)
           block_offset = block->block_to_sequence.block.x1;   /* start of block in sequence/parent */
         }
 
+      /* If there are any variations in this transcript they may affect the frame */
+      if (feature && feature->mode == ZMAPSTYLE_MODE_SEQUENCE && feature->feature.sequence.variations)
+        {
+          GList *variations = feature->feature.sequence.variations ;
+
+          /* Calculate the total offset caused by variations up to the given coord */
+          int variation_diff = zmapFeatureDNACalculateVariationDiff(1, coord, variations) ;
+
+          x -= variation_diff ;
+        }
+
       frame = feature_frame_coords(block_offset, x) ;
     }
   
@@ -1716,6 +1727,7 @@ static void get_feature_list_extent(gpointer list_data, gpointer span_data)
 static ZMapFullExon feature_find_closest_exon_at_coord(ZMapFeature feature, int coord)
 {
   ZMapFullExon result = NULL;
+  zMapReturnValIfFail(feature && feature->mode == ZMAPSTYLE_MODE_SEQUENCE, result) ;
 
   gboolean first_time = TRUE;
   gboolean found = FALSE;

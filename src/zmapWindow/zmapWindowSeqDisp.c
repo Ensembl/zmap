@@ -504,13 +504,24 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
       /* Brute force, reinit the whole peptide string. */
       memset(seq, (int)SHOW_TRANS_BACKGROUND, trans_feature->feature.sequence.length) ;
 
-      /* Destroy any previous exon list */
+      /* Destroy any previous exon/variation list */
       if (trans_feature->feature.sequence.exon_list)
         {
           g_list_free(trans_feature->feature.sequence.exon_list);
           trans_feature->feature.sequence.exon_list = NULL;
         }
+
+      if (trans_feature->feature.sequence.variations)
+        {
+          g_list_free(trans_feature->feature.sequence.variations) ;
+          trans_feature->feature.sequence.variations = NULL ;
+        }
       
+      /* If the feature contains any variations, store them because we'll need them to display
+       * the translation correctly aligned. */
+      if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+        trans_feature->feature.sequence.variations = g_list_copy(feature->feature.transcript.variations) ;
+
       /* Get the exon descriptions from the feature. */
       zMapFeatureAnnotatedExonsCreate(feature, TRUE, FALSE, &trans_feature->feature.sequence.exon_list) ;
 

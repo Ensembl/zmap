@@ -1296,8 +1296,8 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
         {
           /* mixed exon: may have utrs, split codons or just cds. */
           int ex_cds_start = exon_start, ex_cds_end = exon_end ;
-          int exon_length ;
-          int start_phase, end_phase ;
+          int exon_length = 0 ;
+          int start_phase = 0, end_phase = 0 ;
 
           if (exon_start < full_data->cds_start)
             {
@@ -1330,6 +1330,14 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
           /* ok, now any utr sections are removed we can work out phases of translation section. */
           exon_length = (ex_cds_end - ex_cds_start) + 1 ;
+          
+          /* variations may change the length of the peptide sequence in the exon */
+          if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+            {
+              int variation_diff = zmapFeatureDNACalculateVariationDiff(ex_cds_start, ex_cds_end, 
+                                                                        feature->feature.transcript.variations) ;
+              exon_length += variation_diff ;
+            }
 
           if (ex_cds_start == full_data->cds_start && exon_length < 3)
             {
@@ -1534,8 +1542,8 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 /* Create a full exon with all the positional information and update the running positional
  * counters required for cds phase calcs etc. */
 static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZMapSpan exon_span,
-       int *curr_feature_pos, int *curr_spliced_pos,
-       int *curr_cds_pos, int *curr_trans_pos)
+                               int *curr_feature_pos, int *curr_spliced_pos,
+                               int *curr_cds_pos, int *curr_trans_pos)
 {
   ZMapFullExon exon = NULL ;
   int exon_length = ZMAP_SPAN_LENGTH(exon_span) ;

@@ -194,7 +194,11 @@ typedef struct ZMapSequenceStruct_
 
   int length ;						    /* length of sequence in bases or peptides. */
   char *sequence ;					    /* Actual sequence." */
-  GList *exon_list ;                                        /* If this sequence is a translation, this is the exon list it was translated from */
+  GList *exon_list ;                                        /* If this sequence is a translation, this is 
+                                                             * the exon list it was translated from */
+  GList *variations ;                                       /* If the sequence is a translation, this
+                                                             * list contains any variations applied
+                                                             * to it */
 } ZMapSequenceStruct, *ZMapSequence ;
 
 
