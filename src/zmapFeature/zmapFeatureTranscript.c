@@ -304,6 +304,97 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 }
 
 
+/* Returns a variation in the list that overlaps the given variation (or null if none) */
+static ZMapFeature findOverlappingVariation(ZMapFeature variation, GList *compare_list)
+{
+  ZMapFeature result = NULL ;
+
+  GList *compare_item = compare_list ;
+
+  for ( ; compare_item && !result; compare_item = compare_item->next)
+    {
+      ZMapFeature compare_feature = (ZMapFeature)(compare_item->data) ;
+      if ((compare_feature->x1 >= variation->x1 && compare_feature->x1 <= variation->x2) ||
+          (compare_feature->x2 >= variation->x1 && compare_feature->x2 <= variation->x2))
+        {
+          result = compare_feature ;
+        }
+    }
+  
+  return result ;
+}
+
+/* Remove all the variation metadata in a transcript. */
+gboolean zMapFeatureRemoveTranscriptVariations(ZMapFeature feature, 
+                                               GError **error)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT, result) ;
+  
+  g_list_free(feature->feature.transcript.variations) ;
+  feature->feature.transcript.variations = NULL ;
+
+  return TRUE ;
+}
+
+
+/* Add a variation to a transcript feature. Stores the variation as metadata which is used
+ * to modify the transcript sequence. Only applies the variation if it lies within an exon. */
+gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, 
+                                           ZMapFeature variation,
+                                           GError **error)
+{
+  gboolean result = FALSE ;
+
+  zMapReturnValIfFail(feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT, result) ;
+  zMapReturnValIfFail(variation && variation->mode == ZMAPSTYLE_MODE_BASIC, result) ;
+
+  /* Find which exon the variation lies in */
+  GArray *exons = feature->feature.transcript.exons;
+  int i = 0 ;
+
+  for ( ; i < exons->len; ++i)
+    {
+      ZMapSpan exon = &(g_array_index(exons, ZMapSpanStruct, i)) ;
+
+      if (variation->x1 >= exon->x1 && variation->x2 <= exon->x2)
+        {
+          /* Ok, found the exon. Add the variation to the transcript (but
+           * disallow adding of overlapping variations). */
+          ZMapFeature overlapping_variation = findOverlappingVariation(variation, feature->feature.transcript.variations) ;
+
+          if (!overlapping_variation)
+            {
+              feature->feature.transcript.variations = 
+                g_list_insert_sorted(feature->feature.transcript.variations, 
+                                     variation,
+                                     zMapFeatureCmp) ;
+              
+              result = TRUE ;
+            }
+          else if (overlapping_variation->mode == ZMAPSTYLE_MODE_BASIC &&
+                   overlapping_variation->feature.basic.variation_str)
+            {
+              g_set_error(error, g_quark_from_string("ZMap"), 99, 
+                          "Cannot add variation '%s' because it overlaps existing variation '%s'\n",
+                          variation->feature.basic.variation_str,
+                          overlapping_variation->feature.basic.variation_str) ;
+            }
+          else
+            {
+              g_set_error(error, g_quark_from_string("ZMap"), 99, 
+                          "Cannot add variation '%s' because it overlaps existing variation '<invalid type>'\n",
+                          variation->feature.basic.variation_str) ;
+            }
+
+          break ;
+        }
+    }
+
+  return result ;
+}
+
+
 /* Removes all exons */
 void zMapFeatureRemoveExons(ZMapFeature feature)
 {
@@ -426,8 +517,8 @@ gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature)
  * see the ZMapFullExon struct.
  *
  */
-gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein,
- GList **exon_regions_list_out)
+gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, gboolean pad, 
+                                         GList **exon_regions_list_out)
 {
   gboolean result = FALSE ;
   gboolean exon_debug = FALSE ;
@@ -465,7 +556,7 @@ gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_p
         {
           int real_length;
 
-          full_data.translation = zMapFeatureTranslation(feature, &real_length);
+          full_data.translation = zMapFeatureTranslation(feature, &real_length, pad);
         }
 
 
@@ -1205,8 +1296,8 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
         {
           /* mixed exon: may have utrs, split codons or just cds. */
           int ex_cds_start = exon_start, ex_cds_end = exon_end ;
-          int exon_length ;
-          int start_phase, end_phase ;
+          int exon_length = 0 ;
+          int start_phase = 0, end_phase = 0 ;
 
           if (exon_start < full_data->cds_start)
             {
@@ -1239,6 +1330,14 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
           /* ok, now any utr sections are removed we can work out phases of translation section. */
           exon_length = (ex_cds_end - ex_cds_start) + 1 ;
+          
+          /* variations may change the length of the peptide sequence in the exon */
+          if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+            {
+              int variation_diff = zmapFeatureDNACalculateVariationDiff(ex_cds_start, ex_cds_end, 
+                                                                        feature->feature.transcript.variations) ;
+              exon_length += variation_diff ;
+            }
 
           if (ex_cds_start == full_data->cds_start && exon_length < 3)
             {
@@ -1353,19 +1452,50 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
   if (full_exon_cds)
     {
-      int pep_start, pep_end, pep_length ;
-      char *peptide ;
+      int pep_start = 0, pep_end = 0, pep_length = 0, variation_diff1 = 0, variation_diff2 = 0 ;
+      char *peptide = NULL ;
 
       pep_start = (full_exon_cds->cds_span.x1 / 3) + 1 ;
       pep_end = full_exon_cds->cds_span.x2 / 3 ;
 
+      /* If there are any variations in this exon they may affect its length */
+      if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+        {
+          GList *variations = feature->feature.transcript.variations ;
+
+          /* Get the total offset caused by variations before this exon (this will affect the
+           * length of previous exons so will therefore affect the start index in the transcript's
+           * peptide sequence where this exon starts). */
+          variation_diff1 = zmapFeatureDNACalculateVariationDiff(1,
+                                                                exon_span->x1, 
+                                                                variations) ;
+
+          /* Get the total offset caused by variations within this exon (this will affect the
+           * exon length) */
+          variation_diff2 = zmapFeatureDNACalculateVariationDiff(exon_span->x1,
+                                                                exon_span->x2, 
+                                                                variations) ;
+
+          /* Convert to peptide coords. Round up to include any partial codon (but note we need
+           * to round the absolute value up, so round down for negative numbers) */
+          if (variation_diff1 < 0)
+            variation_diff1 = (variation_diff1 - 2) / 3;
+          else
+            variation_diff1 = (variation_diff1 + 2) / 3;
+
+          if (variation_diff2 < 0)
+            variation_diff2 = (variation_diff2) / 3;
+          else
+            variation_diff2 = (variation_diff2) / 3;
+        }
+
       full_exon_cds->pep_span.x1 = pep_start ;
       full_exon_cds->pep_span.x2 = pep_end ;
-      pep_length = pep_end - pep_start + 1 ;
+      pep_length = pep_end - pep_start + 1 + variation_diff2 ;
 
       if (full_data->translation)
         {
-          peptide = full_data->translation + (pep_start - 1) ;
+          peptide = full_data->translation + (pep_start - 1 + variation_diff1) ;
           full_exon_cds->peptide = g_strndup(peptide, pep_length) ;
         }
 
@@ -1429,8 +1559,8 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 /* Create a full exon with all the positional information and update the running positional
  * counters required for cds phase calcs etc. */
 static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZMapSpan exon_span,
-       int *curr_feature_pos, int *curr_spliced_pos,
-       int *curr_cds_pos, int *curr_trans_pos)
+                               int *curr_feature_pos, int *curr_spliced_pos,
+                               int *curr_cds_pos, int *curr_trans_pos)
 {
   ZMapFullExon exon = NULL ;
   int exon_length = ZMAP_SPAN_LENGTH(exon_span) ;

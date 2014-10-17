@@ -67,6 +67,36 @@ ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window)
 }
 
 
+/*!
+ * \brief Get the single feature that resides in the scratch column
+ *
+ * \returns The ZMapFeature, or NULL if the column doesn't exist
+ */
+static ZMapFeature zmapWindowScratchGetFeature(ZMapWindow window)
+{
+  ZMapFeature feature = NULL ;
+  ZMapFeatureSet feature_set = zmapWindowScratchGetFeatureset(window) ;
+
+  if (feature_set)
+    {
+      ZMapFeatureAny feature_any = (ZMapFeatureAny)feature_set;
+
+      GHashTableIter iter;
+      gpointer key, value;
+
+      g_hash_table_iter_init (&iter, feature_any->children);
+
+      /* Should only be one, so just get the first */
+      while (g_hash_table_iter_next (&iter, &key, &value) && !feature)
+        {
+          feature = (ZMapFeature)(value);
+        }
+    }
+  
+  return feature;
+}
+
+
 /* Do the callback to the View level for a command on the scratch column */
 static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
                                      ZMapWindow window,
@@ -126,6 +156,16 @@ static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
       /* Call back to the View to update all windows */
       ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
       (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+
+      /* If the translation is being shown for the scratch feature, recalculate it */
+      ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
+
+      if (window->show_translation_featureset_id &&
+          window->show_translation_featureset_id == scratch_featureset->unique_id)
+        {
+          ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
+          zmapWindowFeatureShowTranslation(window, scratch_feature) ;
+        }
     }
   else
     {
@@ -230,6 +270,16 @@ void zmapWindowScratchUndo(ZMapWindow window)
   scratch_cmd->cmd = ZMAPWINDOW_CMD_UNDOSCRATCH ;
   
   (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+
+  /* If the translation is being shown for the scratch feature, recalculate it */
+  ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
+
+  if (window->show_translation_featureset_id &&
+      window->show_translation_featureset_id == scratch_featureset->unique_id)
+    {
+      ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
+      zmapWindowFeatureShowTranslation(window, scratch_feature) ;
+    }
 }
 
 
@@ -249,5 +299,35 @@ void zmapWindowScratchRedo(ZMapWindow window)
   scratch_cmd->cmd = ZMAPWINDOW_CMD_REDOSCRATCH ;
   
   (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+
+  /* If the translation is being shown for the scratch feature, recalculate it */
+  ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
+
+  if (window->show_translation_featureset_id &&
+      window->show_translation_featureset_id == scratch_featureset->unique_id)
+    {
+      ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
+      zmapWindowFeatureShowTranslation(window, scratch_feature) ;
+    }
 }
 
+
+/*!
+ * \brief Get evidence feature names from the scratch column and call the given callback with them.
+ */
+void zmapWindowScratchFeatureGetEvidence(ZMapWindow window, ZMapFeature feature, 
+                                         ZMapWindowGetEvidenceCB evidence_cb, gpointer evidence_cb_data)
+{
+  zMapReturnIfFail(window && feature && evidence_cb) ;
+
+  /* Call the callback to the view */
+  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+  ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
+  
+  /* Set up general command field for callback. */
+  scratch_cmd->cmd = ZMAPWINDOW_CMD_GETEVIDENCE ;
+  scratch_cmd->evidence_cb = evidence_cb ;
+  scratch_cmd->evidence_cb_data = evidence_cb_data ;
+  
+  (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+}

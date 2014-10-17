@@ -203,7 +203,7 @@ static double deOverlap(GList *visible,int n_loci, double text_h, double start, 
 
   zMapReturnValIfFail(visible, longest) ;
 
-  visible = g_list_sort(visible, zMapFeatureCmp);
+  visible = g_list_sort(visible, zMapWindowFeatureCmp);
 
   /* arrange into groups of overlapping loci (not names).
    * NOTE the groups do not overlap at all,but the locus names may

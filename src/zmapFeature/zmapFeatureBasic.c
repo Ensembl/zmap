@@ -39,8 +39,10 @@
 
 #include <ZMap/zmapFeature.h>
 #include <zmapFeature_P.h>
+#include <string.h>
 
 
+#define VARIATION_SEPARATOR_CHAR '/'
 
 
 /* 
@@ -78,5 +80,95 @@ gboolean zmapFeatureBasicHasMatchingBoundary(ZMapFeature feature,
 }
 
 
+
+/* Get the sections before and after the separator in a variation string. Note that at the moment
+ * this ignores anything after the second separator, if there is one. (This function could be
+ * modified to return a list of new strings if we want to return all of the alternatives.)
+ * Returns the diff between new_len and old len (which is negative if a deletion, positive for an
+ * insertion or 0 for a replacement of the same number of chars). */
+int zMapFeatureVariationGetSections(const char *variation_str, 
+                                    char **old_str_out, char **new_str_out, 
+                                    int *old_len_out, int *new_len_out)
+{
+  int diff = 0 ;
+  zMapReturnValIfFail(variation_str && *variation_str != 0, diff) ;
+
+  const char *separator_pos = strchr(variation_str, VARIATION_SEPARATOR_CHAR) ;
+  const int len = strlen(variation_str) ;
+
+  if (separator_pos)
+    {
+      /* The end of the replacement string is at another separator or the end of the string */
+      const char *end = strchr(separator_pos + 1, VARIATION_SEPARATOR_CHAR) ;
+
+      if (!end)
+        end = variation_str + len ;
+
+      int old_len = separator_pos - variation_str ;
+      int new_len = end - separator_pos - 1 ;
+
+      char *old_str = NULL ;
+      char *new_str = NULL ;
+
+      if (old_len > 0)
+        {
+          old_str = g_strndup(variation_str, old_len) ;
+          
+          if (strcmp(old_str, "-") == 0) /* insertion */
+            old_len = 0 ;
+        }
+
+      if (new_len > 0)
+        {
+          new_str = g_strndup(separator_pos + 1, new_len) ;
+          
+          if (strcmp(new_str, "-") == 0) /* deletion */
+            new_len = 0 ;
+        }
+
+      /* Assign output variables */
+      diff = new_len - old_len ;
+
+      if (old_len_out)
+        *old_len_out = old_len ;
+
+      if (new_len_out)
+        *new_len_out = new_len ;
+
+      if (old_str_out && old_len > 0)
+        *old_str_out = old_str ;
+      else
+        g_free(old_str) ;
+
+      if (new_str_out && new_len > 0)
+        *new_str_out = new_str ;
+      else
+        g_free(new_str) ;
+    }
+
+  return diff ;
+}
+
+
+
+//static gboolean variationIsMulti(const char *variation_str)
+//{
+//  gboolean result = FALSE ;
+//  zMapReturnValIfFail(variation_str && *variation_str != 0, result) ;
+//
+//  /* If the string contains more than one separator, it is a multiple variation */
+//  char *cp = strchr(variation_str, VARIATION_SEPARATOR_CHAR) ;
+//
+//  if (cp)
+//    {
+//
+//      cp = strchr(cp + 1, VARIATION_SEPARATOR_CHAR) ;
+//
+//      if (cp)
+//        result = TRUE ;
+//    }
+//
+//  return result ;
+//}
 
 

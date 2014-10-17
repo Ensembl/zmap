@@ -529,6 +529,8 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
       char *p,*q;
       int i;
 
+      frame = zMapFeatureFrameAtCoord(feature->feature, y + feature->y1);
+
       y_base = y / seq->factor;
       if(y_base >= sequence->length)
         break;
@@ -567,7 +569,6 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
       pango_renderer_draw_layout(pango->renderer, pango->layout,
                                  cx * PANGO_SCALE, (cy + seq->offset) * PANGO_SCALE) ;
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -847,11 +848,30 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
 
   //zMapDebugPrintf("seq coord %.1f, %.1f, %.1f -> %ld\n",x,y,featureset->dy, seq_y);
 
+  ZMapFrame frame = featureset->frame;
+  ZMapFeature feature = zmapWindowItemGetFeature((FooCanvasItem*)featureset) ;
+
+  if (frame == ZMAPFRAME_NONE)
+    {
+      /* We get here for the Show Translation column, where all 3 frames are in 
+       * the same column. We need to know which exon we're in to find the frame 
+       * for this particular section, but that's difficult because we can't work
+       * out exactly which coord we're at until we know the frame! For now just find 
+       * the closest exon and hope that's good enough. */
+      frame = zMapFeatureFrameAtCoord(feature, seq_y + seq->start - 1) ;
+
+      if (frame == ZMAPFRAME_NONE)
+        {
+          zMapDebugPrintf("Could not find frame for Translation at coordinate %d", seq_y);
+          frame = ZMAPFRAME_0;
+        }
+    }
+
 
   seq_y -= 1;                                                    /* zero base */
   if(seq->factor > 1)                                            /* bias to first base of residue */
     {
-      seq_y -= featureset->frame - ZMAPFRAME_0;                    /* remove frame offset */
+      seq_y -= frame - ZMAPFRAME_0;                    /* remove frame offset */
       seq_y -= seq_y % seq->factor;                            /* bias to start of residue */
     }
 
@@ -866,7 +886,7 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
   seq_y += 1;                                                    /* start of this row in seq coords,
                                                                as we have 1-based coordinates */
   if(seq->factor > 1)
-    seq_y += featureset->frame - ZMAPFRAME_0;                    /* back to frame offset coords */
+    seq_y += frame - ZMAPFRAME_0;                    /* back to frame offset coords */
 
   //zMapDebugPrintf("row coord %ld\n", seq_y);
 
@@ -902,12 +922,15 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMapDebugPrintf("seq_y = %ld %d\n",seq_y,featureset->frame);
+  zMapDebugPrintf("seq_y = %ld %d\n",seq_y,frame);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* now we have seq coords, adjust the cursor to the start of the selected residue */
   seq_y += featureset->start - 1;
+
+  int phase_offset = zMapFeatureSplitCodonOffset(feature, seq_y) ;
+  seq_y -= phase_offset ;
 
   if(set)
     {

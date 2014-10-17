@@ -5898,6 +5898,13 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
         zmapViewScratchRedo(view);
         break;
       }
+
+    case ZMAPWINDOW_CMD_GETEVIDENCE:
+      {
+        ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+        zmapViewScratchFeatureGetEvidence(view, scratch_cmd->evidence_cb, scratch_cmd->evidence_cb_data);
+        break;
+      }
       
     default:
       {

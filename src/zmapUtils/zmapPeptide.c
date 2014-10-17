@@ -286,7 +286,7 @@ ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
 
   pep->peptide = translateDNA(dna, translation_table, include_stop, &(pep->incomplete_final_codon)) ;
 
-  if (include_stop && g_array_index(pep->peptide, char, (pep->peptide->len - 2)) == '*')
+  if (include_stop && pep->peptide && g_array_index(pep->peptide, char, (pep->peptide->len - 2)) == '*')
     pep->stop_codon = TRUE ;
 
   return pep ;
@@ -355,7 +355,8 @@ ZMapPeptide zMapPeptideCreateSafely(char *sequence_name, char *gene_name,
 /* The length of the amino acid sequence */
 int zMapPeptideLength(ZMapPeptide peptide)
 {
-  int length ;
+  int length = 0 ;
+  zMapReturnValIfFail(peptide && peptide->peptide, length) ;
 
   length = peptide->peptide->len - 1 ;    /* Remove trailing NULL. */
 
@@ -388,12 +389,14 @@ int zMapPeptideFullSourceCodonLength(ZMapPeptide peptide)
 
 gboolean zMapPeptideHasStopCodon(ZMapPeptide peptide)
 {
+  zMapReturnValIfFail(peptide, FALSE) ;
   return peptide->stop_codon ;
 }
 
 char *zMapPeptideSequence(ZMapPeptide peptide)
 {
-  char *sequence ;
+  char *sequence = NULL ;
+  zMapReturnValIfFail(peptide && peptide->peptide, sequence) ;
 
   sequence = (char *)peptide->peptide->data ;
 

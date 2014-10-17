@@ -1728,7 +1728,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
           seq_term = "Protein" ;
 
-          frame = zMapFeatureFrame(feature) ;
+          frame = zMapFeatureFrameAtCoord(feature, start) ;
 
           select.feature_desc.sub_feature_term   =  g_strdup("Frame") ;
           select.feature_desc.sub_feature_index  =  g_strdup(zMapFeatureFrame2Str(frame)) ;

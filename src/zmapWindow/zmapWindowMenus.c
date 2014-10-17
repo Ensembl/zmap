@@ -3784,7 +3784,7 @@ static GList *getTranscriptTextAttrs(ZMapFeature feature, gboolean spliced, gboo
   GList *text_attrs = NULL ;
   GList *exon_list = NULL ;
 
-  if (zMapFeatureAnnotatedExonsCreate(feature, FALSE, &exon_list))
+  if (zMapFeatureAnnotatedExonsCreate(feature, FALSE, FALSE, &exon_list))
     {
       MakeTextAttrStruct text_data ;
 
@@ -4030,18 +4030,16 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-STUFF LEFT TO DO.....
-
-DEFINE HIGHLIGHT_DATA STRUCT
-CHANGE FUNC PROTO FOR GETEVIDENCE...AND MAKE IT CALL BACK TO THIS FUNC SUPPLYING
-THE EVIDENCE LIST AND WE SHOULD BE DONE.....
-
-BUT MAY NEED A SPECIAL CALLBACK IN FEATURESHOW TO HANDLE THIS CALLBACK
-SEPARATELY FROM THE EXISTING FEATURESHOW CALLBACK......
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+/*
+ * STUFF LEFT TO DO.....
+ * 
+ * DEFINE HIGHLIGHT_DATA STRUCT
+ * CHANGE FUNC PROTO FOR GETEVIDENCE...AND MAKE IT CALL BACK TO THIS FUNC SUPPLYING
+ * THE EVIDENCE LIST AND WE SHOULD BE DONE.....
+ * 
+ * BUT MAY NEED A SPECIAL CALLBACK IN FEATURESHOW TO HANDLE THIS CALLBACK
+ * SEPARATELY FROM THE EXISTING FEATURESHOW CALLBACK......
+*/
 
 /* This code is a callback, called from zmapWindowFeatureGetEvidence() which
  * contacts our peer to get evidence lists of features.

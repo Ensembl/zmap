@@ -252,9 +252,10 @@ ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view)
  *
  * \returns The ZMapFeature, or NULL if there was a problem
  */
-ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set)
+ZMapFeature zmapViewScratchGetFeature(ZMapView view)
 {
-  ZMapFeature feature = NULL;
+  ZMapFeature feature = NULL ;
+  ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(view);
 
   if (feature_set)
     {
@@ -526,6 +527,42 @@ static gboolean scratchMergeTranscript(ScratchMergeData merge_data, ZMapFeature 
 }
 
 
+/*!
+ * \brief Add/merge a variation to the scratch column
+ */
+static gboolean scratchMergeVariation(ScratchMergeData merge_data, ZMapFeature feature)
+{
+  gboolean merged = TRUE;
+
+  /* Copying a variation means that we use the variation to modify the sequence of 
+   * the transcript (rather than it modifying the exon coords as for other features). */
+  merged = zMapFeatureAddTranscriptVariation(merge_data->dest_feature, feature, merge_data->error) ;
+
+  return merged;
+}
+
+
+static gboolean featureIsVariation(ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+
+  if (feature && feature->mode == ZMAPSTYLE_MODE_BASIC &&
+      feature->feature.basic.variation_str)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+/* Some features (just variations at present) need to be added as additional metadata rather than
+ * being used to modify the feature itself. This function returns true if the given feature is
+ * metadata type. */
+static gboolean featureIsMetadata(ZMapFeature feature)
+{
+  return featureIsVariation(feature) ;
+}
+
+
 /*! 
  * \brief Add/merge a feature to the scratch column
  */
@@ -535,7 +572,7 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data, ZMapFeature fea
   zMapReturnValIfFail(feature, merged) ;
 
   /* If the start/end is not set, set it now from the feature extent */
-  if (!scratchGetStartEndFlag(merge_data->view))
+  if (!scratchGetStartEndFlag(merge_data->view) && !featureIsMetadata(feature))
     {
       merge_data->dest_feature->x1 = feature->x1;
       merge_data->dest_feature->x2 = feature->x2;
@@ -547,7 +584,10 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data, ZMapFeature fea
         {
         case ZMAPSTYLE_MODE_ALIGNMENT:      /* fall through */
         case ZMAPSTYLE_MODE_BASIC:
-          merged = scratchMergeBasic(merge_data, feature);
+          if (featureIsVariation(feature))
+            merged = scratchMergeVariation(merge_data, feature);
+          else
+            merged = scratchMergeBasic(merge_data, feature);
           break;
         case ZMAPSTYLE_MODE_TRANSCRIPT:
           merged = scratchMergeTranscript(merge_data, feature);
@@ -728,6 +768,15 @@ static void scratchDeleteFeatureExons(ZMapView view, ZMapFeature feature, ZMapFe
 }
 
 
+/*!
+ * \brief Utility to delete all metadata from the given feature
+ */
+static void scratchDeleteFeatureMetadata(ZMapFeature feature)
+{
+  zMapFeatureRemoveTranscriptVariations(feature, NULL) ;
+}
+
+
 static void scratchEraseFeature(ZMapView zmap_view)
 {
   g_return_if_fail(zmap_view && zmap_view->features) ;
@@ -737,11 +786,14 @@ static void scratchEraseFeature(ZMapView zmap_view)
   ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
   g_return_if_fail(feature_set) ;
 
-  ZMapFeature feature = zmapViewScratchGetFeature(feature_set) ;
+  ZMapFeature feature = zmapViewScratchGetFeature(zmap_view) ;
   g_return_if_fail(feature) ;
 
   /* Delete the exons and introns */
   scratchDeleteFeatureExons(zmap_view, feature, feature_set);
+
+  /* Delete any metadata we've added */
+  scratchDeleteFeatureMetadata(feature) ;
 
   /* Reset the start-/end-set flag */
   scratchSetStartEndFlag(zmap_view, FALSE);
@@ -1417,8 +1469,7 @@ gboolean zmapViewScratchSave(ZMapView view, ZMapFeature feature)
     {
       /* If the new feature is exactly the same as the existing one then we don't
        * need to do anything. */
-      ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(view) ;
-      ZMapFeature old_feature = zmapViewScratchGetFeature(feature_set) ;
+      ZMapFeature old_feature = zmapViewScratchGetFeature(view) ;
 
       if (!featuresEqual(old_feature, feature))
         {
@@ -1439,3 +1490,33 @@ gboolean zmapViewScratchSave(ZMapView view, ZMapFeature feature)
 }
 
 
+/*!
+ * \brief Called when the user selects to show evidence. Constructs a list of evidence and then
+ * calls the given callback (usually to highlight the evidence).
+ */
+void zmapViewScratchFeatureGetEvidence(ZMapView view, ZMapWindowGetEvidenceCB evidence_cb, gpointer evidence_cb_data)
+{
+  zMapReturnIfFail(view && evidence_cb) ;
+
+  GList *evidence_list = NULL ;
+
+  /* Loop through each edit operation and append the feature name(s) to the evidence list */
+  GList *operation_item = view->edit_list_start ;
+
+  while (operation_item)
+    {
+      EditOperation operation = (EditOperation)(operation_item->data) ;
+
+      /* Append the feature ids from the operation to the result list. Note that concat takes
+       * ownership of the second list so make a copy of it first. */
+      GList *tmp = g_list_copy(operation->src_feature_ids) ;
+      evidence_list = g_list_concat(evidence_list, tmp) ;
+
+      if (operation_item == view->edit_list_end)
+        break ;
+
+      operation_item = operation_item->next ;
+    }
+
+  evidence_cb(evidence_list, evidence_cb_data) ;
+}

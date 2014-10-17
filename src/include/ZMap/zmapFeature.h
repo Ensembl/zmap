@@ -192,8 +192,13 @@ typedef struct ZMapSequenceStruct_
 /* Where possible dna frame from which peptide translated. */
 /* use zMapFeatureFrame() instead, this is based on seq coords and is stable even if we extend the seq upwards */
 
-  int length ;                                             /* length of sequence in bases or peptides. */
-  char *sequence ;                                         /* Actual sequence." */
+  int length ;						    /* length of sequence in bases or peptides. */
+  char *sequence ;					    /* Actual sequence." */
+  GList *exon_list ;                                        /* If this sequence is a translation, this is 
+                                                             * the exon list it was translated from */
+  GList *variations ;                                       /* If the sequence is a translation, this
+                                                             * list contains any variations applied
+                                                             * to it */
 } ZMapSequenceStruct, *ZMapSequence ;
 
 
@@ -663,12 +668,16 @@ typedef struct ZMapTranscriptStructType
   GArray *exons ;                                          /* Of ZMapSpanStruct. */
   GArray *introns ;                                        /* Of ZMapSpanStruct. */
 
+  GList *variations ;                                      /* List of variations to apply to this
+                                                            * transcript's sequence */
+
   struct
   {
     unsigned int cds : 1 ;
     unsigned int start_not_found : 1 ;
     unsigned int end_not_found : 1 ;
   } flags ;
+
 
 } ZMapTranscriptStruct, *ZMapTranscript ;
 
@@ -993,6 +1002,8 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 					  gboolean end_not_found_flag) ;
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
+gboolean zMapFeatureRemoveTranscriptVariations(ZMapFeature feature, GError **error) ;
+gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, ZMapFeature variation, GError **error) ;
 void zMapFeatureRemoveExons(ZMapFeature feature);
 void zMapFeatureRemoveIntrons(ZMapFeature feature);
 void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature);
@@ -1044,6 +1055,9 @@ void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_i
 ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
 ZMapFrame zMapFeatureFrameFromCoords(int block, int feature);
 ZMapPhase zMapFeaturePhase(ZMapFeature feature) ;
+ZMapFrame zMapFeatureFrameAtCoord(ZMapFeature feature, int coord) ;
+ZMapFrame zMapFeatureClosestFrameAtCoord(ZMapFeature feature, int coord) ;
+int zMapFeatureSplitCodonOffset(ZMapFeature feature, int coord) ;
 
 gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_string) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
@@ -1279,7 +1293,7 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
 gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 			     int exon_start, int exon_end,
 			     int *exon_cds_start, int *exon_cds_end, int *phase_out) ;
-gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, GList **exon_list_out) ;
+gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, gboolean pad, GList **exon_list_out) ;
 void zMapFeatureAnnotatedExonsDestroy(GList *exon_list) ;
 
 ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key,
@@ -1333,8 +1347,8 @@ void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureType
 
 
 
-char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length) ;
-char *zMapFeatureTranslation(ZMapFeature feature, int *length) ;
+char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length, gboolean pad) ;
+char *zMapFeatureTranslation(ZMapFeature feature, int *length, gboolean pad) ;
 gboolean zMapFeatureShowTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out) ;
 void zMapFeatureShowTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 
@@ -1357,5 +1371,18 @@ gboolean zMapAlignBlockArrayDestroy(GArray* const) ;
 ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray* const, int index) ;
 gboolean zMapAlignBlockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
 gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
+
+gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
+
+gboolean zMapFeatureHasMatchingBoundary(ZMapFeature feature,
+                                        int boundary_start, int boundary_end,
+                                        int *boundary_start_out, int *boundary_end_out) ;
+
+int zMapFeatureVariationGetSections(const char *variation_str, 
+                                    char **old_str_out, char **new_str_out, 
+                                    int *old_len_out, int *new_len_out) ;
+
+
+gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
 #endif /* ZMAP_FEATURE_H */

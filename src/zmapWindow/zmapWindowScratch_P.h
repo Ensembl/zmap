@@ -41,5 +41,7 @@ void zmapWindowScratchUndo(ZMapWindow window);
 void zmapWindowScratchRedo(ZMapWindow window);
 void zmapWindowScratchClear(ZMapWindow window);
 ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window);
+void zmapWindowScratchFeatureGetEvidence(ZMapWindow window, ZMapFeature feature, 
+                                         ZMapWindowGetEvidenceCB evidence_cb, gpointer evidence_cb_dataw) ;
 
 #endif	/* ZMAP_WINDOW_MARK_P_H */
