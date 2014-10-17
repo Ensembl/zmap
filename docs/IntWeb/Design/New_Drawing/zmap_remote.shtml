@@ -126,13 +126,47 @@ left behind by the scrolling.</p>
 
 <h3>Zooming</h3>
 
-<p>zmap's zooming was always good but clunky once the maximum X Windows limit had
+<p>ZMap's zooming was always good but clunky once the maximum X Windows limit had
 been reached because further scrolling was more and more limited in scope in order
 to avoid exceeding the maximum window size.</p>
 
 <p>Scrolling on demand would fix this by having a fixed window size.</p>
 
+<p>Semantic zooming whereby the way in which features are displayed can change 
+as the scale of the view changes. Particularly important if ZMap is to support 
+annotation/curation of much larger sequence regions than currently handled.   </p>
 
+<h3>User Configurability</h3>
+
+<p>User adjustment of display features such as colour, bumping modes, track width, 
+track ordering, histogram and graph ranges,
+background colours, and many other things should be allowed. And also controllable 
+to prevent such if necessary. As much of this as possible should be made dynamically 
+controllable.</p>
+
+
+<a name="perfect"></a>
+<h2>Other Requirements</h2>
+
+<h3>Platform Independence</h3>
+
+<p>It is desirable to be able to do native builds on Linux, MacOS and Windows at least.
+ Appropriate choices of libraries and toolkits at an early stage will bring this goal 
+closer with no extra effort </p>
+
+<h3>Future Proofing</h3>
+
+<p>Poor choices of libraries and toolkits can lead to dependence not only on particular
+operating systems but also on out-of-date and unmaintained (and indeed unmaintainable) 
+tools such as the foocanvas. This must be avoided in order not to waste time in the future 
+and make sure that we can take advantage of improvments in technology such as hardware 
+acceleration.
+
+<h3>Use of Standards</h3>
+
+<p>Standards should be used where possible. This includes not only language standards such 
+as the STL and boost but other efforts such as formal design methodologies (documented patterns) 
+and drawing standards such as OpenGL.
 
 
 <a name="implementation"></a>
@@ -158,6 +192,11 @@ harder to work on that it should have been.</p>
 there are requirements such as multiple windows on to the same sequence or
 multiple windows onto different sequences that do it this area more complex.<p>
 
+<p>Fortunately it is relatively simple (with approprite choices of libraries)
+to ensure that the object model for the 
+program as a whole and any display components can be kept separate from the drawing 
+model itself. 
+
 
 <h3>The Drawing Model</h3>
 
@@ -171,13 +210,29 @@ multiple windows onto different sequences that do it this area more complex.<p>
   <li>Draw features into buffers of some description from where the data would
       be moved into the window. Buffering would allow fetching data ahead and so
       avoiding delays but this would make the design significantly more complicated.</li>
+  <li>Buffering of feature data. This does not refer to drawing buffers as such but 
+      a subset of the overall set of features that are in or just outside of the 
+      sequence/track area represented by the viewport. As the viewport is moved,
+      features are added to the subset at one end, and removed from the other. Or 
+      added/removed from both ends at the same time in the case of zooming.
+  </li>
+</ul>
+
+<p>Other drawing issues to take account of:</p>
+
+<ul>
+  <li>We should use tools that allow us to take advantage of hardware acceleration 
+      where possible.</li>
+  <li>We must maintain separation of the widget set from the drawing code per se. 
+       There are many widget sets that provide native drawing capabilities, but 
+       these should be avoided in order to clearly deliniate the user interaction
+       and display components and the drawing code itself. This will allow future 
+       changes to one or the other to be done independently.</li>
 </ul>
 
 
 
-
-
-
+<h3>Choice of Libraries/Toolkits</h3>
 
 
 <!--#include virtual="/perl/footer"-->
