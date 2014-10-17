@@ -159,7 +159,8 @@ $SPECIFIC_CONFIGURE_ARGS \
 #
 # This adds a link to the htslib folder in the build directory. 
 #
-ln -s ../../htslib-develop
+#ln -s ../../htslib-develop
+cp -r ../../htslib-develop .
 
 
 exit 0

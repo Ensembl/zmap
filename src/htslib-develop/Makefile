@@ -256,6 +256,7 @@ test/test-vcf-sweep.o: test/test-vcf-sweep.c $(htslib_vcf_sweep_h)
 install: lib-static lib-shared $(BUILT_PROGRAMS) $(BUILT_TEST_PROGRAMS)
 
 distdir:
+	cp -r ./* $(distdir) ;
 
 installdirs:
 	mkdir -p $(DESTDIR)$(bindir) $(DESTDIR)$(includedir)/htslib $(DESTDIR)$(libdir) $(DESTDIR)$(man1dir) $(DESTDIR)$(man5dir)
