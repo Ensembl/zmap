@@ -122,6 +122,20 @@ annotators.<p>
 <p>Zmap should be loading new features as the user scrolls and dumping those features
 left behind by the scrolling.</p>
 
+<p>Within the possible frameworks set out below for the drawing model, this should not
+be a problem, since fetch requests are then delegated to the data model and the GUI
+front end and drawing code should know nothing about it.
+
+<p>However at the moment I am thinking of two levels of data buffering. The first 
+is associated with a particular view and is the subset of features from the data 
+model that the view will attempt to draw.  This is the subset that gets changed as
+we perform most scrolling or zooming operations.
+
+<p>The second is the data model itself 
+in the sense that whether automatically or user driven the data model should
+be able to request more features from the sources (databases, whatever) to 
+which the system is connected. 
+
 
 
 <h3>Zooming</h3>
@@ -136,6 +150,12 @@ to avoid exceeding the maximum window size.</p>
 as the scale of the view changes. Particularly important if ZMap is to support 
 annotation/curation of much larger sequence regions than currently handled.   </p>
 
+<p> Another possibility that might also make drawing and scrolling about the space 
+more efficient is to have some kind of semantically defined drawing of features. 
+For example, while scrolling, only draw feature outlines, or only draw the start and 
+end exons of transcripts. Once the scroll movement has finished, then draw everything 
+completely. 
+
 <h3>User Configurability</h3>
 
 <p>User adjustment of display features such as colour, bumping modes, track width, 
@@ -143,6 +163,12 @@ track ordering, histogram and graph ranges,
 background colours, and many other things should be allowed. And also controllable 
 to prevent such if necessary. As much of this as possible should be made dynamically 
 controllable.</p>
+
+<h3>Revcomp</h3>
+
+<p>Do we really need this? If so, some thought needs to go into what it means, e.g 
+coordinates and their meanings, is revcomp a property of the view or the underlying 
+data model? </p>
 
 
 <a name="perfect"></a>
@@ -210,7 +236,8 @@ model itself.
   <li>Draw features into buffers of some description from where the data would
       be moved into the window. Buffering would allow fetching data ahead and so
       avoiding delays but this would make the design significantly more complicated.</li>
-  <li>Buffering of feature data. This does not refer to drawing buffers as such but 
+  <li>Buffering of feature data. This does not refer to drawing buffers as such 
+      (although could) but 
       a subset of the overall set of features that are in or just outside of the 
       sequence/track area represented by the viewport. As the viewport is moved,
       features are added to the subset at one end, and removed from the other. Or 
@@ -232,7 +259,126 @@ model itself.
 
 
 
+<h3>Static vs. Dynamic Linking</h3>
+
+Some libraries (e.g. Qt) come with their own build/make facilities which have to be used.
+It is inevitable that attempting to integrate something like this with the ZMap build system
+would be problematic, so perhaps we should consider building components separately e.g GUI, 
+data processing, communications layers, etc. 
+
+
+
 <h3>Choice of Libraries/Toolkits</h3>
+
+<p>To satisfy all of the above criteria I suggest the most important priorities for the 
+decision as follows:</p>
+<ul>
+  <li>Speed/hardware acceleration.</li>
+  <li>Future proofing/support of open source projects. </li>
+  <li>Decoupling widgets from drawing.  </li>
+  <li>Portability. Linux, windows, macos. </li>
+</ul>
+<p>The following is a few initial candidates and assessment 
+of advantages and disadvantages.</p>
+<ul>
+
+  <li>GTK+3 (http://en.wikipedia.org/wiki/GTK%2B) 
+    <p>Advantages</p>
+    <ul>
+      <li> Better the devil you know
+      <li> C or C++ binding
+      <li> Supports OpenGL
+    </ul>
+    <p>Disadvantages</p>
+    <ul>
+      <li> Might be as unpredictably buggy as v2.*
+      <li> Requires GLib
+    </ul>
+  </li> 
+ 
+<p>
+  <li>Qt (http://en.wikipedia.org/wiki/Qt_%28software%29) 
+    <p>Advantages</p>
+    <ul>
+      <li> Probably the best product (e.g. google earth uses this)
+      <li> C++
+      <li> Supports OpenGL
+    </ul>
+    <p> Disadvantages</p>
+    <ul>
+      <li> Very very comprehensive (i.e. complicated)
+      <li> Enormous libraries
+      <li> Have to use their make facility (qmake)
+    </ul>
+  </li>  
+
+<p>
+  <li>FLTK (http://en.wikipedia.org/wiki/FLTK)
+    <p>Advantages</p>
+    <ul>
+      <li> Lightweight and simple
+      <li> C++
+      <li> Supports OpenGL
+    </ul>
+    <p> Disadvantages</p>
+    <ul>
+      <li> Less variety of functionality than others
+    </ul>
+  </li>
+
+</ul>
+
+
+
+<h3>A Proposed Experiment</h3>
+
+<p>To test these ideas, I suggest an experiment something like the following:  
+
+<p>We are interested in performance of drawing a large number of objects (e.g 10^6) 
+defined in some 
+world coordinate space, call this [X_s, X_e] by [Y_s, Y_e]. (Subscripts meaning 'start'
+and 'end' here.) Our viewport (the bit that's visible on the screen) is only going to 
+be a very small portion of the world space (although eventually will be zoomable from 
+all the way in and out). Viewport size of about 100-th of the total world space seems 
+a reasonable place to start.  I am not going to worry too much about coordinate mappings 
+at the moment, since that's not the focus of this experiment.
+
+<p>Let the viewport have the size X_v by Y_v.  This is in 
+units of screen pixels. Let the region of the world space that this maps into be
+defined by [x_s,x_e] and [y_s,y_e].
+
+<p>What do we want to see in the initial test?
+<ul>
+  <li> Good performance "scrolling" around this space.
+  <li> Zoomability all the way in and out.
+</ul>
+What does "scrolling" mean in this context? Simply moving the viewport around the 
+world space, not necessarily (although it could be) in the sense of a scrolled 
+window widget.  
+
+Some possible programming approaches to this are:
+<ul>
+  <li> Have a large drawing area to accomodate the whole of the world space 
+       and place this into a scrolled window. This will
+       obviously get very bad very quickly.
+  <li> Have a drawing widget in a scrolled window, but where the widget is defined to
+       be (say) three times the size of the visible region in the world space and 
+       only redraw it when the user's scrolling gets within some tolerance of the 
+       edge. This is conceptually what we currently do.
+  <li> Draw into the widget taking into account the viewport-to-world transformation 
+       ourselves. Calls to draw all of the objects in the world space will then be made and
+       we allow the library to take care of clipping objects outside of the visible region.
+  <li> As previous, but only make calls to draw a subset of the features in the immediate 
+       vicinity of the visible region. This will require maintaining a buffered subset of
+       features to be drawn that is updated as one moves the visible region around. For
+       example as we scroll to the right, features are added to the end of the list, and 
+       removed from the beginning. This approach relies on maintaining lists of features 
+       sorted according to their positions in the world space.
+</ul>
+There are other possibilties; for example, a combination of the buffered feature subset 
+with the drawing widget and scrolled window. But the simplest ones are the place to start. 
+I think it should be fairly straightfoward to try out some of these possibilities with
+the widget sets specified above and initially with the OpenGL interface. 
 
 
 <!--#include virtual="/perl/footer"-->
