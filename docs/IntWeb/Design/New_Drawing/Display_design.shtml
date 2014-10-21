@@ -40,7 +40,8 @@ legend{ font-weight: bold }
 
 <ul>
   <li><a href="#introduction"><b>Introduction</b></a></li>
-  <li><a href="#perfect"><b>Perfect</b></a></li>
+  <li><a href="#perfect"><b>The Perfect Feature Display</b></a></li>
+  <li><a href="#other_requirements"><b>Other Requirements</b></a></li>
   <li><a href="#implementation"><b>Implementation</b></a></li>
 </ul>
 
@@ -81,11 +82,14 @@ the following issues need to be addressed:</p>
       scrolling over that fixed range but we need to change to continuous loading of features allowing
       zmap to scroll over whole chromosomes.</p></li>
   <li><p><b>Vertical/Horizontal - </b>Acedb had vertical tracks which maximised the number of tracks
-      that could be displayed but all other modern browsers show tracks horizontally which provides
-      more sequence but fewer tracks.</p></li>
+      that could be displayed and ZMap copied this model but all other modern
+      browsers show tracks horizontally which provides more sequence but fewer tracks.
+      We need to allow the user to switch their display from one to the other.</p></li>
 </ul>
 
 <p>This document describes the issues, approach and effort required to reimplement zmap drawing.</p>
+
+
 
 
 <a name="perfect"></a>
@@ -108,11 +112,27 @@ main criticism of zmap: "ugh, why is it vertical".</p>
 
 <h3>Multiple Windows</h3>
 
-<p>One of ZMap's great selling points was the ability to split the feature view
+<p>One of ZMap's great selling points is the ability to split the feature view
 an arbitrary number of times and to have different sequences in different
 windows and to split those windows and so on. No browser-based or indeed java-based
 stand alone program has replicated this and yet it's a great feature for the
 annotators.<p>
+
+<p>There are however some design issues with multiple windows onto a single sequence:</p>
+
+
+<ul>
+
+<li><p>When a feature is highlighted/focussed in one window should it be highlighted in all
+    the others ? <font color="red">The answer is "Yes" because not doing so leads
+    to very confusing semantics for cut/paste and other such operations.</font></p><li>
+<li><p>When a column is bumped in on window should it be bumped in the other
+    windows ? <font color="red">The answer is "Yes", although it seems like a good idea to
+    allow independent bumping this leads to difficult and complex code with much state
+    having to be kept for each window.</font></p><li>
+</ul>
+
+
 
 
 <h3>Unlimited Scrolling</h3>
@@ -124,17 +144,17 @@ left behind by the scrolling.</p>
 
 <p>Within the possible frameworks set out below for the drawing model, this should not
 be a problem, since fetch requests are then delegated to the data model and the GUI
-front end and drawing code should know nothing about it.
+front end and drawing code should know nothing about it.</p>
 
 <p>However at the moment I am thinking of two levels of data buffering. The first 
 is associated with a particular view and is the subset of features from the data 
 model that the view will attempt to draw.  This is the subset that gets changed as
-we perform most scrolling or zooming operations.
+we perform most scrolling or zooming operations.</p>
 
 <p>The second is the data model itself 
 in the sense that whether automatically or user driven the data model should
 be able to request more features from the sources (databases, whatever) to 
-which the system is connected. 
+which the system is connected. </p>
 
 
 
@@ -154,7 +174,8 @@ annotation/curation of much larger sequence regions than currently handled.   </
 more efficient is to have some kind of semantically defined drawing of features. 
 For example, while scrolling, only draw feature outlines, or only draw the start and 
 end exons of transcripts. Once the scroll movement has finished, then draw everything 
-completely. 
+completely.</p> 
+
 
 <h3>User Configurability</h3>
 
@@ -164,14 +185,83 @@ background colours, and many other things should be allowed. And also controllab
 to prevent such if necessary. As much of this as possible should be made dynamically 
 controllable.</p>
 
-<h3>Revcomp</h3>
 
-<p>Do we really need this? If so, some thought needs to go into what it means, e.g 
-coordinates and their meanings, is revcomp a property of the view or the underlying 
-data model? </p>
+<h3>Searchable Features</h3>
+
+<p>The original acedb feature display (FMap) did not have a search facility making it hard
+for annotators to find certain kinds of features (e.g. EST's, mRNA's), ZMap allows full
+searching by column, feature name, position, strand. Ideally this would be augmented with
+more formalised regular expressions and/or sql-like queries.</p>
 
 
-<a name="perfect"></a>
+<h3>Coordinates, Revcomp and all</h3>
+
+<h3>1-based or Sequence-based</h3>
+
+<p>ZMap offers the ability to view sequences either in their original coordinate frame
+or a 1-based corodinate frame, the latter is popular because it is considerably easier
+to navigate with this system of numbering. We should offer both options though there
+are some issues with reverse complementing (see below).</p>
+
+<h3>Reverse Complementing</h3>
+
+<p>It is customary for viewers to offer the user the option to reverse complement
+the sequence and there are a number of reasons for this:</p>
+
+<ul>
+  <li>Obviously strands have direction and we find it hard to work in the reverse
+      direction meaning that users prefer to reverse complement the view to
+      work with the reverse strand.</li>
+  <li>It is wasteful to hold both strands of DNA in memory meaning that if the user
+      is to see the opposite strand the original must be reverse complemented.</li>
+  <li>When running matching algorithms against a sequence and displaying the results
+      "on the fly", matches may occur on either strand.</li>
+</ul>
+
+<p>When reverse complementing there are various options:</p>
+
+<table border="1" cellpadding="3">
+<thead><tr><th>Coord System</th> <th>Forward coords</th> <th>Reverse coords</th></tr><thead>
+<tbody>
+<tr> <td>Sequence-based, natural</td> <td>1907778, 1918889</td> <td>1918889, 1907778</td> </tr>
+<tr> <td>Sequence-based, -ve</td> <td>1907778, 1918889</td> <td>-1918889, -1907778</td> </tr>
+<tr> <td>1-based, natural</td> <td>1, 11112</td> <td>11112, 1</td> </tr>
+<tr> <td>1-based, -ve</td> <td>1, 11112</td> <td>-11112, -1</td> </tr>
+</tbody>
+</table>
+
+<p>The negative coordinates though looking strange offer two advantages:</p>
+
+<ul>
+  <li>The user is immediately reminded that the sequence has been reverse complemented.</li>
+  <li>The system whereby the numerically smaller coordinate is at the top/start of the
+      screen is maintanied.</li>
+</ul>
+  
+<p>There are in essence two courses of action to reverse complement:</p>
+
+<ul>
+  <li><b>Reverse the view</b> but leave the data as is.</li>
+  <li><b>Reverse the data</b> and as a result the view is reversed.</li>
+</ul>
+
+<p>Experience with both acedb and ZMap has shown the former approach while attractive
+because the data does not need to be altered presents considerable opportunities for
+errors as the data and view are now out of step. This was considered sufficiently
+large a problem that both programs took the latter approach and generally reversing
+the data was found to be sufficiently fast that it did not cause problems.</p>
+
+
+<h3>Support for scrolling devices</h3>
+
+<p>In recent years the number of ways of scrolling has expanded including additions
+to existing devices (e.g. the mouse scroll wheel) or new devices (e.g. Apple trackpad).
+Most current toolkits support these devices and this is an important factor in
+user acceptance.</p>
+
+
+
+<a name="other_requirements"></a>
 <h2>Other Requirements</h2>
 
 <h3>Platform Independence</h3>
@@ -186,13 +276,13 @@ closer with no extra effort </p>
 operating systems but also on out-of-date and unmaintained (and indeed unmaintainable) 
 tools such as the foocanvas. This must be avoided in order not to waste time in the future 
 and make sure that we can take advantage of improvments in technology such as hardware 
-acceleration.
+acceleration.</p>
 
 <h3>Use of Standards</h3>
 
 <p>Standards should be used where possible. This includes not only language standards such 
 as the STL and boost but other efforts such as formal design methodologies (documented patterns) 
-and drawing standards such as OpenGL.
+and drawing standards such as OpenGL.</p>
 
 
 <a name="implementation"></a>
@@ -221,7 +311,62 @@ multiple windows onto different sequences that do it this area more complex.<p>
 <p>Fortunately it is relatively simple (with approprite choices of libraries)
 to ensure that the object model for the 
 program as a whole and any display components can be kept separate from the drawing 
-model itself. 
+model itself. </p>
+
+
+<h3>Feature representation</h3>
+
+<p>In general there are several layers in a drawing system, these often
+include the graphics, an object to be drawn and the original data from
+which the object was derived. Acedb followed this model almost exactly:</p>
+
+<pre>
+
+layer:        graphics        &lt;--       objects       &lt;--       original data
+
+acedb:      Graph package     &lt;--      FMap SEGs      &lt;--      Acedb DB objects
+
+</pre>
+
+<p>In ZMap there have been 3 different models:</p>
+
+<pre>
+
+layer:        graphics        &lt;--       objects       &lt;--       original data
+
+
+"Everything is a foocanvas object":
+
+ZMap 1:      Foocanvas        &lt;-----------------------------      ZMapFeatureNNN objects
+              objects
+
+
+"Everything is a foocanvas-derived zmap canvas objects":
+
+ZMap 2:      Foocanvas        &lt;--      ZMapCanvas     &lt;--      ZMapFeatureNNN objects
+              objects                      objects
+
+
+"Higher objects are still foocanvas-derived zmap canvas objects
+ the rest are direct GDK drawing":
+
+ZMap 3:      Foocanvas        &lt;--      ZMapCanvas     &lt;-- 
+              objects                      objects              \
+                                                                 --  ZMapFeatureNNN objects
+                                                                /
+GDK            &lt;--------------------------------------------
+             graphics  
+
+</pre>
+
+<p>The first system was simple but had some drawbacks in representing complex features,
+the second was far, far too heavyweight and killed preformance, the third was not
+properly finished and so is a bit like a combination of systems 1 and 2.</p>
+
+<p>The choice representation is a crucial one as it has big effects on efficiency but
+perhaps more importantly on complexity and therefore maintainability of the code.</p>
+
+
 
 
 <h3>The Drawing Model</h3>
@@ -264,7 +409,7 @@ model itself.
 Some libraries (e.g. Qt) come with their own build/make facilities which have to be used.
 It is inevitable that attempting to integrate something like this with the ZMap build system
 would be problematic, so perhaps we should consider building components separately e.g GUI, 
-data processing, communications layers, etc. 
+data processing, communications layers, etc.</p> 
 
 Although static linking is possible with most libraries there is a strong preference  
 amongst development projects (and commercial providers of course) for things to 
@@ -272,7 +417,7 @@ be dynamic. Binary redistribution is not a problem.
 This is the default for almost everything and it is not always obvious 
 or easy to make the change to static linking. Despite the advantages from the point 
 of view of installation and distribution, it might be a good idea to consider making
-this change at some point before we are forced to do so.
+this change at some point before we are forced to do so.</p>
 
 
 
@@ -280,12 +425,14 @@ this change at some point before we are forced to do so.
 
 <p>To satisfy all of the above criteria I suggest the most important priorities for the 
 decision as follows:</p>
+
 <ul>
   <li>Speed/hardware acceleration.</li>
   <li>Future proofing/support of open source projects. </li>
   <li>Decoupling widgets from drawing.  </li>
   <li>Portability. Linux, windows, macos. </li>
 </ul>
+
 <p>The following is a few initial candidates and assessment 
 of advantages and disadvantages.</p>
 <ul>
@@ -341,7 +488,7 @@ of advantages and disadvantages.</p>
 
 <h3>A Proposed Experiment</h3>
 
-<p>To test these ideas, I suggest an experiment something like the following:  
+<p>To test these ideas, I suggest an experiment something like the following:  </p>
 
 <p>We are interested in performance of drawing a large number of objects (e.g 10^6) 
 defined in some 
@@ -350,22 +497,24 @@ and 'end' here.) Our viewport (the bit that's visible on the screen) is only goi
 be a very small portion of the world space (although eventually will be zoomable from 
 all the way in and out). Viewport size of about 100-th of the total world space seems 
 a reasonable place to start.  I am not going to worry too much about coordinate mappings 
-at the moment, since that's not the focus of this experiment.
+at the moment, since that's not the focus of this experiment.</p>
 
 <p>Let the viewport have the size X_v by Y_v.  This is in 
 units of screen pixels. Let the region of the world space that this maps into be
-defined by [x_s,x_e] and [y_s,y_e].
+defined by [x_s,x_e] and [y_s,y_e].</p>
 
-<p>What do we want to see in the initial test?
+<p>What do we want to see in the initial test?</p>
+
 <ul>
   <li> Good performance "scrolling" around this space.
   <li> Zoomability all the way in and out.
 </ul>
-What does "scrolling" mean in this context? Simply moving the viewport around the 
-world space, not necessarily (although it could be) in the sense of a scrolled 
-window widget.  
 
-Some possible programming approaches to this are:
+<p>What does "scrolling" mean in this context? Simply moving the viewport around the 
+world space, not necessarily (although it could be) in the sense of a scrolled 
+window widget.</p>  
+
+<p>Some possible programming approaches to this are:</p>
 <ul>
   <li> Have a large drawing area to accomodate the whole of the world space 
        and place this into a scrolled window. This will
@@ -384,10 +533,11 @@ Some possible programming approaches to this are:
        removed from the beginning. This approach relies on maintaining lists of features 
        sorted according to their positions in the world space.
 </ul>
-There are other possibilties; for example, a combination of the buffered feature subset 
+
+<p>There are other possibilties; for example, a combination of the buffered feature subset 
 with the drawing widget and scrolled window. But the simplest ones are the place to start. 
 I think it should be fairly straightfoward to try out some of these possibilities with
-the widget sets specified above and initially with the OpenGL interface. 
+the widget sets specified above and initially with the OpenGL interface. </p>
 
 
 <!--#include virtual="/perl/footer"-->
