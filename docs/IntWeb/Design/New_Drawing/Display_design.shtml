@@ -252,6 +252,26 @@ large a problem that both programs took the latter approach and generally revers
 the data was found to be sufficiently fast that it did not cause problems.</p>
 
 
+<h3>Intelligent Zoom</h3>
+
+<p>Currently in ZMap it is easy to zoom "right out" vertically but (weirdly)
+not horizontally, such operations should be built in from the start by providing
+a good interface to the "world to screen" coordinate systems.</p>
+
+<p>This requirement is partly for the obvious reason: simple ease of navigation but
+also partly for screen shots, see next section for thoughts on screen shots.</p>
+
+
+<h3>Screen shots</h3>
+
+<p>A major short coming of ZMap was that we originally used the <b>g2</b> library
+to produce screen shot postscript files, this package went out of date and now the
+only option for users is to take a pixel screen shot which is no good for publications.</p>
+
+<p>So...we need to make sure that we can "draw" to either/or postscript to pdf targets
+in high quality.</p>
+
+
 <h3>Support for scrolling devices</h3>
 
 <p>In recent years the number of ways of scrolling has expanded including additions
