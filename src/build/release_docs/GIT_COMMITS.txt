@@ -1,155 +1,193 @@
 
-Git commits for  from commit "production" until commit "feature/zeroMQ"
+Git commits for  from commit "production" until commit "release/1.1.0"
 
-d6c4517 2014-08-13 update again
-e19e65f 2014-08-13 Merge branch 'production' into feature/zeroMQ
-7433f90 2014-08-13 small change to assert in zmapWindowCanvasFeatureset.c in function zmapWindowContainerFeatureSetGetFrame (possible bug)
-6abd96d 2014-08-05 removed a debug printf() message
-be7e4e5 2014-08-05 Merge branch 'develop' into feature/zeroMQ
-90dd246 2014-07-30 Merge branch 'develop' into feature/zeroMQ
-abb3efa 2014-07-30 Merge branch 'develop' into feature/zeroMQ
-a60b88c 2014-07-30 Merge branch 'develop' into feature/zeroMQ
-94cad2d 2014-07-28 Remove file created by build
-82b2564 2014-07-21 "src/zmapWindow/zmapWindowFeature.c"
-907c548 2014-07-21 "tidy up cursor code and fix it to add cursors from app, zmap or view."
-ea9b11b 2014-07-21 "tidy up cursor code and fix it to add cursors from app, zmap or view."
-21a3524 2014-07-21 "add cursor setting functions. Tidy up code."
-7eb7027 2014-07-21 "add funcs to set/get cursors."
-9d2bb82 2014-07-21 "add calls to set a cursor on all zmaps."
-1f2412d 2014-07-21 "add calls to set a cursor on all zmaps."
-634bb35 2014-07-21 "add calls to set cursors on toplevel of control + all subwindows."
-705e933 2014-07-21 "Add code to make zmap modal no user input) + set cursor when doing xremote ops."
-06bb751 2014-07-14 Merge branch 'develop' into feature/zeroMQ
-89ea941 2014-07-14 "tidy up commenting of quit functions."
-28b4be5 2014-07-14 "add ungrab function of ungrabbing pointer/keyboard."
-a756582 2014-07-14 "minor tidy up of string defines."
-30493e8 2014-07-04 bit of a tidy up of alignment feature creation
-d270032 2014-07-03 Fix compile error
-fe7b0b4 2014-07-01 Better handling of stop/met codons in annotation column
-f32874c 2014-07-01 Grey out Save option when feature details not editable
-5c2e4e5 2014-07-03 Fix incorrect install location for server scripts
-34f7c9a 2014-07-03 put mac back in build
-52453cb 2014-07-03 take mac out of build temporarily
-e64ea57 2014-07-01 edit of previous
-51ad2db 2014-07-01 update to fix RT:407213
-862997a 2014-07-01 "replace all usage of strtok with thread safe strtok_r."
-4f14cd9 2014-06-30 "fix up small buglets in our exit routine for orphan zmaps."
-81938e4 2014-06-30 Fix a bug with exported coords when zmap is revcomped
-ad2380a 2014-06-30 Fix compiler warning with incorrect enum usage
-4f06e23 2014-06-30 Exclude compiler warnings for deprecated functions
-40a7cb3 2014-06-30 Fix compiler warnings where incorrect enum type used
-03406ae 2014-06-26 Make delete key delete the temp feature when the annotation feature is selected
-630f72e 2014-06-26 Add menu item shortcuts for annotation menu
-4da5d65 2014-06-27 fix to RT:406962
-f3362a4 2014-06-25 remove strok (possibly unused and not needed anyway) in zmapView.c
-fc65783 2014-06-25 Fix regression in looking up features caused by 568ff7d
-bee653d 2014-06-24 Fix compiler warnings
-2b63bd0 2014-06-24 Merge abutting exons
-4eca7e5 2014-06-24 Fix bug merging splice site in end exons
-0112865 2014-06-20 Allow copying of multiple features to annotation column
-24c28c8 2014-06-20 Tidying (split long function)
-ed221ed 2014-06-24 update to remove use of strtok() from zmapUtils.c
-aa35275 2014-06-16 Fix compile errors with previous acedbserver change
-08c7eee 2014-06-16 finishing off file formatting in src/zmapWindow
-c487f72 2014-06-16 Better acedb version comparison and warnings
-f37c101 2014-06-16 Fix spurious warning when pasting in zmap
-6368b40 2014-06-16 update to file formatting
-b6529e8 2014-06-16 formatting in zmapWindow.c
-8495e33 2014-06-16 update to formatting of zmapWindowRemoteControl.c
-22351c3 2014-06-13 fix to trap case where a transcript subfeature is outside of the parent [start,end]
-8a28862 2014-06-13 minor bug (incorrect int type) in GFFGetVersion
-edd55df 2014-06-10 put mac back into build
-16d46e9 2014-06-10 partial fix for hunt problem (RT:403236); remainder requires alteration to otterlace
-a750410 2014-06-09 "Fix broken single feature delete, broken by my own fix for OTF deletes."
-8eb0742 2014-06-09 Update release notes
-a6f5baf 2014-06-09 "Simplify maximising code, either we can get the right height/width or we 90% each way."
-a48b48c 2014-06-09 Remove mac from builds
-0af37a3 2014-06-06 log warning if registration of composite feature IDs fails
-b7f87d8 2014-06-06 empty composite_features table upon encountering ###
-9a8bcf4 2014-06-05 fix for hunt in zmap (RT:402136)
-be1437b 2014-06-05 Add error messages for acedb server version check failures
-c3c0586 2014-06-03 Better error message when pipe receives empty file
-a1413db 2014-06-05 update to functionality of v3 parser
-d3fa8b5 2014-05-30 "fix puzzling bug in feature erase, seemed not to work for whole sets of features."
-c96c011 2014-05-30 "formatting only."
-d3b90d2 2014-05-30 "get rid of annoying text box init."
-9472471 2014-05-30 "correct bad format log messages."
-aa67fb8 2014-05-28 "fix bug in detecting truly empty gff file/pipe from just an empty header."
-a4668fb 2014-05-28 "Change to use new params in zMapGFFGetVersionFromGIO()."
-0c8d84b 2014-05-28 "fix bug and change params in zMapGFFGetVersionFromGIO"
-1fde209 2014-05-27 "fix stupid bug in version testing."
-aa661c1 2014-05-20 Fix bug with editing blixem settings
-859438a 2014-05-16 Drag-and-drop now sends correct data
-6a6c2d2 2014-05-16 WIP: Drag-and-drop mechanism now working
-dc595dc 2014-05-15 WIP: implement dragging from zmap
-d8a55f8 2014-05-21 drawing fix for RT:383730
-5ee928a 2014-05-19 removal unused variables in zmapControl/zmapControlPreferences.c
-b7f257a 2014-05-19 bug fix for off-by-one error in gapped boxes
-0831ca1 2014-05-16 updates to info panel and corresponding tooltips
-fc50076 2014-05-15 update to add Note as feature->description
-75325ff 2014-05-15 Update release notes for 0.23.0
-3df738c 2014-05-14 ifdef out file-chooser for print dialog on windows
-da1ff51 2014-05-13 "fix shrinkable window initial size and add it to preference window."
-2689f66 2014-05-13 "more prefs stuff to utils file and sort out strings."
-7a6fe87 2014-05-13 Tidying of cygwin stuff
-61a0634 2014-05-13 ifdef out file-chooser code for import dialog on windows
-ca8c403 2014-05-13 Use plain text entry instead of file chooser for export on windows
-c21d021 2014-05-13 "fix bug where we fail to reap children when our connection terminates before child has exited."
-4c02252 2014-05-13 "simplify process termination func and add enum to text func for status."
-c3033be 2014-05-12 Add installation instructions for windows(cygwin)
-3b57529 2014-05-12 Update release notes for zmap 0.23.0
-c34fa8d 2014-05-12 Fix a bug with saving the temp feature when revcompd
-8d164ac 2014-05-12 remove a bug in src/zmapGFF/zmapGFFAttribute.c that I put in half an hour ago...
-56b1d0f 2014-05-12 removal of compiler warnings from src/zmapGFF/zmapGFFStringUtils.c
-e8a71e2 2014-05-12 removal of compiler warnings from src/zmapGFF/zmapGFFFeatureData.c
-dbeb9a6 2014-05-12 removal of compiler warnings from src/zmapGFF/zmapGFFAttribute.c
-7dbd189 2014-05-12 removal of compiler warnings from src/zmapGFF/zmapGFF3parser.c
-bec6989 2014-05-12 update to file formatting
-9239d21 2014-05-12 update to file formatting
-09fead3 2014-05-12 update to file formatting
-2f5a15a 2014-05-12 update to file formatting
-61cb85f 2014-05-12 update to file formatting
-267d44c 2014-05-12 "add tip for how to add ./configure args for autoconf'd package."
-7fc3591 2014-05-12 update to formatting of files
-6a637fc 2014-07-09 "further exiting tidy up."
-3d39397 2014-07-09 "fix compile error."
-285fbf5 2014-07-09 "fix stupid bug in time routine."
-110bfcd 2014-07-09 "fix compile error."
-20a48f4 2014-07-09 "tidy up state and other left bits."
-20bd977 2014-07-09 "fix several state changes, fix when we start queue monitoring, fix logging - too verbose."
-1d71d41 2014-07-09 "fix bugs in the exit routines and simplify/unify it."
-eb07346 2014-07-09 "change prototype for reset call to return boolean."
-74ed34a 2014-07-09 "remove redundant defines from old xremote."
-8912e1b 2014-07-02 "remove timer callback, not needed."
-77dff85 2014-07-02 "add error handling func per send request."
-18e94b5 2014-07-02 "add error handling func per send request."
-cd04ab2 2014-06-30 "fix bug, not setting retry counter in message header."
-a6919a2 2014-06-30 "fix dreadful memory leak in my code...not freeing xml parser."
-6197eb4 2014-06-30 "start removing Gemma's queueing stuff as it's now in remote control."
-7a9239d 2014-06-30 "remove setting up of remote from X windows related code. No longer necessary."
-18663f1 2014-06-13 "improve timeout handling and failure handling."
-a82c459 2014-06-13 "fix rubbish bug in attribute checking."
-853aa9e 2014-06-13 "hack fix for double free, code needs to be removed anyway."
-238869c 2014-06-12 add timeout handling for incoming requests.
-5bb6698 2014-06-12 fix bugs in test prog.
-b6148ac 2014-06-12 "add timeout handling for incoming requests."
-ca479e5 2014-06-11 "remove idle debug message...too much output."
-70c7ec4 2014-06-10 "fix buglet in removing timer function at remote control destroy."
-5c8037f 2014-06-10 latest version of unfinished zeromq code.
-a177bec 2014-06-04 zeromq_remote.shtml: fix typo and clarify timeout handling sequence.
-96da2c4 2014-05-23 zeromq_remote.shtml: exponential back-off for timeouts.
-a0836f3 2014-05-12 "add generated file entries to be ignored."
-d2d0f96 2014-05-12 "add specific ignores for this directory."
-4517499 2014-05-12 "dummy...we need to remove this file from git...but it does need to be in the import."
-7d028cd 2014-05-12 "add test call to zeromq"
-230b985 2014-05-12 "add platform.hpp.in to ignored files."
-ce81862 2014-05-12 "fix remotecontrol build to work with zeromq."
-fc6fc53 2014-05-09 "add missing header file."
-33ddd51 2014-05-09 "fix incorrect config exclude."
-0c69c80 2014-05-09 add all the zeromq files
-3a7781b 2014-05-09 "probably shouldn't be in git but tricky."
-b7894a1 2014-05-09 "add a token bit of test code for zeromq"
-d2cdf41 2014-05-09 "add zeromq to the build."
+5fe4a50 2014-10-17 Build: fix bug with installation location for server scripts
+3716652 2014-10-17 Merge branch 'feature/edit_transcript' into develop
+36d7d4b 2014-10-17 changes to runconfig and the htslib makefile to get make dist to work
+ad9839a 2014-10-16 "add new design doc for zmap drawing improvements."
+a37deef 2014-10-16 "remove the display_index handling, breaks the display for reasons that are not clear."
+530e152 2014-10-16 "remove debug info."
+8942b0c 2014-10-16 change default option in file import to remap=TRUE
+c73f2f4 2014-10-15 update to sequence name on importing data (non-remapped)
+586083d 2014-10-15 Fix compiler warning
+ea796f0 2014-10-15 Fix compiler warnings
+31db9f0 2014-10-14 Fix compiler warnings
+29a71cd 2014-10-15 Fix compiler warnings (unused variables)
+54f6d57 2014-10-15 update to error handling and logic of file importing (mapping tickbox added)
+ff546cd 2014-10-14 update to file import error handling and logic
+29f9449 2014-10-14 docs/WWW/user/configuration.shtml: typo fix.
+b980b74 2014-10-14 added a few error tests to the gffv3 parser
+7e0c429 2014-10-13 small change to htslib makefile
+b476b2b 2014-10-13 small change to htslib makefile
+0983655 2014-10-10 "update user doc for highlight and splice short cuts."
+12195cd 2014-10-10 Merge branch 'feature/hts' into develop
+6f976a9 2014-10-10 "oops, wrong path to images for design doc."
+9b4feb7 2014-10-10 "add splice highlight doc, somehow missing !"
+5cbccc8 2014-10-10 "fix small buglet in 'h' highlight key, toggles more sensibly now."
+8fb92c8 2014-10-09 "add new shift-h and s short cut keys to user doc."
+6e02ff2 2014-10-09 Merge branch 'feature/splice_highlight' into develop
+3cd1b91 2014-10-06 ZMAPGUI_HELP_WHATS_NEW, ZMAP_INTERNAL_WEB_WHATSNEW: remove, because unused
+4da94f9 2014-09-30 Merge branch 'production' into develop
+722ffc0 2014-09-24 change to the way CDS flags are set (not a bug, but not completely safe either)
+1144d0f 2014-09-23 "fix bug in finding translation column name, need unique id."
+9c8212c 2014-09-23 "Formatting only."
+6e9a492 2014-09-23 "Replace redundant frame enum with ZMAP_WINDOW_3FRAME_OFF and fix column id call."
+1f86e9e 2014-09-23 "Replace redundant frame enum with ZMAP_WINDOW_3FRAME_OFF."
+84a4827 2014-09-23 "remove redundant enums from Display3FrameMode."
+40f87fd 2014-09-23 "remove redundant enums from ZMapWindow3FrameMode."
+6ca43ed 2014-09-18 "fix bug in asserts at start of stack func. which prevented stack trace display."
+2a48daf 2014-09-16 Minor change to release notes script
+4d0946c 2014-09-16 zmap_remote.shtml: add link to Architecture of Open Source Applications
+cfee3ba 2014-09-12 remove debug flags from column ordering code
+3ed983e 2014-09-11 update to the way that anonymous source data are output
+772bcfd 2014-09-11 "fix a bug of several years whereby reverse strand columns are not reverse sorted."
+c0bfad6 2014-09-11 update to reading of start/end_not_found attributes
+7096d0d 2014-09-11 Merge branch 'production' into develop
+bdc36fd 2014-09-11 Fix a bug with variations not being passed to blixem
+4cebf26 2014-09-10 some small modifications to how the cds start/end not found flags are handled
+3f38514 2014-09-09 Merge branch 'feature/editing' into develop
+1e10bdd 2014-09-09 zmap_remote.shtml: clean up duplication and comments left during construction.
+f1ee56d 2014-09-09 remove all redundant images/umlet docs for x remote version.
+6c0cbcb 2014-09-09 "update with all the zeromq changes."
+54cd3fc 2014-09-09 "add new diagrams for zeromq write up."
+90aa74b 2014-09-09 "remove redundant zMapRemoteControlReceiveWaitForRequest()."
+d9cca12 2014-09-09 "add more detail to internal code section."
+68d4c63 2014-09-08 Merge branch 'feature/editing' into develop
+34032fc 2014-09-08 Fix duplicate const compiler warnings
+ec4701d 2014-09-05 changes to string handling in parser
+414a3cc 2014-09-05 fixes for SIRT:400820
+40cdb8c 2014-09-04 small update to previous
+fb15f24 2014-09-04 update to fix SIRT:400622
+7626005 2014-09-04 update to gff dumper
+9f0e1a8 2014-09-04 some changes to dumping of cds features
+4829aaf 2014-09-03 zmapView.c: zMapViewConnect(): comment typo fix.
+65749f7 2014-09-03 zmapViewRemoteControl.c: executeRequest(): comment typo fix.
+093bc54 2014-09-02 zmapView.c: zMapViewConnect(): comment typo fix.
+3e9d91a 2014-09-02 zmap_remote_new.shtml: intergrate mg13's ZeroMQ section.
+02c609d 2014-09-01 Fix small bug in build script
+19924d0 2014-09-01 rename remote control dir.
+77759c9 2014-09-01 Small changes to build scripts
+cdc0ab7 2014-09-01 Debugging
+f758a06 2014-09-01 Another attempt to fix build scripts
+f41470c 2014-09-01 Minor fix to release notes script
+1e491ad 2014-09-01 Minor fix
+f76e2b2 2014-09-01 Check that branch exists before doing build
+1ab6537 2014-09-01 Fix typo passing wrong arg to release notes script
+c50a92a 2014-09-01 Move release notes scripts to tools repo
+ea01a9e 2014-09-01 Merge branch 'feature/zeroMQ' into develop
+ce178f3 2014-08-29 remove redundant script.
+b857e13 2014-08-29 "remove unused variables."
+26532f1 2014-08-28 Merge branch 'feature/editing' into develop
+8fc33ce 2014-08-28 Fix incorrect/uninit use of group_id (should be feature_id)
+489c1a3 2014-08-28 Fix compiler warnings
+03c16e6 2014-08-28 configure.ac: remove rogue apostrophes.
+59e8c10 2014-08-28 configure.ac: remove a stray character that mangled the typesetting of the description of --enable-profile in the output of "configure --help".
+464250e 2014-08-26 "tidy up commenting."
+39e724d 2014-08-22 changes to output of Gap vs. gaps attribute on develop
+5b00c27 2014-08-21 update to cigar parsing/testing
+91f6c1c 2014-08-21 update to cigar parsing
+cd407d0 2014-08-15 some updates to internals of alignment parsing/cigars
+f73748f 2014-08-14 small correction to dumper
+d3f4159 2014-08-14 some corrections to error trapping in zmapWindow.c
+c31b1b0 2014-08-14 small change to dumper gaps
+71e2571 2014-08-14 update to fix some formatting changes
+13a7bc7 2014-08-14 update with more cigar parsing code
+09dd04f 2014-08-13 "remove docs build from all but the release build."
+7b8dc5d 2014-08-13 "ZMap version 0.24.1-130-g771bb2b - Update RT and git commit reports"
+771bb2b 2014-08-13 "fix up code for committing release notes."
+a9d6f73 2014-08-13 "ZMap version 0.24.1-128-g73244d2 - Update RT and git commit reports"
+73244d2 2014-08-13 "fix up code for committing release notes."
+f1db417 2014-08-13 "fix up code for committing release notes."
+fd63e0f 2014-08-13 "fix up code for committing release notes."
+d21b4f8 2014-08-13 "fix bug in since/until commits."
+14413b6 2014-08-13 "add hack to get feature/zeromq for testing only."
+84ee9b1 2014-08-13 "add hack to get feature/zeromq for testing only."
+25dc1e1 2014-08-13 "add hack to get feature/zeromq for testing only."
+02e1f84 2014-08-13 "fix my own bug in the commit since/until range."
+a4297e5 2014-08-13 Merge branch 'production' into develop
+7d8d58d 2014-08-13 "use production HEAD as since commit for finding commits."
+bf84b6d 2014-08-13 "remove unwanted clutter."
+ead02dc 2014-08-13 "clarify where docs are."
+9366d01 2014-08-13 new cigar parsing code
+8cb3221 2014-08-12 "fix up bug in finding last commit date."
+ff92446 2014-08-11 updates to cigar parsing
+7815950 2014-08-11 "add debug info."
+356cb1a 2014-08-11 "fix path for output and also where rt comes from."
+3c1c88b 2014-08-11 "fix git change format."
+3c22594 2014-08-08 fix stupid bug.
+9411e28 2014-08-08 move of file
+e9e0749 2014-08-08 "rename of git script."
+670d9cc 2014-08-08 "more script fixes."
+20374f3 2014-08-08 updates to internals of cigar parsing functions in src/zmapFeature/zmapFeatureAlignment.c
+fc73197 2014-08-08 "more script fixes + new git commit script."
+7d175b4 2014-08-08 "fix bug in script."
+f82e42f 2014-08-08 "fix bug in script."
+12b4df0 2014-08-08 "fix bug in script."
+dc22efd 2014-08-08 "fix bug in script."
+778e5fd 2014-08-08 "fix bug in script."
+4cb833e 2014-08-08 "fix bug in script."
+88f9bb7 2014-08-08 "fix bug in script."
+b1d6cdd 2014-08-08 "fix bug in script."
+4cfb1be 2014-08-08 "fix bug in script."
+1c6656b 2014-08-07 "fix stupid build bug."
+70e9b8f 2014-08-07 "fix bug in script."
+a994f96 2014-08-07 "fix bug in script."
+efbf729 2014-08-07 "fix bug in script."
+5d57d34 2014-08-07 added error check to src/zmapWindow/zmapWindowColBump.c
+7c5c28e 2014-08-07 "fix bug in script."
+4c6f7c2 2014-08-07 error checks and tab damage in zmapWindowCanvas.c
+f13bed4 2014-08-07 "fix bug in script."
+8e76186 2014-08-07 "fix bug in script."
+ce91ecd 2014-08-07 "fix bug in script."
+c008a65 2014-08-07 "fix bug in script."
+ee0fd6a 2014-08-07 error tests in function calls in src/zmapWindow/zmapWindow.c
+851d85d 2014-08-07 "replace bootstrap with autogen.sh"
+e83ad25 2014-08-07 "add gitignore for new release_doc dir."
+17d0975 2014-08-07 A step along the way to getting the RT stuff working in the build.
+1d1dc6b 2014-08-07 "changes to get RT changes going again."
+4ff8dbb 2014-08-07 "add new release notes dir to things _not_ ignored by git."
+4d01a64 2014-07-16 remove redundant directories.
+1f34dec 2014-07-16 rename bootstrap to autogen.sh
+a645fe6 2014-07-16 rename bootstrap to autogen.sh
+7c01a0d 2014-08-07 error catching in function calls and tab damage in zmapWindowCanvasLocus.c and zmapWindowOldItems.c
+a8007de 2014-08-06 error checks in function calls and tab damage in zmapWindowContainerItem.c
+229dd91 2014-08-06 error checks in function calls and tab damage in zmapWindowContainerGroup.c
+05b4fc3 2014-08-06 error checks in function calls and tab damage in zmapWindowContainerFeatureSet.c
+eb57cad 2014-08-06 error checks in function calls and tab damage in zmapWindowCanvasUtils.c
+aa69dc1 2014-08-06 error checks in function calls and tab damage in zmapWindowCanvasTranscript.c
+a982e4b 2014-08-06 error checks in function calls and tab damage in zmapWindowCanvasSequence.c
+f0d5ec8 2014-08-06 repair of tab damage on previous
+4b35460 2014-08-06 error traps in function calls for zmapWindowCanvasLocus.c
+d6b4787 2014-08-06 error traps in function calls for zmapWindowCanvasGraphItem.c and zmapWindowCanvasGraphics.c
+f539a91 2014-08-06 addition to build instructions to add non-autoconf package
+f30c23f 2014-08-05 "oops...remove debug code."
+aa927b9 2014-08-05 "add zMapWindowCanvasFeaturesetGetSetIDAtPos() to support subcol bumping by featureset name, formatting."
+dafdf23 2014-08-05 "add struct to support sorting subcols."
+a8e0f57 2014-08-05 "add zMapWindowCanvasFeaturesetGetSetIDAtPos() and formatting."
+43f8e26 2014-08-05 "add bumping by featureset name for when there are multiple featuresets in a col."
+81617b1 2014-08-05 "fix small buglet in graph drawing."
+f8f601b 2014-08-05 "formatting."
+6a926f1 2014-08-05 "formatting."
+0445273 2014-08-05 "fix faulty logic on column bump fail, formatting."
+18878cf 2014-08-05 "fix event callback, in wrong place, add tooltip for column name entry/exit, formatting."
+3fbab56 2014-08-05 "add zmapWindowFeatureItemEventHandler() and some formatting."
+b7e5c9b 2014-08-05 "remove Malcolm's 'wrong way round' event handling function, it's now zmapWindowFeatureItemEventHandler() and is called by column event handler."
+867b480 2014-08-05 "move item factory function to zmapFeature.c where it belongs."
+8d0cb66 2014-08-05 "formatting only."
+ed0873a 2014-08-04 "add featureset-name bump and fix enum macro usage."
+8cb056f 2014-07-30 "formatting"
+744f2c2 2014-07-30 "tidy up code, correct formatting."
+118584c 2014-07-30 "formatting"
+8a84de6 2014-07-30 "add new col id call + formatting."
+3d60510 2014-07-30 "add new getcolumnid call."
+b479179 2014-07-29 "move internal only routine to internal header."
+4720e6d 2014-07-29 "add func. to get feature unique name."
+35b3327 2014-07-29 "formatting only."
+ba9e7ec 2014-04-30 "new utils functions for canvas stuff."
+20f0a22 2014-03-26 update from merge of develop.
+d4f6528 2014-08-05 some more error handling for function call arguments
+2805083 2014-08-05 some more error handling in function interfaces in src/zmapWindow/canvas/
+
 
 End of git commits
 
