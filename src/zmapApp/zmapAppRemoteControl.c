@@ -49,7 +49,7 @@
 #include <ZMap/zmapAppRemote.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <zmapApp_P.h>
-
+#include <ZMap/zmap.h>
 
 static void receivedPeerRequestCB(ZMapRemoteControl remote_control,
                                   ZMapRemoteControlReturnReplyFunc remote_reply_func, void *remote_reply_data,
@@ -71,7 +71,10 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
                            void *user_data) ;
 
 static void setDebugLevel(void) ;
+static gboolean setModalOnCB(gpointer data) ;
+static gboolean setModalOffCB(gpointer data) ;
 static void setModal(ZMapAppContext app_context, gboolean modal) ;
+static gboolean doSetModal(ZMapAppContext app_context, gboolean modal) ;
 static void setCursorCB(ZMap zmap, void *user_data) ;
 
 
@@ -563,9 +566,53 @@ static void setDebugLevel(void)
 }
 
 
+/* Callback to turn modal on. */
+static gboolean setModalOnCB(gpointer data)
+{
+  gboolean result = FALSE ;
+  ZMapAppContext app_context = (ZMapAppContext)data ;
 
+  //zMapLogWarning("%s", "setModalOnCB") ;
+  result = doSetModal(app_context, TRUE) ;
+
+  /* Return FALSE to indicate the source should be removed from the gtk main loop */
+  return FALSE ;
+}
+
+
+/* Callback to turn modal off. */
+static gboolean setModalOffCB(gpointer data)
+{
+  gboolean result = FALSE ;
+  ZMapAppContext app_context = (ZMapAppContext)data ;
+
+  //MapLogWarning("%s", "setModalOffCB") ;
+  result = doSetModal(app_context, FALSE) ;
+
+  /* Return FALSE to indicate the source should be removed from the gtk main loop */
+  return FALSE ;
+}
+
+
+  /* Delay long enough to allow a double-click to happen before we block further clicks */
 static void setModal(ZMapAppContext app_context, gboolean modal)
 {
+  //zMapLogWarning("setModal(modal=%d)", modal) ;
+
+  /* Delay long enough to allow a double-click to happen before we block further clicks */
+  if (modal)
+    {
+      g_timeout_add(ZMAP_DOUBLE_CLICK_THRESHOLD_MS, setModalOnCB, (gpointer)app_context) ;
+    }
+  else
+    {
+      g_timeout_add(ZMAP_DOUBLE_CLICK_THRESHOLD_MS, setModalOffCB, (gpointer)app_context) ;
+    }
+}
+
+static gboolean doSetModal(ZMapAppContext app_context, gboolean modal)
+{
+  gboolean success = TRUE ;
   GdkCursor *curr_cursor ;
   GtkWindow *window ;
   gboolean curr_modal ;
@@ -584,6 +631,8 @@ static void setModal(ZMapAppContext app_context, gboolean modal)
                             (modal ? "ON" : "OFF"), (modal ? "ON" : "OFF")) ;
 
       zMapLogCritical("%s", msg) ;
+
+      success = FALSE ;
     }
 
   gtk_window_set_modal(window, modal) ;
@@ -598,7 +647,7 @@ static void setModal(ZMapAppContext app_context, gboolean modal)
 
   zMapLogWarning("Modal - %s", (modal ? "ON" : "OFF")) ;
 
-  return ;
+  return success ;
 }
 
 
