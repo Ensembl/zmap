@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 04/08/2014 to 17/10/2014
+Request Tracker Tickets Resolved from 04/08/2014 to 23/10/2014
 
 ticket/117349
 id: ticket/117349
@@ -48,6 +48,16 @@ Subject: build directory clean up
 Requestors: edgrif@sanger.ac.uk
 Owner: mh17
 Resolved: Wed Sep 10 16:21:07 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/280524
+id: ticket/280524
+Queue: zmap
+Subject: feature request: extend dynamic thresholding to more/all columns (needs col. background adding)
+Requestors: lw2@sanger.ac.uk
+Owner: mh17
+Resolved: Tue Oct 21 14:04:39 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -181,6 +191,16 @@ Resolved: Thu Oct 09 10:23:55 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
+ticket/343091
+id: ticket/343091
+Queue: zmap
+Subject: Race condition in RemoteControl - simultaneous clients
+Requestors: mca@sanger.ac.uk, mg13@sanger.ac.uk
+Owner: edgrif
+Resolved: Fri Oct 17 15:47:34 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
 ticket/345104
 id: ticket/345104
 Queue: zmap
@@ -208,6 +228,19 @@ Subject: Bigwig column style config
 Requestors: jmg@sanger.ac.uk
 Owner: edgrif
 Resolved: Fri Sep 12 14:47:00 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/371286
+id: ticket/371286
+Queue: zmap
+Subject: ZMap does not handshake after starting (77)
+
+Requestors: kj2@sanger.ac.uk, lw2@sanger.ac.uk, mms@sanger.ac.uk,
+            mpind@cc.umanitoba.ca, sb7@sanger.ac.uk
+
+Owner: edgrif
+Resolved: Fri Oct 17 16:24:34 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -311,6 +344,16 @@ Resolved: Fri Sep 05 15:21:16 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
+ticket/404745
+id: ticket/404745
+Queue: zmap
+Subject: Standalone ZMap: Highlight Evidence crash
+Requestors: gb10@sanger.ac.uk
+Owner: gb10
+Resolved: Tue Oct 21 14:13:27 2014
+CF.{zmapace_gitcommit}: aa14e7d
+CF.{zmapace_resolve_version}: Otterlace v86, ZMap 1.0.0-358-gaa14e7d (for release/1.1.0)
+
 ticket/406244
 id: ticket/406244
 Queue: zmap
@@ -348,6 +391,16 @@ Subject: reverse strand RNAseq in wrong place
 Requestors: jel@sanger.ac.uk
 Owner: edgrif
 Resolved: Thu Sep 11 14:31:21 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/426312
+id: ticket/426312
+Queue: zmap
+Subject: Locus not displayed.
+Requestors: edgrif@sanger.ac.uk
+Owner: edgrif
+Resolved: Fri Oct 17 15:35:57 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

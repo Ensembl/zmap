@@ -1,3 +1,22 @@
+2014-10-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug where double click is not received due to xremote blocking (RT429182)
+ src/include/ZMap/zmap.h            |    1 +
+ src/zmapApp/zmapAppRemoteControl.c |   53 ++++++++++++++++++++++++++++++++++-
+ src/zmapWindow/zmapWindowFeature.c |    4 +--
+ 3 files changed, 53 insertions(+), 5 deletions(-)
+
+2014-10-17  Steve Miller  <sm23@sanger.ac.uk>
+ creation of release notes after release build for 1.1.0
+ docs/WWW/user/release_notes.shtml |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+2014-10-17  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.0.0-366-g5fe4a50 - Update RT and git commit reports
+ src/ChangeLog                                  | 3575 ++++++++++++++----------
+ src/build/release_docs/GIT_COMMITS.txt         |  338 ++-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  470 ++--
+ 3 files changed, 2616 insertions(+), 1767 deletions(-)
+
 2014-10-17  Gemma Barson  <gb10@sanger.ac.uk>
  Build: fix bug with installation location for server scripts
  scripts/zmap_compile_and_tar.sh |   10 +++++++---
