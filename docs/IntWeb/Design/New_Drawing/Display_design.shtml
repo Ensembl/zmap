@@ -559,5 +559,17 @@ with the drawing widget and scrolled window. But the simplest ones are the place
 I think it should be fairly straightfoward to try out some of these possibilities with
 the widget sets specified above and initially with the OpenGL interface. </p>
 
+<h3>Experiment results:</h3> 
+<ul>
+<li>With 10^6 features in a [0,10] by [0,10] world space region and a viewport mapped into
+a 1 by 1 region of this space (i.e. 1/100-th of the area) then the performance scrolling 
+around is acceptable. There are noticable delays, but the results are surprisingly good.
+Increasing the number of features by a further order of magnitude degrades performance 
+to an unacceptable level. This is allowing the OpenGL system to take care of clipping 
+outside of the viewport.</li>
+<li>Adding VBO to the above drawing. Might not make much difference on our hardware.</li>
+<li>Adding smart buffering in software to the above.</li>
+</ul>
+
 
 <!--#include virtual="/perl/footer"-->
