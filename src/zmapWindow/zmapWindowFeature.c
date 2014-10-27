@@ -415,7 +415,9 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
            * hack looking for the difference in time. This can happen if user clicks on
            * a very large feature causing us to paste a lot of text to the selection
            * buffer. */
-          if (second_press || but_event->time - last_but_release < ZMAP_DOUBLE_CLICK_THRESHOLD_MS)
+          guint but_threshold = 500 ;                            /* Separation of clicks in milliseconds. */
+
+          if (second_press || but_event->time - last_but_release < but_threshold)
             {
               const gchar *style_id = g_quark_to_string(zMapStyleGetID(*feature->style)) ;
 

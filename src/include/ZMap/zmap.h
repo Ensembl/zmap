@@ -36,6 +36,5 @@
 /* global #defines */
 
 #define GOBJ_CAST      1      // use static casts where possible
-#define ZMAP_DOUBLE_CLICK_THRESHOLD_MS 500 // max time between clicks for a double-click
 
 #endif /* !ZMAP_ZMAP_H */
