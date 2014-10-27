@@ -1,6 +1,9 @@
 
 Git commits for  from commit "production" until commit "release/1.1.0"
 
+8e52166 2014-10-23 Fix bug where double click is not received due to xremote blocking (RT429182)
+2c27695 2014-10-17 creation of release notes after release build for 1.1.0
+4229464 2014-10-17 ZMap version 1.0.0-366-g5fe4a50 - Update RT and git commit reports
 5fe4a50 2014-10-17 Build: fix bug with installation location for server scripts
 3716652 2014-10-17 Merge branch 'feature/edit_transcript' into develop
 36d7d4b 2014-10-17 changes to runconfig and the htslib makefile to get make dist to work
