@@ -66,38 +66,42 @@
 #define THREAD_DEBUG_MSG(CHILD_THREAD, FORMAT_STR, ...)	\
   G_STMT_START								\
   {									\
-    char *thread_str ;							\
+    if (thread_debug_G)                                                 \
+      {                                                                 \
+        char *thread_str ;                                              \
 									\
-    thread_str = zMapThreadGetThreadID((CHILD_THREAD)) ;		\
+        thread_str = zMapThreadGetThreadID((CHILD_THREAD)) ;		\
 									\
-    zMapDebugPrint(thread_debug_G, THREAD_DEBUG_MSG_PREFIX FORMAT_STR, thread_str, __VA_ARGS__) ; \
+        zMapDebugPrint(thread_debug_G, THREAD_DEBUG_MSG_PREFIX FORMAT_STR, thread_str, __VA_ARGS__) ; \
+                                                                        \
+        zMapLogMessage(THREAD_DEBUG_MSG_PREFIX FORMAT_STR, thread_str, __VA_ARGS__) ; \
 									\
-    zMapLogMessage(THREAD_DEBUG_MSG_PREFIX FORMAT_STR, thread_str, __VA_ARGS__) ; \
-									\
-    g_free(thread_str) ;						\
-									\
+        g_free(thread_str) ;						\
+      }                                                                 \
   } G_STMT_END
 
 /* Define thread debug messages with extra information, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_FULL(CHILD_THREAD, VIEW_CON, REQUEST_TYPE, REPLY, FORMAT_STR, ...) \
   G_STMT_START								\
   {									\
-    GString *msg_str ;							\
+    if (thread_debug_G)                                                 \
+      {                                                                 \
+        GString *msg_str ;                                              \
                                                                         \
-    msg_str = g_string_new("") ;                                        \
+        msg_str = g_string_new("") ;                                    \
                                                                         \
-    g_string_append_printf(msg_str, "status = \"%s\", request = \"%s\", reply = \"%s\", msg = \""FORMAT_STR"\"", \
-                           zMapViewThreadStatus2ExactStr((VIEW_CON)->thread_status), \
-                           zMapServerReqType2ExactStr((REQUEST_TYPE)),  \
-                           zMapThreadReply2ExactStr((REPLY)),           \
-                           __VA_ARGS__) ;                               \
+        g_string_append_printf(msg_str, "status = \"%s\", request = \"%s\", reply = \"%s\", msg = \""FORMAT_STR"\"", \
+                               zMapViewThreadStatus2ExactStr((VIEW_CON)->thread_status), \
+                               zMapServerReqType2ExactStr((REQUEST_TYPE)), \
+                               zMapThreadReply2ExactStr((REPLY)),       \
+                               __VA_ARGS__) ;                           \
                                                                         \
-    g_string_append_printf(msg_str, ", url = \"%s\"", (VIEW_CON)->url) ;  \
+        g_string_append_printf(msg_str, ", url = \"%s\"", (VIEW_CON)->url) ; \
                                                                         \
-    THREAD_DEBUG_MSG((CHILD_THREAD), "%s", msg_str->str) ;              \
+        THREAD_DEBUG_MSG((CHILD_THREAD), "%s", msg_str->str) ;          \
                                                                         \
-    g_string_free(msg_str, TRUE) ;                                      \
-    									\
+        g_string_free(msg_str, TRUE) ;                                  \
+      }                                                                 \
   } G_STMT_END
 
 
@@ -3441,6 +3445,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
               
 	      thread_has_died = TRUE ;
 	    }
+          else if (!data)
+            {
+              THREAD_DEBUG_MSG(thread, "%s", "got reply from child thread but there is no data.") ;
+            }
 	  else
 	    {
 	      ZMapServerReqAny req_any = NULL ;
