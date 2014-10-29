@@ -1511,11 +1511,11 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 {
   ZMapWindowCanvasFeature feat = NULL ;
 
-  /* Warning...this code is quite hard to fathom/follow... */
+  /* WARNING...THIS CODE IS QUITE HARD TO FATHOM/FOLLOW... */
+
   if (type > FEATURE_INVALID && type < FEATURE_N_TYPE)
     {
       GList *l ;
-      gpointer mem ;
       int size ;
       zmapWindowCanvasFeatureType ftype = type ;
 
@@ -1524,16 +1524,18 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 	  type = FEATURE_INVALID ;			    /* catch all for simple features (one common free list) */
 	  size = sizeof(zmapWindowCanvasFeatureStruct) ;
 	}
-      else
-	{
-
-	}
 
       if (!featureset_class_G->feature_free_list[type])
 	{
 	  int i ;
+          gpointer mem ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          /* WHY ISN'T THIS ZERO'D.... */
 
 	  mem = g_malloc(size * N_FEAT_ALLOC) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  mem = g_malloc0(size * N_FEAT_ALLOC) ;
 
 	  for (i = 0 ; i < N_FEAT_ALLOC ; i++, mem += size)
 	    {
@@ -1547,7 +1549,9 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 	}
 
       l = featureset_class_G->feature_free_list[type] ;
+
       feat = (ZMapWindowCanvasFeature)l->data ;
+
       featureset_class_G->feature_free_list[type]
 	= g_list_delete_link(featureset_class_G->feature_free_list[type], l) ;
 
@@ -2435,10 +2439,36 @@ GList *zMapWindowFeaturesetFindFeatures(ZMapWindowFeaturesetItem featureset_item
 }
 
 
+/* I'm not sure how closely ->display and ->display_index are linked, if the first exists does
+ * the second ? or vice versa ?......would affect how this function is coded. */
+gboolean zmapWindowCanvasFeaturesetFreeDisplayLists(ZMapWindowFeaturesetItem featureset_item_inout)
+{
+  gboolean result = FALSE ;
+  
+  if (featureset_item_inout->display_index)
+    {
+      zMapSkipListDestroy(featureset_item_inout->display_index, NULL) ;
+      featureset_item_inout->display_index = NULL ;
 
+      if (featureset_item_inout->display)
+	{
+          GList  *features ;
 
+	  for (features = featureset_item_inout->display ; features ;
+               features = g_list_delete_link(features, features))
+	    {
+	      ZMapWindowCanvasFeature feat = (ZMapWindowCanvasFeature)features->data ;
 
+	      zmapWindowCanvasFeatureFree(feat) ;
+	    }
+	  featureset_item_inout->display = NULL ;
+	}
 
+      result = TRUE ;
+    }
+
+  return result ;
+}
 
 
 
@@ -2469,62 +2499,68 @@ gboolean zMapWindowCanvasItemSetFeature(ZMapWindowCanvasItem item, double x, dou
 
 
 /* cut and paste from former graph density code */
-gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatureTypeStyle style)
+gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem featureset_item, ZMapFeatureTypeStyle style)
 {
   GdkColor *draw = NULL, *fill = NULL, *outline = NULL;
-  FooCanvasItem *foo = (FooCanvasItem *) di;
+  FooCanvasItem *foo = (FooCanvasItem *) featureset_item;
   gboolean re_index = FALSE;
   GList  *features;
 
-  zMapReturnValIfFail(di, FALSE) ;
+  zMapReturnValIfFail(featureset_item, FALSE) ;
 
-  //  di->recalculate_zoom = TRUE;		// trigger recalc
+  //  featureset_item->recalculate_zoom = TRUE;		// trigger recalc
 
 
-  if (zMapStyleGetMode(di->style) == ZMAPSTYLE_MODE_GRAPH
-      && di->re_bin && zMapStyleDensityMinBin(di->style) != zMapStyleDensityMinBin(style))
+  if (zMapStyleGetMode(featureset_item->style) == ZMAPSTYLE_MODE_GRAPH
+      && featureset_item->re_bin && zMapStyleDensityMinBin(featureset_item->style) != zMapStyleDensityMinBin(style))
     re_index = TRUE;
 
-  if (di->display_index && re_index)
-    {
-      zMapSkipListDestroy(di->display_index, NULL);
-      di->display_index = NULL;
 
-      if (di->display)	/* was re-binned */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (featureset_item->display_index && re_index)
+    {
+      zMapSkipListDestroy(featureset_item->display_index, NULL);
+      featureset_item->display_index = NULL;
+
+      if (featureset_item->display)	/* was re-binned */
 	{
-	  for(features = di->display; features; features = g_list_delete_link(features,features))
+	  for(features = featureset_item->display; features; features = g_list_delete_link(features,features))
 	    {
 	      ZMapWindowCanvasFeature feat = (ZMapWindowCanvasFeature) features->data;
 
 	      zmapWindowCanvasFeatureFree(feat);
 	    }
-	  di->display = NULL;
+	  featureset_item->display = NULL;
 	}
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (re_index && featureset_item->display_index)
+    zmapWindowCanvasFeaturesetFreeDisplayLists(featureset_item) ;
 
-  di->style = style;		/* includes col width */
-  di->width = style->width;
-  di->x_off = zMapStyleDensityStagger(style) * di->set_index;
-  di->x_off += zMapStyleOffset(style);
+
+  featureset_item->style = style;		/* includes col width */
+  featureset_item->width = style->width;
+  featureset_item->x_off = zMapStyleDensityStagger(style) * featureset_item->set_index;
+  featureset_item->x_off += zMapStyleOffset(style);
 
   /* need to set colours */
-  zmapWindowCanvasItemGetColours(style, di->strand, di->frame,
+  zmapWindowCanvasItemGetColours(style, featureset_item->strand, featureset_item->frame,
                                  ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &outline, NULL, NULL);
 
   if(fill)
     {
-      di->fill_set = TRUE;
-      di->fill_colour = gdk_color_to_rgba(fill);
-      di->fill_pixel = foo_canvas_get_color_pixel(foo->canvas, di->fill_colour);
+      featureset_item->fill_set = TRUE;
+      featureset_item->fill_colour = gdk_color_to_rgba(fill);
+      featureset_item->fill_pixel = foo_canvas_get_color_pixel(foo->canvas, featureset_item->fill_colour);
     }
   if(outline)
     {
-      di->outline_set = TRUE;
-      di->outline_colour = gdk_color_to_rgba(outline);
-      di->outline_pixel = foo_canvas_get_color_pixel(foo->canvas, di->outline_colour);
+      featureset_item->outline_set = TRUE;
+      featureset_item->outline_colour = gdk_color_to_rgba(outline);
+      featureset_item->outline_pixel = foo_canvas_get_color_pixel(foo->canvas, featureset_item->outline_colour);
     }
 
-  foo_canvas_item_request_update ((FooCanvasItem *)di);
+  foo_canvas_item_request_update ((FooCanvasItem *)featureset_item);
 
   return TRUE;
 }
@@ -3415,7 +3451,8 @@ ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem 
  *
  */
 /* NOTE it turns out that g_list_sort invalidates ->from pointers so we can't use them
- * however to delete all features we can just destroy the featureset, it will be created again when we add a new feature
+ * however to delete all features we can just destroy the featureset,
+ * it will be created again when we add a new feature
  */
 int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature)
 {
