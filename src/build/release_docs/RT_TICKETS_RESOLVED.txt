@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 04/08/2014 to 23/10/2014
+Request Tracker Tickets Resolved from 04/08/2014 to 29/10/2014
 
 ticket/117349
 id: ticket/117349
@@ -401,6 +401,16 @@ Subject: Locus not displayed.
 Requestors: edgrif@sanger.ac.uk
 Owner: edgrif
 Resolved: Fri Oct 17 15:35:57 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/428543
+id: ticket/428543
+Queue: zmap
+Subject: urgent, probably showstopper
+Requestors: sm23@sanger.ac.uk
+Owner: sm23
+Resolved: Fri Oct 24 09:26:37 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

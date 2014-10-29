@@ -1,6 +1,12 @@
 
 Git commits for  from commit "production" until commit "release/1.1.0"
 
+91cf708 2014-10-29 "change splice to show on selected column too and for both strands of features as per user request."
+29dda60 2014-10-29 "fix bug in freeing display list of features causing RT429859. Improve some variable names."
+08ca8ad 2014-10-29 "add function to free display and display_list, improve some variable names."
+8e5ab40 2014-10-29 "fix unecessary processing in thread debug messages, remove debugging message."
+8e4cbcb 2014-10-27 Revert "Fix bug where double click is not received due to xremote blocking (RT429182)"
+4044938 2014-10-23 ZMap version 1.0.0-369-g8e52166 - Update RT and git commit reports
 8e52166 2014-10-23 Fix bug where double click is not received due to xremote blocking (RT429182)
 2c27695 2014-10-17 creation of release notes after release build for 1.1.0
 4229464 2014-10-17 ZMap version 1.0.0-366-g5fe4a50 - Update RT and git commit reports
