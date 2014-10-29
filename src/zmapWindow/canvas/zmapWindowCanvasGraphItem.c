@@ -101,7 +101,7 @@ static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeS
  *                        Globals
  */
 
-static gboolean debug_G = FALSE ;                            /* Set TRUE for debug output. */
+static gboolean debug_G = FALSE ;                           /* Set TRUE for debug output. */
 
 
 
@@ -114,7 +114,7 @@ static gboolean debug_G = FALSE ;                            /* Set TRUE for deb
  */
 
 
-/* Called by canvasFeature to set up callbacks for graph when features are painted, zoomed etc. */
+/* Called by canvasFeature to set up method function pointers for graph features to be painted, zoomed etc. */
 void zMapWindowCanvasGraphInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
@@ -128,6 +128,7 @@ void zMapWindowCanvasGraphInit(void)
   funcs[FUNC_ZOOM] = graphZoom ;
   funcs[FUNC_POINT] = graphPoint ;
 
+  /* And again encapsulation is broken..... */
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPH, funcs, 0, sizeof(ZMapWindowCanvasGraphStruct)) ;
 
   return ;
@@ -164,6 +165,8 @@ static void graphInit(ZMapWindowFeaturesetItem featureset)
  * not just box/line resizing. */
 static void graphPreZoom(ZMapWindowFeaturesetItem featureset)
 {
+
+  /* This breaks encapsulation by calling back to featureset which is not good... */
   zMapWindowCanvasFeaturesetSetZoomRecalc(featureset, TRUE) ;
 
   return ;
@@ -182,6 +185,7 @@ static void graphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
   /* WHEN DOES featureset->featurestyle GET SET ????????? */
   /* OK...THIS ALL POINTS TO SOMETHING NOT QUITE RIGHT....AT THIS POINT WE ARE ZOOMING
    * WHICH REQUIRES STYLE ACCESS BUT featureset->featurestyle IS NOT SET....DUH... */
@@ -192,12 +196,25 @@ static void graphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable
   /* FIND OUT WHEN featureset->featurestyle GETS SET....POTENTIAL FOR SCREW UPS HERE...
    *  */
 
+
+
+
   if (featureset->featurestyle)
     {
       setColumnStyle(featureset, featureset->featurestyle) ;
     }
+
+  /* HACK FOR NOW TO TRY AND GET IT WORKING.... */
+  else if (featureset->style)
+    {
+      setColumnStyle(featureset, featureset->style) ;
+    }
+
+
   else
     {
+      /* AGH, CRASHES HERE WITH NO feature->style bexcause there is no feature.... */
+
       GList *feature_list ;
       ZMapWindowCanvasFeature feature_item ;
       ZMapFeature feature ;
@@ -215,14 +232,20 @@ static void graphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable
   /* Some displays must be rebinned on zoom. */
   if (featureset->re_bin)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if (featureset->display_index)
         {
           zMapSkipListDestroy(featureset->display_index, zmapWindowCanvasFeatureFree);
           featureset->display = NULL;
           featureset->display_index = NULL;
         }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      if (featureset->display_index)
+        zmapWindowCanvasFeaturesetFreeDisplayLists(featureset) ;
 
-      featureset->display = densityCalcBins(featureset);
+
+      featureset->display = densityCalcBins(featureset) ;
     }
 
   /* will index display not features if display is set */
@@ -906,7 +929,17 @@ static double graphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
   double best = 1.0e36 ;
   double can_start, can_end ;
 
+
+  /* Not sure how/why this should ever fail.... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapReturnValIfFail(gs && gs->feature && fi, best) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  zMapReturnValIfFail(gs, best) ;
+  zMapReturnValIfFail(gs->feature, best) ;
+  zMapReturnValIfFail(fi, best) ;
+
+
 
   /* Get feature extent on display. */
   /* NOTE cannot use feature coords as transcript exons all point to the same feature */
@@ -969,65 +1002,75 @@ static double graphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
  * try not to split big bins into smaller ones, there's no min size in BP, but the source data
  * imposes a limit
  */
-static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
+static GList *densityCalcBins(ZMapWindowFeaturesetItem featureset_item)
 {
+  GList *result = NULL ;
   double start,end;
   int seq_range;
   int n_bins;
   int bases_per_bin;
   int bin_start,bin_end;
-  ZMapWindowCanvasFeature src_gs = NULL;                    /* source */
-  ZMapWindowCanvasFeature bin_gs = NULL ;                   /* re-binned */
   GList *src = NULL,*dest = NULL ;
-  double score = 0.0;
+  ZMapWindowCanvasFeature src_gs = NULL;                    /* the original features */
+  ZMapWindowCanvasFeature bin_gs = NULL ;                   /* the re-binned features */
+  double score = 0.0 ;
   double min_feat_score = 0.0, max_feat_score = 0.0 ;
+  int min_bin ;
+  gboolean fixed ;
 
-  zMapReturnValIfFail(di, dest);
 
   /* this is weird given that the feature style may not have been given for the column style yet.... */
-  int min_bin = zMapStyleDensityMinBin(di->style);          /* min pixels per bin */
-  gboolean fixed = zMapStyleDensityFixed(di->style);
+  min_bin = zMapStyleDensityMinBin(featureset_item->style); /* min pixels per bin */
+  fixed = zMapStyleDensityFixed(featureset_item->style);
 
 
   zMapDebugPrint(debug_G, "FeatureSet  \"%s\", featureset style \"%s\",  feature style \"%s\", Score scaling is: %s",
-                 g_quark_to_string(di->id),
-                 zMapStyleGetName(di->style),
-                 ((di->featurestyle) ? zMapStyleGetName(di->featurestyle) : "no feature style"),
-                 zmapStyleScale2ExactStr(zMapStyleGetScoreScale(di->style))) ;
+                 g_quark_to_string(featureset_item->id),
+                 zMapStyleGetName(featureset_item->style),
+                 ((featureset_item->featurestyle)
+                  ? zMapStyleGetName(featureset_item->featurestyle) : "no feature style"),
+                 zmapStyleScale2ExactStr(zMapStyleGetScoreScale(featureset_item->style))) ;
 
 
-  if (!di->features_sorted)
-    di->features = g_list_sort(di->features, zMapWindowFeatureCmp) ;
+  if (!featureset_item->features_sorted)
+    featureset_item->features = g_list_sort(featureset_item->features, zMapWindowFeatureCmp) ;
 
-  di->features_sorted = TRUE ;
+  featureset_item->features_sorted = TRUE ;
 
   if(!min_bin)
     min_bin = 4;
 
-  start = di->start;
-  end   = di->end;
+  start = featureset_item->start;
+  end   = featureset_item->end;
 
   seq_range = (int) (end - start + 1);
 
-  n_bins = (int) (seq_range * di->zoom / min_bin) ;
+  n_bins = (int) (seq_range * featureset_item->zoom / min_bin) ;
 
   bases_per_bin = seq_range / n_bins;
   if(bases_per_bin < 1) /* at high zoom we get many pixels per base */
     bases_per_bin = 1;
 
-  for (bin_start = start, src = di->features, dest = NULL ; bin_start < end && src ; bin_start = bin_end + 1)
+  for (bin_start = start, src = featureset_item->features, dest = NULL ;
+       bin_start < end && src ;
+       bin_start = bin_end + 1)
     {
       bin_end = bin_start + bases_per_bin - 1 ;             /* end can equal start */
 
-      bin_gs = zmapWindowCanvasFeatureAlloc(di->type) ;
+      bin_gs = zmapWindowCanvasFeatureAlloc(featureset_item->type) ;
 
       bin_gs->y1 = bin_start;
       bin_gs->y2 = bin_end;
       bin_gs->score = 0.0;
 
-      for(;src; src = src->next)
+      for (;src; src = src->next)
         {
           src_gs = (ZMapWindowCanvasFeature) src->data;
+
+
+          zMapDebugPrint(debug_G, "bin_start, bin_end: %d, %d\tsrc_gs->y1, src_gs->y2: %f, %f",
+                         bin_start, bin_end, src_gs->y1, src_gs->y2) ;
+                          
 
           if(src_gs->y2 < bin_start)
             continue;
@@ -1063,9 +1106,12 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
                 }
               bin_gs->feature = src_gs->feature;
             }
-          score = src_gs->score;
+
+
 
           /* this implicitly pro-rates any partial overlap of source bins */
+          score = src_gs->score;
+
           if(fabs(score) > fabs(bin_gs->score))
             {
               bin_gs->score = score;
@@ -1088,45 +1134,46 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
             }
         }
 
-      if(bin_gs->score > 0)
+
+      if (bin_gs->score > 0)
         {
           if (bin_gs->feature->score < min_feat_score)
             min_feat_score = bin_gs->feature->score ;
           else if (bin_gs->feature->score > max_feat_score)
             max_feat_score = bin_gs->feature->score ;
 
+          bin_gs->score = zMapWindowCanvasFeatureGetNormalisedScore(featureset_item->style, bin_gs->feature->score);
 
-          bin_gs->score = zMapWindowCanvasFeatureGetNormalisedScore(di->style, bin_gs->feature->score);
+          bin_gs->width = featureset_item->width;
 
-          bin_gs->width = di->width;
+          if (featureset_item->style->mode_data.graph.mode != ZMAPSTYLE_GRAPH_HEATMAP)
+            bin_gs->width = featureset_item->width * bin_gs->score;
 
-          if(di->style->mode_data.graph.mode != ZMAPSTYLE_GRAPH_HEATMAP)
-            bin_gs->width = di->width * bin_gs->score;
-
-
-          zMapDebugPrint(debug_G, "Feature score: %f, normalised score: %f, di->width: %f, bin_gs->width: %f",
-                         bin_gs->feature->score, bin_gs->score, di->width, bin_gs->width) ;
+          zMapDebugPrint(debug_G,
+                         "Feature score: %f, normalised score: %f, featureset_item->width: %f, bin_gs->width: %f",
+                         bin_gs->feature->score, bin_gs->score, featureset_item->width, bin_gs->width) ;
 
 
-          if(!fixed && src_gs->y2 < bin_gs->y2) /* limit dest bin to extent of src */
+          if (!fixed && src_gs->y2 < bin_gs->y2) /* limit dest bin to extent of src */
             {
               bin_gs->y2 = src_gs->y2;
             }
 
-          dest = g_list_prepend(dest,(gpointer) bin_gs);
+          dest = g_list_prepend(dest, (gpointer)bin_gs) ;
         }
 
     }
 
   /* we could have been artisitic and constructed dest backwards */
-  dest = g_list_reverse(dest);
+  if (dest)
+    result = g_list_reverse(dest) ;
 
 
   zMapDebugPrint(debug_G, "Min Feature score: %f, max Feat score: %f",
                  min_feat_score, max_feat_score) ;
 
 
-  return dest ;
+  return result ;
 }
 
 

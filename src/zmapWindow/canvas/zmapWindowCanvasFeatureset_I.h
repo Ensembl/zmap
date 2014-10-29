@@ -152,6 +152,7 @@ typedef struct _zmapWindowCanvasFeatureStruct
 
   ZMapFeature feature ;
 
+
   //  GList *from;		/* the list node that holds the feature */
   /* refer to comment above zmapWindowCanvasFeatureset.c/zMapWindowFeaturesetItemRemoveFeature() */
 
@@ -274,7 +275,11 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   ZMapFeatureTypeStyle style;				    /* column style: NB could have several
 							       featuresets mapped into this by virtualisation */
+
+
   ZMapFeatureTypeStyle featurestyle;			    /* current cached style for features */
+
+
 
   zmapWindowCanvasFeatureType type;
 
@@ -431,6 +436,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
 PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix,
 					    ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
 void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset, PixRect pix);
+
+gboolean zmapWindowCanvasFeaturesetFreeDisplayLists(ZMapWindowFeaturesetItem featureset_item_inout) ;
 
 void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
 gboolean zmapWindowCanvasFeatureValid(ZMapWindowCanvasFeature feature) ;
