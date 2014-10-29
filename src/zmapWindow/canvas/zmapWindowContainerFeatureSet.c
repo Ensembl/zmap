@@ -1252,9 +1252,17 @@ static void highlightFeatures(ZMapWindowContainerGroup container, FooCanvasPoint
 
         container_set = ZMAP_CONTAINER_FEATURESET(zmapWindowContainerChildGetParent(FOO_CANVAS_ITEM(container))) ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
         /* Make sure we are on the same strand and that's it's not the selected col. ! */
         if (container_set->splice_highlight && container_set->strand == selected_container_set->strand
             && container_set != selected_container_set
+            && (featureset_item = zmapWindowContainerGetFeatureSetItem(container_set)))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+          /* Try highlighting all features including the selected column, users seem to prefer that. */
+        if (container_set->splice_highlight && container_set->strand == selected_container_set->strand
             && (featureset_item = zmapWindowContainerGetFeatureSetItem(container_set)))
           {
             GList *feature_list ;
@@ -1294,9 +1302,14 @@ static void highlightFeature(gpointer data, gpointer user_data)
   ZMapFeature feature = zmapWindowCanvasFeatureGetFeature(feature_item) ;
   ZMapWindowContainerFeatureSet selected_container_set = splice_data->selected_container_set ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Only highlight if container strand (some cols deliberately contain features of both
    * strand, e.g. EST's). */
   if (feature->strand == selected_container_set->strand)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    /* Try highlighting regardless of strand. */
     {
       DoTheHighlightStruct highlight_data ;
 
