@@ -1,3 +1,20 @@
+2014-10-30  Steve Miller  <sm23@sanger.ac.uk>
+ fix for SIRT:430405
+ src/zmapFeature/zmapFeatureAlignment.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
+
+2014-10-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "Improve commenting, move variable to scope where it's used."
+ src/zmapWindow/zmapWindowDrawFeatures.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+2014-10-29  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.0.0-375-g91cf708 - Update RT and git commit reports
+ src/ChangeLog                                  |   35 ++++++++++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    6 ++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   12 +++++++-
+ 3 files changed, 52 insertions(+), 1 deletions(-)
+
 2014-10-29  Ed Griffiths  <edgrif@sanger.ac.uk>
  "change splice to show on selected column too and for both strands of features as per user request."
  .../canvas/zmapWindowContainerFeatureSet.c         |   13 +++++++++++++

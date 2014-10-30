@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 04/08/2014 to 29/10/2014
+Request Tracker Tickets Resolved from 04/08/2014 to 30/10/2014
 
 ticket/117349
 id: ticket/117349
@@ -404,6 +404,16 @@ Resolved: Fri Oct 17 15:35:57 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
+ticket/428320
+id: ticket/428320
+Queue: zmap
+Subject: New-ZMap startup failure
+Requestors: mca@sanger.ac.uk
+Owner: edgrif
+Resolved: Wed Oct 29 15:35:46 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
 ticket/428543
 id: ticket/428543
 Queue: zmap
@@ -411,6 +421,16 @@ Subject: urgent, probably showstopper
 Requestors: sm23@sanger.ac.uk
 Owner: sm23
 Resolved: Fri Oct 24 09:26:37 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/429859
+id: ticket/429859
+Queue: zmap
+Subject: ZMap bug in displaying reverse strand coverage data
+Requestors: edgrif@sanger.ac.uk, jh13@sanger.ac.uk, vb1@sanger.ac.uk
+Owner: edgrif
+Resolved: Thu Oct 30 09:15:08 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

@@ -1,6 +1,9 @@
 
 Git commits for  from commit "production" until commit "release/1.1.0"
 
+6e825e6 2014-10-30 fix for SIRT:430405
+e9ce8a2 2014-10-29 "Improve commenting, move variable to scope where it's used."
+7f32541 2014-10-29 ZMap version 1.0.0-375-g91cf708 - Update RT and git commit reports
 91cf708 2014-10-29 "change splice to show on selected column too and for both strands of features as per user request."
 29dda60 2014-10-29 "fix bug in freeing display list of features causing RT429859. Improve some variable names."
 08ca8ad 2014-10-29 "add function to free display and display_list, improve some variable names."
