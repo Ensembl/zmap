@@ -1,3 +1,38 @@
+2014-10-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "change splice to show on selected column too and for both strands of features as per user request."
+ .../canvas/zmapWindowContainerFeatureSet.c         |   13 +++++++++++++
+ 1 files changed, 13 insertions(+), 0 deletions(-)
+
+2014-10-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix bug in freeing display list of features causing RT429859. Improve some variable names."
+ src/zmapWindow/canvas/zmapWindowCanvasGraphItem.c |  121 ++++++++++++++-------
+ 1 files changed, 84 insertions(+), 37 deletions(-)
+
+2014-10-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add function to free display and display_list, improve some variable names."
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |   99 +++++++++++++------
+ .../canvas/zmapWindowCanvasFeatureset_I.h          |    7 ++
+ 2 files changed, 75 insertions(+), 31 deletions(-)
+
+2014-10-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix unecessary processing in thread debug messages, remove debugging message."
+ src/zmapView/zmapView.c |   44 ++++++++++++++++++++++++++------------------
+ 1 files changed, 26 insertions(+), 18 deletions(-)
+
+2014-10-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Revert "Fix bug where double click is not received due to xremote blocking (RT429182)"
+ src/include/ZMap/zmap.h            |    1 -
+ src/zmapApp/zmapAppRemoteControl.c |   53 +----------------------------------
+ src/zmapWindow/zmapWindowFeature.c |    4 ++-
+ 3 files changed, 5 insertions(+), 53 deletions(-)
+
+2014-10-23  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.0.0-369-g8e52166 - Update RT and git commit reports
+ src/ChangeLog                                  |   19 ++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    3 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   55 +++++++++++++++++++++++-
+ 3 files changed, 76 insertions(+), 1 deletions(-)
+
 2014-10-23  Gemma Barson  <gb10@sanger.ac.uk>
  Fix bug where double click is not received due to xremote blocking (RT429182)
  src/include/ZMap/zmap.h            |    1 +

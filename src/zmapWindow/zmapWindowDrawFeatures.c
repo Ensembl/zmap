@@ -2642,8 +2642,8 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 /* Implements a tooltip window that shows the column name as the pointer enters a column.
  * 
  * With the new version of tooltips as of gtk 2.12 you don't need to allocate/deallocate
- * the tooltip. Tooltips have become "per-widget" and some settings like time before
- * tooltip is shown have to be made using a whole new "settings" model.
+ * the tooltip. Tooltips have become "per-widget" and some settings like "time before
+ * tooltip is shown" have to be made using a whole new "settings" model.
  *  */
 static gboolean setColumnTooltip(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
@@ -2652,10 +2652,10 @@ static gboolean setColumnTooltip(FooCanvasItem *item, GdkEvent *event, gpointer 
   if (event->type == GDK_ENTER_NOTIFY || event->type == GDK_LEAVE_NOTIFY)
     {
       FooCanvas *foo_canvas = item->canvas ;
-      ZMapWindowContainerFeatureSet feature_set_container = (ZMapWindowContainerFeatureSet)item ;
 
       if (event->type == GDK_ENTER_NOTIFY)
         {
+          ZMapWindowContainerFeatureSet feature_set_container = (ZMapWindowContainerFeatureSet)item ;
           GQuark col_id ;
           char *col_name ;
       
