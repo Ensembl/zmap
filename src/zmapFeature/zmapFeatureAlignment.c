@@ -418,7 +418,7 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
 
 
 
-/* 
+/*
  *            Package routines.
  */
 
@@ -475,7 +475,7 @@ gboolean zmapFeatureAlignmentHasMatchingBoundary(ZMapFeature feature,
 
 
 
-/* 
+/*
  *            Internal routines.
  */
 
@@ -505,6 +505,11 @@ static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
         result = TRUE ;
         break ;
       case ZMAPALIGN_FORMAT_CIGAR_ENSEMBL:
+        properties->bDigitsLeft = TRUE ;
+        properties->bMayOmit1   = TRUE ;
+        properties->bSpaces     = FALSE ;
+        result = TRUE ;
+        break ;
       case ZMAPALIGN_FORMAT_CIGAR_BAM:
         properties->bDigitsLeft = TRUE ;
         properties->bMayOmit1   = FALSE ;
