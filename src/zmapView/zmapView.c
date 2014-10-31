@@ -3445,10 +3445,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
               
 	      thread_has_died = TRUE ;
 	    }
-          else if (!data)
-            {
-              THREAD_DEBUG_MSG(thread, "%s", "got reply from child thread but there is no data.") ;
-            }
 	  else
 	    {
 	      ZMapServerReqAny req_any = NULL ;
