@@ -39,7 +39,7 @@
 #include <zmq.h>
 
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapEnum.h>                                  /* for XXX_LIST macros. */
+#include <ZMap/zmapEnum.h>
 #include <ZMap/zmapRemoteControl.h>
 
 
@@ -52,9 +52,11 @@
 
 /* Timeouts are now a list of values. Change as needed for debugging/production etc. */
 enum {TIMEOUT_LIST_INIT_SIZE = 20} ;                        /* Intial size of timeout array. */
+
 #define TIMEOUT_DEBUG_LIST "1000000"
-#define TIMEOUT_PRODUCTION_LIST "100,400,800,1600"
-#define TIMEOUT_DEFAULT_LIST TIMEOUT_DEBUG_LIST
+#define TIMEOUT_PRODUCTION_LIST "333,1000,3000,9000"
+
+#define TIMEOUT_DEFAULT_LIST TIMEOUT_PRODUCTION_LIST
 
 
 #define TIMEOUT_TYPE_LIST(_)                                            \

@@ -60,27 +60,15 @@
 #define EXIT_TXT  "Exit  <<<<"
 
 #define WRONG_STATE_STR "Wrong State !! Expected state to be: \"%s\". "
-#define OUT_OF_BAND_STR "Received out-of-band \"%s\" while waiting for \"%s\" !!"
 
 
-
-
-/* SOME OF THESE WILL NEED REVISITING WITH MICHAEL'S NEW EXPONENTIAL STUFF... */
-
-/* some useful timeout values... */
-enum
-  {
-    NULL_TIMEOUT = 0,					    /* Turns timeouts off. */
-    DEFAULT_TIMEOUT = 10000,				    /* Standard timeout, needs testing. */
-    DEBUG_TIMEOUT = 3600000				    /* Debug timeout of an hour.... */
-  } ;
 
 /* Have no idea what's sensible but a guess is to think that we need socket checking to be faster
  * than queue checking since the queue checker can't have anything to check unless there is something
  * from the socket. */
 enum
   {
-    SOCKET_WATCH_INTERVAL = 10,                              /* Interval in ms between checking zmq socket. */
+    SOCKET_WATCH_INTERVAL = 10,                             /* Interval in ms between checking zmq socket. */
 
     QUEUE_WATCH_INTERVAL = 20                               /* Interval in ms between checking request/repy queues. */
   } ;
@@ -91,13 +79,13 @@ enum
  * Use these macros for _ALL_ logging calls/error handling in this code
  * to ensure that messages go to the right place.
  */
-#define REMOTELOGMSG(REMOTE_CONTROL, FORMAT_STR, ...)                   \
-  do									\
-    {									\
-      errorMsg((REMOTE_CONTROL),                                        \
-	       __FILE__,						\
-	       __PRETTY_FUNCTION__,					\
-	       (FORMAT_STR), __VA_ARGS__) ;				\
+#define REMOTELOGMSG(REMOTE_CONTROL, FORMAT_STR, ...)   \
+  do                                                    \
+    {                                                   \
+      errorMsg((REMOTE_CONTROL),                        \
+	       __FILE__,                                \
+	       __PRETTY_FUNCTION__,                     \
+	       (FORMAT_STR), __VA_ARGS__) ;             \
     } while (0)
 
 
@@ -121,19 +109,18 @@ enum
 
 
 /* Bad state (!) messages. */
-#define BADSTATELOGMSG(REMOTE_CONTROL, STATE, FORMAT_STR, ...)          \
-  do									\
-    {									\
-      REMOTELOGMSG((REMOTE_CONTROL),                                    \
-		   WRONG_STATE_STR FORMAT_STR,				\
-		   remoteState2ExactStr((STATE)),			\
-		   __VA_ARGS__) ;					\
+#define BADSTATELOGMSG(REMOTE_CONTROL, STATE, FORMAT_STR, ...)  \
+  do                                                            \
+    {                                                           \
+      REMOTELOGMSG((REMOTE_CONTROL),                            \
+		   WRONG_STATE_STR FORMAT_STR,                  \
+		   remoteState2ExactStr((STATE)),               \
+		   __VA_ARGS__) ;                               \
     } while (0)
 
 
 
 /* Call the error handler with standard params. */
-
 #define CALL_ERR_HANDLER(REMOTE_CONTROL, ERROR_RC, FORMAT_STR, ...)	\
   do									\
     {									\
@@ -143,34 +130,6 @@ enum
 		   (ERROR_RC),						\
 		   (FORMAT_STR), __VA_ARGS__) ;				\
     } while (0)
-
-#define CALL_BADSTATE_HANDLER(REMOTE_CONTROL, STATE, FORMAT_STR, ...)   \
-  do									\
-    {									\
-      errorHandler((REMOTE_CONTROL),                                    \
-		   __FILE__,						\
-		   __PRETTY_FUNCTION__,					\
-		   ZMAP_REMOTECONTROL_RC_BAD_STATE,			\
-		   WRONG_STATE_STR FORMAT_STR,				\
-		   remoteState2ExactStr((STATE)),			\
-		   __VA_ARGS__) ;					\
-    } while (0)
-
-#define CALL_OUTOFBAND_HANDLER(REMOTE_CONTROL, BAD_SIGNAL, EXPECTED_SIGNAL) \
-  do									\
-    {									\
-      errorHandler((REMOTE_CONTROL),                                    \
-		   __FILE__,						\
-		   __PRETTY_FUNCTION__,					\
-		   ZMAP_REMOTECONTROL_RC_OUT_OF_BAND,			\
-		   OUT_OF_BAND_STR,					\
-		   (BAD_SIGNAL),					\
-		   (EXPECTED_SIGNAL)) ;					\
-    } while (0)
-
-
-
-
 
 
 
@@ -240,7 +199,7 @@ static TimerData zeroMQSocketSetWatch(GSourceFunc wait_func_cb, ZMapRemoteContro
 static gboolean zeroMQSocketUnSetWatch(TimerData timer_data) ;
 static gboolean zeroMQSocketSendMessage(void *zmq_socket, char *header, char *body, char **err_msg_out) ;
 static gboolean zeroMQSocketSendFrame(void *zmq_socket, void *msg, int msg_len, gboolean send_more,
-                                        char **err_msg_out) ;
+                                      char **err_msg_out) ;
 static SocketFetchRC zeroMQSocketFetchFrame(void *socket, char **msg_out, char **err_msg_out) ;
 static SocketFetchRC zeroMQSocketFetchMessage(void *socket, char **header_out, char **body_out, char **err_msg_out) ;
 static gboolean zeroMQSocketClose(void *zmq_socket, char *endpoint, gboolean disconnect, char **err_msg_out) ;
@@ -255,7 +214,7 @@ static void errorHandler(ZMapRemoteControl remote_control,
 			 ZMapRemoteControlRCType error_rc, char *format_str, ...) ;
 static gboolean stderrOutputCB(gpointer user_data, char *err_msg) ;
 static void errorMsg(ZMapRemoteControl remote_control,
-     const char *file_name, const char *func_name, char *format_str, ...) ;
+                     const char *file_name, const char *func_name, char *format_str, ...) ;
 static void logMsg(ZMapRemoteControl remote_control,
 		   const char *file_name, const char *func_name, char *format_str, va_list args) ;
 
@@ -268,9 +227,6 @@ static void logMsg(ZMapRemoteControl remote_control,
 
 /* Used for validation of ZMapRemoteControlStruct. */
 ZMAP_MAGIC_NEW(remote_control_magic_G, ZMapRemoteControlStruct) ;
-
-
-
 
 /* Debugging stuff... */
 static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_NORMAL ;
@@ -378,13 +334,13 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->receive)
-   {
-     REMOTELOGMSG(remote_control,
-                  "%s",
-                  "Receive interface already initialised.") ;
+    {
+      REMOTELOGMSG(remote_control,
+                   "%s",
+                   "Receive interface already initialised.") ;
 
-     result = FALSE ;
-   }
+      result = FALSE ;
+    }
   else if (!zeroMQSocketReplierCreate(remote_control->zmq_context, &receive_socket, &socket_address, &err_msg))
     {
       REMOTELOGMSG(remote_control, "%s", err_msg) ;
@@ -449,13 +405,13 @@ gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->send)
-   {
-     REMOTELOGMSG(remote_control,
-                  "%s",
-                  "Send interface already initialised.") ;
+    {
+      REMOTELOGMSG(remote_control,
+                   "%s",
+                   "Send interface already initialised.") ;
 
-     result = FALSE ;
-   }
+      result = FALSE ;
+    }
   else if (!socket_string || !(*socket_string))
     {
       REMOTELOGMSG(remote_control,
@@ -571,7 +527,7 @@ gboolean zMapRemoteControlReset(ZMapRemoteControl remote_control)
     }
 
   return result ;
- }
+}
 
 
 
@@ -602,7 +558,7 @@ gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, ZMapRemoteC
   remote_debug_G = debug_level ;
 
   return result ;
- }
+}
 
 
 /* Takes a comma-separated list of millisecond timeout values, e.g. "5,500,10000" and stores
@@ -651,7 +607,7 @@ gboolean zMapRemoteControlSetTimeoutList(ZMapRemoteControl remote_control, char 
     }
 
   return result ;
- }
+}
 
 
 
@@ -660,7 +616,7 @@ gboolean zMapRemoteControlSetTimeoutList(ZMapRemoteControl remote_control, char 
  * to switch routines (e.g. from graphic to terminal or whatever).
  */
 gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
-     ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data) 
+                                     ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data) 
 {
   gboolean result = FALSE ;
 
@@ -675,7 +631,7 @@ gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
   result = TRUE ;
 
   return result ;
- }
+}
 
 
 /* Return to default error message handler. */
@@ -691,7 +647,7 @@ gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control)
   remote_control->err_report_data = NULL ;
 
   return result ;
- }
+}
 
 
 /* Free all resources and destroy the remote control block.
@@ -1539,7 +1495,7 @@ static gboolean passReceiveToApp(ZMapRemoteControl remote_control, RemoteZeroMQM
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
               "Calling apps callback func to process request:\n \"%s\"",
-               request->body) ;
+              request->body) ;
 
   /* Call the app callback to process the request, the app will call
    * receiveReplyFromAppCB() with its response, this may happen
@@ -1550,7 +1506,7 @@ static gboolean passReceiveToApp(ZMapRemoteControl remote_control, RemoteZeroMQM
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
               "Returned from apps callback func to process request:\n \"%s\"",
-               request->body) ;
+              request->body) ;
 
   return result ;
 }
@@ -2385,8 +2341,8 @@ static gboolean zeroMQSocketClose(void *zmq_socket, char *endpoint, gboolean dis
 /* The send/receive code works asynchronously and if there are errors, state needs to be
  * reset so that the send or receive is aborted. */
 static void errorHandler(ZMapRemoteControl remote_control,
-         const char *file_name, const char *func_name,
-         ZMapRemoteControlRCType error_rc, char *format_str, ...)
+                         const char *file_name, const char *func_name,
+                         ZMapRemoteControlRCType error_rc, char *format_str, ...)
 {
   va_list args1, args2 ;
   int bytes_printed ;
@@ -2451,7 +2407,7 @@ static gboolean stderrOutputCB(gpointer user_data_unused, char *err_msg)
  * in a standard format.
  *  */
 static void errorMsg(ZMapRemoteControl remote_control,
-     const char *file_name, const char *func_name, char *format_str, ...)
+                     const char *file_name, const char *func_name, char *format_str, ...)
 {
   va_list args ;
 
@@ -2476,7 +2432,7 @@ static void errorMsg(ZMapRemoteControl remote_control,
  * 
  */
 static void logMsg(ZMapRemoteControl remote_control,
-   const char *file_name, const char *func_name, char *format_str, va_list args)
+                   const char *file_name, const char *func_name, char *format_str, va_list args)
 {
   GString *msg ;
   char *name ;
@@ -2820,11 +2776,13 @@ static char *headerSetRetry(char *curr_header, int new_retry_num)
 
   g_strfreev(split_string_orig) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+
+  /* ok...I've undeffed this...check that code does not crash.... */
   /* test this .....  should work !! */
 
   g_free(curr_header) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   return new_header ;
