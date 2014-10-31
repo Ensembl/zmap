@@ -34,6 +34,12 @@
 #include <glib.h>
 
 
+/* format string for printing double positions in a reasonable format... */
+
+#define CANVAS_FORMAT_DOUBLE "%.2f"
+
+
+
 
 gint zMapWindowFeatureCmp(gconstpointer a, gconstpointer b) ;
 gint zMapWindowFeatureFullCmp(gconstpointer a, gconstpointer b) ;
