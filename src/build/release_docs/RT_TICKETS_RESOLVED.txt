@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 04/08/2014 to 30/10/2014
+Request Tracker Tickets Resolved from 04/08/2014 to 31/10/2014
 
 ticket/117349
 id: ticket/117349
@@ -401,6 +401,16 @@ Subject: Locus not displayed.
 Requestors: edgrif@sanger.ac.uk
 Owner: edgrif
 Resolved: Fri Oct 17 15:35:57 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/426799
+id: ticket/426799
+Queue: zmap
+Subject: Logging repeated text (85.05 under tkhack; 87-dev without tkhack)
+Requestors: jh13@sanger.ac.uk, mca@sanger.ac.uk
+Owner: edgrif
+Resolved: Fri Oct 31 09:21:12 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

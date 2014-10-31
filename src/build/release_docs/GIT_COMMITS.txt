@@ -1,6 +1,8 @@
 
 Git commits for  from commit "production" until commit "release/1.1.0"
 
+8a2dbbd 2014-10-31 "fix bug which broke column popup names showing."
+c4ca276 2014-10-30 ZMap version 1.0.0-378-g6e825e6 - Update RT and git commit reports
 6e825e6 2014-10-30 fix for SIRT:430405
 e9ce8a2 2014-10-29 "Improve commenting, move variable to scope where it's used."
 7f32541 2014-10-29 ZMap version 1.0.0-375-g91cf708 - Update RT and git commit reports
