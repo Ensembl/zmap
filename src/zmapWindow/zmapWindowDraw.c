@@ -133,7 +133,7 @@ void zMapWindow3FrameToggle(ZMapWindow window)
   ZMapWindow3FrameMode mode = ZMAP_WINDOW_3FRAME_TRANS ;
 
   if (IS_3FRAME(window->display_3_frame))
-    mode = ZMAP_WINDOW_3FRAME_INVALID ;
+    mode = ZMAP_WINDOW_3FRAME_OFF ;
 
   myWindowSet3FrameMode(window, mode) ;
 
@@ -289,15 +289,17 @@ gboolean zmapWindowGetColumnVisibility(ZMapWindow window,FooCanvasGroup *column_
  * new_col_state = NULL if new (empty) column
  *  */
 void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
-      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_needed)
+                              ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_needed)
 {
-  ZMapWindowContainerFeatureSet container;
+  ZMapWindowContainerFeatureSet container = NULL ;
+  ZMapWindowContainerGroup group = NULL ;
   ZMapStyleColumnDisplayState curr_col_state ;
   gboolean cur_visible,new_visible;
 
   zMapLogTime(TIMER_SETVIS,TIMER_START,0,"");
 
   container = (ZMapWindowContainerFeatureSet)column_group;
+  group = (ZMapWindowContainerGroup) column_group;
 
   curr_col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
   //printf("set state %s\n",g_quark_to_string(container->unique_id));
@@ -314,8 +316,6 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
         }
       else
         {
-          ZMapWindowContainerGroup group = (ZMapWindowContainerGroup) column_group;
-
           cur_visible = group->flags.visible; /* actual current state */
         }
 
@@ -343,10 +343,19 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
             }
         }
 
-      /* Only do redraw if it was requested _and_ state change needs it. */
-      if (redraw_if_needed && redraw)
+      if (redraw)
         {
-          zmapWindowFullReposition(window->feature_root_group,TRUE, "set state") ;
+          /* If this is the annotation column, update the preferences flag to enable annotation */
+          if (group->feature_any->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
+            {
+              window->flags[ZMAPFLAG_ENABLE_ANNOTATION] = new_visible ;
+            }
+
+          /* Only do redraw if it was requested _and_ state change needs it. */
+          if (redraw_if_needed)
+            {
+              zmapWindowFullReposition(window->feature_root_group,TRUE, "set state") ;
+            }
         }
     }
   zMapLogTime(TIMER_SETVIS,TIMER_STOP,0,"");
@@ -526,22 +535,7 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
 
   if (frame_specific)
     {
-#if MH17_NOT_USED
-      ZMapFrame set_frame;
-      ZMapStrand set_strand;
-
-      set_strand = zmapWindowContainerFeatureSetGetStrand(container) ;
-      set_frame  = zmapWindowContainerFeatureSetGetFrame(container) ;
-#endif
-
-
-      /* MH17: acedb only gives us lower cased names
- previously capitalised name came from req_featuresets ???
- if(container->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
- but we can patch up from the [ZMap] columns list
-      */
-      /* gb10: made this check use the lowercase unique id to fix the acedb bug */
-      if(zmapWindowContainerFeatureSetGetColumnId(container) == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
+      if (zmapWindowContainerFeaturesetGetColumnUniqueId(container) == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
         {
           if (IS_3FRAME_TRANS(window->display_3_frame))
             displayed = TRUE ;
@@ -551,6 +545,7 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
           displayed = TRUE ;
         }
     }
+
 
   return displayed ;
 }
@@ -738,6 +733,7 @@ void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, ch
     }
 
   g_free(poscol);
+
   return ;
 }
 
@@ -1006,7 +1002,7 @@ static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
 {
   switch (frame_mode)
     {
-    case ZMAP_WINDOW_3FRAME_INVALID:
+    case ZMAP_WINDOW_3FRAME_OFF:
       {
         ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;    /* comment out to remember selection */
         ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
@@ -1076,24 +1072,24 @@ static void preZoomCB(ZMapWindowContainerGroup container, FooCanvasPoints *point
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-        ZMapWindow window = (ZMapWindow)user_data;
-        ZMapWindowFeaturesetItem cfs = NULL ;
-        FooCanvasItem *item = (FooCanvasItem *)container ;
+	ZMapWindow window = (ZMapWindow)user_data;
+	ZMapWindowFeaturesetItem cfs = NULL ;
+	FooCanvasItem *item = (FooCanvasItem *)container ;
 
-        if (zmapWindowContainerFeatureSetGetDisplay((ZMapWindowContainerFeatureSet)container)
-            == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
-          zmapWindowColumnSetMagState(window, (FooCanvasGroup *)container) ;
+	if (zmapWindowContainerFeatureSetGetDisplay((ZMapWindowContainerFeatureSet)container)
+	    == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
+	  zmapWindowColumnSetMagState(window, (FooCanvasGroup *)container) ;
 
-        /* Get the feature set item and set the canvas zoom and call any col. functions
-         * needed to prepare for zooming (e.g. to set text width etc. */
-        if ((cfs = ZMapWindowContainerGetFeatureSetItem(container)))
-          {
-            zMapWindowCanvasFeaturesetSetZoomY(cfs, item->canvas->pixels_per_unit_y) ;
-        
-            zMapWindowCanvasFeaturesetPreZoom(cfs) ;
-          }
+	/* Get the feature set item and set the canvas zoom and call any col. functions
+	 * needed to prepare for zooming (e.g. to set text width etc. */
+	if ((cfs = zmapWindowContainerGetFeatureSetItem((ZMapWindowContainerFeatureSet)container)))
+	  {
+	    zMapWindowCanvasFeaturesetSetZoomY(cfs, item->canvas->pixels_per_unit_y) ;
 
-        break ;
+	    zMapWindowCanvasFeaturesetPreZoom(cfs) ;
+	  }
+
+	break ;
       }
 
     default:

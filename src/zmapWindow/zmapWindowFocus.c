@@ -199,12 +199,10 @@ char *zMapWindowGetHotColumnName(ZMapWindow window)
 {
   char *column_name = NULL ;
   ZMapWindowContainerFeatureSet column ;
-  GQuark set_id ;
 
   if ((column = window->focus->focus_column))
     {
-      set_id = zmapWindowContainerFeatureSetColumnDisplayName(column) ;
-      column_name = (char *)g_quark_to_string(set_id) ;
+      column_name = zmapWindowContainerFeaturesetGetColumnName(column) ;
     }
 
   return column_name ;
@@ -607,10 +605,13 @@ void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus)
   if(hot_column)
     {
       GdkColor *colour = NULL;
+      GQuark column_id ;
+      ZMapFeatureColumn column ;
 
       /* Check if there's a selection colour set in the column style */
-      GQuark column_id = zmapWindowContainerFeatureSetGetColumnId(ZMAP_CONTAINER_FEATURESET(hot_column));
-      ZMapFeatureColumn column = zMapWindowGetColumn(focus->window->context_map,column_id);
+      column_id = zmapWindowContainerFeaturesetGetColumnUniqueId(ZMAP_CONTAINER_FEATURESET(hot_column)) ;
+
+      column = zMapWindowGetColumn(focus->window->context_map,column_id) ;
 
       if(hot_column && column->style_id)
         {

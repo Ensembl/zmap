@@ -300,21 +300,139 @@ void zmapWindowItemShowTranslationRemove(ZMapWindow window, FooCanvasItem *featu
   return ;
 }
 
-
-
 void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate)
 {
   ZMapFeature feature ;
 
   feature = zMapWindowCanvasItemGetFeature(feature_to_translate);
 
+  zmapWindowFeatureShowTranslation(window, feature) ;
+}
+
+
+/* Copy a section from src_ptr to dest_ptr from the start of src_ptr up to the coord of the given
+ * variation. src_coord gives the initial coord that src_ptr points to. After the copy, the 
+ * pointers are moved so that they point to the start of the next section after this variation. */
+static void copyExonPeptideSequenceSection(ZMapFeature variation, int *src_coord, char **src_ptr, char **dest_ptr)
+{
+  zMapReturnIfFail(variation && variation->feature.basic.variation_str) ;
+  zMapReturnIfFail(src_coord && src_ptr && *src_ptr && dest_ptr && *dest_ptr) ;
+
+  /* Get the difference in length in DNA bases caused by this variation */
+  const int diff = zMapFeatureVariationGetSections(variation->feature.basic.variation_str,
+                                                   NULL, NULL, NULL, NULL) ;
+
+  if (diff != 0)
+    {
+      /* Deletion or insertion. Copy everything before the variation. Convert to peptide
+       * coords, and round up so it's inclusive of any partial codon. */
+      const int len_to_copy = (variation->x1 - *src_coord + 2) / 3 ;
+
+      memcpy(*dest_ptr, *src_ptr, len_to_copy) ;
+
+      /* Set src_coord to point to the next coord after this variation. */
+      *src_coord = variation->x2 + 1 ;
+
+      if (diff < 0)
+        {
+          /* Deletion. Increase the position in the source string to the next
+           * base after those we've copied. */
+          *src_ptr += len_to_copy ;
+
+          /* Skip over the deleted bases in the dest string. Note that we need 
+           * to multiply diff by -1 to get the absolute number of bases. Note also that we don't
+           * round up in the conversion to peptides here so we exclude any partial codon (because
+           * that was already included in the length we copied). */
+          *dest_ptr += len_to_copy + ((diff * -1) / 3) ;
+        }
+      else
+        {
+          /* Insertion. Increase the position in the dest string to the next base 
+           * after those we've copied. */
+          *dest_ptr += len_to_copy ;
+
+          /* Skip over the inserted bases in the src string. Note that we don't round up the in
+           * the conversion to peptides here so we exclude any partial codon (because that was
+           * already included in the length we copied). */
+          *src_ptr += len_to_copy + (diff / 3) ;
+        }
+    }
+}
+
+
+/* Given an exon peptide sequence that contains variations, copy it into dest_ptr, aligning the
+ * result to the reference sequence. To do this, insertions are skipped and deletions are
+ * marked with dashes. */
+static void copyExonPeptideSequenceVariations(ZMapFeature feature, ZMapFullExon exon, char **dest_ptr)
+{
+  zMapReturnIfFail(feature && exon && dest_ptr && *dest_ptr && feature && feature->feature.transcript.variations) ;
+
+  /* src_ptr will point to the current start position in the peptide that we want to copy from */
+  char *src_ptr = exon->peptide ;
+
+  /* src_coord stores the coordinate of the peptide that src_ptr currently points to */
+  int src_coord = exon->sequence_span.x1 ;
+
+  /* Make sure variations are sorted by position (they should be already but the list
+   * shouldn't be long so no harm in making sure). */
+  feature->feature.transcript.variations = 
+    g_list_sort(feature->feature.transcript.variations, zMapFeatureCmp) ;
+
+  /* Loop through each variation */
+  GList *variation_item = feature->feature.transcript.variations ;
+
+  for ( ; variation_item; variation_item = variation_item->next)
+    {
+      ZMapFeature variation = (ZMapFeature)(variation_item->data) ;
+
+      /* If outside the max end of the exon, then none of the variations
+       * can apply, so stop. */
+      if (variation->x2 > exon->sequence_span.x2)
+        break ;
+
+      /* If not inside this exon then continue to the next variation */
+      if (variation->x1 < exon->sequence_span.x1)
+        continue ;
+
+      /* Copy the section up to this variation and increment the pointers to point to the section
+       * after this variation */
+      copyExonPeptideSequenceSection(variation, &src_coord, &src_ptr, dest_ptr) ;
+    }
+
+  /* Copy the remaining section of the peptide (i.e. the section from the last variation to the end) */
+  memcpy(*dest_ptr, src_ptr, strlen(src_ptr)) ;
+}
+
+
+/* Copy the exon peptide sequence from src_ptr to dest_ptr. The result is aligned to the reference
+ * sequence even if it contains variations. */
+static void copyExonPeptideSequence(ZMapFeature feature, ZMapFullExon exon, char **dest_ptr)
+{
+  zMapReturnIfFail(dest_ptr && *dest_ptr) ;
+  zMapReturnIfFailSafe(exon && exon->peptide) ;
+
+  if (feature && feature->feature.transcript.variations)
+    {
+      /* Copy the sequence, aligning it according to the variations */
+      copyExonPeptideSequenceVariations(feature, exon, dest_ptr) ;
+    }
+  else
+    {
+      /* Just copy the entire peptide sequence to dest */
+      memcpy(*dest_ptr, exon->peptide, strlen(exon->peptide)) ;
+    }
+}
+
+
+void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
+{
   if (!(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_HAS_CDS(feature) && ZMAPFEATURE_FORWARD(feature)))
     {
       zMapWarning("%s %s",
                   zMapFeatureName((ZMapFeatureAny)feature),
-                  (!ZMAPFEATURE_IS_TRANSCRIPT(feature) ? "is not a transcript."
-                   : (!ZMAPFEATURE_HAS_CDS(feature) ? "has no cds."
-                      : "must be on the forward strand."))) ;
+                  (!ZMAPFEATURE_IS_TRANSCRIPT(feature) ? "is not a transcript.\n"
+                   : (!ZMAPFEATURE_HAS_CDS(feature) ? "has no cds.\n"
+                      : "must be on the forward strand.\n"))) ;
     }
   else
     {
@@ -329,10 +447,10 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       gboolean force = TRUE, force_to = TRUE, do_dna = FALSE, do_aa = FALSE, do_trans = TRUE ;
       char *seq ;
       int len ;
-      GList *exon_list = NULL, *exon_list_member;
+      GList *exon_list_member;
       ZMapFullExon current_exon ;
-      char *pep_ptr ;
-      int pep_start = 0, pep_end = 0 ;
+      char *dest_ptr = NULL ;
+      int dest_start = 0, dest_end = 0 ;
       double seq_start;
       ZMapWindowFeaturesetItem fset;
       gboolean found_cds = FALSE ;
@@ -366,6 +484,10 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       if(!trans_set)
         return;
 
+      
+      /* Remember the featureset we called show-translation for */
+      if (feature && feature->parent)
+        window->show_translation_featureset_id = feature->parent->unique_id ;
 
       trans_id2c = (ID2Canvas)(trans_set->data) ;
 
@@ -382,16 +504,29 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       /* Brute force, reinit the whole peptide string. */
       memset(seq, (int)SHOW_TRANS_BACKGROUND, trans_feature->feature.sequence.length) ;
 
-      /* NOTE
-       * to display exons well we need to offset the the phse in each one at high zoom
-       * however, this code is not set up to do that so we are stuck with frame 1
-       * unless we do a rewrite
-       */
+      /* Destroy any previous exon/variation list */
+      if (trans_feature->feature.sequence.exon_list)
+        {
+          g_list_free(trans_feature->feature.sequence.exon_list);
+          trans_feature->feature.sequence.exon_list = NULL;
+        }
+
+      if (trans_feature->feature.sequence.variations)
+        {
+          g_list_free(trans_feature->feature.sequence.variations) ;
+          trans_feature->feature.sequence.variations = NULL ;
+        }
+      
+      /* If the feature contains any variations, store them because we'll need them to display
+       * the translation correctly aligned. */
+      if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+        trans_feature->feature.sequence.variations = g_list_copy(feature->feature.transcript.variations) ;
 
       /* Get the exon descriptions from the feature. */
-      zMapFeatureAnnotatedExonsCreate(feature, TRUE, &exon_list) ;
+      zMapFeatureAnnotatedExonsCreate(feature, TRUE, FALSE, &trans_feature->feature.sequence.exon_list) ;
 
       /* Get first/last members and set background of whole transcript to '-' */
+      GList *exon_list = trans_feature->feature.sequence.exon_list;
       exon_list_member = g_list_first(exon_list) ;
       do
         {
@@ -401,7 +536,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
               current_exon->region_type == EXON_SPLIT_CODON_5 ||
               current_exon->region_type == EXON_SPLIT_CODON_3)
             {
-              pep_start = current_exon->sequence_span.x1 - seq_start + 1;
+              dest_start = current_exon->sequence_span.x1 - seq_start + 1;
               found_cds = TRUE ; /* sanity check that a CDS exists */
               break ;
             }
@@ -423,7 +558,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
                   current_exon->region_type == EXON_SPLIT_CODON_5 ||
                   current_exon->region_type == EXON_SPLIT_CODON_3)
                 {
-                  pep_end = current_exon->sequence_span.x2 - seq_start + 1;
+                  dest_end = current_exon->sequence_span.x2 - seq_start + 1;
 
                   break ;
                 }
@@ -432,12 +567,12 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 
           if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
-            zMapFeature2BlockCoords(block, &pep_start, &pep_end) ;
+            zMapFeature2BlockCoords(block, &dest_start, &dest_end) ;
 
-          pep_start = (pep_start + 2) / 3 ;        /* we assume frame 1, bias other frames backwards */
-          pep_end = (pep_end + 2) / 3 ;
+          dest_start = (dest_start + 2) / 3 ;        /* we assume frame 1, bias other frames backwards */
+          dest_end = (dest_end + 2) / 3 ;
 
-          memset(((seq + pep_start) - 1), (int)SHOW_TRANS_INTRON, ((pep_end - pep_start))) ;
+          memset(((seq + dest_start) - 1), (int)SHOW_TRANS_INTRON, ((dest_end - dest_start))) ;
 
           /* Now memcpy peptide strings into appropriate places, remember to divide seq positions
            * by 3 !!!!!! */
@@ -459,24 +594,25 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
                 {
                   int tmp = 0 ;
 
-                  pep_start = current_exon->sequence_span.x1 - seq_start + 1 ;
+                  dest_start = current_exon->sequence_span.x1 - seq_start + 1 ;
 
                   if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
-                    zMapFeature2BlockCoords(block, &pep_start, &tmp) ;
+                    zMapFeature2BlockCoords(block, &dest_start, &tmp) ;
 
-                  pep_start = (pep_start + 2) / 3 ;
+                  dest_start = (dest_start + 2) / 3 ;
 
-                  pep_ptr = (seq + pep_start) - 1 ;
+                  dest_ptr = (seq + dest_start) - 1 ;
 
-                  if (current_exon->peptide)
-                    memcpy(pep_ptr, current_exon->peptide, strlen(current_exon->peptide)) ;
+                  /* Copy the src sequence to the dest sequence. Note that this function
+                   * takes care of making sure it is aligned correctly if there are
+                   * variations */
+                  copyExonPeptideSequence(feature, current_exon, &dest_ptr) ;
                 }
             }
           while ((exon_list_member = g_list_next(exon_list_member))) ;
 
-
-          /* Revist whether we need to do this call or just a redraw...... */
-          zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, do_trans, force_to, force) ;
+      /* Revist whether we need to do this call or just a redraw...... */
+      zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, do_trans, force_to, force) ;
 
 #if 0
           /* i tried, but this does not highlight */
@@ -492,6 +628,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
   return ;
 }
+
 
 
 
@@ -549,12 +686,6 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
   tmp_frame = ZMAPFRAME_NONE ;
   set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
 
-#if 0
-  if ((item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-                                         block->parent->unique_id, block->unique_id,
-                                         set_id, tmp_strand, tmp_frame, 0)))
-    ;
-#endif
   {
     int frame_num, pep_start, pep_end ;
 
@@ -668,7 +799,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
               frame = ZMAPFRAME_0 ;
 
             /* Get positions/translation etc of all exons. */
-            if (!zMapFeatureAnnotatedExonsCreate(seed_feature, TRUE, &exon_list))
+            if (!zMapFeatureAnnotatedExonsCreate(seed_feature, TRUE, TRUE, &exon_list))
               {
                 zMapLogWarning("Could not find exons/introns in transcript %s", zMapFeatureName((ZMapFeatureAny) seed_feature)) ;
                 break;

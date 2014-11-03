@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -29,7 +29,7 @@
  *              zmapWindow/items and has now been subsumed/replaced
  *              by Malcolm Hinsley's rewrite contained in
  *              zmapWindow/canvas.
- *              
+ *
  *              The intention is to gradually remove all of Roy's
  *              original code but for now it is in this file.
  *
@@ -56,7 +56,7 @@
 
 enum
   {
-    CONTAINER_PROP_0,		/* zero is invalid */
+    CONTAINER_PROP_0,                /* zero is invalid */
     CONTAINER_PROP_VISIBLE,
   };
 
@@ -67,7 +67,7 @@ typedef struct EachIntervalDataStructType
   ZMapFeature          feature;
   ZMapFeatureSubPartSpan sub_feature;
   ZMapStyleColourType  style_colour_type;
-  int 			colour_flags;
+  int                         colour_flags;
   GdkColor            *default_fill_colour;
   GdkColor            *border_colour;
   ZMapWindowCanvasItemClass klass;
@@ -92,37 +92,37 @@ typedef struct MyGObjectInfoStructName
 static void zmap_window_container_block_class_init  (ZMapWindowContainerBlockClass block_data_class);
 static void zmap_window_container_block_init        (ZMapWindowContainerBlock block_data);
 static void zmap_window_container_block_set_property(GObject      *gobject,
-						     guint         param_id,
-						     const GValue *value,
-						     GParamSpec   *pspec);
+                                                     guint         param_id,
+                                                     const GValue *value,
+                                                     GParamSpec   *pspec);
 static void zmap_window_container_block_get_property(GObject    *gobject,
-						     guint       param_id,
-						     GValue     *value,
-						     GParamSpec *pspec);
+                                                     guint       param_id,
+                                                     GValue     *value,
+                                                     GParamSpec *pspec);
 static void zmap_window_container_block_destroy     (GtkObject *gtkobject);
 
 
 
 static void zmap_window_container_context_class_init  (ZMapWindowContainerContextClass block_data_class);
 static void zmap_window_container_context_set_property(GObject      *gobject,
-						       guint         param_id,
-						       const GValue *value,
-						       GParamSpec   *pspec);
+                                                       guint         param_id,
+                                                       const GValue *value,
+                                                       GParamSpec   *pspec);
 static void zmap_window_container_context_get_property(GObject    *gobject,
-						       guint       param_id,
-						       GValue     *value,
-						       GParamSpec *pspec);
+                                                       guint       param_id,
+                                                       GValue     *value,
+                                                       GParamSpec *pspec);
 static void zmap_window_container_context_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
 
 static void zmap_window_container_alignment_class_init  (ZMapWindowContainerAlignmentClass container_align_class);
-static void zmap_window_container_alignment_set_property(GObject      *gobject, 
-							 guint         param_id, 
-							 const GValue *value, 
-							 GParamSpec   *pspec);
-static void zmap_window_container_alignment_get_property(GObject    *gobject, 
-							 guint       param_id, 
-							 GValue     *value, 
-							 GParamSpec *pspec);
+static void zmap_window_container_alignment_set_property(GObject      *gobject,
+                                                         guint         param_id,
+                                                         const GValue *value,
+                                                         GParamSpec   *pspec);
+static void zmap_window_container_alignment_get_property(GObject    *gobject,
+                                                         guint       param_id,
+                                                         GValue     *value,
+                                                         GParamSpec *pspec);
 
 
 static GObjectClass *parent_class_G = NULL ;
@@ -133,7 +133,7 @@ static FooCanvasItemClass *parent_item_class_G = NULL ;
 
 
 
-/* 
+/*
  *             CONTEXT ROUTINES
  */
 
@@ -144,22 +144,22 @@ GType zmapWindowContainerContextGetType(void)
   if (!group_type)
     {
       static const GTypeInfo group_info =
-	{
-	  sizeof (zmapWindowContainerContextClass),
-	  (GBaseInitFunc) NULL,
-	  (GBaseFinalizeFunc) NULL,
-	  (GClassInitFunc) zmap_window_container_context_class_init,
-	  NULL,           /* class_finalize */
-	  NULL,           /* class_data */
-	  sizeof (zmapWindowContainerContext),
-	  0,              /* n_preallocs */
-	  (GInstanceInitFunc) NULL
-	};
+        {
+          sizeof (zmapWindowContainerContextClass),
+          (GBaseInitFunc) NULL,
+          (GBaseFinalizeFunc) NULL,
+          (GClassInitFunc) zmap_window_container_context_class_init,
+          NULL,           /* class_finalize */
+          NULL,           /* class_data */
+          sizeof (zmapWindowContainerContext),
+          0,              /* n_preallocs */
+          (GInstanceInitFunc) NULL
+        };
 
       group_type = g_type_register_static (ZMAP_TYPE_CONTAINER_GROUP,
-					   ZMAP_WINDOW_CONTAINER_CONTEXT_NAME,
-					   &group_info,
-					   0);
+                                           ZMAP_WINDOW_CONTAINER_CONTEXT_NAME,
+                                           &group_info,
+                                           0);
     }
 
   return group_type;
@@ -168,9 +168,11 @@ GType zmapWindowContainerContextGetType(void)
 
 static void zmap_window_container_context_class_init(ZMapWindowContainerContextClass context_class)
 {
-  GObjectClass *gobject_class;
-  FooCanvasItemClass *item_class;
-  zmapWindowContainerGroupClass *group_class ;
+  GObjectClass *gobject_class = NULL ;
+  FooCanvasItemClass *item_class = NULL ;
+  zmapWindowContainerGroupClass *group_class = NULL ;
+
+  zMapReturnIfFail(context_class) ;
 
   gobject_class = (GObjectClass *)context_class;
   item_class    = (FooCanvasItemClass *)context_class;
@@ -197,13 +199,13 @@ static void zmap_window_container_context_class_init(ZMapWindowContainerContextC
 
 
 static void zmap_window_container_context_set_property(GObject      *gobject,
-						       guint         param_id,
-						       const GValue *value,
-						       GParamSpec   *pspec)
+                                                       guint         param_id,
+                                                       const GValue *value,
+                                                       GParamSpec   *pspec)
 {
-  ZMapWindowContainerGroup container;
+  ZMapWindowContainerGroup container = NULL ;
 
-  g_return_if_fail(ZMAP_IS_CONTAINER_GROUP(gobject));
+  zMapReturnIfFail(ZMAP_IS_CONTAINER_GROUP(gobject));
 
   container = ZMAP_CONTAINER_GROUP(gobject);
 
@@ -218,11 +220,13 @@ static void zmap_window_container_context_set_property(GObject      *gobject,
 }
 
 static void zmap_window_container_context_get_property(GObject    *gobject,
-						       guint       param_id,
-						       GValue     *value,
-						       GParamSpec *pspec)
+                                                       guint       param_id,
+                                                       GValue     *value,
+                                                       GParamSpec *pspec)
 {
-  ZMapWindowContainerContext container_context;
+  ZMapWindowContainerContext container_context = NULL ;
+
+  zMapReturnIfFail(gobject) ;
 
   container_context = ZMAP_CONTAINER_CONTEXT(gobject);
 
@@ -239,6 +243,8 @@ static void zmap_window_container_context_get_property(GObject    *gobject,
 
 static void zmap_window_container_context_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
 {
+  zMapReturnIfFail(parent_item_class_G) ;
+
   if(parent_item_class_G->update)
     (parent_item_class_G->update)(item, i2w_dx, i2w_dy, flags);
 
@@ -255,16 +261,16 @@ static void zmap_window_container_context_update (FooCanvasItem *item, double i2
 
 
 
-/* 
+/*
  *    ALIGNMENT ROUTINES
  */
 
 
 ZMapWindowContainerAlignment zmapWindowContainerAlignmentAugment(ZMapWindowContainerAlignment alignment,
-								 ZMapFeatureAlignment feature)
+                                                                 ZMapFeatureAlignment feature)
 {
   zmapWindowContainerAttachFeatureAny((ZMapWindowContainerGroup)alignment,
-				      (ZMapFeatureAny)feature);
+                                      (ZMapFeatureAny)feature);
 
   return alignment;
 }
@@ -272,36 +278,38 @@ ZMapWindowContainerAlignment zmapWindowContainerAlignmentAugment(ZMapWindowConta
 GType zmapWindowContainerAlignmentGetType(void)
 {
   static GType group_type = 0;
-  
-  if (!group_type) 
+
+  if (!group_type)
     {
-      static const GTypeInfo group_info = 
-	{
-	  sizeof (zmapWindowContainerAlignmentClass),
-	  (GBaseInitFunc)NULL,
-	  (GBaseFinalizeFunc)NULL,
-	  (GClassInitFunc)zmap_window_container_alignment_class_init,
-	  NULL,           /* class_finalize */
-	  NULL,           /* class_data */
-	  sizeof (zmapWindowContainerAlignment),
-	  0,              /* n_preallocs */
-	  (GInstanceInitFunc)NULL
-	};
-    
+      static const GTypeInfo group_info =
+        {
+          sizeof (zmapWindowContainerAlignmentClass),
+          (GBaseInitFunc)NULL,
+          (GBaseFinalizeFunc)NULL,
+          (GClassInitFunc)zmap_window_container_alignment_class_init,
+          NULL,           /* class_finalize */
+          NULL,           /* class_data */
+          sizeof (zmapWindowContainerAlignment),
+          0,              /* n_preallocs */
+          (GInstanceInitFunc)NULL
+        };
+
       group_type = g_type_register_static (ZMAP_TYPE_CONTAINER_GROUP,
-					   ZMAP_WINDOW_CONTAINER_ALIGNMENT_NAME,
-					   &group_info,
-					   0);
+                                           ZMAP_WINDOW_CONTAINER_ALIGNMENT_NAME,
+                                           &group_info,
+                                           0);
     }
-  
+
   return group_type;
 }
 
 
 static void zmap_window_container_alignment_class_init(ZMapWindowContainerAlignmentClass container_align_class)
 {
-  GObjectClass *gobject_class;
-  zmapWindowContainerGroupClass *group_class ;
+  GObjectClass *gobject_class = NULL ;
+  zmapWindowContainerGroupClass *group_class = NULL ;
+
+  zMapReturnIfFail(container_align_class) ;
 
   gobject_class = (GObjectClass *)container_align_class;
   group_class = (zmapWindowContainerGroupClass *)container_align_class ;
@@ -324,10 +332,10 @@ static void zmap_window_container_alignment_class_init(ZMapWindowContainerAlignm
 }
 
 
-static void zmap_window_container_alignment_set_property(GObject      *gobject, 
-							 guint         param_id, 
-							 const GValue *value, 
-							 GParamSpec   *pspec)
+static void zmap_window_container_alignment_set_property(GObject      *gobject,
+                                                         guint         param_id,
+                                                         const GValue *value,
+                                                         GParamSpec   *pspec)
 {
 
   switch(param_id)
@@ -340,10 +348,10 @@ static void zmap_window_container_alignment_set_property(GObject      *gobject,
   return ;
 }
 
-static void zmap_window_container_alignment_get_property(GObject    *gobject, 
-							 guint       param_id, 
-							 GValue     *value, 
-							 GParamSpec *pspec)
+static void zmap_window_container_alignment_get_property(GObject    *gobject,
+                                                         guint       param_id,
+                                                         GValue     *value,
+                                                         GParamSpec *pspec)
 {
   ZMapWindowContainerAlignment container_align;
 
@@ -361,7 +369,7 @@ static void zmap_window_container_alignment_get_property(GObject    *gobject,
 
 
 
-/* 
+/*
  *             BLOCK ROUTINES
  */
 
@@ -379,22 +387,22 @@ GType zmapWindowContainerBlockGetType(void)
   if (!group_type)
     {
       static const GTypeInfo group_info =
-	{
-	  sizeof (zmapWindowContainerBlockClass),
-	  (GBaseInitFunc) NULL,
-	  (GBaseFinalizeFunc) NULL,
-	  (GClassInitFunc) zmap_window_container_block_class_init,
-	  NULL,           /* class_finalize */
-	  NULL,           /* class_data */
-	  sizeof (zmapWindowContainerBlock),
-	  0,              /* n_preallocs */
-	  (GInstanceInitFunc) zmap_window_container_block_init
-	};
+        {
+          sizeof (zmapWindowContainerBlockClass),
+          (GBaseInitFunc) NULL,
+          (GBaseFinalizeFunc) NULL,
+          (GClassInitFunc) zmap_window_container_block_class_init,
+          NULL,           /* class_finalize */
+          NULL,           /* class_data */
+          sizeof (zmapWindowContainerBlock),
+          0,              /* n_preallocs */
+          (GInstanceInitFunc) zmap_window_container_block_init
+        };
 
       group_type = g_type_register_static (ZMAP_TYPE_CONTAINER_GROUP,
-					   ZMAP_WINDOW_CONTAINER_BLOCK_NAME,
-					   &group_info,
-					   0);
+                                           ZMAP_WINDOW_CONTAINER_BLOCK_NAME,
+                                           &group_info,
+                                           0);
     }
 
   return group_type;
@@ -404,6 +412,8 @@ GType zmapWindowContainerBlockGetType(void)
 gboolean zmapWindowContainerBlockIsCompressedColumn(ZMapWindowContainerBlock block_data)
 {
   gboolean result = FALSE ;
+
+  zMapReturnValIfFail(block_data, result) ;
 
   if (block_data->compressed_cols)
     result = TRUE ;
@@ -424,10 +434,12 @@ gboolean zmapWindowContainerBlockIsCompressedColumn(ZMapWindowContainerBlock blo
  */
 
 ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBlock container_block,
-							 ZMapFeatureBlock feature)
+                                                         ZMapFeatureBlock feature)
 {
+  zMapReturnValIfFail(container_block && feature, container_block) ;
+
   zmapWindowContainerAttachFeatureAny((ZMapWindowContainerGroup)container_block,
-				      (ZMapFeatureAny)feature);
+                                      (ZMapFeatureAny)feature);
 
   return container_block;
 }
@@ -436,9 +448,11 @@ ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBloc
 
 static void zmap_window_container_block_class_init(ZMapWindowContainerBlockClass block_data_class)
 {
-  ZMapWindowContainerGroupClass group_class;
-  GtkObjectClass *gtkobject_class;
-  GObjectClass *gobject_class;
+  ZMapWindowContainerGroupClass group_class = NULL ;
+  GtkObjectClass *gtkobject_class = NULL ;
+  GObjectClass *gobject_class = NULL ;
+
+  zMapReturnIfFail(block_data_class) ;
 
   gobject_class   = (GObjectClass *)block_data_class;
   gtkobject_class = (GtkObjectClass *)block_data_class;
@@ -460,7 +474,9 @@ static void zmap_window_container_block_class_init(ZMapWindowContainerBlockClass
 
 static void zmap_window_container_block_init(ZMapWindowContainerBlock block_data)
 {
-  block_data->compressed_cols    = NULL;
+  zMapReturnIfFail(block_data) ;
+
+  block_data->compressed_cols = NULL;
 
   return ;
 }
@@ -468,9 +484,9 @@ static void zmap_window_container_block_init(ZMapWindowContainerBlock block_data
 
 
 static void zmap_window_container_block_set_property(GObject      *gobject,
-						     guint         param_id,
-						     const GValue *value,
-						     GParamSpec   *pspec)
+                                                     guint         param_id,
+                                                     const GValue *value,
+                                                     GParamSpec   *pspec)
 {
 
   switch(param_id)
@@ -484,9 +500,9 @@ static void zmap_window_container_block_set_property(GObject      *gobject,
 }
 
 static void zmap_window_container_block_get_property(GObject    *gobject,
-						     guint       param_id,
-						     GValue     *value,
-						     GParamSpec *pspec)
+                                                     guint       param_id,
+                                                     GValue     *value,
+                                                     GParamSpec *pspec)
 {
   ZMapWindowContainerBlock block_data;
 
@@ -507,11 +523,15 @@ static void zmap_window_container_block_get_property(GObject    *gobject,
 static void zmap_window_container_block_destroy(GtkObject *gtkobject)
 {
   ZMapWindowContainerBlock block_data;
-  GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS(parent_class_G);
+  GtkObjectClass *gtkobject_class = NULL ;
+
+  zMapReturnIfFail(gtkobject && parent_class_G) ;
+
+  gtkobject_class = GTK_OBJECT_CLASS(parent_class_G);
 
   block_data = ZMAP_CONTAINER_BLOCK(gtkobject);
 
-  block_data->window = NULL;	/* not ours */
+  block_data->window = NULL;        /* not ours */
 
 
   /* compressed and bumped columns are not ours. canvas owns them, just free the lists */
@@ -550,6 +570,8 @@ GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock 
 {
   GList *list = NULL;
 
+  zMapReturnValIfFail(block_data, list) ;
+
   list = block_data->compressed_cols;
   block_data->compressed_cols = NULL;
 
@@ -570,6 +592,8 @@ GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock bloc
 {
   GList *list = NULL;
 
+  zMapReturnValIfFail(block_data, list) ;
+
   list = block_data->bumped_cols;
   block_data->bumped_cols = NULL;
 
@@ -588,6 +612,7 @@ GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock bloc
  */
 void zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_data, FooCanvasGroup *container)
 {
+  zMapReturnIfFail(block_data) ;
 
   if(ZMAP_IS_CONTAINER_FEATURESET(container))
     {
@@ -609,8 +634,9 @@ void zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_data
  * \return nothing
  */
 void zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_data,
-						 FooCanvasGroup *container)
+                                                 FooCanvasGroup *container)
 {
+  zMapReturnIfFail(block_data) ;
 
   block_data->compressed_cols = g_list_append(block_data->compressed_cols, container) ;
 

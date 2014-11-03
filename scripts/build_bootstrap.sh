@@ -37,9 +37,10 @@ FILES_TO_REMOVE=
 
 
 
-# I don't know why history recording is turned on... ???
+# Load common functions, can't use zmap_message etc. until this is done.
 . $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
-set -o history
+
+# Set up the build environment, e.g. build machine list, config package paths etc.
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
@@ -51,16 +52,16 @@ zmap_message_out "Start of build bootstrap, running in $PWD"
 zmap_message_out "About to parse options: $*"
 
 usage="$0 -b <branch> -d -f <zmap feature dir> -g -p <build_prefix> -r -s <seqtools directory> -t -u VARIABLE=VALUE"
-while getopts ":b:df:gp:rs:tu" opt ; do
+
+while getopts ":b:df:gp:rs:u" opt ; do
     case $opt in
 	b  ) BRANCH=$OPTARG ;;
-	d  ) ZMAP_MASTER_RT_RELEASE_NOTES="yes"   ;;
+	d  ) ZMAP_BUILD_RELEASE_DOCS="yes"   ;;
 	f  ) ZMAP_MASTER_BUILD_COPY_DIR=$OPTARG ;;
 	g  ) GIT_VERSION_INFO="yes" ;;
 	p  ) BUILD_PREFIX=$OPTARG ;;
 	r  ) ZMAP_MASTER_INC_REL_VERSION="yes"    ;;
 	s  ) ZMAP_SEQTOOLS_RELEASE_DIR=$OPTARG ;;
-	t  ) ZMAP_MASTER_TAG_CVS="yes"            ;;
 	u  ) ZMAP_MASTER_INC_UPDATE_VERSION="yes" ;;
 	\? ) zmap_message_rm_exit "$usage"
     esac
@@ -125,12 +126,10 @@ cat <<'EOF'
 ECHO=echo
 
 CVS_MODULE=ZMap
-CVS_ROOT=":ext:cvs.internal.sanger.ac.uk:/repos/cvs/zmap"
-CVS_RSH="ssh"
 
 BRANCH='develop'
 
-export CVS_ROOT CVS_RSH
+export CVS_RSH
 
 if [ "x$SCRIPT_NAME" == "x" ]; then
     SCRIPT_NAME=$(basename $0)
@@ -228,6 +227,9 @@ if [ "x$gen_checkout_script" != "x" ]; then
     _checkout_message_out "Running git clone of zmap.git, branch $BRANCH, into $MASTER_SRC_DIR"
     git clone -b $BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
+    # get the production branch (but don't check it out)
+    git branch production origin/production
+
 #    _checkout_message_out "Forcing branch to 'production'"
 #    BRANCH='production'
 
@@ -320,13 +322,9 @@ zmap_message_out "ZMAP_MASTER_BUILD_COPY_DIR=$ZMAP_MASTER_BUILD_COPY_DIR"
 zmap_message_out "ZMAP_MASTER_BUILD_DEVELOPMENT_DIR=$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR"
 zmap_message_out "ZMAP_MASTER_BUILD_DOCS=$ZMAP_MASTER_BUILD_DOCS"
 zmap_message_out "ZMAP_MASTER_BUILD_DOXYGEN_DOCS=$ZMAP_MASTER_BUILD_DOXYGEN_DOCS"
-zmap_message_out "ZMAP_MASTER_CVS_RELEASE_NOTES=$ZMAP_MASTER_CVS_RELEASE_NOTES"
-zmap_message_out "ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_MASTER_RT_RELEASE_NOTES"
-zmap_message_out "ZMAP_MASTER_FORCE_RELEASE_NOTES=$ZMAP_MASTER_FORCE_RELEASE_NOTES"
+zmap_message_out "ZMAP_BUILD_RELEASE_DOCS=$ZMAP_BUILD_RELEASE_DOCS"
 zmap_message_out "ZMAP_MASTER_DOCS2WEB=$ZMAP_MASTER_DOCS2WEB"
 zmap_message_out "ZMAP_MASTER_WEBPUBLISH=$ZMAP_MASTER_WEBPUBLISH"
-zmap_message_out "ZMAP_MASTER_BUILD_DIST=$ZMAP_MASTER_BUILD_DIST"
-zmap_message_out "ZMAP_MASTER_BUILD_CANVAS_DIST=$ZMAP_MASTER_BUILD_CANVAS_DIST"
 zmap_message_out "ZMAP_BUILD_MACHINES=$ZMAP_BUILD_MACHINES"
 zmap_message_out "ZMAP_MASTER_RUN_TEST_SUITE=$ZMAP_MASTER_RUN_TEST_SUITE"
 zmap_message_out "ZMAP_MASTER_INC_REL_VERSION=$ZMAP_MASTER_INC_REL_VERSION"
@@ -374,52 +372,6 @@ zmap_message_out "All hosts alive."
 
 
 
-
-
-# CAN'T DO THIS BECAUSE WE HAVEN'T DONE A MAKE YET !!!
-#
-# For feature branch builds embed a feature branch ID in zmap code so it can be displayed to user.
-#if [ -n "$GIT_VERSION_INFO" ] ; then
-#
-#    version_file="$SRC_DIR/zmapUtils/$ZMAP_VERSION_HEADER"
-#
-#    zmap_message_out "Collecting GIT describe info..."
-#
-#    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
-#
-#    zmap_message_out "Inserting GIT describe info..$GIT_VERSION_INFO into $version_file."
-#
-#    $SCRIPTS_DIR/set_dev_description.pl $version_file $GIT_VERSION_INFO || zmap_message_exit "Failed to set git version in file $version_file"
-#
-#fi
-#
-#
-# Get current version stuff... Do this before building...
-#
-#zmap_message_out "Fetching version using versioner script"
-#ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
-#    -path $CHECKOUT_BASE/ \
-#    -show -V -quiet) || zmap_message_rm_exit "Failed to get zmap version"
-
-# so try this.....
-#if [ -n "$GIT_VERSION_INFO" ] ; then
-#
-#    zmap_message_out "Collecting GIT describe info....for zmap version string"
-#
-#    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
-#
-#    ZMAP_RELEASE_VERSION=$GIT_VERSION_INFO
-#
-#else
-#
-#    zmap_message_out "Fetching ZMap Version using versioner script....for zmap version string"
-#
-#    ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
-#	-path $CHECKOUT_BASE/ \
-#	-show -V -quiet) || zmap_message_rm_exit "Failed to get zmap version"
-#
-#fi
-
 if [ -n "$GIT_VERSION_INFO" ] ; then
   GIT_FLAG=''
 else
@@ -451,82 +403,9 @@ mkdir $RELEASE_LOCATION || zmap_message_rm_exit "Failed to create release direct
 
 
 
-# Make the release notes, this needs to happen before building and before
-# possibly freezing the cvs as we lock the release notes to the binary
-# using a #define
-#
-if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
-
-    NO_CVS=""
-    if [ "x$ZMAP_MASTER_TAG_CVS" != "x$ZMAP_TRUE" ]; then
-	NO_CVS='-n'
-    fi
-
-    FORCE_NOTES=""
-    if [ "x$ZMAP_MASTER_FORCE_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
-        FORCE_NOTES='-f'
-    fi
-
-    $SCRIPTS_DIR/zmap_make_rt_release_notes.sh $NO_CVS $FORCE_NOTES $CHECKOUT_BASE || \
-	zmap_message_exit "Failed to build release notes from Request Tracker"
-
-    # We need to copy the changed web header into the master directory from the directory it was run in.
-    # $SCRIPTS_DIR looks like /var/tmp/zmap.<rand>/ZMap/scripts and will edit the header found in there.
-    # We do it here as it doesn't seem to be the responsibility of zmap_build_rt_release_notes.sh
-
-    PATH_TO_MODIFIED_WEB_HEADER=$(find $ZMAP_BUILD_CONTAINER/$CVS_MODULE -name $ZMAP_WEBPAGE_HEADER | grep -v CVS)
-
-    PATH_TO_MASTER_WEB_HEADER=$(find $ZMAP_BUILD_CONTAINER/$MASTER_SRC_DIR -name $ZMAP_WEBPAGE_HEADER | grep -v CVS)
-
-    chmod u+w $PATH_TO_MASTER_WEB_HEADER || zmap_message_err  "Failed to chmod $PATH_TO_MASTER_WEB_HEADER"
-    rm -f $PATH_TO_MASTER_WEB_HEADER     || zmap_message_exit "Failed to remove $PATH_TO_MASTER_WEB_HEADER"
-    cp $PATH_TO_MODIFIED_WEB_HEADER $PATH_TO_MASTER_WEB_HEADER || zmap_message_exit "Failed to cp web header"
-
-    if [ "x$ZMAP_MASTER_RT_TO_CVS" == "x$ZMAP_TRUE" ]; then
-	# The release notes file will need editing. mail annotools about that.
-	FILE_DATE=$(date "+%Y_%m_%d")
-	RELEASE_NOTES_OUTPUT="${ZMAP_RELEASE_FILE_PREFIX}.${FILE_DATE}.${ZMAP_RELEASE_FILE_SUFFIX}"
-	(cat <<EOF
-ZMap Build Needs You.
-
-ZMap $ZMAP_RELEASE_VERSION Release notes file needs editing.
-
-Find the file here when the build finishes (assuming it does).
-
-$RELEASE_LOCATION/ZMap/doc/IntWeb/Release_notes/$RELEASE_NOTES_OUTPUT
-
-After modifying the file it needs  cvs updated and to be copied to the
-website.   Use  the  $RELEASE_LOCATION/ZMap/scripts/zmap_update_web.sh
-script, with no arguments to do the latter.
-
-EOF
-	) | mailx -s "Release Notes Created" $ZMAP_MASTER_NOTIFY_MAIL
-    fi
-fi
 
 
-# SURELY THIS IS ALL REDUNDANT NOW WE USE git.........
-# If requested, tag cvs to 'freeze' the code.
-# Logic is: To tag using  the version _in_  cvs. This would  have been
-# incremented the last time this script was run!
-#
-#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-#    zmap_message_out "Fetching cvs tag using versioner script"
-#    cvs_tag=$($SCRIPTS_DIR/versioner \
-#	-path $CHECKOUT_BASE/ \
-#	-show -quiet) || zmap_message_exit "Failed to get zmap version"
-#
-#    zmap_message_out "Tagging cvs using versioner script"
-#
-#    zmap_message_out "Will use cvs tag $cvs_tag"
-#
-#    $SCRIPTS_DIR/versioner -tag -path $CHECKOUT_BASE || zmap_message_exit "Failed to cvs tag zmap"
-#fi
-
-
-
-
-# ================== FARM OFF BUILDS ==================
+# ================== START FARMED OFF BUILDS ==================
 
 
 tar_target=$(hostname):$ZMAP_BUILD_CONTAINER
@@ -664,105 +543,74 @@ if [ $HOSTS_FAILED == $HOSTS_RUN ]; then
     zmap_message_rm_exit "Build failed on _all_ hosts!"
 fi
 
+# ================== END FARMED OFF BUILDS ==================
 
 
 
 
-# ================== MASTER BUILD TASKS ==================
+# ================== START MASTER BUILD TASKS ==================
 
-# We need to run bootstrap and  configure to get the make file targets
-# docs and dist.
-
-zmap_message_out "Starting Master build tasks. Create ChangeLog, make docs, dist etc..."
+zmap_message_out "Starting Master build tasks. Create changelog, make docs, dist etc..."
 
 zmap_message_out "Path is" $PATH
 
 zmap_cd $SRC_DIR
 
 
-zmap_message_out "Creating ChangeLog"
-git log --stat --date=short --pretty='format:%ad  %an  <%ae>%n %s' > ChangeLog ||  zmap_message_rm_exit "Failed to create ChangeLog"
-
-
-
-zmap_message_out "Running bootstrap"
-
-./bootstrap || zmap_message_rm_exit "Failed to bootstrap"
-
-zmap_message_out "Running runconfig"
-
-./runconfig || zmap_message_rm_exit "Failed to runconfig"
-
-
-if [ "x$ZMAP_MASTER_CVS_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
-    zmap_message_err "Need to code release notes bit..."
-
-    # This is done in zmap_build_rt_release_notes.sh
-    $SCRIPTS_DIR/zmap_make_cvs_release_notes.sh || zmap_message_rm_exit "Failed to successfully build release notes from cvs."
-fi
-
-
-if [ "x$ZMAP_MASTER_BUILD_DOCS" == "x$ZMAP_TRUE" ]; then
-    zmap_message_out "Running $SCRIPTS_DIR/zmap_make_docs ..."
-
-    $SCRIPTS_DIR/zmap_make_docs.sh  || zmap_message_rm_exit "Failed to successfully run zmap_make_docs.sh"
-
-    zmap_message_out "Running $SCRIPTS_DIR/zmap_update_web.sh ..."
-
-    $SCRIPTS_DIR/zmap_update_web.sh || zmap_message_rm_exit "Failed to successfully run zmap_update_web.sh"
-fi
-
-
-if [ "x$ZMAP_MASTER_BUILD_DIST" == "x$ZMAP_TRUE" ]; then
-    # make dist
-    # put somewhere useful!
-    zmap_message_out "Running make dist ..."
-
-    make dist || zmap_message_rm_exit "Failed to make distribution file"
-
-    zmap_message_out "mkdir $ZMAP_BUILD_CONTAINER/Dist"
-
-    mkdir -p $ZMAP_BUILD_CONTAINER/Dist
-
-    cp zmap*.tar.gz $ZMAP_BUILD_CONTAINER/Dist/ || zmap_message_rm_exit "Failed to copy distribution to Dist folder."
-fi
-
-
-# ALL REDUNDANT NOW WE DON'T HAVE A VERSION IN THE CODE.
-# version inc...
-#if [ "x$ZMAP_MASTER_INC_REL_VERSION" == "x$ZMAP_TRUE" ]; then
+# Make the distribution file for zmap.
 #
-#    $SCRIPTS_DIR/versioner -path $CHECKOUT_BASE -increment -release -cvs || \
-#	zmap_message_rm_exit "Failed to update release version in cvs"
-#    zmap_message_out "ZMap Version - release number incremented."
+# To do this we need to do all the autoconf stuff so we can run the "make dist" target.
 #
-#elif [ "x$ZMAP_MASTER_INC_UPDATE_VERSION" == "x$ZMAP_TRUE" ]; then
+
+zmap_message_out "Running $ZMAP_BOOTSTRAP_SCRIPT"
+./$ZMAP_BOOTSTRAP_SCRIPT || zmap_message_rm_exit "Failed to $ZMAP_BOOTSTRAP_SCRIPT"
+zmap_message_out "Finished $ZMAP_BOOTSTRAP_SCRIPT"
+
+zmap_message_out "Running $ZMAP_RUNCONFIG_SCRIPT"
+./runconfig || zmap_message_rm_exit "Failed to $ZMAP_RUNCONFIG_SCRIPT"
+zmap_message_out "Finished $ZMAP_RUNCONFIG_SCRIPT"
+
+# make dist
+# put somewhere useful!
+zmap_message_out "Running make dist ..."
+
+make dist || zmap_message_rm_exit "Failed to make distribution file"
+
+zmap_message_out "mkdir $ZMAP_BUILD_CONTAINER/Dist"
+
+mkdir -p $ZMAP_BUILD_CONTAINER/Dist
+
+cp zmap*.tar.gz $ZMAP_BUILD_CONTAINER/Dist/ || zmap_message_rm_exit "Failed to copy distribution to Dist folder."
+
+zmap_message_out "Finished make dist ..."
+
+
+
+# I THINK WE DON'T NEED TO DO THIS ANY MORE....IS MAKE DOCS MALCOLM'S STUFF ??
 #
-#    $SCRIPTS_DIR/versioner -path $CHECKOUT_BASE -increment -update -cvs || \
-#	zmap_message_rm_exit "Failed to update update version in cvs"
-#    zmap_message_out "ZMap Version - update number incremented."
 #
-#fi
+#zmap_message_out "Running $SCRIPTS_DIR/zmap_make_docs ..."
+#
+#$SCRIPTS_DIR/zmap_make_docs.sh  || zmap_message_rm_exit "Failed to successfully run zmap_make_docs.sh"
+#
+#zmap_message_out "Running $SCRIPTS_DIR/zmap_update_web.sh ..."
+#
+#$SCRIPTS_DIR/zmap_update_web.sh || zmap_message_rm_exit "Failed to successfully run zmap_update_web.sh"
+#
+#
 
 
 zmap_cd $save_root
 
 
 TAR_FILE=$(pwd)/Complete_build.tar.gz
-# add it to list of files to remove on exit
+
+# add tar file to list of files to remove on exit
 zmap_edit_variable_add FILES_TO_REMOVE $TAR_FILE
 
 zmap_message_out "About to do: tar -zcf$TAR_FILE $zmap_tmp_dir"
 tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_rm_exit "Failed to create tar file of $zmap_tmp_dir"
-#tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_exit "Failed to create tar file of $zmap_tmp_dir"
 
-
-# Turning this off for now as it makes life difficult for anacode.
-#
-#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-#    zmap_tar_old_releases $ZMAP_RELEASES_DIR
-#    zmap_delete_ancient_tars $ZMAP_RELEASES_DIR
-#fi
 
 
 if [ "x$RELEASE_LOCATION" == "x" ]; then
@@ -774,17 +622,13 @@ fi
 
 $SCRIPTS_DIR/zmap_handle_release_tar.sh -t $TAR_FILE -r $RELEASE_LOCATION || \
     zmap_message_rm_exit "Failed to release what we've built here today."
-#$SCRIPTS_DIR/zmap_handle_release_tar.sh -t $TAR_FILE -r $RELEASE_LOCATION || \
-#    zmap_message_err "Failed to release what we've built here today."
 
 
 #
 # Set up the symlink from zmap home dir to project directory holding the builds.
 #
-#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-    $SCRIPTS_DIR/zmap_symlink.sh -r $RELEASE_LOCATION -l $ZMAP_LINK_NAME || \
+$SCRIPTS_DIR/zmap_symlink.sh -r $RELEASE_LOCATION -l $ZMAP_LINK_NAME || \
 	zmap_message_rm_exit "Failed to update symlink"
-#fi
 
 
 
@@ -804,6 +648,7 @@ if [ "x$ZMAP_MASTER_REMOVE_FOLDER" == "x$ZMAP_TRUE" ]; then
 fi
 
 
+
 # And the tar file
 rm -f $TAR_FILE || zmap_message_rm_exit "Failed to remove $TAR_FILE"
 
@@ -812,6 +657,24 @@ zmap_edit_variable_del FILES_TO_REMOVE $TAR_FILE
 
 
 # N.B. We now have no $SCRIPTS_DIR
+
+
+# Make all the release associated docs (git changes, RT tickets resolved).
+#
+# We do this by finding all the commits made since the production HEAD
+# until the current release HEAD.
+# We use the date of the parent commit/date for when the current release
+# was created to get all the RT tickets resolved in the same period as the commits.
+#
+
+if [ "x$ZMAP_BUILD_RELEASE_DOCS" == "x$ZMAP_TRUE" ]; then
+    RELEASE_NOTES_FILE=$ZMAP_USER_DOCS_DIR/$ZMAP_USER_RELEASE_DOC_FILE_NAME
+    zmap_message_out "Calling $ANNOTOOLS_BIN/make_release_notes.sh $CHECKOUT_BASE zmap ZMap $GIT_VERSION_INFO $RELEASE_NOTES_FILE"
+
+    $ANNOTOOLS_BIN/make_release_notes.sh $RELEASE_LOCATION/ZMap/src "zmap" "ZMap" $GIT_VERSION_INFO $RELEASE_NOTES_FILE || \
+        zmap_message_exit "Failed to make release notes"
+fi
+
 
 
 # Looks like success... Checking versions match (non-fatal errors)

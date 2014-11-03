@@ -104,6 +104,9 @@ typedef enum
     STYLE_PROP_SHOW_ONLY_IN_SEPARATOR,
     STYLE_PROP_DIRECTIONAL_ENDS,
 
+    STYLE_PROP_SPLICE_HIGHLIGHT,
+    STYLE_PROP_SPLICE_HIGHLIGHT_TOLERANCE,
+
 #if MH17_NO_DEFERRED
     STYLE_PROP_DEFERRED,
     STYLE_PROP_LOADED,
@@ -246,6 +249,10 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_HIDE_FORWARD_STRAND    "hide-forward-strand"
 #define ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR "show-only-in-separator"
 #define ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS       "directional-ends"
+
+#define ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT            "splice-highlight"
+#define ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT_TOLERANCE  "splice-highlight-tolerance"
+
 /* ... frame sensitivity */
 #define ZMAPSTYLE_PROPERTY_FRAME_MODE             "frame-mode"
 /* ... deferred loading */
@@ -371,8 +378,10 @@ _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling disp
 /* NOTE x-ref to feature_types[] in zmapWindowCanvasFeatureset.c if you change this */
 
 ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
+
 #define N_STYLE_MODE	(ZMAPSTYLE_MODE_META)
 #define N_STYLE_FEATURE_MODE	ZMAPSTYLE_MODE_PLAIN
+
 
 #define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                                      \
 _(ZMAPSTYLE_COLDISPLAY_INVALID,   , "invalid"  , "invalid mode  "                        , "") \
@@ -391,20 +400,21 @@ _(ZMAPSTYLE_BLIXEM_X,       , "blixem-x", "Blixem peptide sequence. "   , "")
 ZMAP_DEFINE_ENUM(ZMapStyleBlixemType, ZMAP_STYLE_BLIXEM_LIST) ;
 
 
-/* Specifies how features in columns should be bumpped for compact display. */
+/* Specifies how features in columns should be bumped for compact display. */
 #define ZMAP_STYLE_BUMP_MODE_LIST(_)                                              \
-_(ZMAPBUMP_INVALID,               , "invalid",               "invalid",                       "invalid")					\
-_(ZMAPBUMP_UNBUMP,                , "unbump",                "Unbump",                        "No bumping (default)") \
-_(ZMAPBUMP_OVERLAP,               , "overlap",               "Overlap",                       "Bump any features overlapping each other.") \
-_(ZMAPBUMP_START_POSITION,        , "start-position",        "Start Position",                "Bump if features have same start coord.") \
-_(ZMAPBUMP_ALTERNATING,           , "alternating",           "Alternating",                   "Alternate features between two sub_columns, e.g. to display assemblies.") \
-_(ZMAPBUMP_ALL,                   , "all",                   "Bump All",                      "A sub-column for every feature.") \
-_(ZMAPBUMP_NAME,                  , "name",                  "Name",                          "A sub-column for features with the same name.") \
-_(ZMAPBUMP_NAME_INTERLEAVE,       , "name-interleave",       "Name Interleave",               "All features with same name in a single sub-column but several names interleaved in each sub-column, the most compact display.") \
-_(ZMAPBUMP_NAME_NO_INTERLEAVE,    , "name-no-interleave",    "Name No Interleave",            "Display as for Interleave but no interleaving of different names.") \
-_(ZMAPBUMP_NAME_COLINEAR,         , "name-colinear",         "Name & Colinear", "As for Name but colinear alignments shown.") \
-_(ZMAPBUMP_NAME_BEST_ENDS,        , "name-best-ends",        "Name and Best 5'& 3' Matches",  "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.") \
-_(ZMAPBUMP_STYLE,               , "style",               "Style",                       "Show features using an alternate style.")
+_(ZMAPBUMP_INVALID,            , "invalid",            "invalid mode", "")					\
+_(ZMAPBUMP_UNBUMP,             , "unbump",             "No bumping (default)", "") \
+_(ZMAPBUMP_OVERLAP,            , "overlap",            "Bump any features overlapping each other.", "") \
+_(ZMAPBUMP_START_POSITION,     , "start-position",     "Bump if features have same start coord.", "") \
+_(ZMAPBUMP_ALTERNATING,        , "alternating",        "Alternate features between two sub_columns, e.g. to display assemblies.", "") \
+_(ZMAPBUMP_ALL,                , "all",                "A sub-column for every feature.", "") \
+_(ZMAPBUMP_NAME,               , "name",               "A sub-column for features with the same name.", "") \
+_(ZMAPBUMP_FEATURESET_NAME,    , "featureset-name",    "A sub-column for each featureset in a column.", "") \
+_(ZMAPBUMP_NAME_INTERLEAVE,    , "name-interleave",    "All features with same name in a single sub-column but several names interleaved in each sub-column, the most compact display.", "") \
+_(ZMAPBUMP_NAME_NO_INTERLEAVE, , "name-no-interleave", "Display as for Interleave but no interleaving of different names.", "") \
+_(ZMAPBUMP_NAME_COLINEAR,      , "name-colinear",      "As for Name but colinear alignments shown.", "") \
+_(ZMAPBUMP_NAME_BEST_ENDS,     , "name-best-ends",     "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.", "") \
+_(ZMAPBUMP_STYLE,              , "style",              "Show features using an alternate style.", "")
 
 
 /* We should do this automatically or not at all..... */
@@ -918,8 +928,8 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean showText;                    /*!< Should feature text be displayed. */
 
-    /*! Strand, show reverse and frame are all linked: something that is frame specific must be
-     * strand specific as well.... */
+  /* Strand, show reverse and frame are all linked: something that is frame specific must be
+   * strand specific as well.... */
   gboolean strand_specific;                   /*!< Feature that is on one strand of the dna. */
   gboolean show_rev_strand;                   /*!< Only display the feature on the
                                                  reverse strand if this is set. */
@@ -928,6 +938,11 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean directional_end;                   /*!< Display pointy ends on exons etc. */
 
+  gboolean splice_highlight ;                               /* TRUE => highlight matching splices. */
+  guint splice_highlight_tolerance ;                        /* Highlight if within this tolerance (bases). */
+
+
+  /* IS THIS USED ????? SEE IF WE CAN REMOVE IT...... */
   gboolean foo;
 
   gboolean filter;		/* can filter by score */
@@ -937,10 +952,12 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean loaded;             /* flag to say if we're loaded */
 #endif
-	/* these flags are not set by config */
-  gboolean inherited;         /* style has inherited it's parents */
+
+  /* these flags are not set by config */
+  gboolean inherited;                                       /* style has inherited it's parents */
   gboolean is_default;
   gboolean overridden;
+
 
   /*! Mode specific fields, see docs for individual structs. */
   union
@@ -1214,6 +1231,10 @@ gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 
 
 
+/* 
+ * the trouble with all these macros is that they do not test the "is_set" flag.... which
+ * is not very smart....
+ */
 
 //gboolean zMapStyleIsDirectionalEnd(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsDirectionalEnd(style)   ((style)->directional_end)
@@ -1244,6 +1265,9 @@ gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 //gboolean zMapStyleIsFrameOneColumn(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsFrameOneColumn(style)   ((style)->frame_mode == ZMAPSTYLE_3_FRAME_ONLY_1)
 #define zMapStyleGetFrameMode(style)      ((style)->frame_mode)
+
+#define zMapStyleIsSpliceHighlight(style)   ((style)->splice_highlight)
+#define zMapStyleSpliceHighlightTolerance(style) ((style)->splice_highlight_tolerance)
 
 //double zMapStyleBaseline(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGraphFill(style)   ((style)->mode_data.graph.fill)

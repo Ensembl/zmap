@@ -51,9 +51,11 @@ modifications to it:</p>
 
 
 <ul>
-  <li><p><a href="#adding_autoconf_packages">How To Add Other Autoconf Packages Into The Zmap Build System</a>
+  <li><p><a href="#adding_autoconf_packages">How To Add Other Autoconf Packages Into The ZMap Build System</a>
       Covers adding other autoconf-based libraries into the zmap tree so that
       they are statically linked into zmap when it is built.</p></li>
+  <li><p><a href="#adding_nonautoconf_packages">How To Add Other Non-autoconf Packages Into The ZMap Build System</a>
+      As with the previous, but where the package to be added does not use autoconf.</p></li>
 </ul>
 
 
@@ -237,6 +239,75 @@ as required by the zmap build system.</p>
 please document what you did as part of this file.</p>
 
 
+<a name="adding_nonautoconf_packages"></a>
+<h2>How To Add Other Non-autoconf Packages Into The ZMap Build System</h2>
+
+<h3>1) Copying The Package Into The ZMap Tree</h3>
+As in the previous case, copy and test the package to be added on your system. This section will use the 
+Sanger HTS lib for reading/writing SAM/BAM/CRAM files as an example 
+(<a href="https://github.com/samtools/htslib">HTS on github</a>).
+This assumes that the new package can simply be built using the Makefile present in its top level folder. 
+
+
+
+
+<h3>2) Add the package directory to ZMap build</h3>
+Suppose that the package is copied to the ZMap source tree and put into the location: 
+<pre>
+src/htslib-develop
+</pre>
+Edit the file src/Makefile.am and add the name of the directory where the new package has been copied: 
+<pre>
+SUBDIRS = AceConn libpfetch libcurlobject libzmapfoocanvas <font color="red"><b>htslib-develop</b></font> include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+</pre>
+
+<h3>3) Add command to runconfig script</h3>
+The runconfig script should be altered to create a link in the build directory to the location of the package 
+directory (in order that the Makefile can be found when running the build): 
+<pre>
+#
+# This adds a link to the htslib folder in the build directory. 
+#
+<font color="red"><b>ln -s ../../htslib-develop</b></font>
+</pre>
+
+<h3>4) Add library to Makefile.am </h3>
+The location of the static library should be added to the file Makefile.am 
+<pre>
+zmap_LDADD =                                                 \
+        $(top_builddir)/.libs/libZMapApp.a                   \
+        $(top_builddir)/.libs/libZMap.a                      \
+        $(top_builddir)/.libs/libZMapAppServices.a           \
+        $(top_builddir)/.libs/libZMapThr.a                   \
+        $(top_builddir)/.libs/libZMapRemoteControl.a         \
+        $(top_builddir)/.libs/libZMapXML.a                   \
+        $(top_builddir)/.libs/libZMapUtils.a                 \
+        $(top_builddir)/.libs/libzmapfoocanvas.a             \
+        $(top_builddir)/.libs/libPFetch.a                    \
+        <font color="red"><b>$(top_builddir)/htslib-develop/libhts.a              \</b></font>
+        $(top_builddir)/AceConn/src/.libs/libAceConn.a       \
+        $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
+        $(GTK_LIBS)                                          \
+        $(LIBCURL) -lexpat                                   \
+        @MACOSX_UNIVERSAL_FLAGS@ $(NULL)
+</pre>
+
+<h3>5) Edit Makefile.common to add location of include files</h3>
+The location of the includes files in the new package should be added to Makefile.common as shown in red: 
+<pre>
+AM_CPPFLAGS = -g -I$(top_srcdir)/include \
+        -I$(top_builddir)  -I$(top_srcdir)/AceConn/include \
+        <font color="red"><b>-I$(top_srcdir)/htslib-develop \</b></font>
+        @GTK_CFLAGS@ \
+        @LIBCURL_CPPFLAGS@ \
+        $(NULL)
+</pre>
+The public includes files for this package are actually in the directory htslib-develop/htslib, so C source code 
+that uses them should use the syntax 
+<pre>
+<font color="red"><b>#include &lt;htslib/hts.h&gt </b></font>
+</pre>
+to include the appropriate files. 
 
 
 

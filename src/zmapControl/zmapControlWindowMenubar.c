@@ -59,9 +59,7 @@ static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 
 static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window);
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *w);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window);
 static void printCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
@@ -80,21 +78,30 @@ GtkItemFactory *item_factory;
 
 
 static GtkItemFactoryEntry menu_items[] = {
-         { "/_File",                        NULL,         NULL,                  0, "<Branch>" },
-         { "/File/_New Sequence",           NULL,         newSequenceByConfigCB, 2, NULL },
-         { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
-         { "/File/_Import",  "<control>I", importCB, 0, NULL },/* or Read ? */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-        { "/File/_Export",  "<control>E", exportCB, 0, NULL },
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-         { "/File/sep1",                     NULL,         NULL, 0, "<Separator>" },
-         { "/File/_Save screen shot",        NULL,         dumpCB, 0, NULL },
-         { "/File/_Print screen shot",       "<control>P", printCB, 0, NULL },
-         { "/File/sep1",                     NULL,           NULL, 0, "<Separator>" },
-         { "/File/Close",                    "<control>W", closeCB, 0, NULL },
-         { "/File/Quit",                     "<control>Q", quitCB, 0, NULL },
+         { "/_File",                                NULL,                NULL,                  0,  "<Branch>" },
+         { "/File/_New Sequence",                   NULL,                newSequenceByConfigCB, 2,  NULL },
+         { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
+         { "/File/_Save",                           "<control>S",        exportCB,              22,  NULL },
+         { "/File/Save _As",                        "<shift><control>S", exportCB,              23,  NULL },
+         { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
+         { "/File/_Import",                         "<control>I",        importCB,              0,  NULL },/* or Read ? */
+         { "/File/_Export",                         NULL,                NULL,                  0,  "<Branch>" },
+         { "/File/Export/_All Features",            NULL,                NULL,                  0,  "<Branch>" },
+         { "/File/Export/All Features/_DNA",        NULL,                exportCB,              1,  NULL },
+         { "/File/Export/All Features/_Features",   "<control>E",        exportCB,              2,  NULL },
+         { "/File/Export/All Features/_Context",    NULL,                exportCB,              3,  NULL },
+         { "/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
+         { "/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
+         { "/File/Export/Marked Features/_Features","<shift><control>E", exportCB,              12, NULL },
+         { "/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL },
+         { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
+         { "/File/Save screen sho_t",               NULL,                dumpCB,                0,  NULL },
+         { "/File/_Print screen shot",              "<control>P",        printCB,               0,  NULL },
+         { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
+         { "/File/Close",                           "<control>W",        closeCB,               0,  NULL },
+         { "/File/Quit",                            "<control>Q",        quitCB,                0,  NULL },
 
-         { "/_Edit",                         NULL,         NULL, 0, "<Branch>" },
+         { "/_Edit",                                NULL,                NULL,                  0,  "<Branch>" },
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
          { "/Edit/Cu_t",                     "<control>X", copyPasteCB, 0, NULL },
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -108,7 +115,7 @@ static GtkItemFactoryEntry menu_items[] = {
 
          { "/_View",         NULL,         NULL, 0, "<Branch>" },
          { "/View/Session Details", NULL,  showSessionCB, 0, NULL },
-        
+
 #ifdef ALLOW_POPOUT_PANEL
          { "/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL },
 #endif/* ALLOW_POPOUT_PANEL */
@@ -126,7 +133,6 @@ static GtkItemFactoryEntry menu_items[] = {
          { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
          { "/Help/Alignment Display", NULL, allHelpCB, ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
          { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
-         //{ "/Help/What's New", NULL,    allHelpCB, ZMAPGUI_HELP_WHATS_NEW, NULL },
          { "/Help/About ZMap",    NULL,    aboutCB, 0, NULL }
 };
 
@@ -138,7 +144,7 @@ GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
   GtkWidget *menubar = NULL ;
   GtkAccelGroup *accel_group ;
   gint nmenu_items = sizeof (menu_items) / sizeof (menu_items[0]) ;
-  zMapReturnValIfFail(zmap, menubar) ; 
+  zMapReturnValIfFail(zmap, menubar) ;
 
   accel_group = gtk_accel_group_new() ;
 
@@ -154,22 +160,99 @@ GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
 }
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Should pop up a dialog box to ask for a file name....e.g. the file chooser. */
 static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
-  zmap = (ZMap)cb_data ;
-  gchar *file = "ZMap.features" ;
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
+  ZMapWindow curr_window = NULL ;
+  ZMapView curr_view = NULL ;
+  GError *error = NULL ;
+  gboolean result = FALSE ;
 
-  zmapViewFeatureDump(zmap->focus_viewwindow, file) ;
+  zmap = (ZMap)cb_data ;
+  curr_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+  curr_view = zMapViewGetView(zmap->focus_viewwindow) ;
+
+  switch (callback_action)
+    {
+    case 1:
+      {
+        /* Export DNA */
+        result = zMapWindowExportFASTA(curr_window, NULL, &error) ;
+        break ;
+      }
+
+    case 2:
+      {
+        /* Export all features */
+        result = zMapWindowExportFeatures(curr_window, FALSE, NULL, NULL, &error) ;
+        break ;
+      }
+
+    case 3:
+      {
+        /* Export context */
+        result = zMapWindowExportContext(curr_window, &error) ;
+        break ;
+      }
+
+    case 12:
+      {
+        /* Export featuers for marked region */
+        result = zMapWindowExportFeatures(curr_window, TRUE, NULL, NULL, &error) ;
+        break ;
+      }
+
+    case 22:
+      {
+        /* Save - same as export all features but we pass the existing filename, if there is one;
+         * if there isn't then the file chooser will be shown and we'll save the file the user
+         * selects for future Save operations. */
+        char *filename = g_strdup(zMapViewGetSaveFile(curr_view, TRUE)) ;
+        result = zMapWindowExportFeatures(curr_window, FALSE, NULL, &filename, &error) ;
+
+        if (result)
+          zMapViewSetSaveFile(curr_view, filename) ;
+
+        if (filename)
+          g_free(filename) ;
+
+        break ;
+      }
+
+    case 23:
+      {
+        /* Save As - same as export all features but we save the filename for the next Save operation */
+        char *filename = NULL ;
+        result = zMapWindowExportFeatures(curr_window, FALSE, NULL, &filename, &error) ;
+
+        if (result)
+          zMapViewSetSaveFile(curr_view, filename) ;
+
+        if (filename)
+          g_free(filename) ;
+
+        break ;
+      }
+
+    default:
+      {
+        break ;
+      }
+    }
+
+  /* We can get result==FALSE if the user cancelled in which case the error is not set, so don't
+   * report an error in that case */
+  if (error)
+    {
+      zMapWarning("Export failed: %s", error->message) ;
+      g_error_free(error) ;
+      error = NULL ;
+    }
 
   return ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -184,13 +267,13 @@ static void controlImportFileCB(gpointer user_data)
 
 static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = (ZMap)cb_data ; 
+  ZMap zmap = (ZMap)cb_data ;
   ZMapViewWindow vw ;
   ZMapFeatureSequenceMap map ;
   ZMapFeatureSequenceMap view_seq ;
   int start, end ;
 
-  zMapReturnIfFail(zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
 
   vw = zmap->focus_viewwindow ;
 
@@ -201,6 +284,7 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   map->start = view_seq->start;
   map->end = view_seq->end;
   map->sequence = view_seq->sequence;
+  map->dataset = view_seq->dataset ;
   map->config_file = view_seq->config_file;
 
   /* limit to mark if set */
@@ -230,10 +314,10 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
-  zMapReturnIfFail(zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
   ZMapWindow window ;
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
@@ -246,10 +330,10 @@ static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 
 static void printCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
-  zMapReturnIfFail(zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
   ZMapWindow window ;
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
@@ -263,10 +347,10 @@ static void printCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 /* Causes currently focussed zmap window to redraw itself. */
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
-  zMapReturnIfFail(zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
 
   zMapViewRedraw(zmap->focus_viewwindow) ;
 
@@ -277,8 +361,8 @@ static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 /* Shows preference edit window. */
 static void preferencesCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
 
   zmapControlShowPreferences(zmap) ;
@@ -290,8 +374,8 @@ static void preferencesCB(gpointer cb_data, guint callback_action, GtkWidget *wi
 /* Shows developer status dialog window. */
 static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
   char *passwd = NULL ;
   GtkResponseType result ;
@@ -313,8 +397,8 @@ static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *wind
 /* Display session data, this is a mixture of machine and per view data. */
 static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
   GString *session_text ;
 
@@ -431,7 +515,7 @@ static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 /* Kill the whole zmap application. */
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
-  ZMap zmap = (ZMap)cb_data ; 
+  ZMap zmap = (ZMap)cb_data ;
 
   /* Call the application exit callback to get everything killed...including this zmap. */
   (*(zmap->zmap_cbs_G->quit_req))(zmap, zmap->app_data) ;
@@ -447,7 +531,7 @@ static void copyPasteCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   EditActionType action = (EditActionType)callback_action ;
   ZMapWindow curr_window ;
 
-  zMapReturnIfFail(zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
 
   curr_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
@@ -500,8 +584,8 @@ static void handle_option( gpointer data, guint callback_action, GtkWidget *w )
 static void popout_panel( gpointer data, guint callback_action, GtkWidget *w )
 {
   GtkWidget *toplevel;
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(data) ;
   zmap = (ZMap)data;
 
   if((toplevel = zMapGUIPopOutWidget(zmap->button_info_box, zmap->zmap_id)))
@@ -515,8 +599,8 @@ static void popout_panel( gpointer data, guint callback_action, GtkWidget *w )
 /* Load a new sequence by config file into a zmap. */
 static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
 
   zMapAppGetSequenceView(makeSequenceViewCB, zmap, zmap->default_sequence, FALSE) ;
@@ -531,7 +615,7 @@ static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_dat
   ZMapView view ;
   char *err_msg = NULL ;
 
-  if (!(view = zmapControlInsertView(zmap, seq_map, &err_msg)))
+  if (!(view = zMapControlInsertView(zmap, seq_map, &err_msg)))
     {
       zMapWarning("%s", err_msg) ;
       g_free(err_msg) ;

@@ -477,7 +477,7 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
 
       seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
 
-        seq_map->config_file = config_txt ;
+      seq_map->config_file = config_txt ;
 
       if (*sequence)
         {
@@ -488,7 +488,7 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
         }
       else
         {
-                  zMapAppGetSequenceConfig(seq_map, &tmp_error);
+          zMapAppGetSequenceConfig(seq_map, &tmp_error);
                   
           if (tmp_error)
             {
@@ -499,6 +499,10 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
             {
               err_msg = "Cannot load sequence from config file, check sequence, start and end specified." ;
               sequence_ok = FALSE ;
+            }
+          else
+            {
+              sequence_ok = TRUE ;
             }
         }
 

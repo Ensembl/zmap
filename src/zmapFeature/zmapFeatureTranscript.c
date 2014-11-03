@@ -130,7 +130,8 @@ gboolean zMapFeatureTranscriptInit(ZMapFeature feature)
  * that the coordinates are only changed if the range is being expanded. The phase is
  * only stored if the _start_ of the range is expanded.
  */
-gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase)
+gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase,
+                                            gboolean bStartNotFound, gboolean bEndNotFound, int iStartNotFound)
 {
   gboolean result = FALSE ;
 
@@ -168,6 +169,16 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
           feature->feature.transcript.cds_end = end ;
         }
       result = TRUE ;
+    }
+
+  if (bStartNotFound)
+    {
+      feature->feature.transcript.flags.start_not_found = 1 ;
+      feature->feature.transcript.start_not_found = iStartNotFound ;
+    }
+  if (bEndNotFound)
+    {
+      feature->feature.transcript.flags.end_not_found = 1 ;
     }
 
   return result ;
@@ -211,11 +222,19 @@ gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest
     {
       dest_feature->feature.transcript.flags.cds = src_feature->feature.transcript.flags.cds ;
 
-      if (src_feature->feature.transcript.cds_start < dest_feature->feature.transcript.cds_start)
-        dest_feature->feature.transcript.cds_start = src_feature->feature.transcript.cds_start ;
+      /* We only use the src coords if it means the CDS region will expand. However, 0 means
+       * unset so always use the src coord if the current one is unset. */
+      if (dest_feature->feature.transcript.cds_start == 0 ||
+          src_feature->feature.transcript.cds_start < dest_feature->feature.transcript.cds_start)
+        {
+          dest_feature->feature.transcript.cds_start = src_feature->feature.transcript.cds_start ;
+        }
 
-      if (src_feature->feature.transcript.cds_end > dest_feature->feature.transcript.cds_end)
-        dest_feature->feature.transcript.cds_end = src_feature->feature.transcript.cds_end ;
+      if (dest_feature->feature.transcript.cds_end == 0 ||
+          src_feature->feature.transcript.cds_end > dest_feature->feature.transcript.cds_end)
+        {
+          dest_feature->feature.transcript.cds_end = src_feature->feature.transcript.cds_end ;
+        }
 
       result = TRUE ;
     }
@@ -280,6 +299,97 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
         }
     }
 
+
+  return result ;
+}
+
+
+/* Returns a variation in the list that overlaps the given variation (or null if none) */
+static ZMapFeature findOverlappingVariation(ZMapFeature variation, GList *compare_list)
+{
+  ZMapFeature result = NULL ;
+
+  GList *compare_item = compare_list ;
+
+  for ( ; compare_item && !result; compare_item = compare_item->next)
+    {
+      ZMapFeature compare_feature = (ZMapFeature)(compare_item->data) ;
+      if ((compare_feature->x1 >= variation->x1 && compare_feature->x1 <= variation->x2) ||
+          (compare_feature->x2 >= variation->x1 && compare_feature->x2 <= variation->x2))
+        {
+          result = compare_feature ;
+        }
+    }
+  
+  return result ;
+}
+
+/* Remove all the variation metadata in a transcript. */
+gboolean zMapFeatureRemoveTranscriptVariations(ZMapFeature feature, 
+                                               GError **error)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT, result) ;
+  
+  g_list_free(feature->feature.transcript.variations) ;
+  feature->feature.transcript.variations = NULL ;
+
+  return TRUE ;
+}
+
+
+/* Add a variation to a transcript feature. Stores the variation as metadata which is used
+ * to modify the transcript sequence. Only applies the variation if it lies within an exon. */
+gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, 
+                                           ZMapFeature variation,
+                                           GError **error)
+{
+  gboolean result = FALSE ;
+
+  zMapReturnValIfFail(feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT, result) ;
+  zMapReturnValIfFail(variation && variation->mode == ZMAPSTYLE_MODE_BASIC, result) ;
+
+  /* Find which exon the variation lies in */
+  GArray *exons = feature->feature.transcript.exons;
+  int i = 0 ;
+
+  for ( ; i < exons->len; ++i)
+    {
+      ZMapSpan exon = &(g_array_index(exons, ZMapSpanStruct, i)) ;
+
+      if (variation->x1 >= exon->x1 && variation->x2 <= exon->x2)
+        {
+          /* Ok, found the exon. Add the variation to the transcript (but
+           * disallow adding of overlapping variations). */
+          ZMapFeature overlapping_variation = findOverlappingVariation(variation, feature->feature.transcript.variations) ;
+
+          if (!overlapping_variation)
+            {
+              feature->feature.transcript.variations = 
+                g_list_insert_sorted(feature->feature.transcript.variations, 
+                                     variation,
+                                     zMapFeatureCmp) ;
+              
+              result = TRUE ;
+            }
+          else if (overlapping_variation->mode == ZMAPSTYLE_MODE_BASIC &&
+                   overlapping_variation->feature.basic.variation_str)
+            {
+              g_set_error(error, g_quark_from_string("ZMap"), 99, 
+                          "Cannot add variation '%s' because it overlaps existing variation '%s'\n",
+                          variation->feature.basic.variation_str,
+                          overlapping_variation->feature.basic.variation_str) ;
+            }
+          else
+            {
+              g_set_error(error, g_quark_from_string("ZMap"), 99, 
+                          "Cannot add variation '%s' because it overlaps existing variation '<invalid type>'\n",
+                          variation->feature.basic.variation_str) ;
+            }
+
+          break ;
+        }
+    }
 
   return result ;
 }
@@ -384,11 +494,11 @@ gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature)
       if (!(feature->feature.transcript.exons->len))
         {
           ZMapSpanStruct exon = {0}, *exon_ptr = NULL ;
-        
+
           exon.x1 = feature->x1 ;
           exon.x2 = feature->x2 ;
           exon_ptr = &exon ;
-        
+
           result = zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, NULL) ;
         }
       else if (!(feature->feature.transcript.introns->len))
@@ -407,8 +517,8 @@ gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature)
  * see the ZMapFullExon struct.
  *
  */
-gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein,
- GList **exon_regions_list_out)
+gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, gboolean pad, 
+                                         GList **exon_regions_list_out)
 {
   gboolean result = FALSE ;
   gboolean exon_debug = FALSE ;
@@ -445,8 +555,8 @@ gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_p
       if (include_protein)
         {
           int real_length;
-        
-          full_data.translation = zMapFeatureTranslation(feature, &real_length);
+
+          full_data.translation = zMapFeatureTranslation(feature, &real_length, pad);
         }
 
 
@@ -454,7 +564,7 @@ gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_p
 
       if (g_list_length(*exon_regions_list_out) > 0)
         result = TRUE ;
-        
+
       if (exon_debug)
         g_list_foreach(*exon_regions_list_out, printDetailedExons, NULL) ;
 
@@ -524,14 +634,14 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
           break;
 
         zMap_g_hash_table_get_data(&features, feature_set->features);
-        
+
         for ( ; features; features = g_list_delete_link(features, features))
           {
             ZMapFeature feat = (ZMapFeature) features->data;
-        
+
             zMapFeatureTranscriptSortExons(feat) ;
           }
-        
+
         break;
       }
 
@@ -600,7 +710,7 @@ gboolean zMapFeatureTranscriptMergeIntron(ZMapFeature transcript, Coord x1, Coor
           boundary = ZMAPBOUNDARY_3_SPLICE ;
           zMapFeatureTranscriptMergeCoord(transcript, x2, &boundary, &tmp_error) ;
         }
-      
+
       result = TRUE ;
     }
 
@@ -643,7 +753,7 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
 
   for ( ; i < array->len; ++i)
     {
-      /* Check if the new exon overlaps the existing one. Include one base 
+      /* Check if the new exon overlaps the existing one. Include one base
        * beyond the end of the existing exon so that abutting exons get merged */
       ZMapSpan compare_exon = &(g_array_index(array, ZMapSpanStruct, i));
 
@@ -688,7 +798,7 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
     }
 
   zMapFeatureTranscriptRecreateIntrons(transcript);
-  
+
   return result ;
 }
 
@@ -703,7 +813,7 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
 gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature transcript, Coord coord)
 {
   gboolean result = FALSE ;
-  
+
   if (!transcript || transcript->mode != ZMAPSTYLE_MODE_TRANSCRIPT)
     return result;
 
@@ -741,7 +851,7 @@ gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature transcript, Co
           /* The coord is in the gap between this and the next exon. Merge the two exons. */
           prev_exon->x2 = exon->x2 ;
           g_array_remove_index(array, i) ;
-          
+
           result = TRUE ;
           break ;
         }
@@ -750,9 +860,61 @@ gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature transcript, Co
     }
 
   zMapFeatureTranscriptRecreateIntrons(transcript);
-  
+
   return result ;
 }
+
+
+
+
+
+/* 
+ *            Package routines.
+ */
+
+/* Do boundary_start/boundary_end match the start/end of the transcript or any of the
+ * exons within the transcript. */
+gboolean zmapFeatureTranscriptHasMatchingBoundary(ZMapFeature feature,
+                                                  int boundary_start, int boundary_end,
+                                                  int *boundary_start_out, int *boundary_end_out)
+{
+  gboolean result = FALSE ;
+  int slop ;
+  GArray *array = feature->feature.transcript.exons;
+  int i ;
+  int match_start, match_end ;
+
+  zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
+
+  slop = zMapStyleSpliceHighlightTolerance(*(feature->style)) ;
+
+  for ( i = 0 ; i < array->len; ++i)
+    {
+      ZMapSpan exon = &(g_array_index(array, ZMapSpanStruct, i)) ;
+
+      if (zmapFeatureCoordsMatch(slop, boundary_start, boundary_end,
+                                 exon->x1, exon->x2,
+                                 &match_start, &match_end))
+        {
+          result = TRUE ;
+
+          if (boundary_start_out && match_start)
+            *boundary_start_out = match_start ;
+
+          if (boundary_end_out && match_end)
+            *boundary_end_out = match_end ;
+        }
+    }
+
+  return result ;
+}
+
+
+
+/* 
+ *           Internal routines
+ */
+
 
 
 /*!
@@ -799,8 +961,8 @@ static ZMapBoundaryType showTrimStartEndConfirmation()
 
 /* special case: we only have one exon and x lies inside it */
 static gboolean mergeCoordInsideSoleExon(ZMapFeature transcript,
-                                         ZMapBoundaryType *boundary_inout, 
-                                         const int x, 
+                                         ZMapBoundaryType *boundary_inout,
+                                         const int x,
                                          ZMapSpan exon,
                                          GError **error)
 {
@@ -829,8 +991,8 @@ static gboolean mergeCoordInsideSoleExon(ZMapFeature transcript,
 /* x lies inside or before the first exon: trim/extend its start
  * check that the boundary type matches (i.e. modify 3' end of adjacent intron) */
 static gboolean mergeCoordInsideFirstExon(ZMapFeature transcript,
-                                          ZMapBoundaryType *boundary_inout, 
-                                          const int x, 
+                                          ZMapBoundaryType *boundary_inout,
+                                          const int x,
                                           ZMapSpan exon,
                                           GError **error)
 {
@@ -846,15 +1008,15 @@ static gboolean mergeCoordInsideFirstExon(ZMapFeature transcript,
     {
       g_set_error(error, g_quark_from_string("ZMap"), 99, "Invalid boundary type for this operation");
     }
-  
+
   return merged ;
 }
 
 
 /* x lies inside or after the last exon: trim/extend its end */
 static gboolean mergeCoordOutsideLastExon(ZMapFeature transcript,
-                                          ZMapBoundaryType *boundary_inout, 
-                                          const int x, 
+                                          ZMapBoundaryType *boundary_inout,
+                                          const int x,
                                           ZMapSpan exon,
                                           GError **error)
 {
@@ -870,7 +1032,7 @@ static gboolean mergeCoordOutsideLastExon(ZMapFeature transcript,
     {
       g_set_error(error, g_quark_from_string("ZMap"), 99, "Invalid boundary type for this operation");
     }
-  
+
   return merged ;
 }
 
@@ -878,8 +1040,8 @@ static gboolean mergeCoordOutsideLastExon(ZMapFeature transcript,
 /* x lies in the intron before this exon: ask whether
  * to trim the start or end of the intron */
 static gboolean mergeCoordInIntron(ZMapFeature transcript,
-                                   ZMapBoundaryType *boundary_inout, 
-                                   const int x, 
+                                   ZMapBoundaryType *boundary_inout,
+                                   const int x,
                                    ZMapSpan prev_exon,
                                    ZMapSpan exon,
                                    GError **error)
@@ -888,7 +1050,7 @@ static gboolean mergeCoordInIntron(ZMapFeature transcript,
 
   if (*boundary_inout == ZMAPBOUNDARY_NONE)
     *boundary_inout = showTrimStartEndConfirmation();
-  
+
   if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
     {
       /* to trim the intron start, we extend the prev exon end */
@@ -901,15 +1063,15 @@ static gboolean mergeCoordInIntron(ZMapFeature transcript,
       exon->x1 = x;
       merged = TRUE;
     }
-  
+
   return merged;
 }
 
 
   /* x lies in this exon: ask whether to trim the start or end*/
 static gboolean mergeCoordInExon(ZMapFeature transcript,
-                                 ZMapBoundaryType *boundary_inout, 
-                                 const int x, 
+                                 ZMapBoundaryType *boundary_inout,
+                                 const int x,
                                  ZMapSpan exon,
                                  GError **error)
 {
@@ -930,7 +1092,7 @@ static gboolean mergeCoordInExon(ZMapFeature transcript,
       exon->x1 = x;
       merged = TRUE;
     }
-  
+
   return merged ;
 }
 
@@ -981,13 +1143,13 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
             }
           else if (i == array->len - 1 && x >= exon->x2)
             {
-              merged = mergeCoordOutsideLastExon(transcript, boundary_inout, x, exon, &tmp_error) ;              
+              merged = mergeCoordOutsideLastExon(transcript, boundary_inout, x, exon, &tmp_error) ;
               break;
             }
           else if (x < exon->x1)
             {
               merged = mergeCoordInIntron(transcript, boundary_inout, x, prev_exon, exon, &tmp_error) ;
-              
+
               if (merged)
                 {
                   /* Check if we've created abutting exons and if so merge them */
@@ -1026,6 +1188,51 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
   return merged;
 }
 
+
+/*!
+ * \brief Determine if two transcripts are equal i.e. have the same exons and cds
+ *
+ * \return TRUE if equal, FALSE if not
+ */
+gboolean zMapFeatureTranscriptsEqual(ZMapFeature feature1, ZMapFeature feature2, GError **error)
+{
+  gboolean result = FALSE ;
+  GError *tmp_error = NULL ;
+
+  if (!feature1 || !feature2)
+    g_set_error(&tmp_error, g_quark_from_string("ZMap"), 99, "Feature is null");
+
+  if (feature1->mode != ZMAPSTYLE_MODE_TRANSCRIPT || feature2->mode != ZMAPSTYLE_MODE_TRANSCRIPT)
+    g_set_error(&tmp_error, g_quark_from_string("ZMap"), 99, "Feature is not a transcript");
+
+  if (!tmp_error &&
+      feature1->feature.transcript.flags.cds == feature2->feature.transcript.flags.cds &&
+      feature1->feature.transcript.cds_start == feature2->feature.transcript.cds_start &&
+      feature1->feature.transcript.cds_end == feature2->feature.transcript.cds_end)
+    {
+      /* Loop through exons and check start/end */
+      GArray *exons1 = feature1->feature.transcript.exons;
+      GArray *exons2 = feature2->feature.transcript.exons;
+
+      if (exons1->len == exons2->len)
+        {
+          /* now assume true but set result to false if we find an exon mismatch */
+          result = TRUE ;
+          int i = 0 ;
+
+          for ( ; result && i < exons1->len; ++i)
+            {
+              ZMapSpan span1 = &(g_array_index(exons1, ZMapSpanStruct, i));
+              ZMapSpan span2 = &(g_array_index(exons2, ZMapSpanStruct, i));
+
+              if (span1->x1 != span2->x1 || span1->x2 != span2->x2)
+                result = FALSE ;
+            }
+        }
+    }
+
+  return result ;
+}
 
 
 
@@ -1089,9 +1296,9 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
         {
           /* mixed exon: may have utrs, split codons or just cds. */
           int ex_cds_start = exon_start, ex_cds_end = exon_end ;
-          int exon_length ;
-          int start_phase, end_phase ;
-        
+          int exon_length = 0 ;
+          int start_phase = 0, end_phase = 0 ;
+
           if (exon_start < full_data->cds_start)
             {
               /* 5' utr part. */
@@ -1123,7 +1330,15 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
           /* ok, now any utr sections are removed we can work out phases of translation section. */
           exon_length = (ex_cds_end - ex_cds_start) + 1 ;
-        
+          
+          /* variations may change the length of the peptide sequence in the exon */
+          if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+            {
+              int variation_diff = zmapFeatureDNACalculateVariationDiff(ex_cds_start, ex_cds_end, 
+                                                                        feature->feature.transcript.variations) ;
+              exon_length += variation_diff ;
+            }
+
           if (ex_cds_start == full_data->cds_start && exon_length < 3)
             {
               /* pathological, start of whole cds is at the end of an exon and there are less than
@@ -1137,32 +1352,32 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
             {
               start_phase = (full_data->trans_coord_counter) % 3 ;
               end_phase = ((full_data->trans_coord_counter + exon_length) - 1) % 3 ;
-        
+
               if (start_phase)
                 {
                   /* 5' split codon ends one base before full codon. */
                   int correction ;
-                
+
                   correction = ((start_phase == 1 ? 2 : 1) - 1) ;
-                
+
                   ex_split_5.x1 = ex_cds_start ;
-                
+
                   ex_split_5.x2 = ex_split_5.x1 + correction ;
-                
+
                   ex_cds_start = ex_split_5.x2 + 1 ;
                 }
-                
+
               if (end_phase < 2)
                 {
                   /* 3' split codon starts one base after end of full codon. */
                   int correction ;
-                
+
                   correction = ((end_phase + 1) % 3) - 1 ;
-                
+
                   ex_split_3.x1 = ex_cds_end - correction ;
-                
+
                   ex_split_3.x2 = ex_cds_end ;
-                
+
                   ex_cds_end = ex_split_3.x1 - 1 ;
                 }
 
@@ -1177,10 +1392,10 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
                           && (ex_cds_end <=  exon_span->x2 || (ex_split_3.x1 && ex_cds_end < ex_split_3.x1)))
                 {
                   ex_cds = *exon_span ;    /* struct copy. */
-        
+
                   if (ex_cds_start)
                     ex_cds.x1 = ex_cds_start ;
-        
+
                   if (ex_cds_end)
                     ex_cds.x2 = ex_cds_end ;
                 }
@@ -1237,32 +1452,63 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
   if (full_exon_cds)
     {
-      int pep_start, pep_end, pep_length ;
-      char *peptide ;
+      int pep_start = 0, pep_end = 0, pep_length = 0, variation_diff1 = 0, variation_diff2 = 0 ;
+      char *peptide = NULL ;
 
       pep_start = (full_exon_cds->cds_span.x1 / 3) + 1 ;
       pep_end = full_exon_cds->cds_span.x2 / 3 ;
 
+      /* If there are any variations in this exon they may affect its length */
+      if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+        {
+          GList *variations = feature->feature.transcript.variations ;
+
+          /* Get the total offset caused by variations before this exon (this will affect the
+           * length of previous exons so will therefore affect the start index in the transcript's
+           * peptide sequence where this exon starts). */
+          variation_diff1 = zmapFeatureDNACalculateVariationDiff(1,
+                                                                exon_span->x1, 
+                                                                variations) ;
+
+          /* Get the total offset caused by variations within this exon (this will affect the
+           * exon length) */
+          variation_diff2 = zmapFeatureDNACalculateVariationDiff(exon_span->x1,
+                                                                exon_span->x2, 
+                                                                variations) ;
+
+          /* Convert to peptide coords. Round up to include any partial codon (but note we need
+           * to round the absolute value up, so round down for negative numbers) */
+          if (variation_diff1 < 0)
+            variation_diff1 = (variation_diff1 - 2) / 3;
+          else
+            variation_diff1 = (variation_diff1 + 2) / 3;
+
+          if (variation_diff2 < 0)
+            variation_diff2 = (variation_diff2) / 3;
+          else
+            variation_diff2 = (variation_diff2) / 3;
+        }
+
       full_exon_cds->pep_span.x1 = pep_start ;
       full_exon_cds->pep_span.x2 = pep_end ;
-      pep_length = pep_end - pep_start + 1 ;
+      pep_length = pep_end - pep_start + 1 + variation_diff2 ;
 
       if (full_data->translation)
         {
-          peptide = full_data->translation + (pep_start - 1) ;
+          peptide = full_data->translation + (pep_start - 1 + variation_diff1) ;
           full_exon_cds->peptide = g_strndup(peptide, pep_length) ;
         }
 
       if (full_exon_split_5)
         {
           pep_start-- ;
-        
+
           full_exon_split_5->pep_span.x1 = full_exon_split_5->pep_span.x2 = pep_start ;
 
           if (full_data->translation)
             {
               peptide = full_data->translation + (pep_start - 1) ;
-        
+
               full_exon_split_5->peptide = g_strndup(peptide, 1) ;
             }
         }
@@ -1270,13 +1516,13 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
       if (full_exon_split_3)
         {
           pep_end++ ;
-        
+
           full_exon_split_3->pep_span.x1 = full_exon_split_3->pep_span.x2 = pep_end ;
-        
+
           if (full_data->translation)
             {
               peptide = full_data->translation + (pep_end - 1) ;
-        
+
               full_exon_split_3->peptide = g_strndup(peptide, 1) ;
             }
         }
@@ -1313,8 +1559,8 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 /* Create a full exon with all the positional information and update the running positional
  * counters required for cds phase calcs etc. */
 static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZMapSpan exon_span,
-       int *curr_feature_pos, int *curr_spliced_pos,
-       int *curr_cds_pos, int *curr_trans_pos)
+                               int *curr_feature_pos, int *curr_spliced_pos,
+                               int *curr_cds_pos, int *curr_trans_pos)
 {
   ZMapFullExon exon = NULL ;
   int exon_length = ZMAP_SPAN_LENGTH(exon_span) ;
@@ -1353,7 +1599,7 @@ static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZM
          * not trans pos, which is used to set phase
          * (RT 266769)
          */
-        
+
         *curr_cds_pos += exon_length ;
         }
 

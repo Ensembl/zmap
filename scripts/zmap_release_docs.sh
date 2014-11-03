@@ -65,13 +65,14 @@ zmap_cd ../src
 # bootstrap and runconfig are directory sensitive in their effects and
 # requirements. So we need to cd to src directory first. 
 
-zmap_message_out "Running bootstrap"
+zmap_message_out "Running $ZMAP_BOOTSTRAP_SCRIPT"
+./$ZMAP_BOOTSTRAP_SCRIPT || zmap_message_exit "Failed to $ZMAP_BOOTSTRAP_SCRIPT"
+zmap_message_out "Finished $ZMAP_BOOTSTRAP_SCRIPT"
 
-./bootstrap || zmap_message_exit "Failed to bootstrap"
+zmap_message_out "Running $ZMAP_RUNCONFIG_SCRIPT"
+./$ZMAP_RUNCONFIG_SCRIPT || zmap_message_exit "Failed to $ZMAP_RUNCONFIG_SCRIPT"
+zmap_message_out "Finished $ZMAP_RUNCONFIG_SCRIPT"
 
-zmap_message_out "Running runconfig"
-
-./runconfig || zmap_message_exit "Failed to runconfig"
 
 # Now do what we came here to do.
 

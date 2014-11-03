@@ -103,20 +103,18 @@ bump-spacing=3.000000
 
 [style-alignment]
 description=default alignment style
-sub-features=homology:homology-glyph ; non-concensus-splice:nc-splice-glyph
 alignment-show-gaps=true
 alignment-parse-gaps=true
 mode=alignment
+default-bump-mode=overlap
 strand-specific=true
-alignment-pfetchable=true
+alignment-pfetchable=false
 colours=normal fill pink ; normal border #97737a
-default-bump-mode=all
 parent-style=root
 show-reverse-strand=true
 directional-ends=true
 max-score=100.000000
-min-score=70.000000
-score-mode=percent
+min-score=1.000000
 
 
 [style-basic]

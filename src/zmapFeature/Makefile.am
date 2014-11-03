@@ -10,13 +10,15 @@ zmapFeature.c                  \
 zmapFeature_P.h                \
 zmapFeature3FrameTranslation.c \
 zmapFeatureAlignment.c         \
-zmapFeatureTranscript.c        \
+zmapFeatureBasic.c              \
 zmapFeatureContext.c           \
 zmapFeatureContextUtils.c      \
 zmapFeatureDNA.c               \
 zmapFeatureFormatInput.c       \
 zmapFeatureData.c   \
 zmapFeatureOutput.c \
+zmapFeatureParams.c \
+zmapFeatureTranscript.c        \
 zmapFeatureTypes.c  \
 zmapFeatureUtils.c  \
 zmapStyle.c         \

@@ -112,7 +112,7 @@ static gboolean compositeFeaturesInsert(ZMapGFF3Parser const pParser, GQuark fea
 /*
  * See comments with function.
  */
-static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
+static gboolean hack_SpecialColumnToSOTerm(const char * const, char * const ) ;
 
 /*
  * These alternatives are in place temporarily until we have
@@ -2334,8 +2334,8 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
   sErrText = NULL ;
   if (g_ascii_strcasecmp(sSequence, ".") == 0)
     sErrText = g_strdup("sSequence cannot be '.'") ;
-  else if (g_ascii_strcasecmp(sSource, ".") == 0)
-    sErrText = g_strdup("sSource cannot be '.'") ;
+  //else if (g_ascii_strcasecmp(sSource, ".") == 0)
+  //  sErrText = g_strdup("sSource cannot be '.'") ;
   else if (g_ascii_strcasecmp(sType, ".") == 0)
     sErrText = g_strdup("sType cannot be '.'") ;
   else if (!zMapFeatureFormatType(pParser->SO_compliant, pParser->default_to_basic, sType, &cType))
@@ -2380,7 +2380,7 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
   /*
    * Deal with hack to source -> SO term mapping
    */
-  hack_SpecialColumnToSOTerm(sSource, &sType ) ;
+  hack_SpecialColumnToSOTerm(sSource, sType ) ;
 
   /*
    * sType must be either an accession number or a valid name from the
@@ -2411,6 +2411,21 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
       cType = zMapSOSetGetStyleModeFromName(pParser->cSOSetInUse, sType ) ;
       cHomol = zMapSOSetGetHomolFromID(pParser->cSOSetInUse, iSOID) ;
       pSOIDData = zMapSOIDDataCreateFromData(iSOID, sType, cType, cHomol ) ;
+    }
+
+  /*
+   * Now this is a hack to deal with cases where the source was not specified.
+   * We need a different source name for every different possible style mode
+   * at least. In this case I choose to create a name for every different SO term,
+   * which will accomodate that possibility (and more).
+   */
+  if (!strcmp(sSource, "."))
+    {
+      char *sTemp = NULL ;
+      sTemp = g_strdup_printf("anon_source (%s type)", zmapStyleMode2ShortText(zMapSOIDDataGetStyleMode(pSOIDData))) ;
+      strcpy(sSource, sTemp) ;
+      if (sTemp)
+        g_free(sTemp) ;
     }
 
   /*
@@ -2642,7 +2657,8 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
   unsigned int iSOID = 0,
     nAttributes = 0 ;
   int iStart = 0,
-    iEnd = 0 ;
+    iEnd = 0,
+    iStartNotFound = 0 ;
   char * sSOType = NULL,
     *sFeatureName = NULL,
     *sFeatureNameID = NULL,
@@ -2659,7 +2675,9 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
     bIsIntron = FALSE,
     bIsCDS = FALSE,
     bIsComponent = FALSE,
-    bWithinParent = FALSE ;
+    bWithinParent = FALSE,
+    bStartNotFound = FALSE,
+    bEndNotFound = FALSE ;
   GQuark gqThisID = 0 , gqLocusID = 0, gqThisUniqueID = 0 ;
   ZMapFeature pFeature = NULL ;
   ZMapSOIDData pSOIDData = NULL ;
@@ -2667,7 +2685,8 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
   ZMapGFFAttribute *pAttributes = NULL,
     pAttributeParent = NULL,
     pAttributeID = NULL,
-    pAttributeLocus = NULL ;  ;
+    pAttributeLocus = NULL,
+    pAttribute = NULL ;
   ZMapSpanStruct cSpanItem = {0},
     *pSpanItem = NULL ;
   ZMapStrand cStrand = ZMAPSTRAND_NONE ;
@@ -2842,9 +2861,18 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
           else if (bIsCDS)
             {
               /*
-               * Should we also include start_not_found, end_not_found if present?
+               * CDS data; also include start_not_found and end_not_found.
                */
-              bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd, cPhase) ;
+              if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_start_not_found)))
+                {
+                  bStartNotFound = zMapAttParseCDSStartNotFound(pAttribute, &iStartNotFound) ;
+                }
+              if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_end_not_found)))
+                {
+                  bEndNotFound = zMapAttParseCDSEndNotFound(pAttribute) ;
+                }
+              bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd, cPhase,
+                                                              bStartNotFound, bEndNotFound, iStartNotFound) ;
             }
         }
 
@@ -3068,7 +3096,6 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
                                         ZMapFeatureSet pFeatureSet,
                                         char ** psError)
 {
-  static const char * sRead = "read" ;
   typedef enum {NONE, FIRST, SECOND} CaseToTreat ;
   CaseToTreat cCase = NONE ;
   unsigned int iSOID = 0,
@@ -3090,7 +3117,6 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
     bNewFeatureCreated = FALSE,
     bFeatureAdded = FALSE,
     bParseAttribute = FALSE,
-    bParseAttributeID = FALSE,
     bParseAttributeTarget = FALSE,
     bDataAdded = FALSE ;
   GArray *pGaps = NULL ;
@@ -3099,7 +3125,6 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute *pAttributes = NULL,
     pAttribute = NULL,
-    pAttributeID = NULL,
     pAttributeTarget = NULL ;
   ZMapStrand cStrand = ZMAPSTRAND_NONE,
     cTargetStrand = ZMAPSTRAND_NONE ;
@@ -3170,7 +3195,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
       bParseAttributeTarget = zMapAttParseTarget(pAttributeTarget, &gqTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
     }
 
-  /* 
+  /*
   if ((pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)))
     {
       bParseAttributeID = zMapAttParseID(pAttributeID, &gqTargetID) ;
@@ -3331,7 +3356,7 @@ static ZMapFeature makeFeatureAssemblyPath(ZMapGFFFeatureData pFeatureData,
  * Default feature creation function.
  */
 static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData pFeatureData,
-  const ZMapFeatureSet const pFeatureSet, char **psError)
+  const ZMapFeatureSet pFeatureSet, char **psError)
 {
   char *sName = NULL,
     *sFeatureName = NULL,
@@ -3659,7 +3684,7 @@ static gboolean clipFeatureLogic_General(ZMapGFF3Parser  pParser, ZMapGFFFeature
  * for the affected columns.
  *
  */
-static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** const psType )
+static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char * const sType )
 {
   /*
    * List of special source names to be treated by this function.
@@ -3670,26 +3695,26 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
   static const char *sCol06 = "das_ChromSig" ;
   gboolean bResult = FALSE ;
 
-  zMapReturnValIfFail(sSource && *sSource && psType && *psType, bResult ) ;
+  zMapReturnValIfFail(sSource && *sSource && sType, bResult ) ;
 
   if (!strcmp(sSource, sCol01))
     {
-      *psType = "transcript" ;
+      strcpy(sType, "transcript" );
       bResult = TRUE ;
     }
   else if (strstr(sSource, sCol02)) /* several sources start with the string "das_phastCons" */
     {
-      *psType = "das_phastCons" ;
+      strcpy(sType, "das_phastCons") ;
       bResult = TRUE ;
     }
   else if (strstr(sSource, sCol05)) /* several sources start with the string "solexa_coverage" */
     {
-      *psType = "solexa_coverage" ;
+      strcpy(sType, "solexa_coverage") ;
       bResult = TRUE ;
     }
   else if (!strcmp(sSource, sCol06))
     {
-      *psType = "transcript" ;
+      strcpy(sType, "transcript") ;
     }
 
   return bResult ;
@@ -3879,7 +3904,10 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
             {
               if (zMapAttParseURL(pAttribute, &sURL))
                 {
-                  zMapFeatureAddURL(pFeature, sURL) ;
+                  if (*sURL)
+                    {
+                      zMapFeatureAddURL(pFeature, sURL) ;
+                    }
                 }
             }
 
@@ -3890,7 +3918,10 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
             {
               if (zMapAttParseEnsemblVariation(pAttribute, &sVariation))
                 {
-                  zMapFeatureAddVariationString(pFeature, sVariation) ;
+                  if (*sVariation)
+                    {
+                      zMapFeatureAddVariationString(pFeature, sVariation) ;
+                    }
                 }
             }
 
@@ -3901,7 +3932,10 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
             {
               if (zMapAttParseNote(pAttribute, &sNote))
                 {
-                  zMapFeatureAddDescription(pFeature, sNote) ;
+                  if (*sNote)
+                    {
+                      zMapFeatureAddDescription(pFeature, sNote) ;
+                    }
                 }
             }
 

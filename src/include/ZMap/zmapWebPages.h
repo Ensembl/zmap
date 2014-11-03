@@ -52,9 +52,4 @@
 #define ZMAPWEB_KEYBOARD_DOC  "keyboard_mouse.shtml"
 
 
-/* an interim solutuion: we really need to set this up on an external web page
- * due to sanger web re-organinisation none of the original links in the menu work
- */
-#define ZMAP_INTERNAL_WEB_WHATSNEW "http://mediawiki.internal.sanger.ac.uk/wiki/index.php/Otterlace_zmap_new_features"
-
 #endif /* ZMAP_WEBPAGES_H */

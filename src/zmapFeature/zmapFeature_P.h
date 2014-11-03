@@ -65,8 +65,27 @@ typedef struct
 void zmapPrintFeatureContext(ZMapFeatureContext context) ;
 gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_out) ;
 
-void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int block_start, int block_end) ;
-void zMapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet translation_fs) ;
+
+gboolean zmapFeatureBasicHasMatchingBoundary(ZMapFeature feature,
+                                             int boundary_start, int boundary_end,
+                                             int *boundary_start_out, int *boundary_end_out) ;
+gboolean zmapFeatureAlignmentHasMatchingBoundary(ZMapFeature feature,
+                                                 int boundary_start, int boundary_end,
+                                                 int *boundary_start_out, int *boundary_end_out) ;
+gboolean zmapFeatureTranscriptHasMatchingBoundary(ZMapFeature feature,
+                                                  int boundary_start, int boundary_end,
+                                                  int *boundary_start_out, int *boundary_end_out) ;
+GList *zmapFeatureGetSubparts(ZMapFeature feature) ;
+
+void zmapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int block_start, int block_end) ;
+void zmapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet translation_fs) ;
+
+gboolean zmapFeatureCoordsMatch(int slop, int boundary_start, int boundary_end,
+                                int start, int end, int *match_start_out, int *match_end_out) ;
+
+int zmapFeatureDNACalculateVariationDiff(const int start, 
+                                         const int end,
+                                         GList *variations) ;
 
 
 #endif /* !ZMAP_FEATURE_P_H */

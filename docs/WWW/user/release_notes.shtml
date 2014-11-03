@@ -6,6 +6,17 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+
+<h4>Version 1.0.0</h4>
+<ul>
+  <li> Splice highlighting implemented (SIRT:398088)
+  <li> Import of BAM/BIGWIG/GFF; output of GFF tidied up
+  <li> Feature editing and annotation column; many changes and improvments
+  <li> Standalone ZMap can take several GFF files on command line 
+  <li> Internal handling of cigar parsing completed and generalised
+  <li> Input of GFF data with anonymous source ('.') allowed
+</ul>
+
 <h4>Version 1.0.0</h4>
 <ul>
   <li>Implementation of zeroMQ transport layer for the remote communications protocol. Note that this is incompatible with previous versions of the protocol. Fixes several bugs including RT347901.

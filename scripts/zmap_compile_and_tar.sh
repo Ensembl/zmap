@@ -70,12 +70,16 @@ zmap_cd $CVS_MODULE_LOCAL/src
 
 zmap_message_out "PATH =" $PATH
 
-zmap_message_out "Running bootstrap"
-./bootstrap  || zmap_message_exit $(hostname) "Failed Running bootstrap"
+zmap_message_out "Running $ZMAP_BOOTSTRAP_SCRIPT"
+./$ZMAP_BOOTSTRAP_SCRIPT  || zmap_message_exit $(hostname) "Failed Running $ZMAP_BOOTSTRAP_SCRIPT"
+zmap_message_out "Finished $ZMAP_BOOTSTRAP_SCRIPT"
 
-zmap_message_out "Running runconfig"
-./runconfig --prefix=$CVS_CHECKOUT_DIR/$CVS_MODULE_LOCAL/$INSTALL_PREFIX || \
-    zmap_message_exit $(hostname) "Failed Running runconfig"
+
+zmap_message_out "Running $ZMAP_RUNCONFIG_SCRIPT"
+./$ZMAP_RUNCONFIG_SCRIPT --prefix=$CVS_CHECKOUT_DIR/$CVS_MODULE_LOCAL/$INSTALL_PREFIX || \
+    zmap_message_exit $(hostname) "Failed Running $ZMAP_RUNCONFIG_SCRIPT"
+zmap_message_out "Finished $ZMAP_RUNCONFIG_SCRIPT"
+
 
 if [ "x$ZMAP_MAKE" == "x$ZMAP_TRUE" ]; then
     zmap_message_out "Running make"
@@ -228,12 +232,16 @@ then
     # local checkout for some reason.)
     copy_script=~zmap/BUILD_CHECKOUT/ZMap_develop/scripts/copy_directory.sh
 
+    # Copy the source directory to the project area (the source includes the bin and share 
+    # subdirectories so we don't need to explicitly specify those). 
     zmap_message_out "Running: ssh $dev_machine "$copy_script $source_dir $project_area""
     ssh $dev_machine "$copy_script $source_dir $project_area"
     wait
 
+    # Copy the server scripts to the project area. Note we need to specify 
+    # the bin subdirectory in the destination here.
     zmap_message_out "Running: ssh $dev_machine "$copy_script $server_dir $project_area/bin""
-    ssh $dev_machine "$copy_script $server_dir $project_area"
+    ssh $dev_machine "$copy_script $server_dir $project_area/bin"
     wait
   
     # We don't currently build on ubuntu precise because the ubuntu lucid build works there.
@@ -245,8 +253,8 @@ then
       ssh $dev_machine "$copy_script $source_dir $precise_project_area"
       wait  
 
-      zmap_message_out "Running: ssh $dev_machine $copy_script $server_dir $precise_project_area"
-      ssh $dev_machine "$copy_script $server_dir $precise_project_area"
+      zmap_message_out "Running: ssh $dev_machine $copy_script $server_dir $precise_project_area/bin"
+      ssh $dev_machine "$copy_script $server_dir $precise_project_area/bin"
       wait  
     fi    
   fi

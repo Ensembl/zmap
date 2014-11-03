@@ -85,11 +85,8 @@ typedef enum
     DISPLAY_3FRAME_NONE     = 0x0U,			    /* No 3 frame at all. */
     DISPLAY_3FRAME_ON       = 0x1U,			    /* 3 frame display is on. */
     DISPLAY_3FRAME_TRANS    = 0x2U,			    /* Translations displayed when 3 frame on. */
-    DISPLAY_3FRAME_TRANS_ON = 0x3U,
     DISPLAY_3FRAME_COLS     = 0x4U,			    /* All other cols displayed when 3 frame on. */
-    DISPLAY_3FRAME_COLS_ON  = 0x5U,
-    DISPLAY_3FRAME_ALL      = 0x6U,			    /* Everything on. */
-    DISPLAY_3FRAME_ALL_ON   = 0x7U
+    DISPLAY_3FRAME_ALL      = 0x6U			    /* Everything on. */
   } Display3FrameMode ;
 
 #define IS_3FRAME_TRANS(FRAME_MODE) \
@@ -875,6 +872,9 @@ typedef struct _ZMapWindowStruct
   Display3FrameMode display_3_frame ;
   gboolean show_3_frame_reverse ;			  /* 3 frame displayed on reverse col ? */
 
+  /* Remember the last featureset we calculated the translation for. (If it's the scratch
+   * featureset then we need to recalculate the translation after any edit operation.)  */
+  GQuark show_translation_featureset_id ;
 
 } ZMapWindowStruct ;
 
@@ -929,8 +929,6 @@ typedef void (*ZMapWindowStyleTableCallback)(ZMapFeatureTypeStyle style, gpointe
 
 typedef GHashTable * (*ZMapWindowListGetFToIHash)(gpointer user_data);
 typedef GList * (*ZMapWindowListSearchHashFunc)(ZMapWindow widnow, GHashTable *hash_table, gpointer user_data);
-
-typedef void (*ZMapWindowGetEvidenceCB)(GList *evidence, gpointer user_data) ;
 
 
 
@@ -1007,12 +1005,6 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateWithBackground(FooCanvasG
 
 
 GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id);
-
-FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
-					      ZMapWindowContainerFeatureSet parent_container,
-					      ZMapWindowContainerFeatures features_container,
-					      FooCanvasItem * foo_featureset,
-                                              ZMapWindowFeatureStack     feature_stack);
 
 GHashTable *zmapWindowFToICreate(void) ;
 gboolean zmapWindowFToIAddRoot(GHashTable *feature_to_context_hash, FooCanvasGroup *root_group) ;
@@ -1159,12 +1151,16 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  ZMapFeatureSet feature_set, GList *source,
 			  double x_pos, double y_pos) ;
 
+
+gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+
 ZMapFeatureBlock zmapWindowItemGetFeatureBlock(FooCanvasItem *item) ;
 ZMapFeature zmapWindowItemGetFeature(FooCanvasItem *item) ;
 ZMapFeatureAny zmapWindowItemGetFeatureAny(FooCanvasItem *item) ;
 ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, const int expected_type) ;
 
 FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item) ;
+void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature) ;
 void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate) ;
 void zmapWindowItemShowTranslationRemove(ZMapWindow window, FooCanvasItem *feature_item);
 
@@ -1327,7 +1323,14 @@ gboolean zMapWindowContainerSummarise(ZMapWindow window,ZMapFeatureTypeStyle sty
 GList *zMapWindowContainerSummariseSortFeatureSet(ZMapFeatureSet fset);
 
 ZMapFeatureTypeStyle zMapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFeatureSet container);
-gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set, ZMapStyleBumpMode bump_mode);
+gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set,
+                                                  ZMapStyleBumpMode bump_mode);
+
+void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
+                               ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
+
+
+
 
 GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type) ;
 GtkWidget    *zmapWindowFeatureListCreateView(ZMapWindowListType list_type, GtkTreeModel *treeModel,
@@ -1498,11 +1501,16 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
 
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle style,
-				     	ZMapWindowContainerFeatureSet set_group,
-				      ZMapWindowContainerFeatures set_features,
-					FooCanvasItem *foo_featureset,
-					ZMapWindowFeatureStack feature_stack) ;
-
+                                     ZMapWindowContainerFeatureSet set_group,
+                                     ZMapWindowContainerFeatures set_features,
+                                     FooCanvasItem *foo_featureset,
+                                     GCallback featureset_callback_func,
+                                     ZMapWindowFeatureStack feature_stack) ;
+FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
+                                                 ZMapWindowContainerFeatureSet parent_container,
+                                                 ZMapWindowContainerFeatures features_container,
+                                                 FooCanvasItem * foo_featureset,
+                                                 ZMapWindowFeatureStack     feature_stack);
 void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset);
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;

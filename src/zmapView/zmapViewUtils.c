@@ -35,6 +35,7 @@
 #include <glib.h>
 
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapUtilsGUI.h>
 #include <zmapView_P.h>
 
 
@@ -173,6 +174,37 @@ void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource s
   return ;
 }
 
+void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value)
+{
+  zMapReturnIfFail(view && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS) ;
+
+  view->flags[flag] = value ;
+
+  /* Perform any updates required for the particular flag that was set */
+  switch (flag)
+    {
+    case ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS:
+      zMapViewUpdateColumnBackground(view);
+      break ;
+      
+    case ZMAPFLAG_ENABLE_ANNOTATION:
+      zMapViewToggleScratchColumn(view, value, TRUE) ;
+      break ;
+      
+    default:
+      break ;
+    } ;
+}
+
+gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(view && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS, result) ;
+
+  result = view->flags[flag] ;
+
+  return result ;
+}
 
 
 /* Return, as text, details of all data connections for this view. Interface is not completely
@@ -236,8 +268,6 @@ void zMapViewSetCursor(ZMapView view, GdkCursor *cursor)
 
   return ;
 }
-
-
 
 
 
@@ -1040,6 +1070,7 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
 					     NULL, NULL) ;
 
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, VIEW_FILTERED,
+                                           NULL,
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
 					   "bool", view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS]) ;
 

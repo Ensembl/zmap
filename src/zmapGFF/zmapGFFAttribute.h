@@ -171,8 +171,8 @@ gboolean zMapAttParseGap(ZMapGFFAttribute , GArray ** const , ZMapStrand , int, 
 gboolean zMapAttParseCigarExonerate(ZMapGFFAttribute , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
 gboolean zMapAttParseCigarEnsembl(ZMapGFFAttribute , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
 gboolean zMapAttParseCigarBam(ZMapGFFAttribute , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
-gboolean zMapAttParseCDSStartNotFound(ZMapGFFAttribute, gboolean * const, int * const ) ;
-gboolean zMapAttParseCDSEndNotFound(ZMapGFFAttribute, gboolean * const ) ;
+gboolean zMapAttParseCDSStartNotFound(ZMapGFFAttribute, int * const ) ;
+gboolean zMapAttParseCDSEndNotFound(ZMapGFFAttribute) ;
 gboolean zMapAttParseDerives_from(ZMapGFFAttribute, char ** const ) ;
 gboolean zMapAttParseDbxref(ZMapGFFAttribute, char ** const, char ** const ) ;
 gboolean zMapAttParseGaps(ZMapGFFAttribute, GArray ** const, ZMapStrand, ZMapStrand ) ;

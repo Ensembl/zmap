@@ -34,9 +34,12 @@ ERROR_RECIPIENT='annotools@sanger.ac.uk'
 MAIL_SUBJECT="ZMap Build Failed (control script)"
 
 
+
 # where build scripts are located.
 BASE_DIR=~zmap
 SCRIPTS_DIR="$BASE_DIR/BUILD_CHECKOUT/ZMap/scripts"
+
+
 
 BUILD_SCRIPT="$SCRIPTS_DIR/build_bootstrap.sh"
 FUNCTIONS_SCRIPT="$SCRIPTS_DIR/zmap_functions.sh"
@@ -54,19 +57,15 @@ LINK_PREFIX='BUILD'
 # Various build params.
 SLEEP=15
 TAG_RELEASE_BUILD=no
-TAG_CVS=''
 INC_REL_VERSION=''
 INC_UPDATE_VERSION=''
-RT_TO_CVS=''
 ERASE_SUBDIRS=''
 INPUT_DIR=''
 OUTPUT_DIR=''
 BRANCH='develop'
 CRON=''
 GIT_FEATURE_INFO=''
-ZMAP_MASTER_BUILD_DIST=''
-ZMAP_MASTER_RT_RELEASE_NOTES=''
-ZMAP_MASTER_FORCE_RELEASE_NOTES=''
+ZMAP_BUILD_RELEASE_DOCS=''
 SEQTOOLS_DIR='DEVELOPMENT'
 
 # try to load useful shared shell functions...after this we will have access to
@@ -114,21 +113,18 @@ message_out "ZMap Build Started: $*"
 #
 usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -e -g -i <input directory> -m -n -o <output directory> -s <seqtools directory> -t -r -u ]   <build prefix>"
 
-while getopts ":a:b:cdegi:mno:rs:tu" opt ; do
+while getopts ":a:b:cdegi:mo:rs:u" opt ; do
     case $opt in
 	a  ) ERROR_RECIPIENT=$OPTARG ;;
 	b  ) BRANCH=$OPTARG ;;
 	c  ) CRON='yes' ;;
-	d  ) ZMAP_MASTER_BUILD_DIST='yes'   ;;
+	d  ) ZMAP_BUILD_RELEASE_DOCS='yes'   ;;
 	e  ) ERASE_SUBDIRS='yes' ;;
 	g  ) GIT_FEATURE_INFO='-g' ;;
 	i  ) INPUT_DIR=$OPTARG ;;
-	m  ) RT_TO_CVS='no' ;;
-	n  ) ZMAP_MASTER_RT_RELEASE_NOTES='yes' ;;
 	o  ) OUTPUT_DIR=$OPTARG ;;
 	r  ) INC_REL_VERSION='-r'    ;;
 	s  ) SEQTOOLS_DIR=$OPTARG ;;
-	t  ) TAG_CVS='-t' ;;
 	u  ) INC_UPDATE_VERSION='-u' ;;
 	\? ) message_exit "Bad arg flag: $usage" ;;
     esac
@@ -222,7 +218,7 @@ fi
 #
 
 # all single letter flags...
-CMD_OPTIONS="$TAG_CVS $INC_REL_VERSION $INC_UPDATE_VERSION $GIT_FEATURE_INFO"
+CMD_OPTIONS="$INC_REL_VERSION $INC_UPDATE_VERSION $GIT_FEATURE_INFO"
 
 # Now flags with options
 if [ -n "$BUILD_PREFIX" ] ; then
@@ -267,26 +263,9 @@ CMD_OPTIONS="$CMD_OPTIONS ZMAP_RELEASES_DIR=$PARENT_BUILD_DIR"
 CMD_OPTIONS="$CMD_OPTIONS ZMAP_LINK_NAME=$LINK_NAME"
 
 
-if [ -n "$RT_TO_CVS" ] ; then
+if [ -n "$ZMAP_BUILD_RELEASE_DOCS" ] ; then
 
-  CMD_OPTIONS="$CMD_OPTIONS ZMAP_MASTER_RT_TO_CVS=$RT_TO_CVS"
-
-fi
-
-
-if [ -n "$ZMAP_MASTER_RT_RELEASE_NOTES" ] ; then
-
-    CMD_OPTIONS="$CMD_OPTIONS ZMAP_MASTER_RT_RELEASE_NOTES=$ZMAP_MASTER_RT_RELEASE_NOTES"
-
-    # for now we force the release notes production....
-    CMD_OPTIONS="$CMD_OPTIONS ZMAP_MASTER_FORCE_RELEASE_NOTES=yes"
-
-fi
-
-
-if [ -n "$ZMAP_MASTER_BUILD_DIST" ] ; then
-
-    CMD_OPTIONS="$CMD_OPTIONS ZMAP_MASTER_BUILD_DIST=$ZMAP_MASTER_BUILD_DIST"
+    CMD_OPTIONS="$CMD_OPTIONS ZMAP_BUILD_RELEASE_DOCS=$ZMAP_BUILD_RELEASE_DOCS"
 
 fi
 

@@ -238,7 +238,7 @@ int zMapNumViews(ZMap zmap)
 
 
 /* Might rename this to be more meaningful maybe.... */
-ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
+ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, GError **error)
 {
   ZMapViewWindow view_window = NULL ;
 
@@ -263,7 +263,7 @@ gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
   zMapReturnValIfFail((zmap && view && findViewInZMap(zmap, view)), result );
   zMapReturnValIfFail((zmap->state != ZMAP_DYING), FALSE) ;
 
-  result = zMapViewConnect(zmap->default_sequence, view, config) ;
+  result = zMapViewConnect(zmap->default_sequence, view, config, NULL) ;
 
   zmapControlWindowSetGUIState(zmap) ;
 
@@ -271,14 +271,14 @@ gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
 }
 
 
-gboolean zMapConnectView(ZMap zmap, ZMapView view)
+gboolean zMapConnectView(ZMap zmap, ZMapView view, GError **error)
 {
   gboolean result = FALSE ;
 
   zMapReturnValIfFail((zmap && view && findViewInZMap(zmap, view)), result ) ;  
   zMapReturnValIfFail((zmap->state != ZMAP_DYING), FALSE) ;
 
-  if ((result = zMapViewConnect(zmap->default_sequence, view, NULL)))
+  if ((result = zMapViewConnect(zmap->default_sequence, view, NULL, error)))
     zmapControlWindowSetGUIState(zmap) ;
 
   return result ;
@@ -401,6 +401,28 @@ char *zMapGetZMapStatus(ZMap zmap)
   state = (char *)zmapStates[zmap->state] ;
 
   return state ;
+}
+
+
+/* Check if there are any unsaved changes and if so ask the user whether to save or not.
+ * Returns true if we should continue or false if we should cancel. */
+gboolean zMapCheckIfUnsaved(ZMap zmap)
+{
+  gboolean result = TRUE ;
+  GList *list_item ;
+
+  list_item = zmap->view_list ;
+  do
+    {
+      ZMapView view ;
+
+      view = list_item->data ;
+
+      result = zMapViewCheckIfUnsaved(view);
+    }
+  while (result && (list_item = g_list_next(list_item))) ;
+
+  return result ;
 }
 
 
@@ -645,10 +667,8 @@ void zmapControlDoKill(ZMap zmap, GList **destroyed_views_out)
 
 void zmapControlLoadCB(ZMap zmap)
 {
-  /* if (!zmap || !zmap->focus_viewwindow) 
-    return ; */
+  GError *tmp_error = NULL ;
   zMapReturnIfFail(zmap && zmap->focus_viewwindow) ; 
-
 
   /* We can only load something if there is at least one view. */
   if (zmap->state == ZMAP_VIEWS)
@@ -668,9 +688,18 @@ void zmapControlLoadCB(ZMap zmap)
 	}
       else
 	{
-	  if (!(status = zMapViewConnect(zmap->default_sequence, curr_view, NULL)))
-	    zMapCritical("%s", "ZMap could not configure server connections, please check connection data.") ;
+          if (!(status = zMapViewConnect(zmap->default_sequence, curr_view, NULL, &tmp_error)))
+            {
+              zMapCritical("%s", "ZMap could not configure server connections, please check connection data: %s",
+                           (tmp_error ? tmp_error->message : "<no error message>")) ;
+            }
 	}
+    }
+
+  if (tmp_error)
+    {
+      g_error_free(tmp_error) ;
+      tmp_error = NULL ;
     }
 
   return ;
@@ -705,10 +734,11 @@ void zmapControlResetCB(ZMap zmap)
  * and an error message in err_msg which the caller should free with g_free.
  * Note this call only creates the window and tells the view to connect, the connection
  * may fail some time later resulting in the view being removed. */
-ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg)
+ZMapView zMapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg)
 {
   ZMapView view = NULL ;
   ZMapViewWindow view_window ;
+  GError *tmp_error = NULL ;
 
   zMapReturnValIfFail(zmap, view) ;
 
@@ -716,15 +746,21 @@ ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, c
     {
       view = zMapViewGetView(view_window) ;
 
-      if (!zMapViewConnect(sequence_map, view, NULL))
+      if (!zMapViewConnect(sequence_map, view, NULL, &tmp_error))
 	{
-	  *err_msg = g_strdup_printf("Display of sequence \"%s\" failed, see log for details.",
-				     sequence_map->sequence) ;
+          *err_msg = g_strdup_printf("Display of sequence \"%s\" failed: %s",
+                                     sequence_map->sequence, (tmp_error ? tmp_error->message : "<no error message>")) ;
 
 	  zMapViewDestroy(view) ;
 
 	  view = NULL ;
 	}
+    }
+
+  if (tmp_error)
+    {
+      g_error_free(tmp_error) ;
+      tmp_error = NULL ;
     }
 
   return view ;

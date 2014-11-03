@@ -964,6 +964,28 @@ void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zma
   return ;
 }
 
+
+/* Trivial cover function for creating a new dialog window complete
+ * with the title set as per zMapGUIMakeTitleString above.
+ *
+ * window_type  The sort of window it is, e.g. "feature editor"
+ * message      Very short text, e.g. "Please Reply" or a feature name or....
+ * returns      the toplevel widget.
+ */
+GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data)
+{
+  GtkWidget *dialog = NULL ;
+  
+  dialog = gtk_dialog_new() ;
+
+  zMapGUISetToplevelTitle(dialog, zmap_win_type, zmap_win_text) ;
+
+  if (response_cb_func)
+    g_signal_connect(G_OBJECT(dialog), "response", response_cb_func, response_cb_data) ;
+
+  return dialog ;
+}
+
 /* Trivial cover function for creating a new toplevel window complete
  * with the title set as per zMapGUIMakeTitleString above.
  *
@@ -1186,10 +1208,6 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
           web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_RELEASE_NOTES) ;
           break ;
 
-        case ZMAPGUI_HELP_WHATS_NEW:
-          web_page = g_strdup_printf("%s",ZMAP_INTERNAL_WEB_WHATSNEW);/* a temporary fix via the internal wiki */
-          break;
-
         default:
           zMapWarning("menu choice (%d) temporarily unavailable",help_contents);
           /* this used to assert: why crash? */
@@ -1377,7 +1395,6 @@ gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *ms
 }
 
 
-
 /*!
  * Show a message where user must enter some text, caller should use
  * g_free() to release text when finished with.
@@ -1405,6 +1422,68 @@ GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char 
   return result ;
 }
 
+
+/*!
+ * Show a message where user must choose Yes/No/Cancel. 
+ *
+ * See zMapGUIMsgFull() for complete documentation of parameters.
+ *
+ * @return  char *, users text or NULL if no text.
+ */
+GtkResponseType zMapGUIMsgGetYesNoCancel(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
+{
+  GtkResponseType result = GTK_RESPONSE_CANCEL ;
+  gboolean modal = TRUE ;
+
+  result = messageFull(parent, "Save changes?", msg, modal, 0,
+                       GTK_STOCK_YES, GTK_STOCK_CANCEL, GTK_STOCK_NO,
+                       msg_type, GTK_JUSTIFY_CENTER, NULL) ;
+
+  return result ;
+}
+
+
+/*!
+ * Show a message where user must choose whether to Save or not. Has 3 buttons:
+ * OK (to continue without saving), Cancel (to stop), or Save (to save then continue)
+ *
+ * See zMapGUIMsgFull() for complete documentation of parameters.
+ *
+ * @return  char *, users text or NULL if no text.
+ */
+GtkResponseType zMapGUIMsgGetSave(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
+{
+  GtkResponseType result = GTK_RESPONSE_CANCEL ;
+  gboolean modal = TRUE ;
+
+  result = messageFull(parent, "Save changes?", msg, modal, 0,
+                       GTK_STOCK_OK, GTK_STOCK_CANCEL, GTK_STOCK_SAVE,
+                       msg_type, GTK_JUSTIFY_CENTER, NULL) ;
+
+  return result ;
+}
+
+
+/*!
+ * Show a message where user must choose whether to Save or not. Has 3 buttons:
+ * OK (to continue without saving), Cancel (to stop), or Save (to save then continue)
+ *
+ * See zMapGUIMsgFull() for complete documentation of parameters.
+ *
+ * @return  char *, users text or NULL if no text.
+ */
+GtkResponseType zMapGUIMsgGetSaveFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
+                                      char *first_button, char *second_button, char* third_button)
+{
+  GtkResponseType result = GTK_RESPONSE_CANCEL ;
+  gboolean modal = TRUE ;
+
+  result = messageFull(parent, "Save changes?", msg, modal, 0,
+                       first_button, second_button, third_button,
+                       msg_type, GTK_JUSTIFY_CENTER, NULL) ;
+
+  return result ;
+}
 
 
 
@@ -2318,7 +2397,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
   guint timeout_func_id ;
   int interval = display_timeout * 1000 ;    /* glib needs time in milliseconds. */
-  GtkResponseType first_response = 0, second_response = 0, third_response = 0 ;
+  GtkResponseType first_response = 0, second_response = 0, third_response = 0, default_response = 0 ;
 
 
   /* Set up title. */
@@ -2377,8 +2456,17 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 
   g_free(full_title) ;
 
-
   gtk_container_set_border_width(GTK_CONTAINER(dialog), 5) ;
+
+  /* Set default response to OK, Close, or Cancel (in that order of priority) */
+  if (first_response)
+    default_response = first_response ;
+  else if (third_response)
+    default_response = third_response ;
+  else if (second_response)
+    default_response = second_response ;
+
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), default_response) ;
 
   /* Set up the message text in a button widget so that it can put in the primary
    * selection buffer for cut/paste when user clicks on it. */
@@ -2416,6 +2504,11 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 
   gtk_widget_show_all(dialog) ;
 
+  if (default_response)
+    {
+      GtkWidget *default_widget = gtk_dialog_get_widget_for_response(GTK_DIALOG(dialog), default_response) ;
+      gtk_widget_grab_focus(default_widget) ;
+    }
 
   /* Note flow of control here: for non-modal/no-data-returned messages simply connect gtk destroy
    * to ensure dialog gets cleaned up and return, for modal/data messages we _block_ waiting
@@ -2429,6 +2522,8 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
     }
   else
     {
+      gboolean destroy = TRUE ; /* whether to destroy the dialog */
+
       /* block waiting for user to answer dialog, for modal we can use straight gtk call,
        * for non-modal must use our home-grown (and probably buggy) version. */
       if (modal)
@@ -2468,9 +2563,17 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
                       }
                   }
 
+
                 break ;
               }
-            default:
+
+            case GTK_RESPONSE_DELETE_EVENT: 
+              /* Esc key. Same as cancel but we don't destroy as this is done automatically */
+              destroy = FALSE ;
+              /* fall through */
+            case GTK_RESPONSE_CLOSE: 
+              /* fall through */
+            case GTK_RESPONSE_CANCEL: 
               {
                 switch (user_data->type)
                   {
@@ -2489,10 +2592,15 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 
                 break ;
               }
+
+            default:
+              zMapWarnIfReached() ;
+              break ;
           }
       }
 
-      gtk_widget_destroy(dialog) ;
+      if (destroy)
+        gtk_widget_destroy(dialog) ;
   }
 
 

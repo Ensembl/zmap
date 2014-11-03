@@ -841,10 +841,11 @@ void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing)
 void zMapStyleInitBumpMode(ZMapFeatureTypeStyle style,
    ZMapStyleBumpMode default_bump_mode, ZMapStyleBumpMode curr_bump_mode)
 {
-  if (!(style && (default_bump_mode ==  ZMAPBUMP_INVALID
-              || (default_bump_mode >= ZMAPBUMP_START && default_bump_mode <= ZMAPBUMP_END))
-              && (curr_bump_mode ==  ZMAPBUMP_INVALID
-              || (curr_bump_mode >= ZMAPBUMP_START && curr_bump_mode <= ZMAPBUMP_END)) ) )
+  if (!(style &&
+        (default_bump_mode ==  ZMAPBUMP_INVALID
+         || (default_bump_mode >= ZMAPBUMP_START && default_bump_mode <= ZMAPBUMP_END))
+        && (curr_bump_mode ==  ZMAPBUMP_INVALID
+            || (curr_bump_mode >= ZMAPBUMP_START && curr_bump_mode <= ZMAPBUMP_END)) ) )
     return ;
 
   if (!style->bump_fixed)
