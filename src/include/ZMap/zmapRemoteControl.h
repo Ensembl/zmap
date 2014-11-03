@@ -146,7 +146,11 @@ gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
 				   ZMapRemoteControlReplyHandlerFunc reply_handler_func,
 				   gpointer reply_handler_func_data) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 gboolean zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *peer_xml_request) ;
 
 

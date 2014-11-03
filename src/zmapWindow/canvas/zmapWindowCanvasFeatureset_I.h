@@ -24,11 +24,11 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Private header for featuresets (== columns).
+ * Description: Private header for featuresets, a featureset
+ *              is contained within a column.
  *
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_FEATURESET_ITEM_I_H
 #define ZMAP_WINDOW_FEATURESET_ITEM_I_H
 
@@ -44,7 +44,7 @@
 
 
 
-/* Default colours !! - should be in more public header ?? */
+/* Default feature colours, suitably boring to prompt user to set their own. */
 #define CANVAS_DEFAULT_COLOUR_FILL   "grey"
 #define CANVAS_DEFAULT_COLOUR_BORDER "black"
 #define CANVAS_DEFAULT_COLOUR_DRAW   "white"
@@ -52,31 +52,22 @@
 
 
 /* Enums ???? */
-#define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED		/* any focus flag will map to selected */
-#define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED		/* eg masked */
-#define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE)		/* includes masking (EST) */
-#define FEATURE_HIDDEN		0x0100		/* not always false, set for hidden rather than visible to make flag twiddling easier */
-#define FEATURE_USER_HIDE	0x0200		/* hidden by user request */
-#define FEATURE_MARK_HIDE	0x0400		/* hidden by bump from mark */
-#define FEATURE_SUMMARISED	0x0800		/* hidden by summarise */
-#define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
-#define FEATURE_HIDE_FILTER	0x2000		/* filtered by score or something else eg locus prefix */
-#define FEATURE_HIDE_COMPOSITE	0x4000	/* squashed or collapsed */
-#define FEATURE_HIDE_EXPAND	0x8000		/* compressed feature got bumped */
-#define FEATURE_HIDE_REASON	0xfe00		/* NOTE: update this if you add a reason */
+#define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED /* any focus flag will map to selected */
+#define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED  /* eg masked */
+#define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE) /* includes masking (EST) */
+
+#define FEATURE_HIDDEN		0x0100                      /* not always false, set for hidden rather than
+                                                               visible to make flag twiddling easier */
+#define FEATURE_USER_HIDE	0x0200                      /* hidden by user request */
+#define FEATURE_MARK_HIDE	0x0400                      /* hidden by bump from mark */
+#define FEATURE_SUMMARISED	0x0800                      /* hidden by summarise */
+#define FEATURE_MASK_HIDE	0x1000                      /* masked feature hidden by user */
+#define FEATURE_HIDE_FILTER	0x2000                      /* filtered by score or something else eg locus prefix */
+#define FEATURE_HIDE_COMPOSITE	0x4000                      /* squashed or collapsed */
+#define FEATURE_HIDE_EXPAND	0x8000                      /* compressed feature got bumped */
+#define FEATURE_HIDE_REASON	0xfe00                      /* NOTE: update this if you add a reason */
 
 #define FEATURE_FOCUS_ID	WINDOW_FOCUS_ID
-
-
-/* CHECK IF THIS IS EVER USED AND DELETE IF NOT... */
-#if 0
-#define FEATURE_SQUASHED_START	0x10000
-#define FEATURE_SQUASHED_END		0x20000
-#define FEATURE_SQUASHED		0x30000
-
-  GArray *gaps;					/* alternate gaps array for alignments if squashed */
-#endif
-
 
 #define WCG_FILL_SET		1
 #define WCG_OUTLINE_SET		2
@@ -121,15 +112,34 @@ typedef struct _zmapWindowCanvasGraphicsStruct
 
 } zmapWindowCanvasGraphicsStruct;
 
-/* NOTE see featureset_init_funcs() for a relevant Assert */
 
 
 
-/*
- * minimal data struct to define a feature
- * handle boxes as y1,y2 + width
- */
+/* Foocanvas positions are doubles and foocanvas does not define one of these. */
+typedef struct ZMapWindowCanvasCanvasSpanStructType
+{
+  double start, end ;
+} ZMapWindowCanvasCanvasSpanStruct, *ZMapWindowCanvasCanvasSpan ;
 
+
+
+/* Data about displayed subcols. When bumped the features in a column may be
+ * displayed as separate subcolumns. */
+typedef struct ZMapWindowCanvasSubColStructType
+{
+  GQuark subcol_id ;                                        /* "name" of subcol. */
+
+  double offset ;                                           /* subcol offset in column. */
+
+  double width ;                                            /* subcol width. */
+
+} ZMapWindowCanvasSubColStruct, *ZMapWindowCanvasSubCol ;
+
+
+
+
+
+/* minimal data struct to define a feature handle boxes as y1,y2 + width */
 typedef struct _zmapWindowCanvasFeatureStruct
 {
 #if NEED_TO_REWRITE_SHED_LOADS_OF_CODE
@@ -140,11 +150,13 @@ typedef struct _zmapWindowCanvasFeatureStruct
   double y1, y2;    	/* top, bottom of item (box or line) */
 #endif
 
-  ZMapFeature feature;
+  ZMapFeature feature ;
+
+
   //  GList *from;		/* the list node that holds the feature */
   /* refer to comment above zmapWindowCanvasFeatureset.c/zMapWindowFeaturesetItemRemoveFeature() */
 
-  double score;		/* determines feature width */
+  double score ;                                            /* determines feature width */
 
   /* ideally these could be ints but the canvas works with doubles */
   double width;
@@ -156,8 +168,31 @@ typedef struct _zmapWindowCanvasFeatureStruct
 
   ZMapWindowCanvasFeature left,right;	/* for exons and alignments, NULL for simple features */
 
+  /* NULL if splice highlighting is off, contains positions of all places highlights
+   * need to be drawn within feature if highlighting is on. */
+  GList *splice_positions ;
+
+
 } zmapWindowCanvasFeatureStruct;
 
+
+
+/*
+ * module generic text interface, initially used by sequence and locus feature types
+ * is used to paint single line text things at given x,y
+ * highlighting is done with coloured boxes behind the text
+ */
+
+typedef struct _zmapWindowCanvasPangoStruct
+{
+  GdkDrawable *drawable;		/* used to tell if a new window has been created and our pango is not valid */
+
+  PangoRenderer *renderer;	/* we use one per column to draw each line seperatly */
+  PangoContext *context;
+  PangoLayout *layout;
+
+  int text_height, text_width;
+} zmapWindowCanvasPangoStruct ;
 
 
 /* used for featureset summarise to prevent display of invisible features */
@@ -223,22 +258,28 @@ typedef struct zmapWindowFeaturesetItemClassStructType
 
 
 
-/* NOTE this class/ structure is used for all types of columns
+/* THIS IS A CHILD OF THE COLUMN GROUP CREATED ELSEWHERE....IN ESSENCE IT HOLDS THE
+ * FEATURES THOUGH THESE ARE NO LONGER FOOCANVAS OBJECTS.
+ * 
+ * NOTE this class/ structure is used for all types of columns
  * it is not inherited and various optional functions have been squeezed in
  * eg:
  * -- graph density feature get re-binned before display (and we have two lists of feature database)
  * -- gapped alignments are recalulated for display when zoom changes (extra data per feature, one list)
  */
-
 typedef struct _zmapWindowFeaturesetItemStruct
 {
   zmapWindowCanvasItemStruct __parent__;		/* itself derived from FooCanvasItem */
 
-  GQuark id;
+  GQuark id;                                                /* original or unique id ?? */
 
   ZMapFeatureTypeStyle style;				    /* column style: NB could have several
 							       featuresets mapped into this by virtualisation */
+
+
   ZMapFeatureTypeStyle featurestyle;			    /* current cached style for features */
+
+
 
   zmapWindowCanvasFeatureType type;
 
@@ -247,9 +288,13 @@ typedef struct _zmapWindowFeaturesetItemStruct
   ZMapStrand strand;
   ZMapFrame frame;
 
+
+  /* Should the next two fields really be in the containerfeatureset struct ? */
+
   /* Points to data that is needed on a per column basis and is assigned by the functions
    * that handle that data. */
   gpointer per_column_data ;
+
 
   /* Glyph data, this is held separately because as well as glyph columns there are columns
    * e.g. alignments, that also need glyph data. */
@@ -287,7 +332,14 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean highlight_sideways;/* temp bodge to allow old code to drive this */
   /* transcripts do alignments don't they get highlit by calling code */
 
-  GList *features;		/* we add features to a simple list and create the index on demand when we get an expose */
+
+  /* Some columns can be bumped to have sub-cols, this is a list of ZMapWindowCanvasSubCol
+   * giving offsets, names etc for subcols. */
+  GList *sub_col_list ;
+
+
+  /* we add features to a simple list and create the index on demand when we get an expose */
+  GList *features;
   /* NOTE elsewhere we don't use GList as we get a 30% performance improvement
    * but we need to sort features so GList is more convenient */
 
@@ -306,10 +358,15 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean bumped;		/* using bumped X or not */
   ZMapStyleBumpMode bump_mode;	/* if set */
 
+
   int set_index;			/* for staggered columns (heatmaps) */
 
   /* I'm not sure what this is ? */
   double x_off;
+
+  double width;                 /* column width */
+  double bump_width;
+
 
   /* graphics context for all contained features
    * each one has its own colours that we set on draw (eg for heatmaps)
@@ -327,23 +384,30 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   gpointer deferred;		  /* buffer for deferred paints, eg constructed polyline */
 
-  /* WHEN ARE THESE USED....DUH..... */
+
+
+  /* Feature colours....Gosh...all seems a mish-mash....... */
+
+  /* Bitfield ???? */
+  gboolean fill_set ;                                       /* Is fill color set? */
+  gboolean outline_set ;                                    /* Is outline color set? */
+  gboolean background_set ;                                 /* Is background set ? */
+  gboolean border_set ;                                     /* Is border set ? */
+  gboolean splice_set ;
+
   gulong fill_colour;           /* Fill color, RGBA */
-  gulong outline_colour;        /* Outline color, RGBA */
   gulong fill_pixel;            /* Fill color */
+
+  gulong outline_colour;        /* Outline color, RGBA */
   gulong outline_pixel;         /* Outline color */
 
   gulong background;		  /* eg for 3FT or strand separator */
   GdkBitmap *stipple;
+
   gulong border;			  /* eg for navigator locator */
 
-  double width;                 /* column width */
-  double bump_width;
-
-  gboolean fill_set;    	/* Is fill color set? */
-  gboolean outline_set;	 	/* Is outline color set? */
-  gboolean background_set;	/* Is background set ? */
-  gboolean border_set;		/* Is border set ? */
+  gulong splice_colour ;                                    /* Fill color, RGBA */
+  gulong splice_pixel ;                                     /* Fill color */
 
 
   ZMapFeature point_feature;	/* set by cursor movement */
@@ -367,28 +431,13 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
 
 
-/*
- * module generic text interface, initially used by sequence and locus feature types
- * is used to paint single line text things at given x,y
- * highlighting is done with coloured boxes behind the text
- */
-
-typedef struct _zmapWindowCanvasPangoStruct
-{
-  GdkDrawable *drawable;		/* used to tell if a new window has been created and our pango is not valid */
-
-  PangoRenderer *renderer;	/* we use one per column to draw each line seperatly */
-  PangoContext *context;
-  PangoLayout *layout;
-
-  int text_height, text_width;
-} zmapWindowCanvasPangoStruct ;
-
 
 
 PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix,
 					    ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
 void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset, PixRect pix);
+
+gboolean zmapWindowCanvasFeaturesetFreeDisplayLists(ZMapWindowFeaturesetItem featureset_item_inout) ;
 
 void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
 gboolean zmapWindowCanvasFeatureValid(ZMapWindowCanvasFeature feature) ;

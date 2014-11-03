@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -37,6 +37,32 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasDraw.h>
 
+
+/* For highlighting of common splices across columns. */
+typedef struct HighlightDataStructType
+{
+  ZMapWindowFeaturesetItem featureset ;
+  ZMapWindowCanvasFeature feature ;
+  GdkDrawable *drawable ;
+
+  ZMapBoundaryType boundary_type ;                          /* 5' or 3' */
+  double x1, x2 ;
+
+  gulong splice_pixel ;                                    /* splice colour. */
+
+} HighlightDataStruct, *HighlightData ;
+
+
+
+static void highlightSplice(gpointer data, gpointer user_data) ;
+
+
+
+
+
+/* 
+ *                External routines
+ */
 
 
 
@@ -77,6 +103,8 @@ gboolean zMapWindowCanvasCalcHorizCoords(ZMapWindowFeaturesetItem featureset, ZM
 /* erm,,, clip to visible scroll region: else rectangles would get extra edges */
 int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
 {
+  zMapReturnValIfFail(featureset, 0);
+
   /* for H or V lines we can clip easily */
 
   if(cy1 > featureset->clip_y2)
@@ -146,9 +174,11 @@ int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
 
 
 /* these are less common than solid lines */
-int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
+int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
+                          gint cx1, gint cy1, gint cx2, gint cy2)
 {
-  int ret;
+  int ret = 0 ;
+  zMapReturnValIfFail(featureset && drawable, ret);
 
   gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_ON_OFF_DASH,GDK_CAP_BUTT, GDK_JOIN_MITER);
 
@@ -167,9 +197,10 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
                    gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill)
 {
   int result = 0 ;
+  zMapReturnValIfFail(featureset && drawable, result) ;
 
   /* as our rectangles are all aligned to H and V we can clip easily */
-  
+
   /* First check whether the coords overlap the clip rect at all */
   if(cy1 > featureset->clip_y2)
     return 0;
@@ -192,7 +223,7 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
     cy2 = featureset->clip_y2;
 
 
-  
+
   if (cy2 == cy1 || cx1 == cx2)
     {
       gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
@@ -210,7 +241,7 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
 
   else
     {
-      /* Fill rectangles get drawn one smaller in each dimension so correct for this. */
+      /* Fill rectangles get drawn by X one smaller in each dimension so correct for this. */
       if (fill)
 	{
 	  cx2++ ;
@@ -228,13 +259,13 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
 
 /* Draw rectangles: takes care of resizing for filled vs. outline rectangles, rectangles
  * that are so small they are drawn as lines and so on.
- * 
+ *
  * One point to note is that I'm not too happy with the world -> pixel conversion, there
  * is inaccuracy caused by rounding or maybe it's just the coordinate reporting function
  * of zmap that is broken. Anyhow we end up subtracting a pixel off the length of the
  * rectangle to try make things right....duh.....
  */
-gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset, 
+gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
                                           double x1, double x2, double y1, double y2,
                                           GdkDrawable *drawable,
                                           gboolean fill_set, gboolean outline_set, gulong fill, gulong outline)
@@ -257,7 +288,7 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
                                                             /* + 1 to draw to the end of the last base */
 
   /* as our rectangles are all aligned to H and V we can clip easily */
-  
+
 
   /* First check whether the coords overlap the clip rect at all */
   if (!(cy1 > featureset->clip_y2 || cy2 < featureset->clip_y1
@@ -285,12 +316,12 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
             c.pixel = fill ;
 
           gdk_gc_set_foreground(featureset->gc, &c) ;
-          gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2) ;
+          gdk_draw_line(drawable, featureset->gc, cx1, cy1, cx2, cy2) ;
         }
       else
         {
           /* Need to draw a rectangle, possibly with fill and outline.
-           * 
+           *
            * NOTE: outline rectangles are drawn _one_ bigger than filled rectangles
            * in both x & y by gdk_draw_rectangle() so we need to allow for that.
            */
@@ -339,6 +370,49 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
     }
 
   return result ;
+}
+
+
+
+/* Given the featureset, drawable etc., display all the splices for the given feature. */
+void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                              GdkDrawable *drawable, double x1, double x2)
+{
+  HighlightDataStruct highlight_data ;
+
+  highlight_data.featureset = featureset ;
+  highlight_data.feature = feature ;
+  highlight_data.drawable = drawable ;
+  highlight_data.x1 = x1 ;
+  highlight_data.x2 = x2 ;
+
+  zMapWindowCanvasFeaturesetGetSpliceColour(featureset, &(highlight_data.splice_pixel)) ;
+
+  g_list_foreach(feature->splice_positions, highlightSplice, &highlight_data) ;
+
+  return ;
+}
+
+
+
+
+
+/* 
+ *             Internal routines
+ */
+
+
+static void highlightSplice(gpointer data, gpointer user_data)
+{
+  ZMapSplicePosition splice_pos = (ZMapSplicePosition)data ;
+  HighlightData highlight_data = (HighlightData)user_data ;
+
+  zMapCanvasFeaturesetDrawBoxMacro(highlight_data->featureset, highlight_data->x1, highlight_data->x2,
+                                   splice_pos->start, splice_pos->end,
+                                   highlight_data->drawable,
+                                   TRUE, TRUE, highlight_data->splice_pixel, highlight_data->splice_pixel) ;
+
+  return ;
 }
 
 

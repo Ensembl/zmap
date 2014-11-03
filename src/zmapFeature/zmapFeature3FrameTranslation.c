@@ -40,27 +40,20 @@
 #include <zmapFeature_P.h>
 
 
-
-
 static void destroySequenceData(ZMapFeature feature) ;
 static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style,
- int block_start, int block_end) ;
+                                                 int block_start, int block_end) ;
 static void translation_set_populate(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set,
-     ZMapFeatureTypeStyle style,
-     char *seq_name, char *seq, int block_start, int block_end) ;
-
-
-
+                                     ZMapFeatureTypeStyle style,
+                                     char *seq_name, char *seq, int block_start, int block_end) ;
 static gboolean showTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style,
-int block_start, int block_end) ;
+                                        int block_start, int block_end) ;
 static void translationPopulate(ZMapFeatureBlock feature_block,
-ZMapFeatureSet feature_set,
-ZMapFeatureTypeStyle style,
-char *seq_name,
-char *dna,
-int block_start, int block_end) ;
-
-
+                                ZMapFeatureSet feature_set,
+                                ZMapFeatureTypeStyle style,
+                                char *seq_name,
+                                char *dna,
+                                int block_start, int block_end) ;
 
 
 /*
@@ -221,7 +214,7 @@ void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set, Z
 
 /* This function relies on the 3 frame translation features already existing....should make
  * sure this is true.......... */
-void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int block_start, int block_end)
+void zmapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int block_start, int block_end)
 {
   feature3FrameTranslationPopulate(feature_set, NULL, block_start, block_end) ;
 
@@ -231,7 +224,7 @@ void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int bloc
 
 /* This function relies on the 3 frame translation features already existing....should make
  * sure this is true.......... */
-void zMapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet translation_fs)
+void zmapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet translation_fs)
 {
   zMapFeatureORFSetCreateFeatures(feature_set, NULL, translation_fs);
 

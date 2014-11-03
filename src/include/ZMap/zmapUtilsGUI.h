@@ -122,7 +122,7 @@ typedef enum {ZMAPGUI_MENU_NONE, ZMAPGUI_MENU_BRANCH, ZMAPGUI_MENU_SEPARATOR,
 
 /*! Types of help page that can be displayed. */
 typedef enum {ZMAPGUI_HELP_GENERAL, ZMAPGUI_HELP_QUICK_START, ZMAPGUI_HELP_ALIGNMENT_DISPLAY,
-	      ZMAPGUI_HELP_RELEASE_NOTES, ZMAPGUI_HELP_KEYBOARD, ZMAPGUI_HELP_WHATS_NEW } ZMapHelpType ;
+	      ZMAPGUI_HELP_RELEASE_NOTES, ZMAPGUI_HELP_KEYBOARD } ZMapHelpType ;
 
 
 /*! Bit of explanation here....
@@ -405,6 +405,7 @@ typedef struct _ZMapGuiNotebookTagValueStruct
   unsigned int ignore_duplicates : 1;	/* RT_66037 */
   GList *children_unused ;				    /* Always NULL, no children ever. */
 
+  GQuark tooltip ;
   ZMapGuiNotebookTagValueDisplayType display_type ;
 
   ZMapGuiNotebookTagValueDataType data_type ;
@@ -470,6 +471,7 @@ void zMapGUISetAbbrevTitlePrefix(gboolean abbrev_prefix) ;
 gboolean zMapGUIGetAbbrevTitlePrefix(void) ;
 char *zMapGUIMakeTitleString(char *window_type, char *message) ;
 void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zmap_win_text) ;
+GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data) ;
 GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text) ;
 
 GdkCursor *zMapGUICreateCursor(char *cursor_name) ;
@@ -488,7 +490,10 @@ gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *ms
                                char* first_button, char *second_button) ;
 GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text,
 				  char **text_out) ;
-
+GtkResponseType zMapGUIMsgGetYesNoCancel(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
+GtkResponseType zMapGUIMsgGetSave(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
+GtkResponseType zMapGUIMsgGetSaveFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
+                                      char *first_button, char *second_button, char* third_button) ;
 
 void zMapGUIShowAbout(void) ;
 
@@ -533,6 +538,7 @@ ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsectio
 							GList *headers, GList *types) ;
 ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph paragraph,
 						      char *tag_value_name,
+                                                      char *tooltip,
 						      ZMapGuiNotebookTagValueDisplayType display_type,
 						      const char *arg_type, ...) ;
 void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage page) ;

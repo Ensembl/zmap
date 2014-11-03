@@ -439,7 +439,7 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
     {
-      /* Replace is a delete of a feature follwed by a create. */
+      /* Replace is a delete of a feature followed by a create. */
       eraseFeatures(view, request_data) ;
 
       if (request_data->command_rc == REMOTE_COMMAND_RC_OK)

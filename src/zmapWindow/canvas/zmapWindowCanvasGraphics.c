@@ -47,14 +47,17 @@
 
 
 
-//int line_debug = 0;
-
 void linePaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
   int cx1, cy1, cx2, cy2;
-  FooCanvasItem *foo = (FooCanvasItem *) featureset;
-  ZMapWindowCanvasGraphics feat = (ZMapWindowCanvasGraphics) feature;
+  FooCanvasItem *foo = NULL ;
+  ZMapWindowCanvasGraphics feat = NULL ;
   GdkColor c;
+
+  zMapReturnIfFail(featureset && feature );
+
+  foo = (FooCanvasItem *) featureset ;
+  feat = (ZMapWindowCanvasGraphics) feature ;
 
   c.pixel = feat->outline;
   gdk_gc_set_foreground (featureset->gc, &c);
@@ -64,10 +67,7 @@ void linePaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
   foo_canvas_w2c(foo->canvas, feat->x2 + featureset->dx, feat->y2 - featureset->start + featureset->dy,
                  &cx2, &cy2);
 
-  //printf("paint line %d %d %d %d (%1.f %.1f)\n", cx1, cy1, cx2, cy2, feat->y1, feat->y2);
-  //line_debug = 1;
   zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
-  //line_debug = 0;
 
   return ;
 }
@@ -79,10 +79,11 @@ void linePaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
 static void zmapWindowCanvasGraphicsGetPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset)
 {
   /* lazy evaluation of pango renderer */
-  ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
+  ZMapWindowCanvasPango pango = NULL ;
 
-  if(!pango)
-    return;
+  zMapReturnIfFail(featureset && featureset->opt ) ;
+
+  pango = (ZMapWindowCanvasPango) featureset->opt;
 
   if(pango->drawable && pango->drawable != drawable)
     zmapWindowCanvasFeaturesetFreePango(pango);
@@ -102,10 +103,15 @@ static void zmapWindowCanvasGraphicsGetPango(GdkDrawable *drawable, ZMapWindowFe
 
 void textPaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  FooCanvasItem *foo = (FooCanvasItem *) featureset;
-  ZMapWindowCanvasGraphics gfx = (ZMapWindowCanvasGraphics) feature;
+  FooCanvasItem *foo = NULL ;
+  ZMapWindowCanvasGraphics gfx = NULL ;
   int len;
   int cx,cy;
+
+  zMapReturnIfFail(featureset && feature ) ;
+
+  foo = (FooCanvasItem *) featureset ;
+  gfx = (ZMapWindowCanvasGraphics) feature;
 
   ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
   if(!pango)
@@ -120,8 +126,7 @@ void textPaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
   pango_layout_set_text (pango->layout, gfx->text, len);
 
   foo_canvas_w2c (foo->canvas, gfx->x1 + featureset->dx, (gfx->y1 + gfx->y2) / 2 - featureset->start + featureset->dy, &cx, &cy);
-  cy -= pango->text_height / 2;		/* centre text on line */
-  //printf("paint text %d %d (%1.f %1.f) %s\n", cx, cy,gfx->y1,gfx->y2, gfx->text);
+  cy -= pango->text_height / 2;                /* centre text on line */
 
   pango_renderer_draw_layout (pango->renderer, pango->layout,  cx * PANGO_SCALE , cy * PANGO_SCALE);
 }
@@ -131,16 +136,19 @@ void textPaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
 void graphicsZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
   /* if longest item < text height increase that to match */
-  ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
+  ZMapWindowCanvasPango pango = NULL;
   double text_h;
   GList *l;
+
+  zMapReturnIfFail(featureset);
+  pango = (ZMapWindowCanvasPango) featureset->opt;
 
   if(!pango)
     return;
 
   zmapWindowCanvasGraphicsGetPango(drawable, featureset);
 
-  text_h = pango->text_height / featureset->zoom;	/* can't use foo_canvas_c2w as it does a scroll offset */
+  text_h = pango->text_height / featureset->zoom;        /* can't use foo_canvas_c2w as it does a scroll offset */
 
   /* strickly speaking we could get away with text/2 as we centre the text on a y coordinate
    * that would be enough to make the lookup work
@@ -173,7 +181,7 @@ void zMapWindowCanvasGraphicsInit(void)
   funcs[FUNC_ZOOM] = graphicsZoomSet;
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPHICS, funcs, 0, sizeof(zmapWindowCanvasPangoStruct));
 
-  funcs[FUNC_ZOOM] = NULL;	/* not needed by the others but no harm done  if it's left in?? */
+  funcs[FUNC_ZOOM] = NULL;        /* not needed by the others but no harm done  if it's left in?? */
 
   funcs[FUNC_PAINT] = linePaint;
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LINE, funcs, 0, 0);

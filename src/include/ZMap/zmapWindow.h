@@ -71,16 +71,21 @@ typedef enum {ZMAP_WINLOCK_NONE, ZMAP_WINLOCK_VERTICAL, ZMAP_WINLOCK_HORIZONTAL}
 /* Controls display of 3 frame translations and/or 3 frame columns when 3 frame mode is selected. */
 typedef enum
   {
-    ZMAP_WINDOW_3FRAME_INVALID,
+    ZMAP_WINDOW_3FRAME_OFF,                                 /* No 3 frame display. */
     ZMAP_WINDOW_3FRAME_TRANS,                               /* 3 frame translation display. */
-    ZMAP_WINDOW_3FRAME_COLS,                                /* 3 frame other cols display. */
-    ZMAP_WINDOW_3FRAME_ALL                                  /* All 3 frame cols. */
+    ZMAP_WINDOW_3FRAME_COLS,                                /* 3 frame cols display. */
+    ZMAP_WINDOW_3FRAME_ALL                                  /* 3 frame cols and translation display. */
   } ZMapWindow3FrameMode ;
 
 typedef enum 
   {
     ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
     ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, /* True if filtered columns should be highlighted */
+    ZMAPFLAG_FEATURES_NEED_SAVING,       /* True if there are new features that have not been saved */
+    ZMAPFLAG_SCRATCH_NEEDS_SAVING,       /* True if changes have been made in the scratch column
+                                          * that have not been "saved" to a real featureset */
+    ZMAPFLAG_ENABLE_ANNOTATION,          /* True if we should enable editing via the annotation column */
+    ZMAPFLAG_ENABLE_ANNOTATION_INIT,     /* False until the enable-annotation flag has been initialised */
     
     ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
   } ZMapFlag;
@@ -190,6 +195,7 @@ typedef struct
 {
   ZMapFeature feature ;
   ZMapFeatureSet feature_set ;
+  GError *error ;
 } ZMapWindowMergeNewFeatureStruct, *ZMapWindowMergeNewFeature ;
 
 
@@ -228,7 +234,8 @@ typedef enum
     ZMAPWINDOW_CMD_DELETEFROMSCRATCH,
     ZMAPWINDOW_CMD_CLEARSCRATCH,
     ZMAPWINDOW_CMD_UNDOSCRATCH,
-    ZMAPWINDOW_CMD_REDOSCRATCH
+    ZMAPWINDOW_CMD_REDOSCRATCH,
+    ZMAPWINDOW_CMD_GETEVIDENCE
   } ZMapWindowCommandType ;
 
 
@@ -323,6 +330,9 @@ typedef struct
 } ZMapWindowCallbackCommandRevCompStruct, *ZMapWindowCallbackCommandRevComp ;
 
 
+typedef void (*ZMapWindowGetEvidenceCB)(GList *evidence, gpointer user_data) ;
+
+
 typedef struct ZMapWindowCallbackCommandScratchStructName
 {
   /* Common section. */
@@ -337,6 +347,9 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
   ZMapFeatureSubPartSpan subpart; /* the subpart to use, if applicable */
   gboolean use_subfeature; /* if true, use the clicked subfeature; otherwise use the entire
                               feature */
+
+  ZMapWindowGetEvidenceCB evidence_cb; /* callback to call for get-evidence */
+  gpointer evidence_cb_data;
 } ZMapWindowCallbackCommandScratchStruct, *ZMapWindowCallbackCommandScratch ;
 
 
@@ -348,6 +361,7 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
 /* Callback functions that can be registered with ZMapWindow, functions are registered all in one.
  * go via the ZMapWindowCallbacksStruct. */
 typedef void (*ZMapWindowCallbackFunc)(ZMapWindow window, void *caller_data, void *window_data) ;
+typedef gboolean (*ZMapWindowBoolCallbackFunc)(ZMapWindow window, void *caller_data, void *window_data) ;
 typedef void (*ZMapWindowLoadCallbackFunc)(ZMapWindow window,
                                            void *caller_data, gpointer load_cb_data, void *window_data) ;
 
@@ -364,7 +378,7 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc visibilityChange ;
   ZMapWindowCallbackFunc command ;                          /* Request to exit given command. */
   ZMapWindowLoadCallbackFunc drawn_data ;
-  ZMapWindowCallbackFunc merge_new_feature ;
+  ZMapWindowBoolCallbackFunc merge_new_feature ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* WHAT..... */
@@ -438,6 +452,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
                           void *app_data, ZMapWindow old,
                           ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
                           ZMapWindowLockType window_locking) ;
+
+void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
 
 gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
                                         char *command_name, char *request,
@@ -544,8 +560,6 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window,
                                  FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature) ;
 
-gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
-
 gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor **fill);
 gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill);
 
@@ -605,5 +619,9 @@ gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, Gd
 void zMapWindowUpdateColumnBackground(ZMapWindow window, ZMapFeatureSet feature_set, gboolean highlight_column_background);
 
 GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item) ;
+
+gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_region, ZMapFeatureAny feature_in, char **filepath_inout, GError **error) ;
+gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GError **error) ;
+gboolean zMapWindowExportContext(ZMapWindow window, GError **error) ;
 
 #endif /* !ZMAP_WINDOW_H */

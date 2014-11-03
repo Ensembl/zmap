@@ -57,6 +57,9 @@ static ZMapFrame feature_frame_coords(int start_coord, int offset);
 
 static void get_feature_list_extent(gpointer list_data, gpointer span_data);
 
+//static ZMapFullExon feature_find_exon_at_coord(ZMapFeature feature, int coord) ;
+static ZMapFullExon feature_find_closest_exon_at_coord(ZMapFeature feature, int coord) ;
+
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
 static void addTypeQuark(gpointer style_id, gpointer data, gpointer user_data) ;
 
@@ -382,22 +385,31 @@ void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2)
 
 
 
-/*!
- * Returns the original name of any feature type. The returned string belongs
+/* Returns the original name of any feature type. The returned string belongs
  * to the feature and must _NOT_ be free'd. This function can never return
- * NULL as all features must have valid names.
- *
- * @param   any_feature    The feature.
- * @return  char *         The name of the feature.
- *  */
+ * NULL as all features must have valid names. */
 char *zMapFeatureName(ZMapFeatureAny any_feature)
 {
   char *feature_name = NULL ;
 
-  if (!zMapFeatureIsValid(any_feature))
-    return feature_name ;
+  zMapReturnValIfFail(zMapFeatureIsValid(any_feature), NULL) ;
 
   feature_name = (char *)g_quark_to_string(any_feature->original_id) ;
+
+  return feature_name ;
+}
+
+
+/* Returns the unique name of any feature type. The returned string belongs
+ * to the feature and must _NOT_ be free'd. This function can never return
+ * NULL as all features must have valid unique names. */
+char *zMapFeatureUniqueName(ZMapFeatureAny any_feature)
+{
+  char *feature_name = NULL ;
+
+  zMapReturnValIfFail(zMapFeatureIsValid(any_feature), NULL) ;
+
+  feature_name = (char *)g_quark_to_string(any_feature->unique_id) ;
 
   return feature_name ;
 }
@@ -1376,12 +1388,61 @@ ZMapFrame zMapFeatureFrame(ZMapFeature feature)
   return frame ;
 }
 
+
 ZMapFrame zMapFeatureFrameFromCoords(int block, int feature)
 {
 return feature_frame_coords(block, feature);
 }
 
+ZMapFrame zMapFeatureFrameAtCoord(ZMapFeature feature, int coord)
+{
+  ZMapFrame frame = zMapFeatureFrame(feature) ; /* default to feature frame */
 
+  ZMapFullExon exon = feature_find_closest_exon_at_coord(feature, coord) ;
+
+  if (exon)
+    {
+      int x = exon->sequence_span.x1 - exon->start_phase ;
+      int block_offset = 0 ;
+
+      if (feature && feature->parent->parent)
+        {
+          ZMapFeatureBlock block = (ZMapFeatureBlock)(feature->parent->parent);
+          block_offset = block->block_to_sequence.block.x1;   /* start of block in sequence/parent */
+        }
+
+      /* If there are any variations in this transcript they may affect the frame */
+      if (feature && feature->mode == ZMAPSTYLE_MODE_SEQUENCE && feature->feature.sequence.variations)
+        {
+          GList *variations = feature->feature.sequence.variations ;
+
+          /* Calculate the total offset caused by variations up to the given coord */
+          int variation_diff = zmapFeatureDNACalculateVariationDiff(1, coord, variations) ;
+
+          x -= variation_diff ;
+        }
+
+      frame = feature_frame_coords(block_offset, x) ;
+    }
+  
+  return frame ;
+}
+
+int zMapFeatureSplitCodonOffset(ZMapFeature feature, int coord)
+{
+  int result = 0 ;
+
+  ZMapFullExon exon = feature_find_closest_exon_at_coord(feature, coord) ;
+
+  if (exon)
+    {
+      /* Only apply the offset to the first peptide in the sequence */
+      if (coord == exon->sequence_span.x1)
+        result = exon->start_phase ;
+    }
+  
+  return result ;
+}
 
 
 ZMapFrame zMapFeatureSubPartFrame(ZMapFeature feature, int coord)
@@ -1418,8 +1479,21 @@ ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature)
 }
 
 
+ZMapPhase zMapFeaturePhase(ZMapFeature feature)
+{
+  ZMapPhase result = ZMAPPHASE_NONE ;
+  
+  if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT &&
+      feature->feature.transcript.flags.start_not_found)
+    {
+      result = feature->feature.transcript.start_not_found ;
+    }
 
-char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
+  return result ;
+}
+
+
+char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length, gboolean pad)
 {
   char *pep_str = NULL ;
   ZMapFeatureContext context ;
@@ -1456,13 +1530,13 @@ char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
   return pep_str ;
 }
 
-char *zMapFeatureTranslation(ZMapFeature feature, int *length)
+char *zMapFeatureTranslation(ZMapFeature feature, int *length, gboolean pad)
 {
   char *seq;
 
   if(feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
-      seq = zMapFeatureTranscriptTranslation(feature, length);
+      seq = zMapFeatureTranscriptTranslation(feature, length, pad);
     }
   else
     {
@@ -1505,6 +1579,44 @@ gboolean zMapFeaturePrintChildNames(ZMapFeatureAny feature_any)
   return result ;
 }
 
+
+
+
+/*
+ *              Package routines.
+ */
+
+/* Checks to see if boundary_start/boundary_end match start/end within +- slop,
+ * if either does returns TRUE and returns start/end in match_start_out/match_end_out. 
+ * 
+ * Boundaries are not compared if < 1.
+ * 
+ */
+gboolean zmapFeatureCoordsMatch(int slop, int boundary_start, int boundary_end,
+                                int start, int end, int *match_start_out, int *match_end_out)
+{
+  gboolean result = FALSE ;
+  int match_start = 0, match_end = 0 ;
+
+  if (boundary_start > 0 && abs(start - boundary_start) <= slop)
+    match_start = start ;
+
+  if (boundary_end > 0 && abs(end - boundary_end) <= slop)
+    match_end = end ;
+
+  if (match_start || match_end)
+    {
+      if (match_start_out)
+        *match_start_out = match_start ;
+
+      if (match_end_out)
+        *match_end_out = match_end ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
 
 
 
@@ -1576,6 +1688,106 @@ static void get_feature_list_extent(gpointer list_data, gpointer span_data)
     span->x2 = feature->x2;
 
   return ;
+}
+
+
+/* For peptide sequences only. Find the exon that the given 
+ * coord lies in. For other feature types, returns null. */
+//static ZMapFullExon feature_find_exon_at_coord(ZMapFeature feature, int coord)
+//{
+//  if (feature && feature->feature.sequence.exon_list)
+//    {
+//      GList *item = feature->feature.sequence.exon_list ;
+//
+//      for ( ; item; item = item->next)
+//        {
+//          ZMapFullExon exon = (ZMapFullExon)(item->data) ;
+//
+//          /* Only consider coding exons */
+//          if (exon->region_type == EXON_CODING ||
+//              exon->region_type == EXON_SPLIT_CODON_5 ||
+//              exon->region_type == EXON_SPLIT_CODON_3)
+//            {
+//              int x1 = exon->sequence_span.x1 ;
+//              int x2 = exon->sequence_span.x2 ;
+//              
+//              if (coord >= x1 - 2 && coord <= x2 + 2)
+//                {
+//                  result = exon ;
+//                  break ;
+//                }
+//            }
+//        }
+//    }
+//}
+
+
+/* For peptide sequences only. Find the nearest exon to the given 
+ * coord. For other feature types, returns null. */
+static ZMapFullExon feature_find_closest_exon_at_coord(ZMapFeature feature, int coord)
+{
+  ZMapFullExon result = NULL;
+  zMapReturnValIfFail(feature && feature->mode == ZMAPSTYLE_MODE_SEQUENCE, result) ;
+
+  gboolean first_time = TRUE;
+  gboolean found = FALSE;
+  int closest_dist = 0;
+  GList *exon_item = feature->feature.sequence.exon_list;
+  
+  for ( ; exon_item; exon_item = exon_item->next)
+    {
+      ZMapFullExon current_exon = (ZMapFullExon)(exon_item->data) ;
+      int x1 = current_exon->sequence_span.x1 ;
+      int x2 = current_exon->sequence_span.x2 ;
+      int y = coord ;
+      
+      /* Only consider coding exons */
+      if (current_exon->region_type == EXON_CODING ||
+          current_exon->region_type == EXON_SPLIT_CODON_5 ||
+          current_exon->region_type == EXON_SPLIT_CODON_3)
+        {
+          if (y >= x1 && y <= x2)
+            {
+              /* Inside the exon - done */
+              //zMapDebugPrintf("Coord %d found in exon %d,%d", y, x1, x2) ;
+              result = current_exon ;
+              found = TRUE ;
+              break ;
+            }
+          else if (y < x1)
+            {
+              int cur_dist = x1 - y ;
+              
+              if (first_time || cur_dist < closest_dist)
+                {
+                  first_time = FALSE ;
+                  closest_dist = cur_dist ;
+                  result = current_exon ;
+                }
+            }
+          else /* y > x2 */
+            {
+              int cur_dist = y - x2 ;
+              
+              if (first_time || cur_dist < closest_dist)
+                {
+                  first_time = FALSE ;
+                  closest_dist = cur_dist ;
+                  result = current_exon ;
+                }
+            }
+        }
+    }
+
+//  if (feature->feature.sequence.exon_list)
+//    {
+//      if (!result)
+//        zMapDebugPrintf("Could not find exon at coordinate %d", coord);
+//      else if (!found)
+//        zMapDebugPrintf("Coord %d nearest exon is %d,%d (dist=%d)", coord, result->sequence_span.x1, result->sequence_span.x2, closest_dist);
+//    }
+
+  return result ;
 }
 
 

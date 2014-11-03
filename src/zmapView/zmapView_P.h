@@ -39,6 +39,23 @@
 #include <ZMap/zmapWindowNavigator.h>
 
 
+/*
+ * We follow glib convention in error domain naming:
+ *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
+ */
+#define ZMAP_VIEW_ERROR g_quark_from_string("ZMAP_VIEW_ERROR")
+
+/*
+ * Some error types for use in the view
+ */
+typedef enum
+{
+  ZMAPVIEW_ERROR_STATE,
+  ZMAPVIEW_ERROR_SOURCES_LOADING,
+  ZMAPVIEW_ERROR_SERVERS,
+} ZMapViewError ;
+
+
 
 /* IF WE REFACTORED VIEW TO HAVE NO WINDOWS ETC THEN THIS COULD GO.... */
 /* We have this because it enables callers to call on a window but us to get the corresponding view. */
@@ -378,7 +395,12 @@ typedef struct _ZMapViewStruct
   GList *edit_list ;
   GList *edit_list_start ;
   GList *edit_list_end ;
-  gboolean scratch_start_end_set ;     /* TRUE if the scratch-column forward-strand feature start/end has been set */
+  gboolean scratch_start_end_set ;     /* TRUE if the scratch-column forward-strand feature
+                                        * start/end has been set */
+
+  GQuark save_file ;                   /* Filename to use for the Save option in standalone
+                                        * ZMap. Gets set either from the input file or from the
+                                        * first Save As operation.  */
 
 } ZMapViewStruct ;
 
@@ -494,8 +516,11 @@ gboolean zmapViewScratchDeleteFeatures(ZMapView zmap_view, GList *features, cons
 gboolean zmapViewScratchUndo(ZMapView zmap_view);
 gboolean zmapViewScratchRedo(ZMapView zmap_view);
 gboolean zmapViewScratchClear(ZMapView zmap_view);
+gboolean zmapViewScratchSave(ZMapView zmap_view, ZMapFeature feature);
+void zmapViewScratchFeatureGetEvidence(ZMapView view, ZMapWindowGetEvidenceCB evidence_cb, gpointer evidence_cb_data) ;
 ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view);
-ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set);
+ZMapFeature zmapViewScratchGetFeature(ZMapView view);
+void zmapViewScratchRemoveFeatures(ZMapView view, GList *feature_list) ;
 
 
 #ifdef LOTS_OF_EXONS

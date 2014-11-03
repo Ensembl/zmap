@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -54,6 +54,10 @@ gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas,
 {
   gboolean result = FALSE ;
 
+  zMapReturnValIfFail(canvas &&
+                      layout_win_width && layout_win_height &&
+                      layout_binwin_width && layout_binwin_height, result ) ;
+
   if (FOO_IS_CANVAS(canvas))
     {
       GtkWidget *widget = GTK_WIDGET(canvas) ;
@@ -79,7 +83,11 @@ gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas,
 
 void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double y1, double y2)
 {
-  FooCanvas *canvas = FOO_CANVAS(window->canvas) ;
+  FooCanvas *canvas = NULL ;
+
+  zMapReturnIfFail(window) ;
+
+  canvas = FOO_CANVAS(window->canvas) ;
 
   foo_canvas_set_scroll_region(canvas, x1, y1, x2, y2) ;
 

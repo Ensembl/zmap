@@ -53,11 +53,12 @@ static ZMapStyleGlyphShapeStruct truncation_shape_basic_instance_start =
   {
     0, 0,      5, -5,        0, -10,       -5, -5,      0, 0,          0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-  },                                                                               /* length 32 coordinate array */
-  5,                                                                               /* number of coordinates */
-  10, 10,                                                                          /* width and height */
-  0,                                                                               /* quark ID */
-  GLYPH_DRAW_LINES                                                                 /* ZMapStyleGlyphDrawType; LINES == OUTLINE, POLYGON == filled */
+  },                                                        /* length 32 coordinate array */
+  5,                                                        /* number of coordinates */
+  10, 10,                                                   /* width and height */
+  0,                                                        /* quark ID */
+  GLYPH_DRAW_LINES                                          /* ZMapStyleGlyphDrawType:
+                                                               LINES == OUTLINE, POLYGON == filled */
 }  ;
 
 static ZMapStyleGlyphShapeStruct truncation_shape_basic_instance_end =
@@ -78,6 +79,9 @@ static ZMapStyleGlyphShapeStruct * truncation_shape_basic_end = &truncation_shap
 static ZMapWindowCanvasGlyph truncation_glyph_basic_start = NULL ;
 static ZMapWindowCanvasGlyph truncation_glyph_basic_end = NULL ;
 
+
+
+
 /*
  * Function to draw a  basic feature.
  */
@@ -85,13 +89,11 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                               GdkDrawable *drawable, GdkEventExpose *expose)
 {
   gulong fill,outline ;
-  int colours_set = 0, fill_set = 0, outline_set = 0;
+  int colours_set = 0, fill_set = 0, outline_set = 0 ;
   double x1 = 0.0, x2 = 0.0, col_width = 0.0 ;
-  gboolean draw_truncation_glyphs = TRUE,
-    truncated_start = FALSE,
-    truncated_end = FALSE ;
-  zMapReturnIfFail(featureset && feature && drawable && expose ) ;
-  ZMapFeatureTypeStyle style = *feature->feature->style;
+  gboolean draw_truncation_glyphs = TRUE, truncated_start = FALSE, truncated_end = FALSE ;
+  zMapReturnIfFail(featureset && feature && feature->feature && drawable && expose ) ;
+  ZMapFeatureTypeStyle style = *feature->feature->style ;
   FooCanvasItem *foo = (FooCanvasItem *) featureset ;
 
   /* colours are not defined for the CanvasFeatureSet
@@ -137,6 +139,16 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
       zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, feature->y1, feature->y2, drawable,
                                        fill_set, outline_set, fill, outline) ;
     }
+
+
+
+  /* Highlight all splice positions if they exist, do this bumped or unbumped otherwise user
+   * has to bump column to see common splices. */
+  if (feature->splice_positions)
+    {
+      zMapCanvasFeaturesetDrawSpliceHighlights(featureset, feature, drawable, x1, x2) ;
+    }
+
 
 
 #ifdef INCLUDE_TRUNCATION_GLYPHS_BASIC

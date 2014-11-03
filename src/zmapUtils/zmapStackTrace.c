@@ -104,8 +104,8 @@ gboolean zMapStack2fd(unsigned int remove, int fd)
   void *stack[ZMAPLOG_MAX_TRACE_SIZE] ;
   size_t size, first = 0 ;
 
-  zMapReturnValIfFail((remove > 0), FALSE) ;
-  zMapReturnValIfFail((fd > 0), FALSE) ;
+  zMapReturnValIfFail((remove >= 0), FALSE) ;
+  zMapReturnValIfFail((fd >= 0), FALSE) ;
 
   if ((size = backtrace(stack, ZMAPLOG_MAX_TRACE_SIZE)))
     {

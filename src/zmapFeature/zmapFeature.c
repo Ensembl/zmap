@@ -124,7 +124,16 @@ typedef struct
   GQuark original_id ;
   int start, end ;
   GList *feature_list ;
+  ZMapStrand strand ;
 } FindFeaturesRangeStruct, *FindFeaturesRange ;
+
+
+/* Utility struct to store a feature id to search for and the resultant feature that is found */
+typedef struct _FeatureSearchStruct
+{
+  GQuark search_id ;             /* feature id to search for */
+  ZMapFeatureAny found_feature ; /* the feature we found */
+} FeatureSearchStruct, *FeatureSearch ;
 
 
 void print_loaded(GList *l,char *fred);
@@ -174,6 +183,7 @@ static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any) ;
 
 static void findFeaturesRangeCB(gpointer key, gpointer value, gpointer user_data) ;
 static void findFeaturesNameCB(gpointer key, gpointer value, gpointer user_data) ;
+static void findFeaturesNameStrandCB(gpointer key, gpointer value, gpointer user_data) ;
 
 static ZMapFeatureContextExecuteStatus addEmptySets(GQuark key,
                                                   gpointer data,
@@ -236,13 +246,60 @@ gboolean zMapFeatureAnyFindFeature(ZMapFeatureAny feature_set, ZMapFeatureAny fe
 }
 
 
-/* Returns the feature if found, NULL otherwise. */
-ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_set, GQuark feature_id)
+/* Looks up a feature_id in the given parent. Returns the feature if found, NULL otherwise. */
+ZMapFeatureAny zMapFeatureParentGetFeatureByID(ZMapFeatureAny feature_parent, GQuark feature_id)
 {
   ZMapFeatureAny feature = NULL ;
-  zMapReturnValIfFail(feature_set, feature) ;
+  zMapReturnValIfFail(feature_parent, feature) ;
 
-  feature = g_hash_table_lookup(feature_set->children, GINT_TO_POINTER(feature_id)) ;
+  feature = g_hash_table_lookup(feature_parent->children, GINT_TO_POINTER(feature_id)) ;
+
+  return feature ;
+}
+
+
+/*! 
+ * \brief Callback used to determine whether the current feature has the id in the user data and
+ * if so to set the result in the user data.
+ */
+static ZMapFeatureContextExecuteStatus find_feature_by_id(GQuark key,
+                                                          gpointer data,
+                                                          gpointer user_data,
+                                                          char **error_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+
+  ZMapFeatureAny any = (ZMapFeatureAny)data ;
+  FeatureSearch search_data = (FeatureSearch)user_data ;
+  
+  if (any->unique_id == search_data->search_id)
+    {
+      search_data->found_feature = any ;
+      status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ; /* stop searching */
+    }
+  
+  return status ;
+}
+
+
+/* Looks up a feature_id in ANY level of the child features of feature_any. Returns the feature if
+ * found, NULL otherwise. If you know that feature_any is a direct parent of the feature you're
+ * looking for use zMapFeatureParentGetFeatureByID instead as that is more effcient. */
+ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_any, 
+                                            GQuark feature_id, 
+                                            ZMapFeatureLevelType struct_type)
+{
+  ZMapFeatureAny feature = NULL ;
+  zMapReturnValIfFail(feature_any && feature_id, feature) ;
+
+  FeatureSearchStruct search_data = {feature_id, NULL} ;
+
+  zMapFeatureContextExecute(feature_any,
+                            struct_type,
+                            find_feature_by_id,
+                            &search_data);
+  
+  feature = search_data.found_feature ;
 
   return feature ;
 }
@@ -920,7 +977,7 @@ ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set, GQuark feat
   ZMapFeature feature = NULL ;
   zMapReturnValIfFail(feature_set, feature) ;
 
-  feature = (ZMapFeature)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_set, feature_id) ;
+  feature = (ZMapFeature)zMapFeatureParentGetFeatureByID((ZMapFeatureAny)feature_set, feature_id) ;
 
   return feature ;
 }
@@ -952,6 +1009,7 @@ GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int
   find_data.start = start ;
   find_data.end = end ;
   find_data.feature_list = NULL ;
+  find_data.strand = ZMAPSTRAND_NONE ;
 
   g_hash_table_foreach(feature_set->features, findFeaturesRangeCB, &find_data) ;
 
@@ -980,6 +1038,7 @@ GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark origina
 
   find_data.original_id = original_id ;
   find_data.feature_list = NULL ;
+  find_data.strand = ZMAPSTRAND_NONE ;
 
   g_hash_table_foreach(feature_set->features, findFeaturesNameCB, &find_data) ;
 
@@ -988,13 +1047,43 @@ GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark origina
   return feature_list ;
 }
 
-/* A GHFunc() to add a feature to a list if it within a given range */
+/* A GHFunc() to add a feature to a list if it has the given name */
 static void findFeaturesNameCB(gpointer key, gpointer value, gpointer user_data)
 {
   FindFeaturesRange find_data = (FindFeaturesRange)user_data ;
   ZMapFeature feature = (ZMapFeature)value ;
 
   if (feature->original_id == find_data->original_id)
+    find_data->feature_list = g_list_append(find_data->feature_list, feature) ;
+
+  return ;
+}
+
+
+/* Return a list of all features with the given name and strand */
+GList *zMapFeatureSetGetNamedFeaturesForStrand(ZMapFeatureSet feature_set, GQuark original_id, ZMapStrand strand)
+{
+  GList *feature_list = NULL ;
+  FindFeaturesRangeStruct find_data = {0} ;
+
+  find_data.original_id = original_id ;
+  find_data.feature_list = NULL ;
+  find_data.strand = strand ;
+
+  g_hash_table_foreach(feature_set->features, findFeaturesNameStrandCB, &find_data) ;
+
+  feature_list = find_data.feature_list ;
+
+  return feature_list ;
+}
+
+/* A GHFunc() to add a feature to a list if it has the given name and strand */
+static void findFeaturesNameStrandCB(gpointer key, gpointer value, gpointer user_data)
+{
+  FindFeaturesRange find_data = (FindFeaturesRange)user_data ;
+  ZMapFeature feature = (ZMapFeature)value ;
+
+  if (feature->original_id == find_data->original_id && feature->strand == find_data->strand)
     find_data->feature_list = g_list_append(find_data->feature_list, feature) ;
 
   return ;
@@ -1123,7 +1212,7 @@ ZMapFeatureBlock zMapFeatureAlignmentGetBlockByID(ZMapFeatureAlignment feature_a
 {
   ZMapFeatureBlock feature_block = NULL;
 
-  feature_block = (ZMapFeatureBlock)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_align, block_id) ;
+  feature_block = (ZMapFeatureBlock)zMapFeatureParentGetFeatureByID((ZMapFeatureAny)feature_align, block_id) ;
 
   return feature_block ;
 }
@@ -1247,7 +1336,7 @@ ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block, GQuark
 {
   ZMapFeatureSet feature_set ;
 
-  feature_set = (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block, set_id) ;
+  feature_set = (ZMapFeatureSet)zMapFeatureParentGetFeatureByID((ZMapFeatureAny)feature_block, set_id) ;
 
   return feature_set ;
 }
@@ -1359,7 +1448,7 @@ ZMapFeatureAlignment zMapFeatureContextGetAlignmentByID(ZMapFeatureContext featu
 {
   ZMapFeatureAlignment feature_align ;
 
-  feature_align = (ZMapFeatureAlignment)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_context, align_id) ;
+  feature_align = (ZMapFeatureAlignment)zMapFeatureParentGetFeatureByID((ZMapFeatureAny)feature_context, align_id) ;
 
   return feature_align ;
 }
@@ -2095,13 +2184,13 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
       }
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
-        merge_data->current_view_block = zMapFeatureAnyGetFeatureByID(merge_data->current_view_align, key) ;
+        merge_data->current_view_block = zMapFeatureParentGetFeatureByID(merge_data->current_view_align, key) ;
 
         break;
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
-        merge_data->current_view_set = zMapFeatureAnyGetFeatureByID(merge_data->current_view_block, key) ;
+        merge_data->current_view_set = zMapFeatureParentGetFeatureByID(merge_data->current_view_block, key) ;
 
       /* Note that we fall through _IF_ caller specified just a feature set with no children because
        * then we delete all features in the set (but not the set itself as this is usually
@@ -2123,7 +2212,7 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
           lookup_parent = merge_data->current_view_set ;
 
         if (!lookup_parent
-            || !(erased_feature_any = zMapFeatureAnyGetFeatureByID(lookup_parent, key)))
+            || !(erased_feature_any = zMapFeatureParentGetFeatureByID(lookup_parent, key)))
           {
             zMapLogWarning("Feature \"%s\" absent from current context, cannot delete.",
                            g_quark_to_string(key)) ;
@@ -2725,7 +2814,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
             feature_any->parent = NULL;
             status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
 
-            if (!(*view_path_ptr = zMapFeatureAnyGetFeatureByID(*view_path_parent_ptr,
+            if (!(*view_path_ptr = zMapFeatureParentGetFeatureByID(*view_path_parent_ptr,
                                                                 feature_any->unique_id)))
               {
                 /* If its new we can simply copy a pointer over to the diff context
@@ -2865,7 +2954,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
         feature_any->parent = NULL;
         status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
 
-        if (!(zMapFeatureAnyGetFeatureByID(*view_path_parent_ptr, feature_any->unique_id)))
+        if (!(zMapFeatureParentGetFeatureByID(*view_path_parent_ptr, feature_any->unique_id)))
           {
             merge_data->new_features = new = TRUE ;
             merge_data->feature_count++ ;
@@ -3233,3 +3322,84 @@ static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any)
 
   return ;
 }
+
+/*
+ * Create a GArray to store elements of type ZMapAlignBlockStruct
+ */
+GArray* zMapAlignBlockArrayCreate()
+{
+  GArray* align_block_array = NULL ;
+  align_block_array = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), 10) ;
+  return align_block_array ;
+}
+
+/*
+ * Destroy a GArray storing elements of type ZMapAlignBlockStruct
+ */
+gboolean zMapAlignBlockArrayDestroy(GArray* const align_block_array)
+{
+  gboolean result = FALSE ;
+   if (align_block_array)
+    {
+      g_array_free(align_block_array, TRUE) ;
+      result = TRUE ;
+    }
+  return result ;
+}
+
+/*
+ *
+ */
+ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray*const align_block_array, int index)
+{
+  ZMapAlignBlock block = NULL ;
+  if (align_block_array && index>=0)
+    {
+      block = &g_array_index(align_block_array, ZMapAlignBlockStruct, index) ;
+    }
+  return block ;
+}
+
+gboolean zMapAlignBlockAddBlock(GArray** p_align_block_array, const ZMapAlignBlockStruct * const block)
+{
+  gboolean result = FALSE ;
+  GArray *align_block_array = NULL ;
+  if (p_align_block_array && (align_block_array = *p_align_block_array) && block)
+    {
+      align_block_array = g_array_append_val(align_block_array, *block) ;
+      *p_align_block_array = align_block_array ;
+      result = TRUE ;
+    }
+  return result ;
+}
+
+/* sort by genomic coordinate */
+/* start coord then end coord reversed */
+gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
+{
+  ZMapFeature feata = (ZMapFeature) a;
+  ZMapFeature featb = (ZMapFeature) b;
+
+  if(!featb)
+    {
+      if(!feata)
+        return(0);
+      return(1);
+    }
+  if(!feata)
+    return(-1);
+
+  if(feata->x1 < featb->x1)
+    return(-1);
+  if(feata->x1 > featb->x1)
+    return(1);
+
+  if(feata->x2 > featb->x2)
+    return(-1);
+
+  if(feata->x2 < featb->x2)
+    return(1);
+
+  return(0);
+}
+

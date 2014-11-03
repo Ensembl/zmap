@@ -75,13 +75,14 @@ void zMapInit(ZMapCallbacks callbacks) ;
 ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap sequence_map, GdkCursor *normal_cursor) ;
 int zMapNumViews(ZMap zmap) ;
 gboolean zMapSetSessionColour(ZMap zmap, GdkColor *session_colour) ;
-ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
+ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, GError **error) ;
+ZMapView zMapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-gboolean zMapConnectView(ZMap zmap, ZMapView view) ;
+gboolean zMapConnectView(ZMap zmap, ZMapView view, GError **error) ;
 gboolean zMapLoadView(ZMap zmap, ZMapView view) ;
 
 gboolean zMapStopView(ZMap zmap, ZMapView view) ;
@@ -92,9 +93,10 @@ gboolean zMapRaise(ZMap zmap);
 char *zMapGetZMapID(ZMap zmap) ;
 char *zMapGetZMapStatus(ZMap zmap) ;
 void zMapSetCursor(ZMap zmap, GdkCursor *cursor) ;
-
 void zMapControlForAllZMapViews(ZMap zmap, ZMapControlForAllCallbackFunc user_func_cb, void *user_func_data) ;
-
+gboolean zMapCheckIfUnsaved(ZMap zmap) ;
+gboolean zMapReset(ZMap zmap) ;
+void zMapDestroy(ZMap zmap, GList **destroyed_views_inout) ;
 
 gboolean zMapControlProcessRemoteRequest(ZMap zmap,
 					 char *command_name, char *request, gpointer view_id,

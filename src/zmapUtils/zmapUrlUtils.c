@@ -243,9 +243,12 @@ sepstring (const char *s)
 }
 
 /* Return the size of file named by FILENAME, or -1 if it cannot be
-   opened or seeked into. */
+   opened or seeked into. 
+   NB (sm23) This function name has been changed because of a clash with 
+   a function in htslib. 
+*/
 long
-file_size (const char *filename)
+file_size_temp (const char *filename)
 {
   long size;
   /* We use fseek rather than stat to determine the file size because

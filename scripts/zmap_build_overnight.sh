@@ -30,7 +30,7 @@ if (( $# > 0 )) ; then
   SEQTOOLS_DIR=$1
 fi
 
-./build_run.sh -c -d -e -g -s $SEQTOOLS_DIR $BUILD_PREFIX || RC=1
+./build_run.sh -c -e -g -s $SEQTOOLS_DIR $BUILD_PREFIX || RC=1
 
 
 exit $RC

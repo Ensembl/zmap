@@ -113,9 +113,6 @@ ZMAP_MASTER_RUN_TEST_SUITE=no
 ZMAP_MASTER_REMOVE_FOLDER=yes
 ZMAP_MASTER_NOTIFY_MAIL=annotools@sanger.ac.uk
 
-ZMAP_MASTER_BUILD_DIST=no
-ZMAP_MASTER_BUILD_CANVAS_DIST=no
-
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 
 # tviewsrv and lucid-dev64 are now ubuntu....
@@ -160,11 +157,20 @@ ZMAP_ACECONN_RELEASE_CONTAINER=$ZMAP_ACEDB_RELEASE_CONTAINER
 ZMAP_ACECONN_RELEASE_DIR=AceConn
 
 
+
+# Not sure which of these are still needed......
+#
 ZMAP_RELEASE_NOTES_TIMESTAMP=LAST_RELEASE_DATE.txt
 ZMAP_VERSION_HEADER=zmapUtils_P.h
 ZMAP_WEBPAGE_HEADER=zmapWebPages.h
-ZMAP_RELEASE_FILE_PREFIX=release_notes
-ZMAP_RELEASE_FILE_SUFFIX=shtml
+
+
+# This file must be hand-edited.
+#
+ZMAP_USER_DOCS_DIR='doc/user'
+ZMAP_USER_RELEASE_DOC_FILE_NAME='release_notes.shtml'
+
+
 
 
 WEBPUBLISH=webpublish
@@ -204,6 +210,9 @@ ZMAP_WEBSITE_TARGET=$WEBROOT/Software/analysis/ZMap
 NEED_LIBTOOLIZE=yes
 
 
+ZMAP_BOOTSTRAP_SCRIPT='autogen.sh'
+ZMAP_RUNCONFIG_SCRIPT='runconfig'
+
 # runconfig variables
 #
 
@@ -229,6 +238,8 @@ UNIVERSAL_BUILD=no
 PKG_CONFIG=$GTK_PREFIX/bin/pkg-config
 ACLOCAL_FLAGS="-I $GTK_PREFIX/share/aclocal"
 
+# The annotools bin directory on /software
+ANNOTOOLS_BIN=/software/annotools/bin
 
 # Now source host specific variables/values
 # First we source host type specific ones

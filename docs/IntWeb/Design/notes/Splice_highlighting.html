@@ -1,0 +1,220 @@
+<!--#set var="banner" value="Splice Highlighting"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+.tab { margin-left: 10%; }
+</style>
+
+
+<h2>ZMap: Splice Highlighting</h2>
+
+
+
+<h3>Introduction</h3>
+
+<p>This document describes the design of splice highlighting within zmap.</p>
+
+<p>Annotators frequently want to know if coordinates of features match, e.g. if
+a particular match (EST, cDNA etc) aligns to within a certain tolerance to the
+exons of a transcript. The easiest way to do this is to allow the annotator to
+click on the feature they are interested in and then automatically highlight
+features in other columns that have the same start or end coordinates as that
+feature.</p>
+
+<p>This facility is commonly referred to as:</p>
+
+<p class=tab><b>splice highlighting</b></p>
+
+<p>The below images show highlighting off and then highlighting turned on.</p>
+
+<img src="Splice_highlight_off.png" class="img" alt="splice highlighting off">
+<img src="Splice_highlight_on.png" class="img" alt="splice highlighting on">
+
+<p>The highlighted feature is a protein coding primary transcript and the splice
+highlighted features are BLAT EST alignments.</p>
+
+
+
+<h3>User Interface</h3>
+
+
+<p>Select a feature and then press <b>'s'</b> to see highlighted in red all the
+start/ends of features in other columns that match the highlighted features
+start/ends, e.g. highlight a transcript, press <b>'s'</b> and you will be able to see
+all the EST's, mRNA's and other features that line up with the transcript.</p>
+
+<p>Some usage notes:</p>
+
+<ul>
+<li><p>the highlighting only works on the "box-like" features, it does not include
+graph or heatmap data.</p></li>
+
+<li><p>you can select any box-like feature in any column and use the highlighting so
+you can select a transcript and see which EST's match it or conversely select an
+EST and see which transcripts match it and so on.</p></li>
+
+<li><p>the <b>'s'</b> key toggles the highlighting on/off and you may find it useful to
+flick it on/off as it makes it easier to spot the highlights as they blink on
+and off, this is particularly so if you are zoomed right out.</p></li>
+
+<li><p>the highlights are drawn in columns whether they are bumped or not but of
+course to actually see which features are highlighted you will need to bump the
+relevant column.</p></li>
+
+<li><p>if you have selected a feature, pressed <b>'s'</b> and now find that you want to bump
+a column follow this procedure:</p></li>
+
+<ol>
+        <li><p>select the column and bump it, you will see all the splices.</p></li>
+
+        <li><p>restore the selected feature by pressing <b>shift-h</b>.</p></li>
+
+        <li><p>now you can continue to highlight splices with the reselected feature by pressing <b>'s'</b>.</p></li>
+</ol>
+</ul>
+
+<p>You should note that each time you press the <b>'s'</b> key the currently
+highlighted feature will become the new "stored highlighted feature" accessed by
+pressing <b>shift-h</b>. If you accidentally splice highlight the wrong feature
+simply click on your original feature and press <b>'s'</b> again.</p>
+
+
+<h3>Design</h3>
+
+
+<h4>Making features "splice sensitive"</h4>
+
+<p>Which feature sets are "splice sensitive" is controlled by a setting in the
+styles for those feature sets, there are two reasons for this:</p>
+
+<ul>
+<li><p>Some columns contain data where splice matches have no meaning and so
+should be excluded.</p></li>
+<li><p>Where the number of columns displayed is very large performance 
+considerations may make it necessary to restrict the number that are
+splice sensitive.</p></li>
+</ul>
+
+<p>In addition some features (e.g. protein matches) may require that the
+highlighting should be done allowing some "slop" in the splice coordinates.</p>
+
+<p>New "splice" keywords have been added to the style to support these
+features:</p>
+
+<pre>
+
+[some_style]
+splice-highlight = true
+splice-highlight-tolerance = 2
+
+</pre>
+
+
+
+<h4>Implementation</h4>
+
+<p><b>Coding</b></p>
+
+<p>Division of coding:</p>
+
+<ul>
+<li><p><b>zmapWindow/zmapWindow.c, keyboardEvent() - </b>
+<ul>
+<li>calls zmapWindowContainerFeatureSetSpliceHighlightFeatures() and
+zmapWindowContainerFeatureSetSpliceUnhighlightFeatures() to highlight/unhighlight splices.</li>
+<li>Manages store/restore of highlighted features.</li>
+</ul>
+</p></li>
+
+<li><p><b>zmapWindow/canvas/zmapWindowContainerFeatureSet.c, zmapWindowContainerFeatureSetAugment() - </b>
+<ul>
+<li>records if a column should be spliced highlighted.</li>
+</ul>
+</p></li>
+
+<li><p><b>zmapWindow/canvas/zmapWindowContainerFeatureSet.c, zmapWindowContainerFeatureSetSpliceHighlightFeatures() - </b>
+<ul>
+<li>unhighlights any existing splice highlighting.</li>
+<li>finds the highlighted features splice sites coords.</li>
+<li>highlights all matching splice sites in all splice-aware columns.</li>
+</ul>
+</p></li>
+
+<li><p><b>zmapWindow/canvas/zmapWindowContainerFeatureSet.c, zmapWindowContainerFeatureSetSpliceUnhighlightFeatures() - </b>
+<ul>
+<li>unhighlight all existing splice highlights.</li>
+</ul>
+</p></li>
+
+
+<li><p><b>zmapWindow/canvas/zmapWindowCanvasDraw.c, zMapCanvasFeaturesetDrawSpliceHighlights() - </b>
+<ul>
+<li>draw the splice highlights.</li>
+</ul>
+</p></li>
+
+<li><p><b>zmapWindow/canvas/zmapWindowCanvasAlignment.c, zMapWindowCanvasAlignmentPaintFeature() - </b>
+<ul>
+<li>calls zMapCanvasFeaturesetDrawSpliceHighlights() to draw align splice highlights.</li>
+</ul>
+</p></li>
+
+<li><p><b>zmapWindow/canvas/zmapWindowCanvasBasic.c, basicPaintFeature() - </b>
+<ul>
+<li>calls zMapCanvasFeaturesetDrawSpliceHighlights() to draw align splice highlights.</li>
+</ul>
+</p></li>
+
+<li><p><b>zmapWindow/canvas/zmapWindowCanvasTranscript.c, transcriptPaintFeature() - </b>
+<ul>
+<li>calls zMapCanvasFeaturesetDrawSpliceHighlights() to draw align splice highlights.</li>
+</ul>
+</p></li>
+
+</ul>
+
+
+
+<p><b>Pre-display</b></p>
+
+<p>As featuresets are loaded their styles are tested to see if they should be
+splice highlighted and if any featureset should be highlighted then
+the column is marked for highlighting.</p>
+
+
+<p>When a column is to be highlighted then the style setting for splice
+highlighting for each featureset within the column will determine if those
+features are splice highlighted. If set the splice_highlight_tolerance
+for each featureset is used to determine splice highlights.</p>
+
+<p>For each feature within in a column that is to be highlighted two actions
+are taken:</p>
+
+<ol>
+<li><p>A record is made of the feature in a list held on the column so it can be
+unhighlighted efficiently.</p></li>
+
+<li><p>The splices to be highlighted in a feature are recorded in the ZMapWindowCanvasFeature
+struct for use in the drawing routines. This ensures that the splice markers
+are correctly positioned on column bumping.</p></li>
+</ol>
+
+
+<p><b>Drawing</b></p>
+
+<p>As each feature is drawn it's x and y positions are determined, these are then
+used as input to the zMapCanvasFeaturesetDrawSpliceHighlights() function. Currently
+there is a single splice highlight colour (standard X Windows colour "red") and this
+is not customisable. It is likely that just having a single highlight colour is
+easier for people to spot (as with the existing feature highlighting) so this is
+probably adequate.</p>
+
+
+
+
+
+<!--#include virtual="/perl/footer"-->

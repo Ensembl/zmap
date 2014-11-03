@@ -55,6 +55,7 @@
 typedef enum
 {
   ZMAPAPPSERVICES_ERROR_BAD_COORDS,
+  ZMAPAPPSERVICES_ERROR_NO_SEQUENCE,
   ZMAPAPPSERVICES_ERROR_CONFLICT_DATASET,
   ZMAPAPPSERVICES_ERROR_CONFLICT_SEQUENCE,
   ZMAPAPPSERVICES_ERROR_BAD_SEQUENCE_NAME
@@ -222,7 +223,7 @@ void zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error)
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                                 ZMAPSTANZA_APP_DATASET, &tmp_string))
         {
-  /* if not supplied needs to appear in all the pipe script URLs */
+          /* if not supplied needs to appear in all the pipe script URLs */
           if (!seq_map->dataset)
             {
               seq_map->dataset = tmp_string;
@@ -233,7 +234,7 @@ void zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error)
                           "Dataset '%s' in the config file does not match the set dataset '%s'",
                           tmp_string, seq_map->dataset) ;
             }
-}
+        }
 
       if (!tmp_error && 
           zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
@@ -254,7 +255,12 @@ void zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error)
           gboolean got_end = zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                                         ZMAPSTANZA_APP_END, &end) ;
          
-          if (got_start && got_end)
+          if (got_start && got_end && !seq_map->sequence)
+            {
+              g_set_error(&tmp_error, ZMAP_APP_SERVICES_ERROR, ZMAPAPPSERVICES_ERROR_NO_SEQUENCE,
+                          "The coords were specified in the config file but the sequence name was not; must specify all or none of sequence/start/end") ;
+            }
+          else if (got_start && got_end)
             {
               /* Pass merge_details as false because we want the config file range to match the
                * command-line range. (We could merge the ranges, but I'm not sure that makes sense 
