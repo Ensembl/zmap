@@ -214,6 +214,12 @@ enum
   };
 
 
+/* Developer menu ops. */
+enum
+  {
+    DEVELOPER_FEATURE_ONLY = 1,  DEVELOPER_FEATUREITEM_FEATURE, DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE,
+    DEVELOPER_PRINT_STYLE, DEVELOPER_PRINT_CANVAS, DEVELOPER_STATS
+  } ;
 
 
 
@@ -2479,10 +2485,14 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_BRANCH, "_"DEVELOPER_STR,                   0, NULL,       NULL},
-      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature",       1, developerMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature Style", 2, developerMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Canvas",       3, developerMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Window Stats",  4, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature Only",  DEVELOPER_FEATURE_ONLY, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show FeatureItem & Feature",
+       DEVELOPER_FEATUREITEM_FEATURE, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show FeaturesetItem, FeatureItem and Feature",
+       DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Canvas", DEVELOPER_PRINT_STYLE, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Canvas", DEVELOPER_PRINT_CANVAS, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Window Stats", DEVELOPER_STATS, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
@@ -2508,43 +2518,105 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 
   switch (menu_item_id)
     {
-    case 1:
+    case DEVELOPER_FEATURE_ONLY:
       {
-        if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+        if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
           {
             zMapWarning("%s", "Not on a feature.") ;
           }
-        else if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+        else
           {
-            char *feature_text ;
             ZMapFeature feature ;
-            GString *item_text_str ;
-            char *coord_text ;
+            char *feature_text ;
             char *msg_text ;
 
             feature = (ZMapFeature)feature_any ;
 
             feature_text = zMapFeatureAsString(feature) ;
 
-            item_text_str = g_string_sized_new(2048) ;
+            msg_text = g_strdup_printf("\n%s\n", feature_text) ;
 
-            zmapWindowItemDebugItemToString(item_text_str, menu_data->item) ;
-
-            coord_text = zmapWindowItemCoordsText(menu_data->item) ;
-
-            msg_text = g_strdup_printf("%s\n%s\t%s\n", feature_text, item_text_str->str, coord_text) ;
-
-            zMapGUIShowText((char *)g_quark_to_string(feature->original_id), msg_text, FALSE) ;
+            zMapGUIShowText((char *)g_quark_to_string(feature->original_id), feature_text, FALSE) ;
 
             g_free(msg_text) ;
-            g_free(coord_text) ;
-            g_string_free(item_text_str, TRUE) ;
             g_free(feature_text) ;
           }
 
         break ;
       }
-    case 2:
+    case DEVELOPER_FEATUREITEM_FEATURE:
+      {
+        if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
+          {
+            zMapWarning("%s", "Not on a feature.") ;
+          }
+        else
+          {
+            ZMapWindowFeaturesetItem featureset_item = ZMAP_WINDOW_FEATURESET_ITEM(menu_data->item) ;
+            ZMapWindowCanvasFeature feature_item ;
+            char *feature_text ;
+            ZMapFeature feature ;
+            GString *canvas_feature_text ;
+            char *msg_text ;
+
+            feature_item = zMapWindowCanvasFeaturesetGetPointFeatureItem(featureset_item) ;
+
+            canvas_feature_text = zMapWindowCanvasFeature2Txt(feature_item) ;
+
+            feature = (ZMapFeature)feature_any ;
+
+            feature_text = zMapFeatureAsString(feature) ;
+
+            msg_text = g_strdup_printf("\n%s\n%s\n", canvas_feature_text->str, feature_text) ;
+
+            zMapGUIShowText((char *)g_quark_to_string(feature->original_id), msg_text, FALSE) ;
+
+            g_free(msg_text) ;
+            g_string_free(canvas_feature_text, TRUE) ;
+            g_free(feature_text) ;
+          }
+
+        break ;
+      }
+    case DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE:
+      {
+        if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
+          {
+            zMapWarning("%s", "Not on a feature.") ;
+          }
+        else
+          {
+            ZMapWindowFeaturesetItem featureset_item = ZMAP_WINDOW_FEATURESET_ITEM(menu_data->item) ;
+            ZMapWindowCanvasFeature feature_item ;
+            GString *canvas_featureset_text ;
+            GString *canvas_feature_text ;
+            ZMapFeature feature ;
+            char *feature_text ;
+            char *msg_text ;
+
+            feature_item = zMapWindowCanvasFeaturesetGetPointFeatureItem(featureset_item) ;
+
+            canvas_featureset_text = zMapWindowCanvasFeatureset2Txt(featureset_item) ;
+
+            canvas_feature_text = zMapWindowCanvasFeature2Txt(feature_item) ;
+
+            feature = (ZMapFeature)feature_any ;
+
+            feature_text = zMapFeatureAsString(feature) ;
+
+            msg_text = g_strdup_printf("\n%s\n%s\n%s\n", canvas_featureset_text->str, canvas_feature_text->str, feature_text) ;
+
+            zMapGUIShowText((char *)g_quark_to_string(feature->original_id), msg_text, FALSE) ;
+
+            g_free(msg_text) ;
+            g_free(feature_text) ;
+            g_string_free(canvas_feature_text, TRUE) ;
+            g_string_free(canvas_featureset_text, TRUE) ;
+          }
+
+        break ;
+      }
+    case DEVELOPER_PRINT_STYLE:
       {
         ZMapWindowContainerFeatureSet container = NULL;
 
@@ -2578,14 +2650,14 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
         break ;
       }
 
-    case 3:
+    case DEVELOPER_PRINT_CANVAS:
       {
         zmapWindowPrintCanvas(menu_data->window->canvas) ;
 
         break ;
       }
 
-    case 4:
+    case DEVELOPER_STATS:
       {
         GString *session_text ;
         char *title ;
