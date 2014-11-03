@@ -40,7 +40,11 @@
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapSkipList.h>
 #include <zmapWindowCanvasFeatureset.h>
+
+/* would love to get rid of canvas item... */
 #include <zmapWindowCanvasItem_I.h>
+
+
 
 
 
@@ -259,7 +263,8 @@ typedef struct zmapWindowFeaturesetItemClassStructType
 
 
 /* THIS IS A CHILD OF THE COLUMN GROUP CREATED ELSEWHERE....IN ESSENCE IT HOLDS THE
- * FEATURES THOUGH THESE ARE NO LONGER FOOCANVAS OBJECTS.
+ * FEATURES THOUGH THESE ARE NO LONGER FOOCANVAS OBJECTS. THOUGH I DON'T THINK THERE
+ * IS ONE OF THESE PER FEATURESET WITHIN A COLUMN....CHECK THIS THOUGH !
  * 
  * NOTE this class/ structure is used for all types of columns
  * it is not inherited and various optional functions have been squeezed in
@@ -269,104 +274,111 @@ typedef struct zmapWindowFeaturesetItemClassStructType
  */
 typedef struct _zmapWindowFeaturesetItemStruct
 {
-  zmapWindowCanvasItemStruct __parent__;		/* itself derived from FooCanvasItem */
+  zmapWindowCanvasItemStruct __parent__ ;		/* itself derived from FooCanvasItem */
 
-  GQuark id;                                                /* original or unique id ?? */
+  /* id is a composite of column unique id and foo->canvas, group, name, layer. */
+  GQuark id ;
 
-  ZMapFeatureTypeStyle style;				    /* column style: NB could have several
+  zmapWindowCanvasFeatureType type ;
+
+  ZMapFeatureTypeStyle style ;				    /* Column style: NB could have several
 							       featuresets mapped into this by virtualisation */
+  ZMapFeatureTypeStyle featurestyle ;			    /* Current cached style for features */
 
+  ZMapStrand strand ;
+  ZMapFrame frame ;
 
-  ZMapFeatureTypeStyle featurestyle;			    /* current cached style for features */
+  ZMapFeature point_feature ;                               /* set by cursor movement */
+  ZMapWindowCanvasFeature point_canvas_feature ;            /* last clicked canvasfeature, set by select,
+                                                               need for legacy code interface */
 
-
-
-  zmapWindowCanvasFeatureType type;
-
-  gint layer;						    /* underlay features or overlay (flags) */
-
-  ZMapStrand strand;
-  ZMapFrame frame;
-
-
-  /* Should the next two fields really be in the containerfeatureset struct ? */
+  ZMapWindowCanvasFeature last_added ;	/* necessary optimisation */
+  /* NOTE
+   * when we add a feature we wipe the display index (due to not having implemented the skip list fully)
+   * which means that we can't look up the last added feature
+   * which is what we need to do to set show/hide or colour
+   * so we keep this pointer to find the last one added
+   */
 
   /* Points to data that is needed on a per column basis and is assigned by the functions
    * that handle that data. */
   gpointer per_column_data ;
 
 
+  /* SHOULD THE NEXT TWO FIELDS REALLY BE IN THE CONTAINERFEATURESET STRUCT ? */
   /* Glyph data, this is held separately because as well as glyph columns there are columns
    * e.g. alignments, that also need glyph data. */
   gpointer glyph_per_column_data ;
-  gboolean draw_truncation_glyphs ;
+
+  gpointer opt ;                                            /* feature type optional set level data */
 
 
   /* Some stuff for handling zooming, not straight forward because we have to deal
    * with our canvas window being much smaller than our sequence making drawing/scrolling
    * difficult. */
 
-  gboolean recalculate_zoom;    /* gets set to true if the zoom has changed and we need to recalculate summary data */
-  double zoom;			/* current units per pixel */
-  double bases_per_pixel;
+  gboolean recalculate_zoom ;    /* gets set to true if the zoom has changed and we need to recalculate summary data */
+  double zoom ;			/* current units per pixel */
+  double bases_per_pixel ;
 
   GtkAdjustment *v_adjuster ;                               /* needed to calculate exposes. */
 
-
   /* stuff for column summarise */
-  PixRect *col_cover;    	/* temp. data structs */
+  PixRect *col_cover ;    	/* temp. data structs */
 #if SUMMARISE_STATS
-  gint n_col_cover_show;      /* stats for my own curiosity/ to justify the code */
-  gint n_col_cover_hide;
-  gint n_col_cover_list;
+  gint n_col_cover_show ;      /* stats for my own curiosity/ to justify the code */
+  gint n_col_cover_hide ;
+  gint n_col_cover_list ;
 #endif
 
-  double start,end;
-  double longest;			/* feature y-coords extent of biggest feature */
-  gboolean overlap;		/* default is to assume features do, some styles imply that they do not (eg coverage/ heatmap) */
-  double bump_overlap;		/* calculated according length of compound features */
 
-  gboolean link_sideways;	/* has complex features */
-  gboolean linked_sideways;	/* that have been constructed */
+  double start,end ;
+  double longest ;			/* feature y-coords extent of biggest feature */
 
-  gboolean highlight_sideways;/* temp bodge to allow old code to drive this */
+  /* I'm not sure what this is ? */
+  double x_off ;
+
+  double width ;                 /* column width */
+  double bump_width ;
+
+  gboolean overlap ;		/* default is to assume features do, some styles imply that they do not (eg coverage/ heatmap) */
+  double bump_overlap ;		/* calculated according length of compound features */
+
+  gboolean bumped ;		/* using bumped X or not */
+  ZMapStyleBumpMode bump_mode ;	/* if set */
+
+  gint layer ;						    /* underlay features or overlay (flags) */
+
+  gboolean draw_truncation_glyphs ;
+
+  gboolean link_sideways ;	/* has complex features */
+  gboolean linked_sideways ;	/* that have been constructed */
+  gboolean highlight_sideways ;/* temp bodge to allow old code to drive this */
   /* transcripts do alignments don't they get highlit by calling code */
-
 
   /* Some columns can be bumped to have sub-cols, this is a list of ZMapWindowCanvasSubCol
    * giving offsets, names etc for subcols. */
   GList *sub_col_list ;
 
-
   /* we add features to a simple list and create the index on demand when we get an expose */
-  GList *features;
+  GList *features ;
   /* NOTE elsewhere we don't use GList as we get a 30% performance improvement
    * but we need to sort features so GList is more convenient */
 
-  long n_features;
-  gboolean features_sorted;				    /* by start coord */
+  long n_features ;
+  gboolean features_sorted ;				    /* by start coord */
 
-  gboolean re_bin;					    /* re-calculate bins/ features according to zoom */
-  GList *display;					    /* features for display */
+  gboolean re_bin ;					    /* re-calculate bins/ features according to zoom */
+  GList *display ;					    /* features for display */
   /* NOTE normally features are indexed into display_index
    * coverage data gets re-binned and new features stored in display which is then indexed
    * if we add new features then we re-create the index - new features are added to features
    * if display is not NULL then we have to free both lists on destroy
    */
-  ZMapSkipList display_index;
-
-  gboolean bumped;		/* using bumped X or not */
-  ZMapStyleBumpMode bump_mode;	/* if set */
+  ZMapSkipList display_index ;
 
 
-  int set_index;			/* for staggered columns (heatmaps) */
-
-  /* I'm not sure what this is ? */
-  double x_off;
-
-  double width;                 /* column width */
-  double bump_width;
-
+  int set_index ;			/* for staggered columns (heatmaps) */
 
   /* graphics context for all contained features
    * each one has its own colours that we set on draw (eg for heatmaps)
@@ -374,15 +386,15 @@ typedef struct _zmapWindowFeaturesetItemStruct
    * it also pretends to do alpha but 'X doesn't do it'
    * crib foo-canvas-rect-elipse.c for inspiration
    */
-  GdkGC *gc;             	  /* GC for graphics output */
+  GdkGC *gc ;             	  /* GC for graphics output */
 
-  gint clip_y1,clip_y2,clip_x1,clip_x2;		/* visble scroll region plus one pixel all round */
+  gint clip_y1,clip_y2,clip_x1,clip_x2 ;		/* visble scroll region plus one pixel all round */
 
-  double x;				  /* x canvas coordinate of the featureset, used for column reposition */
+  double x ;				  /* x canvas coordinate of the featureset, used for column reposition */
 
   double dx, dy ;			  /* canvas offsets as calculated for paint */
 
-  gpointer deferred;		  /* buffer for deferred paints, eg constructed polyline */
+  gpointer deferred ;		  /* buffer for deferred paints, eg constructed polyline */
 
 
 
@@ -395,37 +407,27 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean border_set ;                                     /* Is border set ? */
   gboolean splice_set ;
 
-  gulong fill_colour;           /* Fill color, RGBA */
-  gulong fill_pixel;            /* Fill color */
+  gulong fill_colour;                                       /* Fill color, RGBA */
+  gulong fill_pixel ;                                       /* Fill color */
 
-  gulong outline_colour;        /* Outline color, RGBA */
-  gulong outline_pixel;         /* Outline color */
+  gulong outline_colour ;                                   /* Outline color, RGBA */
+  gulong outline_pixel ;                                    /* Outline color */
 
-  gulong background;		  /* eg for 3FT or strand separator */
-  GdkBitmap *stipple;
+  gulong background ;                                       /* eg for 3FT or strand separator */
+  GdkBitmap *stipple ;
 
-  gulong border;			  /* eg for navigator locator */
+  gulong border ;                                           /* eg for navigator locator */
 
   gulong splice_colour ;                                    /* Fill color, RGBA */
   gulong splice_pixel ;                                     /* Fill color */
 
 
-  ZMapFeature point_feature;	/* set by cursor movement */
-  ZMapWindowCanvasFeature point_canvas_feature;		/* last clicked canvasfeature, set by select, need for legacy code interface */
 
-  ZMapWindowCanvasFeature last_added;	/* necessary optimisation */
-  /* NOTE
-   * when we add a feature we wipe the display index (due to not having implemented the skip list fully)
-   * which means that we can't look up the last added feature
-   * which is what we need to do to set show/hide or colour
-   * so we keep this pointer to find the last one added
-   */
+  double filter_value ;                                     /* active level, default 0.0 */
+  int n_filtered ;
+  gboolean enable_filter ;                                  /* has score in a feature and style allows it */
 
-  double filter_value;		/* active level, default 0.0 */
-  int n_filtered;
-  gboolean enable_filter;	/* has score in a feature and style allows it */
 
-  gpointer opt;			/* feature type optional set level data */
 
 } ZMapWindowFeaturesetItemStruct ;
 
