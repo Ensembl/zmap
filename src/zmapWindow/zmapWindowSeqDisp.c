@@ -775,6 +775,11 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
       ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) sequence_feature;
       GdkColor *fill;
       ZMapFeatureSubPartSpanStruct span ;
+      GQuark feature_style_id = 0 ;
+      GQuark show_translation_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
+
+      if (feature && feature->style && *feature->style)
+        feature_style_id = (*feature->style)->unique_id ; 
 
       /*
        * previous code did deselect as part of the select operation
@@ -925,7 +930,11 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                           {
                             if((slice_coord % 3) == (frame - ZMAPFRAME_0))
                               in_frame = TRUE;
-                            if (!in_frame)
+
+                            /* For peptides only show split codon for the inframe column of the
+                             * three-frame translation (confusing otherwise). However, for the
+                             * show-translation column, always show it. */
+                            if (!in_frame && feature_style_id != show_translation_id)
                               fill = coding_background ;
                           }
                         //zMapLogWarning("split3  in_frame = %d  (%d %d)", in_frame, slice_coord, slice_coord % 3);
@@ -944,8 +953,10 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                               in_frame = TRUE;
                             //zMapLogWarning("split5  in_frame = %d  (%d %d)", in_frame, slice_coord, slice_coord % 3);
 
-                            /* For peptides only show split codon for inframe col., confusing otherwise. */
-                            if (!in_frame)
+                            /* For peptides only show split codon for the inframe column of the
+                             * three-frame translation (confusing otherwise). However, for the
+                             * show-translation column, always show it. */
+                            if (!in_frame && feature_style_id != show_translation_id)
                               fill = coding_background ;
                           }
                         break ;
