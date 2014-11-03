@@ -86,7 +86,7 @@ typedef struct
 static void extendTranscript(ZMapFeature transcript, ZMapSpanStruct * span) ;
 
 static void getDetailedExon(gpointer exon_data, gpointer user_data) ;
-static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZMapSpan exon_span,
+static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZMapSpan exon_span, GList *variations,
        int *curr_feature_pos, int *curr_spliced_pos,
        int *curr_cds_pos, int *trans_spliced_pos) ;
 static void exonDestroy(ZMapFullExon exon) ;
@@ -1250,10 +1250,12 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
      ex_cds = {0}, ex_split_3 = {0}, ex_utr_3 = {0} ;
   ZMapFullExon full_exon_cds = NULL, full_exon_start_not_found = NULL,
     full_exon_utr_5 = NULL, full_exon_utr_3 = NULL, full_exon_split_5 = NULL, full_exon_split_3 = NULL ;
-
+  GList *variations = NULL ;
 
   feature = full_data->feature ;
 
+  if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    variations = feature->feature.transcript.variations ;
 
   if (!full_data->cds)
     {
@@ -1262,7 +1264,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
       ex_utr_5 = *exon_span ;    /* struct copy. */
 
       if (ex_utr_5.x1)
-        full_exon_utr_5 = exonCreate(feature->x1, EXON_NON_CODING, &ex_utr_5,
+        full_exon_utr_5 = exonCreate(feature->x1, EXON_NON_CODING, &ex_utr_5, variations,
                                      &(full_data->feature_coord_counter),
                                      &(full_data->spliced_coord_counter),
                                      &(full_data->cds_coord_counter),
@@ -1332,10 +1334,9 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
           exon_length = (ex_cds_end - ex_cds_start) + 1 ;
           
           /* variations may change the length of the peptide sequence in the exon */
-          if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+          if (variations)
             {
-              int variation_diff = zmapFeatureDNACalculateVariationDiff(ex_cds_start, ex_cds_end, 
-                                                                        feature->feature.transcript.variations) ;
+              int variation_diff = zmapFeatureDNACalculateVariationDiff(ex_cds_start, ex_cds_end, variations) ;
               exon_length += variation_diff ;
             }
 
@@ -1405,40 +1406,40 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
       /* Now we've calculated positions, create all the full exon structs. */
       if (ex_utr_5.x1)
-        full_exon_utr_5 = exonCreate(feature->x1, EXON_NON_CODING, &ex_utr_5,
+        full_exon_utr_5 = exonCreate(feature->x1, EXON_NON_CODING, &ex_utr_5, variations,
                                      &(full_data->feature_coord_counter),
                                      &(full_data->spliced_coord_counter),
                                      &(full_data->cds_coord_counter),
                                      &(full_data->trans_coord_counter)) ;
 
       if (ex_split_5.x1)
-        full_exon_split_5 = exonCreate(feature->x1, EXON_SPLIT_CODON_5, &ex_split_5,
+        full_exon_split_5 = exonCreate(feature->x1, EXON_SPLIT_CODON_5, &ex_split_5, variations,
                                        &(full_data->feature_coord_counter),
                                        &(full_data->spliced_coord_counter),
                                        &(full_data->cds_coord_counter),
                                        &(full_data->trans_coord_counter)) ;
       else if (ex_start_not_found.x1)
-        full_exon_start_not_found = exonCreate(feature->x1, EXON_START_NOT_FOUND, &ex_start_not_found,
+        full_exon_start_not_found = exonCreate(feature->x1, EXON_START_NOT_FOUND, &ex_start_not_found, variations,
                                                &(full_data->feature_coord_counter),
                                                &(full_data->spliced_coord_counter),
                                                &(full_data->cds_coord_counter),
                                                &(full_data->trans_coord_counter)) ;
 
       if (ex_cds.x1)
-        full_exon_cds = exonCreate(feature->x1, EXON_CODING, &ex_cds,
+        full_exon_cds = exonCreate(feature->x1, EXON_CODING, &ex_cds, variations,
                                      &(full_data->feature_coord_counter),
                                      &(full_data->spliced_coord_counter),
                                      &(full_data->cds_coord_counter),
                                      &(full_data->trans_coord_counter)) ;
       if (ex_split_3.x1)
-        full_exon_split_3 = exonCreate(feature->x1, EXON_SPLIT_CODON_3, &ex_split_3,
+        full_exon_split_3 = exonCreate(feature->x1, EXON_SPLIT_CODON_3, &ex_split_3, variations,
                                        &(full_data->feature_coord_counter),
                                        &(full_data->spliced_coord_counter),
                                        &(full_data->cds_coord_counter),
                                        &(full_data->trans_coord_counter)) ;
 
       if (ex_utr_3.x1)
-        full_exon_utr_3 = exonCreate(feature->x1, EXON_NON_CODING, &ex_utr_3,
+        full_exon_utr_3 = exonCreate(feature->x1, EXON_NON_CODING, &ex_utr_3, variations,
                                      &(full_data->feature_coord_counter),
                                      &(full_data->spliced_coord_counter),
                                      &(full_data->cds_coord_counter),
@@ -1452,50 +1453,19 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
   if (full_exon_cds)
     {
-      int pep_start = 0, pep_end = 0, pep_length = 0, variation_diff1 = 0, variation_diff2 = 0 ;
+      int pep_start = 0, pep_end = 0, pep_length = 0 ;
       char *peptide = NULL ;
 
       pep_start = (full_exon_cds->cds_span.x1 / 3) + 1 ;
       pep_end = full_exon_cds->cds_span.x2 / 3 ;
 
-      /* If there are any variations in this exon they may affect its length */
-      if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-        {
-          GList *variations = feature->feature.transcript.variations ;
-
-          /* Get the total offset caused by variations before this exon (this will affect the
-           * length of previous exons so will therefore affect the start index in the transcript's
-           * peptide sequence where this exon starts). */
-          variation_diff1 = zmapFeatureDNACalculateVariationDiff(1,
-                                                                exon_span->x1, 
-                                                                variations) ;
-
-          /* Get the total offset caused by variations within this exon (this will affect the
-           * exon length) */
-          variation_diff2 = zmapFeatureDNACalculateVariationDiff(exon_span->x1,
-                                                                exon_span->x2, 
-                                                                variations) ;
-
-          /* Convert to peptide coords. Round up to include any partial codon (but note we need
-           * to round the absolute value up, so round down for negative numbers) */
-          if (variation_diff1 < 0)
-            variation_diff1 = (variation_diff1 - 2) / 3;
-          else
-            variation_diff1 = (variation_diff1 + 2) / 3;
-
-          if (variation_diff2 < 0)
-            variation_diff2 = (variation_diff2) / 3;
-          else
-            variation_diff2 = (variation_diff2) / 3;
-        }
-
       full_exon_cds->pep_span.x1 = pep_start ;
       full_exon_cds->pep_span.x2 = pep_end ;
-      pep_length = pep_end - pep_start + 1 + variation_diff2 ;
+      pep_length = pep_end - pep_start + 1;
 
       if (full_data->translation)
         {
-          peptide = full_data->translation + (pep_start - 1 + variation_diff1) ;
+          peptide = full_data->translation + (pep_start - 1) ;
           full_exon_cds->peptide = g_strndup(peptide, pep_length) ;
         }
 
@@ -1558,18 +1528,25 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
 /* Create a full exon with all the positional information and update the running positional
  * counters required for cds phase calcs etc. */
-static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZMapSpan exon_span,
+static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZMapSpan exon_span, GList *variations,
                                int *curr_feature_pos, int *curr_spliced_pos,
                                int *curr_cds_pos, int *curr_trans_pos)
 {
   ZMapFullExon exon = NULL ;
-  int exon_length = ZMAP_SPAN_LENGTH(exon_span) ;
+  const int exon_span_length = ZMAP_SPAN_LENGTH(exon_span) ;
+
+  const int variation_diff1 = zmapFeatureDNACalculateVariationDiff(1, feature_start - 1, variations);
+  const int variation_diff2 = zmapFeatureDNACalculateVariationDiff(feature_start, feature_start + exon_span_length, variations);
+  const int exon_length = exon_span_length + variation_diff2 ;
 
   /* Create the new full exon struct and set all the positional data. */
   exon = g_new0(ZMapFullExonStruct, 1) ;
   exon->region_type = region_type ;
   exon->sequence_span = exon->unspliced_span = *exon_span ; /* struct copy */
   zMapCoordsToOffset(feature_start, 1, &(exon->unspliced_span.x1), &(exon->unspliced_span.x2)) ;
+
+  exon->unspliced_span.x1 += variation_diff1 ;
+  exon->unspliced_span.x2 += variation_diff2 ;
 
   exon->spliced_span.x1 = *curr_spliced_pos + 1 ;
   exon->spliced_span.x2 = *curr_spliced_pos + exon_length ;
