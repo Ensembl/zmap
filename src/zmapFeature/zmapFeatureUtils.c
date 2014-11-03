@@ -1416,8 +1416,8 @@ ZMapFrame zMapFeatureFrameAtCoord(ZMapFeature feature, int coord)
         {
           GList *variations = feature->feature.sequence.variations ;
 
-          /* Calculate the total offset caused by variations up to the given coord */
-          int variation_diff = zmapFeatureDNACalculateVariationDiff(1, coord, variations) ;
+          /* Calculate the total offset caused by variations in this exon up to the given coord */
+          int variation_diff = zmapFeatureDNACalculateVariationDiff(exon->sequence_span.x1, coord, variations) ;
 
           x -= variation_diff ;
         }
