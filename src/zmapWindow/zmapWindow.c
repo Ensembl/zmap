@@ -1953,7 +1953,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
                          "locus", &(select.feature_desc.feature_locus), NULL);
 
-      if (ZMAPFEATURE_IS_BASIC(feature) && feature->feature.basic.has_attr.variation_str)
+      if (ZMAPFEATURE_IS_BASIC(feature) && feature->feature.basic.flags.variation_str)
         {
           select.feature_desc.feature_name = g_strdup_printf("%s (%s)",
             (char *)g_quark_to_string(feature->original_id),

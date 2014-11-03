@@ -76,12 +76,12 @@ typedef enum
 
 typedef struct _zmapWindowCanvasTranscriptStruct
 {
-	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
+  zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 
-	int index;		/* of intron or exon */
+  int index;		/* of intron or exon */
 
-	ZMapWindowCanvasTranscriptSubType sub_type;
-	/* can tell if exon has CDS/  UTR from feature->feature struct */
+  ZMapWindowCanvasTranscriptSubType sub_type;
+  /* can tell if exon has CDS/  UTR from feature->feature struct */
 
 } zmapWindowCanvasTranscriptStruct, *ZMapWindowCanvasTranscript;
 

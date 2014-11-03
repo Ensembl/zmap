@@ -33,18 +33,13 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <glib.h>
+
 #include <ZMap/zmapGFF.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindowFeatureList.h>
 #include <zmapWindow_P.h>
 
-//#include <items/zmapWindowCanvasItem_I.h> /* for debugguing */
 
 #define ZMAP_WINDOW_LIST_OBJ_KEY "ZMapWindowList"
 
@@ -733,8 +728,8 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
              * but non bumped columns should have features displayed here
              */
 
-                        zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) id2c->item, feature);
-                        zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem) id2c->item,TRUE);
+                  zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) id2c->item, feature);
+                  zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem) id2c->item,TRUE);
 
             }
 

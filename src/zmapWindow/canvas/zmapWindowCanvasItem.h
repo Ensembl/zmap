@@ -68,6 +68,8 @@ typedef struct _zmapWindowCanvasItemStruct  zmapWindowCanvasItem, *ZMapWindowCan
 /* Class */
 typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMapWindowCanvasItemClass ;
 
+
+
 /* the fact this comes here shows that something is amiss with the headers...oh dear...this file
    needs the above two typedefs..... */
 #include <zmapWindowCanvasFeatureset.h>	/* need typedefs to stop gcc from barfing */
@@ -86,15 +88,15 @@ typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMa
  * flags are provided to make it easier to sort this
  * ??? really stretchy items only refer to featureset backgrounds???
  */
-#define ZMAP_CANVAS_LAYER_DECORATION	1	/* else is normal features */
+#define ZMAP_CANVAS_LAYER_DECORATION	        1	/* else is normal features */
 #define ZMAP_CANVAS_LAYER_OVERLAY		2	/* else is underlay if decoration */
 #define ZMAP_CANVAS_LAYER_STRETCH_X		4	/* fit to container? */
 #define ZMAP_CANVAS_LAYER_STRETCH_Y		8
 
-#define ZMAP_CANVAS_LAYER_ROOT_BACKGROUND		13
+#define ZMAP_CANVAS_LAYER_ROOT_BACKGROUND	13
 #define ZMAP_CANVAS_LAYER_ALIGN_BACKGROUND	13
 #define ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND	5
-#define ZMAP_CANVAS_LAYER_COL_BACKGROUND		5
+#define ZMAP_CANVAS_LAYER_COL_BACKGROUND	5
 #define ZMAP_CANVAS_LAYER_SEPARATOR_BACKGROUND	1	/* fixed size according to style */
 #define ZMAP_CANVAS_LAYER_BLOCK_MARK		7	/* overlay, y can be set by user */
 #define ZMAP_CANVAS_LAYER_NAV_LOCATOR		5	/* underlay, y is set by zoom and scroll */
@@ -115,10 +117,10 @@ ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_feature_item) ;
 
 
 void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame,
-      ZMapStyleColourType    colour_type,
-      GdkColor **fill, GdkColor **draw, GdkColor **outline,
-      GdkColor              *default_fill,
-      GdkColor              *border);
+                                    ZMapStyleColourType    colour_type,
+                                    GdkColor **fill, GdkColor **draw, GdkColor **outline,
+                                    GdkColor              *default_fill,
+                                    GdkColor              *border);
 
 
 
@@ -126,11 +128,13 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 					       double x, double y,
 					       ZMapFeatureSubPartSpan *sub_feature_out);
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetObject(FooCanvasItem *item);
-ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item, ZMapFeature feature, double x, double y);
+ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item,
+                                                           ZMapFeature feature, double x, double y) ;
 
 gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidden);
 
-void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item, ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
+void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item,
+                                            ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
 					    ZMapStyleColourType colour_type,
 					    int colour_flags,
 					    GdkColor *default_fill_colour,

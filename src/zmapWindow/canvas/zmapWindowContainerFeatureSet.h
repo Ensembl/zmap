@@ -106,6 +106,7 @@ GList *zmapWindowContainerFeatureSetGetFeatureSets(ZMapWindowContainerFeatureSet
 gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet container);
 
 /* Style lookup */
+ZMapFeatureTypeStyle zMapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFeatureSet container) ;
 ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromStyle(ZMapWindowContainerFeatureSet container_set,
 								 ZMapFeatureTypeStyle         style2copy);
 ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContainerFeatureSet container_set,
