@@ -33,8 +33,8 @@
 #define ZMAP_WINDOW_FEATURESET_H
 
 #include <libzmapfoocanvas/libfoocanvas.h>
-#include <zmapWindowCanvasItem.h>
 
+#include <ZMap/zmapFeature.h>
 
 
 #define ZMAP_WINDOW_FEATURESET_ITEM_NAME "ZMapWindowFeaturesetItem"
@@ -106,33 +106,32 @@ typedef void (*ZMapWindowFeatureFreeFunc)(ZMapWindowFeaturesetItem featureset) ;
 /* NOTE these are set by style mode but are defined separately as CanvasFeaturesets
  * do not initially handle all style modes */
 /* see  zMapWindowFeaturesetAddItem() */
-typedef enum
-  {
-    FEATURE_INVALID,
 
-    /* genomic features */
-    FEATURE_BASIC,
-    FEATURE_GENOMIC = FEATURE_BASIC,
+/* genomic features are FEATURE_BASIC to FEATURE_GLYPH
+ *
+ * FEATURE_GRAPHICS onwards are unadorned graphics primitives and FEATURE_GRAPHICS
+ * is a catch-all for the featureset type.
+ * NOTE that FEATURE_GRAPHICS is used in the code to test for feature vs. graphic items.
+ */
+#define ZMAP_CANVASFEATURE_TYPE_LIST(_)         \
+_(FEATURE_INVALID,    , "invalid", "invalid type", "")           \
+_(FEATURE_BASIC,    , "basic", "Basic feature", "")               \
+_(FEATURE_ALIGN,    , "align", "Alignment feature", "")                   \
+_(FEATURE_TRANSCRIPT,    , "transcript", "Transcript", "")              \
+_(FEATURE_SEQUENCE,    , "sequence", "Sequence", "")                \
+_(FEATURE_ASSEMBLY,    , "assembly", "Assembly", "")                \
+_(FEATURE_LOCUS,    , "locus", "Locus", "")                   \
+_(FEATURE_GRAPH,    , "graph", "Graph", "")                   \
+_(FEATURE_GLYPH,    , "glyph", "Glyph", "")                                   \
+_(FEATURE_GRAPHICS,    , "graphics", "Graphics", "") \
+_(FEATURE_LINE,    , "line", "Line", "") \
+_(FEATURE_BOX,    , "box", "Box", "") \
+_(FEATURE_TEXT,    , "text", "Text", "") \
+_(FEATURE_N_TYPE,    , "num_types", "Number of CanvasFeature types", "")
 
-    FEATURE_ALIGN,
-    FEATURE_TRANSCRIPT,
+ZMAP_DEFINE_ENUM(zmapWindowCanvasFeatureType, ZMAP_CANVASFEATURE_TYPE_LIST) ;
 
-    FEATURE_SEQUENCE,
-    FEATURE_ASSEMBLY,
-    FEATURE_LOCUS,
 
-    FEATURE_GRAPH,
-    FEATURE_GLYPH,
-
-    /* unadorned graphics primitives, NOTE that FEATURE_GRAPHICS is used in the code to test
-     * for feature vs. graphic items. */
-    FEATURE_GRAPHICS,		/* a catch-all for the featureset type */
-    FEATURE_LINE,
-    FEATURE_BOX,
-    FEATURE_TEXT,
-
-    FEATURE_N_TYPE
-  } zmapWindowCanvasFeatureType ;
 
 typedef enum
   {
@@ -173,6 +172,8 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int fea
 
 gboolean zMapWindowCanvasIsFeatureSet(ZMapWindowFeaturesetItem fi) ;
 
+GString *zMapWindowCanvasFeatureset2Txt(ZMapWindowFeaturesetItem featureset_item) ;
+
 void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable,
                                          ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango,
                                          char *family, int size, GdkColor *draw);
@@ -189,20 +190,26 @@ ZMapWindowFeaturesetItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanv
                                                                          ZMapStrand strand, ZMapFrame frame,
                                                                          int index, guint layer);
 
+
 guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset);
 GQuark zMapWindowCanvasFeaturesetGetSetIDAtPos(ZMapWindowFeaturesetItem fi, double event_x) ;
 
 
 gboolean zMapWindowCanvasFeaturesetHasPointFeature(FooCanvasItem *item) ;
+ZMapFeature zMapWindowCanvasFeaturesetGetPointFeature(ZMapWindowFeaturesetItem featureset_item) ;
 gboolean zMapWindowCanvasFeaturesetUnsetPointFeature(FooCanvasItem *item) ;
+
+ZMapWindowCanvasFeature zMapWindowCanvasFeaturesetGetPointFeatureItem(ZMapWindowFeaturesetItem featureset_item) ;
 
 
 ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type) ;
+
 gboolean zmapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean complex,
                                                  ZMapSpan span, double *width) ;
 ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,
                                                                 ZMapFeature feature, double x, double y) ;
 ZMapFeature zmapWindowCanvasFeatureGetFeature(ZMapWindowCanvasFeature feature) ;
+
 void zmapWindowCanvasFeatureAddSplicePos(ZMapWindowCanvasFeature feature_item,
                                          int splice_pos, ZMapBoundaryType boundary_type) ;
 void zmapWindowCanvasFeatureRemoveSplicePos(ZMapWindowCanvasFeature feature_item) ;
@@ -226,8 +233,15 @@ int zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset,
 
 ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset_item,
                                                        ZMapFeature feature, double y1, double y2);
+
+GString *zMapWindowCanvasFeature2Txt(ZMapWindowCanvasFeature canvas_feature) ;
+
 int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature);
 int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet featureset, gboolean destroy);
+
+
+
+
 
 ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetItem featureset_item,
                                                          zmapWindowCanvasFeatureType type,
@@ -302,7 +316,7 @@ int zMapWindowFeaturesetItemGetNFiltered(FooCanvasItem *item);
 void zMapWindowCanvasFeaturesetRequestReposition(FooCanvasItem *foo);
 
 
-
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapWindowCanvasFeatureType2ExactStr, zmapWindowCanvasFeatureType) ;
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_H */
