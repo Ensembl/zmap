@@ -1105,6 +1105,8 @@ gboolean zmapWindowContainerFeatureSetDoSpliceHighlight(ZMapWindowContainerFeatu
  * 
  * If splice_highlight_features is NULL this has the effect of turning off splice highlighting but
  * you should use zmapWindowContainerFeatureSetSpliceUnhighlightFeatures().
+ * 
+ * (See Splice_highlighting.html)
  *  */
 gboolean zmapWindowContainerFeatureSetSpliceHighlightFeatures(ZMapWindowContainerFeatureSet container_set,
                                                               GList *splice_highlight_features)

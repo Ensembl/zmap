@@ -374,7 +374,9 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
 
 
 
-/* Given the featureset, drawable etc., display all the splices for the given feature. */
+/* Given the featureset, drawable etc., display all the splices for the given feature.
+ * (See Splice_highlighting.html)
+ */
 void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                                               GdkDrawable *drawable, double x1, double x2)
 {
