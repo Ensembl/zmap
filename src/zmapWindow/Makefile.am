@@ -79,6 +79,7 @@ canvas/zmapWindowCanvasBasic.c \
 canvas/zmapWindowCanvasBasic.h \
 canvas/zmapWindowCanvasDraw.c \
 canvas/zmapWindowCanvasDraw.h \
+canvas/zmapWindowCanvasFeature.c \
 canvas/zmapWindowCanvasFeatureset.c \
 canvas/zmapWindowCanvasFeatureset.h \
 canvas/zmapWindowCanvasFeaturesetBump.c \
