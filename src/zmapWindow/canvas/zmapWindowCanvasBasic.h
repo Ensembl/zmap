@@ -32,7 +32,10 @@
 #ifndef ZMAP_CANVAS_BASIC_H
 #define ZMAP_CANVAS_BASIC_H
 
-void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable,GdkEventExpose *expose);
+#include <zmapWindowCanvasFeatureset.h>
+
+void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                       GdkDrawable *drawable, GdkEventExpose *expose);
 void zMapWindowCanvasBasicInit(void);
 
 #endif /* !ZMAP_CANVAS_BASIC_H */
