@@ -124,7 +124,6 @@ typedef enum {ZMAPPHASE_NONE = 0, ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPha
 typedef enum {ZMAPHOMOL_NONE = 0, ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL} ZMapHomolType ;
 
 
-
 /* Original format of an alignment. */
 #define ZMAPSTYLE_ALIGNMENT_GAPS   "Gaps"
 #define ZMAPSTYLE_ALIGNMENT_CIGAR  "cigar"
@@ -154,7 +153,8 @@ typedef enum
     COLINEARITY_N_TYPE
   } ColinearityType ;
 
-
+/* THIS NEEDS SPLITTING IT'S A CONFUSION OF TYPES....clone ends are completely different from
+   splice ends.....sigh... */
 typedef enum {ZMAPBOUNDARY_NONE = 0, ZMAPBOUNDARY_CLONE_END,
 	      ZMAPBOUNDARY_5_SPLICE, ZMAPBOUNDARY_3_SPLICE } ZMapBoundaryType ;
 
@@ -584,14 +584,16 @@ typedef struct ZMapFeatureSetStructType
 /* Basic feature: a "box" on the screen. */
 typedef struct ZMapBasicStructType
 {
+  /* WHY NO FLAG FOR KNOWN_NAME ? ....CHECK THIS... */
+
   /* Used to detect when data fields are set. */
   struct
   {
     unsigned int variation_str : 1 ;
-  } has_attr ;
+  } flags ;
 
-
-  GQuark known_name ;                                      /* Known or external name for feature. */
+  GQuark known_name ;                                      /* Known or external name for
+                                                              feature. */
 
   char *variation_str ;                                    /* e.g. "A/T" for SNP etc. */
 
@@ -603,34 +605,6 @@ typedef struct ZMapBasicStructType
 /* Homology feature. */
 typedef struct ZMapHomolStructType
 {
-  ZMapHomolType type ;                                     /* as in Blast* */
-
-  int length ;                                             /* Length of homol/align etc. */
-
-  /* Quality measures. (NEED TO GET SCORE IN HERE) */
-  float percent_id ;
-
-
-  GQuark clone_id ;                                        /* Clone this match is aligned to. */
-
-  /* Coords are _always_ for the forward strand of the match sequence and always x1 <= x2,
-   * strand shows which strand is aligned. */
-  int y1, y2 ;                                             /* Query start/end */
-  ZMapStrand strand ;                                      /* Which strand of the homol was
-                                                              aligned to the sequence. */
-
-  ZMapPhase target_phase ;                                 /* for tx_homol */
-
-
-  /* The coords in this array are start/end pairs for sub blocks and start < end always. */
-  GArray *align ;                                          /* of AlignBlock, if null, align is ungapped. */
-
-
-
-  char * sequence;                                         /* sequence if given in GFF */
-
-
-
   struct
   {
     /* If align != NULL and perfect == TRUE then gaps array is a "perfect"
@@ -647,12 +621,42 @@ typedef struct ZMapHomolStructType
 
   } flags ;
 
+  ZMapHomolType type ;                                     /* as in Blast* */
+
+  GQuark clone_id ;                                        /* Clone this match is aligned to. */
+
+  /* Coords are _always_ for the forward strand of the match sequence and always x1 <= x2,
+   * strand shows which strand is aligned. */
+  int y1, y2 ;                                             /* Start/end in match sequence. */
+  ZMapStrand strand ;                                      /* Which strand of the homol was
+                                                              aligned to the sequence. */
+
+  /* Quality measures. (NEED TO GET SCORE IN HERE) */
+  float percent_id ;
+
+  /* IS THIS USED ANYWHERE ?? */
+  ZMapPhase target_phase ;                                 /* for tx_homol */
+
+  int length ;                                             /* Length of homol/align etc. */
+
+  char *sequence ;                                          /* sequence if given in GFF */
+
+  /* The coords in this array are start/end pairs for sub blocks and start < end always. */
+  GArray *align ;                                          /* of AlignBlock, if null, align is ungapped. */
+
 } ZMapHomolStruct, *ZMapHomol ;
 
 
 /* Transcript feature. */
 typedef struct ZMapTranscriptStructType
 {
+  struct
+  {
+    unsigned int cds : 1 ;
+    unsigned int start_not_found : 1 ;
+    unsigned int end_not_found : 1 ;
+  } flags ;
+
   GQuark known_name ;                                      /* Known or external name for transcript. */
 
   GQuark locus_id ;	                                       /* Locus this transcript belongs to. */
@@ -670,13 +674,6 @@ typedef struct ZMapTranscriptStructType
 
   GList *variations ;                                      /* List of variations to apply to this
                                                             * transcript's sequence */
-
-  struct
-  {
-    unsigned int cds : 1 ;
-    unsigned int start_not_found : 1 ;
-    unsigned int end_not_found : 1 ;
-  } flags ;
 
 
 } ZMapTranscriptStruct, *ZMapTranscript ;
