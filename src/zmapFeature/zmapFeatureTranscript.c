@@ -1304,8 +1304,6 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
       createFullExonStructs(full_data, feature, variations, exons_data) ;
     }
 
-
-
   /* Set up the translation from CDS stuff. */
   setUpTranslationFromCDSs(full_data, exons_data) ;
 
@@ -1336,6 +1334,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 }
 
 
+/* Calculate the positions of all the individual parts of an exon i.e. cds, utr, split codons etc. */
 static void calculateExonPositions(ItemShowTranslationTextData full_data, ZMapSpan exon_span, 
                                    GList *variations, CreateExonsData exons_data)
 {
@@ -1472,6 +1471,8 @@ static void calculateExonPositions(ItemShowTranslationTextData full_data, ZMapSp
 }
 
 
+/* Called after exon positions (cds, utr etc.) have all been calculated. This constructs the
+ * structs for each individual exon section. */
 static void createFullExonStructs(ItemShowTranslationTextData full_data, ZMapFeature feature, 
                                   GList *variations, CreateExonsData exons_data)
 {
@@ -1579,6 +1580,8 @@ static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZM
 }
 
 
+/* Once the sections of an exon have been constructed (utr, cds etc) this is called to set up the
+ * translation (if a cds exists) */
 static void setUpTranslationFromCDSs(ItemShowTranslationTextData full_data, CreateExonsData exons_data)
 {
   if (exons_data->full_exon_cds)
