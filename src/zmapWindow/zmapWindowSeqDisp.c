@@ -323,7 +323,13 @@ static void copyExonPeptideSequenceSection(ZMapFeature variation, ZMapFrame exon
   const int diff = zMapFeatureVariationGetSections(variation->feature.basic.variation_str,
                                                    NULL, NULL, NULL, NULL) ;
 
-  if (diff != 0)
+
+  /* Calculate the new frame. Note that we don't adjust this to be 1,2 or 3 so it may
+   * be below 1 or greater than 3. That's so that we can determine if we're in the same
+   * codon that we started in or not. */
+  const int new_frame = exon_frame - (diff % 3) ;
+
+  if (diff < 0)
     {
       /* Deletion or insertion. Copy everything before the variation. Convert to peptide
        * coords, and round up so it's inclusive of any partial codon. */
@@ -334,42 +340,49 @@ static void copyExonPeptideSequenceSection(ZMapFeature variation, ZMapFrame exon
       /* Set src_coord to point to the next coord after this variation. */
       *src_coord = variation->x2 + 1 ;
 
-      /* Calculate the new frame. Note that we don't adjust this to be 1,2 or 3 so it may
-       * be below 1 or greater than 3. That's so that we can determine if we're in the same
-       * codon that we started in or not. */
-      const int new_frame = exon_frame - (diff % 3) ;
+      /* Deletion. Increase the position in the source string to the next
+       * base after those we've copied. */
+      *src_ptr += len_to_copy ;
+      
+      /* Skip over the deleted bases in the dest string. Note that we need 
+       * to multiply diff by -1 to get the absolute number of bases. Note also that we don't
+       * round up in the conversion to peptides here so we exclude any partial codon (because
+       * that was already included in the length we copied). However we do need to include
+       * any offset caused by a frame shift. */
+      *dest_ptr += len_to_copy + ((diff * -1) / 3) ;
 
-      /* If the new frame shifts us into a different codon then that offsets where we need to
-       * start the display of the next section. Subtract one so that we have 0-based frame and
-       * divide by 3 so that if it's in the same codon (i.e. 0,1,2) it gives us an offset of 0
-       * and the next codon (3,4,5) gives an offset of 1 etc. */
-      const int frame_shift_offset = (new_frame - 1) / 3 ;
+      if (new_frame > 3)
+        (*dest_ptr)++ ;
+    }
+  else if (diff > 0)
+    {
+      /* Insertion. Copy everything before the variation. Convert to peptide
+       * coords (note that the insertion has two coords, one either side of the insertion
+       * point. We want to copy includive of the first coord but not the second, so do +1 
+       * here on the x1 coord to include it. */
+      const int len_to_copy = (variation->x1 - *src_coord + 1) / 3 ;
+      const gboolean partial_codon = (variation->x1 - *src_coord + 1) % 3 ;
 
-      if (diff < 0)
-        {
-          /* Deletion. Increase the position in the source string to the next
-           * base after those we've copied. */
-          *src_ptr += len_to_copy ;
+      memcpy(*dest_ptr, *src_ptr, len_to_copy) ;
 
-          /* Skip over the deleted bases in the dest string. Note that we need 
-           * to multiply diff by -1 to get the absolute number of bases. Note also that we don't
-           * round up in the conversion to peptides here so we exclude any partial codon (because
-           * that was already included in the length we copied). However we do need to include
-           * any offset caused by a frame shift. */
-          *dest_ptr += len_to_copy + frame_shift_offset + ((diff * -1) / 3) ;
-        }
+      /* Set src_coord to point to the next coord after this variation. */
+      *src_coord = variation->x2 + 1 ;
+
+      /* Insertion. Increase the position in the dest string to the next base 
+       * after those we've copied. Include any offset caused by a frame shift. */
+      *dest_ptr += len_to_copy ;
+
+      if (new_frame < 1)
+        (*dest_ptr)-- ;
+
+      /* Skip over the inserted bases in the src string. Note that we round up here in 
+       * the conversion to peptides to include any partial codon in the inserted bases. 
+       * Also copy one extra base if there was a partial codon where the insertion is 
+       * because we will replace that peptide with one from the inserted bases. */
+      if (partial_codon)
+        *src_ptr += len_to_copy + ((diff + 2) / 3) ;
       else
-        {
-          /* Insertion. Increase the position in the dest string to the next base 
-           * after those we've copied. */
-          *dest_ptr += len_to_copy ;
-
-          /* Skip over the inserted bases in the src string. Note that we don't round up the in
-           * the conversion to peptides here so we exclude any partial codon (because that was
-           * already included in the length we copied). However we do need to include any offset
-           * caused by a frame shift. */
-          *src_ptr += len_to_copy + frame_shift_offset + (diff / 3) ;
-        }
+        *src_ptr += len_to_copy + (diff / 3) ;
     }
 }
 
