@@ -313,7 +313,8 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 /* Copy a section from src_ptr to dest_ptr from the start of src_ptr up to the coord of the given
  * variation. src_coord gives the initial coord that src_ptr points to. After the copy, the 
  * pointers are moved so that they point to the start of the next section after this variation. */
-static void copyExonPeptideSequenceSection(ZMapFeature variation, int *src_coord, char **src_ptr, char **dest_ptr)
+static void copyExonPeptideSequenceSection(ZMapFeature variation, ZMapFrame exon_frame,
+                                           int *src_coord, char **src_ptr, char **dest_ptr)
 {
   zMapReturnIfFail(variation && variation->feature.basic.variation_str) ;
   zMapReturnIfFail(src_coord && src_ptr && *src_ptr && dest_ptr && *dest_ptr) ;
@@ -333,6 +334,17 @@ static void copyExonPeptideSequenceSection(ZMapFeature variation, int *src_coord
       /* Set src_coord to point to the next coord after this variation. */
       *src_coord = variation->x2 + 1 ;
 
+      /* Calculate the new frame. Note that we don't adjust this to be 1,2 or 3 so it may
+       * be below 1 or greater than 3. That's so that we can determine if we're in the same
+       * codon that we started in or not. */
+      const int new_frame = exon_frame - (diff % 3) ;
+
+      /* If the new frame shifts us into a different codon then that offsets where we need to
+       * start the display of the next section. Subtract one so that we have 0-based frame and
+       * divide by 3 so that if it's in the same codon (i.e. 0,1,2) it gives us an offset of 0
+       * and the next codon (3,4,5) gives an offset of 1 etc. */
+      const int frame_shift_offset = (new_frame - 1) / 3 ;
+
       if (diff < 0)
         {
           /* Deletion. Increase the position in the source string to the next
@@ -342,8 +354,9 @@ static void copyExonPeptideSequenceSection(ZMapFeature variation, int *src_coord
           /* Skip over the deleted bases in the dest string. Note that we need 
            * to multiply diff by -1 to get the absolute number of bases. Note also that we don't
            * round up in the conversion to peptides here so we exclude any partial codon (because
-           * that was already included in the length we copied). */
-          *dest_ptr += len_to_copy + ((diff * -1) / 3) ;
+           * that was already included in the length we copied). However we do need to include
+           * any offset caused by a frame shift. */
+          *dest_ptr += len_to_copy + frame_shift_offset + ((diff * -1) / 3) ;
         }
       else
         {
@@ -353,8 +366,9 @@ static void copyExonPeptideSequenceSection(ZMapFeature variation, int *src_coord
 
           /* Skip over the inserted bases in the src string. Note that we don't round up the in
            * the conversion to peptides here so we exclude any partial codon (because that was
-           * already included in the length we copied). */
-          *src_ptr += len_to_copy + (diff / 3) ;
+           * already included in the length we copied). However we do need to include any offset
+           * caused by a frame shift. */
+          *src_ptr += len_to_copy + frame_shift_offset + (diff / 3) ;
         }
     }
 }
@@ -378,6 +392,8 @@ static void copyExonPeptideSequenceVariations(ZMapFeature feature, ZMapFullExon 
   feature->feature.transcript.variations = 
     g_list_sort(feature->feature.transcript.variations, zMapFeatureCmp) ;
 
+  ZMapFrame exon_frame = zMapFeatureSubPartFrame(feature, exon->sequence_span.x1) ;
+
   /* Loop through each variation */
   GList *variation_item = feature->feature.transcript.variations ;
 
@@ -396,7 +412,7 @@ static void copyExonPeptideSequenceVariations(ZMapFeature feature, ZMapFullExon 
 
       /* Copy the section up to this variation and increment the pointers to point to the section
        * after this variation */
-      copyExonPeptideSequenceSection(variation, &src_coord, &src_ptr, dest_ptr) ;
+      copyExonPeptideSequenceSection(variation, exon_frame, &src_coord, &src_ptr, dest_ptr) ;
     }
 
   /* Copy the remaining section of the peptide (i.e. the section from the last variation to the end) */
