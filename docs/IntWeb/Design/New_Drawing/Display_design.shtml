@@ -567,8 +567,16 @@ around is acceptable. There are noticable delays, but the results are surprising
 Increasing the number of features by a further order of magnitude degrades performance 
 to an unacceptable level. This is allowing the OpenGL system to take care of clipping 
 outside of the viewport.</li>
-<li>Adding VBO to the above drawing. Might not make much difference on our hardware.</li>
-<li>Adding smart buffering in software to the above.</li>
+<li>Adding Vertex Buffer Object to the above treatment. Gives slight improvement, but 
+would be expected to be better on more up to date hardware.</li>
+<li>Have also tried tiled container of gl drawing areas in one display as a possible 
+route to our multiple/split view technique in ZMap. Appears to work well with 10k 
+features in each drawing area. </li>
+<li>Need to think about the model for tracks within a view. They should be clickable
+and individually resizable.</li>
+<li>Need to think about the model for bumping and how this fits in with capturing 
+mouse clicks etc.
+<li>Adding smart buffering (at the feature/vertex level) in software to the above.</li>
 </ul>
 
 
