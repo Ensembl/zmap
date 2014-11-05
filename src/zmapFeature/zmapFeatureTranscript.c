@@ -125,7 +125,7 @@ static void exonCreateSection(const int feature_start, ExonRegionType region_typ
                               int *curr_feature_pos, int *curr_spliced_pos,
                               int *curr_cds_pos, int *curr_trans_pos,
                               GList **exon_list_out) ;
-static void createTranslationForCDS(ItemShowTranslationTextData full_data, CreateExonsData exons_data) ;
+static void createTranslationForCDS(ItemShowTranslationTextData full_data, GList *full_exon_cds_list) ;
 static void exonDestroy(ZMapFullExon exon) ;
 static void exonListFree(gpointer data, gpointer user_data_unused) ;
 static void printDetailedExons(gpointer exon_data, gpointer user_data) ;
@@ -1318,8 +1318,24 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
       createFullExonStructs(full_data, feature, variations, exons_data) ;
     }
 
+  /* Add any 5' split codon/start-not-found to the start of the cds list and the 3' to the
+   * end. This is required because createTranslationForCDS uses a list of
+   * split_5..CDS..split3 subsections for any variations within the CDS, so we main the main 
+   * split codons work in the same way.   */
+
+  /* These two must be mutually exclusive. */
+  if (exons_data->full_exon_split_5)
+    exons_data->full_exon_cds_list = g_list_prepend(exons_data->full_exon_cds_list, exons_data->full_exon_split_5) ;
+  else if (exons_data->full_exon_start_not_found)
+    exons_data->full_exon_cds_list = g_list_append(exons_data->full_exon_cds_list, exons_data->full_exon_start_not_found) ;
+
+  if (exons_data->full_exon_split_3)
+    exons_data->full_exon_cds_list = g_list_append(exons_data->full_exon_cds_list, exons_data->full_exon_split_3) ;
+
+
   /* Set up the translation from CDS stuff. */
-  createTranslationForCDS(full_data, exons_data) ;
+  createTranslationForCDS(full_data, exons_data->full_exon_cds_list) ;
+
 
   /* To help subsequent processing by the caller, exon regions are added in their
    * "logical" order i.e. in the order they occur on the sequence: if there's
@@ -1327,17 +1343,9 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
   if (exons_data->full_exon_utr_5)
     *(full_data->full_exons) = g_list_append(*(full_data->full_exons), exons_data->full_exon_utr_5) ;
 
-  /* These two must be mutually exclusive. */
-  if (exons_data->full_exon_split_5)
-    *(full_data->full_exons) = g_list_append(*(full_data->full_exons), exons_data->full_exon_split_5) ;
-  else if (exons_data->full_exon_start_not_found)
-    *(full_data->full_exons) = g_list_append(*(full_data->full_exons), exons_data->full_exon_start_not_found) ;
-
+  /* the cds list already includes all the split codons and start-not-found */
   if (exons_data->full_exon_cds_list)
     *(full_data->full_exons) = g_list_concat(*(full_data->full_exons), exons_data->full_exon_cds_list) ;
-
-  if (exons_data->full_exon_split_3)
-    *(full_data->full_exons) = g_list_append(*(full_data->full_exons), exons_data->full_exon_split_3) ;
 
   if (exons_data->full_exon_utr_3)
     *(full_data->full_exons) = g_list_append(*(full_data->full_exons), exons_data->full_exon_utr_3) ;
@@ -1768,13 +1776,28 @@ static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZM
 
 /* Once the sections of an exon have been constructed (utr, cds etc) this is called to set up the
  * translation (if a cds exists) */
-static void createTranslationForCDS(ItemShowTranslationTextData full_data, CreateExonsData exons_data)
+static void createTranslationForCDS(ItemShowTranslationTextData full_data, GList *full_exon_cds_list)
 {
-  GList *cds_item = exons_data->full_exon_cds_list ;
+  GList *cds_item = full_exon_cds_list ;
 
   for ( ; cds_item; cds_item = cds_item->next)
     {
       ZMapFullExon full_exon_cds = (ZMapFullExon)(cds_item->data) ;
+
+      if (full_exon_cds->region_type != EXON_CODING)
+        continue ;
+
+      ZMapFullExon full_exon_split_5 = NULL ;
+      ZMapFullExon full_exon_split_3 = NULL ;
+
+      /* See if there is a 5' and/or 3' split codon associated with this CDS. These will be the
+       * previous and next items in the list respectively if they exist (we check the type to
+       * confirm). */
+      if (cds_item->prev && ((ZMapFullExon)(cds_item->prev->data))->region_type == EXON_SPLIT_CODON_5)
+        full_exon_split_5 = (ZMapFullExon)(cds_item->prev->data) ;
+
+      if (cds_item->next && ((ZMapFullExon)(cds_item->next->data))->region_type == EXON_SPLIT_CODON_3)
+        full_exon_split_3 = (ZMapFullExon)(cds_item->next->data) ;
 
       int pep_start = 0, pep_end = 0, pep_length = 0 ;
       char *peptide = NULL ;
@@ -1792,31 +1815,31 @@ static void createTranslationForCDS(ItemShowTranslationTextData full_data, Creat
           full_exon_cds->peptide = g_strndup(peptide, pep_length) ;
         }
 
-      if (exons_data->full_exon_split_5)
+      if (full_exon_split_5)
         {
           pep_start-- ;
 
-          exons_data->full_exon_split_5->pep_span.x1 = exons_data->full_exon_split_5->pep_span.x2 = pep_start ;
+          full_exon_split_5->pep_span.x1 = full_exon_split_5->pep_span.x2 = pep_start ;
 
           if (full_data->translation)
             {
               peptide = full_data->translation + (pep_start - 1) ;
 
-              exons_data->full_exon_split_5->peptide = g_strndup(peptide, 1) ;
+              full_exon_split_5->peptide = g_strndup(peptide, 1) ;
             }
         }
 
-      if (exons_data->full_exon_split_3)
+      if (full_exon_split_3)
         {
           pep_end++ ;
 
-          exons_data->full_exon_split_3->pep_span.x1 = exons_data->full_exon_split_3->pep_span.x2 = pep_end ;
+          full_exon_split_3->pep_span.x1 = full_exon_split_3->pep_span.x2 = pep_end ;
 
           if (full_data->translation)
             {
               peptide = full_data->translation + (pep_end - 1) ;
 
-              exons_data->full_exon_split_3->peptide = g_strndup(peptide, 1) ;
+              full_exon_split_3->peptide = g_strndup(peptide, 1) ;
             }
         }
     }
