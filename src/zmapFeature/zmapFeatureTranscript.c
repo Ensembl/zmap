@@ -92,7 +92,8 @@ typedef struct _CreateExonsDataStruct
   ZMapSpanStruct ex_cds ; 
   ZMapSpanStruct ex_split_3 ; 
   ZMapSpanStruct ex_utr_3 ;
-  ZMapFullExon full_exon_cds ;
+  GList *full_exon_cds_list ; /* we might have multiple parts to the CDS if it is split up by
+                               * variations */
   ZMapFullExon full_exon_start_not_found ;
   ZMapFullExon full_exon_utr_5 ;
   ZMapFullExon full_exon_utr_3 ;
@@ -109,9 +110,16 @@ static void calculateExonPositions(ItemShowTranslationTextData full_data, ZMapSp
 static void createFullExonStructs(ItemShowTranslationTextData full_data, ZMapFeature feature, 
                                   GList *variations, CreateExonsData exons_data) ;
 static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZMapSpan exon_span, GList *variations,
-       int *curr_feature_pos, int *curr_spliced_pos,
-       int *curr_cds_pos, int *trans_spliced_pos) ;
-static void setUpTranslationFromCDSs(ItemShowTranslationTextData full_data, CreateExonsData exons_data) ;
+                               int *curr_feature_pos, int *curr_spliced_pos,
+                               int *curr_cds_pos, int *trans_spliced_pos) ;
+static GList* exonCreateCDS(const int feature_start, ZMapSpan exon_span, GList *variations,
+                            int *curr_feature_pos, int *curr_spliced_pos,
+                            int *curr_cds_pos, int *curr_trans_pos) ;
+static ZMapFullExon exonCreateCDSSection(const int feature_start, GList *variations,
+                                         const int section_start_coord, const int section_end_coord,
+                                         int *curr_feature_pos, int *curr_spliced_pos,
+                                         int *curr_cds_pos, int *curr_trans_pos) ;
+static void createTranslationForCDS(ItemShowTranslationTextData full_data, CreateExonsData exons_data) ;
 static void exonDestroy(ZMapFullExon exon) ;
 static void exonListFree(gpointer data, gpointer user_data_unused) ;
 static void printDetailedExons(gpointer exon_data, gpointer user_data) ;
@@ -1305,7 +1313,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
     }
 
   /* Set up the translation from CDS stuff. */
-  setUpTranslationFromCDSs(full_data, exons_data) ;
+  createTranslationForCDS(full_data, exons_data) ;
 
   /* To help subsequent processing by the caller, exon regions are added in their
    * "logical" order i.e. in the order they occur on the sequence: if there's
@@ -1319,8 +1327,8 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
   else if (exons_data->full_exon_start_not_found)
     *(full_data->full_exons) = g_list_append(*(full_data->full_exons), exons_data->full_exon_start_not_found) ;
 
-  if (exons_data->full_exon_cds)
-    *(full_data->full_exons) = g_list_append(*(full_data->full_exons), exons_data->full_exon_cds) ;
+  if (exons_data->full_exon_cds_list)
+    *(full_data->full_exons) = g_list_concat(*(full_data->full_exons), exons_data->full_exon_cds_list) ;
 
   if (exons_data->full_exon_split_3)
     *(full_data->full_exons) = g_list_append(*(full_data->full_exons), exons_data->full_exon_split_3) ;
@@ -1478,45 +1486,166 @@ static void createFullExonStructs(ItemShowTranslationTextData full_data, ZMapFea
 {
   if (exons_data->ex_utr_5.x1)
     exons_data->full_exon_utr_5 = exonCreate(feature->x1, EXON_NON_CODING, &exons_data->ex_utr_5, variations,
-                                 &(full_data->feature_coord_counter),
-                                 &(full_data->spliced_coord_counter),
-                                 &(full_data->cds_coord_counter),
-                                 &(full_data->trans_coord_counter)) ;
+                                             &(full_data->feature_coord_counter),
+                                             &(full_data->spliced_coord_counter),
+                                             &(full_data->cds_coord_counter),
+                                             &(full_data->trans_coord_counter)) ;
 
   if (exons_data->ex_split_5.x1)
     exons_data->full_exon_split_5 = exonCreate(feature->x1, EXON_SPLIT_CODON_5, &exons_data->ex_split_5, variations,
-                                   &(full_data->feature_coord_counter),
-                                   &(full_data->spliced_coord_counter),
-                                   &(full_data->cds_coord_counter),
-                                   &(full_data->trans_coord_counter)) ;
+                                               &(full_data->feature_coord_counter),
+                                               &(full_data->spliced_coord_counter),
+                                               &(full_data->cds_coord_counter),
+                                               &(full_data->trans_coord_counter)) ;
   else if (exons_data->ex_start_not_found.x1)
     exons_data->full_exon_start_not_found = exonCreate(feature->x1, EXON_START_NOT_FOUND, &exons_data->ex_start_not_found, variations,
-                                           &(full_data->feature_coord_counter),
-                                           &(full_data->spliced_coord_counter),
-                                           &(full_data->cds_coord_counter),
-                                           &(full_data->trans_coord_counter)) ;
+                                                       &(full_data->feature_coord_counter),
+                                                       &(full_data->spliced_coord_counter),
+                                                       &(full_data->cds_coord_counter),
+                                                       &(full_data->trans_coord_counter)) ;
 
   if (exons_data->ex_cds.x1)
-    exons_data->full_exon_cds = exonCreate(feature->x1, EXON_CODING, &exons_data->ex_cds, variations,
-                               &(full_data->feature_coord_counter),
-                               &(full_data->spliced_coord_counter),
-                               &(full_data->cds_coord_counter),
-                               &(full_data->trans_coord_counter)) ;
+    exons_data->full_exon_cds_list = exonCreateCDS(feature->x1, &exons_data->ex_cds, variations,
+                                                   &(full_data->feature_coord_counter),
+                                                   &(full_data->spliced_coord_counter),
+                                                   &(full_data->cds_coord_counter),
+                                                   &(full_data->trans_coord_counter)) ;
   if (exons_data->ex_split_3.x1)
     exons_data->full_exon_split_3 = exonCreate(feature->x1, EXON_SPLIT_CODON_3, &exons_data->ex_split_3, variations,
-                                   &(full_data->feature_coord_counter),
-                                   &(full_data->spliced_coord_counter),
-                                   &(full_data->cds_coord_counter),
-                                   &(full_data->trans_coord_counter)) ;
+                                               &(full_data->feature_coord_counter),
+                                               &(full_data->spliced_coord_counter),
+                                               &(full_data->cds_coord_counter),
+                                               &(full_data->trans_coord_counter)) ;
 
   if (exons_data->ex_utr_3.x1)
     exons_data->full_exon_utr_3 = exonCreate(feature->x1, EXON_NON_CODING, &exons_data->ex_utr_3, variations,
-                                     &(full_data->feature_coord_counter),
-                                     &(full_data->spliced_coord_counter),
-                                     &(full_data->cds_coord_counter),
-                                     &(full_data->trans_coord_counter)) ;
+                                             &(full_data->feature_coord_counter),
+                                             &(full_data->spliced_coord_counter),
+                                             &(full_data->cds_coord_counter),
+                                             &(full_data->trans_coord_counter)) ;
 }
 
+
+/* Create a exon structs for the section of the CDS split up by a variations */
+static GList* exonCreateCDS(const int feature_start, ZMapSpan exon_span, GList *variations,
+                            int *curr_feature_pos, int *curr_spliced_pos,
+                            int *curr_cds_pos, int *curr_trans_pos)
+{
+  GList *result = NULL ;
+
+  /* Make sure variations are sorted by position (they should be already but the list
+   * shouldn't be long so no harm in making sure). */
+  variations = g_list_sort(variations, zMapFeatureCmp) ;
+
+  /* This keeps track of the start of the current section within the exon */
+  int section_start_coord = exon_span->x1 ;
+
+  /* Loop through each variation */
+  GList *variation_item = variations ;
+
+  for ( ; variation_item; variation_item = variation_item->next)
+    {
+      ZMapFeature variation = (ZMapFeature)(variation_item->data) ;
+
+      /* If outside the max end of the exon, then none of the variations
+       * can apply, so stop. */
+      if (variation->x2 > exon_span->x2)
+        break ;
+
+      /* If not inside this exon then continue to the next variation */
+      if (variation->x1 < exon_span->x1)
+        continue ;
+
+      /* Get the difference in length in DNA bases caused by this variation. If it's zero then
+       * it doesn't affect the CDS coords so we can ignore it. */
+      const int diff = zMapFeatureVariationGetSections(variation->feature.basic.variation_str,
+                                                       NULL, NULL, NULL, NULL) ;
+
+      if (diff == 0)
+        continue ;
+
+      /* Set the end of this section to be the start of the variation. */
+      int section_end_coord = variation->x1 ;
+
+      if (diff < 0)
+        {
+          /* For a deletion, exclude the variation x1 coord from the section, because that coord is part
+           * of the deletion. We don't need to do this for an insertion because the insertion
+           * point is between the x1 and x2 coord, so the coords themselves are not affected. */
+          --section_end_coord ;
+        }
+
+      ZMapFullExon exon = exonCreateCDSSection(feature_start, variations, section_start_coord, section_end_coord,
+                                               curr_feature_pos, curr_spliced_pos, curr_cds_pos, curr_trans_pos) ;
+      
+      if (exon)
+        result = g_list_append(result, exon) ;
+
+      /* Update the section start coord ready for the next section. Again, for deletions exclude
+       * the variation coord but for insertions include it. */
+      section_start_coord = variation->x2 ;
+      
+      if (diff < 0)
+        ++section_start_coord ;
+    }
+
+  /* Create the final section, between the last variation and the end of the exon. (If there were
+   * no variations then this will be the full span from the start to the end of the exon.) */
+  ZMapFullExon exon = exonCreateCDSSection(feature_start, variations, section_start_coord, exon_span->x2,
+                                           curr_feature_pos, curr_spliced_pos, curr_cds_pos, curr_trans_pos) ;
+
+  if (exon)
+    result = g_list_append(result, exon) ;
+
+  return result ;
+}
+
+
+static ZMapFullExon exonCreateCDSSection(const int feature_start, GList *variations,
+                                         const int section_start_coord, const int section_end_coord,
+                                         int *curr_feature_pos, int *curr_spliced_pos,
+                                         int *curr_cds_pos, int *curr_trans_pos)
+{
+  ZMapFullExon exon = NULL ;
+
+  /* Ok, the variation affects this CDS. Create the new full exon struct for the section up to
+   * the variation, and set all the positional data. */
+  exon = g_new0(ZMapFullExonStruct, 1) ;
+  exon->region_type = EXON_CODING ;
+
+  /* Set the range for this section to be up to the start of this variation */
+  exon->sequence_span.x1 = exon->unspliced_span.x1 = section_start_coord ;
+  exon->sequence_span.x2 = exon->unspliced_span.x2 = section_end_coord ;
+
+  /* Convert unspliced coords to local coords within the feature */
+  zMapCoordsToOffset(feature_start, 1, &(exon->unspliced_span.x1), &(exon->unspliced_span.x2)) ;
+
+  /* Offset the start coord by the total difference caused by variations before this
+   * exon. Note that we do this for all local coords within the feature, but not for the
+   * sequence_span since that is in reference sequence coords and they are absolute. */
+  const int variation_diff = zmapFeatureDNACalculateVariationDiff(1, feature_start - 1, variations);
+  exon->unspliced_span.x1 += variation_diff ;
+
+  const int section_length = exon->sequence_span.x2 - exon->sequence_span.x1 + 1 ;
+
+  exon->spliced_span.x1 = *curr_spliced_pos + 1 ;
+  exon->spliced_span.x2 = *curr_spliced_pos + section_length ;
+
+  exon->cds_span.x1 = *curr_cds_pos + 1 ;
+  exon->cds_span.x2 = *curr_cds_pos + section_length ;
+
+  /* start not found section is not part of translation so is not given a phase. */
+  exon->start_phase = *curr_trans_pos % 3 ;
+  exon->end_phase = ((*curr_trans_pos + section_length) - 1) % 3 ;
+
+  /* Now update the position counters. */
+  *curr_feature_pos += section_length ;
+  *curr_spliced_pos += section_length ;
+  *curr_cds_pos += section_length ;
+  *curr_trans_pos += section_length ;
+
+  return exon ;
+}
 
 /* Create a full exon with all the positional information and update the running positional
  * counters required for cds phase calcs etc. */
@@ -1582,24 +1711,28 @@ static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZM
 
 /* Once the sections of an exon have been constructed (utr, cds etc) this is called to set up the
  * translation (if a cds exists) */
-static void setUpTranslationFromCDSs(ItemShowTranslationTextData full_data, CreateExonsData exons_data)
+static void createTranslationForCDS(ItemShowTranslationTextData full_data, CreateExonsData exons_data)
 {
-  if (exons_data->full_exon_cds)
+  GList *cds_item = exons_data->full_exon_cds_list ;
+
+  for ( ; cds_item; cds_item = cds_item->next)
     {
+      ZMapFullExon full_exon_cds = (ZMapFullExon)(cds_item->data) ;
+
       int pep_start = 0, pep_end = 0, pep_length = 0 ;
       char *peptide = NULL ;
 
-      pep_start = (exons_data->full_exon_cds->cds_span.x1 / 3) + 1 ;
-      pep_end = exons_data->full_exon_cds->cds_span.x2 / 3 ;
+      pep_start = (full_exon_cds->cds_span.x1 / 3) + 1 ;
+      pep_end = full_exon_cds->cds_span.x2 / 3 ;
 
-      exons_data->full_exon_cds->pep_span.x1 = pep_start ;
-      exons_data->full_exon_cds->pep_span.x2 = pep_end ;
+      full_exon_cds->pep_span.x1 = pep_start ;
+      full_exon_cds->pep_span.x2 = pep_end ;
       pep_length = pep_end - pep_start + 1;
 
       if (full_data->translation)
         {
           peptide = full_data->translation + (pep_start - 1) ;
-          exons_data->full_exon_cds->peptide = g_strndup(peptide, pep_length) ;
+          full_exon_cds->peptide = g_strndup(peptide, pep_length) ;
         }
 
       if (exons_data->full_exon_split_5)
