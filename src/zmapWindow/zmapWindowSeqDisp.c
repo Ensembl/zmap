@@ -440,7 +440,7 @@ static void copyExonPeptideSequence(ZMapFeature feature, ZMapFullExon exon, char
   zMapReturnIfFail(dest_ptr && *dest_ptr) ;
   zMapReturnIfFailSafe(exon && exon->peptide) ;
 
-  if (0) //feature && feature->feature.transcript.variations)
+  if (feature && feature->feature.transcript.variations)
     {
       /* Copy the sequence, aligning it according to the variations */
       copyExonPeptideSequenceVariations(feature, exon, dest_ptr) ;

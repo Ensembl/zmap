@@ -115,10 +115,15 @@ static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZM
 static GList* exonCreateCDS(const int feature_start, ZMapSpan exon_span, GList *variations,
                             int *curr_feature_pos, int *curr_spliced_pos,
                             int *curr_cds_pos, int *curr_trans_pos) ;
-static ZMapFullExon exonCreateCDSSection(const int feature_start, GList *variations,
-                                         const int section_start_coord, const int section_end_coord,
-                                         int *curr_feature_pos, int *curr_spliced_pos,
-                                         int *curr_cds_pos, int *curr_trans_pos) ;
+static void exonCreateVariationSection(const int feature_start, GList *variations,
+                                       const int section_start_coord, const int section_end_coord,
+                                       int *curr_feature_pos, int *curr_spliced_pos,
+                                       int *curr_cds_pos, int *curr_trans_pos, GList **exon_list_out) ;
+static void exonCreateSection(const int feature_start, ExonRegionType region_type, GList *variations,
+                              const int section_start_coord, const int section_end_coord,
+                              int *curr_feature_pos, int *curr_spliced_pos,
+                              int *curr_cds_pos, int *curr_trans_pos,
+                              GList **exon_list_out) ;
 static void createTranslationForCDS(ItemShowTranslationTextData full_data, CreateExonsData exons_data) ;
 static void exonDestroy(ZMapFullExon exon) ;
 static void exonListFree(gpointer data, gpointer user_data_unused) ;
@@ -1575,11 +1580,8 @@ static GList* exonCreateCDS(const int feature_start, ZMapSpan exon_span, GList *
           --section_end_coord ;
         }
 
-      ZMapFullExon exon = exonCreateCDSSection(feature_start, variations, section_start_coord, section_end_coord,
-                                               curr_feature_pos, curr_spliced_pos, curr_cds_pos, curr_trans_pos) ;
-      
-      if (exon)
-        result = g_list_append(result, exon) ;
+      exonCreateVariationSection(feature_start, variations, section_start_coord, section_end_coord,
+                                 curr_feature_pos, curr_spliced_pos, curr_cds_pos, curr_trans_pos, &result) ;
 
       /* Update the section start coord ready for the next section. Again, for deletions exclude
        * the variation coord but for insertions include it. */
@@ -1591,27 +1593,93 @@ static GList* exonCreateCDS(const int feature_start, ZMapSpan exon_span, GList *
 
   /* Create the final section, between the last variation and the end of the exon. (If there were
    * no variations then this will be the full span from the start to the end of the exon.) */
-  ZMapFullExon exon = exonCreateCDSSection(feature_start, variations, section_start_coord, exon_span->x2,
-                                           curr_feature_pos, curr_spliced_pos, curr_cds_pos, curr_trans_pos) ;
-
-  if (exon)
-    result = g_list_append(result, exon) ;
+  exonCreateVariationSection(feature_start, variations, section_start_coord, exon_span->x2,
+                             curr_feature_pos, curr_spliced_pos, curr_cds_pos, curr_trans_pos,
+                             &result) ;
 
   return result ;
 }
 
 
-static ZMapFullExon exonCreateCDSSection(const int feature_start, GList *variations,
-                                         const int section_start_coord, const int section_end_coord,
-                                         int *curr_feature_pos, int *curr_spliced_pos,
-                                         int *curr_cds_pos, int *curr_trans_pos)
+static void exonCreateVariationSection(const int feature_start, GList *variations,
+                                       const int section_start_coord, const int section_end_coord,
+                                       int *curr_feature_pos, int *curr_spliced_pos,
+                                       int *curr_cds_pos, int *curr_trans_pos,
+                                       GList **exon_list_out)
+{
+  const int section_length = section_end_coord - section_start_coord + 1 ;
+
+  int start_phase = *curr_trans_pos % 3 ;
+  int end_phase = ((*curr_trans_pos + section_length) - 1) % 3 ;
+
+  int cds_section_start = section_start_coord ;
+  int cds_section_end = section_end_coord ;
+
+  int ex_split_5_start = 0 ;
+  int ex_split_5_end = 0 ;
+  int ex_split_3_start = 0 ;
+  int ex_split_3_end = 0 ;
+  
+  if (start_phase)
+    {
+      /* 5' split codon ends one base before full codon. */
+      int correction = ((start_phase == 1 ? 2 : 1) - 1) ;
+
+      ex_split_5_start = section_start_coord ;
+      ex_split_5_end = ex_split_5_start + correction ;
+
+      cds_section_start = ex_split_5_end + 1 ;
+    }
+
+  if (end_phase < 2)
+    {
+      /* 3' split codon starts one base after end of full codon. */
+      int correction = ((end_phase + 1) % 3) - 1 ;
+
+      ex_split_3_start = section_end_coord - correction ;
+      ex_split_3_end = section_end_coord ;
+
+      cds_section_end = ex_split_3_start - 1 ;
+    }
+
+  /* Create sections for the 5-split, CDS and 3-split, if applicable (and in that order) */
+  if (start_phase)
+    {
+      exonCreateSection(feature_start, EXON_SPLIT_CODON_5, variations,
+                        ex_split_5_start, ex_split_5_end,
+                        curr_feature_pos, curr_spliced_pos, curr_cds_pos, curr_trans_pos,
+                        exon_list_out) ;
+    }
+
+  exonCreateSection(feature_start, EXON_CODING, variations,
+                    cds_section_start, cds_section_end,
+                    curr_feature_pos, curr_spliced_pos, curr_cds_pos, curr_trans_pos,
+                    exon_list_out) ;
+
+  if (end_phase < 2)
+    {
+      exonCreateSection(feature_start, EXON_SPLIT_CODON_3, variations,
+                        ex_split_3_start, ex_split_3_end,
+                        curr_feature_pos, curr_spliced_pos, curr_cds_pos, curr_trans_pos,
+                        exon_list_out) ;
+    }
+}
+
+
+static void exonCreateSection(const int feature_start, ExonRegionType region_type, GList *variations,
+                              const int section_start_coord, const int section_end_coord,
+                              int *curr_feature_pos, int *curr_spliced_pos,
+                              int *curr_cds_pos, int *curr_trans_pos,
+                              GList **exon_list_out)
 {
   ZMapFullExon exon = NULL ;
 
-  /* Ok, the variation affects this CDS. Create the new full exon struct for the section up to
+  const int section_length = section_end_coord - section_start_coord + 1 ;
+
+  /* Create the new full exon struct for the section up to
    * the variation, and set all the positional data. */
   exon = g_new0(ZMapFullExonStruct, 1) ;
-  exon->region_type = EXON_CODING ;
+  exon->region_type = region_type ;
 
   /* Set the range for this section to be up to the start of this variation */
   exon->sequence_span.x1 = exon->unspliced_span.x1 = section_start_coord ;
@@ -1620,21 +1688,12 @@ static ZMapFullExon exonCreateCDSSection(const int feature_start, GList *variati
   /* Convert unspliced coords to local coords within the feature */
   zMapCoordsToOffset(feature_start, 1, &(exon->unspliced_span.x1), &(exon->unspliced_span.x2)) ;
 
-  /* Offset the start coord by the total difference caused by variations before this
-   * exon. Note that we do this for all local coords within the feature, but not for the
-   * sequence_span since that is in reference sequence coords and they are absolute. */
-  const int variation_diff = zmapFeatureDNACalculateVariationDiff(1, feature_start - 1, variations);
-  exon->unspliced_span.x1 += variation_diff ;
-
-  const int section_length = exon->sequence_span.x2 - exon->sequence_span.x1 + 1 ;
-
   exon->spliced_span.x1 = *curr_spliced_pos + 1 ;
   exon->spliced_span.x2 = *curr_spliced_pos + section_length ;
 
   exon->cds_span.x1 = *curr_cds_pos + 1 ;
   exon->cds_span.x2 = *curr_cds_pos + section_length ;
 
-  /* start not found section is not part of translation so is not given a phase. */
   exon->start_phase = *curr_trans_pos % 3 ;
   exon->end_phase = ((*curr_trans_pos + section_length) - 1) % 3 ;
 
@@ -1644,7 +1703,8 @@ static ZMapFullExon exonCreateCDSSection(const int feature_start, GList *variati
   *curr_cds_pos += section_length ;
   *curr_trans_pos += section_length ;
 
-  return exon ;
+  if (exon && exon_list_out)
+    *exon_list_out = g_list_append(*exon_list_out, exon) ;
 }
 
 /* Create a full exon with all the positional information and update the running positional
@@ -1654,20 +1714,13 @@ static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZM
                                int *curr_cds_pos, int *curr_trans_pos)
 {
   ZMapFullExon exon = NULL ;
-  const int exon_span_length = ZMAP_SPAN_LENGTH(exon_span) ;
-
-  const int variation_diff1 = zmapFeatureDNACalculateVariationDiff(1, feature_start - 1, variations);
-  const int variation_diff2 = zmapFeatureDNACalculateVariationDiff(feature_start, feature_start + exon_span_length, variations);
-  const int exon_length = exon_span_length + variation_diff2 ;
-
+  const int exon_length = ZMAP_SPAN_LENGTH(exon_span) ;
+  
   /* Create the new full exon struct and set all the positional data. */
   exon = g_new0(ZMapFullExonStruct, 1) ;
   exon->region_type = region_type ;
   exon->sequence_span = exon->unspliced_span = *exon_span ; /* struct copy */
   zMapCoordsToOffset(feature_start, 1, &(exon->unspliced_span.x1), &(exon->unspliced_span.x2)) ;
-
-  exon->unspliced_span.x1 += variation_diff1 ;
-  exon->unspliced_span.x2 += variation_diff2 ;
 
   exon->spliced_span.x1 = *curr_spliced_pos + 1 ;
   exon->spliced_span.x2 = *curr_spliced_pos + exon_length ;

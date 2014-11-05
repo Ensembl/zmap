@@ -691,8 +691,7 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
 {
   ZMapSpan exon_span = (ZMapSpan)exon_data;
   FeatureSeqFetcher seq_fetcher = (FeatureSeqFetcher)user_data;
-  int offset = 0, variation_diff1 = 0, variation_diff2 = 0,
-    length = 0, start = 0, end = 0, dna_len = 0 ;
+  int offset = 0, length = 0, start = 0, end = 0, dna_len = 0 ;
 
   start = exon_span->x1;
   end = exon_span->x2;
@@ -700,12 +699,8 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
   /* Check the exon lies within the  */
   if (zMapCoordsClamp(seq_fetcher->start, seq_fetcher->end, &start, &end))
     {
-      /* If there are any variations in this exon they may affect its length */
-      variation_diff1 = zmapFeatureDNACalculateVariationDiff(1, start, seq_fetcher->variations) ;
-      variation_diff2 = zmapFeatureDNACalculateVariationDiff(start, end, seq_fetcher->variations) ;
-
-      offset = start - seq_fetcher->dna_start + variation_diff1 ;
-      length = end - start + 1 + variation_diff2 ;
+      offset = start - seq_fetcher->dna_start ;
+      length = end - start + 1 ;
 
       if (seq_fetcher->dna_in)
         dna_len = strlen(seq_fetcher->dna_in) ;
