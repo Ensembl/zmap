@@ -1470,6 +1470,28 @@ static void zmap_window_featureset_item_item_draw(FooCanvasItem *item, GdkDrawab
 	setFeaturesetColours(fi, feat) ;
 
       // call the paint function for the feature
+
+      /* gb10: hack to redraw the entire screen area for the show translation column. I don't understand
+       * why but it is blanking out some areas on scrolling (where the expose area is just the new
+       * bit of the view that has been scrolled into view. */
+      static GQuark show_translation_id = 0 ;
+      if (!show_translation_id)
+        show_translation_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
+      
+      if (fi && fi->featurestyle && fi->featurestyle->unique_id == show_translation_id && item && item->canvas)
+        {
+          int diff = item->canvas->layout.container.widget.allocation.height - expose->area.height ;
+
+          if (diff > 0)
+            {
+              if (diff > expose->area.y - 1)
+                diff = expose->area.y - 1 ;
+
+              expose->area.height += diff ;
+              expose->area.y -= diff ;
+            }
+        }    
+
       zMapWindowCanvasFeaturesetPaintFeature(fi,feat,drawable,expose) ;
 
       if(feat->y1 > y2)                                     /* for lines we have to do one more */
