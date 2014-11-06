@@ -2661,7 +2661,6 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem featureset_it
   GdkColor *draw = NULL, *fill = NULL, *outline = NULL;
   FooCanvasItem *foo = (FooCanvasItem *) featureset_item;
   gboolean re_index = FALSE;
-  GList  *features;
 
   zMapReturnValIfFail(featureset_item, FALSE) ;
 
