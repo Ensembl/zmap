@@ -119,7 +119,8 @@
 #define SCRATCH_COPY_THIS_FEATURE  "Copy this feature"
 #define SCRATCH_COPY_THIS_COORD    "Copy this coord"
 #define SCRATCH_DELETE_SUBFEATURE  "Delete subfeature"
-#define SCRATCH_SAVE               "Save"
+#define SCRATCH_SAVE               "Set attributes" /* can be used to set attributes for the temp
+                                                     * feature and/or save the temp feature */
 #define SCRATCH_UNDO               "Undo"
 #define SCRATCH_REDO               "Redo"
 #define SCRATCH_CLEAR              "Clear"
