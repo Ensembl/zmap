@@ -201,6 +201,16 @@ typedef struct
 } ZMapWindowStatsAlignStruct, *ZMapWindowStatsAlign ;
 
 
+
+/* Used from to record data needed in zmapWindowHighlightEvidenceCB(). */
+typedef struct ZMapWindowHighlightDataStructType
+{
+  ZMapWindow window ;
+  ZMapFeatureAny feature ;
+} ZMapWindowHighlightDataStruct, *ZMapWindowHighlightData ;
+
+
+
 #define zmapWindowStatsAddBasic(STATS_PTR, FEATURE_PTR) \
   (ZMapWindowStatsBasic)zmapWindowStatsAddChild((STATS_PTR), (ZMapFeatureAny)(FEATURE_PTR))
 #define zmapWindowStatsAddTranscript(STATS_PTR, FEATURE_PTR) \
@@ -884,6 +894,11 @@ typedef struct ZMapWindowStructType
   /* Remember the last featureset we calculated the translation for. (If it's the scratch
    * featureset then we need to recalculate the translation after any edit operation.)  */
   GQuark show_translation_featureset_id ;
+
+  /* Remember the last featureset we called highlight-evidence for. (If it's the scratch
+   * featureset then we need to do some special processing before/after editing the scratch
+   * feature.)*/
+  GQuark highlight_evidence_featureset_id ;
 
 } ZMapWindowStruct ;
 
@@ -1745,6 +1760,8 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block, GList *colum
 void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 
 void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
+
+void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data) ;
 
 /* Malcolms.... */
 void foo_bug_set(void *key,char *id) ;

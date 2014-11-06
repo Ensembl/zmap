@@ -442,6 +442,10 @@ void zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
 {
   zMapReturnIfFail(window && feature && evidence_cb) ;
 
+  /* Remember which featureset we called get-evidence for */
+  if (feature->parent)
+    window->highlight_evidence_featureset_id = feature->parent->unique_id ;
+
   if (feature->parent && feature->parent->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
     {
       /* The scratch column is a special case because it exists only in zmap */

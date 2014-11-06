@@ -7249,6 +7249,85 @@ void zMapWindowUpdateColumnBackground(ZMapWindow window,
 
 
 
+/*
+ * STUFF LEFT TO DO.....
+ * 
+ * DEFINE HIGHLIGHT_DATA STRUCT
+ * CHANGE FUNC PROTO FOR GETEVIDENCE...AND MAKE IT CALL BACK TO THIS FUNC SUPPLYING
+ * THE EVIDENCE LIST AND WE SHOULD BE DONE.....
+ * 
+ * BUT MAY NEED A SPECIAL CALLBACK IN FEATURESHOW TO HANDLE THIS CALLBACK
+ * SEPARATELY FROM THE EXISTING FEATURESHOW CALLBACK......
+*/
+
+/* This code is a callback, called from zmapWindowFeatureGetEvidence() which
+ * contacts our peer to get evidence lists of features.
+ * As far as I can tell this code takes a feature and then tries to highlight all
+ * the evidence for that feature by searching columns for named evidence for the
+ * feature. */
+void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data)
+{
+  ZMapWindowHighlightData highlight_data = (ZMapWindowHighlightData)user_data ;
+  GList *evidence_items = NULL ;
+
+
+  /* search for the features named in the list and find thier canvas items */
+  for ( ; evidence ; evidence = evidence->next)
+    {
+      GList *items,*items_free ;
+      GQuark wildcard = g_quark_from_string("*");
+      char *feature_name;
+      GQuark feature_search_id;
+
+      /* need to add a * to the end to match strand and frame name mangling */
+      feature_name = g_strdup_printf("%s*",g_quark_to_string(GPOINTER_TO_UINT(evidence->data)));
+      feature_name = zMapFeatureCanonName(feature_name);    /* done in situ */
+      feature_search_id = g_quark_from_string(feature_name);
+
+      /* catch NULL names due to ' getting escaped int &apos; */
+      if(feature_search_id == wildcard)
+        continue;
+
+      items_free = zmapWindowFToIFindItemSetFull(highlight_data->window,
+                                                 highlight_data->window->context_to_item,
+                                                 highlight_data->feature->parent->parent->parent->unique_id,
+                                                 highlight_data->feature->parent->parent->unique_id,
+                                                 wildcard,0,"*","*",
+                                                 feature_search_id,
+                                                 NULL,NULL);
+
+
+      /* zMapLogWarning("evidence %s returns %d features", feature_name, g_list_length(items_free));*/
+      g_free(feature_name);
+
+      for(items = items_free; items; items = items->next)
+        {
+          /* NOTE: need to filter by transcript start and end coords in case of repeat alignments */
+          /* Not so - annotators want to see duplicated features' data */
+
+          evidence_items = g_list_prepend(evidence_items,items->data);
+        }
+
+      g_list_free(items_free);
+    }
+
+  /* menu_data->item is the transcript and would be the
+   * focus hot item if this was a focus highlight
+   * in this call it's irrelevant so don't set the hot item, pass NULL instead
+   */
+
+  zmapWindowFocusAddItemsType(highlight_data->window->focus, evidence_items,
+                              NULL /* menu_data->item */, WINDOW_FOCUS_GROUP_EVIDENCE);
+
+
+  g_list_free(evidence);
+  g_list_free(evidence_items);
+
+
+  return ;
+}
+
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
