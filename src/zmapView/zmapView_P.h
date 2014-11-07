@@ -439,6 +439,7 @@ gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context
 void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
 
+gboolean zmapViewExecuteCommand(ZMapView view, gpointer user_data) ;
 
 /* Context Window Hash (CWH) for the correct timing of the call to zMapFeatureContextDestroy */
 GHashTable *zmapViewCWHHashCreate(void);
