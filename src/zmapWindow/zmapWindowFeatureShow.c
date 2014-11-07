@@ -802,9 +802,18 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
        * originally copied into the Annotation column, rather than the temp feature
        * details. Defaults will need to be passed through somehow because we don't want to pollute
        * this code with Annotation column stuff. */
+      /* If the user has previously saved the feature name as an attribute but not saved the
+         feature to the peer yet it will have been cached and we want to use that. */
+      char *feature_name = NULL ;
+
+      if (show->zmapWindow->scratch_feature_id)
+        feature_name = g_strdup(g_quark_to_string(show->zmapWindow->scratch_feature_id)) ;
+      else
+        feature_name = g_strdup(g_quark_to_string(feature->original_id)) ;
+
       tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Name", NULL,
                                                 ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                "string", g_strdup(g_quark_to_string(feature->original_id)),
+                                                "string", feature_name,
                                                 NULL) ;
 
       if (show->editable)
@@ -815,6 +824,11 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
            * in the annotation column is overwritten. This allows the user to edit things such
            * as the CDS or exon coords of the temp feature. */
           const char *featureset_name = ZMAP_FIXED_STYLE_SCRATCH_NAME ;
+
+          /* If the user has previously changed the featureset but not saved the feature to a
+           * peer then the new name will have been cached and we show that instead. */
+          if (show->zmapWindow->scratch_feature_set_id)
+            featureset_name = g_quark_to_string(show->zmapWindow->scratch_feature_set_id) ;
 
           tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Set", "Please specify the Feature Set that you would like to save the feature to",
                                                     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
@@ -2514,17 +2528,28 @@ static ZMapFeatureSet getFeaturesetFromName(ZMapWindow window, char *name)
 /*! \todo Check that this is a transcript */
 static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_feature, ZMapWindowFeatureShow show)
 {
-  zMapReturnIfFail(chapter_feature) ;
+  zMapReturnIfFail(chapter_feature && show && show->feature && show->feature->parent) ;
 
   GError *error = NULL ;
   gboolean ok = TRUE ;
 
+  ZMapWindow window = NULL ;
+  GQuark feature_id = 0 ;
+  GQuark feature_set_id = 0 ;
+  GQuark old_feature_id  = 0 ;
+  GQuark old_feature_set_id = 0 ;
+  GQuark new_feature_id  = 0 ;
+  GQuark new_feature_set_id = 0 ;
+  GQuark temp_feature_id = 0 ;
+  GQuark temp_feature_set_id = 0 ;
   ZMapFeature feature = NULL ;
-  ZMapWindow window = show->zmapWindow ;
-  ZMapFeatureSet feature_set = getFeaturesetFromName(window, chapter_feature->feature_set) ;
+  ZMapFeatureSet feature_set = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
   gboolean revcomp = FALSE ;
-  int offset = window->feature_context->parent_span.x1 - 1 ; /* need to convert user coords to chromosome coords */
+  int offset = 0 ;
+
+  window = show->zmapWindow ;
+  offset = window->feature_context->parent_span.x1 - 1 ; /* need to convert user coords to chromosome coords */
 
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     {
@@ -2532,6 +2557,57 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
       offset = window->feature_context->parent_span.x2 - offset + 1 ; /* inverts coords when revcomp'd */
     }
 
+  old_feature_id = show->feature->original_id ;
+  old_feature_set_id = show->feature->parent->unique_id ;
+  new_feature_id = g_quark_from_string(chapter_feature->feature_name) ;
+  new_feature_set_id = zMapStyleCreateID(chapter_feature->feature_set) ;
+  temp_feature_id = g_quark_from_string(SCRATCH_FEATURE_NAME) ;
+  temp_feature_set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME) ;
+
+  /* "Save" means something different depending on whether a peer is connected or not: when 
+   * peer is connected we just save attributes, and the user will later send the feature to the 
+   * peer to be created with those attributes; in standalone zmap, we create a new feature 
+   * with the given name in the given featureset. */
+  zmapWindowScratchResetAttributes(window) ;
+
+  if (window->xremote_client)
+    {
+      /* A peer is connected. We just want to remember the attributes. Coordinate changes
+       * etc. can be applied to the existing temp feature. We can't change the name or featureset
+       * but we want to remember these attributes so that the user dosen't have to enter them
+       * again. */
+      zmapWindowScratchSaveFeature(window, new_feature_id) ;
+      zmapWindowScratchSaveFeatureSet(window, new_feature_set_id) ;
+
+      feature_id = old_feature_id ;
+      feature_set_id = old_feature_set_id ;
+    }
+  else
+    {
+      /* Standalone zmap. */
+
+      /* Special treatment if the feature name has been edited but the column hasn't
+       * (i.e. it's the Annotation column). The Annotation column should only ever have one feature
+       * so we don't create a new feature with the new name but update the existing feature;
+       * however, save the name so that when the user wants to save the feature to a different
+       * featureset they don't have to re-enter it. */
+      if (new_feature_set_id == temp_feature_set_id && new_feature_id != temp_feature_id)
+        {
+          zmapWindowScratchSaveFeature(window, new_feature_id) ;
+
+          feature_id = old_feature_id ;
+          feature_set_id = old_feature_set_id ;
+        }
+      else
+        {
+          /* Otherwise, create a new feature with the given name in the given featureset. */
+          feature_id = new_feature_id ;
+          feature_set_id = new_feature_set_id ;
+        }
+    }
+
+  feature_set = getFeaturesetFromName(window, (char*)g_quark_to_string(feature_set_id)) ;
+  
   if (feature_set)
     {
       style = feature_set->style ;
@@ -2542,10 +2618,10 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
       g_set_error(&error, g_quark_from_string("ZMap"), 99, "Please specify a Feature Set") ;
     }
 
-  if (ok)
+  if (ok && !feature)
     {
-      /* Create the feature with default values */
-      feature = zMapFeatureCreateFromStandardData(chapter_feature->feature_name,
+      /* In standalone zmap we want to create a new feature. */
+      feature = zMapFeatureCreateFromStandardData((char*)g_quark_to_string(feature_id),
                                                   NULL,
                                                   NULL,
                                                   ZMAPSTYLE_MODE_TRANSCRIPT,

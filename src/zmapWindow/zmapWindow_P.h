@@ -900,6 +900,11 @@ typedef struct ZMapWindowStructType
    * feature.)*/
   GQuark highlight_evidence_featureset_id ;
 
+  /* These values save attributes about the scratch feature that cannot be saved in the temp feature
+   * struct itself because the real feature hasn't been created yet. */
+  GQuark scratch_feature_id ;
+  GQuark scratch_feature_set_id ;
+
 } ZMapWindowStruct ;
 
 
@@ -1339,6 +1344,9 @@ void zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item, const gbo
 
 void zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature,
 				  ZMapWindowGetEvidenceCB evidence_cb, gpointer user_data) ;
+void zmapWindowScratchSaveFeature(ZMapWindow window, GQuark feature_id) ;
+void zmapWindowScratchSaveFeatureSet(ZMapWindow window, GQuark feature_set_id) ;
+void zmapWindowScratchResetAttributes(ZMapWindow window) ;
 
 /* summarise busy column by not displaying invisible features */
 gboolean zmapWindowContainerSummariseIsItemVisible(ZMapWindow window, double dx1,double dy1,double dx2, double dy2);

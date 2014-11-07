@@ -5278,7 +5278,7 @@ void zmapWindowFetchData(ZMapWindow window,
 
 
 /* Handles all keyboard events for the ZMap window, as per gtk callback rules
- * returns TRUE if it handled the event, FALSE otherwise. */
+ * returns TRUE if it handled the event, FALSE otherwise. See Coordinates.shtml */
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 {
   gboolean event_handled = FALSE ;

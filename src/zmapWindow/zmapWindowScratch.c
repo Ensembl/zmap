@@ -389,3 +389,31 @@ void zmapWindowScratchFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
   
   (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
 }
+
+
+/* 
+ * \brief Save the feature name to be used when we create the real feature from the scratch feature.
+ */
+void zmapWindowScratchSaveFeature(ZMapWindow window, GQuark feature_id)
+{
+  window->scratch_feature_id = feature_id ;
+}
+
+
+/* 
+ * \brief Save the featureset to be used when we create the real feature from the scratch feature.
+ */
+void zmapWindowScratchSaveFeatureSet(ZMapWindow window, GQuark feature_set_id)
+{
+  window->scratch_feature_set_id = feature_set_id ;
+}
+
+
+/* 
+ * \brief Reset the saved attributes
+ */
+void zmapWindowScratchResetAttributes(ZMapWindow window)
+{
+  window->scratch_feature_id = 0 ;
+  window->scratch_feature_set_id = 0 ;
+}
