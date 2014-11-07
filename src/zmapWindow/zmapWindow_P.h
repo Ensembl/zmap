@@ -641,7 +641,7 @@ typedef struct
 
 /* Represents a single sequence display window with its scrollbars, canvas and feature
  * display. */
-typedef struct _ZMapWindowStruct
+typedef struct ZMapWindowStructType
 {
 
   ZMapWindowConfigStruct config ;			    /* Holds window configuration info. */
@@ -694,6 +694,15 @@ typedef struct _ZMapWindowStruct
 
 
   gboolean multi_select ;
+
+
+  /* Highlighting data for flip-flopping focus. */
+  FooCanvasGroup *focus_column ;
+  FooCanvasItem *focus_item ;
+  ZMapFeature focus_feature ;
+
+  /* Highlighting state for flip-flopping splice highlighting. */
+  gboolean splice_highlight_on ;
 
 
   /* Some default colours, good for hiding boxes/lines. */
@@ -1592,6 +1601,7 @@ void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column, 
 FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusDestroy(ZMapWindowFocus focus) ;
 
+FooCanvasGroup *zmapWindowGetFirstColumn(ZMapWindow window, ZMapStrand strand) ;
 
 void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items);
 void zmapWindowFocusRehighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window);
@@ -1661,6 +1671,8 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 				     ZMapFeatureBlock     block,
 				     ZMapFeatureSet       feature_set,
 				     ZMapFeatureTypeStyle style);
+
+void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features) ;
 
 gboolean zmapWindowUpdateStyles(ZMapWindow window, GHashTable *read_only_styles, GHashTable *display_styles) ;
 gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
