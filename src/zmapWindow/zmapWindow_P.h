@@ -1717,6 +1717,8 @@ ZMapFeatureTypeStyle zMapWindowGetColumnStyle(ZMapWindow window,GQuark col_id);
 GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id);
 //GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQuark feature_set_id);
 
+void zmapWindowFeatureCallXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
+                                  char *command, FooCanvasItem *real_item) ;
 
 
 /* Ruler Functions */
