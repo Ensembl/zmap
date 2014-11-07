@@ -17,6 +17,7 @@ zmapWindowCanvas.c \
 zmapWindowColBump.c \
 zmapWindowColConfig.c \
 zmapWindowColOrder.c \
+zmapWindowCommand.c \
 zmapWindowDisplayOps.c \
 zmapWindowDNA.c \
 zmapWindowDNAChoose.c \
