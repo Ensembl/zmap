@@ -1326,9 +1326,12 @@ void zmapWindowFeatureCallXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   feature_set.magic       = feature_copy->magic ;
 #endif
   feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
-  feature_set.parent      = feature_copy->parent->parent;
-  feature_set.unique_id   = feature_copy->parent->unique_id;
-  feature_set.original_id = feature_copy->parent->original_id;
+  if (feature_copy->parent)
+    {
+      feature_set.parent      = feature_copy->parent->parent;
+      feature_set.unique_id   = feature_copy->parent->unique_id;
+      feature_set.original_id = feature_copy->parent->original_id;
+    }
 
   feature_set.features = g_hash_table_new(NULL, NULL) ;
   g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature_copy->unique_id), feature_copy) ;

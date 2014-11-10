@@ -2764,7 +2764,22 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
        * create the new feature as well */
       if (create_feature && window->xremote_client)
         {
-          zmapWindowFeatureCallXRemote(window, (ZMapFeatureAny)feature, ZACP_CREATE_FEATURE, NULL) ;
+          /* Find the newly-created feature (this will have a different pointer to the local
+           * feature we created with the same info because of the way merge-features works). */
+          GList *new_feature_list = zMapFeatureSetGetNamedFeaturesForStrand(feature_set, feature->original_id, feature->strand) ;
+          if (g_list_length(new_feature_list) == 1)
+            {
+              ZMapFeature new_feature = (ZMapFeature)(new_feature_list->data) ;
+              zmapWindowFeatureCallXRemote(window, (ZMapFeatureAny)new_feature, ZACP_CREATE_FEATURE, NULL) ;
+            }
+          else
+            {
+              ok = FALSE ;
+              g_set_error(&error, g_quark_from_string("ZMap"), 99, 
+                          "Error merging new feature '%s'; expected 1 feature in featureset but found %d",
+                          g_quark_to_string(feature->original_id),
+                          g_list_length(new_feature_list)) ;
+            }
         }
 
       /*! \todo Check that feature was saved successfully before reporting back. Also close

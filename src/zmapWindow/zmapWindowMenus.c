@@ -119,8 +119,8 @@
 #define SCRATCH_COPY_THIS_FEATURE  "Copy this feature"
 #define SCRATCH_COPY_THIS_COORD    "Copy this coord"
 #define SCRATCH_DELETE_SUBFEATURE  "Delete subfeature"
-#define SCRATCH_SAVE               "Set attributes" /* can be used to set attributes for the temp
-                                                     * feature and/or save the temp feature */
+#define SCRATCH_CREATE             "Create feature"
+#define SCRATCH_ATTRIBUTES         "Set attributes"
 #define SCRATCH_UNDO               "Undo"
 #define SCRATCH_REDO               "Redo"
 #define SCRATCH_CLEAR              "Clear"
@@ -191,7 +191,8 @@ enum
     ITEM_MENU_COPY_TO_SCRATCH,
     ITEM_MENU_COPY_SUBPART_TO_SCRATCH,
     ITEM_MENU_DELETE_FROM_SCRATCH,
-    ITEM_MENU_SAVE_SCRATCH_FEATURE,
+    ITEM_MENU_SCRATCH_ATTRIBUTES,
+    ITEM_MENU_SCRATCH_CREATE,
     ITEM_MENU_CLEAR_SCRATCH,
     ITEM_MENU_UNDO_SCRATCH,
     ITEM_MENU_REDO_SCRATCH,
@@ -889,7 +890,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
       menu_data->feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
     {
       addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_DELETE_SUBFEATURE, ITEM_MENU_DELETE_FROM_SCRATCH, itemMenuCB, NULL);
-      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_SAVE, ITEM_MENU_SAVE_SCRATCH_FEATURE, itemMenuCB, NULL);
+      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_ATTRIBUTES, ITEM_MENU_SCRATCH_ATTRIBUTES, itemMenuCB, NULL);
+      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_CREATE, ITEM_MENU_SCRATCH_CREATE, itemMenuCB, NULL);
     }
 
   menu[i].type = ZMAPGUI_MENU_NONE;
@@ -927,8 +929,17 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       zmapWindowScratchDeleteFeature(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, TRUE);
       break ;
 
-    case ITEM_MENU_SAVE_SCRATCH_FEATURE:
+    case ITEM_MENU_SCRATCH_ATTRIBUTES:
       zmapWindowFeatureShow(menu_data->window, menu_data->item, TRUE) ;
+      break ;
+
+    case ITEM_MENU_SCRATCH_CREATE:
+      /* If an xremote peer is connected, send create-feature message; otherwise show
+       * create-feature dialog */
+      if (menu_data->window->xremote_client)
+        zmapWindowFeatureCallXRemote(menu_data->window, menu_data->feature, ZACP_CREATE_FEATURE, NULL) ;
+      else
+        zmapWindowFeatureShow(menu_data->window, menu_data->item, TRUE) ;
       break ;
 
     case ITEM_MENU_UNDO_SCRATCH:
