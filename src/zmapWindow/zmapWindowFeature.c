@@ -428,15 +428,10 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
                   if (window->xremote_client)
                     {
                       /* For the scratch column, the feature doesn't exist in the peer.
-                       * Ask the peer to create it. */
-                      /*! \todo We may wish to change this so that, rather than creating
-                       * the feature immediately, it opens an intermediary dialog where the
-                       * user can set some attributes locally in zmap instead. Then from
-                       * that dialog, or another option in zmap, they could have the option
-                       * to save the feature to the peer. */
+                       * Pop up a dialog to give the user the option to . */
                       if (feature && feature->style && strcmp(style_id, ZMAP_FIXED_STYLE_SCRATCH_NAME) == 0)
                         {
-                          zmapWindowFeatureCallXRemote(window, (ZMapFeatureAny)feature, ZACP_CREATE_FEATURE, highlight_item) ;
+                          zmapWindowFeatureShow(window, item, TRUE) ;
                         }
                       else
                         {
