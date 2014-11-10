@@ -175,6 +175,50 @@ static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
     }
 }
 
+
+/* If evidence features for the scratch column are highlighted, unhighlight
+ * them. We need to do this before copying features into the scratch column because otherwise we
+ * would re-copy all of the existing features. It's a pain for the user to have to hide evidence
+ * before copying and then highlight it again afterwards, which is why we do this automatically
+ */
+static void scratchHideEvidence(ZMapWindow window)
+{
+  zMapReturnIfFail(window) ;
+
+  ZMapWindowFocus focus = window->focus;
+
+  if (focus && window->highlight_evidence_featureset_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
+    {
+      zmapWindowFocusResetType(focus,WINDOW_FOCUS_GROUP_EVIDENCE);
+    }
+
+  return ;
+}
+
+
+/* If evidence was highlighted for the scratch column, re-highlight it after an edit. This makes
+ * sure any newly copied features are included and is also necessary because we hide evidence
+ * with scratchHideEvidence before a copy.  */
+static void scratchHighlightEvidence(ZMapWindow window)
+{
+  zMapReturnIfFail(window) ;
+
+  if (window->highlight_evidence_featureset_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
+    {
+      ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
+      
+      ZMapWindowHighlightData highlight_data = g_new0(ZMapWindowHighlightDataStruct, 1) ;
+      highlight_data->window = window ;
+      highlight_data->feature = (ZMapFeatureAny)scratch_feature ;
+
+      zmapWindowScratchFeatureGetEvidence(window, scratch_feature, zmapWindowHighlightEvidenceCB, highlight_data) ;
+    }
+
+  return ;
+}
+
+
+
 /*!
  * \brief Copy the given feature to the scratch column
  *
@@ -194,6 +238,8 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
 {
   if (window)
     {
+      scratchHideEvidence(window) ;
+
       doScratchCallbackCommand(ZMAPWINDOW_CMD_COPYTOSCRATCH, 
                                window,
                                feature, 
@@ -201,6 +247,8 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
                                world_x,
                                world_y,
                                use_subfeature) ;
+
+      scratchHighlightEvidence(window) ;
     }
 }
 
@@ -243,6 +291,8 @@ void zmapWindowScratchClear(ZMapWindow window)
   if (!window)
     return;
 
+  scratchHideEvidence(window) ;
+
   /* Call the callback to the view to redraw everything */
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
@@ -262,6 +312,8 @@ void zmapWindowScratchUndo(ZMapWindow window)
   if (!window)
     return;
 
+  scratchHideEvidence(window) ;
+
   /* Call the callback to the view to redraw everything */
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
@@ -270,6 +322,8 @@ void zmapWindowScratchUndo(ZMapWindow window)
   scratch_cmd->cmd = ZMAPWINDOW_CMD_UNDOSCRATCH ;
   
   (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+
+  scratchHighlightEvidence(window) ;
 
   /* If the translation is being shown for the scratch feature, recalculate it */
   ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
@@ -291,6 +345,8 @@ void zmapWindowScratchRedo(ZMapWindow window)
   if (!window)
     return;
 
+  scratchHideEvidence(window) ;
+
   /* Call the callback to the view to redraw everything */
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
@@ -299,6 +355,8 @@ void zmapWindowScratchRedo(ZMapWindow window)
   scratch_cmd->cmd = ZMAPWINDOW_CMD_REDOSCRATCH ;
   
   (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+
+  scratchHighlightEvidence(window) ;
 
   /* If the translation is being shown for the scratch feature, recalculate it */
   ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
@@ -330,4 +388,32 @@ void zmapWindowScratchFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
   scratch_cmd->evidence_cb_data = evidence_cb_data ;
   
   (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+}
+
+
+/* 
+ * \brief Save the feature name to be used when we create the real feature from the scratch feature.
+ */
+void zmapWindowScratchSaveFeature(ZMapWindow window, GQuark feature_id)
+{
+  window->scratch_feature_id = feature_id ;
+}
+
+
+/* 
+ * \brief Save the featureset to be used when we create the real feature from the scratch feature.
+ */
+void zmapWindowScratchSaveFeatureSet(ZMapWindow window, GQuark feature_set_id)
+{
+  window->scratch_feature_set_id = feature_set_id ;
+}
+
+
+/* 
+ * \brief Reset the saved attributes
+ */
+void zmapWindowScratchResetAttributes(ZMapWindow window)
+{
+  window->scratch_feature_id = 0 ;
+  window->scratch_feature_set_id = 0 ;
 }

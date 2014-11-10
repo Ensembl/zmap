@@ -1301,9 +1301,6 @@ static void highlightFeature(gpointer data, gpointer user_data)
 {
   ZMapWindowCanvasFeature feature_item = (ZMapWindowCanvasFeature)data ;
   SpliceHighlight splice_data = (SpliceHighlight)user_data ;
-  ZMapFeature feature = zmapWindowCanvasFeatureGetFeature(feature_item) ;
-  ZMapWindowContainerFeatureSet selected_container_set = splice_data->selected_container_set ;
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Only highlight if container strand (some cols deliberately contain features of both

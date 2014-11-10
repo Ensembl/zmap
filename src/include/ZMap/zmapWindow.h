@@ -45,6 +45,7 @@
 #include <ZMap/zmapAppRemote.h>
 #include <ZMap/zmapXMLHandler.h>
 
+#define SCRATCH_FEATURE_NAME "temp_feature"
 
 
 /*! Opaque type, represents an individual ZMap window. */

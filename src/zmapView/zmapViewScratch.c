@@ -44,8 +44,6 @@
 
 
 
-#define SCRATCH_FEATURE_NAME "temp_feature"
-
 
 typedef enum {ZMAPEDIT_MERGE, ZMAPEDIT_DELETE, ZMAPEDIT_CLEAR, ZMAPEDIT_SAVE} ZMapEditType ;
 
