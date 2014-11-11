@@ -5211,12 +5211,13 @@ static gboolean mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *wi
 
   if (result)
     {
-      /* Save the new feature to the annotation column (so the temp feature is updated with the
-       * same info as the new feature we've created)  */
-      zmapViewScratchSave(view, merge->feature) ;
-
       /* Now create the new feature */
       zmapViewMergeNewFeature(view, merge->feature, merge->feature_set) ;
+
+      /* Save the new feature to the annotation column (so the temp feature is updated with the
+       * same info as the new feature we've created). This takes ownership of merge->feature. */
+      zmapViewScratchSave(view, merge->feature) ;
+
     }
 
   return result ;

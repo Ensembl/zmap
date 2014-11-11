@@ -775,7 +775,7 @@ static gboolean scratchDoSaveOperation(ScratchMergeData merge_data)
 
   if (operation->src_feature)
     {
-      merged = scratchMergeFeature(merge_data, operation->src_feature, FALSE) ;
+      merged = scratchMergeFeature(merge_data, operation->src_feature, TRUE) ;
     }
   else
     {
@@ -829,6 +829,9 @@ static void scratchEraseFeature(ZMapView zmap_view)
   /* Reset the start-/end-set flag */
   scratchSetStartEndFlag(zmap_view, FALSE);
 
+  /* Reset cached attributes */
+  zmapViewScratchResetAttributes(zmap_view) ;
+  
   /* Reset cached attributes */
   //zmapViewScratchResetAttributes(zmap_view) ;
 
@@ -1237,38 +1240,6 @@ static void operationAddFeatureList(EditOperation operation, GList *features)
     }
 }
 
-/*!
- * \brief Return true if two features are exactly the same, as far as we care for
- * constructing the scratch feature.
- */
-static gboolean featuresEqual(ZMapFeature feature1, ZMapFeature feature2)
-{
-  gboolean result = FALSE ;
-
-  if (feature1 && feature2)
-    {
-      if (feature1->mode == feature2->mode &&
-          feature1->strand == feature2->strand &&
-          feature1->x1 == feature2->x1 &&
-          feature1->x2 == feature2->x2)
-        {
-          if (feature1->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-            {
-              result = zMapFeatureTranscriptsEqual(feature1, feature2, NULL) ;
-            }
-          else
-            {
-              /* shouldn't get here because scratch feature is a transcript */
-              zMapWarnIfReached() ;
-              result = TRUE ; 
-            }
-        }
-          
-    }
-
-  return result ;
-}
-
 
 /*!
  * \brief Copy the given feature(s) into the scratch column
@@ -1504,23 +1475,28 @@ gboolean zmapViewScratchSave(ZMapView view, ZMapFeature feature)
 {
   if (zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION) && feature)
     {
-      /* If the new feature is exactly the same as the existing one then we don't
-       * need to do anything. */
-      ZMapFeature old_feature = zmapViewScratchGetFeature(view) ;
+      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
 
-      if (!featuresEqual(old_feature, feature))
-        {
-          view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+      /* Save the cached feature name and featureset in the source feature (instead of the
+       * temp feature name and featureset which are no longer needed now we're taking
+       * ownership of this feature struct) */
+      GQuark feature_id = view->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] ;
+      GQuark feature_set_id = view->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] ;
 
-          /* Now create the save operation */
-          EditOperation operation = g_new0(EditOperationStruct, 1);
+      if (feature_id)
+        feature->original_id = feature_id ;
+
+      if (feature_set_id)
+        feature->parent = zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)view->features, feature_set_id, ZMAPFEATURE_STRUCT_FEATURESET) ;
+
+      /* Now create the save operation */
+      EditOperation operation = g_new0(EditOperationStruct, 1);
       
-          operation->edit_type = ZMAPEDIT_SAVE ;
-          operation->src_feature = feature ;
+      operation->edit_type = ZMAPEDIT_SAVE ;
+      operation->src_feature = feature ;
 
-          /* Add this operation to the list and recreate the scratch feature. */
-          scratchAddOperation(view, operation) ;
-        }
+      /* Add this operation to the list and recreate the scratch feature. */
+      scratchAddOperation(view, operation) ;
     }
 
   return TRUE;

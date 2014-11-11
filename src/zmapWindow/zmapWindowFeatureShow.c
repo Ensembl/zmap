@@ -2573,6 +2573,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
 
   GError *error = NULL ;
   gboolean ok = TRUE ;
+  gboolean destroy_feature = TRUE ;
 
   ZMapWindow window = NULL ;
   GQuark feature_id = 0 ;
@@ -2747,10 +2748,11 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
     }
   else if (ok)
     {
-      /* Otherwise merge the feature into the zmap context */
+      /* Otherwise merge the feature into the zmap context. This takes ownership of the feature
+       * we created */
       ZMapWindowMergeNewFeatureStruct merge = {feature, feature_set, NULL} ;
-
       ok = window->caller_cbs->merge_new_feature(window, window->app_data, &merge) ;
+      destroy_feature = FALSE ;
     }
 
   if (ok)
@@ -2777,6 +2779,9 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
           g_error_free(error) ;
         }
     }
+
+  if (feature && destroy_feature)
+    zMapFeatureDestroy(feature) ;
 }
 
 
