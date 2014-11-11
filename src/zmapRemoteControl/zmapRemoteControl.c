@@ -2805,9 +2805,12 @@ static RemoteZeroMQMessage zeroMQMessageCreate(char *header, char *body)
 
 static void zeroMQMessageDestroy(RemoteZeroMQMessage zeromq_msg)
 {
-  g_free(zeromq_msg->header) ;
-  g_free(zeromq_msg->body) ;
-  g_free(zeromq_msg) ;
+  if (zeromq_msg)
+    {
+      g_free(zeromq_msg->header) ;
+      g_free(zeromq_msg->body) ;
+      g_free(zeromq_msg) ;
+    }
 
   return ;
 }
