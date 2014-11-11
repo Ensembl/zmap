@@ -2057,7 +2057,8 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmp
   ZMapSkipList sl = NULL;
   zmapWindowCanvasFeatureStruct search;
   double extra = 0.0;
-  zMapReturnValIfFail(fi, sl) ;
+
+  zMapReturnValIfFail(fi, NULL) ;
 
   extra = fi->longest;
 
