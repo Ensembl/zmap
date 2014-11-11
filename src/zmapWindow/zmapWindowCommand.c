@@ -113,7 +113,9 @@ static gboolean doSplice(ZMapWindow window, ZMapWindowCallbackCommandSplice spli
           focus_container = (ZMapWindowContainerFeatureSet)focus_column ;
 
           if ((result = zmapWindowContainerFeatureSetSpliceHighlightFeatures(focus_container,
-                                                                             splice_data->highlight_features)))
+                                                                             splice_data->highlight_features,
+                                                                             splice_data->seq_start,
+                                                                             splice_data->seq_end)))
             {
               zmapWindowFullReposition(window->feature_root_group, TRUE, "key s") ;
 

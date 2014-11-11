@@ -799,7 +799,7 @@ void zmapWindowDrawRemove3FrameFeatures(ZMapWindow window)
 
 
 
-void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features)
+void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features, int seq_start, int seq_end)
 {
   FooCanvasGroup *focus_column ;
   FooCanvasItem *focus_item  ;
@@ -815,7 +815,8 @@ void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features)
       focus_container = (ZMapWindowContainerFeatureSet)focus_column ;
 
       if ((result = zmapWindowContainerFeatureSetSpliceHighlightFeatures(focus_container,
-                                                                         highlight_features)))
+                                                                         highlight_features,
+                                                                         seq_start, seq_end)))
         {
           zmapWindowFullReposition(window->feature_root_group, TRUE, "key s") ;
           

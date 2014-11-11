@@ -3302,13 +3302,12 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       /* Is this the place to do the splice ?? */
       if (feature_sets->splice_highlight_on)
         {
-          zmapWindowDrawSplices(window, NULL) ;
+          zmapWindowDrawSplices(window, NULL, 0, 0) ;
         }
 
 
       /* Tell layer above that we have finished loading/displaying features. */
-      (*(window_cbs_G->drawn_data))(window,
-            window->app_data, window_data->loaded_cb_user_data, diff_context) ;
+      (*(window_cbs_G->drawn_data))(window, window->app_data, window_data->loaded_cb_user_data, diff_context) ;
 
 
       g_free(feature_sets) ;
@@ -5175,8 +5174,7 @@ void zmapWindowFetchData(ZMapWindow window,
           //zMapLogWarning("fetch all: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
 
         }
-      else if (zmapWindowMarkIsSet(window->mark) &&
-                       zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
+      else if (zmapWindowMarkIsSet(window->mark) && zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
         {
           fetch_data->start = start;
           fetch_data->end   = end;
@@ -5841,13 +5839,27 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         else
           {
             FooCanvasGroup *focus_column ;
-            FooCanvasItem *focus_item  ;
+            FooCanvasItem *focus_item ;
+            GList *highlight_features ;
 
             if ((focus_column = zmapWindowFocusGetHotColumn(window->focus))
                 && (focus_item = zmapWindowFocusGetHotItem(window->focus))
-                && (splice_data.highlight_features = zmapWindowFocusGetFeatureList(window->focus)))
+                && (highlight_features = zmapWindowFocusGetFeatureList(window->focus)))
               {
+                int start, end ;
+
+                if (zmapWindowMarkIsSet(window->mark) && zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
+                  {
+                    /* Exclude any features not overlapping the given region.... */
+                    highlight_features = zMapFeatureGetOverlapFeatures(highlight_features,
+                                                                       start, end, ZMAPFEATURE_OVERLAP_ALL) ;
+
+                    splice_data.seq_start = start ;
+                    splice_data.seq_end = end ;
+                  }
+
                 splice_data.do_highlight = TRUE ;
+                splice_data.highlight_features = highlight_features ;
 
                 (*(window_cbs_G->command))(window, window->app_data, &splice_data) ;
               }

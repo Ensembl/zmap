@@ -1695,7 +1695,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 				     ZMapFeatureSet       feature_set,
 				     ZMapFeatureTypeStyle style);
 
-void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features) ;
+void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features, int seq_start, int seq_end) ;
 
 gboolean zmapWindowUpdateStyles(ZMapWindow window, GHashTable *read_only_styles, GHashTable *display_styles) ;
 gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
