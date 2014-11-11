@@ -2667,6 +2667,8 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
                                                   FALSE,
                                                   0.0,
                                                   ZMAPSTRAND_FORWARD);
+
+      feature->parent = (ZMapFeatureAny)feature_set ;
     }
 
   if (ok)
@@ -2743,8 +2745,14 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
       zMapFeatureTranscriptRecreateIntrons(feature) ;
     }
 
-  if (ok)
+  if (ok && create_feature && window->xremote_client)
     {
+      /* Tell the xremote peer to create the new feature */
+      zmapWindowFeatureCallXRemote(window, (ZMapFeatureAny)feature, ZACP_CREATE_FEATURE, NULL) ;
+    }
+  else if (ok)
+    {
+      /* Otherwise merge the feature into the zmap context */
       ZMapWindowMergeNewFeatureStruct merge = {feature, feature_set, NULL} ;
 
       ok = window->caller_cbs->merge_new_feature(window, window->app_data, &merge) ;
@@ -2752,34 +2760,12 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
 
   if (ok)
     {
-      /* If create_eature is true, the scratch feature has been saved. However, we have now
+      /* If create_feature is true, the scratch feature has been saved. However, we have now
        * created a new "real" feature which is unsaved. */
       if (create_feature)
         {
           window->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
           window->flags[ZMAPFLAG_FEATURES_NEED_SAVING] = TRUE ;
-        }
-
-      /* If creating a new feature and we have an xremote peer then we need to tell the peer to
-       * create the new feature as well */
-      if (create_feature && window->xremote_client)
-        {
-          /* Find the newly-created feature (this will have a different pointer to the local
-           * feature we created with the same info because of the way merge-features works). */
-          GList *new_feature_list = zMapFeatureSetGetNamedFeaturesForStrand(feature_set, feature->original_id, feature->strand) ;
-          if (g_list_length(new_feature_list) == 1)
-            {
-              ZMapFeature new_feature = (ZMapFeature)(new_feature_list->data) ;
-              zmapWindowFeatureCallXRemote(window, (ZMapFeatureAny)new_feature, ZACP_CREATE_FEATURE, NULL) ;
-            }
-          else
-            {
-              ok = FALSE ;
-              g_set_error(&error, g_quark_from_string("ZMap"), 99, 
-                          "Error merging new feature '%s'; expected 1 feature in featureset but found %d",
-                          g_quark_to_string(feature->original_id),
-                          g_list_length(new_feature_list)) ;
-            }
         }
 
       /*! \todo Check that feature was saved successfully before reporting back. Also close
