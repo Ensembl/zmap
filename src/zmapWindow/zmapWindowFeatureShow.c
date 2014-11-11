@@ -2611,10 +2611,10 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
 
   if (create_feature)
     {
-      /* Create a new feature with the given feature name and featureset. The featureset must not
-       * be the Annotation column (otherwise the user should hit Save instead of Create to save
-       * attributes in the temp feature). */
-      if (new_feature_set_id != temp_feature_set_id)
+      /* Create a new feature with the given feature name and featureset. In standalone zmap,
+       * the featureset must not be the Annotation column (otherwise the user should hit Save 
+       * instead of Create to save attributes in the temp feature). */
+      if (window->xremote_client || new_feature_set_id != temp_feature_set_id)
         {
           feature_id = new_feature_id ;
           feature_set_id = new_feature_set_id ;
@@ -2623,7 +2623,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
         {
           ok = FALSE ;
           g_set_error(&error, g_quark_from_string("ZMap"), 99, 
-                      "You cannot create a new feature in the %s column.\n\nEither press Save instead, or specify a\ndifferent feature set to create the new feature in.",
+                      "You cannot create a new feature in the %s column.\n\nEither press Save Attributes instead to save the temp feature, or specify a\ndifferent feature set to create the new feature in.",
                       ZMAP_FIXED_STYLE_SCRATCH_NAME) ;
         }
     }
