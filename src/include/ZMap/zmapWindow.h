@@ -349,6 +349,8 @@ typedef struct ZMapWindowCallbackCommandSpliceStructType
 
   GList *highlight_features ;
 
+  int seq_start, seq_end ;                                  /* highlight between start/end. */
+
 } ZMapWindowCallbackCommandSpliceStruct, *ZMapWindowCallbackCommandSplice ;
 
 
