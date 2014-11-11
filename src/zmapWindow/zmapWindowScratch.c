@@ -299,6 +299,8 @@ void zmapWindowScratchClear(ZMapWindow window)
 
   scratchHideEvidence(window) ;
 
+  zmapWindowScratchResetAttributes(window) ;
+
   /* Call the callback to the view to redraw everything */
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
@@ -388,7 +390,7 @@ void zmapWindowScratchFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
  */
 void zmapWindowScratchSaveFeature(ZMapWindow window, GQuark feature_id)
 {
-  window->scratch_feature_id = feature_id ;
+  window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] = feature_id ;
 }
 
 
@@ -397,7 +399,7 @@ void zmapWindowScratchSaveFeature(ZMapWindow window, GQuark feature_id)
  */
 void zmapWindowScratchSaveFeatureSet(ZMapWindow window, GQuark feature_set_id)
 {
-  window->scratch_feature_set_id = feature_set_id ;
+  window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] = feature_set_id ;
 }
 
 
@@ -406,6 +408,6 @@ void zmapWindowScratchSaveFeatureSet(ZMapWindow window, GQuark feature_set_id)
  */
 void zmapWindowScratchResetAttributes(ZMapWindow window)
 {
-  window->scratch_feature_id = 0 ;
-  window->scratch_feature_set_id = 0 ;
+  window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] = 0 ;
+  window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] = 0 ;
 }

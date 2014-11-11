@@ -937,7 +937,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       /* If an xremote peer is connected, send create-feature message; otherwise show
        * create-feature dialog */
       if (menu_data->window->xremote_client)
-        zmapWindowFeatureCallXRemote(menu_data->window, menu_data->feature, ZACP_CREATE_FEATURE, NULL) ;
+        zmapWindowFeatureCallXRemote(menu_data->window, (ZMapFeatureAny)menu_data->feature, ZACP_CREATE_FEATURE, NULL) ;
       else
         zmapWindowFeatureShow(menu_data->window, menu_data->item, TRUE) ;
       break ;

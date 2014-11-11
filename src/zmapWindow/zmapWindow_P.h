@@ -877,6 +877,7 @@ typedef struct ZMapWindowStructType
   ZMapWindowState state;	/* need to store this see revcomp, RT 229703 */
 
   gboolean *flags ; /* array of flags from the view level */
+  int *int_values ; /* array of int values from the view level */
 
   /* The display_forward_coords flag controls whether coords are displayed
    * always as if for the original forward strand or for the whichever is the current forward
@@ -899,11 +900,6 @@ typedef struct ZMapWindowStructType
    * featureset then we need to do some special processing before/after editing the scratch
    * feature.)*/
   GQuark highlight_evidence_featureset_id ;
-
-  /* These values save attributes about the scratch feature that cannot be saved in the temp feature
-   * struct itself because the real feature hasn't been created yet. */
-  GQuark scratch_feature_id ;
-  GQuark scratch_feature_set_id ;
 
 } ZMapWindowStruct ;
 

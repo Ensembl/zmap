@@ -369,7 +369,8 @@ typedef struct _ZMapViewStruct
   gboolean columns_set;                   // if set from config style use config only
                                           // else use source featuresets in order as of old
 
-  gboolean flags[ZMAPFLAG_NUM_FLAGS] ;    /* boolean flags */
+  gboolean flags[ZMAPFLAG_NUM_FLAGS] ;    /* boolean flags (also accessible from window level) */
+  int int_values[ZMAPINT_NUM_VALUES] ;    /* int values (also accessible from window level) */
 
   /* Be good to get rid of this window stuff in any restructure..... */
   GList *window_list ;					    /* Of ZMapViewWindow. */
@@ -386,6 +387,7 @@ typedef struct _ZMapViewStruct
   gboolean kill_blixems ;
   GList *spawned_processes ;
 
+  gboolean xremote_client ;               /* true if this zmap is an xremote client */
 
   GHashTable *cwh_hash ;
 
@@ -401,7 +403,6 @@ typedef struct _ZMapViewStruct
   GQuark save_file ;                   /* Filename to use for the Save option in standalone
                                         * ZMap. Gets set either from the input file or from the
                                         * first Save As operation.  */
-
 } ZMapViewStruct ;
 
 
@@ -522,7 +523,9 @@ void zmapViewScratchFeatureGetEvidence(ZMapView view, ZMapWindowGetEvidenceCB ev
 ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view);
 ZMapFeature zmapViewScratchGetFeature(ZMapView view);
 void zmapViewScratchRemoveFeatures(ZMapView view, GList *feature_list) ;
-
+void zmapViewScratchSaveFeature(ZMapView window, GQuark feature_id) ;
+void zmapViewScratchSaveFeatureSet(ZMapView window, GQuark feature_set_id) ;
+void zmapViewScratchResetAttributes(ZMapView view) ;
 
 #ifdef LOTS_OF_EXONS
 #define ZMAP_VIEW_REMOTE_SEND_XML_TEST "<zmap>\
