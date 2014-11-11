@@ -97,6 +97,19 @@ static ZMapFeature zmapWindowScratchGetFeature(ZMapWindow window)
 }
 
 
+static void scratchRecalcTranslation(ZMapWindow window)
+{
+  ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
+
+  if (window->show_translation_featureset_id &&
+      window->show_translation_featureset_id == scratch_featureset->unique_id)
+    {
+      ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
+      zmapWindowFeatureShowTranslation(window, scratch_feature) ;
+    }
+
+}
+
 /* Do the callback to the View level for a command on the scratch column */
 static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
                                      ZMapWindow window,
@@ -158,14 +171,7 @@ static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
       (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
 
       /* If the translation is being shown for the scratch feature, recalculate it */
-      ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
-
-      if (window->show_translation_featureset_id &&
-          window->show_translation_featureset_id == scratch_featureset->unique_id)
-        {
-          ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
-          zmapWindowFeatureShowTranslation(window, scratch_feature) ;
-        }
+      scratchRecalcTranslation(window) ;
     }
   else
     {
@@ -326,14 +332,7 @@ void zmapWindowScratchUndo(ZMapWindow window)
   scratchHighlightEvidence(window) ;
 
   /* If the translation is being shown for the scratch feature, recalculate it */
-  ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
-
-  if (window->show_translation_featureset_id &&
-      window->show_translation_featureset_id == scratch_featureset->unique_id)
-    {
-      ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
-      zmapWindowFeatureShowTranslation(window, scratch_feature) ;
-    }
+  scratchRecalcTranslation(window) ;
 }
 
 
@@ -359,14 +358,7 @@ void zmapWindowScratchRedo(ZMapWindow window)
   scratchHighlightEvidence(window) ;
 
   /* If the translation is being shown for the scratch feature, recalculate it */
-  ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
-
-  if (window->show_translation_featureset_id &&
-      window->show_translation_featureset_id == scratch_featureset->unique_id)
-    {
-      ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
-      zmapWindowFeatureShowTranslation(window, scratch_feature) ;
-    }
+  scratchRecalcTranslation(window) ;
 }
 
 
