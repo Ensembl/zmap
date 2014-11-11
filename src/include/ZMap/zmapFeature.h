@@ -143,6 +143,20 @@ _(ZMAPALIGN_FORMAT_GAPS_ACEDB,       , "gaps_acedb",       "invalid mode "      
 ZMAP_DEFINE_ENUM(ZMapFeatureAlignFormat, ZMAP_ALIGN_GAP_FORMAT_LIST) ;
 
 
+/* Used to specify overlap type for features vs. a coord range. */
+typedef enum
+  {
+    ZMAPFEATURE_OVERLAP_NONE,                               /* No overlap with range. */
+    ZMAPFEATURE_OVERLAP_COMPLETE,                           /* Feature completely enclosed by
+                                                               range. */
+    ZMAPFEATURE_OVERLAP_PARTIAL_INTERNAL,                   /* One end of the feature is within the range
+                                                               but not the other. */
+    ZMAPFEATURE_OVERLAP_PARTIAL_EXTERNAL,                   /* The feature completely encloses the range. */
+    ZMAPFEATURE_OVERLAP_ALL                                 /* Includes all overlapping features. */
+
+  } ZMapFeatureRangeOverlapType ;
+
+
 /* Used to specify the degree of colinearity between two alignment blocks. */
 typedef enum
   {
@@ -1066,6 +1080,10 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
 void zMapFeatureDestroy(ZMapFeature feature) ;
 
 
+GList *zMapFeatureGetOverlapFeatures(GList *feature_list, int start, int end, ZMapFeatureRangeOverlapType overlap) ;
+
+
+
 /*
  * FeatureSet funcs
  */
@@ -1367,18 +1385,12 @@ GArray* zMapAlignBlockArrayCreate() ;
 gboolean zMapAlignBlockArrayDestroy(GArray* const) ;
 ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray* const, int index) ;
 gboolean zMapAlignBlockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
-gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
 
 gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
-
-gboolean zMapFeatureHasMatchingBoundary(ZMapFeature feature,
-                                        int boundary_start, int boundary_end,
-                                        int *boundary_start_out, int *boundary_end_out) ;
-
+GList *zMapFeatureHasMatchingBoundaries(ZMapFeature feature, GList *boundaries) ;
 int zMapFeatureVariationGetSections(const char *variation_str, 
                                     char **old_str_out, char **new_str_out, 
                                     int *old_len_out, int *new_len_out) ;
-
 
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 

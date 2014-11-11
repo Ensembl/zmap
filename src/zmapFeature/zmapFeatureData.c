@@ -41,91 +41,76 @@
 #include <zmapFeature_P.h>
 
 
+
+static void freeSubPart(gpointer data, gpointer user_data_unused) ;
+
+
+
 /* 
  *                       External routines.
  */
 
 
-
-
-
-/* Checks to see if any boundary within feature coincides with either
- * boundary_start or boundary_end, the actual coinciding boundary for
- * each is returned in boundary_start_out and boundary_end_out if specified.
- * The actual boundary position may be different because the feature's
- * style might allow "slop" in the precise boundary position. 
+/* Checks to see if any boundary within feature coincides with any
+ * boundary in boundaries. Returns a list of ZMapSpanStruct of those that
+ * do or NULL if there are none.
+ * Note that the actual boundary position may be different from the original
+ * because the feature's style might allow "slop" in the precise position. 
  * 
- * If at least one boundary is found TRUE is returned and if 
- * boundary_start_out and/or boundary_end_out are specified the positions
- * or zero are returned. If neither boundary is found then FALSE is
- * returned and boundary_start_out and/or boundary_end_out are unaltered.
- * 
- * Note that currently boundaries are only searched for in basic, alignment
- * and transcript type features.
+ * Note that currently only basic, alignment and transcript type features
+ * are searched for boundaries.
  * 
  *  */
-gboolean zMapFeatureHasMatchingBoundary(ZMapFeature feature,
-                                        int boundary_start, int boundary_end,
-                                        int *boundary_start_out, int *boundary_end_out)
+GList *zMapFeatureHasMatchingBoundaries(ZMapFeature feature, GList *boundaries)
 {
-  gboolean result = FALSE ;
+  GList *matching_boundaries = NULL ;
 
-  zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
+  zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), NULL) ;
 
-  switch (feature->mode)
+  if (boundaries)
     {
-    case ZMAPSTYLE_MODE_BASIC:
-      {
-        result = zmapFeatureBasicHasMatchingBoundary(feature,
-                                                     boundary_start, boundary_end,
-                                                     boundary_start_out, boundary_end_out) ;
+      switch (feature->mode)
+        {
+        case ZMAPSTYLE_MODE_BASIC:
+          {
+            matching_boundaries = zmapFeatureBasicHasMatchingBoundaries(feature, boundaries) ;
 
-        break ;
-      }
-    case ZMAPSTYLE_MODE_ALIGNMENT:
-      {
-        result = zmapFeatureAlignmentHasMatchingBoundary(feature,
-                                                         boundary_start, boundary_end,
-                                                         boundary_start_out, boundary_end_out) ;
+            break ;
+          }
+        case ZMAPSTYLE_MODE_ALIGNMENT:
+          {
+            matching_boundaries = zmapFeatureAlignmentHasMatchingBoundaries(feature, boundaries) ;
 
-        break ;
-      }
-    case ZMAPSTYLE_MODE_TRANSCRIPT:
-      {
-        result = zmapFeatureTranscriptHasMatchingBoundary(feature,
-                                                          boundary_start, boundary_end,
-                                                          boundary_start_out, boundary_end_out) ;
+            break ;
+          }
+        case ZMAPSTYLE_MODE_TRANSCRIPT:
+          {
+            matching_boundaries = zmapFeatureTranscriptHasMatchingBoundaries(feature, boundaries) ;
 
-        break ;
-      }
-    default:
-      {
-        result = FALSE ;
+            break ;
+          }
+        default:
+          {
+            matching_boundaries = NULL ;
 
-        break ;
-      }
+            break ;
+          }
+        }
     }
 
-
-  return result ;
+  return matching_boundaries ;
 }
 
 
 
 
-/* Checks to see if any boundary within feature coincides with either
- * boundary_start or boundary_end, the actual coinciding boundary for
- * each is returned in boundary_start_out and boundary_end_out if specified.
- * The actual boundary position may be different because the feature's
- * style might allow "slop" in the precise boundary position. 
+/* If the feature is basic, align or transcript its start/end and any
+ * subparts are returned and the function returns TRUE, otherwise 
+ * returns FALSE.
  * 
- * If at least one boundary is found TRUE is returned and if 
- * boundary_start_out and/or boundary_end_out are specified the positions
- * or zero are returned. If neither boundary is found then FALSE is
- * returned and boundary_start_out and/or boundary_end_out are unaltered.
- * 
- * Note that currently boundaries are only searched for in basic, alignment
- * and transcript type features.
+ * Note that subparts are a list of newly allocated ZMapSpanStruct
+ * which should be freed by the caller, the function zMapFeatureFreeSubParts()
+ * can be used to do this.
  * 
  *  */
 gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out)
@@ -188,6 +173,51 @@ gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_
 
 
   return result ;
+}
+
+
+void zMapFeatureFreeSubParts(GList *sub_parts)
+{
+  g_list_foreach(sub_parts, freeSubPart, NULL) ;
+
+  return ;
+}
+
+
+/* Can be used to get non-overlapping or overlapping features of various types. */
+GList *zMapFeatureGetOverlapFeatures(GList *feature_list, int start, int end, ZMapFeatureRangeOverlapType overlap)
+{
+  GList *new_list = feature_list ;
+  GList *curr ;
+
+  curr = new_list ;
+  while (curr)
+    {
+      GList *next ;
+      ZMapFeature feature ;
+      ZMapFeatureRangeOverlapType feature_overlap = ZMAPFEATURE_OVERLAP_NONE ;
+
+      next = g_list_next(curr) ;
+      feature = (ZMapFeature)(curr->data) ;
+
+      if (feature->x1 >= start && feature->x2 <= end)
+        feature_overlap = ZMAPFEATURE_OVERLAP_COMPLETE ;
+      else if (feature->x1 < start && feature->x2 > end)
+        feature_overlap = ZMAPFEATURE_OVERLAP_PARTIAL_EXTERNAL ;
+      else if ((feature->x1 >= start && feature->x1 <= end)
+               || (feature->x2 >= start && feature->x2 <= end))
+        feature_overlap = ZMAPFEATURE_OVERLAP_PARTIAL_INTERNAL ;
+      else
+        feature_overlap = ZMAPFEATURE_OVERLAP_NONE ;
+    
+      if (!((overlap == ZMAPFEATURE_OVERLAP_ALL && feature_overlap != ZMAPFEATURE_OVERLAP_NONE)
+            || (overlap == feature_overlap)))
+        new_list = g_list_delete_link(new_list, curr) ;
+
+      curr = next ;
+    }
+
+  return new_list ;
 }
 
 
@@ -255,4 +285,21 @@ GList *zmapFeatureGetSubparts(ZMapFeature feature)
   return subparts ;
 }
 
+
+
+
+
+/* 
+ *                    Internal routines
+ */
+
+
+/* A GFunc() called to free the g_new'd data for a list element, in this case it's a
+ * ZMapSpanStruct but we don't really need to know that. */
+static void freeSubPart(gpointer data, gpointer user_data_unused)
+{
+  g_free(data) ;
+
+  return ;
+}
 

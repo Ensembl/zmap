@@ -909,41 +909,93 @@ gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature transcript, Co
  *            Package routines.
  */
 
-/* Do boundary_start/boundary_end match the start/end of the transcript or any of the
- * exons within the transcript. */
-gboolean zmapFeatureTranscriptHasMatchingBoundary(ZMapFeature feature,
-                                                  int boundary_start, int boundary_end,
-                                                  int *boundary_start_out, int *boundary_end_out)
+
+/* Do any of boundaries match the start/end of the transcript or any of the
+ * exons within the transcript ? Return a list of ZMapSpanStruct with those
+ * that do.
+ * 
+ * Note in the code below that we can avoid unnecessary comparisons because
+ * both boundaries and the exons in the transcript are sorted into ascending
+ * sequence position.
+ * Note also that a zero value boundary means "no boundary".
+ *  */
+GList *zmapFeatureTranscriptHasMatchingBoundaries(ZMapFeature feature, GList *boundaries)
 {
-  gboolean result = FALSE ;
+  GList *matching_boundaries = NULL ;
   int slop ;
   GArray *array = feature->feature.transcript.exons;
+  GList *curr ;
   int i ;
-  int match_start, match_end ;
 
   zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
 
   slop = zMapStyleSpliceHighlightTolerance(*(feature->style)) ;
 
-  for ( i = 0 ; i < array->len; ++i)
+  curr = boundaries ;
+  i = 0 ;
+  while (curr)
     {
-      ZMapSpan exon = &(g_array_index(array, ZMapSpanStruct, i)) ;
+      ZMapSpan curr_boundary = (ZMapSpan)(curr->data) ;
 
-      if (zmapFeatureCoordsMatch(slop, boundary_start, boundary_end,
-                                 exon->x1, exon->x2,
-                                 &match_start, &match_end))
+      if ((curr_boundary->x1) && feature->x2 < curr_boundary->x1)
         {
-          result = TRUE ;
-
-          if (boundary_start_out && match_start)
-            *boundary_start_out = match_start ;
-
-          if (boundary_end_out && match_end)
-            *boundary_end_out = match_end ;
+          /* Feature is before current splice. */
+          ;
         }
+      else if ((curr_boundary->x2) && feature->x1 > curr_boundary->x2)
+        {
+          /* curr splice is beyond feature so stop compares. */
+          break ;
+        }
+      else
+        {
+          while (i < array->len)
+            {
+              ZMapSpan exon ;
+
+              exon = &(g_array_index(array, ZMapSpanStruct, i)) ;
+
+              if ((curr_boundary->x1) && exon->x2 < curr_boundary->x1)
+                {
+                  /* Block is before current splice. */
+                  ;
+                }
+              else if ((curr_boundary->x2) && exon->x1 > curr_boundary->x2)
+                {
+                  /* curr splice is beyond feature so stop compares. */
+                  break ;
+                }
+              else
+                {
+                  int match_boundary_start = 0, match_boundary_end = 0 ;
+
+                  if (zmapFeatureCoordsMatch(slop, curr_boundary->x1, curr_boundary->x2,
+                                             exon->x1, exon->x2,
+                                             &match_boundary_start, &match_boundary_end))
+                    {
+                      ZMapSpan match_boundary ;
+
+                      match_boundary = g_new0(ZMapSpanStruct, 1) ;
+              
+                      if (match_boundary_start)
+                        match_boundary->x1 = match_boundary_start ;
+                      if (match_boundary_end)
+                        match_boundary->x2 = match_boundary_end ;
+
+                      matching_boundaries = g_list_append(matching_boundaries, match_boundary) ;
+                    }
+                }
+
+              i++ ;
+            }
+
+
+        }
+
+      curr = g_list_next(curr) ;
     }
 
-  return result ;
+  return matching_boundaries ;
 }
 
 

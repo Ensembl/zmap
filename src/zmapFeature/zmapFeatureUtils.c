@@ -826,60 +826,61 @@ int zMapFeatureColumnOrderNext(void)
 /* get the column struct for a featureset */
 ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_id)
 {
-      ZMapFeatureColumn column = NULL;
-      ZMapFeatureSetDesc gff;
+  ZMapFeatureColumn column = NULL;
+  ZMapFeatureSetDesc gff;
 
-      char *name = (char *) g_quark_to_string(set_id);
+  char *name = (char *) g_quark_to_string(set_id);
 
-      if(!map->featureset_2_column)
+  if(!map->featureset_2_column)
+    {
+      /* so that we can use autoconfigured servers */
+      map->featureset_2_column = g_hash_table_new(NULL,NULL);
+    }
+
+  /* get the column the featureset goes in */
+  gff = g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(set_id));
+  if(!gff)
+    {
+      //            zMapLogWarning("creating featureset_2_column for %s",name);
+      /* recover from un-configured error
+       * NOTE this occurs for seperator features eg DNA search
+       * the style is predefined but the featureset and column are created
+       * blindly with no reference to config
+       * NOTE ideally these should be done along with getAllPredefined() styles
+       */
+
+      /* instant fix for a bug: DNA search fails to display seperator features */
+      gff = g_new0(ZMapFeatureSetDescStruct,1);
+      gff->column_id =
+        gff->column_ID =
+        gff->feature_src_ID = set_id;
+      gff->feature_set_text = name;
+      g_hash_table_insert(map->featureset_2_column,GUINT_TO_POINTER(set_id),gff);
+    }
+  /*      else*/
+  {
+    column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(gff->column_id));
+    if(!column)
       {
-            /* so that we can use autoconfigured servers */
-            map->featureset_2_column = g_hash_table_new(NULL,NULL);
+        ZMapFeatureSource gff_source;
+
+
+        column = g_new0(ZMapFeatureColumnStruct,1);
+
+        column->unique_id =
+          column->column_id = set_id;
+
+        column->order = zMapFeatureColumnOrderNext();
+
+        gff_source = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(set_id));
+        column->column_desc = name;
+
+        column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,GUINT_TO_POINTER(set_id));
+        g_hash_table_insert(map->columns,GUINT_TO_POINTER(set_id),column);
       }
+  }
 
-      /* get the column the featureset goes in */
-      gff = g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(set_id));
-      if(!gff)
-      {
-//            zMapLogWarning("creating featureset_2_column for %s",name);
-            /* recover from un-configured error
-             * NOTE this occurs for seperator features eg DNA search
-             * the style is predefined but the featureset and column are created
-             * blindly with no reference to config
-             * NOTE ideally these should be done along with getAllPredefined() styles
-             */
-
-             /* instant fix for a bug: DNA search fails to display seperator features */
-             gff = g_new0(ZMapFeatureSetDescStruct,1);
-             gff->column_id =
-             gff->column_ID =
-             gff->feature_src_ID = set_id;
-             gff->feature_set_text = name;
-             g_hash_table_insert(map->featureset_2_column,GUINT_TO_POINTER(set_id),gff);
-      }
-/*      else*/
-      {
-            column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(gff->column_id));
-            if(!column)
-            {
-            ZMapFeatureSource gff_source;
-
-
-                  column = g_new0(ZMapFeatureColumnStruct,1);
-
-                  column->unique_id =
-                  column->column_id = set_id;
-
-                  column->order = zMapFeatureColumnOrderNext();
-
-                  gff_source = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(set_id));
-                  column->column_desc = name;
-
-                  column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,GUINT_TO_POINTER(set_id));
-                  g_hash_table_insert(map->columns,GUINT_TO_POINTER(set_id),column);
-            }
-      }
-      return column;
+  return column;
 }
 
 
@@ -1586,10 +1587,78 @@ gboolean zMapFeaturePrintChildNames(ZMapFeatureAny feature_any)
  *              Package routines.
  */
 
+/* Given a list of boundaries in the form ZMapSpanStructs representing pairs of
+ * start/end boundaries, returns a list of ZMapSpanStructs which are all the 
+ * boundaries that match within the feature. Note that if the feature's style
+ * gave a 'slop' factor for the comparison then this will have been included
+ * 
+ * For basic features this will be derived from the features start/end but for
+ * compound features such as alignments and transcripts there may be a number
+ * of matches.
+ * 
+ * NOTE:
+ *  - the supplied boundaries must be sorted in order of ascending sequence position
+ *  - boundaries are assumed to be >= 0 with a value of 0 meaning "no boundary".
+ */
+GList *zmapFeatureCoordsListMatch(ZMapFeature feature, int match_tolerance, GList *boundaries)
+{
+  GList *matching_boundaries = NULL ;
+  int slop ;
+  GList *curr ;
+
+  zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
+
+  slop = zMapStyleSpliceHighlightTolerance(*(feature->style)) ;
+
+  curr = boundaries ;
+  while (curr)
+    {
+      ZMapSpan curr_boundary = (ZMapSpan)(curr->data) ;
+      int match_boundary_start = 0, match_boundary_end = 0 ;
+
+      if ((curr_boundary->x1) && feature->x2 < curr_boundary->x1)
+        {
+          /* Feature is before current splice so continue. */
+          ;
+        }
+      else if ((curr_boundary->x2) && feature->x1 > curr_boundary->x2)
+        {
+          /* curr splice is beyond feature so stop. */
+          break ;
+        }
+      else
+        {
+          /* ok, work to do. */
+          if (zmapFeatureCoordsMatch(slop, curr_boundary->x1, curr_boundary->x2,
+                                     feature->x1, feature->x2,
+                                     &match_boundary_start, &match_boundary_end))
+            {
+              ZMapSpan match_boundary ;
+
+              match_boundary = g_new0(ZMapSpanStruct, 1) ;
+              
+              if (match_boundary_start)
+                match_boundary->x1 = match_boundary_start ;
+              if (match_boundary_end)
+                match_boundary->x2 = match_boundary_end ;
+
+              matching_boundaries = g_list_append(matching_boundaries, match_boundary) ;
+            }
+        }
+
+      curr = g_list_next(curr) ;
+    }
+
+  return matching_boundaries ;
+}
+
+
+
+
 /* Checks to see if boundary_start/boundary_end match start/end within +- slop,
  * if either does returns TRUE and returns start/end in match_start_out/match_end_out. 
  * 
- * Boundaries are not compared if < 1.
+ * Boundaries are assumed to be >= 0, boundaries are not compared if 0.
  * 
  */
 gboolean zmapFeatureCoordsMatch(int slop, int boundary_start, int boundary_end,

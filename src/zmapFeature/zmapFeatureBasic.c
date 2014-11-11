@@ -21,7 +21,6 @@
  * originally written by:
  *
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
@@ -60,23 +59,19 @@
  */
 
 
-/* Do boundary_start/boundary_end match the start/end of the basic feature ? */
-gboolean zmapFeatureBasicHasMatchingBoundary(ZMapFeature feature,
-                                             int boundary_start, int boundary_end,
-                                             int *boundary_start_out, int *boundary_end_out)
+/* Do any of the supplied boundaries match the start/end of the basic feature ? */
+GList *zmapFeatureBasicHasMatchingBoundaries(ZMapFeature feature, GList *boundaries)
 {
-  gboolean result = FALSE ;
+  GList *matching_boundaries = NULL ;
   int slop ;
 
   zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
 
   slop = zMapStyleSpliceHighlightTolerance(*(feature->style)) ;
 
-  result = zmapFeatureCoordsMatch(slop, boundary_start, boundary_end,
-                                  feature->x1, feature->x2,
-                                  boundary_start_out, boundary_end_out) ;
+  matching_boundaries = zmapFeatureCoordsListMatch(feature, slop, boundaries) ;
 
-  return result ;
+  return matching_boundaries ;
 }
 
 
