@@ -1170,7 +1170,8 @@ static gboolean queueMonitorCB(gpointer user_data)
                     char *err_msg ;
 
                     err_msg = g_strdup_printf("Request final timeout after %gs, request discarded: \"%s\"",
-                                              timeout_s, remote_control->curr_req_raw->body) ;
+                                              timeout_s, 
+                                              (remote_control->curr_req_raw ? remote_control->curr_req_raw->body : "<null>")) ;
 
                     REMOTELOGMSG(remote_control, "%s", err_msg) ;
 
