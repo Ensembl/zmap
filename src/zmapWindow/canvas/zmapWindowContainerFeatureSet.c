@@ -1468,7 +1468,6 @@ static void highlightFeature(gpointer data, gpointer user_data)
   SpliceHighlight splice_data = (SpliceHighlight)user_data ;
   ZMapFeature feature = zmapWindowCanvasFeatureGetFeature(feature_item) ;
   ZMapWindowContainerFeatureSet current_container_set = splice_data->current_container_set ;
-  ZMapWindowContainerFeatureSet selected_container_set = splice_data->selected_container_set ;
   GList *curr ;
   GList *splice_matches ;
 

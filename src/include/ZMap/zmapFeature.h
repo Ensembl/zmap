@@ -1394,4 +1394,6 @@ int zMapFeatureVariationGetSections(const char *variation_str,
 
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
+void zMapFeatureFreeSubParts(GList *sub_parts) ;
+
 #endif /* ZMAP_FEATURE_H */
