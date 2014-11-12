@@ -178,7 +178,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
                                  GList *feature_set_names,
                                  GtkAdjustment *hadjustment,
                                  GtkAdjustment *vadjustment,
-                                 gboolean *flags) ;
+                                 gboolean *flags,
+                                 int *int_values) ;
 static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos) ;
 static void myWindowMove(ZMapWindow window, double start, double end) ;
 
@@ -408,13 +409,13 @@ ZMapWindowCallbacks zmapWindowGetCBs(void)
 
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             ZMapFeatureSequenceMap sequence, void *app_data,
-                            GList *feature_set_names, gboolean *flags)
+                            GList *feature_set_names, gboolean *flags, int *int_values)
 {
   ZMapWindow window ;
 
   window = myWindowCreate(parent_widget, sequence, app_data,
                           feature_set_names,
-                          NULL, NULL, flags) ;
+                          NULL, NULL, flags, int_values) ;
 
   return window ;
 }
@@ -452,7 +453,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
   new_window = myWindowCreate(parent_widget, sequence, app_data,
                               original_window->feature_set_names,
                               hadjustment, vadjustment,
-                              original_window->flags) ;
+                              original_window->flags,
+                              original_window->int_values) ;
   if (!new_window)
     return new_window ;
 
@@ -2239,7 +2241,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
                                  GList *feature_set_names,
                                  GtkAdjustment *hadjustment,
                                  GtkAdjustment *vadjustment,
-                                 gboolean *flags)
+                                 gboolean *flags,
+                                 int *int_values)
 {
   ZMapWindow window = NULL ;
   GtkWidget *canvas, *eventbox ;
@@ -2317,6 +2320,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->context_to_item = zmapWindowFToICreate() ;
 
   window->flags = flags ;
+  window->int_values = int_values ;
 
   /* Init. lists of dialog windows attached to this zmap window. */
   window->featureListWindows = g_ptr_array_new() ;

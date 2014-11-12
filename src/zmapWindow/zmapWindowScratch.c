@@ -97,6 +97,19 @@ static ZMapFeature zmapWindowScratchGetFeature(ZMapWindow window)
 }
 
 
+static void scratchRecalcTranslation(ZMapWindow window)
+{
+  ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
+
+  if (window->show_translation_featureset_id &&
+      window->show_translation_featureset_id == scratch_featureset->unique_id)
+    {
+      ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
+      zmapWindowFeatureShowTranslation(window, scratch_feature) ;
+    }
+
+}
+
 /* Do the callback to the View level for a command on the scratch column */
 static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
                                      ZMapWindow window,
@@ -158,14 +171,7 @@ static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
       (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
 
       /* If the translation is being shown for the scratch feature, recalculate it */
-      ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
-
-      if (window->show_translation_featureset_id &&
-          window->show_translation_featureset_id == scratch_featureset->unique_id)
-        {
-          ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
-          zmapWindowFeatureShowTranslation(window, scratch_feature) ;
-        }
+      scratchRecalcTranslation(window) ;
     }
   else
     {
@@ -293,6 +299,8 @@ void zmapWindowScratchClear(ZMapWindow window)
 
   scratchHideEvidence(window) ;
 
+  zmapWindowScratchResetAttributes(window) ;
+
   /* Call the callback to the view to redraw everything */
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
@@ -326,14 +334,7 @@ void zmapWindowScratchUndo(ZMapWindow window)
   scratchHighlightEvidence(window) ;
 
   /* If the translation is being shown for the scratch feature, recalculate it */
-  ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
-
-  if (window->show_translation_featureset_id &&
-      window->show_translation_featureset_id == scratch_featureset->unique_id)
-    {
-      ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
-      zmapWindowFeatureShowTranslation(window, scratch_feature) ;
-    }
+  scratchRecalcTranslation(window) ;
 }
 
 
@@ -359,14 +360,7 @@ void zmapWindowScratchRedo(ZMapWindow window)
   scratchHighlightEvidence(window) ;
 
   /* If the translation is being shown for the scratch feature, recalculate it */
-  ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
-
-  if (window->show_translation_featureset_id &&
-      window->show_translation_featureset_id == scratch_featureset->unique_id)
-    {
-      ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
-      zmapWindowFeatureShowTranslation(window, scratch_feature) ;
-    }
+  scratchRecalcTranslation(window) ;
 }
 
 
@@ -396,7 +390,7 @@ void zmapWindowScratchFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
  */
 void zmapWindowScratchSaveFeature(ZMapWindow window, GQuark feature_id)
 {
-  window->scratch_feature_id = feature_id ;
+  window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] = feature_id ;
 }
 
 
@@ -405,7 +399,7 @@ void zmapWindowScratchSaveFeature(ZMapWindow window, GQuark feature_id)
  */
 void zmapWindowScratchSaveFeatureSet(ZMapWindow window, GQuark feature_set_id)
 {
-  window->scratch_feature_set_id = feature_set_id ;
+  window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] = feature_set_id ;
 }
 
 
@@ -414,6 +408,6 @@ void zmapWindowScratchSaveFeatureSet(ZMapWindow window, GQuark feature_set_id)
  */
 void zmapWindowScratchResetAttributes(ZMapWindow window)
 {
-  window->scratch_feature_id = 0 ;
-  window->scratch_feature_set_id = 0 ;
+  window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] = 0 ;
+  window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] = 0 ;
 }

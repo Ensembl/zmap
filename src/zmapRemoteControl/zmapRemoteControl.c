@@ -1170,7 +1170,8 @@ static gboolean queueMonitorCB(gpointer user_data)
                     char *err_msg ;
 
                     err_msg = g_strdup_printf("Request final timeout after %gs, request discarded: \"%s\"",
-                                              timeout_s, remote_control->curr_req_raw->body) ;
+                                              timeout_s, 
+                                              (remote_control->curr_req_raw ? remote_control->curr_req_raw->body : "<null>")) ;
 
                     REMOTELOGMSG(remote_control, "%s", err_msg) ;
 
@@ -2804,9 +2805,12 @@ static RemoteZeroMQMessage zeroMQMessageCreate(char *header, char *body)
 
 static void zeroMQMessageDestroy(RemoteZeroMQMessage zeromq_msg)
 {
-  g_free(zeromq_msg->header) ;
-  g_free(zeromq_msg->body) ;
-  g_free(zeromq_msg) ;
+  if (zeromq_msg)
+    {
+      g_free(zeromq_msg->header) ;
+      g_free(zeromq_msg->body) ;
+      g_free(zeromq_msg) ;
+    }
 
   return ;
 }

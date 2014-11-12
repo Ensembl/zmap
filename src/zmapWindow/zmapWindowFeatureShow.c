@@ -808,8 +808,8 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
          feature to the peer yet it will have been cached and we want to use that. */
       char *feature_name = NULL ;
 
-      if (show->zmapWindow->scratch_feature_id)
-        feature_name = g_strdup(g_quark_to_string(show->zmapWindow->scratch_feature_id)) ;
+      if (show->zmapWindow->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE])
+        feature_name = g_strdup(g_quark_to_string(show->zmapWindow->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE])) ;
       else
         feature_name = g_strdup(g_quark_to_string(feature->original_id)) ;
 
@@ -829,8 +829,8 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
           /* If the user has previously changed the featureset but not saved the feature to a
            * peer then the new name will have been cached and we show that instead. */
-          if (show->zmapWindow->scratch_feature_set_id)
-            featureset_name = g_quark_to_string(show->zmapWindow->scratch_feature_set_id) ;
+          if (show->zmapWindow->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET])
+            featureset_name = g_quark_to_string(show->zmapWindow->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET]) ;
 
           tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Set", "Please specify the Feature Set that you would like to save the feature to",
                                                     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
@@ -2573,6 +2573,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
 
   GError *error = NULL ;
   gboolean ok = TRUE ;
+  gboolean destroy_feature = TRUE ;
 
   ZMapWindow window = NULL ;
   GQuark feature_id = 0 ;
@@ -2603,18 +2604,12 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
   new_feature_set_id = zMapStyleCreateID(chapter_feature->feature_set) ;
   temp_feature_set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME) ;
 
-  /* "Save" means something different depending on whether a peer is connected or not: when 
-   * peer is connected we just save attributes, and the user will later send the feature to the 
-   * peer to be created with those attributes; in standalone zmap, we create a new feature 
-   * with the given name in the given featureset. */
-  zmapWindowScratchResetAttributes(window) ;
-
   if (create_feature)
     {
-      /* Create a new feature with the given feature name and featureset. The featureset must not
-       * be the Annotation column (otherwise the user should hit Save instead of Create to save
-       * attributes in the temp feature). */
-      if (new_feature_set_id != temp_feature_set_id)
+      /* Create a new feature with the given feature name and featureset. In standalone zmap,
+       * the featureset must not be the Annotation column (otherwise the user should hit Save 
+       * instead of Create to save attributes in the temp feature). */
+      if (window->xremote_client || new_feature_set_id != temp_feature_set_id)
         {
           feature_id = new_feature_id ;
           feature_set_id = new_feature_set_id ;
@@ -2623,21 +2618,22 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
         {
           ok = FALSE ;
           g_set_error(&error, g_quark_from_string("ZMap"), 99, 
-                      "You cannot create a new feature in the %s column.\n\nEither press Save instead, or specify a\ndifferent feature set to create the new feature in.",
+                      "You cannot create a new feature in the %s column.\n\nEither press Save Attributes instead to save the temp feature, or specify a\ndifferent feature set to create the new feature in.",
                       ZMAP_FIXED_STYLE_SCRATCH_NAME) ;
         }
     }
   else
     {
-      /* Cache the user-entered feature name and featureset, which we'll use later if they open
-       * the dialog again */
-      zmapWindowScratchSaveFeature(window, new_feature_id) ;
-      zmapWindowScratchSaveFeatureSet(window, new_feature_set_id) ;
-
-      /* Update the rest of the details in the existing feature */
+      /* Save attributes in the temp feature rather than creating a real feature. We just Update
+       * the details in the existing temp feature, so we need to use the temp feature name/featureset */
       feature_id = old_feature_id ;
       feature_set_id = old_feature_set_id ;
     }
+
+  /* Cache the user-entered feature name and featureset, since these do not get saved in the
+   * temp feature itself */
+  zmapWindowScratchSaveFeature(window, new_feature_id) ;
+  zmapWindowScratchSaveFeatureSet(window, new_feature_set_id) ;
 
   if (ok)
     {
@@ -2667,6 +2663,8 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
                                                   FALSE,
                                                   0.0,
                                                   ZMAPSTRAND_FORWARD);
+
+      feature->parent = (ZMapFeatureAny)feature_set ;
     }
 
   if (ok)
@@ -2743,43 +2741,28 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
       zMapFeatureTranscriptRecreateIntrons(feature) ;
     }
 
-  if (ok)
+  if (ok && create_feature && window->xremote_client)
     {
+      /* Tell the xremote peer to create the new feature */
+      zmapWindowFeatureCallXRemote(window, (ZMapFeatureAny)feature, ZACP_CREATE_FEATURE, NULL) ;
+    }
+  else if (ok)
+    {
+      /* Otherwise merge the feature into the zmap context. This takes ownership of the feature
+       * we created */
       ZMapWindowMergeNewFeatureStruct merge = {feature, feature_set, NULL} ;
-
       ok = window->caller_cbs->merge_new_feature(window, window->app_data, &merge) ;
+      destroy_feature = FALSE ;
     }
 
   if (ok)
     {
-      /* If create_eature is true, the scratch feature has been saved. However, we have now
+      /* If create_feature is true, the scratch feature has been saved. However, we have now
        * created a new "real" feature which is unsaved. */
       if (create_feature)
         {
           window->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
           window->flags[ZMAPFLAG_FEATURES_NEED_SAVING] = TRUE ;
-        }
-
-      /* If creating a new feature and we have an xremote peer then we need to tell the peer to
-       * create the new feature as well */
-      if (create_feature && window->xremote_client)
-        {
-          /* Find the newly-created feature (this will have a different pointer to the local
-           * feature we created with the same info because of the way merge-features works). */
-          GList *new_feature_list = zMapFeatureSetGetNamedFeaturesForStrand(feature_set, feature->original_id, feature->strand) ;
-          if (g_list_length(new_feature_list) == 1)
-            {
-              ZMapFeature new_feature = (ZMapFeature)(new_feature_list->data) ;
-              zmapWindowFeatureCallXRemote(window, (ZMapFeatureAny)new_feature, ZACP_CREATE_FEATURE, NULL) ;
-            }
-          else
-            {
-              ok = FALSE ;
-              g_set_error(&error, g_quark_from_string("ZMap"), 99, 
-                          "Error merging new feature '%s'; expected 1 feature in featureset but found %d",
-                          g_quark_to_string(feature->original_id),
-                          g_list_length(new_feature_list)) ;
-            }
         }
 
       /*! \todo Check that feature was saved successfully before reporting back. Also close
@@ -2796,6 +2779,9 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
           g_error_free(error) ;
         }
     }
+
+  if (feature && destroy_feature)
+    zMapFeatureDestroy(feature) ;
 }
 
 

@@ -78,6 +78,8 @@ typedef enum
     ZMAP_WINDOW_3FRAME_ALL                                  /* 3 frame cols and translation display. */
   } ZMapWindow3FrameMode ;
 
+/* These flags are stored in an array in the ZMapView but the array is also passed to the window
+ * level so they are accessible there */
 typedef enum 
   {
     ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
@@ -91,6 +93,15 @@ typedef enum
     ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
   } ZMapFlag;
 
+/* These int values are stored in an array in the ZMapView but the array is also passed to the
+ * window level so that they are accessible there. */
+typedef enum
+  {
+    ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE,   /* Quark to use as feature name for scratch feature */
+    ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET,/* Quark to use as featureset name for scratch feature */
+
+    ZMAPINT_NUM_VALUES
+  } ZMapIntValue;
 
 
 /*! ZMap Window has various callbacks which will return different types of data for various actions. */
@@ -475,7 +486,7 @@ extern int focus_group_mask[];  /* indexed by ZMapWindowFocusType */
 void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             ZMapFeatureSequenceMap sequence, void *app_data,
-                            GList *feature_set_names, gboolean *flags) ;
+                            GList *feature_set_names, gboolean *flags, int *int_values) ;
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap sequence,
                           void *app_data, ZMapWindow old,
                           ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,

@@ -3204,6 +3204,10 @@ static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data
 
   zmap_view->kill_blixems = TRUE ;
 
+  /* If a remote request func is registered then we're an xremote client */
+  if (view_cbs_G->remote_request_func)
+    zmap_view->xremote_client = TRUE ;
+
   /* Set all flags to false by default */ 
   int flag = 0 ;
   for ( ; flag < ZMAPFLAG_NUM_FLAGS; ++flag)
@@ -3222,7 +3226,12 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget)
   view_window = createWindow(zmap_view, NULL) ;
 
   /* There are no steps where this can fail at the moment. */
-  window = zMapWindowCreate(parent_widget, zmap_view->view_sequence, view_window, NULL, zmap_view->flags) ;
+  window = zMapWindowCreate(parent_widget, 
+                            zmap_view->view_sequence, 
+                            view_window, 
+                            NULL, 
+                            zmap_view->flags,
+                            zmap_view->int_values) ;
 
   view_window->window = window ;
 
@@ -5202,12 +5211,13 @@ static gboolean mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *wi
 
   if (result)
     {
-      /* Save the new feature to the annotation column (so the temp feature is updated with the
-       * same info as the new feature we've created)  */
-      zmapViewScratchSave(view, merge->feature) ;
-
       /* Now create the new feature */
       zmapViewMergeNewFeature(view, merge->feature, merge->feature_set) ;
+
+      /* Save the new feature to the annotation column (so the temp feature is updated with the
+       * same info as the new feature we've created). This takes ownership of merge->feature. */
+      zmapViewScratchSave(view, merge->feature) ;
+
     }
 
   return result ;

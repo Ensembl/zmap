@@ -265,7 +265,27 @@ GArray *addTranscriptSubFeatures(GArray *xml_array, ZMapFeature feature)
   GArray *span_array = NULL;
   int i;
 
-  /* CDS ???????? */
+  /* CDS */
+  if (feature->feature.transcript.flags.cds)
+    {
+      /* subfeature start. */
+      g_array_append_val(xml_array, subfeature[OPEN_INDEX]) ;
+
+      /* start */
+      subfeature[START_INDEX].value.i = feature->feature.transcript.cds_start ;
+      g_array_append_val(xml_array, subfeature[START_INDEX]) ;
+
+      /* end */
+      subfeature[END_INDEX].value.i = feature->feature.transcript.cds_end ;
+      g_array_append_val(xml_array, subfeature[END_INDEX]) ;
+
+      /* ontology */
+      subfeature[ONT_INDEX].value.q = g_quark_from_string("cds") ;
+      g_array_append_val(xml_array, subfeature[ONT_INDEX]) ;
+
+      /* subfeature end. */
+      g_array_append_val(xml_array, subfeature[CLOSE_INDEX]) ;
+    }
 
   /* subfeature elements. */
   if ((span_array = feature->feature.transcript.exons))
@@ -768,6 +788,24 @@ static void generateFeatureSpanEventsXremote(ZMapFeature feature, XMLContextDump
     };
   ZMapXMLUtilsEventStack event;
   int i;
+
+  /* CDS */
+  if (feature->feature.transcript.flags.cds)
+    {
+      /* start */
+      event = &elements[1];
+      event->value.i = feature->feature.transcript.cds_start;
+
+      /* end */
+      event = &elements[2];
+      event->value.i = feature.feature.transcript.cds_end;
+      
+      /* ontology */
+      event = &elements[3];
+      event->value.q = g_quark_from_string("cds") ;
+
+      xml_data->xml_events_out = zMapXMLUtilsAddStackToEventsArrayEnd(xml_data->xml_events_out, &elements[0]);
+    }
 
   if ((span_array = feature->feature.transcript.exons))
     {
