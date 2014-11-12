@@ -1,206 +1,48 @@
 
-Git commits for  from commit "production" until commit "release/1.1.0"
+Git commits for  from commit "production" until commit "release/1.2.0"
 
-8a2dbbd 2014-10-31 "fix bug which broke column popup names showing."
-c4ca276 2014-10-30 ZMap version 1.0.0-378-g6e825e6 - Update RT and git commit reports
-6e825e6 2014-10-30 fix for SIRT:430405
-e9ce8a2 2014-10-29 "Improve commenting, move variable to scope where it's used."
-7f32541 2014-10-29 ZMap version 1.0.0-375-g91cf708 - Update RT and git commit reports
-91cf708 2014-10-29 "change splice to show on selected column too and for both strands of features as per user request."
-29dda60 2014-10-29 "fix bug in freeing display list of features causing RT429859. Improve some variable names."
-08ca8ad 2014-10-29 "add function to free display and display_list, improve some variable names."
-8e5ab40 2014-10-29 "fix unecessary processing in thread debug messages, remove debugging message."
-8e4cbcb 2014-10-27 Revert "Fix bug where double click is not received due to xremote blocking (RT429182)"
-4044938 2014-10-23 ZMap version 1.0.0-369-g8e52166 - Update RT and git commit reports
-8e52166 2014-10-23 Fix bug where double click is not received due to xremote blocking (RT429182)
-2c27695 2014-10-17 creation of release notes after release build for 1.1.0
-4229464 2014-10-17 ZMap version 1.0.0-366-g5fe4a50 - Update RT and git commit reports
-5fe4a50 2014-10-17 Build: fix bug with installation location for server scripts
-3716652 2014-10-17 Merge branch 'feature/edit_transcript' into develop
-36d7d4b 2014-10-17 changes to runconfig and the htslib makefile to get make dist to work
-ad9839a 2014-10-16 "add new design doc for zmap drawing improvements."
-a37deef 2014-10-16 "remove the display_index handling, breaks the display for reasons that are not clear."
-530e152 2014-10-16 "remove debug info."
-8942b0c 2014-10-16 change default option in file import to remap=TRUE
-c73f2f4 2014-10-15 update to sequence name on importing data (non-remapped)
-586083d 2014-10-15 Fix compiler warning
-ea796f0 2014-10-15 Fix compiler warnings
-31db9f0 2014-10-14 Fix compiler warnings
-29a71cd 2014-10-15 Fix compiler warnings (unused variables)
-54f6d57 2014-10-15 update to error handling and logic of file importing (mapping tickbox added)
-ff546cd 2014-10-14 update to file import error handling and logic
-29f9449 2014-10-14 docs/WWW/user/configuration.shtml: typo fix.
-b980b74 2014-10-14 added a few error tests to the gffv3 parser
-7e0c429 2014-10-13 small change to htslib makefile
-b476b2b 2014-10-13 small change to htslib makefile
-0983655 2014-10-10 "update user doc for highlight and splice short cuts."
-12195cd 2014-10-10 Merge branch 'feature/hts' into develop
-6f976a9 2014-10-10 "oops, wrong path to images for design doc."
-9b4feb7 2014-10-10 "add splice highlight doc, somehow missing !"
-5cbccc8 2014-10-10 "fix small buglet in 'h' highlight key, toggles more sensibly now."
-8fb92c8 2014-10-09 "add new shift-h and s short cut keys to user doc."
-6e02ff2 2014-10-09 Merge branch 'feature/splice_highlight' into develop
-3cd1b91 2014-10-06 ZMAPGUI_HELP_WHATS_NEW, ZMAP_INTERNAL_WEB_WHATSNEW: remove, because unused
-4da94f9 2014-09-30 Merge branch 'production' into develop
-722ffc0 2014-09-24 change to the way CDS flags are set (not a bug, but not completely safe either)
-1144d0f 2014-09-23 "fix bug in finding translation column name, need unique id."
-9c8212c 2014-09-23 "Formatting only."
-6e9a492 2014-09-23 "Replace redundant frame enum with ZMAP_WINDOW_3FRAME_OFF and fix column id call."
-1f86e9e 2014-09-23 "Replace redundant frame enum with ZMAP_WINDOW_3FRAME_OFF."
-84a4827 2014-09-23 "remove redundant enums from Display3FrameMode."
-40f87fd 2014-09-23 "remove redundant enums from ZMapWindow3FrameMode."
-6ca43ed 2014-09-18 "fix bug in asserts at start of stack func. which prevented stack trace display."
-2a48daf 2014-09-16 Minor change to release notes script
-4d0946c 2014-09-16 zmap_remote.shtml: add link to Architecture of Open Source Applications
-cfee3ba 2014-09-12 remove debug flags from column ordering code
-3ed983e 2014-09-11 update to the way that anonymous source data are output
-772bcfd 2014-09-11 "fix a bug of several years whereby reverse strand columns are not reverse sorted."
-c0bfad6 2014-09-11 update to reading of start/end_not_found attributes
-7096d0d 2014-09-11 Merge branch 'production' into develop
-bdc36fd 2014-09-11 Fix a bug with variations not being passed to blixem
-4cebf26 2014-09-10 some small modifications to how the cds start/end not found flags are handled
-3f38514 2014-09-09 Merge branch 'feature/editing' into develop
-1e10bdd 2014-09-09 zmap_remote.shtml: clean up duplication and comments left during construction.
-f1ee56d 2014-09-09 remove all redundant images/umlet docs for x remote version.
-6c0cbcb 2014-09-09 "update with all the zeromq changes."
-54cd3fc 2014-09-09 "add new diagrams for zeromq write up."
-90aa74b 2014-09-09 "remove redundant zMapRemoteControlReceiveWaitForRequest()."
-d9cca12 2014-09-09 "add more detail to internal code section."
-68d4c63 2014-09-08 Merge branch 'feature/editing' into develop
-34032fc 2014-09-08 Fix duplicate const compiler warnings
-ec4701d 2014-09-05 changes to string handling in parser
-414a3cc 2014-09-05 fixes for SIRT:400820
-40cdb8c 2014-09-04 small update to previous
-fb15f24 2014-09-04 update to fix SIRT:400622
-7626005 2014-09-04 update to gff dumper
-9f0e1a8 2014-09-04 some changes to dumping of cds features
-4829aaf 2014-09-03 zmapView.c: zMapViewConnect(): comment typo fix.
-65749f7 2014-09-03 zmapViewRemoteControl.c: executeRequest(): comment typo fix.
-093bc54 2014-09-02 zmapView.c: zMapViewConnect(): comment typo fix.
-3e9d91a 2014-09-02 zmap_remote_new.shtml: intergrate mg13's ZeroMQ section.
-02c609d 2014-09-01 Fix small bug in build script
-19924d0 2014-09-01 rename remote control dir.
-77759c9 2014-09-01 Small changes to build scripts
-cdc0ab7 2014-09-01 Debugging
-f758a06 2014-09-01 Another attempt to fix build scripts
-f41470c 2014-09-01 Minor fix to release notes script
-1e491ad 2014-09-01 Minor fix
-f76e2b2 2014-09-01 Check that branch exists before doing build
-1ab6537 2014-09-01 Fix typo passing wrong arg to release notes script
-c50a92a 2014-09-01 Move release notes scripts to tools repo
-ea01a9e 2014-09-01 Merge branch 'feature/zeroMQ' into develop
-ce178f3 2014-08-29 remove redundant script.
-b857e13 2014-08-29 "remove unused variables."
-26532f1 2014-08-28 Merge branch 'feature/editing' into develop
-8fc33ce 2014-08-28 Fix incorrect/uninit use of group_id (should be feature_id)
-489c1a3 2014-08-28 Fix compiler warnings
-03c16e6 2014-08-28 configure.ac: remove rogue apostrophes.
-59e8c10 2014-08-28 configure.ac: remove a stray character that mangled the typesetting of the description of --enable-profile in the output of "configure --help".
-464250e 2014-08-26 "tidy up commenting."
-39e724d 2014-08-22 changes to output of Gap vs. gaps attribute on develop
-5b00c27 2014-08-21 update to cigar parsing/testing
-91f6c1c 2014-08-21 update to cigar parsing
-cd407d0 2014-08-15 some updates to internals of alignment parsing/cigars
-f73748f 2014-08-14 small correction to dumper
-d3f4159 2014-08-14 some corrections to error trapping in zmapWindow.c
-c31b1b0 2014-08-14 small change to dumper gaps
-71e2571 2014-08-14 update to fix some formatting changes
-13a7bc7 2014-08-14 update with more cigar parsing code
-09dd04f 2014-08-13 "remove docs build from all but the release build."
-7b8dc5d 2014-08-13 "ZMap version 0.24.1-130-g771bb2b - Update RT and git commit reports"
-771bb2b 2014-08-13 "fix up code for committing release notes."
-a9d6f73 2014-08-13 "ZMap version 0.24.1-128-g73244d2 - Update RT and git commit reports"
-73244d2 2014-08-13 "fix up code for committing release notes."
-f1db417 2014-08-13 "fix up code for committing release notes."
-fd63e0f 2014-08-13 "fix up code for committing release notes."
-d21b4f8 2014-08-13 "fix bug in since/until commits."
-14413b6 2014-08-13 "add hack to get feature/zeromq for testing only."
-84ee9b1 2014-08-13 "add hack to get feature/zeromq for testing only."
-25dc1e1 2014-08-13 "add hack to get feature/zeromq for testing only."
-02e1f84 2014-08-13 "fix my own bug in the commit since/until range."
-a4297e5 2014-08-13 Merge branch 'production' into develop
-7d8d58d 2014-08-13 "use production HEAD as since commit for finding commits."
-bf84b6d 2014-08-13 "remove unwanted clutter."
-ead02dc 2014-08-13 "clarify where docs are."
-9366d01 2014-08-13 new cigar parsing code
-8cb3221 2014-08-12 "fix up bug in finding last commit date."
-ff92446 2014-08-11 updates to cigar parsing
-7815950 2014-08-11 "add debug info."
-356cb1a 2014-08-11 "fix path for output and also where rt comes from."
-3c1c88b 2014-08-11 "fix git change format."
-3c22594 2014-08-08 fix stupid bug.
-9411e28 2014-08-08 move of file
-e9e0749 2014-08-08 "rename of git script."
-670d9cc 2014-08-08 "more script fixes."
-20374f3 2014-08-08 updates to internals of cigar parsing functions in src/zmapFeature/zmapFeatureAlignment.c
-fc73197 2014-08-08 "more script fixes + new git commit script."
-7d175b4 2014-08-08 "fix bug in script."
-f82e42f 2014-08-08 "fix bug in script."
-12b4df0 2014-08-08 "fix bug in script."
-dc22efd 2014-08-08 "fix bug in script."
-778e5fd 2014-08-08 "fix bug in script."
-4cb833e 2014-08-08 "fix bug in script."
-88f9bb7 2014-08-08 "fix bug in script."
-b1d6cdd 2014-08-08 "fix bug in script."
-4cfb1be 2014-08-08 "fix bug in script."
-1c6656b 2014-08-07 "fix stupid build bug."
-70e9b8f 2014-08-07 "fix bug in script."
-a994f96 2014-08-07 "fix bug in script."
-efbf729 2014-08-07 "fix bug in script."
-5d57d34 2014-08-07 added error check to src/zmapWindow/zmapWindowColBump.c
-7c5c28e 2014-08-07 "fix bug in script."
-4c6f7c2 2014-08-07 error checks and tab damage in zmapWindowCanvas.c
-f13bed4 2014-08-07 "fix bug in script."
-8e76186 2014-08-07 "fix bug in script."
-ce91ecd 2014-08-07 "fix bug in script."
-c008a65 2014-08-07 "fix bug in script."
-ee0fd6a 2014-08-07 error tests in function calls in src/zmapWindow/zmapWindow.c
-851d85d 2014-08-07 "replace bootstrap with autogen.sh"
-e83ad25 2014-08-07 "add gitignore for new release_doc dir."
-17d0975 2014-08-07 A step along the way to getting the RT stuff working in the build.
-1d1dc6b 2014-08-07 "changes to get RT changes going again."
-4ff8dbb 2014-08-07 "add new release notes dir to things _not_ ignored by git."
-4d01a64 2014-07-16 remove redundant directories.
-1f34dec 2014-07-16 rename bootstrap to autogen.sh
-a645fe6 2014-07-16 rename bootstrap to autogen.sh
-7c01a0d 2014-08-07 error catching in function calls and tab damage in zmapWindowCanvasLocus.c and zmapWindowOldItems.c
-a8007de 2014-08-06 error checks in function calls and tab damage in zmapWindowContainerItem.c
-229dd91 2014-08-06 error checks in function calls and tab damage in zmapWindowContainerGroup.c
-05b4fc3 2014-08-06 error checks in function calls and tab damage in zmapWindowContainerFeatureSet.c
-eb57cad 2014-08-06 error checks in function calls and tab damage in zmapWindowCanvasUtils.c
-aa69dc1 2014-08-06 error checks in function calls and tab damage in zmapWindowCanvasTranscript.c
-a982e4b 2014-08-06 error checks in function calls and tab damage in zmapWindowCanvasSequence.c
-f0d5ec8 2014-08-06 repair of tab damage on previous
-4b35460 2014-08-06 error traps in function calls for zmapWindowCanvasLocus.c
-d6b4787 2014-08-06 error traps in function calls for zmapWindowCanvasGraphItem.c and zmapWindowCanvasGraphics.c
-f539a91 2014-08-06 addition to build instructions to add non-autoconf package
-f30c23f 2014-08-05 "oops...remove debug code."
-aa927b9 2014-08-05 "add zMapWindowCanvasFeaturesetGetSetIDAtPos() to support subcol bumping by featureset name, formatting."
-dafdf23 2014-08-05 "add struct to support sorting subcols."
-a8e0f57 2014-08-05 "add zMapWindowCanvasFeaturesetGetSetIDAtPos() and formatting."
-43f8e26 2014-08-05 "add bumping by featureset name for when there are multiple featuresets in a col."
-81617b1 2014-08-05 "fix small buglet in graph drawing."
-f8f601b 2014-08-05 "formatting."
-6a926f1 2014-08-05 "formatting."
-0445273 2014-08-05 "fix faulty logic on column bump fail, formatting."
-18878cf 2014-08-05 "fix event callback, in wrong place, add tooltip for column name entry/exit, formatting."
-3fbab56 2014-08-05 "add zmapWindowFeatureItemEventHandler() and some formatting."
-b7e5c9b 2014-08-05 "remove Malcolm's 'wrong way round' event handling function, it's now zmapWindowFeatureItemEventHandler() and is called by column event handler."
-867b480 2014-08-05 "move item factory function to zmapFeature.c where it belongs."
-8d0cb66 2014-08-05 "formatting only."
-ed0873a 2014-08-04 "add featureset-name bump and fix enum macro usage."
-8cb056f 2014-07-30 "formatting"
-744f2c2 2014-07-30 "tidy up code, correct formatting."
-118584c 2014-07-30 "formatting"
-8a84de6 2014-07-30 "add new col id call + formatting."
-3d60510 2014-07-30 "add new getcolumnid call."
-b479179 2014-07-29 "move internal only routine to internal header."
-4720e6d 2014-07-29 "add func. to get feature unique name."
-35b3327 2014-07-29 "formatting only."
-ba9e7ec 2014-04-30 "new utils functions for canvas stuff."
-20f0a22 2014-03-26 update from merge of develop.
-d4f6528 2014-08-05 some more error handling for function call arguments
-2805083 2014-08-05 some more error handling in function interfaces in src/zmapWindow/canvas/
+6a23c1c 2014-11-12 Fix compiler warnings
+85e7139 2014-11-12 Merge branch 'feature/edit_transcript' into develop
+9c22b49 2014-11-11 "rewrite splice highlighting to substantially increase efficiency."
+d81f53e 2014-11-11 "add mark support to splice highlighting."
+b947458 2014-11-11 "rewrite feature funcs to return a list of all splice matches, not just one."
+5ba7c70 2014-11-11 "add mark support to splice highlighting."
+a306291 2014-11-10 Merge branch 'feature/edit_transcript' into develop
+c7b4659 2014-11-07 "add new function to display splices."
+94bd94e 2014-11-07 "add new code to excute windows commands coming from zmapview"
+3ad7479 2014-11-07 "fix bug in splice highlighting with multiple windows."
+d2188e3 2014-11-07 "Add function to find first column on forward or reverse strand."
+523f652 2014-11-07 "add splice highlight in multiple window support."
+180e596 2014-11-07 "add new splice command, zMapWindowExecuteCommand() and splice highlight support."
+ef874bd 2014-11-07 "add code to get splice highlighting for all windows."
+0127d9c 2014-11-07 "add new zmapViewCommand."
+358be63 2014-11-07 "add new zmapViewCommand.c file to excute window commands."
+66ffd4a 2014-11-07 "add new zmapViewCommand.c file."
+72a0891 2014-11-06 Merge branch 'feature/edit_transcript' into develop
+258ec1b 2014-11-05 some updates to drawing design document with latest experiment results
+4fd78f0 2014-11-03 Merge branch 'feature/Feature_debug_display' into develop
+93fa112 2014-11-03 "add cross refs to splice highlight design doc."
+ca9edb1 2014-11-03 Merge branch 'production' into develop
+87609fb 2014-11-03 Merge branch 'production' into develop
+e567be6 2014-10-31 "add format param. for printing canvas doubles in readable format."
+cdb6a0f 2014-10-31 remove unwanted file.
+d3226e4 2014-10-31 "tidy up last bits from zeromq, timeouts, outofband removal, formatting."
+bae72c6 2014-10-31 Merge branch 'release/1.1.0' into develop
+704adca 2014-10-31 Merge branch 'feature/Remote_looping' into develop
+6f48d12 2014-10-30 Merge branch 'release/1.1.0' into develop
+226f6f3 2014-10-30 Merge branch 'release/1.1.0' into develop
+8734a2b 2014-10-29 Merge remote branch 'origin/release/1.1.0' into develop
+7ffaa25 2014-10-29 Merge remote branch 'origin/release/1.1.0' into develop
+35e7281 2014-10-27 Merge branch 'release/1.1.0' into develop
+f0df80d 2014-10-24 update to drawing design document with some initial results
+232e40a 2014-10-23 Merge branch 'release/1.1.0' into develop
+02399e8 2014-10-22 "update docs."
+81bd042 2014-10-21 "update to doc."
+c25e6db 2014-10-21 rename display design docs.
+ee4c518 2014-10-21 small additions to drawing design document
+dd3da4f 2014-10-20 additions to graphics design document
+43e6636 2014-10-20 remove redundant copy of file.
+2152799 2014-10-17 add some material to graphics design document
 
 
 End of git commits
