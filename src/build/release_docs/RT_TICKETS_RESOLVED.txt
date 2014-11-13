@@ -1,55 +1,5 @@
 
-Request Tracker Tickets Resolved from 04/08/2014 to 31/10/2014
-
-ticket/117349
-id: ticket/117349
-Queue: zmap
-Subject: Unique IDs for zmap
-Requestors: edgrif@sanger.ac.uk
-Owner: mh17
-Resolved: Wed Sep 10 16:19:41 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/165122
-id: ticket/165122
-Queue: zmap
-Subject: 64 bit zmap is linked against libAceConn
-Requestors: bfan@iastate.edu, jreecy@iastate.edu, zhu@iastate.edu
-Owner: edgrif
-Resolved: Wed Sep 10 16:16:55 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/226534
-id: ticket/226534
-Queue: zmap
-Subject: save screenshot appears to have gone AWOL
-Requestors: af2@sanger.ac.uk, lw2@sanger.ac.uk, mh17@sanger.ac.uk
-Owner: mh17
-Resolved: Wed Sep 10 16:18:08 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/264243
-id: ticket/264243
-Queue: zmap
-Subject: disappearing data
-Requestors: edgrif@sanger.ac.uk
-Owner: mh17
-Resolved: Wed Sep 10 16:55:23 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/271742
-id: ticket/271742
-Queue: zmap
-Subject: build directory clean up
-Requestors: edgrif@sanger.ac.uk
-Owner: mh17
-Resolved: Wed Sep 10 16:21:07 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
+Request Tracker Tickets Resolved from 17/10/2014 to 12/11/2014
 
 ticket/280524
 id: ticket/280524
@@ -58,136 +8,6 @@ Subject: feature request: extend dynamic thresholding to more/all columns (needs
 Requestors: lw2@sanger.ac.uk
 Owner: mh17
 Resolved: Tue Oct 21 14:04:39 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/282302
-id: ticket/282302
-Queue: zmap
-Subject: GFF export need to output only some columns
-Requestors: mh17@sanger.ac.uk, mt4@sanger.ac.uk
-Owner: sm23
-Resolved: Wed Sep 10 16:53:56 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/288374
-id: ticket/288374
-Queue: zmap
-Subject: Missing data in zmap from the solexa_introns column in zebrafish
-Requestors: gkl@sanger.ac.uk
-Owner: sm23
-Resolved: Wed Sep 10 16:52:46 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/288914
-id: ticket/288914
-Queue: zmap
-Subject: Loading data into existing session (and red/green load boxes issue)
-Requestors: mpk@sanger.ac.uk
-Owner: mh17
-Resolved: Wed Sep 10 17:03:03 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/296606
-id: ticket/296606
-Queue: zmap
-Subject: Blixem on paired reads does not have a column name in the main window title
-Requestors: jh13@sanger.ac.uk
-Owner: sm23
-Resolved: Wed Sep 10 16:58:11 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/303021
-id: ticket/303021
-Queue: zmap
-Subject: multiple views gives messed up navigator
-Requestors: mh17@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Sep 12 11:20:46 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/303022
-id: ticket/303022
-Queue: zmap
-Subject: navigator multiple refresh on load
-Requestors: mh17@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Sep 12 16:16:02 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/305093
-id: ticket/305093
-Queue: zmap
-Subject: Navigator title overlaps sequence name (sgifaceserver)
-Requestors: gb10@sanger.ac.uk
-Owner: sm23
-Resolved: Thu Oct 09 10:21:44 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/313837
-id: ticket/313837
-Queue: zmap
-Subject: Style for tiny tag features?
-Requestors: jgrg@sanger.ac.uk, mca@sanger.ac.uk
-Owner: edgrif
-Resolved: Thu Oct 09 10:29:53 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/319676
-id: ticket/319676
-Queue: zmap
-Subject: gf splice glyphs disappear when clicked on
-Requestors: jgrg@sanger.ac.uk, lw2@sanger.ac.uk
-Owner: edgrif
-Resolved: Thu Sep 11 14:39:15 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/321811
-id: ticket/321811
-Queue: zmap
-Subject: zmap parser fails if an attribute's text contains another attribute's tag name
-Requestors: gb10@sanger.ac.uk
-Owner: edgrif
-Resolved: Wed Sep 10 16:22:26 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/323531
-id: ticket/323531
-Queue: zmap
-Subject: XRemote problem ZMap->Otter on Mac
-Requestors: mg13@sanger.ac.uk
-Owner: edgrif
-Resolved: Thu Oct 09 10:51:08 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/339966
-id: ticket/339966
-Queue: zmap
-Subject: Crash when pfetch returns nothing (0.16.0)
-Requestors: mca@sanger.ac.uk
-Owner: sm23
-Resolved: Thu Oct 02 16:37:33 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/340979
-id: ticket/340979
-Queue: zmap
-Subject: Issues with blocking and order of requests
-Requestors: gb10@sanger.ac.uk
-Owner: sm23
-Resolved: Thu Oct 09 10:23:55 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -211,26 +31,6 @@ Resolved: Fri Oct 17 14:25:42 2014
 CF.{zmapace_gitcommit}: g3716652
 CF.{zmapace_resolve_version}: 1.0.0-365-g3716652, otterlace v86
 
-ticket/347901
-id: ticket/347901
-Queue: zmap
-Subject: Multiple ZMap warnings about the peer disappearing.
-Requestors: jh13@sanger.ac.uk
-Owner: edgrif
-Resolved: Wed Sep 10 17:06:20 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/355588
-id: ticket/355588
-Queue: zmap
-Subject: Bigwig column style config
-Requestors: jmg@sanger.ac.uk
-Owner: edgrif
-Resolved: Fri Sep 12 14:47:00 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
 ticket/371286
 id: ticket/371286
 Queue: zmap
@@ -244,106 +44,6 @@ Resolved: Fri Oct 17 16:24:34 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/372012
-id: ticket/372012
-Queue: zmap
-Subject: bam_get causes ERROR:zmapViewFeatureCollapse.c:1099:makeGaps: assertion failed: ((diff >= 0))
-Requestors: lw2@sanger.ac.uk, mca@sanger.ac.uk, mpk@sanger.ac.uk
-Owner: edgrif
-Resolved: Thu Sep 11 15:47:22 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/376131
-id: ticket/376131
-Queue: zmap
-Subject: zmap crashing
-Requestors: dml@sanger.ac.uk
-Owner: edgrif
-Resolved: Thu Oct 09 10:39:07 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/389485
-id: ticket/389485
-Queue: zmap
-Subject: Feature details window will not open
-Requestors: mp7@sanger.ac.uk
-Owner: edgrif
-Resolved: Thu Oct 09 10:45:18 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/391610
-id: ticket/391610
-Queue: zmap
-Subject: Zmap installation
-Requestors: taylorzheng.zz@gmail.com
-Owner: gb10
-Resolved: Thu Oct 09 10:43:04 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/398088
-id: ticket/398088
-Queue: zmap
-Subject: feature request: edge comparison between selected models or features
-Requestors: lw2@sanger.ac.uk
-Owner: sm23
-Resolved: Tue Oct 14 12:40:20 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/400243
-id: ticket/400243
-Queue: zmap
-Subject: GFF dumper outputs acedb-style gaps
-Requestors: gb10@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Aug 22 16:55:07 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/400298
-id: ticket/400298
-Queue: zmap
-Subject: GFF dumper: ID tags are not unique
-Requestors: gb10@sanger.ac.uk
-Owner: sm23
-Resolved: Thu Sep 04 14:36:50 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/400622
-id: ticket/400622
-Queue: zmap
-Subject: GFF dumper: CDS features are incorrect
-Requestors: gb10@sanger.ac.uk
-Owner: sm23
-Resolved: Thu Sep 04 14:34:33 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/400820
-id: ticket/400820
-Queue: zmap
-Subject: GFF parser: problems loading "The Canonical Gene"
-Requestors: gb10@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Sep 05 15:08:15 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/401836
-id: ticket/401836
-Queue: zmap
-Subject: Further GFF issues 
-Requestors: sm23@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Sep 05 15:21:16 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
 ticket/404745
 id: ticket/404745
 Queue: zmap
@@ -353,46 +53,6 @@ Owner: gb10
 Resolved: Tue Oct 21 14:13:27 2014
 CF.{zmapace_gitcommit}: aa14e7d
 CF.{zmapace_resolve_version}: Otterlace v86, ZMap 1.0.0-358-gaa14e7d (for release/1.1.0)
-
-ticket/406244
-id: ticket/406244
-Queue: zmap
-Subject: Select newly created transcripts?
-Requestors: dm4@sanger.ac.uk, mca@sanger.ac.uk
-Owner: mca
-Resolved: Wed Aug 13 12:21:39 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/411616
-id: ticket/411616
-Queue: zmap
-Subject: zmap crash
-Requestors: mpk@sanger.ac.uk
-Owner: edgrif
-Resolved: Tue Sep 09 16:13:56 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/415434
-id: ticket/415434
-Queue: zmap
-Subject: GFF parser: invalid Gap string crashes zmap
-Requestors: gb10@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Aug 15 15:42:59 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/420018
-id: ticket/420018
-Queue: zmap
-Subject: reverse strand RNAseq in wrong place
-Requestors: jel@sanger.ac.uk
-Owner: edgrif
-Resolved: Thu Sep 11 14:31:21 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
 
 ticket/426312
 id: ticket/426312
@@ -441,6 +101,16 @@ Subject: ZMap bug in displaying reverse strand coverage data
 Requestors: edgrif@sanger.ac.uk, jh13@sanger.ac.uk, vb1@sanger.ac.uk
 Owner: edgrif
 Resolved: Thu Oct 30 09:15:08 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/431939
+id: ticket/431939
+Queue: zmap
+Subject: questions about splice highlighting...
+Requestors: mms@sanger.ac.uk
+Owner: edgrif
+Resolved: Tue Nov 11 13:59:35 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
