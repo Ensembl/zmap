@@ -6,8 +6,16 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 1.2.0</h4>
+<ul>
+  <li> Splice highlighting speed improvments, and mark support
+  <li> Some modifications to transcript editing (SIRT:425064)
+  <li> Double click blocking fixed
+  <li> Vanishing tooltips fixed
+  <li> Error with loading graph-type data fixed
+</ul>
 
-<h4>Version 1.0.0</h4>
+<h4>Version 1.1.0</h4>
 <ul>
   <li> Splice highlighting implemented (SIRT:398088)
   <li> Import of BAM/BIGWIG/GFF; output of GFF tidied up
