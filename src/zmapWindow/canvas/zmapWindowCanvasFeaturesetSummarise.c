@@ -38,6 +38,9 @@
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapUtilsLog.h>
 #include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
+
+
 
 /*
       initially this was an experimental module to find out the level of filtering we could do

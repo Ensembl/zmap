@@ -33,7 +33,7 @@
 #define ZMAP_CANVAS_GLYPH_I_H
 
 
-#include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
 /* Per Column Glyph Data.

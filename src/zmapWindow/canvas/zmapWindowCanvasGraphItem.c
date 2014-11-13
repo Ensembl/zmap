@@ -46,8 +46,8 @@
 #include <ZMap/zmapUtilsLog.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasDraw.h>
-#include <zmapWindowCanvasUtils.h>
 #include <zmapWindowCanvasFeatureset.h>
+#include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasGraphItem_I.h>
 
 /*
@@ -118,9 +118,9 @@ static gboolean debug_G = FALSE ;                           /* Set TRUE for debu
 void zMapWindowCanvasGraphInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
+  gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
   funcs[FUNC_SET_INIT] = graphInit ;
-  funcs[FUNC_EXTENT] = graphGetFeatureExtent ;
   funcs[FUNC_PREPARE] = graphPaintPrepare ;
   funcs[FUNC_PAINT] = graphPaintFeature ;
   funcs[FUNC_FLUSH] = graphPaintFlush ;
@@ -129,7 +129,12 @@ void zMapWindowCanvasGraphInit(void)
   funcs[FUNC_POINT] = graphPoint ;
 
   /* And again encapsulation is broken..... */
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPH, funcs, 0, sizeof(ZMapWindowCanvasGraphStruct)) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPH, funcs, sizeof(ZMapWindowCanvasGraphStruct)) ;
+
+
+  feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = graphGetFeatureExtent ;
+
+  zMapWindowCanvasFeatureSetSize(FEATURE_GRAPH, feature_funcs, 0) ;
 
   return ;
 }
@@ -1057,7 +1062,7 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem featureset_item)
     {
       bin_end = bin_start + bases_per_bin - 1 ;             /* end can equal start */
 
-      bin_gs = zmapWindowCanvasFeatureAlloc(featureset_item->type) ;
+      bin_gs = zMapWindowCanvasFeatureAlloc(featureset_item->type) ;
 
       bin_gs->y1 = bin_start;
       bin_gs->y2 = bin_end;

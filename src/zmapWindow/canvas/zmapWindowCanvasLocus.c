@@ -43,8 +43,8 @@
 
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasDraw.h>
-#include <zmapWindowCanvasUtils.h>
 #include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasLocus_I.h>
 
 
@@ -69,6 +69,7 @@ static double locusPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 void zMapWindowCanvasLocusInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL };
+  gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
   funcs[FUNC_PAINT] = zMapWindowCanvasLocusPaintFeature ;
   funcs[FUNC_ZOOM] = zMapWindowCanvasLocusZoomSet ;
@@ -76,8 +77,9 @@ void zMapWindowCanvasLocusInit(void)
   funcs[FUNC_ADD] = zMapWindowCanvasLocusAddFeature ;
   funcs[FUNC_POINT] = locusPoint ;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LOCUS, funcs,
-                                     sizeof(zmapWindowCanvasLocusStruct), sizeof(zmapWindowCanvasLocusSetStruct));
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LOCUS, funcs, sizeof(zmapWindowCanvasLocusSetStruct));
+
+  zMapWindowCanvasFeatureSetSize(FEATURE_LOCUS, feature_funcs, sizeof(zmapWindowCanvasLocusStruct)) ;
 
   return ;
 }

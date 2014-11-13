@@ -38,6 +38,7 @@
 #include <ZMap/zmapStyle.h>
 #include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasGlyph_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
@@ -220,10 +221,14 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 void zMapWindowCanvasBasicInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
+  gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
   funcs[FUNC_PAINT] = basicPaintFeature ;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, 0, 0) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, 0) ;
+
+  zMapWindowCanvasFeatureSetSize(FEATURE_BASIC, feature_funcs, 0) ;
+
 
   return ;
 }

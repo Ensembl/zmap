@@ -38,6 +38,7 @@
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasTranscript_I.h>
 #include <zmapWindowCanvasGlyph_I.h>
 #include <zmapWindowCanvasGlyph.h>
@@ -99,13 +100,16 @@ static void transcriptGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan
 void zMapWindowCanvasTranscriptInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
+  gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
   funcs[FUNC_PAINT] = transcriptPaintFeature;
   funcs[FUNC_ADD]   = transcriptAddFeature;
-  funcs[FUNC_SUBPART] = transcriptGetSubPartSpan;
-  funcs[FUNC_EXTENT] = transcriptGetFeatureExtent;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, sizeof(zmapWindowCanvasTranscriptStruct), 0) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, 0) ;
+
+  feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = transcriptGetFeatureExtent ;
+  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = transcriptGetSubPartSpan;
+  zMapWindowCanvasFeatureSetSize(FEATURE_TRANSCRIPT, feature_funcs, sizeof(zmapWindowCanvasTranscriptStruct)) ;
 
   return ;
 }

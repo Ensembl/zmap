@@ -37,6 +37,7 @@
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasGlyph_I.h>
 
 
@@ -127,6 +128,7 @@ static GHashTable *glyph_cache_G = NULL ;
 void zMapWindowCanvasGlyphInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
+  gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
   funcs[FUNC_SET_INIT] = glyphColumnInit ;
   funcs[FUNC_SET_PAINT] = glyphSetPaint ;
@@ -137,7 +139,9 @@ void zMapWindowCanvasGlyphInit(void)
   funcs[FUNC_FREE] = glyphColumnFree ;
   funcs[FUNC_ADD] = glyphAddFeature ;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GLYPH, funcs, sizeof(zmapWindowCanvasGlyphStruct), 0) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GLYPH, funcs, 0) ;
+
+  zMapWindowCanvasFeatureSetSize(FEATURE_GLYPH, feature_funcs, sizeof(zmapWindowCanvasGlyphStruct)) ;
 
   return ;
 }
