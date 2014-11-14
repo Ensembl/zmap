@@ -9,7 +9,14 @@
 <h4>Version 1.2.0</h4>
 <ul>
   <li> Splice highlighting speed improvments, and mark support
-  <li> Some modifications to transcript editing (SIRT:425064)
+  <li> Feature editing:
+  <ul>
+    <li> Functionality to edit the sequence of a transcript is now complete (SIRT:425064)
+    <li> Split codons around variations are highlighted
+    <li> You can now set attributes such as the CDS for the temp feature before saving it to a real featureset or sending to a peer
+    <li> Automatically highlight new evidence after adding it to the Annotation column
+    <li> Fixed an issue with highlighted evidence being re-added to the Annotation column
+  </ul>
   <li> Double click blocking fixed
   <li> Vanishing tooltips fixed
   <li> Error with loading graph-type data fixed
@@ -20,6 +27,14 @@
   <li> Splice highlighting implemented (SIRT:398088)
   <li> Import of BAM/BIGWIG/GFF; output of GFF tidied up
   <li> Feature editing and annotation column; many changes and improvments
+  <ul>
+    <li>Warn if there are unsaved features on exit
+    <li>Reverse complementing does not clear the Annotation column
+    <li>You can enable annotation from the Preferences dialog
+    <li>You can edit feature coords in the Create Feature dialog
+    <li>You can now highlight evidence for the Annotation column
+    <li>Prototype functionality added to edit the sequence of a transcript
+  </ul>
   <li> Standalone ZMap can take several GFF files on command line 
   <li> Internal handling of cigar parsing completed and generalised
   <li> Input of GFF data with anonymous source ('.') allowed
