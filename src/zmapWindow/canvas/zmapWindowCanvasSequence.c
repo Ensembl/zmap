@@ -38,6 +38,7 @@
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasSequence_I.h>
 
 
@@ -77,19 +78,25 @@ void zMapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset)
 void zMapWindowCanvasSequenceInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL };
+  gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
   funcs[FUNC_PAINT]   = zmapWindowCanvasSequencePaintFeature;
   funcs[FUNC_PRE_ZOOM] = zmapWindowCanvasSequencePreZoom ;
   funcs[FUNC_ZOOM]    = zmapWindowCanvasSequenceZoomSet;
   funcs[FUNC_COLOUR]  = zmapWindowCanvasSequenceSetColour;
   funcs[FUNC_FREE]    = zmapWindowCanvasSequenceFreeSet;
-  funcs[FUNC_SUBPART] = zmapWindowCanvasSequenceGetSubPartSpan;
+
 
   /* it would have been better to make a SequenceSet struct to wrap the Pango in case we ant to add anything,
    * search for pango-> and ->opt to find all occurences
    */
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_SEQUENCE, funcs,
-                                     sizeof(zmapWindowCanvasSequenceStruct), sizeof(zmapWindowCanvasPangoStruct));
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_SEQUENCE, funcs, sizeof(zmapWindowCanvasPangoStruct)) ;
+
+
+  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = zmapWindowCanvasSequenceGetSubPartSpan ;
+
+  zMapWindowCanvasFeatureSetSize(FEATURE_SEQUENCE, feature_funcs, sizeof(zmapWindowCanvasSequenceStruct)) ;
+  
 
   return ;
 }

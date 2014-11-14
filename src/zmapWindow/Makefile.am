@@ -81,6 +81,8 @@ canvas/zmapWindowCanvasBasic.h \
 canvas/zmapWindowCanvasDraw.c \
 canvas/zmapWindowCanvasDraw.h \
 canvas/zmapWindowCanvasFeature.c \
+canvas/zmapWindowCanvasFeature.h \
+canvas/zmapWindowCanvasFeature_I.h \
 canvas/zmapWindowCanvasFeatureset.c \
 canvas/zmapWindowCanvasFeatureset.h \
 canvas/zmapWindowCanvasFeaturesetBump.c \
@@ -106,8 +108,6 @@ canvas/zmapWindowCanvasSequence_I.h \
 canvas/zmapWindowCanvasTranscript.c \
 canvas/zmapWindowCanvasTranscript.h \
 canvas/zmapWindowCanvasTranscript_I.h \
-canvas/zmapWindowCanvasUtils.c \
-canvas/zmapWindowCanvasUtils.h \
 canvas/zmapWindowContainerAlignment.h \
 canvas/zmapWindowContainerAlignment_I.h \
 canvas/zmapWindowContainerBlock.h \

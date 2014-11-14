@@ -1387,6 +1387,7 @@ ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray* const, int index) ;
 gboolean zMapAlignBlockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
 
 gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
+void zMapFeatureFreeSubParts(GList *sub_parts) ;
 GList *zMapFeatureHasMatchingBoundaries(ZMapFeature feature, GList *boundaries) ;
 int zMapFeatureVariationGetSections(const char *variation_str, 
                                     char **old_str_out, char **new_str_out, 

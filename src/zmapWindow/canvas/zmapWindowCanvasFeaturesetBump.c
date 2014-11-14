@@ -41,6 +41,7 @@
 #include <ZMap/zmapSkipList.h>
 #include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
 
 
 /*
@@ -361,7 +362,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	  continue;
 	}
 
-      if (!zmapWindowCanvasFeatureGetFeatureExtent(feature,
+      if (!zMapWindowCanvasFeatureGetFeatureExtent(feature,
                                                    bump_data->complex, &bump_data->span, &bump_data->width))
 	continue;
 

@@ -39,6 +39,7 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtilsLog.h>
 #include <zmapWindowCanvasDraw.h>
+#include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasAlignment_I.h>
 #include <zmapWindowCanvasGlyph_I.h>
 #include <zmapWindowCanvasGlyph.h>
@@ -132,18 +133,23 @@ static long n_gap_free = 0;
 void zMapWindowCanvasAlignmentInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL };
+  gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
   funcs[FUNC_SET_INIT] = alignmentColumnInit ;
   funcs[FUNC_PAINT]  = zMapWindowCanvasAlignmentPaintFeature;
-  funcs[FUNC_EXTENT] = zMapWindowCanvasAlignmentGetFeatureExtent;
   funcs[FUNC_PRE_ZOOM] = zmapWindowCanvasAlignmentPreZoom ;
   funcs[FUNC_ZOOM]   = zMapWindowCanvasAlignmentZoomSet;
   funcs[FUNC_FREE]   = zMapWindowCanvasAlignmentFreeSet;
   funcs[FUNC_ADD]    = zMapWindowCanvasAlignmentAddFeature;
-  funcs[FUNC_SUBPART] = zmapWindowCanvasAlignmentGetSubPartSpan;
   funcs[FUNC_POINT]   = alignmentPoint;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ALIGN, funcs, sizeof(zmapWindowCanvasAlignmentStruct), 0);
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ALIGN, funcs, 0) ;
+
+
+  feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = zMapWindowCanvasAlignmentGetFeatureExtent ;
+  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = zmapWindowCanvasAlignmentGetSubPartSpan ;
+
+  zMapWindowCanvasFeatureSetSize(FEATURE_ALIGN, feature_funcs, sizeof(zmapWindowCanvasAlignmentStruct)) ;
 
   return ;
 }

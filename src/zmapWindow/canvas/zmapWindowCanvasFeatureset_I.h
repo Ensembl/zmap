@@ -46,6 +46,26 @@
 
 
 
+/* Why is this public ???? */
+/* enums for function type */
+typedef enum
+  {
+    FUNC_SET_INIT,
+    FUNC_PREPARE,
+    FUNC_SET_PAINT,
+    FUNC_PAINT,
+    FUNC_FLUSH,
+    FUNC_COLOUR,
+    FUNC_STYLE,
+    FUNC_PRE_ZOOM,
+    FUNC_ZOOM,
+    FUNC_INDEX,
+    FUNC_FREE,
+    FUNC_POINT,
+    FUNC_ADD,
+    FUNC_N_FUNC                                             /* Number of functions: must be last. */
+  } zmapWindowCanvasFeatureItemFunc ;
+
 
 
 /* Default feature colours, suitably boring to prompt user to set their own. */
@@ -78,106 +98,6 @@
 
 
 
-
-
-
-#if NEED_TO_REWRITE_SHED_LOADS_OF_CODE
-/* this is common to all of our display features */
-typedef struct _zmapWindowCanvasBaseStruct
-{
-  zmapWindowCanvasFeatureType type;
-  double y1, y2;    	/* top, bottom of item (box or line) */
-} zmapWindowCanvasBaseStruct;
-#endif
-
-
-/* minimal data for a simple line or box */
-/* to handle text or more complex things need to extend this */
-
-typedef struct _zmapWindowCanvasGraphicsStruct
-{
-#if NEED_TO_REWRITE_SHED_LOADS_OF_CODE
-  zmapWindowCanvasBaseStruct base;
-#else
-
-  /* must be identical with zmapWindowCanvasBaseStruct, NOTE type > FEATURE_GRAPHICS */
-  zmapWindowCanvasFeatureType type;
-  double y1, y2;    	/* top, bottom of item (box or line) */
-#endif
-
-
-  /* include enough to handle lines boxes text, maybe arcs too */
-  /* anything more complex need to be derived from this */
-  double x1, x2;
-  long fill ,outline;
-  char *text;
-
-  int flags;                                                /* See FEATURE_XXXX above. */
-
-} zmapWindowCanvasGraphicsStruct;
-
-
-
-
-/* Foocanvas positions are doubles and foocanvas does not define one of these. */
-typedef struct ZMapWindowCanvasCanvasSpanStructType
-{
-  double start, end ;
-} ZMapWindowCanvasCanvasSpanStruct, *ZMapWindowCanvasCanvasSpan ;
-
-
-
-/* Data about displayed subcols. When bumped the features in a column may be
- * displayed as separate subcolumns. */
-typedef struct ZMapWindowCanvasSubColStructType
-{
-  GQuark subcol_id ;                                        /* "name" of subcol. */
-
-  double offset ;                                           /* subcol offset in column. */
-
-  double width ;                                            /* subcol width. */
-
-} ZMapWindowCanvasSubColStruct, *ZMapWindowCanvasSubCol ;
-
-
-
-
-
-/* minimal data struct to define a feature handle boxes as y1,y2 + width */
-typedef struct _zmapWindowCanvasFeatureStruct
-{
-#if NEED_TO_REWRITE_SHED_LOADS_OF_CODE
-  zmapWindowCanvasBaseStruct base;
-#else
-  /* must be identical with zmapWindowCanvasBaseStruct */
-  zmapWindowCanvasFeatureType type;
-  double y1, y2;    	/* top, bottom of item (box or line) */
-#endif
-
-  ZMapFeature feature ;
-
-
-  //  GList *from;		/* the list node that holds the feature */
-  /* refer to comment above zmapWindowCanvasFeatureset.c/zMapWindowFeaturesetItemRemoveFeature() */
-
-  double score ;                                            /* determines feature width */
-
-  /* ideally these could be ints but the canvas works with doubles */
-  double width;
-  double bump_offset;	/* for X coord  (left hand side of sub column */
-
-  int bump_col;		/* for calculating sub-col before working out width */
-
-  long flags;				/* non standard display option eg selected */
-
-  ZMapWindowCanvasFeature left,right;	/* for exons and alignments, NULL for simple features */
-
-  /* NULL if splice highlighting is off, contains positions of all places highlights
-   * need to be drawn within feature if highlighting is on. */
-  GList *splice_positions ;
-
-
-} zmapWindowCanvasFeatureStruct;
 
 
 
@@ -236,7 +156,11 @@ typedef struct zmapWindowFeaturesetItemClassStructType
   GHashTable *featureset_items;         /* singleton canvas items per column, indexed by unique id */
   /* NOTE duplicated in container canvas item till we get rid of that */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   GList *feature_free_list[FEATURE_N_TYPE];
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* these are allocated for all columns, so it does not matter if we have a column with 1 feature */
   /* NOTE we have free lists foe each featuretype; this will waste only a few K of memory */

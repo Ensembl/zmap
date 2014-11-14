@@ -39,7 +39,7 @@
 
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasDraw.h>
-#include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasAssembly_I.h>
 
 
@@ -78,10 +78,13 @@ void zMapWindowCanvasAssemblyPaintFeature(ZMapWindowFeaturesetItem featureset, Z
 void zMapWindowCanvasAssemblyInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL };
+  gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
   funcs[FUNC_PAINT] = zMapWindowCanvasAssemblyPaintFeature;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ASSEMBLY, funcs, 0, 0);
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ASSEMBLY, funcs, 0) ;
+
+  zMapWindowCanvasFeatureSetSize(FEATURE_ASSEMBLY, feature_funcs, 0) ;
 
   return ;
 }
