@@ -15,12 +15,14 @@ Installing Cygwin
 5. Go through the installation wizard accepting all the default options up until the Choose Download Site page. Here I chose http://cygwin.mirror.constant.com.
 6. On the Select Packages page, select these packages (just click on 'Skip' to toggle it to the latest version):
       Devel/gcc-core
+      Devel/gcc-g++
+      Devel/libsqlite3-devel
       Devel/make
       Devel/pkg-config
       Libs/libcurl-devel
       Libs/libglib2.0-devel *** also tick the SOURCE checkbox ***
       Libs/libgtk2.0-devel  *** also tick the SOURCE checkbox ***
-      Libs/readline
+      Libs/readline         (or Libs/libreadline-devel)
       Web/wget
       X11/xinit
 7. Accept the default option on the next page and then installation should start.  This may take some time.
