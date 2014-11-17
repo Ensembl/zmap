@@ -463,8 +463,18 @@ AC_CONFIG_SUBDIRS([AceConn])
 #         https://github.com/tracebox/tracebox/blob/master/configure.ac
 #
 ac_configure_args_pre="$ac_configure_args"
-ac_configure_args_post="$ac_configure_args --enable-static"
+
+# OS-specific tests
+case "${host_os}" in
+    *cygwin*)
+        ac_configure_args_post="$ac_configure_args"
+        ;;
+    *)
+        ac_configure_args_post="$ac_configure_args --enable-static"
+        ;;
+esac
 ac_configure_args="$ac_configure_args_post"
+
 AC_CONFIG_COMMANDS_PRE([ac_configure_args="$ac_configure_args_pre"])
 AC_CONFIG_COMMANDS_POST([ac_configure_args="$ac_configure_args_post"])
 AC_CONFIG_SUBDIRS([zeromq])
