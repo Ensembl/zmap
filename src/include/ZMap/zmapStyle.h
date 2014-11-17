@@ -541,30 +541,28 @@ ZMAP_DEFINE_ENUM(ZMapStyleMergeMode, ZMAP_STYLE_MERGE_MODE_LIST) ;
 
 #define ZMAP_TYPE_FEATURE_STYLE           (zMapFeatureTypeStyleGetType())
 
-#if GOBJ_CAST
-#define ZMAP_FEATURE_STYLE(obj)      ((ZMapFeatureTypeStyle) obj)
-#define ZMAP_FEATURE_STYLE_CONST(obj)   ((ZMapFeatureTypeStyle const) obj)
-#else
-#define ZMAP_FEATURE_STYLE(obj)	          (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyle))
-#define ZMAP_FEATURE_STYLE_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyle const))
-#endif
+#define ZMAP_FEATURE_STYLE(obj)	          (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_FEATURE_STYLE, struct ZMapFeatureTypeStyleStructType))
+#define ZMAP_FEATURE_STYLE_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_FEATURE_STYLE, struct ZMapFeatureTypeStyleStructType const))
 
-#define ZMAP_FEATURE_STYLE_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyleClass))
+#define ZMAP_FEATURE_STYLE_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_FEATURE_STYLE, struct ZMapFeatureTypeStyleClassStructType))
 #define ZMAP_IS_FEATURE_STYLE(obj)	  (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_FEATURE_STYLE))
-#define ZMAP_FEATURE_STYLE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyleClass))
+#define ZMAP_FEATURE_STYLE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_FEATURE_STYLE, struct ZMapFeatureTypeStyleClassStructType))
+
+
+
+/* Class */
+typedef struct ZMapFeatureTypeStyleClassStructType *ZMapFeatureTypeStyleClass ;
+
+/* Instance */
+typedef struct ZMapFeatureTypeStyleStructType *ZMapFeatureTypeStyle ;
 
 
 
 // ----- style structs moved here for faster access ------
 
-/*! @addtogroup zmapstyles
- * @{
- *  */
 
-
-
-/*! @struct ZMapStyleColour zmapStyle_P.h
- *  @brief ZMap object colours
+/* struct ZMapStyleColour zmapStyle_P.h
+ * brief ZMap object colours
  *
  * All ZMap objects can potentially have a border colour, a fill colour and a draw colour
  * which can be used to "draw" over the fill colour. */
@@ -829,6 +827,11 @@ typedef struct ZMapStyleAssemblyPathStructType
 } ZMapStyleAssemblyPathStruct, *ZMapStyleAssemblyPath ;
 
 
+
+
+
+
+
 /* THIS STRUCT NEEDS A MAGIC PTR, ONCE IT HAS ONE THEN ADD A TEST TO zmapStyleIsValid() FOR IT.... */
 
 /*! @struct ZMapFeatureTypeStyle zmapStyle_P.h
@@ -836,7 +839,7 @@ typedef struct ZMapStyleAssemblyPathStructType
  *
  * ZMap Style definition, the style must have a mode which specifies what sort of
  * of feature the style represents. */
-typedef struct _zmapFeatureTypeStyleStruct
+typedef struct ZMapFeatureTypeStyleStructType
 {
   GObject __parent__;
 
@@ -868,7 +871,7 @@ typedef struct _zmapFeatureTypeStyleStruct
   GQuark sub_features[ZMAPSTYLE_SUB_FEATURE_MAX] ;      /* style ID quarks indexed by SUBFEATURE
                                                           ENUM */
   /* style pointers indexed by SUBFEATURE ENUM */
-  struct _zmapFeatureTypeStyleStruct *sub_style[ZMAPSTYLE_SUB_FEATURE_MAX] ;
+  struct ZMapFeatureTypeStyleStructType *sub_style[ZMAPSTYLE_SUB_FEATURE_MAX] ;
 
 
   ZMapStyleFullColourStruct colours ;                     /*!< Main feature colours. */
@@ -973,36 +976,7 @@ typedef struct _zmapFeatureTypeStyleStruct
   } mode_data ;
 
 
-} zmapFeatureTypeStyleStruct,
-#ifdef ZMAPSTYLE_INTERNAL
-zmapFeatureTypeStyle, *ZMapFeatureTypeStyle;
-#else
-zmapFeatureTypeStyle;
-
-// non internal functions can ref style members but not change them
-// MH17: why have I never liked typedefs?
-// is it because they have to so finely balanced that you can't make them compile??
-// we need a pointer to a const style not a const pointer to a volatile style
-// typdefs are atomic and not text substitutions.
-// try 'google C typedef const pointer' for a few explanations
-//typedef  const zmapFeatureTypeStyle* ZMapFeatureTypeStyle ;
-/* lets forget about the const, there's too much dressage in this source code */
-typedef   zmapFeatureTypeStyle* ZMapFeatureTypeStyle ;
-#endif
-
-
-
-/* Instance */
-//#ifdef ZMAPSTYLE_INTERNAL
-//typedef struct _zmapFeatureTypeStyleStruct  zmapFeatureTypeStyle, *ZMapFeatureTypeStyle ;
-//#else
-// read-only for the public
-//typedef struct _zmapFeatureTypeStyleStruct  zmapFeatureTypeStyle,  *ZMapFeatureTypeStyle const ;
-//#endif
-
-/* Class */
-typedef struct _zmapFeatureTypeStyleClassStruct  zmapFeatureTypeStyleClass, *ZMapFeatureTypeStyleClass ;
-
+} ZMapFeatureTypeStyleStruct ;
 
 
 

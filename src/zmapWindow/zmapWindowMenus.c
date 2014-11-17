@@ -2588,7 +2588,11 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
           }
         else
           {
+
+            /* TRY ASSIGNING TO A WindowCanvasItem AND SEE IF THAT WORKS..... */
             ZMapWindowFeaturesetItem featureset_item = ZMAP_WINDOW_FEATURESET_ITEM(menu_data->item) ;
+
+
             ZMapWindowCanvasFeature feature_item ;
             GString *canvas_featureset_text ;
             GString *canvas_feature_text ;

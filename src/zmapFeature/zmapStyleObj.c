@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Functions for manipulating Type structs and sets of
@@ -43,7 +43,7 @@
 //#include <zmapFeature_P.h>
 #include <ZMap/zmapConfigStyleDefaults.h>
 
-#include <zmapStyle_I.h>
+#include <zmapStyle_P.h>
 
 
 /* Think about defaults, how should they be set, should we force user to set them ? */

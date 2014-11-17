@@ -44,13 +44,8 @@
 
 #define ZMAP_TYPE_CONTAINER_BLOCK           (zmapWindowContainerBlockGetType())
 
-#if GOBJ_CAST
-#define ZMAP_CONTAINER_BLOCK(obj)       ((ZMapWindowContainerBlock) obj)
-#define ZMAP_CONTAINER_BLOCK_CONST(obj) ((ZMapWindowContainerBlock const ) obj)
-#else
 #define ZMAP_CONTAINER_BLOCK(obj)	    (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlock))
 #define ZMAP_CONTAINER_BLOCK_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlock const))
-#endif
 
 #define ZMAP_CONTAINER_BLOCK_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlockClass))
 #define ZMAP_IS_CONTAINER_BLOCK(obj)	    (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CONTAINER_BLOCK))

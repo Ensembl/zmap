@@ -149,7 +149,7 @@ typedef struct _pixRect
 
 
 
-typedef struct zmapWindowFeaturesetItemClassStructType
+typedef struct ZMapWindowFeaturesetItemClassStructType
 {
   zmapWindowCanvasItemClass __parent__;
 
@@ -182,7 +182,7 @@ typedef struct zmapWindowFeaturesetItemClassStructType
 
 
 
-} zmapWindowFeaturesetItemClassStruct;
+} ZMapWindowFeaturesetItemClassStruct ;
 
 
 
@@ -196,7 +196,7 @@ typedef struct zmapWindowFeaturesetItemClassStructType
  * -- graph density feature get re-binned before display (and we have two lists of feature database)
  * -- gapped alignments are recalulated for display when zoom changes (extra data per feature, one list)
  */
-typedef struct _zmapWindowFeaturesetItemStruct
+typedef struct ZMapWindowFeaturesetItemStructType
 {
   zmapWindowCanvasItemStruct __parent__ ;		/* itself derived from FooCanvasItem */
 

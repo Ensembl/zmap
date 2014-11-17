@@ -38,7 +38,7 @@
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapEnum.h>
-#include <zmapStyle_I.h>
+#include <zmapStyle_P.h>
 
 
 /* For colour spec building. */
