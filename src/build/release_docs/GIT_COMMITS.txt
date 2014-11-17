@@ -1,6 +1,10 @@
 
 Git commits for  from commit "production" until commit "release/1.2.0"
 
+bd8251f 2014-11-14 Update release notes with more detail on feature editing
+5750782 2014-11-13 update to release notes v. 1.2.0
+5a3a7db 2014-11-12 Fix regression with file import for non-otterlace zmap
+e47baec 2014-11-12 ZMap version 1.1.0-93-g6a23c1c - Update RT and git commit reports
 6a23c1c 2014-11-12 Fix compiler warnings
 85e7139 2014-11-12 Merge branch 'feature/edit_transcript' into develop
 9c22b49 2014-11-11 "rewrite splice highlighting to substantially increase efficiency."

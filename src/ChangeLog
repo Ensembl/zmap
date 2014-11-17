@@ -1,3 +1,25 @@
+2014-11-14  Gemma Barson  <gb10@sanger.ac.uk>
+ Update release notes with more detail on feature editing
+ docs/WWW/user/release_notes.shtml |   17 ++++++++++++++++-
+ 1 files changed, 16 insertions(+), 1 deletions(-)
+
+2014-11-13  Steve Miller  <sm23@sanger.ac.uk>
+ update to release notes v. 1.2.0
+ docs/WWW/user/release_notes.shtml |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+2014-11-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix regression with file import for non-otterlace zmap
+ src/zmapControl/zmapControlImportFile.c |   15 +++++++--------
+ 1 files changed, 7 insertions(+), 8 deletions(-)
+
+2014-11-12  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.1.0-93-g6a23c1c - Update RT and git commit reports
+ src/ChangeLog                                  | 2732 ++++--------------------
+ src/build/release_docs/GIT_COMMITS.txt         |  244 +--
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  352 +---
+ 3 files changed, 471 insertions(+), 2857 deletions(-)
+
 2014-11-12  Gemma Barson  <gb10@sanger.ac.uk>
  Fix compiler warnings
  src/include/ZMap/zmapFeature.h                     |    2 ++
