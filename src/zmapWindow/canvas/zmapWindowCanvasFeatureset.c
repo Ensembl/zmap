@@ -1734,7 +1734,7 @@ GType zMapWindowFeaturesetItemGetType(void)
   if (!group_type)
     {
       static const GTypeInfo group_info = {
-	sizeof (zmapWindowFeaturesetItemClass),
+	sizeof(ZMapWindowFeaturesetItemClassStruct),
 	(GBaseInitFunc) NULL,
 	(GBaseFinalizeFunc) NULL,
 	(GClassInitFunc) zmap_window_featureset_item_item_class_init,
@@ -4143,7 +4143,6 @@ static double graphicsPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature
 
 static void zmap_window_featureset_item_item_destroy (GtkObject *object)
 {
-
   ZMapWindowFeaturesetItem featureset_item;
   GList *features;
   ZMapWindowCanvasFeature feat;
@@ -4167,7 +4166,12 @@ static void zmap_window_featureset_item_item_destroy (GtkObject *object)
 
   g_return_if_fail(ZMAP_IS_WINDOW_FEATURESET_ITEM(object));
 
+
+
   featureset_item = ZMAP_WINDOW_FEATURESET_ITEM(object);
+
+
+
 
   if(g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(featureset_item->id)))
     {

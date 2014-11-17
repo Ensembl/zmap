@@ -42,13 +42,8 @@
 
 #define ZMAP_TYPE_CONTAINER_ALIGNMENT           (zmapWindowContainerAlignmentGetType())
 
-#if GOBJ_CAST
-#define ZMAP_CONTAINER_ALIGNMENT(obj)           ((ZMapWindowContainerAlignment) obj)
-#define ZMAP_CONTAINER_ALIGNMENT_CONST(obj)     ((ZMapWindowContainerAlignment const) obj)
-#else
 #define ZMAP_CONTAINER_ALIGNMENT(obj)	        (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_ALIGNMENT, zmapWindowContainerAlignment))
 #define ZMAP_CONTAINER_ALIGNMENT_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_ALIGNMENT, zmapWindowContainerAlignment const))
-#endif
 
 #define ZMAP_CONTAINER_ALIGNMENT_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_ALIGNMENT, zmapWindowContainerAlignmentClass))
 #define ZMAP_IS_CONTAINER_ALIGNMENT(obj)	(G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CONTAINER_ALIGNMENT))

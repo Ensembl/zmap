@@ -44,37 +44,29 @@
 
 #define ZMAP_TYPE_WINDOW_FEATURESET_ITEM        (zMapWindowFeaturesetItemGetType())
 
-#if GOBJ_CAST
-
-#define ZMAP_WINDOW_FEATURESET_ITEM(obj)       ((ZMapWindowFeaturesetItem) obj)
-#define ZMAP_WINDOW_FEATURESET_ITEM_CONST(obj) ((ZMapWindowFeaturesetItem const) obj)
-
-#else
-
 #define ZMAP_WINDOW_FEATURESET_ITEM(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_FEATURESET_ITEM, ZMapWindowFeaturesetItem))
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_FEATURESET_ITEM, struct ZMapWindowFeaturesetItemStructType))
 #define ZMAP_WINDOW_FEATURESET_ITEM_CONST(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_FEATURESET_ITEM, ZMapWindowFeaturesetItem const))
-
-#endif
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_FEATURESET_ITEM, struct ZMapWindowFeaturesetItemStructType const))
 
 #define ZMAP_WINDOW_FEATURESET_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_FEATURESET_ITEM, zmapWindowFeaturesetItemClass))
+  (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_FEATURESET_ITEM, struct ZMapWindowFeaturesetItemClassStructType))
 #define ZMAP_IS_WINDOW_FEATURESET_ITEM(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
 #define ZMAP_WINDOW_FEATURESET_ITEM_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_FEATURESET_ITEM, zmapWindowFeaturesetItemClass))
+  (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_FEATURESET_ITEM, struct ZMapWindowFeaturesetItemClassStructType))
 
 
 
 /* Class */
-typedef struct zmapWindowFeaturesetItemClassStructType  zmapWindowFeaturesetItemClass, *ZMapWindowFeaturesetItemClass ;
+typedef struct ZMapWindowFeaturesetItemClassStructType *ZMapWindowFeaturesetItemClass ;
 
 /* Instance */
-typedef struct _zmapWindowFeaturesetItemStruct *ZMapWindowFeaturesetItem ;
+typedef struct ZMapWindowFeaturesetItemStructType *ZMapWindowFeaturesetItem ;
+
+
 
 typedef struct _zmapWindowCanvasPangoStruct *ZMapWindowCanvasPango;
-
 typedef struct _zmapWindowCanvasGraphicsStruct *ZMapWindowCanvasGraphics;
 
 
