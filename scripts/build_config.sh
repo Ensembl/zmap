@@ -62,8 +62,11 @@ function _config_set_ZMAP_HOST_TYPE
 	Darwin)
 	    ZMAP_HOST_TYPE=mac
 	    ;;
+	*CYGWIN*)
+	    ZMAP_HOST_TYPE=cygwin
+	    ;;
 	*)
-	    _config_message_exit "Unsupported host type '$host_type'"
+	    _config_message_exit "Unsupported host type '$uname_s'"
 	    ;;
     esac
 }
