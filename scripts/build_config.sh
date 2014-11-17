@@ -167,7 +167,7 @@ ZMAP_WEBPAGE_HEADER=zmapWebPages.h
 
 # This file must be hand-edited.
 #
-ZMAP_USER_DOCS_DIR='doc/user'
+ZMAP_USER_DOCS_DIR='doc/WWW/user'
 ZMAP_USER_RELEASE_DOC_FILE_NAME='release_notes.shtml'
 
 
