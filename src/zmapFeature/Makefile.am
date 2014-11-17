@@ -21,7 +21,6 @@ zmapFeatureParams.c \
 zmapFeatureTranscript.c        \
 zmapFeatureUtils.c  \
 zmapStyle.c         \
-zmapStyle_I.h       \
 zmapStyle_P.h       \
 zmapStyleObj.c  \
 zmapStyleUtils.c    \
