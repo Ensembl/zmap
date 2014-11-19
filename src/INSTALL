@@ -9,6 +9,20 @@ are permitted in any medium without royalty provided the copyright
 notice and this notice are preserved.  This file is offered as-is,
 without warranty of any kind.
 
+
+================================================================================
+Platform specific Instructions
+
+Supported platforms are Linux Mac OS X (Intel) and Windows using the Cygwin
+environment. 
+
+This file contains the standard FSF installation instructions for autoconf-based
+packages but plaform specific instructions are given the accompanying
+INSTALL.xxxx files.
+
+================================================================================
+
+
 Basic Installation
 ==================
 
