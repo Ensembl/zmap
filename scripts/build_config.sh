@@ -62,8 +62,8 @@ function _config_set_ZMAP_HOST_TYPE
 	Darwin)
 	    ZMAP_HOST_TYPE=mac
 	    ;;
-	*CYGWIN*)
-	    ZMAP_HOST_TYPE=cygwin
+        *CYGWIN*)
+            ZMAP_HOST_TYPE=cygwin
 	    ;;
 	*)
 	    _config_message_exit "Unsupported host type '$uname_s'"
@@ -119,10 +119,7 @@ ZMAP_MASTER_NOTIFY_MAIL=annotools@sanger.ac.uk
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 
 # tviewsrv and lucid-dev64 are now ubuntu....
-#ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64"
-ZMAP_BUILD_MACHINES="tviewsrv mac106229i lucid-dev64"
-#ZMAP_BUILD_MACHINES="tviewsrv mac18480i lucid-dev64"
-#ZMAP_BUILD_MACHINES="deskpro021045 mac18480i lucid-dev64"
+ZMAP_BUILD_MACHINES="tviewsrv mac106229i lucid-dev64 t119-win-build"
 
 
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \
