@@ -8,7 +8,7 @@
 <h4>B-Trees</h4>
 <p>Back then i made up a B-tree structure which consists of node with (configurable) 24 items organised as an n-way tree. Typically nodes we kept as having 8-16 items. so that insertion and deletion of one did not result in the tree being modified execept occasionally and only reuqired insertion into a small array.  The tree was explicitly balanced and items could be shuffled from one node to the next to ensure even distribution.
 </p>
-<img src="Design/modules/btree.png" border="1">
+<img src="btree.png" border="1">
 <p>
 It was also a design aim to handle high volume updates (eg page change, real time status info from several data-feeds.  This differs from the ZMap usage where we have high volume loading events and later handle zoom and bump by handling the draw operation differently.
 </p>
@@ -19,7 +19,7 @@ What's common between then and now is the aim to search for an item and then pro
 <h4>Skip Lists as defined</h4>
 <p>Skip lists as written up involve a fixed size stack of higher level lists. When I started looking I had thought that they were guaranteed to not become degenerate, but if you look at what's online you see that it's only 'fairly likely'.  I had hoped to not have to write code to prevent degeneracy...
 </p>
-<img src="Design/modules/skip_array.png" border="1">
+<img src="skip_array.png" border="1">
 
 <h4>Skip Lists as implemented</h4>
 <p>
@@ -27,7 +27,7 @@ What's common between then and now is the aim to search for an item and then pro
 The implementation provided is quite like a B-tree, but replacing the array nodes with a list. I also made all the list links double.
 Balancing/ non degeneracy is a pain, as there are a few edge cases and I can remember writing a test program to find all these by brute force rather than artistically just working them out ('immaculate design').
 </p>
-<img src="Design/modules/skip_list.png" border="1">
+<img src="skip_list.png" border="1">
 
 
 <h3>Balancing upper layers is not implemented</h3>

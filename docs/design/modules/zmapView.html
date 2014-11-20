@@ -2,13 +2,13 @@
 <h2> zmapView - a mixture of V and C from MVC </h2>
 <fieldset> <legend>Summary</legend>
 <p>zmapView is quite a large module! When adding a topic to this file please include a link here.</p>
-<a href="Design/modules/zmapView.shtml#reqdata">Requesting data from sources</a>
-<a href="Design/modules/zmapView.shtml#steplists">Step lists</a>
-<a href="Design/modules/zmapView.shtml#reqcontext">Retreiving data from a server</a>
-<a href="Design/modules/zmapView.shtml#loaddata">Rationalising load-features code</a>
+<a href="zmapView.shtml#reqdata">Requesting data from sources</a>
+<a href="zmapView.shtml#steplists">Step lists</a>
+<a href="zmapView.shtml#reqcontext">Retreiving data from a server</a>
+<a href="zmapView.shtml#loaddata">Rationalising load-features code</a>
 <br />
-<a href="Design/notes/BAM.shtml#blixem_bam">Asking Blixem to Request BAM data</a><br>
-<a href="Design_notes/notes/view_window_style.shtml">Views and Styles</a><br />
+<a href="../notes/BAM.shtml#blixem_bam">Asking Blixem to Request BAM data</a><br>
+<a href="../notes/view_window_style.shtml">Views and Styles</a><br />
 </fieldset>
 
 <fieldset><legend>General notes</legend>
@@ -24,7 +24,7 @@
 <b>NOTE</b>: this proves to be quite fiddly. In the short term (to allow testing of the real code) we will require delayed=true to be set where needed. It may be easier to specify active and delayed sources in [ZMap].
 </p>
 <p>Any request for data after the initial 'data loading' phase will be activated immediately regardless of the setting of 'delayed'.</p>
-<p>Feature columns may be populated by data from several featuresets and this mapping was originally specified by ACEDB. A new stanza [featuresets] is provided to allow this to be defined statically in the main <a href="Design_notes/modules/zmapConfig.shtml">ZMap configuration file</a> (NB: fix this link, it should point to the config user guide)</p>
+<p>Feature columns may be populated by data from several featuresets and this mapping was originally specified by ACEDB. A new stanza [featuresets] is provided to allow this to be defined statically in the main <a href="zmapConfig.shtml">ZMap configuration file</a> (NB: fix this link, it should point to the config user guide)</p>
 
 <h3>Requesting data at startup</h3>
 <p>An initial request for data must be configured as ZMap will not run without data, and this will prevent the situation where we have a blank window and no user control.  It also provides an opportunity to add in predfined data - this can probably be tidied up with little mishap, such that predefined styles etc are added automatically and no initial data requests are required. However, it may be necessary to include all the navigator featuresets in the initial load.</p>
@@ -110,7 +110,7 @@ hello: ref to x-remote doc mentioned above
 <a name="reqcontext"></a>
 <fieldset><legend>Retreiving data from a server</legend>
 <h3>Transferring data</h3>
-<p>The step list code described <a href="Design_notes/modules/zmapView.shtml#steplists">above</a> operates a sequence of operations which differ depending on circumstances but nomimally involve opening a connection and requesting data of various types.  It's not totally obvious how data used for requests arrives at the server and how data supplied by the server ends up back in the view code.</p>
+<p>The step list code described <a href="zmapView.shtml#steplists">above</a> operates a sequence of operations which differ depending on circumstances but nomimally involve opening a connection and requesting data of various types.  It's not totally obvious how data used for requests arrives at the server and how data supplied by the server ends up back in the view code.</p>
 <p>The step list structures maintain data sent accross several steps as required by various parts of the code and this is done by the functions <b>dispatchContextRequests()</b> and <b>processDataRequests()</b> which are defined in <b>zmapView.c</b> and passed to the step list code to be called before and after the requests are actioned.  There are some other structures flapping around: a <b>ZMapFeatureContext</b> (which will ultimately contain all(?) the data supplied by the series of requests) and a <b>ConnectionData</b> which contains information needed by the requests and is private to <b>zmapView</b>.  At various points in the sequence of requests data is passed from one structure to another.  Data supplied by one step is needed by subsequent ones and must be passed back to where it came from so that it can be acessed.</p>
 <h4>Styles</h4>
 <p>Originally (and currently) these were supplied from ACEDB and requested by ZMap.  File and Pipe servers cannot supply styles as the GFF file format does not allow this and the code that processes a GFF file will remove features that do not have a style associated and this means that the file and pipe server modules must be supplied with a styles file.  They then decode this and construct styles data structures which are passed to the calling module (zmapView).  These are held in the ConnectionData structure and passed back to the step list request structures by the <b>dispatchContextRequests()</b> function.  They also get merged into the view, which is what is needed for them to actually be used.

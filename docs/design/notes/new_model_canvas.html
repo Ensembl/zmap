@@ -42,7 +42,7 @@ Each container will hold data to specify strand and frame and also borders if an
 <p>As the number of columns is not very great (typically less than 100) these can be stored in a simple linked list.
 </p>
 
-<img src="Design/notes/new_model_canvas.png"  class="img">
+<img src="new_model_canvas.png"  class="img">
 
 <h4>Canvas coordinates</h4>
 <p>The feature context has coordinates specified as forward strand chromosome based from 1 (although the segment viewed is unlikely to be).  In a block these coordinates will map to zero based canvas coordinates, with the first base in the viewed sequence mapping to 0.0.
@@ -64,7 +64,7 @@ Each container will hold data to specify strand and frame and also borders if an
 <p>This leads to a design as below, where we map source data (context featuresets) into containers (canvas featuresets).
 </p>
 
-<img src="Design/notes/new_model_fset.png"  class="img">
+<img src="new_model_fset.png"  class="img">
 
 <p>Following experiments with coverage displays and graph features it looks feasable to code each featureset as a single foo canvas item and to have this item handle expose events and display individual features.  This means that what were Foo Canvas Items (and ZMapWindowCanvasItems) become simple data structures, and performance improvements of 5x on add and 3x on paint are achievable.
 </p>
@@ -137,7 +137,7 @@ Conversely pre-sorting the data and adding in same-name order to allow effcient 
 <h4> Summary</h4>
 <p>Thus we have a design for feature data structures that looks like the diagram below, where the green exons form a complete transcript object (a similar structure will be used for alignments).  We can select of search for sub-parts of compound objects and are at choice whether or not we wish to access the part of the whole, and the process for each is simple and well defined. Each compound object is a linked list of sub-parts and the start and end correspond to the start and end of the list. Each sub-part refers back to the feature context.  Note that in the canvas there is no data structure corresponding to the whole transcript; it is just a sum of parts.
 </p>
-<img src="Design/notes/new_model_feature.png"  class="img">
+<img src="new_model_feature.png"  class="img">
 
 
 <h4>Bumping simple and compound objects</h4>
@@ -195,7 +195,7 @@ The initial implementation added one line per feature but this has proved tricky
 These can occur between features (nc-splice) in which case they are handled as above. They can also occur at the start and end of a series and extend beyond these bounds. As the exisitng overlap mechanism will pick up expose events for the top end we need no concern ourselfves with that. The bottom end however requires further processing of features beyond the expose region to pick up features just beyond it. As glyphs are defined in pixel coordinates we can calculate maximum value of these and adjust for the current zoom level in the draw function.  Glyphs will be drawn per feature, and this process can be added regardless of bump state, which will keep the code cleaner.
 </ul>
 Here's an pictorial repepresentation:<br />
-<img src="Design/notes/bumped_align.png"  class="img">
+<img src="bumped_align.png"  class="img">
 
 <h4>Handling alignment glyphs</h4>
 <p>There is a performance gain to be had by caching glyph shapes as these are all the same shape and size (but may be inverted or displayed in a different colour.  Glyphs in general can be sized by score (which can be set in the style) and we have to handle this (effciently) if someone configures it (eg as for GF_Splice glyphs as standalone features), but for bumped alignments we currently have a restricted level of variation.  This means we only need to have four data structures for each glyph style definition, but have to allow for one per feature 'just in case'.
