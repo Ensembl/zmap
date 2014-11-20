@@ -8,23 +8,13 @@ how this makes it to the website.
 Contents:
 ---------
 
-Contains pretty much all the docs for zmap development, websites etc.
-including:
+Contains all of the docs relating to the zmap source code and usage, including:
 
-Events			all zmap-related events such as the GAT workshop.
+design			Design documentation for the zmap source code that will
+                        be distributed with the source code
 
-IntWeb			any web content/pages that isn't external,
-			e.g. foocanvas manpages, design docs, developer stuff.
-
-Papers			ZMap papers for publication
-
-Project_notes		internal meetings etc.
-
-WWW			The official documentation that will be distributed 
-                        with the source code. Files in WWW/user/ are help pages
-                        that will be installed along with the executables; other
-                        files in WWW/ will be distributed but not installed.
-
+user			The official documentation/help pages that will be installed
+                        with the source code.
 
 
 
