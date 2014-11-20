@@ -918,7 +918,7 @@ void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items)
   /* NOTE these itens remain in the focus list as normal but are not visible
    * arguably it would be better to handle the hidden items lists in this module
    * but it's done in zmapWindow.c due to history
-   * for a review of this see docs/Design_notes/notes/notepad.shtml
+   * for a review of this see notepad.html
    * NB this is not critical as when features are hidden and others selected others the focus will be cleared anyway
    */
 

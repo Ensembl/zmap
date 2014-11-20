@@ -349,7 +349,7 @@ typedef struct ZMapFeatureContextMergeStatsStructType
  * Sequences and Block Coordinates
  * NOTE with moving to chromosome coords this is a bit out of date
  * will update this comment when I've worked out what to do.
- * NOTE refer to docs/IntWeb/Design/notes/coord_config.shtml and ignore the below
+ * NOTE refer to coord_config.html and ignore the below
  *
  * In the context of displaying a single align with a single block,
  * given a chromosome and a sequence from that to look at *we have:

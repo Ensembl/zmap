@@ -7,13 +7,13 @@ A common theme is the selection of features from a (marked) region and displayin
 Similar functions may already exist in ZMap (eg colinear lines and homology markers on bumped alignments). Some of these could possibly be implemented in ZMap and this point is open to discussion.
 </p>
 <h3>Interface to Otterlace</h3>
-<p>Some notes are available <a href="Design_notes/notes/otter_zmap.shtml#otterface">below</a>.
+<p>Some notes are available <a href="../notes/otter_zmap.shtml#otterface">below</a>.
 </p>
 
 </fieldset>
 
 <fieldset><legend>RT 69060 - Hide EST's that are covered by mRNA data</legend>
-<p>Some notes about how to do this in ZMap without interaction with otterlace can be found <a href="Design_notes/notes/EST_mRNA.shtml">here</a>.
+<p>Some notes about how to do this in ZMap without interaction with otterlace can be found <a href="../notes/EST_mRNA.shtml">here</a>.
 There is also the option of otterlace providing separate featuresets for masked and unmasked data, which would be a very neat solution.
 </p>
 Close reading of the ticket suggests that this is not intended to be an interactive process and simply applies to whole columns, in which case the interactive process below may not be relevant.
@@ -35,7 +35,7 @@ Close reading of the ticket suggests that this is not intended to be an interact
 <li> zmap automatically bumps the relevant columns and displays only the specified features
 </ul>
 </p>
-<p>This process does look complicated: is there any benefit in implementing this instead of <a href="Design_notes/notes/EST_mRNA.shtml">having ZMap calculate it</a>?
+<p>This process does look complicated: is there any benefit in implementing this instead of <a href="../notes/EST_mRNA.shtml">having ZMap calculate it</a>?
 </p>
 </fieldset>
 
@@ -119,7 +119,7 @@ As we are now dealing with two independant sets of highlit features (evidence an
 <p>
 Window colours are set in <b>zmapWindowDrawFeatures.c/setColours()</b>.
 </p>
-<p>The WindowFocus code will be modified to handle multiple lists of related features; see <a href="Design_notes/notes/focus_list.shtml">here</a>.
+<p>The WindowFocus code will be modified to handle multiple lists of related features; see <a href="../notes/focus_list.shtml">here</a>.
 </p>
 
 <h4>Clearing evidence/transcript highlights</h4>

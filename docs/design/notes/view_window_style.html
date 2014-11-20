@@ -5,7 +5,7 @@
 </fieldset>
 <p>Traditionally display styles were related to ACEDB methods (NB this terminology may be wrong...) and these styles included some state information.  Given that the same style could be applied to more than one column this required styles to be copied before use and this resulted in some quite complex code and data structures.
 </p>
-<p>To resolve this the state information has been move into the <a href="Design_notes/notes/ContainerFeatureset.shtml">ContainerFeatureset</a> (bump mode) and replaced by server options (deferred and loaded) resulting in styles as static data that simply describe how to display features.  This also allows styles to be referred to directly instead of being looked up everytime access was needed, which will be a lot more efficient.
+<p>To resolve this the state information has been move into the <a href="../notes/ContainerFeatureset.shtml">ContainerFeatureset</a> (bump mode) and replaced by server options (deferred and loaded) resulting in styles as static data that simply describe how to display features.  This also allows styles to be referred to directly instead of being looked up everytime access was needed, which will be a lot more efficient.
 </p>
 <p>Styles are merged into a global (to the view) table as they are supplied by servers - the ZMap server model is one where each server supplies styles for its features although in practice ZMap supplies these to the server and then retrieves them.  Each display window (pane) is given the global list of styles and traditionally maintained a read-only (original) and volatile copy (with state information).  Various functions were written to juggle all this information and distribute it.
 </p>

@@ -2,7 +2,7 @@
 
 <h2>Display columns</h4>
 <fieldset><legend>Orientation</legend>
-<p>All features on display are held in a data structure known as a <b>zmapWindowContainerFeatureset</b> which is a species of FooCanvasGroup (see <a href="Design_notes/modules/zmapwindow_items.shtml"> zmapWindow/items</a>). These data structures can contain zero or more featuresets, although they should not be created unless there are features to display.
+<p>All features on display are held in a data structure known as a <b>zmapWindowContainerFeatureset</b> which is a species of FooCanvasGroup (see <a href="../modules/zmapwindow_items.shtml"> zmapWindow/items</a>). These data structures can contain zero or more featuresets, although they should not be created unless there are features to display.
 </p>
 <p>A featureset may be displayed in one or more columns, for example separate columns for strand and frame.  It has long been assumed that each feature will only be displayed in a single column - each displayed feature's canvas item structure refers directly to the features context and there is a data structure known as the <b>FtoIHash</b> which maps from feature context to <b>ZMapWindowCanvasItem</b>.
 </p>
@@ -97,7 +97,7 @@ After updating various other segments of code that require the style table then 
 </p>
 <h6>Some intricacies</h6>
 <p>
-The function <b>zMapFindStyle()</b> is widely used to lookup a style, and ZMapWindow has two lists of styles (read_only_styles and display_styles).  These need to be resolved so that there is only one list which is maintained by the owning ZMapView (which out of scope of this page see <a href="Design_notes/notes/view_window_style.shtml">here</a>) but use of this function must be verified in the following places:
+The function <b>zMapFindStyle()</b> is widely used to lookup a style, and ZMapWindow has two lists of styles (read_only_styles and display_styles).  These need to be resolved so that there is only one list which is maintained by the owning ZMapView (which out of scope of this page see <a href="../notes/view_window_style.shtml">here</a>) but use of this function must be verified in the following places:
 <pre>
 deskpro18979[mh17]39: zgf zmapfindstyle
 - == iffed out
@@ -222,7 +222,7 @@ and <b>zmapWindowNavigator.c</b> has its own code in createColumnCB().
 
 <h3>Features may only be displayed in one place per window</h3>
 <p>
-Discussed <a href="Design_notes/notes/FToIHash.shtml">here</a>.
+Discussed <a href="../notes/FToIHash.shtml">here</a>.
 </p>
 
 

@@ -1,7 +1,7 @@
 <!-- $Id $ -->
 <h2>Restructuring the Feature Context </h2>
 <fieldset><legend>Introduction</legend>
-<p>Please refer to <a href= "Design_notes/modules/zmapFeature.shtml">zmapFeature</a> for a discussion of featuresets columns and styles. See the section ?? below for details if implementation and implications of this.
+<p>Please refer to <a href= "../modules/zmapFeature.shtml">zmapFeature</a> for a discussion of featuresets columns and styles. See the section ?? below for details if implementation and implications of this.
 </p>
 <p>Data in ZMap is stored in a <b>Feature Context</b> which is organised in a hierarchy of Context, Align, Block, FeatureSet, Features.  The features themselves can be complex but this is not relevant here.
 </p>
@@ -64,11 +64,11 @@ When displaying a column for each feature the entire list of styles is scanned f
 
 <h3>Columns dialog</h3>
 <p>
-It may be wise to review the columns dialog in terms of 'available columns', and the distinction between featuresets and columns as above, especially when considering that (particularly with pipeServers) we request featuresets not columns.  Recent requests (eg <a href="Design_notes/notes/RNAseq.shtml">RNASeq</a> affect this dialog and a review is required,
+It may be wise to review the columns dialog in terms of 'available columns', and the distinction between featuresets and columns as above, especially when considering that (particularly with pipeServers) we request featuresets not columns.  Recent requests (eg <a href="../notes/RNAseq.shtml">RNASeq</a> affect this dialog and a review is required,
 </p>
 
 <h3>Column sorting</h3>
-<p>The windowFocus code sorts the canvas itens in a column to handle feature tabbing.New functions (such as <a href="Design_notes/notes/EST_mRNA.shtml">EST masking</a>) need to sort individual feature sets and thsi can be done in the features context without affecting function such as feature tabbing.
+<p>The windowFocus code sorts the canvas itens in a column to handle feature tabbing.New functions (such as <a href="../notes/EST_mRNA.shtml">EST masking</a>) need to sort individual feature sets and thsi can be done in the features context without affecting function such as feature tabbing.
 <i>Good News: no work required!</i>
 </p>
 
@@ -89,7 +89,7 @@ It may be wise to review the columns dialog in terms of 'available columns', and
 </p>
 <a name="sort_featureset"></a>
 <h3>Processing Featureset data</h3>
-<p>For some functions (eg <a href="Design_notes/notes/EST_mRNA.shtml">masking EST features</a>) we wish to process the feature context in order and this requires either a change of data structure or an additional set of pointers to each feature to allow sorted access. Please follow that link for implementation details.
+<p>For some functions (eg <a href="../notes/EST_mRNA.shtml">masking EST features</a>) we wish to process the feature context in order and this requires either a change of data structure or an additional set of pointers to each feature to allow sorted access. Please follow that link for implementation details.
 </p>
 
 

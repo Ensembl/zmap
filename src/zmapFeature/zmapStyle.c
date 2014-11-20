@@ -45,7 +45,7 @@
 /*
  * Some notes on implementation by mh17
  *
- * There is a write up in ZMap/docs/Design_notes/modules/zmapFeature.shtml
+ * There is a write up in zmapFeature.shtml
  * (or wherever your source tree is)
  *
  * Styles are GObjects and implement the g_object_get/set interface

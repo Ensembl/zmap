@@ -250,7 +250,7 @@ clearly terminated. </td></tr>
 </td></tr>
 <tr>
 </tbody></table>
-<p>Please refer to <a href="Design_notes/notes/featureset_col.shtml">this file</a> for some notes about some other options affecting column and featureset layout and styles etc etc.</p>
+<p>Please refer to <a href="../notes/featureset_col.shtml">this file</a> for some notes about some other options affecting column and featureset layout and styles etc etc.</p>
 </fieldset>
 
 <a name="logging"></a>

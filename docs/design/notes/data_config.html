@@ -7,7 +7,7 @@
 </p>
 
 <h4>Insufficient flexibilty</h4>
-<p>Please refer to the following diagram, which illustrates how the current ZMap architecture cannot implement what is required (but see <a href="Design/notes/data_config.shtml#bingo">Bingo</a> below).<br />
+<p>Please refer to the following diagram, which illustrates how the current ZMap architecture cannot implement what is required (but see <a href="../notes/data_config.shtml#bingo">Bingo</a> below).<br />
 a) shows the traditional approach derived from ACEDB and now in use with data provided by pipe servers (NOTE: this is not a brilliant example as all the featuresets actually come from one pipe server). <br />
 
 b) shows a simple BAM data column with two reps of the same experiment combined into one column. Each rep is sourced from it's own pipe server and the features can be colour code via styles easily - this fits quite well into existing architecture. <br />
@@ -36,7 +36,7 @@ c) shows a coverage column. Coverage is displayed as several featuresets in a co
 <li> we are handling the problem externally: ZMap should have control over this
 <li> if one of the sources fails it is difficult to recover from the situation
 </ul>
-<img src="Design/notes/data_config.png" class="img" alt="column config">
+<img src="../notes/data_config.png" class="img" alt="column config">
 </p>
 
 
@@ -83,7 +83,7 @@ A subsequent re-implementation of the basic features display code requires a sim
 
 <p>
 Here is a picture of some sample featuresets and columns as needed for ENCODE data:
-<img src="Design/notes/virtual_fset.png" class="img" alt="column config example">
+<img src="../notes/virtual_fset.png" class="img" alt="column config example">
 <br />
 Configuration:
 <pre>
@@ -154,7 +154,7 @@ we request a related column, that contains some real featuresets.
 <p>Existing flat file stanza driven configuration is quite limited and is not a practical solution for large amounts of data and each modification is fairly tedious.
 </p>
 
-<p>Some notes on converting existing configuration file to SQLite can be found <a href="Design.notes/SQLite.shtml">here</a></p>
+<p>Some notes on converting existing configuration file to SQLite can be found <a href="../notes/SQLite.shtml">here</a></p>
 
 <p>
 To make future modifications easier it is proposed to define simple data items (eg featuresets, columns, servers, styles) and then define relations between them.  Each relation will consist of a type and two unique id's, but note that each id may belong to different tables.

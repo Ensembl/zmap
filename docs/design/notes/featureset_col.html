@@ -1,7 +1,7 @@
 <!-- $Id: featureset_col.html,v 1.1 2011-01-10 13:47:48 edgrif Exp $ -->
 <h2>Columns Featuresets and Data Sources</h2>
 <fieldset><legend>Definitions</legend>
-<p><a href="Design_notes/modules/zmapFeature.shtml#terminology">zmapFeature.shtml</a> has some notes about the words used for various data items in the ZMap code (which cannot be changed without a lot of work) and this section aims to define terms to be used to describe things that can be configured by the user/ otterlace or presented to the user/ annotators, or used in an external interface eg data servers and X-remote.  This may seem pedantic, but there is some confusion caused by the re-use of words to refer to different objects.</p>
+<p><a href="../modules/zmapFeature.shtml#terminology">zmapFeature.shtml</a> has some notes about the words used for various data items in the ZMap code (which cannot be changed without a lot of work) and this section aims to define terms to be used to describe things that can be configured by the user/ otterlace or presented to the user/ annotators, or used in an external interface eg data servers and X-remote.  This may seem pedantic, but there is some confusion caused by the re-use of words to refer to different objects.</p>
 
 <p>ACEDB includes a number of configuration options driven by database tables and this functionality must be supported, and other than that we need to be able to specify what data to display, where to request the data, and where to display it.</p>
 <p>We also have to specify a display style for each data item and the display columns themselves.</p>
@@ -179,14 +179,14 @@ coverage=data
 </p>
 
 <p>
-It is also possible to define  'virtual featuresets' that cause several featuresets to be displayed as one.<b>NOTE</b> this is only revelan tot coverage style displays where each featureset effectivel has its own sub-column. See  <a href="Design/notes/data_config.shtml">here</a> for why.
+It is also possible to define  'virtual featuresets' that cause several featuresets to be displayed as one.<b>NOTE</b> this is only revelan tot coverage style displays where each featureset effectivel has its own sub-column. See  <a href="../notes/data_config.shtml">here</a> for why.
 <pre>
 [featuresets]
 coverage_Tier1_cytosol_K562 = coverage_Tier1_cytosol_K562_LongPolyA_Rep1 ; coverage_Tier1_cytosol_K562_LongPolyA_Rep2
 </pre>
 </p>
 
-<p>Refer also to <a href="Design/notes/SQLite.shtml">SQLite configuration</a> for some other notes on future directions.
+<p>Refer also to <a href="../notes/SQLite.shtml">SQLite configuration</a> for some other notes on future directions.
 </p>
 
 </fieldset>

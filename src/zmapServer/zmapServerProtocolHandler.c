@@ -584,7 +584,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
 
 
-/* This function is called if a thread terminates.  see doc/Design_notes/slaveThread.shtml */
+/* This function is called if a thread terminates.  see slaveThread.html */
 ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_msg_out)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
@@ -600,7 +600,7 @@ ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_ms
 }
 
 
-/* This function is called if a thread terminates.  see doc/Design_notes/slaveThread.shtml */
+/* This function is called if a thread terminates.  see slaveThread.html */
 ZMapThreadReturnCode zMapServerDestroyHandler(void **slave_data)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;

@@ -38,7 +38,7 @@ The major problem to solve is one of passing round information regarding what da
 <p>There are currently a number of ways that ZMap is asked to load and display data and these operate by some implicit protocols.  It may be appropriate to redefine some of this to avoid duplication in Blixem configuration.
 </p>
 
-<p>ZMap can be started up without specifying a 'default sequence' and this results in the main window (not normally visible to Otterlace users) being ready to accept sequence requests, and no view window being displayed.  Views can be created by requesting this from the main window (the ZMap Manager) or via an XRemote request from Otterlace, (both of which reuqire a sequence name and start and end coordinates) but note that currently there is no clear linkage between a view and the data sources or request protocol used to request the data.  This has implications for <a href="Design/notes/standalone.shtml">standalone operation</a> and currently the ability to specify different sequences is limited to operation with ACEDB.  Note that ZMap does not provide this kind of function with pipe servers.
+<p>ZMap can be started up without specifying a 'default sequence' and this results in the main window (not normally visible to Otterlace users) being ready to accept sequence requests, and no view window being displayed.  Views can be created by requesting this from the main window (the ZMap Manager) or via an XRemote request from Otterlace, (both of which reuqire a sequence name and start and end coordinates) but note that currently there is no clear linkage between a view and the data sources or request protocol used to request the data.  This has implications for standalone operation and currently the ability to specify different sequences is limited to operation with ACEDB.  Note that ZMap does not provide this kind of function with pipe servers.
 </p>
 
 <p> ZMap will use the sequence name of the current view and the requested start and end coordinates (specified by the mark) as the source of this data and pass these directly to Blixem.  Blixem will call a script provided by Anacode to generate a GFF file containing BAM file sourced data and pass this data to the script via command line arguments.
@@ -48,7 +48,7 @@ The major problem to solve is one of passing round information regarding what da
 <h3>[Blixem] configuration - new options</h3>
 <h4>Configuration file</h4>
 <p>
-The blixem configuration file <b>blixemrc</b> will be amended to include a stanza for fetching short-read data, which will include a script with optional arguments, not including the sequence name or start or end coordinates. Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding other pipe-server arguments which may affect this configuration in future.
+The blixem configuration file <b>blixemrc</b> will be amended to include a stanza for fetching short-read data, which will include a script with optional arguments, not including the sequence name or start or end coordinates. Refer <a href="../notes/standalone.shtml">here</a> for some relevant comments regarding other pipe-server arguments which may affect this configuration in future.
 </p>
 <p>
 The config file already specifies the default pfetch mode for our current data type (EMBL sequences).  This fetch mode relates to fetching missing data for sequences that Blixem already knows about (i.e. those in its &lt;datafile&gt; input file).  The new fetch method will fetch all sequences within a particular region from a particular source, without any prior knowledge of what those sequences are.  We could in the future want additional fetch methods for different data types that we don't yet know about, which may fetch sequences or just sequence data.
@@ -118,7 +118,7 @@ All other options relating to short-reads data will be passed in the GFF file an
 <table border="1"  cellpadding="3" cellspacing="3">
 <tr> <td> seq-data</td> <td>A list of featuresets containing SR data<br />
 As for DNA and protein featuresets we try to match both columns<br /> and featuresets to allow simple configuration.<br /> (Note: each column/featureset has options for short names and more lengthy descriptions). <br />
-Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding extra ZMap config options
+Refer <a href="../notes/standalone.shtml">here</a> for some relevant comments regarding extra ZMap config options
  </td> </tr>
 </table>
 
@@ -171,7 +171,7 @@ Each BAM pipe server will support the relevant ZMap featureset, and coverage dat
 </pre>
 and right clicking on a coverage column will display an option to display the real data column. (This will replace the inclusion of all BAM data sets in the RC menu as at present). Whether or not this causes the columns to switch or display together is not relevant here.  Existing ZMap configuration (eg [featureset-description]) will be used to specify display names and helpful information as at present.
 </p>
-<p>Referring to the <a href="Design/notes/RNAseq.shtml">request</a> for a new pane on the load columns dialog, the existance of a [Coverage] mapping may be used to include featuresets in this page or not, and also the existing load columns pane.
+<p>Referring to the <a href="../notes/RNAseq.html">request</a> for a new pane on the load columns dialog, the existance of a [Coverage] mapping may be used to include featuresets in this page or not, and also the existing load columns pane.
 </p>
 
 

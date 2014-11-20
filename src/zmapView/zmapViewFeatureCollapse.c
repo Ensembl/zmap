@@ -24,7 +24,7 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:   collapse duplicated short reads features subject to configuration
- *                NOTE see docs/IntWeb/Design/notes/BAM.shtml
+ *                NOTE see BAM.html
  *                sets flags in the context per feature to say  collapsed or not
  *
  *-------------------------------------------------------------------

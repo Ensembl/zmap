@@ -21,7 +21,7 @@
 </p>
 <p>Some reasons for wanting to display a feature more than once are:
 <ul>
-<li> re-coding <a href="Design_notes/notes/focus_list.shtml">focus/ highlit items</a> using the overlay group of a ContainerFeatureset.  Existing highlight code has problems with canvas item ordering as highlit items must be brought to the front and this mechanism fails with multiple select.  By displaying a second copy in the overlay list we can avoid all such problems.
+<li> re-coding <a href="../notes/focus_list.shtml">focus/ highlit items</a> using the overlay group of a ContainerFeatureset.  Existing highlight code has problems with canvas item ordering as highlit items must be brought to the front and this mechanism fails with multiple select.  By displaying a second copy in the overlay list we can avoid all such problems.
 <li> Users would like to be able to select a transcript and see it in a new column with all supporting evidence next to it.  Obviously if we could avoid removing these features from thier respective columns that will require less work and be more reliable.
 </ul>
 <b>Note</b> Separator column items (created by a DNA search for example) do not refer to features in the feature context (except perhaps the DNA sequence) and are not relevant here. However this may be an area to be aware of.
@@ -32,7 +32,7 @@
 This would work quicker as scanning a list of one or two items will be faster than searching four hash tables.
 </p>
 <h4>Is the FToIHash used directly by the CanvasItems code?</h4>
-<p>Maybe this is why it exists?  The FToiHash is used by Feature Search which is used for a numboer of different ZMap functions see <a href="Design_notes/notes/feature_search.shtml">here</a> for details.
+<p>Maybe this is why it exists?  The FToiHash is used by Feature Search which is used for a numboer of different ZMap functions see <a href="../notes/feature_search.shtml">here</a> for details.
 </p>
 
 <h4>Displaying features in another column</h4>

@@ -1,6 +1,6 @@
 <h2>Density plots</h2>
 <p>
-<b>A caveat</b>: this page started of as design ideas and developed into implementation notes which evolved as requirements and technical obscurities became clearer, so be skeptical af what you read here.  It's mostly true but pedantry cannot be acheived.  Later on the density code gets to be used as a basis for the <a href="Design/notes/new_model_canvas.shtml">new-model-canvas</a>.
+<b>A caveat</b>: this page started of as design ideas and developed into implementation notes which evolved as requirements and technical obscurities became clearer, so be skeptical af what you read here.  It's mostly true but pedantry cannot be acheived.  Later on the density code gets to be used as a basis for the <a href="../notes/new_model_canvas.shtml">new-model-canvas</a>.
 </p>
 
 <fieldset><legend>Motivation</legend>
@@ -8,13 +8,13 @@
 <p>There are two main reasons for wanting to present a set of features in terms of volumes: 1) speed and 2) usefulness.
 </p>
 <p>
-</p>Especially at low zoom levels high volume columns are displayed with many features overlapping with the result that most are not visible despite being drawn on the canvas.  Experiments with <a href="Design_notes/notes/canvas_tweaks.shtml#summarise">filtering out invisible features</a> from the display while still presenting the same picture show that improvements in speed by a factor of 20x are realistic.
+</p>Especially at low zoom levels high volume columns are displayed with many features overlapping with the result that most are not visible despite being drawn on the canvas.  Experiments with <a href="../notes/canvas_tweaks.shtml#summarise">filtering out invisible features</a> from the display while still presenting the same picture show that improvements in speed by a factor of 20x are realistic.
 </p>
-<p>Features displayed in low resolutions are not very useful to annotators - the display at low zoom levels serves mainly to show where features are and a density plot would give more information - as mentioned above overlapping features are not visible and help no-one.  These kinds of display have been requested specifically for <a href="Design_notes/notes/RNAseq.shtml">RNAseq</a> data.
+<p>Features displayed in low resolutions are not very useful to annotators - the display at low zoom levels serves mainly to show where features are and a density plot would give more information - as mentioned above overlapping features are not visible and help no-one.  These kinds of display have been requested specifically for <a href="../notes/RNAseq.shtml">RNAseq</a> data.
 </p>
 
 <h3>GC content</h3>
-<p>A related requirement is to show <a href="Design_notes/notes/density.shtml">GC content</a> which is a rolling average calculated from the DNA sequence and this can be displayed as a histogram or wiggle plot.
+<p>A related requirement is to show <a href="../notes/density.shtml">GC content</a> which is a rolling average calculated from the DNA sequence and this can be displayed as a histogram or wiggle plot.
 </p>
 </fieldset>
 
@@ -28,7 +28,7 @@
 </p>
 <h3>Wiggle plot</h3>
 <p>A line chart (what most people think of as a graph)</p>
-<img src="Design_notes/notes/density.png" class="img" alt="a picture of density plots">
+<img src="../notes/density.png" class="img" alt="a picture of density plots">
 <p>
 Typically the density scale will be chosen as logarithmic.
 </p>

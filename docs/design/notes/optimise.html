@@ -18,9 +18,9 @@ It may be beneficial to consider some different aspects of speed and percieved s
 </p>
 <hr>
 <p>
-<a href="Design_notes/notes/optimise.shtml#ideas">Ideas/Action</a>
-<a href="Design_notes/notes/optimise.shtml#gobj_build">Notes on ZMap build</a>
-<a href="Design_notes/notes/optimise.shtml#results">Results</a>
+<a href="../notes/optimise.shtml#ideas">Ideas/Action</a>
+<a href="../notes/optimise.shtml#gobj_build">Notes on ZMap build</a>
+<a href="../notes/optimise.shtml#results">Results</a>
 </p>
 
 </fieldset>
@@ -217,7 +217,7 @@ The featureset CanvasGroup now holds a copy of its style and each feature has a 
 <h5> Further work required</h5>
 <p>The column group objects need to be given pointers to the featureset styles instead of making copies of all the styles needed so that all the code access the same instances of each style</p>
 <p>Sub-features types are still processed by style lookup via the column group. and should be implemented as pointers: these extra styles would be accessable only though thier parent via each features style pointer </p>
-<p>See <a href="Design_notes/notes/optimise.html#gdata">below</a> for performance measurements.</p>
+<p>See <a href="../notes/optimise.html#gdata">below</a> for performance measurements.</p>
 
 </fieldset>
 
@@ -258,7 +258,7 @@ If would be advisable to create a test environment that can exercise ZMap functi
 <p>Processing these (just the function g_datalist_id_get_data()) accounts for 14% of 17% of the total or approximately 3% CPU overall.</p>
 <p>They are used only for styles and feature contexts - lists of featuresets.  Given that we can easily have 300+ styles these would be better coded as a GHashTable.
 </p>
-<p>It appears that this function is only called from zMapFindStyle() which could be removed from most of the code if we did as <a href="Design_notes/notes/optimise.shtml#featurestyle">above</a>.
+<p>It appears that this function is only called from zMapFindStyle() which could be removed from most of the code if we did as <a href="../notes/optimise.shtml#featurestyle">above</a>.
 Note that this function is called from processFeature(), (once directly and once via zmapWindowFeatureStrand()) which is called to display every feature, and has to search the window-global list of ~300 styles for each feature.
 </p>
 <fieldset><legend>Action plan</legend>
@@ -287,7 +287,7 @@ which equates to a saving of 7.3% of GLib CPU, whidh is approx 50% more signific
 
 <a name="gobj_build"></a>
 <fieldset><legend>Action plan</legend>
-<p>Implement a global header or build option to allow these macros to be changed easily. Click <a href="Design_notes/build/build.shtml">here</a> for some notes on how to operate the build system.</p>
+<p>Implement a global header or build option to allow these macros to be changed easily. Click <a href="../build/build.shtml">here</a> for some notes on how to operate the build system.</p>
 <p>This option is controlled by:
 <pre>
 #if GOBJ_CAST

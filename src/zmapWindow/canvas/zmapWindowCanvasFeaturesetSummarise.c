@@ -24,7 +24,7 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:   avoids displaying features that cannot be seen at the current zoom level
- *                NOTE see Design_notes/notes/canvas_tweaks.html
+ *                NOTE see canvas_tweaks.html
  *
  *-------------------------------------------------------------------
  */

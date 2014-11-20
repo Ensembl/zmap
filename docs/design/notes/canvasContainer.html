@@ -2,7 +2,7 @@
 
 <h3>Overview</h3>
 
-<p> ZMap uses the FooCanvas to host display items and allocated one for each ZMapWindow and scalebar.  The navigator is allocted another, which is cleared and repainted every time the current window changes.  Refer to <a href="Design/notes/new_model_canvas.shtml">New Model Canvas</a> for an explanation of how features are dsiplayed within each column, using a ZMapWindowCanvasFeatureset object, which is derived from a FooCanvasItem.
+<p> ZMap uses the FooCanvas to host display items and allocated one for each ZMapWindow and scalebar.  The navigator is allocted another, which is cleared and repainted every time the current window changes.  Refer to <a href="../notes/new_model_canvas.shtml">New Model Canvas</a> for an explanation of how features are dsiplayed within each column, using a ZMapWindowCanvasFeatureset object, which is derived from a FooCanvasItem.
 </p>
 <p> Naked FooCanvasItems are no longer used to display features, and the former ZMapWindowCanavsItem (which used to be a FooCanvasGroup) sits between FooCanavsItem and ZMapWindowCanvasFeatureset.
 
@@ -19,8 +19,8 @@ Window decorations such as the mark are implemented as ZMapWindowCanvasFeaturese
 </p>
 
 <h3>See also</h3>
-<a href="Design/notes/containers.shtml">Containers - recent work</a> <br />
-<a href="Design/notes/ContainerFeatureset.shtml">Containers - some older notes</a> <br />
+<a href="../notes/containers.shtml">Containers - recent work</a> <br />
+<a href="../notes/ContainerFeatureset.shtml">Containers - some older notes</a> <br />
 
 <h3>Canvas to Feature Context references</h3>
 <p>Formerly strand groups did not have a feature reference as there was no equivalent in the feature context.  Context Align and Block are still valid.  Column group does not have a featureset reference if there are no features, but may if there are. CanvasFeatureset (a FooCanvasItem not a Group) has either the first of last feature added or the last focus feature. Window decoration CanvasFeaturesets (mark, backgrounds, scale bar) have no feature refernces. Attmpting to follow these may crash ZMap.
@@ -80,7 +80,7 @@ Note that background CanvasFeatureset objects must appear at the head of each Co
 <p>Previously that was implemented half by zmapWindowContainerBlock.c and zmapWindowMark.c.  This is now only implemented by zmapWindowMark.c and there is no need for a Block data structure to be implicated directly other than that the Mark code refers to a Block data structure for historical reasons.  A the mark decoration Canvas featuresets resize to thoer containing group (a block) in X and Y is set by the mouse there is no need for special callbacks in the block code.
 
 <h3>Window Width, Zoom and Scroll and foo_canvas_expose</h3>
-<p>See also: <a href="Design/notes/refresh.shtml">Screen Refresh</a>.</p>
+<p>See also: <a href="../notes/refresh.shtml">Screen Refresh</a>.</p>
 
 <p>Formerly the window width was set by a callback in the ContainerContext code as part of a FooCanvas update, which resulted in further expose events caused by the required set scroll region call.  Ths code has been removed and window width is set by foreground ZMap code called by <b>zMapWindowFullReposition()</b>, which has been optimised to expose less than the full window if possible.
 </p>
