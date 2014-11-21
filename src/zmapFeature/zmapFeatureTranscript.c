@@ -1379,7 +1379,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
   if (exons_data->full_exon_split_5)
     exons_data->full_exon_cds_list = g_list_prepend(exons_data->full_exon_cds_list, exons_data->full_exon_split_5) ;
   else if (exons_data->full_exon_start_not_found)
-    exons_data->full_exon_cds_list = g_list_append(exons_data->full_exon_cds_list, exons_data->full_exon_start_not_found) ;
+    exons_data->full_exon_cds_list = g_list_prepend(exons_data->full_exon_cds_list, exons_data->full_exon_start_not_found) ;
 
   if (exons_data->full_exon_split_3)
     exons_data->full_exon_cds_list = g_list_append(exons_data->full_exon_cds_list, exons_data->full_exon_split_3) ;
