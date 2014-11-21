@@ -1,6 +1,8 @@
 
 Git commits for  from commit "production" until commit "release/1.2.0"
 
+5f73073 2014-11-21 "insert extra logging info. for zmap init. problem on Mac."
+14e50dd 2014-11-17 ZMap version 1.1.0-97-gbd8251f - Update RT and git commit reports
 bd8251f 2014-11-14 Update release notes with more detail on feature editing
 5750782 2014-11-13 update to release notes v. 1.2.0
 5a3a7db 2014-11-12 Fix regression with file import for non-otterlace zmap

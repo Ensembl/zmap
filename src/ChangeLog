@@ -1,3 +1,15 @@
+2014-11-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "insert extra logging info. for zmap init. problem on Mac."
+ src/zmapApp/zmapAppwindow.c |   22 ++++++++++++++++------
+ 1 files changed, 16 insertions(+), 6 deletions(-)
+
+2014-11-17  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.1.0-97-gbd8251f - Update RT and git commit reports
+ src/ChangeLog                                  |   22 +++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    4 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   72 +++++++++++++++++++++++-
+ 3 files changed, 97 insertions(+), 1 deletions(-)
+
 2014-11-14  Gemma Barson  <gb10@sanger.ac.uk>
  Update release notes with more detail on feature editing
  docs/WWW/user/release_notes.shtml |   17 ++++++++++++++++-
