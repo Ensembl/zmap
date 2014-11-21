@@ -157,6 +157,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GError *g_error = NULL ;
   char *config_file = NULL ;
   char *styles_file = NULL ;
+  gboolean verbose_startup_logging = TRUE ;
 
 
 #ifdef ZMAP_MEMORY_DEBUG
@@ -288,6 +289,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       zMapWriteStartMsg() ;
     }
 
+
+  if (verbose_startup_logging)
+    zMapLogMessage("%s", "Reading configuration file.") ;
+
   /* Get general zmap configuration from config. file. */
   getConfiguration(app_context, config_file) ;
 
@@ -338,6 +343,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /*             GTK initialisation              */
 
+  if (verbose_startup_logging)
+    zMapLogMessage("%s", "Initing GTK.") ;
+
   initGnomeGTK(argc, argv) ;    /* May exit if checks fail. */
 
 #ifdef ZMAP_MEMORY_DEBUG
@@ -345,13 +353,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 #endif
 
 
+  if (verbose_startup_logging)
+    zMapLogMessage("%s", "Creating app window.") ;
+
   /* Set up app level cursors, the remote one will only be used if we have
    * a remote peer. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  app_context->normal_cursor = zMapGUICreateCursor("LEFT_PTR") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   app_context->remote_busy_cursor = zMapGUICreateCursor("SB_H_DOUBLE_ARROW") ;
 
 
@@ -405,7 +411,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   if ((log_size = zMapLogFileSize()) > (ZMAP_DEFAULT_MAX_LOG_SIZE * 1048576))
     zMapWarning("Log file was grown to %d bytes, you should think about archiving or removing it.", log_size) ;
 
-
   /* Only show default sequence if we are _not_ controlled via XRemote */
   if (!remote_control)
      {
@@ -452,6 +457,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
   app_context->state = ZMAPAPP_RUNNING ;
+
+
+  if (verbose_startup_logging)
+    zMapLogMessage("%s", "Entering mainloop, init finished.") ;
+
 
   /* Start the GUI. */
   gtk_main() ;
