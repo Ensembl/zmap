@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 17/10/2014 to 12/11/2014
+Request Tracker Tickets Resolved from 17/10/2014 to 17/11/2014
 
 ticket/280524
 id: ticket/280524
@@ -8,6 +8,36 @@ Subject: feature request: extend dynamic thresholding to more/all columns (needs
 Requestors: lw2@sanger.ac.uk
 Owner: mh17
 Resolved: Tue Oct 21 14:04:39 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/304751
+id: ticket/304751
+Queue: zmap
+Subject: 'Use Feature for Mark' crashes zmap
+Requestors: gb10@sanger.ac.uk
+Owner: edgrif
+Resolved: Fri Nov 14 17:06:45 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/310073
+id: ticket/310073
+Queue: zmap
+Subject: Otter looses it column settings when reverse complementing
+Requestors: mms@sanger.ac.uk
+Owner: sm23
+Resolved: Wed Nov 12 14:56:43 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/332824
+id: ticket/332824
+Queue: zmap
+Subject: otterlace_zircon v75 - bumping out of sync with masking
+Requestors: mt4@sanger.ac.uk
+Owner: edgrif
+Resolved: Fri Nov 14 17:01:27 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -30,6 +60,16 @@ Owner: gb10
 Resolved: Fri Oct 17 14:25:42 2014
 CF.{zmapace_gitcommit}: g3716652
 CF.{zmapace_resolve_version}: 1.0.0-365-g3716652, otterlace v86
+
+ticket/359402
+id: ticket/359402
+Queue: zmap
+Subject: ZMap rejected create_feature  - due to message length? (76.06)
+Requestors: edgrif@sanger.ac.uk, gdr@sanger.ac.uk
+Owner: edgrif
+Resolved: Wed Nov 12 14:53:47 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
 
 ticket/371286
 id: ticket/371286
@@ -54,6 +94,16 @@ Resolved: Tue Oct 21 14:13:27 2014
 CF.{zmapace_gitcommit}: aa14e7d
 CF.{zmapace_resolve_version}: Otterlace v86, ZMap 1.0.0-358-gaa14e7d (for release/1.1.0)
 
+ticket/417362
+id: ticket/417362
+Queue: zmap
+Subject: More 454-RNAseq matches in blixem than in zmap
+Requestors: lw2@sanger.ac.uk
+Owner: sm23
+Resolved: Thu Nov 13 09:56:49 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
 ticket/426312
 id: ticket/426312
 Queue: zmap
@@ -74,6 +124,16 @@ Resolved: Fri Oct 31 09:21:12 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
+ticket/427222
+id: ticket/427222
+Queue: zmap
+Subject: ZMap assertions + crash (85.05)
+Requestors: dm4@sanger.ac.uk, mca@sanger.ac.uk
+Owner: sm23
+Resolved: Wed Nov 12 14:49:17 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
 ticket/428320
 id: ticket/428320
 Queue: zmap
@@ -91,6 +151,16 @@ Subject: urgent, probably showstopper
 Requestors: sm23@sanger.ac.uk
 Owner: sm23
 Resolved: Fri Oct 24 09:26:37 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/429182
+id: ticket/429182
+Queue: zmap
+Subject: Double-clicks can be blocked by xremote
+Requestors: jh13@sanger.ac.uk
+Owner: gb10
+Resolved: Thu Nov 13 10:51:22 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
