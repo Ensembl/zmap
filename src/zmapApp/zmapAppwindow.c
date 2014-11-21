@@ -61,6 +61,17 @@
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+#define consoleLogMsg(BOOL, FORMAT, ...)                \
+  G_STMT_START                                          \
+  {                                                     \
+    if ((BOOL))                                         \
+      {                                                 \
+        zMapLogMessage((FORMAT), __VA_ARGS__) ;         \
+        consoleMsg(TRUE, (FORMAT), __VA_ARGS__) ;       \
+      }                                                 \
+  } G_STMT_END
+
+
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
@@ -126,6 +137,7 @@ static void hideMainWindow(ZMapAppContext app_context) ;
 
 static ZMapManagerCallbacksStruct app_window_cbs_G = {addZMapCB, removeZMapCB, infoSetCB, quitReqCB, NULL} ;
 
+static gboolean verbose_startup_logging_G = TRUE ;
 
 
 
@@ -157,7 +169,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GError *g_error = NULL ;
   char *config_file = NULL ;
   char *styles_file = NULL ;
-  gboolean verbose_startup_logging = TRUE ;
 
 
 #ifdef ZMAP_MEMORY_DEBUG
@@ -286,12 +297,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
           g_error_free(g_error) ;
           g_error = NULL ;
         }
+
       zMapWriteStartMsg() ;
     }
 
-
-  if (verbose_startup_logging)
-    zMapLogMessage("%s", "Reading configuration file.") ;
+  consoleLogMsg(verbose_startup_logging_G, "%s", "Reading configuration file.") ;
 
   /* Get general zmap configuration from config. file. */
   getConfiguration(app_context, config_file) ;
@@ -343,8 +353,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /*             GTK initialisation              */
 
-  if (verbose_startup_logging)
-    zMapLogMessage("%s", "Initing GTK.") ;
+  consoleLogMsg(verbose_startup_logging_G, "%s", "Initing GTK.") ;
 
   initGnomeGTK(argc, argv) ;    /* May exit if checks fail. */
 
@@ -353,8 +362,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 #endif
 
 
-  if (verbose_startup_logging)
-    zMapLogMessage("%s", "Creating app window.") ;
+  consoleLogMsg(verbose_startup_logging_G, "%s", "Creating app window.") ;
 
   /* Set up app level cursors, the remote one will only be used if we have
    * a remote peer. */
@@ -459,8 +467,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context->state = ZMAPAPP_RUNNING ;
 
 
-  if (verbose_startup_logging)
-    zMapLogMessage("%s", "Entering mainloop, init finished.") ;
+  consoleLogMsg(verbose_startup_logging_G, "%s", "Entering mainloop, init finished.") ;
 
 
   /* Start the GUI. */
@@ -746,6 +753,8 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
+  consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - main window destroyed, cleaning up.") ;
+
   app_context->app_widg = NULL ;
 
   topLevelDestroy(app_context) ;
@@ -776,10 +785,14 @@ static void topLevelDestroy(ZMapAppContext app_context)
    * Otherwise if there is a remote control then call remoteLevelDestroy(). */
   if ((zMapManagerCount(app_context->zmap_manager)))
     {
+      consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - killing existing views.") ;
+
       killZMaps(app_context) ;
     }
   else
     {
+      consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - no views so preparing to exit.") ;
+
       remoteLevelDestroy(app_context) ;
     }
 
@@ -793,7 +806,7 @@ static void killZMaps(ZMapAppContext app_context)
   guint timeout_func_id ;
   int interval = app_context->exit_timeout * 1000 ;    /* glib needs time in milliseconds. */
 
-  consoleMsg(TRUE, "%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
+  consoleLogMsg(TRUE, "%s", "Exit - Issuing requests to all ZMaps to disconnect from servers and quit.") ;
 
   /* N.B. we block for 2 seconds here to make sure user can see message. */
   zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
@@ -814,6 +827,8 @@ static void killZMaps(ZMapAppContext app_context)
 static gboolean timeoutHandler(gpointer data)
 {
   ZMapAppContext app_context = (ZMapAppContext)data ;
+
+  consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - ZMap views not dying, forced exit !") ;
 
   crashExitApp(app_context) ;
 
@@ -837,12 +852,16 @@ static void remoteLevelDestroy(ZMapAppContext app_context)
     {
       gboolean app_exit = TRUE ;
 
+      consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - disconnecting from remote peer.") ;
+
       remote_disconnecting = zmapAppRemoteControlDisconnect(app_context, app_exit) ;
     }
 
   /* If the disconnect didn't happen or failed or there is no remote then exit. */
   if (!(app_context->remote_control) || !remote_disconnecting)
     {
+      consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - no remote peer, proceeding with exit.") ;
+
       exitApp(app_context) ;
     }
 
@@ -853,6 +872,8 @@ static void remoteLevelDestroy(ZMapAppContext app_context)
 /* Called on clean exit of zmap. */
 static void exitApp(ZMapAppContext app_context)
 {
+  consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - destroying view manager.") ;
+
   /* This must be done here as manager checks to see if all its zmaps have gone. */
   if (app_context->zmap_manager)
     zMapManagerDestroy(app_context->zmap_manager) ;
@@ -885,6 +906,8 @@ static void contextLevelDestroy(ZMapAppContext app_context, int exit_rc, char *e
    * said goodbye to the peer. */
   if (app_context->remote_control)
     {
+      consoleLogMsg(TRUE, "%s", "Exit - destroying remote control interface (remote peer already gone).") ;
+
       zmapAppRemoteControlDestroy(app_context) ;
     }
 
@@ -907,7 +930,7 @@ static void killContext(ZMapAppContext app_context)
   if (exit_rc)
     zMapLogCritical("%s", exit_msg) ;
 
-  consoleMsg(TRUE, "%s", exit_msg) ;
+  consoleLogMsg(TRUE, "%s",  exit_msg) ;
 
   zMapWriteStopMsg() ;
   zMapLogDestroy() ;
@@ -1805,6 +1828,7 @@ static void consoleMsg(gboolean err_msg, char *format, ...)
   va_list args ;
   char *msg_string ;
   FILE *stream ;
+  char *time_string ;
 
   va_start(args, format) ;
   msg_string = g_strdup_vprintf(format, args) ;
@@ -1815,10 +1839,13 @@ static void consoleMsg(gboolean err_msg, char *format, ...)
   else
     stream = stdout ;
 
+  time_string = zMapGetTimeString(ZMAPTIME_LOG, NULL) ;
+
   /* show message and flush to make sure it appears in a timely way. */
-  fprintf(stream, "%s\n", msg_string) ;
+  fprintf(stream, "ZMap [%s] %s\n", time_string, msg_string) ;
   fflush(stream) ;
 
+  g_free(time_string) ;
 
   g_free(msg_string) ;
 

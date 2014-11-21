@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 17/10/2014 to 17/11/2014
+Request Tracker Tickets Resolved from 17/10/2014 to 21/11/2014
 
 ticket/280524
 id: ticket/280524
@@ -94,16 +94,6 @@ Resolved: Tue Oct 21 14:13:27 2014
 CF.{zmapace_gitcommit}: aa14e7d
 CF.{zmapace_resolve_version}: Otterlace v86, ZMap 1.0.0-358-gaa14e7d (for release/1.1.0)
 
-ticket/417362
-id: ticket/417362
-Queue: zmap
-Subject: More 454-RNAseq matches in blixem than in zmap
-Requestors: lw2@sanger.ac.uk
-Owner: sm23
-Resolved: Thu Nov 13 09:56:49 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
 ticket/426312
 id: ticket/426312
 Queue: zmap
@@ -131,16 +121,6 @@ Subject: ZMap assertions + crash (85.05)
 Requestors: dm4@sanger.ac.uk, mca@sanger.ac.uk
 Owner: sm23
 Resolved: Wed Nov 12 14:49:17 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/428320
-id: ticket/428320
-Queue: zmap
-Subject: New-ZMap startup failure
-Requestors: mca@sanger.ac.uk
-Owner: edgrif
-Resolved: Wed Oct 29 15:35:46 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
