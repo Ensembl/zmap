@@ -1,3 +1,9 @@
+2014-11-21  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.1.0-102-g29b92af - Update RT and git commit reports
+ src/ChangeLog                          |   17 +++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt |    3 +++
+ 2 files changed, 20 insertions(+), 0 deletions(-)
+
 2014-11-21  Ed Griffiths  <edgrif@sanger.ac.uk>
  "add exit messages and times !"
  src/zmapApp/zmapAppwindow.c |   53 ++++++++++++++++++++++++++++++++----------

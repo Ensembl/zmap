@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/1.2.0"
 
+78fd204 2014-11-21 ZMap version 1.1.0-102-g29b92af - Update RT and git commit reports
 29b92af 2014-11-21 "add exit messages and times !"
 fc9dfa9 2014-11-21 Fix crash in show-translation when exon has start-not-found (RT435731)
 f5e932d 2014-11-21 ZMap version 1.1.0-99-g5f73073 - Update RT and git commit reports
