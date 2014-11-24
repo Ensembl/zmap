@@ -196,6 +196,8 @@ if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
 
     zmap_cd $ZMAP_ACEDB_RELEASE_CONTAINER
 
+    RELEASE_SRC=RELEASE.${ACEDB_BUILD_LEVEL}.BUILD
+
     release_file=`ls $RELEASE_SRC/ACEDB-*`			    # Should match just one file name 
     release_file=`basename $release_file`
 
@@ -229,7 +231,6 @@ fi
 
 if [ "x$ACEDB_MACHINE" != "x" ]; then
 
-    RELEASE_SRC=RELEASE.${ACEDB_BUILD_LEVEL}.BUILD
     SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.$ACEDB_MACHINE
 
 
