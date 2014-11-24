@@ -164,12 +164,23 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
 	$(top_builddir)/htslib-develop/libhts.a              \
-	$(top_builddir)/AceConn/src/.libs/libAceConn.a       \
-	$(top_builddir)/zeromq/src/.libs/libzmq.a            \
+	$(top_builddir)/AceConn/src/.libs/libAceConn.a       
+
+# The zeromq library has a different suffix on cygwin
+if ON_CYGWIN
+zmap_LDADD +=                                                \
+	$(top_builddir)/zeromq/src/.libs/libzmq.dll.a            
+else
+zmap_LDADD +=                                                \
+	$(top_builddir)/zeromq/src/.libs/libzmq.a            
+endif
+
+zmap_LDADD +=                                                \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
 	$(GTK_LIBS)			                     \
 	$(LIBCURL) -lexpat                                   \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
+
 
 zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
 zmap_LDFLAGS      = -lz

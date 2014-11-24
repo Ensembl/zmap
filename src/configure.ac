@@ -464,16 +464,21 @@ AC_CONFIG_SUBDIRS([AceConn])
 #
 ac_configure_args_pre="$ac_configure_args"
 
+on_cygwin="no"
+
 # OS-specific tests
 case "${host_os}" in
     *cygwin*)
         ac_configure_args_post="$ac_configure_args"
+        on_cygwin="yes"
         ;;
     *)
         ac_configure_args_post="$ac_configure_args --enable-static"
         ;;
 esac
 ac_configure_args="$ac_configure_args_post"
+
+AM_CONDITIONAL(ON_CYGWIN, test "x$on_cygwin" = "xyes")
 
 AC_CONFIG_COMMANDS_PRE([ac_configure_args="$ac_configure_args_pre"])
 AC_CONFIG_COMMANDS_POST([ac_configure_args="$ac_configure_args_post"])
