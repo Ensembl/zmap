@@ -1201,7 +1201,7 @@ static gboolean queueMonitorCB(gpointer user_data)
                         live_req = remote_control->curr_req->request ;
                         stalled_req = peer_request ;
 
-                        if (reqIsEarlier(peer_request->body, remote_control->curr_req->request->body) != 0
+                        if (reqIsEarlier(peer_request->body, remote_control->curr_req->request->body) < 0
                             || strcmp(remote_control->receive->zmq_end_point, remote_control->send->zmq_end_point) < 0)
                           {
                             remote_control->stalled_req = remote_control->curr_req ;
@@ -2448,7 +2448,7 @@ static void logMsg(ZMapRemoteControl remote_control,
 
   msg = g_string_sized_new(500) ;
 
-  g_string_append_printf(msg, "%s%s%s: %s %s()\tState: %s -\tMessage: ",
+  g_string_append_printf(msg, "%s%s%s: %s %s()\tState: %s\nMessage: ",
 			 (add_time ? time_str : ""),
 			 (add_time ? "\t" : ""),
 			 g_quark_to_string(remote_control->app_id),
