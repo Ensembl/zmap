@@ -95,8 +95,12 @@ fi
 # get 3rd parameter, the host machine
 this_host=`hostname`
 
-if [ "x$3" != "x" ]; then
+if [ "x$3" == "x" ]; then
+  zmap_message_err "Host machine not specified; using $this_host"
+else
   this_host=$3
+ 
+  let shift_count=$shift_count+1
 fi
 
 if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
