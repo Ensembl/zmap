@@ -309,8 +309,17 @@ if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
 
 fi
 
-for binary in $ZMAP_SEQTOOLS_BINARIES;
+# For cygwin we have to add a .exe suffix to the binary names
+suffix=''
+cygwin_pattern="*CYGWIN*"
+
+if [[ $hostarch == $cygwin_pattern ]]; then
+    suffix='.exe'
+fi
+
+for binary_in in $ZMAP_SEQTOOLS_BINARIES;
   do
+  binary=$binary_in$suffix
   zmap_message_out "Running scp $seqtools_bin_dir/$binary $TARGET/$binary"
   scp $seqtools_bin_dir/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
 
