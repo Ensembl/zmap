@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 17/10/2014 to 24/11/2014
+Request Tracker Tickets Resolved from 17/10/2014 to 25/11/2014
 
 ticket/280524
 id: ticket/280524
@@ -161,6 +161,16 @@ Subject: questions about splice highlighting...
 Requestors: mms@sanger.ac.uk
 Owner: edgrif
 Resolved: Tue Nov 11 13:59:35 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/435980
+id: ticket/435980
+Queue: zmap
+Subject: ZMap freezing
+Requestors: edgrif@sanger.ac.uk
+Owner: edgrif
+Resolved: Tue Nov 25 11:36:39 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

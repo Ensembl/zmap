@@ -1,6 +1,8 @@
 
 Git commits for  from commit "production" until commit "release/1.2.0"
 
+4ec9871 2014-11-25 "fix bug in determining order of colliding requests...doh."
+edcadc8 2014-11-24 ZMap version 1.1.0-103-g78fd204 - Update RT and git commit reports
 78fd204 2014-11-21 ZMap version 1.1.0-102-g29b92af - Update RT and git commit reports
 29b92af 2014-11-21 "add exit messages and times !"
 fc9dfa9 2014-11-21 Fix crash in show-translation when exon has start-not-found (RT435731)
