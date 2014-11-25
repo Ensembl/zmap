@@ -304,7 +304,14 @@ maintainer-clean-local:
 	@echo 'maintainer-clean-local: Finished removing all generated files....'
 
 
-
+clean-zmap:
+	@echo 'clean-zmap: cleaning up all generated zmap files....'
+	rm -f $(top_builddir)/.libs/libZMap*.a
+	rm -f $(top_builddir)/libZMap*.la
+	rm -f $(top_builddir)/zmap $(top_builddir)/remotecontrol
+	rm -f $(top_builddir)/zmap-zmapAppmain_c.o $(top_builddir)/remotecontrol-remotecontroltest.o $(top_builddir)/zmap.pc
+	rm -f $(top_builddir)/zmap*/lib* rm -rf $(top_builddir)/zmap*/.libs
+	@echo 'clean-zmap: Finished cleaning up all generated zmap files.'
 
 
 mkdocdir:
