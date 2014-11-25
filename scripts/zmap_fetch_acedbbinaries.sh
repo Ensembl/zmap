@@ -36,20 +36,6 @@ set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
-this_host=`hostname`
-
-if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
-    host_type="MASTER"
-else
-    host_type="SLAVE"
-fi
-
-
-zmap_message_out "Running $0 script on $host_type node $this_host...."
-
-
-zmap_message_out "Starting copying acedb source/binaries and Seqtools dist files."
-
 
 
 # ================== OPTIONS ======================
@@ -106,12 +92,19 @@ else
     let shift_count=$shift_count+1
 fi
 
-# get 3rd parameter, defaulting to ACEDB_MACHINE
-acedbmachine=`echo $ACEDB_MACHINE`
+# get 3rd parameter, the host machine
+this_host=`hostname`
 
-if [ "x$3" == "x" ]; then
-  acedbmachine=$3
+if [ "x$3" != "x" ]; then
+  this_host=$3
 fi
+
+if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
+    host_type="MASTER"
+else
+    host_type="SLAVE"
+fi
+
 
 shift $shift_count
 
@@ -121,11 +114,19 @@ if [ $# -gt 0 ]; then
 fi
 
 
+zmap_message_out "Running $0 script on $host_type node $this_host...."
+
+
+zmap_message_out "Starting copying acedb source/binaries and Seqtools dist files."
+
 # ===================== MAIN PART ======================
 
+# Get the ACEDB_MACHINE env var on the host machine
+acedbmachine=`ssh $this_host echo $ACEDB_MACHINE`
 
-# Get machine architecture in zmap format.
-ZMAP_ARCH=$(uname -ms | sed -e 's/ /_/g')
+# Get host machine architecture in zmap format.
+hostarch=`ssh $this_host uname -ms`
+ZMAP_ARCH=$($hostarch | sed -e 's/ /_/g')
 
 
 zmap_message_out "Using '$ZMAP_ARCH' for zmap architecture dir."
@@ -288,7 +289,7 @@ zmap_message_out "Copying Seqtools dist file..."
 
 
 # Horrible naming mismatch in dir names....note the use of "-" instead of "_" in the sed...
-ZMAP_ARCH=$(uname -ms | sed -e 's/ /-/g')
+ZMAP_ARCH=$($hostarch | sed -e 's/ /-/g')
 
 
 seqtools_dist_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/Dist"

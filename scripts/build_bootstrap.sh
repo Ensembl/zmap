@@ -494,13 +494,10 @@ rm -f host_checkout.sh     || exit 1;   \
   # end of inline generated script/run
   #-----------------------------------------------------------------------------------
 
-    # Copy the acedb and seqtools binaries. We need to know the ACEDB_MACHINE env var for
-    # the host machine
-    acedbmachine=`ssh $host echo $ACEDB_MACHINE`
+    # Copy the acedb and seqtools binaries.
+    _checkout_message_out "Running zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR $host ZMAP_SEQTOOLS_RELEASE_DIR=$ZMAP_SEQTOOLS_RELEASE_DIR"
 
-    _checkout_message_out "Running zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR $acedbmachine ZMAP_SEQTOOLS_RELEASE_DIR=$ZMAP_SEQTOOLS_RELEASE_DIR"
-
-    $SCRIPTS_DIR/zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR $acedbmachine ZMAP_SEQTOOLS_RELEASE_DIR=$ZMAP_SEQTOOLS_RELEASE_DIR || zmap_message_exit "Failed to get acedb binaries."
+    $SCRIPTS_DIR/zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR $host ZMAP_SEQTOOLS_RELEASE_DIR=$ZMAP_SEQTOOLS_RELEASE_DIR || zmap_message_exit "Failed to get acedb binaries."
 
 
   if [ $? != 0 ]; then
