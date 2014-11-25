@@ -461,10 +461,6 @@ _checkout_message_out "Running ./zmap_compile_and_tar.sh $options TAR_TARGET=$ta
 
 \$SCRIPTS_DIR/zmap_compile_and_tar.sh $options TAR_TARGET=$tar_target || _checkout_message_exit "Failed to build"
 
-_checkout_message_out "Running zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR ZMAP_SEQTOOLS_RELEASE_DIR=$ZMAP_SEQTOOLS_RELEASE_DIR"
-
-\$SCRIPTS_DIR/zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR ZMAP_SEQTOOLS_RELEASE_DIR=$ZMAP_SEQTOOLS_RELEASE_DIR || _checkout_message_exit "Failed to get acedb binaries."
-
 # Now we can clean up.
 cd \$ZMAP_BUILD_CONTAINER
 
@@ -497,6 +493,14 @@ rm -f host_checkout.sh     || exit 1;   \
 "' > $host.log 2>&1
   # end of inline generated script/run
   #-----------------------------------------------------------------------------------
+
+    # Copy the acedb and seqtools binaries. We need to know the ACEDB_MACHINE env var for
+    # the host machine
+    acedbmachine=`ssh $host echo $ACEDB_MACHINE`
+
+    _checkout_message_out "Running zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR $acedbmachine ZMAP_SEQTOOLS_RELEASE_DIR=$ZMAP_SEQTOOLS_RELEASE_DIR"
+
+    $SCRIPTS_DIR/zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR $acedbmachine ZMAP_SEQTOOLS_RELEASE_DIR=$ZMAP_SEQTOOLS_RELEASE_DIR || zmap_message_exit "Failed to get acedb binaries."
 
 
   if [ $? != 0 ]; then

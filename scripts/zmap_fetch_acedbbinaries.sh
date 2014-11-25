@@ -106,6 +106,13 @@ else
     let shift_count=$shift_count+1
 fi
 
+# get 3rd parameter, defaulting to ACEDB_MACHINE
+acedbmachine=`echo $ACEDB_MACHINE`
+
+if [ "x$3" == "x" ]; then
+  acedbmachine=$3
+fi
+
 shift $shift_count
 
 # including VARIABLE=VALUE settings from command line
@@ -124,10 +131,10 @@ ZMAP_ARCH=$(uname -ms | sed -e 's/ /_/g')
 zmap_message_out "Using '$ZMAP_ARCH' for zmap architecture dir."
 
 # We get machine architecture for acedb from $ACEDB_MACHINE env. variable.
-if [ "x$ACEDB_MACHINE" == "x" ]; then
+if [ "x$acedbmachine" == "x" ]; then
     zmap_message_err "The ENV variable ACEDB_MACHINE is not set so the acedb binaries cannot be found."
 else
-    zmap_message_out "Using '$ACEDB_MACHINE' for acedb architecture dir."
+    zmap_message_out "Using '$acedbmachine' for acedb architecture dir."
 fi
 
 
@@ -229,9 +236,9 @@ fi
 # Do the standard acedb binaries.
 #
 
-if [ "x$ACEDB_MACHINE" != "x" ]; then
+if [ "x$acedbmachine" != "x" ]; then
 
-    SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.$ACEDB_MACHINE
+    SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.$acedbmachine
 
 
     if [ "$ZMAP_MASTER_HOST" != "$this_host" ]; then
