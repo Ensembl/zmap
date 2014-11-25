@@ -130,7 +130,7 @@ acedbmachine=`ssh $this_host echo $ACEDB_MACHINE`
 
 # Get host machine architecture in zmap format.
 hostarch=`ssh $this_host uname -ms`
-ZMAP_ARCH=$($hostarch | sed -e 's/ /_/g')
+ZMAP_ARCH=$(echo $hostarch | sed -e 's/ /_/g')
 
 
 zmap_message_out "Using '$ZMAP_ARCH' for zmap architecture dir."
@@ -293,7 +293,7 @@ zmap_message_out "Copying Seqtools dist file..."
 
 
 # Horrible naming mismatch in dir names....note the use of "-" instead of "_" in the sed...
-ZMAP_ARCH=$($hostarch | sed -e 's/ /-/g')
+ZMAP_ARCH=$(echo $hostarch | sed -e 's/ /-/g')
 
 
 seqtools_dist_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/Dist"
