@@ -126,10 +126,10 @@ zmap_message_out "Starting copying acedb source/binaries and Seqtools dist files
 # ===================== MAIN PART ======================
 
 # Get the ACEDB_MACHINE env var on the host machine
-acedbmachine=`ssh $this_host echo $ACEDB_MACHINE`
+acedbmachine=`ssh $this_host 'echo $ACEDB_MACHINE'`
 
 # Get host machine architecture in zmap format.
-hostarch=`ssh $this_host uname -ms`
+hostarch=`ssh $this_host 'uname -ms'`
 ZMAP_ARCH=$(echo $hostarch | sed -e 's/ /_/g')
 
 
