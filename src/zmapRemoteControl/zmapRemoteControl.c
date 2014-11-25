@@ -59,8 +59,6 @@
 #define ENTER_TXT "Enter >>>>"
 #define EXIT_TXT  "Exit  <<<<"
 
-#define WRONG_STATE_STR "Wrong State !! Expected state to be: \"%s\". "
-
 
 
 /* Have no idea what's sensible but a guess is to think that we need socket checking to be faster
@@ -108,18 +106,6 @@ enum
     } while (0)
 
 
-/* Bad state (!) messages. */
-#define BADSTATELOGMSG(REMOTE_CONTROL, STATE, FORMAT_STR, ...)  \
-  do                                                            \
-    {                                                           \
-      REMOTELOGMSG((REMOTE_CONTROL),                            \
-		   WRONG_STATE_STR FORMAT_STR,                  \
-		   remoteState2ExactStr((STATE)),               \
-		   __VA_ARGS__) ;                               \
-    } while (0)
-
-
-
 /* Call the error handler with standard params. */
 #define CALL_ERR_HANDLER(REMOTE_CONTROL, ERROR_RC, FORMAT_STR, ...)	\
   do									\
@@ -130,6 +116,18 @@ enum
 		   (ERROR_RC),						\
 		   (FORMAT_STR), __VA_ARGS__) ;				\
     } while (0)
+
+/* Used every time there is a serious errror, must call app err handler. */
+#define LOG_AND_CALL_ERR_HANDLER(REMOTE_CONTROL, ERROR_RC, FORMAT_STR, ...) \
+  do									\
+    {									\
+      REMOTELOGMSG((REMOTE_CONTROL),                                    \
+                   (FORMAT_STR), __VA_ARGS__) ;                         \
+      CALL_ERR_HANDLER((REMOTE_CONTROL), (ERROR_RC),                    \
+                       (FORMAT_STR), __VA_ARGS__) ;			\
+    } while (0)
+
+
 
 
 
@@ -854,7 +852,8 @@ static gboolean waitForReplyCB(gpointer user_data)
 
 
 /* THERE'S A SLIGHTLY UNEASY ASSYMETRY HERE.... WE DON'T HAVE A FUNCTION LIKE THIS FOR
- * MAKING REQUESTS TO THE PEER.... */
+ * MAKING REQUESTS TO THE PEER....IT'S CAUSED BY NOT HAVING A CALLBACKS TO SAY THE
+ * REQUEST ARRIVED AND THE REPLY GOT SENT, WE JUST RELY ON ZEROMQ HAVING DONE IT. */
 /* Called by app to give us the reply to the original request which we then send to the peer. */
 static void receiveReplyFromAppCB(void *remote_data, gboolean abort, char *reply)
 {
@@ -961,14 +960,6 @@ static gboolean setToInactive(ZMapRemoteControl remote_control)
       remote_control->send = NULL ;
     }
 
-
-  /* There are quite a few of these to be dealt with... */
-  if (remote_control->curr_req_raw)
-    {
-      zeroMQMessageDestroy(remote_control->curr_req_raw) ;
-      remote_control->curr_req_raw = NULL ;
-    }
-
   if (remote_control->curr_req)
     {
       reqReplyDestroy(remote_control->curr_req) ; 
@@ -1031,9 +1022,9 @@ static gboolean queueMonitorCB(gpointer user_data)
         {
         case REMOTE_STATE_INACTIVE:
           {
-            BADSTATELOGMSG(remote_control, remote_control->state,
-                           "%s",
-                           "Function should not be called while in inactive state, check log for errors.") ;
+            LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_STATE,
+                             "%s",
+                             "Function should not be called while in inactive state, check log for errors.") ;
 
             break ;
           }
@@ -1081,33 +1072,33 @@ static gboolean queueMonitorCB(gpointer user_data)
         case REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT:
           {
             RemoteSend send = remote_control->send ;
+            RemoteZeroMQMessage curr_req_raw ;
 
             DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
                         "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
 
-            remote_control->curr_req_raw = queueRemove(remote_control->outgoing_requests) ;
+            curr_req_raw = queueRemove(remote_control->outgoing_requests) ;
 
             /* Now call request dispatcher */
-            if ((result = sendRequest(remote_control, remote_control->curr_req_raw)))
+            if ((result = sendRequest(remote_control, curr_req_raw)))
               {
-                remote_control->curr_req = reqReplyCreate(remote_control->curr_req_raw,
+                remote_control->curr_req = reqReplyCreate(curr_req_raw,
                                                           REQUEST_TYPE_OUTGOING,
                                                           send->zmq_end_point) ;
+
                 timeoutStartTimer(remote_control) ;
 
                 remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_WAITING_FOR_THEIR_REPLY ;
               }
             else
               {
-                REMOTELOGMSG(remote_control,
-                             "%s", "Could not send outgoing request.") ;
+                LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_SOCKET,
+                                         "%s", "Could not send outgoing request.") ;
 
-                zeroMQMessageDestroy(remote_control->curr_req_raw) ;
+                zeroMQMessageDestroy(curr_req_raw) ;
 
                 remote_control->state = REMOTE_STATE_IDLE ;
               }
-
-            remote_control->curr_req_raw = NULL ;
 
             done = TRUE ;
 
@@ -1145,11 +1136,12 @@ static gboolean queueMonitorCB(gpointer user_data)
                   }
                 else
                   {
-                    REMOTELOGMSG(remote_control,
-                                 "Reply could not be matched to request because: \"%s\"", err_msg) ;
-                    g_free(err_msg) ;
+                    LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_SOCKET,
+                                     "Reply could not be matched to request because: \"%s\"", err_msg) ;
 
                     zeroMQMessageDestroy(reply) ;
+
+                    g_free(err_msg) ;
 
                     remote_control->state = REMOTE_STATE_IDLE ;
                   }
@@ -1167,21 +1159,15 @@ static gboolean queueMonitorCB(gpointer user_data)
                 if ((timeout_type = timeoutHasTimedOut(remote_control)) == TIMEOUT_FINAL)
                   {
                     /* Timed out so chuck our request away. */
-                    char *err_msg ;
+                    LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_TIMED_OUT,
+                                             "Request final timeout after %gs, request discarded: \"%s\"",
+                                             timeout_s, 
+                                             remote_control->curr_req->request->body) ;
 
-                    err_msg = g_strdup_printf("Request final timeout after %gs, request discarded: \"%s\"",
-                                              timeout_s, 
-                                              (remote_control->curr_req_raw ? remote_control->curr_req_raw->body : "<null>")) ;
-
-                    REMOTELOGMSG(remote_control, "%s", err_msg) ;
-
-                    zeroMQMessageDestroy(remote_control->curr_req_raw) ;
-                    remote_control->curr_req_raw = NULL ;
+                    reqReplyDestroy(remote_control->curr_req) ;
+                    remote_control->curr_req = NULL ;
  
                     timeoutResetTimeouts(remote_control) ;
-
-                    CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_TIMED_OUT,
-                                     "%s", err_msg) ;
 
                     remote_control->state = REMOTE_STATE_IDLE ;
                   }
@@ -1226,13 +1212,16 @@ static gboolean queueMonitorCB(gpointer user_data)
                         if ((timeout_type = timeoutHasTimedOut(remote_control)) != TIMEOUT_NONE)
                           {
                             char *err_msg = NULL ;
+                            RemoteZeroMQMessage curr_req_raw ;
+
 
                             /* Keep timed out request so we can resend it if we need to. */
-                            remote_control->curr_req_raw = reqReplyStealRequest(remote_control->curr_req) ;
+                            curr_req_raw = reqReplyStealRequest(remote_control->curr_req) ;
 
                             /* Need to redo header.... */
-                            remote_control->curr_req_raw->header = headerSetRetry(remote_control->curr_req_raw->header,
-                                                                                  (remote_control->timeout_list_pos + 1)) ;
+                            curr_req_raw->header
+                              = headerSetRetry(curr_req_raw->header,
+                                               (remote_control->timeout_list_pos + 1)) ;
 
                             reqReplyDestroy(remote_control->curr_req) ;
                             remote_control->curr_req = NULL ;
@@ -1241,16 +1230,17 @@ static gboolean queueMonitorCB(gpointer user_data)
                             if (!recreateSend(remote_control, &err_msg))
                               {
                                 /* Disaster, we can't reset the socket so set to fail. */
-                                REMOTELOGMSG(remote_control,
-                                             "Could not recreate send socket: \"%s\" !",
-                                             err_msg) ;
+                                LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_SOCKET,
+                                                         "Could not recreate send socket: \"%s\" !",
+                                                         err_msg) ;
 
                                 setToFailed(remote_control) ;
                               }
                             else
                               {
                                 zMapLogWarning("Recreating header/request: [ %s ] %s",
-                                               remote_control->curr_req_raw->header, remote_control->curr_req_raw->body) ;
+                                               curr_req_raw->header,
+                                               curr_req_raw->body) ;
 
                                 REMOTELOGMSG(remote_control,
                                              "Request %d%s timeout after %gs,"
@@ -1260,11 +1250,12 @@ static gboolean queueMonitorCB(gpointer user_data)
                                               (timeout_num == 2 ? "nd" :
                                                (timeout_num == 3 ? "rd" : "th"))),
                                              timeout_s,
-                                             remote_control->curr_req_raw->header,
-                                             remote_control->curr_req_raw->body) ;
+                                             curr_req_raw->header,
+                                             curr_req_raw->body) ;
 
                                 /* must readd to our queue... */
-                                queueAddFront(remote_control->outgoing_requests, remote_control->curr_req_raw) ;
+                                queueAddFront(remote_control->outgoing_requests, curr_req_raw) ;
+
 
                                 remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT ;
                               }
@@ -1324,8 +1315,8 @@ static gboolean queueMonitorCB(gpointer user_data)
                   }
                 else
                   {
-                    REMOTELOGMSG(remote_control,
-                                 "%s", "Could not receive incoming request.") ;
+                    LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_SOCKET,
+                                             "%s", "Could not receive incoming request.") ;
 
                     remote_control->state = REMOTE_STATE_IDLE ;
 
@@ -1356,8 +1347,9 @@ static gboolean queueMonitorCB(gpointer user_data)
 
                 if (!reqReplyMatch(remote_control, remote_control->curr_req, reply->body, &err_msg))
                   {
-                    REMOTELOGMSG(remote_control,
-                                 "Reply could not be matched to request because: \"%s\"", err_msg) ;
+                    LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_OUT_OF_BAND,
+                                             "Reply could not be matched to request because: \"%s\"", err_msg) ;
+
                     g_free(err_msg) ;
 
                     zeroMQMessageDestroy(reply) ;
@@ -1366,7 +1358,8 @@ static gboolean queueMonitorCB(gpointer user_data)
                   }
                 else if (!(result = sendReply(remote_control, reply)))
                   {
-                    REPORTMSG(remote_control, reply, "Reply could not be sent to peer, discarding reply") ;
+                    LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_SOCKET,
+                                             "%s", "Reply could not be sent to peer, discarding reply") ;
 
                     zeroMQMessageDestroy(reply) ;
 
@@ -1393,8 +1386,9 @@ static gboolean queueMonitorCB(gpointer user_data)
             /* Bad state, set interface to failed. */
             zMapWarnIfReached() ;
 
-            REMOTELOGMSG(remote_control, "Remote control disabled because invalid state encountered: %d",
-                         remote_control->state) ;
+            LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_STATE,
+                                     "Remote control disabled because invalid state encountered: %d",
+                                     remote_control->state) ;
 
             setToFailed(remote_control) ;
 

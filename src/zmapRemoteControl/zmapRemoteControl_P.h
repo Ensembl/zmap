@@ -162,8 +162,8 @@ typedef struct RemoteZeroMQMessageStructType
 } RemoteZeroMQMessageStruct, *RemoteZeroMQMessage ;
 
 
-/* Data required for each request/reply in a queue. Used to represent request/replies
- * in the queues of requests/replies. */
+/* Data required for each request/reply in a queue. Used to represent a request/reply
+ * that has currently been dequeued and is being processed prior to requeing or completion. */
 typedef struct ReqReplyStructType
 {
   RemoteControlRequestType request_type ;
@@ -308,11 +308,7 @@ typedef struct ZMapRemoteControlStructType
 
 
   /* The current Request/reply taken from the above queues. */
-
-  RemoteZeroMQMessage curr_req_raw ;                        /* Just the header and xml request string. */
-
-  ReqReply curr_req ;                                       /* Request/Reply being processed,
-                                                               derived from curr_req_raw */
+  ReqReply curr_req ;                                       /* Request/Reply being processed. */
 
   ReqReply prev_incoming_req ;                              /* Hold on to this in case our reply
                                                                was too slow and peer timed us out. */
