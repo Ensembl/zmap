@@ -1,3 +1,26 @@
+2014-11-21  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.1.0-102-g29b92af - Update RT and git commit reports
+ src/ChangeLog                          |   17 +++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt |    3 +++
+ 2 files changed, 20 insertions(+), 0 deletions(-)
+
+2014-11-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add exit messages and times !"
+ src/zmapApp/zmapAppwindow.c |   53 ++++++++++++++++++++++++++++++++----------
+ 1 files changed, 40 insertions(+), 13 deletions(-)
+
+2014-11-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix crash in show-translation when exon has start-not-found (RT435731)
+ src/zmapFeature/zmapFeatureTranscript.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-11-21  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.1.0-99-g5f73073 - Update RT and git commit reports
+ src/ChangeLog                                  |   12 ++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    2 ++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   22 +---------------------
+ 3 files changed, 15 insertions(+), 21 deletions(-)
+
 2014-11-21  Ed Griffiths  <edgrif@sanger.ac.uk>
  "insert extra logging info. for zmap init. problem on Mac."
  src/zmapApp/zmapAppwindow.c |   22 ++++++++++++++++------
