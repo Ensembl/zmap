@@ -402,7 +402,8 @@ fi
 # Delete old builds so we don't run out of space
 #
 if [ $RC == 0 ] ; then
-    $ANNOTOOLS_BIN/delete_old_builds.sh -r $REPOS_NAME -t $BUILD_PREFIX -d $PARENT_BUILD_DIR
+    message_out "Running: $ANNOTOOLS_BIN/delete_old_builds.sh -r $REPOS_NAME -t $BUILD_PREFIX -d $PARENT_BUILD_DIR >> $GLOBAL_LOG 2>&1"
+    $ANNOTOOLS_BIN/delete_old_builds.sh -r $REPOS_NAME -t $BUILD_PREFIX -d $PARENT_BUILD_DIR >> $GLOBAL_LOG 2>&1
 fi
 
 exit $RC
