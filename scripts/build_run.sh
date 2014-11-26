@@ -52,6 +52,8 @@ BUILDS_DIR="$PROJECT_DIR/BUILDS"
 # name of symbolic link from ~zmap to build dir in project directories in /nfs/zmap
 LINK_PREFIX='BUILD'
 
+# repository name
+REPOS_NAME='ZMap'
 
 
 # Various build params.
@@ -395,6 +397,12 @@ if [ $RC == 0 ] ; then
 
 	cat $FTP_LOG  | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
     fi
+fi
+
+# Delete old builds so we don't run out of space
+#
+if [ $RC == 0 ] ; then
+    $ANNOTOOLS_BIN/delete_old_builds.sh -r $REPOS_NAME -t $BUILD_PREFIX -d $PARENT_BUILD_DIR
 fi
 
 exit $RC
