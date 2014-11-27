@@ -18,6 +18,10 @@ PROGNAME=`basename $0`
 GLOBAL_LOG=''
 
 
+# try to load useful shared config...after this we will have access to common variables.
+. ./build_config.sh || { echo "Aborted $PROGNAME - Failed to load common config file: ./build_config.sh"; exit 1; }
+
+
 # Configuration variables
 #
 
