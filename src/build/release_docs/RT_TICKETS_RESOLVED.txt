@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 17/10/2014 to 25/11/2014
+Request Tracker Tickets Resolved from 17/10/2014 to 27/11/2014
 
 ticket/280524
 id: ticket/280524
@@ -171,6 +171,16 @@ Subject: ZMap freezing
 Requestors: edgrif@sanger.ac.uk
 Owner: edgrif
 Resolved: Tue Nov 25 11:36:39 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/436809
+id: ticket/436809
+Queue: zmap
+Subject: Overnight build failures?
+Requestors: mca@sanger.ac.uk
+Owner: edgrif
+Resolved: Thu Nov 27 10:23:47 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

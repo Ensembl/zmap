@@ -2,18 +2,10 @@
 Git commits for  from commit "production" until commit "release/1.2.0"
 
 4ec9871 2014-11-25 "fix bug in determining order of colliding requests...doh."
-edcadc8 2014-11-24 ZMap version 1.1.0-103-g78fd204 - Update RT and git commit reports
-78fd204 2014-11-21 ZMap version 1.1.0-102-g29b92af - Update RT and git commit reports
 29b92af 2014-11-21 "add exit messages and times !"
 fc9dfa9 2014-11-21 Fix crash in show-translation when exon has start-not-found (RT435731)
-f5e932d 2014-11-21 ZMap version 1.1.0-99-g5f73073 - Update RT and git commit reports
 5f73073 2014-11-21 "insert extra logging info. for zmap init. problem on Mac."
-14e50dd 2014-11-17 ZMap version 1.1.0-97-gbd8251f - Update RT and git commit reports
-bd8251f 2014-11-14 Update release notes with more detail on feature editing
-5750782 2014-11-13 update to release notes v. 1.2.0
 5a3a7db 2014-11-12 Fix regression with file import for non-otterlace zmap
-e47baec 2014-11-12 ZMap version 1.1.0-93-g6a23c1c - Update RT and git commit reports
-6a23c1c 2014-11-12 Fix compiler warnings
 85e7139 2014-11-12 Merge branch 'feature/edit_transcript' into develop
 9c22b49 2014-11-11 "rewrite splice highlighting to substantially increase efficiency."
 d81f53e 2014-11-11 "add mark support to splice highlighting."
@@ -34,20 +26,11 @@ ef874bd 2014-11-07 "add code to get splice highlighting for all windows."
 258ec1b 2014-11-05 some updates to drawing design document with latest experiment results
 4fd78f0 2014-11-03 Merge branch 'feature/Feature_debug_display' into develop
 93fa112 2014-11-03 "add cross refs to splice highlight design doc."
-ca9edb1 2014-11-03 Merge branch 'production' into develop
-87609fb 2014-11-03 Merge branch 'production' into develop
-e567be6 2014-10-31 "add format param. for printing canvas doubles in readable format."
 cdb6a0f 2014-10-31 remove unwanted file.
-d3226e4 2014-10-31 "tidy up last bits from zeromq, timeouts, outofband removal, formatting."
-bae72c6 2014-10-31 Merge branch 'release/1.1.0' into develop
 704adca 2014-10-31 Merge branch 'feature/Remote_looping' into develop
-6f48d12 2014-10-30 Merge branch 'release/1.1.0' into develop
-226f6f3 2014-10-30 Merge branch 'release/1.1.0' into develop
 8734a2b 2014-10-29 Merge remote branch 'origin/release/1.1.0' into develop
 7ffaa25 2014-10-29 Merge remote branch 'origin/release/1.1.0' into develop
-35e7281 2014-10-27 Merge branch 'release/1.1.0' into develop
 f0df80d 2014-10-24 update to drawing design document with some initial results
-232e40a 2014-10-23 Merge branch 'release/1.1.0' into develop
 02399e8 2014-10-22 "update docs."
 81bd042 2014-10-21 "update to doc."
 c25e6db 2014-10-21 rename display design docs.

@@ -1,3 +1,10 @@
+2014-11-25  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.1.0-105-g4ec9871 - Update RT and git commit reports
+ src/ChangeLog                                  |   12 ++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    2 ++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   12 +++++++++++-
+ 3 files changed, 25 insertions(+), 1 deletions(-)
+
 2014-11-25  Ed Griffiths  <edgrif@sanger.ac.uk>
  "fix bug in determining order of colliding requests...doh."
  src/zmapRemoteControl/zmapRemoteControl.c |    4 ++--
