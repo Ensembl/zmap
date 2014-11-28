@@ -61,8 +61,6 @@
 #include <ZMap/zmapUtilsLog.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapUtilsLog.h>
-
-#include <zmapWindowCanvasItem.h>
 #include <zmapWindowCanvasBasic.h>
 #include <zmapWindowCanvasAlignment.h>
 #include <zmapWindowCanvasGraphItem.h>
@@ -392,6 +390,107 @@ ZMapWindowFeaturesetItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanv
 
   return featureset_item ;
 }
+
+
+GString *zMapWindowCanvasFeatureset2Txt(ZMapWindowFeaturesetItem featureset_item)
+{
+  GString *canvas_featureset_text = NULL ;
+  char *indent = "" ;
+
+  zMapReturnValIfFail(featureset_item, NULL) ;
+
+  canvas_featureset_text = g_string_sized_new(2048) ;
+
+  /* Title */
+  g_string_append_printf(canvas_featureset_text, "%sZMapWindowFeaturesetItem %p, id = %s)\n",
+                         indent, featureset_item, g_quark_to_string(featureset_item->id)) ;
+
+  indent = "  " ;
+
+  g_string_append_printf(canvas_featureset_text, "%sCanvasFeature type: \"%s\"\n",
+                         indent, zMapWindowCanvasFeatureType2ExactStr(featureset_item->type)) ;
+
+  g_string_append_printf(canvas_featureset_text, "%sColumn style: \"%s\"\n",
+                         indent, zMapStyleGetName(featureset_item->style)) ;
+
+  g_string_append_printf(canvas_featureset_text, "%sCached featureset style: \"%s\"\n",
+                         indent, zMapStyleGetName(featureset_item->featurestyle)) ;
+
+  g_string_append_printf(canvas_featureset_text, "%sColumn strand/frame: \"%s\"  \"%s\"\n",
+                         indent,
+                         zMapFeatureStrand2Str(featureset_item->strand),
+                         zMapFeatureFrame2Str(featureset_item->frame)) ;
+
+  if (featureset_item->point_feature)
+    g_string_append_printf(canvas_featureset_text, "%spoint_feature ZMapFeature %p \"%s\" (unique id = \"%s\")\n",
+                           indent,
+                           featureset_item->point_feature,
+                           (char *)g_quark_to_string(featureset_item->point_feature->original_id),
+                           (char *)g_quark_to_string(featureset_item->point_feature->unique_id)) ;
+  else
+    g_string_append_printf(canvas_featureset_text, "%spoint_feature ZMapFeature NULL\n", indent) ;
+
+  if (featureset_item->point_canvas_feature)
+    g_string_append_printf(canvas_featureset_text, "%spoint_canvas_feature ZMapWindowCanvasFeature %p, type = %s)\n",
+                           indent, featureset_item->point_canvas_feature,
+                           zMapWindowCanvasFeatureType2ExactStr(featureset_item->point_canvas_feature->type)) ;
+  else
+    g_string_append_printf(canvas_featureset_text, "%spoint_canvas_feature ZMapWindowCanvasFeature NULL\n", indent) ;
+
+  g_string_append_printf(canvas_featureset_text, "%sPer column data ?: %s\n",
+                         indent, ((featureset_item->per_column_data) ? "\"yes\"" : "\"no\"")) ;
+
+  g_string_append_printf(canvas_featureset_text, "%sGlyph per column data ?: %s\n",
+                         indent, ((featureset_item->glyph_per_column_data) ? "\"yes\"" : "\"no\"")) ;
+
+  g_string_append_printf(canvas_featureset_text, "%sOpt data ?: %s\n",
+                         indent, ((featureset_item->opt) ? "\"yes\"" : "\"no\"")) ;
+
+  g_string_append_printf(canvas_featureset_text, "%sZoom: recalculate = %s, factor/bases per pixel: %g, %g\n",
+                         indent,
+                         (featureset_item->recalculate_zoom ? "yes" : "no"),
+                         featureset_item->zoom, featureset_item->bases_per_pixel) ;
+
+  g_string_append_printf(canvas_featureset_text, "%sStart, End: " CANVAS_FORMAT_DOUBLE ", " CANVAS_FORMAT_DOUBLE "\n",
+                         indent, featureset_item->start, featureset_item->end) ;
+
+  g_string_append_printf(canvas_featureset_text, "%sLongest Feature: " CANVAS_FORMAT_DOUBLE "\n",
+                         indent, featureset_item->longest) ;
+
+    g_string_append_printf(canvas_featureset_text, "%sx_offset = %g, width = %g, bump_width = %g\n",
+                           indent, featureset_item->x_off, featureset_item->width, featureset_item->bump_width) ;
+
+  g_string_append_printf(canvas_featureset_text, "%soverlap ?, bump_overlap: %s " CANVAS_FORMAT_DOUBLE "\n",
+                         indent,
+                         (featureset_item->overlap ? "\"yes\"" : "\"no\""),
+                         featureset_item->bump_overlap) ;
+
+  g_string_append_printf(canvas_featureset_text, "%sBump = %s, mode = %s\n",
+                         indent,
+                         (featureset_item->bumped ? "yes" : "no"),
+                         zmapStyleBumpMode2ExactStr(featureset_item->bump_mode)) ;
+
+
+
+
+
+
+
+  return canvas_featureset_text ;
+}
+
+
+/* Enum -> String functions, these functions convert the enums _directly_ to strings.
+ *
+ * The functions all have the form
+ *  const char *zMapStyleXXXXMode2ExactStr(ZMapStyleXXXXXMode mode)
+ *  {
+ *    code...
+ *  }
+ *
+ *  */
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapWindowCanvasFeatureType2ExactStr, zmapWindowCanvasFeatureType, ZMAP_CANVASFEATURE_TYPE_LIST) ;
+
 
 
 /* If there is more than one feature set we should probably return NULL ? Otherwise it's confusing ? */
@@ -934,22 +1033,36 @@ ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *f
 gboolean zMapWindowCanvasFeaturesetHasPointFeature(FooCanvasItem *item)
 {
   gboolean result = FALSE ;
+  ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem)item ;
 
-  zMapReturnValIfFail(item, result) ;
+  zMapReturnValIfFail(ZMAP_IS_WINDOW_FEATURESET_ITEM(item), FALSE) ;
 
-  if (ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+  /* Not sure how much checking we should do here...should we check the actual feature ptr...? */
+  if (featureset->point_feature)
     {
-      ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem)item ;
-
-      /* Not sure how much checking we should do here...should we check the actual feature ptr...? */
-      if (featureset->point_feature)
-	{
-	  result = TRUE ;
-	}
+      result = TRUE ;
     }
 
   return result ;
 }
+
+
+ZMapFeature zMapWindowCanvasFeaturesetGetPointFeature(ZMapWindowFeaturesetItem featureset_item)
+{
+  ZMapFeature feature = NULL ;
+
+  zMapReturnValIfFail(ZMAP_IS_WINDOW_FEATURESET_ITEM(featureset_item), FALSE) ;
+
+  /* Not sure how much checking we should do here...should we check the actual feature ptr...? */
+  if (featureset_item->point_feature)
+    {
+      feature = featureset_item->point_feature ;
+    }
+
+  return feature ;
+}
+
+
 
 /* For normal clicking by user the point_feature is reset automatically but
  * features can be removed programmatically (i.e. xremote) requiring the
@@ -974,6 +1087,28 @@ gboolean zMapWindowCanvasFeaturesetUnsetPointFeature(FooCanvasItem *item)
 
   return result ;
 }
+
+
+
+ZMapWindowCanvasFeature zMapWindowCanvasFeaturesetGetPointFeatureItem(ZMapWindowFeaturesetItem featureset_item)
+{
+  ZMapWindowCanvasFeature feature_item = NULL ;
+
+  zMapReturnValIfFail(ZMAP_IS_WINDOW_FEATURESET_ITEM(featureset_item), FALSE) ;
+
+  /* Not sure how much checking we should do here...should we check the actual feature ptr...? */
+  if (featureset_item->point_canvas_feature)
+    {
+      feature_item = featureset_item->point_canvas_feature ;
+    }
+
+  return feature_item ;
+}
+
+
+
+
+
 
 
 /* Do anythings we need to _before_ the zooming of features. */
@@ -1335,6 +1470,28 @@ static void zmap_window_featureset_item_item_draw(FooCanvasItem *item, GdkDrawab
 	setFeaturesetColours(fi, feat) ;
 
       // call the paint function for the feature
+
+      /* gb10: hack to redraw the entire screen area for the show translation column. I don't understand
+       * why but it is blanking out some areas on scrolling (where the expose area is just the new
+       * bit of the view that has been scrolled into view. */
+      static GQuark show_translation_id = 0 ;
+      if (!show_translation_id)
+        show_translation_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
+      
+      if (fi && fi->featurestyle && fi->featurestyle->unique_id == show_translation_id && item && item->canvas)
+        {
+          int diff = item->canvas->layout.container.widget.allocation.height - expose->area.height ;
+
+          if (diff > 0)
+            {
+              if (diff > expose->area.y - 1)
+                diff = expose->area.y - 1 ;
+
+              expose->area.height += diff ;
+              expose->area.y -= diff ;
+            }
+        }    
+
       zMapWindowCanvasFeaturesetPaintFeature(fi,feat,drawable,expose) ;
 
       if(feat->y1 > y2)                                     /* for lines we have to do one more */
@@ -1900,7 +2057,8 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmp
   ZMapSkipList sl = NULL;
   zmapWindowCanvasFeatureStruct search;
   double extra = 0.0;
-  zMapReturnValIfFail(fi, sl) ;
+
+  zMapReturnValIfFail(fi, NULL) ;
 
   extra = fi->longest;
 
@@ -2504,7 +2662,6 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem featureset_it
   GdkColor *draw = NULL, *fill = NULL, *outline = NULL;
   FooCanvasItem *foo = (FooCanvasItem *) featureset_item;
   gboolean re_index = FALSE;
-  GList  *features;
 
   zMapReturnValIfFail(featureset_item, FALSE) ;
 
@@ -4276,8 +4433,9 @@ static void printCanvasFeature(void *data, void *user_data_unused)
 {
   ZMapWindowCanvasFeature canvas_feature = (ZMapWindowCanvasFeature)data ;
 
-  zMapDebugPrintf("\"%s\"(\"%s\") - \"%s\"(\"%s\")\t%g, %g\t"
-                  "width: %g\tbump_offset: %g\t bump_col: %d\tleft: %s\tright: %s\n",
+  zMapDebugPrintf("\"%s\"(\"%s\") - \"%s\"(\"%s\")\t" CANVAS_FORMAT_DOUBLE ", " CANVAS_FORMAT_DOUBLE "\t" 
+                  "width: " CANVAS_FORMAT_DOUBLE "\tbump_offset: " CANVAS_FORMAT_DOUBLE 
+                  "\t bump_col: %d\tleft: %s\tright: %s\n",
                   zMapFeatureName((ZMapFeatureAny)(canvas_feature->feature->parent)),
                   zMapFeatureUniqueName((ZMapFeatureAny)(canvas_feature->feature->parent)),
                   zMapFeatureName((ZMapFeatureAny)(canvas_feature->feature)),

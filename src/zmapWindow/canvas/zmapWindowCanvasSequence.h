@@ -32,7 +32,7 @@
 #ifndef ZMAP_CANVAS_SEQUENCE_H
 #define ZMAP_CANVAS_SEQUENCE_H
 
-#include <ZMap/zmap.h>
+#include <zmapWindowCanvasFeatureset.h>
 
 void zMapWindowCanvasSequenceInit(void) ;
 

@@ -32,6 +32,9 @@
 #ifndef ZMAP_CANVAS_LOCUS_H
 #define ZMAP_CANVAS_LOCUS_H
 
+#include <zmapWindowCanvasFeatureset.h>
+
+
 void zMapWindowCanvasLocusInit(void) ;
 void zMapWindowCanvasLocusSetFilter(ZMapWindowFeaturesetItem featureset, GList * filter) ;
 

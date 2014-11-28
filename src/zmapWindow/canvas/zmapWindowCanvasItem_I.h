@@ -97,6 +97,8 @@ typedef struct _zmapWindowCanvasItemClassStruct
  * is that every single one now has a FooCanvasGroup struct in it....agh....
  *
  *  */
+
+
 typedef struct _zmapWindowCanvasItemStruct
 {
   FooCanvasItem __parent__;				    /* extends FooCanvasItem  */
@@ -108,9 +110,11 @@ typedef struct _zmapWindowCanvasItemStruct
 
   /* Item flags. */
   unsigned int debug : 1 ;
-  gboolean connected: 1;		/* to gtk signal handlers */
+  gboolean connected : 1 ;		/* to gtk signal handlers */
 
 } zmapWindowCanvasItemStruct ;
+
+
 
 
 #endif /* ZMAP_WINDOW_CANVAS_ITEM_I_H */

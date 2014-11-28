@@ -1,0 +1,583 @@
+<!--#set var="banner" value="ZMap - A New Display Design"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- some colours for our boxes etc. -->
+
+<!-- lightpink = #FFB8C1 -->
+
+<style>
+
+pre{ background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+
+.code{ background-color: lightsteelblue }
+.request{ border-color: red;  border-width: medium }
+.reply{ border-color: green; border-width: medium }
+.message{ border-color: blue; border-width: medium }
+
+table.zmap_actions{ background-color: #EFEFEF; border-width: 1px; border-style: solid; border-collapse: collapse }
+table.zmap_actions td{ border-width: 0px 1px 1px 0px; border-style: solid; padding: 2px }
+table.zmap_actions tr{ vertical-align: top; }
+table.zmap_actions th{ border-width: 0px 0px 1px 0px; border-style: solid; }
+
+fieldset
+{
+background-color: lightblue;
+border-style: solid; border-width: 3px; border-color: black;
+padding: 10px
+}
+
+legend{ font-weight: bold }
+
+</style>
+
+
+<h1 align="center">ZMap - A New Display Design</h1>
+
+
+<h2>Main Contents</h2>
+
+<ul>
+  <li><a href="#introduction"><b>Introduction</b></a></li>
+  <li><a href="#perfect"><b>The Perfect Feature Display</b></a></li>
+  <li><a href="#other_requirements"><b>Other Requirements</b></a></li>
+  <li><a href="#implementation"><b>Implementation</b></a></li>
+</ul>
+
+
+<a name="introduction"></a>
+<h2>Introduction</h2>
+
+<p>ZMap has been around for a number of years and while the underlying
+software has always been foocanvas there have been a 3 major versions
+to the way in which the foocanvas was used:</p>
+
+<ul>
+  <li><p>Originally each feature was decomposed into individual foocanvas items (e.g. boxes,
+      lines or glyphs etc.) and then these individual items were drawn. This method had
+      the advantage of simplicity and reasonable performance but led to some
+      clumsy coding to group items into features, e.g. box/lines into a transcript for
+      event handling, highlighting etc.</p></li>
+  <li><p>A second effort subclassed existing foocanvas items to produce new zmapfoocanvas
+      items that represented complex features such as transcripts. While this approach
+      made the coding simpler it was disastrous for performance: alignments (by far the
+      most numerous feature) were no longer represented by a single box but became a
+      foocanavas group containing not just the box for the alignment but also boxes
+      for under/overlays.</p></li>
+  <li><p>A third effort concentrated on performance and removed all foocanvas items for
+      features, foocanvas items representing columns were retained but nothing below
+      that. This has terrific performance advantages but the disadvantage that now
+      zmap code had to handle all drawing of graphics primitives, placement within
+      columns, detecting mouse clicks on features and so on. And...of course this
+      has complicated the code substantially...but the performance is much better.</p></li>
+</ul>
+
+<p>We have reached the stage where drawing in zmap once again needs attention, in particular
+the following issues need to be addressed:</p>
+
+<ul>
+  <li><p><b>Performance - </b>we are not using the graphics potential of current hardware.</p></li>
+  <li><p><b>Drawing Model - </b>Currently all viewable features are loaded in one go allowing rapid
+      scrolling over that fixed range but we need to change to continuous loading of features allowing
+      zmap to scroll over whole chromosomes.</p></li>
+  <li><p><b>Vertical/Horizontal - </b>Acedb had vertical tracks which maximised the number of tracks
+      that could be displayed and ZMap copied this model but all other modern
+      browsers show tracks horizontally which provides more sequence but fewer tracks.
+      We need to allow the user to switch their display from one to the other.</p></li>
+</ul>
+
+<p>This document describes the issues, approach and effort required to reimplement zmap drawing.</p>
+
+
+
+
+<a name="perfect"></a>
+<h2>The Perfect Feature Display</h2>
+
+<p>With repetition comes knowledge, or something like that. If we are to change
+the zmap display then we should start with a list of features that the new code
+must have in order to make the effort worthwhile.</p>
+
+
+<h3>Track Orientation</h3>
+
+<p>The new display needs a button that will toggle vertical/horizontal display
+with minimal disturbance to the user (i.e. they should remain centered on the
+position/track that was displayed before they changed orientation).</p>
+
+<p>The importance of this cannot be overestimated, this is almost always the
+main criticism of zmap: "ugh, why is it vertical".</p>
+
+
+<h3>Multiple Windows</h3>
+
+<p>One of ZMap's great selling points is the ability to split the feature view
+an arbitrary number of times and to have different sequences in different
+windows and to split those windows and so on. No browser-based or indeed java-based
+stand alone program has replicated this and yet it's a great feature for the
+annotators.<p>
+
+<p>There are however some design issues with multiple windows onto a single sequence:</p>
+
+
+<ul>
+
+<li><p>When a feature is highlighted/focussed in one window should it be highlighted in all
+    the others ? <font color="red">The answer is "Yes" because not doing so leads
+    to very confusing semantics for cut/paste and other such operations.</font></p><li>
+<li><p>When a column is bumped in on window should it be bumped in the other
+    windows ? <font color="red">The answer is "Yes", although it seems like a good idea to
+    allow independent bumping this leads to difficult and complex code with much state
+    having to be kept for each window.</font></p><li>
+</ul>
+
+
+
+
+<h3>Unlimited Scrolling</h3>
+
+<p>It is now common to offer this but zmap does not and this needs to be addressed.</p>
+
+<p>Zmap should be loading new features as the user scrolls and dumping those features
+left behind by the scrolling.</p>
+
+<p>Within the possible frameworks set out below for the drawing model, this should not
+be a problem, since fetch requests are then delegated to the data model and the GUI
+front end and drawing code should know nothing about it.</p>
+
+<p>However at the moment I am thinking of two levels of data buffering. The first 
+is associated with a particular view and is the subset of features from the data 
+model that the view will attempt to draw.  This is the subset that gets changed as
+we perform most scrolling or zooming operations.</p>
+
+<p>The second is the data model itself 
+in the sense that whether automatically or user driven the data model should
+be able to request more features from the sources (databases, whatever) to 
+which the system is connected. </p>
+
+
+
+<h3>Zooming</h3>
+
+<p>ZMap's zooming was always good but clunky once the maximum X Windows limit had
+been reached because further scrolling was more and more limited in scope in order
+to avoid exceeding the maximum window size.</p>
+
+<p>Scrolling on demand would fix this by having a fixed window size.</p>
+
+<p>Semantic zooming whereby the way in which features are displayed can change 
+as the scale of the view changes. Particularly important if ZMap is to support 
+annotation/curation of much larger sequence regions than currently handled.   </p>
+
+<p> Another possibility that might also make drawing and scrolling about the space 
+more efficient is to have some kind of semantically defined drawing of features. 
+For example, while scrolling, only draw feature outlines, or only draw the start and 
+end exons of transcripts. Once the scroll movement has finished, then draw everything 
+completely.</p> 
+
+
+<h3>User Configurability</h3>
+
+<p>User adjustment of display features such as colour, bumping modes, track width, 
+track ordering, histogram and graph ranges,
+background colours, and many other things should be allowed. And also controllable 
+to prevent such if necessary. As much of this as possible should be made dynamically 
+controllable.</p>
+
+
+<h3>Searchable Features</h3>
+
+<p>The original acedb feature display (FMap) did not have a search facility making it hard
+for annotators to find certain kinds of features (e.g. EST's, mRNA's), ZMap allows full
+searching by column, feature name, position, strand. Ideally this would be augmented with
+more formalised regular expressions and/or sql-like queries.</p>
+
+
+<h3>Coordinates, Revcomp and all</h3>
+
+<h3>1-based or Sequence-based</h3>
+
+<p>ZMap offers the ability to view sequences either in their original coordinate frame
+or a 1-based corodinate frame, the latter is popular because it is considerably easier
+to navigate with this system of numbering. We should offer both options though there
+are some issues with reverse complementing (see below).</p>
+
+<h3>Reverse Complementing</h3>
+
+<p>It is customary for viewers to offer the user the option to reverse complement
+the sequence and there are a number of reasons for this:</p>
+
+<ul>
+  <li>Obviously strands have direction and we find it hard to work in the reverse
+      direction meaning that users prefer to reverse complement the view to
+      work with the reverse strand.</li>
+  <li>It is wasteful to hold both strands of DNA in memory meaning that if the user
+      is to see the opposite strand the original must be reverse complemented.</li>
+  <li>When running matching algorithms against a sequence and displaying the results
+      "on the fly", matches may occur on either strand.</li>
+</ul>
+
+<p>When reverse complementing there are various options:</p>
+
+<table border="1" cellpadding="3">
+<thead><tr><th>Coord System</th> <th>Forward coords</th> <th>Reverse coords</th></tr><thead>
+<tbody>
+<tr> <td>Sequence-based, natural</td> <td>1907778, 1918889</td> <td>1918889, 1907778</td> </tr>
+<tr> <td>Sequence-based, -ve</td> <td>1907778, 1918889</td> <td>-1918889, -1907778</td> </tr>
+<tr> <td>1-based, natural</td> <td>1, 11112</td> <td>11112, 1</td> </tr>
+<tr> <td>1-based, -ve</td> <td>1, 11112</td> <td>-11112, -1</td> </tr>
+</tbody>
+</table>
+
+<p>The negative coordinates though looking strange offer two advantages:</p>
+
+<ul>
+  <li>The user is immediately reminded that the sequence has been reverse complemented.</li>
+  <li>The system whereby the numerically smaller coordinate is at the top/start of the
+      screen is maintanied.</li>
+</ul>
+  
+<p>There are in essence two courses of action to reverse complement:</p>
+
+<ul>
+  <li><b>Reverse the view</b> but leave the data as is.</li>
+  <li><b>Reverse the data</b> and as a result the view is reversed.</li>
+</ul>
+
+<p>Experience with both acedb and ZMap has shown the former approach while attractive
+because the data does not need to be altered presents considerable opportunities for
+errors as the data and view are now out of step. This was considered sufficiently
+large a problem that both programs took the latter approach and generally reversing
+the data was found to be sufficiently fast that it did not cause problems.</p>
+
+
+<h3>Intelligent Zoom</h3>
+
+<p>Currently in ZMap it is easy to zoom "right out" vertically but (weirdly)
+not horizontally, such operations should be built in from the start by providing
+a good interface to the "world to screen" coordinate systems.</p>
+
+<p>This requirement is partly for the obvious reason: simple ease of navigation but
+also partly for screen shots, see next section for thoughts on screen shots.</p>
+
+
+<h3>Screen shots</h3>
+
+<p>A major short coming of ZMap was that we originally used the <b>g2</b> library
+to produce screen shot postscript files, this package went out of date and now the
+only option for users is to take a pixel screen shot which is no good for publications.</p>
+
+<p>So...we need to make sure that we can "draw" to either/or postscript to pdf targets
+in high quality.</p>
+
+
+<h3>Support for scrolling devices</h3>
+
+<p>In recent years the number of ways of scrolling has expanded including additions
+to existing devices (e.g. the mouse scroll wheel) or new devices (e.g. Apple trackpad).
+Most current toolkits support these devices and this is an important factor in
+user acceptance.</p>
+
+
+
+<a name="other_requirements"></a>
+<h2>Other Requirements</h2>
+
+<h3>Platform Independence</h3>
+
+<p>It is desirable to be able to do native builds on Linux, MacOS and Windows at least.
+ Appropriate choices of libraries and toolkits at an early stage will bring this goal 
+closer with no extra effort </p>
+
+<h3>Future Proofing</h3>
+
+<p>Poor choices of libraries and toolkits can lead to dependence not only on particular
+operating systems but also on out-of-date and unmaintained (and indeed unmaintainable) 
+tools such as the foocanvas. This must be avoided in order not to waste time in the future 
+and make sure that we can take advantage of improvments in technology such as hardware 
+acceleration.</p>
+
+<h3>Use of Standards</h3>
+
+<p>Standards should be used where possible. This includes not only language standards such 
+as the STL and boost but other efforts such as formal design methodologies (documented patterns) 
+and drawing standards such as OpenGL.</p>
+
+
+<a name="implementation"></a>
+<h2>Implementation Issues</h2>
+
+<h3>Coordinate transforms</h3>
+
+<p>ZMap was bedevilled by problems in this area, there was code all over the place
+doing essentially the same things but differently. In defence of zmap the foocanvas
+had a severe shortcoming: it could not deal with the situation where it's scrolled
+window exceeded the X Window maximum of 32k pixels (or least 32k that you could draw
+in to). This made going from feature space to window space <b>hard</b>.</p>
+
+
+<h3>Model-View-Controller</h3>
+
+<p>Whether you subscribe to MVC or MVP, ZMap's model became screwed up a long time
+ago. This was largely the result of trying to accomodate rapidly changing requirements
+without thinking things through more carefully. It has however made much of the code
+harder to work on that it should have been.</p>
+
+<p>On the face of it MVC/MVP should be relatively easy but in the case of zmap
+there are requirements such as multiple windows on to the same sequence or
+multiple windows onto different sequences that do it this area more complex.<p>
+
+<p>Fortunately it is relatively simple (with approprite choices of libraries)
+to ensure that the object model for the 
+program as a whole and any display components can be kept separate from the drawing 
+model itself. </p>
+
+
+<h3>Feature representation</h3>
+
+<p>In general there are several layers in a drawing system, these often
+include the graphics, an object to be drawn and the original data from
+which the object was derived. Acedb followed this model almost exactly:</p>
+
+<pre>
+
+layer:        graphics        &lt;--       objects       &lt;--       original data
+
+acedb:      Graph package     &lt;--      FMap SEGs      &lt;--      Acedb DB objects
+
+</pre>
+
+<p>In ZMap there have been 3 different models:</p>
+
+<pre>
+
+layer:        graphics        &lt;--       objects       &lt;--       original data
+
+
+"Everything is a foocanvas object":
+
+ZMap 1:      Foocanvas        &lt;-----------------------------      ZMapFeatureNNN objects
+              objects
+
+
+"Everything is a foocanvas-derived zmap canvas objects":
+
+ZMap 2:      Foocanvas        &lt;--      ZMapCanvas     &lt;--      ZMapFeatureNNN objects
+              objects                      objects
+
+
+"Higher objects are still foocanvas-derived zmap canvas objects
+ the rest are direct GDK drawing":
+
+ZMap 3:      Foocanvas        &lt;--      ZMapCanvas     &lt;-- 
+              objects                      objects              \
+                                                                 --  ZMapFeatureNNN objects
+                                                                /
+GDK            &lt;--------------------------------------------
+             graphics  
+
+</pre>
+
+<p>The first system was simple but had some drawbacks in representing complex features,
+the second was far, far too heavyweight and killed preformance, the third was not
+properly finished and so is a bit like a combination of systems 1 and 2.</p>
+
+<p>The choice representation is a crucial one as it has big effects on efficiency but
+perhaps more importantly on complexity and therefore maintainability of the code.</p>
+
+
+
+
+<h3>The Drawing Model</h3>
+
+<p>There are several candidates for how drawing might work:</p>
+
+<ul>
+  <li>Simply draw feature data directly into a window, the only
+      coordinate transform would be sequence/track coordinates to window
+      coordinates. This has the advantage of simplicity but the disadvantage
+      that drawing would need to be really fast to make scrolling possible.</li>
+  <li>Draw features into buffers of some description from where the data would
+      be moved into the window. Buffering would allow fetching data ahead and so
+      avoiding delays but this would make the design significantly more complicated.</li>
+  <li>Buffering of feature data. This does not refer to drawing buffers as such 
+      (although could) but 
+      a subset of the overall set of features that are in or just outside of the 
+      sequence/track area represented by the viewport. As the viewport is moved,
+      features are added to the subset at one end, and removed from the other. Or 
+      added/removed from both ends at the same time in the case of zooming.
+  </li>
+</ul>
+
+<p>Other drawing issues to take account of:</p>
+
+<ul>
+  <li>We should use tools that allow us to take advantage of hardware acceleration 
+      where possible.</li>
+  <li>We must maintain separation of the widget set from the drawing code per se. 
+       There are many widget sets that provide native drawing capabilities, but 
+       these should be avoided in order to clearly deliniate the user interaction
+       and display components and the drawing code itself. This will allow future 
+       changes to one or the other to be done independently.</li>
+</ul>
+
+
+
+<h3>Static vs. Dynamic Linking</h3>
+
+Some libraries (e.g. Qt) come with their own build/make facilities which have to be used.
+It is inevitable that attempting to integrate something like this with the ZMap build system
+would be problematic, so perhaps we should consider building components separately e.g GUI, 
+data processing, communications layers, etc.</p> 
+
+Although static linking is possible with most libraries there is a strong preference  
+amongst development projects (and commercial providers of course) for things to 
+be dynamic. Binary redistribution is not a problem.
+This is the default for almost everything and it is not always obvious 
+or easy to make the change to static linking. Despite the advantages from the point 
+of view of installation and distribution, it might be a good idea to consider making
+this change at some point before we are forced to do so.</p>
+
+
+
+<h3>Choice of Libraries/Toolkits</h3>
+
+<p>To satisfy all of the above criteria I suggest the most important priorities for the 
+decision as follows:</p>
+
+<ul>
+  <li>Speed/hardware acceleration.</li>
+  <li>Future proofing/support of open source projects. </li>
+  <li>Decoupling widgets from drawing.  </li>
+  <li>Portability. Linux, windows, macos. </li>
+</ul>
+
+<p>The following is a few initial candidates and assessment 
+of advantages and disadvantages.</p>
+<ul>
+
+  <li>GTK+3 (http://en.wikipedia.org/wiki/GTK%2B) 
+    <p>Advantages</p>
+    <ul>
+      <li> Better the devil you know
+      <li> C or C++ binding
+      <li> Supports OpenGL
+    </ul>
+    <p>Disadvantages</p>
+    <ul>
+      <li> Might be as unpredictably buggy as v2.*
+      <li> Requires GLib
+    </ul>
+  </li> 
+ 
+<p>
+  <li>Qt (http://en.wikipedia.org/wiki/Qt_%28software%29) 
+    <p>Advantages</p>
+    <ul>
+      <li> Probably the best product (e.g. google earth uses this)
+      <li> C++
+      <li> Supports OpenGL
+      <li> Very very comprehensive (i.e. complicated)
+    </ul>
+    <p> Disadvantages</p>
+    <ul>
+      <li> Very very comprehensive (i.e. complicated)
+      <li> Enormous libraries
+      <li> Have to use their make facility (qmake)
+    </ul>
+  </li>  
+
+<p>
+  <li>FLTK (http://en.wikipedia.org/wiki/FLTK)
+    <p>Advantages</p>
+    <ul>
+      <li> Lightweight and simple
+      <li> C++
+      <li> Supports OpenGL
+    </ul>
+    <p> Disadvantages</p>
+    <ul>
+      <li> Less variety of functionality than others
+    </ul>
+  </li>
+
+</ul>
+
+
+
+<h3>A Proposed Experiment</h3>
+
+<p>To test these ideas, I suggest an experiment something like the following:  </p>
+
+<p>We are interested in performance of drawing a large number of objects (e.g 10^6) 
+defined in some 
+world coordinate space, call this [X_s, X_e] by [Y_s, Y_e]. (Subscripts meaning 'start'
+and 'end' here.) Our viewport (the bit that's visible on the screen) is only going to 
+be a very small portion of the world space (although eventually will be zoomable from 
+all the way in and out). Viewport size of about 100-th of the total world space seems 
+a reasonable place to start.  I am not going to worry too much about coordinate mappings 
+at the moment, since that's not the focus of this experiment.</p>
+
+<p>Let the viewport have the size X_v by Y_v.  This is in 
+units of screen pixels. Let the region of the world space that this maps into be
+defined by [x_s,x_e] and [y_s,y_e].</p>
+
+<p>What do we want to see in the initial test?</p>
+
+<ul>
+  <li> Good performance "scrolling" around this space.
+  <li> Zoomability all the way in and out.
+</ul>
+
+<p>What does "scrolling" mean in this context? Simply moving the viewport around the 
+world space, not necessarily (although it could be) in the sense of a scrolled 
+window widget.</p>  
+
+<p>Some possible programming approaches to this are:</p>
+<ul>
+  <li> Have a large drawing area to accomodate the whole of the world space 
+       and place this into a scrolled window. This will
+       obviously get very bad very quickly.
+  <li> Have a drawing widget in a scrolled window, but where the widget is defined to
+       be (say) three times the size of the visible region in the world space and 
+       only redraw it when the user's scrolling gets within some tolerance of the 
+       edge. This is conceptually what we currently do.
+  <li> Draw into the widget taking into account the viewport-to-world transformation 
+       ourselves. Calls to draw all of the objects in the world space will then be made and
+       we allow the library to take care of clipping objects outside of the visible region.
+  <li> As previous, but only make calls to draw a subset of the features in the immediate 
+       vicinity of the visible region. This will require maintaining a buffered subset of
+       features to be drawn that is updated as one moves the visible region around. For
+       example as we scroll to the right, features are added to the end of the list, and 
+       removed from the beginning. This approach relies on maintaining lists of features 
+       sorted according to their positions in the world space.
+</ul>
+
+<p>There are other possibilties; for example, a combination of the buffered feature subset 
+with the drawing widget and scrolled window. But the simplest ones are the place to start. 
+I think it should be fairly straightfoward to try out some of these possibilities with
+the widget sets specified above and initially with the OpenGL interface. </p>
+
+<h3>Experiment results:</h3> 
+<ul>
+<li>With 10^6 features in a [0,10] by [0,10] world space region and a viewport mapped into
+a 1 by 1 region of this space (i.e. 1/100-th of the area) then the performance scrolling 
+around is acceptable. There are noticable delays, but the results are surprisingly good.
+Increasing the number of features by a further order of magnitude degrades performance 
+to an unacceptable level. This is allowing the OpenGL system to take care of clipping 
+outside of the viewport.</li>
+<li>Adding Vertex Buffer Object to the above treatment. Gives slight improvement, but 
+would be expected to be better on more up to date hardware.</li>
+<li>Have also tried tiled container of gl drawing areas in one display as a possible 
+route to our multiple/split view technique in ZMap. Appears to work well with 10k 
+features in each drawing area. </li>
+<li>Need to think about the model for tracks within a view. They should be clickable
+and individually resizable.</li>
+<li>Need to think about the model for bumping and how this fits in with capturing 
+mouse clicks etc.
+<li>Adding smart buffering (at the feature/vertex level) in software to the above.</li>
+</ul>
+
+
+<!--#include virtual="/perl/footer"-->

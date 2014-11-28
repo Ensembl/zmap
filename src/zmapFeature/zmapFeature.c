@@ -570,7 +570,7 @@ gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_stri
   if (!(feature && (variation_string && *variation_string)) )
     return result ;
 
-  feature->feature.basic.has_attr.variation_str = TRUE ;
+  feature->feature.basic.flags.variation_str = TRUE ;
   feature->feature.basic.variation_str = variation_string ;
   result = TRUE ;
 

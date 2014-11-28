@@ -94,8 +94,6 @@ static PFetchStatus pfetch_reader_func(PFetchHandle *handle, char *text, guint *
                                        GError *error, gpointer user_data) ;
 static PFetchStatus pfetch_closed_func(gpointer user_data) ;
 
-static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
-                        char *action, FooCanvasItem *real_item) ;
 static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
 			       char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 			       gpointer reply_handler_func_data) ;
@@ -430,19 +428,14 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
                   if (window->xremote_client)
                     {
                       /* For the scratch column, the feature doesn't exist in the peer.
-                       * Ask the peer to create it. */
-                      /*! \todo We may wish to change this so that, rather than creating
-                       * the feature immediately, it opens an intermediary dialog where the
-                       * user can set some attributes locally in zmap instead. Then from
-                       * that dialog, or another option in zmap, they could have the option
-                       * to save the feature to the peer. */
+                       * Pop up a dialog to give the user the option to . */
                       if (feature && feature->style && strcmp(style_id, ZMAP_FIXED_STYLE_SCRATCH_NAME) == 0)
                         {
-                          callXRemote(window, (ZMapFeatureAny)feature, ZACP_CREATE_FEATURE, highlight_item) ;
+                          zmapWindowFeatureShow(window, item, TRUE) ;
                         }
                       else
                         {
-                          callXRemote(window, (ZMapFeatureAny)feature, ZACP_EDIT_FEATURE, highlight_item) ;
+                          zmapWindowFeatureCallXRemote(window, (ZMapFeatureAny)feature, ZACP_EDIT_FEATURE, highlight_item) ;
                         }
                     }
                   else
@@ -1020,12 +1013,12 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
               replace_highlight = FALSE ;
 
               if (window->xremote_client)
-                callXRemote(window, my_feature, ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
+                zmapWindowFeatureCallXRemote(window, my_feature, ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
             }
           else
             {
               if (window->xremote_client)
-                callXRemote(window, my_feature, ZACP_SELECT_FEATURE, highlight_item) ;
+                zmapWindowFeatureCallXRemote(window, my_feature, ZACP_SELECT_FEATURE, highlight_item) ;
 
               window->multi_select = TRUE ;
             }
@@ -1034,7 +1027,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
         {
           /* single select */
           if (window->xremote_client)
-            callXRemote(window, my_feature, ZACP_SELECT_FEATURE, highlight_item) ;
+            zmapWindowFeatureCallXRemote(window, my_feature, ZACP_SELECT_FEATURE, highlight_item) ;
 
           window->multi_select = FALSE ;
         }
@@ -1263,8 +1256,8 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item, GCallback feature
 /* THIS FUNCTION NEEDS CLEANING UP, HACKED FROM OLD XREMOTE CODE..... */
 /* Called by select and edit code to call xremote with "select", "edit" etc commands
  * for peer. The peers reply is handled in handleXRemoteReply() */
-static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
-                        char *command, FooCanvasItem *real_item)
+void zmapWindowFeatureCallXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
+                                  char *command, FooCanvasItem *real_item)
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapXMLUtilsEventStack xml_elements ;
@@ -1328,9 +1321,12 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   feature_set.magic       = feature_copy->magic ;
 #endif
   feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
-  feature_set.parent      = feature_copy->parent->parent;
-  feature_set.unique_id   = feature_copy->parent->unique_id;
-  feature_set.original_id = feature_copy->parent->original_id;
+  if (feature_copy->parent)
+    {
+      feature_set.parent      = feature_copy->parent->parent;
+      feature_set.unique_id   = feature_copy->parent->unique_id;
+      feature_set.original_id = feature_copy->parent->original_id;
+    }
 
   feature_set.features = g_hash_table_new(NULL, NULL) ;
   g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature_copy->unique_id), feature_copy) ;
@@ -1425,7 +1421,7 @@ static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
         }
     }
 
-  g_free(remote_data) ;                                            /* Allocated in callXRemote() */
+  g_free(remote_data) ;                                            /* Allocated in zmapWindowFeatureCallXRemote() */
 
   return ;
 }

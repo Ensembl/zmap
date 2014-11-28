@@ -2907,7 +2907,7 @@ static gboolean formatVariant(GFFFormatData gff_data, GString *line,
       g_free(url_escaped) ;
     }
 
-  if (feature->feature.basic.has_attr.variation_str)
+  if (feature->feature.basic.flags.variation_str)
     {
       char *variant_str = NULL ;
 

@@ -205,10 +205,11 @@ static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList
 static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data) ;
 static void destroyZMapView(ZMapView *zmap) ;
 static void displayDataWindows(ZMapView zmap_view,
-				       ZMapFeatureContext all_features, ZMapFeatureContext new_features,
-				       GHashTable *new_styles, LoadFeaturesData loaded_features,
-				       gboolean undisplay, GList *masked,
-				       ZMapFeature highlight_feature, gboolean allow_clean) ;
+                               ZMapFeatureContext all_features, ZMapFeatureContext new_features,
+                               GHashTable *new_styles, LoadFeaturesData loaded_features,
+                               gboolean undisplay, GList *masked,
+                               ZMapFeature highlight_feature, gboolean splice_highlight,
+                               gboolean allow_clean) ;
 static gint zmapIdleCB(gpointer cb_data) ;
 static void enterCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void leaveCB(ZMapWindow window, void *caller_data, void *window_data) ;
@@ -337,10 +338,6 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
 				  gpointer reply_handler_func_data) ;
 
 static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_msg, void *user_data) ;
-
-
-
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -3207,6 +3204,10 @@ static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data
 
   zmap_view->kill_blixems = TRUE ;
 
+  /* If a remote request func is registered then we're an xremote client */
+  if (view_cbs_G->remote_request_func)
+    zmap_view->xremote_client = TRUE ;
+
   /* Set all flags to false by default */ 
   int flag = 0 ;
   for ( ; flag < ZMAPFLAG_NUM_FLAGS; ++flag)
@@ -3225,7 +3226,12 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget)
   view_window = createWindow(zmap_view, NULL) ;
 
   /* There are no steps where this can fail at the moment. */
-  window = zMapWindowCreate(parent_widget, zmap_view->view_sequence, view_window, NULL, zmap_view->flags) ;
+  window = zMapWindowCreate(parent_widget, 
+                            zmap_view->view_sequence, 
+                            view_window, 
+                            NULL, 
+                            zmap_view->flags,
+                            zmap_view->int_values) ;
 
   view_window->window = window ;
 
@@ -5034,7 +5040,9 @@ static void resetWindows(ZMapView zmap_view)
 void displayDataWindows(ZMapView zmap_view,
 			ZMapFeatureContext all_features, ZMapFeatureContext new_features,
 			GHashTable *new_styles, LoadFeaturesData loaded_features_in,
-			gboolean undisplay, GList *masked, ZMapFeature highlight_feature, gboolean allow_clean)
+			gboolean undisplay, GList *masked,
+                        ZMapFeature highlight_feature, gboolean splice_highlight,
+                        gboolean allow_clean)
 {
   GList *list_item, *window_list  = NULL;
   gboolean clean_required = FALSE;
@@ -5069,7 +5077,8 @@ void displayDataWindows(ZMapView zmap_view,
 	  zMapWindowDisplayData(view_window->window, NULL,
 				all_features, new_features,
 				&zmap_view->context_map,
-				masked, highlight_feature,
+				masked,
+                                highlight_feature, splice_highlight,
 				loaded_features) ;
 	}
       else
@@ -5202,12 +5211,13 @@ static gboolean mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *wi
 
   if (result)
     {
-      /* Save the new feature to the annotation column (so the temp feature is updated with the
-       * same info as the new feature we've created)  */
-      zmapViewScratchSave(view, merge->feature) ;
-
       /* Now create the new feature */
       zmapViewMergeNewFeature(view, merge->feature, merge->feature_set) ;
+
+      /* Save the new feature to the annotation column (so the temp feature is updated with the
+       * same info as the new feature we've created). This takes ownership of merge->feature. */
+      zmapViewScratchSave(view, merge->feature) ;
+
     }
 
   return result ;
@@ -5767,7 +5777,7 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
 
   /* Signal the ZMap that there is work to be done. */
   displayDataWindows(view, view->features, diff_context, new_styles,
-		     loaded_features, FALSE, masked, NULL, TRUE) ;
+		     loaded_features, FALSE, masked, NULL, FALSE, TRUE) ;
 
   /* Not sure about the timing of the next bit. */
 
@@ -5798,7 +5808,7 @@ static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inou
     }
   else
     {
-      displayDataWindows(view, view->features, diff_context, NULL, NULL, TRUE, NULL, NULL, TRUE) ;
+      displayDataWindows(view, view->features, diff_context, NULL, NULL, TRUE, NULL, NULL, FALSE, TRUE) ;
 
       zMapFeatureContextDestroy(diff_context, TRUE) ;
     }
@@ -5815,6 +5825,25 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
   ZMapView view = view_window->parent_view ;
   ZMapWindowCallbackCommandAny cmd_any = (ZMapWindowCallbackCommandAny)window_data ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  char *err_msg = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  /* Rewrite to use a better interface.... */
+
+
+
+  /* TEMP CODE...... */
+  if (cmd_any->cmd == ZMAPWINDOW_CMD_SPLICE)
+    {
+      /* Need error handling added here.....??? or should it be per window ?? */
+      gboolean result ;
+
+      result = zmapViewExecuteCommand(view, window_data) ;
+    }
+  else
   switch (cmd_any->cmd)
     {
     case ZMAPWINDOW_CMD_SHOWALIGN:
@@ -6789,3 +6818,6 @@ void zMapViewSetSaveFile(ZMapView view, const char *filename)
   view->save_file = g_quark_from_string(filename) ;
   view->flags[ZMAPFLAG_FEATURES_NEED_SAVING] = FALSE ;
 }
+
+
+

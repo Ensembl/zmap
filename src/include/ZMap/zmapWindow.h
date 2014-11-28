@@ -45,10 +45,11 @@
 #include <ZMap/zmapAppRemote.h>
 #include <ZMap/zmapXMLHandler.h>
 
+#define SCRATCH_FEATURE_NAME "temp_feature"
 
 
 /*! Opaque type, represents an individual ZMap window. */
-typedef struct _ZMapWindowStruct *ZMapWindow ;
+typedef struct ZMapWindowStructType *ZMapWindow ;
 
 
 
@@ -77,6 +78,8 @@ typedef enum
     ZMAP_WINDOW_3FRAME_ALL                                  /* 3 frame cols and translation display. */
   } ZMapWindow3FrameMode ;
 
+/* These flags are stored in an array in the ZMapView but the array is also passed to the window
+ * level so they are accessible there */
 typedef enum 
   {
     ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
@@ -90,6 +93,15 @@ typedef enum
     ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
   } ZMapFlag;
 
+/* These int values are stored in an array in the ZMapView but the array is also passed to the
+ * window level so that they are accessible there. */
+typedef enum
+  {
+    ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE,   /* Quark to use as feature name for scratch feature */
+    ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET,/* Quark to use as featureset name for scratch feature */
+
+    ZMAPINT_NUM_VALUES
+  } ZMapIntValue;
 
 
 /*! ZMap Window has various callbacks which will return different types of data for various actions. */
@@ -221,7 +233,14 @@ typedef struct
  *
  * Data returned by the "command" callback, note all command structs must start with the
  * CommandAny fields.
- *
+ * 
+ * THIS NEEDS REDOING SO THE CALLER OF WINDOW KNOWS NOTHING ABOUT THE ACTUAL FUNCTION
+ * TO BE CALLED OR ANYTHING ABOUT THE ARGS, IT NEEDS GENERALISING....
+ * 
+ * THERE SHOULD BE A SINGLE STRUCT WITH A CALLBACK AND A USER POINTER AND THAT'S IT.
+ * 
+ * ALL OF THESE STRUCTS SHOULD BE MOVED INTERNALLY TO ZMAPWINDOW AND BE USED THERE.
+ * 
  */
 
 typedef enum
@@ -230,6 +249,7 @@ typedef enum
     ZMAPWINDOW_CMD_GETFEATURES,
     ZMAPWINDOW_CMD_SHOWALIGN,
     ZMAPWINDOW_CMD_REVERSECOMPLEMENT,
+    ZMAPWINDOW_CMD_SPLICE,
     ZMAPWINDOW_CMD_COPYTOSCRATCH,
     ZMAPWINDOW_CMD_DELETEFROMSCRATCH,
     ZMAPWINDOW_CMD_CLEARSCRATCH,
@@ -328,6 +348,25 @@ typedef struct
   /* No extra data needed for rev. comp. */
 
 } ZMapWindowCallbackCommandRevCompStruct, *ZMapWindowCallbackCommandRevComp ;
+
+
+/* Splice features. */
+typedef struct ZMapWindowCallbackCommandSpliceStructType
+{
+  /* Common section. */
+  ZMapWindowCommandType cmd ;
+
+  gboolean do_highlight ;
+
+  GList *highlight_features ;
+
+  int seq_start, seq_end ;                                  /* highlight between start/end. */
+
+} ZMapWindowCallbackCommandSpliceStruct, *ZMapWindowCallbackCommandSplice ;
+
+
+
+
 
 
 typedef void (*ZMapWindowGetEvidenceCB)(GList *evidence, gpointer user_data) ;
@@ -447,7 +486,7 @@ extern int focus_group_mask[];  /* indexed by ZMapWindowFocusType */
 void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             ZMapFeatureSequenceMap sequence, void *app_data,
-                            GList *feature_set_names, gboolean *flags) ;
+                            GList *feature_set_names, gboolean *flags, int *int_values) ;
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap sequence,
                           void *app_data, ZMapWindow old,
                           ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
@@ -459,12 +498,16 @@ gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
                                         char *command_name, char *request,
                                         ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
+gboolean zMapWindowExecuteCommand(ZMapWindow window, ZMapWindowCallbackCommandAny cmd_any, char **err_msg_out) ;
+
 void zMapWindowSetCursor(ZMapWindow window, GdkCursor *cursor) ;
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
                            ZMapFeatureContext current_features, ZMapFeatureContext new_features,
                            ZMapFeatureContextMap context_map,
-                           GList *masked, ZMapFeature highlight_feature, gpointer loaded_cb_user_data) ;
+                           GList *masked,
+                           ZMapFeature highlight_feature,  gboolean splice_highlight,
+                           gpointer loaded_cb_user_data) ;
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);

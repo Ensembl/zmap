@@ -310,120 +310,6 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 }
 
 
-/* Copy a section from src_ptr to dest_ptr from the start of src_ptr up to the coord of the given
- * variation. src_coord gives the initial coord that src_ptr points to. After the copy, the 
- * pointers are moved so that they point to the start of the next section after this variation. */
-static void copyExonPeptideSequenceSection(ZMapFeature variation, int *src_coord, char **src_ptr, char **dest_ptr)
-{
-  zMapReturnIfFail(variation && variation->feature.basic.variation_str) ;
-  zMapReturnIfFail(src_coord && src_ptr && *src_ptr && dest_ptr && *dest_ptr) ;
-
-  /* Get the difference in length in DNA bases caused by this variation */
-  const int diff = zMapFeatureVariationGetSections(variation->feature.basic.variation_str,
-                                                   NULL, NULL, NULL, NULL) ;
-
-  if (diff != 0)
-    {
-      /* Deletion or insertion. Copy everything before the variation. Convert to peptide
-       * coords, and round up so it's inclusive of any partial codon. */
-      const int len_to_copy = (variation->x1 - *src_coord + 2) / 3 ;
-
-      memcpy(*dest_ptr, *src_ptr, len_to_copy) ;
-
-      /* Set src_coord to point to the next coord after this variation. */
-      *src_coord = variation->x2 + 1 ;
-
-      if (diff < 0)
-        {
-          /* Deletion. Increase the position in the source string to the next
-           * base after those we've copied. */
-          *src_ptr += len_to_copy ;
-
-          /* Skip over the deleted bases in the dest string. Note that we need 
-           * to multiply diff by -1 to get the absolute number of bases. Note also that we don't
-           * round up in the conversion to peptides here so we exclude any partial codon (because
-           * that was already included in the length we copied). */
-          *dest_ptr += len_to_copy + ((diff * -1) / 3) ;
-        }
-      else
-        {
-          /* Insertion. Increase the position in the dest string to the next base 
-           * after those we've copied. */
-          *dest_ptr += len_to_copy ;
-
-          /* Skip over the inserted bases in the src string. Note that we don't round up the in
-           * the conversion to peptides here so we exclude any partial codon (because that was
-           * already included in the length we copied). */
-          *src_ptr += len_to_copy + (diff / 3) ;
-        }
-    }
-}
-
-
-/* Given an exon peptide sequence that contains variations, copy it into dest_ptr, aligning the
- * result to the reference sequence. To do this, insertions are skipped and deletions are
- * marked with dashes. */
-static void copyExonPeptideSequenceVariations(ZMapFeature feature, ZMapFullExon exon, char **dest_ptr)
-{
-  zMapReturnIfFail(feature && exon && dest_ptr && *dest_ptr && feature && feature->feature.transcript.variations) ;
-
-  /* src_ptr will point to the current start position in the peptide that we want to copy from */
-  char *src_ptr = exon->peptide ;
-
-  /* src_coord stores the coordinate of the peptide that src_ptr currently points to */
-  int src_coord = exon->sequence_span.x1 ;
-
-  /* Make sure variations are sorted by position (they should be already but the list
-   * shouldn't be long so no harm in making sure). */
-  feature->feature.transcript.variations = 
-    g_list_sort(feature->feature.transcript.variations, zMapFeatureCmp) ;
-
-  /* Loop through each variation */
-  GList *variation_item = feature->feature.transcript.variations ;
-
-  for ( ; variation_item; variation_item = variation_item->next)
-    {
-      ZMapFeature variation = (ZMapFeature)(variation_item->data) ;
-
-      /* If outside the max end of the exon, then none of the variations
-       * can apply, so stop. */
-      if (variation->x2 > exon->sequence_span.x2)
-        break ;
-
-      /* If not inside this exon then continue to the next variation */
-      if (variation->x1 < exon->sequence_span.x1)
-        continue ;
-
-      /* Copy the section up to this variation and increment the pointers to point to the section
-       * after this variation */
-      copyExonPeptideSequenceSection(variation, &src_coord, &src_ptr, dest_ptr) ;
-    }
-
-  /* Copy the remaining section of the peptide (i.e. the section from the last variation to the end) */
-  memcpy(*dest_ptr, src_ptr, strlen(src_ptr)) ;
-}
-
-
-/* Copy the exon peptide sequence from src_ptr to dest_ptr. The result is aligned to the reference
- * sequence even if it contains variations. */
-static void copyExonPeptideSequence(ZMapFeature feature, ZMapFullExon exon, char **dest_ptr)
-{
-  zMapReturnIfFail(dest_ptr && *dest_ptr) ;
-  zMapReturnIfFailSafe(exon && exon->peptide) ;
-
-  if (feature && feature->feature.transcript.variations)
-    {
-      /* Copy the sequence, aligning it according to the variations */
-      copyExonPeptideSequenceVariations(feature, exon, dest_ptr) ;
-    }
-  else
-    {
-      /* Just copy the entire peptide sequence to dest */
-      memcpy(*dest_ptr, exon->peptide, strlen(exon->peptide)) ;
-    }
-}
-
-
 void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
 {
   if (!(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_HAS_CDS(feature) && ZMAPFEATURE_FORWARD(feature)))
@@ -603,10 +489,8 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
 
                   dest_ptr = (seq + dest_start) - 1 ;
 
-                  /* Copy the src sequence to the dest sequence. Note that this function
-                   * takes care of making sure it is aligned correctly if there are
-                   * variations */
-                  copyExonPeptideSequence(feature, current_exon, &dest_ptr) ;
+                  /* Copy the src sequence to the dest sequence. */
+                  memcpy(dest_ptr, current_exon->peptide, strlen(current_exon->peptide)) ;
                 }
             }
           while ((exon_list_member = g_list_next(exon_list_member))) ;
@@ -775,6 +659,11 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
       ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) sequence_feature;
       GdkColor *fill;
       ZMapFeatureSubPartSpanStruct span ;
+      GQuark feature_style_id = 0 ;
+      GQuark show_translation_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
+
+      if (feature && feature->style && *feature->style)
+        feature_style_id = (*feature->style)->unique_id ; 
 
       /*
        * previous code did deselect as part of the select operation
@@ -925,7 +814,11 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                           {
                             if((slice_coord % 3) == (frame - ZMAPFRAME_0))
                               in_frame = TRUE;
-                            if (!in_frame)
+
+                            /* For peptides only show split codon for the inframe column of the
+                             * three-frame translation (confusing otherwise). However, for the
+                             * show-translation column, always show it. */
+                            if (!in_frame && feature_style_id != show_translation_id)
                               fill = coding_background ;
                           }
                         //zMapLogWarning("split3  in_frame = %d  (%d %d)", in_frame, slice_coord, slice_coord % 3);
@@ -944,8 +837,10 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                               in_frame = TRUE;
                             //zMapLogWarning("split5  in_frame = %d  (%d %d)", in_frame, slice_coord, slice_coord % 3);
 
-                            /* For peptides only show split codon for inframe col., confusing otherwise. */
-                            if (!in_frame)
+                            /* For peptides only show split codon for the inframe column of the
+                             * three-frame translation (confusing otherwise). However, for the
+                             * show-translation column, always show it. */
+                            if (!in_frame && feature_style_id != show_translation_id)
                               fill = coding_background ;
                           }
                         break ;

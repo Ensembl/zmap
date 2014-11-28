@@ -106,6 +106,7 @@ GList *zmapWindowContainerFeatureSetGetFeatureSets(ZMapWindowContainerFeatureSet
 gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet container);
 
 /* Style lookup */
+ZMapFeatureTypeStyle zMapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFeatureSet container) ;
 ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromStyle(ZMapWindowContainerFeatureSet container_set,
 								 ZMapFeatureTypeStyle         style2copy);
 ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContainerFeatureSet container_set,
@@ -127,7 +128,8 @@ ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpUnmarked(ZMapWindowContain
 
 gboolean zmapWindowContainerFeatureSetDoSpliceHighlight(ZMapWindowContainerFeatureSet container_set) ;
 gboolean zmapWindowContainerFeatureSetSpliceHighlightFeatures(ZMapWindowContainerFeatureSet container_set,
-                                                              GList *splice_highlight_features) ;
+                                                              GList *splice_highlight_features,
+                                                              int seq_start, int seq_end) ;
 gboolean zmapWindowContainerFeatureSetSpliceUnhighlightFeatures(ZMapWindowContainerFeatureSet container_set) ;
 
 ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowContainerFeatureSet container_set);

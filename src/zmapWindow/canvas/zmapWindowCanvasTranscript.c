@@ -376,7 +376,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
 
 
   /* Highlight all splice positions if they exist, do this bumped or unbumped otherwise user
-   * has to bump column to see common splices. */
+   * has to bump column to see common splices (See Splice_highlighting.html). */
   if (feature->splice_positions)
     {
       zMapCanvasFeaturesetDrawSpliceHighlights(featureset, feature, drawable, x1, x2) ;

@@ -201,6 +201,16 @@ typedef struct
 } ZMapWindowStatsAlignStruct, *ZMapWindowStatsAlign ;
 
 
+
+/* Used from to record data needed in zmapWindowHighlightEvidenceCB(). */
+typedef struct ZMapWindowHighlightDataStructType
+{
+  ZMapWindow window ;
+  ZMapFeatureAny feature ;
+} ZMapWindowHighlightDataStruct, *ZMapWindowHighlightData ;
+
+
+
 #define zmapWindowStatsAddBasic(STATS_PTR, FEATURE_PTR) \
   (ZMapWindowStatsBasic)zmapWindowStatsAddChild((STATS_PTR), (ZMapFeatureAny)(FEATURE_PTR))
 #define zmapWindowStatsAddTranscript(STATS_PTR, FEATURE_PTR) \
@@ -641,7 +651,7 @@ typedef struct
 
 /* Represents a single sequence display window with its scrollbars, canvas and feature
  * display. */
-typedef struct _ZMapWindowStruct
+typedef struct ZMapWindowStructType
 {
 
   ZMapWindowConfigStruct config ;			    /* Holds window configuration info. */
@@ -694,6 +704,15 @@ typedef struct _ZMapWindowStruct
 
 
   gboolean multi_select ;
+
+
+  /* Highlighting data for flip-flopping focus. */
+  FooCanvasGroup *focus_column ;
+  FooCanvasItem *focus_item ;
+  ZMapFeature focus_feature ;
+
+  /* Highlighting state for flip-flopping splice highlighting. */
+  gboolean splice_highlight_on ;
 
 
   /* Some default colours, good for hiding boxes/lines. */
@@ -858,6 +877,7 @@ typedef struct _ZMapWindowStruct
   ZMapWindowState state;	/* need to store this see revcomp, RT 229703 */
 
   gboolean *flags ; /* array of flags from the view level */
+  int *int_values ; /* array of int values from the view level */
 
   /* The display_forward_coords flag controls whether coords are displayed
    * always as if for the original forward strand or for the whichever is the current forward
@@ -875,6 +895,11 @@ typedef struct _ZMapWindowStruct
   /* Remember the last featureset we calculated the translation for. (If it's the scratch
    * featureset then we need to recalculate the translation after any edit operation.)  */
   GQuark show_translation_featureset_id ;
+
+  /* Remember the last featureset we called highlight-evidence for. (If it's the scratch
+   * featureset then we need to do some special processing before/after editing the scratch
+   * feature.)*/
+  GQuark highlight_evidence_featureset_id ;
 
 } ZMapWindowStruct ;
 
@@ -1315,6 +1340,9 @@ void zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item, const gbo
 
 void zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature,
 				  ZMapWindowGetEvidenceCB evidence_cb, gpointer user_data) ;
+void zmapWindowScratchSaveFeature(ZMapWindow window, GQuark feature_id) ;
+void zmapWindowScratchSaveFeatureSet(ZMapWindow window, GQuark feature_set_id) ;
+void zmapWindowScratchResetAttributes(ZMapWindow window) ;
 
 /* summarise busy column by not displaying invisible features */
 gboolean zmapWindowContainerSummariseIsItemVisible(ZMapWindow window, double dx1,double dy1,double dx2, double dy2);
@@ -1592,6 +1620,7 @@ void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column, 
 FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusDestroy(ZMapWindowFocus focus) ;
 
+FooCanvasGroup *zmapWindowGetFirstColumn(ZMapWindow window, ZMapStrand strand) ;
 
 void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items);
 void zmapWindowFocusRehighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window);
@@ -1662,6 +1691,8 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 				     ZMapFeatureSet       feature_set,
 				     ZMapFeatureTypeStyle style);
 
+void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features, int seq_start, int seq_end) ;
+
 gboolean zmapWindowUpdateStyles(ZMapWindow window, GHashTable *read_only_styles, GHashTable *display_styles) ;
 gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
 					     ZMapFeatureBlock block,
@@ -1682,6 +1713,8 @@ ZMapFeatureTypeStyle zMapWindowGetColumnStyle(ZMapWindow window,GQuark col_id);
 GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id);
 //GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQuark feature_set_id);
 
+void zmapWindowFeatureCallXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
+                                  char *command, FooCanvasItem *real_item) ;
 
 
 /* Ruler Functions */
@@ -1733,6 +1766,8 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block, GList *colum
 void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 
 void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
+
+void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data) ;
 
 /* Malcolms.... */
 void foo_bug_set(void *key,char *id) ;

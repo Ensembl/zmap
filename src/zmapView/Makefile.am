@@ -10,6 +10,7 @@ zmapView_P.h \
 zmapViewUtils.c \
 zmapView_P.h \
 zmapViewCallBlixem.c \
+zmapViewCommand.c \
 zmapViewFeatureMask.c \
 zmapViewFeatureCollapse.c \
 zmapViewRemoteControl.c \

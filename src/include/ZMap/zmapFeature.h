@@ -124,7 +124,6 @@ typedef enum {ZMAPPHASE_NONE = 0, ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPha
 typedef enum {ZMAPHOMOL_NONE = 0, ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL} ZMapHomolType ;
 
 
-
 /* Original format of an alignment. */
 #define ZMAPSTYLE_ALIGNMENT_GAPS   "Gaps"
 #define ZMAPSTYLE_ALIGNMENT_CIGAR  "cigar"
@@ -144,6 +143,20 @@ _(ZMAPALIGN_FORMAT_GAPS_ACEDB,       , "gaps_acedb",       "invalid mode "      
 ZMAP_DEFINE_ENUM(ZMapFeatureAlignFormat, ZMAP_ALIGN_GAP_FORMAT_LIST) ;
 
 
+/* Used to specify overlap type for features vs. a coord range. */
+typedef enum
+  {
+    ZMAPFEATURE_OVERLAP_NONE,                               /* No overlap with range. */
+    ZMAPFEATURE_OVERLAP_COMPLETE,                           /* Feature completely enclosed by
+                                                               range. */
+    ZMAPFEATURE_OVERLAP_PARTIAL_INTERNAL,                   /* One end of the feature is within the range
+                                                               but not the other. */
+    ZMAPFEATURE_OVERLAP_PARTIAL_EXTERNAL,                   /* The feature completely encloses the range. */
+    ZMAPFEATURE_OVERLAP_ALL                                 /* Includes all overlapping features. */
+
+  } ZMapFeatureRangeOverlapType ;
+
+
 /* Used to specify the degree of colinearity between two alignment blocks. */
 typedef enum
   {
@@ -154,7 +167,8 @@ typedef enum
     COLINEARITY_N_TYPE
   } ColinearityType ;
 
-
+/* THIS NEEDS SPLITTING IT'S A CONFUSION OF TYPES....clone ends are completely different from
+   splice ends.....sigh... */
 typedef enum {ZMAPBOUNDARY_NONE = 0, ZMAPBOUNDARY_CLONE_END,
 	      ZMAPBOUNDARY_5_SPLICE, ZMAPBOUNDARY_3_SPLICE } ZMapBoundaryType ;
 
@@ -584,14 +598,16 @@ typedef struct ZMapFeatureSetStructType
 /* Basic feature: a "box" on the screen. */
 typedef struct ZMapBasicStructType
 {
+  /* WHY NO FLAG FOR KNOWN_NAME ? ....CHECK THIS... */
+
   /* Used to detect when data fields are set. */
   struct
   {
     unsigned int variation_str : 1 ;
-  } has_attr ;
+  } flags ;
 
-
-  GQuark known_name ;                                      /* Known or external name for feature. */
+  GQuark known_name ;                                      /* Known or external name for
+                                                              feature. */
 
   char *variation_str ;                                    /* e.g. "A/T" for SNP etc. */
 
@@ -603,34 +619,6 @@ typedef struct ZMapBasicStructType
 /* Homology feature. */
 typedef struct ZMapHomolStructType
 {
-  ZMapHomolType type ;                                     /* as in Blast* */
-
-  int length ;                                             /* Length of homol/align etc. */
-
-  /* Quality measures. (NEED TO GET SCORE IN HERE) */
-  float percent_id ;
-
-
-  GQuark clone_id ;                                        /* Clone this match is aligned to. */
-
-  /* Coords are _always_ for the forward strand of the match sequence and always x1 <= x2,
-   * strand shows which strand is aligned. */
-  int y1, y2 ;                                             /* Query start/end */
-  ZMapStrand strand ;                                      /* Which strand of the homol was
-                                                              aligned to the sequence. */
-
-  ZMapPhase target_phase ;                                 /* for tx_homol */
-
-
-  /* The coords in this array are start/end pairs for sub blocks and start < end always. */
-  GArray *align ;                                          /* of AlignBlock, if null, align is ungapped. */
-
-
-
-  char * sequence;                                         /* sequence if given in GFF */
-
-
-
   struct
   {
     /* If align != NULL and perfect == TRUE then gaps array is a "perfect"
@@ -647,12 +635,42 @@ typedef struct ZMapHomolStructType
 
   } flags ;
 
+  ZMapHomolType type ;                                     /* as in Blast* */
+
+  GQuark clone_id ;                                        /* Clone this match is aligned to. */
+
+  /* Coords are _always_ for the forward strand of the match sequence and always x1 <= x2,
+   * strand shows which strand is aligned. */
+  int y1, y2 ;                                             /* Start/end in match sequence. */
+  ZMapStrand strand ;                                      /* Which strand of the homol was
+                                                              aligned to the sequence. */
+
+  /* Quality measures. (NEED TO GET SCORE IN HERE) */
+  float percent_id ;
+
+  /* IS THIS USED ANYWHERE ?? */
+  ZMapPhase target_phase ;                                 /* for tx_homol */
+
+  int length ;                                             /* Length of homol/align etc. */
+
+  char *sequence ;                                          /* sequence if given in GFF */
+
+  /* The coords in this array are start/end pairs for sub blocks and start < end always. */
+  GArray *align ;                                          /* of AlignBlock, if null, align is ungapped. */
+
 } ZMapHomolStruct, *ZMapHomol ;
 
 
 /* Transcript feature. */
 typedef struct ZMapTranscriptStructType
 {
+  struct
+  {
+    unsigned int cds : 1 ;
+    unsigned int start_not_found : 1 ;
+    unsigned int end_not_found : 1 ;
+  } flags ;
+
   GQuark known_name ;                                      /* Known or external name for transcript. */
 
   GQuark locus_id ;	                                       /* Locus this transcript belongs to. */
@@ -670,13 +688,6 @@ typedef struct ZMapTranscriptStructType
 
   GList *variations ;                                      /* List of variations to apply to this
                                                             * transcript's sequence */
-
-  struct
-  {
-    unsigned int cds : 1 ;
-    unsigned int start_not_found : 1 ;
-    unsigned int end_not_found : 1 ;
-  } flags ;
 
 
 } ZMapTranscriptStruct, *ZMapTranscript ;
@@ -1069,6 +1080,10 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
 void zMapFeatureDestroy(ZMapFeature feature) ;
 
 
+GList *zMapFeatureGetOverlapFeatures(GList *feature_list, int start, int end, ZMapFeatureRangeOverlapType overlap) ;
+
+
+
 /*
  * FeatureSet funcs
  */
@@ -1370,19 +1385,15 @@ GArray* zMapAlignBlockArrayCreate() ;
 gboolean zMapAlignBlockArrayDestroy(GArray* const) ;
 ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray* const, int index) ;
 gboolean zMapAlignBlockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
-gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
 
 gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
-
-gboolean zMapFeatureHasMatchingBoundary(ZMapFeature feature,
-                                        int boundary_start, int boundary_end,
-                                        int *boundary_start_out, int *boundary_end_out) ;
-
+GList *zMapFeatureHasMatchingBoundaries(ZMapFeature feature, GList *boundaries) ;
 int zMapFeatureVariationGetSections(const char *variation_str, 
                                     char **old_str_out, char **new_str_out, 
                                     int *old_len_out, int *new_len_out) ;
 
-
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
+
+void zMapFeatureFreeSubParts(GList *sub_parts) ;
 
 #endif /* ZMAP_FEATURE_H */

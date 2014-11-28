@@ -74,21 +74,22 @@ typedef struct
 
 
 
-static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key,
-gpointer data,
-gpointer user_data,
-char   **err_out);
-static void invoke_dump_features_cb(gpointer list_data, gpointer user_data);
+static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark key,
+                                                        gpointer data, gpointer user_data,
+                                                        char **err_out) ;
+static void invoke_dump_features_cb(gpointer list_data, gpointer user_data) ;
 static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   key,
-     gpointer data,
-     gpointer user_data,
-     char   **err_out);
-static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
-GHashTable    *styles,
-GString       *dump_string_in_out,
-GError       **error,
-gpointer       user_data);
+                                                                     gpointer data, gpointer user_data,
+                                                                     char   **err_out) ;
+static gboolean simple_context_print_cb(ZMapFeatureAny feature_any, GHashTable *styles,
+                                        GString *dump_string_in_out, GError **error, gpointer user_data) ;
+
 GString *feature2Text(GString *feature_str, ZMapFeature feature) ;
+static GString *basicFeature2Txt(GString *result_in, char *indent, ZMapFeature feature) ;
+static GString *alignFeature2Txt(GString *result_in, char *indent, ZMapFeature feature) ;
+static GString *transcriptFeature2Txt(GString *result_in, char *indent, ZMapFeature feature) ;
+static GString *assemblyFeature2Txt(GString *result_in, char *indent, ZMapFeature feature) ;
+static GString *sequenceFeature2Txt(GString *result_in, char *indent, ZMapFeature feature) ;
 
 
 
@@ -100,32 +101,12 @@ GString *feature2Text(GString *feature_str, ZMapFeature feature) ;
  */
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* NOT READY FOR THIS.... */
-
-ZMapFeatureAsText zMapFeature2Text(ZMapFeature feature)
-{
-  ZMapFeatureAsText feature_text = NULL ;
-
-
-
-
-  return feature_text ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
 char *zMapFeatureAsString(ZMapFeature feature)
 {
   char *feature_text = NULL ;
   GString *feature_str ;
 
-  feature_str = g_string_sized_new(2048) ;
+  feature_str = g_string_sized_new(4000) ;
 
   feature_str = feature2Text(feature_str, feature) ;
 
@@ -700,29 +681,99 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 GString *feature2Text(GString *feature_str, ZMapFeature feature)
 {
   GString *result = feature_str ;
-  char *type = "(type)", *strand ;
-  ZMapFeatureTypeStyle style ;
+  char *feature_mode, *style_mode ;
+  char *strand ;
+  char *indent = "" ;
+  gsize str_len ;
 
-  style = *feature->style ;
-  type = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
+  /* Title */
+  g_string_append_printf(result, "%sZMapFeature %p, \"%s\" (unique id = \"%s\")\n",
+                         indent,
+                         feature,
+                         (char *)g_quark_to_string(feature->original_id),
+                         (char *)g_quark_to_string(feature->unique_id)) ;
+
+  /* Common feature parts */
+  indent = "  " ;
+
+  feature_mode = (char *)zMapStyleMode2ExactStr(feature->mode) ;
+  style_mode = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(*feature->style)) ;
+  g_string_append_printf(result, "%sFeature mode: %s  Style mode: %s\n",
+                         indent, feature_mode, style_mode) ;
+
+  g_string_append_printf(result, "%sSO term: \"%s\"\n",
+                         indent, g_quark_to_string(feature->SO_accession)) ;
 
   strand = zMapFeatureStrand2Str(feature->strand) ;
+  g_string_append_printf(result, "%sStrand, Start, End: %s, %d, %d\n", indent, strand, feature->x1, feature->x2) ;
 
-  g_string_append_printf(result,
-                         "%s\t(%s)\t%s\t%d\t%d\t%s\t%f",
-                         (char *)g_quark_to_string(feature->original_id),
-                         (char *)g_quark_to_string(feature->unique_id),
-                         type,
-                         feature->x1,
-                         feature->x2,
-                         strand,
-                         feature->score) ;
+  if (feature->flags.has_score)
+    g_string_append_printf(result, "%sScore = %g\n", indent, feature->score) ;
+
+  g_string_append_printf(result, "%sSource id: \"%s\"  Source text: \"%s\"\n",
+                         indent,
+                         g_quark_to_string(feature->source_id),
+                         g_quark_to_string(feature->source_text)) ;
 
   if (feature->description)
+    g_string_append_printf(result, "%sDescription: \"%s\"" , indent, feature->description) ;
+
+  if (feature->url)
+    g_string_append_printf(result, "%sURL: \"%s\"" , indent, feature->url) ;
+
+
+  /* Now print the subpart details. */
+  indent = "    " ;
+  g_string_append_printf(result, "\n%s%s subparts:\n", indent, zMapStyleMode2ExactStr(feature->mode)) ;
+
+  str_len = result->len ;                                   /* Used to detect if there any subparts. */
+
+  indent = "      " ;
+  switch (feature->mode)
     {
-      g_string_append_c(result, '\t') ;
-      g_string_append(result, feature->description) ;
+    case ZMAPSTYLE_MODE_BASIC:
+      {
+        result = basicFeature2Txt(result, indent, feature) ;
+
+        break ;
+      }
+    case ZMAPSTYLE_MODE_ALIGNMENT:
+      {
+        result = alignFeature2Txt(result, indent, feature) ;
+
+        break ;
+      }
+    case ZMAPSTYLE_MODE_TRANSCRIPT:
+      {
+        result = transcriptFeature2Txt(result, indent, feature) ;
+
+        break ;
+      }
+    case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+      {
+        result = assemblyFeature2Txt(result, indent, feature) ;
+
+        break ;
+      }
+    case ZMAPSTYLE_MODE_SEQUENCE:
+      {
+        result = sequenceFeature2Txt(result, indent, feature) ;
+
+        break ;
+      }
+    default:
+      {
+        g_string_append_printf(result, "%s<No printable subparts>" , indent) ;
+
+        break ;
+      }
     }
+
+
+  /* If there were no subparts then tell the user ! */
+  if (str_len == result->len)
+    g_string_append_printf(result, "%s<None>\n" , indent) ;
+
 
   return result ;
 }
@@ -730,6 +781,205 @@ GString *feature2Text(GString *feature_str, ZMapFeature feature)
 
 
 
+static GString *basicFeature2Txt(GString *result_in, char *indent, ZMapFeature feature)
+{
+  GString *result = result_in ;
+
+  if (feature->feature.basic.known_name)
+    g_string_append_printf(result, "%sKnown name: %s\n",
+                           indent, g_quark_to_string(feature->feature.basic.known_name)) ;
+
+  if (feature->feature.basic.flags.variation_str)
+    g_string_append_printf(result, "%sVariation string: %s\n", indent, feature->feature.basic.variation_str) ;
+
+  return result ;
+}
+
+
+static GString *alignFeature2Txt(GString *result_in, char *indent, ZMapFeature feature)
+{
+  GString *result = result_in ;
+  char *homol_str ;
+  char *strand ;
+
+  /* Need to do homol type but need to set up enum stuff..... */
+  homol_str = zMapFeatureHomol2Str(feature->feature.homol.type) ;
+  g_string_append_printf(result, "%sHomol type: %s\n", indent, homol_str) ;
+
+  strand = zMapFeatureStrand2Str(feature->feature.homol.strand) ;
+  g_string_append_printf(result, "%sStrand, Start, End: %s, %d, %d\n",
+                         indent, strand, feature->feature.homol.y1, feature->feature.homol.y2) ;
+
+  if (feature->feature.homol.percent_id)
+    g_string_append_printf(result, "%sMatch percent id: %g\n", indent, feature->feature.homol.percent_id) ;
+
+  if (feature->feature.homol.length)
+    g_string_append_printf(result, "%sMatch sequence length: %d\n", indent, feature->feature.homol.length) ;
+
+  if (feature->feature.homol.flags.has_clone_id)
+    g_string_append_printf(result, "%sClone id for match: %s\n",
+                           indent, g_quark_to_string(feature->feature.homol.clone_id)) ;
+
+  if (feature->feature.homol.sequence)
+    {
+      enum {SEQ_LEN = 20} ;
+      int seq_len ;
+
+      if ((seq_len = strlen(feature->feature.homol.sequence)) > SEQ_LEN)
+        seq_len = SEQ_LEN ;
+
+      g_string_append_printf(result, "%sStart of match sequence: ", indent) ;
+
+      result = g_string_append_len(result, feature->feature.homol.sequence, seq_len) ;
+
+      g_string_append(result, "\n") ;
+    }
+
+  if (feature->feature.homol.align)
+    {
+      GArray *gaps_array = feature->feature.homol.align ;
+      int i ;
+
+      g_string_append_printf(result, "%sGapped align blocks:\n", indent) ;
+
+      for (i = 0 ; i < gaps_array->len ; i++)
+        {
+          ZMapAlignBlock block = NULL ;
+
+          block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i)) ;
+
+          g_string_append_printf(result, "%sReference <- Match: %d, %d <- %d, %d\n",
+                                 indent, block->t1, block->t2, block->q1, block->q2) ;
+        }
+    }
+
+  return result ;
+}
+
+
+static GString *transcriptFeature2Txt(GString *result_in, char *indent, ZMapFeature feature)
+{
+  GString *result = result_in ;
+
+  if (feature->feature.transcript.known_name)
+    g_string_append_printf(result, "%sKnown name: %s\n",
+                           indent, g_quark_to_string(feature->feature.transcript.known_name)) ;
+
+  if (feature->feature.transcript.locus_id)
+    g_string_append_printf(result, "%sKnown name: %s\n",
+                           indent, g_quark_to_string(feature->feature.transcript.locus_id)) ;
+
+  if (feature->feature.transcript.flags.cds)
+    g_string_append_printf(result, "%sCDS start = %d  end = %d\n",
+                           indent, feature->feature.transcript.cds_start, feature->feature.transcript.cds_end) ;
+
+  if (feature->feature.transcript.flags.start_not_found || feature->feature.transcript.flags.end_not_found)
+    {
+      g_string_append_printf(result, "%s", indent) ;      
+
+      if (feature->feature.transcript.flags.start_not_found)
+        g_string_append_printf(result, "Start_not_found = %d  ", feature->feature.transcript.start_not_found) ;
+
+      if (feature->feature.transcript.flags.end_not_found)
+        g_string_append(result, "End_not_found = TRUE") ;
+    }
+
+  if (feature->feature.transcript.exons)
+    {
+      GArray *span_array = feature->feature.transcript.exons ;
+      int i ;
+
+      g_string_append_printf(result, "%sExons:\n", indent) ;
+
+      for (i = 0 ; i < span_array->len ; i++)
+        {
+          ZMapSpan span = NULL ;
+
+          span = &(g_array_index(span_array, ZMapSpanStruct, i)) ;
+
+          g_string_append_printf(result, "%s  %d: %d, %d\n",
+                                 indent, i, span->x1, span->x2) ;
+        }
+    }
+
+
+
+  return result ;
+}
+
+
+static GString *assemblyFeature2Txt(GString *result_in, char *indent, ZMapFeature feature)
+{
+  GString *result = result_in ;
+  char *strand ;
+
+  strand = zMapFeatureStrand2Str(feature->feature.assembly_path.strand) ;
+  g_string_append_printf(result, "%sStrand = %s\n", indent, strand) ;
+
+  if (feature->feature.assembly_path.length)
+    g_string_append_printf(result, "%sAssembly sequence length: %d\n", indent, feature->feature.assembly_path.length) ;
+
+  /* Print out path ?? */
+  if (feature->feature.assembly_path.path)
+    {
+      GArray *span_array = feature->feature.assembly_path.path ;
+      int i ;
+
+      g_string_append_printf(result, "%sSpans:\n", indent) ;
+
+      for (i = 0 ; i < span_array->len ; i++)
+        {
+          ZMapSpan span = NULL ;
+
+          span = &(g_array_index(span_array, ZMapSpanStruct, i)) ;
+
+          g_string_append_printf(result, "%sSpan: %d, %d\n",
+                                 indent, span->x1, span->x2) ;
+        }
+    }
+
+
+  return result ;
+}
+
+
+static GString *sequenceFeature2Txt(GString *result_in, char *indent, ZMapFeature feature)
+{
+  GString *result = result_in ;
+  char *sequence_type ;
+
+  if (feature->feature.sequence.name)
+    g_string_append_printf(result, "%sSequence name: %s\n",
+                           indent, g_quark_to_string(feature->feature.sequence.name)) ;
+
+  /* Hacked the sequence type...needs proper enuming... */
+  if (feature->feature.sequence.type == ZMAPSEQUENCE_DNA)
+    sequence_type = "DNA" ;
+  else
+    sequence_type = "Peptide" ;
+  g_string_append_printf(result, "%sSequence type: %s\n", indent, sequence_type) ;
+
+  if (feature->feature.sequence.length)
+    g_string_append_printf(result, "%sAssembly sequence length: %d\n", indent, feature->feature.sequence.length) ;
+
+  if (feature->feature.sequence.sequence)
+    {
+      enum {SEQ_LEN = 20} ;
+      int seq_len ;
+
+      if ((seq_len = strlen(feature->feature.sequence.sequence)) > SEQ_LEN)
+        seq_len = SEQ_LEN ;
+
+      g_string_append_printf(result, "%sStart of match sequence: ", indent) ;
+
+      result = g_string_append_len(result, feature->feature.sequence.sequence, seq_len) ;
+
+      g_string_append(result, "\n") ;
+    }
+
+
+  return result ;
+}
 
 
 

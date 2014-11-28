@@ -17,6 +17,7 @@ zmapWindowCanvas.c \
 zmapWindowColBump.c \
 zmapWindowColConfig.c \
 zmapWindowColOrder.c \
+zmapWindowCommand.c \
 zmapWindowDisplayOps.c \
 zmapWindowDNA.c \
 zmapWindowDNAChoose.c \
@@ -79,6 +80,7 @@ canvas/zmapWindowCanvasBasic.c \
 canvas/zmapWindowCanvasBasic.h \
 canvas/zmapWindowCanvasDraw.c \
 canvas/zmapWindowCanvasDraw.h \
+canvas/zmapWindowCanvasFeature.c \
 canvas/zmapWindowCanvasFeatureset.c \
 canvas/zmapWindowCanvasFeatureset.h \
 canvas/zmapWindowCanvasFeaturesetBump.c \

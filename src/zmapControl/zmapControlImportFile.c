@@ -53,8 +53,6 @@
 /* number of optional dialog entries for FILE_NONE (is really 8 so i allowed a few spare) */
 #define N_ARGS 16
 
-static const gboolean default_remap_flag = TRUE ;
-
 
 typedef enum
   {
@@ -630,8 +628,10 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ; */
 
 
+  /* Make the default remap setting true if we're hooked up to otterlace (which does the
+   * remapping), false otherwise. */
   main_frame->map_widg = map_seq_button = gtk_check_button_new () ;
-  gtk_toggle_button_set_active((GtkToggleButton*)map_seq_button, default_remap_flag) ;
+  gtk_toggle_button_set_active((GtkToggleButton*)map_seq_button, main_frame->is_otter) ;
   gtk_box_pack_start(GTK_BOX(entrybox), map_seq_button, FALSE, TRUE, 0) ;
 
   /*main_frame->offset_widg = entry = gtk_entry_new() ;
@@ -874,7 +874,9 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
   gtk_entry_set_text(GTK_ENTRY(main_frame->source_widg), "")  ;
   gtk_entry_set_text(GTK_ENTRY(main_frame->assembly_widg), "")  ;
 
-  gtk_toggle_button_set_active((GtkToggleButton*)main_frame->map_widg, default_remap_flag) ;
+  /* Make the default remap setting true if we're hooked up to otterlace (which does the
+   * remapping), false otherwise. */
+  gtk_toggle_button_set_active((GtkToggleButton*)main_frame->map_widg, main_frame->is_otter) ;
 
   /*
    *Try to get a source name for non-GFF types.
@@ -1095,11 +1097,8 @@ static void importFileCB(gpointer cb_data)
             }
 
         }
-      else if (main_frame->is_otter && ((file_type == FILE_BAM) || (file_type == FILE_BIGWIG)))
+      else if ((file_type == FILE_BAM) || (file_type == FILE_BIGWIG))
         {
-          /* note that we must be hooked up to otter to do these types,
-             hence "main_frame->is_otter" is required */
-
           /* we must have a source for these data types */
           if (!*source_txt)
             {
