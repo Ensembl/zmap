@@ -175,15 +175,17 @@ zmap_LDADD +=                                                \
 	$(top_builddir)/zeromq/src/.libs/libzmq.a            
 endif
 
+# I've had to add in the X11 lib otherwise we can't compile on Ubuntu
+# 64-bit machines (-lz is included because htslib needs it).
 zmap_LDADD +=                                                \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
 	$(GTK_LIBS)			                     \
-	$(LIBCURL) -lexpat                                   \
+	$(LIBCURL) -lexpat -lX11 -lz                         \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 
 zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
-zmap_LDFLAGS      = -lz
+
 
 # zeromq is C++ so we need to link with g++, not gcc.
 #zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
