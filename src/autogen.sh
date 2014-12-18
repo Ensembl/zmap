@@ -22,6 +22,7 @@ fi
 
 RC=0
 run_autoupdate=''					    # don't run autoupdate by default.
+force_remake_all=''
 install_missing='-i'
 verbose=''
 version_arg=''
@@ -41,8 +42,9 @@ set -o history
 #
 usage="$SCRIPT_NAME [ -u ]"
 
-while getopts ":iuv" opt ; do
+while getopts ":fiuv" opt ; do
     case $opt in
+	f  ) force_remake_all='-f' ;;
 	i  ) install_missing='-i' ;;
 	u  ) run_autoupdate='yes' ;;
 	v  ) verbose='-v' ;;
@@ -133,6 +135,7 @@ fi
 # set up for the build to be run as part of the zmap build. However this means we need
 # to create a config sub-directory so that its ./configure will run.
 zeromq_dir='zeromq/config'
+rm -rf $zeromq_dir  || zmap_message_exit "Could not remove tmp dir $zeromq_dir for zeromq build."
 mkdir $zeromq_dir  || zmap_message_exit "Cannot make $zeromq_dir for zeromq build."
 
 
@@ -144,7 +147,7 @@ mkdir $zeromq_dir  || zmap_message_exit "Cannot make $zeromq_dir for zeromq buil
 zmap_message_out "About to run autoreconf to bootstrap autotools and our build system"
 zmap_message_out "-------------------------------------------------------------------"
 
-autoreconf $verbose $install_missing -I ./ || zmap_message_exit "Failed running autoreconf"
+autoreconf $force_remake_all $verbose $install_missing -I ./ || zmap_message_exit "Failed running autoreconf"
 
 zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "Finished running autoreconf for bootstrap"
