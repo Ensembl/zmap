@@ -70,5 +70,6 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs) ;
 void dasGetServerFuncs(ZMapServerFuncs das_funcs) ;
 void fileGetServerFuncs(ZMapServerFuncs das_funcs) ;
 void pipeGetServerFuncs(ZMapServerFuncs das_funcs) ;
+void ensemblGetServerFuncs(ZMapServerFuncs das_funcs) ;
 
 #endif /* !ZMAP_SERVER_P_H */

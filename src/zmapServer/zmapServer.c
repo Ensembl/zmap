@@ -91,6 +91,10 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
       pipeGetServerFuncs(serverfuncs);
       break;
 
+    case SCHEME_ENSEMBL:
+      ensemblGetServerFuncs(serverfuncs);
+      break;
+
     default:
       /* Nothing to do here, note this case is excluded by the zMapReturnValIfFail() check. */
       break;

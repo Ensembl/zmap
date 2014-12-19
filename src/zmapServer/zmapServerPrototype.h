@@ -123,6 +123,7 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs) ;
 void dasGetServerFuncs(ZMapServerFuncs das_funcs) ;
 void fileGetServerFuncs(ZMapServerFuncs file_funcs) ;
 void pipeGetServerFuncs(ZMapServerFuncs pipe_funcs) ;
+void ensemblGetServerFuncs(ZMapServerFuncs pipe_funcs) ;
 */
 
 /* Try to give consistent messages/logging.... */

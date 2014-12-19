@@ -57,6 +57,7 @@ typedef enum {
   SCHEME_FILE,
   SCHEME_PIPE,
   SCHEME_MYSQL,
+  SCHEME_ENSEMBL,
   SCHEME_INVALID
 } ZMapURLScheme;
 
