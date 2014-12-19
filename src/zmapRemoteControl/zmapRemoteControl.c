@@ -1006,6 +1006,15 @@ static gboolean setToInactive(ZMapRemoteControl remote_control)
  * This is the gatekeeper for ordering and processing of requests, we can only be handling
  * one request at a time and collisions and timeouts are handled here.
  * 
+ * You should not the following about the general processing of state/messages:
+ * 
+ * If the result of an action is that we can process the next state/step immediately
+ * then we leave "done" as FALSE so that we loop and process the new state.
+ * 
+ * If the result of the action is that we will need to wait (e.g. for a reply from the peer)
+ * then we set "done" to TRUE and exit this routine to be called back again in
+ * QUEUE_WATCH_INTERVAL ms by which time the reply or whatever will have happened.
+ * 
  *  */
 static gboolean queueMonitorCB(gpointer user_data)
 {
@@ -1131,8 +1140,6 @@ static gboolean queueMonitorCB(gpointer user_data)
                     remote_control->curr_req = NULL ;
 
                     timeoutResetTimeouts(remote_control) ;
-
-                    remote_control->state = REMOTE_STATE_IDLE ;
                   }
                 else
                   {
@@ -1142,129 +1149,138 @@ static gboolean queueMonitorCB(gpointer user_data)
                     zeroMQMessageDestroy(reply) ;
 
                     g_free(err_msg) ;
-
-                    remote_control->state = REMOTE_STATE_IDLE ;
                   }
+
+                remote_control->state = REMOTE_STATE_IDLE ;
               }
-            else
+            else if (!queueIsEmpty(remote_control->incoming_requests))
               {
-                /* Incoming reply queue is empty, check we haven't timed out and check to see if
-                 * peer has sent us a request (i.e. there's a collision). */
-                int timeout_num = 0 ;
-                double timeout_s = 0.0 ;
-                TimeoutType timeout_type ;
+                /* We have sent a request but before we see the reply the peer has also sent
+                 * a request, i.e. the peer has launched request at same time as us....if their request
+                 * is earlier then we service theirs before going back to waiting for ours. */
+                RemoteZeroMQMessage peer_request ;
+                RemoteZeroMQMessage live_req, stalled_req ; /* For log message. */
 
-                timeoutGetCurrTimeout(remote_control, &timeout_num, &timeout_s) ;
+                /* Get the peer request. */
+                peer_request = queuePeek(remote_control->incoming_requests) ;
 
-                if ((timeout_type = timeoutHasTimedOut(remote_control)) == TIMEOUT_FINAL)
+                live_req = remote_control->curr_req->request ;
+                stalled_req = peer_request ;
+
+                if (reqIsEarlier(peer_request->body, remote_control->curr_req->request->body) < 0
+                    || strcmp(remote_control->receive->zmq_end_point, remote_control->send->zmq_end_point) < 0)
                   {
-                    /* Timed out so chuck our request away. */
-                    LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_TIMED_OUT,
-                                             "Request final timeout after %gs, request discarded: \"%s\"",
-                                             timeout_s, 
-                                             remote_control->curr_req->request->body) ;
-
-                    reqReplyDestroy(remote_control->curr_req) ;
+                    remote_control->stalled_req = remote_control->curr_req ;
                     remote_control->curr_req = NULL ;
- 
-                    timeoutResetTimeouts(remote_control) ;
 
-                    remote_control->state = REMOTE_STATE_IDLE ;
+                    live_req = peer_request ;
+                    stalled_req = remote_control->stalled_req->request ;
+
+                    remote_control->state = REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED ;
                   }
                 else
                   {
-                    if (!queueIsEmpty(remote_control->incoming_requests))
+                    done = TRUE ;
+                  }
+
+                REMOTELOGMSG(remote_control,
+                             "Request collision, order of servicing requests will be:"
+                             "\n%s\n\"%s\""
+                             "\nfollowed by:"
+                             "\n%s\n\"%s\"",
+                             live_req->header, live_req->body,
+                             stalled_req->header, stalled_req->body) ;
+              }
+            else
+              {
+                /* Incoming reply queue is empty, check we haven't timed out. */
+                int timeout_num = 0 ;
+                double timeout_s = 0.0 ;
+                TimeoutType timeout_type ;
+                RemoteZeroMQMessage curr_req_raw ;
+
+                /* Debugging... */
+                timeoutGetCurrTimeout(remote_control, &timeout_num, &timeout_s) ;
+
+
+                if ((timeout_type = timeoutHasTimedOut(remote_control)) == TIMEOUT_NONE)
+                  {
+                    done = TRUE ;
+                  }
+                else
+                  {
+                    char *err_msg = NULL ;
+
+                    /* Keep timed out request so we can resend it or refer to it if we need to. */
+                    curr_req_raw = reqReplyStealRequest(remote_control->curr_req) ;
+
+                    if (timeout_type != TIMEOUT_FINAL)
                       {
-                        /* We have sent a request but before we see the reply the peer has also sent
-                         * a request, i.e. the peer has launched request at same time as us....if their request
-                         * is earlier then we service theirs before going back to waiting for ours. */
-                        RemoteZeroMQMessage peer_request ;
-                        RemoteZeroMQMessage live_req, stalled_req ; /* For log message. */
+                        char *err_msg = NULL ;
 
-                        /* Get the peer request. */
-                        peer_request = queuePeek(remote_control->incoming_requests) ;
+                        /* Need to redo header.... */
+                        curr_req_raw->header
+                          = headerSetRetry(curr_req_raw->header,
+                                           (remote_control->timeout_list_pos + 1)) ;
+                      }
 
-                        live_req = remote_control->curr_req->request ;
-                        stalled_req = peer_request ;
+                    reqReplyDestroy(remote_control->curr_req) ;
+                    remote_control->curr_req = NULL ;
 
-                        if (reqIsEarlier(peer_request->body, remote_control->curr_req->request->body) < 0
-                            || strcmp(remote_control->receive->zmq_end_point, remote_control->send->zmq_end_point) < 0)
-                          {
-                            remote_control->stalled_req = remote_control->curr_req ;
-                            remote_control->curr_req = NULL ;
+                    /* Recreate our send socket to clean it all up.  */
+                    if (!recreateSend(remote_control, &err_msg))
+                      {
+                        /* Disaster, we can't reset the socket so set to fail. */
+                        LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_SOCKET,
+                                                 "Could not recreate send socket: \"%s\" !",
+                                                 err_msg) ;
 
-                            live_req = peer_request ;
-                            stalled_req = remote_control->stalled_req->request ;
+                        setToFailed(remote_control) ;
 
-                            remote_control->state = REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED ;
-                          }
-
-                        REMOTELOGMSG(remote_control,
-                                     "Request collision, order of servicing requests will be:"
-                                     "\n%s\n\"%s\""
-                                     "\nfollowed by:"
-                                     "\n%s\n\"%s\"",
-                                     live_req->header, live_req->body,
-                                     stalled_req->header, stalled_req->body) ;
+                        done = TRUE ;
                       }
                     else
                       {
-                        if ((timeout_type = timeoutHasTimedOut(remote_control)) != TIMEOUT_NONE)
+                        if (timeout_type == TIMEOUT_FINAL)
                           {
-                            char *err_msg = NULL ;
-                            RemoteZeroMQMessage curr_req_raw ;
+                            /* Timed out so chuck our request away. */
+                            LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_TIMED_OUT,
+                                                     "Request final timeout after %gs, request discarded: \"%s\"",
+                                                     timeout_s, 
+                                                     curr_req_raw->body) ;
+ 
+                            zeroMQMessageDestroy( curr_req_raw) ;
+
+                            timeoutResetTimeouts(remote_control) ;
+
+                            remote_control->state = REMOTE_STATE_IDLE ;
+                          }
+                        else
+                          {
+                            zMapLogWarning("Recreating header/request: [ %s ] %s",
+                                           curr_req_raw->header,
+                                           curr_req_raw->body) ;
+
+                            REMOTELOGMSG(remote_control,
+                                         "Request %d%s timeout after %gs,"
+                                         " resending request: \n%s\n\"%s\".",
+                                         timeout_num,
+                                         (timeout_num == 1 ? "st" : 
+                                          (timeout_num == 2 ? "nd" :
+                                           (timeout_num == 3 ? "rd" : "th"))),
+                                         timeout_s,
+                                         curr_req_raw->header,
+                                         curr_req_raw->body) ;
+
+                            /* must readd to our queue... */
+                            queueAddFront(remote_control->outgoing_requests, curr_req_raw) ;
 
 
-                            /* Keep timed out request so we can resend it if we need to. */
-                            curr_req_raw = reqReplyStealRequest(remote_control->curr_req) ;
-
-                            /* Need to redo header.... */
-                            curr_req_raw->header
-                              = headerSetRetry(curr_req_raw->header,
-                                               (remote_control->timeout_list_pos + 1)) ;
-
-                            reqReplyDestroy(remote_control->curr_req) ;
-                            remote_control->curr_req = NULL ;
-
-                            /* Timed out, so recreate our send socket to clean it all up.  */
-                            if (!recreateSend(remote_control, &err_msg))
-                              {
-                                /* Disaster, we can't reset the socket so set to fail. */
-                                LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_SOCKET,
-                                                         "Could not recreate send socket: \"%s\" !",
-                                                         err_msg) ;
-
-                                setToFailed(remote_control) ;
-                              }
-                            else
-                              {
-                                zMapLogWarning("Recreating header/request: [ %s ] %s",
-                                               curr_req_raw->header,
-                                               curr_req_raw->body) ;
-
-                                REMOTELOGMSG(remote_control,
-                                             "Request %d%s timeout after %gs,"
-                                             " resending request: \n%s\n\"%s\".",
-                                             timeout_num,
-                                             (timeout_num == 1 ? "st" : 
-                                              (timeout_num == 2 ? "nd" :
-                                               (timeout_num == 3 ? "rd" : "th"))),
-                                             timeout_s,
-                                             curr_req_raw->header,
-                                             curr_req_raw->body) ;
-
-                                /* must readd to our queue... */
-                                queueAddFront(remote_control->outgoing_requests, curr_req_raw) ;
-
-
-                                remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT ;
-                              }
+                            remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT ;
                           }
                       }
                   }
               }
-
-            done = TRUE ;
 
             break ;
           }
