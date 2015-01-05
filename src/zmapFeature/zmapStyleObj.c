@@ -1,4 +1,4 @@
-/*  File: zmapFeatureTypes.c
+/*  File: zmapStyleObj.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------

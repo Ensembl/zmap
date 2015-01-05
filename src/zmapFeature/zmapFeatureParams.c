@@ -1,4 +1,4 @@
-/*  File: zmapFeatureData.c
+/*  File: zmapFeatureParams.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
