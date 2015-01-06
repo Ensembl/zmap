@@ -40,6 +40,7 @@ legend{ font-weight: bold }
 
 <ul>
   <li><a href="#introduction"><b>Introduction</b></a></li>
+  <li><a href="#lessons"><b>Lessons from Previous Implementations</b></a></li>
   <li><a href="#perfect"><b>The Perfect Feature Display</b></a></li>
   <li><a href="#other_requirements"><b>Other Requirements</b></a></li>
   <li><a href="#implementation"><b>Implementation</b></a></li>
@@ -89,6 +90,171 @@ the following issues need to be addressed:</p>
 
 <p>This document describes the issues, approach and effort required to reimplement zmap drawing.</p>
 
+
+
+<a name="lessons"></a>
+<h2>Lessons from Previous Implementations</h2>
+
+<h3>Split GUI</h3>
+
+<p>A design goal in zmap was to be able to display multiple independent
+sequence views within a single top level window and to be able to display
+multiple windows showing different parts of a sequence view. The way this was
+done was to have a kind of "wrapper" both visually and in code terms around the
+multiple views called <b>ZMapControl</b>, within this each set of windows that
+displayed a single sequence was held within a <b>ZMapView</b> and each window
+within a view was represented by a <b>ZMapWindow</b> to give a tree
+hierachy:</p>
+
+
+<pre>
+top level window                    ZMapControl
+                                     /       \
+                                    /         \
+                                   /    ...    \
+                                  /             \
+groups of sequence         ZMapView            ZMapView
+     windows                /    \              /    \
+                           /  ..  \            /  ..  \
+                          /        \          /        \
+individual         ZMapWindow   ZMapWindow  ZMapWindow  ZMapWindow
+sequence windows
+</pre>
+
+<p>Although this seems quite conceptually appealing it has some severe
+consequences that were not well addressed in zmap.</p>
+
+<p>Imagine the user clicks on a feature within a <b>ZMapWindow</b> and this
+action presents a menu from which the user selects an option. The option
+selected requires action on _all_ the other<b> ZMapWindow's</b> within that
+<b>ZMapView</b> (e.g. highlighting a feature), how is that to be accomplished
+while maintaining code separation from <b>ZMapView</b> ? Imagine further that
+the option results in a change that must be further reflected up to
+<b>ZMapControl</b>, e.g. highlighting a feature requires that the features
+details should be displayed in the information display controlled by
+<b>ZMapControl</b>. zmap of course has mechanisms for doing this but they
+remain clumsy and messy.</p>
+
+<p>This aspect of feedback has been a problem in the apparently straight
+forward MVC pattern for years and has resulted in alternatives such as
+Model-View-Presenter and other attempts to make these kind of interactions
+cleaner.</p>
+
+<p>The abstraction we used for zmap, while appealing in many ways, has made the
+code more complicated in an annoying way with multiple levels of callbacks and
+the complication of functions say in <b>ZMapView</b> being triggered both from
+the <b>ZMapControl</b> level and from the <b>ZMapWindow</b> level.</p>
+
+<p>While the design goal was a good one and is much loved by the annotators our
+implementation leaves much to be desired, it's not clean and is hard for
+new programmers to understand or modify.</p>
+
+
+
+
+<h3>Multi-layer Coordinate System</h3>
+
+<p>Early in zmap design the decision was made to use the foocanvas as the basic
+drawing widget to display features, it was fast and seemed to have a number of
+useful features including event filtering to deliver events on drawn
+features. In particular the foocanvas had a system for displaying a program
+controlled section of a real world space called the <b>"scrolled region"</b>
+which seemed very applicable to display of large sequeces.  It turned out
+however that the foocanvas had a number of less advantageous features which
+caused us a lot of trouble:</p>
+
+<ol>
+  <li><p>The foocanvas does not handle the display of features where the combination
+      of zoom factor and feature coordinate range leads to a window bigger than the
+      underlying <b>X Windows</b> limits of 65k for window size and 32k pixels for many
+      drawing instructions. Displaying sequences almost always exceeded these limits
+      because the <b>"scrolled region"</b> would become too big
+      meaning we had to handle this problem ourselves.</p>
+  <li><p>The only coordinate system available for drawing features is a "group-relative" one,
+      that is features drawn within a group are drawn in coordinates relative to that
+      group, <b>not</b> in world coordinates. This leads to a great deal of confusion
+      when coding as it's hard to convert in ones head from group to world or vice versa
+      and while trivial sounding has led to many, many errors and misunderstandings.</p>
+  <li><p>All features within a group are held as a linked list, if you have a large number
+      of groups that must be searched to find for example the nearest feature
+      to a pointer click, this cripples performance.</p>
+  <li><p>Groups do not maintain a size, foocanvas has to work out the size of a group from
+      its features each time you ask, this means that each columns are bumped there is a whole
+      load of work just to find out the width of columns that haven't changed.</p>
+  <li><p>The foocanvas does not support differential zooming (i.e. different horizontal/vertical
+      zoom factors) and cannot do transforms (e.g. vertical to horizontal) meaning that
+      we have a to write a lot of custom code.</p>
+  <li><p>The foocanvas does not support moving the <b>"scrolled region"</b> and zooming in a
+      single operation which means that when zooming in there would often be a double draw
+      as we first had to zoom and then move the scrolled region (see below).</p>
+</ol>
+
+<p>The effect of these factors has meant that within the zmap code we ended up
+with a complex coordinate system: sequence coordinates had to be mapped to
+foocanvas group coordinates, <b>"scrolled region"</b> size and position would
+have to be monitored as the user zoomed in and out to handle the <b>X
+Windows</b> limits. This usually meant that the scrolled region would have to
+be limited in size and scrolled to maintain the users position as they scrolled
+right in and out.</p>
+
+<p>This has led to more problems than almost anything else in display, it seems so easy but
+in fact is a complex operation because it involves interdependencies between zoom factor,
+<b>"scrolled region"</b> size and <b>"scrolled region"</b> position. The act of zooming may
+mean that because we have to restrict the <b>"scrolled region"</b> to the <b>X Windows</b>
+limit then the scrolled region has to be moved to stay centred on the zoom but it can't be
+moved until it's been zoomed and these are separate functions in the foocanvas.</p>
+
+<p>These problems were compounded by a steady proliferation in functions to try
+to work out where we are on the sequence or in the window. This was largely our
+fault, there should have been some carefully worked code to do this. Note that
+even this is not straightforward as any function must cope with the full range of
+world to pixel possibilities:</p>
+
+<p><b>Many Bases Per Pixel:</b> when the user is zoomed out there will be anything
+from many thousands of bases per pixel down to 1 base per pixel.</p>
+
+<p><b>Many Pixels Per Base:</b> as the user zooms in more and more they will reach the stage
+where there are several pixels per base, the limit being when zmap can display individual
+base letters vertically, at this point the number of pixels per base depends on the size
+of the fixed font used to display the base letters.</p>
+
+
+<p><b>Conclusion 1:</b> if at all possible the world coordinates used should be the
+sequence coordinates, this vastly simplifies programming and debugging. There should be just
+one coordinate transform from world to screen coordinates (and back again).</p>
+
+<p><b>Conclusion 2:</b> functions that hide all coordinate transformation complexity
+should be written early and must be the <b>only</b> way in which positions can be
+calculated.</p>
+
+<p><b>Conclusion 2:</b> if drawing can be done fast enough it would be better to draw
+into a fixed window size rather than have a larger window that can be scrolled.</p>
+
+
+<h3>The Data and Display Threads interface</h3>
+
+<p>zmap has a simple but not optimal model: one thread services all GUI requests and
+is also responsible for processing features from a series of data threads. Each data
+thread gathers features from some source and puts them into a common format after
+which they are passed back to the gui thread.</p>
+
+<p>(There is no point in having multiple threads for the GUI because nearly all
+<b>X lib</b> implemenations while being thread safe are not multi-threaded and
+many <b>X Servers</b> are not multi-threaded either.)</p>
+
+<p>The zmap design could be improved in a number of ways:</p>
+
+<p><b>1)</b>It would make for a cleaner design to introduce a data handling
+thread that would be responsible for merging all data from the data threads. It
+would then signal the GUI thread that there were new features to be drawn. This
+would clearly separate GUI from data responsibilities.</p>
+
+<p><b>2)</b>Currently the data handling thread polls a series of connections cycling
+around them to see if they have any data. A better model would be along the lines
+of code used to handle zeroMQ interactions for the remote control interface. Here
+asynchronous routines simply place their data into queues which are then picked up
+by the polling routine. This is much simpler and cleaner interface and there
+are various design patterns and variations of this for exactly this kind of usage.</p>
 
 
 
@@ -179,11 +345,32 @@ completely.</p>
 
 <h3>User Configurability</h3>
 
-<p>User adjustment of display features such as colour, bumping modes, track width, 
-track ordering, histogram and graph ranges,
-background colours, and many other things should be allowed. And also controllable 
-to prevent such if necessary. As much of this as possible should be made dynamically 
+<p>User adjustment of display features such as colour, bumping modes, track
+width, track ordering, histogram and graph ranges, background colours, and many
+other things should be allowed. And also controllable to prevent such if
+necessary. As much of this as possible should be made dynamically
 controllable.</p>
+
+<h4>Positioning Columns by Dragging</h>
+
+<p>Some browsers (e.g. UCSC) allow the user to drag columns to position them.
+This is a very good technique for coping with the small size of the screen
+relative to a large number of columns, it enables the user to position
+columns they are interested in next to each other.</p>
+
+<p>This can be implemented in a simple way by just drawing an outline box on
+the screen with an indicator of where the column will be positioned so the user
+can be sure about where it will go. It would be good if we could leverage any
+existing Widget set support to do this instead of having to program it all
+ourselves.</p>
+
+<h4>Show/Hide of columns</h4>
+
+<p>There's nothing to say here apart from that it must be instaneous !</p>
+
+
+
+
 
 
 <h3>Searchable Features</h3>
