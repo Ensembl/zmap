@@ -149,7 +149,18 @@ the <b>ZMapControl</b> level and from the <b>ZMapWindow</b> level.</p>
 implementation leaves much to be desired, it's not clean and is hard for
 new programmers to understand or modify.</p>
 
+<p>In essence this comes down to the problem of "layering vs. subcomponents" within
+an application. By layering I mean the system whereby each level is independent of
+the level above it (i.e. the level that makes calls to it), by componenets I mean
+self-contained subunits of code that can call each other whether by direct function calls
+or by some less closely coupled communication layer.</p>
 
+<p>In zmap there are layers which should be subcomponents and vice versa. There
+are good historical reasons for this, the design used to be cleaner but has become
+polluted by changing demands over the years.</p>
+
+<p>This is the most difficult bit to get right and has a profound impact on how
+easy the system is to modify, maintain and indeed understand.</p>
 
 
 <h3>Multi-layer Coordinate System</h3>
