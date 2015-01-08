@@ -1,6 +1,6 @@
 /*  File: pipeServer_P.h
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk), Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
