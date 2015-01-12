@@ -20,6 +20,11 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 
+# Check if we have mysql
+AX_LIB_MYSQL()
+AM_CONDITIONAL([USE_MYSQL], [test "$HAVE_MYSQL" -eq 1])
+
+
 # Check if this is a Git repository and, if so, use output
 # of git describe abbreviated to just tag which for us is the version string.
 # otherwise use PACKAGE_VERSION which will include info about the current
@@ -505,6 +510,10 @@ echo \
      install   - build and install everything
      <program> - build specific program
 "
+
+if test "$HAVE_MYSQL" -eq 0; then
+echo " Warning: mysql not found; excluding ensembl server"
+fi
 
 echo "---------------------------------------------------------------------
 "

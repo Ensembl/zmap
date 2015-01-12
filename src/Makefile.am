@@ -23,11 +23,8 @@ include $(srcdir)/Makefile.common
 #
 ACLOCAL_AMFLAGS = -I m4
 
-
-
-
 # ZMAP_SRC_DIRS See configure.ac
-SUBDIRS = AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+SUBDIRS = AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop samtools_parallel ensc-core/src include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
 
 CLEANFILES = $(pkgconfig_DATA)
 
@@ -164,6 +161,8 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
 	$(top_builddir)/htslib-develop/libhts.a              \
+	$(top_builddir)/samtools_parallel/libbam.a           \
+	$(top_builddir)/ensc-core/src/libensc.a              \
 	$(top_builddir)/AceConn/src/.libs/libAceConn.a       
 
 # The zeromq library has a different suffix on cygwin
@@ -179,6 +178,7 @@ zmap_LDADD +=                                                \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
 	$(GTK_LIBS)			                     \
 	$(LIBCURL) -lexpat                                   \
+	$(MYSQL_LDFLAGS)                                     \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 
@@ -190,7 +190,7 @@ zmap_LDFLAGS      = -lz
 #zmap_LINK         = g++ $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 zmap_LINK         = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
-zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
+zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp $(MYSQL_CFLAGS)
 zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
 # MACOSX_UNIVERSAL_FILE was also in LDFLAGS...
 

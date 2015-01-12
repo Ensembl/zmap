@@ -9,6 +9,15 @@ AM_CPPFLAGS = -g -I$(top_srcdir)/include \
 	-I$(top_builddir)  -I$(top_srcdir)/AceConn/include \
 	-I$(top_srcdir)/htslib-develop \
 	-I$(top_srcdir)/zeromq/include \
+	-I$(top_srcdir)/samtools_parallel \
+	-I$(top_srcdir)/ensc-core/src/DataModel \
+	-I$(top_srcdir)/ensc-core/src/DataAdaptors \
+	-I$(top_srcdir)/ensc-core/src/Util \
+	-I$(top_srcdir)/ensc-core/src/DataModel/Mapper \
+	-I$(top_srcdir)/ensc-core/src/DataModel/Basic \
+	-I$(top_srcdir)/ensc-core/src/Compara/DataAdaptors \
+	-I$(top_srcdir)/ensc-core/src/Compara/DataModel \
+	-I$(top_srcdir)/ensc-core/src/OBDA \
 	@GTK_CFLAGS@ \
         @LIBCURL_CPPFLAGS@ \
         $(NULL)
