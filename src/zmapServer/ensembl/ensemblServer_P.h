@@ -29,9 +29,19 @@
 #ifndef ENSEMBL_SERVER_P_H
 #define ENSEMBL_SERVER_P_H
 
+#include <DBAdaptor.h>
+
 typedef struct _EnsemblServerStruct
 {
   char *config_file ;
+
+  /* Connection details. */
+  DBAdaptor *dba;
+  char *host ;
+  int port ;
+  char *user ;
+  char *passwd ;
+  char *db_name ;
 
   /* Results of server requests. */
   ZMapServerResponseType result ;
@@ -41,7 +51,7 @@ typedef struct _EnsemblServerStruct
   ZMapFeatureContext req_context ;
 
   gint zmap_start, zmap_end ;				    /* request coordinates for our one block */
-  
+
 } EnsemblServerStruct, *EnsemblServer;
 
 

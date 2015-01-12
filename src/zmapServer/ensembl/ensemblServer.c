@@ -42,9 +42,10 @@
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapGFF.h>
 #include <ZMap/zmapStyle.h>
+#include <ZMap/zmapURL.h>
 #include <zmapServerPrototype.h>
 #include <ensemblServer_P.h>
-
+#include <EnsC.h>
 
 #define ACEDB_PROTOCOL_STR "Acedb"                            /* For error messages. */
 
@@ -130,9 +131,31 @@ static gboolean createConnection(void **server_out,
   gboolean result = FALSE ;
   GError *error = NULL ;
   EnsemblServer server ;
+  char *prog_name = g_strdup(g_get_prgname()) ;
 
   /* Always return a server struct as it contains error message stuff. */
   server = (EnsemblServer)g_new0(EnsemblServerStruct, 1) ;
+
+  server->config_file = g_strdup(config_file) ;
+
+  server->host = g_strdup(url->host) ;
+  server->port = url->port ;
+  server->user = g_strdup(url->user) ;
+
+  if (url->passwd)
+    server->passwd = g_strdup(url->passwd) ;
+
+  server->db_name = zMapURLGetQueryValue(url->query, "db_name") ;
+
+  initEnsC(1, &prog_name);
+
+  printf("Opening connection for '%s' ...", server->db_name);
+  server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
+
+  printf(" Done\n");
+  printf("Assembly type %s\n",DBAdaptor_getAssemblyType(server->dba));
+
+  g_free(prog_name) ;
 
   return result ;
 }

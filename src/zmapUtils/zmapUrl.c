@@ -2053,6 +2053,72 @@ protocol_from_scheme(ZMapURLScheme scheme)
 }
 
 
+char *zMapURLGetQueryValue(char *full_query, char *key)
+{
+  char *value = NULL, **split   = NULL, **ptr     = NULL ;
+
+  if ((full_query && *full_query) && (key && *key))
+    {
+      split = ptr = g_strsplit(full_query, "&", 0) ;
+
+      while(ptr && *ptr != '\0')
+        {
+          char **key_value = NULL, **kv_ptr, *real_key ;
+
+          key_value = kv_ptr = g_strsplit(*ptr, "=", 0);
+
+          /* Can this actually happen ? */
+          if (key_value[0])
+            {
+              real_key = *key_value ;
+              if (*real_key == '?')
+                real_key++ ;
+            
+              if (g_ascii_strcasecmp(real_key, key) == 0)
+                value = g_strdup(key_value[1]) ;
+            }
+
+          g_strfreev(kv_ptr) ;
+
+          ptr++ ;
+        }
+
+      g_strfreev(split) ;
+    }
+
+  return value;
+}
+
+gboolean zMapURLGetQueryBoolean(char *full_query, char *key)
+{
+  gboolean result = FALSE;
+  char *value = NULL;
+
+  if((value = zMapURLGetQueryValue(full_query, key)))
+    {
+      if(g_ascii_strcasecmp("true", value) == 0)
+        result = TRUE;
+      g_free(value);
+    }
+
+  return result;
+}
+
+int zMapURLGetQueryInt(char *full_query, char *key)
+{
+  int result = 0 ;
+  char *value = NULL ;
+
+  if ((value = zMapURLGetQueryValue(full_query, key)))
+    {
+      result = atoi(value) ;
+
+      g_free(value) ;
+    }
+
+  return result ;
+}
+
 #if 0
 /* Debugging and testing support for path_simplify. */
 

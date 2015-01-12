@@ -32,6 +32,7 @@
 #ifndef ZMAPURL_H
 #define ZMAPURL_H
 
+#include <glib.h>
 
 /* Default port definitions */
 #define DEFAULT_HTTP_PORT 80
@@ -110,5 +111,9 @@ char *uri_merge(const char *, const char *) ;
 
 char *rewrite_shorthand_url(const char *) ;
 int schemes_are_similar_p(ZMapURLScheme a, ZMapURLScheme b) ;
+
+char *zMapURLGetQueryValue(char *full_query, char *key) ;
+gboolean zMapURLGetQueryBoolean(char *full_query, char *key) ;
+int zMapURLGetQueryInt(char *full_query, char *key) ;
 
 #endif /* ZMAPURL_H */
