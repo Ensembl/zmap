@@ -5211,19 +5211,28 @@ void zmapWindowFetchData(ZMapWindow window,
       if (load)
         {
           /* the user requests columns but zmap requests featuresets, so expand the list */
-          GList * fset_list = NULL;
+          GList *fset_list = NULL;
           GList *col_list;
 
           if (is_column)/* user requests a column */
             {
-              for (col_list = featureset_name_list;col_list;col_list = col_list->next)
+              for (col_list = featureset_name_list ; col_list ; col_list = col_list->next)
                 {
+                  GList *set_list ;
+                  GQuark orig_id ;
+                  GQuark unique_id ;
+
+                  orig_id = GPOINTER_TO_UINT(col_list->data) ;
+                  unique_id = zMapFeatureSetCreateID((char *)g_quark_to_string(orig_id)) ;
+
                   /* must copy as this is a static list */
-                  fset_list
-                    = g_list_concat(g_list_copy(zMapFeatureGetColumnFeatureSets(window->context_map,
-                                                                                GPOINTER_TO_UINT(col_list->data),
-                                                                                TRUE)),
-                                                                    fset_list);
+                  if ((set_list = zMapFeatureGetColumnFeatureSets(window->context_map,
+                                                                  unique_id,
+                                                                  TRUE)))
+                    {
+                      fset_list
+                        = g_list_concat(g_list_copy(set_list), fset_list) ;
+                    }
                 }
             }
           else/* zmap requests data via column menu */
