@@ -47,9 +47,6 @@
 
 #define ZMAPLOG_FILENAME "zmap.log"
 
-#define CLEAN_EXIT_MSG "Exit clean - goodbye cruel world !"
-
-
 
 /*
  * We follow glib convention in error domain naming:
