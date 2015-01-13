@@ -1,15 +1,5 @@
 
-Request Tracker Tickets Resolved from 17/10/2014 to 27/11/2014
-
-ticket/280524
-id: ticket/280524
-Queue: zmap
-Subject: feature request: extend dynamic thresholding to more/all columns (needs col. background adding)
-Requestors: lw2@sanger.ac.uk
-Owner: mh17
-Resolved: Tue Oct 21 14:04:39 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
+Request Tracker Tickets Resolved from 12/11/2014 to 13/01/2015
 
 ticket/304751
 id: ticket/304751
@@ -41,26 +31,6 @@ Resolved: Fri Nov 14 17:01:27 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/343091
-id: ticket/343091
-Queue: zmap
-Subject: Race condition in RemoteControl - simultaneous clients
-Requestors: mca@sanger.ac.uk, mg13@sanger.ac.uk
-Owner: edgrif
-Resolved: Fri Oct 17 15:47:34 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/345104
-id: ticket/345104
-Queue: zmap
-Subject: "show translation in zmap" amino-acids difficult to select and coordinates offset
-Requestors: lw2@sanger.ac.uk
-Owner: gb10
-Resolved: Fri Oct 17 14:25:42 2014
-CF.{zmapace_gitcommit}: g3716652
-CF.{zmapace_resolve_version}: 1.0.0-365-g3716652, otterlace v86
-
 ticket/359402
 id: ticket/359402
 Queue: zmap
@@ -68,49 +38,6 @@ Subject: ZMap rejected create_feature  - due to message length? (76.06)
 Requestors: edgrif@sanger.ac.uk, gdr@sanger.ac.uk
 Owner: edgrif
 Resolved: Wed Nov 12 14:53:47 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/371286
-id: ticket/371286
-Queue: zmap
-Subject: ZMap does not handshake after starting (77)
-
-Requestors: kj2@sanger.ac.uk, lw2@sanger.ac.uk, mms@sanger.ac.uk,
-            mpind@cc.umanitoba.ca, sb7@sanger.ac.uk
-
-Owner: edgrif
-Resolved: Fri Oct 17 16:24:34 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/404745
-id: ticket/404745
-Queue: zmap
-Subject: Standalone ZMap: Highlight Evidence crash
-Requestors: gb10@sanger.ac.uk
-Owner: gb10
-Resolved: Tue Oct 21 14:13:27 2014
-CF.{zmapace_gitcommit}: aa14e7d
-CF.{zmapace_resolve_version}: Otterlace v86, ZMap 1.0.0-358-gaa14e7d (for release/1.1.0)
-
-ticket/426312
-id: ticket/426312
-Queue: zmap
-Subject: Locus not displayed.
-Requestors: edgrif@sanger.ac.uk
-Owner: edgrif
-Resolved: Fri Oct 17 15:35:57 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/426799
-id: ticket/426799
-Queue: zmap
-Subject: Logging repeated text (85.05 under tkhack; 87-dev without tkhack)
-Requestors: jh13@sanger.ac.uk, mca@sanger.ac.uk
-Owner: edgrif
-Resolved: Fri Oct 31 09:21:12 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -124,16 +51,6 @@ Resolved: Wed Nov 12 14:49:17 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/428543
-id: ticket/428543
-Queue: zmap
-Subject: urgent, probably showstopper
-Requestors: sm23@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Oct 24 09:26:37 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
 ticket/429182
 id: ticket/429182
 Queue: zmap
@@ -144,23 +61,13 @@ Resolved: Thu Nov 13 10:51:22 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/429859
-id: ticket/429859
+ticket/434126
+id: ticket/434126
 Queue: zmap
-Subject: ZMap bug in displaying reverse strand coverage data
-Requestors: edgrif@sanger.ac.uk, jh13@sanger.ac.uk, vb1@sanger.ac.uk
-Owner: edgrif
-Resolved: Thu Oct 30 09:15:08 2014
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/431939
-id: ticket/431939
-Queue: zmap
-Subject: questions about splice highlighting...
+Subject: Logging repeated text (86.08 Mac)
 Requestors: mms@sanger.ac.uk
 Owner: edgrif
-Resolved: Tue Nov 11 13:59:35 2014
+Resolved: Fri Nov 28 09:22:16 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -181,6 +88,26 @@ Subject: Overnight build failures?
 Requestors: mca@sanger.ac.uk
 Owner: edgrif
 Resolved: Thu Nov 27 10:23:47 2014
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/437214
+id: ticket/437214
+Queue: zmap
+Subject: ZMap flattens case of column names in feature_loading_complete messages when request comes from ZMap
+Requestors: mg13@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon Jan 12 16:25:15 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/437717
+id: ticket/437717
+Queue: zmap
+Subject: zmap leaks memory doing nothing
+Requestors: mca@sanger.ac.uk
+Owner: edgrif
+Resolved: Tue Dec 02 15:20:35 2014
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
