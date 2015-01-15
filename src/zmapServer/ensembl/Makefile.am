@@ -2,7 +2,7 @@
 include $(top_srcdir)/Makefile.common
 
 # Only compile ensembl server if we have mysql installed
-if USE_MYSQL
+#if USE_MYSQL
 
 SUBDIRS = .
 
@@ -22,4 +22,4 @@ libEnsemblServer_la_LDFLAGS = $(ENSC_CORE_DIR)/libensc.a $(MYSQL_LDFLAGS)
 #
 MAINTAINERCLEANFILES = $(top_srcdir)/zmapServer/ensembl/Makefile.in
 
-endif
+#endif
