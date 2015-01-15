@@ -46,6 +46,7 @@
 #include <zmapServerPrototype.h>
 #include <ensemblServer_P.h>
 #include <EnsC.h>
+#include <SliceAdaptor.h>
 
 #define ACEDB_PROTOCOL_STR "Acedb"                            /* For error messages. */
 
@@ -78,6 +79,10 @@ static ZMapServerResponseType getStatus(void *server_in, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
+
+static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequences_inout) ;
+
+static void setErrMsg(EnsemblServer server, char *new_msg) ;
 
 
 /*
@@ -228,6 +233,8 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
+  doGetSequences(server, sequences_inout) ;
+
   return result ;
 }
 
@@ -331,4 +338,62 @@ static ZMapServerResponseType destroyConnection(void *server_in)
   g_free(server) ;
 
   return result ;
+}
+
+
+/* For each sequence makes a request to find the sequence and then set it in
+ * the input ZMapSequence
+ *
+ * Function returns ZMAP_SERVERRESPONSE_OK if sequences were found and retrieved,
+ * ZMAP_SERVERRESPONSE_REQFAIL otherwise.
+ *
+ */
+static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequences_inout)
+{
+  SequenceAdaptor *seq_adaptor = DBAdaptor_getSequenceAdaptor(server->dba);
+  SliceAdaptor *slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
+
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  GList *next_seq ;
+
+  /* We need to loop round finding each sequence and then fetching its dna... */
+  next_seq = sequences_inout ;
+  while (next_seq)
+    {
+      ZMapSequence sequence = (ZMapSequence)(next_seq->data) ;
+
+      /* chromosome, clone, contig or supercontig */
+      Slice *slice = SliceAdaptor_fetchByRegion(slice_adaptor, "chromosome", sequence->name, POS_UNDEF, POS_UNDEF, STRAND_UNDEF, NULL, 0);
+      char *seq = SequenceAdaptor_fetchBySliceStartEndStrand(seq_adaptor, slice, 1, POS_UNDEF, 1);
+
+      if (seq)
+        {
+          sequence->sequence = seq ;
+
+          result = ZMAP_SERVERRESPONSE_OK ;
+        }
+      else
+        {
+          setErrMsg(server, g_strdup_printf("Failed to fetch %s sequence for object \"%s\".",
+                                            (sequence->type == ZMAPSEQUENCE_DNA ? "nucleotide" : "peptide"),
+                                            g_quark_to_string(sequence->name))) ;
+
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
+        }
+
+      next_seq = g_list_next(next_seq) ;
+    }
+
+  return result ;
+}
+
+/* It's possible for us to have reported an error and then another error to come along. */
+static void setErrMsg(EnsemblServer server, char *new_msg)
+{
+  if (server->last_err_msg)
+    g_free(server->last_err_msg) ;
+
+  server->last_err_msg = new_msg ;
+
+  return ;
 }
