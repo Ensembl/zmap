@@ -203,10 +203,6 @@ static gboolean dump_alignment_target_v3(ZMapFeature feature, gpointer homol,
 static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
   GString *gff_string, GError **error, GFFDumpData gff_data) ;
 
-/* utils */
-static char strand2Char(ZMapStrand strand) ;
-static char phase2Char(ZMapPhase phase) ;
-
 
 
 /*
@@ -710,7 +706,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
           else
             g_string_append_printf(gff_string, GFF_SEP_NOSCORE, '.') ;
 
-          g_string_append_printf(gff_string, GFF_SEP_STRAND, strand2Char(feature->strand)) ;
+          g_string_append_printf(gff_string, GFF_SEP_STRAND, zMapGFFFormatStrand2Char(feature->strand)) ;
 
           /*
            * Not sure why this was done in the first place; the only
@@ -719,7 +715,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
           g_string_append_printf(gff_string, GFF_SEP_STRAND, '.');
           //g_string_append_printf(gff_string, GFF_SEP_PHASE,
           //    ((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds)
-          //        ? phase2Char(feature->feature.transcript.phase) : '.')) ;
+          //        ? zMapGFFFormatPhase2Char(feature->feature.transcript.phase) : '.')) ;
 
           /* Now to the attribute fields, and any subparts... */
 
@@ -1059,8 +1055,8 @@ static gboolean dump_transcript_foreach_subpart_v3(ZMapFeature feature,
                              gff_data->gff_feature,
                              span.x1, span.x2,
                              '.', /* no score */
-                             strand2Char(feature->strand),
-                             phase2Char(phase)) ;
+                             zMapGFFFormatStrand2Char(feature->strand),
+                             zMapGFFFormatPhase2Char(phase)) ;
       g_string_append_printf(buffer, "\t") ;
       result = dump_transcript_parent_v3(feature, &(feature->feature.transcript), buffer, error_out, gff_data);
     }
@@ -1126,8 +1122,8 @@ static gboolean dump_transcript_foreach_subpart_v3_cds(ZMapFeature feature,
                                  gff_data->gff_source,
                                  gff_data->gff_feature,
                                  start, end, '.',
-                                 strand2Char(feature->strand),
-                                 phase2Char(phase) );
+                                 zMapGFFFormatStrand2Char(feature->strand),
+                                 zMapGFFFormatPhase2Char(phase) );
           g_string_append_printf(buffer, "\t") ;
           result = dump_transcript_parent_v3(feature, transcript, buffer, error_out, gff_data);
 
@@ -1176,8 +1172,8 @@ static gboolean dump_transcript_subpart_lines(ZMapFeature feature, gpointer tran
       transcript->cds_start,
       transcript->cds_end,
       '.',
-      strand2Char(feature->strand),
-      phase2Char(transcript->start_not_found)) ;
+      zMapGFFFormatStrand2Char(feature->strand),
+      zMapGFFFormatPhase2Char(transcript->start_not_found)) ;
 
   result = dump_transcript_identifier(feature, transcript,
     gff_string, error, gff_data);
@@ -1206,8 +1202,8 @@ static gboolean dump_transcript_foreach_subpart(ZMapFeature feature, GString *bu
         gff_data->gff_feature,
         span.x1, span.x2,
         '.', /* no score */
-        strand2Char(feature->strand),
-        phase2Char(phase)) ;
+        zMapGFFFormatStrand2Char(feature->strand),
+        zMapGFFFormatPhase2Char(phase)) ;
 
       result = dump_transcript_identifier(feature, &(feature->feature.transcript),
         buffer, error_out, gff_data);
@@ -1442,7 +1438,7 @@ static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
 
 
 
-static char strand2Char(ZMapStrand strand)
+char zMapGFFFormatStrand2Char(ZMapStrand strand)
 {
   char strand_char = '.' ;
 
@@ -1463,7 +1459,7 @@ static char strand2Char(ZMapStrand strand)
 }
 
 
-static char phase2Char(ZMapPhase phase)
+char zMapGFFFormatPhase2Char(ZMapPhase phase)
 {
   char phase_char = '.' ;
 
@@ -1486,3 +1482,253 @@ static char phase2Char(ZMapPhase phase)
   return phase_char ;
 }
 
+/* Length of a block. */
+static int calcBlockLength(ZMapSequenceType match_seq_type, int start, int end)
+{
+  int coord ;
+
+  coord = (end - start) + 1 ;
+
+  if (match_seq_type == ZMAPSEQUENCE_PEPTIDE)
+    coord /= 3 ;
+
+  return coord ;
+}
+
+/* Length between two blocks. */
+static int calcGapLength(ZMapSequenceType match_seq_type, int start, int end)
+{
+  int coord ;
+
+  coord = (end - start) - 1 ;
+
+  if (match_seq_type == ZMAPSEQUENCE_PEPTIDE)
+    coord /= 3 ;
+
+  return coord ;
+}
+
+/*
+ * Return the gaps array as a (GFFv3) Gap attribute. This is the code that
+ * was originally in the file zmapViewCallBlixem. Note that there is also code
+ * in zmapFeatureAlignment that puportedly does the same thing (with a greater
+ * variety of formats) but I have not had time to check that they give identical
+ * results.
+ */
+gboolean zMapGFFFormatGap2GFF(GString *attribute, GArray *gaps, ZMapStrand q_strand, ZMapSequenceType match_seq_type)
+{
+  gboolean result = FALSE ;
+  int k=0, index=0, incr=0, coord=0,
+    curr_match=0, next_match=0, curr_ref=0, next_ref=0 ;
+  ZMapAlignBlock gap ;
+
+  if (!attribute || !gaps)
+    return result ;
+  result = TRUE ;
+
+  g_string_truncate(attribute, 0) ;
+  g_string_printf(attribute, "Gap=") ;
+
+      /* correct, needed ?? */
+      if (q_strand == ZMAPSTRAND_REVERSE)
+        {
+          index = gaps->len - 1 ;
+          incr = -1 ;
+        }
+      else
+        {
+          index = 0 ;
+          incr = 1 ;
+        }
+
+      for (k = 0 ; k < gaps->len ; k++, index += incr)
+        {
+
+          gap = &(g_array_index(gaps, ZMapAlignBlockStruct, index)) ;
+
+          coord = calcBlockLength(match_seq_type, gap->t1, gap->t2) ;
+          g_string_append_printf(attribute, "M%d ", coord) ;
+
+          if (k < gaps->len - 1)
+            {
+              ZMapAlignBlock next_gap ;
+
+              next_gap = &(g_array_index(gaps, ZMapAlignBlockStruct, index + incr)) ;
+
+              if (gap->q_strand == ZMAPSTRAND_FORWARD)
+                {
+                  curr_match = gap->q2 ;
+                  next_match = next_gap->q1 ;
+                }
+              else
+                {
+                  /* For the match, q1 > q2 for rev strand */
+                  curr_match = next_gap->q1 ;
+                  next_match = gap->q2 ;
+                }
+
+              if (gap->t_strand == ZMAPSTRAND_FORWARD)
+                {
+                  curr_ref = gap->t2 ;
+                  next_ref = next_gap->t1 ;
+                }
+              else
+                {
+                  /* For the ref, t2 > t1 for both strands */
+                  curr_ref = next_gap->t2 ;
+                  next_ref = gap->t1 ;
+                }
+
+              if (next_match > curr_match + 1)
+                {
+                  g_string_append_printf(attribute, "I%d ", (next_match - curr_match) - 1) ;
+                }
+              else if (next_ref > curr_ref + 1)
+                {
+                  coord = calcGapLength(match_seq_type, curr_ref, next_ref) ;
+
+                  /* Check if it's an intron or deletion */
+                  AlignBlockBoundaryType boundary_type = ALIGN_BLOCK_BOUNDARY_EDGE ;
+                  if (gap->q_strand == gap->t_strand)
+                    boundary_type = gap->end_boundary ;
+                  else
+                    boundary_type = gap->start_boundary ;
+
+                  if (boundary_type == ALIGN_BLOCK_BOUNDARY_INTRON)
+                    g_string_append_printf(attribute, "N%d ", coord) ;
+                  else
+                    g_string_append_printf(attribute, "D%d ", coord) ;
+                }
+              else
+                zMapLogWarning("Bad coords in zMapGFFFormatGap2GFF(): gap %d,%d -> %d, %d, next_gap %d, %d -> %d, %d",
+                               gap->t1, gap->t2, gap->q1, gap->q2,
+                               next_gap->t1, next_gap->t2, next_gap->q1, next_gap->q2) ;
+            }
+        }
+
+  return result ;
+}
+
+/*
+ * This is append an attribute to a line optionally prepending the attribute with
+ * a tab character (i.e. for the first attribute). Optionally adds a semi-colon at
+ * the end.
+ */
+gboolean zMapGFFFormatAppendAttribute(GString *gff_line, GString *attribute, gboolean tab_prefix, gboolean sc_terminator)
+{
+  static const char c_delimiter = ';',
+    c_tab = '\t' ;
+  gboolean result = FALSE ;
+
+  if (!gff_line || !attribute)
+    return result ;
+  result = TRUE ;
+
+  if (tab_prefix)
+    {
+      g_string_append_printf(gff_line, "%c", c_tab) ;
+    }
+
+  if (sc_terminator)
+    g_string_append_printf(gff_line, "%s%c", attribute->str, c_delimiter) ;
+  else
+    g_string_append_printf(gff_line, "%s", attribute->str) ;
+
+  return result ;
+}
+
+/*
+ * Put minimal header data into the string argument. Previous contents of the string
+ * are destroyed if requested.
+ */
+gboolean zMapGFFFormatHeader(gboolean over_write, GString *line,
+                             const char *sequence_region, int start, int end)
+{
+  gboolean status = FALSE ;
+
+  if (!line)
+    return status ;
+  status = TRUE ;
+
+  if (over_write)
+    g_string_truncate(line, (gsize)0) ;
+  g_string_append_printf(line, "##gff-version 3\n##sequence-region %s %d %d\n",
+                         sequence_region, start, end) ;
+
+  return status ;
+}
+
+/*
+ * Put the mandatory GFF data into the string argument. Previous contents of the string
+ * are destroyed if requested. Appends a tab character if necessary.
+ */
+gboolean zMapGFFFormatMandatory(gboolean over_write, GString *line,
+                                const char *sequence, const char *source, const char *type,
+                                int start, int end, float score, ZMapStrand strand, ZMapPhase phase,
+                                gboolean has_score, gboolean append_tab)
+{
+  static const char *s_CDS = "CDS" ;
+  gboolean status = FALSE ;
+  char *s_score = NULL,
+    c_strand = '\0',
+    c_phase = '\0' ;
+
+  if (!line || !sequence || !*sequence
+            || !source || !*source
+            || !type || !*type
+            || (start <= 0) || (start > end))
+    return status ;
+  status = TRUE ;
+
+  /*
+   * Score data.
+   */
+  if (has_score)
+    {
+      s_score = g_strdup_printf("%g", score) ;
+    }
+  else
+    {
+      s_score = g_strdup_printf(".") ;
+    }
+
+  /*
+   * Strand data.
+   */
+  c_strand = zMapGFFFormatStrand2Char(strand) ;
+
+  /*
+   * Phase data. We _must_ have a phase given for a CDS and _not_
+   * specified for anything else.
+   */
+  if (!strcmp(type, s_CDS))
+    {
+      c_phase = zMapGFFFormatPhase2Char(phase) ;
+      if (c_phase == '.')
+        status = FALSE ;
+    }
+  else
+    {
+      c_phase = zMapGFFFormatPhase2Char(phase) ;
+      if (c_phase != '.')
+        status = FALSE ;
+    }
+
+  /*
+   * Fill in mandatory GFF fields.
+   */
+  if (status)
+    {
+      if (over_write)
+        g_string_truncate(line, (gsize)0) ;
+      g_string_append_printf(line, "%s\t%s\t%s\t%i\t%i\t%s\t%c\t%c",
+                             sequence, source, type, start, end, s_score, c_strand, c_phase ) ;
+      if (append_tab)
+        line = g_string_append_c(line, '\t') ;
+    }
+
+  if (s_score)
+    g_free(s_score) ;
+
+  return status ;
+}

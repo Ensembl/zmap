@@ -148,11 +148,18 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 /*
  *
  */
+gboolean zMapGFFFormatGap2GFF(GString *, GArray *, ZMapStrand, ZMapSequenceType) ;
+gboolean zMapGFFFormatAppendAttribute(GString *, GString *, gboolean, gboolean) ;
+char zMapGFFFormatStrand2Char(ZMapStrand strand) ;
+char zMapGFFFormatPhase2Char(ZMapPhase phase) ;
+gboolean zMapGFFFormatHeader(gboolean, GString *, const char *, int, int) ;
+gboolean zMapGFFFormatMandatory(gboolean, GString *, const char *, const char *, const char *,
+  int, int, float, ZMapStrand, ZMapPhase, gboolean, gboolean ) ;
 gboolean zMapGFFDumpVersionSet(ZMapGFFVersion gff_version ) ;
 ZMapGFFVersion zMapGFFDumpVersionGet() ;
 gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out);
 gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
-			   ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
+  ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
 gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, GIOChannel *file, GString **text_out, GError **error_out) ;
 
 #endif /* ZMAP_GFF_H */
