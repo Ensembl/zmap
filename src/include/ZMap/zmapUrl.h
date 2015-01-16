@@ -42,6 +42,7 @@
 #define DEFAULT_ACEDB_PORT 23100 /* default sgifaceserver port */
 #define DEFAULT_MYSQL_PORT 3306
 #define DEFAULT_HTTPS_PORT 443
+#define DEFAULT_ENSEMBL_PORT 5306
 
 
 

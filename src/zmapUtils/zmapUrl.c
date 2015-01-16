@@ -84,6 +84,8 @@ static struct scheme_data supported_schemes[] =
 
   { "mysql://", DEFAULT_MYSQL_PORT, 1 },
 
+  { "ensembl://", DEFAULT_ENSEMBL_PORT, 1 },
+  
   /* SCHEME_INVALID */
   { NULL,       -1,                 0 }
 };

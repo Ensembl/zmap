@@ -846,6 +846,12 @@ void zmapViewSessionAddServer(ZMapViewSessionServer server_data, ZMapURL url, ch
 	server_data->scheme_data.file.path = g_strdup(url->path) ;
 	break ;
       }
+    case SCHEME_ENSEMBL:
+      {
+        server_data->scheme_data.ensembl.host = g_strdup(url->host) ;
+        server_data->scheme_data.ensembl.port = url->port ;
+        break ;
+      }
     default:
       {
 	/* other schemes not currently supported so mark as invalid. */
@@ -881,6 +887,11 @@ void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServer
       {
 
 	break ;
+      }
+    case SCHEME_ENSEMBL:
+      {
+
+        break ;
       }
     default:
       {
@@ -919,6 +930,11 @@ void zmapViewSessionFreeServer(ZMapViewSessionServer server_data)
 	g_free(server_data->scheme_data.pipe.path) ;
 	g_free(server_data->scheme_data.pipe.query) ;
 	break ;
+      }
+    case SCHEME_ENSEMBL:
+      {
+        g_free(server_data->scheme_data.ensembl.host) ;
+        break ;
       }
     default:
       {
@@ -1031,6 +1047,12 @@ static void formatSession(gpointer data, gpointer user_data)
 	g_string_append_printf(session_text, "\tScript: %s\n\n", server_data->scheme_data.pipe.path) ;
 	g_string_append_printf(session_text, "\tQuery: %s\n\n", server_data->scheme_data.pipe.query) ;
 	break ;
+      }
+    case SCHEME_ENSEMBL:
+      {
+        g_string_append_printf(session_text, "\tServer: %s\n\n", server_data->scheme_data.ensembl.host) ;
+        g_string_append_printf(session_text, "\tPort: %d\n\n", server_data->scheme_data.ensembl.port) ;
+        break ;
       }
     default:
       {

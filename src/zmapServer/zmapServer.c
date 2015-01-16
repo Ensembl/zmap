@@ -56,7 +56,9 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 
   zMapReturnValIfFail((server_global_data_out), result) ;
   zMapReturnValIfFail((url->scheme == SCHEME_ACEDB || url->scheme == SCHEME_HTTP
-                       || url->scheme == SCHEME_FILE || url->scheme == SCHEME_PIPE), result) ;
+                       || url->scheme == SCHEME_FILE || url->scheme == SCHEME_PIPE
+                       || url->scheme == SCHEME_ENSEMBL), 
+                      result) ;
 
   serverfuncs = g_new0(ZMapServerFuncsStruct, 1) ;
 

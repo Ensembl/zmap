@@ -136,10 +136,11 @@ static gboolean createConnection(void **server_out,
   gboolean result = FALSE ;
   GError *error = NULL ;
   EnsemblServer server ;
-  char *prog_name = g_strdup(g_get_prgname()) ;
+  char *prog_name = g_strdup("zmap") ;
 
   /* Always return a server struct as it contains error message stuff. */
   server = (EnsemblServer)g_new0(EnsemblServerStruct, 1) ;
+  *server_out = (void *)server ;
 
   server->config_file = g_strdup(config_file) ;
 
@@ -147,7 +148,7 @@ static gboolean createConnection(void **server_out,
   server->port = url->port ;
   server->user = g_strdup(url->user) ;
 
-  if (url->passwd)
+  if (url->passwd && url->passwd[0] && url->passwd[0] != '\0')
     server->passwd = g_strdup(url->passwd) ;
 
   server->db_name = zMapURLGetQueryValue(url->query, "db_name") ;
@@ -294,7 +295,7 @@ static char *lastErrorMsg(void *server_in)
   char *err_msg = NULL ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
-  if (server->last_err_msg)
+  if (server && server->last_err_msg)
     err_msg = server->last_err_msg ;
 
   return err_msg ;
