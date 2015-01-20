@@ -1526,7 +1526,7 @@ gboolean zMapGFFFormatGap2GFF(GString *attribute, GArray *gaps, ZMapStrand q_str
     return result ;
   result = TRUE ;
 
-  g_string_truncate(attribute, 0) ;
+  g_string_truncate(attribute, (gsize)0) ;
   g_string_printf(attribute, "Gap=") ;
 
       /* correct, needed ?? */

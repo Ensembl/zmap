@@ -85,14 +85,11 @@ typedef enum
 
 
 /*
- * Data needed by GFF formatting output routines.
+ * Data needed by GFF formatting output routines. All that is done here
+ * is accumulating values to be used as feature numerical ids.
  */
 typedef struct GFFFormatDataStructType
 {
-  gboolean use_SO_ids ;                    /* TRUE => use accession ids. Well, should
-                                              always be done, right? */
-  gboolean maximise_ids ;                  /* Give every feature an id. */
-
   int alignment_count ;
   int transcript_count ;
   int exon_count ;
@@ -146,7 +143,8 @@ typedef struct ZMapBlixemDataStruct_
 
   char          *opts;
 
-  void          *format_data ;             /* Some formats need "callback" data. */
+  //void          *format_data ;
+  GFFFormatData   format_data ; /* Some formats need "callback" data. */
   BlixemFileFormat file_format ;
   char          *tmpDir ;
   gboolean      keep_tmpfiles ;
@@ -372,9 +370,10 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view,
                                       int offset, int position,
                                       ZMapFeatureSet feature_set, GList **local_sequences_out)
 {
+  static char *err_msg = "error in zmapViewBlixemLocalSequences()" ;
   gboolean status = FALSE ;
   ZMapBlixemData blixem_data = NULL ;
-  char *err_msg = "error in zmapViewBlixemLocalSequences()" ;
+
   blixem_data = createBlixemData() ;
   if (!blixem_data)
     return status ;
@@ -448,6 +447,7 @@ gboolean zmapViewCallBlixem(ZMapView view,
   char **argv    = NULL ;
   GFFFormatDataStruct gff_data = {FALSE} ;
   ZMapBlixemData blixem_data = NULL ;
+
   blixem_data = createBlixemData() ;
   if (!blixem_data)
     return status ;
@@ -464,9 +464,6 @@ gboolean zmapViewCallBlixem(ZMapView view,
                                mark_start, mark_end,
                                features, feature_set, align_set, blixem_data, &err_msg)))
     {
-      if (blixem_data->file_format == BLX_FILE_FORMAT_GFF)
-        blixem_data->format_data = &gff_data ;
-
       blixem_data->local_sequences = local_sequences ;
       blixem_data->source = source;
 
@@ -535,8 +532,10 @@ gboolean zmapViewCallBlixem(ZMapView view,
         *kill_on_exit = blixem_data->kill_on_exit ;
     }
 
-  deleteBlixemData(&blixem_data) ;
-  deleteBlixArgArray(&argv) ;
+  if (blixem_data)
+    deleteBlixemData(&blixem_data) ;
+  if (argv)
+    deleteBlixArgArray(&argv) ;
 
   if (!status)
     {
@@ -565,7 +564,7 @@ ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNote
     getUserPrefs(view->view_sequence->config_file, &blixem_config_curr_G) ;
 
 
-  chapter = makeChapter(note_book_parent) ; // mh17: this uses blixen_config_curr_G
+  chapter = makeChapter(note_book_parent) ; /* mh17: this uses blixen_config_curr_G */
 
   return chapter ;
 }
@@ -620,6 +619,13 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 
   /* ZMap uses the new blixem so default format is GFF by default. */
   blixem_data->file_format = BLX_FILE_FORMAT_GFF ;
+  if (blixem_data->format_data)
+    {
+      blixem_data->format_data->alignment_count = 0 ;
+      blixem_data->format_data->exon_count = 0 ;
+      blixem_data->format_data->feature_count = 0 ;
+      blixem_data->format_data->transcript_count = 0 ;
+    }
 
   if (!(zMapFeatureBlockDNA(block, NULL, NULL, NULL)))
     {
@@ -647,6 +653,7 @@ static ZMapBlixemData createBlixemData()
   ZMapBlixemData result = NULL ;
 
   result = (ZMapBlixemData) g_new0(ZMapBlixemDataStruct, 1) ;
+  result->format_data = g_new0(GFFFormatDataStruct, 1 ) ;
 
   return result ;
 }
@@ -666,6 +673,8 @@ static void deleteBlixemData(ZMapBlixemData *p_blixem_data)
     g_free(blixem_data->fastAFile);
   if (blixem_data->gff_file)
     g_free(blixem_data->gff_file);
+  if (blixem_data->format_data)
+    g_free(blixem_data->format_data) ;
 
   if (blixem_data->netid)
     g_free(blixem_data->netid);
@@ -1912,16 +1921,25 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
   static const char *SO_nucleotide_match = "nucleotide_match",
     *SO_read = "read",
     *SO_protein_match = "protein_match" ;
-  gboolean status = TRUE ;
+  gboolean status = FALSE ;
   const char *type = NULL ;
   ZMapSequenceType match_seq_type = ZMAPSEQUENCE_NONE ;
+  GString *attribute = NULL ;
+
+  if (!gff_data || !line )
+    return status ;
+  status = TRUE ;
+
+  attribute = g_string_new(NULL) ;
 
   if (homol_type == ZMAPHOMOL_N_HOMOL)
     match_seq_type = ZMAPSEQUENCE_DNA ;
   else
     match_seq_type = ZMAPSEQUENCE_PEPTIDE ;
 
-  /* type depends on other properties */
+  /*
+   * type depends on other properties
+   */
   if (match_seq_type == ZMAPSEQUENCE_DNA)
     {
       if (pfetchable)
@@ -1935,7 +1953,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
     }
 
   /*
-   * output mandatory GFF data
+   * Mandatory fields.
    */
   zMapGFFFormatMandatory(TRUE, line,
                          ref_name, source_name, type,
@@ -1943,126 +1961,68 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
                          score, q_strand, ZMAPPHASE_NONE,
                          TRUE, TRUE ) ;
 
-  /* Target attribute */
-  if (match_name)
+  /*
+   * Target attribute; note that the strand is optional
+   */
+  if (match_name && *match_name)
     {
-      g_string_append_printf(line, "Target=%s %d %d %c;",
-                             match_name, sstart, send,
-                             zMapGFFFormatStrand2Char(s_strand)) ;
-    }
-
-  /* ID attribute */
-  if (gff_data->maximise_ids)
-    {
-      gff_data->alignment_count++ ;
-      g_string_append_printf(line, "ID=match%d;", gff_data->alignment_count ) ;
-    }
-
-  if (percent_id)
-    {
-      g_string_append_printf(line, "percentID=%g;", percent_id) ;
-    }
-
-  if (gaps)
-    {
-      int k=0, index=0, incr=0 ;
-      GString *align_str = NULL ;
-
-      align_str = g_string_sized_new(2000) ;
-
-      /* Gap=M8 D3 M6 I1 M6 */
-
-      /* correct, needed ?? */
-      if (q_strand == ZMAPSTRAND_REVERSE)
+      if (s_strand != ZMAPSTRAND_NONE)
         {
-          index = gaps->len - 1 ;
-          incr = -1 ;
+          g_string_printf(attribute, "Target=%s %d %d %c",
+                          match_name, sstart, send,
+                          zMapGFFFormatStrand2Char(s_strand)) ;
         }
       else
         {
-          index = 0 ;
-          incr = 1 ;
+          g_string_printf(attribute, "Target=%s %d %d",
+                          match_name, sstart, send) ;
         }
-
-      for (k = 0 ; k < gaps->len ; k++, index += incr)
-        {
-          ZMapAlignBlock gap ;
-          int coord ;
-
-          gap = &(g_array_index(gaps, ZMapAlignBlockStruct, index)) ;
-
-          coord = calcBlockLength(match_seq_type, gap->t1, gap->t2) ;
-          g_string_append_printf(align_str, "M%d ", coord) ;
-
-          if (k < gaps->len - 1)
-            {
-              ZMapAlignBlock next_gap ;
-              int curr_match, next_match, curr_ref, next_ref ;
-
-              next_gap = &(g_array_index(gaps, ZMapAlignBlockStruct, index + incr)) ;
-
-              if (gap->q_strand == ZMAPSTRAND_FORWARD)
-                {
-                  curr_match = gap->q2 ;
-                  next_match = next_gap->q1 ;
-                }
-              else
-                {
-                  /* For the match, q1 > q2 for rev strand */
-                  curr_match = next_gap->q1 ;
-                  next_match = gap->q2 ;
-                }
-
-              if (gap->t_strand == ZMAPSTRAND_FORWARD)
-                {
-                  curr_ref = gap->t2 ;
-                  next_ref = next_gap->t1 ;
-                }
-              else
-                {
-                  /* For the ref, t2 > t1 for both strands */
-                  curr_ref = next_gap->t2 ;
-                  next_ref = gap->t1 ;
-                }
-
-              if (next_match > curr_match + 1)
-                {
-                  g_string_append_printf(align_str, "I%d ", (next_match - curr_match) - 1) ;
-                }
-              else if (next_ref > curr_ref + 1)
-                {
-                  coord = calcGapLength(match_seq_type, curr_ref, next_ref) ;
-
-                  /* Check if it's an intron or deletion */
-                  AlignBlockBoundaryType boundary_type = ALIGN_BLOCK_BOUNDARY_EDGE ;
-                  if (gap->q_strand == gap->t_strand)
-                    boundary_type = gap->end_boundary ;
-                  else
-                    boundary_type = gap->start_boundary ;
-
-                  if (boundary_type == ALIGN_BLOCK_BOUNDARY_INTRON)
-                    g_string_append_printf(align_str, "N%d ", coord) ;
-                  else
-                    g_string_append_printf(align_str, "D%d ", coord) ;
-                }
-              else
-                zMapLogWarning("Bad coords in GFFv3 writer: gap %d,%d -> %d, %d, next_gap %d, %d -> %d, %d",
-                               gap->t1, gap->t2, gap->q1, gap->q2,
-                               next_gap->t1, next_gap->t2, next_gap->q1, next_gap->q2) ;
-            }
-        }
-
-      g_string_append_printf(line, "Gap=%s;", align_str->str) ;
-
-      g_string_free(align_str, TRUE) ;
+      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+      g_string_truncate(attribute, (gsize)0) ;
     }
 
+  /*
+   * ID attribute
+   */
+  gff_data->alignment_count++ ;
+  g_string_printf(attribute, "ID=match%d", gff_data->alignment_count ) ;
+  zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+  g_string_truncate(attribute, (gsize)0) ;
+
+  /*
+   * percentID attribute
+   */
+  if (percent_id != (float)0.0)
+    {
+      g_string_printf(attribute, "percentID=%g", percent_id) ;
+      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+      g_string_truncate(attribute, (gsize)0) ;
+    }
+
+  /*
+   * Gap attribute (gffv3)
+   */
+  if (gaps)
+    {
+      zMapGFFFormatGap2GFF(attribute, gaps, q_strand, match_seq_type) ;
+      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+      g_string_truncate(attribute, (gsize)0) ;
+    }
+
+  /*
+   * Sequence attribute
+   */
   if (sequence && *sequence)
     {
-      g_string_append_printf(line, "sequence=%s;", sequence) ;
+      g_string_printf(attribute, "sequence=%s", sequence) ;
+      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+      g_string_truncate(attribute, (gsize)0) ;
     }
 
   g_string_append_c(line, '\n') ;
+
+  if (attribute)
+    g_string_free(attribute, TRUE) ;
 
   return status ;
 }
@@ -2162,7 +2122,6 @@ static gboolean formatTranscriptGFF(ZMapBlixemData blixem_data, ZMapFeature feat
    * Send this line to the ouput channel.
    */
   status = printLine(channel, &(blixem_data->errorMsg), line, TRUE) ;
-  //line = g_string_truncate(line, (gsize)0) ; /* Reset string buffer. */
 
 
   /* Write out the exons...and if there is one the CDS sections. */
@@ -2187,7 +2146,6 @@ static gboolean formatTranscriptGFF(ZMapBlixemData blixem_data, ZMapFeature feat
            * Send this line to the output channel.
            */
           status = printLine(channel, &(blixem_data->errorMsg), line, TRUE) ;
-          //line = g_string_truncate(line, (gsize)0) ;
 
         }
     }
@@ -2210,11 +2168,14 @@ static gboolean formatExonGFF(GFFFormatData gff_data, GString *line, int min, in
   static const char *SO_exon_id = "exon",
     *SO_CDS_id = "CDS" ;
   gboolean status = FALSE ;
-  char *id_str = NULL, *parent_str = NULL ;
+  GString *parent_attribute = NULL,
+    *id_attribute = NULL ;
 
   if (!gff_data || !ref_name || !source_name || !feature)
     return status ;
   status = TRUE ;
+  parent_attribute = g_string_new(NULL) ;
+  id_attribute = g_string_new(NULL) ;
 
   /*
    * Mandatory fields.
@@ -2226,18 +2187,17 @@ static gboolean formatExonGFF(GFFFormatData gff_data, GString *line, int min, in
                          (gboolean)feature->flags.has_score, TRUE ) ;
 
   /*
-   * Now add ID and Parent attributes.
+   * Parent attribute
    */
+  g_string_printf(parent_attribute, "Parent=%s%d", transcript_name, gff_data->transcript_count) ;
+  zMapGFFFormatAppendAttribute(line, parent_attribute, FALSE, TRUE ) ;
 
-  parent_str = g_strdup_printf("Parent=%s%d", transcript_name, gff_data->transcript_count) ;
-  g_string_append_printf(line, "%s", parent_str) ;
-  if (gff_data->maximise_ids)
-    {
-      gff_data->exon_count++ ;
-      id_str = g_strdup_printf("ID=exon%d", gff_data->exon_count) ;
-    }
-  if (id_str)
-    g_string_append_printf(line, ";%s", id_str) ;
+  /*
+   * ID attribute.
+   */
+  gff_data->exon_count++ ;
+  g_string_printf(id_attribute, "ID=exon%d", gff_data->exon_count) ;
+  zMapGFFFormatAppendAttribute(line, id_attribute, FALSE, TRUE) ;
   g_string_append_c(line, '\n');
 
   /*
@@ -2259,8 +2219,8 @@ static gboolean formatExonGFF(GFFFormatData gff_data, GString *line, int min, in
           int tmp_cds1, tmp_cds2;
           ZMapPhase phase = ZMAPPHASE_NONE ;
 
-          if (zMapFeatureExon2CDS(feature,
-                                  exon_start, exon_end, &tmp_cds1, &tmp_cds2, &phase))
+          if (zMapFeatureExon2CDS(feature, exon_start, exon_end,
+                                  &tmp_cds1, &tmp_cds2, &phase))
             {
               /* mandatory data */
               zMapGFFFormatMandatory(FALSE, line,
@@ -2269,18 +2229,17 @@ static gboolean formatExonGFF(GFFFormatData gff_data, GString *line, int min, in
                          feature->score, qstrand, phase,
                          (gboolean)feature->flags.has_score, TRUE ) ;
               /* attributes */
-              g_string_append_printf(line, "%s", parent_str) ;
-              if (id_str)
-                g_string_append_printf(line, ";%s", id_str) ;
+              zMapGFFFormatAppendAttribute(line, parent_attribute, FALSE, TRUE) ;
+              zMapGFFFormatAppendAttribute(line, id_attribute, FALSE, TRUE) ;
               g_string_append_c(line, '\n');
             }
         }
     }
 
-  if (id_str)
-    g_free(id_str) ;
-  if (parent_str)
-    g_free(parent_str) ;
+  if (parent_attribute)
+    g_string_free(parent_attribute, TRUE) ;
+  if (id_attribute)
+    g_string_free(id_attribute, TRUE) ;
 
   return status ;
 }
@@ -2366,12 +2325,9 @@ static gboolean formatPolyAGFF(GFFFormatData gff_data, GString *line,
   /*
    * ID attribute
    */
-  if (gff_data->maximise_ids)
-    {
-      gff_data->feature_count++ ;
-      g_string_printf(attribute, "ID=feature%d", gff_data->feature_count) ;
-      zMapGFFFormatAppendAttribute(line, attribute, TRUE, FALSE) ;
-    }
+  gff_data->feature_count++ ;
+  g_string_printf(attribute, "ID=feature%d", gff_data->feature_count) ;
+  zMapGFFFormatAppendAttribute(line, attribute, TRUE, FALSE) ;
 
   g_string_free(attribute, TRUE);
 
@@ -2411,14 +2367,10 @@ static gboolean formatVariantGFF(GFFFormatData gff_data, GString *line,
   /*
    * ID attribute
    */
-  if (gff_data->maximise_ids)
-    {
-      char *id_str = NULL ;
-      gff_data->feature_count++ ;
-      g_string_printf(attribute, "ID=feature%d", gff_data->feature_count) ;
-      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-      g_string_truncate(attribute, (gsize)0) ;
-    }
+  gff_data->feature_count++ ;
+  g_string_printf(attribute, "ID=feature%d", gff_data->feature_count) ;
+  zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+  g_string_truncate(attribute, (gsize)0) ;
 
   /*
    * URL attribute
@@ -2479,7 +2431,8 @@ static gboolean printLine(GIOChannel *gio_channel, char **err_msg_out, GString *
     {
       *err_msg_out = g_strdup_printf("Could not write to file, error \"%s\" for line \"%50s...\"",
                                      channel_error->message, line->str) ;
-      g_error_free(channel_error) ;
+      if (channel_error)
+        g_error_free(channel_error) ;
       channel_error = NULL;
       status = FALSE ;
     }
