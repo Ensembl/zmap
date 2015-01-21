@@ -108,13 +108,13 @@ typedef struct _ZMapGFFFormatDataStruct
   zMapGFFFormatAttrFunc *text;
 } ZMapGFFFormatDataStruct ;
 
-typedef struct_GFFHeaderDataStruct
+typedef struct _ZMapGFFFormatHeaderDataStruct
 {
   GString *header_string;         /* string to use as buffer. */
   const char *gff_sequence;       /* can be shared between header and dump data
                                      structs in case dumping list. */
   gboolean status, cont;          /* simple status and continuation flags */
-} GFFHeaderDataStruct, *GFFHeaderData ;
+} ZMapGFFFormatHeaderDataStruct, *ZMapGFFFormatHeaderData ;
 
 /* Functions to dump the header section of gff files */
 static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file,
@@ -416,7 +416,7 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file,
                                  const char **sequence_in_out, GString **header_string_out,
                                  GError **error_out)
 {
-  GFFHeaderDataStruct header_data = {NULL};
+  ZMapGFFFormatHeaderDataStruct header_data = {NULL};
 
   zMapReturnValIfFail(feature_any && (feature_any->struct_type != ZMAPFEATURE_STRUCT_INVALID) && error_out, FALSE ) ;
 
@@ -468,7 +468,7 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark  key, gpoin
 {
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  GFFHeaderData header_data  = (GFFHeaderData)user_data;
+  ZMapGFFFormatHeaderData header_data  = (ZMapGFFFormatHeaderData)user_data;
 
   zMapReturnValIfFail(data && user_data && (feature_any->struct_type != ZMAPFEATURE_STRUCT_INVALID), status ) ;
 
