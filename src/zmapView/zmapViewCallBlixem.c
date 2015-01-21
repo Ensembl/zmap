@@ -2202,9 +2202,57 @@ static gboolean formatExonGFF(GString *line, int min, int max,
  */
 static gboolean printBasic(ZMapFeature feature, ZMapBlixemData  blixem_data)
 {
+//<<<<<<< HEAD
   gboolean status = FALSE ;
   const char *ref_name = NULL,
     *source_name = NULL ;
+//|||||||
+//  gboolean status = TRUE ;
+//  char *ref_name = NULL,
+//    *source_name = NULL,
+//    *so_term = NULL ;
+//  static BasicFeatureDumpStruct dumpers[] =
+ //   {
+//      {SO_ACC_CNV, formatVariant},
+//      {SO_ACC_DELETION, formatVariant},
+//      {SO_ACC_INSERTION,  formatVariant},
+//      {SO_ACC_POLYA_JUNC, formatPolyA},
+//      {SO_ACC_POLYA_SEQ, formatPolyA},
+//      {SO_ACC_POLYA_SIGNAL, formatPolyA},
+//      {SO_ACC_POLYA_SITE, formatPolyA},
+//      {SO_ACC_SEQ_ALT, formatVariant},
+//      {SO_ACC_SNP, formatVariant},
+//      {SO_ACC_SNV,  formatVariant},
+//      {SO_ACC_MUTATION, formatVariant},
+//      {SO_ACC_SUBSTITUTION, formatVariant},
+//      {NULL, NULL}
+//    } ;
+//  BasicFeatureDump curr = NULL ;
+//  so_term = g_quark_to_string(feature->SO_accession) ;
+//=======
+//  gboolean status = TRUE ;
+//  char *ref_name = NULL,
+//    *source_name = NULL,
+//    *so_term = NULL ;
+//  static BasicFeatureDumpStruct dumpers[] =
+//    {
+///      {SO_ACC_CNV, formatVariant},
+//      {SO_ACC_DELETION, formatVariant},
+//      {SO_ACC_INSERTION,  formatVariant},
+//      {SO_ACC_POLYA_JUNC, formatPolyA},
+//     {SO_ACC_POLYA_SEQ, formatPolyA},
+//      {SO_ACC_POLYA_SIGNAL, formatPolyA},
+//      {SO_ACC_POLYA_SITE, formatPolyA},
+//      {SO_ACC_SEQ_ALT, formatVariant},
+//      {SO_ACC_SNP, formatVariant},
+//      {SO_ACC_SNV,  formatVariant},
+//      {SO_ACC_MUTATION, formatVariant},
+//      {SO_ACC_SUBSTITUTION, formatVariant},
+//      {NULL, NULL}
+//    } ;
+//  BasicFeatureDump curr = NULL ;
+//  so_term = (char *)g_quark_to_string(feature->SO_accession) ;
+//>>>>>>> develop
 
   BasicFeatureDumpFunc format_func = formatVariantGFF ;
 
