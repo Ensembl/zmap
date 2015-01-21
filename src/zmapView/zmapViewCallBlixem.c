@@ -2801,7 +2801,7 @@ static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data)
       {NULL, NULL}
     } ;
   BasicFeatureDump curr = NULL ;
-  so_term = g_quark_to_string(feature->SO_accession) ;
+  so_term = (char *)g_quark_to_string(feature->SO_accession) ;
 
 
   /* Swop to other strand..... */
