@@ -1,3 +1,20 @@
+2015-01-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix incorrect gap string for protein seqs sent to blixem
+ src/zmapView/zmapViewCallBlixem.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+2015-01-13  Gemma Barson  <gb10@sanger.ac.uk>
+ Update release notes
+ docs/user/release_notes.shtml |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+2015-01-13  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.2.0-83-g6fd8c75 - Update RT and git commit reports
+ src/ChangeLog                                  | 2147 ++++++++++++++++++------
+ src/build/release_docs/GIT_COMMITS.txt         |   63 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  123 +--
+ 3 files changed, 1694 insertions(+), 639 deletions(-)
+
 2015-01-12  Ed Griffiths  <edgrif@sanger.ac.uk>
  "fix bug causing lowercasing of featureset names on user loading."
  src/zmapWindow/zmapWindow.c          |   23 +++++++---

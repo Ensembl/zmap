@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/1.3.0"
 
+48f9533 2015-01-21 Fix incorrect gap string for protein seqs sent to blixem
 6fd8c75 2015-01-12 "fix bug causing lowercasing of featureset names on user loading."
 315c026 2015-01-08 Update the copyright declarations to the year 2015.
 7ab1636 2015-01-06 "add text for lessons learned from zmap."
