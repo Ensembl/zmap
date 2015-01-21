@@ -1348,12 +1348,12 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
      int exon_start, int exon_end, int *exon_cds_start, int *exon_cds_end, ZMapPhase *phase_out)
 {
   gboolean is_cds_exon = FALSE ;
-  int exon_index ;
+  int exon_index =0;
 
   if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds
               && (exon_index = findExon(feature, exon_start, exon_end)) > -1)
     {
-      int cds_start, cds_end ;
+      int cds_start=0, cds_end=0 ;
 
       cds_start = feature->feature.transcript.cds_start ;
       cds_end = feature->feature.transcript.cds_end ;
@@ -1361,7 +1361,8 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
       if (!(cds_start > exon_end || cds_end < exon_start))
         {
           /* Exon has a cds section so calculate it and find the exons phase. */
-          int start, end, phase ;
+          int start=0, end =0;
+          ZMapPhase phase = ZMAPPHASE_NONE ;
 
           if (calcExonPhase(feature, exon_index, &start, &end, &phase))
             {
