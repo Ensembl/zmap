@@ -65,21 +65,27 @@ function zmap_untar_file
 	mkdir -p $untar_tmp_path
 
         #
-        # Untar the package to the temp destination
+        # Copy and untar the package in the temp destination
         #
-	zmap_message_out "Untarring $package to $untar_tmp_path"
+        zmap_message_out "Copying $package to $untar_tmp_path"
+        cp $package $untar_tmp_path
+
+        package_name=`basename $package`
         zmap_cd $untar_tmp_path
-	tar $tar_options $package
+	zmap_message_out "Untarring $package_name to $untar_tmp_path"
+	tar $tar_options $package_name
 
 	if [ $? != 0 ]; then
 	    zmap_cd $output_dir_parent
 	    rm -rf $untar_tmp
-	    zmap_message_exit "Failed to untar $package. Removed $untar_tmp_path."
+	    zmap_message_exit "Failed to untar $package_name. Removed $untar_tmp_path."
 	else
             #
             # Get the name of the build directory. There should only be one item
-            # in the tmp directory, so we can just use ls to get the build dir name.
+            # in the tmp directory (after removing the tar file), so we can just
+            #use ls to get the build dir name.
             #
+            rm -f $package_name
 	    package_dir=$(ls)
 
             #
@@ -102,7 +108,7 @@ function zmap_untar_file
             #
 	    zmap_cd $output_dir_parent
 	    rm -rf $untar_tmp_path
-	    zmap_message_out "$package successfully untarred to $output_dir"
+	    zmap_message_out "$package_name successfully untarred to $output_dir"
 	fi
     fi
 
