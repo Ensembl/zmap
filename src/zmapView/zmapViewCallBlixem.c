@@ -74,15 +74,6 @@ enum
 
 #define BLX_ARGV_ARGC_MAX 100
 
-typedef enum
-{
-
-  BLX_FILE_FORMAT_INVALID,
-  BLX_FILE_FORMAT_GFF
-
-} BlixemFileFormat ;
-
-
 /* Control block for preparing data to call blixem. */
 typedef struct ZMapBlixemDataStruct_
 {
@@ -128,7 +119,6 @@ typedef struct ZMapBlixemDataStruct_
 
   char          *opts;
 
-  BlixemFileFormat file_format ;
   char          *tmpDir ;
   gboolean      keep_tmpfiles ;
   gboolean      sleep_on_startup ;
@@ -177,7 +167,9 @@ typedef struct ZMapBlixemDataStruct_
 } ZMapBlixemDataStruct, *ZMapBlixemData ;
 
 
-/* Holds just the config data, some of which is user configurable. */
+/*
+ * Holds just the config data, some of which is user configurable.
+ */
 typedef struct BlixemConfigDataStructType
 {
   gboolean init ;                           /* TRUE when struct has been initialised. */
@@ -216,8 +208,6 @@ typedef struct BlixemConfigDataStructType
 
   int           homol_max ;                   /* defines max. number of aligns sent
                                                  to blixem. */
-
-  BlixemFileFormat file_format ;
   gboolean      keep_tmpfiles ;
   gboolean      sleep_on_startup ;
 
@@ -233,9 +223,9 @@ typedef struct BlixemConfigDataStructType
 /*
  * Used for mode==BASIC only.
  */
-typedef gboolean (*BasicFeatureDumpFunc)(GString *line, const char *ref_name,
-                                         const char *source_name,
-                                         ZMapFeature feature) ;
+//typedef gboolean (*BasicFeatureDumpFunc)(GString *line, const char *ref_name,
+//                                         const char *source_name,
+//                                         ZMapFeature feature) ;
 
 static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
                                ZMapHomolType align_type,
@@ -283,25 +273,19 @@ static gboolean formatTranscriptGFF(ZMapBlixemData blixem_data, ZMapFeature feat
 static gboolean formatAlignmentGFF(GString *line,
                                    const char *ref_name, const char *match_name, const char *source_name,
                                    ZMapHomolType homol_type,
-                                   int qstart, int qend, ZMapStrand q_strand,
+                                   int start, int end, ZMapStrand strand,
                                    int sstart, int send, ZMapStrand s_strand,
                                    float score, float percent_id,
                                    GArray *gaps,
-                                   const char *sequence, const char *description,
+                                   const char *sequence,
                                    gboolean pfetchable) ;
 
-static gboolean formatExonGFF(GString *line, int min, int max,
-                                    const char *ref_name, const char *source_name,
-                                    ZMapFeature feature, const char *transcript_name,
-                                    int exon_start, int exon_end,
-                                    int qstrand) ;
+static gboolean formatExonGFF(ZMapBlixemData blixem_data, ZMapFeature feature,
+                              int exon_start, int exon_end) ;
 static gboolean formatPolyAGFF(GString *line,
                             const char *ref_name, const char *source_name, ZMapFeature feature) ;
-static gboolean formatVariantGFF(GString *line,
+static gboolean formatBasicGFF(GString *line,
                               const char *ref_name, const char *source_name, ZMapFeature feature) ;
-
-static gboolean printLine(GIOChannel *gio_channel, char **err_msg_out, GString *line,
-  gboolean truncate_after_write) ;
 
 static int findFeature(gconstpointer a, gconstpointer b) ;
 static void freeSequences(gpointer data, gpointer user_data_unused) ;
@@ -315,8 +299,6 @@ static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 static void getSetList(gpointer data, gpointer user_data) ;
 static void getFeatureCB(gpointer key, gpointer data, gpointer user_data) ;
 static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
-static int calcBlockLength(ZMapSequenceType match_seq_type, int start, int end) ;
-static int calcGapLength(ZMapSequenceType match_seq_type, int start, int end) ;
 
 GList * zMapViewGetColumnFeatureSets(ZMapBlixemData data,GQuark column_id);
 
@@ -434,7 +416,6 @@ gboolean zmapViewCallBlixem(ZMapView view,
     return status ;
   status = TRUE ;
 
-  /* new version of this... */
   argv = createBlixArgArray() ;
   if (!argv)
     status = FALSE ;
@@ -600,9 +581,6 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
   blixem_data->feature_set = feature_set ;
   blixem_data->block = block ;
 
-  /* ZMap uses the new blixem so default format is GFF by default. */
-  blixem_data->file_format = BLX_FILE_FORMAT_GFF ;
-
   if (!(zMapFeatureBlockDNA(block, NULL, NULL, NULL)))
     {
       status = FALSE;
@@ -730,18 +708,6 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                     ZMAPSTANZA_BLIXEM_MAX, &tmp_int))
         file_prefs.homol_max = tmp_int ;
-
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                       ZMAPSTANZA_BLIXEM_FILE_FORMAT, &tmp_string))
-        {
-          g_strstrip(tmp_string) ;
-
-          if (g_ascii_strcasecmp(tmp_string, "gffv3") == 0)
-            file_prefs.file_format = BLX_FILE_FORMAT_GFF ;
-
-          g_free(tmp_string) ;
-        }
-
 
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                         ZMAPSTANZA_BLIXEM_KEEP_TEMP, &tmp_bool))
@@ -908,9 +874,6 @@ static void setPrefs(BlixemConfigData curr_prefs, ZMapBlixemData blixem_data)
   blixem_data->sleep_on_startup = curr_prefs->sleep_on_startup ;
 
   blixem_data->kill_on_exit = curr_prefs->kill_on_exit ;
-
-  if (curr_prefs->file_format)
-    blixem_data->file_format = curr_prefs->file_format ;
 
   if (blixem_data->dna_sets)
     g_list_free(blixem_data->dna_sets) ;
@@ -1098,11 +1061,8 @@ static gboolean makeTmpfiles(ZMapBlixemData blixem_data)
   /* Create file(s) to hold features. */
   if (status)
     {
-      if (blixem_data->file_format == BLX_FILE_FORMAT_GFF)
-        {
-          if ((status = makeTmpfile(blixem_data->tmpDir, "gff", &(blixem_data->gff_file))))
-            status = setTmpPerms(blixem_data->gff_file, FALSE) ;
-        }
+      if ((status = makeTmpfile(blixem_data->tmpDir, "gff", &(blixem_data->gff_file))))
+        status = setTmpPerms(blixem_data->gff_file, FALSE) ;
     }
 
 
@@ -1532,7 +1492,7 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
               zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
               g_string_truncate(attribute, (gsize)0);
 
-              printLine(blixem_data->gff_channel, &(blixem_data->errorMsg),
+              ZMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
                         blixem_data->line, TRUE) ;
             }
         }
@@ -1620,7 +1580,7 @@ static gboolean initFeatureFile(const char *filename, GString *buffer,
   /* Open the file, always needed. */
   if ((*gio_channel_out = g_io_channel_new_file(filename, "w", &channel_error)))
     {
-      status = printLine(*gio_channel_out, err_out, buffer, TRUE) ;
+      status = ZMapGFFOutputWriteLineToGIO(*gio_channel_out, err_out, buffer, TRUE) ;
     }
   else
     {
@@ -1703,7 +1663,7 @@ static void writeListEntry(gpointer data, gpointer user_data)
 
 static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
 {
-  if (!feature || !blixem_data || (blixem_data->file_format != BLX_FILE_FORMAT_GFF))
+  if (!feature || !blixem_data )
     return ;
 
   /* There is no way to interrupt g_hash_table_foreach() so instead if errorMsg is set
@@ -1727,33 +1687,29 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
 
       if (include_feature)
         {
-          switch (feature->mode)
+          if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+            zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
+
+          if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
             {
-              case ZMAPSTYLE_MODE_ALIGNMENT:
+              if (feature->feature.homol.type == blixem_data->align_type)
                 {
-                  if (feature->feature.homol.type == blixem_data->align_type)
-                    {
-                      if ((*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
-                          || (*blixem_data->opts == 'N' && feature->feature.homol.type == ZMAPHOMOL_N_HOMOL))
-                        status = printAlignment(feature, blixem_data) ;
-                    }
-                  break ;
-                }
-              case ZMAPSTYLE_MODE_TRANSCRIPT:
-                {
-                  status = printTranscript(feature, blixem_data) ;
-                  break ;
-                }
-              case ZMAPSTYLE_MODE_BASIC:
-                {
-                  status = printBasic(feature, blixem_data) ;
-                  break ;
-                }
-              default:
-                {
-                  break ;
+                  if (   (*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+                      || (*blixem_data->opts == 'N' && feature->feature.homol.type == ZMAPHOMOL_N_HOMOL))
+                    status = printAlignment(feature, blixem_data) ;
                 }
             }
+          else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+            {
+              status = printTranscript(feature, blixem_data) ;
+            }
+          else if (feature->mode == ZMAPSTYLE_MODE_BASIC)
+            {
+              status = printBasic(feature, blixem_data) ;
+            }
+
+           if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+             zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
         }
     }
 
@@ -1765,13 +1721,12 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
 static gboolean printAlignment(ZMapFeature feature, ZMapBlixemData  blixem_data)
 {
   gboolean status = FALSE ;
-  int tmp=0, min=0, max=0, qstart=0, qend=0, sstart=0,
-    send=0, qframe=0, sframe=0, x1=0, x2=0;
+  int tmp=0, sstart=0, send=0 ;
   GString *line = NULL ;
-  const char *seq_str = NULL ,
-    *description = NULL,
+  const char *seq_name = NULL,
     *match_name = NULL,
-    *source_name = NULL ;
+    *source_name = NULL,
+    *seq_str = NULL;
   GList *list_ptr = NULL ;
   GIOChannel *curr_channel = NULL ;
 
@@ -1779,60 +1734,15 @@ static gboolean printAlignment(ZMapFeature feature, ZMapBlixemData  blixem_data)
     return status ;
   status = TRUE ;
 
-  min = blixem_data->features_min ;
-  max = blixem_data->features_max ;
   line = blixem_data->line ;
-
-  /* If view is revcomp'd then recomp back so we always pass forward coords. */
-  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
-
-  x1 = feature->x1 ;
-  x2 = feature->x2 ;
-
-  /* qstart and qend are the coordinates of the current homology relative to the viewing view,
-   * rather than absolute coordinates. */
-  if (feature->strand == ZMAPSTRAND_REVERSE)
-    {
-      qstart = x2 ;
-      qend   = x1 ;
-    }
-  else
-    {
-      qstart = x1 ;
-      qend   = x2 ;
-    }
-
-  /* qframe is derived from the position of the start position
-   * of this homology relative to one end of the viewing view
-   * or the other, depending on strand.  Mod3 gives us the odd
-   * bases if that distance is not a whole number of codons. */
-  if (feature->strand == ZMAPSTRAND_REVERSE)
-    {
-      qframe = 1 + ((max - qstart) % 3) ;
-    }
-  else
-    {
-      qframe = 1 + ((qstart - 1) % 3) ;
-    }
 
   sstart = feature->feature.homol.y1 ;
   send   = feature->feature.homol.y2 ;
 
-  if (feature->feature.homol.strand == ZMAPSTRAND_REVERSE)
-    {
-      if (feature->feature.homol.length)
-        sframe = (1 + ((feature->feature.homol.length) - sstart) % 3) ;
-    }
-  else
-    {
-      if (feature->feature.homol.length)
-        sframe = (1 + (sstart-1) % 3) ;
-    }
-
-  seq_str = (const char *) feature->feature.homol.sequence;
-  match_name = (const char *)g_quark_to_string(feature->original_id) ;
-  source_name = (const char *)g_quark_to_string(feature->parent->original_id) ;
+  seq_name = g_quark_to_string(blixem_data->block->original_id) ;
+  match_name = g_quark_to_string(feature->original_id) ;
+  source_name = g_quark_to_string(feature->parent->original_id) ;
+  seq_str = feature->feature.homol.sequence;
 
   /* this if could be tidied up, but let's leave existing logic alone
    * of old 'local sequence' meant in ACEDB, for BAM we get it in GFF and save it in the feature
@@ -1854,27 +1764,19 @@ static gboolean printAlignment(ZMapFeature feature, ZMapBlixemData  blixem_data)
     }
 
   /*
-   * Call the output function for GFF data.
+   * Format output function...
    */
-  if (feature->strand == ZMAPSTRAND_REVERSE)
-    tmp = qstart, qstart = qend, qend = tmp ;
-
   status = formatAlignmentGFF(line,
-                              (const char *)g_quark_to_string(blixem_data->block->original_id),
-                              match_name, source_name, feature->feature.homol.type,
-                              qstart, qend, feature->strand,
+                              seq_name, match_name, source_name, feature->feature.homol.type,
+                              feature->x1, feature->x2, feature->strand,
                               sstart, send, feature->feature.homol.strand,
                               feature->score, feature->feature.homol.percent_id,
-                              feature->feature.homol.align, seq_str, description,
+                              feature->feature.homol.align, seq_str,
                               zMapStyleIsPfetchable((*feature->style))) ;
 
   curr_channel = blixem_data->gff_channel ;
-  status = printLine(curr_channel, &(blixem_data->errorMsg),
+  status = ZMapGFFOutputWriteLineToGIO(curr_channel, &(blixem_data->errorMsg),
                      line, TRUE) ;
-
-  /* If view is recomp'd we should swop back again now. */
-  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
   return status ;
 }
@@ -1883,10 +1785,10 @@ static gboolean printAlignment(ZMapFeature feature, ZMapBlixemData  blixem_data)
 static gboolean formatAlignmentGFF(GString *line,
                                    const char *ref_name, const char *match_name, const char *source_name,
                                    ZMapHomolType homol_type,
-                                   int qstart, int qend, ZMapStrand q_strand,
+                                   int start, int end, ZMapStrand strand,
                                    int sstart, int send, ZMapStrand s_strand,
                                    float score, float percent_id,
-                                   GArray *gaps, const char *sequence, const char *description,
+                                   GArray *gaps, const char *sequence,
                                    gboolean pfetchable)
 {
   static const char *SO_nucleotide_match = "nucleotide_match",
@@ -1928,8 +1830,8 @@ static gboolean formatAlignmentGFF(GString *line,
    */
   zMapGFFFormatMandatory(TRUE, line,
                          ref_name, source_name, type,
-                         qstart, qend,
-                         score, q_strand, ZMAPPHASE_NONE,
+                         start, end,
+                         score, strand, ZMAPPHASE_NONE,
                          TRUE, TRUE ) ;
 
   /*
@@ -1967,7 +1869,7 @@ static gboolean formatAlignmentGFF(GString *line,
    */
   if (gaps)
     {
-      zMapGFFFormatGap2GFF(attribute, gaps, q_strand, match_seq_type) ;
+      zMapGFFFormatGap2GFF(attribute, gaps, strand, match_seq_type) ;
       zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
       g_string_truncate(attribute, (gsize)0) ;
     }
@@ -1996,19 +1898,10 @@ static gboolean printTranscript(ZMapFeature feature, ZMapBlixemData  blixem_data
 {
   gboolean status = TRUE;
 
-  /* Swop to other strand..... */
-  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
-
-
   /*
    * Output the feature and subfeatures.
    */
   status = formatTranscriptGFF(blixem_data, feature) ;
-
-   /* And swop it back again. */
-  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
   return status ;
 }
@@ -2022,7 +1915,7 @@ static gboolean formatTranscriptGFF(ZMapBlixemData blixem_data, ZMapFeature feat
 {
   gboolean status = FALSE ;
   GIOChannel *channel = NULL ;
-  int i=0, min=0, max =0 ;
+  int i=0 ;
   ZMapSpan span = NULL ;
   GString *line = NULL ;
   const char *ref_name = NULL,
@@ -2038,9 +1931,6 @@ static gboolean formatTranscriptGFF(ZMapBlixemData blixem_data, ZMapFeature feat
   attribute = g_string_new(NULL) ;
   channel = blixem_data->gff_channel ;
   line = blixem_data->line ;
-
-  min = blixem_data->features_min ;
-  max = blixem_data->features_max ;
 
   ref_name = g_quark_to_string(blixem_data->block->original_id) ;
   transcript_name = g_quark_to_string(feature->original_id) ;
@@ -2078,7 +1968,7 @@ static gboolean formatTranscriptGFF(ZMapBlixemData blixem_data, ZMapFeature feat
   /*
    * Send this line to the ouput channel.
    */
-  status = printLine(channel, &(blixem_data->errorMsg), line, TRUE) ;
+  status = ZMapGFFOutputWriteLineToGIO(channel, &(blixem_data->errorMsg), line, TRUE) ;
 
 
   /* Write out the exons...and if there is one the CDS sections. */
@@ -2093,16 +1983,13 @@ static gboolean formatTranscriptGFF(ZMapBlixemData blixem_data, ZMapFeature feat
           exon_start = span->x1 ;
           exon_end = span->x2 ;
 
-          formatExonGFF(line, min, max,
-                        ref_name, source_name,
-                        feature, transcript_name,
-                        exon_start, exon_end,
-                        feature->strand) ;
+          formatExonGFF(blixem_data, feature,
+                        exon_start, exon_end) ;
 
           /*
            * Send this line to the output channel.
            */
-          status = printLine(channel, &(blixem_data->errorMsg), line, TRUE) ;
+          status = ZMapGFFOutputWriteLineToGIO(channel, &(blixem_data->errorMsg), line, TRUE) ;
 
         }
     }
@@ -2116,23 +2003,25 @@ static gboolean formatTranscriptGFF(ZMapBlixemData blixem_data, ZMapFeature feat
 /*
  * This is for exons and CDS subfeatures only.
  */
-static gboolean formatExonGFF(GString *line, int min, int max,
-                             const char *ref_name,const char *source_name,
-                             ZMapFeature feature, const char *transcript_name,
-                             int exon_start, int exon_end,
-                             int qstrand)
+static gboolean formatExonGFF(ZMapBlixemData blixem_data, ZMapFeature feature,
+                             int exon_start, int exon_end)
 {
   static const char *SO_exon_id = "exon",
     *SO_CDS_id = "CDS" ;
   gboolean status = FALSE ;
-  GString *parent_attribute = NULL,
-    *id_attribute = NULL ;
+  GString *parent_attribute = NULL, *line ;
+  const char *ref_name = NULL,
+    *transcript_name = NULL,
+    *source_name = NULL ;
 
-  if (!ref_name || !source_name || !feature)
+  if (!blixem_data || !feature)
     return status ;
   status = TRUE ;
   parent_attribute = g_string_new(NULL) ;
-  id_attribute = g_string_new(NULL) ;
+  line = blixem_data->line ;
+  ref_name = g_quark_to_string(blixem_data->block->original_id) ;
+  transcript_name = g_quark_to_string(feature->original_id) ;
+  source_name = g_quark_to_string(feature->parent->original_id) ;
 
   /*
    * Mandatory fields.
@@ -2153,9 +2042,9 @@ static gboolean formatExonGFF(GString *line, int min, int max,
   /*
    * Now do a CDS line if the feature has one.
    */
-  if (ZMAPFEATURE_HAS_CDS(feature))
+  if (feature->feature.transcript.flags.cds)
     {
-      int cds_start, cds_end ;
+      int cds_start=0, cds_end=0 ;
 
       cds_start = feature->feature.transcript.cds_start ;
       cds_end = feature->feature.transcript.cds_end ;
@@ -2166,7 +2055,7 @@ static gboolean formatExonGFF(GString *line, int min, int max,
         }
       else
         {
-          int tmp_cds1, tmp_cds2;
+          int tmp_cds1=0, tmp_cds2=0;
           ZMapPhase phase = ZMAPPHASE_NONE ;
 
           if (zMapFeatureExon2CDS(feature, exon_start, exon_end,
@@ -2176,11 +2065,10 @@ static gboolean formatExonGFF(GString *line, int min, int max,
               zMapGFFFormatMandatory(FALSE, line,
                          ref_name, source_name, SO_CDS_id,
                          tmp_cds1, tmp_cds2,
-                         feature->score, qstrand, phase,
+                         feature->score, feature->strand, phase,
                          (gboolean)feature->flags.has_score, TRUE ) ;
               /* attributes */
               zMapGFFFormatAppendAttribute(line, parent_attribute, FALSE, TRUE) ;
-              zMapGFFFormatAppendAttribute(line, id_attribute, FALSE, TRUE) ;
               g_string_append_c(line, '\n');
             }
         }
@@ -2188,145 +2076,39 @@ static gboolean formatExonGFF(GString *line, int min, int max,
 
   if (parent_attribute)
     g_string_free(parent_attribute, TRUE) ;
-  if (id_attribute)
-    g_string_free(id_attribute, TRUE) ;
 
   return status ;
 }
 
 
 
-
-/* This is were we really need gffv3....
- * Er, yes well...
+/*
+ *
  */
 static gboolean printBasic(ZMapFeature feature, ZMapBlixemData  blixem_data)
 {
-//<<<<<<< HEAD
   gboolean status = FALSE ;
   const char *ref_name = NULL,
     *source_name = NULL ;
-//|||||||
-//  gboolean status = TRUE ;
-//  char *ref_name = NULL,
-//    *source_name = NULL,
-//    *so_term = NULL ;
-//  static BasicFeatureDumpStruct dumpers[] =
- //   {
-//      {SO_ACC_CNV, formatVariant},
-//      {SO_ACC_DELETION, formatVariant},
-//      {SO_ACC_INSERTION,  formatVariant},
-//      {SO_ACC_POLYA_JUNC, formatPolyA},
-//      {SO_ACC_POLYA_SEQ, formatPolyA},
-//      {SO_ACC_POLYA_SIGNAL, formatPolyA},
-//      {SO_ACC_POLYA_SITE, formatPolyA},
-//      {SO_ACC_SEQ_ALT, formatVariant},
-//      {SO_ACC_SNP, formatVariant},
-//      {SO_ACC_SNV,  formatVariant},
-//      {SO_ACC_MUTATION, formatVariant},
-//      {SO_ACC_SUBSTITUTION, formatVariant},
-//      {NULL, NULL}
-//    } ;
-//  BasicFeatureDump curr = NULL ;
-//  so_term = g_quark_to_string(feature->SO_accession) ;
-//=======
-//  gboolean status = TRUE ;
-//  char *ref_name = NULL,
-//    *source_name = NULL,
-//    *so_term = NULL ;
-//  static BasicFeatureDumpStruct dumpers[] =
-//    {
-///      {SO_ACC_CNV, formatVariant},
-//      {SO_ACC_DELETION, formatVariant},
-//      {SO_ACC_INSERTION,  formatVariant},
-//      {SO_ACC_POLYA_JUNC, formatPolyA},
-//     {SO_ACC_POLYA_SEQ, formatPolyA},
-//      {SO_ACC_POLYA_SIGNAL, formatPolyA},
-//      {SO_ACC_POLYA_SITE, formatPolyA},
-//      {SO_ACC_SEQ_ALT, formatVariant},
-//      {SO_ACC_SNP, formatVariant},
-//      {SO_ACC_SNV,  formatVariant},
-//      {SO_ACC_MUTATION, formatVariant},
-//      {SO_ACC_SUBSTITUTION, formatVariant},
-//      {NULL, NULL}
-//    } ;
-//  BasicFeatureDump curr = NULL ;
-//  so_term = (char *)g_quark_to_string(feature->SO_accession) ;
-//>>>>>>> develop
-
-  BasicFeatureDumpFunc format_func = formatVariantGFF ;
 
   if (!feature || !blixem_data || !blixem_data->view )
     return status ;
   status = TRUE ;
 
-  /* Swop to other strand..... */
-  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
-
   ref_name = g_quark_to_string(blixem_data->block->original_id) ;
   source_name = g_quark_to_string(feature->parent->original_id) ;
 
-  /*
-   * Originally there were several specific polyA* SO terms used.
-   * I have changed it to generalise in the following fashion:
-   */
-  const char * feature_term = g_quark_to_string(feature->SO_accession) ;
-  if (   g_str_has_prefix(feature_term, "polyA")
-      || g_str_has_prefix(source_name, "polyA")
-      || g_str_has_prefix(source_name, "polya") )
-    {
-      format_func = formatPolyAGFF ;
-    }
-
-  /*
-   * a function will always have been selected so now call it
-   */
-  status = format_func(blixem_data->line, ref_name, source_name, feature) ;
+  status = formatBasicGFF(blixem_data->line, ref_name, source_name, feature) ;
 
   if (status)
-    status = printLine(blixem_data->gff_channel, &(blixem_data->errorMsg),
+    status = ZMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
                        blixem_data->line, TRUE) ;
 
-  /*
-   * And swop it back again.
-   */
-  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
-
   return status ;
 }
 
 
-static gboolean formatPolyAGFF(GString *line,
-                            const char *ref_name, const char *source_name, ZMapFeature feature)
-{
-  gboolean status = FALSE ;
-  char *id_str = NULL ;
-  GString *attribute = NULL ;
-
-  if (!line || !ref_name || !source_name || !feature)
-    return status ;
-  status = TRUE ;
-
-  attribute  = g_string_new(NULL) ;
-
-  /*
-   * Mandatory GFF fields...
-   */
-  zMapGFFFormatMandatory(TRUE, line,
-                         ref_name, source_name, g_quark_to_string(feature->SO_accession),
-                         feature->x1, feature->x2,
-                         feature->score, feature->strand, ZMAPPHASE_NONE,
-                         (gboolean)feature->flags.has_score, FALSE) ;
-  g_string_append_c(line, '\n') ;
-  g_string_free(attribute, TRUE);
-
-  return status ;
-}
-
-
-static gboolean formatVariantGFF(GString *line,
+static gboolean formatBasicGFF(GString *line,
                               const char *ref_name, const char *source_name,
                               ZMapFeature feature)
 {
@@ -2387,39 +2169,33 @@ static gboolean formatVariantGFF(GString *line,
 
 
 
-
-
-/* Output a line to a GIOChannel, returns FALSE if write fails and sets err_msg_out with
- * the reason. */
-static gboolean printLine(GIOChannel *gio_channel, char **err_msg_out, GString *line,
-  gboolean truncate_after_write)
+static gboolean formatPolyAGFF(GString *line,
+                            const char *ref_name, const char *source_name, ZMapFeature feature)
 {
   gboolean status = FALSE ;
-  GError *channel_error = NULL ;
-  gsize bytes_written = 0 ;
+  char *id_str = NULL ;
+  GString *attribute = NULL ;
 
-  if (!line)
+  if (!line || !ref_name || !source_name || !feature)
     return status ;
   status = TRUE ;
 
-  if (g_io_channel_write_chars(gio_channel, line->str, -1,
-                               &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
-    {
-      *err_msg_out = g_strdup_printf("Could not write to file, error \"%s\" for line \"%50s...\"",
-                                     channel_error->message, line->str) ;
-      if (channel_error)
-        g_error_free(channel_error) ;
-      channel_error = NULL;
-      status = FALSE ;
-    }
-  else
-    {
-      if (truncate_after_write)
-        g_string_truncate(line, (gsize)0) ;
-    }
+  attribute  = g_string_new(NULL) ;
+
+  /*
+   * Mandatory GFF fields...
+   */
+  zMapGFFFormatMandatory(TRUE, line,
+                         ref_name, source_name, g_quark_to_string(feature->SO_accession),
+                         feature->x1, feature->x2,
+                         feature->score, feature->strand, ZMAPPHASE_NONE,
+                         (gboolean)feature->flags.has_score, FALSE) ;
+  g_string_append_c(line, '\n') ;
+  g_string_free(attribute, TRUE);
 
   return status ;
 }
+
 
 
 
@@ -2487,7 +2263,7 @@ static void getFeatureCB(gpointer key, gpointer data, gpointer user_data)
           {
             if (feature->feature.homol.type == blixem_data->align_type)
               {
-                if ((*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+                if (   (*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
                     || (*blixem_data->opts == 'N' && feature->feature.homol.type == ZMAPHOMOL_N_HOMOL))
                   blixem_data->align_list = g_list_append(blixem_data->align_list, feature) ;
               }
@@ -2724,7 +2500,7 @@ static void checkForLocalSequence(gpointer key, gpointer data, gpointer user_dat
                       if ((feature->x1 >= blixem_data->features_min && feature->x1 <= blixem_data->features_max)
                           && (feature->x2 >= blixem_data->features_min && feature->x2 <= blixem_data->features_max))
                         {
-                          if ((*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+                          if (   (*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
                               || (*blixem_data->opts == 'N' && feature->feature.homol.type == ZMAPHOMOL_N_HOMOL))
                             {
                               ZMapSequence new_sequence ;
@@ -3148,32 +2924,6 @@ static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
 {
 
   return ;
-}
-
-/* Length of a block. */
-static int calcBlockLength(ZMapSequenceType match_seq_type, int start, int end)
-{
-  int coord ;
-
-  coord = (end - start) + 1 ;
-
-  if (match_seq_type == ZMAPSEQUENCE_PEPTIDE)
-    coord /= 3 ;
-
-  return coord ;
-}
-
-/* Length between two blocks. */
-static int calcGapLength(ZMapSequenceType match_seq_type, int start, int end)
-{
-  int coord ;
-
-  coord = (end - start) - 1 ;
-
-  if (match_seq_type == ZMAPSEQUENCE_PEPTIDE)
-    coord /= 3 ;
-
-  return coord ;
 }
 
 /*************************** end of file *********************************/

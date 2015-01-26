@@ -146,8 +146,10 @@ void zMapGFFSetParseOnly(ZMapGFFParser parser, gboolean parse_only) ;
 gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block) ;
 
 /*
- *
+ * Output functions.
  */
+gboolean ZMapGFFOutputWriteLineToGIO(GIOChannel *gio_channel, char **err_msg_out, GString *line,
+  gboolean truncate_after_write) ;
 gboolean zMapGFFFormatGap2GFF(GString *, GArray *, ZMapStrand, ZMapSequenceType) ;
 gboolean zMapGFFFormatAppendAttribute(GString *, GString *, gboolean, gboolean) ;
 char zMapGFFFormatStrand2Char(ZMapStrand strand) ;
