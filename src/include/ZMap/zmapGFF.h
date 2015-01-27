@@ -44,6 +44,11 @@
  */
 typedef struct ZMapGFFParserStruct_ *ZMapGFFParser ;
 
+/*
+ * Used for formatting of output.
+ */
+typedef struct _ZMapGFFFormatDataStruct *ZMapGFFFormatData ;
+
 
 /*
  * Version of GFF in use; only these symbols should be used. These are used
@@ -148,6 +153,10 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 /*
  * Output functions.
  */
+gboolean ZMapGFFFormatAttributeSetBasic(ZMapGFFFormatData ) ;
+gboolean ZMapGFFFormatAttributeSetTranscript(ZMapGFFFormatData ) ;
+gboolean ZMapGFFFormatAttributeSetAlignment(ZMapGFFFormatData ) ;
+gboolean ZMapGFFFormatAttributeSetText(ZMapGFFFormatData ) ;
 gboolean ZMapGFFOutputWriteLineToGIO(GIOChannel *gio_channel, char **err_msg_out, GString *line,
   gboolean truncate_after_write) ;
 gboolean zMapGFFFormatGap2GFF(GString *, GArray *, ZMapStrand, ZMapSequenceType) ;
