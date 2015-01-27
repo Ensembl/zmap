@@ -436,9 +436,12 @@ gpointer data,
 gpointer user_data,
 char   **err_out)
 {
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   DumpFeaturesToFile dump_data = (DumpFeaturesToFile)user_data ;
+  if (!feature_any || !dump_data)
+    return status ;
+  status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
 
   switch(feature_any->struct_type)
     {
@@ -875,7 +878,7 @@ static GString *transcriptFeature2Txt(GString *result_in, char *indent, ZMapFeat
 
   if (feature->feature.transcript.flags.start_not_found || feature->feature.transcript.flags.end_not_found)
     {
-      g_string_append_printf(result, "%s", indent) ;      
+      g_string_append_printf(result, "%s", indent) ;
 
       if (feature->feature.transcript.flags.start_not_found)
         g_string_append_printf(result, "Start_not_found = %d  ", feature->feature.transcript.start_not_found) ;

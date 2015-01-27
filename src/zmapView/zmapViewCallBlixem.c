@@ -219,14 +219,6 @@ typedef struct BlixemConfigDataStructType
 } BlixemConfigDataStruct, *BlixemConfigData ;
 
 
-
-/*
- * Used for mode==BASIC only.
- */
-//typedef gboolean (*BasicFeatureDumpFunc)(GString *line, const char *ref_name,
-//                                         const char *source_name,
-//                                         ZMapFeature feature) ;
-
 static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
                                ZMapHomolType align_type,
                                int offset, int position,
