@@ -47,8 +47,9 @@
 #include <ensemblServer_P.h>
 #include <EnsC.h>
 #include <SliceAdaptor.h>
+#include <SequenceAdaptor.h>
 
-#define ACEDB_PROTOCOL_STR "Acedb"                            /* For error messages. */
+#define ENSEMBL_PROTOCOL_STR "Ensembl"                            /* For error messages. */
 
 
 /* These provide the interface functions for an ensembl server implementation, i.e. you
@@ -136,7 +137,6 @@ static gboolean createConnection(void **server_out,
   gboolean result = FALSE ;
   GError *error = NULL ;
   EnsemblServer server ;
-  char *prog_name = g_strdup("zmap") ;
 
   /* Always return a server struct as it contains error message stuff. */
   server = (EnsemblServer)g_new0(EnsemblServerStruct, 1) ;
@@ -146,37 +146,89 @@ static gboolean createConnection(void **server_out,
 
   server->host = g_strdup(url->host) ;
   server->port = url->port ;
-  server->user = g_strdup(url->user) ;
+
+  if (url->user)
+    server->user = g_strdup(url->user) ;
+  else
+    server->user = g_strdup("anonymous") ;
 
   if (url->passwd && url->passwd[0] && url->passwd[0] != '\0')
     server->passwd = g_strdup(url->passwd) ;
 
   server->db_name = zMapURLGetQueryValue(url->query, "db_name") ;
 
-  initEnsC(1, &prog_name);
+  /* Initialise the ensembl C API the first time we are called
+   * put this but we need to make sure  */
+  static gboolean first = TRUE ;
 
-  printf("Opening connection for '%s' ...", server->db_name);
-  server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
+  if (first)
+    {
+      char *prog_name = g_strdup("zmap") ;
+      initEnsC(1, &prog_name) ;
+      g_free(prog_name) ;
+      first = FALSE ;
+    }
 
-  printf(" Done\n");
-  printf("Assembly type %s\n",DBAdaptor_getAssemblyType(server->dba));
-
-  g_free(prog_name) ;
+  if (server->host && server->db_name)
+    {
+      result = TRUE ;
+    }
+  else if (!server->host)
+    {
+      setErrMsg(server, g_strdup("Cannot create connection, required value 'host' is missing from source url")) ;
+      ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+    }
+  else if (!server->db_name)
+    {
+      setErrMsg(server, g_strdup("Cannot create connection, required value 'db_name' is missing from source url")) ;
+      ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+    }
 
   return result ;
 }
 
-/* When we open the connection we not only check the ensembl version of the server but also
- * set "quiet" mode on so that we can get dna, gff and other stuff back unadulterated by
- * extraneous information. */
-// mh17: added sequence_server flag for compatability with pipeServer, it's not used here
+
 static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen req_open)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
+  zMapReturnValIfFail(req_open && req_open->sequence_map, result) ;
+
+  server->sequence = g_strdup(req_open->sequence_map->sequence) ;
   server->zmap_start = req_open->zmap_start ;
   server->zmap_end = req_open->zmap_end ;
+
+  ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, 
+                 "Opening connection for '%s'", server->db_name) ;
+
+  server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
+
+  if (server->dba)
+    {
+      server->slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
+      server->seq_adaptor = DBAdaptor_getSequenceAdaptor(server->dba);
+
+      server->slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
+                                                 server->sequence, server->zmap_start, server->zmap_end, 
+                                                 STRAND_UNDEF, NULL, 0);
+
+      if (server->slice_adaptor && server->seq_adaptor && server->slice)
+        {
+          result = ZMAP_SERVERRESPONSE_OK ;
+        }
+      else
+        {
+          setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)", 
+                                            server->db_name, server->sequence, server->zmap_start, server->zmap_end)) ;
+          ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+        }
+    }
+  else
+    {
+      setErrMsg(server, g_strdup_printf("Failed to get db adaptor for %s", server->db_name)) ;
+      ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+    }
 
   return result ;
 }
@@ -185,6 +237,25 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
+
+  if (server && server->dba)
+    {
+      char *assembly_type = DBAdaptor_getAssemblyType(server->dba) ;
+
+      if (assembly_type)
+        {
+          ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, 
+                         "Assembly type %s\n", assembly_type);
+
+          g_free(assembly_type) ;
+          result = ZMAP_SERVERRESPONSE_OK ;
+        }
+      else
+        {
+          setErrMsg(server, g_strdup_printf("Failed to get assembly type for database %s", server->db_name)) ;
+          ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+        }
+    }
 
   return result ;
 }
@@ -209,6 +280,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
+  result = ZMAP_SERVERRESPONSE_OK ;
   return result ;
 }
 
@@ -313,7 +385,7 @@ static ZMapServerResponseType getStatus(void *server_in, gint *exit_code)
 /* Is the server connected ? */
 static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state)
 {
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
@@ -322,7 +394,7 @@ static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnect
 /* Try to close the connection. */
 static ZMapServerResponseType closeConnection(void *server_in)
 {
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
@@ -335,6 +407,18 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
+
+  if (server->sequence)
+    g_free(server->sequence) ;
+
+  if (server->config_file)
+    g_free(server->config_file) ;
+
+  if (server->host)
+    g_free(server->host) ;
+
+  if (server->passwd)
+    g_free(server->passwd) ;
 
   g_free(server) ;
 
@@ -351,9 +435,6 @@ static ZMapServerResponseType destroyConnection(void *server_in)
  */
 static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequences_inout)
 {
-  SequenceAdaptor *seq_adaptor = DBAdaptor_getSequenceAdaptor(server->dba);
-  SliceAdaptor *slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
-
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   GList *next_seq ;
 
@@ -364,8 +445,12 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
       ZMapSequence sequence = (ZMapSequence)(next_seq->data) ;
 
       /* chromosome, clone, contig or supercontig */
-      Slice *slice = SliceAdaptor_fetchByRegion(slice_adaptor, "chromosome", sequence->name, POS_UNDEF, POS_UNDEF, STRAND_UNDEF, NULL, 0);
-      char *seq = SequenceAdaptor_fetchBySliceStartEndStrand(seq_adaptor, slice, 1, POS_UNDEF, 1);
+      char *seq_name = g_strdup(g_quark_to_string(sequence->name)) ;
+
+      Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
+                                                seq_name, POS_UNDEF, POS_UNDEF, STRAND_UNDEF, NULL, 0);
+      
+      char *seq = SequenceAdaptor_fetchBySliceStartEndStrand(server->seq_adaptor, slice, 1, POS_UNDEF, 1);
 
       if (seq)
         {
@@ -377,11 +462,12 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
         {
           setErrMsg(server, g_strdup_printf("Failed to fetch %s sequence for object \"%s\".",
                                             (sequence->type == ZMAPSEQUENCE_DNA ? "nucleotide" : "peptide"),
-                                            g_quark_to_string(sequence->name))) ;
+                                            seq_name)) ;
 
           result = ZMAP_SERVERRESPONSE_REQFAIL ;
         }
 
+      g_free(seq_name) ;
       next_seq = g_list_next(next_seq) ;
     }
 

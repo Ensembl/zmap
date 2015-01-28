@@ -30,13 +30,18 @@
 #define ENSEMBL_SERVER_P_H
 
 #include <DBAdaptor.h>
+#include <SliceAdaptor.h>
 
 typedef struct _EnsemblServerStruct
 {
   char *config_file ;
 
   /* Connection details. */
-  DBAdaptor *dba;
+  DBAdaptor *dba ;
+  SliceAdaptor *slice_adaptor ;
+  SequenceAdaptor *seq_adaptor ;
+  Slice *slice ;
+
   char *host ;
   int port ;
   char *user ;
@@ -50,6 +55,7 @@ typedef struct _EnsemblServerStruct
 
   ZMapFeatureContext req_context ;
 
+  char *sequence ;                                          /* request sequence name for our one block */
   gint zmap_start, zmap_end ;				    /* request coordinates for our one block */
 
 } EnsemblServerStruct, *EnsemblServer;
