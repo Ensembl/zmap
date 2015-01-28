@@ -1688,16 +1688,26 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
                 {
                   if (   (*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
                       || (*blixem_data->opts == 'N' && feature->feature.homol.type == ZMAPHOMOL_N_HOMOL))
-                    status = printAlignment(feature, blixem_data) ;
+                    {
+                      status = printAlignment(feature, blixem_data) ;
+                    }
                 }
             }
           else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
             {
               status = printTranscript(feature, blixem_data) ;
+
             }
           else if (feature->mode == ZMAPSTYLE_MODE_BASIC)
             {
               status = printBasic(feature, blixem_data) ;
+            }
+
+          if (status)
+            {
+              status = ZMapGFFOutputWriteLineToGIO(blixem_data->gff_channel,
+                                                   &(blixem_data->errorMsg),
+                                                   blixem_data->line, TRUE) ;
             }
 
            if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
@@ -1715,7 +1725,7 @@ static gboolean printAlignment(ZMapFeature feature, ZMapBlixemData  blixem_data)
   gboolean status = FALSE ;
   int tmp=0, sstart=0, send=0 ;
   GString *line = NULL ;
-  const char *seq_name = NULL,
+  const char *ref_name = NULL,
     *match_name = NULL,
     *source_name = NULL,
     *seq_str = NULL;
@@ -1731,7 +1741,7 @@ static gboolean printAlignment(ZMapFeature feature, ZMapBlixemData  blixem_data)
   sstart = feature->feature.homol.y1 ;
   send   = feature->feature.homol.y2 ;
 
-  seq_name = g_quark_to_string(blixem_data->block->original_id) ;
+  ref_name = g_quark_to_string(blixem_data->block->original_id) ;
   match_name = g_quark_to_string(feature->original_id) ;
   source_name = g_quark_to_string(feature->parent->original_id) ;
   seq_str = feature->feature.homol.sequence;
@@ -1759,16 +1769,12 @@ static gboolean printAlignment(ZMapFeature feature, ZMapBlixemData  blixem_data)
    * Format output function...
    */
   status = formatAlignmentGFF(line,
-                              seq_name, match_name, source_name, feature->feature.homol.type,
+                              ref_name, match_name, source_name, feature->feature.homol.type,
                               feature->x1, feature->x2, feature->strand,
                               sstart, send, feature->feature.homol.strand,
                               feature->score, feature->feature.homol.percent_id,
                               feature->feature.homol.align, seq_str,
                               zMapStyleIsPfetchable((*feature->style))) ;
-
-  curr_channel = blixem_data->gff_channel ;
-  status = ZMapGFFOutputWriteLineToGIO(curr_channel, &(blixem_data->errorMsg),
-                     line, TRUE) ;
 
   return status ;
 }
@@ -1888,7 +1894,7 @@ static gboolean formatAlignmentGFF(GString *line,
 /* Print a transcript. */
 static gboolean printTranscript(ZMapFeature feature, ZMapBlixemData  blixem_data)
 {
-  gboolean status = TRUE;
+  gboolean status = FALSE ;
 
   /*
    * Output the feature and subfeatures.
@@ -1957,12 +1963,6 @@ static gboolean formatTranscriptGFF(ZMapBlixemData blixem_data, ZMapFeature feat
    */
   g_string_append_c(line, '\n');
 
-  /*
-   * Send this line to the ouput channel.
-   */
-  status = ZMapGFFOutputWriteLineToGIO(channel, &(blixem_data->errorMsg), line, TRUE) ;
-
-
   /* Write out the exons...and if there is one the CDS sections. */
   for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
     {
@@ -1977,12 +1977,6 @@ static gboolean formatTranscriptGFF(ZMapBlixemData blixem_data, ZMapFeature feat
 
           formatExonGFF(blixem_data, feature,
                         exon_start, exon_end) ;
-
-          /*
-           * Send this line to the output channel.
-           */
-          status = ZMapGFFOutputWriteLineToGIO(channel, &(blixem_data->errorMsg), line, TRUE) ;
-
         }
     }
 
@@ -2018,7 +2012,7 @@ static gboolean formatExonGFF(ZMapBlixemData blixem_data, ZMapFeature feature,
   /*
    * Mandatory fields.
    */
-  zMapGFFFormatMandatory(TRUE, line,
+  zMapGFFFormatMandatory(FALSE, line,
                          ref_name, source_name, SO_exon_id,
                          exon_start, exon_end,
                          feature->score, feature->strand, ZMAPPHASE_NONE,
@@ -2091,10 +2085,6 @@ static gboolean printBasic(ZMapFeature feature, ZMapBlixemData  blixem_data)
   source_name = g_quark_to_string(feature->parent->original_id) ;
 
   status = formatBasicGFF(blixem_data->line, ref_name, source_name, feature) ;
-
-  if (status)
-    status = ZMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
-                       blixem_data->line, TRUE) ;
 
   return status ;
 }

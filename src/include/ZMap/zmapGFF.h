@@ -157,6 +157,7 @@ gboolean ZMapGFFFormatAttributeSetBasic(ZMapGFFFormatData ) ;
 gboolean ZMapGFFFormatAttributeSetTranscript(ZMapGFFFormatData ) ;
 gboolean ZMapGFFFormatAttributeSetAlignment(ZMapGFFFormatData ) ;
 gboolean ZMapGFFFormatAttributeSetText(ZMapGFFFormatData ) ;
+gboolean ZMapGFFFormatAttributeUnsetAll(ZMapGFFFormatData) ;
 gboolean ZMapGFFOutputWriteLineToGIO(GIOChannel *gio_channel, char **err_msg_out, GString *line,
   gboolean truncate_after_write) ;
 gboolean zMapGFFFormatGap2GFF(GString *, GArray *, ZMapStrand, ZMapSequenceType) ;

@@ -93,9 +93,8 @@ typedef struct _ZMapGFFFormatDataStruct
   const char *so_term;                  /* The feature type e.g. Sequence, intron, exon, CDS, coding_exon, misc_feature */
   const char *feature_name;             /* The feature name e.g. AC12345.1-001 */
   int start, end ;
-  gboolean status, cont ;
 
-  struct                                /* possible attributes that we might output */
+  struct
     {
       unsigned short attribute_name        : 1 ;
       unsigned short attribute_id          : 1 ;
@@ -107,8 +106,9 @@ typedef struct _ZMapGFFFormatDataStruct
       unsigned short attribute_gap         : 1 ;
       unsigned short attribute_target      : 1 ;
       unsigned short attribute_variation   : 1 ;
-      //unsigned short traversal_status      : 1 ;
-      //unsigned short traversal_continue    : 1 ;
+      unsigned short attribute_sequence    : 1 ;
+      unsigned short status                : 1 ;
+      unsigned short cont                  : 1 ;
     } flags ;
 
   /* sets of functions for doing attributes. */
@@ -142,7 +142,7 @@ static gboolean dump_attributes(zMapGFFFormatAttrFunc func_array[], ZMapFeature 
 static gboolean dump_text_note_v3(ZMapFeature feature, gpointer basic_data,
   GString *gff_string, GError **error, ZMapGFFFormatData format_data) ;
 static gboolean dump_transcript_locus_v3(ZMapFeature feature, gpointer transcript_data,
-  GString *gff_string, GError **error, ZMapGFFFormatData format_data);
+  GString *gff_string, GError **error, ZMapGFFFormatData format_data) ;
 static gboolean dump_id_as_name_v3(ZMapFeature feature, gpointer basic_data,
   GString *gff_string, GError **error, ZMapGFFFormatData format_data) ;
 static gboolean dump_transcript_id_v3(ZMapFeature feature, gpointer basic_data,
@@ -156,8 +156,7 @@ static gboolean dump_transcript_subpart_v3(ZMapFeature feature, gpointer transcr
 static gboolean dump_transcript_foreach_subpart_v3(ZMapFeature feature, GString *buffer,
   GError **error_out, GArray *subparts, ZMapGFFFormatData format_data) ;
 static gboolean dump_transcript_foreach_subpart_v3_cds(ZMapFeature feature, GString *buffer,
-                                                       GError **error_out, ZMapTranscript transcript,
-                                                       ZMapGFFFormatData format_data) ;
+  GError **error_out, ZMapTranscript transcript, ZMapGFFFormatData format_data) ;
 /*
  * V3 versions of alignment output functions
  */
@@ -178,8 +177,8 @@ static gboolean dump_alignment_gap_v3(ZMapFeature feature, gpointer homol_data,
  */
 
 static zMapGFFFormatAttrFunc basic_funcs_G_GFF3[] = {
-  dump_text_note_v3,              /* Note = <unquoted_string> */
-  dump_id_as_name_v3,             /* Name = <unquoted_string> */
+  dump_text_note_v3,
+  dump_id_as_name_v3,
   NULL,
 };
 static zMapGFFFormatAttrFunc transcript_funcs_G_GFF3[] = {
@@ -189,8 +188,8 @@ static zMapGFFFormatAttrFunc transcript_funcs_G_GFF3[] = {
   NULL
 };
 static zMapGFFFormatAttrFunc homol_funcs_G_GFF3[] = {
-  dump_alignment_target_v3,       /* Target=<clone_id> <start> <end> <strand> */
-  dump_alignment_gap_v3,          /* Gaps=(<int><int><int><int>)+ */
+  dump_alignment_target_v3,
+  dump_alignment_gap_v3,
   NULL
 };
 static zMapGFFFormatAttrFunc text_funcs_G_GFF3[] = {
@@ -252,8 +251,8 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
 
   format_data.sequence = NULL ;
   format_data.line  = g_string_new(NULL) ;
-  format_data.cont   = TRUE;
-  format_data.status = TRUE;
+  format_data.flags.cont   = TRUE;
+  format_data.flags.status = TRUE;
   result = dump_full_header(dump_set, file, &format_data, error_out) ;
 
   if (result)
@@ -299,8 +298,8 @@ gboolean zMapGFFDumpList(GList *dump_list,
 
   format_data.sequence = sequence;
   format_data.line = g_string_new(NULL) ;
-  format_data.cont   = TRUE;
-  format_data.status = TRUE;
+  format_data.flags.cont    = TRUE;
+  format_data.flags.status = TRUE;
   result = dump_full_header(feature_any, file, &format_data, error_out) ;
 
   if (result)
@@ -350,12 +349,19 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any,
   /*
    * Now write this to the IO channel.
    */
-  if(format_data->status)
+  if(format_data->flags.status)
     {
-       format_data->status = ZMapGFFOutputWriteLineToGIO(file, error_out, format_data->line, TRUE) ;
+      char *error_msg = NULL ;
+      format_data->flags.status = ZMapGFFOutputWriteLineToGIO(file, &error_msg, format_data->line, TRUE) ;
+      if (error_msg)
+        {
+          *error_out = g_error_new(g_quark_from_string("ERROR in dump_full_header()"),
+                                   (gint)0, "message was '%s'", error_msg ) ;
+          g_free(error_msg) ;
+        }
     }
 
-  return format_data->status;
+  return format_data->flags.status ;
 }
 
 static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark  key, gpointer data,
@@ -372,7 +378,7 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark  key, gpoin
       case ZMAPFEATURE_STRUCT_CONTEXT:
         break;
       case ZMAPFEATURE_STRUCT_ALIGN:
-        if(format_data->status && format_data->cont)
+        if(format_data->flags.status && format_data->flags.cont)
           {
             /*
              * ZMapFeatureAlignment feature_align = (ZMapFeatureAlignment)feature_any;
@@ -388,7 +394,7 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark  key, gpoin
           }
         break;
       case ZMAPFEATURE_STRUCT_BLOCK:
-        if(format_data->status && format_data->cont)
+        if(format_data->flags.status && format_data->flags.cont)
           {
             ZMapFeatureBlock feature_block = (ZMapFeatureBlock)feature_any;
 
@@ -396,8 +402,8 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark  key, gpoin
             format_data->start = feature_block->block_to_sequence.block.x1 ;
             format_data->end = feature_block->block_to_sequence.block.x2 ;
 
-            format_data->status = TRUE;
-            format_data->cont   = FALSE;
+            format_data->flags.status = TRUE;
+            format_data->flags.cont   = FALSE;
             status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
           }
         break;
@@ -544,7 +550,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
                   result = ZMapGFFFormatAttributeSetText(format_data) ;
                   result = dump_attributes(format_data->text,
                                            feature,
-                                           NULL, /* this needs to be &(feature->feature.text) */
+                                           NULL,
                                            gff_string,
                                            error, format_data) ;
                 }
@@ -570,10 +576,43 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 /*
  * These functions select the attributes to output for features
  * of the specified ZMapStyleMode.
+
  */
+gboolean ZMapGFFFormatAttributeUnsetAll(ZMapGFFFormatData format_data)
+{
+  gboolean result = FALSE ;
+
+  if (!format_data)
+    return result ;
+  result = TRUE ;
+
+  format_data->flags.attribute_name       = FALSE ;
+  format_data->flags.attribute_id         = FALSE ;
+  format_data->flags.attribute_parent     = FALSE ;
+  format_data->flags.attribute_note       = FALSE ;
+  format_data->flags.attribute_locus      = FALSE ;
+  format_data->flags.attribute_percent_id = FALSE ;
+  format_data->flags.attribute_url        = FALSE ;
+  format_data->flags.attribute_gap        = FALSE ;
+  format_data->flags.attribute_target     = FALSE ;
+  format_data->flags.attribute_variation  = FALSE ;
+  format_data->flags.attribute_sequence   = FALSE ;
+
+  return result ;
+}
+
 gboolean ZMapGFFFormatAttributeSetBasic(ZMapGFFFormatData format_data)
 {
   gboolean result = FALSE ;
+
+  if (!format_data)
+    return result ;
+  result = ZMapGFFFormatAttributeUnsetAll(format_data) ;
+
+  format_data->flags.attribute_name        = TRUE ;
+  format_data->flags.attribute_url         = TRUE ;
+  format_data->flags.attribute_variation   = TRUE ;
+  format_data->flags.attribute_note        = TRUE ;
 
   return result ;
 }
@@ -582,6 +621,16 @@ gboolean ZMapGFFFormatAttributeSetTranscript(ZMapGFFFormatData format_data)
 {
   gboolean result = FALSE ;
 
+  if (!format_data)
+    return result ;
+  result = ZMapGFFFormatAttributeUnsetAll(format_data) ;
+
+  format_data->flags.attribute_name        = TRUE ;
+  format_data->flags.attribute_id          = TRUE ;
+  format_data->flags.attribute_note        = TRUE ;
+  format_data->flags.attribute_locus       = TRUE ;
+  format_data->flags.attribute_url         = TRUE ;
+
   return result ;
 }
 
@@ -589,12 +638,31 @@ gboolean ZMapGFFFormatAttributeSetAlignment(ZMapGFFFormatData format_data)
 {
   gboolean result = FALSE ;
 
+  if (!format_data)
+    return result ;
+  result = ZMapGFFFormatAttributeUnsetAll(format_data) ;
+
+  format_data->flags.attribute_name        = TRUE ;
+  format_data->flags.attribute_gap         = TRUE ;
+  format_data->flags.attribute_target      = TRUE ;
+  format_data->flags.attribute_percent_id  = TRUE ;
+  format_data->flags.attribute_sequence    = TRUE ;
+
   return result ;
 }
 
 gboolean ZMapGFFFormatAttributeSetText(ZMapGFFFormatData format_data)
 {
   gboolean result = FALSE ;
+
+  if (!format_data)
+    return result ;
+  result = ZMapGFFFormatAttributeUnsetAll(format_data) ;
+
+  format_data->flags.attribute_name        = TRUE ;
+  format_data->flags.attribute_note        = TRUE ;
+  format_data->flags.attribute_url         = TRUE ;
+  format_data->flags.attribute_locus       = TRUE ;
 
   return result ;
 }
