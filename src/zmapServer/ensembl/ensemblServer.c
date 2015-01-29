@@ -48,6 +48,7 @@
 #include <EnsC.h>
 #include <SliceAdaptor.h>
 #include <SequenceAdaptor.h>
+#include <SimpleFeature.h>
 
 #define ENSEMBL_PROTOCOL_STR "Ensembl"                            /* For error messages. */
 
@@ -135,7 +136,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout)
 {
   gboolean result = FALSE ;
-  GError *error = NULL ;
+  //GError *error = NULL ;
   EnsemblServer server ;
 
   /* Always return a server struct as it contains error message stuff. */
@@ -279,6 +280,43 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
+
+  //SimpleFeatureAdaptor *sfa = DBAdaptor_getSimpleFeatureAdaptor(server->dba) ;
+  Vector *features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
+  gboolean failed = FALSE ;
+  int i = 0 ;
+
+  for (i=0;i<Vector_getNumElement(features) && !failed;i++) 
+    {
+      SimpleFeature *sf = Vector_getElementAt(features,i);
+      long start = SimpleFeature_getStart(sf);
+      long end   = SimpleFeature_getEnd(sf);
+
+      //printf("slice start = %d end = %d\n",start,end);
+      SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,"contig",NULL,NULL);
+
+      if (rsf)
+        {
+          printf("rc start = %ld end = %ld\n",SimpleFeature_getStart(rsf),SimpleFeature_getEnd(rsf));
+        }
+      else
+        {
+          printf("no mapped feature\n");
+        }
+
+      if (rsf) 
+        {
+          SimpleFeature *sf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)rsf, "chromosome", NULL, server->slice);
+          sf = (SimpleFeature*)SeqFeature_transfer((SeqFeature*)rsf, server->slice);
+        
+          if (SimpleFeature_getStart(sf) != start || SimpleFeature_getEnd(sf) != end)
+            {
+              printf("Remapping to slice produced different coords start %ld v %ld   end %ld v %ld\n", 
+                     SimpleFeature_getStart(sf),start, SimpleFeature_getEnd(sf),end);
+              failed = TRUE;
+            }
+        }
+    }
 
   result = ZMAP_SERVERRESPONSE_OK ;
   return result ;
