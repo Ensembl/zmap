@@ -1,6 +1,6 @@
 /*  File: zmapAppRemoteControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2010-2014: Genome Research Ltd.
+ *  Copyright (c) 2010-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -524,17 +524,21 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
   GtkWindow *window ;
   gboolean curr_modal ;
 
-  /* Get current modality, if it's on we must turn it off otherwise user cannot
-   * interact with zmap. */
-  window = GTK_WINDOW(app_context->app_widg) ;
-  if ((curr_modal = gtk_window_get_modal(window)))
-    setModal(app_context, FALSE) ;
+  /* If we are dying the app_widg window will already have gone and calling back to error
+   * handler funcs will be too late. */
+  if (app_context->state != ZMAPAPP_DYING)
+    {
+      /* Get current modality, if it's on we must turn it off otherwise user cannot
+       * interact with zmap. */
+      window = GTK_WINDOW(app_context->app_widg) ;
+      if ((curr_modal = gtk_window_get_modal(window)))
+        setModal(app_context, FALSE) ;
   
-
-  if (remote->error_handler_func)
-    (remote->error_handler_func)(error_type, err_msg, remote->error_handler_func_data) ;
-  else
-    zMapLogWarning("%s", err_msg) ;
+      if (remote->error_handler_func)
+        (remote->error_handler_func)(error_type, err_msg, remote->error_handler_func_data) ;
+      else
+        zMapLogWarning("%s", err_msg) ;
+    }
 
   return ;
 }

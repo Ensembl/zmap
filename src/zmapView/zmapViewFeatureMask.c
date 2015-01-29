@@ -1,6 +1,6 @@
 /*  File: zmapViewFeatureMask.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:   masks EST features with mRNAs subject to configuration
- *                NOTE see Design_notes/notes/EST_mRNA.shtml
+ *                NOTE see EST_mRNA.html
  *                sets flags in the context per feature to say masked or not
  *                that display code can use
  *
@@ -53,7 +53,7 @@
  */
 
 /*!
- *     NOTE: See Design_notes/notes/EST_mRNA.shtml for the write up
+ *     NOTE: See EST_mRNA.html for the write up
  */
 
 #define FILE_DEBUG      0     /* can use this for performance stats, could add it to the log? */

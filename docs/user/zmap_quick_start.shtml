@@ -1,0 +1,160 @@
+<head>
+  <title>ZMap - Quick Start</title>
+</head>
+
+
+<body>
+<h1>ZMap - Quick Start</h1>
+
+<ul>
+  <li><a href="release_notes.shtml">What's new</a></li>
+  <li><a href="#t_overview">Overview</a></li>
+  <li><a href="#t_running">Running ZMap</a></li>
+  <li><a href="#t_screen">The display</a></li>
+  <li><a href="#t_zooming">Zooming</a></li>
+  <li><a href="#t_scrolling">Scrolling</a></li>
+  <li><a href="#t_selections">Selecting features</a></li>
+  <li><a href="#t_copy">Copy and paste</a></li>
+  <li><a href="#t_menu">Context menu</a></li>
+  <li><a href="#t_bump">Bumping features</a></li>
+  <li><a href="#t_mark">Marking a region</a></li>
+  <li><a href="#t_search">Search</a></li>
+  <li><a href="#t_shortcuts">Keyboard shortcuts</a></li>
+</ul>
+
+
+<div id="t_overview">
+  <h2>Overview</h2>
+  <p>This page gives a quick-start guide to using ZMap. Full documentation is available here:</p>
+  <ul>
+    <li><a href="release_notes.shtml">What's new</a> (revision history)</li>
+    <li><a href="index.shtml">Main help pages</a> (more detailed help)</li>
+    <li><a href="ZMap_User_Manual.pdf">User manual</a></li>
+  </ul>
+</div>
+
+<div id="t_running">
+  <h2>Running ZMap</h2>
+  <ul>
+    <li>The simplest way to run ZMap is to pass a GFF file on the command line. GFF version 2 and 3 are supported. A sample file is given in the examples directory and can be opened like this: <pre>./zmap examples/features.gff</pre>
+    <li>A styles file and config file can be provided to customize the appearance and behaviour of ZMap: <pre>./zmap --conf_dir=examples examples/features.gff</pre>
+    <li>ZMap can be configured to load data from multiple sources in parallel. This is useful to run ZMap from a peer program such as Otterlace.
+    </ul>
+</div>
+
+<div id="t_screen">
+  <h2>The display</h2>
+  <ul>
+    <li>The screen areas of zmap are modelled loosely on a browser, with a menu bar, button/information toolbar and display area. Tooltips are available for toolbar areas where appropriate.
+    <li>The forward strand is shown on the right and the reverse strand on left, with a yellow strand separator between.
+    <li>The display is oriented vertically rather than horizontally to allow more columns to be displayed.
+  </ul>
+
+<div id="t_zooming">
+  <h2>Zooming</h2>
+  <ul>
+    <li>Click the Zoom In/Out button to zoom 2x in/out.
+    <li>Right-click the Zoom buttons for more options, such as zoom to the whole sequence.
+    <li>Click and drag to lasso an area to zoom to.
+    <li>Select a feature and press 'z' to zoom to the feature.
+  </ul>
+</div>
+
+
+<div id="t_scrolling">
+  <h2>Scrolling</h2>
+  <ul>
+    <li>Scroll using the scrollbars or mouse wheel.
+    <li>Middle-click/drag to display a ruler bar. The view will re-center when you release the middle mouse button.
+  </ul>
+</div>
+
+<div id="t_splitting">
+  <h2>Splitting the display</h2>
+  <ul>
+    <li>You can split the display horizontally and/or vertically an arbitrary number of times.
+    <li>Windows scroll in unison by default, but can be unlocked using the 'Unlock' button on the toolbar.
+    <li>The active window has a highlighted/recessed border.
+  </ul>
+  
+<div id="t_selections">
+  <h2>Selecting features</h2>
+  <ul>
+    <li>You can select a feature or column by clicking on it. Its details will be shown on the toolbar.
+    <li>Shift-click or shift-drag to select multiple features.
+    <li>The feedback bar at the top of the window shows information about the currently-selected feature or column.
+    <li>Double-click a feature to show its details (or to edit them if the feature is editable).
+  </ul>
+</div>
+
+<div id="t_copy">
+  <h2>Copy and paste</h2>
+  <ul>
+    <li>When a single features is selected, its name and exon coords are copied to the selection buffer and can be pasted by middle-clicking.
+    <li>When multiple features are selected, their names and feature start/end coords are copied to the selection buffer.
+    <li>Ctrl-C copies the selected feature's toplevel coords to the clipboard (rather than local 1-based coords).
+  </ul>
+</div>
+
+<div id="t_menu">
+  <h2>Context menu</h2>
+  <ul>
+    <li>Right-click in the ZMap window pop up the context menu. This will give options relevant to the feature/column/etc. that you clicked on.
+    <li>Menus are context sensitive.
+  </ul>
+</div>
+
+<div id="t_bump">
+  <h2>Bumping features</h2>
+  <ul>
+    <li>Press 'b' when a column is selected to bump/unbump the features in the column.
+    <li>Right-click on a column to show further bumping options.
+  </ul>
+</div>
+
+<div id="t_mark">
+  <h2>Marking a region</h2>
+  <ul>
+    <li>You can mark a region by pressing the 'm' key - it will mark the region for the currently-selected feature or the current display area if no feature is selected.
+    <li>Bumping a column when the mark is set will only bump features within the marked region to save screen space.
+  </ul>
+</div>
+
+<div id="t_search">
+  <h2>Search</h2>
+  <ul>
+    <li>Available from the right-click menu.
+    <li>Search for DNA or peptide sequence.
+    <li>Search for a feature or subsets of features. Names can be wild-carded to find subsets and filters such as strand and position can be applied.
+  </ul>
+
+<div id="t_shortcuts">
+  <h2>Keyboard shortcuts</h2>
+  These are some of the most commonly used keyboard shortcuts but there are many more. See the <a href="keyboard_mouse.shtml">shortcuts</a> page for a full list.
+  <ul>
+    <li><b>Cntl Q</b>    Quit
+    <li><b>Cntl H</b>    Help
+    <li><b>b</b>    Bump
+    <li><b>m</b>    Mark region
+    <li><b>r</b>    Reverse complement
+    <li><b>t</b>    Translate
+    <li><b>w</b>    Zoom out to whole sequence
+    <li><b>z</b>    Zoom out to extent of selected features
+    <li><b>+ (or =), -</b> zoom in/out by 10%
+    <li><b>Cntl + (or =), Cntl -</b> zoom in/out by 50%
+    <li><b>up-arrow, down-arrow</b> scroll up/down slowly bit
+    <li><b>Cntl up-arrow, Cntl down-arrow</b> scroll up/down more quickly
+    <li><b>left-arrow, right-arrow</b> scroll left/right slowly
+    <li><b>Cntl left-arrow, Cntl right-arrow</b> scroll left/right more quickly
+    <li><b>page-up, page-down</b> up/down by half a "page"
+    <li><b>Cntl page-up, Cntl page-down</b> up/down by a whole "page"
+    <li><b>Home, End</b> Go to far left or right
+    <li><b>Cntl Home, Cntl End</b> Go to top or bottom
+    <li><b>Delete, Shift Delete</b> Hide/Show selected features.
+    <li><b>Enter</b> Show feature details for highlighted feature.
+    <li><b>Shift up-arrow, Shift down-arrow</b> Jump from feature to feature within a column.
+    <li><b>Shift left-arrow, Shift right-arrow</b> Jump from column to column.
+  </ul>
+</div>
+
+</body>

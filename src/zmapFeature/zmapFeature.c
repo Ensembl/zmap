@@ -1,6 +1,6 @@
 /*  File: zmapFeature.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -2597,7 +2597,7 @@ static void mergeFeatureSetLoaded(ZMapFeatureSet view_set, ZMapFeatureSet new_se
 /* for most columns we just load the lot, so there will be a single range */
 /* NOTE we find the featureset in the first align/block, as ATM there can only be one
  * the context is designed to have more and if so we need to supply a current block to this function
- * refer to 'Handling Multiple Blocks' in doc/Design_notes/modules/zmapWindowColConfig.shtml
+ * refer to 'Handling Multiple Blocks' in zmapWindowColConfig.html
  */
 gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block,  GQuark unique_id,int start, int end)
 {

@@ -1,6 +1,6 @@
 /*  File: zmapStyleUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -38,7 +38,7 @@
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapEnum.h>
-#include <zmapStyle_I.h>
+#include <zmapStyle_P.h>
 
 
 /* For colour spec building. */

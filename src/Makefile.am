@@ -45,8 +45,10 @@ dist_doc_DATA = $(srcdir)/doc/user/*
 
 # these are included in the distribution, but are not installed
 EXTRA_DIST = INSTALL \
+	INSTALL.linux \
+	INSTALL.mac \
 	INSTALL.windows \
-	README.zmap \
+	README \
 	$(srcdir)/doc/* \
 	$(srcdir)/examples/* \
 	$(NULL)
@@ -162,15 +164,28 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
 	$(top_builddir)/htslib-develop/libhts.a              \
-	$(top_builddir)/AceConn/src/.libs/libAceConn.a       \
-	$(top_builddir)/zeromq/src/.libs/libzmq.a            \
+	$(top_builddir)/AceConn/src/.libs/libAceConn.a       
+
+# The zeromq library has a different suffix on cygwin
+if ON_CYGWIN
+zmap_LDADD +=                                                \
+	$(top_builddir)/zeromq/src/.libs/libzmq.dll.a            
+else
+zmap_LDADD +=                                                \
+	$(top_builddir)/zeromq/src/.libs/libzmq.a            
+endif
+
+# I've had to add in the X11 lib otherwise we can't compile on Ubuntu
+# 64-bit machines (-lz is included because htslib needs it).
+zmap_LDADD +=                                                \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
 	$(GTK_LIBS)			                     \
-	$(LIBCURL) -lexpat                                   \
+	$(LIBCURL) -lexpat -lX11 -lz                         \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
+
 zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
-zmap_LDFLAGS      = -lz
+
 
 # zeromq is C++ so we need to link with g++, not gcc.
 #zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -291,7 +306,14 @@ maintainer-clean-local:
 	@echo 'maintainer-clean-local: Finished removing all generated files....'
 
 
-
+clean-zmap:
+	@echo 'clean-zmap: cleaning up all generated zmap files....'
+	rm -f $(top_builddir)/.libs/libZMap*.a
+	rm -f $(top_builddir)/libZMap*.la
+	rm -f $(top_builddir)/zmap $(top_builddir)/remotecontrol
+	rm -f $(top_builddir)/zmap-zmapAppmain_c.o $(top_builddir)/remotecontrol-remotecontroltest.o $(top_builddir)/zmap.pc
+	rm -f $(top_builddir)/zmap*/lib* rm -rf $(top_builddir)/zmap*/.libs
+	@echo 'clean-zmap: Finished cleaning up all generated zmap files.'
 
 
 mkdocdir:
@@ -316,8 +338,8 @@ install-zmap-static-libs:
 	@list='$(LIBS_ZMAP)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  $(am__strip_dir) \
-	  echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)/$(libdir)/$$f'"; \
-	  $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)/$(libdir)/$$f"; \
+	  echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)$(libdir)/$$f'"; \
+	  $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)$(libdir)/$$f"; \
 	done
 	@echo "************************************************************"
 

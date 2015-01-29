@@ -1,6 +1,6 @@
 /*  File: zmap.h
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,20 +21,19 @@
  * originally written by:
  *
  *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: The purpose of this header is to allow us to set
+ *              #defines, macros etc that will be global to all files.
+ *              e.g. to define something like POSIX behaviour.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_ZMAP_H
 #define ZMAP_ZMAP_H
 
 
-/* global #defines */
 
-#define GOBJ_CAST      1      // use static casts where possible
 
 #endif /* !ZMAP_ZMAP_H */

@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasGraphics.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,6 +43,7 @@
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasGraphics.h>
 
 
@@ -177,17 +178,21 @@ void graphicsZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 void zMapWindowCanvasGraphicsInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL };
+  gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
   funcs[FUNC_ZOOM] = graphicsZoomSet;
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPHICS, funcs, 0, sizeof(zmapWindowCanvasPangoStruct));
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPHICS, funcs,sizeof(zmapWindowCanvasPangoStruct));
+  zMapWindowCanvasFeatureSetSize(FEATURE_GRAPHICS, feature_funcs, 0) ;
 
   funcs[FUNC_ZOOM] = NULL;        /* not needed by the others but no harm done  if it's left in?? */
 
   funcs[FUNC_PAINT] = linePaint;
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LINE, funcs, 0, 0);
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LINE, funcs, 0) ;
+  zMapWindowCanvasFeatureSetSize(FEATURE_LINE, feature_funcs, 0) ;
 
   funcs[FUNC_PAINT] = textPaint;
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TEXT, funcs, 0, 0);
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TEXT, funcs, 0);
+  zMapWindowCanvasFeatureSetSize(FEATURE_TEXT, feature_funcs, 0) ;
 
   return ;
 }

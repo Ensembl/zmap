@@ -1,6 +1,6 @@
 /*  File: zmapWindowFocus.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -918,7 +918,7 @@ void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items)
   /* NOTE these itens remain in the focus list as normal but are not visible
    * arguably it would be better to handle the hidden items lists in this module
    * but it's done in zmapWindow.c due to history
-   * for a review of this see docs/Design_notes/notes/notepad.shtml
+   * for a review of this see notepad.html
    * NB this is not critical as when features are hidden and others selected others the focus will be cleared anyway
    */
 

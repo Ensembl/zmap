@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainerGroup.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -94,13 +94,8 @@
 
 #define ZMAP_TYPE_CONTAINER_GROUP           (zmapWindowContainerGroupGetType())
 
-#if GOBJ_CAST
-#define ZMAP_CONTAINER_GROUP(obj)       ((ZMapWindowContainerGroup) obj)
-#define ZMAP_CONTAINER_GROUP_CONST(obj)     ((ZMapWindowContainerGroup const) obj)
-#else
 #define ZMAP_CONTAINER_GROUP(obj)	    (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_GROUP, zmapWindowContainerGroup))
 #define ZMAP_CONTAINER_GROUP_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_GROUP, zmapWindowContainerGroup const))
-#endif
 #define ZMAP_CONTAINER_GROUP_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_GROUP, zmapWindowContainerGroupClass))
 #define ZMAP_IS_CONTAINER_GROUP(obj)	    (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CONTAINER_GROUP))
 #define ZMAP_CONTAINER_GROUP_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_CONTAINER_GROUP, zmapWindowContainerGroupClass))

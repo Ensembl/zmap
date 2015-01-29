@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasFeaturesetBump.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -41,6 +41,7 @@
 #include <ZMap/zmapSkipList.h>
 #include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
 
 
 /*
@@ -361,7 +362,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	  continue;
 	}
 
-      if (!zmapWindowCanvasFeatureGetFeatureExtent(feature,
+      if (!zMapWindowCanvasFeatureGetFeatureExtent(feature,
                                                    bump_data->complex, &bump_data->span, &bump_data->width))
 	continue;
 

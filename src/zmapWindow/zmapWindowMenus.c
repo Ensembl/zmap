@@ -1,6 +1,6 @@
 /*  File: zmapWindowMenus.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -2588,7 +2588,11 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
           }
         else
           {
+
+            /* TRY ASSIGNING TO A WindowCanvasItem AND SEE IF THAT WORKS..... */
             ZMapWindowFeaturesetItem featureset_item = ZMAP_WINDOW_FEATURESET_ITEM(menu_data->item) ;
+
+
             ZMapWindowCanvasFeature feature_item ;
             GString *canvas_featureset_text ;
             GString *canvas_feature_text ;

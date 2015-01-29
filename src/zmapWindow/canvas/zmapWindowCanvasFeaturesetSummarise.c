@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasFeaturesetSummarise.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:   avoids displaying features that cannot be seen at the current zoom level
- *                NOTE see Design_notes/notes/canvas_tweaks.html
+ *                NOTE see canvas_tweaks.html
  *
  *-------------------------------------------------------------------
  */
@@ -38,6 +38,9 @@
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapUtilsLog.h>
 #include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
+
+
 
 /*
       initially this was an experimental module to find out the level of filtering we could do

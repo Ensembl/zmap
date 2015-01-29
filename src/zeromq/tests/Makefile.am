@@ -37,7 +37,6 @@ noinst_PROGRAMS = test_system \
                   test_req_correlate \
                   test_req_relaxed \
                   test_conflate \
-                  test_inproc_connect \
                   test_issue_566 \
                   test_abstract_ipc \
                   test_many_sockets
@@ -47,6 +46,7 @@ noinst_PROGRAMS += test_shutdown_stress \
                    test_pair_ipc \
                    test_reqrep_ipc \
                    test_timeo \
+                   test_inproc_connect \
                    test_fork
 endif
 

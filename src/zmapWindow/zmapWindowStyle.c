@@ -1,6 +1,6 @@
 /*  File: zmapWindowStyle.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -57,7 +57,7 @@ b) styles have a lot of other options we could set
 typedef struct
 {
         ItemMenuCBData menu_data;                /* which featureset etc */
-        zmapFeatureTypeStyleStruct save;        /* copy of original used for Revert only */
+        ZMapFeatureTypeStyleStruct save;        /* copy of original used for Revert only */
         gboolean changed;                                /* if we have applied any changes */
         gboolean override;                        /* if we should make a child style */
         gboolean created;                                /* if we made a child style */
@@ -110,7 +110,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 
   my_data->menu_data = menu_data;
   style = menu_data->feature_set->style;
-  memcpy(& my_data->save, style,sizeof (zmapFeatureTypeStyleStruct));
+  memcpy(& my_data->save, style,sizeof (ZMapFeatureTypeStyleStruct));
 
   /* when to override a style? (create a child)
    * - if it has not been overridden already
@@ -339,7 +339,7 @@ gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMa
         my_data->menu_data->feature = feature;
         style = set->style;
 
-        memcpy(& my_data->save, style,sizeof (zmapFeatureTypeStyleStruct));
+        memcpy(& my_data->save, style,sizeof (ZMapFeatureTypeStyleStruct));
 
 //        clear_style(my_data);
         my_data->created = FALSE;        /* different style, override only created on apply */
@@ -402,7 +402,7 @@ static void cancelCB(GtkWidget *widget, gpointer cb_data)
         else                                /* restore the existing style */
         {
                 style = my_data->menu_data->feature_set->style;
-                memcpy((void *) style, (void *) &my_data->save, sizeof (zmapFeatureTypeStyleStruct));
+                memcpy((void *) style, (void *) &my_data->save, sizeof (ZMapFeatureTypeStyleStruct));
         }
 
         my_data->changed = FALSE;

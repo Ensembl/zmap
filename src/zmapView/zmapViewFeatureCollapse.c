@@ -1,6 +1,6 @@
 /*  File: zmapViewFeatureCollapse.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:   collapse duplicated short reads features subject to configuration
- *                NOTE see docs/IntWeb/Design/notes/BAM.shtml
+ *                NOTE see BAM.html
  *                sets flags in the context per feature to say  collapsed or not
  *
  *-------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasFeatureset.h
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -36,52 +36,41 @@
 
 #include <ZMap/zmapFeature.h>
 
+#include <zmapWindowCanvasFeature.h>
+
+
 
 #define ZMAP_WINDOW_FEATURESET_ITEM_NAME "ZMapWindowFeaturesetItem"
 
 #define ZMAP_TYPE_WINDOW_FEATURESET_ITEM        (zMapWindowFeaturesetItemGetType())
 
-#if GOBJ_CAST
-#define ZMAP_WINDOW_FEATURESET_ITEM(obj)       ((ZMapWindowFeaturesetItem) obj)
-#define ZMAP_WINDOW_FEATURESET_ITEM_CONST(obj) ((ZMapWindowFeaturesetItem const) obj)
-#else
-#define ZMAP_WINDOW_FEATURESET_ITEM(obj)	      (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_FEATURESET_ITEM, zmapWindowFeaturesetItem))
-#define ZMAP_WINDOW_FEATURESET_ITEM_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_FEATURESET_ITEM, zmapWindowFeaturesetItem const))
-#endif
-#define ZMAP_WINDOW_FEATURESET_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_FEATURESET_ITEM, zmapWindowFeaturesetItemClass))
-#define ZMAP_IS_WINDOW_FEATURESET_ITEM(obj)        (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
-#define ZMAP_WINDOW_FEATURESET_ITEM_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_FEATURESET_ITEM, zmapWindowFeaturesetItemClass))
+#define ZMAP_WINDOW_FEATURESET_ITEM(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_FEATURESET_ITEM, struct ZMapWindowFeaturesetItemStructType))
+#define ZMAP_WINDOW_FEATURESET_ITEM_CONST(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_FEATURESET_ITEM, struct ZMapWindowFeaturesetItemStructType const))
 
+#define ZMAP_WINDOW_FEATURESET_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_FEATURESET_ITEM, struct ZMapWindowFeaturesetItemClassStructType))
+#define ZMAP_IS_WINDOW_FEATURESET_ITEM(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
+#define ZMAP_WINDOW_FEATURESET_ITEM_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_FEATURESET_ITEM, struct ZMapWindowFeaturesetItemClassStructType))
 
-
-/* Instance */
-typedef struct _zmapWindowFeaturesetItemStruct *ZMapWindowFeaturesetItem ;
-typedef struct _zmapWindowCanvasFeatureStruct *ZMapWindowCanvasFeature ;
-typedef struct _zmapWindowCanvasPangoStruct *ZMapWindowCanvasPango;
-
-typedef struct _zmapWindowCanvasGraphicsStruct *ZMapWindowCanvasGraphics;
 
 
 /* Class */
-typedef struct zmapWindowFeaturesetItemClassStructType  zmapWindowFeaturesetItemClass, *ZMapWindowFeaturesetItemClass ;
+typedef struct ZMapWindowFeaturesetItemClassStructType *ZMapWindowFeaturesetItemClass ;
+
+/* Instance */
+typedef struct ZMapWindowFeaturesetItemStructType *ZMapWindowFeaturesetItem ;
 
 
-/* Why is this public ???? */
-/* enums for function type */
-typedef enum
-  {
-    FUNC_SET_INIT,
-    FUNC_PREPARE,
-    FUNC_SET_PAINT, FUNC_PAINT,
-    FUNC_FLUSH, FUNC_EXTENT,
-    FUNC_COLOUR,
-    FUNC_STYLE,
-    FUNC_PRE_ZOOM, FUNC_ZOOM,
-    FUNC_INDEX, FUNC_FREE,
-    FUNC_POINT,
-    FUNC_ADD, FUNC_SUBPART,
-    FUNC_N_FUNC
-  } zmapWindowCanvasFeatureFunc;
+
+typedef struct _zmapWindowCanvasPangoStruct *ZMapWindowCanvasPango;
+typedef struct _zmapWindowCanvasGraphicsStruct *ZMapWindowCanvasGraphics;
+
+
+
 
 
 /* Typedefs for per feature type function implementations (there should be others here.... */
@@ -100,36 +89,6 @@ typedef double (*ZMapWindowFeatureItemPointFunc)(ZMapWindowFeaturesetItem fi, ZM
 
 typedef void (*ZMapWindowFeatureFreeFunc)(ZMapWindowFeaturesetItem featureset) ;
 
-
-
-/* enums for feature function lookup  (feature types) */
-/* NOTE these are set by style mode but are defined separately as CanvasFeaturesets
- * do not initially handle all style modes */
-/* see  zMapWindowFeaturesetAddItem() */
-
-/* genomic features are FEATURE_BASIC to FEATURE_GLYPH
- *
- * FEATURE_GRAPHICS onwards are unadorned graphics primitives and FEATURE_GRAPHICS
- * is a catch-all for the featureset type.
- * NOTE that FEATURE_GRAPHICS is used in the code to test for feature vs. graphic items.
- */
-#define ZMAP_CANVASFEATURE_TYPE_LIST(_)         \
-_(FEATURE_INVALID,    , "invalid", "invalid type", "")           \
-_(FEATURE_BASIC,    , "basic", "Basic feature", "")               \
-_(FEATURE_ALIGN,    , "align", "Alignment feature", "")                   \
-_(FEATURE_TRANSCRIPT,    , "transcript", "Transcript", "")              \
-_(FEATURE_SEQUENCE,    , "sequence", "Sequence", "")                \
-_(FEATURE_ASSEMBLY,    , "assembly", "Assembly", "")                \
-_(FEATURE_LOCUS,    , "locus", "Locus", "")                   \
-_(FEATURE_GRAPH,    , "graph", "Graph", "")                   \
-_(FEATURE_GLYPH,    , "glyph", "Glyph", "")                                   \
-_(FEATURE_GRAPHICS,    , "graphics", "Graphics", "") \
-_(FEATURE_LINE,    , "line", "Line", "") \
-_(FEATURE_BOX,    , "box", "Box", "") \
-_(FEATURE_TEXT,    , "text", "Text", "") \
-_(FEATURE_N_TYPE,    , "num_types", "Number of CanvasFeature types", "")
-
-ZMAP_DEFINE_ENUM(zmapWindowCanvasFeatureType, ZMAP_CANVASFEATURE_TYPE_LIST) ;
 
 
 
@@ -168,7 +127,7 @@ typedef struct BumpFeaturesetStructName
 
 GType zMapWindowFeaturesetItemGetType(void) ;
 
-void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int feature_size, int set_size) ;
+void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int set_size) ;
 
 gboolean zMapWindowCanvasIsFeatureSet(ZMapWindowFeaturesetItem fi) ;
 
@@ -202,19 +161,6 @@ gboolean zMapWindowCanvasFeaturesetUnsetPointFeature(FooCanvasItem *item) ;
 ZMapWindowCanvasFeature zMapWindowCanvasFeaturesetGetPointFeatureItem(ZMapWindowFeaturesetItem featureset_item) ;
 
 
-ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type) ;
-
-gboolean zmapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean complex,
-                                                 ZMapSpan span, double *width) ;
-ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,
-                                                                ZMapFeature feature, double x, double y) ;
-ZMapFeature zmapWindowCanvasFeatureGetFeature(ZMapWindowCanvasFeature feature) ;
-
-void zmapWindowCanvasFeatureAddSplicePos(ZMapWindowCanvasFeature feature_item,
-                                         int splice_pos, ZMapBoundaryType boundary_type) ;
-void zmapWindowCanvasFeatureRemoveSplicePos(ZMapWindowCanvasFeature feature_item) ;
-void zmapWindowCanvasFeatureFree(gpointer thing) ;
-
 void zMapWindowCanvasFeaturesetSetWidth(ZMapWindowFeaturesetItem featureset, double width);
 double zMapWindowCanvasFeaturesetGetWidth(ZMapWindowFeaturesetItem featureset);
 
@@ -234,7 +180,6 @@ int zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset,
 ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset_item,
                                                        ZMapFeature feature, double y1, double y2);
 
-GString *zMapWindowCanvasFeature2Txt(ZMapWindowCanvasFeature canvas_feature) ;
 
 int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature);
 int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet featureset, gboolean destroy);

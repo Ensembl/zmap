@@ -1,6 +1,6 @@
 /*  File: zmapView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -3431,7 +3431,20 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  if (connect_data)
 	    {
 	      /* Does this need to be separate....?? probably not.... */
+
+              /* this seems to leak memory but it's very hard to trace the logic of its usage. */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+              /* This leaks memory, I've removed the copy and tested but the logic is hard to follow
+                 * and it's not at all clear when the list goes away....if there's a subsequent
+                 * problem then it needs sorting out properly or hacking by doing a g_list_free()
+                 * on connect_data->loaded_features->feature_set and reallocating..... 2/12/2014 EG
+                 *  */
 	      connect_data->loaded_features->feature_sets = g_list_copy(connect_data->feature_sets) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	      connect_data->loaded_features->feature_sets = connect_data->feature_sets ;
+
+
+
 	      connect_data->loaded_features->xwid = zmap_view->xwid ;
 	    }
 
@@ -3444,7 +3457,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	      /* Warn the user ! */
 	      if (view_con->show_warning)
-                zMapWarning("Source is being removed: Error was: %s\n\nSource: %s", (err_msg ? err_msg : "<no error message>"), view_con->url) ;
+                zMapWarning("Source is being removed: Error was: %s\n\nSource: %s",
+                            (err_msg ? err_msg : "<no error message>"), view_con->url) ;
 
 	      zMapLogCritical("Source \"%s\", cannot access reply from server thread,"
                               " error was: %s", view_con->url, (err_msg ? err_msg : "<no error message>")) ;

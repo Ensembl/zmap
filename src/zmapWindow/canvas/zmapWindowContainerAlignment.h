@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainerAlignment.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -42,13 +42,8 @@
 
 #define ZMAP_TYPE_CONTAINER_ALIGNMENT           (zmapWindowContainerAlignmentGetType())
 
-#if GOBJ_CAST
-#define ZMAP_CONTAINER_ALIGNMENT(obj)           ((ZMapWindowContainerAlignment) obj)
-#define ZMAP_CONTAINER_ALIGNMENT_CONST(obj)     ((ZMapWindowContainerAlignment const) obj)
-#else
 #define ZMAP_CONTAINER_ALIGNMENT(obj)	        (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_ALIGNMENT, zmapWindowContainerAlignment))
 #define ZMAP_CONTAINER_ALIGNMENT_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_ALIGNMENT, zmapWindowContainerAlignment const))
-#endif
 
 #define ZMAP_CONTAINER_ALIGNMENT_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_ALIGNMENT, zmapWindowContainerAlignmentClass))
 #define ZMAP_IS_CONTAINER_ALIGNMENT(obj)	(G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CONTAINER_ALIGNMENT))

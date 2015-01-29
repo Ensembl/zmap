@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasFeatureset.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -71,8 +71,13 @@
 #include <zmapWindowCanvasGraphics.h>
 #include <zmapWindowCanvasGlyph.h>
 #include <zmapWindowCanvasDraw.h>
-#include <zmapWindowCanvasUtils.h>
 #include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeature_I.h>
+
+
+/* format string for printing double positions in a reasonable format... */
+#define CANVAS_FORMAT_DOUBLE "%.2f"
+
 
 
 /* Used in zMapWindowCanvasFeaturesetGetSetIDAtPos() */
@@ -81,14 +86,6 @@ typedef struct FindIDAtPosDataStructType
   double position ;
   GQuark id_at_position ;
 } FindIDAtPosDataStruct, *FindIDAtPosData ;
-
-
-
-typedef gint (FeatureCmpFunc)(gconstpointer a, gconstpointer b) ;
-
-
-
-
 
 
 static void zmap_window_featureset_item_item_class_init(ZMapWindowFeaturesetItemClass featureset_class) ;
@@ -145,7 +142,6 @@ static void printCanvasFeature(void *data, void *user_data_unused) ;
 
 static void findNameAtPosCB(gpointer data, gpointer user_data) ;
 
-static void freeSplicePosCB(gpointer data, gpointer user_data_unused) ;
 
 
 /*
@@ -191,19 +187,31 @@ static gpointer _featureset_prepare_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_set_paint_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_paint_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_flush_G[FEATURE_N_TYPE] = { 0 };
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gpointer _featureset_extent_G[FEATURE_N_TYPE] = { 0 };
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static gpointer _featureset_free_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_pre_zoom_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_zoom_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_point_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_add_G[FEATURE_N_TYPE] = { 0 };
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gpointer _featureset_subpart_G[FEATURE_N_TYPE] = { 0 };
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static gpointer _featureset_colour_G[FEATURE_N_TYPE] = { 0 };
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static long n_block_alloc = 0;
 static long n_feature_alloc = 0;
 static long n_feature_free = 0;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -222,15 +230,20 @@ static long n_feature_free = 0;
  * we know how many there are due to the zmapWindowCanvasFeatureType enum
  * so we just do them all, once, from the featureset class init
  * rather tediously that means we have to include headers for each type
- * In terms of OO 'classiness' we regard CanvasFeatureSet as the big daddy that has a few dependant children
- * they dont get to evolve unknown to thier parent.
+ * In terms of OO 'classiness' we regard CanvasFeatureSet as the big daddy
+ * that has a few dependant children they dont get to evolve unknown to thier parent.
  *
- * NOTE these functions could be called from the application, before starting the window/ camvas, which would allow extendablilty
+ * NOTE these functions could be called from the application,
+ * before starting the window/ camvas, which would allow extendablilty
  */
 void featureset_init_funcs(void)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* set size of unspecified features structs to just the base */
   featureset_class_G->struct_size[FEATURE_INVALID] = sizeof(zmapWindowCanvasFeatureStruct);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  zMapWindowCanvasFeatureInit() ;
 
   zMapWindowCanvasBasicInit();		/* the order of these may be important */
   zMapWindowCanvasGlyphInit();
@@ -572,26 +585,36 @@ void zMapWindowContainerGroupSortByLayer(FooCanvasGroup * group)
 /* each feature type defines its own functions */
 /* if they inherit from another type then they must include that type's headers and call code directly */
 
-void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int feature_struct_size, int set_struct_size)
+void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,
+                                        gpointer *set_funcs, int set_struct_size)
 {
 
-  _featureset_set_init_G[featuretype] = funcs[FUNC_SET_INIT];
-  _featureset_prepare_G[featuretype] = funcs[FUNC_PREPARE];
-  _featureset_set_paint_G[featuretype] = funcs[FUNC_SET_PAINT];
-  _featureset_paint_G[featuretype] = funcs[FUNC_PAINT];
-  _featureset_flush_G[featuretype] = funcs[FUNC_FLUSH];
-  _featureset_extent_G[featuretype] = funcs[FUNC_EXTENT];
-  _featureset_colour_G[featuretype]  = funcs[FUNC_COLOUR];
-  _featureset_pre_zoom_G[featuretype] = funcs[FUNC_PRE_ZOOM];
-  _featureset_zoom_G[featuretype] = funcs[FUNC_ZOOM];
-  _featureset_free_G[featuretype] = funcs[FUNC_FREE];
-  _featureset_point_G[featuretype] = funcs[FUNC_POINT];
-  _featureset_add_G[featuretype]     = funcs[FUNC_ADD];
-  _featureset_subpart_G[featuretype] = funcs[FUNC_SUBPART];
+  _featureset_set_init_G[featuretype] = set_funcs[FUNC_SET_INIT];
+  _featureset_prepare_G[featuretype] = set_funcs[FUNC_PREPARE];
+  _featureset_set_paint_G[featuretype] = set_funcs[FUNC_SET_PAINT];
+  _featureset_paint_G[featuretype] = set_funcs[FUNC_PAINT];
+  _featureset_flush_G[featuretype] = set_funcs[FUNC_FLUSH];
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  _featureset_extent_G[featuretype] = set_funcs[FUNC_EXTENT];
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  featureset_class_G->struct_size[featuretype] = feature_struct_size;
+  _featureset_colour_G[featuretype] = set_funcs[FUNC_COLOUR];
+  _featureset_pre_zoom_G[featuretype] = set_funcs[FUNC_PRE_ZOOM];
+  _featureset_zoom_G[featuretype] = set_funcs[FUNC_ZOOM];
+  _featureset_free_G[featuretype] = set_funcs[FUNC_FREE];
+  _featureset_point_G[featuretype] = set_funcs[FUNC_POINT];
+  _featureset_add_G[featuretype] = set_funcs[FUNC_ADD];
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  _featureset_subpart_G[featuretype] = set_funcs[FUNC_SUBPART];
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   featureset_class_G->set_struct_size[featuretype] = set_struct_size;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  featureset_class_G->struct_size[featuretype] = feature_struct_size;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return ;
 }
@@ -783,38 +806,6 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, Z
 }
 
 
-/* get the total sequence extent of a simple or complex feature */
-/* used by bumping; we allow force to simple for optional but silly bump modes */
-gboolean zmapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature,
-                                                 gboolean complex, ZMapSpan span, double *width)
-{
-  gboolean result = TRUE ;
-
-  void (*func) (ZMapWindowCanvasFeature feature, ZMapSpan span, double *width) = NULL;
-
-  zMapReturnValIfFail(zmapWindowCanvasFeatureValid(feature), FALSE) ;
-
-  func = _featureset_extent_G[feature->type];
-
-  if(!complex)		/* reset any compund feature extents */
-    feature->y2 = feature->feature->x2;
-
-  if(!func || !complex)
-    {
-      /* all features have an extent, if it's simple get it here */
-      span->x1 = feature->feature->x1;	/* use real coord from the feature context */
-      span->x2 = feature->feature->x2;
-      *width = feature->width;
-    }
-  else
-    {
-      func(feature, span, width);
-    }
-
-  return result ;
-}
-
-
 /* Dump to screen information about all the features  */
 void zmapWindowCanvasFeaturesetDumpFeatures(ZMapWindowFeaturesetItem featureset)
 {
@@ -944,60 +935,6 @@ gboolean zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featurese
 }
 
 
-ZMapFeature zmapWindowCanvasFeatureGetFeature(ZMapWindowCanvasFeature feature_item)
-{
-  ZMapFeature feature = NULL ;
-
-  if (feature_item->feature)
-    feature = feature_item->feature ;
-
-  return feature ;
-}
-
-
-/* Add/remove splice positions to a feature, these can be displayed/highlighted
- * to the user.
- * 
- * These positions probably indicate where the feature splices match some other
- * feature  selected by the user. */
-void zmapWindowCanvasFeatureAddSplicePos(ZMapWindowCanvasFeature feature_item,
-                                         int feature_pos, ZMapBoundaryType boundary_type)
-{
-  ZMapSplicePosition splice_pos ;
-
-  splice_pos = g_new0(ZMapSplicePositionStruct, 1) ;
-  splice_pos->boundary_type = boundary_type ;
-
-  if (boundary_type == ZMAPBOUNDARY_5_SPLICE)
-    {
-      splice_pos->start = feature_pos - 3 ;
-      splice_pos->end = feature_pos - 1 ;
-    }
-  else
-    {
-      splice_pos->start = feature_pos + 1 ;
-      splice_pos->end = feature_pos + 3 ;
-    }
-
-  feature_item->splice_positions = g_list_append(feature_item->splice_positions, splice_pos) ;
-
-  return ;
-}
-
-void zmapWindowCanvasFeatureRemoveSplicePos(ZMapWindowCanvasFeature feature_item)
-{
-  g_list_foreach(feature_item->splice_positions, freeSplicePosCB, NULL) ;
-
-  g_list_free(feature_item->splice_positions) ;
-
-  feature_item->splice_positions = NULL ;
-
-  return ;
-}
-
-
-
-
 /* if a featureset has any allocated data free it */
 void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
 {
@@ -1011,24 +948,6 @@ void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
 
   return;
 }
-
-/* return a span struct for the feature */
-ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo, ZMapFeature feature,
-								double x, double y)
-{
-  ZMapFeatureSubPartSpan (*func) (FooCanvasItem *foo,ZMapFeature feature,double x,double y) = NULL;
-  //	ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
-  zMapReturnValIfFail(feature, NULL) ;
-
-
-  if(feature->mode > 0 && feature->mode < FEATURE_N_TYPE)
-    func = _featureset_subpart_G[feature->mode];
-  if(!func)
-    return NULL;
-
-  return func(foo, feature, x, y);
-}
-
 
 gboolean zMapWindowCanvasFeaturesetHasPointFeature(FooCanvasItem *item)
 {
@@ -1663,89 +1582,6 @@ void zMapWindowCanvasFeaturesetShowHideMasked(FooCanvasItem *foo, gboolean show,
 }
 
 
-/* allocate a free list for an unknown structure */
-ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type)
-{
-  ZMapWindowCanvasFeature feat = NULL ;
-
-  /* WARNING...THIS CODE IS QUITE HARD TO FATHOM/FOLLOW... */
-
-  if (type > FEATURE_INVALID && type < FEATURE_N_TYPE)
-    {
-      GList *l ;
-      int size ;
-      zmapWindowCanvasFeatureType ftype = type ;
-
-      if (!(size = featureset_class_G->struct_size[type]))
-	{
-	  type = FEATURE_INVALID ;			    /* catch all for simple features (one common free list) */
-	  size = sizeof(zmapWindowCanvasFeatureStruct) ;
-	}
-
-      if (!featureset_class_G->feature_free_list[type])
-	{
-	  int i ;
-          gpointer mem ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          /* WHY ISN'T THIS ZERO'D.... */
-
-	  mem = g_malloc(size * N_FEAT_ALLOC) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	  mem = g_malloc0(size * N_FEAT_ALLOC) ;
-
-	  for (i = 0 ; i < N_FEAT_ALLOC ; i++, mem += size)
-	    {
-	      feat = (ZMapWindowCanvasFeature)mem ;
-	      feat->type = type ;
-	      feat->feature = NULL ;
-	      zmapWindowCanvasFeatureFree((gpointer)mem) ;
-	    }
-
-	  n_block_alloc++ ;
-	}
-
-      l = featureset_class_G->feature_free_list[type] ;
-
-      feat = (ZMapWindowCanvasFeature)l->data ;
-
-      featureset_class_G->feature_free_list[type]
-	= g_list_delete_link(featureset_class_G->feature_free_list[type], l) ;
-
-      /* GOODNESS ME....THIS SEEMS TO REZERO SOMETHING WE INIT'D ABOVE.... */
-      /* these can get re-allocated so must zero */
-      memset((gpointer)feat, 0, size) ;
-
-      /* AND NOW WE RESET THE TYPE....STREUTH..... */
-      feat->type = ftype ;
-
-      n_feature_alloc++ ;
-    }
-
-  return feat ;
-}
-
-
-/* need to be a ZMapSkipListFreeFunc for use as a callback */
-void zmapWindowCanvasFeatureFree(gpointer thing)
-{
-  ZMapWindowCanvasFeature feat = NULL ;
-  zmapWindowCanvasFeatureType type ;
-
-  zMapReturnIfFail(thing && featureset_class_G) ;
-
-  feat = (ZMapWindowCanvasFeature) thing ;
-  type = feat->type ;
-
-  if(!featureset_class_G->struct_size[type])
-    type = FEATURE_INVALID ;		/* catch all for simple features */
-
-  featureset_class_G->feature_free_list[type] =
-    g_list_prepend(featureset_class_G->feature_free_list[type], thing) ;
-
-  n_feature_free++ ;
-}
-
 
 
 int get_heat_rgb(int a,int b,double score)
@@ -1898,7 +1734,7 @@ GType zMapWindowFeaturesetItemGetType(void)
   if (!group_type)
     {
       static const GTypeInfo group_info = {
-	sizeof (zmapWindowFeaturesetItemClass),
+	sizeof(ZMapWindowFeaturesetItemClassStruct),
 	(GBaseInitFunc) NULL,
 	(GBaseFinalizeFunc) NULL,
 	(GClassInitFunc) zmap_window_featureset_item_item_class_init,
@@ -3553,7 +3389,7 @@ ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem 
       if(type == FEATURE_INVALID)		/* no style or feature type not implemented */
         return NULL;
 
-      feat = zmapWindowCanvasFeatureAlloc(type);
+      feat = zMapWindowCanvasFeatureAlloc(type);
 
       feat->feature = feature;
       feat->type = type;
@@ -3715,7 +3551,7 @@ ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetIte
   if (type == FEATURE_INVALID || type < FEATURE_GRAPHICS)
     return NULL;
 
-  feat = (ZMapWindowCanvasGraphics) zmapWindowCanvasFeatureAlloc(type);
+  feat = (ZMapWindowCanvasGraphics)zMapWindowCanvasFeatureAlloc(type);
 
   feat->type = type;
 
@@ -4307,7 +4143,6 @@ static double graphicsPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature
 
 static void zmap_window_featureset_item_item_destroy (GtkObject *object)
 {
-
   ZMapWindowFeaturesetItem featureset_item;
   GList *features;
   ZMapWindowCanvasFeature feat;
@@ -4331,7 +4166,12 @@ static void zmap_window_featureset_item_item_destroy (GtkObject *object)
 
   g_return_if_fail(ZMAP_IS_WINDOW_FEATURESET_ITEM(object));
 
+
+
   featureset_item = ZMAP_WINDOW_FEATURESET_ITEM(object);
+
+
+
 
   if(g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(featureset_item->id)))
     {
@@ -4470,15 +4310,6 @@ static void findNameAtPosCB(gpointer data, gpointer user_data)
   return ;
 }
 
-
-static void freeSplicePosCB(gpointer data, gpointer user_data_unused)
-{
-  ZMapSplicePosition splice_pos = (ZMapSplicePosition)data ; /* for debugging. */
-
-  g_free(splice_pos) ;
-
-  return ;
-}
 
   
 

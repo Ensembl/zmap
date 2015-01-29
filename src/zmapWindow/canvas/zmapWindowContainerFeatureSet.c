@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainerFeatureSet.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2013-2014: Genome Research Ltd.
+ *  Copyright (c) 2013-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <ZMap/zmapBase.h>
+#include <ZMap/zmapFeature.h>
 #include <zmapWindow_P.h>                                   /* for ZMapWindowStats... */
 #include <zmapWindowContainerFeatureSet_I.h>
 
@@ -1400,7 +1401,7 @@ static void unhighlightFeatureCB(gpointer data, gpointer user_data)
 {
   ZMapWindowCanvasFeature feature_item = (ZMapWindowCanvasFeature)data ;
 
-  zmapWindowCanvasFeatureRemoveSplicePos(feature_item) ;
+  zMapWindowCanvasFeatureRemoveSplicePos(feature_item) ;
 
   return ;
 }
@@ -1466,7 +1467,7 @@ static void highlightFeature(gpointer data, gpointer user_data)
 {
   ZMapWindowCanvasFeature feature_item = (ZMapWindowCanvasFeature)data ;
   SpliceHighlight splice_data = (SpliceHighlight)user_data ;
-  ZMapFeature feature = zmapWindowCanvasFeatureGetFeature(feature_item) ;
+  ZMapFeature feature = zMapWindowCanvasFeatureGetFeature(feature_item) ;
   ZMapWindowContainerFeatureSet current_container_set = splice_data->current_container_set ;
   GList *curr ;
   GList *splice_matches ;
@@ -1511,10 +1512,10 @@ static void addSplicesCB(gpointer data, gpointer user_data)
   ZMapWindowCanvasFeature feature_item = (ZMapWindowCanvasFeature)user_data ;
 
   if (splice_span->x1)
-    zmapWindowCanvasFeatureAddSplicePos(feature_item, splice_span->x1, ZMAPBOUNDARY_5_SPLICE) ;
+    zMapWindowCanvasFeatureAddSplicePos(feature_item, splice_span->x1, ZMAPBOUNDARY_5_SPLICE) ;
 
   if (splice_span->x2)
-    zmapWindowCanvasFeatureAddSplicePos(feature_item, splice_span->x2, ZMAPBOUNDARY_3_SPLICE) ;
+    zMapWindowCanvasFeatureAddSplicePos(feature_item, splice_span->x2, ZMAPBOUNDARY_3_SPLICE) ;
 
   return ;
 }

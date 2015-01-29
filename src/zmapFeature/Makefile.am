@@ -19,11 +19,10 @@ zmapFeatureData.c   \
 zmapFeatureOutput.c \
 zmapFeatureParams.c \
 zmapFeatureTranscript.c        \
-zmapFeatureTypes.c  \
 zmapFeatureUtils.c  \
 zmapStyle.c         \
-zmapStyle_I.h       \
 zmapStyle_P.h       \
+zmapStyleObj.c  \
 zmapStyleUtils.c    \
 $(NULL)
 

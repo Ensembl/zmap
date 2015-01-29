@@ -1,6 +1,6 @@
 /*  File: zmapFeature.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -349,7 +349,7 @@ typedef struct ZMapFeatureContextMergeStatsStructType
  * Sequences and Block Coordinates
  * NOTE with moving to chromosome coords this is a bit out of date
  * will update this comment when I've worked out what to do.
- * NOTE refer to docs/IntWeb/Design/notes/coord_config.shtml and ignore the below
+ * NOTE refer to coord_config.html and ignore the below
  *
  * In the context of displaying a single align with a single block,
  * given a chromosome and a sequence from that to look at *we have:
@@ -1387,6 +1387,7 @@ ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray* const, int index) ;
 gboolean zMapAlignBlockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
 
 gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
+void zMapFeatureFreeSubParts(GList *sub_parts) ;
 GList *zMapFeatureHasMatchingBoundaries(ZMapFeature feature, GList *boundaries) ;
 int zMapFeatureVariationGetSections(const char *variation_str, 
                                     char **old_str_out, char **new_str_out, 
