@@ -6,6 +6,17 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 1.3.0</h4>
+<ul>
+  <li>Fix a bug where zmap was leaking memory when idle (SIRT:437717) 
+  <li>Fix a bug where ZMap could sometimes log repeated text many times (RT426799)
+  <li>Fix a bug with ZMap freezing (RT435980)
+  <li>Fix a bug causing lowercasing of featureset names on user loading.
+  <li>Fix a bug in state processing, did not clear up correctly on intermediate timeouts.
+  <li>Fix bugs in handling errors, not calling zmap to clear up modal lock.
+  <li>Fix install target on cygwin
+</ul>
+
 <h4>Version 1.2.0</h4>
 <ul>
   <li> Splice highlighting speed improvments, and mark support

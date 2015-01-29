@@ -1,543 +1,1701 @@
-2014-11-25  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.1.0-105-g4ec9871 - Update RT and git commit reports
- src/ChangeLog                                  |   12 ++++++++++++
- src/build/release_docs/GIT_COMMITS.txt         |    2 ++
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |   12 +++++++++++-
- 3 files changed, 25 insertions(+), 1 deletions(-)
+2015-01-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix incorrect gap string for protein seqs sent to blixem
+ src/zmapView/zmapViewCallBlixem.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
 
-2014-11-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- "fix bug in determining order of colliding requests...doh."
- src/zmapRemoteControl/zmapRemoteControl.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+2015-01-13  Gemma Barson  <gb10@sanger.ac.uk>
+ Update release notes
+ docs/user/release_notes.shtml |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
 
-2014-11-24  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.1.0-103-g78fd204 - Update RT and git commit reports
- src/ChangeLog                                  |    6 ++++++
- src/build/release_docs/GIT_COMMITS.txt         |    1 +
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
- 3 files changed, 8 insertions(+), 1 deletions(-)
+2015-01-13  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.2.0-83-g6fd8c75 - Update RT and git commit reports
+ src/ChangeLog                                  | 2147 ++++++++++++++++++------
+ src/build/release_docs/GIT_COMMITS.txt         |   63 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  123 +--
+ 3 files changed, 1694 insertions(+), 639 deletions(-)
 
-2014-11-21  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.1.0-102-g29b92af - Update RT and git commit reports
- src/ChangeLog                          |   17 +++++++++++++++++
- src/build/release_docs/GIT_COMMITS.txt |    3 +++
- 2 files changed, 20 insertions(+), 0 deletions(-)
+2015-01-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix bug causing lowercasing of featureset names on user loading."
+ src/zmapWindow/zmapWindow.c          |   23 +++++++---
+ src/zmapWindow/zmapWindowColConfig.c |   72 +++++++++++++++++----------------
+ 2 files changed, 53 insertions(+), 42 deletions(-)
 
-2014-11-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add exit messages and times !"
- src/zmapApp/zmapAppwindow.c |   53 ++++++++++++++++++++++++++++++++----------
- 1 files changed, 40 insertions(+), 13 deletions(-)
+2015-01-08  Jeremy Henty  <jh13@sanger.ac.uk>
+ Update the copyright declarations to the year 2015.
+ src/canvas_choice/containers.c                     |    2 +-
+ src/canvas_choice/containers.h                     |    2 +-
+ src/canvas_choice/crcanvas_demo.c                  |    2 +-
+ src/canvas_choice/crcanvas_demo.h                  |    2 +-
+ src/canvas_choice/foocanvas_demo.c                 |    2 +-
+ src/canvas_choice/foocanvas_demo.h                 |    2 +-
+ src/canvas_choice/goocanvas_demo.c                 |    2 +-
+ src/canvas_choice/goocanvas_demo.h                 |    2 +-
+ src/canvas_choice/goocanvas_mv_demo.c              |    2 +-
+ src/canvas_choice/goocanvas_mv_demo.h              |    2 +-
+ src/canvas_choice/gui.c                            |    2 +-
+ src/canvas_choice/gui.h                            |    2 +-
+ src/canvas_choice/long_item_test.c                 |    2 +-
+ src/canvas_choice/long_item_test.h                 |    2 +-
+ src/canvas_choice/utils.c                          |    2 +-
+ src/canvas_choice/utils.h                          |    2 +-
+ src/include/ZMap/zmap.h                            |    2 +-
+ src/include/ZMap/zmapAppRemote.h                   |    2 +-
+ src/include/ZMap/zmapAppServices.h                 |    2 +-
+ src/include/ZMap/zmapBase.h                        |    2 +-
+ src/include/ZMap/zmapCmdLineArgs.h                 |    2 +-
+ src/include/ZMap/zmapConfig.h                      |    2 +-
+ src/include/ZMap/zmapConfigDir.h                   |    2 +-
+ src/include/ZMap/zmapConfigIni.h                   |    2 +-
+ src/include/ZMap/zmapConfigKeyboard.h              |    2 +-
+ src/include/ZMap/zmapConfigStanzaStructs.h         |    2 +-
+ src/include/ZMap/zmapConfigStrings.h               |    2 +-
+ src/include/ZMap/zmapConfigStyleDefaults.h         |    2 +-
+ src/include/ZMap/zmapControl.h                     |    2 +-
+ src/include/ZMap/zmapControlImportFile.h           |    2 +-
+ src/include/ZMap/zmapDAS.h                         |    2 +-
+ src/include/ZMap/zmapDNA.h                         |    2 +-
+ src/include/ZMap/zmapDraw.h                        |    2 +-
+ src/include/ZMap/zmapEnum.h                        |    2 +-
+ src/include/ZMap/zmapFASTA.h                       |    2 +-
+ src/include/ZMap/zmapFeature.h                     |    2 +-
+ src/include/ZMap/zmapFeatureLoadDisplay.h          |    2 +-
+ src/include/ZMap/zmapGFF.h                         |    2 +-
+ src/include/ZMap/zmapGFFStringUtils.h              |    2 +-
+ src/include/ZMap/zmapGLibUtils.h                   |    2 +-
+ src/include/ZMap/zmapGUITreeView.h                 |    2 +-
+ src/include/ZMap/zmapIO.h                          |    2 +-
+ src/include/ZMap/zmapMLF.h                         |    2 +-
+ src/include/ZMap/zmapManager.h                     |    2 +-
+ src/include/ZMap/zmapPeptide.h                     |    2 +-
+ src/include/ZMap/zmapReadLine.h                    |    2 +-
+ src/include/ZMap/zmapRemoteCommand.h               |    2 +-
+ src/include/ZMap/zmapRemoteControl.h               |    2 +-
+ src/include/ZMap/zmapRemoteProtocol.h              |    2 +-
+ src/include/ZMap/zmapSO.h                          |    2 +-
+ src/include/ZMap/zmapSOParser.h                    |    2 +-
+ src/include/ZMap/zmapSeqBitmap.h                   |    2 +-
+ src/include/ZMap/zmapSequence.h                    |    2 +-
+ src/include/ZMap/zmapServerProtocol.h              |    2 +-
+ src/include/ZMap/zmapSkipList.h                    |    2 +-
+ src/include/ZMap/zmapString.h                      |    2 +-
+ src/include/ZMap/zmapStyle.h                       |    2 +-
+ src/include/ZMap/zmapThreads.h                     |    2 +-
+ src/include/ZMap/zmapUrl.h                         |    2 +-
+ src/include/ZMap/zmapUtils.h                       |    2 +-
+ src/include/ZMap/zmapUtilsCheck.h                  |    2 +-
+ src/include/ZMap/zmapUtilsDebug.h                  |    2 +-
+ src/include/ZMap/zmapUtilsFoo.h                    |    2 +-
+ src/include/ZMap/zmapUtilsGUI.h                    |    2 +-
+ src/include/ZMap/zmapUtilsHandle.h                 |    2 +-
+ src/include/ZMap/zmapUtilsLog.h                    |    2 +-
+ src/include/ZMap/zmapUtilsLogical.h                |    2 +-
+ src/include/ZMap/zmapUtilsMesg.h                   |    2 +-
+ src/include/ZMap/zmapView.h                        |    2 +-
+ src/include/ZMap/zmapWebPages.h                    |    2 +-
+ src/include/ZMap/zmapWindow.h                      |    2 +-
+ src/include/ZMap/zmapWindowDrawFeatures.h          |    2 +-
+ src/include/ZMap/zmapWindowNavigator.h             |    2 +-
+ src/include/ZMap/zmapXML.h                         |    2 +-
+ src/include/ZMap/zmapXMLHandler.h                  |    2 +-
+ src/libcurlobject/libcurlobject.c                  |    2 +-
+ src/libcurlobject/libcurlobject.h                  |    2 +-
+ src/libcurlobject/libcurlobject_I.h                |    2 +-
+ src/libpfetch/libpfetch-utils.c                    |    2 +-
+ src/libpfetch/libpfetch.c                          |    2 +-
+ src/libpfetch/libpfetch.h                          |    2 +-
+ src/libpfetch/libpfetch_I.h                        |    2 +-
+ src/libpfetch/libpfetch_P.h                        |    2 +-
+ src/libpfetch/tests/check_libpfetch.c              |    2 +-
+ src/libpfetch/tests/check_libpfetch.h              |    2 +-
+ src/tests/check_zmapmain.c                         |    2 +-
+ src/tests/zmapCheck.h                              |    2 +-
+ src/tests/zmapSuites.h                             |    2 +-
+ src/zmapApp/zmapAppRemoteCommand.c                 |    2 +-
+ src/zmapApp/zmapAppRemoteControl.c                 |    2 +-
+ src/zmapApp/zmapApp_P.h                            |    2 +-
+ src/zmapApp/zmapApp_PP.h                           |    2 +-
+ src/zmapApp/zmapAppconnect.c                       |    2 +-
+ src/zmapApp/zmapAppmain_c.c                        |    2 +-
+ src/zmapApp/zmapAppmanage.c                        |    2 +-
+ src/zmapApp/zmapAppmenubar.c                       |    2 +-
+ src/zmapApp/zmapAppwindow.c                        |    2 +-
+ src/zmapAppServices/zmapAppDebugConfig.c           |    2 +-
+ src/zmapAppServices/zmapAppSequenceView.c          |    2 +-
+ src/zmapConfig/default_styles.c                    |    2 +-
+ src/zmapConfig/zmapConfigDir.c                     |    2 +-
+ src/zmapConfig/zmapConfigDir_P.h                   |    2 +-
+ src/zmapConfig/zmapConfigFile.c                    |    2 +-
+ src/zmapConfig/zmapConfigIni.c                     |    2 +-
+ src/zmapConfig/zmapConfigIni_P.h                   |    2 +-
+ src/zmapConfig/zmapConfigKey.c                     |    2 +-
+ src/zmapConfig/zmapConfigLoader.c                  |    2 +-
+ src/zmapControl/zmapControl.c                      |    2 +-
+ src/zmapControl/zmapControlImportFile.c            |    2 +-
+ src/zmapControl/zmapControlNavigator.c             |    2 +-
+ src/zmapControl/zmapControlPreferences.c           |    2 +-
+ src/zmapControl/zmapControlRemoteControl.c         |    2 +-
+ src/zmapControl/zmapControlViews.c                 |    2 +-
+ src/zmapControl/zmapControlWindow.c                |    2 +-
+ src/zmapControl/zmapControlWindowButtons.c         |    2 +-
+ src/zmapControl/zmapControlWindowFrame.c           |    2 +-
+ src/zmapControl/zmapControlWindowInfoPanel.c       |    2 +-
+ src/zmapControl/zmapControlWindowMenubar.c         |    2 +-
+ src/zmapControl/zmapControl_P.h                    |    2 +-
+ src/zmapControl/zmapNavigator_P.h                  |    2 +-
+ src/zmapDAS/zmapDAS1DSN.c                          |    2 +-
+ src/zmapDAS/zmapDAS1Parser.c                       |    2 +-
+ src/zmapDraw/zmapDraw.c                            |    2 +-
+ src/zmapDraw/zmapDraw_P.h                          |    2 +-
+ src/zmapFeature/tests/check_zmapFeature.c          |    2 +-
+ src/zmapFeature/tests/check_zmapFeature.h          |    2 +-
+ src/zmapFeature/tests/check_zmapFeature_P.c        |    2 +-
+ src/zmapFeature/tests/check_zmapFeature_P.h        |    2 +-
+ src/zmapFeature/tests/check_zmapStyle.c            |    2 +-
+ src/zmapFeature/tests/check_zmapStyle.h            |    2 +-
+ src/zmapFeature/tests/check_zmapStyle_P.c          |    2 +-
+ src/zmapFeature/tests/check_zmapStyle_P.h          |    2 +-
+ src/zmapFeature/zmapFeature.c                      |    2 +-
+ src/zmapFeature/zmapFeature3FrameTranslation.c     |    2 +-
+ src/zmapFeature/zmapFeatureAlignment.c             |    2 +-
+ src/zmapFeature/zmapFeatureBasic.c                 |    2 +-
+ src/zmapFeature/zmapFeatureContext.c               |    2 +-
+ src/zmapFeature/zmapFeatureContextUtils.c          |    2 +-
+ src/zmapFeature/zmapFeatureDNA.c                   |    2 +-
+ src/zmapFeature/zmapFeatureData.c                  |    2 +-
+ src/zmapFeature/zmapFeatureFormatInput.c           |    2 +-
+ src/zmapFeature/zmapFeatureOutput.c                |    2 +-
+ src/zmapFeature/zmapFeatureParams.c                |    2 +-
+ src/zmapFeature/zmapFeatureTranscript.c            |    2 +-
+ src/zmapFeature/zmapFeatureUtils.c                 |    2 +-
+ src/zmapFeature/zmapFeature_P.h                    |    2 +-
+ src/zmapFeature/zmapStyle.c                        |    2 +-
+ src/zmapFeature/zmapStyleObj.c                     |    2 +-
+ src/zmapFeature/zmapStyleUtils.c                   |    2 +-
+ src/zmapFeature/zmapStyle_P.h                      |    2 +-
+ src/zmapGFF/gffparser.c                            |    2 +-
+ src/zmapGFF/zmapGFF2Dumper.c                       |    2 +-
+ src/zmapGFF/zmapGFF2_P.h                           |    2 +-
+ src/zmapGFF/zmapGFF2parser.c                       |    2 +-
+ src/zmapGFF/zmapGFF3_P.h                           |    2 +-
+ src/zmapGFF/zmapGFF3parser.c                       |    2 +-
+ src/zmapGFF/zmapGFFAttribute.c                     |    2 +-
+ src/zmapGFF/zmapGFFAttribute.h                     |    2 +-
+ src/zmapGFF/zmapGFFDirective.c                     |    2 +-
+ src/zmapGFF/zmapGFFDirective.h                     |    2 +-
+ src/zmapGFF/zmapGFFFeatureData.c                   |    2 +-
+ src/zmapGFF/zmapGFFFeatureData.h                   |    2 +-
+ src/zmapGFF/zmapGFFGeneral.c                       |    2 +-
+ src/zmapGFF/zmapGFFHeader.c                        |    2 +-
+ src/zmapGFF/zmapGFFHeader.h                        |    2 +-
+ src/zmapGFF/zmapGFFStringUtils.c                   |    2 +-
+ src/zmapGFF/zmapGFFUtils.c                         |    2 +-
+ src/zmapGFF/zmapGFF_P.h                            |    2 +-
+ src/zmapGFF/zmapMLF.c                              |    2 +-
+ src/zmapGFF/zmapMLF_P.h                            |    2 +-
+ src/zmapGFF/zmapSOParser.c                         |    2 +-
+ src/zmapGFF/zmapSOParser_P.h                       |    2 +-
+ src/zmapManager/zmapManager.c                      |    2 +-
+ src/zmapManager/zmapManager_P.h                    |    2 +-
+ .../remotetest/remotecontroltest.c                 |    2 +-
+ src/zmapRemoteControl/zmapRemoteCommand.c          |    2 +-
+ src/zmapRemoteControl/zmapRemoteControl.c          |    2 +-
+ src/zmapRemoteControl/zmapRemoteControlXML.c       |    2 +-
+ src/zmapRemoteControl/zmapRemoteControl_P.h        |    2 +-
+ src/zmapServer/acedb/acedbServer.c                 |    2 +-
+ src/zmapServer/acedb/acedbServer_P.h               |    2 +-
+ src/zmapServer/das/dasServer.c                     |    2 +-
+ src/zmapServer/das/dasServer_P.h                   |    2 +-
+ src/zmapServer/file/fileServer.c                   |    2 +-
+ src/zmapServer/file/fileServer_P.h                 |    2 +-
+ src/zmapServer/pipe/pipeServer.c                   |    2 +-
+ src/zmapServer/pipe/pipeServer_P.h                 |    2 +-
+ src/zmapServer/zmapDataSource.c                    |    2 +-
+ src/zmapServer/zmapDataSource.h                    |    2 +-
+ src/zmapServer/zmapDataSource_P.h                  |    2 +-
+ src/zmapServer/zmapServer.c                        |    2 +-
+ src/zmapServer/zmapServer.h                        |    2 +-
+ src/zmapServer/zmapServerProtocolHandler.c         |    2 +-
+ src/zmapServer/zmapServerPrototype.h               |    2 +-
+ src/zmapServer/zmapServer_P.h                      |    2 +-
+ src/zmapThreads/zmapSlave.c                        |    2 +-
+ src/zmapThreads/zmapSlave.test.c                   |    2 +-
+ src/zmapThreads/zmapSlave_P.h                      |    2 +-
+ src/zmapThreads/zmapThreads.c                      |    2 +-
+ src/zmapThreads/zmapThreadsUtils.c                 |    2 +-
+ src/zmapThreads/zmapThreads_P.h                    |    2 +-
+ src/zmapUtils/tests/check_zmapConfigLoader.c       |    2 +-
+ src/zmapUtils/tests/check_zmapConfigLoader.h       |    2 +-
+ src/zmapUtils/zmapAppRemoteUtils.c                 |    2 +-
+ src/zmapUtils/zmapBase.c                           |    2 +-
+ src/zmapUtils/zmapBase_I.h                         |    2 +-
+ src/zmapUtils/zmapBioUtils.c                       |    2 +-
+ src/zmapUtils/zmapCmdLineArgs.c                    |    2 +-
+ src/zmapUtils/zmapCmdLineArgs_P.h                  |    2 +-
+ src/zmapUtils/zmapCoords.c                         |    2 +-
+ src/zmapUtils/zmapDNA.c                            |    2 +-
+ src/zmapUtils/zmapFASTA.c                          |    2 +-
+ src/zmapUtils/zmapFileUtils.c                      |    2 +-
+ src/zmapUtils/zmapFooUtils.c                       |    2 +-
+ src/zmapUtils/zmapGLibUtils.c                      |    2 +-
+ src/zmapUtils/zmapGUINotebook.c                    |    2 +-
+ src/zmapUtils/zmapGUITreeView.c                    |    2 +-
+ src/zmapUtils/zmapGUITreeView_I.h                  |    2 +-
+ src/zmapUtils/zmapGUImenus.c                       |    2 +-
+ src/zmapUtils/zmapGUIutils.c                       |    2 +-
+ src/zmapUtils/zmapHandle.c                         |    2 +-
+ src/zmapUtils/zmapIOOut.c                          |    2 +-
+ src/zmapUtils/zmapIO_P.h                           |    2 +-
+ src/zmapUtils/zmapLogging.c                        |    2 +-
+ src/zmapUtils/zmapPeptide.c                        |    2 +-
+ src/zmapUtils/zmapRadixSort.c                      |    2 +-
+ src/zmapUtils/zmapReadLine.c                       |    2 +-
+ src/zmapUtils/zmapReadLine_P.h                     |    2 +-
+ src/zmapUtils/zmapSO.c                             |    2 +-
+ src/zmapUtils/zmapSequence.c                       |    2 +-
+ src/zmapUtils/zmapSignals.c                        |    2 +-
+ src/zmapUtils/zmapSkipList.c                       |    2 +-
+ src/zmapUtils/zmapStackTrace.c                     |    2 +-
+ src/zmapUtils/zmapString.c                         |    2 +-
+ src/zmapUtils/zmapUtils.c                          |    2 +-
+ src/zmapUtils/zmapUtilsSpawn.c                     |    2 +-
+ src/zmapUtils/zmapUtilsSystem.c                    |    2 +-
+ src/zmapUtils/zmapUtilsUsers.c                     |    2 +-
+ src/zmapUtils/zmapUtils_P.h                        |    2 +-
+ src/zmapUtils/zmapWebBrowser.c                     |    2 +-
+ src/zmapView/zmapView.c                            |    2 +-
+ src/zmapView/zmapViewCallBlixem.c                  |    2 +-
+ src/zmapView/zmapViewCommand.c                     |    2 +-
+ src/zmapView/zmapViewFeatureCollapse.c             |    2 +-
+ src/zmapView/zmapViewFeatureMask.c                 |    2 +-
+ src/zmapView/zmapViewRemoteControl.c               |    2 +-
+ src/zmapView/zmapViewScratch.c                     |    2 +-
+ src/zmapView/zmapViewUtils.c                       |    2 +-
+ src/zmapView/zmapView_P.h                          |    2 +-
+ src/zmapWindow/canvas/zmapWindowAllBase.h          |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasAlignment.c  |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasAlignment.h  |    2 +-
+ .../canvas/zmapWindowCanvasAlignment_I.h           |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasAssembly.c   |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasAssembly.h   |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasAssembly_I.h |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasBasic.c      |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasBasic.h      |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.c       |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.h       |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasFeature.c    |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasFeature.h    |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasFeature_I.h  |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.h |    2 +-
+ .../canvas/zmapWindowCanvasFeaturesetBump.c        |    2 +-
+ .../canvas/zmapWindowCanvasFeaturesetSummarise.c   |    2 +-
+ .../canvas/zmapWindowCanvasFeatureset_I.h          |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasGlyph.c      |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasGlyph.h      |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasGlyph_I.h    |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasGraphItem.c  |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasGraphItem.h  |    2 +-
+ .../canvas/zmapWindowCanvasGraphItem_I.h           |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasGraphics.c   |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasGraphics.h   |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasGraphics_I.h |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasItem.h       |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasItem_I.h     |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasLocus.c      |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasLocus.h      |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasLocus_I.h    |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasSequence.c   |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasSequence.h   |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasSequence_I.h |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasTranscript.h |    2 +-
+ .../canvas/zmapWindowCanvasTranscript_I.h          |    2 +-
+ .../canvas/zmapWindowContainerAlignment.h          |    2 +-
+ .../canvas/zmapWindowContainerAlignment_I.h        |    2 +-
+ src/zmapWindow/canvas/zmapWindowContainerBlock.h   |    2 +-
+ src/zmapWindow/canvas/zmapWindowContainerBlock_I.h |    2 +-
+ src/zmapWindow/canvas/zmapWindowContainerContext.h |    2 +-
+ .../canvas/zmapWindowContainerContext_I.h          |    2 +-
+ .../canvas/zmapWindowContainerFeatureSet.c         |    2 +-
+ .../canvas/zmapWindowContainerFeatureSet.h         |    2 +-
+ .../canvas/zmapWindowContainerFeatureSet_I.h       |    2 +-
+ src/zmapWindow/canvas/zmapWindowContainerGroup.c   |    2 +-
+ src/zmapWindow/canvas/zmapWindowContainerGroup.h   |    2 +-
+ src/zmapWindow/canvas/zmapWindowContainerGroup_I.h |    2 +-
+ src/zmapWindow/canvas/zmapWindowContainerItem.c    |    2 +-
+ src/zmapWindow/canvas/zmapWindowContainerUtils.h   |    2 +-
+ src/zmapWindow/canvas/zmapWindowContainers.h       |    2 +-
+ src/zmapWindow/canvas/zmapWindowOldItems.c         |    2 +-
+ src/zmapWindow/zmapWindow.c                        |    2 +-
+ src/zmapWindow/zmapWindowCanvas.c                  |    2 +-
+ src/zmapWindow/zmapWindowColBump.c                 |    2 +-
+ src/zmapWindow/zmapWindowColConfig.c               |    2 +-
+ src/zmapWindow/zmapWindowColOrder.c                |    2 +-
+ src/zmapWindow/zmapWindowCommand.c                 |    2 +-
+ src/zmapWindow/zmapWindowDNA.c                     |    2 +-
+ src/zmapWindow/zmapWindowDNAChoose.c               |    2 +-
+ src/zmapWindow/zmapWindowDNAList.c                 |    2 +-
+ src/zmapWindow/zmapWindowDNAList.h                 |    2 +-
+ src/zmapWindow/zmapWindowDNAList_I.h               |    2 +-
+ src/zmapWindow/zmapWindowDisplayOps.c              |    2 +-
+ src/zmapWindow/zmapWindowDraw.c                    |    2 +-
+ src/zmapWindow/zmapWindowDrawFeatures.c            |    2 +-
+ src/zmapWindow/zmapWindowDump.c                    |    2 +-
+ src/zmapWindow/zmapWindowExport.c                  |    2 +-
+ src/zmapWindow/zmapWindowFeature.c                 |    2 +-
+ src/zmapWindow/zmapWindowFeatureFuncs.c            |    2 +-
+ src/zmapWindow/zmapWindowFeatureList.c             |    2 +-
+ src/zmapWindow/zmapWindowFeatureList.h             |    2 +-
+ src/zmapWindow/zmapWindowFeatureList_I.h           |    2 +-
+ src/zmapWindow/zmapWindowFeatureShow.c             |    2 +-
+ src/zmapWindow/zmapWindowFocus.c                   |    2 +-
+ src/zmapWindow/zmapWindowItem.c                    |    2 +-
+ src/zmapWindow/zmapWindowItemDebug.c               |    2 +-
+ src/zmapWindow/zmapWindowItemHash.c                |    2 +-
+ src/zmapWindow/zmapWindowList.c                    |    2 +-
+ src/zmapWindow/zmapWindowMark.c                    |    2 +-
+ src/zmapWindow/zmapWindowMark.h                    |    2 +-
+ src/zmapWindow/zmapWindowMenus.c                   |    2 +-
+ src/zmapWindow/zmapWindowNavigator.c               |    2 +-
+ src/zmapWindow/zmapWindowNavigatorMenus.c          |    2 +-
+ src/zmapWindow/zmapWindowNavigatorWidget.c         |    2 +-
+ src/zmapWindow/zmapWindowNavigator_P.h             |    2 +-
+ src/zmapWindow/zmapWindowPreferences.c             |    2 +-
+ src/zmapWindow/zmapWindowPrint.c                   |    2 +-
+ src/zmapWindow/zmapWindowRemoteControl.c           |    2 +-
+ src/zmapWindow/zmapWindowRemoteControlUtils.c      |    2 +-
+ src/zmapWindow/zmapWindowScale.c                   |    2 +-
+ src/zmapWindow/zmapWindowScratch.c                 |    2 +-
+ src/zmapWindow/zmapWindowScratch_P.h               |    2 +-
+ src/zmapWindow/zmapWindowSearch.c                  |    2 +-
+ src/zmapWindow/zmapWindowSeqDisp.c                 |    2 +-
+ src/zmapWindow/zmapWindowState.c                   |    2 +-
+ src/zmapWindow/zmapWindowState.h                   |    2 +-
+ src/zmapWindow/zmapWindowStats.c                   |    2 +-
+ src/zmapWindow/zmapWindowStyle.c                   |    2 +-
+ src/zmapWindow/zmapWindowUtils.c                   |    2 +-
+ src/zmapWindow/zmapWindowZoomControl.c             |    2 +-
+ src/zmapWindow/zmapWindowZoomControl_P.h           |    2 +-
+ src/zmapWindow/zmapWindow_P.h                      |    2 +-
+ src/zmapXML/example_xml_writer.c                   |    2 +-
+ src/zmapXML/zmapXMLAttribute.c                     |    2 +-
+ src/zmapXML/zmapXMLDocument.c                      |    2 +-
+ src/zmapXML/zmapXMLElement.c                       |    2 +-
+ src/zmapXML/zmapXMLParse.c                         |    2 +-
+ src/zmapXML/zmapXMLUtils.c                         |    2 +-
+ src/zmapXML/zmapXMLWriter.c                        |    2 +-
+ src/zmapXML/zmapXML_P.h                            |    2 +-
+ 363 files changed, 363 insertions(+), 363 deletions(-)
 
-2014-11-21  Gemma Barson  <gb10@sanger.ac.uk>
- Fix crash in show-translation when exon has start-not-found (RT435731)
- src/zmapFeature/zmapFeatureTranscript.c |    2 +-
+2015-01-07  Steve Miller  <sm23@sanger.ac.uk>
+ formatting of src/zmapView/zmapViewCallBlixem.c
+ src/zmapView/zmapViewCallBlixem.c | 2228 +++++++++++++++++++------------------
+ 1 files changed, 1116 insertions(+), 1112 deletions(-)
+
+2015-01-07  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "minor update"
+ docs/design/New_Drawing/Display_design.shtml |   13 ++++++++++++-
+ 1 files changed, 12 insertions(+), 1 deletions(-)
+
+2015-01-06  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add text for lessons learned from zmap."
+ docs/design/New_Drawing/Display_design.shtml |  195 +++++++++++++++++++++++++-
+ 1 files changed, 191 insertions(+), 4 deletions(-)
+
+2015-01-05  Jeremy Henty  <jh13@sanger.ac.uk>
+ Fix some "File: " header lines.
+ src/zmapFeature/zmapFeatureParams.c |    2 +-
+ src/zmapFeature/zmapStyleObj.c      |    2 +-
+ src/zmapFeature/zmapStyle_P.h       |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+2015-01-05  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add range of years copyright text as per sanger software policy."
+ src/RANGE_OF_YEARS_COPYRIGHT |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+2014-12-19  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix bug in state processing, did not clear up correctly on intermediate timeouts."
+ src/zmapRemoteControl/zmapRemoteControl.c |  208 ++++++++++++++++-------------
+ 1 files changed, 112 insertions(+), 96 deletions(-)
+
+2014-12-19  Gemma Barson  <gb10@sanger.ac.uk>
+ Disable zeromq test which sometimes hangs on cygwin
+ src/zeromq/tests/Makefile.am |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-2014-11-21  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.1.0-99-g5f73073 - Update RT and git commit reports
- src/ChangeLog                                  |   12 ++++++++++++
- src/build/release_docs/GIT_COMMITS.txt         |    2 ++
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |   22 +---------------------
- 3 files changed, 15 insertions(+), 21 deletions(-)
+2014-12-18  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add in -f flag option to pass to autoreconf."
+ src/autogen.sh |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+2014-12-18  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add in -lX11 to link flags for 64-bit ubuntu."
+ src/Makefile.am |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+2014-12-02  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix memory leak causing zmap process to grow when idle."
+ src/zmapView/zmapView.c |   16 +++++++++++++++-
+ 1 files changed, 15 insertions(+), 1 deletions(-)
+
+2014-11-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'production' into develop
+2014-11-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Build: load missing config
+ scripts/build_run.sh |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+2014-11-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor change to logging for delete-builds script
+ scripts/build_run.sh |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+2014-11-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Add call to script to delete old builds
+ scripts/build_run.sh |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+2014-11-25  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add clean-zmap target to makefile"
+ src/Makefile.am |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
+
+2014-11-25  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'release/1.2.0' into develop
+2014-11-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'feature/cygwin' into develop
+2014-11-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug with named binaries on cygwin
+ scripts/zmap_fetch_acedbbinaries.sh |   11 ++++++++++-
+ 1 files changed, 10 insertions(+), 1 deletions(-)
+
+2014-11-25  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix bugs in handling errors, not calling zmap to clear up modal lock."
+ src/zmapRemoteControl/zmapRemoteControl.c   |  126 +++++++++++++--------------
+ src/zmapRemoteControl/zmapRemoteControl_P.h |   10 +--
+ 2 files changed, 63 insertions(+), 73 deletions(-)
+
+2014-11-25  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix small bug, should not set model when app is dying, window is already gone."
+ src/zmapApp/zmapAppRemoteControl.c |   24 ++++++++++++++----------
+ 1 files changed, 14 insertions(+), 10 deletions(-)
+
+2014-11-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix minor bug in fetch_acedbbinaries
+ scripts/zmap_fetch_acedbbinaries.sh |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2014-11-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix minor bug in fetch_acedbbinaries
+ scripts/zmap_fetch_acedbbinaries.sh |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2014-11-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug with args to fetch_acedbbinaries
+ scripts/zmap_fetch_acedbbinaries.sh |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+2014-11-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bugs with copying acedb/seqtools binaries
+ scripts/build_bootstrap.sh          |    9 ++-----
+ scripts/zmap_fetch_acedbbinaries.sh |   43 ++++++++++++++++++-----------------
+ 2 files changed, 25 insertions(+), 27 deletions(-)
+
+2014-11-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix problem copying acedb binaries on cygwin
+ scripts/build_bootstrap.sh          |   12 ++++++++----
+ scripts/zmap_fetch_acedbbinaries.sh |   15 +++++++++++----
+ 2 files changed, 19 insertions(+), 8 deletions(-)
+
+2014-11-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Build: update to previous
+ scripts/zmap_fetch_acedbbinaries.sh |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+2014-11-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Build: make ACEDB_MACHINE optional
+ scripts/zmap_fetch_acedbbinaries.sh |   85 ++++++++++++++++++-----------------
+ 1 files changed, 44 insertions(+), 41 deletions(-)
+
+2014-11-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Build: fix libzmq.dll.a suffix for cygwin
+ src/Makefile.am  |   15 +++++++++++++--
+ src/configure.ac |    5 +++++
+ 2 files changed, 18 insertions(+), 2 deletions(-)
+
+2014-11-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Build: attempt to fix (disable) zeromq tests on cygwin
+ src/zeromq/configure.ac |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2014-11-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix install target on cygwin
+ src/Makefile.am |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
 2014-11-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- "insert extra logging info. for zmap init. problem on Mac."
- src/zmapApp/zmapAppwindow.c |   22 ++++++++++++++++------
- 1 files changed, 16 insertions(+), 6 deletions(-)
+ Merge branch 'release/1.2.0' into develop
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Docs: update broken links
+ docs/design/misc/about.html                        |    4 ++--
+ docs/design/modules/zmapServer.rel                 |    2 +-
+ docs/design/notes/BAM.html                         |    8 ++++----
+ docs/design/notes/ContainerFeatureset.html         |    6 +++---
+ docs/design/notes/EST_mRNA.html                    |    4 ++--
+ docs/design/notes/FToIHash.html                    |    4 ++--
+ docs/design/notes/GFF_zmap.html                    |    2 +-
+ docs/design/notes/canvasContainer.html             |    8 ++++----
+ docs/design/notes/col_order.html                   |    4 ++--
+ docs/design/notes/data_config.html                 |    8 ++++----
+ docs/design/notes/density.html                     |   10 +++++-----
+ docs/design/notes/f_context.html                   |    8 ++++----
+ docs/design/notes/feature_search.html              |    2 +-
+ docs/design/notes/featureset_col.html              |    6 +++---
+ docs/design/notes/foo_perf.html                    |    2 +-
+ docs/design/notes/glyph_style.html                 |    4 ++--
+ docs/design/notes/graph_config.html                |    2 +-
+ docs/design/notes/notepad.html                     |    4 ++--
+ docs/design/notes/optimise.html                    |   12 ++++++------
+ docs/design/notes/otter_zmap.html                  |    8 ++++----
+ docs/design/notes/performance.html                 |    4 ++--
+ docs/design/notes/server_layers.html               |    8 ++++----
+ docs/design/notes/standalone.html                  |    4 ++--
+ docs/design/notes/view_window_style.html           |    2 +-
+ docs/user/configuration.shtml                      |    2 +-
+ src/include/ZMap/zmapFeature.h                     |    2 +-
+ src/zmapFeature/zmapFeature.c                      |    2 +-
+ src/zmapFeature/zmapStyle.c                        |    2 +-
+ src/zmapServer/das/README                          |    2 +-
+ src/zmapServer/zmapServerProtocolHandler.c         |    4 ++--
+ src/zmapView/zmapViewFeatureCollapse.c             |    2 +-
+ src/zmapView/zmapViewFeatureMask.c                 |    4 ++--
+ .../canvas/zmapWindowCanvasFeaturesetSummarise.c   |    2 +-
+ src/zmapWindow/zmapWindowFocus.c                   |    2 +-
+ 34 files changed, 75 insertions(+), 75 deletions(-)
 
-2014-11-17  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.1.0-97-gbd8251f - Update RT and git commit reports
- src/ChangeLog                                  |   22 +++++++
- src/build/release_docs/GIT_COMMITS.txt         |    4 +
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |   72 +++++++++++++++++++++++-
- 3 files changed, 97 insertions(+), 1 deletions(-)
+2014-11-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'release/1.2.0' into develop
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Update links to Design directory
+ docs/design/index.html                       |  102 +++++++++++++-------------
+ docs/design/modules/zmapApp.html             |    2 -
+ docs/design/modules/zmapConfig.html          |    2 +-
+ docs/design/modules/zmapFeature.html         |   20 +++---
+ docs/design/modules/zmapServer.html          |    8 +-
+ docs/design/modules/zmapSkipList.html        |    6 +-
+ docs/design/modules/zmapThreads.html         |    2 +-
+ docs/design/modules/zmapUtils.html           |    2 +-
+ docs/design/modules/zmapView.html            |   16 ++--
+ docs/design/modules/zmapWindow.html          |   16 ++--
+ docs/design/modules/zmapWindowColConfig.html |    6 +-
+ docs/design/notes/RNAseq.html                |    8 +-
+ docs/design/notes/foo_coords.html            |    4 +-
+ docs/design/notes/new_model_canvas.html      |    8 +-
+ docs/design/notes/print.html                 |    2 +-
+ 15 files changed, 100 insertions(+), 104 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor corrections to files included in dist
+ src/Makefile.am |    4 +++-
+ src/README.zmap |   52 ----------------------------------------------------
+ 2 files changed, 3 insertions(+), 53 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'feature/docs_tidy' into develop
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Update references to moved docs
+ scripts/README          |    4 ++--
+ scripts/build_config.sh |    2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor change to rename Design to design to make it same case as user dir
+ docs/Design/.gitignore                             |    1 -
+ docs/Design/Acedb_ID_construction.shtml            |  407 ---
+ docs/Design/Cluster_tags.shtml                     |  174 --
+ docs/Design/Coordinates.shtml                      |  325 ---
+ docs/Design/New_Drawing/Display_design.shtml       |  583 ----
+ .../Remote_control/Application_callbacks.png       |  Bin 31935 -> 0 bytes
+ .../Remote_control/Application_callbacks.uxf       |  531 ----
+ .../Application_zmap_implementation.png            |  Bin 36977 -> 0 bytes
+ .../Application_zmap_implementation.uxf            |  497 ----
+ .../Remote_control/Application_zmap_structure.png  |  Bin 28182 -> 0 bytes
+ .../Remote_control/Application_zmap_structure.uxf  |  199 --
+ docs/Design/Remote_control/Queuing_control.png     |  Bin 81590 -> 0 bytes
+ docs/Design/Remote_control/Queuing_control.uxf     |  966 ------
+ .../Remote_control/Request_Response_busy.uxf       |   26 -
+ .../Request_Response_initialisation_orig.uxf       |   25 -
+ .../Remote_control/Request_Response_state.png      |  Bin 19319 -> 0 bytes
+ .../Remote_control/Request_Response_state.uxf      |   23 -
+ .../Remote_control/Request_Response_timeout.uxf    |   32 -
+ .../Remote_control/ZeroMQ_Collision_state.png      |  Bin 40168 -> 0 bytes
+ .../Remote_control/ZeroMQ_Collision_state.uxf      |  461 ---
+ .../ZeroMQ_Collision_state_abort.png               |  Bin 46321 -> 0 bytes
+ .../ZeroMQ_Collision_state_abort.uxf               |  581 ----
+ .../Remote_control/ZeroMQ_Req_Rep_coll_win.png     |  Bin 35955 -> 0 bytes
+ .../Remote_control/ZeroMQ_Req_Rep_coll_win.uxf     |  645 ----
+ .../ZeroMQ_Req_Rep_coll_win_abort.png              |  Bin 35952 -> 0 bytes
+ .../ZeroMQ_Req_Rep_coll_win_abort.uxf              |  645 ----
+ .../Remote_control/ZeroMQ_Req_Rep_timeout.png      |  Bin 55980 -> 0 bytes
+ .../Remote_control/ZeroMQ_Req_Rep_timeout.uxf      |  684 -----
+ .../Design/Remote_control/ZeroMQ_Request_Reply.png |  Bin 25023 -> 0 bytes
+ .../Design/Remote_control/ZeroMQ_Request_Reply.uxf |  413 ---
+ .../ZeroMQ_Request_Response_state.png              |  Bin 12313 -> 0 bytes
+ .../ZeroMQ_Request_Response_state.uxf              |  163 --
+ docs/Design/Remote_control/zmap_remote.shtml       | 3068 --------------------
+ docs/Design/Tag_sets.shtml                         |   54 -
+ docs/Design/ZMap_Coord_System.png                  |  Bin 28742 -> 0 bytes
+ docs/Design/ZMap_Coord_System.uxf                  |   38 -
+ docs/Design/column_config.shtml                    |   68 -
+ docs/Design/config.shtml                           |  304 --
+ docs/Design/index.html                             |  136 -
+ docs/Design/misc/.gitignore                        |    1 -
+ docs/Design/misc/ZMap_paper.html                   |  184 --
+ docs/Design/misc/about.html                        |   74 -
+ docs/Design/misc/about.rel                         |    3 -
+ docs/Design/misc/convert.html                      |  254 --
+ docs/Design/modules/.gitignore                     |    1 -
+ docs/Design/modules/btree.png                      |  Bin 14203 -> 0 bytes
+ docs/Design/modules/btree.uxf                      |   29 -
+ docs/Design/modules/col_config.png                 |  Bin 19612 -> 0 bytes
+ docs/Design/modules/load_columns.png               |  Bin 36935 -> 0 bytes
+ docs/Design/modules/load_columns.xcf               |  Bin 755778 -> 0 bytes
+ docs/Design/modules/pipeServer.html                |  176 --
+ docs/Design/modules/skip_array.png                 |  Bin 7969 -> 0 bytes
+ docs/Design/modules/skip_array.uxf                 |   30 -
+ docs/Design/modules/skip_list.png                  |  Bin 8679 -> 0 bytes
+ docs/Design/modules/skip_list.uxf                  |   25 -
+ docs/Design/modules/zmapApp.html                   |   27 -
+ docs/Design/modules/zmapConfig.html                |  147 -
+ docs/Design/modules/zmapConfig.rel                 |    1 -
+ docs/Design/modules/zmapControl.html               |    4 -
+ docs/Design/modules/zmapDAS.html                   |    4 -
+ docs/Design/modules/zmapDocs.html                  |    4 -
+ docs/Design/modules/zmapDraw.html                  |    4 -
+ docs/Design/modules/zmapFeature.html               |  243 --
+ docs/Design/modules/zmapGFF.html                   |    4 -
+ docs/Design/modules/zmapMake.html                  |    4 -
+ docs/Design/modules/zmapManager.html               |    4 -
+ docs/Design/modules/zmapNavigator.html             |   89 -
+ docs/Design/modules/zmapNoThreads.html             |    4 -
+ docs/Design/modules/zmapServer.html                |   64 -
+ docs/Design/modules/zmapServer.rel                 |    2 -
+ docs/Design/modules/zmapSkipList.html              |   92 -
+ docs/Design/modules/zmapThreads.html               |    6 -
+ docs/Design/modules/zmapUtils.html                 |   10 -
+ docs/Design/modules/zmapView.html                  |  153 -
+ docs/Design/modules/zmapWindow.html                |   15 -
+ docs/Design/modules/zmapWindowColBump.html         |   55 -
+ docs/Design/modules/zmapWindowColConfig.html       |  260 --
+ docs/Design/modules/zmapWindow_items.html          |   90 -
+ docs/Design/modules/zmapXML.html                   |   29 -
+ docs/Design/notes/.gitignore                       |    1 -
+ docs/Design/notes/BAM.html                         |  250 --
+ docs/Design/notes/ContainerFeatureset.html         |  343 ---
+ docs/Design/notes/EST_mRNA.html                    |  301 --
+ docs/Design/notes/FToIHash.html                    |   42 -
+ docs/Design/notes/GFF_zmap.html                    |  305 --
+ docs/Design/notes/LocusFeature.html                |   58 -
+ docs/Design/notes/RNAseq.html                      |   28 -
+ docs/Design/notes/SQLite.html                      |  407 ---
+ docs/Design/notes/Splice_highlight_off.png         |  Bin 7176 -> 0 bytes
+ docs/Design/notes/Splice_highlight_on.png          |  Bin 6952 -> 0 bytes
+ docs/Design/notes/Splice_highlighting.html         |  220 --
+ docs/Design/notes/app_callbacks.html               |   19 -
+ docs/Design/notes/bumped_align.png                 |  Bin 32795 -> 0 bytes
+ docs/Design/notes/bumped_align.uxf                 |   50 -
+ docs/Design/notes/canvasContainer.html             |  106 -
+ docs/Design/notes/canvas_tweaks.html               |  205 --
+ docs/Design/notes/col_order.html                   |   69 -
+ docs/Design/notes/column_group.html                |   65 -
+ docs/Design/notes/containers.html                  |   97 -
+ docs/Design/notes/coord_config.html                |  385 ---
+ docs/Design/notes/data_config.html                 |  181 --
+ docs/Design/notes/data_config.png                  |  Bin 35584 -> 0 bytes
+ docs/Design/notes/data_config.uxf                  |   26 -
+ docs/Design/notes/density.html                     |  437 ---
+ docs/Design/notes/density.png                      |  Bin 37563 -> 0 bytes
+ docs/Design/notes/est_mask.png                     |  Bin 23649 -> 0 bytes
+ docs/Design/notes/est_mask.uxf                     |   57 -
+ docs/Design/notes/f_context.html                   |   96 -
+ docs/Design/notes/feature_search.html              |   50 -
+ docs/Design/notes/featureset_col.html              |  248 --
+ docs/Design/notes/focus_list.html                  |  137 -
+ docs/Design/notes/foo_coords.html                  |  190 --
+ docs/Design/notes/foo_perf.html                    |  460 ---
+ docs/Design/notes/foogroup.png                     |  Bin 7102 -> 0 bytes
+ docs/Design/notes/foogroup.uxf                     |   26 -
+ docs/Design/notes/glyph_style.html                 |  345 ---
+ docs/Design/notes/graph_config.html                |  179 --
+ docs/Design/notes/import.png                       |  Bin 38857 -> 0 bytes
+ docs/Design/notes/new_model_canvas.html            |  423 ---
+ docs/Design/notes/new_model_canvas.png             |  Bin 15210 -> 0 bytes
+ docs/Design/notes/new_model_canvas.uxf             |   54 -
+ docs/Design/notes/new_model_feature.png            |  Bin 9045 -> 0 bytes
+ docs/Design/notes/new_model_feature.uxf            |   28 -
+ docs/Design/notes/new_model_fset.png               |  Bin 32097 -> 0 bytes
+ docs/Design/notes/new_model_fset.uxf               |   69 -
+ docs/Design/notes/new_window.html                  |   48 -
+ docs/Design/notes/notepad.html                     |   12 -
+ docs/Design/notes/optimise.html                    |  487 ----
+ docs/Design/notes/otter_zmap.html                  |  237 --
+ docs/Design/notes/performance.html                 |   84 -
+ docs/Design/notes/print.html                       |  125 -
+ docs/Design/notes/print_dialog.png                 |  Bin 51376 -> 0 bytes
+ docs/Design/notes/refresh.html                     |   64 -
+ docs/Design/notes/search.png                       |  Bin 26536 -> 0 bytes
+ docs/Design/notes/sequenceFeature.html             |  103 -
+ docs/Design/notes/server_layers.html               |  539 ----
+ docs/Design/notes/slaveThread.html                 |  110 -
+ docs/Design/notes/standalone.html                  |   23 -
+ docs/Design/notes/support.png                      |  Bin 14435 -> 0 bytes
+ docs/Design/notes/support.uxf                      |   24 -
+ docs/Design/notes/view_window_style.html           |   47 -
+ docs/Design/notes/virtual_fset.png                 |  Bin 22833 -> 0 bytes
+ docs/Design/notes/virtual_fset.uxf                 |   76 -
+ docs/Design/notes/wiggle.html                      |   90 -
+ .../notes/zmap_rnaseq_column_selection_window.gif  |  Bin 263331 -> 0 bytes
+ docs/Design/notes/zmap_rnaseq_columns.gif          |  Bin 66453 -> 0 bytes
+ docs/Design/pipe_server_config.shtml               |  108 -
+ docs/Design/zmap_lace_xml.shtml                    |  233 --
+ docs/Design/zmap_plugins.shtml                     |   41 -
+ docs/Design/zmap_standalone.shtml                  |   95 -
+ docs/design/.gitignore                             |    1 +
+ docs/design/Acedb_ID_construction.shtml            |  407 +++
+ docs/design/Cluster_tags.shtml                     |  174 ++
+ docs/design/Coordinates.shtml                      |  325 +++
+ docs/design/New_Drawing/Display_design.shtml       |  583 ++++
+ .../Remote_control/Application_callbacks.png       |  Bin 0 -> 31935 bytes
+ .../Remote_control/Application_callbacks.uxf       |  531 ++++
+ .../Application_zmap_implementation.png            |  Bin 0 -> 36977 bytes
+ .../Application_zmap_implementation.uxf            |  497 ++++
+ .../Remote_control/Application_zmap_structure.png  |  Bin 0 -> 28182 bytes
+ .../Remote_control/Application_zmap_structure.uxf  |  199 ++
+ docs/design/Remote_control/Queuing_control.png     |  Bin 0 -> 81590 bytes
+ docs/design/Remote_control/Queuing_control.uxf     |  966 ++++++
+ .../Remote_control/Request_Response_busy.uxf       |   26 +
+ .../Request_Response_initialisation_orig.uxf       |   25 +
+ .../Remote_control/Request_Response_state.png      |  Bin 0 -> 19319 bytes
+ .../Remote_control/Request_Response_state.uxf      |   23 +
+ .../Remote_control/Request_Response_timeout.uxf    |   32 +
+ .../Remote_control/ZeroMQ_Collision_state.png      |  Bin 0 -> 40168 bytes
+ .../Remote_control/ZeroMQ_Collision_state.uxf      |  461 +++
+ .../ZeroMQ_Collision_state_abort.png               |  Bin 0 -> 46321 bytes
+ .../ZeroMQ_Collision_state_abort.uxf               |  581 ++++
+ .../Remote_control/ZeroMQ_Req_Rep_coll_win.png     |  Bin 0 -> 35955 bytes
+ .../Remote_control/ZeroMQ_Req_Rep_coll_win.uxf     |  645 ++++
+ .../ZeroMQ_Req_Rep_coll_win_abort.png              |  Bin 0 -> 35952 bytes
+ .../ZeroMQ_Req_Rep_coll_win_abort.uxf              |  645 ++++
+ .../Remote_control/ZeroMQ_Req_Rep_timeout.png      |  Bin 0 -> 55980 bytes
+ .../Remote_control/ZeroMQ_Req_Rep_timeout.uxf      |  684 +++++
+ .../design/Remote_control/ZeroMQ_Request_Reply.png |  Bin 0 -> 25023 bytes
+ .../design/Remote_control/ZeroMQ_Request_Reply.uxf |  413 +++
+ .../ZeroMQ_Request_Response_state.png              |  Bin 0 -> 12313 bytes
+ .../ZeroMQ_Request_Response_state.uxf              |  163 ++
+ docs/design/Remote_control/zmap_remote.shtml       | 3068 ++++++++++++++++++++
+ docs/design/Tag_sets.shtml                         |   54 +
+ docs/design/ZMap_Coord_System.png                  |  Bin 0 -> 28742 bytes
+ docs/design/ZMap_Coord_System.uxf                  |   38 +
+ docs/design/column_config.shtml                    |   68 +
+ docs/design/config.shtml                           |  304 ++
+ docs/design/index.html                             |  136 +
+ docs/design/misc/.gitignore                        |    1 +
+ docs/design/misc/ZMap_paper.html                   |  184 ++
+ docs/design/misc/about.html                        |   74 +
+ docs/design/misc/about.rel                         |    3 +
+ docs/design/misc/convert.html                      |  254 ++
+ docs/design/modules/.gitignore                     |    1 +
+ docs/design/modules/btree.png                      |  Bin 0 -> 14203 bytes
+ docs/design/modules/btree.uxf                      |   29 +
+ docs/design/modules/col_config.png                 |  Bin 0 -> 19612 bytes
+ docs/design/modules/load_columns.png               |  Bin 0 -> 36935 bytes
+ docs/design/modules/load_columns.xcf               |  Bin 0 -> 755778 bytes
+ docs/design/modules/pipeServer.html                |  176 ++
+ docs/design/modules/skip_array.png                 |  Bin 0 -> 7969 bytes
+ docs/design/modules/skip_array.uxf                 |   30 +
+ docs/design/modules/skip_list.png                  |  Bin 0 -> 8679 bytes
+ docs/design/modules/skip_list.uxf                  |   25 +
+ docs/design/modules/zmapApp.html                   |   27 +
+ docs/design/modules/zmapConfig.html                |  147 +
+ docs/design/modules/zmapConfig.rel                 |    1 +
+ docs/design/modules/zmapControl.html               |    4 +
+ docs/design/modules/zmapDAS.html                   |    4 +
+ docs/design/modules/zmapDocs.html                  |    4 +
+ docs/design/modules/zmapDraw.html                  |    4 +
+ docs/design/modules/zmapFeature.html               |  243 ++
+ docs/design/modules/zmapGFF.html                   |    4 +
+ docs/design/modules/zmapMake.html                  |    4 +
+ docs/design/modules/zmapManager.html               |    4 +
+ docs/design/modules/zmapNavigator.html             |   89 +
+ docs/design/modules/zmapNoThreads.html             |    4 +
+ docs/design/modules/zmapServer.html                |   64 +
+ docs/design/modules/zmapServer.rel                 |    2 +
+ docs/design/modules/zmapSkipList.html              |   92 +
+ docs/design/modules/zmapThreads.html               |    6 +
+ docs/design/modules/zmapUtils.html                 |   10 +
+ docs/design/modules/zmapView.html                  |  153 +
+ docs/design/modules/zmapWindow.html                |   15 +
+ docs/design/modules/zmapWindowColBump.html         |   55 +
+ docs/design/modules/zmapWindowColConfig.html       |  260 ++
+ docs/design/modules/zmapWindow_items.html          |   90 +
+ docs/design/modules/zmapXML.html                   |   29 +
+ docs/design/notes/.gitignore                       |    1 +
+ docs/design/notes/BAM.html                         |  250 ++
+ docs/design/notes/ContainerFeatureset.html         |  343 +++
+ docs/design/notes/EST_mRNA.html                    |  301 ++
+ docs/design/notes/FToIHash.html                    |   42 +
+ docs/design/notes/GFF_zmap.html                    |  305 ++
+ docs/design/notes/LocusFeature.html                |   58 +
+ docs/design/notes/RNAseq.html                      |   28 +
+ docs/design/notes/SQLite.html                      |  407 +++
+ docs/design/notes/Splice_highlight_off.png         |  Bin 0 -> 7176 bytes
+ docs/design/notes/Splice_highlight_on.png          |  Bin 0 -> 6952 bytes
+ docs/design/notes/Splice_highlighting.html         |  220 ++
+ docs/design/notes/app_callbacks.html               |   19 +
+ docs/design/notes/bumped_align.png                 |  Bin 0 -> 32795 bytes
+ docs/design/notes/bumped_align.uxf                 |   50 +
+ docs/design/notes/canvasContainer.html             |  106 +
+ docs/design/notes/canvas_tweaks.html               |  205 ++
+ docs/design/notes/col_order.html                   |   69 +
+ docs/design/notes/column_group.html                |   65 +
+ docs/design/notes/containers.html                  |   97 +
+ docs/design/notes/coord_config.html                |  385 +++
+ docs/design/notes/data_config.html                 |  181 ++
+ docs/design/notes/data_config.png                  |  Bin 0 -> 35584 bytes
+ docs/design/notes/data_config.uxf                  |   26 +
+ docs/design/notes/density.html                     |  437 +++
+ docs/design/notes/density.png                      |  Bin 0 -> 37563 bytes
+ docs/design/notes/est_mask.png                     |  Bin 0 -> 23649 bytes
+ docs/design/notes/est_mask.uxf                     |   57 +
+ docs/design/notes/f_context.html                   |   96 +
+ docs/design/notes/feature_search.html              |   50 +
+ docs/design/notes/featureset_col.html              |  248 ++
+ docs/design/notes/focus_list.html                  |  137 +
+ docs/design/notes/foo_coords.html                  |  190 ++
+ docs/design/notes/foo_perf.html                    |  460 +++
+ docs/design/notes/foogroup.png                     |  Bin 0 -> 7102 bytes
+ docs/design/notes/foogroup.uxf                     |   26 +
+ docs/design/notes/glyph_style.html                 |  345 +++
+ docs/design/notes/graph_config.html                |  179 ++
+ docs/design/notes/import.png                       |  Bin 0 -> 38857 bytes
+ docs/design/notes/new_model_canvas.html            |  423 +++
+ docs/design/notes/new_model_canvas.png             |  Bin 0 -> 15210 bytes
+ docs/design/notes/new_model_canvas.uxf             |   54 +
+ docs/design/notes/new_model_feature.png            |  Bin 0 -> 9045 bytes
+ docs/design/notes/new_model_feature.uxf            |   28 +
+ docs/design/notes/new_model_fset.png               |  Bin 0 -> 32097 bytes
+ docs/design/notes/new_model_fset.uxf               |   69 +
+ docs/design/notes/new_window.html                  |   48 +
+ docs/design/notes/notepad.html                     |   12 +
+ docs/design/notes/optimise.html                    |  487 ++++
+ docs/design/notes/otter_zmap.html                  |  237 ++
+ docs/design/notes/performance.html                 |   84 +
+ docs/design/notes/print.html                       |  125 +
+ docs/design/notes/print_dialog.png                 |  Bin 0 -> 51376 bytes
+ docs/design/notes/refresh.html                     |   64 +
+ docs/design/notes/search.png                       |  Bin 0 -> 26536 bytes
+ docs/design/notes/sequenceFeature.html             |  103 +
+ docs/design/notes/server_layers.html               |  539 ++++
+ docs/design/notes/slaveThread.html                 |  110 +
+ docs/design/notes/standalone.html                  |   23 +
+ docs/design/notes/support.png                      |  Bin 0 -> 14435 bytes
+ docs/design/notes/support.uxf                      |   24 +
+ docs/design/notes/view_window_style.html           |   47 +
+ docs/design/notes/virtual_fset.png                 |  Bin 0 -> 22833 bytes
+ docs/design/notes/virtual_fset.uxf                 |   76 +
+ docs/design/notes/wiggle.html                      |   90 +
+ .../notes/zmap_rnaseq_column_selection_window.gif  |  Bin 0 -> 263331 bytes
+ docs/design/notes/zmap_rnaseq_columns.gif          |  Bin 0 -> 66453 bytes
+ docs/design/pipe_server_config.shtml               |  108 +
+ docs/design/zmap_lace_xml.shtml                    |  233 ++
+ docs/design/zmap_plugins.shtml                     |   41 +
+ docs/design/zmap_standalone.shtml                  |   95 +
+ 300 files changed, 21644 insertions(+), 21644 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'feature/docs_tidy' into develop
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove IntWeb and WWW directories, and move user and design to toplevel
+ docs/Design/.gitignore                             |    1 +
+ docs/Design/Acedb_ID_construction.shtml            |  407 +++
+ docs/Design/Cluster_tags.shtml                     |  174 ++
+ docs/Design/Coordinates.shtml                      |  325 +++
+ docs/Design/New_Drawing/Display_design.shtml       |  583 ++++
+ .../Remote_control/Application_callbacks.png       |  Bin 0 -> 31935 bytes
+ .../Remote_control/Application_callbacks.uxf       |  531 ++++
+ .../Application_zmap_implementation.png            |  Bin 0 -> 36977 bytes
+ .../Application_zmap_implementation.uxf            |  497 ++++
+ .../Remote_control/Application_zmap_structure.png  |  Bin 0 -> 28182 bytes
+ .../Remote_control/Application_zmap_structure.uxf  |  199 ++
+ docs/Design/Remote_control/Queuing_control.png     |  Bin 0 -> 81590 bytes
+ docs/Design/Remote_control/Queuing_control.uxf     |  966 ++++++
+ .../Remote_control/Request_Response_busy.uxf       |   26 +
+ .../Request_Response_initialisation_orig.uxf       |   25 +
+ .../Remote_control/Request_Response_state.png      |  Bin 0 -> 19319 bytes
+ .../Remote_control/Request_Response_state.uxf      |   23 +
+ .../Remote_control/Request_Response_timeout.uxf    |   32 +
+ .../Remote_control/ZeroMQ_Collision_state.png      |  Bin 0 -> 40168 bytes
+ .../Remote_control/ZeroMQ_Collision_state.uxf      |  461 +++
+ .../ZeroMQ_Collision_state_abort.png               |  Bin 0 -> 46321 bytes
+ .../ZeroMQ_Collision_state_abort.uxf               |  581 ++++
+ .../Remote_control/ZeroMQ_Req_Rep_coll_win.png     |  Bin 0 -> 35955 bytes
+ .../Remote_control/ZeroMQ_Req_Rep_coll_win.uxf     |  645 ++++
+ .../ZeroMQ_Req_Rep_coll_win_abort.png              |  Bin 0 -> 35952 bytes
+ .../ZeroMQ_Req_Rep_coll_win_abort.uxf              |  645 ++++
+ .../Remote_control/ZeroMQ_Req_Rep_timeout.png      |  Bin 0 -> 55980 bytes
+ .../Remote_control/ZeroMQ_Req_Rep_timeout.uxf      |  684 +++++
+ .../Design/Remote_control/ZeroMQ_Request_Reply.png |  Bin 0 -> 25023 bytes
+ .../Design/Remote_control/ZeroMQ_Request_Reply.uxf |  413 +++
+ .../ZeroMQ_Request_Response_state.png              |  Bin 0 -> 12313 bytes
+ .../ZeroMQ_Request_Response_state.uxf              |  163 ++
+ docs/Design/Remote_control/zmap_remote.shtml       | 3068 ++++++++++++++++++++
+ docs/Design/Tag_sets.shtml                         |   54 +
+ docs/Design/ZMap_Coord_System.png                  |  Bin 0 -> 28742 bytes
+ docs/Design/ZMap_Coord_System.uxf                  |   38 +
+ docs/Design/column_config.shtml                    |   68 +
+ docs/Design/config.shtml                           |  304 ++
+ docs/Design/index.html                             |  136 +
+ docs/Design/misc/.gitignore                        |    1 +
+ docs/Design/misc/ZMap_paper.html                   |  184 ++
+ docs/Design/misc/about.html                        |   74 +
+ docs/Design/misc/about.rel                         |    3 +
+ docs/Design/misc/convert.html                      |  254 ++
+ docs/Design/modules/.gitignore                     |    1 +
+ docs/Design/modules/btree.png                      |  Bin 0 -> 14203 bytes
+ docs/Design/modules/btree.uxf                      |   29 +
+ docs/Design/modules/col_config.png                 |  Bin 0 -> 19612 bytes
+ docs/Design/modules/load_columns.png               |  Bin 0 -> 36935 bytes
+ docs/Design/modules/load_columns.xcf               |  Bin 0 -> 755778 bytes
+ docs/Design/modules/pipeServer.html                |  176 ++
+ docs/Design/modules/skip_array.png                 |  Bin 0 -> 7969 bytes
+ docs/Design/modules/skip_array.uxf                 |   30 +
+ docs/Design/modules/skip_list.png                  |  Bin 0 -> 8679 bytes
+ docs/Design/modules/skip_list.uxf                  |   25 +
+ docs/Design/modules/zmapApp.html                   |   27 +
+ docs/Design/modules/zmapConfig.html                |  147 +
+ docs/Design/modules/zmapConfig.rel                 |    1 +
+ docs/Design/modules/zmapControl.html               |    4 +
+ docs/Design/modules/zmapDAS.html                   |    4 +
+ docs/Design/modules/zmapDocs.html                  |    4 +
+ docs/Design/modules/zmapDraw.html                  |    4 +
+ docs/Design/modules/zmapFeature.html               |  243 ++
+ docs/Design/modules/zmapGFF.html                   |    4 +
+ docs/Design/modules/zmapMake.html                  |    4 +
+ docs/Design/modules/zmapManager.html               |    4 +
+ docs/Design/modules/zmapNavigator.html             |   89 +
+ docs/Design/modules/zmapNoThreads.html             |    4 +
+ docs/Design/modules/zmapServer.html                |   64 +
+ docs/Design/modules/zmapServer.rel                 |    2 +
+ docs/Design/modules/zmapSkipList.html              |   92 +
+ docs/Design/modules/zmapThreads.html               |    6 +
+ docs/Design/modules/zmapUtils.html                 |   10 +
+ docs/Design/modules/zmapView.html                  |  153 +
+ docs/Design/modules/zmapWindow.html                |   15 +
+ docs/Design/modules/zmapWindowColBump.html         |   55 +
+ docs/Design/modules/zmapWindowColConfig.html       |  260 ++
+ docs/Design/modules/zmapWindow_items.html          |   90 +
+ docs/Design/modules/zmapXML.html                   |   29 +
+ docs/Design/notes/.gitignore                       |    1 +
+ docs/Design/notes/BAM.html                         |  250 ++
+ docs/Design/notes/ContainerFeatureset.html         |  343 +++
+ docs/Design/notes/EST_mRNA.html                    |  301 ++
+ docs/Design/notes/FToIHash.html                    |   42 +
+ docs/Design/notes/GFF_zmap.html                    |  305 ++
+ docs/Design/notes/LocusFeature.html                |   58 +
+ docs/Design/notes/RNAseq.html                      |   28 +
+ docs/Design/notes/SQLite.html                      |  407 +++
+ docs/Design/notes/Splice_highlight_off.png         |  Bin 0 -> 7176 bytes
+ docs/Design/notes/Splice_highlight_on.png          |  Bin 0 -> 6952 bytes
+ docs/Design/notes/Splice_highlighting.html         |  220 ++
+ docs/Design/notes/app_callbacks.html               |   19 +
+ docs/Design/notes/bumped_align.png                 |  Bin 0 -> 32795 bytes
+ docs/Design/notes/bumped_align.uxf                 |   50 +
+ docs/Design/notes/canvasContainer.html             |  106 +
+ docs/Design/notes/canvas_tweaks.html               |  205 ++
+ docs/Design/notes/col_order.html                   |   69 +
+ docs/Design/notes/column_group.html                |   65 +
+ docs/Design/notes/containers.html                  |   97 +
+ docs/Design/notes/coord_config.html                |  385 +++
+ docs/Design/notes/data_config.html                 |  181 ++
+ docs/Design/notes/data_config.png                  |  Bin 0 -> 35584 bytes
+ docs/Design/notes/data_config.uxf                  |   26 +
+ docs/Design/notes/density.html                     |  437 +++
+ docs/Design/notes/density.png                      |  Bin 0 -> 37563 bytes
+ docs/Design/notes/est_mask.png                     |  Bin 0 -> 23649 bytes
+ docs/Design/notes/est_mask.uxf                     |   57 +
+ docs/Design/notes/f_context.html                   |   96 +
+ docs/Design/notes/feature_search.html              |   50 +
+ docs/Design/notes/featureset_col.html              |  248 ++
+ docs/Design/notes/focus_list.html                  |  137 +
+ docs/Design/notes/foo_coords.html                  |  190 ++
+ docs/Design/notes/foo_perf.html                    |  460 +++
+ docs/Design/notes/foogroup.png                     |  Bin 0 -> 7102 bytes
+ docs/Design/notes/foogroup.uxf                     |   26 +
+ docs/Design/notes/glyph_style.html                 |  345 +++
+ docs/Design/notes/graph_config.html                |  179 ++
+ docs/Design/notes/import.png                       |  Bin 0 -> 38857 bytes
+ docs/Design/notes/new_model_canvas.html            |  423 +++
+ docs/Design/notes/new_model_canvas.png             |  Bin 0 -> 15210 bytes
+ docs/Design/notes/new_model_canvas.uxf             |   54 +
+ docs/Design/notes/new_model_feature.png            |  Bin 0 -> 9045 bytes
+ docs/Design/notes/new_model_feature.uxf            |   28 +
+ docs/Design/notes/new_model_fset.png               |  Bin 0 -> 32097 bytes
+ docs/Design/notes/new_model_fset.uxf               |   69 +
+ docs/Design/notes/new_window.html                  |   48 +
+ docs/Design/notes/notepad.html                     |   12 +
+ docs/Design/notes/optimise.html                    |  487 ++++
+ docs/Design/notes/otter_zmap.html                  |  237 ++
+ docs/Design/notes/performance.html                 |   84 +
+ docs/Design/notes/print.html                       |  125 +
+ docs/Design/notes/print_dialog.png                 |  Bin 0 -> 51376 bytes
+ docs/Design/notes/refresh.html                     |   64 +
+ docs/Design/notes/search.png                       |  Bin 0 -> 26536 bytes
+ docs/Design/notes/sequenceFeature.html             |  103 +
+ docs/Design/notes/server_layers.html               |  539 ++++
+ docs/Design/notes/slaveThread.html                 |  110 +
+ docs/Design/notes/standalone.html                  |   23 +
+ docs/Design/notes/support.png                      |  Bin 0 -> 14435 bytes
+ docs/Design/notes/support.uxf                      |   24 +
+ docs/Design/notes/view_window_style.html           |   47 +
+ docs/Design/notes/virtual_fset.png                 |  Bin 0 -> 22833 bytes
+ docs/Design/notes/virtual_fset.uxf                 |   76 +
+ docs/Design/notes/wiggle.html                      |   90 +
+ .../notes/zmap_rnaseq_column_selection_window.gif  |  Bin 0 -> 263331 bytes
+ docs/Design/notes/zmap_rnaseq_columns.gif          |  Bin 0 -> 66453 bytes
+ docs/Design/pipe_server_config.shtml               |  108 +
+ docs/Design/zmap_lace_xml.shtml                    |  233 ++
+ docs/Design/zmap_plugins.shtml                     |   41 +
+ docs/Design/zmap_standalone.shtml                  |   95 +
+ docs/IntWeb/Design/.gitignore                      |    1 -
+ docs/IntWeb/Design/Acedb_ID_construction.shtml     |  407 ---
+ docs/IntWeb/Design/Cluster_tags.shtml              |  174 --
+ docs/IntWeb/Design/Coordinates.shtml               |  325 ---
+ .../IntWeb/Design/New_Drawing/Display_design.shtml |  583 ----
+ .../Remote_control/Application_callbacks.png       |  Bin 31935 -> 0 bytes
+ .../Remote_control/Application_callbacks.uxf       |  531 ----
+ .../Application_zmap_implementation.png            |  Bin 36977 -> 0 bytes
+ .../Application_zmap_implementation.uxf            |  497 ----
+ .../Remote_control/Application_zmap_structure.png  |  Bin 28182 -> 0 bytes
+ .../Remote_control/Application_zmap_structure.uxf  |  199 --
+ .../Design/Remote_control/Queuing_control.png      |  Bin 81590 -> 0 bytes
+ .../Design/Remote_control/Queuing_control.uxf      |  966 ------
+ .../Remote_control/Request_Response_busy.uxf       |   26 -
+ .../Request_Response_initialisation_orig.uxf       |   25 -
+ .../Remote_control/Request_Response_state.png      |  Bin 19319 -> 0 bytes
+ .../Remote_control/Request_Response_state.uxf      |   23 -
+ .../Remote_control/Request_Response_timeout.uxf    |   32 -
+ .../Remote_control/ZeroMQ_Collision_state.png      |  Bin 40168 -> 0 bytes
+ .../Remote_control/ZeroMQ_Collision_state.uxf      |  461 ---
+ .../ZeroMQ_Collision_state_abort.png               |  Bin 46321 -> 0 bytes
+ .../ZeroMQ_Collision_state_abort.uxf               |  581 ----
+ .../Remote_control/ZeroMQ_Req_Rep_coll_win.png     |  Bin 35955 -> 0 bytes
+ .../Remote_control/ZeroMQ_Req_Rep_coll_win.uxf     |  645 ----
+ .../ZeroMQ_Req_Rep_coll_win_abort.png              |  Bin 35952 -> 0 bytes
+ .../ZeroMQ_Req_Rep_coll_win_abort.uxf              |  645 ----
+ .../Remote_control/ZeroMQ_Req_Rep_timeout.png      |  Bin 55980 -> 0 bytes
+ .../Remote_control/ZeroMQ_Req_Rep_timeout.uxf      |  684 -----
+ .../Design/Remote_control/ZeroMQ_Request_Reply.png |  Bin 25023 -> 0 bytes
+ .../Design/Remote_control/ZeroMQ_Request_Reply.uxf |  413 ---
+ .../ZeroMQ_Request_Response_state.png              |  Bin 12313 -> 0 bytes
+ .../ZeroMQ_Request_Response_state.uxf              |  163 --
+ .../IntWeb/Design/Remote_control/zmap_remote.shtml | 3068 --------------------
+ docs/IntWeb/Design/Tag_sets.shtml                  |   54 -
+ docs/IntWeb/Design/ZMap_Coord_System.png           |  Bin 28742 -> 0 bytes
+ docs/IntWeb/Design/ZMap_Coord_System.uxf           |   38 -
+ docs/IntWeb/Design/column_config.shtml             |   68 -
+ docs/IntWeb/Design/config.shtml                    |  304 --
+ docs/IntWeb/Design/index.html                      |  136 -
+ docs/IntWeb/Design/misc/.gitignore                 |    1 -
+ docs/IntWeb/Design/misc/ZMap_paper.html            |  184 --
+ docs/IntWeb/Design/misc/about.html                 |   74 -
+ docs/IntWeb/Design/misc/about.rel                  |    3 -
+ docs/IntWeb/Design/misc/convert.html               |  254 --
+ docs/IntWeb/Design/modules/.gitignore              |    1 -
+ docs/IntWeb/Design/modules/btree.png               |  Bin 14203 -> 0 bytes
+ docs/IntWeb/Design/modules/btree.uxf               |   29 -
+ docs/IntWeb/Design/modules/col_config.png          |  Bin 19612 -> 0 bytes
+ docs/IntWeb/Design/modules/load_columns.png        |  Bin 36935 -> 0 bytes
+ docs/IntWeb/Design/modules/load_columns.xcf        |  Bin 755778 -> 0 bytes
+ docs/IntWeb/Design/modules/pipeServer.html         |  176 --
+ docs/IntWeb/Design/modules/skip_array.png          |  Bin 7969 -> 0 bytes
+ docs/IntWeb/Design/modules/skip_array.uxf          |   30 -
+ docs/IntWeb/Design/modules/skip_list.png           |  Bin 8679 -> 0 bytes
+ docs/IntWeb/Design/modules/skip_list.uxf           |   25 -
+ docs/IntWeb/Design/modules/zmapApp.html            |   27 -
+ docs/IntWeb/Design/modules/zmapConfig.html         |  147 -
+ docs/IntWeb/Design/modules/zmapConfig.rel          |    1 -
+ docs/IntWeb/Design/modules/zmapControl.html        |    4 -
+ docs/IntWeb/Design/modules/zmapDAS.html            |    4 -
+ docs/IntWeb/Design/modules/zmapDocs.html           |    4 -
+ docs/IntWeb/Design/modules/zmapDraw.html           |    4 -
+ docs/IntWeb/Design/modules/zmapFeature.html        |  243 --
+ docs/IntWeb/Design/modules/zmapGFF.html            |    4 -
+ docs/IntWeb/Design/modules/zmapMake.html           |    4 -
+ docs/IntWeb/Design/modules/zmapManager.html        |    4 -
+ docs/IntWeb/Design/modules/zmapNavigator.html      |   89 -
+ docs/IntWeb/Design/modules/zmapNoThreads.html      |    4 -
+ docs/IntWeb/Design/modules/zmapServer.html         |   64 -
+ docs/IntWeb/Design/modules/zmapServer.rel          |    2 -
+ docs/IntWeb/Design/modules/zmapSkipList.html       |   92 -
+ docs/IntWeb/Design/modules/zmapThreads.html        |    6 -
+ docs/IntWeb/Design/modules/zmapUtils.html          |   10 -
+ docs/IntWeb/Design/modules/zmapView.html           |  153 -
+ docs/IntWeb/Design/modules/zmapWindow.html         |   15 -
+ docs/IntWeb/Design/modules/zmapWindowColBump.html  |   55 -
+ .../IntWeb/Design/modules/zmapWindowColConfig.html |  260 --
+ docs/IntWeb/Design/modules/zmapWindow_items.html   |   90 -
+ docs/IntWeb/Design/modules/zmapXML.html            |   29 -
+ docs/IntWeb/Design/notes/.gitignore                |    1 -
+ docs/IntWeb/Design/notes/BAM.html                  |  250 --
+ docs/IntWeb/Design/notes/ContainerFeatureset.html  |  343 ---
+ docs/IntWeb/Design/notes/EST_mRNA.html             |  301 --
+ docs/IntWeb/Design/notes/FToIHash.html             |   42 -
+ docs/IntWeb/Design/notes/GFF_zmap.html             |  305 --
+ docs/IntWeb/Design/notes/LocusFeature.html         |   58 -
+ docs/IntWeb/Design/notes/RNAseq.html               |   28 -
+ docs/IntWeb/Design/notes/SQLite.html               |  407 ---
+ docs/IntWeb/Design/notes/Splice_highlight_off.png  |  Bin 7176 -> 0 bytes
+ docs/IntWeb/Design/notes/Splice_highlight_on.png   |  Bin 6952 -> 0 bytes
+ docs/IntWeb/Design/notes/Splice_highlighting.html  |  220 --
+ docs/IntWeb/Design/notes/app_callbacks.html        |   19 -
+ docs/IntWeb/Design/notes/bumped_align.png          |  Bin 32795 -> 0 bytes
+ docs/IntWeb/Design/notes/bumped_align.uxf          |   50 -
+ docs/IntWeb/Design/notes/canvasContainer.html      |  106 -
+ docs/IntWeb/Design/notes/canvas_tweaks.html        |  205 --
+ docs/IntWeb/Design/notes/col_order.html            |   69 -
+ docs/IntWeb/Design/notes/column_group.html         |   65 -
+ docs/IntWeb/Design/notes/containers.html           |   97 -
+ docs/IntWeb/Design/notes/coord_config.html         |  385 ---
+ docs/IntWeb/Design/notes/data_config.html          |  181 --
+ docs/IntWeb/Design/notes/data_config.png           |  Bin 35584 -> 0 bytes
+ docs/IntWeb/Design/notes/data_config.uxf           |   26 -
+ docs/IntWeb/Design/notes/density.html              |  437 ---
+ docs/IntWeb/Design/notes/density.png               |  Bin 37563 -> 0 bytes
+ docs/IntWeb/Design/notes/est_mask.png              |  Bin 23649 -> 0 bytes
+ docs/IntWeb/Design/notes/est_mask.uxf              |   57 -
+ docs/IntWeb/Design/notes/f_context.html            |   96 -
+ docs/IntWeb/Design/notes/feature_search.html       |   50 -
+ docs/IntWeb/Design/notes/featureset_col.html       |  248 --
+ docs/IntWeb/Design/notes/focus_list.html           |  137 -
+ docs/IntWeb/Design/notes/foo_coords.html           |  190 --
+ docs/IntWeb/Design/notes/foo_perf.html             |  460 ---
+ docs/IntWeb/Design/notes/foogroup.png              |  Bin 7102 -> 0 bytes
+ docs/IntWeb/Design/notes/foogroup.uxf              |   26 -
+ docs/IntWeb/Design/notes/glyph_style.html          |  345 ---
+ docs/IntWeb/Design/notes/graph_config.html         |  179 --
+ docs/IntWeb/Design/notes/import.png                |  Bin 38857 -> 0 bytes
+ docs/IntWeb/Design/notes/new_model_canvas.html     |  423 ---
+ docs/IntWeb/Design/notes/new_model_canvas.png      |  Bin 15210 -> 0 bytes
+ docs/IntWeb/Design/notes/new_model_canvas.uxf      |   54 -
+ docs/IntWeb/Design/notes/new_model_feature.png     |  Bin 9045 -> 0 bytes
+ docs/IntWeb/Design/notes/new_model_feature.uxf     |   28 -
+ docs/IntWeb/Design/notes/new_model_fset.png        |  Bin 32097 -> 0 bytes
+ docs/IntWeb/Design/notes/new_model_fset.uxf        |   69 -
+ docs/IntWeb/Design/notes/new_window.html           |   48 -
+ docs/IntWeb/Design/notes/notepad.html              |   12 -
+ docs/IntWeb/Design/notes/optimise.html             |  487 ----
+ docs/IntWeb/Design/notes/otter_zmap.html           |  237 --
+ docs/IntWeb/Design/notes/performance.html          |   84 -
+ docs/IntWeb/Design/notes/print.html                |  125 -
+ docs/IntWeb/Design/notes/print_dialog.png          |  Bin 51376 -> 0 bytes
+ docs/IntWeb/Design/notes/refresh.html              |   64 -
+ docs/IntWeb/Design/notes/search.png                |  Bin 26536 -> 0 bytes
+ docs/IntWeb/Design/notes/sequenceFeature.html      |  103 -
+ docs/IntWeb/Design/notes/server_layers.html        |  539 ----
+ docs/IntWeb/Design/notes/slaveThread.html          |  110 -
+ docs/IntWeb/Design/notes/standalone.html           |   23 -
+ docs/IntWeb/Design/notes/support.png               |  Bin 14435 -> 0 bytes
+ docs/IntWeb/Design/notes/support.uxf               |   24 -
+ docs/IntWeb/Design/notes/view_window_style.html    |   47 -
+ docs/IntWeb/Design/notes/virtual_fset.png          |  Bin 22833 -> 0 bytes
+ docs/IntWeb/Design/notes/virtual_fset.uxf          |   76 -
+ docs/IntWeb/Design/notes/wiggle.html               |   90 -
+ .../notes/zmap_rnaseq_column_selection_window.gif  |  Bin 263331 -> 0 bytes
+ docs/IntWeb/Design/notes/zmap_rnaseq_columns.gif   |  Bin 66453 -> 0 bytes
+ docs/IntWeb/Design/pipe_server_config.shtml        |  108 -
+ docs/IntWeb/Design/zmap_lace_xml.shtml             |  233 --
+ docs/IntWeb/Design/zmap_plugins.shtml              |   41 -
+ docs/IntWeb/Design/zmap_standalone.shtml           |   95 -
+ docs/README                                        |   20 +-
+ docs/WWW/css/dev_server.css                        | 1334 ---------
+ docs/WWW/css/zmap-default.css                      |   13 -
+ docs/WWW/css/zmap_doc.css                          |    4 -
+ docs/WWW/gfx/canvas_logo.png                       |  Bin 5041 -> 0 bytes
+ docs/WWW/gfx/zmap.png                              |  Bin 9699 -> 0 bytes
+ docs/WWW/gfx/zmap_logo.png                         |  Bin 2634 -> 0 bytes
+ docs/WWW/index.shtml                               |   22 -
+ docs/WWW/user/Splice_highlight_off.png             |  Bin 7176 -> 0 bytes
+ docs/WWW/user/Splice_highlight_on.png              |  Bin 6952 -> 0 bytes
+ docs/WWW/user/ZMap_User_Manual.pdf                 |  Bin 4492317 -> 0 bytes
+ docs/WWW/user/align1.png                           |  Bin 1414 -> 0 bytes
+ docs/WWW/user/config_file.shtml                    |   99 -
+ docs/WWW/user/configuration.shtml                  |  621 ----
+ docs/WWW/user/index.shtml                          |   30 -
+ docs/WWW/user/keyboard_mouse.shtml                 |  263 --
+ docs/WWW/user/release_notes.shtml                  |   95 -
+ docs/WWW/user/styles.shtml                         | 1731 -----------
+ docs/WWW/user/this_links.ini                       |    9 -
+ docs/WWW/user/user_interface.shtml                 |  305 --
+ docs/WWW/user/zmap_quick_start.shtml               |  160 -
+ docs/css/dev_server.css                            | 1334 +++++++++
+ docs/css/zmap-default.css                          |   13 +
+ docs/css/zmap_doc.css                              |    4 +
+ docs/gfx/canvas_logo.png                           |  Bin 0 -> 5041 bytes
+ docs/gfx/zmap.png                                  |  Bin 0 -> 9699 bytes
+ docs/gfx/zmap_logo.png                             |  Bin 0 -> 2634 bytes
+ docs/index.shtml                                   |   22 +
+ docs/user/Splice_highlight_off.png                 |  Bin 0 -> 7176 bytes
+ docs/user/Splice_highlight_on.png                  |  Bin 0 -> 6952 bytes
+ docs/user/ZMap_User_Manual.pdf                     |  Bin 0 -> 4492317 bytes
+ docs/user/align1.png                               |  Bin 0 -> 1414 bytes
+ docs/user/config_file.shtml                        |   99 +
+ docs/user/configuration.shtml                      |  621 ++++
+ docs/user/index.shtml                              |   30 +
+ docs/user/keyboard_mouse.shtml                     |  263 ++
+ docs/user/release_notes.shtml                      |   95 +
+ docs/user/styles.shtml                             | 1731 +++++++++++
+ docs/user/this_links.ini                           |    9 +
+ docs/user/user_interface.shtml                     |  305 ++
+ docs/user/zmap_quick_start.shtml                   |  160 +
+ src/doc                                            |    2 +-
+ 342 files changed, 26336 insertions(+), 26346 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Move Project_notes docs dir to team.git repo
+ docs/Project_notes/2005/2005_03_09.meeting         |  106 -----
+ docs/Project_notes/2005/2005_03_23.meeting         |   60 ---
+ docs/Project_notes/2005/2005_04_19.meeting         |   93 ----
+ docs/Project_notes/2006/2006_01_06.meeting         |  165 -------
+ docs/Project_notes/2007/2007_02_07.meeting         |  196 --------
+ docs/Project_notes/2007/milestones                 |   38 --
+ docs/Project_notes/2007/zmap_lace_tasks.txt        |  204 --------
+ docs/Project_notes/2008/Strategy_Autumn_2008.shtml |  402 ----------------
+ docs/Project_notes/2009/Tools_meeting.txt          |  220 ---------
+ .../Project_notes/2009/ZMap_Acedb_Goals_2009.shtml |    1 -
+ docs/Project_notes/2010/Goals.2010.shtml           |  274 -----------
+ docs/Project_notes/README                          |    3 -
+ .../zlave_meetings/2006/zmap_lace.2006_06_21       |  150 ------
+ .../zlave_meetings/2006/zmap_lace.2006_07_12       |  181 -------
+ .../zlave_meetings/2006/zmap_lace.2006_07_26       |  111 -----
+ .../zlave_meetings/2006/zmap_lace.2006_09_13       |  160 -------
+ .../zlave_meetings/2006/zmap_lace.2006_10_11       |  140 ------
+ .../zlave_meetings/2006/zmap_lace.2006_11_02       |  174 -------
+ .../zlave_meetings/2006/zmap_lace.2006_11_29       |  310 ------------
+ .../zlave_meetings/2007/zmap_lace.2007_01_11       |  203 --------
+ .../zlave_meetings/2007/zmap_lace.2007_01_24       |  239 ----------
+ .../zlave_meetings/2007/zmap_lace.2007_02_01       |  203 --------
+ .../zlave_meetings/2007/zmap_lace.2007_02_23       |  360 --------------
+ .../zlave_meetings/2007/zmap_lace.2007_03_14       |  264 -----------
+ .../zlave_meetings/2007/zmap_lace.2007_04_13       |  300 ------------
+ .../zlave_meetings/2007/zmap_lace.2007_04_23       |  234 ----------
+ .../zlave_meetings/2007/zmap_lace.2007_05_09       |  234 ----------
+ .../zlave_meetings/2007/zmap_lace.2007_06_06       |  265 -----------
+ .../zlave_meetings/2007/zmap_lace.2007_06_14       |  126 -----
+ .../zlave_meetings/2007/zmap_lace.2007_07_04       |  223 ---------
+ .../zlave_meetings/2007/zmap_lace.2007_08_15       |  190 --------
+ .../zlave_meetings/2007/zmap_lace.2007_09_12       |  211 ---------
+ .../zlave_meetings/2007/zmap_lace.2007_09_26       |  218 ---------
+ .../zlave_meetings/2007/zmap_lace.2007_10_11       |  253 ----------
+ .../zlave_meetings/2007/zmap_lace.2007_10_25       |  246 ----------
+ .../zlave_meetings/2007/zmap_lace.2007_11_08       |  306 ------------
+ .../zlave_meetings/2007/zmap_lace.2007_11_22       |  283 -----------
+ .../zlave_meetings/2007/zmap_lace.2007_12_06       |  324 -------------
+ .../zlave_meetings/2008/zmap_lace.2008_01_10       |  389 ----------------
+ .../zlave_meetings/2008/zmap_lace.2008_02_07       |  469 -------------------
+ .../zlave_meetings/2008/zmap_lace.2008_02_21       |  445 ------------------
+ .../zlave_meetings/2008/zmap_lace.2008_03_06       |  456 ------------------
+ .../zlave_meetings/2008/zmap_lace.2008_03_20       |  432 -----------------
+ .../zlave_meetings/2008/zmap_lace.2008_04_16       |  421 -----------------
+ .../zlave_meetings/2008/zmap_lace.2008_05_08       |  409 ----------------
+ .../zlave_meetings/2008/zmap_lace.2008_05_22       |  426 -----------------
+ .../zlave_meetings/2008/zmap_lace.2008_06_05       |  425 -----------------
+ .../zlave_meetings/2008/zmap_lace.2008_06_26       |  422 -----------------
+ .../zlave_meetings/2008/zmap_lace.2008_07_10       |  421 -----------------
+ .../zlave_meetings/2008/zmap_lace.2008_07_24       |  452 ------------------
+ .../zlave_meetings/2008/zmap_lace.2008_08_07       |  452 ------------------
+ .../zlave_meetings/2008/zmap_lace.2008_09_25       |  450 ------------------
+ .../zlave_meetings/2008/zmap_lace.2008_10_09       |  417 -----------------
+ .../zlave_meetings/2008/zmap_lace.2008_10_23       |  377 ---------------
+ .../zlave_meetings/2008/zmap_lace.2008_11_20       |  376 ---------------
+ .../zlave_meetings/2008/zmap_lace.2008_12_04       |  376 ---------------
+ .../zlave_meetings/2009/zmap_lace.2009_01_15       |  373 ---------------
+ .../zlave_meetings/2009/zmap_lace.2009_01_29       |  369 ---------------
+ .../zlave_meetings/2009/zmap_lace.2009_02_12       |  376 ---------------
+ .../zlave_meetings/2009/zmap_lace.2009_03_06       |  381 ---------------
+ .../zlave_meetings/2009/zmap_lace.2009_03_19       |  366 ---------------
+ .../zlave_meetings/2009/zmap_lace.2009_04_02       |  388 ---------------
+ .../zlave_meetings/2009/zmap_lace.2009_04_23       |  382 ---------------
+ .../zlave_meetings/2009/zmap_lace.2009_05_07       |  418 -----------------
+ .../zlave_meetings/2009/zmap_lace.2009_05_21       |  423 -----------------
+ .../zlave_meetings/2009/zmap_lace.2009_06_18       |  461 ------------------
+ .../zlave_meetings/2009/zmap_lace.2009_07_30       |  453 ------------------
+ .../zlave_meetings/2009/zmap_lace.2009_08_20       |  451 ------------------
+ .../zlave_meetings/2009/zmap_lace.2009_09_03       |  449 ------------------
+ .../zlave_meetings/2009/zmap_lace.2009_10_01       |  445 ------------------
+ .../zlave_meetings/2009/zmap_lace.2009_10_15       |  451 ------------------
+ .../zlave_meetings/2009/zmap_lace.2009_11_19       |  471 -------------------
+ .../zlave_meetings/2009/zmap_lace.2009_12_03       |  492 --------------------
+ docs/Project_notes/zlave_meetings/README           |    8 -
+ 74 files changed, 0 insertions(+), 22442 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Move Events docs dir to team.git repo
+ docs/Events/GAT_workshop_2008/index.shtml          |   50 --
+ docs/Events/GAT_workshop_2008/proceedings.shtml    |  572 --------------------
+ docs/Events/GAT_workshop_2008/program.shtml        |  333 ------------
+ .../GAT_workshop_2008/slides/GAT-Artemis_ACT.ppt   |  Bin 4614144 -> 0 bytes
+ .../GAT_workshop_2008/slides/GAT_jgrg_edgrif.ppt   |  Bin 440832 -> 0 bytes
+ .../GAT_workshop_2008/slides/Gary_Williams.ppt     |  Bin 2136064 -> 0 bytes
+ .../GAT_workshop_2008/slides/IGB_HTTP_API.ppt      |  Bin 166400 -> 0 bytes
+ .../slides/Jen_Harrow_summary.ppt                  |  Bin 13312 -> 0 bytes
+ .../slides/Syntenic_annotation.ppt                 |  Bin 377856 -> 0 bytes
+ .../slides/interclient_api_rough_draft_2005.doc    |  Bin 60928 -> 0 bytes
+ .../GAT_workshop_2008/slides/interclient_comms.ppt |  Bin 35328 -> 0 bytes
+ docs/Events/GAT_workshop_2008/slides/summary.ppt   |  Bin 13312 -> 0 bytes
+ docs/Events/README                                 |    6 -
+ 13 files changed, 0 insertions(+), 961 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Move Papers docs dir to team.git repo
+ docs/Papers/Annotation_clients.txt |   43 ---------
+ docs/Papers/README                 |    3 -
+ docs/Papers/ZMap.txt               |  170 ------------------------------------
+ 3 files changed, 0 insertions(+), 216 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove obsolete README file
+ docs/IntWeb/README |    4 ----
+ 1 files changed, 0 insertions(+), 4 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove unused html index/css/gfx file
+ docs/IntWeb/css/dev_server.css   | 1334 --------------------------------------
+ docs/IntWeb/css/zmap-default.css |   13 -
+ docs/IntWeb/css/zmap_doc.css     |    4 -
+ docs/IntWeb/gfx/canvas_logo.png  |  Bin 5041 -> 0 bytes
+ docs/IntWeb/gfx/zmap.png         |  Bin 9699 -> 0 bytes
+ docs/IntWeb/gfx/zmap_logo.png    |  Bin 2634 -> 0 bytes
+ docs/IntWeb/index.shtml          |    5 -
+ 7 files changed, 0 insertions(+), 1356 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove Malcolm's docgen stuff
+ docs/IntWeb/scripts/build      |   18 ----
+ docs/IntWeb/scripts/docgen     |  169 ----------------------------------------
+ docs/IntWeb/scripts/make_pages |   47 -----------
+ docs/IntWeb/scripts/navbar.rel |   36 ---------
+ docs/IntWeb/scripts/new        |   13 ---
+ 5 files changed, 0 insertions(+), 283 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Moved Talks directory to the team.git repo
+ docs/IntWeb/Talks/Acedb_ZMap.ppt                |  Bin 126976 -> 0 bytes
+ docs/IntWeb/Talks/BigWindows.ppt                |  Bin 413696 -> 0 bytes
+ docs/IntWeb/Talks/README                        |   16 ----------------
+ docs/IntWeb/Talks/ZMap_and_DAS2.ppt             |  Bin 107520 -> 0 bytes
+ docs/IntWeb/Talks/index.shtml                   |   20 --------------------
+ docs/IntWeb/Talks/zmapRemoteControlOverview.ppt |  Bin 32256 -> 0 bytes
+ docs/IntWeb/Talks/zmapTwoWayIPC.ppt             |  Bin 835072 -> 0 bytes
+ 7 files changed, 0 insertions(+), 36 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove obsolete release notes docs directory
+ docs/IntWeb/Release_notes/LAST_RELEASE_DATE.txt    |    1 -
+ docs/IntWeb/Release_notes/README                   |   37 -
+ docs/IntWeb/Release_notes/index.shtml              |   15 -
+ docs/IntWeb/Release_notes/rel56_01Jun.html         | 2554 ---------
+ .../Release_notes/release_notes.2006_10_18.shtml   |  143 -
+ .../Release_notes/release_notes.2006_11_14.shtml   |   61 -
+ .../Release_notes/release_notes.2007_02_08.shtml   | 2539 ---------
+ .../Release_notes/release_notes.2007_02_28.shtml   |  229 -
+ .../Release_notes/release_notes.2007_03_28.shtml   |   14 -
+ .../Release_notes/release_notes.2007_03_29.shtml   |  711 ---
+ .../Release_notes/release_notes.2007_04_25.shtml   |  479 --
+ .../Release_notes/release_notes.2008_05_06.shtml   |   91 -
+ .../Release_notes/release_notes.2008_05_16.shtml   |  286 -
+ .../Release_notes/release_notes.2008_06_06.shtml   |  656 ---
+ .../Release_notes/release_notes.2008_06_26.shtml   |  435 --
+ .../Release_notes/release_notes.2008_07_08.shtml   |  269 -
+ .../Release_notes/release_notes.2008_07_09.shtml   |  100 -
+ .../Release_notes/release_notes.2008_07_25.shtml   |  212 -
+ .../Release_notes/release_notes.2008_09_04.shtml   |  243 -
+ .../Release_notes/release_notes.2008_10_13.shtml   |  565 --
+ .../Release_notes/release_notes.2008_11_14.shtml   |  531 --
+ .../Release_notes/release_notes.2009_01_09.shtml   |  501 --
+ .../Release_notes/release_notes.2009_05_18.shtml   | 1994 -------
+ .../Release_notes/release_notes.2009_07_29.shtml   | 1097 ----
+ .../Release_notes/release_notes.2009_08_14.shtml   |  195 -
+ .../Release_notes/release_notes.2009_09_02.shtml   |  333 --
+ .../Release_notes/release_notes.2009_09_04.shtml   |  271 -
+ .../Release_notes/release_notes.2009_09_07.shtml   |  103 -
+ .../Release_notes/release_notes.2009_09_09.shtml   |  105 -
+ .../Release_notes/release_notes.2009_09_10.shtml   |  118 -
+ .../Release_notes/release_notes.2009_09_11.shtml   |   94 -
+ .../Release_notes/release_notes.2009_09_30.shtml   |  254 -
+ .../Release_notes/release_notes.2009_10_02.shtml   |  125 -
+ .../Release_notes/release_notes.2009_10_16.shtml   |  164 -
+ .../Release_notes/release_notes.2009_10_19.shtml   |   91 -
+ .../Release_notes/release_notes.2009_10_21.shtml   |   80 -
+ .../Release_notes/release_notes.2009_10_23.shtml   |   75 -
+ .../Release_notes/release_notes.2009_11_30.shtml   |  417 --
+ .../Release_notes/release_notes.2009_12_02.shtml   |  146 -
+ .../Release_notes/release_notes.2009_12_04.shtml   |  164 -
+ .../Release_notes/release_notes.2009_12_17.shtml   |  543 --
+ .../Release_notes/release_notes.2009_12_18.shtml   |   96 -
+ .../Release_notes/release_notes.2009_12_22.shtml   |  116 -
+ .../Release_notes/release_notes.2010_01_14.shtml   |  215 -
+ .../Release_notes/release_notes.2010_01_15.shtml   |  133 -
+ .../Release_notes/release_notes.2010_01_20.shtml   |  222 -
+ .../Release_notes/release_notes.2010_01_25.shtml   |  337 --
+ .../Release_notes/release_notes.2010_02_05.shtml   |  238 -
+ .../Release_notes/release_notes.2010_12_09.shtml   |  160 -
+ .../Release_notes/release_notes.2011_01_14.shtml   | 5919 --------------------
+ .../Release_notes/release_notes.2011_02_18.shtml   |  899 ---
+ .../Release_notes/release_notes.2011_02_21.shtml   |  221 -
+ .../Release_notes/release_notes.2011_02_24.shtml   |  159 -
+ .../Release_notes/release_notes.2011_03_03.shtml   |  345 --
+ .../Release_notes/release_notes.2011_03_04.shtml   |   85 -
+ .../Release_notes/release_notes.2011_03_08.shtml   |   97 -
+ .../release_notes.2011_03_11.14_15_44.shtml        |   80 -
+ .../Release_notes/release_notes.2011_03_11.shtml   |  137 -
+ .../release_notes.2011_04_07.08_58_02.shtml        | 1096 ----
+ .../release_notes.2011_05_06.13_47_51.shtml        |  403 --
+ .../release_notes.2011_05_10.09_58_22.shtml        |  370 --
+ .../release_notes.2011_05_10.10_06_34.shtml        |   89 -
+ .../release_notes.2011_05_13.13_44_41.shtml        |  434 --
+ .../release_notes.2011_05_13.14_01_47.shtml        |   80 -
+ .../release_notes.2011_05_13.14_53_04.shtml        |   90 -
+ .../release_notes.2011_05_27.12_33_30.shtml        |  450 --
+ .../release_notes.2011_05_27.14_48_22.shtml        |  553 --
+ .../release_notes.2011_06_16.11_27_12.shtml        |  444 --
+ .../release_notes.2011_06_16.13_43_22.shtml        |  101 -
+ .../release_notes.2011_06_17.09_47_31.shtml        |  129 -
+ .../release_notes.2011_07_05.14_12_00.shtml        | 1986 -------
+ .../Release_notes/release_notes_template.shtml     |   59 -
+ 72 files changed, 0 insertions(+), 32784 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'feature/docs_tidy' into develop
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove gitignore file for obsolete directory
+ docs/IntWeb/Development/.gitignore |    5 -----
+ 1 files changed, 0 insertions(+), 5 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Move obsolete docs which Steve has moved to wiki
+ docs/IntWeb/Development/build_files.shtml  |  316 ---------
+ docs/IntWeb/Development/build_system.shtml | 1050 ----------------------------
+ docs/IntWeb/Development/coding_notes.shtml |  721 -------------------
+ docs/IntWeb/Development/debugging.shtml    |  166 -----
+ 4 files changed, 0 insertions(+), 2253 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove obsolete demo doc and move relevant stuff to user guide
+ docs/IntWeb/Development/zmap_demo.txt |  172 ---------------------------------
+ docs/WWW/user/zmap_quick_start.shtml  |   68 +++++++++----
+ 2 files changed, 49 insertions(+), 191 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove docs that have been moved to wiki
+ docs/IntWeb/Development/ZMap_XCode.shtml |  100 ------------------------------
+ docs/IntWeb/Development/macosx.html      |   28 --------
+ 2 files changed, 0 insertions(+), 128 deletions(-)
+
+2014-11-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove obsolete docs
+ docs/IntWeb/Development/MAC_G2.README    |   87 ----
+ docs/IntWeb/Development/UBUNTU_BUILD.txt |   60 ---
+ docs/IntWeb/Development/cvs_git.html     |  779 ------------------------------
+ docs/IntWeb/Development/gdk_events.html  |   45 --
+ 4 files changed, 0 insertions(+), 971 deletions(-)
+
+2014-11-19  Gemma Barson  <gb10@sanger.ac.uk>
+ Temp hack to fix zeromq build on cygwin (rename curve_keygen.c to curve_keygen.cpp)
+ src/zeromq/tools/Makefile.am      |    4 +-
+ src/zeromq/tools/curve_keygen.c   |   58 -------------------------------------
+ src/zeromq/tools/curve_keygen.cpp |   58 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 60 insertions(+), 60 deletions(-)
+
+2014-11-19  Gemma Barson  <gb10@sanger.ac.uk>
+ Add t119-win-build to bulid machines
+ scripts/build_config.sh |    9 +++------
+ 1 files changed, 3 insertions(+), 6 deletions(-)
+
+2014-11-19  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "a few more tidy ups of install instructions."
+ src/INSTALL |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+2014-11-19  Ed Griffiths  <edgrif@sanger.ac.uk>
+ update install files using Gemma's write up from web pages.
+ src/INSTALL.linux   |   70 +++++++++++++++++++++++++++
+ src/INSTALL.mac     |   65 ++++++++++++++++++++++++++
+ src/INSTALL.windows |  129 +++++++++++++++++++++++++++++++-------------------
+ 3 files changed, 215 insertions(+), 49 deletions(-)
+
+2014-11-17  Gemma Barson  <gb10@sanger.ac.uk>
+ Add cygwin to supported host types
+ scripts/build_config.sh |    5 ++++-
+ src/runconfig           |   12 ++++++++++++
+ 2 files changed, 16 insertions(+), 1 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix path to release notes file."
+ scripts/build_config.sh |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ clean up docs dir, remove expat and others redundant files, move foocanvas to src/libzmapfoocanvas.
+ docs/IntWeb/Development/expat/expat.png            |  Bin 1717 -> 0 bytes
+ docs/IntWeb/Development/expat/index.shtml          |   10 -
+ docs/IntWeb/Development/expat/reference.html       | 2309 --------------------
+ docs/IntWeb/Development/expat/style.css            |  101 -
+ docs/IntWeb/Development/expat/valid-xhtml10.png    |  Bin 2414 -> 0 bytes
+ docs/IntWeb/Development/expat/xmlwf.1              |  251 ---
+ docs/IntWeb/Development/expat/xmlwf.sgml           |  473 ----
+ docs/IntWeb/Development/fix_copyright.html         |   93 -
+ docs/IntWeb/Development/foo_canvas.html            |  431 ----
+ docs/IntWeb/Development/foocanvas.shtml            |   12 -
+ docs/IntWeb/Development/foocanvas/dev_notes.shtml  |  440 ----
+ docs/IntWeb/Development/foocanvas/foo_canvas.html  |  431 ----
+ docs/IntWeb/Development/foocanvas/foocanvas.shtml  |   12 -
+ docs/IntWeb/Development/foocanvas/header.ini       |   40 -
+ docs/IntWeb/Development/foocanvas/this_links.ini   |   15 -
+ docs/IntWeb/Development/foocanvas/user_guide.shtml |   20 -
+ .../Development/foocanvas/zmap_canvas_items.shtml  |  215 --
+ .../foocanvas/zmap_container_items.shtml           |   82 -
+ docs/IntWeb/Development/index.shtml                |    4 -
+ src/libzmapfoocanvas/docs/foocanvas.shtml          |   12 +
+ .../docs/foocanvas/dev_notes.shtml                 |  440 ++++
+ .../docs/foocanvas/foo_canvas.html                 |  431 ++++
+ .../docs/foocanvas/foocanvas.shtml                 |   12 +
+ src/libzmapfoocanvas/docs/foocanvas/header.ini     |   40 +
+ src/libzmapfoocanvas/docs/foocanvas/this_links.ini |   15 +
+ .../docs/foocanvas/user_guide.shtml                |   20 +
+ .../docs/foocanvas/zmap_canvas_items.shtml         |  215 ++
+ .../docs/foocanvas/zmap_container_items.shtml      |   82 +
+ 28 files changed, 1267 insertions(+), 4939 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "try to fix cygwin compile problem for zeromq"
+ src/configure.ac |   12 +++++++++++-
+ 1 files changed, 11 insertions(+), 1 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove zmapStyle_I.h, my mistake, I thought I'd done this."
+ src/zmapFeature/Makefile.am |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'feature/GOBJ_CAST' into develop
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ remove redundant GOBJ_CAST.
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |    8 +++++-
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.h |   24 ++++++-------------
+ .../canvas/zmapWindowCanvasFeatureset_I.h          |    6 ++--
+ src/zmapWindow/canvas/zmapWindowCanvasItem.h       |    5 ----
+ .../canvas/zmapWindowContainerAlignment.h          |    5 ----
+ src/zmapWindow/canvas/zmapWindowContainerBlock.h   |    5 ----
+ src/zmapWindow/canvas/zmapWindowContainerContext.h |    5 ----
+ .../canvas/zmapWindowContainerFeatureSet.h         |    5 ----
+ src/zmapWindow/canvas/zmapWindowContainerGroup.h   |    5 ----
+ 9 files changed, 17 insertions(+), 51 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "change of style struct name."
+ src/zmapWindow/zmapWindowStyle.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "change of style header name."
+ src/zmapWindow/zmapWindowMenus.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "change of style header name."
+ src/zmapFeature/zmapStyleUtils.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "rename struct name to follow coding standards."
+ src/zmapFeature/zmapStyle.c |  202 +++++++++++++++++++++---------------------
+ 1 files changed, 101 insertions(+), 101 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove GOBJ_CAST, now redundant."
+ src/include/ZMap/zmap.h |   11 +++++------
+ 1 files changed, 5 insertions(+), 6 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove Malcolm's now redundant cast stuff and clear up confusing attempt to hide style data members."
+ src/include/ZMap/zmapStyle.h |   68 +++++++++++++-----------------------------
+ 1 files changed, 21 insertions(+), 47 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove zmapFeatureTypes.c, add zmapStyleObj.c"
+ src/zmapFeature/Makefile.am |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "code from src/zmapFeature/zmapStyle_I.h merged into here and unnecessary ifdef removed."
+ src/zmapFeature/zmapStyle_P.h |  115 ++++++++++++++++++++++++++++++++++++++---
+ 1 files changed, 108 insertions(+), 7 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ removed to avoid confusion and code merged to src/zmapFeature/zmapStyle_P.h.
+ src/zmapFeature/zmapStyle_I.h |  155 -----------------------------------------
+ 1 files changed, 0 insertions(+), 155 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ code moved to new style files to avoid confusion.
+ src/zmapFeature/zmapFeatureTypes.c | 1240 ------------------------------------
+ 1 files changed, 0 insertions(+), 1240 deletions(-)
+
+2014-11-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "move style code from zmapFeatureTypes.c and create zmapStyleObj.c."
+ src/zmapFeature/zmapStyleObj.c | 1240 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 1240 insertions(+), 0 deletions(-)
 
 2014-11-14  Gemma Barson  <gb10@sanger.ac.uk>
- Update release notes with more detail on feature editing
- docs/WWW/user/release_notes.shtml |   17 ++++++++++++++++-
- 1 files changed, 16 insertions(+), 1 deletions(-)
+ Minor change to windows installation doc
+ src/INSTALL.windows |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-2014-11-13  Steve Miller  <sm23@sanger.ac.uk>
- update to release notes v. 1.2.0
- docs/WWW/user/release_notes.shtml |   10 +++++++++-
- 1 files changed, 9 insertions(+), 1 deletions(-)
+2014-11-14  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'feature/Canvas_feature' into develop
+2014-11-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ move canvasfeature specific code into it's own file/interface.
+ src/include/ZMap/zmapFeature.h                     |    1 +
+ src/zmapWindow/Makefile.am                         |    4 +-
+ src/zmapWindow/canvas/zmapWindowCanvasAlignment.c  |   12 +-
+ src/zmapWindow/canvas/zmapWindowCanvasAssembly.c   |    7 +-
+ src/zmapWindow/canvas/zmapWindowCanvasBasic.c      |    7 +-
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.c       |    1 +
+ src/zmapWindow/canvas/zmapWindowCanvasFeature.c    |  484 +++++++++++++++++++-
+ src/zmapWindow/canvas/zmapWindowCanvasFeature.h    |  100 ++++
+ src/zmapWindow/canvas/zmapWindowCanvasFeature_I.h  |  148 ++++++
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |  279 +++---------
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.h |   93 +---
+ .../canvas/zmapWindowCanvasFeaturesetBump.c        |    3 +-
+ .../canvas/zmapWindowCanvasFeaturesetSummarise.c   |    3 +
+ .../canvas/zmapWindowCanvasFeatureset_I.h          |  124 +----
+ src/zmapWindow/canvas/zmapWindowCanvasGlyph.c      |    6 +-
+ src/zmapWindow/canvas/zmapWindowCanvasGlyph_I.h    |    2 +-
+ src/zmapWindow/canvas/zmapWindowCanvasGraphItem.c  |   13 +-
+ src/zmapWindow/canvas/zmapWindowCanvasGraphics.c   |   11 +-
+ src/zmapWindow/canvas/zmapWindowCanvasLocus.c      |    8 +-
+ src/zmapWindow/canvas/zmapWindowCanvasSequence.c   |   13 +-
+ src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |   10 +-
+ src/zmapWindow/canvas/zmapWindowCanvasUtils.c      |  253 ----------
+ src/zmapWindow/canvas/zmapWindowCanvasUtils.h      |   55 ---
+ .../canvas/zmapWindowContainerFeatureSet.c         |    9 +-
+ 24 files changed, 908 insertions(+), 738 deletions(-)
 
+2014-11-13  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'release/1.2.0' into develop
 2014-11-12  Gemma Barson  <gb10@sanger.ac.uk>
  Fix regression with file import for non-otterlace zmap
  src/zmapControl/zmapControlImportFile.c |   15 +++++++--------
  1 files changed, 7 insertions(+), 8 deletions(-)
-
-2014-11-12  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.1.0-93-g6a23c1c - Update RT and git commit reports
- src/ChangeLog                                  | 2732 ++++--------------------
- src/build/release_docs/GIT_COMMITS.txt         |  244 +--
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |  352 +---
- 3 files changed, 471 insertions(+), 2857 deletions(-)
-
-2014-11-12  Gemma Barson  <gb10@sanger.ac.uk>
- Fix compiler warnings
- src/include/ZMap/zmapFeature.h                     |    2 ++
- .../canvas/zmapWindowContainerFeatureSet.c         |    1 -
- 2 files changed, 2 insertions(+), 1 deletions(-)
-
-2014-11-12  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'feature/edit_transcript' into develop
-2014-11-11  Gemma Barson  <gb10@sanger.ac.uk>
- Cache feature name of copied transcript
- src/zmapView/zmapView.c                |    7 ++-
- src/zmapView/zmapViewScratch.c         |   68 ++++++++++---------------------
- src/zmapWindow/zmapWindowFeatureShow.c |    9 +++-
- 3 files changed, 33 insertions(+), 51 deletions(-)
-
-2014-11-11  Gemma Barson  <gb10@sanger.ac.uk>
- Default temp feature name is the original transcript that was copied
- src/include/ZMap/zmapWindow.h          |   13 +++++-
- src/zmapView/zmapView.c                |   11 ++++-
- src/zmapView/zmapViewScratch.c         |   79 +++++++++++++++++++++++++++++--
- src/zmapView/zmapView_P.h              |    9 ++-
- src/zmapWindow/zmapWindow.c            |   14 ++++--
- src/zmapWindow/zmapWindowFeatureShow.c |   27 ++++------
- src/zmapWindow/zmapWindowMenus.c       |    2 +-
- src/zmapWindow/zmapWindowScratch.c     |   10 ++--
- src/zmapWindow/zmapWindow_P.h          |    6 +--
- 9 files changed, 129 insertions(+), 42 deletions(-)
-
-2014-11-11  Gemma Barson  <gb10@sanger.ac.uk>
- Tidying: colsolidate small amount of code
- src/zmapWindow/zmapWindowScratch.c |   40 ++++++++++++++---------------------
- 1 files changed, 16 insertions(+), 24 deletions(-)
-
-2014-11-11  Gemma Barson  <gb10@sanger.ac.uk>
- Fix small problem where create_feature wasn't been sent to peer
- src/zmapWindow/zmapWindowFeatureShow.c |   10 +++++-----
- 1 files changed, 5 insertions(+), 5 deletions(-)
-
-2014-11-11  Gemma Barson  <gb10@sanger.ac.uk>
- Add CDS to create_feature xremote message
- src/zmapWindow/zmapWindowRemoteControlUtils.c |   40 ++++++++++++++++++++++++-
- 1 files changed, 39 insertions(+), 1 deletions(-)
-
-2014-11-11  Gemma Barson  <gb10@sanger.ac.uk>
- Fix potential null access
- src/zmapRemoteControl/zmapRemoteControl.c |    9 ++++++---
- 1 files changed, 6 insertions(+), 3 deletions(-)
-
-2014-11-11  Gemma Barson  <gb10@sanger.ac.uk>
- Fix potential null access
- src/zmapRemoteControl/zmapRemoteControl.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-2014-11-11  Gemma Barson  <gb10@sanger.ac.uk>
- Stop zmap creating a feature before asking peer to create it
- src/zmapWindow/zmapWindowFeatureShow.c |   34 +++++++++----------------------
- 1 files changed, 10 insertions(+), 24 deletions(-)
-
-2014-11-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- "rewrite splice highlighting to substantially increase efficiency."
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |    3 +-
- .../canvas/zmapWindowContainerFeatureSet.c         |  366 ++++++++++++--------
- .../canvas/zmapWindowContainerFeatureSet.h         |    3 +-
- 3 files changed, 232 insertions(+), 140 deletions(-)
-
-2014-11-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add mark support to splice highlighting."
- src/include/ZMap/zmapWindow.h |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-2014-11-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- "rewrite feature funcs to return a list of all splice matches, not just one."
- src/include/ZMap/zmapFeature.h          |   26 ++++--
- src/zmapFeature/zmapFeatureAlignment.c  |   99 ++++++++++++++-----
- src/zmapFeature/zmapFeatureBasic.c      |   15 +--
- src/zmapFeature/zmapFeatureData.c       |  169 ++++++++++++++++++++-----------
- src/zmapFeature/zmapFeatureTranscript.c |   88 +++++++++++++----
- src/zmapFeature/zmapFeatureUtils.c      |  157 +++++++++++++++++++++--------
- src/zmapFeature/zmapFeature_P.h         |   18 ++--
- 7 files changed, 396 insertions(+), 176 deletions(-)
-
-2014-11-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add mark support to splice highlighting."
- src/zmapWindow/zmapWindow.c             |   26 +++++++++++++++++++-------
- src/zmapWindow/zmapWindowCommand.c      |    4 +++-
- src/zmapWindow/zmapWindowDrawFeatures.c |    5 +++--
- src/zmapWindow/zmapWindow_P.h           |    2 +-
- 4 files changed, 26 insertions(+), 11 deletions(-)
-
-2014-11-10  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'feature/edit_transcript' into develop
-2014-11-10  Gemma Barson  <gb10@sanger.ac.uk>
- Pop up attributes dialog on double-click before creating feature
- src/zmapWindow/zmapWindowFeature.c |    9 ++-------
- 1 files changed, 2 insertions(+), 7 deletions(-)
-
-2014-11-10  Gemma Barson  <gb10@sanger.ac.uk>
- Fix bugs with create-feature button on attributes dialog
- src/zmapWindow/zmapWindowFeature.c     |    9 ++++++---
- src/zmapWindow/zmapWindowFeatureShow.c |   17 ++++++++++++++++-
- src/zmapWindow/zmapWindowMenus.c       |   21 ++++++++++++++++-----
- 3 files changed, 38 insertions(+), 9 deletions(-)
-
-2014-11-07  Gemma Barson  <gb10@sanger.ac.uk>
- Add Create-Feature and Save-Attribute buttons
- src/zmapWindow/zmapWindowFeature.c     |   18 ++---
- src/zmapWindow/zmapWindowFeatureShow.c |  138 +++++++++++++++++++++-----------
- src/zmapWindow/zmapWindow_P.h          |    2 +
- 3 files changed, 102 insertions(+), 56 deletions(-)
-
-2014-11-07  Gemma Barson  <gb10@sanger.ac.uk>
- Cache feature name/feature set when save properties
- src/include/ZMap/zmapWindow.h          |    1 +
- src/zmapView/zmapViewScratch.c         |    2 -
- src/zmapWindow/zmapWindow.c            |    2 +-
- src/zmapWindow/zmapWindowFeatureShow.c |   92 +++++++++++++++++++++++++++++---
- src/zmapWindow/zmapWindowScratch.c     |   28 ++++++++++
- src/zmapWindow/zmapWindow_P.h          |    8 +++
- 6 files changed, 122 insertions(+), 11 deletions(-)
-
-2014-11-06  Gemma Barson  <gb10@sanger.ac.uk>
- Automatically highlight new evidence after edit
- src/zmapWindow/zmapWindow.c            |   79 ++++++++++++++++++++++++++
- src/zmapWindow/zmapWindowFeatureShow.c |    4 +
- src/zmapWindow/zmapWindowMenus.c       |   97 +------------------------------
- src/zmapWindow/zmapWindowScratch.c     |   58 +++++++++++++++++++
- src/zmapWindow/zmapWindow_P.h          |   17 ++++++
- 5 files changed, 162 insertions(+), 93 deletions(-)
-
-2014-11-06  Gemma Barson  <gb10@sanger.ac.uk>
- Minor change to right-click menu text
- src/zmapWindow/zmapWindowMenus.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-2014-11-06  Gemma Barson  <gb10@sanger.ac.uk>
- Fix compiler warnings
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |    1 -
- .../canvas/zmapWindowContainerFeatureSet.c         |    3 ---
- 2 files changed, 0 insertions(+), 4 deletions(-)
-
-2014-11-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add new function to display splices."
- src/zmapWindow/zmapWindowDrawFeatures.c |   31 +++++++++++++++++++++++++++++++
- 1 files changed, 31 insertions(+), 0 deletions(-)
-
-2014-11-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add new code to excute windows commands coming from zmapview"
- src/zmapWindow/Makefile.am         |    1 +
- src/zmapWindow/zmapWindowCommand.c |  149 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 150 insertions(+), 0 deletions(-)
-
-2014-11-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- "fix bug in splice highlighting with multiple windows."
- src/zmapWindow/zmapWindow_P.h |   14 +++++++++++++-
- 1 files changed, 13 insertions(+), 1 deletions(-)
-
-2014-11-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- "Add function to find first column on forward or reverse strand."
- src/zmapWindow/zmapWindowCanvas.c |   92 +++++++++++++++++++++++++++++++++++++
- 1 files changed, 92 insertions(+), 0 deletions(-)
-
-2014-11-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add splice highlight in multiple window support."
- src/zmapWindow/zmapWindow.c |  232 +++++++++++++------------------------------
- 1 files changed, 70 insertions(+), 162 deletions(-)
-
-2014-11-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add new splice command, zMapWindowExecuteCommand() and splice highlight support."
- src/include/ZMap/zmapWindow.h |   35 ++++++++++++++++++++++++++++++++---
- 1 files changed, 32 insertions(+), 3 deletions(-)
-
-2014-11-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add code to get splice highlighting for all windows."
- src/zmapView/zmapView.c |   46 ++++++++++++++++++++++++++++++++++------------
- 1 files changed, 34 insertions(+), 12 deletions(-)
-
-2014-11-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add new zmapViewCommand."
- src/zmapView/zmapView_P.h |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2014-11-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add new zmapViewCommand.c file to excute window commands."
- src/zmapView/zmapViewCommand.c |   84 ++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 84 insertions(+), 0 deletions(-)
-
-2014-11-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add new zmapViewCommand.c file."
- src/zmapView/Makefile.am |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2014-11-06  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'feature/edit_transcript' into develop
-2014-11-05  Gemma Barson  <gb10@sanger.ac.uk>
- Remove obsolete code
- src/zmapWindow/zmapWindowSeqDisp.c |  149 +-----------------------------------
- 1 files changed, 2 insertions(+), 147 deletions(-)
-
-2014-11-05  Gemma Barson  <gb10@sanger.ac.uk>
- Fix bug with split codon display
- src/zmapFeature/zmapFeatureTranscript.c |   61 +++++++++++++++++++++----------
- 1 files changed, 42 insertions(+), 19 deletions(-)
-
-2014-11-05  Gemma Barson  <gb10@sanger.ac.uk>
- Finished implementation of new exon structure for variations
- src/zmapFeature/zmapFeatureDNA.c        |   11 ++++-
- src/zmapFeature/zmapFeatureTranscript.c |   66 ++++++++++++++++--------------
- 2 files changed, 43 insertions(+), 34 deletions(-)
-
-2014-11-05  Gemma Barson  <gb10@sanger.ac.uk>
- WIP: split codons added to new exon structure
- src/zmapFeature/zmapFeatureDNA.c        |   11 +--
- src/zmapFeature/zmapFeatureTranscript.c |  131 ++++++++++++++++++++++---------
- src/zmapWindow/zmapWindowSeqDisp.c      |    2 +-
- 3 files changed, 96 insertions(+), 48 deletions(-)
-
-2014-11-05  Gemma Barson  <gb10@sanger.ac.uk>
- WIP: change full exon structure when variations exist
- src/zmapFeature/zmapFeatureTranscript.c |  211 +++++++++++++++++++++++++------
- src/zmapWindow/zmapWindowSeqDisp.c      |    2 +-
- 2 files changed, 173 insertions(+), 40 deletions(-)
-
-2014-11-04  Gemma Barson  <gb10@sanger.ac.uk>
- Commenting
- src/zmapFeature/zmapFeatureTranscript.c |    7 +++++--
- 1 files changed, 5 insertions(+), 2 deletions(-)
-
-2014-11-04  Gemma Barson  <gb10@sanger.ac.uk>
- Tidying: split up large function
- src/zmapFeature/zmapFeatureTranscript.c |  464 +++++++++++++++++--------------
- 1 files changed, 253 insertions(+), 211 deletions(-)
-
-2014-11-04  Gemma Barson  <gb10@sanger.ac.uk>
- WIP fix alignment when add insertion
- src/zmapWindow/zmapWindowSeqDisp.c |   81 +++++++++++++++++++++---------------
- 1 files changed, 47 insertions(+), 34 deletions(-)
-
-2014-11-04  Gemma Barson  <gb10@sanger.ac.uk>
- Fix misalignment of translation when there is a frame shift
- src/zmapWindow/zmapWindowSeqDisp.c |   28 ++++++++++++++++++++++------
- 1 files changed, 22 insertions(+), 6 deletions(-)
-
-2014-11-03  Gemma Barson  <gb10@sanger.ac.uk>
- Enable split codon highlighting for all frames in the show translation column
- src/zmapWindow/zmapWindowSeqDisp.c |   17 ++++++++++++++---
- 1 files changed, 14 insertions(+), 3 deletions(-)
-
-2014-11-03  Gemma Barson  <gb10@sanger.ac.uk>
- Fix alignment of translation when has insertions/deletions
- src/zmapFeature/zmapFeatureUtils.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2014-11-03  Gemma Barson  <gb10@sanger.ac.uk>
- Correct frame now highlighted for translation with insertions/deletions
- src/zmapFeature/zmapFeatureTranscript.c |   73 +++++++++++--------------------
- 1 files changed, 25 insertions(+), 48 deletions(-)
-
-2014-10-17  Gemma Barson  <gb10@sanger.ac.uk>
- Hack to fix translation column blanking out
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |   22 ++++++++++++++++++++
- 1 files changed, 22 insertions(+), 0 deletions(-)
-
-2014-11-05  Steve Miller  <sm23@sanger.ac.uk>
- some updates to drawing design document with latest experiment results
- .../IntWeb/Design/New_Drawing/Display_design.shtml |   12 ++++++++++--
- 1 files changed, 10 insertions(+), 2 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'feature/Feature_debug_display' into develop
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add featureset2txt function. remove redundant header."
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |  162 ++++++++++++++++++--
- 1 files changed, 149 insertions(+), 13 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add featureset2txt function. remove redundant header."
- src/zmapWindow/canvas/zmapWindowCanvasFeature.c |   84 +++++++++++++++++++++++
- 1 files changed, 84 insertions(+), 0 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "convert canvasfeaturetype to use zmapEnum.h macros."
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.h |   66 ++++++++++++--------
- 1 files changed, 40 insertions(+), 26 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "rearrange featureset_item struct to try make more sense of it."
- .../canvas/zmapWindowCanvasFeatureset_I.h          |  152 ++++++++++----------
- 1 files changed, 77 insertions(+), 75 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "formatting."
- src/zmapWindow/canvas/zmapWindowCanvasItem.h   |   22 +++++++++++++---------
- src/zmapWindow/canvas/zmapWindowCanvasItem_I.h |    6 +++++-
- 2 files changed, 18 insertions(+), 10 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "formatting."
- .../canvas/zmapWindowCanvasTranscript_I.h          |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add format spec for printing canvas coords."
- src/zmapWindow/canvas/zmapWindowCanvasUtils.h |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add missing include."
- src/zmapWindow/canvas/zmapWindowCanvasSequence.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add missing include."
- src/zmapWindow/canvas/zmapWindowCanvasLocus.h |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add func to get style."
- .../canvas/zmapWindowContainerFeatureSet.h         |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add basic point func."
- src/zmapWindow/canvas/zmapWindowCanvasBasic.h |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "minor rename of basic feature struct elem."
- src/zmapWindow/zmapWindow.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add more debug info to developer menu."
- src/zmapWindow/zmapWindowMenus.c |  108 +++++++++++++++++++++++++++++++------
- 1 files changed, 90 insertions(+), 18 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "remove unecessary header include."
- src/zmapWindow/zmapWindowList.c |   11 +++--------
- 1 files changed, 3 insertions(+), 8 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "remove unecessary header include."
- src/zmapWindow/zmapWindowItemDebug.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "formatting."
- src/zmapWindow/zmapWindowColBump.c |   89 ++++++++++++++++++++----------------
- 1 files changed, 50 insertions(+), 39 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add new zmapWindowCanvasFeature.c file."
- src/zmapWindow/Makefile.am |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "minor rename of basic feature struct elem."
- src/zmapView/zmapViewCallBlixem.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "augment feature as text output with subtype info."
- src/zmapFeature/zmapFeatureOutput.c |  348 ++++++++++++++++++++++++++++++-----
- 1 files changed, 299 insertions(+), 49 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "minor rename of basic feature struct elem."
- src/zmapFeature/zmapFeature.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "formatting."
- src/include/ZMap/zmapFeature.h |   75 +++++++++++++++++++---------------------
- 1 files changed, 36 insertions(+), 39 deletions(-)
-
-2014-11-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add cross refs to splice highlight design doc."
- src/zmapWindow/canvas/zmapWindowCanvasAlignment.c  |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasBasic.c      |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasDraw.c       |    4 +++-
- src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |    2 +-
- .../canvas/zmapWindowContainerFeatureSet.c         |    2 ++
- 5 files changed, 8 insertions(+), 4 deletions(-)
-
-2014-11-03  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'production' into develop
-2014-11-03  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'production' into develop
-2014-11-03  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'release/1.1.0' into production
-2014-10-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add format param. for printing canvas doubles in readable format."
- src/zmapWindow/canvas/zmapWindowCanvasUtils.h |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
-
-2014-10-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- remove unwanted file.
- src/zmapRemoteControl/zmapRemoteControl_P.orig.h |  252 ----------------------
- 1 files changed, 0 insertions(+), 252 deletions(-)
-
-2014-10-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- "tidy up last bits from zeromq, timeouts, outofband removal, formatting."
- src/zmapRemoteControl/zmapRemoteControl.c   |  132 +++++++++------------------
- src/zmapRemoteControl/zmapRemoteControl_P.h |    8 +-
- 2 files changed, 50 insertions(+), 90 deletions(-)
-
-2014-10-31  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'release/1.1.0' into develop
-2014-10-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'feature/Remote_looping' into develop
-2014-10-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- "fix bug in collision handling leading to looping endlessly."
- src/zmapRemoteControl/zmapRemoteControl.c |  160 +++++++++++++++--------------
- 1 files changed, 81 insertions(+), 79 deletions(-)
-
-2014-10-30  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'release/1.1.0' into develop
-2014-10-30  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'release/1.1.0' into develop
-2014-10-29  Steve Miller  <sm23@sanger.ac.uk>
- Merge remote branch 'origin/release/1.1.0' into develop
-2014-10-29  Steve Miller  <sm23@sanger.ac.uk>
- Merge remote branch 'origin/release/1.1.0' into develop
-2014-10-27  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'release/1.1.0' into develop
-2014-10-24  Steve Miller  <sm23@sanger.ac.uk>
- update to drawing design document with some initial results
- .../IntWeb/Design/New_Drawing/Display_design.shtml |   12 ++++++++++++
- 1 files changed, 12 insertions(+), 0 deletions(-)
-
-2014-10-23  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'release/1.1.0' into develop
-2014-10-22  Ed Griffiths  <edgrif@sanger.ac.uk>
- "update docs."
- .../IntWeb/Design/New_Drawing/Display_design.shtml |   20 ++++++++++++++++++++
- 1 files changed, 20 insertions(+), 0 deletions(-)
-
-2014-10-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- "update to doc."
- .../IntWeb/Design/New_Drawing/Display_design.shtml |  204 +++++++++++++++++---
- 1 files changed, 177 insertions(+), 27 deletions(-)
-
-2014-10-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- rename display design docs.
- .../IntWeb/Design/New_Drawing/Display_design.shtml |  393 ++++++++++++++++++++
- docs/IntWeb/Design/New_Drawing/zmap_remote.shtml   |  393 --------------------
- 2 files changed, 393 insertions(+), 393 deletions(-)
-
-2014-10-21  Steve Miller  <sm23@sanger.ac.uk>
- small additions to drawing design document
- docs/IntWeb/Design/New_Drawing/zmap_remote.shtml |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
-
-2014-10-20  Steve Miller  <sm23@sanger.ac.uk>
- additions to graphics design document
- docs/IntWeb/Design/New_Drawing/zmap_remote.shtml |  148 +++++++++++++++++++++-
- 1 files changed, 147 insertions(+), 1 deletions(-)
-
-2014-10-20  Ed Griffiths  <edgrif@sanger.ac.uk>
- remove redundant copy of file.
- .../IntWeb/Development/Acedb_ID_construction.shtml |  407 --------------------
- 1 files changed, 0 insertions(+), 407 deletions(-)
-
-2014-10-17  Steve Miller  <sm23@sanger.ac.uk>
- add some material to graphics design document
- docs/IntWeb/Design/New_Drawing/zmap_remote.shtml |   59 +++++++++++++++++++++-
- 1 files changed, 57 insertions(+), 2 deletions(-)

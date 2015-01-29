@@ -2279,7 +2279,12 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 
               if (next_match > curr_match + 1)
                 {
-                  g_string_append_printf(align_str, "I%d ", (next_match - curr_match) - 1) ;
+                  int num_bases = (next_match - curr_match) - 1 ;
+
+                  if (match_seq_type == ZMAPSEQUENCE_PEPTIDE)
+                    num_bases /= 3 ;
+
+                  g_string_append_printf(align_str, "I%d ", num_bases) ;
                 }
               else if (next_ref > curr_ref + 1)
                 {
