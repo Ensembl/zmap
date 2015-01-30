@@ -1684,6 +1684,7 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
             {
               if (feature->feature.homol.type == blixem_data->align_type)
                 {
+//<<<<<<< HEAD
                   if (   (*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
                       || (*blixem_data->opts == 'N' && feature->feature.homol.type == ZMAPHOMOL_N_HOMOL))
                     {
@@ -1699,6 +1700,7 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
                         }
                       status = printAlignment(feature, blixem_data->line, seq_str) ;
                     }
+//|||||||
                 }
             }
           else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
