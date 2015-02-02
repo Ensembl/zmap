@@ -286,7 +286,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   gboolean failed = FALSE ;
   int i = 0 ;
 
-  for (i=0;i<Vector_getNumElement(features) && !failed;i++) 
+  for (i = 0; i < Vector_getNumElement(features) && !failed; ++i) 
     {
       SimpleFeature *sf = Vector_getElementAt(features,i);
       long start = SimpleFeature_getStart(sf);
@@ -297,7 +297,8 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 
       if (rsf)
         {
-          printf("rc start = %ld end = %ld\n",SimpleFeature_getStart(rsf),SimpleFeature_getEnd(rsf));
+          const char *feature_name = SimpleFeature_getDisplayLabel(rsf) ;
+          printf("rc name = %s, start = %ld end = %ld\n",feature_name, SimpleFeature_getStart(rsf),SimpleFeature_getEnd(rsf));
         }
       else
         {
