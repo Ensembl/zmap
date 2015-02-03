@@ -15,7 +15,7 @@ ENSC_CORE_OBJ_DIR=$(ENSC_CORE_DIR)/objectfiles
 libEnsemblServer_la_SOURCES = ensemblServer.c ensemblServer_P.h
 libEnsemblServer_la_LIBADD  = 
 libEnsemblServer_la_CFLAGS  = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapServer $(ENSC_CORE_CFLAGS) $(MYSQL_CFLAGS)
-libEnsemblServer_la_LDFLAGS = $(ENSC_CORE_DIR)/libensc.a $(MYSQL_LDFLAGS)
+libEnsemblServer_la_LDFLAGS = -L$(ENSC_CORE_DIR) -lensc $(MYSQL_LDFLAGS)
 
 
 # Extra files to remove for the maintainer-clean target.
