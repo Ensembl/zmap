@@ -23,9 +23,10 @@ function zmap_untar_file
     untar_tmp="untar_tmp.$$"
     restore_dir=$(pwd)
 
-    zmap_cd /var/tmp
-
     if [ "x$1" != "x" ]; then
+        #
+        # Get the arguments
+        #
 	package=$1
 	output_dir=$package
 
@@ -41,14 +42,9 @@ function zmap_untar_file
 	    output_dir=/var/tmp/$output_dir
 	fi
 
-	mkdir -p $untar_tmp
-	zmap_cd  $untar_tmp
-
-	if [ -d $output_dir ]; then
-	    zmap_message_out "$output_dir already exists... Removing"
-	    rm -rf $output_dir
-	fi
-
+        #
+        # Get the tar options
+        #
 	if echo $package | egrep -q "tar.gz$" ; then
 	    tar_options="-zxf"
 	fi
@@ -61,24 +57,59 @@ function zmap_untar_file
 	    tar_options="-jxf"
 	fi
 
-	zmap_message_out "Untarring $package to $output_dir"
-	tar $tar_options $package
+        #
+        # Make a temp dir on the destination location to untar to
+        #
+        output_dir_parent=`dirname $output_dir`
+        untar_tmp_path=$output_dir_parent/$untar_tmp
+	mkdir -p $untar_tmp_path
+
+        #
+        # Copy and untar the package in the temp destination
+        #
+        zmap_message_out "Copying $package to $untar_tmp_path"
+        cp $package $untar_tmp_path
+
+        package_name=`basename $package`
+        zmap_cd $untar_tmp_path
+	zmap_message_out "Untarring $package_name to $untar_tmp_path"
+	tar $tar_options $package_name
 
 	if [ $? != 0 ]; then
-	    zmap_cd /var/tmp
+	    zmap_cd $output_dir_parent
 	    rm -rf $untar_tmp
-	    zmap_message_exit "Failed to untar $package"
+	    zmap_message_exit "Failed to untar $package_name. Removed $untar_tmp_path."
 	else
+            #
+            # Get the name of the build directory. There should only be one item
+            # in the tmp directory (after removing the tar file), so we can just
+            #use ls to get the build dir name.
+            #
+            rm -f $package_name
 	    package_dir=$(ls)
+
+            #
+            # Move the build dir to the output_dir location (remove the output
+            # dir first if it already exists).
+            #
+	    if [ -d $output_dir ]; then
+	        zmap_message_out "$output_dir already exists... Removing"
+	        rm -rf $output_dir
+	    fi
+
 	    if [ ! -d $output_dir ]; then
 		mv -f $package_dir $output_dir
 	    else
 		cp -r $package_dir/* $output_dir/
 	    fi
-	    zmap_cd /var/tmp
-	    rm -rf $untar_tmp
+
+            #
+            # Remove the temp untar dir
+            #
+	    zmap_cd $output_dir_parent
+	    rm -rf $untar_tmp_path
+	    zmap_message_out "$package_name successfully untarred to $output_dir"
 	fi
-	zmap_message_out "$package untarred to $output_dir"
     fi
 
     zmap_cd $restore_dir

@@ -1,6 +1,6 @@
 /*  File: zmapAppwindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -61,6 +61,10 @@
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+#define INIT_FORMAT "Init - %s"
+#define EXIT_FORMAT "Exit - %s"
+
+
 #define consoleLogMsg(BOOL, FORMAT, ...)                \
   G_STMT_START                                          \
   {                                                     \
@@ -71,6 +75,8 @@
       }                                                 \
   } G_STMT_END
 
+
+#define CLEAN_EXIT_MSG "terminated cleanly, goodbye cruel world !"
 
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
@@ -207,6 +213,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
 
+  /* THIS ORDER NEEDS CHANGING...CMDLINE STUFF FIRST THEN THE REST... */
+
+  consoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, "zmap starting.") ;
+
+
   /* Set up stack tracing for when we get killed by a signal. */
   setupSignalHandlers() ;
 
@@ -243,7 +254,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       /* CAN'T LOG HERE....log has not been init'd.... */
 
       if (!peer_socket && peer_timeout_list)
-        consoleMsg(TRUE, "%s",
+        consoleMsg(TRUE, INIT_FORMAT,
                    "timeout list specified but no peer socket so remote interface cannot be created.") ;
     }
   else
@@ -301,7 +312,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       zMapWriteStartMsg() ;
     }
 
-  consoleLogMsg(verbose_startup_logging_G, "%s", "Reading configuration file.") ;
+  consoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, "Reading configuration file.") ;
 
   /* Get general zmap configuration from config. file. */
   getConfiguration(app_context, config_file) ;
@@ -353,7 +364,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /*             GTK initialisation              */
 
-  consoleLogMsg(verbose_startup_logging_G, "%s", "Initing GTK.") ;
+  consoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, "Initing GTK.") ;
 
   initGnomeGTK(argc, argv) ;    /* May exit if checks fail. */
 
@@ -362,7 +373,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 #endif
 
 
-  consoleLogMsg(verbose_startup_logging_G, "%s", "Creating app window.") ;
+  consoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, "Creating app window.") ;
 
   /* Set up app level cursors, the remote one will only be used if we have
    * a remote peer. */
@@ -467,7 +478,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context->state = ZMAPAPP_RUNNING ;
 
 
-  consoleLogMsg(verbose_startup_logging_G, "%s", "Entering mainloop, init finished.") ;
+  consoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, "Entering mainloop, startup finished.") ;
 
 
   /* Start the GUI. */
@@ -753,7 +764,7 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - main window destroyed, cleaning up.") ;
+  consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "main window destroyed, cleaning up.") ;
 
   app_context->app_widg = NULL ;
 
@@ -785,13 +796,13 @@ static void topLevelDestroy(ZMapAppContext app_context)
    * Otherwise if there is a remote control then call remoteLevelDestroy(). */
   if ((zMapManagerCount(app_context->zmap_manager)))
     {
-      consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - killing existing views.") ;
+      consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "killing existing views.") ;
 
       killZMaps(app_context) ;
     }
   else
     {
-      consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - no views so preparing to exit.") ;
+      consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "no views so preparing to exit.") ;
 
       remoteLevelDestroy(app_context) ;
     }
@@ -806,7 +817,7 @@ static void killZMaps(ZMapAppContext app_context)
   guint timeout_func_id ;
   int interval = app_context->exit_timeout * 1000 ;    /* glib needs time in milliseconds. */
 
-  consoleLogMsg(TRUE, "%s", "Exit - Issuing requests to all ZMaps to disconnect from servers and quit.") ;
+  consoleLogMsg(TRUE, EXIT_FORMAT, "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
 
   /* N.B. we block for 2 seconds here to make sure user can see message. */
   zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
@@ -828,7 +839,7 @@ static gboolean timeoutHandler(gpointer data)
 {
   ZMapAppContext app_context = (ZMapAppContext)data ;
 
-  consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - ZMap views not dying, forced exit !") ;
+  consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "ZMap views not dying, forced exit !") ;
 
   crashExitApp(app_context) ;
 
@@ -852,7 +863,7 @@ static void remoteLevelDestroy(ZMapAppContext app_context)
     {
       gboolean app_exit = TRUE ;
 
-      consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - disconnecting from remote peer.") ;
+      consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "disconnecting from remote peer.") ;
 
       remote_disconnecting = zmapAppRemoteControlDisconnect(app_context, app_exit) ;
     }
@@ -860,7 +871,7 @@ static void remoteLevelDestroy(ZMapAppContext app_context)
   /* If the disconnect didn't happen or failed or there is no remote then exit. */
   if (!(app_context->remote_control) || !remote_disconnecting)
     {
-      consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - no remote peer, proceeding with exit.") ;
+      consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "no remote peer, proceeding with exit.") ;
 
       exitApp(app_context) ;
     }
@@ -872,7 +883,7 @@ static void remoteLevelDestroy(ZMapAppContext app_context)
 /* Called on clean exit of zmap. */
 static void exitApp(ZMapAppContext app_context)
 {
-  consoleLogMsg(verbose_startup_logging_G, "%s", "Exit - destroying view manager.") ;
+  consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "destroying view manager.") ;
 
   /* This must be done here as manager checks to see if all its zmaps have gone. */
   if (app_context->zmap_manager)
@@ -906,7 +917,7 @@ static void contextLevelDestroy(ZMapAppContext app_context, int exit_rc, char *e
    * said goodbye to the peer. */
   if (app_context->remote_control)
     {
-      consoleLogMsg(TRUE, "%s", "Exit - destroying remote control interface (remote peer already gone).") ;
+      consoleLogMsg(TRUE, EXIT_FORMAT, "destroying remote control interface (remote peer already gone).") ;
 
       zmapAppRemoteControlDestroy(app_context) ;
     }
@@ -930,7 +941,7 @@ static void killContext(ZMapAppContext app_context)
   if (exit_rc)
     zMapLogCritical("%s", exit_msg) ;
 
-  consoleLogMsg(TRUE, "%s",  exit_msg) ;
+  consoleLogMsg(TRUE, EXIT_FORMAT,  exit_msg) ;
 
   zMapWriteStopMsg() ;
   zMapLogDestroy() ;
