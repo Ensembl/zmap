@@ -144,6 +144,7 @@ static gboolean createConnection(void **server_out,
   *server_out = (void *)server ;
 
   server->config_file = g_strdup(config_file) ;
+  server->mutex = g_mutex_new() ;
 
   server->host = g_strdup(url->host) ;
   server->port = url->port ;
@@ -203,16 +204,20 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, 
                  "Opening connection for '%s'", server->db_name) ;
 
+  g_mutex_lock(server->mutex) ;
   server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
+  g_mutex_unlock(server->mutex) ;
 
   if (server->dba)
     {
+      g_mutex_lock(server->mutex) ;
       server->slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
       server->seq_adaptor = DBAdaptor_getSequenceAdaptor(server->dba);
 
       server->slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
                                                  server->sequence, server->zmap_start, server->zmap_end, 
                                                  STRAND_UNDEF, NULL, 0);
+      g_mutex_unlock(server->mutex) ;
 
       if (server->slice_adaptor && server->seq_adaptor && server->slice)
         {
@@ -241,7 +246,9 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
 
   if (server && server->dba)
     {
+      g_mutex_lock(server->mutex) ;
       char *assembly_type = DBAdaptor_getAssemblyType(server->dba) ;
+      g_mutex_unlock(server->mutex) ;
 
       if (assembly_type)
         {
@@ -281,6 +288,8 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
+  g_mutex_lock(server->mutex) ;
+
   //SimpleFeatureAdaptor *sfa = DBAdaptor_getSimpleFeatureAdaptor(server->dba) ;
   Vector *features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
   gboolean failed = FALSE ;
@@ -318,6 +327,8 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
             }
         }
     }
+
+  g_mutex_unlock(server->mutex) ;
 
   result = ZMAP_SERVERRESPONSE_OK ;
   return result ;
@@ -459,6 +470,9 @@ static ZMapServerResponseType destroyConnection(void *server_in)
   if (server->passwd)
     g_free(server->passwd) ;
 
+  if (server->mutex)
+    g_mutex_free(server->mutex) ;
+
   g_free(server) ;
 
   return result ;
@@ -476,6 +490,8 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   GList *next_seq ;
+
+  g_mutex_lock(server->mutex) ;
 
   /* We need to loop round finding each sequence and then fetching its dna... */
   next_seq = sequences_inout ;
@@ -509,6 +525,8 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
       g_free(seq_name) ;
       next_seq = g_list_next(next_seq) ;
     }
+
+  g_mutex_unlock(server->mutex) ;
 
   return result ;
 }
