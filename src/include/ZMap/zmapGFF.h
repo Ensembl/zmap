@@ -153,14 +153,16 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 /*
  * Output functions.
  */
-gboolean ZMapGFFFormatAttributeSetBasic(ZMapGFFFormatData ) ;
-gboolean ZMapGFFFormatAttributeSetTranscript(ZMapGFFFormatData ) ;
-gboolean ZMapGFFFormatAttributeSetAlignment(ZMapGFFFormatData ) ;
-gboolean ZMapGFFFormatAttributeSetText(ZMapGFFFormatData ) ;
-gboolean ZMapGFFFormatAttributeUnsetAll(ZMapGFFFormatData) ;
-gboolean ZMapGFFOutputWriteLineToGIO(GIOChannel *gio_channel, char **err_msg_out, GString *line,
-  gboolean truncate_after_write) ;
-gboolean zMapGFFFormatGap2GFF(GString *, GArray *, ZMapStrand, ZMapSequenceType) ;
+gboolean zMapGFFWriteFeatureText(ZMapFeature, GString*) ;
+gboolean zMapGFFWriteFeatureTranscript(ZMapFeature , GString *) ;
+gboolean zMapGFFWriteFeatureBasic(ZMapFeature , GString *) ;
+gboolean zMapGFFWriteFeatureAlignment(ZMapFeature , GString *, const char *) ;
+gboolean zMapGFFFormatAttributeSetBasic(ZMapGFFFormatData ) ;
+gboolean zMapGFFFormatAttributeSetTranscript(ZMapGFFFormatData ) ;
+gboolean zMapGFFFormatAttributeSetAlignment(ZMapGFFFormatData ) ;
+gboolean zMapGFFFormatAttributeSetText(ZMapGFFFormatData ) ;
+gboolean zMapGFFFormatAttributeUnsetAll(ZMapGFFFormatData) ;
+gboolean zMapGFFOutputWriteLineToGIO(GIOChannel *gio_channel, char **err_msg_out, GString *line, gboolean truncate_after_write) ;
 gboolean zMapGFFFormatAppendAttribute(GString *, GString *, gboolean, gboolean) ;
 char zMapGFFFormatStrand2Char(ZMapStrand strand) ;
 char zMapGFFFormatPhase2Char(ZMapPhase phase) ;
