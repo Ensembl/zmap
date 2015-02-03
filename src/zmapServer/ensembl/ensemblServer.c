@@ -42,7 +42,7 @@
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapGFF.h>
 #include <ZMap/zmapStyle.h>
-#include <ZMap/zmapURL.h>
+#include <ZMap/zmapUrl.h>
 #include <zmapServerPrototype.h>
 #include <ensemblServer_P.h>
 #include <EnsC.h>
