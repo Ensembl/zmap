@@ -195,7 +195,9 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
-  zMapReturnValIfFail(req_open && req_open->sequence_map, result) ;
+  zMapReturnValIfFail(server && req_open && req_open->sequence_map, result) ;
+
+  g_mutex_lock(server->mutex) ;
 
   server->sequence = g_strdup(req_open->sequence_map->sequence) ;
   server->zmap_start = req_open->zmap_start ;
@@ -204,20 +206,16 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, 
                  "Opening connection for '%s'", server->db_name) ;
 
-  g_mutex_lock(server->mutex) ;
   server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
-  g_mutex_unlock(server->mutex) ;
 
-  if (server->dba)
+  if (server->dba && server->dba->dbc)
     {
-      g_mutex_lock(server->mutex) ;
       server->slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
       server->seq_adaptor = DBAdaptor_getSequenceAdaptor(server->dba);
 
       server->slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
                                                  server->sequence, server->zmap_start, server->zmap_end, 
                                                  STRAND_UNDEF, NULL, 0);
-      g_mutex_unlock(server->mutex) ;
 
       if (server->slice_adaptor && server->seq_adaptor && server->slice)
         {
@@ -232,9 +230,11 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
     }
   else
     {
-      setErrMsg(server, g_strdup_printf("Failed to get db adaptor for %s", server->db_name)) ;
+      setErrMsg(server, g_strdup_printf("Failed to create database connection for %s", server->db_name)) ;
       ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
     }
+
+  g_mutex_unlock(server->mutex) ;
 
   return result ;
 }
