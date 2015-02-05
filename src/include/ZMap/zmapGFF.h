@@ -47,7 +47,7 @@ typedef struct ZMapGFFParserStruct_ *ZMapGFFParser ;
 /*
  * Used for formatting of output.
  */
-typedef struct _ZMapGFFFormatDataStruct *ZMapGFFFormatData ;
+typedef struct ZMapGFFFormatDataStruct_ *ZMapGFFFormatData ;
 
 
 /*
@@ -68,7 +68,24 @@ enum
   GFF_DEFAULT_VERSION = ZMAPGFF_VERSION_2
 } ;
 
-
+/*
+ * These are flags to set to ouput various of the attributes
+ * in GFFv3.
+ */
+typedef struct ZMapGFFAttributeFlagsStruct_
+{
+  unsigned short name        : 1 ;
+  unsigned short id          : 1 ;
+  unsigned short parent      : 1 ;
+  unsigned short note        : 1 ;
+  unsigned short locus       : 1 ;
+  unsigned short percent_id  : 1 ;
+  unsigned short url         : 1 ;
+  unsigned short gap         : 1 ;
+  unsigned short target      : 1 ;
+  unsigned short variation   : 1 ;
+  unsigned short sequence    : 1 ;
+} ZMapGFFAttributeFlagsStruct, *ZMapGFFAttributeFlags;
 
 /*
  * Feature clip mode, selects how individual feature coords should be clipped in relation
@@ -85,8 +102,9 @@ ZMapGFFClipMode ;
 
 
 
-/* Types/Struct for GFF file header info., currently this is all we are interested
- * in but this may expand as GFFv3 support is introduced. */
+/*
+ * Types/Struct for GFF file header info
+ */
 
 typedef enum
 {
@@ -153,15 +171,15 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 /*
  * Output functions.
  */
-gboolean zMapGFFWriteFeatureText(ZMapFeature, GString*) ;
-gboolean zMapGFFWriteFeatureTranscript(ZMapFeature , GString *) ;
-gboolean zMapGFFWriteFeatureBasic(ZMapFeature , GString *) ;
-gboolean zMapGFFWriteFeatureAlignment(ZMapFeature , GString *, const char *) ;
-gboolean zMapGFFFormatAttributeSetBasic(ZMapGFFFormatData ) ;
-gboolean zMapGFFFormatAttributeSetTranscript(ZMapGFFFormatData ) ;
-gboolean zMapGFFFormatAttributeSetAlignment(ZMapGFFFormatData ) ;
-gboolean zMapGFFFormatAttributeSetText(ZMapGFFFormatData ) ;
-gboolean zMapGFFFormatAttributeUnsetAll(ZMapGFFFormatData) ;
+gboolean zMapGFFWriteFeatureText(ZMapFeature, ZMapGFFAttributeFlags, GString*) ;
+gboolean zMapGFFWriteFeatureTranscript(ZMapFeature , ZMapGFFAttributeFlags, GString *) ;
+gboolean zMapGFFWriteFeatureBasic(ZMapFeature , ZMapGFFAttributeFlags, GString *) ;
+gboolean zMapGFFWriteFeatureAlignment(ZMapFeature , ZMapGFFAttributeFlags, GString *, const char *) ;
+gboolean zMapGFFFormatAttributeSetBasic(ZMapGFFAttributeFlags ) ;
+gboolean zMapGFFFormatAttributeSetTranscript(ZMapGFFAttributeFlags ) ;
+gboolean zMapGFFFormatAttributeSetAlignment(ZMapGFFAttributeFlags ) ;
+gboolean zMapGFFFormatAttributeSetText(ZMapGFFAttributeFlags ) ;
+gboolean zMapGFFFormatAttributeUnsetAll(ZMapGFFAttributeFlags) ;
 gboolean zMapGFFOutputWriteLineToGIO(GIOChannel *gio_channel, char **err_msg_out, GString *line, gboolean truncate_after_write) ;
 gboolean zMapGFFFormatAppendAttribute(GString *, GString *, gboolean, gboolean) ;
 char zMapGFFFormatStrand2Char(ZMapStrand strand) ;

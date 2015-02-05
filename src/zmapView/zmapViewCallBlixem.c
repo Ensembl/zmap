@@ -128,6 +128,8 @@ typedef struct ZMapBlixemDataStruct_
   char          *gff_file ;
   GIOChannel    *gff_channel ;
 
+  ZMapGFFAttributeFlags attribute_flags ;
+
   ZMapView     view;
 
   GList *features ;
@@ -546,6 +548,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
   blixem_data->features = features ;
   blixem_data->feature_set = feature_set ;
   blixem_data->block = block ;
+  zMapGFFFormatAttributeUnsetAll(blixem_data->attribute_flags) ;
 
   if (!(zMapFeatureBlockDNA(block, NULL, NULL, NULL)))
     {
@@ -573,6 +576,7 @@ static ZMapBlixemData createBlixemData()
   ZMapBlixemData result = NULL ;
 
   result = (ZMapBlixemData) g_new0(ZMapBlixemDataStruct, 1) ;
+  result->attribute_flags = (ZMapGFFAttributeFlags) g_new0(ZMapGFFAttributeFlagsStruct, 1) ;
 
   return result ;
 }
@@ -592,6 +596,8 @@ static void deleteBlixemData(ZMapBlixemData *p_blixem_data)
     g_free(blixem_data->gff_file);
   if (blixem_data->line)
     g_string_free(blixem_data->line, TRUE ) ;
+  if (blixem_data->attribute_flags)
+    g_free(blixem_data->attribute_flags) ;
   if (blixem_data->netid)
     g_free(blixem_data->netid);
   if (blixem_data->script)
@@ -1632,6 +1638,7 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
 {
   if (!feature || !blixem_data )
     return ;
+  //ZMapGFFAttributeFlagsStruct attribute_flags ;
 
   /* There is no way to interrupt g_hash_table_foreach() so instead if errorMsg is set
    * then it means there was an error in processing so we don't process any
@@ -1675,17 +1682,20 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
                           ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
                           seq_str = sequence->sequence ;
                         }
-                      status = zMapGFFWriteFeatureAlignment(feature, blixem_data->line, seq_str) ;
+                      status = zMapGFFFormatAttributeSetAlignment(blixem_data->attribute_flags)
+                            && zMapGFFWriteFeatureAlignment(feature, blixem_data->attribute_flags, blixem_data->line, seq_str) ;
                     }
                 }
             }
           else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
             {
-              status = zMapGFFWriteFeatureTranscript(feature, blixem_data->line) ;
+              status = zMapGFFFormatAttributeSetTranscript(blixem_data->attribute_flags)
+                    && zMapGFFWriteFeatureTranscript(feature, blixem_data->attribute_flags, blixem_data->line) ;
             }
           else if (feature->mode == ZMAPSTYLE_MODE_BASIC)
             {
-              status = zMapGFFWriteFeatureBasic(feature, blixem_data->line) ;
+              status = zMapGFFFormatAttributeSetBasic(blixem_data->attribute_flags)
+                    && zMapGFFWriteFeatureBasic(feature, blixem_data->attribute_flags, blixem_data->line) ;
             }
 
           if (status)
