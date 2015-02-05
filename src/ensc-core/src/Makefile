@@ -39,7 +39,7 @@ ZLIBDIR=../../samtools_parallel
 
 # *edgrif* -Ofast is not recognised...
 #
-CFLAGS =  -g -O0 -Wno-format-security -IDataModel -IDataAdaptors -IUtil -IDataModel/Mapper -IDataModel/Basic -ICompara/DataAdaptors -ICompara/DataModel -IOBDA $(MYSQLCFLAGS) $(LIBCONFIGCFLAGS)
+CFLAGS = -Wall -Wno-format-security -IDataModel -IDataAdaptors -IUtil -IDataModel/Mapper -IDataModel/Basic -ICompara/DataAdaptors -ICompara/DataModel -IOBDA $(MYSQLCFLAGS) $(LIBCONFIGCFLAGS) -g -O0
 #CFLAGS =  -Ofast -fprofile-arcs -ftest-coverage -Wno-format-security -IDataModel -IDataAdaptors -IUtil -IDataModel/Mapper -IDataModel/Basic -ICompara/DataAdaptors -ICompara/DataModel -IOBDA $(MYSQLCFLAGS)
 #CFLAGS =  -Ofast -fbranch-probabilities -Wno-format-security -IDataModel -IDataAdaptors -IUtil -IDataModel/Mapper -IDataModel/Basic -ICompara/DataAdaptors -ICompara/DataModel -IOBDA $(MYSQLCFLAGS)
 
