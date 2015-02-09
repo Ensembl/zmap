@@ -167,12 +167,6 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 static int cigarGetLength(char **cigar_str) ;
 #endif
 
-//static gboolean alignStrCanonical2GFFv3Gap(char ** align_str, AlignStrCanonical canon) ;
-//static gboolean alignStrCanonical2ExonerateCigar(char ** align_str, AlignStrCanonical canon) ;
-//static gboolean alignStrCanonical2EnsemblCigar(char ** align_str, AlignStrCanonical canon) ;
-//static gboolean alignStrCanonical2BamCigar(char ** align_str, AlignStrCanonical canon) ;
-//static gboolean alignStrCanonical2ExonerateVulgar(char ** align_str, AlignStrCanonical canon) ;
-
 static gboolean alignStrCanonicalSubstituteBamCigar(AlignStrCanonical canon) ;
 static gboolean alignStrCanonicalSubstituteEnsemblCigar(AlignStrCanonical canon) ;
 static gboolean alignStrCanonicalSubstituteExonerateCigar(AlignStrCanonical canon) ;
@@ -425,7 +419,7 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
 /* Do any of boundaries match the start/end of the alignment or any of the
  * gapped blocks (if there are any) within the alignment.Return a list of ZMapSpanStruct with those
  * that do.
- * 
+ *
  * Note in the code below that we can avoid unnecessary comparisons because
  * both boundaries and the exons in the transcript are sorted into ascending
  * sequence position.
@@ -477,7 +471,7 @@ GList *zmapFeatureAlignmentHasMatchingBoundaries(ZMapFeature feature, GList *bou
                   ZMapAlignBlock block ;
 
                   block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i)) ;
-              
+
                   if ((curr_boundary->x1) && block->t2 < curr_boundary->x1)
                     {
                       /* Block is before current splice. */
@@ -499,7 +493,7 @@ GList *zmapFeatureAlignmentHasMatchingBoundaries(ZMapFeature feature, GList *bou
                           ZMapSpan match_boundary ;
 
                           match_boundary = g_new0(ZMapSpanStruct, 1) ;
-              
+
                           if (match_boundary_start)
                             match_boundary->x1 = match_boundary_start ;
                           if (match_boundary_end)
