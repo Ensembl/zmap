@@ -35,19 +35,9 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapControl.h>
 #include <ZMap/zmapControlImportFile.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapXRemote.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-#include <zmapNavigator_P.h>
+#include <zmapNavigator_P.h>                                /* WHY is this here ?? */
 
 
-
-/* Windows are 90% of screen height by default...but normally we automatically set window to fill screen taking
- * into account window manager tool bars etc. */
-#define ZMAPWINDOW_VERT_PROP 0.90
-#define ZMAPWINDOW_HORIZ_PROP 0.90
 
 
 #define USE_REGION	0	/* scroll bar pane on left that does nothing */
