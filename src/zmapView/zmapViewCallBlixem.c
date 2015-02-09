@@ -1401,7 +1401,7 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
    */
   if (status)
     {
-      ZMapFeatureSet feature_set ;
+      ZMapFeatureSet feature_set = NULL ;
       GList *set_list = NULL ;
 
       blixem_data->errorMsg = NULL ;
@@ -1465,6 +1465,7 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
                                      TRUE, TRUE) ;
               g_string_append_printf(attribute, "dataType=short-read") ;
               zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
+              g_string_append_c(blixem_data->line, '\n') ;
               g_string_truncate(attribute, (gsize)0);
 
               zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
@@ -1663,6 +1664,8 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
         {
           if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
             zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
+
+          zMapGFFFormatAttributeUnsetAll(blixem_data->attribute_flags) ;
 
           if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
             {

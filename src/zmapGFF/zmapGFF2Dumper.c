@@ -433,6 +433,7 @@ gboolean zMapGFFFormatAttributeSetTranscript(ZMapGFFAttributeFlags attribute_fla
       attribute_flags->note        = TRUE ;
       attribute_flags->locus       = TRUE ;
       attribute_flags->url         = TRUE ;
+      attribute_flags->parent      = TRUE ;
     }
 
   return result ;
@@ -1024,7 +1025,7 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
    * Write a line for each exon and each CDS if present with
    * the ID of the previous line as Parent attribute.
    */
-  if (flags->id && flags->parent && escaped_string)
+  if (flags->parent && escaped_string)
     {
       g_string_printf(attribute, "Parent=%s", escaped_string) ;
       for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
@@ -1264,7 +1265,7 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
   /*
    * Variation string attribute.
    */
-  if (flags->id && feature->feature.basic.flags.variation_str)
+  if (flags->variation && feature->feature.basic.flags.variation_str)
     {
       g_string_printf(attribute, "variant_sequence=%s", feature->feature.basic.variation_str) ;
       zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
