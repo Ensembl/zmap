@@ -67,9 +67,14 @@ typedef struct ZMapGFFFormatDataStruct_
 
 } ZMapGFFFormatDataStruct ;
 
+/*
+ * A hack for sources that are input as '.',
+ * and also a list of characters that are to be
+ * unescaped upon output (in names and ids).
+ */
 static const char *anon_source = "anon_source",
     *anon_source_ab = ".",
-    *reserved_allowed = " ()" ;
+    *reserved_allowed = " ()+-:;@/" ;
 
 /* Functions to dump the header section of gff files */
 static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file,
@@ -1251,7 +1256,7 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
   if (flags->url && feature->url)
     {
       string_escaped = g_uri_escape_string(feature->url,
-                                           reserved_allowed, FALSE) ;
+                                           NULL, FALSE) ;
       if (string_escaped)
         {
           g_string_printf(attribute, "url=%s", string_escaped) ;
