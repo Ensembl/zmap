@@ -4313,6 +4313,9 @@ static void zoomToRubberBandArea(ZMapWindow window)
       foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
       foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
+      if (rooty1 <  window->min_coord || rooty2 > window->max_coord)
+        border = TRUE ;
+
 //printf("zoom to rubber band %f %f\n", rooty1, rooty2);
       zmapWindowZoomToWorldPosition(window, border, rootx1, rooty1, rootx2, rooty2) ;
     }
@@ -4586,7 +4589,7 @@ static void myWindowZoomTo(ZMapWindow window, double zoom_factor, double start, 
 
 
 void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
-   double rootx1, double rooty1, double rootx2, double rooty2)
+                                   double rootx1, double rooty1, double rootx2, double rooty2)
 {
   GtkAdjustment *v_adjuster ;
   /* size of bound area */
@@ -4704,11 +4707,10 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
           /* If we had a border we need to take this into account,
            * otherwise the feature just ends up at the top of the
            * window with 2 border widths at the bottom! */
-          if(border)
+          if (border)
             canvasy -= border_size;
 
-          if(beforey != canvasy)
-            foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
+          foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
         }
       else
         {                           /* This takes a lot of time.... */
@@ -4723,7 +4725,7 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
           foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
 
           /* Do the right thing with the border again. */
-          if(border)
+          if (border)
             canvasy -= border_size;
 
           /* No need to worry about border here as we're using the centre of the window. */
