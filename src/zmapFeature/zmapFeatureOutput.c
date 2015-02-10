@@ -704,6 +704,8 @@ GString *feature2Text(GString *feature_str, ZMapFeature feature)
   g_string_append_printf(result, "%sFeature mode: %s  Style mode: %s\n",
                          indent, feature_mode, style_mode) ;
 
+  g_string_append_printf(result, "%sStyle: \"%s\"\n", indent, zMapStyleGetName(*feature->style)) ;
+
   g_string_append_printf(result, "%sSO term: \"%s\"\n",
                          indent, g_quark_to_string(feature->SO_accession)) ;
 
