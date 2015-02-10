@@ -303,7 +303,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
                 }
               else
                 {
-                  temp_string = g_strdup(feature_desc->feature_name) ;
+                  temp_string = g_strdup(feature_desc->feature_set) ;
                 }
               text[8] = g_strdup(temp_string) ;
               if (temp_string)
@@ -329,7 +329,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
                 }
               else
                 {
-                  temp_string = g_strdup(feature_desc->feature_name) ;
+                  temp_string = g_strdup(feature_desc->feature_source) ;
                 }
               text[9] = g_strdup(temp_string) ;
               if (temp_string)
