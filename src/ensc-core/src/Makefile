@@ -497,6 +497,7 @@ clean	:
 	rm -f Programs/countsnps
 	rm -f Programs/indicate
 	find ./ -name "*.o" -exec rm {} \;
+	find ./ -name "*.dSYM" -exec rm {} \;
 	find ./Tests ! -name "*.c" ! -name "*.h" -type f -perm -0700 -exec rm {} \;
 
 #DO NOT REMOVE THIS LINE OR ADD ANYTHING AFTER IT - ADDMAKE DEPENDS ON IT FOR MAKING DEPENDENCIES
