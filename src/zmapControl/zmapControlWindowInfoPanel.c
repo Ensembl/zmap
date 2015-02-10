@@ -120,7 +120,7 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap, ZMapInfoPanelLabels labels)
  */
 void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeatureDesc feature_desc)
 {
-  static const int text_length_max = 30 ;
+  static const int text_length_max = 20 ;
   static const char *format_name_max = "%s %s" ;
   GtkWidget *label[INFO_PANEL_LABELS] = {NULL} ;
   char *text[INFO_PANEL_LABELS] = {NULL} ;
@@ -170,7 +170,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
       else
         {
           /*
-           * IName label; if it's longer than a certain number of characters then
+           * Name label; if it's longer than a certain number of characters then
            * what goes to the display should be truncated.
            */
           if (feature_desc->feature_name)
@@ -180,7 +180,6 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
                 {
                   temp_string_part = g_strndup(feature_desc->feature_name, text_length_max) ;
                   temp_string = g_strdup_printf(format_name_max, temp_string_part, "[...]") ;
-
                 }
               else
                 {
@@ -195,11 +194,20 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
                                         (feature_desc->feature_total_length ? feature_desc->feature_total_length : ""),
                                         (feature_desc->feature_total_length ? ")" : "")) ;
               if (temp_string)
-                g_free(temp_string) ;
+                {
+                  g_free(temp_string) ;
+                  temp_string = NULL ;
+                }
               if (temp_string_part)
-                g_free(temp_string_part) ;
+                {
+                  g_free(temp_string_part) ;
+                  temp_string_part = NULL ;
+                }
             }
 
+          /*
+           * Strand label
+           */
           if (feature_desc->feature_strand)
             {
               if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->feature_query_strand)
@@ -208,6 +216,9 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
                 text[1] = g_strdup_printf("%s", feature_desc->feature_strand) ;
             }
 
+          /*
+           * Feature start and end data.
+           */
           if (feature_desc->feature_start)
             {
               if (!(feature_desc->feature_query_start))
@@ -230,6 +241,9 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
                                           (feature_desc->feature_query_length ? ")" : "")) ;
             }
 
+          /*
+           * Subpart start and end data
+           */
           if (feature_desc->sub_feature_start)
             text[3] = g_strdup_printf("%s %s: %s, %s%s%s%s%s%s%s%s",
                                       feature_desc->sub_feature_term,
@@ -249,7 +263,10 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
             text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
 
           /* Frame */
-          text[4] = g_strdup(feature_desc->feature_frame) ;
+          if (feature_desc->feature_frame)
+            {
+              text[4] = g_strdup(feature_desc->feature_frame) ;
+            }
 
           if(feature_desc->feature_population)
             {
@@ -269,14 +286,65 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
               text[6] = g_strdup_printf("%s", feature_desc->feature_score) ;
             }
 
-           /* Style type */
-          text[7] = g_strdup(feature_desc->feature_term) ;
+          /* Style type */
+          if (feature_desc->feature_term)
+            {
+              text[7] = g_strdup(feature_desc->feature_term) ;
+            }
 
           /* Feature set */
-          text[8] = g_strdup(feature_desc->feature_set) ;
+          feature_desc->feature_set = "adsfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+          if (feature_desc->feature_set)
+            {
+              name_length = strlen(feature_desc->feature_set) ;
+              if (name_length > text_length_max)
+                {
+                  temp_string_part = g_strndup(feature_desc->feature_set, text_length_max) ;
+                  temp_string = g_strdup_printf(format_name_max, temp_string_part, "[...]") ;
+                }
+              else
+                {
+                  temp_string = g_strdup(feature_desc->feature_name) ;
+                }
+              text[8] = g_strdup(temp_string) ;
+              if (temp_string)
+                {
+                  g_free(temp_string) ;
+                  temp_string = NULL ;
+                }
+              if (temp_string_part)
+                {
+                  g_free(temp_string_part) ;
+                  temp_string_part = NULL ;
+                }
+            }
 
           /* Source */
-          text[9] = g_strdup(feature_desc->feature_source) ;
+          feature_desc->feature_source = "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss";
+          if (feature_desc->feature_source)
+            {
+              name_length = strlen(feature_desc->feature_source) ;
+              if (name_length > text_length_max)
+                {
+                  temp_string_part = g_strndup(feature_desc->feature_source, text_length_max) ;
+                  temp_string = g_strdup_printf(format_name_max, temp_string_part, "[...]") ;
+                }
+              else
+                {
+                  temp_string = g_strdup(feature_desc->feature_name) ;
+                }
+              text[9] = g_strdup(temp_string) ;
+              if (temp_string)
+                {
+                  g_free(temp_string) ;
+                  temp_string = NULL ;
+                }
+              if (temp_string_part)
+                {
+                  g_free(temp_string_part) ;
+                  temp_string_part = NULL ;
+                }
+            }
 
           /* Now to the tooltips... */
 
@@ -333,37 +401,36 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
                 }
             }
 
+          /*
+           * Text for the tooltips themselves.
+           */
           tooltip[0] = g_string_free(desc_str, FALSE) ;
 
+          if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+            tooltip[1] = g_strdup("Strand match is aligned to / Strand match is aligned from") ;
+          else
+            tooltip[1] = g_strdup("Strand feature is located on") ;
 
           if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
-            tooltip[1] = "Strand match is aligned to / Strand match is aligned from" ;
+            tooltip[2] = g_strdup("sequence start, end  <-  match start, end (match length)") ;
           else
-            tooltip[1] = "Strand feature is located on" ;
-
-          if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
-            tooltip[2] = "sequence start, end  <-  match start, end (match length)" ;
-          else
-            tooltip[2] = "Feature start, end (length)" ;
+            tooltip[2] = g_strdup("Feature start, end (length)") ;
 
           if (feature_desc->sub_feature_term)
             tooltip[3] = g_strdup("sub_feature_type  index:   start, end  (length)") ;
 
-          tooltip[4] = "Frame" ;
+          tooltip[4] = g_strdup("Frame") ;
 
-          tooltip[5] = "Number of clustered features" ;
+          tooltip[5] = g_strdup("Number of clustered features") ;
 
           if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->feature_percent_id)
             tooltip[6] = g_strdup("Score / percent ID") ;
           else if (feature_desc->feature_score)
             tooltip[6] = g_strdup("Score") ;
 
-          char * feature_acc_id = zMapSOIDDataName2SOAcc(feature_desc->feature_term) ;
-          tooltip[7] = feature_acc_id ? g_strdup_printf("%s%s", "Feature Type: ", feature_acc_id) : "Feature Type";
-          if (feature_acc_id)
-            g_free(feature_acc_id) ;
-          tooltip[8] = "Feature Set" ;
-          tooltip[9] = "Feature Source" ;
+          tooltip[7] = g_strdup("Feature Term") ;
+          tooltip[8] = g_strdup_printf("%s: '%s'", "Feature Set", feature_desc->feature_set) ;
+          tooltip[9] = g_strdup_printf("%s: '%s'", "Feature Source", feature_desc->feature_source) ;
         }
     }
 
@@ -380,20 +447,9 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
           gtk_label_set_text(GTK_LABEL(label[i]), text[i]) ;
 
           if (tooltip[i])
-            gtk_tooltips_set_tip(zmap->feature_tooltips, gtk_widget_get_parent(label[i]),
+            gtk_tooltips_set_tip(zmap->feature_tooltips,
+                                 gtk_widget_get_parent(label[i]),
                                  tooltip[i], "") ;
-          switch(i)
-            {
-            case 0:
-            case 3:
-              /* some tooltips need freeing! */
-              if (tooltip[i])
-                g_free(tooltip[i]);
-              break;
-            default:
-              /* no freeing */
-              break;
-            }
         }
       else
         {
@@ -413,8 +469,6 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
     gtk_tooltips_enable(zmap->feature_tooltips) ;
   else
     gtk_tooltips_disable(zmap->feature_tooltips) ;
-
-
 
   return ;
 }
