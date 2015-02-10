@@ -2492,7 +2492,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
        DEVELOPER_FEATUREITEM_FEATURE, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show FeaturesetItem, FeatureItem and Feature",
        DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE, developerMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Canvas", DEVELOPER_PRINT_STYLE, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Style", DEVELOPER_PRINT_STYLE, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Canvas", DEVELOPER_PRINT_CANVAS, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Window Stats", DEVELOPER_STATS, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
@@ -2502,14 +2502,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
 
   return menu ;
 }
-
-#if 0
-static void show_all_styles_cb(ZMapFeatureTypeStyle style, gpointer unused)
-{
-  zmapWindowShowStyle(style) ;
-  return ;
-}
-#endif
 
 static void developerMenuCB(int menu_item_id, gpointer callback_data)
 {
