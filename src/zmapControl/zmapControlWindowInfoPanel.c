@@ -427,8 +427,8 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
             tooltip[6] = g_strdup("Score") ;
 
           tooltip[7] = g_strdup("Feature Term") ;
-          tooltip[8] = g_strdup_printf("%s: '%s'", "Feature Set = ", feature_desc->feature_set) ;
-          tooltip[9] = g_strdup_printf("%s: '%s'", "Feature Source = ", feature_desc->feature_source) ;
+          tooltip[8] = g_strdup_printf("Feature Set =  '%s'", feature_desc->feature_set) ;
+          tooltip[9] = g_strdup_printf("Feature Source = '%s'",  feature_desc->feature_source) ;
         }
     }
 
