@@ -111,8 +111,8 @@ static GtkItemFactoryEntry menu_items_G[] = {
  *
  */
 void zmapWindowDNAListCreate(ZMapWindow zmap_window, GList *dna_list,
-     char *ref_seq_name, char *match_sequence, char *match_details,
-     ZMapFeatureBlock block, ZMapFeatureSet match_feature_set)
+                             char *ref_seq_name, char *match_sequence, char *match_details,
+                             ZMapFeatureBlock block, ZMapFeatureSet match_feature_set)
 {
   DNAWindowListData window_list ;
   GString *title_str ;
@@ -146,10 +146,10 @@ void zmapWindowDNAListCreate(ZMapWindow zmap_window, GList *dna_list,
              NULL);
 
   g_object_set(G_OBJECT(window_list->dna_list),
-             "selection-mode", GTK_SELECTION_SINGLE,
-             "selection-func", selectionFuncCB,
-             "selection-data", window_list,
-             NULL);
+               "selection-mode", GTK_SELECTION_MULTIPLE,
+               "selection-func", selectionFuncCB,
+               "selection-data", window_list,
+               NULL);
 
   zMapWindowDNAListAddMatches(window_list->dna_list, dna_list);
 
@@ -209,7 +209,7 @@ static void drawListWindow(DNAWindowListData window_list, GtkWidget *tree_view)
   scrolled_window = gtk_scrolled_window_new(NULL, NULL);
 
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-                         GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+                                 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
   gtk_container_add(GTK_CONTAINER(sub_frame), GTK_WIDGET(scrolled_window));
 
