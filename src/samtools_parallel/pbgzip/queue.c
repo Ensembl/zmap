@@ -75,7 +75,7 @@ queue_init(int32_t capacity, int8_t ordered, int32_t num_adders, int32_t num_get
   }
 
   
-  fprintf(stderr,"Created queue %d with %d getters and %d adders\n",q,q->num_getters,(int)q->num_adders);
+  fprintf(stderr,"Created queue %d with %d getters and %d adders\n",q,q->num_getters,q->num_adders);
   return q;
 }
 
