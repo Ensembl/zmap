@@ -2056,6 +2056,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
         g_free(select.feature_desc.feature_set_description) ;
       g_free(select.feature_desc.feature_start) ;
       g_free(select.feature_desc.feature_end) ;
+      g_free(select.feature_desc.feature_term) ;
       g_free(select.feature_desc.feature_query_start) ;
       g_free(select.feature_desc.feature_query_end) ;
       g_free(select.feature_desc.feature_query_length) ;
@@ -6756,17 +6757,17 @@ static void canvas_unset_busy_cursor(ZMapWindow window, const char *file, const 
 
 
 /* Cursor setting....we should also really block interaction with the canvas....
- * 
+ *
  * Use zmapWindowBusy() macro to call this function in all internal code.
  *
  * Use zMapWindowSetCursor() for all external calls to set cursor.
- * 
- * Note that if cursor is NULL then this "unsets" the existing cursor. For 
+ *
+ * Note that if cursor is NULL then this "unsets" the existing cursor. For
  * internal cursors we reset to whatever the windows normal cursor was
  * (see zmapWindowBusy() macro stuff).
- * 
- * 
- * 
+ *
+ *
+ *
  */
 static void canvasSetCursor(ZMapWindow window,
                             gboolean external_cursor, GdkCursor *cursor,
@@ -7278,11 +7279,11 @@ void zMapWindowUpdateColumnBackground(ZMapWindow window,
 
 /*
  * STUFF LEFT TO DO.....
- * 
+ *
  * DEFINE HIGHLIGHT_DATA STRUCT
  * CHANGE FUNC PROTO FOR GETEVIDENCE...AND MAKE IT CALL BACK TO THIS FUNC SUPPLYING
  * THE EVIDENCE LIST AND WE SHOULD BE DONE.....
- * 
+ *
  * BUT MAY NEED A SPECIAL CALLBACK IN FEATURESHOW TO HANDLE THIS CALLBACK
  * SEPARATELY FROM THE EXISTING FEATURESHOW CALLBACK......
 */
