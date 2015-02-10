@@ -129,7 +129,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
   int i = 0, name_length = 0 ;
   GString *desc_str = NULL ;
 
-  zMapReturnIfFail(labels) ;
+  zMapReturnIfFail(zmap && labels) ;
 
   label[0] = labels->feature_name ;
   label[1] = labels->feature_strand ;
@@ -293,7 +293,6 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
             }
 
           /* Feature set */
-          feature_desc->feature_set = "adsfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
           if (feature_desc->feature_set)
             {
               name_length = strlen(feature_desc->feature_set) ;
@@ -320,7 +319,6 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
             }
 
           /* Source */
-          feature_desc->feature_source = "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss";
           if (feature_desc->feature_source)
             {
               name_length = strlen(feature_desc->feature_source) ;
@@ -429,8 +427,8 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
             tooltip[6] = g_strdup("Score") ;
 
           tooltip[7] = g_strdup("Feature Term") ;
-          tooltip[8] = g_strdup_printf("%s: '%s'", "Feature Set", feature_desc->feature_set) ;
-          tooltip[9] = g_strdup_printf("%s: '%s'", "Feature Source", feature_desc->feature_source) ;
+          tooltip[8] = g_strdup_printf("%s: '%s'", "Feature Set = ", feature_desc->feature_set) ;
+          tooltip[9] = g_strdup_printf("%s: '%s'", "Feature Source = ", feature_desc->feature_source) ;
         }
     }
 
@@ -462,6 +460,8 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
     {
       if (text[i])
         g_free(text[i]) ;
+      if (tooltip[i])
+        g_free(tooltip[i]) ;
     }
 
   /* I don't know if we need to do this each time....or if it does any harm.... */
