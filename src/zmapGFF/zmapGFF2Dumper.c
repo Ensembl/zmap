@@ -58,6 +58,7 @@ typedef struct ZMapGFFFormatDataStruct_
 {
   const char *sequence;                 /* The sequence name. e.g. 16.12345-23456 */
   int start, end ;
+  ZMapGFFAttributeFlags attribute_flags ;
 
   struct
     {
@@ -85,6 +86,9 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark key, gpoint
 /* ZMapFeatureDumpFeatureFunc to dump gff. writes lines into gstring buffer... */
 static gboolean dump_gff_cb(ZMapFeatureAny feature_any, GHashTable *styles,
   GString *gff_string,  GError **error, gpointer user_data);
+
+static void deleteGFFFormatData(ZMapGFFFormatData *) ;
+static ZMapGFFFormatData createGFFFormatData() ;
 
 /*
  * Public interface function to set the version of GFF to output.
@@ -130,17 +134,23 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
                            ZMapSpan region_span, GIOChannel *file, GError **error_out)
 {
   gboolean result = FALSE ;
-  ZMapGFFFormatDataStruct format_data = {NULL};
+  ZMapGFFFormatData format_data = NULL ;
 
   zMapReturnValIfFail(   file && dump_set
                       && (dump_set->struct_type != ZMAPFEATURE_STRUCT_INVALID)
                       && error_out,
                                   result) ;
 
-  format_data.sequence = NULL ;
-  format_data.flags.cont   = TRUE;
-  format_data.flags.status = TRUE;
-  result = dump_full_header(dump_set, file, &format_data, error_out) ;
+  if ((format_data = createGFFFormatData()))
+    result = TRUE ;
+
+  if (result)
+    {
+      format_data->sequence = NULL ;
+      format_data->flags.cont   = TRUE;
+      format_data->flags.status = TRUE;
+      result = dump_full_header(dump_set, file, format_data, error_out) ;
+    }
 
   if (result)
     {
@@ -149,11 +159,14 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
        * Subset, there's a chance it wouldn't get set at all */
       if(region_span)
         result = zMapFeatureContextRangeDumpToFile((ZMapFeatureAny)dump_set, styles, region_span,
-                   dump_gff_cb, &format_data, file, error_out) ;
+                   dump_gff_cb, format_data, file, error_out) ;
       else
         result = zMapFeatureContextDumpToFile((ZMapFeatureAny)dump_set, styles,
-                   dump_gff_cb, &format_data, file, error_out) ;
+                   dump_gff_cb, format_data, file, error_out) ;
     }
+
+  if (format_data)
+    deleteGFFFormatData(&format_data) ;
 
   return result ;
 }
@@ -170,22 +183,31 @@ gboolean zMapGFFDumpList(GList *dump_list,
 {
   gboolean result = FALSE ;
   ZMapFeatureAny feature_any = NULL ;
-  ZMapGFFFormatDataStruct format_data = {NULL};
+  ZMapGFFFormatData format_data = NULL ;
 
   zMapReturnValIfFail(dump_list && dump_list->data && error_out, result) ;
   feature_any  = (ZMapFeatureAny)(dump_list->data);
   zMapReturnValIfFail(feature_any->struct_type != ZMAPFEATURE_STRUCT_INVALID, result ) ;
 
-  format_data.sequence = sequence;
-  format_data.flags.cont    = TRUE;
-  format_data.flags.status = TRUE;
-  result = dump_full_header(feature_any, file, &format_data, error_out) ;
+  if ((format_data = createGFFFormatData()))
+    result = TRUE ;
+
+  if (result)
+    {
+      format_data->sequence = sequence;
+      format_data->flags.cont    = TRUE;
+      format_data->flags.status = TRUE;
+      result = dump_full_header(feature_any, file, format_data, error_out) ;
+    }
 
   if (result)
     {
       result = zMapFeatureListDumpToFileOrBuffer(dump_list, styles, dump_gff_cb,
-                                                 &format_data, file, text_out, error_out) ;
+                                                 format_data, file, text_out, error_out) ;
     }
+
+  if (format_data)
+    deleteGFFFormatData(&format_data) ;
 
   return result ;
 }
@@ -299,10 +321,8 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
   gboolean result = TRUE;
   ZMapFeatureSet featureset = NULL ;
   ZMapFeature feature = NULL ;
-  ZMapGFFAttributeFlagsStruct attribute_flags ;
 
   zMapReturnValIfFail(   feature_any
-                      && feature_any->parent
                       && format_data, result ) ;
 
   switch(feature_any->struct_type)
@@ -340,32 +360,32 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
             {
               case ZMAPSTYLE_MODE_BASIC:
                 {
-                  result = zMapGFFFormatAttributeSetBasic(&attribute_flags)
-                        && zMapGFFWriteFeatureBasic(feature, &attribute_flags, line) ;
+                  result = zMapGFFFormatAttributeSetBasic(format_data->attribute_flags)
+                        && zMapGFFWriteFeatureBasic(feature, format_data->attribute_flags, line) ;
                 }
                 break;
               case ZMAPSTYLE_MODE_TRANSCRIPT:
                 {
-                  result = zMapGFFFormatAttributeSetTranscript(&attribute_flags)
-                        && zMapGFFWriteFeatureTranscript(feature, &attribute_flags, line) ;
+                  result = zMapGFFFormatAttributeSetTranscript(format_data->attribute_flags)
+                        && zMapGFFWriteFeatureTranscript(feature, format_data->attribute_flags, line) ;
                 }
                 break;
               case ZMAPSTYLE_MODE_ALIGNMENT:
                 {
-                  result = zMapGFFFormatAttributeSetAlignment(&attribute_flags)
-                        && zMapGFFWriteFeatureAlignment(feature, &attribute_flags, line, NULL) ;
+                  result = zMapGFFFormatAttributeSetAlignment(format_data->attribute_flags)
+                        && zMapGFFWriteFeatureAlignment(feature, format_data->attribute_flags, line, NULL) ;
                 }
                 break;
               case ZMAPSTYLE_MODE_TEXT:
                 {
-                  result = zMapGFFFormatAttributeSetText(&attribute_flags)
-                        && zMapGFFWriteFeatureText(feature, &attribute_flags, line ) ;
+                  result = zMapGFFFormatAttributeSetText(format_data->attribute_flags)
+                        && zMapGFFWriteFeatureText(feature, format_data->attribute_flags, line ) ;
                 }
                 break;
               case ZMAPSTYLE_MODE_GRAPH:
                 {
-                  result = zMapGFFFormatAttributeSetGraph(&attribute_flags)
-                        && zMapGFFWriteFeatureGraph(feature, &attribute_flags, line ) ;
+                  result = zMapGFFFormatAttributeSetGraph(format_data->attribute_flags)
+                        && zMapGFFWriteFeatureGraph(feature, format_data->attribute_flags, line ) ;
                 }
                 break;
               default:
@@ -1455,3 +1475,39 @@ gboolean zMapGFFWriteFeatureGraph(ZMapFeature feature, ZMapGFFAttributeFlags fla
 
 
 
+/*
+ * Create an object of ZMapGFFFormatData type.
+ */
+static ZMapGFFFormatData createGFFFormatData()
+{
+  ZMapGFFFormatData result = NULL ;
+
+  result = (ZMapGFFFormatData) g_new0(ZMapGFFFormatDataStruct, 1) ;
+  if (result)
+    {
+      result->attribute_flags = (ZMapGFFAttributeFlags) g_new0(ZMapGFFAttributeFlagsStruct, 1) ;
+    }
+
+  return result ;
+}
+
+/*
+ * Delete an object of ZMapGFFFormatData type.
+ */
+static void deleteGFFFormatData(ZMapGFFFormatData *p_format_data)
+{
+  if (!p_format_data || !*p_format_data)
+    return ;
+  ZMapGFFFormatData format_data = *p_format_data ;
+
+  if (format_data->attribute_flags)
+    {
+      g_free(format_data->attribute_flags) ;
+    }
+
+  memset(format_data, 0, sizeof(ZMapGFFFormatDataStruct)) ;
+  g_free(format_data) ;
+  *p_format_data = NULL ;
+
+  return ;
+}
