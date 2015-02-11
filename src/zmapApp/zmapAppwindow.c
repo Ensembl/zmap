@@ -215,11 +215,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
 
-  /* THIS ORDER NEEDS CHANGING...CMDLINE STUFF FIRST THEN THE REST... */
-
-  consoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, "ZMap starting.") ;
-
-
   /* Set up stack tracing for when we get killed by a signal. */
   setupSignalHandlers() ;
 
@@ -232,10 +227,13 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
    * there are bad command line args. */
   zMapCmdLineArgsCreate(&argc, argv) ;
 
-
   /* If user specified version flag, show zmap version and exit with zero return code. */
   checkForCmdLineVersionArg(argc, argv) ;
 
+
+  /* Don't output messages before we've checked the version flag which should be the only
+   * output when user asks for version. */
+  consoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, "ZMap starting.") ;
 
   /* The main control block. */
   app_context = createAppContext() ;
