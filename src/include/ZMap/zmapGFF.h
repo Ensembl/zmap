@@ -74,17 +74,17 @@ enum
  */
 typedef struct ZMapGFFAttributeFlagsStruct_
 {
-  unsigned short name        : 1 ;
-  unsigned short id          : 1 ;
-  unsigned short parent      : 1 ;
-  unsigned short note        : 1 ;
-  unsigned short locus       : 1 ;
-  unsigned short percent_id  : 1 ;
-  unsigned short url         : 1 ;
-  unsigned short gap         : 1 ;
-  unsigned short target      : 1 ;
-  unsigned short variation   : 1 ;
-  unsigned short sequence    : 1 ;
+  unsigned int name        : 1 ;
+  unsigned int id          : 1 ;
+  unsigned int parent      : 1 ;
+  unsigned int note        : 1 ;
+  unsigned int locus       : 1 ;
+  unsigned int percent_id  : 1 ;
+  unsigned int url         : 1 ;
+  unsigned int gap         : 1 ;
+  unsigned int target      : 1 ;
+  unsigned int variation   : 1 ;
+  unsigned int sequence    : 1 ;
 } ZMapGFFAttributeFlagsStruct, *ZMapGFFAttributeFlags;
 
 /*

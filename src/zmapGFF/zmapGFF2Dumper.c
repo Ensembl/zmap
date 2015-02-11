@@ -62,8 +62,8 @@ typedef struct ZMapGFFFormatDataStruct_
 
   struct
     {
-      unsigned char status : 1 ;
-      unsigned char cont   : 1 ;
+      unsigned int status : 1 ;
+      unsigned int cont   : 1 ;
     } flags ;
 
 } ZMapGFFFormatDataStruct ;
