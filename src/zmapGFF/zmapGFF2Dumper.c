@@ -1502,6 +1502,7 @@ static void deleteGFFFormatData(ZMapGFFFormatData *p_format_data)
 
   if (format_data->attribute_flags)
     {
+      memset(format_data->attribute_flags, 0, sizeof(ZMapGFFAttributeFlagsStruct)) ;
       g_free(format_data->attribute_flags) ;
     }
 
