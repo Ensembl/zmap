@@ -171,10 +171,12 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 /*
  * Output functions.
  */
+gboolean zMapGFFWriteFeatureGraph(ZMapFeature, ZMapGFFAttributeFlags, GString*) ;
 gboolean zMapGFFWriteFeatureText(ZMapFeature, ZMapGFFAttributeFlags, GString*) ;
 gboolean zMapGFFWriteFeatureTranscript(ZMapFeature , ZMapGFFAttributeFlags, GString *) ;
 gboolean zMapGFFWriteFeatureBasic(ZMapFeature , ZMapGFFAttributeFlags, GString *) ;
 gboolean zMapGFFWriteFeatureAlignment(ZMapFeature , ZMapGFFAttributeFlags, GString *, const char *) ;
+gboolean zMapGFFFormatAttributeSetGraph(ZMapGFFAttributeFlags ) ;
 gboolean zMapGFFFormatAttributeSetBasic(ZMapGFFAttributeFlags ) ;
 gboolean zMapGFFFormatAttributeSetTranscript(ZMapGFFAttributeFlags ) ;
 gboolean zMapGFFFormatAttributeSetAlignment(ZMapGFFAttributeFlags ) ;
