@@ -4,7 +4,8 @@
 CC = gcc
 
 MYSQLCFLAGS=${shell mysql_config --cflags}
-MYSQLLIBS=${shell mysql_config --libs}
+# use libs_r for thread safe version
+MYSQLLIBS=${shell mysql_config --libs_r} -lmysys -ldbug
 
 # *edgrif*NOTE SURE WHY WE NEED THE LIBCONFIG STUFF....
 #
