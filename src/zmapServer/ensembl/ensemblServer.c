@@ -306,8 +306,13 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 
       if (rsf)
         {
-          const char *feature_name = SimpleFeature_getDisplayLabel(rsf) ;
-          printf("rc name = %s, start = %ld end = %ld\n",feature_name, SimpleFeature_getStart(rsf),SimpleFeature_getEnd(rsf));
+          Analysis *analysis = SimpleFeature_getAnalysis(rsf) ;
+
+          printf("Label %s, Start %ld, End %ld, Score %f, Phase %hhd, EndPhase %hhd, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
+                 SimpleFeature_getDisplayLabel(rsf), SimpleFeature_getStart(rsf),SimpleFeature_getEnd(rsf),
+                 SimpleFeature_getScore(rsf), SimpleFeature_getPhase(rsf), SimpleFeature_getEndPhase(rsf),
+                 SimpleFeature_getStrand(rsf), SimpleFeature_getLength(rsf),
+                 analysis->gffSource, analysis->gffFeature, analysis->module);
         }
       else
         {
