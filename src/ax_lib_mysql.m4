@@ -81,7 +81,7 @@ AC_DEFUN([AX_LIB_MYSQL],
 
         if test "$MYSQL_CONFIG" != "no"; then
             MYSQL_CFLAGS="`$MYSQL_CONFIG --cflags`"
-            MYSQL_LDFLAGS="`$MYSQL_CONFIG --libs`"
+            MYSQL_LDFLAGS="`$MYSQL_CONFIG --libs_r`"
 
             MYSQL_VERSION=`$MYSQL_CONFIG --version`
 
