@@ -888,7 +888,9 @@ gboolean zMapGFFOutputWriteLineToGIO(GIOChannel *gio_channel,
   return status ;
 }
 
-
+/*
+ * Write out alignment feature and attributes.
+ */
 gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags flags,
                                       GString * line, const char *seq_str)
 {
@@ -1162,7 +1164,6 @@ gboolean zMapGFFWriteFeatureText(ZMapFeature feature, ZMapGFFAttributeFlags flag
   const char *sequence_name = NULL,
     *source_name = NULL,
     *type = NULL ;
-  char *string_escaped = NULL ;
   GString * attribute = NULL ;
 
   if (   !feature
@@ -1237,7 +1238,6 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
   const char *sequence_name = NULL,
     *source_name = NULL,
     *type = NULL ;
-  char *string_escaped = NULL ;
   GString *attribute = NULL ;
 
   if (   !feature
@@ -1338,7 +1338,6 @@ gboolean zMapGFFWriteFeatureGraph(ZMapFeature feature, ZMapGFFAttributeFlags fla
   const char *sequence_name = NULL,
     *source_name = NULL,
     *type = NULL ;
-  char *string_escaped = NULL ;
   GString *attribute = NULL ;
 
   if (   !feature
