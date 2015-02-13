@@ -60,13 +60,17 @@ typedef struct MainFrameStructName
 
   ZMapAppGetSequenceViewCB user_func ;
   gpointer user_data ;
+  ZMapAppClosedSequenceViewCB close_func ;
+  gpointer close_data ;
+
 } MainFrameStruct, *MainFrame ;
 
 
 
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
-    ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
+                            ZMapAppGetSequenceViewCB user_func, gpointer user_data,
+                            ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
+                            ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeButtonBox(MainFrame main_data) ;
 static void setSequenceEntries(MainFrame main_data) ;
@@ -88,14 +92,15 @@ static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 
 /* Display a dialog to get from the reader a sequence to be displayed with a start/end
  * and optionally a config file. */
-void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
+GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
+                                  ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
+                                  ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
 {
-  GtkWidget *toplevel, *container ;
+  GtkWidget *toplevel = NULL ;
+  GtkWidget *container ;
   gpointer seq_data = NULL ;
 
-  /* if (!user_func) 
-    return ; */
+
   zMapReturnIfFail(user_func) ; 
 
   toplevel = zMapGUIToplevelNew(NULL, "Please specify sequence to be viewed.") ;
@@ -103,26 +108,29 @@ void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_da
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
-  container = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map, display_sequence) ;
+  container = makePanel(toplevel, &seq_data,
+                        user_func, user_data,
+                        close_func, close_data,
+                        sequence_map, display_sequence) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
-     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
+                     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
 
   gtk_widget_show_all(toplevel) ;
 
-  return ;
+  return toplevel ;
 }
 
 
 /* As for zMapAppGetSequenceView() except that returns a GtkWidget that can be
  * incorporated into a window. */
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-      ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
+                                      ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
 {
   GtkWidget *container = NULL ;
 
-  container = makePanel(NULL, NULL, user_func, user_data, sequence_map, display_sequence) ;
+  container = makePanel(NULL, NULL, user_func, user_data, NULL, NULL, sequence_map, display_sequence) ;
 
   return container ;
 }
@@ -137,8 +145,9 @@ GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpoint
 
 /* Make the whole panel returning the top container of the panel. */
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
-    ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
+                            ZMapAppGetSequenceViewCB user_func, gpointer user_data,
+                            ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
+                            ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
 {
   GtkWidget *frame = NULL ;
   GtkWidget *vbox, *main_frame, *button_box ;
@@ -148,6 +157,8 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
 
   main_data->user_func = user_func ;
   main_data->user_data = user_data ;
+  main_data->close_func = close_func ;
+  main_data->close_data = close_data ;
   main_data->sequence_map = *sequence_map ;
   main_data->sequence_map.sequence = g_strdup(main_data->sequence_map.sequence) ;
   main_data->sequence_map.config_file = g_strdup(main_data->sequence_map.config_file) ;
@@ -259,15 +270,15 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 
   create_button = gtk_button_new_with_label("Create ZMap") ;
   gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
-     GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_data) ;
+                     GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_data) ;
   gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
 
 #ifndef __CYGWIN__
   /* N.B. we use the gtk "built-in" file chooser stuff. */
   main_data->chooser_widg = chooser_button = gtk_file_chooser_button_new("Choose A Config File",
-         GTK_FILE_CHOOSER_ACTION_OPEN) ;
+                                                                         GTK_FILE_CHOOSER_ACTION_OPEN) ;
   gtk_signal_connect(GTK_OBJECT(chooser_button), "file-set",
-     GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_data) ;
+                     GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_data) ;
   gtk_box_pack_start(GTK_BOX(button_box), chooser_button, FALSE, TRUE, 0) ;
   home_dir = (char *)g_get_home_dir() ;
   gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(chooser_button), home_dir) ;
@@ -282,7 +293,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
     {
       defaults_button = gtk_button_new_with_label("Set Defaults") ;
       gtk_signal_connect(GTK_OBJECT(defaults_button), "clicked",
-         GTK_SIGNAL_FUNC(defaultsCB), (gpointer)main_data) ;
+                         GTK_SIGNAL_FUNC(defaultsCB), (gpointer)main_data) ;
       gtk_box_pack_start(GTK_BOX(button_box), defaults_button, FALSE, TRUE, 0) ;
     }
 
@@ -292,7 +303,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
     {
       close_button = gtk_button_new_with_label("Close") ;
       gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
-         GTK_SIGNAL_FUNC(closeCB), (gpointer)main_data) ;
+                         GTK_SIGNAL_FUNC(closeCB), (gpointer)main_data) ;
       gtk_box_pack_start(GTK_BOX(button_box), close_button, FALSE, TRUE, 0) ;
 
       /* set create button as default. */
@@ -312,6 +323,10 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
+
+  /* Signal app we are going if we are a separate window. */
+  if (main_data->close_func)
+    (main_data->close_func)(main_data->toplevel, main_data->close_data) ;
 
   /* Free resources. */
   if (main_data->sequence_map.sequence)
@@ -458,8 +473,8 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
     {
       status = FALSE ;
       err_msg = "You must specify\n"
-                "either just a config file containing a sequence and start,end\n"
-                "or a sequence, start, end and optionally a config file." ;
+        "either just a config file containing a sequence and start,end\n"
+        "or a sequence, start, end and optionally a config file." ;
     }
 
 
