@@ -8,11 +8,12 @@ noinst_LTLIBRARIES = libZMapApp.la
 libZMapApp_la_SOURCES = zmapApp_P.h \
 zmapAppconnect.c \
 zmapAppmain_c.c \
-zmapAppmanage.c \
+zmapAppmanagepanel.c \
 zmapAppmenubar.c \
 zmapAppwindow.c \
 zmapAppRemoteControl.c \
 zmapAppRemoteCommand.c \
+zmapAppManager.c \
 $(NULL)
 
 libZMapApp_la_CFLAGS = $(INCLUDE_COMMON)
