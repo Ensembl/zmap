@@ -55,6 +55,7 @@ typedef enum {RT_INVALID, RT_ACEDB, RT_ANACODE, RT_SEQTOOLS, RT_ZMAP, RT_ZMAP_US
 
 static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void makeSequenceViewCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data) ;
+static void closeSequenceDialogCB(GtkWidget *toplevel, gpointer user_data) ;
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 
@@ -600,10 +601,14 @@ static void popout_panel( gpointer data, guint callback_action, GtkWidget *w )
 static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMap zmap = NULL ;
+
   zMapReturnIfFail(cb_data) ;
+
   zmap = (ZMap)cb_data ;
 
-  zMapAppGetSequenceView(makeSequenceViewCB, zmap, zmap->default_sequence, FALSE) ;
+  if (!(zmap->sequence_dialog))
+    zmap->sequence_dialog = zMapAppGetSequenceView(makeSequenceViewCB, zmap, closeSequenceDialogCB, zmap,
+                                                   zmap->default_sequence, FALSE) ;
 
   return ;
 }
@@ -615,7 +620,15 @@ static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_dat
   ZMapView view ;
   char *err_msg = NULL ;
 
-  if (!(view = zMapControlInsertView(zmap, seq_map, &err_msg)))
+  if ((view = zMapControlInsertView(zmap, seq_map, &err_msg)))
+    {
+      ZMapCallbacks zmap_cbs_G ;
+
+      zmap_cbs_G = zmapControlGetCallbacks() ;
+
+      (*(zmap_cbs_G->view_add))(zmap, view, zmap->app_data) ;
+    }
+  else
     {
       zMapWarning("%s", err_msg) ;
       g_free(err_msg) ;
@@ -625,4 +638,11 @@ static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_dat
 }
 
 
+static void closeSequenceDialogCB(GtkWidget *toplevel, gpointer user_data)
+{
+  ZMap zmap = (ZMap)user_data ;
 
+  zmap->sequence_dialog = NULL ;
+
+  return ;
+}

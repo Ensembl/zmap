@@ -37,12 +37,22 @@
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapXML.h>
-#include <zmapManager_P.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
-
-
 #include <zmapApp/zmapApp_P.h>
+
+
+
+/* Contains the list of ZMaps maintained by manager, plus a record of the callback stuff
+ * registered by the application. */
+typedef struct _ZMapManagerStruct
+{
+  GList *zmap_list ;
+
+  void *gui_data ;
+
+  gboolean remote_control ;
+} ZMapManagerStruct ;
 
 
 typedef struct
@@ -82,8 +92,9 @@ typedef struct ForAllDataStructType
 
 
 
-static void addedCB(ZMap zmap, void *cb_data) ;
-static void destroyedCB(ZMap zmap, void *cb_data) ;
+static void addedCB(ZMap zmap, ZMapView view, void *cb_data) ;
+static void viewDestroyedCB(ZMap zmap, ZMapView view, void *app_data) ;
+static void destroyedCB(ZMap zmap, ZMapView view, void *cb_data) ;
 static void quitReqCB(ZMap zmap, void *cb_data) ;
 
 static void localProcessRemoteRequest(ZMapManager manager,
@@ -119,12 +130,8 @@ static void forAllCB(void *data, void *user_data) ;
 /*                  Globals                           */
 
 
-/* Holds callbacks the level above us has asked to be called back on. */
-static ZMapManagerCallbacks manager_cbs_G = NULL ;
-
-
 /* Holds callbacks we set in the level below us (ZMap window) to be called back on. */
-ZMapCallbacksStruct zmap_cbs_G = {addedCB, destroyedCB, quitReqCB, NULL} ;
+ZMapCallbacksStruct zmap_cbs_G = {addedCB, viewDestroyedCB, destroyedCB, quitReqCB, NULL} ;
 
 
 static ZMapXMLObjTagFunctionsStruct start_handlers_G[] =
@@ -149,39 +156,25 @@ static ZMapXMLObjTagFunctionsStruct end_handlers_G[] =
  */
 
 
-/* This routine must be called just once before any other zmaps routine, it is a fatal error
- * if the caller calls this routine more than once. The caller must supply all of the callback
- * routines.
- *
- * Note that since this routine is called once per application we do not bother freeing it
- * via some kind of zmaps terminate routine. */
-void zMapManagerInit(ZMapManagerCallbacks callbacks)
+/* This routine only sets callbacks the first time it is called,
+ * otherwise it does nothing. This is because we do not support
+ * reinitialisation in lower layers that get initialised when
+ * this routine is called.
+ */
+void zMapManagerInit(ZMapRemoteAppMakeRequestFunc remote_control_cb_func, void *remote_control_cb_data)
 {
-  if (manager_cbs_G)
-    return ; 
+  static gboolean called = FALSE ;
 
-  if (!(callbacks
-     && callbacks->zmap_added_func && callbacks->zmap_deleted_func && callbacks->zmap_set_info_func
-     && callbacks->quit_req_func))
-    return  ;
+  if (!called)
+    {
+      /* Init zmap remote control callbacks.... */
+      zmap_cbs_G.remote_request_func = remote_control_cb_func ;
+      zmap_cbs_G.remote_request_func_data = remote_control_cb_data ;
 
-  manager_cbs_G = g_new0(ZMapManagerCallbacksStruct, 1) ;
+      zMapInit(&zmap_cbs_G) ;
 
-  manager_cbs_G->zmap_added_func = callbacks->zmap_added_func ; /* called when a zmap is added. */
-  manager_cbs_G->zmap_deleted_func = callbacks->zmap_deleted_func ; /* called when a zmap closes */
-  manager_cbs_G->zmap_set_info_func = callbacks->zmap_set_info_func ;
-    /* called when zmap does something that gui needs to know about (remote calls) */
-  manager_cbs_G->quit_req_func = callbacks->quit_req_func ; /* called when layer below requests that zmap app exits. */
-
-  /* Called when a zmap component wants to make a remote request. */
-  manager_cbs_G->remote_request_func = callbacks->remote_request_func ;
-  manager_cbs_G->remote_request_func_data = callbacks->remote_request_func_data ;
-
-  /* Init zmap remote control callbacks.... */
-  zmap_cbs_G.remote_request_func = callbacks->remote_request_func ;
-  zmap_cbs_G.remote_request_func_data = callbacks->remote_request_func_data ;
-
-  zMapInit(&zmap_cbs_G) ;
+      called = TRUE ;
+    }
 
   return ;
 }
@@ -197,21 +190,17 @@ ZMapManager zMapManagerCreate(void *gui_data)
 
   manager->gui_data = gui_data ;
 
-  if (manager_cbs_G->remote_request_func)
+  if (zmap_cbs_G.remote_request_func)
     manager->remote_control = TRUE ;
 
   return manager ;
 }
 
 
-/* Add a new zmap window with associated thread and all the gubbins.
- * Return indicates what happened on trying to add zmap.
- * 
-
-OOPS...THIS ALL DOESN'T WORK LIKE THAT NOW....
-
- * If zmap_out is NULL view is displayed in a new window, if an
- * existing  zmap is given then view is added to that zmap.
+/* Add a new sequence view either in an existing zmap or a new one.
+ *
+ * If zmap_inout is NULL view is displayed in a new window, if an
+ * existing zmap is given then view is added to that zmap.
  * 
  * Policy is:
  *
@@ -220,10 +209,7 @@ OOPS...THIS ALL DOESN'T WORK LIKE THAT NOW....
  * 
  * sequence_map is assumed to be filled in correctly.
  * 
- * 
- * load_view is a hack that can go once the new view stuff is here...
- * 
- *  */
+ */
 ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
                                     ZMap *zmap_inout, ZMapView *view_out, GError **error)
 {
@@ -249,6 +235,10 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
           zMapConnectView(zmap, zMapViewGetView(view_window), &tmp_error))
         {
           result = ZMAPMANAGER_ADD_OK ;
+
+          view = zMapViewGetView(view_window) ;
+
+          zmapAppManagerUpdate(app_context, zmap, view) ;
         }
       else
         {
@@ -266,8 +256,6 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
       /* Only fill if there was a sequence and we created the view. */
       if (view)
         *view_out = view ;
-
-      (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;
     }
 
   if (tmp_error)
@@ -395,9 +383,9 @@ gboolean zMapManagerRaise(ZMap zmap)
 }
 
 gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
- char *command_name, char *request,
- ZMap zmap, gpointer view_id,
- ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
+                                         char *command_name, char *request,
+                                         ZMap zmap, gpointer view_id,
+                                         ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   gboolean result = FALSE ;
 
@@ -536,6 +524,7 @@ gboolean zMapManagerDestroy(ZMapManager zmaps)
 
 
 
+
 /*
  *                       Internal routines
  */
@@ -543,27 +532,46 @@ gboolean zMapManagerDestroy(ZMapManager zmaps)
 
 
 /* Gets called when a ZMap window is created. */
-static void addedCB(ZMap zmap, void *cb_data)
+static void addedCB(ZMap zmap, ZMapView view, void *cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
-  ZMapManager zmaps = app_context->zmap_manager ;
 
-  (*(manager_cbs_G->zmap_added_func))(zmaps->gui_data, zmap) ;
+  zmapAppManagerUpdate(app_context, zmap, view) ;
 
   return ;
 }
 
 
+
+/* Called when a view is destroyed within a zmap but the zmap is still there. */
+static void viewDestroyedCB(ZMap zmap, ZMapView view, void *app_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)app_data ;
+
+  /* Call code to remove a view.....different from zmapAppManagerRemove() ?? */
+  zmapAppManagerRemove(app_context, zmap, view) ;
+
+  return ;
+}
+
+
+
+
 /* Gets called when a single ZMap window closes from "under our feet" as a result of user interaction,
  * we then make sure we clean up. */
-static void destroyedCB(ZMap zmap, void *cb_data)
+static void destroyedCB(ZMap zmap, ZMapView view, void *cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
   ZMapManager zmaps = app_context->zmap_manager ;
 
   zmaps->zmap_list = g_list_remove(zmaps->zmap_list, zmap) ;
 
-  (*(manager_cbs_G->zmap_deleted_func))(zmaps->gui_data, zmap) ;
+  zmapAppManagerRemove(app_context, zmap, view) ;
+
+  /* If we have been signalled to die and the last zmap has gone then call
+   * the next stage to close the remote control and so on. */
+  if (app_context->state == ZMAPAPP_DYING && ((zMapManagerCount(app_context->zmap_manager)) == 0))
+    zmapAppRemoteLevelDestroy(app_context) ;
 
   return ;
 }
@@ -577,7 +585,7 @@ static void quitReqCB(ZMap zmap, void *cb_data)
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
   ZMapManager zmaps = app_context->zmap_manager ;
 
-  (*(manager_cbs_G->quit_req_func))(zmaps->gui_data, zmap) ;
+  zmapAppQuitReq(app_context) ;
 
   return ;
 }
@@ -839,8 +847,6 @@ static ZMapManagerAddResult addNewView(ZMapManager zmaps,
       /* Only add zmap to list if we made a new one. */
       if (!zmap_in)
         zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
-
-      (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;
 
       *view_out = view ;
     }

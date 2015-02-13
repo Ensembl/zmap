@@ -114,7 +114,7 @@ ZMAP_MASTER_RUN_TEST_SUITE=no
 
 
 ZMAP_MASTER_REMOVE_FOLDER=yes
-ZMAP_MASTER_NOTIFY_MAIL=annotools@sanger.ac.uk
+ZMAP_MASTER_NOTIFY_MAIL=annosoft@sanger.ac.uk
 
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 

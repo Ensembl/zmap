@@ -504,7 +504,7 @@ rm -f host_checkout.sh     || exit 1;   \
       zmap_message_err "Build on $host failed!"
       let HOSTS_FAILED=HOSTS_FAILED+1
       if [ "x$ZMAP_MASTER_NOTIFY_MAIL" != "x" ]; then
-	  # mail tail $host.log to annotools@sanger.ac.uk
+	  # mail tail $host.log to annosoft@sanger.ac.uk
 	  echo "ZMap Build Failed"                                   > fail.log
 	  echo ""                                                   >> fail.log
  	  echo "Tail of log:"                                       >> fail.log

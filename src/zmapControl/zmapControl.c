@@ -51,7 +51,7 @@ typedef struct ForAllDataStructType
 
 static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map) ;
 static void destroyZMap(ZMap zmap) ;
-static void killFinal(ZMap *zmap) ;
+static void killFinal(ZMap *zmap, ZMapView view) ;
 static void killViews(ZMap zmap, GList **destroyed_views_inout) ;
 static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
 static void updateControl(ZMap zmap, ZMapView view) ;
@@ -110,17 +110,16 @@ ZMapViewCallbacksStruct view_cbs_G =
  * via some kind of zmaps terminate routine. */
 void zMapInit(ZMapCallbacks callbacks)
 {
-  /* if (zmap_cbs_G) 
-    return ; */
-  zMapReturnIfFail(!zmap_cbs_G); 
+  zMapReturnIfFail(!zmap_cbs_G) ;
 
-  /* if (!callbacks || !callbacks->add || !&callbacks->destroy || !callbacks->quit_req) 
-    return ; */
-  zMapReturnIfFail(callbacks && callbacks->add && &callbacks->destroy && callbacks->quit_req) ; 
+  zMapReturnIfFail(callbacks
+                   && callbacks->view_add && callbacks->view_destroy
+                   &&callbacks->destroy && callbacks->quit_req) ; 
 
   zmap_cbs_G = g_new0(ZMapCallbacksStruct, 1) ;
 
-  zmap_cbs_G->add = callbacks->add ;
+  zmap_cbs_G->view_add = callbacks->view_add ;
+  zmap_cbs_G->view_destroy = callbacks->view_destroy ;
   zmap_cbs_G->destroy = callbacks->destroy ;
   zmap_cbs_G->quit_req = callbacks->quit_req ;
 
@@ -131,8 +130,8 @@ void zMapInit(ZMapCallbacks callbacks)
   /* Init view.... */
   view_cbs_G.remote_request_func = callbacks->remote_request_func ;
   view_cbs_G.remote_request_func_data = callbacks->remote_request_func_data ;
-  zMapViewInit(&view_cbs_G) ;
 
+  zMapViewInit(&view_cbs_G) ;
 
   return ;
 }
@@ -253,6 +252,43 @@ ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, GErro
     }
 
   return view_window ;
+}
+
+
+/* Inserts a view into an existing zmap and returns that view, on error returns NULL
+ * and an error message in err_msg which the caller should free with g_free.
+ * Note this call only creates the window and tells the view to connect, the connection
+ * may fail some time later resulting in the view being removed. */
+ZMapView zMapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg)
+{
+  ZMapView view = NULL ;
+  ZMapViewWindow view_window ;
+  GError *tmp_error = NULL ;
+
+  zMapReturnValIfFail(zmap, view) ;
+
+  if ((view_window = zmapControlAddView(zmap, sequence_map)))
+    {
+      view = zMapViewGetView(view_window) ;
+
+      if (!zMapViewConnect(sequence_map, view, NULL, &tmp_error))
+	{
+          *err_msg = g_strdup_printf("Display of sequence \"%s\" failed: %s",
+                                     sequence_map->sequence, (tmp_error ? tmp_error->message : "<no error message>")) ;
+
+	  zMapViewDestroy(view) ;
+
+	  view = NULL ;
+	}
+    }
+
+  if (tmp_error)
+    {
+      g_error_free(tmp_error) ;
+      tmp_error = NULL ;
+    }
+
+  return view ;
 }
 
 
@@ -456,6 +492,13 @@ void zMapDestroy(ZMap zmap, GList **destroyed_views_inout)
  *                Package routines.
  */
 
+ZMapCallbacks zmapControlGetCallbacks(void)
+{
+  return zmap_cbs_G ;
+}
+
+
+
 
 /* Interactive Version:
  * 
@@ -515,13 +558,22 @@ void zmapControlClose(ZMap zmap)
       g_free(msg) ;
     }
 
-  /* CURRENTLY WE ARE NOT REPORTING WHEN THE USER UNSPLITS THE WINDOW, IT DOESN'T CREATE
-   * A NEW VIEW SO LOGICALLY WE CAN'T SAY MUCH ABOUT IT, THIS MAY CHANGE THOUGH.
-   * HENCE CURRENT REDUNDANCY WITH view_destroyed FLAG, WE MAY NEED TO REINSTATE REPORTING. */
   /* If stuff was destroyed then report it....... */
-  if (view_destroyed && destroyed_views && zmap->remote_control)
+  if (view_destroyed && destroyed_views)
     {
-      zmapControlSendViewDeleted(zmap, destroyed_views) ;
+      ZMapCallbacks zmap_cbs_G ;
+
+      /* Call the application callback so that they know a view has gone from within this zmap. */
+      zmap_cbs_G = zmapControlGetCallbacks() ;
+
+      (*(zmap_cbs_G->view_destroy))(zmap, view, zmap->app_data) ;
+
+
+      /* CURRENTLY WE ARE NOT REPORTING WHEN THE USER UNSPLITS THE WINDOW, IT DOESN'T CREATE
+       * A NEW VIEW SO LOGICALLY WE CAN'T SAY MUCH ABOUT IT, THIS MAY CHANGE THOUGH.
+       * HENCE CURRENT REDUNDANCY WITH view_destroyed FLAG, WE MAY NEED TO REINSTATE REPORTING. */
+      if (zmap->remote_control)
+        zmapControlSendViewDeleted(zmap, destroyed_views) ;
     }
 
   return ;
@@ -648,7 +700,7 @@ void zmapControlDoKill(ZMap zmap, GList **destroyed_views_out)
        * signal all the views to die. */
       if (!(zmap->view_list))
 	{
-	  killFinal(&zmap) ;
+	  killFinal(&zmap, NULL) ;
 	}
       else
 	{
@@ -730,43 +782,6 @@ void zmapControlResetCB(ZMap zmap)
   return ;
 }
 
-/* Inserts a view into an existing zmap and returns that view, on error returns NULL
- * and an error message in err_msg which the caller should free with g_free.
- * Note this call only creates the window and tells the view to connect, the connection
- * may fail some time later resulting in the view being removed. */
-ZMapView zMapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg)
-{
-  ZMapView view = NULL ;
-  ZMapViewWindow view_window ;
-  GError *tmp_error = NULL ;
-
-  zMapReturnValIfFail(zmap, view) ;
-
-  if ((view_window = zmapControlAddView(zmap, sequence_map)))
-    {
-      view = zMapViewGetView(view_window) ;
-
-      if (!zMapViewConnect(sequence_map, view, NULL, &tmp_error))
-	{
-          *err_msg = g_strdup_printf("Display of sequence \"%s\" failed: %s",
-                                     sequence_map->sequence, (tmp_error ? tmp_error->message : "<no error message>")) ;
-
-	  zMapViewDestroy(view) ;
-
-	  view = NULL ;
-	}
-    }
-
-  if (tmp_error)
-    {
-      g_error_free(tmp_error) ;
-      tmp_error = NULL ;
-    }
-
-  return view ;
-}
-
-
 
 
 ZMapViewWindow zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
@@ -838,10 +853,6 @@ static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map)
 
   zmap->view2infopanel = g_hash_table_new_full(NULL, NULL, NULL, infoPanelLabelsHashCB);
 
-
-  /* Is this the place to do this ??? Let's see.... */
-  (*(zmap_cbs_G->add))(zmap, zmap->app_data) ;
-
   return zmap ;
 }
 
@@ -853,6 +864,10 @@ static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map)
 static void destroyZMap(ZMap zmap)
 {
   zMapReturnIfFail(zmap) ; 
+
+  if (zmap->sequence_dialog)
+    gtk_widget_destroy(zmap->sequence_dialog) ;
+
 
   g_free(zmap->zmap_id) ;
 
@@ -1165,9 +1180,13 @@ static void viewKilledCB(ZMapView view, void *app_data, void *view_data)
 
   removeView(zmap, view, destroy_data->xwid) ;
 
-  if (!zmap->view_list)
+  if (zmap->view_list)
     {
-
+      /* Call the application callback so that they know a view has gone from within this zmap. */
+      (*(zmap_cbs_G->view_destroy))(zmap, view, zmap->app_data) ;
+    }
+  else
+    {
       if (zmap->state != ZMAP_DYING)
 	{
 	  zMapLogCritical("ZMap \"%s\": the last view has died but zmap is not in ZMAP_DYING state.,"
@@ -1176,7 +1195,7 @@ static void viewKilledCB(ZMapView view, void *app_data, void *view_data)
 	  zmap->state = ZMAP_DYING ;
 	}
 
-      killFinal(&zmap) ;
+      killFinal(&zmap, view) ;
     }
 
   return ;
@@ -1184,7 +1203,7 @@ static void viewKilledCB(ZMapView view, void *app_data, void *view_data)
 
 
 /* This MUST only be called once all the views have gone. */
-static void killFinal(ZMap *zmap_out)
+static void killFinal(ZMap *zmap_out, ZMapView view)
 {
   ZMap zmap = *zmap_out ;
   void *app_data = zmap->app_data ;			    /* Hang on to app data. */
@@ -1202,7 +1221,7 @@ static void killFinal(ZMap *zmap_out)
   destroyZMap(zmap) ;					    /* destroys zmap block. */
 
   /* Call the application callback so that they know we have finally died. */
-  (*(zmap_cbs_G->destroy))(zmap, app_data) ;
+  (*(zmap_cbs_G->destroy))(zmap, view, app_data) ;
 
   *zmap_out = NULL ;
 
