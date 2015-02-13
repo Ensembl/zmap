@@ -1639,7 +1639,6 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
 {
   if (!feature || !blixem_data )
     return ;
-  //ZMapGFFAttributeFlagsStruct attribute_flags ;
 
   /* There is no way to interrupt g_hash_table_foreach() so instead if errorMsg is set
    * then it means there was an error in processing so we don't process any

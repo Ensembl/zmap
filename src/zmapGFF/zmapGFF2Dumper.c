@@ -89,6 +89,17 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any, GHashTable *styles,
 
 static void deleteGFFFormatData(ZMapGFFFormatData *) ;
 static ZMapGFFFormatData createGFFFormatData() ;
+static gboolean getAttributeURL(ZMapFeature, GString *) ;
+static gboolean getAttributeName(ZMapFeature, GString *) ;
+static gboolean getAttributeNote(ZMapFeature, GString *) ;
+static gboolean getAttributeSequence(ZMapFeature, GString *, const char *) ;
+static gboolean getAttributeLocus(ZMapFeature, GString * ) ;
+static gboolean getAttributeID(ZMapFeature, GString *) ;
+static gboolean getAttributeParent(ZMapFeature, GString *) ;
+static gboolean getAttributeVariation(ZMapFeature, GString *) ;
+static gboolean getAttributeTarget(ZMapFeature, GString *) ;
+static gboolean getAttributePercentID(ZMapFeature, GString *) ;
+static gboolean getAttributeGap(ZMapFeature, GString *) ;
 
 /*
  * Public interface function to set the version of GFF to output.
@@ -460,7 +471,6 @@ gboolean zMapGFFFormatAttributeSetGraph(ZMapGFFAttributeFlags attribute_flags)
     {
       attribute_flags->name        = TRUE ;
       attribute_flags->url         = TRUE ;
-      attribute_flags->variation   = TRUE ;
       attribute_flags->note        = TRUE ;
     }
 
@@ -521,7 +531,6 @@ gboolean zMapGFFFormatAttributeSetText(ZMapGFFAttributeFlags attribute_flags)
       attribute_flags->name        = TRUE ;
       attribute_flags->note        = TRUE ;
       attribute_flags->url         = TRUE ;
-      attribute_flags->locus       = TRUE ;
     }
 
   return result ;
@@ -885,15 +894,11 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
 {
   gboolean status = FALSE ;
   const char *sequence_name = NULL,
-    *feature_name = NULL,
     *source_name = NULL,
     *type = NULL ;
-  char *escaped_string = NULL ;
   GString *attribute = NULL ;
-  ZMapStrand strand = ZMAPSTRAND_NONE,
-    s_strand = ZMAPSTRAND_NONE ;
+  ZMapStrand strand = ZMAPSTRAND_NONE ;
   float percent_id = (float) 0.0 ;
-  GArray *gaps = NULL ;
 
   if (   !feature
       || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT)
@@ -908,7 +913,6 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
   source_name = g_quark_to_string(feature->parent->original_id) ;
   if (strstr(source_name, anon_source))
     source_name = anon_source_ab ;
-  feature_name = g_quark_to_string(feature->original_id) ;
   type = g_quark_to_string(feature->SO_accession) ;
   strand = feature->strand ;
 
@@ -929,28 +933,11 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
   /*
    * Target attribute; note that the strand is optional
    */
-  if (flags->target && feature_name && *feature_name)
+  if (flags->target)
     {
-      ZMapStrand s_strand = feature->feature.homol.strand ;
-      int sstart = feature->feature.homol.y1,
-        send = feature->feature.homol.y2 ;
-      escaped_string = g_uri_escape_string(feature_name, reserved_allowed, FALSE  ) ;
-      if (escaped_string)
+      if (getAttributeTarget(feature, attribute))
         {
-          if (s_strand != ZMAPSTRAND_NONE)
-            {
-              g_string_printf(attribute, "Target=%s %d %d %c",
-                              escaped_string, sstart, send,
-                              zMapGFFFormatStrand2Char(s_strand)) ;
-            }
-          else
-            {
-              g_string_printf(attribute, "Target=%s %d %d",
-                              escaped_string, sstart, send) ;
-            }
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
-          g_free(escaped_string) ;
+          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE ) ;
         }
     }
 
@@ -959,12 +946,9 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
    */
   if (flags->percent_id)
     {
-      percent_id = feature->feature.homol.percent_id ;
-      if (percent_id != (float)0.0)
+      if (getAttributePercentID(feature, attribute))
         {
-          g_string_printf(attribute, "percentID=%g", percent_id) ;
           zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
         }
     }
 
@@ -973,30 +957,21 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
    */
   if (flags->gap)
     {
-      gaps = feature->feature.homol.align ;
-      if (gaps)
+      if (getAttributeGap(feature, attribute))
         {
-          ZMapSequenceType match_seq_type = ZMAPSEQUENCE_NONE ;
-          ZMapHomolType homol_type = feature->feature.homol.type ;
-          if (homol_type == ZMAPHOMOL_N_HOMOL)
-            match_seq_type = ZMAPSEQUENCE_DNA ;
-          else
-            match_seq_type = ZMAPSEQUENCE_PEPTIDE ;
-
-          zMapGFFFormatGap2GFF(attribute, gaps, strand, match_seq_type) ;
           zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
         }
     }
 
   /*
    * Sequence attribute
    */
-  if (flags->sequence && seq_str && *seq_str)
+  if (flags->sequence)
     {
-      g_string_printf(attribute, "sequence=%s", seq_str) ;
-      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-      g_string_truncate(attribute, (gsize)0) ;
+      if (getAttributeSequence(feature, attribute, seq_str))
+        {
+          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+        }
     }
 
   g_string_append_c(line, '\n') ;
@@ -1020,10 +995,8 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
   int i=0 ;
   ZMapSpan span = NULL ;
   const char *sequence_name = NULL,
-    *feature_name = NULL,
     *source_name = NULL,
     *type = NULL ;
-  char *escaped_string = NULL ;
   GString *attribute = NULL ;
 
   if (   !feature
@@ -1040,9 +1013,7 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
   source_name = g_quark_to_string(feature->parent->original_id) ;
   if (strstr(source_name, anon_source))
     source_name = anon_source_ab ;
-  feature_name = g_quark_to_string(feature->original_id) ;
   type = g_quark_to_string(feature->SO_accession) ;
-  escaped_string = g_uri_escape_string(feature_name, reserved_allowed, FALSE ) ;
 
   /*
    * Mandatory fields.
@@ -1056,21 +1027,34 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
   /*
    * ID attribute
    */
-  if (flags->id && escaped_string)
+  if (flags->id)
     {
-      g_string_printf(attribute, "ID=%s", escaped_string) ;
-      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-      g_string_truncate(attribute, (gsize)0) ;
+      if (getAttributeID(feature, attribute))
+        {
+          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+        }
     }
 
   /*
    * Name attribute
    */
-  if (flags->name && escaped_string)
+  if (flags->name)
     {
-      g_string_printf(attribute, "Name=%s", escaped_string) ;
-      zMapGFFFormatAppendAttribute(line, attribute, FALSE, FALSE) ;
-      g_string_truncate(attribute, (gsize)0) ;
+      if (getAttributeName(feature, attribute))
+        {
+          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+        }
+    }
+
+  /*
+   * Locus attribute
+   */
+  if (flags->locus)
+    {
+      if (getAttributeLocus(feature, attribute))
+        {
+          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+        }
     }
 
   /*
@@ -1082,9 +1066,9 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
    * Write a line for each exon and each CDS if present with
    * the ID of the previous line as Parent attribute.
    */
-  if (flags->parent && escaped_string)
+  if (flags->parent && getAttributeParent(feature, attribute))
     {
-      g_string_printf(attribute, "Parent=%s", escaped_string) ;
+
       for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
         {
           int exon_start=0, exon_end=0 ;
@@ -1151,8 +1135,6 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
 
   if (attribute)
     g_string_free(attribute, TRUE) ;
-  if (escaped_string)
-    g_free(escaped_string) ;
 
   return status ;
 }
@@ -1166,7 +1148,6 @@ gboolean zMapGFFWriteFeatureText(ZMapFeature feature, ZMapGFFAttributeFlags flag
     *type = NULL ;
   char *string_escaped = NULL ;
   GString * attribute = NULL ;
-  GQuark gqID = 0 ;
 
   if (   !feature
       || (feature->mode != ZMAPSTYLE_MODE_TEXT)
@@ -1197,56 +1178,23 @@ gboolean zMapGFFWriteFeatureText(ZMapFeature feature, ZMapGFFAttributeFlags flag
    */
   if (flags->name)
     {
-      string_escaped = g_uri_escape_string(g_quark_to_string(feature->original_id),
-                                           reserved_allowed, FALSE) ;
-      if (string_escaped)
+
+      if (getAttributeName(feature, attribute))
         {
-          g_string_printf(attribute, "Name=%s", string_escaped) ;
           zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
-          g_string_truncate(attribute, (gsize)0) ;
         }
     }
 
   /*
    * Note attribute
    */
-  if (flags->note && feature->description)
+  if (flags->note)
     {
-      string_escaped = g_uri_escape_string(feature->description,
-                                           reserved_allowed, FALSE) ;
-      if (string_escaped)
+      if (getAttributeNote(feature, attribute))
         {
-          g_string_printf(attribute, "Note=%s", string_escaped) ;
           zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
         }
     }
-
-  /*
-   * locus_id attribute
-   */
-  if (flags->locus && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-    {
-      gqID = feature->feature.transcript.locus_id ;
-      if (gqID)
-        {
-          string_escaped = g_uri_escape_string(g_quark_to_string(gqID),
-                                                reserved_allowed, FALSE ) ;
-          if (string_escaped)
-            {
-              g_string_printf(attribute, "locus=%s", string_escaped) ;
-              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-              g_string_truncate(attribute, (gsize)0) ;
-              g_free(string_escaped) ;
-              string_escaped = NULL ;
-            }
-        }
-    }
-
 
   /*
    * End of this feature line.
@@ -1298,59 +1246,42 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
    */
   if (flags->name)
     {
-      string_escaped = g_uri_escape_string(g_quark_to_string(feature->original_id),
-                                           reserved_allowed, FALSE) ;
-      if (string_escaped)
+      if (getAttributeName(feature, attribute))
         {
-          g_string_printf(attribute, "Name=%s", string_escaped) ;
           zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
-          g_string_truncate(attribute, (gsize)0) ;
         }
     }
 
   /*
    * URL attribute
    */
-  if (flags->url && feature->url)
+  if (flags->url)
     {
-      string_escaped = g_uri_escape_string(feature->url,
-                                           NULL, FALSE) ;
-      if (string_escaped)
+      if (getAttributeURL(feature, attribute))
         {
-          g_string_printf(attribute, "url=%s", string_escaped) ;
           zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
         }
     }
 
   /*
    * Variation string attribute.
    */
-  if (flags->variation && feature->feature.basic.flags.variation_str)
+  if (flags->variation)
     {
-      g_string_printf(attribute, "variant_sequence=%s", feature->feature.basic.variation_str) ;
-      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-      g_string_truncate(attribute, (gsize)0) ;
+      if (getAttributeVariation(feature, attribute))
+        {
+          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+        }
     }
 
   /*
    * Note attribute
    */
-  if (flags->note && feature->description)
+  if (flags->note)
     {
-      string_escaped = g_uri_escape_string(feature->description,
-                                           reserved_allowed, FALSE) ;
-      if (string_escaped)
+      if (getAttributeNote(feature, attribute))
         {
-          g_string_printf(attribute, "Note=%s", string_escaped) ;
           zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
         }
     }
 
@@ -1407,59 +1338,31 @@ gboolean zMapGFFWriteFeatureGraph(ZMapFeature feature, ZMapGFFAttributeFlags fla
    */
   if (flags->name)
     {
-      string_escaped = g_uri_escape_string(g_quark_to_string(feature->original_id),
-                                           reserved_allowed, FALSE) ;
-      if (string_escaped)
+      if (getAttributeName(feature, attribute))
         {
-          g_string_printf(attribute, "Name=%s", string_escaped) ;
           zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
-          g_string_truncate(attribute, (gsize)0) ;
         }
     }
 
   /*
    * URL attribute
    */
-  if (flags->url && feature->url)
+  if (flags->url)
     {
-      string_escaped = g_uri_escape_string(feature->url,
-                                           NULL, FALSE) ;
-      if (string_escaped)
+      if (getAttributeURL(feature, attribute))
         {
-          g_string_printf(attribute, "url=%s", string_escaped) ;
           zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
         }
-    }
-
-  /*
-   * Variation string attribute.
-   */
-  if (flags->variation && feature->feature.basic.flags.variation_str)
-    {
-      g_string_printf(attribute, "variant_sequence=%s", feature->feature.basic.variation_str) ;
-      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-      g_string_truncate(attribute, (gsize)0) ;
     }
 
   /*
    * Note attribute
    */
-  if (flags->note && feature->description)
+  if (flags->note)
     {
-      string_escaped = g_uri_escape_string(feature->description,
-                                           reserved_allowed, FALSE) ;
-      if (string_escaped)
+      if (getAttributeNote(feature, attribute))
         {
-          g_string_printf(attribute, "Note=%s", string_escaped) ;
           zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
         }
     }
 
@@ -1512,3 +1415,329 @@ static void deleteGFFFormatData(ZMapGFFFormatData *p_format_data)
 
   return ;
 }
+
+/*
+ * Function to return the Name attribute.
+ */
+static gboolean getAttributeName(ZMapFeature feature, GString *attribute)
+{
+  static const char *format_str = "Name=%s" ;
+  gboolean result = FALSE ;
+  char *string_escaped = NULL ;
+
+  if (!feature || !attribute)
+    return result ;
+
+  string_escaped = g_uri_escape_string(g_quark_to_string(feature->original_id),
+                                       reserved_allowed, FALSE) ;
+  if (string_escaped)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_printf(attribute, format_str, string_escaped) ;
+      g_free(string_escaped) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+/*
+ * Function to return the ID attribute (same as Name at present).
+ */
+static gboolean getAttributeID(ZMapFeature feature, GString *attribute)
+{
+  static const char *format_str = "ID=%s" ;
+  gboolean result = FALSE ;
+  char *string_escaped = NULL ;
+
+  if (!feature || !attribute)
+    return result ;
+
+  string_escaped = g_uri_escape_string(g_quark_to_string(feature->original_id),
+                                       reserved_allowed, FALSE) ;
+  if (string_escaped)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_printf(attribute, format_str, string_escaped) ;
+      g_free(string_escaped) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+/*
+ * Function to return the Parent attribute (same as Name and ID at present).
+ */
+static gboolean getAttributeParent(ZMapFeature feature, GString *attribute)
+{
+  static const char *format_str = "Parent=%s" ;
+  gboolean result = FALSE ;
+  char *string_escaped = NULL ;
+
+  if (!feature || !attribute)
+    return result ;
+
+  string_escaped = g_uri_escape_string(g_quark_to_string(feature->original_id),
+                                       reserved_allowed, FALSE) ;
+  if (string_escaped)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_printf(attribute, format_str, string_escaped) ;
+      g_free(string_escaped) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+/*
+ * Function to return the escaped URL attribute.
+ */
+static gboolean getAttributeURL(ZMapFeature feature, GString *attribute)
+{
+  static const char *format_str = "url=%s" ;
+  gboolean result = FALSE ;
+  char *string_escaped = NULL ;
+
+  if (!feature || !attribute)
+    return result ;
+
+  if (feature->url)
+    {
+      string_escaped = g_uri_escape_string(feature->url,
+                                           NULL, FALSE) ;
+      if (string_escaped)
+        {
+          g_string_truncate(attribute, (gsize)0) ;
+          g_string_printf(attribute, format_str, string_escaped) ;
+          g_free(string_escaped) ;
+          result = TRUE ;
+        }
+    }
+
+  return result ;
+}
+
+
+/*
+ * Function to return the escaped Note attribute.
+ */
+static gboolean getAttributeNote(ZMapFeature feature, GString *attribute)
+{
+  static const char *format_str = "Note=%s" ;
+  gboolean result = FALSE ;
+  char *string_escaped = NULL ;
+
+  if (!feature || !attribute)
+    return result ;
+
+  if (feature->description)
+    {
+      string_escaped = g_uri_escape_string(feature->description,
+                                           reserved_allowed, FALSE) ;
+      if (string_escaped)
+        {
+          g_string_truncate(attribute, (gsize)0) ;
+          g_string_printf(attribute, format_str, string_escaped) ;
+          g_free(string_escaped) ;
+          result = TRUE ;
+        }
+    }
+
+  return result ;
+}
+
+
+/*
+ * Function to return the sequence attribute.
+ */
+static gboolean getAttributeSequence(ZMapFeature feature, GString *attribute, const char *seq_str)
+{
+  static const char *format_str = "sequence=%s" ;
+  gboolean result = FALSE ;
+
+  if (!feature || !attribute || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT))
+    return result ;
+
+  if (seq_str && *seq_str)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_printf(attribute, format_str, seq_str) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+/*
+ * locus attribute
+ */
+static gboolean getAttributeLocus(ZMapFeature feature, GString *attribute)
+{
+  static const char *format_str = "locus=%s" ;
+  gboolean result = FALSE ;
+  char *string_escaped = NULL ;
+  GQuark gqID = 0 ;
+
+  if (    !feature
+       || !attribute
+       || (feature->mode != ZMAPSTYLE_MODE_TRANSCRIPT)  )
+    return result ;
+
+  gqID = feature->feature.transcript.locus_id ;
+  if (gqID)
+    {
+      string_escaped = g_uri_escape_string(g_quark_to_string(gqID),
+                                           reserved_allowed, FALSE ) ;
+      if (string_escaped)
+        {
+          g_string_truncate(attribute, (gsize)0) ;
+          g_string_printf(attribute, format_str, string_escaped) ;
+          g_free(string_escaped) ;
+          result = TRUE ;
+        }
+    }
+
+  return result ;
+}
+
+
+
+/*
+ * Variation string attribute.
+ */
+static gboolean getAttributeVariation(ZMapFeature feature, GString* attribute)
+{
+  static const char *format_str = "variant_sequence=%s" ;
+  gboolean result = FALSE ;
+
+  if (    !feature
+       || !attribute
+       || (feature->mode != ZMAPSTYLE_MODE_BASIC)  )
+    return result ;
+
+  if (feature->feature.basic.flags.variation_str)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_printf(attribute, format_str, feature->feature.basic.variation_str) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+/*
+ * Target attribute.
+ */
+static gboolean getAttributeTarget(ZMapFeature feature, GString *attribute)
+{
+  gboolean result = FALSE ;
+  char * escaped_string = NULL ;
+  int sstart = 0, send = 0 ;
+  ZMapStrand s_strand = ZMAPSTRAND_NONE ;
+
+  if (!feature || !attribute || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT) )
+   return result ;
+
+  s_strand = feature->feature.homol.strand ;
+  sstart = feature->feature.homol.y1 ;
+  send = feature->feature.homol.y2 ;
+  escaped_string = g_uri_escape_string(g_quark_to_string(feature->original_id), reserved_allowed, FALSE) ;
+  if (escaped_string)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      if (s_strand != ZMAPSTRAND_NONE)
+        {
+          g_string_printf(attribute, "Target=%s %d %d %c",
+                          escaped_string, sstart, send,
+                          zMapGFFFormatStrand2Char(s_strand)) ;
+        }
+      else
+        {
+          g_string_printf(attribute, "Target=%s %d %d",
+                          escaped_string, sstart, send) ;
+        }
+      g_free(escaped_string) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+/*
+ * percentID attribute
+ */
+static gboolean getAttributePercentID(ZMapFeature feature, GString *attribute)
+{
+  gboolean result = FALSE ;
+  float percent_id = 0.0 ;
+
+  if (!feature || !attribute || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT) )
+    return result ;
+
+  percent_id = feature->feature.homol.percent_id ;
+  if (percent_id != 0.0)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_printf(attribute, "percentID=%g", percent_id) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+/*
+ * Gap attribute
+ */
+static gboolean getAttributeGap(ZMapFeature feature, GString *attribute)
+{
+  gboolean result = FALSE ;
+  GArray *gaps = NULL ;
+  ZMapSequenceType match_seq_type = ZMAPSEQUENCE_NONE ;
+  ZMapHomolType homol_type = ZMAPHOMOL_NONE ;
+  ZMapStrand strand = ZMAPSTRAND_NONE ;
+
+  if (!feature || !attribute || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT) )
+    return result ;
+
+  gaps = feature->feature.homol.align ;
+  strand = feature->strand ;
+  if (gaps)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      homol_type = feature->feature.homol.type ;
+
+      if (homol_type == ZMAPHOMOL_N_HOMOL)
+        match_seq_type = ZMAPSEQUENCE_DNA ;
+      else
+        match_seq_type = ZMAPSEQUENCE_PEPTIDE ;
+
+      zMapGFFFormatGap2GFF(attribute, gaps, strand, match_seq_type) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
