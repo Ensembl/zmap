@@ -787,7 +787,7 @@ gboolean zMapGFFFormatMandatory(gboolean over_write, GString *line,
     c_phase = '\0' ;
 
   if (!line || !sequence || !*sequence
-            || !source || !*source
+       /*   || !source || !*source */
             || !type || !*type
             || (start <= 0) || (start > end))
     return status ;
@@ -924,58 +924,66 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
   /*
    * Mandatory fields.
    */
-  zMapGFFFormatMandatory(TRUE, line,
-                         sequence_name, source_name, type,
-                         feature->x1, feature->x2,
-                         feature->score, strand, ZMAPPHASE_NONE,
-                         TRUE, TRUE ) ;
+  status = zMapGFFFormatMandatory(TRUE, line,
+                                  sequence_name, source_name, type,
+                                  feature->x1, feature->x2,
+                                  feature->score, strand, ZMAPPHASE_NONE,
+                                  TRUE, TRUE ) ;
+
+  if (status)
+    {
+
+      /*
+       * Target attribute; note that the strand is optional
+       */
+      if (flags->target)
+        {
+          if (getAttributeTarget(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE ) ;
+            }
+        }
+
+      /*
+       * percentID attribute
+       */
+      if (flags->percent_id)
+        {
+          if (getAttributePercentID(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
+
+      /*
+       * Gap attribute (gffv3)
+       */
+      if (flags->gap)
+        {
+          if (getAttributeGap(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
+
+      /*
+       * Sequence attribute
+       */
+      if (flags->sequence)
+        {
+          if (getAttributeSequence(feature, attribute, seq_str))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
+
+      g_string_append_c(line, '\n') ;
+
+    } /* if (status) */
 
   /*
-   * Target attribute; note that the strand is optional
+   * Free when finished.
    */
-  if (flags->target)
-    {
-      if (getAttributeTarget(feature, attribute))
-        {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE ) ;
-        }
-    }
-
-  /*
-   * percentID attribute
-   */
-  if (flags->percent_id)
-    {
-      if (getAttributePercentID(feature, attribute))
-        {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-        }
-    }
-
-  /*
-   * Gap attribute (gffv3)
-   */
-  if (flags->gap)
-    {
-      if (getAttributeGap(feature, attribute))
-        {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-        }
-    }
-
-  /*
-   * Sequence attribute
-   */
-  if (flags->sequence)
-    {
-      if (getAttributeSequence(feature, attribute, seq_str))
-        {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-        }
-    }
-
-  g_string_append_c(line, '\n') ;
-
   if (attribute)
     g_string_free(attribute, TRUE) ;
 
@@ -1018,120 +1026,128 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
   /*
    * Mandatory fields.
    */
-  zMapGFFFormatMandatory(TRUE, line,
-                         sequence_name, source_name, type,
-                         feature->x1, feature->x2,
-                         feature->score, feature->strand, ZMAPPHASE_NONE,
-                         (gboolean)feature->flags.has_score, TRUE ) ;
+  status = zMapGFFFormatMandatory(TRUE, line,
+                                  sequence_name, source_name, type,
+                                  feature->x1, feature->x2,
+                                  feature->score, feature->strand, ZMAPPHASE_NONE,
+                                  (gboolean)feature->flags.has_score, TRUE ) ;
 
-  /*
-   * ID attribute
-   */
-  if (flags->id)
+  if (status)
     {
-      if (getAttributeID(feature, attribute))
+      /*
+       * ID attribute
+       */
+      if (flags->id)
         {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-        }
-    }
-
-  /*
-   * Name attribute
-   */
-  if (flags->name)
-    {
-      if (getAttributeName(feature, attribute))
-        {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-        }
-    }
-
-  /*
-   * Locus attribute
-   */
-  if (flags->locus)
-    {
-      if (getAttributeLocus(feature, attribute))
-        {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-        }
-    }
-
-  /*
-   * End of line for parent object.
-   */
-  g_string_append_c(line, '\n');
-
-  /*
-   * Write a line for each exon and each CDS if present with
-   * the ID of the previous line as Parent attribute.
-   */
-  if (flags->parent && getAttributeParent(feature, attribute))
-    {
-
-      for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
-        {
-          int exon_start=0, exon_end=0 ;
-
-          span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i) ;
-
-          if (span)
+          if (getAttributeID(feature, attribute))
             {
-              exon_start = span->x1 ;
-              exon_end = span->x2 ;
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
 
-              /*
-               * Mandatory fields.
-               */
-              zMapGFFFormatMandatory(FALSE, line,
-                                     sequence_name, source_name, SO_exon_id,
-                                     exon_start, exon_end,
-                                     feature->score, feature->strand, ZMAPPHASE_NONE,
-                                     (gboolean)feature->flags.has_score, TRUE ) ;
+      /*
+       * Name attribute
+       */
+      if (flags->name)
+        {
+          if (getAttributeName(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
 
-              /*
-               * Parent attribute and end of line.
-               */
-              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE ) ;
-              g_string_append_c(line, '\n');
+      /*
+       * Locus attribute
+       */
+      if (flags->locus)
+        {
+          if (getAttributeLocus(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
 
-              /*
-               * Now do a CDS line if the feature has one.
-               */
-              if (feature->feature.transcript.flags.cds)
+      /*
+       * End of line for parent object.
+       */
+      g_string_append_c(line, '\n');
+
+      /*
+       * Write a line for each exon and each CDS if present with
+       * the ID of the previous line as Parent attribute.
+       */
+      if (flags->parent && getAttributeParent(feature, attribute))
+        {
+
+          for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
+            {
+              int exon_start=0, exon_end=0 ;
+
+              span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i) ;
+
+              if (span)
                 {
-                  int cds_start=0, cds_end=0 ;
+                  exon_start = span->x1 ;
+                  exon_end = span->x2 ;
 
-                  cds_start = feature->feature.transcript.cds_start ;
-                  cds_end = feature->feature.transcript.cds_end ;
-
-                  if (exon_start > cds_end || exon_end < cds_start)
+                  /*
+                   * Mandatory fields.
+                   */
+                  if (zMapGFFFormatMandatory(FALSE, line,
+                                         sequence_name, source_name, SO_exon_id,
+                                         exon_start, exon_end,
+                                         (float)0.0, feature->strand, ZMAPPHASE_NONE,
+                                         FALSE, TRUE ) )
                     {
-                      ;
-                    }
-                  else
-                    {
-                      int tmp_cds1=0, tmp_cds2=0;
-                      ZMapPhase phase = ZMAPPHASE_NONE ;
 
-                      if (zMapFeatureExon2CDS(feature, exon_start, exon_end,
-                                              &tmp_cds1, &tmp_cds2, &phase))
+                      /*
+                       * Parent attribute and end of line.
+                       */
+                      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE ) ;
+                      g_string_append_c(line, '\n');
+
+                      /*
+                       * Now do a CDS line if the feature has one.
+                       */
+                      if (feature->feature.transcript.flags.cds)
                         {
-                          /* mandatory data */
-                          zMapGFFFormatMandatory(FALSE, line,
-                                                 sequence_name, source_name, SO_CDS_id,
-                                                 tmp_cds1, tmp_cds2,
-                                                 feature->score, feature->strand, phase,
-                                                 (gboolean)feature->flags.has_score, TRUE ) ;
-                          /* parent attribute and end of line */
-                          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-                          g_string_append_c(line, '\n');
-                        }
-                    }
-                } /* if the feature has a CDS */
-            } /* if the exon span is valid */
-        } /* loop over exons */
-    }
+                          int cds_start=0, cds_end=0 ;
+
+                          cds_start = feature->feature.transcript.cds_start ;
+                          cds_end = feature->feature.transcript.cds_end ;
+
+                          if (exon_start > cds_end || exon_end < cds_start)
+                            {
+                              ;
+                            }
+                          else
+                            {
+                              int tmp_cds1=0, tmp_cds2=0;
+                              ZMapPhase phase = ZMAPPHASE_NONE ;
+
+                              if (zMapFeatureExon2CDS(feature, exon_start, exon_end,
+                                                      &tmp_cds1, &tmp_cds2, &phase))
+                                {
+                                  /* mandatory data */
+                                  if (zMapGFFFormatMandatory(FALSE, line,
+                                                         sequence_name, source_name, SO_CDS_id,
+                                                         tmp_cds1, tmp_cds2,
+                                                         (float)0.0, feature->strand, phase,
+                                                         FALSE, TRUE ))
+                                    {
+                                      /* parent attribute and end of line */
+                                      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+                                      g_string_append_c(line, '\n');
+                                    }
+                                }
+                            }
+                        } /* if the feature has a CDS */
+                    } /* if write of exon line was OK */
+                } /* if the exon span is valid */
+            } /* loop over exons */
+        } /* if we have a parent attribute */
+
+    } /* if (status) */
 
   if (attribute)
     g_string_free(attribute, TRUE) ;
@@ -1167,39 +1183,46 @@ gboolean zMapGFFWriteFeatureText(ZMapFeature feature, ZMapGFFAttributeFlags flag
   /*
    * Mandatory fields...
    */
-  zMapGFFFormatMandatory(TRUE, line,
-                         sequence_name, source_name, type,
-                         feature->x1, feature->x2,
-                         feature->score, feature->strand, ZMAPPHASE_NONE,
-                         (gboolean)feature->flags.has_score, TRUE) ;
+  status = zMapGFFFormatMandatory(TRUE, line,
+                                  sequence_name, source_name, type,
+                                  feature->x1, feature->x2,
+                                  feature->score, feature->strand, ZMAPPHASE_NONE,
+                                  (gboolean)feature->flags.has_score, TRUE) ;
 
-  /*
-   * Name attribute
-   */
-  if (flags->name)
+  if (status)
     {
-
-      if (getAttributeName(feature, attribute))
+      /*
+       * Name attribute
+       */
+      if (flags->name)
         {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+
+          if (getAttributeName(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
         }
+
+      /*
+       * Note attribute
+       */
+      if (flags->note)
+        {
+          if (getAttributeNote(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
+
+      /*
+       * End of this feature line.
+       */
+      g_string_append_c(line, '\n') ;
     }
 
   /*
-   * Note attribute
+   * Free when finished
    */
-  if (flags->note)
-    {
-      if (getAttributeNote(feature, attribute))
-        {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-        }
-    }
-
-  /*
-   * End of this feature line.
-   */
-  g_string_append_c(line, '\n') ;
   g_string_free(attribute, TRUE) ;
 
   return status ;
@@ -1235,60 +1258,69 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
   /*
    * Mandatory fields...
    */
-  zMapGFFFormatMandatory(TRUE, line,
-                         sequence_name, source_name, type,
-                         feature->x1, feature->x2,
-                         feature->score, feature->strand, ZMAPPHASE_NONE,
-                         (gboolean)feature->flags.has_score, TRUE) ;
+  status = zMapGFFFormatMandatory(TRUE, line,
+                                  sequence_name, source_name, type,
+                                  feature->x1, feature->x2,
+                                  feature->score, feature->strand, ZMAPPHASE_NONE,
+                                  (gboolean)feature->flags.has_score, TRUE) ;
 
-  /*
-   * Name attribute
-   */
-  if (flags->name)
+  if (status)
     {
-      if (getAttributeName(feature, attribute))
+
+      /*
+       * Name attribute
+       */
+      if (flags->name)
         {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+          if (getAttributeName(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
         }
-    }
+
+      /*
+       * URL attribute
+       */
+      if (flags->url)
+        {
+          if (getAttributeURL(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
+
+      /*
+       * Variation string attribute.
+       */
+      if (flags->variation)
+        {
+          if (getAttributeVariation(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
+
+      /*
+       * Note attribute
+       */
+      if (flags->note)
+        {
+          if (getAttributeNote(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
+
+      /*
+       * End of line.
+       */
+      g_string_append_c(line, '\n') ;
+
+   }
 
   /*
-   * URL attribute
+   * Free when finished.
    */
-  if (flags->url)
-    {
-      if (getAttributeURL(feature, attribute))
-        {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-        }
-    }
-
-  /*
-   * Variation string attribute.
-   */
-  if (flags->variation)
-    {
-      if (getAttributeVariation(feature, attribute))
-        {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-        }
-    }
-
-  /*
-   * Note attribute
-   */
-  if (flags->note)
-    {
-      if (getAttributeNote(feature, attribute))
-        {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-        }
-    }
-
-  /*
-   * End of line.
-   */
-  g_string_append_c(line, '\n') ;
   g_string_free(attribute, TRUE) ;
 
   return status ;
@@ -1327,49 +1359,58 @@ gboolean zMapGFFWriteFeatureGraph(ZMapFeature feature, ZMapGFFAttributeFlags fla
   /*
    * Mandatory fields...
    */
-  zMapGFFFormatMandatory(TRUE, line,
-                         sequence_name, source_name, type,
-                         feature->x1, feature->x2,
-                         feature->score, feature->strand, ZMAPPHASE_NONE,
-                         (gboolean)feature->flags.has_score, TRUE) ;
+  status = zMapGFFFormatMandatory(TRUE, line,
+                                  sequence_name, source_name, type,
+                                  feature->x1, feature->x2,
+                                  feature->score, feature->strand, ZMAPPHASE_NONE,
+                                  (gboolean)feature->flags.has_score, TRUE) ;
 
-  /*
-   * Name attribute
-   */
-  if (flags->name)
+  if (status)
     {
-      if (getAttributeName(feature, attribute))
+
+      /*
+       * Name attribute
+       */
+      if (flags->name)
         {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+          if (getAttributeName(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
         }
+
+      /*
+       * URL attribute
+       */
+      if (flags->url)
+        {
+          if (getAttributeURL(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
+
+      /*
+       * Note attribute
+       */
+      if (flags->note)
+        {
+          if (getAttributeNote(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
+
+      /*
+       * End of line.
+       */
+      g_string_append_c(line, '\n') ;
+
     }
 
   /*
-   * URL attribute
+   * Free this when finished.
    */
-  if (flags->url)
-    {
-      if (getAttributeURL(feature, attribute))
-        {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-        }
-    }
-
-  /*
-   * Note attribute
-   */
-  if (flags->note)
-    {
-      if (getAttributeNote(feature, attribute))
-        {
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-        }
-    }
-
-  /*
-   * End of line.
-   */
-  g_string_append_c(line, '\n') ;
   g_string_free(attribute, TRUE) ;
 
   return status ;
@@ -1721,15 +1762,6 @@ static gboolean getAttributeGap(ZMapFeature feature, GString *attribute)
 
   return result ;
 }
-
-
-
-
-
-
-
-
-
 
 
 
