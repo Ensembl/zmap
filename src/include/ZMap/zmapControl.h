@@ -46,15 +46,18 @@ typedef struct _ZMapStruct *ZMap ;
 /* Applications can register functions that will be called back with their own
  * data and a reference to the zmap that made the callback. */
 typedef void (*ZMapCallbackFunc)(ZMap zmap, void *app_data) ;
+typedef void (*ZMapCallbackViewFunc)(ZMap zmap, ZMapView view, void *app_data) ;
 
 
 /* Set of callback routines that allow the caller to be notified when events happen
  * to a ZMap. */
 typedef struct _ZMapCallbacksStruct
 {
-  ZMapCallbackFunc add ;				    /* Reports that zmap has been
+  ZMapCallbackViewFunc view_add ;                           /* Reports that zmap/view has been
 							       created. */
-  ZMapCallbackFunc destroy ;				    /* Reports that this zmap instance has
+  ZMapCallbackViewFunc view_destroy ;                       /* Reports that a view within a zmap
+                                                               has been destroyed. */
+  ZMapCallbackViewFunc destroy ;                            /* Reports that this zmap instance has
 							       been destroyed. */
   ZMapCallbackFunc quit_req ;				    /* Requests application
 							       termination. */
