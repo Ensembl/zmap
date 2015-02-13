@@ -6,6 +6,17 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 1.4.0</h4>
+<ul>
+  <li> Further developments to column filtering and splice highlighting
+  <li> GFF output has been internally unified and tidied up (SIRT:283110)
+  <li> Bug fixes and logging added to deal with slow startup problem on mac (SIRT:378314)
+  <li> Fix for collision detection (SIRT:447933)
+  <li> Fix for rare bug, zmap abort on exit (SIRT:437729)
+  <li> Bug fix for scrolling on reselection of a search result (SIRT:430753), and 
+      another zooming bug (SIRT:421191)
+</ul>
+
 <h4>Version 1.3.0</h4>
 <ul>
   <li>Fix a bug where zmap was leaking memory when idle (SIRT:437717) 
