@@ -1,31 +1,27 @@
 
-Git commits for  from commit "production" until commit "release/1.3.0"
+Git commits for  from commit "production" until commit "release/1.4.0"
 
-48f9533 2015-01-21 Fix incorrect gap string for protein seqs sent to blixem
-6fd8c75 2015-01-12 "fix bug causing lowercasing of featureset names on user loading."
-315c026 2015-01-08 Update the copyright declarations to the year 2015.
-7ab1636 2015-01-06 "add text for lessons learned from zmap."
-64e8a9d 2015-01-05 Fix some "File: " header lines.
-7e9ac48 2015-01-05 "add range of years copyright text as per sanger software policy."
-c5bf469 2014-12-19 "fix bug in state processing, did not clear up correctly on intermediate timeouts."
-165fb2f 2014-12-19 Disable zeromq test which sometimes hangs on cygwin
-a5a92b9 2014-12-18 "add in -f flag option to pass to autoreconf."
-2374938 2014-12-18 "add in -lX11 to link flags for 64-bit ubuntu."
-6fcadd5 2014-12-02 "fix memory leak causing zmap process to grow when idle."
-6efdb1f 2014-11-25 "add clean-zmap target to makefile"
-d41007d 2014-11-25 Merge branch 'feature/cygwin' into develop
-a00ed49 2014-11-25 "fix bugs in handling errors, not calling zmap to clear up modal lock."
-d281062 2014-11-25 "fix small bug, should not set model when app is dying, window is already gone."
-c21d3cd 2014-11-24 Fix install target on cygwin
-be05419 2014-11-20 Docs: update broken links
-b69fde4 2014-11-20 Update links to Design directory
-ace60f3 2014-11-19 update install files using Gemma's write up from web pages.
-c849175 2014-11-17 Add cygwin to supported host types
-ce2ad16 2014-11-17 clean up docs dir, remove expat and others redundant files, move foocanvas to src/libzmapfoocanvas.
-ae48c7e 2014-11-17 "remove zmapStyle_I.h, my mistake, I thought I'd done this."
-e00838f 2014-11-17 Merge branch 'feature/GOBJ_CAST' into develop
-acc322f 2014-11-14 Merge branch 'feature/Canvas_feature' into develop
-e10eae8 2014-11-12 Fix regression with file import for non-otterlace zmap
+1173481 2015-02-13 Replace 'annotools' email id with 'annosoft'
+25fc5d8 2015-02-11 small bug in dumper code
+bc0631d 2015-02-11 changed a couple of bitfield definitions to unsigned int
+270efea 2015-02-11 rearrangements to gff dumping flags
+93f37e1 2015-02-11 added mode=GRAPH features to the gff dumper
+905cb2a 2015-02-11 "move init message to be after version checking code so only version is shown."
+3efa194 2015-02-10 Merge branch 'feature/infopanel' into develop
+5169e53 2015-02-10 "Kind of fix for RT 378314: Zmap uses non fixed width font, put test early on in init."
+922a114 2015-02-10 "Fix RT 421191: zooming in on edge of assembly doesn't zoom in there."
+4ecd90e 2015-02-10 "Fix RT 430753: Reselecting a Search result does not scroll."
+8a69d2b 2015-02-10 "duh.....fix up ignore instruction."
+a52eae6 2015-02-10 "add an ignore file for generated zmapConfig/default_styles.c file."
+dc2f714 2015-02-10 generated file, should not be in git.
+86258be 2015-02-10 "fix copyright date."
+713ea46 2015-02-10 "Add style name to feature output."
+538d0ef 2015-02-10 "Fix wrong string in developer menu, should be 'Print Style'."
+824e4ce 2015-02-09 Merge branch 'feature/gffoutput' into develop
+65ef89a 2015-02-09 "replace now redundant window size getting code with new screen size routine."
+50e07ca 2015-02-09 "change to use new monitor size getting call."
+75f12d6 2015-02-09 "Add Gemma's code for getting physical monitor size into our screen size routine."
+85d8c5a 2015-01-28 correction to year in copyright statement
 
 
 End of git commits
