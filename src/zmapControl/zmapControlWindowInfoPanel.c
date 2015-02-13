@@ -39,7 +39,7 @@
 
 /* Keep in step with number of feature details widgets. NOTE that _not_ every text field in
  * the feature description is displayed in a label. */
-static enum
+enum
   {
     INFO_PANEL_LABELS = 10
   } ;

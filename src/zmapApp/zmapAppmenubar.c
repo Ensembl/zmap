@@ -19,9 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *          Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Implements zmap main window menubar.
  *              
@@ -31,47 +31,38 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <stdlib.h>
 #include <stdio.h>
+
 #include <ZMap/zmapUtilsGUI.h>
 #include <zmapApp_P.h>
 
 
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
-static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
-static void handle_option( gpointer data, guint callback_action, GtkWidget *w ) ;
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
 static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
-void DestroyNotifyFunc( gpointer data ) ;
 
+
+
+/* 
+ *                 Globals
+ */
 
 static GtkItemFactoryEntry menu_items[] = {
  { "/_File",           NULL,          NULL,          0, "<Branch>",  NULL},
- { "/File/_New",       "<control>N",  print_hello,   2, NULL,   NULL},
- { "/File/_Open",      "<control>O",  print_hello,   0, NULL,   NULL},
- { "/File/_Save",      "<control>S",  print_hello,   0, NULL,   NULL},
- { "/File/Save _As",   NULL,          NULL,          0, NULL,  NULL},
- { "/File/sep1",       NULL,          NULL,          0, "<Separator>",  NULL},
  { "/File/Quit",       "<control>Q",  quitCB,        0, NULL,  NULL},
- { "/_Edit",           NULL,          NULL,          0, "<Branch>",  NULL},
- { "/Edit/Cu_t",       "<control>X",  print_hello,   0, NULL,  NULL},
- { "/Edit/_Copy",      "<control>C",  print_hello,   0, NULL,  NULL},
- { "/Edit/_Paste",      "<control>V", print_hello,   0, NULL,  NULL},
- { "/_Options",        NULL,          NULL,          0, "<Branch>",  NULL},
- { "/Options/Option1", NULL,          handle_option, 1, "<CheckItem>",  NULL},
- { "/Options/Option2", NULL,          handle_option, 2, "<ToggleItem>",  NULL},
- { "/Options/Option3", NULL,          handle_option, 3, "<CheckItem>",  NULL},
- { "/Options/Option4", NULL,          handle_option, 4, "<ToggleItem>",  NULL},
  { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
  { "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
  { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
  { "/Help/About ZMap",    NULL,    aboutCB, 0, NULL }
 };
+
+
+
+
+/* 
+ *                Package routines
+ */
 
 
 GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context)
@@ -109,35 +100,6 @@ static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   return ;
 }
 
-static void print_hello( gpointer data, guint callback_action, GtkWidget *w )
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GtkWidget *myWidget;
-  printf( "widget is %x data is %s\n", w, data );
-  g_message ("Hello, World!\n");
-
-  myWidget = gtk_item_factory_get_widget (item_factory, "/File/New");
-  printf( "File/New is %x\n", myWidget );
-
-  gtk_item_factory_delete_item( item_factory, "/Edit" );
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-}
-
-static void handle_option( gpointer data, guint callback_action, GtkWidget *w )
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GtkCheckMenuItem *checkMenuItem = (GtkCheckMenuItem *) w;
-
-  printf( "widget is %x data is %s\n", w, data );
-  g_message ("Hello, World!\n");
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-}
-
-
 
 /* Show the usual tedious "About" dialog. */
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window)
@@ -158,16 +120,4 @@ static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *window
 }
 
 
-
-
-
-
-void DestroyNotifyFunc( gpointer data )
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf( "data is %x\n", data );
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-}
 

@@ -1984,7 +1984,6 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
   int i, incr, end ;
   int cds_bases ;
   gboolean first_exon ;
-  int phase_out = 0 ;
 
   cds_start = feature->feature.transcript.cds_start ;
   cds_end = feature->feature.transcript.cds_end ;
