@@ -25,7 +25,7 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
- * Description: Dumps the features within a given block as GFF v2
+ * Description: Dumps the features within a given block as GFF v3
  *
  * Exported functions: See ZMap/zmapGFF.h
  *-------------------------------------------------------------------
@@ -89,17 +89,6 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any, GHashTable *styles,
 
 static void deleteGFFFormatData(ZMapGFFFormatData *) ;
 static ZMapGFFFormatData createGFFFormatData() ;
-static gboolean getAttributeURL(ZMapFeature, GString *) ;
-static gboolean getAttributeName(ZMapFeature, GString *) ;
-static gboolean getAttributeNote(ZMapFeature, GString *) ;
-static gboolean getAttributeSequence(ZMapFeature, GString *, const char *) ;
-static gboolean getAttributeLocus(ZMapFeature, GString * ) ;
-static gboolean getAttributeID(ZMapFeature, GString *) ;
-static gboolean getAttributeParent(ZMapFeature, GString *) ;
-static gboolean getAttributeVariation(ZMapFeature, GString *) ;
-static gboolean getAttributeTarget(ZMapFeature, GString *) ;
-static gboolean getAttributePercentID(ZMapFeature, GString *) ;
-static gboolean getAttributeGap(ZMapFeature, GString *) ;
 
 /*
  * Public interface function to set the version of GFF to output.
@@ -940,7 +929,7 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
        */
       if (flags->target)
         {
-          if (getAttributeTarget(feature, attribute))
+          if (zMapWriteAttributeTarget(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE ) ;
             }
@@ -951,7 +940,7 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
        */
       if (flags->percent_id)
         {
-          if (getAttributePercentID(feature, attribute))
+          if (zMapWriteAttributePercentID(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -962,7 +951,7 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
        */
       if (flags->gap)
         {
-          if (getAttributeGap(feature, attribute))
+          if (zMapWriteAttributeGap(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -973,7 +962,7 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
        */
       if (flags->sequence)
         {
-          if (getAttributeSequence(feature, attribute, seq_str))
+          if (zMapWriteAttributeSequence(feature, attribute, seq_str))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1041,7 +1030,7 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
        */
       if (flags->id)
         {
-          if (getAttributeID(feature, attribute))
+          if (zMapWriteAttributeID(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1052,7 +1041,7 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
        */
       if (flags->name)
         {
-          if (getAttributeName(feature, attribute))
+          if (zMapWriteAttributeName(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1063,7 +1052,7 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
        */
       if (flags->locus)
         {
-          if (getAttributeLocus(feature, attribute))
+          if (zMapWriteAttributeLocus(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1078,7 +1067,7 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
        * Write a line for each exon and each CDS if present with
        * the ID of the previous line as Parent attribute.
        */
-      if (flags->parent && getAttributeParent(feature, attribute))
+      if (flags->parent && zMapWriteAttributeParent(feature, attribute))
         {
 
           for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
@@ -1198,7 +1187,7 @@ gboolean zMapGFFWriteFeatureText(ZMapFeature feature, ZMapGFFAttributeFlags flag
       if (flags->name)
         {
 
-          if (getAttributeName(feature, attribute))
+          if (zMapWriteAttributeName(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1209,7 +1198,7 @@ gboolean zMapGFFWriteFeatureText(ZMapFeature feature, ZMapGFFAttributeFlags flag
        */
       if (flags->note)
         {
-          if (getAttributeNote(feature, attribute))
+          if (zMapWriteAttributeNote(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1272,7 +1261,7 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
        */
       if (flags->name)
         {
-          if (getAttributeName(feature, attribute))
+          if (zMapWriteAttributeName(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1283,7 +1272,7 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
        */
       if (flags->url)
         {
-          if (getAttributeURL(feature, attribute))
+          if (zMapWriteAttributeURL(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1294,7 +1283,7 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
        */
       if (flags->variation)
         {
-          if (getAttributeVariation(feature, attribute))
+          if (zMapWriteAttributeVariation(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1305,7 +1294,7 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
        */
       if (flags->note)
         {
-          if (getAttributeNote(feature, attribute))
+          if (zMapWriteAttributeNote(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1372,7 +1361,7 @@ gboolean zMapGFFWriteFeatureGraph(ZMapFeature feature, ZMapGFFAttributeFlags fla
        */
       if (flags->name)
         {
-          if (getAttributeName(feature, attribute))
+          if (zMapWriteAttributeName(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1383,7 +1372,7 @@ gboolean zMapGFFWriteFeatureGraph(ZMapFeature feature, ZMapGFFAttributeFlags fla
        */
       if (flags->url)
         {
-          if (getAttributeURL(feature, attribute))
+          if (zMapWriteAttributeURL(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1394,7 +1383,7 @@ gboolean zMapGFFWriteFeatureGraph(ZMapFeature feature, ZMapGFFAttributeFlags fla
        */
       if (flags->note)
         {
-          if (getAttributeNote(feature, attribute))
+          if (zMapWriteAttributeNote(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -1459,7 +1448,7 @@ static void deleteGFFFormatData(ZMapGFFFormatData *p_format_data)
 /*
  * Function to return the Name attribute.
  */
-static gboolean getAttributeName(ZMapFeature feature, GString *attribute)
+gboolean zMapWriteAttributeName(ZMapFeature feature, GString *attribute)
 {
   static const char *format_str = "Name=%s" ;
   gboolean result = FALSE ;
@@ -1484,7 +1473,7 @@ static gboolean getAttributeName(ZMapFeature feature, GString *attribute)
 /*
  * Function to return the ID attribute (same as Name at present).
  */
-static gboolean getAttributeID(ZMapFeature feature, GString *attribute)
+gboolean zMapWriteAttributeID(ZMapFeature feature, GString *attribute)
 {
   static const char *format_str = "ID=%s" ;
   gboolean result = FALSE ;
@@ -1509,7 +1498,7 @@ static gboolean getAttributeID(ZMapFeature feature, GString *attribute)
 /*
  * Function to return the Parent attribute (same as Name and ID at present).
  */
-static gboolean getAttributeParent(ZMapFeature feature, GString *attribute)
+gboolean zMapWriteAttributeParent(ZMapFeature feature, GString *attribute)
 {
   static const char *format_str = "Parent=%s" ;
   gboolean result = FALSE ;
@@ -1535,7 +1524,7 @@ static gboolean getAttributeParent(ZMapFeature feature, GString *attribute)
 /*
  * Function to return the escaped URL attribute.
  */
-static gboolean getAttributeURL(ZMapFeature feature, GString *attribute)
+gboolean zMapWriteAttributeURL(ZMapFeature feature, GString *attribute)
 {
   static const char *format_str = "url=%s" ;
   gboolean result = FALSE ;
@@ -1564,7 +1553,7 @@ static gboolean getAttributeURL(ZMapFeature feature, GString *attribute)
 /*
  * Function to return the escaped Note attribute.
  */
-static gboolean getAttributeNote(ZMapFeature feature, GString *attribute)
+gboolean zMapWriteAttributeNote(ZMapFeature feature, GString *attribute)
 {
   static const char *format_str = "Note=%s" ;
   gboolean result = FALSE ;
@@ -1593,7 +1582,7 @@ static gboolean getAttributeNote(ZMapFeature feature, GString *attribute)
 /*
  * Function to return the sequence attribute.
  */
-static gboolean getAttributeSequence(ZMapFeature feature, GString *attribute, const char *seq_str)
+gboolean zMapWriteAttributeSequence(ZMapFeature feature, GString *attribute, const char *seq_str)
 {
   static const char *format_str = "sequence=%s" ;
   gboolean result = FALSE ;
@@ -1615,7 +1604,7 @@ static gboolean getAttributeSequence(ZMapFeature feature, GString *attribute, co
 /*
  * locus attribute
  */
-static gboolean getAttributeLocus(ZMapFeature feature, GString *attribute)
+gboolean zMapWriteAttributeLocus(ZMapFeature feature, GString *attribute)
 {
   static const char *format_str = "locus=%s" ;
   gboolean result = FALSE ;
@@ -1649,7 +1638,7 @@ static gboolean getAttributeLocus(ZMapFeature feature, GString *attribute)
 /*
  * Variation string attribute.
  */
-static gboolean getAttributeVariation(ZMapFeature feature, GString* attribute)
+gboolean zMapWriteAttributeVariation(ZMapFeature feature, GString* attribute)
 {
   static const char *format_str = "variant_sequence=%s" ;
   gboolean result = FALSE ;
@@ -1672,7 +1661,7 @@ static gboolean getAttributeVariation(ZMapFeature feature, GString* attribute)
 /*
  * Target attribute.
  */
-static gboolean getAttributeTarget(ZMapFeature feature, GString *attribute)
+gboolean zMapWriteAttributeTarget(ZMapFeature feature, GString *attribute)
 {
   gboolean result = FALSE ;
   char * escaped_string = NULL ;
@@ -1710,7 +1699,7 @@ static gboolean getAttributeTarget(ZMapFeature feature, GString *attribute)
 /*
  * percentID attribute
  */
-static gboolean getAttributePercentID(ZMapFeature feature, GString *attribute)
+gboolean zMapWriteAttributePercentID(ZMapFeature feature, GString *attribute)
 {
   gboolean result = FALSE ;
   float percent_id = 0.0 ;
@@ -1732,7 +1721,7 @@ static gboolean getAttributePercentID(ZMapFeature feature, GString *attribute)
 /*
  * Gap attribute
  */
-static gboolean getAttributeGap(ZMapFeature feature, GString *attribute)
+gboolean zMapWriteAttributeGap(ZMapFeature feature, GString *attribute)
 {
   gboolean result = FALSE ;
   GArray *gaps = NULL ;

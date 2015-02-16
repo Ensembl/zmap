@@ -196,4 +196,16 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
   ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
 gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, GIOChannel *file, GString **text_out, GError **error_out) ;
 
+gboolean zMapWriteAttributeURL(ZMapFeature, GString *) ;
+gboolean zMapWriteAttributeName(ZMapFeature, GString *) ;
+gboolean zMapWriteAttributeNote(ZMapFeature, GString *) ;
+gboolean zMapWriteAttributeSequence(ZMapFeature, GString *, const char *) ;
+gboolean zMapWriteAttributeLocus(ZMapFeature, GString * ) ;
+gboolean zMapWriteAttributeID(ZMapFeature, GString *) ;
+gboolean zMapWriteAttributeParent(ZMapFeature, GString *) ;
+gboolean zMapWriteAttributeVariation(ZMapFeature, GString *) ;
+gboolean zMapWriteAttributeTarget(ZMapFeature, GString *) ;
+gboolean zMapWriteAttributePercentID(ZMapFeature, GString *) ;
+gboolean zMapWriteAttributeGap(ZMapFeature, GString *) ;
+
 #endif /* ZMAP_GFF_H */
