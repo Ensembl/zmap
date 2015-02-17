@@ -95,9 +95,9 @@ static GtkItemFactoryEntry menu_items[] = {
          //{ "/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
          //{ "/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
          //{ "/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL },
-         //{ "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
-         //{ "/File/Save screen sho_t",               NULL,                dumpCB,                0,  NULL },
-         //{ "/File/_Print screen shot",              "<control>P",        printCB,               0,  NULL },
+         { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
+         { "/File/Save screen sho_t",               NULL,                dumpCB,                0,  NULL },
+         { "/File/_Print screen shot",              "<control>P",        printCB,               0,  NULL },
          { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
          { "/File/Close",                           "<control>W",        closeCB,               0,  NULL },
          { "/File/Quit",                            "<control>Q",        quitCB,                0,  NULL },
@@ -191,17 +191,17 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
         break ;
       }
 
+    case 12:
+      {
+        /* Export features for marked region */
+        result = zMapWindowExportFeatures(curr_window, TRUE, NULL, NULL, &error) ;
+        break ;
+      }
+
     case 3:
       {
         /* Export context */
         result = zMapWindowExportContext(curr_window, &error) ;
-        break ;
-      }
-
-    case 12:
-      {
-        /* Export featuers for marked region */
-        result = zMapWindowExportFeatures(curr_window, TRUE, NULL, NULL, &error) ;
         break ;
       }
 
