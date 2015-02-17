@@ -87,14 +87,14 @@ static GtkItemFactoryEntry menu_items[] = {
          { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
          { "/File/_Import",                         "<control>I",        importCB,              0,  NULL },/* or Read ? */
          { "/File/_Export",                         NULL,                NULL,                  0,  "<Branch>" },
-         { "/File/Export/_All Features",            NULL,                NULL,                  0,  "<Branch>" },
-         { "/File/Export/All Features/_DNA",        NULL,                exportCB,              1,  NULL },
-         { "/File/Export/All Features/_Features",   "<control>E",        exportCB,              2,  NULL },
-         { "/File/Export/All Features/_Context",    NULL,                exportCB,              3,  NULL },
-         { "/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
-         { "/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
-         { "/File/Export/Marked Features/_Features","<shift><control>E", exportCB,              12, NULL },
-         { "/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL },
+         //{ "/File/Export/_Data",                      NULL,                NULL,                  0,  "<Branch>" },
+         { "/File/Export/_DNA",                  NULL,                exportCB,              1,  NULL },
+         { "/File/Export/_Features",             "<control>E",        exportCB,              2,  NULL },
+         { "/File/Export/_Features (marked)",    "<shift><control>E", exportCB,              12, NULL },
+         { "/File/Export/_Context",              NULL,                exportCB,              3,  NULL },
+         //{ "/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
+         //{ "/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
+         //{ "/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL },
          { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
          { "/File/Save screen sho_t",               NULL,                dumpCB,                0,  NULL },
          { "/File/_Print screen shot",              "<control>P",        printCB,               0,  NULL },
@@ -191,17 +191,17 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
         break ;
       }
 
+    case 12:
+      {
+        /* Export features for marked region */
+        result = zMapWindowExportFeatures(curr_window, TRUE, NULL, NULL, &error) ;
+        break ;
+      }
+
     case 3:
       {
         /* Export context */
         result = zMapWindowExportContext(curr_window, &error) ;
-        break ;
-      }
-
-    case 12:
-      {
-        /* Export featuers for marked region */
-        result = zMapWindowExportFeatures(curr_window, TRUE, NULL, NULL, &error) ;
         break ;
       }
 

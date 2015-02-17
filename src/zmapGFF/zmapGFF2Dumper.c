@@ -25,7 +25,7 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
- * Description: Dumps the features within a given block as GFF v2
+ * Description: Dumps the features within a given block as GFF v3
  *
  * Exported functions: See ZMap/zmapGFF.h
  *-------------------------------------------------------------------
@@ -460,7 +460,6 @@ gboolean zMapGFFFormatAttributeSetGraph(ZMapGFFAttributeFlags attribute_flags)
     {
       attribute_flags->name        = TRUE ;
       attribute_flags->url         = TRUE ;
-      attribute_flags->variation   = TRUE ;
       attribute_flags->note        = TRUE ;
     }
 
@@ -521,7 +520,6 @@ gboolean zMapGFFFormatAttributeSetText(ZMapGFFAttributeFlags attribute_flags)
       attribute_flags->name        = TRUE ;
       attribute_flags->note        = TRUE ;
       attribute_flags->url         = TRUE ;
-      attribute_flags->locus       = TRUE ;
     }
 
   return result ;
@@ -778,7 +776,7 @@ gboolean zMapGFFFormatMandatory(gboolean over_write, GString *line,
     c_phase = '\0' ;
 
   if (!line || !sequence || !*sequence
-            || !source || !*source
+       /*   || !source || !*source */
             || !type || !*type
             || (start <= 0) || (start > end))
     return status ;
@@ -879,21 +877,19 @@ gboolean zMapGFFOutputWriteLineToGIO(GIOChannel *gio_channel,
   return status ;
 }
 
-
+/*
+ * Write out alignment feature and attributes.
+ */
 gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags flags,
                                       GString * line, const char *seq_str)
 {
   gboolean status = FALSE ;
   const char *sequence_name = NULL,
-    *feature_name = NULL,
     *source_name = NULL,
     *type = NULL ;
-  char *escaped_string = NULL ;
   GString *attribute = NULL ;
-  ZMapStrand strand = ZMAPSTRAND_NONE,
-    s_strand = ZMAPSTRAND_NONE ;
+  ZMapStrand strand = ZMAPSTRAND_NONE ;
   float percent_id = (float) 0.0 ;
-  GArray *gaps = NULL ;
 
   if (   !feature
       || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT)
@@ -908,7 +904,6 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
   source_name = g_quark_to_string(feature->parent->original_id) ;
   if (strstr(source_name, anon_source))
     source_name = anon_source_ab ;
-  feature_name = g_quark_to_string(feature->original_id) ;
   type = g_quark_to_string(feature->SO_accession) ;
   strand = feature->strand ;
 
@@ -920,87 +915,66 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
   /*
    * Mandatory fields.
    */
-  zMapGFFFormatMandatory(TRUE, line,
-                         sequence_name, source_name, type,
-                         feature->x1, feature->x2,
-                         feature->score, strand, ZMAPPHASE_NONE,
-                         TRUE, TRUE ) ;
+  status = zMapGFFFormatMandatory(TRUE, line,
+                                  sequence_name, source_name, type,
+                                  feature->x1, feature->x2,
+                                  feature->score, strand, ZMAPPHASE_NONE,
+                                  TRUE, TRUE ) ;
 
-  /*
-   * Target attribute; note that the strand is optional
-   */
-  if (flags->target && feature_name && *feature_name)
+  if (status)
     {
-      ZMapStrand s_strand = feature->feature.homol.strand ;
-      int sstart = feature->feature.homol.y1,
-        send = feature->feature.homol.y2 ;
-      escaped_string = g_uri_escape_string(feature_name, reserved_allowed, FALSE  ) ;
-      if (escaped_string)
+
+      /*
+       * Target attribute; note that the strand is optional
+       */
+      if (flags->target)
         {
-          if (s_strand != ZMAPSTRAND_NONE)
+          if (zMapWriteAttributeTarget(feature, attribute))
             {
-              g_string_printf(attribute, "Target=%s %d %d %c",
-                              escaped_string, sstart, send,
-                              zMapGFFFormatStrand2Char(s_strand)) ;
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE ) ;
             }
-          else
+        }
+
+      /*
+       * percentID attribute
+       */
+      if (flags->percent_id)
+        {
+          if (zMapWriteAttributePercentID(feature, attribute))
             {
-              g_string_printf(attribute, "Target=%s %d %d",
-                              escaped_string, sstart, send) ;
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
-          g_free(escaped_string) ;
         }
-    }
 
-  /*
-   * percentID attribute
-   */
-  if (flags->percent_id)
-    {
-      percent_id = feature->feature.homol.percent_id ;
-      if (percent_id != (float)0.0)
+      /*
+       * Gap attribute (gffv3)
+       */
+      if (flags->gap)
         {
-          g_string_printf(attribute, "percentID=%g", percent_id) ;
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
+          if (zMapWriteAttributeGap(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
         }
-    }
 
-  /*
-   * Gap attribute (gffv3)
-   */
-  if (flags->gap)
-    {
-      gaps = feature->feature.homol.align ;
-      if (gaps)
+      /*
+       * Sequence attribute
+       */
+      if (flags->sequence)
         {
-          ZMapSequenceType match_seq_type = ZMAPSEQUENCE_NONE ;
-          ZMapHomolType homol_type = feature->feature.homol.type ;
-          if (homol_type == ZMAPHOMOL_N_HOMOL)
-            match_seq_type = ZMAPSEQUENCE_DNA ;
-          else
-            match_seq_type = ZMAPSEQUENCE_PEPTIDE ;
-
-          zMapGFFFormatGap2GFF(attribute, gaps, strand, match_seq_type) ;
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
+          if (zMapWriteAttributeSequence(feature, attribute, seq_str))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
         }
-    }
+
+      g_string_append_c(line, '\n') ;
+
+    } /* if (status) */
 
   /*
-   * Sequence attribute
+   * Free when finished.
    */
-  if (flags->sequence && seq_str && *seq_str)
-    {
-      g_string_printf(attribute, "sequence=%s", seq_str) ;
-      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-      g_string_truncate(attribute, (gsize)0) ;
-    }
-
-  g_string_append_c(line, '\n') ;
-
   if (attribute)
     g_string_free(attribute, TRUE) ;
 
@@ -1020,10 +994,8 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
   int i=0 ;
   ZMapSpan span = NULL ;
   const char *sequence_name = NULL,
-    *feature_name = NULL,
     *source_name = NULL,
     *type = NULL ;
-  char *escaped_string = NULL ;
   GString *attribute = NULL ;
 
   if (   !feature
@@ -1040,119 +1012,136 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
   source_name = g_quark_to_string(feature->parent->original_id) ;
   if (strstr(source_name, anon_source))
     source_name = anon_source_ab ;
-  feature_name = g_quark_to_string(feature->original_id) ;
   type = g_quark_to_string(feature->SO_accession) ;
-  escaped_string = g_uri_escape_string(feature_name, reserved_allowed, FALSE ) ;
 
   /*
    * Mandatory fields.
    */
-  zMapGFFFormatMandatory(TRUE, line,
-                         sequence_name, source_name, type,
-                         feature->x1, feature->x2,
-                         feature->score, feature->strand, ZMAPPHASE_NONE,
-                         (gboolean)feature->flags.has_score, TRUE ) ;
+  status = zMapGFFFormatMandatory(TRUE, line,
+                                  sequence_name, source_name, type,
+                                  feature->x1, feature->x2,
+                                  feature->score, feature->strand, ZMAPPHASE_NONE,
+                                  (gboolean)feature->flags.has_score, TRUE ) ;
 
-  /*
-   * ID attribute
-   */
-  if (flags->id && escaped_string)
+  if (status)
     {
-      g_string_printf(attribute, "ID=%s", escaped_string) ;
-      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-      g_string_truncate(attribute, (gsize)0) ;
-    }
-
-  /*
-   * Name attribute
-   */
-  if (flags->name && escaped_string)
-    {
-      g_string_printf(attribute, "Name=%s", escaped_string) ;
-      zMapGFFFormatAppendAttribute(line, attribute, FALSE, FALSE) ;
-      g_string_truncate(attribute, (gsize)0) ;
-    }
-
-  /*
-   * End of line for parent object.
-   */
-  g_string_append_c(line, '\n');
-
-  /*
-   * Write a line for each exon and each CDS if present with
-   * the ID of the previous line as Parent attribute.
-   */
-  if (flags->parent && escaped_string)
-    {
-      g_string_printf(attribute, "Parent=%s", escaped_string) ;
-      for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
+      /*
+       * ID attribute
+       */
+      if (flags->id)
         {
-          int exon_start=0, exon_end=0 ;
-
-          span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i) ;
-
-          if (span)
+          if (zMapWriteAttributeID(feature, attribute))
             {
-              exon_start = span->x1 ;
-              exon_end = span->x2 ;
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
 
-              /*
-               * Mandatory fields.
-               */
-              zMapGFFFormatMandatory(FALSE, line,
-                                     sequence_name, source_name, SO_exon_id,
-                                     exon_start, exon_end,
-                                     feature->score, feature->strand, ZMAPPHASE_NONE,
-                                     (gboolean)feature->flags.has_score, TRUE ) ;
+      /*
+       * Name attribute
+       */
+      if (flags->name)
+        {
+          if (zMapWriteAttributeName(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
 
-              /*
-               * Parent attribute and end of line.
-               */
-              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE ) ;
-              g_string_append_c(line, '\n');
+      /*
+       * Locus attribute
+       */
+      if (flags->locus)
+        {
+          if (zMapWriteAttributeLocus(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
 
-              /*
-               * Now do a CDS line if the feature has one.
-               */
-              if (feature->feature.transcript.flags.cds)
+      /*
+       * End of line for parent object.
+       */
+      g_string_append_c(line, '\n');
+
+      /*
+       * Write a line for each exon and each CDS if present with
+       * the ID of the previous line as Parent attribute.
+       */
+      if (flags->parent && zMapWriteAttributeParent(feature, attribute))
+        {
+
+          for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
+            {
+              int exon_start=0, exon_end=0 ;
+
+              span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i) ;
+
+              if (span)
                 {
-                  int cds_start=0, cds_end=0 ;
+                  exon_start = span->x1 ;
+                  exon_end = span->x2 ;
 
-                  cds_start = feature->feature.transcript.cds_start ;
-                  cds_end = feature->feature.transcript.cds_end ;
-
-                  if (exon_start > cds_end || exon_end < cds_start)
+                  /*
+                   * Mandatory fields.
+                   */
+                  if (zMapGFFFormatMandatory(FALSE, line,
+                                         sequence_name, source_name, SO_exon_id,
+                                         exon_start, exon_end,
+                                         (float)0.0, feature->strand, ZMAPPHASE_NONE,
+                                         FALSE, TRUE ) )
                     {
-                      ;
-                    }
-                  else
-                    {
-                      int tmp_cds1=0, tmp_cds2=0;
-                      ZMapPhase phase = ZMAPPHASE_NONE ;
 
-                      if (zMapFeatureExon2CDS(feature, exon_start, exon_end,
-                                              &tmp_cds1, &tmp_cds2, &phase))
+                      /*
+                       * Parent attribute and end of line.
+                       */
+                      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE ) ;
+                      g_string_append_c(line, '\n');
+
+                      /*
+                       * Now do a CDS line if the feature has one.
+                       */
+                      if (feature->feature.transcript.flags.cds)
                         {
-                          /* mandatory data */
-                          zMapGFFFormatMandatory(FALSE, line,
-                                                 sequence_name, source_name, SO_CDS_id,
-                                                 tmp_cds1, tmp_cds2,
-                                                 feature->score, feature->strand, phase,
-                                                 (gboolean)feature->flags.has_score, TRUE ) ;
-                          /* parent attribute and end of line */
-                          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-                          g_string_append_c(line, '\n');
-                        }
-                    }
-                } /* if the feature has a CDS */
-            } /* if the exon span is valid */
-        } /* loop over exons */
-    }
+                          int cds_start=0, cds_end=0 ;
+
+                          cds_start = feature->feature.transcript.cds_start ;
+                          cds_end = feature->feature.transcript.cds_end ;
+
+                          if (exon_start > cds_end || exon_end < cds_start)
+                            {
+                              ;
+                            }
+                          else
+                            {
+                              int tmp_cds1=0, tmp_cds2=0;
+                              ZMapPhase phase = ZMAPPHASE_NONE ;
+
+                              if (zMapFeatureExon2CDS(feature, exon_start, exon_end,
+                                                      &tmp_cds1, &tmp_cds2, &phase))
+                                {
+                                  /* mandatory data */
+                                  if (zMapGFFFormatMandatory(FALSE, line,
+                                                         sequence_name, source_name, SO_CDS_id,
+                                                         tmp_cds1, tmp_cds2,
+                                                         (float)0.0, feature->strand, phase,
+                                                         FALSE, TRUE ))
+                                    {
+                                      /* parent attribute and end of line */
+                                      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+                                      g_string_append_c(line, '\n');
+                                    }
+                                }
+                            }
+                        } /* if the feature has a CDS */
+                    } /* if write of exon line was OK */
+                } /* if the exon span is valid */
+            } /* loop over exons */
+        } /* if we have a parent attribute */
+
+    } /* if (status) */
 
   if (attribute)
     g_string_free(attribute, TRUE) ;
-  if (escaped_string)
-    g_free(escaped_string) ;
 
   return status ;
 }
@@ -1164,9 +1153,7 @@ gboolean zMapGFFWriteFeatureText(ZMapFeature feature, ZMapGFFAttributeFlags flag
   const char *sequence_name = NULL,
     *source_name = NULL,
     *type = NULL ;
-  char *string_escaped = NULL ;
   GString * attribute = NULL ;
-  GQuark gqID = 0 ;
 
   if (   !feature
       || (feature->mode != ZMAPSTYLE_MODE_TEXT)
@@ -1186,72 +1173,46 @@ gboolean zMapGFFWriteFeatureText(ZMapFeature feature, ZMapGFFAttributeFlags flag
   /*
    * Mandatory fields...
    */
-  zMapGFFFormatMandatory(TRUE, line,
-                         sequence_name, source_name, type,
-                         feature->x1, feature->x2,
-                         feature->score, feature->strand, ZMAPPHASE_NONE,
-                         (gboolean)feature->flags.has_score, TRUE) ;
+  status = zMapGFFFormatMandatory(TRUE, line,
+                                  sequence_name, source_name, type,
+                                  feature->x1, feature->x2,
+                                  feature->score, feature->strand, ZMAPPHASE_NONE,
+                                  (gboolean)feature->flags.has_score, TRUE) ;
 
-  /*
-   * Name attribute
-   */
-  if (flags->name)
+  if (status)
     {
-      string_escaped = g_uri_escape_string(g_quark_to_string(feature->original_id),
-                                           reserved_allowed, FALSE) ;
-      if (string_escaped)
+      /*
+       * Name attribute
+       */
+      if (flags->name)
         {
-          g_string_printf(attribute, "Name=%s", string_escaped) ;
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
-          g_string_truncate(attribute, (gsize)0) ;
-        }
-    }
 
-  /*
-   * Note attribute
-   */
-  if (flags->note && feature->description)
-    {
-      string_escaped = g_uri_escape_string(feature->description,
-                                           reserved_allowed, FALSE) ;
-      if (string_escaped)
-        {
-          g_string_printf(attribute, "Note=%s", string_escaped) ;
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
-        }
-    }
-
-  /*
-   * locus_id attribute
-   */
-  if (flags->locus && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-    {
-      gqID = feature->feature.transcript.locus_id ;
-      if (gqID)
-        {
-          string_escaped = g_uri_escape_string(g_quark_to_string(gqID),
-                                                reserved_allowed, FALSE ) ;
-          if (string_escaped)
+          if (zMapWriteAttributeName(feature, attribute))
             {
-              g_string_printf(attribute, "locus=%s", string_escaped) ;
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-              g_string_truncate(attribute, (gsize)0) ;
-              g_free(string_escaped) ;
-              string_escaped = NULL ;
             }
         }
+
+      /*
+       * Note attribute
+       */
+      if (flags->note)
+        {
+          if (zMapWriteAttributeNote(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
+
+      /*
+       * End of this feature line.
+       */
+      g_string_append_c(line, '\n') ;
     }
 
-
   /*
-   * End of this feature line.
+   * Free when finished
    */
-  g_string_append_c(line, '\n') ;
   g_string_free(attribute, TRUE) ;
 
   return status ;
@@ -1266,7 +1227,6 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
   const char *sequence_name = NULL,
     *source_name = NULL,
     *type = NULL ;
-  char *string_escaped = NULL ;
   GString *attribute = NULL ;
 
   if (   !feature
@@ -1287,77 +1247,69 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
   /*
    * Mandatory fields...
    */
-  zMapGFFFormatMandatory(TRUE, line,
-                         sequence_name, source_name, type,
-                         feature->x1, feature->x2,
-                         feature->score, feature->strand, ZMAPPHASE_NONE,
-                         (gboolean)feature->flags.has_score, TRUE) ;
+  status = zMapGFFFormatMandatory(TRUE, line,
+                                  sequence_name, source_name, type,
+                                  feature->x1, feature->x2,
+                                  feature->score, feature->strand, ZMAPPHASE_NONE,
+                                  (gboolean)feature->flags.has_score, TRUE) ;
 
-  /*
-   * Name attribute
-   */
-  if (flags->name)
+  if (status)
     {
-      string_escaped = g_uri_escape_string(g_quark_to_string(feature->original_id),
-                                           reserved_allowed, FALSE) ;
-      if (string_escaped)
+
+      /*
+       * Name attribute
+       */
+      if (flags->name)
         {
-          g_string_printf(attribute, "Name=%s", string_escaped) ;
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
-          g_string_truncate(attribute, (gsize)0) ;
+          if (zMapWriteAttributeName(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
         }
-    }
 
-  /*
-   * URL attribute
-   */
-  if (flags->url && feature->url)
-    {
-      string_escaped = g_uri_escape_string(feature->url,
-                                           NULL, FALSE) ;
-      if (string_escaped)
+      /*
+       * URL attribute
+       */
+      if (flags->url)
         {
-          g_string_printf(attribute, "url=%s", string_escaped) ;
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
+          if (zMapWriteAttributeURL(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
         }
-    }
 
-  /*
-   * Variation string attribute.
-   */
-  if (flags->variation && feature->feature.basic.flags.variation_str)
-    {
-      g_string_printf(attribute, "variant_sequence=%s", feature->feature.basic.variation_str) ;
-      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-      g_string_truncate(attribute, (gsize)0) ;
-    }
-
-  /*
-   * Note attribute
-   */
-  if (flags->note && feature->description)
-    {
-      string_escaped = g_uri_escape_string(feature->description,
-                                           reserved_allowed, FALSE) ;
-      if (string_escaped)
+      /*
+       * Variation string attribute.
+       */
+      if (flags->variation)
         {
-          g_string_printf(attribute, "Note=%s", string_escaped) ;
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
+          if (zMapWriteAttributeVariation(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
         }
-    }
+
+      /*
+       * Note attribute
+       */
+      if (flags->note)
+        {
+          if (zMapWriteAttributeNote(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
+
+      /*
+       * End of line.
+       */
+      g_string_append_c(line, '\n') ;
+
+   }
 
   /*
-   * End of line.
+   * Free when finished.
    */
-  g_string_append_c(line, '\n') ;
   g_string_free(attribute, TRUE) ;
 
   return status ;
@@ -1375,7 +1327,6 @@ gboolean zMapGFFWriteFeatureGraph(ZMapFeature feature, ZMapGFFAttributeFlags fla
   const char *sequence_name = NULL,
     *source_name = NULL,
     *type = NULL ;
-  char *string_escaped = NULL ;
   GString *attribute = NULL ;
 
   if (   !feature
@@ -1396,77 +1347,58 @@ gboolean zMapGFFWriteFeatureGraph(ZMapFeature feature, ZMapGFFAttributeFlags fla
   /*
    * Mandatory fields...
    */
-  zMapGFFFormatMandatory(TRUE, line,
-                         sequence_name, source_name, type,
-                         feature->x1, feature->x2,
-                         feature->score, feature->strand, ZMAPPHASE_NONE,
-                         (gboolean)feature->flags.has_score, TRUE) ;
+  status = zMapGFFFormatMandatory(TRUE, line,
+                                  sequence_name, source_name, type,
+                                  feature->x1, feature->x2,
+                                  feature->score, feature->strand, ZMAPPHASE_NONE,
+                                  (gboolean)feature->flags.has_score, TRUE) ;
 
-  /*
-   * Name attribute
-   */
-  if (flags->name)
+  if (status)
     {
-      string_escaped = g_uri_escape_string(g_quark_to_string(feature->original_id),
-                                           reserved_allowed, FALSE) ;
-      if (string_escaped)
+
+      /*
+       * Name attribute
+       */
+      if (flags->name)
         {
-          g_string_printf(attribute, "Name=%s", string_escaped) ;
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
-          g_string_truncate(attribute, (gsize)0) ;
+          if (zMapWriteAttributeName(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
         }
-    }
 
-  /*
-   * URL attribute
-   */
-  if (flags->url && feature->url)
-    {
-      string_escaped = g_uri_escape_string(feature->url,
-                                           NULL, FALSE) ;
-      if (string_escaped)
+      /*
+       * URL attribute
+       */
+      if (flags->url)
         {
-          g_string_printf(attribute, "url=%s", string_escaped) ;
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
+          if (zMapWriteAttributeURL(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
         }
-    }
 
-  /*
-   * Variation string attribute.
-   */
-  if (flags->variation && feature->feature.basic.flags.variation_str)
-    {
-      g_string_printf(attribute, "variant_sequence=%s", feature->feature.basic.variation_str) ;
-      zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-      g_string_truncate(attribute, (gsize)0) ;
-    }
-
-  /*
-   * Note attribute
-   */
-  if (flags->note && feature->description)
-    {
-      string_escaped = g_uri_escape_string(feature->description,
-                                           reserved_allowed, FALSE) ;
-      if (string_escaped)
+      /*
+       * Note attribute
+       */
+      if (flags->note)
         {
-          g_string_printf(attribute, "Note=%s", string_escaped) ;
-          zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
-          g_string_truncate(attribute, (gsize)0) ;
-          g_free(string_escaped) ;
-          string_escaped = NULL ;
+          if (zMapWriteAttributeNote(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
         }
+
+      /*
+       * End of line.
+       */
+      g_string_append_c(line, '\n') ;
+
     }
 
   /*
-   * End of line.
+   * Free this when finished.
    */
-  g_string_append_c(line, '\n') ;
   g_string_free(attribute, TRUE) ;
 
   return status ;
@@ -1512,3 +1444,320 @@ static void deleteGFFFormatData(ZMapGFFFormatData *p_format_data)
 
   return ;
 }
+
+/*
+ * Function to return the Name attribute.
+ */
+gboolean zMapWriteAttributeName(ZMapFeature feature, GString *attribute)
+{
+  static const char *format_str = "Name=%s" ;
+  gboolean result = FALSE ;
+  char *string_escaped = NULL ;
+
+  if (!feature || !attribute)
+    return result ;
+
+  string_escaped = g_uri_escape_string(g_quark_to_string(feature->original_id),
+                                       reserved_allowed, FALSE) ;
+  if (string_escaped)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_printf(attribute, format_str, string_escaped) ;
+      g_free(string_escaped) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+/*
+ * Function to return the ID attribute (same as Name at present).
+ */
+gboolean zMapWriteAttributeID(ZMapFeature feature, GString *attribute)
+{
+  static const char *format_str = "ID=%s" ;
+  gboolean result = FALSE ;
+  char *string_escaped = NULL ;
+
+  if (!feature || !attribute)
+    return result ;
+
+  string_escaped = g_uri_escape_string(g_quark_to_string(feature->original_id),
+                                       reserved_allowed, FALSE) ;
+  if (string_escaped)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_printf(attribute, format_str, string_escaped) ;
+      g_free(string_escaped) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+/*
+ * Function to return the Parent attribute (same as Name and ID at present).
+ */
+gboolean zMapWriteAttributeParent(ZMapFeature feature, GString *attribute)
+{
+  static const char *format_str = "Parent=%s" ;
+  gboolean result = FALSE ;
+  char *string_escaped = NULL ;
+
+  if (!feature || !attribute)
+    return result ;
+
+  string_escaped = g_uri_escape_string(g_quark_to_string(feature->original_id),
+                                       reserved_allowed, FALSE) ;
+  if (string_escaped)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_printf(attribute, format_str, string_escaped) ;
+      g_free(string_escaped) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+/*
+ * Function to return the escaped URL attribute.
+ */
+gboolean zMapWriteAttributeURL(ZMapFeature feature, GString *attribute)
+{
+  static const char *format_str = "url=%s" ;
+  gboolean result = FALSE ;
+  char *string_escaped = NULL ;
+
+  if (!feature || !attribute)
+    return result ;
+
+  if (feature->url)
+    {
+      string_escaped = g_uri_escape_string(feature->url,
+                                           NULL, FALSE) ;
+      if (string_escaped)
+        {
+          g_string_truncate(attribute, (gsize)0) ;
+          g_string_printf(attribute, format_str, string_escaped) ;
+          g_free(string_escaped) ;
+          result = TRUE ;
+        }
+    }
+
+  return result ;
+}
+
+
+/*
+ * Function to return the escaped Note attribute.
+ */
+gboolean zMapWriteAttributeNote(ZMapFeature feature, GString *attribute)
+{
+  static const char *format_str = "Note=%s" ;
+  gboolean result = FALSE ;
+  char *string_escaped = NULL ;
+
+  if (!feature || !attribute)
+    return result ;
+
+  if (feature->description)
+    {
+      string_escaped = g_uri_escape_string(feature->description,
+                                           reserved_allowed, FALSE) ;
+      if (string_escaped)
+        {
+          g_string_truncate(attribute, (gsize)0) ;
+          g_string_printf(attribute, format_str, string_escaped) ;
+          g_free(string_escaped) ;
+          result = TRUE ;
+        }
+    }
+
+  return result ;
+}
+
+
+/*
+ * Function to return the sequence attribute.
+ */
+gboolean zMapWriteAttributeSequence(ZMapFeature feature, GString *attribute, const char *seq_str)
+{
+  static const char *format_str = "sequence=%s" ;
+  gboolean result = FALSE ;
+
+  if (!feature || !attribute || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT))
+    return result ;
+
+  if (seq_str && *seq_str)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_printf(attribute, format_str, seq_str) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+/*
+ * locus attribute
+ */
+gboolean zMapWriteAttributeLocus(ZMapFeature feature, GString *attribute)
+{
+  static const char *format_str = "locus=%s" ;
+  gboolean result = FALSE ;
+  char *string_escaped = NULL ;
+  GQuark gqID = 0 ;
+
+  if (    !feature
+       || !attribute
+       || (feature->mode != ZMAPSTYLE_MODE_TRANSCRIPT)  )
+    return result ;
+
+  gqID = feature->feature.transcript.locus_id ;
+  if (gqID)
+    {
+      string_escaped = g_uri_escape_string(g_quark_to_string(gqID),
+                                           reserved_allowed, FALSE ) ;
+      if (string_escaped)
+        {
+          g_string_truncate(attribute, (gsize)0) ;
+          g_string_printf(attribute, format_str, string_escaped) ;
+          g_free(string_escaped) ;
+          result = TRUE ;
+        }
+    }
+
+  return result ;
+}
+
+
+
+/*
+ * Variation string attribute.
+ */
+gboolean zMapWriteAttributeVariation(ZMapFeature feature, GString* attribute)
+{
+  static const char *format_str = "variant_sequence=%s" ;
+  gboolean result = FALSE ;
+
+  if (    !feature
+       || !attribute
+       || (feature->mode != ZMAPSTYLE_MODE_BASIC)  )
+    return result ;
+
+  if (feature->feature.basic.flags.variation_str)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_printf(attribute, format_str, feature->feature.basic.variation_str) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+/*
+ * Target attribute.
+ */
+gboolean zMapWriteAttributeTarget(ZMapFeature feature, GString *attribute)
+{
+  gboolean result = FALSE ;
+  char * escaped_string = NULL ;
+  int sstart = 0, send = 0 ;
+  ZMapStrand s_strand = ZMAPSTRAND_NONE ;
+
+  if (!feature || !attribute || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT) )
+   return result ;
+
+  s_strand = feature->feature.homol.strand ;
+  sstart = feature->feature.homol.y1 ;
+  send = feature->feature.homol.y2 ;
+  escaped_string = g_uri_escape_string(g_quark_to_string(feature->original_id), reserved_allowed, FALSE) ;
+  if (escaped_string)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      if (s_strand != ZMAPSTRAND_NONE)
+        {
+          g_string_printf(attribute, "Target=%s %d %d %c",
+                          escaped_string, sstart, send,
+                          zMapGFFFormatStrand2Char(s_strand)) ;
+        }
+      else
+        {
+          g_string_printf(attribute, "Target=%s %d %d",
+                          escaped_string, sstart, send) ;
+        }
+      g_free(escaped_string) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+/*
+ * percentID attribute
+ */
+gboolean zMapWriteAttributePercentID(ZMapFeature feature, GString *attribute)
+{
+  gboolean result = FALSE ;
+  float percent_id = 0.0 ;
+
+  if (!feature || !attribute || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT) )
+    return result ;
+
+  percent_id = feature->feature.homol.percent_id ;
+  if (percent_id != 0.0)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_printf(attribute, "percentID=%g", percent_id) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+/*
+ * Gap attribute
+ */
+gboolean zMapWriteAttributeGap(ZMapFeature feature, GString *attribute)
+{
+  gboolean result = FALSE ;
+  GArray *gaps = NULL ;
+  ZMapSequenceType match_seq_type = ZMAPSEQUENCE_NONE ;
+  ZMapHomolType homol_type = ZMAPHOMOL_NONE ;
+  ZMapStrand strand = ZMAPSTRAND_NONE ;
+
+  if (!feature || !attribute || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT) )
+    return result ;
+
+  gaps = feature->feature.homol.align ;
+  strand = feature->strand ;
+  if (gaps)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      homol_type = feature->feature.homol.type ;
+
+      if (homol_type == ZMAPHOMOL_N_HOMOL)
+        match_seq_type = ZMAPSEQUENCE_DNA ;
+      else
+        match_seq_type = ZMAPSEQUENCE_PEPTIDE ;
+
+      zMapGFFFormatGap2GFF(attribute, gaps, strand, match_seq_type) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+
+
+
+
+
+
+
+
