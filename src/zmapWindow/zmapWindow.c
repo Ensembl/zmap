@@ -4269,7 +4269,7 @@ static void dragDataGetCB(GtkWidget *widget,
       ZMapWindow window = (ZMapWindow)user_data ;
       GList *feature_list = NULL ;
       GError *tmp_error = NULL ;
-      GString *result = NULL ;
+      GString *result = g_string_new(NULL) ;
 
       if (window && window->focus)
         feature_list = zmapWindowFocusGetFeatureList(window->focus) ;
@@ -4280,7 +4280,7 @@ static void dragDataGetCB(GtkWidget *widget,
           if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
             zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
 
-          zMapGFFDumpList(feature_list, window->context_map->styles, NULL, NULL, &result, &tmp_error) ;
+          zMapGFFDumpList(feature_list, window->context_map->styles, NULL, NULL, result, &tmp_error) ;
 
           /* And swop it back again. */
           if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
@@ -4305,7 +4305,7 @@ static void zoomToRubberBandArea(ZMapWindow window)
 
   if (window->rubberband)
     {
-      double rootx1, rootx2, rooty1, rooty2 ;
+      double rootx1=0.0, rootx2=0.0, rooty1=0.0, rooty2=0.0 ;
       gboolean border = FALSE ;
 
       /* Get size of item and convert to world coords. */
@@ -4316,7 +4316,6 @@ static void zoomToRubberBandArea(ZMapWindow window)
       if (rooty1 <  window->min_coord || rooty2 > window->max_coord)
         border = TRUE ;
 
-//printf("zoom to rubber band %f %f\n", rooty1, rooty2);
       zmapWindowZoomToWorldPosition(window, border, rootx1, rooty1, rootx2, rooty2) ;
     }
 
@@ -4328,7 +4327,7 @@ static void zoomToRubberBandArea(ZMapWindow window)
 /* Zoom to a single item. */
 void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item)
 {
-  double rootx1, rootx2, rooty1, rooty2;
+  double rootx1=0.0, rootx2=0.0, rooty1=0.0, rooty2=0.0;
   gboolean border = TRUE ;
 
   if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
@@ -4356,6 +4355,8 @@ void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
 {
 
   MaxBoundsStruct max_bounds = {0.0} ;
+  if (!rootx1 || !rootx2 || !rooty1 || !rooty2)
+    return ;
 
   g_list_foreach(items, getMaxBounds, &max_bounds) ;
 

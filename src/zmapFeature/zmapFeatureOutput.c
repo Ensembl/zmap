@@ -272,14 +272,14 @@ gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_li
                                            ZMapFeatureDumpFeatureFunc dump_func,
                                            gpointer                   dump_user_data,
                                            GIOChannel                *dump_file,
-                                           GString                   **text_out,
+                                           GString                   *buffer,
                                            GError                   **dump_error_out)
 {
   gboolean result = FALSE;
   DumpFeaturesToFileStruct dump_data = {FALSE};
   DumpAnyStruct dump_any;
 
-  if (!(dump_file || text_out) || !dump_func || !dump_error_out)
+  if (!(dump_file || buffer) || ((!dump_file) && (!buffer))|| !dump_func || !dump_error_out)
     return result ;
 
   dump_any.data_type = DUMP_DATA_ANY;
@@ -291,15 +291,21 @@ gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_li
   dump_data.dump_error  = dump_error_out ;
   dump_data.dump_func   = dump_func ;
   dump_data.dump_data   = &dump_any ;
-  dump_data.dump_string = g_string_sized_new(2000);
+  /*dump_data.dump_string = g_string_sized_new(2000);*/
+  if (buffer)
+    dump_data.dump_string = buffer ;
+  else
+    dump_data.dump_string = g_string_sized_new(2000) ;
 
   g_list_foreach(feature_list, invoke_dump_features_cb, &dump_data);
 
   /* If the caller has requested the text output, return the GString, otherwise free it */
-  if (text_out)
+  /*if (text_out)
     *text_out = dump_data.dump_string ;
   else
-    g_string_free(dump_data.dump_string, TRUE);
+    g_string_free(dump_data.dump_string, TRUE);*/
+  if (!buffer)
+    g_string_free(dump_data.dump_string, TRUE) ;
 
   result = dump_data.status ;
 

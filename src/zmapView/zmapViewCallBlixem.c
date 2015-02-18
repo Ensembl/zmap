@@ -129,6 +129,7 @@ typedef struct ZMapBlixemDataStruct_
   GIOChannel    *gff_channel ;
 
   ZMapGFFAttributeFlags attribute_flags ;
+  gboolean over_write ;
 
   ZMapView     view;
 
@@ -548,6 +549,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
   blixem_data->features = features ;
   blixem_data->feature_set = feature_set ;
   blixem_data->block = block ;
+  blixem_data->over_write = TRUE ;
   zMapGFFFormatAttributeUnsetAll(blixem_data->attribute_flags) ;
 
   if (!(zMapFeatureBlockDNA(block, NULL, NULL, NULL)))
@@ -1458,18 +1460,20 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
             {
               const char *sequence_name = g_quark_to_string(blixem_data->block->original_id) ;
 
-              zMapGFFFormatMandatory(TRUE, blixem_data->line, sequence_name,
+              if (zMapGFFFormatMandatory(blixem_data->over_write, blixem_data->line, sequence_name,
                                      g_quark_to_string(GPOINTER_TO_UINT(l->data)), SO_region,
                                      start, end,
                                      (float)0.0, ZMAPSTRAND_NONE, ZMAPPHASE_NONE,
-                                     TRUE, TRUE) ;
-              g_string_append_printf(attribute, "dataType=short-read") ;
-              zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
-              g_string_append_c(blixem_data->line, '\n') ;
-              g_string_truncate(attribute, (gsize)0);
+                                     TRUE, TRUE) )
+                {
+                  g_string_append_printf(attribute, "dataType=short-read") ;
+                  zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
+                  g_string_append_c(blixem_data->line, '\n') ;
+                  g_string_truncate(attribute, (gsize)0);
 
-              zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
-                        blixem_data->line, TRUE) ;
+                  zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
+                            blixem_data->line, TRUE) ;
+                }
             }
         }
 
@@ -1639,7 +1643,6 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
 {
   if (!feature || !blixem_data )
     return ;
-  //ZMapGFFAttributeFlagsStruct attribute_flags ;
 
   /* There is no way to interrupt g_hash_table_foreach() so instead if errorMsg is set
    * then it means there was an error in processing so we don't process any
@@ -1686,19 +1689,22 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
                           seq_str = sequence->sequence ;
                         }
                       status = zMapGFFFormatAttributeSetAlignment(blixem_data->attribute_flags)
-                            && zMapGFFWriteFeatureAlignment(feature, blixem_data->attribute_flags, blixem_data->line, seq_str) ;
+                            && zMapGFFWriteFeatureAlignment(feature, blixem_data->attribute_flags, blixem_data->line,
+                                                            blixem_data->over_write, seq_str) ;
                     }
                 }
             }
           else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
             {
               status = zMapGFFFormatAttributeSetTranscript(blixem_data->attribute_flags)
-                    && zMapGFFWriteFeatureTranscript(feature, blixem_data->attribute_flags, blixem_data->line) ;
+                    && zMapGFFWriteFeatureTranscript(feature, blixem_data->attribute_flags,
+                                                     blixem_data->line, blixem_data->over_write) ;
             }
           else if (feature->mode == ZMAPSTYLE_MODE_BASIC)
             {
               status = zMapGFFFormatAttributeSetBasic(blixem_data->attribute_flags)
-                    && zMapGFFWriteFeatureBasic(feature, blixem_data->attribute_flags, blixem_data->line) ;
+                    && zMapGFFWriteFeatureBasic(feature, blixem_data->attribute_flags,
+                                                blixem_data->line, blixem_data->over_write) ;
             }
 
           if (status)
