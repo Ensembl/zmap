@@ -171,11 +171,11 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 /*
  * Output functions.
  */
-gboolean zMapGFFWriteFeatureGraph(ZMapFeature, ZMapGFFAttributeFlags, GString*) ;
-gboolean zMapGFFWriteFeatureText(ZMapFeature, ZMapGFFAttributeFlags, GString*) ;
-gboolean zMapGFFWriteFeatureTranscript(ZMapFeature , ZMapGFFAttributeFlags, GString *) ;
-gboolean zMapGFFWriteFeatureBasic(ZMapFeature , ZMapGFFAttributeFlags, GString *) ;
-gboolean zMapGFFWriteFeatureAlignment(ZMapFeature , ZMapGFFAttributeFlags, GString *, const char *) ;
+gboolean zMapGFFWriteFeatureGraph(ZMapFeature, ZMapGFFAttributeFlags, GString*, gboolean) ;
+gboolean zMapGFFWriteFeatureText(ZMapFeature, ZMapGFFAttributeFlags, GString*, gboolean) ;
+gboolean zMapGFFWriteFeatureTranscript(ZMapFeature , ZMapGFFAttributeFlags, GString *, gboolean) ;
+gboolean zMapGFFWriteFeatureBasic(ZMapFeature , ZMapGFFAttributeFlags, GString *, gboolean) ;
+gboolean zMapGFFWriteFeatureAlignment(ZMapFeature , ZMapGFFAttributeFlags, GString *, gboolean, const char *) ;
 gboolean zMapGFFFormatAttributeSetGraph(ZMapGFFAttributeFlags ) ;
 gboolean zMapGFFFormatAttributeSetBasic(ZMapGFFAttributeFlags ) ;
 gboolean zMapGFFFormatAttributeSetTranscript(ZMapGFFAttributeFlags ) ;
@@ -194,7 +194,7 @@ ZMapGFFVersion zMapGFFDumpVersionGet() ;
 gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out);
 gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
   ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
-gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, GIOChannel *file, GString **text_out, GError **error_out) ;
+gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, GIOChannel *file, GString *text_out, GError **error_out) ;
 
 gboolean zMapWriteAttributeURL(ZMapFeature, GString *) ;
 gboolean zMapWriteAttributeName(ZMapFeature, GString *) ;

@@ -52,18 +52,21 @@ static ZMapGFFVersion gff_output_version_G = ZMAPGFF_VERSION_3 ;
 /*
  * This is used to pick up bits of data from different points
  * within the context/align/block/featureset/feature heirarchy.
- * It would be better if we could do without it of course.
+ * It would be better if we could do without it of course. Note
+ * this object does not control the lifetime of the GString *buffer.
  */
 typedef struct ZMapGFFFormatDataStruct_
 {
   const char *sequence;                 /* The sequence name. e.g. 16.12345-23456 */
   int start, end ;
+  GString *buffer ;
   ZMapGFFAttributeFlags attribute_flags ;
 
   struct
     {
-      unsigned int status : 1 ;
-      unsigned int cont   : 1 ;
+      unsigned int status      : 1 ;
+      unsigned int cont        : 1 ;
+      unsigned int over_write  : 1 ;
     } flags ;
 
 } ZMapGFFFormatDataStruct ;
@@ -147,8 +150,9 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
   if (result)
     {
       format_data->sequence = NULL ;
-      format_data->flags.cont   = TRUE;
-      format_data->flags.status = TRUE;
+      format_data->flags.cont       = TRUE;
+      format_data->flags.status     = TRUE;
+      format_data->flags.over_write = TRUE ;
       result = dump_full_header(dump_set, file, format_data, error_out) ;
     }
 
@@ -171,14 +175,14 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
   return result ;
 }
 
-/*!
- * \brief Dump a list of ZMapFeatureAny to a file and/or text buffer. sequence can be NULL
+/*
+ *
  */
 gboolean zMapGFFDumpList(GList *dump_list,
                          GHashTable *styles,
                          char *sequence,
                          GIOChannel *file,
-                         GString **text_out,
+                         GString *text_out,
                          GError **error_out)
 {
   gboolean result = FALSE ;
@@ -195,8 +199,13 @@ gboolean zMapGFFDumpList(GList *dump_list,
   if (result)
     {
       format_data->sequence = sequence;
-      format_data->flags.cont    = TRUE;
-      format_data->flags.status = TRUE;
+      format_data->flags.cont       = TRUE;
+      format_data->flags.status     = TRUE;
+      format_data->flags.over_write = FALSE ;
+      if (!file && text_out)
+        format_data->buffer = text_out ;
+      else
+        format_data = NULL ;
       result = dump_full_header(feature_any, file, format_data, error_out) ;
     }
 
@@ -222,10 +231,19 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any,
 {
   zMapReturnValIfFail(   feature_any
                       && (feature_any->struct_type != ZMAPFEATURE_STRUCT_INVALID)
-                      && file
                       && error_out, FALSE ) ;
   GString *line  = NULL ;
-  line = g_string_new(NULL) ;
+  gboolean write_to_gio = FALSE ;
+
+  if (!file && format_data->buffer)
+    {
+      line = format_data->buffer ;
+    }
+  else
+    {
+      write_to_gio = TRUE ;
+      line = g_string_new(NULL) ;
+    }
 
   /*
    * This descends the data structures to find the ##sequence-region
@@ -244,7 +262,7 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any,
   /*
    * Now write this to the IO channel.
    */
-  if(format_data->flags.status)
+  if(format_data->flags.status && write_to_gio)
     {
       char *error_msg = NULL ;
       format_data->flags.status = zMapGFFOutputWriteLineToGIO(file, &error_msg, line, TRUE) ;
@@ -256,7 +274,7 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any,
         }
     }
 
-  if (line)
+  if (line && write_to_gio)
     g_string_free(line, TRUE) ;
 
   return format_data->flags.status ;
@@ -361,31 +379,36 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
               case ZMAPSTYLE_MODE_BASIC:
                 {
                   result = zMapGFFFormatAttributeSetBasic(format_data->attribute_flags)
-                        && zMapGFFWriteFeatureBasic(feature, format_data->attribute_flags, line) ;
+                        && zMapGFFWriteFeatureBasic(feature, format_data->attribute_flags,
+                                                    line, format_data->flags.over_write) ;
                 }
                 break;
               case ZMAPSTYLE_MODE_TRANSCRIPT:
                 {
                   result = zMapGFFFormatAttributeSetTranscript(format_data->attribute_flags)
-                        && zMapGFFWriteFeatureTranscript(feature, format_data->attribute_flags, line) ;
+                        && zMapGFFWriteFeatureTranscript(feature, format_data->attribute_flags,
+                                                         line, format_data->flags.over_write) ;
                 }
                 break;
               case ZMAPSTYLE_MODE_ALIGNMENT:
                 {
                   result = zMapGFFFormatAttributeSetAlignment(format_data->attribute_flags)
-                        && zMapGFFWriteFeatureAlignment(feature, format_data->attribute_flags, line, NULL) ;
+                        && zMapGFFWriteFeatureAlignment(feature, format_data->attribute_flags,
+                                                        line, format_data->flags.over_write, NULL) ;
                 }
                 break;
               case ZMAPSTYLE_MODE_TEXT:
                 {
                   result = zMapGFFFormatAttributeSetText(format_data->attribute_flags)
-                        && zMapGFFWriteFeatureText(feature, format_data->attribute_flags, line ) ;
+                        && zMapGFFWriteFeatureText(feature, format_data->attribute_flags,
+                                                   line, format_data->flags.over_write ) ;
                 }
                 break;
               case ZMAPSTYLE_MODE_GRAPH:
                 {
                   result = zMapGFFFormatAttributeSetGraph(format_data->attribute_flags)
-                        && zMapGFFWriteFeatureGraph(feature, format_data->attribute_flags, line ) ;
+                        && zMapGFFWriteFeatureGraph(feature, format_data->attribute_flags,
+                                                    line, format_data->flags.over_write ) ;
                 }
                 break;
               default:
@@ -881,7 +904,7 @@ gboolean zMapGFFOutputWriteLineToGIO(GIOChannel *gio_channel,
  * Write out alignment feature and attributes.
  */
 gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags flags,
-                                      GString * line, const char *seq_str)
+                                      GString * line, gboolean over_write, const char *seq_str)
 {
   gboolean status = FALSE ;
   const char *sequence_name = NULL,
@@ -915,7 +938,7 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
   /*
    * Mandatory fields.
    */
-  status = zMapGFFFormatMandatory(TRUE, line,
+  status = zMapGFFFormatMandatory(over_write, line,
                                   sequence_name, source_name, type,
                                   feature->x1, feature->x2,
                                   feature->score, strand, ZMAPPHASE_NONE,
@@ -986,7 +1009,8 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
 /*
  * Write out a transcript feature, also output the CDS if present.
  */
-gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlags flags, GString *line)
+gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlags flags,
+                                       GString *line, gboolean over_write)
 {
   static const char *SO_exon_id = "exon",
     *SO_CDS_id = "CDS" ;
@@ -1017,7 +1041,7 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
   /*
    * Mandatory fields.
    */
-  status = zMapGFFFormatMandatory(TRUE, line,
+  status = zMapGFFFormatMandatory(over_write, line,
                                   sequence_name, source_name, type,
                                   feature->x1, feature->x2,
                                   feature->score, feature->strand, ZMAPPHASE_NONE,
@@ -1147,7 +1171,8 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
 }
 
 
-gboolean zMapGFFWriteFeatureText(ZMapFeature feature, ZMapGFFAttributeFlags flags, GString* line)
+gboolean zMapGFFWriteFeatureText(ZMapFeature feature, ZMapGFFAttributeFlags flags,
+                                 GString* line, gboolean over_write)
 {
   gboolean status = FALSE ;
   const char *sequence_name = NULL,
@@ -1173,7 +1198,7 @@ gboolean zMapGFFWriteFeatureText(ZMapFeature feature, ZMapGFFAttributeFlags flag
   /*
    * Mandatory fields...
    */
-  status = zMapGFFFormatMandatory(TRUE, line,
+  status = zMapGFFFormatMandatory(over_write, line,
                                   sequence_name, source_name, type,
                                   feature->x1, feature->x2,
                                   feature->score, feature->strand, ZMAPPHASE_NONE,
@@ -1221,7 +1246,8 @@ gboolean zMapGFFWriteFeatureText(ZMapFeature feature, ZMapGFFAttributeFlags flag
 /*
  * Output of a basic feature.
  */
-gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags flags, GString* line )
+gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags flags,
+                                  GString* line, gboolean over_write)
 {
   gboolean status = FALSE ;
   const char *sequence_name = NULL,
@@ -1247,7 +1273,7 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
   /*
    * Mandatory fields...
    */
-  status = zMapGFFFormatMandatory(TRUE, line,
+  status = zMapGFFFormatMandatory(over_write, line,
                                   sequence_name, source_name, type,
                                   feature->x1, feature->x2,
                                   feature->score, feature->strand, ZMAPPHASE_NONE,
@@ -1321,7 +1347,8 @@ gboolean zMapGFFWriteFeatureBasic(ZMapFeature feature, ZMapGFFAttributeFlags fla
 /*
  * Output of a graph feature.
  */
-gboolean zMapGFFWriteFeatureGraph(ZMapFeature feature, ZMapGFFAttributeFlags flags, GString* line )
+gboolean zMapGFFWriteFeatureGraph(ZMapFeature feature, ZMapGFFAttributeFlags flags,
+                                  GString* line, gboolean over_write )
 {
   gboolean status = FALSE ;
   const char *sequence_name = NULL,
@@ -1347,7 +1374,7 @@ gboolean zMapGFFWriteFeatureGraph(ZMapFeature feature, ZMapGFFAttributeFlags fla
   /*
    * Mandatory fields...
    */
-  status = zMapGFFFormatMandatory(TRUE, line,
+  status = zMapGFFFormatMandatory(over_write, line,
                                   sequence_name, source_name, type,
                                   feature->x1, feature->x2,
                                   feature->score, feature->strand, ZMAPPHASE_NONE,
@@ -1418,6 +1445,10 @@ static ZMapGFFFormatData createGFFFormatData()
   if (result)
     {
       result->attribute_flags = (ZMapGFFAttributeFlags) g_new0(ZMapGFFAttributeFlagsStruct, 1) ;
+      result->buffer = NULL ;
+      result->flags.over_write = FALSE ;
+      result->flags.status     = FALSE ;
+      result->flags.cont       = FALSE ;
     }
 
   return result ;

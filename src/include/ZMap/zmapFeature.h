@@ -1273,7 +1273,7 @@ gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_li
                                            ZMapFeatureDumpFeatureFunc dump_func,
                                            gpointer                   dump_user_data,
                                            GIOChannel                *dump_file,
-                                           GString                   **text_out,
+                                           GString                   *buffer,
                                            GError                   **dump_error_out);
 
 /*
