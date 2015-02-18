@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 12/01/2015 to 13/02/2015
+Request Tracker Tickets Resolved from 12/01/2015 to 18/02/2015
 
 ticket/115300
 id: ticket/115300
@@ -228,6 +228,26 @@ Resolved: Tue Feb 10 12:01:58 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
+ticket/377315
+id: ticket/377315
+Queue: zmap
+Subject: ~edgrif/TEST/LAURENS doesn't deal well with multi-zmap
+Requestors: lw2@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon Feb 16 11:03:50 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/377937
+id: ticket/377937
+Queue: zmap
+Subject: multi-zmap: closing one session doesn't remove info bar
+Requestors: lw2@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon Feb 16 15:14:59 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
 ticket/378314
 id: ticket/378314
 Queue: zmap
@@ -425,6 +445,16 @@ Subject: style in otter_styles.ini causes Zmap to crash
 Requestors: et3@sanger.ac.uk
 Owner: edgrif
 Resolved: Tue Feb 10 09:55:40 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/450420
+id: ticket/450420
+Queue: zmap
+Subject: sort out zmap main window
+Requestors: edgrif@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon Feb 16 10:25:45 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
