@@ -1,5 +1,6 @@
 /*  File: zmapViewCallBlixem.c
- *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk),
+ *          Steve Miller (sm23@sanger.ac.uk)
  *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
