@@ -55,6 +55,7 @@ typedef enum {RT_INVALID, RT_ACEDB, RT_ANACODE, RT_SEQTOOLS, RT_ZMAP, RT_ZMAP_US
 
 static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void makeSequenceViewCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data) ;
+static void closeSequenceDialogCB(GtkWidget *toplevel, gpointer user_data) ;
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 
@@ -86,14 +87,14 @@ static GtkItemFactoryEntry menu_items[] = {
          { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
          { "/File/_Import",                         "<control>I",        importCB,              0,  NULL },/* or Read ? */
          { "/File/_Export",                         NULL,                NULL,                  0,  "<Branch>" },
-         { "/File/Export/_All Features",            NULL,                NULL,                  0,  "<Branch>" },
-         { "/File/Export/All Features/_DNA",        NULL,                exportCB,              1,  NULL },
-         { "/File/Export/All Features/_Features",   "<control>E",        exportCB,              2,  NULL },
-         { "/File/Export/All Features/_Context",    NULL,                exportCB,              3,  NULL },
-         { "/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
-         { "/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
-         { "/File/Export/Marked Features/_Features","<shift><control>E", exportCB,              12, NULL },
-         { "/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL },
+         //{ "/File/Export/_Data",                      NULL,                NULL,                  0,  "<Branch>" },
+         { "/File/Export/_DNA",                  NULL,                exportCB,              1,  NULL },
+         { "/File/Export/_Features",             "<control>E",        exportCB,              2,  NULL },
+         { "/File/Export/_Features (marked)",    "<shift><control>E", exportCB,              12, NULL },
+         { "/File/Export/_Context",              NULL,                exportCB,              3,  NULL },
+         //{ "/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
+         //{ "/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
+         //{ "/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL },
          { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
          { "/File/Save screen sho_t",               NULL,                dumpCB,                0,  NULL },
          { "/File/_Print screen shot",              "<control>P",        printCB,               0,  NULL },
@@ -190,17 +191,17 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
         break ;
       }
 
+    case 12:
+      {
+        /* Export features for marked region */
+        result = zMapWindowExportFeatures(curr_window, TRUE, NULL, NULL, &error) ;
+        break ;
+      }
+
     case 3:
       {
         /* Export context */
         result = zMapWindowExportContext(curr_window, &error) ;
-        break ;
-      }
-
-    case 12:
-      {
-        /* Export featuers for marked region */
-        result = zMapWindowExportFeatures(curr_window, TRUE, NULL, NULL, &error) ;
         break ;
       }
 
@@ -600,10 +601,14 @@ static void popout_panel( gpointer data, guint callback_action, GtkWidget *w )
 static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMap zmap = NULL ;
+
   zMapReturnIfFail(cb_data) ;
+
   zmap = (ZMap)cb_data ;
 
-  zMapAppGetSequenceView(makeSequenceViewCB, zmap, zmap->default_sequence, FALSE) ;
+  if (!(zmap->sequence_dialog))
+    zmap->sequence_dialog = zMapAppGetSequenceView(makeSequenceViewCB, zmap, closeSequenceDialogCB, zmap,
+                                                   zmap->default_sequence, FALSE) ;
 
   return ;
 }
@@ -615,7 +620,15 @@ static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_dat
   ZMapView view ;
   char *err_msg = NULL ;
 
-  if (!(view = zMapControlInsertView(zmap, seq_map, &err_msg)))
+  if ((view = zMapControlInsertView(zmap, seq_map, &err_msg)))
+    {
+      ZMapCallbacks zmap_cbs_G ;
+
+      zmap_cbs_G = zmapControlGetCallbacks() ;
+
+      (*(zmap_cbs_G->view_add))(zmap, view, zmap->app_data) ;
+    }
+  else
     {
       zMapWarning("%s", err_msg) ;
       g_free(err_msg) ;
@@ -625,4 +638,11 @@ static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_dat
 }
 
 
+static void closeSequenceDialogCB(GtkWidget *toplevel, gpointer user_data)
+{
+  ZMap zmap = (ZMap)user_data ;
 
+  zmap->sequence_dialog = NULL ;
+
+  return ;
+}

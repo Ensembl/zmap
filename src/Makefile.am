@@ -83,7 +83,6 @@ zmapDAS/libZMapDas.la         \
 zmapDraw/libZMapDraw.la       \
 zmapFeature/libZMapFeature.la \
 zmapGFF/libZMapGFF.la         \
-zmapManager/libZMapManager.la \
 zmapView/libZMapView.la       \
 zmapWindow/libZMapWindow.la   \
 zmapServer/libZMapServer.la   \

@@ -452,7 +452,7 @@ gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *peer_cl
 char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event) ;
 
 gboolean zMapGUIGetScreenInfo(GtkWidget *widget, int *curr_screen_out, int *num_screens_out) ;
-gboolean zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *height_out) ;
+gboolean zMapGUIGetTrueMonitorSize(GtkWidget *widget, int *width_out, int *height_out) ;
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
 void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,

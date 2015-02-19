@@ -272,14 +272,14 @@ gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_li
                                            ZMapFeatureDumpFeatureFunc dump_func,
                                            gpointer                   dump_user_data,
                                            GIOChannel                *dump_file,
-                                           GString                   **text_out,
+                                           GString                   *buffer,
                                            GError                   **dump_error_out)
 {
   gboolean result = FALSE;
   DumpFeaturesToFileStruct dump_data = {FALSE};
   DumpAnyStruct dump_any;
 
-  if (!(dump_file || text_out) || !dump_func || !dump_error_out)
+  if (!(dump_file || buffer) || ((!dump_file) && (!buffer))|| !dump_func || !dump_error_out)
     return result ;
 
   dump_any.data_type = DUMP_DATA_ANY;
@@ -291,15 +291,21 @@ gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_li
   dump_data.dump_error  = dump_error_out ;
   dump_data.dump_func   = dump_func ;
   dump_data.dump_data   = &dump_any ;
-  dump_data.dump_string = g_string_sized_new(2000);
+  /*dump_data.dump_string = g_string_sized_new(2000);*/
+  if (buffer)
+    dump_data.dump_string = buffer ;
+  else
+    dump_data.dump_string = g_string_sized_new(2000) ;
 
   g_list_foreach(feature_list, invoke_dump_features_cb, &dump_data);
 
   /* If the caller has requested the text output, return the GString, otherwise free it */
-  if (text_out)
+  /*if (text_out)
     *text_out = dump_data.dump_string ;
   else
-    g_string_free(dump_data.dump_string, TRUE);
+    g_string_free(dump_data.dump_string, TRUE);*/
+  if (!buffer)
+    g_string_free(dump_data.dump_string, TRUE) ;
 
   result = dump_data.status ;
 
@@ -436,9 +442,12 @@ gpointer data,
 gpointer user_data,
 char   **err_out)
 {
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   DumpFeaturesToFile dump_data = (DumpFeaturesToFile)user_data ;
+  if (!feature_any || !dump_data)
+    return status ;
+  status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
 
   switch(feature_any->struct_type)
     {
@@ -701,6 +710,8 @@ GString *feature2Text(GString *feature_str, ZMapFeature feature)
   g_string_append_printf(result, "%sFeature mode: %s  Style mode: %s\n",
                          indent, feature_mode, style_mode) ;
 
+  g_string_append_printf(result, "%sStyle: \"%s\"\n", indent, zMapStyleGetName(*feature->style)) ;
+
   g_string_append_printf(result, "%sSO term: \"%s\"\n",
                          indent, g_quark_to_string(feature->SO_accession)) ;
 
@@ -875,7 +886,7 @@ static GString *transcriptFeature2Txt(GString *result_in, char *indent, ZMapFeat
 
   if (feature->feature.transcript.flags.start_not_found || feature->feature.transcript.flags.end_not_found)
     {
-      g_string_append_printf(result, "%s", indent) ;      
+      g_string_append_printf(result, "%s", indent) ;
 
       if (feature->feature.transcript.flags.start_not_found)
         g_string_append_printf(result, "Start_not_found = %d  ", feature->feature.transcript.start_not_found) ;

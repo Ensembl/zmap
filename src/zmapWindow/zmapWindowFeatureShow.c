@@ -1136,10 +1136,9 @@ static gboolean mapeventCB(GtkWidget *widget, GdkEvent  *event, gpointer   user_
   feature_show->notebook_mapevent_handler = 0 ;
 
   /* Get max possible window size and adjust for users preference. */
-  zMapGUIGetMaxWindowSize(feature_show->window, &max_width, &max_height) ;
+  zMapGUIGetTrueMonitorSize(feature_show->window, &max_width, &max_height) ;
   max_width *= width_proportion ;
   max_height *= height_proportion ;
-
 
   top_width = top_height = vbox_width = vbox_height = 0 ;
 

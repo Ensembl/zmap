@@ -850,7 +850,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
 
   /* add in menu options for clicked feature */
   /* Add options NOT applicable to annotation column first */
-  if (menu_data->feature && menu_data->feature_set && 
+  if (menu_data->feature && menu_data->feature_set &&
       menu_data->feature_set->unique_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
     {
       if (menu_data->feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
@@ -886,7 +886,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
   addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_CLEAR, ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
 
   /* add in annotation menu options */
-  if (menu_data->feature && menu_data->feature_set && 
+  if (menu_data->feature && menu_data->feature_set &&
       menu_data->feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
     {
       addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_DELETE_SUBFEATURE, ITEM_MENU_DELETE_FROM_SCRATCH, itemMenuCB, NULL);
@@ -1932,7 +1932,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
     {
       zMapShowMsg(ZMAP_MSG_WARNING, "%s", error->message) ;
       g_error_free(error) ;
-    }    
+    }
 
   return ;
 }
@@ -2032,7 +2032,7 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
     {
       zMapShowMsg(ZMAP_MSG_WARNING, "%s", error->message) ;
       g_error_free(error) ;
-    }    
+    }
 
   return ;
 }
@@ -2061,7 +2061,7 @@ gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GEr
   if (feature)
     {
       block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK);
-      
+
       if (zMapFeatureBlockDNA(block, &seq_name, &seq_len, &sequence))
         result = exportFASTA(window, ZMAPFASTA_SEQTYPE_DNA, sequence, seq_name, seq_len, "DNA", NULL, error) ;
       else
@@ -2087,30 +2087,25 @@ static void exportMenuCB(int menu_item_id, gpointer callback_data)
 
   switch (menu_item_id)
     {
-    case 1:
+    case 1: /* export dna */
       {
         result = zMapWindowExportFASTA(menu_data->window, feature, &error) ;
         break ;
       }
-    case 2:
+    case 2: /* export all features */
       {
         result = zMapWindowExportFeatures(menu_data->window, FALSE, feature, NULL, &error) ;
         break ;
       }
-    case 3:
-      {
-        result = zMapWindowExportContext(menu_data->window, &error) ;
-        break ;
-      }
-    case 4:
-      {
-        /* exportConfig(); */
-        break;
-      }
-    case 12:
+    case 12: /* features in marked region */
       {
         result = zMapWindowExportFeatures(menu_data->window, TRUE, feature, NULL, &error) ;
         break;
+      }
+    case 3: /* export context */
+      {
+        result = zMapWindowExportContext(menu_data->window, &error) ;
+        break ;
       }
     default:
       break ;
@@ -2492,7 +2487,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
        DEVELOPER_FEATUREITEM_FEATURE, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show FeaturesetItem, FeatureItem and Feature",
        DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE, developerMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Canvas", DEVELOPER_PRINT_STYLE, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Style", DEVELOPER_PRINT_STYLE, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Canvas", DEVELOPER_PRINT_CANVAS, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Window Stats", DEVELOPER_STATS, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
@@ -2502,14 +2497,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
 
   return menu ;
 }
-
-#if 0
-static void show_all_styles_cb(ZMapFeatureTypeStyle style, gpointer unused)
-{
-  zmapWindowShowStyle(style) ;
-  return ;
-}
-#endif
 
 static void developerMenuCB(int menu_item_id, gpointer callback_data)
 {
@@ -3430,8 +3417,10 @@ static gboolean exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *
   return result ;
 }
 
-
-gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_region, ZMapFeatureAny feature_in, 
+/*
+ * If the feature that is passed is NULL then the whole context is used.
+ */
+gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_region, ZMapFeatureAny feature_in,
                                   char **filepath_inout, GError **error)
 {
   gboolean result = FALSE ;
@@ -3445,9 +3434,9 @@ gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_regio
       if (zmapWindowMarkIsSet(window->mark))
         {
           ZMapSpanStruct mark_region = {0,0};
-          
+
           zmapWindowMarkGetSequenceRange(window->mark, &(mark_region.x1), &(mark_region.x2));
-          
+
           result = exportFeatures(window, &mark_region, feature, filepath_inout, error) ;
         }
       else
@@ -3464,7 +3453,7 @@ gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_regio
 }
 
 
-static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature_in, 
+static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature_in,
                                char **filepath_inout, GError **error)
 {
   gboolean result = FALSE ;
@@ -3473,12 +3462,13 @@ static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeat
   GError *tmp_error = NULL ;
   char *error_prefix = "Features export failed:" ;
   ZMapFeatureAny feature = feature_in ;
-  
+
   if (filepath_inout && *filepath_inout)
     filepath = g_strdup(*filepath_inout) ;
 
   if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
-      && feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+  //    || feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE
+     )
     {
       /* For features and featuresets, get the parent block */
       feature = (ZMapFeatureAny)zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK);

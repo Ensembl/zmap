@@ -393,7 +393,6 @@ zmapDAS \
 zmapDraw \
 zmapFeature \
 zmapGFF \
-zmapManager \
 zmapRemoteControl \
 zmapRemoteControl/remotetest \
 zmapServer \
@@ -429,7 +428,6 @@ zmapDraw/Makefile
 zmapFeature/Makefile
 zmapFeature/tests/Makefile
 zmapGFF/Makefile
-zmapManager/Makefile
 zmapRemoteControl/Makefile
 zmapRemoteControl/remotetest/Makefile
 zmapServer/Makefile

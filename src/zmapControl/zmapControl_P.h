@@ -20,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * and was written by
  *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *          Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
@@ -35,19 +35,9 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapControl.h>
 #include <ZMap/zmapControlImportFile.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapXRemote.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-#include <zmapNavigator_P.h>
+#include <zmapNavigator_P.h>                                /* WHY is this here ?? */
 
 
-
-/* Windows are 90% of screen height by default...but normally we automatically set window to fill screen taking
- * into account window manager tool bars etc. */
-#define ZMAPWINDOW_VERT_PROP 0.90
-#define ZMAPWINDOW_HORIZ_PROP 0.90
 
 
 #define USE_REGION	0	/* scroll bar pane on left that does nothing */
@@ -148,6 +138,9 @@ typedef struct _ZMapStruct
   /* Notebook for preferences, should only be one per zmap. */
   ZMapGuiNotebook preferences_note_book ;
 
+  /* New sequence dialog. */
+  GtkWidget *sequence_dialog ;
+
   /* The panes and views and current focus window. */
   GtkWidget *pane_vbox ;				    /* Is the parent of all the panes. */
 
@@ -189,7 +182,7 @@ typedef struct
 							       on xremote widget. */
 
 
-/* Functions internal to zmapControl. */
+ZMapCallbacks zmapControlGetCallbacks(void) ;
 gboolean zmapControlWindowCreate (ZMap zmap, GdkCursor *normal_cursor) ;
 GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap) ;

@@ -51,6 +51,13 @@
 #include <zmapApp_P.h>
 
 
+/* Timeout list for remote control for sends. */
+#define ZMAP_WINDOW_REMOTECONTROL_TIMEOUT_LIST "333,1000,3000,9000"
+
+/* Initially we don't know the remote programs name so default to this... */
+#define ZMAP_APP_REMOTE_PEER "Remote Peer"
+
+
 static void receivedPeerRequestCB(ZMapRemoteControl remote_control,
                                   ZMapRemoteControlReturnReplyFunc remote_reply_func, void *remote_reply_data,
                                   char *request, void *user_data) ;
@@ -182,7 +189,7 @@ gboolean zmapAppRemoteControlInit(ZMapAppContext app_context)
 
 
 
-void zmapAppRemoteControlSetExitRoutine(ZMapAppContext app_context, ZMapAppCBFunc exit_routine)
+void zmapAppRemoteControlSetExitRoutine(ZMapAppContext app_context, ZMapAppRemoteExitFunc exit_routine)
 {
   app_context->remote_control->exit_routine = exit_routine ;
 

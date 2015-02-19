@@ -28,7 +28,6 @@ ZMap/zmapGFFStringUtils.h \
 ZMap/zmapGLibUtils.h \
 ZMap/zmapGUITreeView.h \
 ZMap/zmapIO.h \
-ZMap/zmapManager.h \
 ZMap/zmapMLF.h \
 ZMap/zmapNavigatorStippleG.xbm \
 ZMap/zmapPeptide.h \

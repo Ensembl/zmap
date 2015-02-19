@@ -202,7 +202,5 @@ gboolean zMapAttParseReadPairID(ZMapGFFAttribute, GQuark * const) ;
  * data item of interest. All specific to GFFv3. The pointer string returned is
  * allocated in the function and must be deleted by the caller.
  */
-gboolean zMapAttGenerateGap(char **s_out, ZMapFeature feature) ;
-gboolean zMapAttGenerateTarget(char **s_out, ZMapFeature feature) ;
 
 #endif

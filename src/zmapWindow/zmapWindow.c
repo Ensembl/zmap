@@ -2056,6 +2056,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
         g_free(select.feature_desc.feature_set_description) ;
       g_free(select.feature_desc.feature_start) ;
       g_free(select.feature_desc.feature_end) ;
+      g_free(select.feature_desc.feature_term) ;
       g_free(select.feature_desc.feature_query_start) ;
       g_free(select.feature_desc.feature_query_end) ;
       g_free(select.feature_desc.feature_query_length) ;
@@ -4268,7 +4269,7 @@ static void dragDataGetCB(GtkWidget *widget,
       ZMapWindow window = (ZMapWindow)user_data ;
       GList *feature_list = NULL ;
       GError *tmp_error = NULL ;
-      GString *result = NULL ;
+      GString *result = g_string_new(NULL) ;
 
       if (window && window->focus)
         feature_list = zmapWindowFocusGetFeatureList(window->focus) ;
@@ -4279,7 +4280,7 @@ static void dragDataGetCB(GtkWidget *widget,
           if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
             zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
 
-          zMapGFFDumpList(feature_list, window->context_map->styles, NULL, NULL, &result, &tmp_error) ;
+          zMapGFFDumpList(feature_list, window->context_map->styles, NULL, NULL, result, &tmp_error) ;
 
           /* And swop it back again. */
           if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
@@ -4304,7 +4305,7 @@ static void zoomToRubberBandArea(ZMapWindow window)
 
   if (window->rubberband)
     {
-      double rootx1, rootx2, rooty1, rooty2 ;
+      double rootx1=0.0, rootx2=0.0, rooty1=0.0, rooty2=0.0 ;
       gboolean border = FALSE ;
 
       /* Get size of item and convert to world coords. */
@@ -4312,7 +4313,9 @@ static void zoomToRubberBandArea(ZMapWindow window)
       foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
       foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
-//printf("zoom to rubber band %f %f\n", rooty1, rooty2);
+      if (rooty1 <  window->min_coord || rooty2 > window->max_coord)
+        border = TRUE ;
+
       zmapWindowZoomToWorldPosition(window, border, rootx1, rooty1, rootx2, rooty2) ;
     }
 
@@ -4324,7 +4327,7 @@ static void zoomToRubberBandArea(ZMapWindow window)
 /* Zoom to a single item. */
 void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item)
 {
-  double rootx1, rootx2, rooty1, rooty2;
+  double rootx1=0.0, rootx2=0.0, rooty1=0.0, rooty2=0.0;
   gboolean border = TRUE ;
 
   if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
@@ -4352,6 +4355,8 @@ void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
 {
 
   MaxBoundsStruct max_bounds = {0.0} ;
+  if (!rootx1 || !rootx2 || !rooty1 || !rooty2)
+    return ;
 
   g_list_foreach(items, getMaxBounds, &max_bounds) ;
 
@@ -4585,7 +4590,7 @@ static void myWindowZoomTo(ZMapWindow window, double zoom_factor, double start, 
 
 
 void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
-   double rootx1, double rooty1, double rootx2, double rooty2)
+                                   double rootx1, double rooty1, double rootx2, double rooty2)
 {
   GtkAdjustment *v_adjuster ;
   /* size of bound area */
@@ -4703,11 +4708,10 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
           /* If we had a border we need to take this into account,
            * otherwise the feature just ends up at the top of the
            * window with 2 border widths at the bottom! */
-          if(border)
+          if (border)
             canvasy -= border_size;
 
-          if(beforey != canvasy)
-            foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
+          foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
         }
       else
         {                           /* This takes a lot of time.... */
@@ -4722,7 +4726,7 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
           foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
 
           /* Do the right thing with the border again. */
-          if(border)
+          if (border)
             canvasy -= border_size;
 
           /* No need to worry about border here as we're using the centre of the window. */
@@ -6754,17 +6758,17 @@ static void canvas_unset_busy_cursor(ZMapWindow window, const char *file, const 
 
 
 /* Cursor setting....we should also really block interaction with the canvas....
- * 
+ *
  * Use zmapWindowBusy() macro to call this function in all internal code.
  *
  * Use zMapWindowSetCursor() for all external calls to set cursor.
- * 
- * Note that if cursor is NULL then this "unsets" the existing cursor. For 
+ *
+ * Note that if cursor is NULL then this "unsets" the existing cursor. For
  * internal cursors we reset to whatever the windows normal cursor was
  * (see zmapWindowBusy() macro stuff).
- * 
- * 
- * 
+ *
+ *
+ *
  */
 static void canvasSetCursor(ZMapWindow window,
                             gboolean external_cursor, GdkCursor *cursor,
@@ -7276,11 +7280,11 @@ void zMapWindowUpdateColumnBackground(ZMapWindow window,
 
 /*
  * STUFF LEFT TO DO.....
- * 
+ *
  * DEFINE HIGHLIGHT_DATA STRUCT
  * CHANGE FUNC PROTO FOR GETEVIDENCE...AND MAKE IT CALL BACK TO THIS FUNC SUPPLYING
  * THE EVIDENCE LIST AND WE SHOULD BE DONE.....
- * 
+ *
  * BUT MAY NEED A SPECIAL CALLBACK IN FEATURESHOW TO HANDLE THIS CALLBACK
  * SEPARATELY FROM THE EXISTING FEATURESHOW CALLBACK......
 */

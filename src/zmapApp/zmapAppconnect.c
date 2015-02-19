@@ -123,22 +123,11 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
         }
       else
         {
-          GtkTreeIter iter1 = {0} ;
-        
-          gtk_tree_store_append(app_context->tree_store_widg, &iter1, NULL) ;
-          gtk_tree_store_set(app_context->tree_store_widg, &iter1,
-             ZMAPID_COLUMN, zMapGetZMapID(zmap),
-             ZMAPSEQUENCE_COLUMN,"<dummy>" ,
-             ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
-             ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
-             ZMAPDATA_COLUMN, (gpointer)zmap,
-             -1) ;
+          
+          zmapAppManagerUpdate(app_context, zmap, view) ;
 
-#ifdef RDS_NEVER_INCLUDE_THIS_CODE
-          zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
-            (row + 1), row_text[0], row_text[1]) ;
-#endif /* RDS_NEVER_INCLUDE_THIS_CODE */
 
+          /* Need to update manager..... */
           *zmap_out = zmap ;
           if (view)
             *view_out = view ;
@@ -149,6 +138,7 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 
   return result ;
 }
+
 
 
 
