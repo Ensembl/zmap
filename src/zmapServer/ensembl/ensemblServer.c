@@ -379,8 +379,8 @@ static void vectorGetDNAPepAlignFeatureDetails(Vector *features, EnsemblServer s
         {
           Analysis *analysis = DNAPepAlignFeature_getAnalysis(rsf) ;
 
-          printf("Label %s, Start %ld, End %ld, Score %f, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
-                 DNAPepAlignFeature_getDisplayLabel(rsf), DNAPepAlignFeature_getStart(rsf),DNAPepAlignFeature_getEnd(rsf),
+          printf("Start %ld, End %ld, Score %f, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
+                 DNAPepAlignFeature_getStart(rsf),DNAPepAlignFeature_getEnd(rsf),
                  DNAPepAlignFeature_getScore(rsf), 
                  DNAPepAlignFeature_getStrand(rsf), DNAPepAlignFeature_getLength(rsf),
                  analysis->gffSource, analysis->gffFeature, analysis->module);
