@@ -102,13 +102,10 @@ static void setErrMsg(EnsemblServer server, char *new_msg) ;
 //static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 //static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 
+static const char* featureGetSOTerm(SeqFeature *rsf) ;
 static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf) ;
-static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, const char *SO_accession) ;
-static ZMapFeature makeFeature(SeqFeature *rsf, 
-                               char *feature_name_id,
-                               char *feature_name,
-                               const char *SO_accession, 
-                               ZMapStyleMode feature_mode) ;
+static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType homol_type) ;
+static ZMapFeature makeFeature(SeqFeature *rsf, char *feature_name_id, char *feature_name, ZMapStyleMode feature_mode) ;
 
 /*
  *             Server interface functions.
@@ -753,18 +750,107 @@ static void setErrMsg(EnsemblServer server, char *new_msg)
 //  return ;
 //}
 
-static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf)
+
+static const char* featureGetSOTerm(SeqFeature *rsf)
+{
+  const char *SO_accession = NULL ;
+
+  switch (rsf->objectType)
+    {
+    case CLASS_SEQFEATURE: 
+      break ;
+    case CLASS_EXON: /* fall through */
+    case CLASS_STICKYEXON: 
+      SO_accession = "exon" ;
+      break ;
+    case CLASS_TRANSCRIPT: 
+      SO_accession = "transcript" ;
+      break ;
+    case CLASS_GENE: 
+      SO_accession = "gene" ;
+      break ;
+    case CLASS_SIMPLEFEATURE: 
+      break ;
+    case CLASS_INTRON: /* fall through */
+    case CLASS_INTRONSUPPORTINGEVIDENCE: 
+      SO_accession = "intron" ;
+      break ;
+    case CLASS_REPEATFEATURE: 
+      SO_accession = "repeat_region" ;
+      break ;
+    case CLASS_BASEALIGNFEATURE: 
+      SO_accession = "match" ;
+      break ;
+    case CLASS_FEATUREPAIR: 
+      break ;
+    case CLASS_DNADNAALIGNFEATURE: 
+      SO_accession = "nucleotide_match" ;
+      break ;
+    case CLASS_DNAPEPALIGNFEATURE: 
+      SO_accession = "protein_match" ;
+      break ;
+    case CLASS_REPEATCONSENSUS: 
+      //SO_accession = "consensus" ;
+      break ;
+    case CLASS_PREDICTIONTRANSCRIPT: 
+      SO_accession = "transcript" ;
+      break ;
+    case CLASS_ANNOTATEDSEQFEATURE: 
+      break ;
+    case CLASS_HOMOLOGY: 
+      SO_accession = "match" ;
+      break ;
+    case CLASS_SYNTENYREGION: 
+      SO_accession = "syntenic_region" ;
+      break ;
+    case CLASS_PREDICTIONEXON: 
+      SO_accession = "exon" ;
+      break ;
+    default: 
+      break ;
+    };
+
+  return SO_accession ;
+}
+
+
+static ZMapFeature makeFeatureSimple(SimpleFeature *rsf)
 {
   ZMapFeature feature = NULL ;
 
-  const char *SO_accession = "protein_match" ;
-  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, SO_accession) ;
+  ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
+
+  feature = makeFeature((BaseAlignFeature*)rsf, NULL, NULL, feature_mode) ;
 
   return feature ;
 }
 
 
-static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, const char *SO_accession)
+static ZMapFeature makeFeatureDNAAlign(DNAAlignFeature *rsf)
+{
+  ZMapFeature feature = NULL ;
+
+  ZMapHomolType homol_type = ZMAPHOMOL_N_HOMOL ;
+
+  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, homol_type) ;
+
+  return feature ;
+}
+
+
+static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf)
+{
+  ZMapFeature feature = NULL ;
+
+  ZMapHomolType homol_type = ZMAPHOMOL_X_HOMOL ;
+
+  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, homol_type) ;
+
+  return feature ;
+}
+
+
+static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType homol_type)
 {
   ZMapFeature feature = NULL ;
 
@@ -774,7 +860,7 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, const char *SO_ac
   char *feature_name_id = DNAPepAlignFeature_getHitSeqName(rsf) ;
   char *feature_name = DNAPepAlignFeature_getHitSeqName(rsf) ;
 
-  feature = makeFeature((SeqFeature*)rsf, feature_name_id, feature_name, SO_accession, feature_mode) ;
+  feature = makeFeature((SeqFeature*)rsf, feature_name_id, feature_name, feature_mode) ;
 
   if (feature)
     {
@@ -783,7 +869,6 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, const char *SO_ac
       double percent_id = 0.0 ;
       int query_start = 0 ;
       int query_end = 0 ;
-      ZMapHomolType homol_type = ZMAPHOMOL_X_HOMOL ;
       int query_length = 0 ;
       ZMapStrand query_strand = ZMAPSTRAND_NONE ;
       ZMapPhase target_phase = 0;
@@ -814,14 +899,16 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, const char *SO_ac
 
 
 static ZMapFeature makeFeature(SeqFeature *rsf, 
-                               char *feature_name_id,
-                               char *feature_name,
-                               const char *SO_accession, 
+                               char *feature_name_id_in,
+                               char *feature_name_in,
                                ZMapStyleMode feature_mode)
 {
   ZMapFeature feature = zMapFeatureCreateEmpty() ;
 
+  char *feature_name_id = feature_name_id_in ;
+  char *feature_name = feature_name_in ;
   char *sequence = NULL ;
+  const char *SO_accession = NULL ;
   ZMapFeatureTypeStyle *style  = NULL ;
   int start = 0 ;
   int end = 0 ;
@@ -832,20 +919,31 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
   //source = DNAPepAlignFeature_getDbDisplayName(rsf) ;
 
   /* todo: style = ??? */
-  start = DNAPepAlignFeature_getStart(rsf) ;
-  end = DNAPepAlignFeature_getEnd(rsf) ;
-  has_score = TRUE ;
-  score = DNAPepAlignFeature_getScore(rsf) ;  
+  SO_accession = featureGetSOTerm(rsf) ;
 
-  if (DNAPepAlignFeature_getStrand(rsf) > 0)
-    strand = ZMAPSTRAND_FORWARD ;
-  else if (DNAPepAlignFeature_getStrand(rsf) < 0)
-    strand = ZMAPSTRAND_REVERSE ;
+  if (SO_accession)
+    {
+      if (!feature_name_id)
+        feature_name_id = SeqFeature_getSeqName(rsf) ;
 
-  /* cast away const of so_accession... ugh */
-  zMapFeatureAddStandardData(feature, feature_name_id, feature_name, sequence, (char*)SO_accession,
-                             feature_mode, style,
-                             start, end, has_score, score, strand) ;
+      if (!feature_name)
+        feature_name = SeqFeature_getSeqName(rsf) ;
+
+      start = DNAPepAlignFeature_getStart(rsf) ;
+      end = DNAPepAlignFeature_getEnd(rsf) ;
+      has_score = TRUE ;
+      score = DNAPepAlignFeature_getScore(rsf) ;  
+
+      if (DNAPepAlignFeature_getStrand(rsf) > 0)
+        strand = ZMAPSTRAND_FORWARD ;
+      else if (DNAPepAlignFeature_getStrand(rsf) < 0)
+        strand = ZMAPSTRAND_REVERSE ;
+
+      /* cast away const of so_accession... ugh */
+      zMapFeatureAddStandardData(feature, feature_name_id, feature_name, sequence, (char*)SO_accession,
+                                 feature_mode, style,
+                                 start, end, has_score, score, strand) ;
+    }
 
   return feature ;
 }
