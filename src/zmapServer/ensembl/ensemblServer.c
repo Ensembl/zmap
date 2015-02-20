@@ -99,10 +99,16 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
 
 static void setErrMsg(EnsemblServer server, char *new_msg) ;
 
-static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
-static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
+//static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
+//static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 
 static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf) ;
+static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, const char *SO_accession) ;
+static ZMapFeature makeFeature(SeqFeature *rsf, 
+                               char *feature_name_id,
+                               char *feature_name,
+                               const char *SO_accession, 
+                               ZMapStyleMode feature_mode) ;
 
 /*
  *             Server interface functions.
@@ -397,7 +403,7 @@ static gboolean vectorGetDNAPepAlignFeatures(Vector *features, EnsemblServer ser
         {
           //          Analysis *analysis = DNAPepAlignFeature_getAnalysis(rsf) ;
 
-          ZMapFeature new_feature = makeFeatureDNAPepAlign(rsf) ;
+          makeFeatureDNAPepAlign(rsf) ;
           
 
           //printf("Start %ld, End %ld, Score %f, Cigar %s, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
@@ -545,7 +551,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   EnsemblServer server = (EnsemblServer)server_in ;
-  GetFeaturesDataStruct get_features_data = {NULL} ;
+  //GetFeaturesDataStruct get_features_data = {NULL} ;
 
   g_mutex_lock(server->mutex) ;
   
@@ -725,44 +731,97 @@ static void setErrMsg(EnsemblServer server, char *new_msg)
 
 
 /* Get Features in all blocks within an alignment. */
-static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data)
-{
-  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
-  GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
-
-  if (get_features_data->result == ZMAP_SERVERRESPONSE_OK)
-    g_hash_table_foreach(alignment->blocks, eachBlockGetFeatures, (gpointer)get_features_data) ;
-
-  return ;
-}
-
-
-/* Get features in a block */
-static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data)
-{
-  //ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
-  //GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
-
-
-  return ;
-}
-
+//static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data)
+//{
+//  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
+//  GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
+//
+//  if (get_features_data->result == ZMAP_SERVERRESPONSE_OK)
+//    g_hash_table_foreach(alignment->blocks, eachBlockGetFeatures, (gpointer)get_features_data) ;
+//
+//  return ;
+//}
+//
+//
+///* Get features in a block */
+//static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data)
+//{
+//  //ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
+//  //GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
+//
+//
+//  return ;
+//}
 
 static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf)
 {
-  ZMapFeature feature = zMapFeatureCreateEmpty() ;
-  gboolean ok = TRUE ;
-  
-          //printf("Start %ld, End %ld, Score %f, Cigar %s, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
-          //       DNAAlignFeature_getCigarString(rsf),
-          //       DNAPepAlignFeature_getLength(rsf),
-          //       analysis->gffSource, analysis->gffFeature, analysis->module);
+  ZMapFeature feature = NULL ;
 
-  char *feature_name_id = NULL ;
-  char *feature_name = NULL ;
-  char *sequence = NULL ;
-  char *SO_accession = NULL ;
+  const char *SO_accession = "protein_match" ;
+  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, SO_accession) ;
+
+  return feature ;
+}
+
+
+static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, const char *SO_accession)
+{
+  ZMapFeature feature = NULL ;
+
+  /* Create the basic feature. We need to pass some alignment-specific fields */
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_ALIGNMENT ;
+
+  char *feature_name_id = DNAPepAlignFeature_getHitSeqName(rsf) ;
+  char *feature_name = DNAPepAlignFeature_getHitSeqName(rsf) ;
+
+  feature = makeFeature((SeqFeature*)rsf, feature_name_id, feature_name, SO_accession, feature_mode) ;
+
+  if (feature)
+    {
+      /* Add the alignment data */
+      GQuark clone_id = 0 ;
+      double percent_id = 0.0 ;
+      int query_start = 0 ;
+      int query_end = 0 ;
+      ZMapHomolType homol_type = ZMAPHOMOL_X_HOMOL ;
+      int query_length = 0 ;
+      ZMapStrand query_strand = ZMAPSTRAND_NONE ;
+      ZMapPhase target_phase = 0;
+      GArray *align = NULL ;
+      unsigned int align_error = 0;
+      gboolean has_local_sequence = FALSE ;
+      char *sequence  = NULL ;
+
+      percent_id = DNAPepAlignFeature_getPercId(rsf) ;
+      query_start = DNAPepAlignFeature_getHitStart(rsf) ;
+      query_end = DNAPepAlignFeature_getHitEnd(rsf) ;
+      query_length = DNAPepAlignFeature_getLength(rsf) ;
+
+      if (DNAPepAlignFeature_getHitStrand(rsf) > 0)
+        query_strand = ZMAPSTRAND_FORWARD ;
+      else if (DNAPepAlignFeature_getHitStrand(rsf) < 0)
+        query_strand = ZMAPSTRAND_REVERSE ;
+
+      target_phase = SeqFeature_getPhase((SeqFeature*)rsf) ;
+
+      zMapFeatureAddAlignmentData(feature, clone_id, percent_id, query_start, query_end,
+                                  homol_type, query_length, query_strand, target_phase,
+                                  align, align_error, has_local_sequence, sequence) ;
+    }
+
+  return feature ;
+}
+
+
+static ZMapFeature makeFeature(SeqFeature *rsf, 
+                               char *feature_name_id,
+                               char *feature_name,
+                               const char *SO_accession, 
+                               ZMapStyleMode feature_mode)
+{
+  ZMapFeature feature = zMapFeatureCreateEmpty() ;
+
+  char *sequence = NULL ;
   ZMapFeatureTypeStyle *style  = NULL ;
   int start = 0 ;
   int end = 0 ;
@@ -770,11 +829,9 @@ static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf)
   double score = 0.0 ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
 
+  //source = DNAPepAlignFeature_getDbDisplayName(rsf) ;
 
-  feature_name_id = DNAPepAlignFeature_getHitSeqName(rsf) ;
-  feature_name = DNAPepAlignFeature_getHitSeqName(rsf) ;
   /* todo: style = ??? */
-  SO_accession = "protein_match" ;
   start = DNAPepAlignFeature_getStart(rsf) ;
   end = DNAPepAlignFeature_getEnd(rsf) ;
   has_score = TRUE ;
@@ -785,16 +842,10 @@ static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf)
   else if (DNAPepAlignFeature_getStrand(rsf) < 0)
     strand = ZMAPSTRAND_REVERSE ;
 
-
-  ok = zMapFeatureAddStandardData(feature, feature_name_id, feature_name, sequence, SO_accession,
-                                  feature_mode, style,
-                                  start, end, has_score, score, strand) ;
-
-
-  if (ok)
-    {
-      //zMapFeatureAddAlignmentData() ;
-    }
+  /* cast away const of so_accession... ugh */
+  zMapFeatureAddStandardData(feature, feature_name_id, feature_name, sequence, (char*)SO_accession,
+                             feature_mode, style,
+                             start, end, has_score, score, strand) ;
 
   return feature ;
 }
