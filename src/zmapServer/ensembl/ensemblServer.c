@@ -102,6 +102,7 @@ static void setErrMsg(EnsemblServer server, char *new_msg) ;
 static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 
+static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf) ;
 
 /*
  *             Server interface functions.
@@ -290,18 +291,18 @@ static gboolean vectorGetSimpleFeatures(Vector *features, EnsemblServer server)
   gboolean result = TRUE ;
   int i = 0 ;
 
-  for (i = 0; i < Vector_getNumElement(features) && !failed; ++i) 
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       SimpleFeature *sf = Vector_getElementAt(features,i);
-      long start = SimpleFeature_getStart(sf);
-      long end   = SimpleFeature_getEnd(sf);
+      //long start = SimpleFeature_getStart(sf);
+      //long end   = SimpleFeature_getEnd(sf);
 
       //printf("slice start = %d end = %d\n",start,end);
       SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,"contig",NULL,NULL);
 
       if (rsf)
         {
-          Analysis *analysis = SimpleFeature_getAnalysis(rsf) ;
+          //          Analysis *analysis = SimpleFeature_getAnalysis(rsf) ;
 
 //          printf("DbID %s, Start %ld, End %ld, Score %f, Phase %hhd, EndPhase %hhd, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
 //                 SimpleFeature_getDbID(rsf), SimpleFeature_getStart(rsf),SimpleFeature_getEnd(rsf),
@@ -339,15 +340,15 @@ static gboolean vectorGetDNAAlignFeatures(Vector *features, EnsemblServer server
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       DNAAlignFeature *sf = Vector_getElementAt(features,i);
-      long start = DNAAlignFeature_getStart(sf);
-      long end   = DNAAlignFeature_getEnd(sf);
+      //long start = DNAAlignFeature_getStart(sf);
+      //long end   = DNAAlignFeature_getEnd(sf);
 
       //printf("slice start = %d end = %d\n",start,end);
       DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"contig",NULL,NULL);
 
       if (rsf)
         {
-          Analysis *analysis = DNAAlignFeature_getAnalysis(rsf) ;
+          //Analysis *analysis = DNAAlignFeature_getAnalysis(rsf) ;
 
           //printf("Hit name %s, Start %ld, End %ld, HitStart %d, HitEnd %d, Score %f, Cigar %s, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
           //       DNAAlignFeature_getHitSeqName(rsf), DNAAlignFeature_getStart(rsf),DNAAlignFeature_getEnd(rsf),
@@ -386,15 +387,15 @@ static gboolean vectorGetDNAPepAlignFeatures(Vector *features, EnsemblServer ser
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       DNAPepAlignFeature *sf = Vector_getElementAt(features,i);
-      long start = DNAPepAlignFeature_getStart(sf);
-      long end   = DNAPepAlignFeature_getEnd(sf);
+      //long start = DNAPepAlignFeature_getStart(sf);
+      //long end   = DNAPepAlignFeature_getEnd(sf);
 
       //printf("slice start = %d end = %d\n",start,end);
       DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"contig",NULL,NULL);
 
       if (rsf)
         {
-          Analysis *analysis = DNAPepAlignFeature_getAnalysis(rsf) ;
+          //          Analysis *analysis = DNAPepAlignFeature_getAnalysis(rsf) ;
 
           ZMapFeature new_feature = makeFeatureDNAPepAlign(rsf) ;
           
@@ -432,8 +433,8 @@ static gboolean vectorGetRepeatFeatures(Vector *features, EnsemblServer server)
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       RepeatFeature *sf = Vector_getElementAt(features,i);
-      long start = RepeatFeature_getStart(sf);
-      long end   = RepeatFeature_getEnd(sf);
+      //long start = RepeatFeature_getStart(sf);
+      //long end   = RepeatFeature_getEnd(sf);
 
       //printf("slice start = %d end = %d\n",start,end);
       RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf,"contig",NULL,NULL);
@@ -489,7 +490,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
                                                  GHashTable **source_2_sourcedata_inout)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  EnsemblServer server = (EnsemblServer)server_in ;
+  //EnsemblServer server = (EnsemblServer)server_in ;
 
   result = ZMAP_SERVERRESPONSE_OK ;
   return result ;
@@ -498,7 +499,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  EnsemblServer server = (EnsemblServer)server_in ;
+  //EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
 }
@@ -506,7 +507,7 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
 static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  EnsemblServer server = (EnsemblServer)server_in ;
+  //EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
 }
@@ -532,7 +533,7 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
 static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
-  EnsemblServer server = (EnsemblServer)server_in ;
+  //EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
 }
@@ -616,7 +617,7 @@ static ZMapServerResponseType getStatus(void *server_in, gint *exit_code)
 static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
-  EnsemblServer server = (EnsemblServer)server_in ;
+  //EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
 }
@@ -625,7 +626,7 @@ static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnect
 static ZMapServerResponseType closeConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
-  EnsemblServer server = (EnsemblServer)server_in ;
+  //EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
 }
@@ -739,8 +740,8 @@ static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_
 /* Get features in a block */
 static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data)
 {
-  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
-  GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
+  //ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
+  //GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
 
 
   return ;
@@ -786,11 +787,14 @@ static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf)
 
 
   ok = zMapFeatureAddStandardData(feature, feature_name_id, feature_name, sequence, SO_accession,
-                                  feature_style_mode, &pFeatureSet->style,
+                                  feature_mode, style,
                                   start, end, has_score, score, strand) ;
 
 
-  //zMapFeatureAddAlignmentData() ;
+  if (ok)
+    {
+      //zMapFeatureAddAlignmentData() ;
+    }
 
   return feature ;
 }
