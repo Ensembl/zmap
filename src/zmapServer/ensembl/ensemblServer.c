@@ -55,6 +55,16 @@
 
 #define ENSEMBL_PROTOCOL_STR "Ensembl"                            /* For error messages. */
 
+typedef struct GetFeaturesDataStructType
+{
+  EnsemblServer server ;
+
+  ZMapServerResponseType result ;
+
+  char *err_msg ;
+
+} GetFeaturesDataStruct, *GetFeaturesData ;
+
 
 /* These provide the interface functions for an ensembl server implementation, i.e. you
  * shouldn't change these prototypes without changing all the other server prototypes..... */
@@ -88,6 +98,9 @@ static ZMapServerResponseType destroyConnection(void *server) ;
 static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequences_inout) ;
 
 static void setErrMsg(EnsemblServer server, char *new_msg) ;
+
+static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
+static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 
 
 /*
@@ -272,9 +285,9 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
 }
 
 
-static void vectorGetSimpleFeatureDetails(Vector *features, EnsemblServer server)
+static gboolean vectorGetSimpleFeatures(Vector *features, EnsemblServer server)
 {
-  gboolean failed = FALSE ;
+  gboolean result = TRUE ;
   int i = 0 ;
 
   for (i = 0; i < Vector_getNumElement(features) && !failed; ++i) 
@@ -290,38 +303,40 @@ static void vectorGetSimpleFeatureDetails(Vector *features, EnsemblServer server
         {
           Analysis *analysis = SimpleFeature_getAnalysis(rsf) ;
 
-          printf("Label %s, Start %ld, End %ld, Score %f, Phase %hhd, EndPhase %hhd, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
-                 SimpleFeature_getDisplayLabel(rsf), SimpleFeature_getStart(rsf),SimpleFeature_getEnd(rsf),
-                 SimpleFeature_getScore(rsf), SimpleFeature_getPhase(rsf), SimpleFeature_getEndPhase(rsf),
-                 SimpleFeature_getStrand(rsf), SimpleFeature_getLength(rsf),
-                 analysis->gffSource, analysis->gffFeature, analysis->module);
+//          printf("DbID %s, Start %ld, End %ld, Score %f, Phase %hhd, EndPhase %hhd, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
+//                 SimpleFeature_getDbID(rsf), SimpleFeature_getStart(rsf),SimpleFeature_getEnd(rsf),
+//                 SimpleFeature_getScore(rsf), SimpleFeature_getPhase(rsf), SimpleFeature_getEndPhase(rsf),
+//                 SimpleFeature_getStrand(rsf), SimpleFeature_getLength(rsf),
+//                 analysis->gffSource, analysis->gffFeature, analysis->module);
         }
       else
         {
           printf("no mapped feature\n");
         }
 
-      if (rsf) 
-        {
-          SimpleFeature *sf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)rsf, "chromosome", NULL, server->slice);
-          sf = (SimpleFeature*)SeqFeature_transfer((SeqFeature*)rsf, server->slice);
-        
-          if (SimpleFeature_getStart(sf) != start || SimpleFeature_getEnd(sf) != end)
-            {
-              printf("Remapping to slice produced different coords start %ld v %ld   end %ld v %ld\n", 
-                     SimpleFeature_getStart(sf),start, SimpleFeature_getEnd(sf),end);
-              failed = TRUE;
-            }
-        }
+//      if (rsf) 
+//        {
+//          SimpleFeature *sf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)rsf, "chromosome", NULL, server->slice);
+//          sf = (SimpleFeature*)SeqFeature_transfer((SeqFeature*)rsf, server->slice);
+//        
+//          if (SimpleFeature_getStart(sf) != start || SimpleFeature_getEnd(sf) != end)
+//            {
+//              printf("Remapping to slice produced different coords start %ld v %ld   end %ld v %ld\n", 
+//                     SimpleFeature_getStart(sf),start, SimpleFeature_getEnd(sf),end);
+//              result = FALSE;
+//            }
+//        }
     }  
+
+  return result;
 }
 
-static void vectorGetDNAAlignFeatureDetails(Vector *features, EnsemblServer server)
+static gboolean vectorGetDNAAlignFeatures(Vector *features, EnsemblServer server)
 {
-  gboolean failed = FALSE ;
+  gboolean result = TRUE ;
   int i = 0 ;
 
-  for (i = 0; i < Vector_getNumElement(features) && !failed; ++i) 
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       DNAAlignFeature *sf = Vector_getElementAt(features,i);
       long start = DNAAlignFeature_getStart(sf);
@@ -334,39 +349,41 @@ static void vectorGetDNAAlignFeatureDetails(Vector *features, EnsemblServer serv
         {
           Analysis *analysis = DNAAlignFeature_getAnalysis(rsf) ;
 
-          printf("Hit name %s, Start %ld, End %ld, HitStart %d, HitEnd %d, Score %f, Cigar %s, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
-                 DNAAlignFeature_getHitSeqName(rsf), DNAAlignFeature_getStart(rsf),DNAAlignFeature_getEnd(rsf),
-                 DNAAlignFeature_getHitStart(rsf), DNAAlignFeature_getHitEnd(rsf),
-                 DNAAlignFeature_getScore(rsf), DNAAlignFeature_getCigarString(rsf),
-                 DNAAlignFeature_getStrand(rsf), DNAAlignFeature_getLength(rsf),
-                 analysis->gffSource, analysis->gffFeature, analysis->module);
+          //printf("Hit name %s, Start %ld, End %ld, HitStart %d, HitEnd %d, Score %f, Cigar %s, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
+          //       DNAAlignFeature_getHitSeqName(rsf), DNAAlignFeature_getStart(rsf),DNAAlignFeature_getEnd(rsf),
+          //       DNAAlignFeature_getHitStart(rsf), DNAAlignFeature_getHitEnd(rsf),
+          //       DNAAlignFeature_getScore(rsf), DNAAlignFeature_getCigarString(rsf),
+          //       DNAAlignFeature_getStrand(rsf), DNAAlignFeature_getLength(rsf),
+          //       analysis->gffSource, analysis->gffFeature, analysis->module);
         }
       else
         {
           printf("no mapped feature\n");
         }
 
-      if (rsf) 
-        {
-          DNAAlignFeature *sf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)rsf, "chromosome", NULL, server->slice);
-          sf = (DNAAlignFeature*)SeqFeature_transfer((SeqFeature*)rsf, server->slice);
-        
-          if (DNAAlignFeature_getStart(sf) != start || DNAAlignFeature_getEnd(sf) != end)
-            {
-              printf("Remapping to slice produced different coords start %ld v %ld   end %ld v %ld\n", 
-                     DNAAlignFeature_getStart(sf),start, DNAAlignFeature_getEnd(sf),end);
-              failed = TRUE;
-            }
-        }
+//      if (rsf) 
+//        {
+//          DNAAlignFeature *sf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)rsf, "chromosome", NULL, server->slice);
+//          sf = (DNAAlignFeature*)SeqFeature_transfer((SeqFeature*)rsf, server->slice);
+//        
+//          if (DNAAlignFeature_getStart(sf) != start || DNAAlignFeature_getEnd(sf) != end)
+//            {
+//              printf("Remapping to slice produced different coords start %ld v %ld   end %ld v %ld\n", 
+//                     DNAAlignFeature_getStart(sf),start, DNAAlignFeature_getEnd(sf),end);
+//              result = FALSE;
+//            }
+//        }
     }  
+
+  return result;
 }
 
-static void vectorGetDNAPepAlignFeatureDetails(Vector *features, EnsemblServer server)
+static gboolean vectorGetDNAPepAlignFeatures(Vector *features, EnsemblServer server)
 {
-  gboolean failed = FALSE ;
+  gboolean result = TRUE ;
   int i = 0 ;
 
-  for (i = 0; i < Vector_getNumElement(features) && !failed; ++i) 
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       DNAPepAlignFeature *sf = Vector_getElementAt(features,i);
       long start = DNAPepAlignFeature_getStart(sf);
@@ -379,38 +396,40 @@ static void vectorGetDNAPepAlignFeatureDetails(Vector *features, EnsemblServer s
         {
           Analysis *analysis = DNAPepAlignFeature_getAnalysis(rsf) ;
 
-          printf("Start %ld, End %ld, Score %f, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
-                 DNAPepAlignFeature_getStart(rsf),DNAPepAlignFeature_getEnd(rsf),
-                 DNAPepAlignFeature_getScore(rsf), 
-                 DNAPepAlignFeature_getStrand(rsf), DNAPepAlignFeature_getLength(rsf),
-                 analysis->gffSource, analysis->gffFeature, analysis->module);
+          ZMapFeature new_feature = makeFeatureDNAPepAlign(rsf) ;
+          
+
+          //printf("Start %ld, End %ld, Score %f, Cigar %s, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
+          //       DNAPepAlignFeature_getStart(rsf),DNAPepAlignFeature_getEnd(rsf),
+          //       DNAPepAlignFeature_getScore(rsf), DNAAlignFeature_getCigarString(rsf),
+          //       DNAPepAlignFeature_getStrand(rsf), DNAPepAlignFeature_getLength(rsf),
+          //       analysis->gffSource, analysis->gffFeature, analysis->module);
+
+          //DNAPepAlignFeature *sf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)rsf, "chromosome", NULL, server->slice);
+          //sf = (DNAPepAlignFeature*)SeqFeature_transfer((SeqFeature*)rsf, server->slice);
+          //
+          //if (DNAPepAlignFeature_getStart(sf) != start || DNAPepAlignFeature_getEnd(sf) != end)
+          //  {
+          //    printf("Remapping to slice produced different coords start %ld v %ld   end %ld v %ld\n", 
+          //           DNAPepAlignFeature_getStart(sf),start, DNAPepAlignFeature_getEnd(sf),end);
+          //    result = FALSE;
+          //  }
         }
       else
         {
           printf("no mapped feature\n");
         }
+    }
 
-      if (rsf) 
-        {
-          DNAPepAlignFeature *sf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)rsf, "chromosome", NULL, server->slice);
-          sf = (DNAPepAlignFeature*)SeqFeature_transfer((SeqFeature*)rsf, server->slice);
-        
-          if (DNAPepAlignFeature_getStart(sf) != start || DNAPepAlignFeature_getEnd(sf) != end)
-            {
-              printf("Remapping to slice produced different coords start %ld v %ld   end %ld v %ld\n", 
-                     DNAPepAlignFeature_getStart(sf),start, DNAPepAlignFeature_getEnd(sf),end);
-              failed = TRUE;
-            }
-        }
-    }  
+  return result;
 }
 
-static void vectorGetRepeatFeatureDetails(Vector *features, EnsemblServer server)
+static gboolean vectorGetRepeatFeatures(Vector *features, EnsemblServer server)
 {
-  gboolean failed = FALSE ;
+  gboolean result = TRUE ;
   int i = 0 ;
 
-  for (i = 0; i < Vector_getNumElement(features) && !failed; ++i) 
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       RepeatFeature *sf = Vector_getElementAt(features,i);
       long start = RepeatFeature_getStart(sf);
@@ -434,19 +453,21 @@ static void vectorGetRepeatFeatureDetails(Vector *features, EnsemblServer server
           printf("no mapped feature\n");
         }
 
-      if (rsf) 
-        {
-          RepeatFeature *sf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)rsf, "chromosome", NULL, server->slice);
-          sf = (RepeatFeature*)SeqFeature_transfer((SeqFeature*)rsf, server->slice);
-        
-          if (RepeatFeature_getStart(sf) != start || RepeatFeature_getEnd(sf) != end)
-            {
-              printf("Remapping to slice produced different coords start %ld v %ld   end %ld v %ld\n", 
-                     RepeatFeature_getStart(sf),start, RepeatFeature_getEnd(sf),end);
-              failed = TRUE;
-            }
-        }
+//      if (rsf) 
+//        {
+//          RepeatFeature *sf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)rsf, "chromosome", NULL, server->slice);
+//          sf = (RepeatFeature*)SeqFeature_transfer((SeqFeature*)rsf, server->slice);
+//        
+//          if (RepeatFeature_getStart(sf) != start || RepeatFeature_getEnd(sf) != end)
+//            {
+//              printf("Remapping to slice produced different coords start %ld v %ld   end %ld v %ld\n", 
+//                     RepeatFeature_getStart(sf),start, RepeatFeature_getEnd(sf),end);
+//              result = FALSE;
+//            }
+//        }
     }  
+
+  return result;
 }
 
 
@@ -469,25 +490,6 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
-
-  g_mutex_lock(server->mutex) ;
-
-  SimpleFeatureAdaptor *simple_feature_adaptor = DBAdaptor_getSimpleFeatureAdaptor(server->dba) ;
-  DNAAlignFeatureAdaptor *dna_feature_adaptor = DBAdaptor_getDNAAlignFeatureAdaptor(server->dba) ;
-  ProteinAlignFeatureAdaptor *pep_feature_adaptor = DBAdaptor_getProteinAlignFeatureAdaptor(server->dba) ;
-  RepeatFeatureAdaptor *repeat_feature_adaptor = DBAdaptor_getRepeatFeatureAdaptor(server->dba) ;
-
-  Vector *simple_features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
-  Vector *dna_features =  Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-  Vector *pep_features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-  Vector *repeat_features =  Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
-
-  //vectorGetSimpleFeatureDetails(simple_features, server);
-  vectorGetDNAAlignFeatureDetails(dna_features, server);
-  //vectorGetDNAPepAlignFeatureDetails(pep_features, server);
-  //vectorGetRepeatFeatureDetails(repeat_features, server);
-
-  g_mutex_unlock(server->mutex) ;
 
   result = ZMAP_SERVERRESPONSE_OK ;
   return result ;
@@ -536,16 +538,35 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 }
 
 
-/* Get all features on a sequence.
- * we assume we called pipeGetHeader() already and also pipeGetSequence()
- * so we are at the start of the BODY part of the stream. BUT note that
- * there may be no more lines in the file, we handle that as this point
- * as it's only here that the caller has asked for the features. */
+/* Get all features on a sequence. */
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
                                           ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   EnsemblServer server = (EnsemblServer)server_in ;
+  GetFeaturesDataStruct get_features_data = {NULL} ;
+
+  g_mutex_lock(server->mutex) ;
+  
+  SimpleFeatureAdaptor *simple_feature_adaptor = DBAdaptor_getSimpleFeatureAdaptor(server->dba) ;
+  DNAAlignFeatureAdaptor *dna_feature_adaptor = DBAdaptor_getDNAAlignFeatureAdaptor(server->dba) ;
+  ProteinAlignFeatureAdaptor *pep_feature_adaptor = DBAdaptor_getProteinAlignFeatureAdaptor(server->dba) ;
+  RepeatFeatureAdaptor *repeat_feature_adaptor = DBAdaptor_getRepeatFeatureAdaptor(server->dba) ;
+
+  Vector *simple_features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
+  Vector *dna_features =  Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+  Vector *pep_features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+  Vector *repeat_features =  Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
+
+  //vectorGetSimpleFeatures(simple_features, server);
+  //vectorGetDNAAlignFeatures(dna_features, server);
+  vectorGetDNAPepAlignFeatures(pep_features, server);
+  //vectorGetRepeatFeatures(repeat_features, server);
+
+      g_mutex_unlock(server->mutex) ;
+
+  /* Fetch all the alignment blocks for all the sequences. */
+      //g_hash_table_foreach(feature_context->alignments, eachAlignmentGetFeatures, (gpointer)&get_features_data) ;
 
   return result ;
 }
@@ -700,3 +721,77 @@ static void setErrMsg(EnsemblServer server, char *new_msg)
 
   return ;
 }
+
+
+/* Get Features in all blocks within an alignment. */
+static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
+  GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
+
+  if (get_features_data->result == ZMAP_SERVERRESPONSE_OK)
+    g_hash_table_foreach(alignment->blocks, eachBlockGetFeatures, (gpointer)get_features_data) ;
+
+  return ;
+}
+
+
+/* Get features in a block */
+static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
+  GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
+
+
+  return ;
+}
+
+
+static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf)
+{
+  ZMapFeature feature = zMapFeatureCreateEmpty() ;
+  gboolean ok = TRUE ;
+  
+          //printf("Start %ld, End %ld, Score %f, Cigar %s, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
+          //       DNAAlignFeature_getCigarString(rsf),
+          //       DNAPepAlignFeature_getLength(rsf),
+          //       analysis->gffSource, analysis->gffFeature, analysis->module);
+
+  char *feature_name_id = NULL ;
+  char *feature_name = NULL ;
+  char *sequence = NULL ;
+  char *SO_accession = NULL ;
+  ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_ALIGNMENT ;
+  ZMapFeatureTypeStyle *style  = NULL ;
+  int start = 0 ;
+  int end = 0 ;
+  gboolean has_score = TRUE ;
+  double score = 0.0 ;
+  ZMapStrand strand = ZMAPSTRAND_NONE ;
+
+
+  feature_name_id = DNAPepAlignFeature_getHitSeqName(rsf) ;
+  feature_name = DNAPepAlignFeature_getHitSeqName(rsf) ;
+  /* todo: style = ??? */
+  SO_accession = "protein_match" ;
+  start = DNAPepAlignFeature_getStart(rsf) ;
+  end = DNAPepAlignFeature_getEnd(rsf) ;
+  has_score = TRUE ;
+  score = DNAPepAlignFeature_getScore(rsf) ;  
+
+  if (DNAPepAlignFeature_getStrand(rsf) > 0)
+    strand = ZMAPSTRAND_FORWARD ;
+  else if (DNAPepAlignFeature_getStrand(rsf) < 0)
+    strand = ZMAPSTRAND_REVERSE ;
+
+
+  ok = zMapFeatureAddStandardData(feature, feature_name_id, feature_name, sequence, SO_accession,
+                                  feature_style_mode, &pFeatureSet->style,
+                                  start, end, has_score, score, strand) ;
+
+
+  //zMapFeatureAddAlignmentData() ;
+
+  return feature ;
+}
+
