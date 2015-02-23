@@ -894,7 +894,7 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType hom
                                   align, align_error, has_local_sequence, sequence) ;
       
       zMapLogMessage("Added align data: id %d, qstart %d, qend %d, qlen %d, qstrand %d, ph %d",
-                     percent_id, query_start, query_end, homol_type, query_length, query_strand, target_phase) ;
+                     percent_id, query_start, query_end, query_length, query_strand, target_phase) ;
     }
 
   return feature ;
