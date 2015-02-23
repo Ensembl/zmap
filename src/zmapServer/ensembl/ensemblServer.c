@@ -892,6 +892,9 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType hom
       zMapFeatureAddAlignmentData(feature, clone_id, percent_id, query_start, query_end,
                                   homol_type, query_length, query_strand, target_phase,
                                   align, align_error, has_local_sequence, sequence) ;
+      
+      zMapLogMessage("Added align data: id %d, qstart %d, qend %d, qlen %d, qstrand %d, ph %d",
+                     percent_id, query_start, query_end, homol_type, query_length, query_strand, target_phase) ;
     }
 
   return feature ;
@@ -943,6 +946,9 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
       zMapFeatureAddStandardData(feature, feature_name_id, feature_name, sequence, (char*)SO_accession,
                                  feature_mode, style,
                                  start, end, has_score, score, strand) ;
+
+      zMapLogMessage("Created feature: name %s, so %s, mode %d, start %d, end %d, score %f, strand %d", 
+                     feature_name, SO_accession, feature_mode, start, end, score, strand) ;
     }
 
   return feature ;
