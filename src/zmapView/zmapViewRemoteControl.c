@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -91,16 +91,16 @@ typedef enum
 /* Command descriptor table, records whether command edits the feature context and so on. */
 typedef struct CommandDescriptorStructName
 {
-  char *command ;					    /* Command name/id. */
+  char *command ;                                            /* Command name/id. */
   GQuark command_id ;
 
-  gboolean is_edit ;					    /* Does this command edit the feature context ? */
-  FeatureExistsType exists ;				    /* Does the target of the command need
-							       to exist/not exist etc. ? e.g. columns may be
-							       dynamically loaded so may not exist yet. */
+  gboolean is_edit ;                                            /* Does this command edit the feature context ? */
+  FeatureExistsType exists ;                                    /* Does the target of the command need
+                                                               to exist/not exist etc. ? e.g. columns may be
+                                                               dynamically loaded so may not exist yet. */
 
-  gboolean needs_feature_desc ;				    /* Does command need a feature
-							       description ? */
+  gboolean needs_feature_desc ;                                    /* Does command need a feature
+                                                               description ? */
 
 } CommandDescriptorStruct, *CommandDescriptor ;
 
@@ -206,12 +206,12 @@ typedef struct
 
 
 static void localProcessRemoteRequest(ZMapViewWindow view_window,
-				      char *command_name, char *request,
-				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+                                      char *command_name, char *request,
+                                      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 static void processRequest(ZMapViewWindow view_window,
-			   char *command_name, char *request,
-			   RemoteCommandRCType *command_rc_out, char **reason_out,
-			   ZMapXMLUtilsEventStack *reply_out) ;
+                           char *command_name, char *request,
+                           RemoteCommandRCType *command_rc_out, char **reason_out,
+                           ZMapXMLUtilsEventStack *reply_out) ;
 static CommandDescriptor cmdGetDesc(GQuark command_id) ;
 
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
@@ -228,14 +228,14 @@ static gboolean xml_return_true_cb(gpointer user_data, ZMapXMLElement zmap_eleme
 
 static void copyAddFeature(gpointer key, gpointer value, gpointer user_data) ;
 static ZMapFeature createLocusFeature(ZMapFeatureContext context, ZMapFeature feature,
-				      ZMapFeatureSet locus_feature_set, ZMapFeatureTypeStyle *locus_style,
-				      GQuark new_locus_id) ;
+                                      ZMapFeatureSet locus_feature_set, ZMapFeatureTypeStyle *locus_style,
+                                      GQuark new_locus_id) ;
 static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data) ;
 static void viewDumpContextToFile(ZMapView view, RequestData request_data) ;
 static void eraseFeatures(ZMapView view, RequestData request_data) ;
 static gboolean findFeature(ZMapView view, RequestData request_data) ;
 static gboolean mergeNewFeatures(ZMapView view, RequestData request_data,
-				 ZMapFeatureContext *merge_context, GList **feature_list) ;
+                                 ZMapFeatureContext *merge_context, GList **feature_list) ;
 static void draw_failed_make_message(gpointer list_data, gpointer user_data) ;
 static void delete_failed_make_message(gpointer list_data, gpointer user_data) ;
 static void loadFeatures(ZMapView view, RequestData request_data) ;
@@ -265,7 +265,7 @@ static CommandDescriptorStruct command_table_G[] =
     {ZACP_DUMP_FEATURES,     0, FALSE, FEATURE_DONT_CARE, FALSE},
     {ZACP_REVCOMP,           0, FALSE, FEATURE_DONT_CARE, FALSE},
 
-    {NULL, 0, FALSE, FALSE}				    /* Terminator record. */
+    {NULL, 0, FALSE, FALSE}                                    /* Terminator record. */
   } ;
 
 
@@ -305,8 +305,8 @@ static ZMapXMLObjTagFunctionsStruct view_ends_G[] =
 
 /* See if view can process the command, if not then try all the windows to see if one can process the request. */
 gboolean zMapViewProcessRemoteRequest(ZMapViewWindow view_window,
-				      char *command_name, char *request,
-				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
+                                      char *command_name, char *request,
+                                      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   gboolean result = FALSE ;
 
@@ -318,16 +318,16 @@ gboolean zMapViewProcessRemoteRequest(ZMapViewWindow view_window,
       || strcmp(command_name, ZACP_REVCOMP) == 0)
     {
       localProcessRemoteRequest(view_window,
-				command_name, request,
-				app_reply_func, app_reply_data) ;
+                                command_name, request,
+                                app_reply_func, app_reply_data) ;
 
-      result = TRUE ;					    /* Signal we have handled the request. */
+      result = TRUE ;                                            /* Signal we have handled the request. */
     }
   else
     {
       result = zMapWindowProcessRemoteRequest(view_window->window,
-					      command_name, request,
-					      app_reply_func, app_reply_data) ;
+                                              command_name, request,
+                                              app_reply_func, app_reply_data) ;
     }
 
   return result ;
@@ -337,8 +337,8 @@ gboolean zMapViewProcessRemoteRequest(ZMapViewWindow view_window,
 
 /* Process all peer requests that apply to view. */
 static void localProcessRemoteRequest(ZMapViewWindow view_window,
-				      char *command_name, char *request,
-				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
+                                      char *command_name, char *request,
+                                      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_FAILED ;
   char *reason = NULL ;
@@ -354,9 +354,9 @@ static void localProcessRemoteRequest(ZMapViewWindow view_window,
 
 /* Commands by this routine need the xml to be parsed for arguments etc. */
 static void processRequest(ZMapViewWindow view_window,
-			   char *command_name, char *request,
-			   RemoteCommandRCType *command_rc_out, char **reason_out,
-			   ZMapXMLUtilsEventStack *reply_out)
+                           char *command_name, char *request,
+                           RemoteCommandRCType *command_rc_out, char **reason_out,
+                           ZMapXMLUtilsEventStack *reply_out)
 {
   ZMapXMLParser parser ;
   gboolean cmd_debug = FALSE ;
@@ -387,16 +387,16 @@ static void processRequest(ZMapViewWindow view_window,
       request_data.err_msg = g_string_new("") ;
 
       if (!executeRequest(parser, &request_data))
-	{
-	  *reason_out = zMapXMLUtilsEscapeStr(request_data.err_msg->str) ;
-	}
+        {
+          *reason_out = zMapXMLUtilsEscapeStr(request_data.err_msg->str) ;
+        }
       else
-	{
-	  if (!(request_data.msg))
-	    request_data.msg = "*Error* - Command worked but no message set." ;
+        {
+          if (!(request_data.msg))
+            request_data.msg = "*Error* - Command worked but no message set." ;
 
-	  *reply_out = zMapRemoteCommandMessage2Element(request_data.msg) ;
-	}
+          *reply_out = zMapRemoteCommandMessage2Element(request_data.msg) ;
+        }
 
       *command_rc_out = request_data.command_rc ;
 
@@ -443,39 +443,39 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
       eraseFeatures(view, request_data) ;
 
       if (request_data->command_rc == REMOTE_COMMAND_RC_OK)
-	{
-	  /* mergeNewFeatures sets the request error code/msg if it fails. */
-	  if (mergeNewFeatures(view, request_data,
-			       &(request_data->replace_context), &(request_data->replace_feature_list)))
-	    {
+        {
+          /* mergeNewFeatures sets the request error code/msg if it fails. */
+          if (mergeNewFeatures(view, request_data,
+                               &(request_data->replace_context), &(request_data->replace_feature_list)))
+            {
 
-	      /* THINGS HAVE CHANGED....FINAL FEATURE PARAMETER NEEDS TESTING.... */
+              /* THINGS HAVE CHANGED....FINAL FEATURE PARAMETER NEEDS TESTING.... */
 
-	      zmapViewDrawDiffContext(view, &(request_data->replace_context), request_data->replace_feature) ;
-	      request_data->msg = "Feature replaced ok !" ;
-	    }
-	  else
-	    {
-	      result = FALSE ;
-	    }
-	}
+              zmapViewDrawDiffContext(view, &(request_data->replace_context), request_data->replace_feature) ;
+              request_data->msg = "Feature replaced ok !" ;
+            }
+          else
+            {
+              result = FALSE ;
+            }
+        }
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_CREATE_FEATURE))
     {
       /* mergeNewFeatures sets the request error code/msg if it fails. */
       if (mergeNewFeatures(view, request_data, &(request_data->edit_context), &(request_data->edit_feature_list)))
-	{
+        {
 
-	  /* THINGS HAVE CHANGED....FINAL FEATURE PARAMETER NEEDS TESTING.... */
+          /* THINGS HAVE CHANGED....FINAL FEATURE PARAMETER NEEDS TESTING.... */
 
-	  zmapViewDrawDiffContext(view, &(request_data->edit_context), request_data->edit_feature) ;
+          zmapViewDrawDiffContext(view, &(request_data->edit_context), request_data->edit_feature) ;
 
-	  request_data->msg = "Created feature ok !" ;
-	}
+          request_data->msg = "Created feature ok !" ;
+        }
       else
-	{
-	  result = FALSE ;
-	}
+        {
+          result = FALSE ;
+        }
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_DUMP_FEATURES))
     {
@@ -508,8 +508,8 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
 
 
 static ZMapFeature createLocusFeature(ZMapFeatureContext context, ZMapFeature feature,
-				      ZMapFeatureSet locus_feature_set, ZMapFeatureTypeStyle *locus_style,
-				      GQuark new_locus_id)
+                                      ZMapFeatureSet locus_feature_set, ZMapFeatureTypeStyle *locus_style,
+                                      GQuark new_locus_id)
 {
   ZMapFeature locus_feature = NULL;
   ZMapFeature old_feature;
@@ -557,33 +557,33 @@ static ZMapFeature createLocusFeature(ZMapFeatureContext context, ZMapFeature fe
        *     This means the locus won't be deleted as it should be.
        */
       zMapLogMessage("loci '%s' & '%s' don't match will delete '%s'",
-		     old_locus_name, new_locus_name, old_locus_name);
+                     old_locus_name, new_locus_name, old_locus_name);
 
       tmp_locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
-							    NULL, "",
-							    ZMAPSTYLE_MODE_BASIC, locus_style,
-							    start, end, FALSE, 0.0,
-							    ZMAPSTRAND_NONE) ;
+                                                            NULL, "",
+                                                            ZMAPSTYLE_MODE_BASIC, locus_style,
+                                                            start, end, FALSE, 0.0,
+                                                            ZMAPSTRAND_NONE) ;
 
       zMapFeatureSetAddFeature(locus_feature_set, tmp_locus_feature);
 
       if ((old_locus_feature
-	   = zMapFeatureContextFindFeatureFromFeature(context,
-						      (ZMapFeatureAny)tmp_locus_feature)))
-	{
-	  zMapLogMessage("Found old locus '%s', deleting.", old_locus_name);
-	  locus_feature = (ZMapFeature)zMapFeatureAnyCopy(old_locus_feature);
-	}
+           = zMapFeatureContextFindFeatureFromFeature(context,
+                                                      (ZMapFeatureAny)tmp_locus_feature)))
+        {
+          zMapLogMessage("Found old locus '%s', deleting.", old_locus_name);
+          locus_feature = (ZMapFeature)zMapFeatureAnyCopy(old_locus_feature);
+        }
       else
-	{
-	  zMapLogMessage("Failed to find old locus '%s' during delete.", old_locus_name);
-	  /* make the locus feature itself. */
-	  locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
-							    NULL, "",
-							    ZMAPSTYLE_MODE_BASIC, locus_style,
-							    start, end, FALSE, 0.0,
-							    ZMAPSTRAND_NONE) ;
-	}
+        {
+          zMapLogMessage("Failed to find old locus '%s' during delete.", old_locus_name);
+          /* make the locus feature itself. */
+          locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
+                                                            NULL, "",
+                                                            ZMAPSTYLE_MODE_BASIC, locus_style,
+                                                            start, end, FALSE, 0.0,
+                                                            ZMAPSTRAND_NONE) ;
+        }
 
       zMapFeatureDestroy(tmp_locus_feature);
     }
@@ -591,10 +591,10 @@ static ZMapFeature createLocusFeature(ZMapFeatureContext context, ZMapFeature fe
     {
       /* make the locus feature itself. */
       locus_feature = zMapFeatureCreateFromStandardData(new_locus_name,
-							NULL, "",
-							ZMAPSTYLE_MODE_BASIC, locus_style,
-							start, end, FALSE, 0.0,
-							ZMAPSTRAND_NONE) ;
+                                                        NULL, "",
+                                                        ZMAPSTYLE_MODE_BASIC, locus_style,
+                                                        start, end, FALSE, 0.0,
+                                                        ZMAPSTRAND_NONE) ;
 
     }
 
@@ -614,25 +614,25 @@ static void copyAddFeature(gpointer key, gpointer value, gpointer user_data)
   if (!(request_data->source_id) || feature->source_id == request_data->source_id)
     {
       if ((feature_any = zMapFeatureAnyCopy((ZMapFeatureAny)feature)))
-	{
-	  ZMapFeatureAny feature_copy ;
+        {
+          ZMapFeatureAny feature_copy ;
 
-	  if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
-	      || request_data->replace_stage == REPLACE_DELETE_FEATURE)
-	    {
-	      zMapFeatureSetAddFeature(request_data->edit_feature_set, (ZMapFeature)feature_any) ;
+          if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
+              || request_data->replace_stage == REPLACE_DELETE_FEATURE)
+            {
+              zMapFeatureSetAddFeature(request_data->edit_feature_set, (ZMapFeature)feature_any) ;
 
-	      feature_copy = zMapFeatureAnyCopy(feature_any) ;
-	      request_data->edit_feature_list = g_list_append(request_data->edit_feature_list, feature_copy) ;
-	    }
-	  else
-	    {
-	      zMapFeatureSetAddFeature(request_data->replace_feature_set, (ZMapFeature)feature_any) ;
+              feature_copy = zMapFeatureAnyCopy(feature_any) ;
+              request_data->edit_feature_list = g_list_append(request_data->edit_feature_list, feature_copy) ;
+            }
+          else
+            {
+              zMapFeatureSetAddFeature(request_data->replace_feature_set, (ZMapFeature)feature_any) ;
 
-	      feature_copy = zMapFeatureAnyCopy(feature_any) ;
-	      request_data->replace_feature_list = g_list_append(request_data->replace_feature_list, feature_copy) ;
-	    }
-	}
+              feature_copy = zMapFeatureAnyCopy(feature_any) ;
+              request_data->replace_feature_list = g_list_append(request_data->replace_feature_list, feature_copy) ;
+            }
+        }
     }
 
   return ;
@@ -652,24 +652,24 @@ static CommandDescriptor cmdGetDesc(GQuark command_id)
   if (!(curr_desc->command_id))
     {
       while ((curr_desc->command))
-	{
-	  curr_desc->command_id = g_quark_from_string(curr_desc->command) ;
+        {
+          curr_desc->command_id = g_quark_from_string(curr_desc->command) ;
 
-	  curr_desc++ ;
-	}
+          curr_desc++ ;
+        }
 
-      curr_desc = &(command_table_G[0]) ;		    /* reset to start. */
+      curr_desc = &(command_table_G[0]) ;                    /* reset to start. */
     }
 
   /* Find this commands description. */
   while ((curr_desc->command))
     {
       if (command_id == curr_desc->command_id)
-	{
-	  cmd_desc = curr_desc ;
+        {
+          cmd_desc = curr_desc ;
 
-	  break ;
-	}
+          break ;
+        }
 
       curr_desc++ ;
     }
@@ -695,7 +695,7 @@ static void viewDumpContextToFile(ZMapView view, RequestData request_data)
       request_data->code = ZMAPXREMOTE_UNAVAILABLE;
       request_data->handled = FALSE;
       if (error)
-	g_string_append(request_data->err_msg, error->message);
+        g_string_append(request_data->err_msg, error->message);
     }
   else
     {
@@ -719,24 +719,24 @@ static void viewDumpContextToFile(ZMapView view, RequestData request_data)
 
 #ifdef STYLES_PRINT_TO_FILE
       else if(format && g_ascii_strcasecmp(format, "test-style") == 0)
-	zMapFeatureTypePrintAll(view->features->styles, __FILE__);
+        zMapFeatureTypePrintAll(view->features->styles, __FILE__);
 #endif /* STYLES_PRINT_TO_FILE */
 
       else
-	result = zMapFeatureContextDump(view->features, view->context_map.styles, file, &error);
+        result = zMapFeatureContextDump(view->features, view->context_map.styles, file, &error);
 
       if(!result)
-	{
-	  request_data->code    = ZMAPXREMOTE_INTERNAL;
-	  request_data->handled = FALSE;
-	  if(error)
-	    g_string_append(request_data->err_msg, error->message);
-	}
+        {
+          request_data->code    = ZMAPXREMOTE_INTERNAL;
+          request_data->handled = FALSE;
+          if(error)
+            g_string_append(request_data->err_msg, error->message);
+        }
       else
-	{
-	  request_data->code    = ZMAPXREMOTE_OK;
-	  request_data->handled = TRUE;
-	}
+        {
+          request_data->code    = ZMAPXREMOTE_OK;
+          request_data->handled = TRUE;
+        }
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -787,7 +787,7 @@ static gboolean findFeature(ZMapView view, RequestData request_data)
 
 
 static gboolean mergeNewFeatures(ZMapView view, RequestData request_data,
-				 ZMapFeatureContext *merge_context, GList **feature_list)
+                                 ZMapFeatureContext *merge_context, GList **feature_list)
 {
   gboolean result = FALSE ;
   ZMapFeatureContextMergeStats merge_stats = NULL  ;
@@ -805,7 +805,7 @@ static gboolean mergeNewFeatures(ZMapView view, RequestData request_data,
       request_data->command_rc = REMOTE_COMMAND_RC_OK ;
 
       if (g_list_length(*feature_list))
-	g_list_foreach(*feature_list, draw_failed_make_message, request_data);
+        g_list_foreach(*feature_list, draw_failed_make_message, request_data);
 
       result = TRUE ;
     }
@@ -831,18 +831,18 @@ static void draw_failed_make_message(gpointer list_data, gpointer user_data)
   if (feature_any->struct_type == ZMAPFEATURE_STRUCT_INVALID)
     {
       g_string_append_printf(request_data->err_msg,
-			     "Failed to draw feature '%s' [%s]. Feature already exists.\n",
-			     (char *)g_quark_to_string(feature_any->original_id),
-			     (char *)g_quark_to_string(feature_any->unique_id));
+                             "Failed to draw feature '%s' [%s]. Feature already exists.\n",
+                             (char *)g_quark_to_string(feature_any->original_id),
+                             (char *)g_quark_to_string(feature_any->unique_id));
     }
   else
     {
 
 
       g_string_append_printf(request_data->err_msg,
-			     "Failed to draw feature '%s' [%s]. Unknown reason, check zmap log file.\n",
-			     (char *)g_quark_to_string(feature_any->original_id),
-			     (char *)g_quark_to_string(feature_any->unique_id));
+                             "Failed to draw feature '%s' [%s]. Unknown reason, check zmap log file.\n",
+                             (char *)g_quark_to_string(feature_any->original_id),
+                             (char *)g_quark_to_string(feature_any->unique_id));
     }
 
   return ;
@@ -884,7 +884,7 @@ static ZMapFeatureContextExecuteStatus sanity_check_context(GQuark key,
       request_data->err_msg = g_string_append(request_data->err_msg, reason) ;
 
       if (reason)
-	g_free(reason);
+        g_free(reason);
     }
 
   return ZMAP_CONTEXT_EXEC_STATUS_OK ;
@@ -912,14 +912,14 @@ static void loadFeatures(ZMapView view, RequestData request_data)
       window = request_data->view_window->window ;
 
       if ((zMapWindowMarkGetSequenceSpan(window, &start, &end)))
-	{
-	  use_mark = TRUE ;
-	}
+        {
+          use_mark = TRUE ;
+        }
       else
-	{
-	  g_string_append(request_data->err_msg, "Load features to marked region failed: no mark set.") ;
-	  request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
-	}
+        {
+          g_string_append(request_data->err_msg, "Load features to marked region failed: no mark set.") ;
+          request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
+        }
     }
   else
     {
@@ -929,8 +929,8 @@ static void loadFeatures(ZMapView view, RequestData request_data)
 
   if (request_data->command_rc == REMOTE_COMMAND_RC_OK)
     zmapViewLoadFeatures(view, request_data->edit_block, request_data->feature_sets,
-			 NULL, start, end,
-			 SOURCE_GROUP_DELAYED, TRUE, TRUE) ;
+                         NULL, start, end,
+                         SOURCE_GROUP_DELAYED, TRUE, TRUE) ;
 
   return ;
 }
@@ -952,10 +952,10 @@ static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data
       || request_data->end > request_data->edit_block->block_to_sequence.block.x2)
     {
       g_string_append_printf(request_data->err_msg,
-			     "Requested coords (%d, %d) are outside of block coords (%d, %d).",
-			     request_data->start, request_data->end,
-			     request_data->edit_block->block_to_sequence.block.x1,
-			     request_data->edit_block->block_to_sequence.block.x2) ;
+                             "Requested coords (%d, %d) are outside of block coords (%d, %d).",
+                             request_data->start, request_data->end,
+                             request_data->edit_block->block_to_sequence.block.x1,
+                             request_data->edit_block->block_to_sequence.block.x2) ;
 
       request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
     }
@@ -964,23 +964,23 @@ static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data
       GList *feature_list ;
 
       if (!(feature_list = zMapFeatureSetGetRangeFeatures(request_data->edit_feature_set,
-							  request_data->start, request_data->end)))
-	{
-	  g_string_append_printf(request_data->err_msg,
-				 "No features found for feature set \"%s\" in range (%d, %d).",
-				 zMapFeatureSetGetName(request_data->edit_feature_set),
-				 request_data->start, request_data->end) ;
+                                                          request_data->start, request_data->end)))
+        {
+          g_string_append_printf(request_data->err_msg,
+                                 "No features found for feature set \"%s\" in range (%d, %d).",
+                                 zMapFeatureSetGetName(request_data->edit_feature_set),
+                                 request_data->start, request_data->end) ;
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
-	}
+          request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
+        }
       else
-	{
-	  GHashTable *uniq_features = g_hash_table_new(NULL,NULL) ;
+        {
+          GHashTable *uniq_features = g_hash_table_new(NULL,NULL) ;
 
-	  g_list_foreach(feature_list, findUniqueCB, &uniq_features) ;
+          g_list_foreach(feature_list, findUniqueCB, &uniq_features) ;
 
-	  g_hash_table_foreach(request_data->edit_feature_set->features, makeUniqueListCB, request_data->err_msg) ;
-	}
+          g_hash_table_foreach(request_data->edit_feature_set->features, makeUniqueListCB, request_data->err_msg) ;
+        }
     }
 
   return ;
@@ -1152,7 +1152,7 @@ static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement set_elemen
   if ((attr = zMapXMLElementGetAttributeByName(set_element, "name")))
     {
       if ((align_id = zMapXMLAttributeGetValue(attr)))
-	align_name = (char *)g_quark_to_string(align_id) ;
+        align_name = (char *)g_quark_to_string(align_id) ;
     }
 
   if (align_name)
@@ -1162,30 +1162,30 @@ static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement set_elemen
       request_data->orig_align = NULL ;
 
       if ((request_data->orig_align
-	   = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
-						zMapFeatureAlignmentCreateID(align_name, TRUE))))
-	master_align = TRUE ;
+           = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
+                                                zMapFeatureAlignmentCreateID(align_name, TRUE))))
+        master_align = TRUE ;
       else if ((request_data->orig_align
-		= zMapFeatureContextGetAlignmentByID(request_data->orig_context,
-						     zMapFeatureAlignmentCreateID(align_name, FALSE))))
-	master_align = FALSE ;
+                = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
+                                                     zMapFeatureAlignmentCreateID(align_name, FALSE))))
+        master_align = FALSE ;
 
       if ((request_data->orig_align))
-	{
-	  result = TRUE ;
-	}
+        {
+          result = TRUE ;
+        }
       else
-	{
-	  /* If we can't find the align it's a serious error and we can't carry on. */
-	  char *err_msg ;
+        {
+          /* If we can't find the align it's a serious error and we can't carry on. */
+          char *err_msg ;
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  err_msg = g_strdup_printf("Unknown Align \"%s\":  not found in original_context", align_name) ;
-	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	  g_free(err_msg) ;
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          err_msg = g_strdup_printf("Unknown Align \"%s\":  not found in original_context", align_name) ;
+          zMapXMLParserRaiseParsingError(parser, err_msg) ;
+          g_free(err_msg) ;
 
-	  result = FALSE ;
-	}
+          result = FALSE ;
+        }
     }
   else
     {
@@ -1201,11 +1201,11 @@ static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement set_elemen
       zMapFeatureContextAddAlignment(request_data->edit_context, request_data->edit_align, FALSE) ;
 
       if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
-	{
-	  request_data->replace_align
-	    = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_align)) ;
-	  zMapFeatureContextAddAlignment(request_data->replace_context, request_data->replace_align, FALSE) ;
-	}
+        {
+          request_data->replace_align
+            = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_align)) ;
+          zMapFeatureContextAddAlignment(request_data->replace_context, request_data->replace_align, FALSE) ;
+        }
     }
 
   return result ;
@@ -1224,7 +1224,7 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
   if ((attr = zMapXMLElementGetAttributeByName(set_element, "name")))
     {
       if ((block_id = zMapXMLAttributeGetValue(attr)))
-	block_name = (char *)g_quark_to_string(block_id) ;
+        block_name = (char *)g_quark_to_string(block_id) ;
     }
 
   if (block_name)
@@ -1233,35 +1233,35 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
       ZMapStrand ref_strand, non_strand;
 
       if (!zMapFeatureBlockDecodeID(block_id, &ref_start, &ref_end, &ref_strand,
-				    &non_start, &non_end, &non_strand))
-	{
-	  /* Bad format block name. */
-	  char *err_msg ;
+                                    &non_start, &non_end, &non_strand))
+        {
+          /* Bad format block name. */
+          char *err_msg ;
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  err_msg = g_strdup_printf("Bad Format Block name: \"%s\"", block_name) ;
-	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	  g_free(err_msg) ;
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          err_msg = g_strdup_printf("Bad Format Block name: \"%s\"", block_name) ;
+          zMapXMLParserRaiseParsingError(parser, err_msg) ;
+          g_free(err_msg) ;
 
-	  result = FALSE ;
-	}
+          result = FALSE ;
+        }
       else if (!(request_data->orig_block
-		 = zMapFeatureAlignmentGetBlockByID(request_data->orig_align, block_id)))
-	{
-	  /* If we can't find the block it's a serious error and we can't carry on. */
-	  char *err_msg ;
+                 = zMapFeatureAlignmentGetBlockByID(request_data->orig_align, block_id)))
+        {
+          /* If we can't find the block it's a serious error and we can't carry on. */
+          char *err_msg ;
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  err_msg = g_strdup_printf("Unknown Block \"%s\":  not found in original_context", block_name) ;
-	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	  g_free(err_msg) ;
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          err_msg = g_strdup_printf("Unknown Block \"%s\":  not found in original_context", block_name) ;
+          zMapXMLParserRaiseParsingError(parser, err_msg) ;
+          g_free(err_msg) ;
 
-	  result = FALSE ;
-	}
+          result = FALSE ;
+        }
       else
-	{
-	  result = TRUE ;
-	}
+        {
+          result = TRUE ;
+        }
     }
   else
     {
@@ -1277,10 +1277,10 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
       zMapFeatureAlignmentAddBlock(request_data->edit_align, request_data->edit_block) ;
 
       if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
-	{
-	  request_data->edit_block = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_block)) ;
-	  zMapFeatureAlignmentAddBlock(request_data->edit_align, request_data->edit_block) ;
-	}
+        {
+          request_data->edit_block = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_block)) ;
+          zMapFeatureAlignmentAddBlock(request_data->edit_align, request_data->edit_block) ;
+        }
 
 
       result = TRUE ;
@@ -1307,7 +1307,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   gboolean load_features = FALSE ;
 
 
-  request_data->source_id = 0 ;			    /* reset needed for remove features. */
+  request_data->source_id = 0 ;                            /* reset needed for remove features. */
 
 
 
@@ -1330,18 +1330,18 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
       request_data->orig_align = request_data->orig_context->master_align ;
 
       if (request_data->cmd_desc->is_edit)
-	{
-	  request_data->edit_align
-	    = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_align)) ;
-	  zMapFeatureContextAddAlignment(request_data->edit_context, request_data->edit_align, FALSE) ;
+        {
+          request_data->edit_align
+            = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_align)) ;
+          zMapFeatureContextAddAlignment(request_data->edit_context, request_data->edit_align, FALSE) ;
 
-	  if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
-	    {
-	      request_data->replace_align
-		= (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_align)) ;
-	      zMapFeatureContextAddAlignment(request_data->replace_context, request_data->replace_align, FALSE) ;
-	    }
-	}
+          if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
+            {
+              request_data->replace_align
+                = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_align)) ;
+              zMapFeatureContextAddAlignment(request_data->replace_context, request_data->replace_align, FALSE) ;
+            }
+        }
     }
 
   /* Default to first block if client did not specify one. */
@@ -1350,17 +1350,17 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
       request_data->orig_block = zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
 
       if (request_data->cmd_desc->is_edit)
-	{
-	  request_data->edit_block = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_block)) ;
-	  zMapFeatureAlignmentAddBlock(request_data->edit_align, request_data->edit_block) ;
+        {
+          request_data->edit_block = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_block)) ;
+          zMapFeatureAlignmentAddBlock(request_data->edit_align, request_data->edit_block) ;
 
-	  if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
-	    {
-	      request_data->replace_block
-		= (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_block)) ;
-	      zMapFeatureAlignmentAddBlock(request_data->replace_align, request_data->replace_block) ;
-	    }
-	}
+          if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
+            {
+              request_data->replace_block
+                = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_block)) ;
+              zMapFeatureAlignmentAddBlock(request_data->replace_align, request_data->replace_block) ;
+            }
+        }
     }
 
 
@@ -1372,7 +1372,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
       request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       err_msg = g_strdup_printf("No featureset name in request: \"%s\"",
-				request_data->request) ;
+                                request_data->request) ;
       zMapXMLParserRaiseParsingError(parser, err_msg) ;
       g_free(err_msg) ;
 
@@ -1383,122 +1383,122 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
       /* If we are a replace then we should enter this routine twice, once to delete a feature
        * and once to create its replacment. */
       if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
-	{
-	  if (request_data->replace_stage == REPLACE_NONE)
-	    request_data->replace_stage = REPLACE_DELETE_FEATURE ;
-	  else if (request_data->replace_stage == REPLACE_DELETE_FEATURE)
-	    request_data->replace_stage = REPLACE_CREATE_FEATURE ;
-	  else
-	    {
-	      /* Something is out of sync in the replace operation. */
-	      char *err_msg ;
+        {
+          if (request_data->replace_stage == REPLACE_NONE)
+            request_data->replace_stage = REPLACE_DELETE_FEATURE ;
+          else if (request_data->replace_stage == REPLACE_DELETE_FEATURE)
+            request_data->replace_stage = REPLACE_CREATE_FEATURE ;
+          else
+            {
+              /* Something is out of sync in the replace operation. */
+              char *err_msg ;
 
-	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      err_msg = g_strdup_printf("Error in syntax of replace command: \"%s\"",
-					request_data->request) ;
-	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	      g_free(err_msg) ;
+              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+              err_msg = g_strdup_printf("Error in syntax of replace command: \"%s\"",
+                                        request_data->request) ;
+              zMapXMLParserRaiseParsingError(parser, err_msg) ;
+              g_free(err_msg) ;
 
-	      result = FALSE ;
-	    }
-	}
+              result = FALSE ;
+            }
+        }
 
       if (result)
-	{
-	  /* Record original name and unique names for feature set, all look-ups are via the latter. */
-	  featureset_id = zMapXMLAttributeGetValue(attr) ;
-	  featureset_name = (char *)g_quark_to_string(featureset_id) ;
+        {
+          /* Record original name and unique names for feature set, all look-ups are via the latter. */
+          featureset_id = zMapXMLAttributeGetValue(attr) ;
+          featureset_name = (char *)g_quark_to_string(featureset_id) ;
 
-	  request_data->source_id = unique_set_id = zMapFeatureSetCreateID(featureset_name) ;
-	  unique_set_name = (char *)g_quark_to_string(unique_set_id);
+          request_data->source_id = unique_set_id = zMapFeatureSetCreateID(featureset_name) ;
+          unique_set_name = (char *)g_quark_to_string(unique_set_id);
 
-	  /* Look for the feature set in the current context, it's an error if it's supposed to exist. */
-	  request_data->orig_feature_set = zMapFeatureBlockGetSetByID(request_data->orig_block, unique_set_id) ;
+          /* Look for the feature set in the current context, it's an error if it's supposed to exist. */
+          request_data->orig_feature_set = zMapFeatureBlockGetSetByID(request_data->orig_block, unique_set_id) ;
 
-	  if (!(request_data->orig_feature_set) && request_data->cmd_desc->exists == FEATURE_MUST)
-	    {
-	      /* If we can't find the featureset but it's meant to exist then it's a serious error
-	       * and we can't carry on. */
-	      char *err_msg ;
+          if (!(request_data->orig_feature_set) && request_data->cmd_desc->exists == FEATURE_MUST)
+            {
+              /* If we can't find the featureset but it's meant to exist then it's a serious error
+               * and we can't carry on. */
+              char *err_msg ;
 
-	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      err_msg = g_strdup_printf("Unknown Featureset \"%s\":  not found in original_block", featureset_name) ;
-	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	      g_free(err_msg) ;
+              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+              err_msg = g_strdup_printf("Unknown Featureset \"%s\":  not found in original_block", featureset_name) ;
+              zMapXMLParserRaiseParsingError(parser, err_msg) ;
+              g_free(err_msg) ;
 
-	      result = FALSE ;
-	    }
-	  else
-	    {
-	      if (request_data->orig_feature_set)
-		{
-		  feature_set
-		    = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_feature_set)) ;
-		}
-	      else
-		{
-		  /* Make sure this feature set is a child of the block........ */
-		  if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->edit_block, unique_set_id)))
-		    {
-		      feature_set = zMapFeatureSetCreate(featureset_name, NULL) ;
+              result = FALSE ;
+            }
+          else
+            {
+              if (request_data->orig_feature_set)
+                {
+                  feature_set
+                    = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_feature_set)) ;
+                }
+              else
+                {
+                  /* Make sure this feature set is a child of the block........ */
+                  if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->edit_block, unique_set_id)))
+                    {
+                      feature_set = zMapFeatureSetCreate(featureset_name, NULL) ;
 
-		      request_data->orig_feature_set = feature_set ;
-		    }
+                      request_data->orig_feature_set = feature_set ;
+                    }
 
-		}
+                }
 
-	      zMapFeatureBlockAddFeatureSet(request_data->edit_block, feature_set) ;
+              zMapFeatureBlockAddFeatureSet(request_data->edit_block, feature_set) ;
 
-	      request_data->edit_feature_set = feature_set ;
+              request_data->edit_feature_set = feature_set ;
 
-	      result = TRUE ;
-	    }
-	}
+              result = TRUE ;
+            }
+        }
 
       /* Processing for featuresets is different, if a featureset is marked to be dynamically
        * loaded it will not have been created yet so we shouldn't check for existence. */
       if (result && request_data->cmd_desc->is_edit)
-	{
-	  ZMapSpan span ;
+        {
+          ZMapSpan span ;
 
-	  /* record the region we are getting */
-	  span = (ZMapSpan)g_new0(ZMapSpanStruct,1) ;
-	  span->x1 = request_data->orig_block->block_to_sequence.block.x1 ;
-	  span->x2 = request_data->orig_block->block_to_sequence.block.x2 ;
+          /* record the region we are getting */
+          span = (ZMapSpan)g_new0(ZMapSpanStruct,1) ;
+          span->x1 = request_data->orig_block->block_to_sequence.block.x1 ;
+          span->x2 = request_data->orig_block->block_to_sequence.block.x2 ;
 
 
-	  /* Make sure this feature set is a child of the block........ */
-	  if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
-	      || request_data->replace_stage == REPLACE_DELETE_FEATURE)
-	    {
-	      if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->edit_block, unique_set_id)))
-		{
-		  feature_set = zMapFeatureSetCreate(featureset_name, NULL) ;
-		  zMapFeatureBlockAddFeatureSet(request_data->edit_block, feature_set) ;
+          /* Make sure this feature set is a child of the block........ */
+          if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
+              || request_data->replace_stage == REPLACE_DELETE_FEATURE)
+            {
+              if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->edit_block, unique_set_id)))
+                {
+                  feature_set = zMapFeatureSetCreate(featureset_name, NULL) ;
+                  zMapFeatureBlockAddFeatureSet(request_data->edit_block, feature_set) ;
 
-		  feature_set->loaded = g_list_append(NULL, span) ;
-		}
+                  feature_set->loaded = g_list_append(NULL, span) ;
+                }
 
-	      request_data->edit_feature_set = feature_set ;
-	    }
+              request_data->edit_feature_set = feature_set ;
+            }
 
-	  /* For replace operation the second featureset may be different from the first
-	   * and must go in the second context. */
-	  if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE)
-	      && request_data->replace_stage == REPLACE_CREATE_FEATURE)
-	    {
-	      if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->replace_block, unique_set_id)))
-		{
-		  feature_set = zMapFeatureSetCreate(featureset_name, NULL) ;
-		  zMapFeatureBlockAddFeatureSet(request_data->replace_block, feature_set) ;
+          /* For replace operation the second featureset may be different from the first
+           * and must go in the second context. */
+          if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE)
+              && request_data->replace_stage == REPLACE_CREATE_FEATURE)
+            {
+              if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->replace_block, unique_set_id)))
+                {
+                  feature_set = zMapFeatureSetCreate(featureset_name, NULL) ;
+                  zMapFeatureBlockAddFeatureSet(request_data->replace_block, feature_set) ;
 
-		  feature_set->loaded = g_list_append(NULL, span) ;
-		}
-	      request_data->replace_feature_set = feature_set ;
-	    }
+                  feature_set->loaded = g_list_append(NULL, span) ;
+                }
+              request_data->replace_feature_set = feature_set ;
+            }
 
-	  result = TRUE ;
-	}
+          result = TRUE ;
+        }
     }
 
 
@@ -1509,97 +1509,97 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
       ZMapFeatureSource source_data ;
 
       if (!(source_data = g_hash_table_lookup(request_data->view_window->parent_view->context_map.source_2_sourcedata,
-					      GINT_TO_POINTER(unique_set_id))))
-	{
-	  char *err_msg ;
+                                              GINT_TO_POINTER(unique_set_id))))
+        {
+          char *err_msg ;
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  err_msg = g_strdup_printf("Source %s not found in view->context_map.source_2_sourcedata",
-				    g_quark_to_string(unique_set_id)) ;
-	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	  g_free(err_msg) ;
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          err_msg = g_strdup_printf("Source %s not found in view->context_map.source_2_sourcedata",
+                                    g_quark_to_string(unique_set_id)) ;
+          zMapXMLParserRaiseParsingError(parser, err_msg) ;
+          g_free(err_msg) ;
 
-	  result = FALSE ;
-	}
+          result = FALSE ;
+        }
       else
-	{
-	  request_data->style_id = source_data->style_id ;
-	}
+        {
+          request_data->style_id = source_data->style_id ;
+        }
 
       if (result && !load_features)
-	{
-	  // check style for all command except load_features
-	  // as load features processes a complete step list that inludes requesting the style
-	  // then if the style is not there then we'll drop the features
-	  ZMapFeatureTypeStyle style ;
+        {
+          // check style for all command except load_features
+          // as load features processes a complete step list that inludes requesting the style
+          // then if the style is not there then we'll drop the features
+          ZMapFeatureTypeStyle style ;
 
-	  if ((style = zMapFindStyle(request_data->view_window->parent_view->context_map.styles,
-				     request_data->style_id)))
-	    {
-	      /* Make sure style is correct for what might be a new column. */
+          if ((style = zMapFindStyle(request_data->view_window->parent_view->context_map.styles,
+                                     request_data->style_id)))
+            {
+              /* Make sure style is correct for what might be a new column. */
 
-	      feature_set->style = request_data->style = style ;
-	    }
-	  else
-	    {
-	      char *err_msg ;
+              feature_set->style = request_data->style = style ;
+            }
+          else
+            {
+              char *err_msg ;
 
-	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      err_msg = g_strdup_printf("Style %s not found in view->context_map.styles",
-					g_quark_to_string(request_data->style_id)) ;
-	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	      g_free(err_msg) ;
+              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+              err_msg = g_strdup_printf("Style %s not found in view->context_map.styles",
+                                        g_quark_to_string(request_data->style_id)) ;
+              zMapXMLParserRaiseParsingError(parser, err_msg) ;
+              g_free(err_msg) ;
 
-	      result = FALSE ;
-	    }
-	}
+              result = FALSE ;
+            }
+        }
     }
 
   if (result)
     {
       if (request_data->cmd_desc->is_edit)
-	{
-	  if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
-	      || request_data->replace_stage == REPLACE_DELETE_FEATURE)
-	    request_data->edit_context->req_feature_set_names
-	      = g_list_append(request_data->edit_context->req_feature_set_names, GINT_TO_POINTER(featureset_id)) ;
-	  else
-	    request_data->replace_context->req_feature_set_names
-	      = g_list_append(request_data->replace_context->req_feature_set_names, GINT_TO_POINTER(featureset_id)) ;
-	}
+        {
+          if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
+              || request_data->replace_stage == REPLACE_DELETE_FEATURE)
+            request_data->edit_context->req_feature_set_names
+              = g_list_append(request_data->edit_context->req_feature_set_names, GINT_TO_POINTER(featureset_id)) ;
+          else
+            request_data->replace_context->req_feature_set_names
+              = g_list_append(request_data->replace_context->req_feature_set_names, GINT_TO_POINTER(featureset_id)) ;
+        }
 
       if (request_data->command_id == g_quark_from_string(ZACP_LOAD_FEATURES))
-	{
-	  request_data->feature_sets = g_list_append(request_data->feature_sets, GINT_TO_POINTER(featureset_id)) ;
-	}
+        {
+          request_data->feature_sets = g_list_append(request_data->feature_sets, GINT_TO_POINTER(featureset_id)) ;
+        }
       else if (request_data->command_id == g_quark_from_string(ZACP_GET_FEATURE_NAMES))
-	{
-	  /* NOTE SURE WHY THIS IS HERE.....should be in the feature handler ?? */
+        {
+          /* NOTE SURE WHY THIS IS HERE.....should be in the feature handler ?? */
 
-	  if (result && (attr = zMapXMLElementGetAttributeByName(set_element, "start")))
-	    {
-	      request_data->start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-					     (char **)NULL, 10);
-	    }
-	  else
-	    {
-	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      zMapXMLParserRaiseParsingError(parser, "start is a required attribute for feature.");
-	      result = FALSE ;
-	    }
+          if (result && (attr = zMapXMLElementGetAttributeByName(set_element, "start")))
+            {
+              request_data->start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+                                             (char **)NULL, 10);
+            }
+          else
+            {
+              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+              zMapXMLParserRaiseParsingError(parser, "start is a required attribute for feature.");
+              result = FALSE ;
+            }
 
-	  if (result && (attr = zMapXMLElementGetAttributeByName(set_element, "end")))
-	    {
-	      request_data->end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-					 (char **)NULL, 10);
-	    }
-	  else
-	    {
-	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      zMapXMLParserRaiseParsingError(parser, "end is a required attribute for feature.");
-	      result = FALSE ;
-	    }
-	}
+          if (result && (attr = zMapXMLElementGetAttributeByName(set_element, "end")))
+            {
+              request_data->end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+                                         (char **)NULL, 10);
+            }
+          else
+            {
+              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+              zMapXMLParserRaiseParsingError(parser, "end is a required attribute for feature.");
+              result = FALSE ;
+            }
+        }
     }
 
   return result ;
@@ -1618,11 +1618,11 @@ static gboolean xml_featureset_end_cb(gpointer user_data, ZMapXMLElement set_ele
        * a source name was given then only features from _that_ source are deleted, not
        * all features in the column. */
       if (request_data->command_id == g_quark_from_string(ZACP_DELETE_FEATURE)
-	  && !(request_data->edit_feature_list))
-	{
-	  g_hash_table_foreach(request_data->orig_feature_set->features,
-			       copyAddFeature, request_data) ;
-	}
+          && !(request_data->edit_feature_list))
+        {
+          g_hash_table_foreach(request_data->orig_feature_set->features,
+                               copyAddFeature, request_data) ;
+        }
     }
 
   return result ;
@@ -1635,15 +1635,19 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   gboolean result = TRUE ;
   ZMapXMLAttribute attr = NULL;
   RequestData request_data = (RequestData)user_data;
-  ZMapFeatureAny feature_any;
+  ZMapFeatureAny feature_any = NULL ;
   ZMapStrand strand = ZMAPSTRAND_NONE;
   ZMapPhase start_phase = ZMAPPHASE_NONE ;
-  gboolean has_score = FALSE, start_not_found = FALSE, end_not_found = FALSE;
+  gboolean has_score = FALSE,
+    start_not_found = FALSE,
+    end_not_found = FALSE;
   char *feature_name ;
-  GQuark feature_name_id, feature_unique_id ;
+  GQuark feature_name_id = 0,
+    feature_unique_id = 0,
+    feature_term = 0 ;
   int start = 0, end = 0 ;
   double score = 0.0 ;
-  ZMapStyleMode mode ;
+  ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID ;
 
 
   /* Must have following attributes for all feature level operations. */
@@ -1659,11 +1663,26 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
       result = FALSE ;
     }
 
+  /* ontology = "Sequence", etc... For the moment, I have made this optional
+   * and not required, but we may need to change this as the move away from
+   * AceDB comes into view.
+   */
+  if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "ontology")))
+    {
+      feature_term = zMapXMLAttributeGetValue(attr) ;
+    }
+  /*else
+    {
+      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+      zMapXMLParserRaiseParsingError(parser, "\"ontology\" is a required attribute for feature.") ;
+      result = FALSE ;
+    }
+   */
 
   if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "start")))
     {
       start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-		     (char **)NULL, 10);
+                     (char **)NULL, 10);
     }
   else
     {
@@ -1675,7 +1694,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "end")))
     {
       end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-		   (char **)NULL, 10);
+                   (char **)NULL, 10);
     }
   else
     {
@@ -1687,7 +1706,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "strand")))
     {
       zMapFeatureFormatStrand((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-			      &(strand));
+                              &(strand));
     }
   else
     {
@@ -1718,75 +1737,75 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
       /* More complicated for feature replace.... */
       if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
-	{
-	  if (request_data->replace_stage == REPLACE_DELETE_FEATURE)
-	    request_data->curr_feature_id = feature_unique_id ;
-	  else
-	    request_data->new_feature_id = feature_unique_id ;
+        {
+          if (request_data->replace_stage == REPLACE_DELETE_FEATURE)
+            request_data->curr_feature_id = feature_unique_id ;
+          else
+            request_data->new_feature_id = feature_unique_id ;
 
-	  if (request_data->replace_stage == REPLACE_DELETE_FEATURE)
-	    {
-	      feature_exists = FEATURE_MUST ;
-	    }
-	  else
-	    {
-	      /* Fine if new feature has same name as old one, we just delete it but
-	       * if new feature is a new name then is must not already exist. */
-	      if (request_data->curr_feature_id == request_data->new_feature_id)
-		feature_exists = FEATURE_DONT_CARE ;
-	      else
-		feature_exists = FEATURE_MUST_NOT ;
-	    }
-	}
+          if (request_data->replace_stage == REPLACE_DELETE_FEATURE)
+            {
+              feature_exists = FEATURE_MUST ;
+            }
+          else
+            {
+              /* Fine if new feature has same name as old one, we just delete it but
+               * if new feature is a new name then is must not already exist. */
+              if (request_data->curr_feature_id == request_data->new_feature_id)
+                feature_exists = FEATURE_DONT_CARE ;
+              else
+                feature_exists = FEATURE_MUST_NOT ;
+            }
+        }
       else
-	{
-	  feature_exists = request_data->cmd_desc->exists ;
-	}
+        {
+          feature_exists = request_data->cmd_desc->exists ;
+        }
 
       if (feature_exists == FEATURE_MUST)
-	{
-	  if (!feature)
-	    {
-	      /* If we _don't_ find the feature then it's a serious error for these commands. */
-	      char *err_msg ;
+        {
+          if (!feature)
+            {
+              /* If we _don't_ find the feature then it's a serious error for these commands. */
+              char *err_msg ;
 
-	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" could not be found in featureset \"%s\",",
-					feature_name, g_quark_to_string(feature_unique_id),
-					zMapFeatureName((ZMapFeatureAny)(request_data->orig_feature_set))) ;
-	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	      g_free(err_msg) ;
+              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+              err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" could not be found in featureset \"%s\",",
+                                        feature_name, g_quark_to_string(feature_unique_id),
+                                        zMapFeatureName((ZMapFeatureAny)(request_data->orig_feature_set))) ;
+              zMapXMLParserRaiseParsingError(parser, err_msg) ;
+              g_free(err_msg) ;
 
-	      result = FALSE ;
-	    }
-	}
+              result = FALSE ;
+            }
+        }
       else if (feature_exists == FEATURE_DONT_CARE)
-	{
-	  if (request_data->command_id == g_quark_from_string(ZACP_FIND_FEATURE))
-	    {
-	      if (feature)
-		request_data->found_feature = TRUE ;
-	      else
-		request_data->found_feature = FALSE ;
-	    }
-	}
+        {
+          if (request_data->command_id == g_quark_from_string(ZACP_FIND_FEATURE))
+            {
+              if (feature)
+                request_data->found_feature = TRUE ;
+              else
+                request_data->found_feature = FALSE ;
+            }
+        }
       else if (feature_exists == FEATURE_MUST_NOT)
-	{
-	  if (feature)
-	    {
-	      /* If we _do_ find the feature then it's a serious error. */
-	      char *err_msg ;
+        {
+          if (feature)
+            {
+              /* If we _do_ find the feature then it's a serious error. */
+              char *err_msg ;
 
-	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" already exists in featureset \"%s\",",
-					feature_name, g_quark_to_string(feature_unique_id),
-					zMapFeatureName((ZMapFeatureAny)(request_data->orig_feature_set))) ;
-	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	      g_free(err_msg) ;
+              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+              err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" already exists in featureset \"%s\",",
+                                        feature_name, g_quark_to_string(feature_unique_id),
+                                        zMapFeatureName((ZMapFeatureAny)(request_data->orig_feature_set))) ;
+              zMapXMLParserRaiseParsingError(parser, err_msg) ;
+              g_free(err_msg) ;
 
-	      result = FALSE ;
-	    }
-	}
+              result = FALSE ;
+            }
+        }
     }
 
 
@@ -1798,147 +1817,150 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
       /* Having both options seems redundant.... */
       if (request_data->cmd_desc->is_edit && request_data->cmd_desc->needs_feature_desc)
-	{
-	  if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
-	      || request_data->replace_stage == REPLACE_DELETE_FEATURE)
-	    featureset = request_data->edit_feature_set ;
-	  else
-	    featureset = request_data->replace_feature_set ;
+        {
+          if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
+              || request_data->replace_stage == REPLACE_DELETE_FEATURE)
+            featureset = request_data->edit_feature_set ;
+          else
+            featureset = request_data->replace_feature_set ;
 
-	  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "score")))
-	    {
-	      score = zMapXMLAttributeValueToDouble(attr) ;
-	      has_score = TRUE ;
-	    }
+          if ((attr = zMapXMLElementGetAttributeByName(feature_element, "score")))
+            {
+              score = zMapXMLAttributeValueToDouble(attr) ;
+              has_score = TRUE ;
+            }
 
-	  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "start_not_found")))
-	    {
-	      /* I don't understand what this ghastliness is....how can phase be -ve ?? */
+          if ((attr = zMapXMLElementGetAttributeByName(feature_element, "start_not_found")))
+            {
+              /* I don't understand what this ghastliness is....how can phase be -ve ?? */
               /* gb10: perhaps the strand and phase are mixed up together in this attribute?? It
                * looks like the sign is ignored, anyway */
               long int start_phase_int = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
                                                 (char **)NULL, 10);
 
-	      start_not_found = TRUE;
+              start_not_found = TRUE;
 
               switch (start_phase_int)
-		{
-		case 1:
-		case -1:
-		  start_phase = ZMAPPHASE_0;
-		  break;
-		case 2:
-		case -2:
-		  start_phase = ZMAPPHASE_1;
-		  break;
-		case 3:
-		case -3:
-		  start_phase = ZMAPPHASE_2;
-		  break;
-		default:
-		  start_not_found = FALSE;
-		  start_phase = ZMAPPHASE_NONE;
-		  break;
-		}
-	    }
+                {
+                case 1:
+                case -1:
+                  start_phase = ZMAPPHASE_0;
+                  break;
+                case 2:
+                case -2:
+                  start_phase = ZMAPPHASE_1;
+                  break;
+                case 3:
+                case -3:
+                  start_phase = ZMAPPHASE_2;
+                  break;
+                default:
+                  start_not_found = FALSE;
+                  start_phase = ZMAPPHASE_NONE;
+                  break;
+                }
+            }
 
-	  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "end_not_found")))
-	    {
-	      end_not_found = zMapXMLAttributeValueToBool(attr);
-	    }
+          if ((attr = zMapXMLElementGetAttributeByName(feature_element, "end_not_found")))
+            {
+              end_not_found = zMapXMLAttributeValueToBool(attr);
+            }
 
-	  if (result
-	      && (feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "",
-							      mode,
-							      &(request_data->style),
-							      start, end, has_score,
-							      score, strand)))
-	    {
-	      if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
-		  || request_data->replace_stage == REPLACE_DELETE_FEATURE)
-		request_data->edit_feature = feature ;
-	      else
-		request_data->replace_feature = feature ;
+          if (result
+              && (feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "",
+                                                              mode,
+                                                              &(request_data->style),
+                                                              start, end, has_score,
+                                                              score, strand)))
+            {
+              /* taken from the "ontology" property */
+              feature->SO_accession = feature_term ;
 
-	      zMapFeatureSetAddFeature(featureset, feature) ;
+              if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
+                  || request_data->replace_stage == REPLACE_DELETE_FEATURE)
+                request_data->edit_feature = feature ;
+              else
+                request_data->replace_feature = feature ;
 
-	      /* We need to get all the source info. in here somehow.... */
-	      zMapFeatureAddText(feature, request_data->source_id, NULL, NULL) ;
+              zMapFeatureSetAddFeature(featureset, feature) ;
 
-	      if (start_not_found || end_not_found)
-		{
-		  zMapFeatureAddTranscriptStartEnd(feature, start_not_found, start_phase, end_not_found) ;
-		}
+              /* We need to get all the source info. in here somehow.... */
+              zMapFeatureAddText(feature, request_data->source_id, NULL, NULL) ;
 
-
-	      /* SURELY WE ONLY DO THIS FOR A CREATE OR REPLACE/CREATE...... */
-	      if (request_data->command_id == g_quark_from_string(ZACP_CREATE_FEATURE)
-		  || (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE)
-		      && request_data->replace_stage == REPLACE_CREATE_FEATURE))
-		{
-		  /* Make this into a function.... */
-		  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "locus")))
-		    {
-		      ZMapFeatureBlock block ;
-		      ZMapFeatureSet locus_feature_set = NULL;
-		      ZMapFeature locus_feature = NULL;
-		      GQuark new_locus_id  = zMapXMLAttributeGetValue(attr);
-		      GQuark locus_set_id  = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME);
-		      ZMapFeatureTypeStyle *locus_style ;
-
-		      if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
-			block = request_data->replace_block ;
-		      else
-			block = request_data->edit_block ;
+              if (start_not_found || end_not_found)
+                {
+                  zMapFeatureAddTranscriptStartEnd(feature, start_not_found, start_phase, end_not_found) ;
+                }
 
 
-		      /* Find locus feature set first ... we used to create one here but it should
-		       * already exist in fact. */
-		      if (!(locus_feature_set = zMapFeatureBlockGetSetByID(block, locus_set_id)))
-			{
-			  zMapLogWarning("Cannot find locus feature set so no locus created for feature \"%s\".",
-					 feature_name) ;
-			}
-		      else
-			{
-			  locus_style = &(locus_feature_set->style) ;
+              /* SURELY WE ONLY DO THIS FOR A CREATE OR REPLACE/CREATE...... */
+              if (request_data->command_id == g_quark_from_string(ZACP_CREATE_FEATURE)
+                  || (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE)
+                      && request_data->replace_stage == REPLACE_CREATE_FEATURE))
+                {
+                  /* Make this into a function.... */
+                  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "locus")))
+                    {
+                      ZMapFeatureBlock block ;
+                      ZMapFeatureSet locus_feature_set = NULL;
+                      ZMapFeature locus_feature = NULL;
+                      GQuark new_locus_id  = zMapXMLAttributeGetValue(attr);
+                      GQuark locus_set_id  = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME);
+                      ZMapFeatureTypeStyle *locus_style ;
 
-			  locus_feature = createLocusFeature(request_data->orig_context, feature,
-							     locus_feature_set, locus_style, new_locus_id) ;
+                      if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
+                        block = request_data->replace_block ;
+                      else
+                        block = request_data->edit_block ;
 
-			  /* The feature set and feature need to have their styles set... */
 
-			  /* managed to get the styles set up. Add the feature to
-			   * feature set and finish up the locus. */
-			  zMapFeatureSetAddFeature(locus_feature_set,
-						   locus_feature) ;
-			  zMapFeatureAddLocus(locus_feature, new_locus_id) ;
+                      /* Find locus feature set first ... we used to create one here but it should
+                       * already exist in fact. */
+                      if (!(locus_feature_set = zMapFeatureBlockGetSetByID(block, locus_set_id)))
+                        {
+                          zMapLogWarning("Cannot find locus feature set so no locus created for feature \"%s\".",
+                                         feature_name) ;
+                        }
+                      else
+                        {
+                          locus_style = &(locus_feature_set->style) ;
 
-			  /* We'll still add the locus to the transcript
-			   * feature so at least this information is
-			   * preserved whatever went on with the styles */
-			  zMapFeatureAddLocus(feature, new_locus_id) ;
-			}
-		    }
-		}
+                          locus_feature = createLocusFeature(request_data->orig_context, feature,
+                                                             locus_feature_set, locus_style, new_locus_id) ;
 
-	      if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
-		  || request_data->replace_stage == REPLACE_DELETE_FEATURE)
-		{
-		  feature_any = zMapFeatureAnyCopy((ZMapFeatureAny)request_data->edit_feature) ;
+                          /* The feature set and feature need to have their styles set... */
 
-		  request_data->edit_feature_list = g_list_prepend(request_data->edit_feature_list, feature_any) ;
-		}
-	      else
-		{
-		  feature_any = zMapFeatureAnyCopy((ZMapFeatureAny)request_data->replace_feature) ;
+                          /* managed to get the styles set up. Add the feature to
+                           * feature set and finish up the locus. */
+                          zMapFeatureSetAddFeature(locus_feature_set,
+                                                   locus_feature) ;
+                          zMapFeatureAddLocus(locus_feature, new_locus_id) ;
 
-		  request_data->replace_feature_list = g_list_prepend(request_data->replace_feature_list,
-								      feature_any) ;
-		}
-	    }
+                          /* We'll still add the locus to the transcript
+                           * feature so at least this information is
+                           * preserved whatever went on with the styles */
+                          zMapFeatureAddLocus(feature, new_locus_id) ;
+                        }
+                    }
+                }
 
-	}
+              if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
+                  || request_data->replace_stage == REPLACE_DELETE_FEATURE)
+                {
+                  feature_any = zMapFeatureAnyCopy((ZMapFeatureAny)request_data->edit_feature) ;
+
+                  request_data->edit_feature_list = g_list_prepend(request_data->edit_feature_list, feature_any) ;
+                }
+              else
+                {
+                  feature_any = zMapFeatureAnyCopy((ZMapFeatureAny)request_data->replace_feature) ;
+
+                  request_data->replace_feature_list = g_list_prepend(request_data->replace_feature_list,
+                                                                      feature_any) ;
+                }
+            }
+
+        }
     }
 
   return result ;
@@ -1954,32 +1976,32 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
     {
       /* I don't really like this error handling, it seems wierd.... */
       if (!(request_data->edit_feature))
-	{
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_XML ;
-	  zMapXMLParserCheckIfTrueErrorReturn(request_data->edit_feature == NULL,
-					      parser,
-					      "a feature end tag without a created feature.") ;
+        {
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_XML ;
+          zMapXMLParserCheckIfTrueErrorReturn(request_data->edit_feature == NULL,
+                                              parser,
+                                              "a feature end tag without a created feature.") ;
 
-	  result = FALSE ;
-	}
+          result = FALSE ;
+        }
       else if (ZMAPFEATURE_IS_TRANSCRIPT(request_data->edit_feature)
-	       && !(ZMAPFEATURE_HAS_EXONS(request_data->edit_feature)))
-	{
-	  request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
+               && !(ZMAPFEATURE_HAS_EXONS(request_data->edit_feature)))
+        {
+          request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
 
-	  zMapXMLParserRaiseParsingError(parser, "transcript has no exons.") ;
+          zMapXMLParserRaiseParsingError(parser, "transcript has no exons.") ;
 
-	  result = FALSE ;
-	}
+          result = FALSE ;
+        }
       else
-	{
-	  /* It's probably here that we need to revcomp the feature if the
-	   * view is revcomp'd.... */
-	  if (request_data->view_window->parent_view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-	    {
-	      zMapFeatureReverseComplement(request_data->orig_context, request_data->edit_feature) ;
-	    }
-	}
+        {
+          /* It's probably here that we need to revcomp the feature if the
+           * view is revcomp'd.... */
+          if (request_data->view_window->parent_view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+            {
+              zMapFeatureReverseComplement(request_data->orig_context, request_data->edit_feature) ;
+            }
+        }
     }
 
   return result ;
@@ -2024,12 +2046,12 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
                            (char **)NULL, 10);
         }
       else
-	{
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  zMapXMLParserRaiseParsingError(parser, "start is a required attribute for subfeature.");
+        {
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          zMapXMLParserRaiseParsingError(parser, "start is a required attribute for subfeature.");
 
-	  valid = FALSE ;
-	}
+          valid = FALSE ;
+        }
 
       if (valid && (attr = zMapXMLElementGetAttributeByName(sub_element, "end")))
         {
@@ -2037,29 +2059,29 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
                            (char **)NULL, 10) ;
         }
       else
-	{
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  zMapXMLParserRaiseParsingError(parser, "end is a required attribute for subfeature.");
+        {
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          zMapXMLParserRaiseParsingError(parser, "end is a required attribute for subfeature.");
 
-	  valid = FALSE ;
-	}
+          valid = FALSE ;
+        }
 
       if (valid)
-	{
-	  if (ontology == g_quark_from_string("cds"))
-	    {
-	      zMapFeatureAddTranscriptCDS(feature, TRUE, span.x1, span.x2) ;
-	    }
-	  else
-	    {
-	      if (ontology == g_quark_from_string("exon"))
-		exon_ptr = &span ;
-	      else if (ontology == g_quark_from_string("intron"))
-		intron_ptr = &span ;
+        {
+          if (ontology == g_quark_from_string("cds"))
+            {
+              zMapFeatureAddTranscriptCDS(feature, TRUE, span.x1, span.x2) ;
+            }
+          else
+            {
+              if (ontology == g_quark_from_string("exon"))
+                exon_ptr = &span ;
+              else if (ontology == g_quark_from_string("intron"))
+                intron_ptr = &span ;
 
-	      zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, intron_ptr) ;
-	    }
-	}
+              zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, intron_ptr) ;
+            }
+        }
     }
 
   return result ;                  /* tell caller to clean us up. */

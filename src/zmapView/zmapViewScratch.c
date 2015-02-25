@@ -108,7 +108,7 @@ static void scratchSetStartEndFlag(ZMapView view, gboolean value)
 
 
 /*!
- * \brief destroy an EditOperation struct 
+ * \brief destroy an EditOperation struct
  */
 static void editOperationDestroy(EditOperation operation)
 {
@@ -122,8 +122,8 @@ static void editOperationDestroy(EditOperation operation)
 }
 
 
-/* 
- * \brief Does the same as g_list_free_full, which requires gtk 2.28 
+/*
+ * \brief Does the same as g_list_free_full, which requires gtk 2.28
  */
 static void freeListFull(GList *list, GDestroyNotify free_func)
 {
@@ -143,7 +143,7 @@ static void freeListFull(GList *list, GDestroyNotify free_func)
 
 /*!
  * \brief This function clears the redo stack. It should be called after a successful operation (other
- * than an undo or redo) to "reset" where to start doing redo's from. 
+ * than an undo or redo) to "reset" where to start doing redo's from.
  */
 static gboolean scratchClearRedoStack(ZMapView view)
 {
@@ -192,7 +192,7 @@ static void scratchAddOperation(ZMapView view, EditOperation operation)
   scratchClearRedoStack(view) ;
 
   view->edit_list = g_list_append(view->edit_list, operation) ;
-  
+
   /* If this is the first item, also set the start/end pointers */
   if (!view->edit_list_end)
     {
@@ -209,7 +209,7 @@ static void scratchAddOperation(ZMapView view, EditOperation operation)
                                  the original end pointer! */
     }
 
-  /* For "clear" and "save" operations we set the start pointer to the end of the list, 
+  /* For "clear" and "save" operations we set the start pointer to the end of the list,
    * so that all of the operations before this are ignored (but they're still there
    * so we can undo the operation) */
   if (operation->edit_type == ZMAPEDIT_CLEAR || operation->edit_type == ZMAPEDIT_SAVE)
@@ -285,10 +285,10 @@ ZMapFeature getFeature(ZMapView view, GList *list_item)
 
   if (feature_id)
     {
-      ZMapFeatureAny feature_any = zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)view->features, 
-                                                                feature_id, 
+      ZMapFeatureAny feature_any = zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)view->features,
+                                                                feature_id,
                                                                 ZMAPFEATURE_STRUCT_FEATURE) ;
-  
+
       if (feature_any && feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
         result = (ZMapFeature)feature_any ;
     }
@@ -344,7 +344,7 @@ void scratchRemoveFeature(gpointer list_data, gpointer user_data)
                 {
                   operation->src_feature_ids = g_list_delete_link(operation->src_feature_ids, cur_item) ;
                   changed = TRUE ;
-                  char *msg = g_strdup_printf("Feature '%s' is no longer valid and has been removed from the Annotation column.\n", 
+                  char *msg = g_strdup_printf("Feature '%s' is no longer valid and has been removed from the Annotation column.\n",
                                               g_quark_to_string(feature->original_id)) ;
                   zMapWarning("%s", msg) ;
                   g_free(msg) ;
@@ -352,7 +352,7 @@ void scratchRemoveFeature(gpointer list_data, gpointer user_data)
             }
         }
     }
- 
+
   /* If we've changed the list of source features we need to recreate the scratch feature */
   if (changed)
     scratchFeatureRecreate(view);
@@ -431,7 +431,7 @@ static gboolean scratchMergeBase(ScratchMergeData merge_data)
   gboolean merged = FALSE;
 
   /* If it's a peptide sequence check if it's a met or stop codon and
-   * set the boundary type accordingly (only do this if the span we're 
+   * set the boundary type accordingly (only do this if the span we're
    * looking at is a single base) */
   GList *feature_list = merge_data->operation->src_feature_ids ;
 
@@ -450,20 +450,20 @@ static gboolean scratchMergeBase(ScratchMergeData merge_data)
             {
               /* Get 0-based coord and convert from dna to peptide coord */
               const int index = (merge_data->operation->seq_start - merge_data->view->view_sequence->start) / 3 ;
-              
+
               if (index < sequence->length)
                 {
                   const char cp = sequence->sequence[index] ;
-                  
+
                   if (cp == '*')
                     {
                       /* Decrement the coord so we don't include the stop codon in the exon */
                       --merge_data->operation->seq_start ;
-                      merge_data->operation->boundary = ZMAPBOUNDARY_5_SPLICE ; 
+                      merge_data->operation->boundary = ZMAPBOUNDARY_5_SPLICE ;
                     }
                   else if (cp == 'M' || cp == 'm')
                     {
-                      merge_data->operation->boundary = ZMAPBOUNDARY_3_SPLICE ; 
+                      merge_data->operation->boundary = ZMAPBOUNDARY_3_SPLICE ;
                     }
                 }
             }
@@ -511,7 +511,7 @@ static gboolean scratchMergeSplice(ScratchMergeData merge_data, ZMapFeature feat
 /*!
  * \brief Add/merge a transcript feature to the scratch column
  */
-static gboolean scratchMergeTranscript(ScratchMergeData merge_data, 
+static gboolean scratchMergeTranscript(ScratchMergeData merge_data,
                                        ZMapFeature feature)
 {
   gboolean merged = TRUE;
@@ -533,7 +533,7 @@ static gboolean scratchMergeVariation(ScratchMergeData merge_data, ZMapFeature f
 {
   gboolean merged = TRUE;
 
-  /* Copying a variation means that we use the variation to modify the sequence of 
+  /* Copying a variation means that we use the variation to modify the sequence of
    * the transcript (rather than it modifying the exon coords as for other features). */
   merged = zMapFeatureAddTranscriptVariation(merge_data->dest_feature, feature, merge_data->error) ;
 
@@ -562,10 +562,10 @@ static gboolean featureIsMetadata(ZMapFeature feature)
 }
 
 
-/*! 
+/*!
  * \brief Add/merge a feature to the scratch column
  */
-static gboolean scratchMergeFeature(ScratchMergeData merge_data, 
+static gboolean scratchMergeFeature(ScratchMergeData merge_data,
                                     ZMapFeature feature,
                                     const gboolean save_attributes)
 {
@@ -594,6 +594,12 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data,
 
   if (feature)
     {
+      /*
+       * (sm23) This is a bit of a hack and may not be the best place for this operation.
+       *  But the new feature must be given an SO term!
+       */
+      merge_data->dest_feature->SO_accession = feature->SO_accession ;
+
       switch (feature->mode)
         {
         case ZMAPSTYLE_MODE_ALIGNMENT:      /* fall through */
@@ -636,11 +642,11 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data,
           /* If the error is not already set, set it now .*/
           if (*merge_data->error == NULL)
             {
-              g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, 
+              g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
                           "Failed to merge feature '%s'.\n", g_quark_to_string(feature->original_id));
             }
         }
-    }  
+    }
 
   return merged ;
 }
@@ -649,7 +655,7 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data,
 /*!
  * \brief Add/merge a feature to the scratch column
  */
-static gboolean scratchDoMergeOperation(ScratchMergeData merge_data, 
+static gboolean scratchDoMergeOperation(ScratchMergeData merge_data,
                                         const gboolean first_merge)
 {
   gboolean merged = FALSE;
@@ -671,8 +677,8 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data,
         {
           const char *subfeature_desc = zMapFeatureSubPart2Str(operation->subpart->subpart) ;
 
-          g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, 
-                      "copy of subfeature of type '%s' is not implemented.\n", 
+          g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
+                      "copy of subfeature of type '%s' is not implemented.\n",
                       subfeature_desc);
         }
     }
@@ -694,14 +700,14 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data,
           /* If the first feature is a transcript then we save its attributes so that the user
            * can easily overwrite the same transcript. Currently only applicable in standalone
            * zmap. */
-          const gboolean save_attributes = 
+          const gboolean save_attributes =
             !merge_data->view->xremote_client &&
-            first_feature && 
+            first_feature &&
             !merge_data->operation->use_subfeature &&
             feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT ;
-          
+
           merged = scratchMergeFeature(merge_data, feature, save_attributes) ;
-          
+
           if (!merged)
             break ;
         }
@@ -747,7 +753,7 @@ static gboolean scratchDoDeleteOperation(ScratchMergeData merge_data)
       g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
                   "Program error: a subfeature is required to delete an intron/exon.") ;
     }
-  
+
   return merged ;
 }
 
@@ -782,7 +788,7 @@ static gboolean scratchDoSaveOperation(ScratchMergeData merge_data)
       g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
                   "Program error: no feature specified for Save operation.") ;
     }
-  
+
   return merged ;
 }
 
@@ -831,7 +837,7 @@ static void scratchEraseFeature(ZMapView zmap_view)
 
   /* Reset cached attributes */
   zmapViewScratchResetAttributes(zmap_view) ;
-  
+
   /* Reset cached attributes */
   //zmapViewScratchResetAttributes(zmap_view) ;
 
@@ -1021,7 +1027,7 @@ static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_featu
           if (list_item == view->edit_list_end)
             {
               view->edit_list_end = view->edit_list_end->prev ;
-              
+
               if (view->edit_list_end == NULL)
                 {
                   /* This was the first item and it failed so reset start/end to null to indicate
@@ -1264,7 +1270,7 @@ gboolean zmapViewScratchCopyFeatures(ZMapView view,
       view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1);
-      
+
       operation->edit_type = ZMAPEDIT_MERGE ;
       operation->seq_start = seq_start;
       operation->seq_end = seq_end;
@@ -1300,7 +1306,7 @@ gboolean zmapViewScratchDeleteFeatures(ZMapView view,
       view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1);
-      
+
       operation->edit_type = ZMAPEDIT_DELETE ;
       operation->seq_start = seq_start;
       operation->seq_end = seq_end;
@@ -1375,7 +1381,7 @@ gboolean zmapViewScratchUndo(ZMapView view)
               while (view->edit_list_start && view->edit_list_start->prev)
                 {
                   EditOperation prev_operation = (EditOperation)(view->edit_list_start->prev->data) ;
-              
+
                   /* If the previous operaition is a clear then leave the start at the current
                    * operation (i.e. the one after the clear, which is where the feature
                    * construction starts). */
@@ -1394,16 +1400,16 @@ gboolean zmapViewScratchUndo(ZMapView view)
 
           /* In all cases, move the end pointer back one place */
           view->edit_list_end = view->edit_list_end->prev ;
-      
+
           /* If we have no operations left in the list, null the start pointer too */
           if (view->edit_list_end == NULL)
             view->edit_list_start = NULL ;
 
           if (view->edit_list_start)
             {
-          
+
             }
-      
+
           scratchFeatureRecreate(view);
         }
       else
@@ -1447,7 +1453,7 @@ gboolean zmapViewScratchRedo(ZMapView view)
            * so we just need to set the start/end pointers to the first item in the list */
           view->edit_list_start = view->edit_list_end = view->edit_list ;
 
-          /* For "clear" and "save" operations we need to move the start pointer to the 
+          /* For "clear" and "save" operations we need to move the start pointer to the
            * same as the end pointer */
           EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
           if (operation->edit_type == ZMAPEDIT_CLEAR || operation->edit_type == ZMAPEDIT_SAVE)
@@ -1467,7 +1473,7 @@ gboolean zmapViewScratchRedo(ZMapView view)
 
 /*!
  * \brief Called when the user saves manual edits to the scratch feature.
- * 
+ *
  * The given feature is the feature that has been constructed from the manual information
  * but this feature does not exist in any featureset etc. so we take ownership of it.
  */
@@ -1491,7 +1497,7 @@ gboolean zmapViewScratchSave(ZMapView view, ZMapFeature feature)
 
       /* Now create the save operation */
       EditOperation operation = g_new0(EditOperationStruct, 1);
-      
+
       operation->edit_type = ZMAPEDIT_SAVE ;
       operation->src_feature = feature ;
 
@@ -1535,7 +1541,7 @@ void zmapViewScratchFeatureGetEvidence(ZMapView view, ZMapWindowGetEvidenceCB ev
 }
 
 
-/* 
+/*
  * \brief Save the feature name to be used when we create the real feature from the scratch feature.
  */
 void zmapViewScratchSaveFeature(ZMapView view, GQuark feature_id)
@@ -1544,7 +1550,7 @@ void zmapViewScratchSaveFeature(ZMapView view, GQuark feature_id)
 }
 
 
-/* 
+/*
  * \brief Save the featureset to be used when we create the real feature from the scratch feature.
  */
 void zmapViewScratchSaveFeatureSet(ZMapView view, GQuark feature_set_id)
@@ -1553,7 +1559,7 @@ void zmapViewScratchSaveFeatureSet(ZMapView view, GQuark feature_set_id)
 }
 
 
-/* 
+/*
  * \brief Reset the saved attributes
  */
 void zmapViewScratchResetAttributes(ZMapView view)
