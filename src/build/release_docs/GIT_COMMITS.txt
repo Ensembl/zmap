@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/1.4.0"
 
+4033cca 2015-02-25 "fix at zmap end for feature ontology/blixem display problem - RT 452621"
 91e31a1 2015-02-18 fix to drag/drop feature to blixem
 1173481 2015-02-13 Replace 'annotools' email id with 'annosoft'
 25fc5d8 2015-02-11 small bug in dumper code

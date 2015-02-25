@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 12/01/2015 to 18/02/2015
+Request Tracker Tickets Resolved from 12/01/2015 to 25/02/2015
 
 ticket/115300
 id: ticket/115300
@@ -455,6 +455,16 @@ Subject: sort out zmap main window
 Requestors: edgrif@sanger.ac.uk
 Owner: edgrif
 Resolved: Mon Feb 16 10:25:45 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/451891
+id: ticket/451891
+Queue: zmap
+Subject: zmap discards features with wrong style
+Requestors: jgrg@sanger.ac.uk
+Owner: sm23
+Resolved: Thu Feb 19 16:18:56 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
