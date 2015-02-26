@@ -70,7 +70,7 @@ static int span_compare (gconstpointer a, gconstpointer b) ;
 
 static int findExon(ZMapFeature feature, int exon_start, int exon_end) ;
 static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
-      int *exon_cds_start, int *exon_cds_end, int *phase_out) ;
+      int *exon_cds_start, int *exon_cds_end, ZMapPhase *phase_out) ;
 
 static void printChildCB(gpointer key, gpointer value, gpointer user_data_unused) ;
 
@@ -666,7 +666,7 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *quer
               *query_start = *query_end ;
               *query_end = tmp ;
             }
-        
+
           result = TRUE ;
         }
     }
@@ -1068,12 +1068,12 @@ gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
           ZMapMapBlockStruct map_data = { {0,0}, {0,0}, FALSE };
           map_data.parent.x1 = w1;
           map_data.parent.x2 = w2;
-  
+
           parent_data.map         = &map_data;
           parent_data.limit_start = feature->x1;
           parent_data.limit_end   = feature->x2;
           parent_data.counter     = 0;
-  
+
           zMapFeatureTranscriptExonForeach(feature, map_parent2child,
                                            &parent_data);
           if(t1)
@@ -1164,7 +1164,7 @@ gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpa
           if (first->x1 > last->x1)
             forward = FALSE ;
         }
-        
+
       if (forward)
         {
           end = children->len ;
@@ -1179,11 +1179,11 @@ gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpa
       for (i = start; i < end; i++)
         {
           ZMapSpan child_span ;
-        
+
           index = i * multiplier ;
-        
+
           child_span = &(g_array_index(children, ZMapSpanStruct, index)) ;
-        
+
           (function)(child_span, user_data) ;
         }
 
@@ -1331,7 +1331,7 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
             *cds1 = map_data.block.x1;
           if (cds2)
             *cds2 = map_data.block.x2;
-        
+
           cds_exon = TRUE;
         }
     }
@@ -1345,15 +1345,15 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
  * of the exon and also it's phase. Returns FALSE if the exon is not in the transcript
  * or if the exon has no cds section. */
 gboolean zMapFeatureExon2CDS(ZMapFeature feature,
-     int exon_start, int exon_end, int *exon_cds_start, int *exon_cds_end, int *phase_out)
+     int exon_start, int exon_end, int *exon_cds_start, int *exon_cds_end, ZMapPhase *phase_out)
 {
   gboolean is_cds_exon = FALSE ;
-  int exon_index ;
+  int exon_index =0;
 
   if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds
               && (exon_index = findExon(feature, exon_start, exon_end)) > -1)
     {
-      int cds_start, cds_end ;
+      int cds_start=0, cds_end=0 ;
 
       cds_start = feature->feature.transcript.cds_start ;
       cds_end = feature->feature.transcript.cds_end ;
@@ -1361,14 +1361,15 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
       if (!(cds_start > exon_end || cds_end < exon_start))
         {
           /* Exon has a cds section so calculate it and find the exons phase. */
-          int start, end, phase ;
-        
+          int start=0, end =0;
+          ZMapPhase phase = ZMAPPHASE_NONE ;
+
           if (calcExonPhase(feature, exon_index, &start, &end, &phase))
             {
               *exon_cds_start = start ;
               *exon_cds_end = end ;
               *phase_out = phase ;
-        
+
               is_cds_exon = TRUE ;
             }
         }
@@ -1425,7 +1426,7 @@ ZMapFrame zMapFeatureFrameAtCoord(ZMapFeature feature, int coord)
 
       frame = feature_frame_coords(block_offset, x) ;
     }
-  
+
   return frame ;
 }
 
@@ -1441,7 +1442,7 @@ int zMapFeatureSplitCodonOffset(ZMapFeature feature, int coord)
       if (coord == exon->sequence_span.x1)
         result = exon->start_phase ;
     }
-  
+
   return result ;
 }
 
@@ -1483,7 +1484,7 @@ ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature)
 ZMapPhase zMapFeaturePhase(ZMapFeature feature)
 {
   ZMapPhase result = ZMAPPHASE_NONE ;
-  
+
   if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT &&
       feature->feature.transcript.flags.start_not_found)
     {
@@ -1588,14 +1589,14 @@ gboolean zMapFeaturePrintChildNames(ZMapFeatureAny feature_any)
  */
 
 /* Given a list of boundaries in the form ZMapSpanStructs representing pairs of
- * start/end boundaries, returns a list of ZMapSpanStructs which are all the 
+ * start/end boundaries, returns a list of ZMapSpanStructs which are all the
  * boundaries that match within the feature. Note that if the feature's style
  * gave a 'slop' factor for the comparison then this will have been included
- * 
+ *
  * For basic features this will be derived from the features start/end but for
  * compound features such as alignments and transcripts there may be a number
  * of matches.
- * 
+ *
  * NOTE:
  *  - the supplied boundaries must be sorted in order of ascending sequence position
  *  - boundaries are assumed to be >= 0 with a value of 0 meaning "no boundary".
@@ -1636,7 +1637,7 @@ GList *zmapFeatureCoordsListMatch(ZMapFeature feature, int match_tolerance, GLis
               ZMapSpan match_boundary ;
 
               match_boundary = g_new0(ZMapSpanStruct, 1) ;
-              
+
               if (match_boundary_start)
                 match_boundary->x1 = match_boundary_start ;
               if (match_boundary_end)
@@ -1656,10 +1657,10 @@ GList *zmapFeatureCoordsListMatch(ZMapFeature feature, int match_tolerance, GLis
 
 
 /* Checks to see if boundary_start/boundary_end match start/end within +- slop,
- * if either does returns TRUE and returns start/end in match_start_out/match_end_out. 
- * 
+ * if either does returns TRUE and returns start/end in match_start_out/match_end_out.
+ *
  * Boundaries are assumed to be >= 0, boundaries are not compared if 0.
- * 
+ *
  */
 gboolean zmapFeatureCoordsMatch(int slop, int boundary_start, int boundary_end,
                                 int start, int end, int *match_start_out, int *match_end_out)
@@ -1760,7 +1761,7 @@ static void get_feature_list_extent(gpointer list_data, gpointer span_data)
 }
 
 
-/* For peptide sequences only. Find the exon that the given 
+/* For peptide sequences only. Find the exon that the given
  * coord lies in. For other feature types, returns null. */
 //static ZMapFullExon feature_find_exon_at_coord(ZMapFeature feature, int coord)
 //{
@@ -1779,7 +1780,7 @@ static void get_feature_list_extent(gpointer list_data, gpointer span_data)
 //            {
 //              int x1 = exon->sequence_span.x1 ;
 //              int x2 = exon->sequence_span.x2 ;
-//              
+//
 //              if (coord >= x1 - 2 && coord <= x2 + 2)
 //                {
 //                  result = exon ;
@@ -1791,7 +1792,7 @@ static void get_feature_list_extent(gpointer list_data, gpointer span_data)
 //}
 
 
-/* For peptide sequences only. Find the nearest exon to the given 
+/* For peptide sequences only. Find the nearest exon to the given
  * coord. For other feature types, returns null. */
 static ZMapFullExon feature_find_closest_exon_at_coord(ZMapFeature feature, int coord)
 {
@@ -1802,14 +1803,14 @@ static ZMapFullExon feature_find_closest_exon_at_coord(ZMapFeature feature, int 
   gboolean found = FALSE;
   int closest_dist = 0;
   GList *exon_item = feature->feature.sequence.exon_list;
-  
+
   for ( ; exon_item; exon_item = exon_item->next)
     {
       ZMapFullExon current_exon = (ZMapFullExon)(exon_item->data) ;
       int x1 = current_exon->sequence_span.x1 ;
       int x2 = current_exon->sequence_span.x2 ;
       int y = coord ;
-      
+
       /* Only consider coding exons */
       if (current_exon->region_type == EXON_CODING ||
           current_exon->region_type == EXON_SPLIT_CODON_5 ||
@@ -1826,7 +1827,7 @@ static ZMapFullExon feature_find_closest_exon_at_coord(ZMapFeature feature, int 
           else if (y < x1)
             {
               int cur_dist = x1 - y ;
-              
+
               if (first_time || cur_dist < closest_dist)
                 {
                   first_time = FALSE ;
@@ -1837,7 +1838,7 @@ static ZMapFullExon feature_find_closest_exon_at_coord(ZMapFeature feature, int 
           else /* y > x2 */
             {
               int cur_dist = y - x2 ;
-              
+
               if (first_time || cur_dist < closest_dist)
                 {
                   first_time = FALSE ;
@@ -1975,7 +1976,7 @@ static int findExon(ZMapFeature feature, int exon_start, int exon_end)
 /* Returns the coords (in reference sequence coords) of the cds section of the given exon
  * and also it's phase. */
 static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
-      int *exon_cds_start_out, int *exon_cds_end_out, int *phase_out)
+      int *exon_cds_start_out, int *exon_cds_end_out, ZMapPhase * p_phase_out)
 {
   gboolean result = FALSE ;
   int cds_start, cds_end ;
@@ -1983,6 +1984,7 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
   int i, incr, end ;
   int cds_bases ;
   gboolean first_exon ;
+  int phase_out = 0 ;
 
   cds_start = feature->feature.transcript.cds_start ;
   cds_end = feature->feature.transcript.cds_end ;
@@ -2045,7 +2047,7 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
               /* The first exon must have phase 0 unless it has been annotated as
                * starting with a different phase, all others are calculated from
                * CDS bases so far. */
-        
+
               if (first_exon)
                 {
                   if (feature->feature.transcript.flags.start_not_found)
@@ -2057,13 +2059,28 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
                 {
                   phase = (3 - (cds_bases % 3)) % 3 ;
                 }
-        
+
               *exon_cds_start_out = start ;
               *exon_cds_end_out = end ;
-              *phase_out = phase ;
-        
+              switch (phase)
+                {
+                  case 0:
+                    *p_phase_out = ZMAPPHASE_0 ;
+                    break ;
+                  case 1:
+                    *p_phase_out = ZMAPPHASE_1 ;
+                    break ;
+                  case 2:
+                    *p_phase_out = ZMAPPHASE_2 ;
+                    break ;
+                  default:
+                    *p_phase_out = ZMAPPHASE_NONE ;
+                    break ;
+                } ;
+
+
               result = TRUE ;
-        
+
               break ;
             }
 

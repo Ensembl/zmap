@@ -175,6 +175,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GError *g_error = NULL ;
   char *config_file = NULL ;
   char *styles_file = NULL ;
+  PangoFont *tmp_font = NULL ;
+  PangoFontDescription *tmp_font_desc = NULL ;
 
 
 #ifdef ZMAP_MEMORY_DEBUG
@@ -213,11 +215,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
 
-  /* THIS ORDER NEEDS CHANGING...CMDLINE STUFF FIRST THEN THE REST... */
-
-  consoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, "zmap starting.") ;
-
-
   /* Set up stack tracing for when we get killed by a signal. */
   setupSignalHandlers() ;
 
@@ -230,10 +227,13 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
    * there are bad command line args. */
   zMapCmdLineArgsCreate(&argc, argv) ;
 
-
   /* If user specified version flag, show zmap version and exit with zero return code. */
   checkForCmdLineVersionArg(argc, argv) ;
 
+
+  /* Don't output messages before we've checked the version flag which should be the only
+   * output when user asks for version. */
+  consoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, "ZMap starting.") ;
 
   /* The main control block. */
   app_context = createAppContext() ;
@@ -251,11 +251,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   peer_socket = peer_timeout_list = NULL ;
   if (!checkPeerID(config_file, &peer_socket, &peer_timeout_list))
     {
-      /* CAN'T LOG HERE....log has not been init'd.... */
-
-      if (!peer_socket && peer_timeout_list)
-        consoleMsg(TRUE, INIT_FORMAT,
-                   "timeout list specified but no peer socket so remote interface cannot be created.") ;
+      consoleMsg(verbose_startup_logging_G, INIT_FORMAT, "No remote peer to contact.") ;
     }
   else
     {
@@ -266,13 +262,13 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
       if (zmapAppRemoteControlCreate(app_context, peer_socket, peer_timeout_list))
         {
-          consoleMsg(TRUE, "ZMAP %s() - %s",
-                     __PRETTY_FUNCTION__,
-                     "Calling remoteInstaller()") ;
+          consoleMsg(verbose_startup_logging_G, INIT_FORMAT, "Contacting remote peer.") ;
 
           remoteInstaller(app_context) ;
 
           zmapAppRemoteControlSetExitRoutine(app_context, remoteExitCB) ;
+
+          consoleMsg(verbose_startup_logging_G, INIT_FORMAT, "Connected to remote peer.") ;
         }
       else
         {
@@ -381,6 +377,25 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
   app_context->app_widg = toplevel = zMapGUIToplevelNew(NULL, NULL) ;
+
+
+
+  /* Now we have a widget, check for fixed width fonts, fatal if we can't find any
+   * because we won't be able to display DNA or peptide sequence correctly. */
+  if(zMapGUIGetFixedWidthFont(GTK_WIDGET(toplevel),
+                              g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY),
+                              ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
+                              &(tmp_font), &(tmp_font_desc)))
+    {
+      consoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, "Fixed width font found.") ;
+    }
+  else
+    {
+      zMapLogWarning("Failed to find fixed width font: '%s'", ZMAP_ZOOM_FONT_FAMILY) ;
+      consoleMsg(TRUE, "Failed to find fixed width font: '%s'", ZMAP_ZOOM_FONT_FAMILY) ;
+      doTheExit(EXIT_FAILURE) ;
+    }
+
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
@@ -764,7 +779,7 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "main window destroyed, cleaning up.") ;
+  consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "Main window destroyed, cleaning up.") ;
 
   app_context->app_widg = NULL ;
 
@@ -796,13 +811,13 @@ static void topLevelDestroy(ZMapAppContext app_context)
    * Otherwise if there is a remote control then call remoteLevelDestroy(). */
   if ((zMapManagerCount(app_context->zmap_manager)))
     {
-      consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "killing existing views.") ;
+      consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "Killing existing views.") ;
 
       killZMaps(app_context) ;
     }
   else
     {
-      consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "no views so preparing to exit.") ;
+      consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "No views so preparing to exit.") ;
 
       remoteLevelDestroy(app_context) ;
     }
@@ -863,7 +878,7 @@ static void remoteLevelDestroy(ZMapAppContext app_context)
     {
       gboolean app_exit = TRUE ;
 
-      consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "disconnecting from remote peer.") ;
+      consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "Disconnecting from remote peer.") ;
 
       remote_disconnecting = zmapAppRemoteControlDisconnect(app_context, app_exit) ;
     }
@@ -871,7 +886,7 @@ static void remoteLevelDestroy(ZMapAppContext app_context)
   /* If the disconnect didn't happen or failed or there is no remote then exit. */
   if (!(app_context->remote_control) || !remote_disconnecting)
     {
-      consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "no remote peer, proceeding with exit.") ;
+      consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "No remote peer, proceeding with exit.") ;
 
       exitApp(app_context) ;
     }
@@ -883,7 +898,7 @@ static void remoteLevelDestroy(ZMapAppContext app_context)
 /* Called on clean exit of zmap. */
 static void exitApp(ZMapAppContext app_context)
 {
-  consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "destroying view manager.") ;
+  consoleLogMsg(verbose_startup_logging_G, EXIT_FORMAT, "Destroying view manager.") ;
 
   /* This must be done here as manager checks to see if all its zmaps have gone. */
   if (app_context->zmap_manager)
@@ -917,7 +932,7 @@ static void contextLevelDestroy(ZMapAppContext app_context, int exit_rc, char *e
    * said goodbye to the peer. */
   if (app_context->remote_control)
     {
-      consoleLogMsg(TRUE, EXIT_FORMAT, "destroying remote control interface (remote peer already gone).") ;
+      consoleLogMsg(TRUE, EXIT_FORMAT, "Destroying remote control interface (remote peer already gone).") ;
 
       zmapAppRemoteControlDestroy(app_context) ;
     }
@@ -1149,9 +1164,10 @@ static void checkConfigDir(char **config_file_out, char **styles_file_out)
 }
 
 
-/* Did caller specify a peer socket id on the command line or in a config file. */
-static gboolean checkPeerID(char *config_file,
-                            char **peer_socket_out, char **peer_timeout_list)
+/* Did caller specify a peer socket id on the command line or in a config file ?
+ * If a peer socket is found then function returns TRUE and may also return
+ * a peer timeout list, otherwise returns FALSE. */
+static gboolean checkPeerID(char *config_file, char **peer_socket_out, char **peer_timeout_list)
 {
   gboolean result = FALSE ;
   ZMapCmdLineArgsType socket_value = {FALSE} ;
@@ -1339,7 +1355,7 @@ static void remoteInstaller(ZMapAppContext app_context)
 
   consoleMsg(TRUE, "ZMAP %s() - %s",
              __PRETTY_FUNCTION__,
-             "In remoteInstaller, about init RemoteControl.") ;
+             "In remoteInstaller, about to init RemoteControl.") ;
 
   /* Set up our remote handler. */
   if (zmapAppRemoteControlInit(app_context))

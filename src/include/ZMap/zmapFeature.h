@@ -208,7 +208,7 @@ typedef struct ZMapSequenceStruct_
 
   int length ;						    /* length of sequence in bases or peptides. */
   char *sequence ;					    /* Actual sequence." */
-  GList *exon_list ;                                        /* If this sequence is a translation, this is 
+  GList *exon_list ;                                        /* If this sequence is a translation, this is
                                                              * the exon list it was translated from */
   GList *variations ;                                       /* If the sequence is a translation, this
                                                              * list contains any variations applied
@@ -1135,7 +1135,7 @@ gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
                              char **seq_name, int *seq_len, char **sequence) ;
 
 
-/* 
+/*
  * FeatureAlignment funcs
  */
 GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean master_alignment) ;
@@ -1273,7 +1273,7 @@ gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_li
                                            ZMapFeatureDumpFeatureFunc dump_func,
                                            gpointer                   dump_user_data,
                                            GIOChannel                *dump_file,
-                                           GString                   **text_out,
+                                           GString                   *buffer,
                                            GError                   **dump_error_out);
 
 /*
@@ -1307,7 +1307,7 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
 			      int *cds1, int *cds2);
 gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 			     int exon_start, int exon_end,
-			     int *exon_cds_start, int *exon_cds_end, int *phase_out) ;
+			     int *exon_cds_start, int *exon_cds_end, ZMapPhase *phase_out) ;
 gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, gboolean pad, GList **exon_list_out) ;
 void zMapFeatureAnnotatedExonsDestroy(GList *exon_list) ;
 
@@ -1389,8 +1389,8 @@ gboolean zMapAlignBlockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
 gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
 void zMapFeatureFreeSubParts(GList *sub_parts) ;
 GList *zMapFeatureHasMatchingBoundaries(ZMapFeature feature, GList *boundaries) ;
-int zMapFeatureVariationGetSections(const char *variation_str, 
-                                    char **old_str_out, char **new_str_out, 
+int zMapFeatureVariationGetSections(const char *variation_str,
+                                    char **old_str_out, char **new_str_out,
                                     int *old_len_out, int *new_len_out) ;
 
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
