@@ -219,8 +219,12 @@ enum
 /* Developer menu ops. */
 enum
   {
-    DEVELOPER_FEATURE_ONLY = 1,  DEVELOPER_FEATUREITEM_FEATURE, DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE,
-    DEVELOPER_PRINT_STYLE, DEVELOPER_PRINT_CANVAS, DEVELOPER_STATS
+    DEVELOPER_FEATURE_ONLY = 1,
+    DEVELOPER_FEATUREITEM_FEATURE,
+    DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE,
+    DEVELOPER_PRINT_STYLE,
+    DEVELOPER_PRINT_CANVAS,
+    DEVELOPER_STATS
   } ;
 
 
@@ -776,8 +780,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 
       if (!style)
         {
-          // style should be attached to the feature, but if not don't fall over
-          // new features should also have styles attached
+          /* style should be attached to the feature, but if not don't fall over
+             new features should also have styles attached */
           zMapLogWarning("Feature menu item does not have style","");
         }
       else
