@@ -80,13 +80,8 @@
 #define FEATURE_PEPTIDE_EXPORT_STR FEATURE_PEPTIDE_STR
 #define FEATURE_PEPTIDE_SHOW_STR   FEATURE_PEPTIDE_STR
 
-
 #define CONTEXT_STR                "All Features"
-#define CONTEXT_EXPORT_STR         CONTEXT_STR
-
 #define MARK_STR                   "Marked Features"
-#define MARK_EXPORT_STR            MARK_STR
-
 #define DEVELOPER_STR              "Developer"
 
 
@@ -145,16 +140,13 @@ enum
     BLIX_SET,                /* Blixem all matches for all features in this column. */
     BLIX_MULTI_SETS,        /* Blixem all matches for all features in the list of columns in the blixem config file. */
     BLIX_SEQ_COVERAGE,        /* Blixem a coverage column: find the real data column */
-//    BLIX_SEQ_SET                /* Blixem a paried read featureset */
+/*    BLIX_SEQ_SET */               /* Blixem a paired read featureset */
   } ;
 
 #define BLIX_SEQ                10000       /* Blixem short reads data base menu index */
 #define REQUEST_SELECTED 20000        /* data related to selected featureset in column */
 #define REQUEST_ALL_SEQ 20001                /* all data related to coverage featuresets in column */
 #define REQUEST_SEQ        20002                /* request SR data from mark from menu */
-    /* MH17 NOTE BLIX_SEQ etc is a range of values */
-    /* this is a temporary implementation till we can blixem a short reads column */
-    /* we assume that we have less than 10k datasets */
 
 
 /* Choose which way a transcripts dna is exported... */
@@ -397,6 +389,7 @@ static void offsetTextAttr(gpointer data, gpointer user_data) ;
 static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window)
 {
   ZMapWindowContainerFeatureSet scratch_container = NULL ;
+  zMapReturnValIfFail(window, scratch_container) ;
 
   ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
 
@@ -424,7 +417,11 @@ static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow wi
  * In the end this should be merged with column menu code so one function does both...
  */
 
-/* Build the menu for a feature item. */
+/*
+ * Build the menu for a feature item.
+ *
+ * Select/highlight a feature and then right click on it.
+ */
 void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
 {
   ZMapWindowContainerGroup column_group =  NULL ;
@@ -433,21 +430,20 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
       {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
-  char *menu_title ;
+  char *menu_title = NULL ;
   GList *menu_sets = NULL ;
-  ItemMenuCBData menu_data ;
-  ZMapFeature feature ;
-  ZMapFeatureTypeStyle style ;
-  ZMapFeatureSet feature_set;
-  ZMapWindowContainerFeatureSet container_set;
-  ZMapGUIMenuItem seq_menus ;
+  ItemMenuCBData menu_data = NULL ;
+  ZMapFeature feature = NULL ;
+  ZMapFeatureTypeStyle style = NULL ;
+  ZMapFeatureSet feature_set = NULL ;
+  ZMapWindowContainerFeatureSet container_set = NULL ;
+  ZMapGUIMenuItem seq_menus = NULL ;
 
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
    * from the canvas item. */
   feature = zMapWindowCanvasItemGetFeature(item);
-  if (!feature)
-    return ;
+  zMapReturnIfFail(feature && button_event) ;
 
 
   style = *feature->style;
@@ -546,7 +542,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
                             zmapWindowMakeMenuBump(NULL, NULL, menu_data,
                                                    zmapWindowContainerFeatureSetGetBumpMode(container_set))) ;
 
-  {
+    {
         GQuark parent_id = 0;
         ZMapFeatureTypeStyle parent = NULL;
 
@@ -562,14 +558,13 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
          */
         if(window->edit_styles || style->is_default || (parent && parent->is_default))
                 menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuStyle(NULL, NULL, menu_data, style, feature->mode));
-  }
+    }
 
   /* list all short reads data, temp access till we get wiggle plots running */
   if ((seq_menus = zmapWindowMakeMenuRequestBAM(NULL, NULL, menu_data)))
     menu_sets = g_list_append(menu_sets, seq_menus) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
-
 
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuSearchListOps(NULL, NULL, menu_data)) ;
 
@@ -592,9 +587,6 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuExportOps(NULL, NULL, menu_data)) ;
 
-  if (zmapWindowMarkIsSet(window->mark))
-    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuMarkExportOps(NULL, NULL, menu_data));
-
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
   g_free(menu_title) ;
@@ -603,7 +595,11 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 }
 
 
-/* Build the background menu for a column. */
+/*
+ * Build the background menu for a column.
+ *
+ * Select a column (but not a feature) and then right-click.
+ */
 void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
                         FooCanvasItem *item,
                         ZMapWindowContainerFeatureSet container_set,
@@ -614,13 +610,14 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
       {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
-  char *menu_title ;
+  char *menu_title = NULL ;
   GList *menu_sets = NULL ;
-  ItemMenuCBData cbdata ;
-  ZMapFeature feature;
-  ZMapFeatureSet feature_set ;
-  ZMapGUIMenuItem seq_menus ;
+  ItemMenuCBData cbdata = NULL ;
+  ZMapFeature feature = NULL ;
+  ZMapFeatureSet feature_set = NULL ;
+  ZMapGUIMenuItem seq_menus = NULL ;
 
+  zMapReturnIfFail(button_event && window && container_set) ;
 
   menu_title = (char *) g_quark_to_string(container_set->original_id);
 
@@ -703,9 +700,6 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuExportOps(NULL, NULL, cbdata)) ;
 
-  if (zmapWindowMarkIsSet(window->mark))
-    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuMarkExportOps(NULL, NULL, cbdata));
-
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
   return ;
@@ -745,6 +739,8 @@ static void addMenuItem(ZMapGUIMenuItem menu,
  * one shared amongst all general menu functions...
  * NOTE HOW THE MENUS ARE DECLARED STATIC IN THE VARIOUS ROUTINES TO MAKE SURE THEY STAY
  * AROUND...OTHERWISE WE WILL HAVE TO KEEP ALLOCATING/DEALLOCATING THEM.....
+ *
+ * Called upon right-click on a selected feature.
  */
 ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
                                              ZMapGUIMenuItemCallbackFunc callback_func,
@@ -826,7 +822,11 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 }
 
 
-/* Options for the scratch column */
+/*
+ * Options for the scratch column
+ *
+ * Called upon right-click within the editing/annotation/scratch column.
+ */
 ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
                                              ZMapGUIMenuItemCallbackFunc callback_func,
                                              gpointer callback_data)
@@ -1734,16 +1734,30 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
 }
 
 
+/*
+ * This is the right-click menu in a view (no feature selected)
+ *
+ * export/all features/dna                (whole context dna; present in file menu)
+ *                     features           (whole context features; present in file menu)
+ *        marked features/features        (whole context, marked coordinate range only)
+ *
+ * "whole context" means all columns and (by default) the whole coordinate range of the view.
+ *
+ * the first two of these options are not needed and the latter should be for one column only,
+ * either all of the features if the mark is not set, or only within the marked coordinate
+ * region if it is set? possibily allow both at all times for a bit of extra flexibility
+ */
 ZMapGUIMenuItem zmapWindowMakeMenuExportOps(int *start_index_inout,
                                           ZMapGUIMenuItemCallbackFunc callback_func,
                                           gpointer callback_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_BRANCH, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"CONTEXT_EXPORT_STR, 0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"CONTEXT_EXPORT_STR"/DNA", 1, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"CONTEXT_EXPORT_STR"/Features", 2, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"CONTEXT_EXPORT_STR"/Context", 3, exportMenuCB, NULL},
+      /* {ZMAPGUI_MENU_BRANCH, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"CONTEXT_STR, 0, NULL, NULL}, */
+      /*{ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"CONTEXT_STR"/DNA", 1, exportMenuCB, NULL}, */
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Features" , 2, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Features (marked)" , 12, exportMenuCB, NULL},
+      /*{ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"CONTEXT_STR"/Context", 3, exportMenuCB, NULL}, */
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
@@ -1752,26 +1766,28 @@ ZMapGUIMenuItem zmapWindowMakeMenuExportOps(int *start_index_inout,
   return menu ;
 }
 
-
+/*
+ * This one doesn't do anything different to the one above, so I've removed calls to it
+ * from the higher level functions. The declaration was in the zmapWindow_P.h file; now
+ * removed from there.
+ */
+/*
 ZMapGUIMenuItem zmapWindowMakeMenuMarkExportOps(int *start_index_inout,
-                                              ZMapGUIMenuItemCallbackFunc callback_func,
+                                              ZMapGUIMenuItemCallbackFunc calback_func,
                                               gpointer callback_data)
 {
-  /* DNA AND CONTEXT SEEM NOT TO BE IMPLEMENTED..... */
-
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_BRANCH, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"MARK_EXPORT_STR, 0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"MARK_EXPORT_STR"/DNA", 1, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"MARK_EXPORT_STR"/Features", 12, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"MARK_EXPORT_STR"/Context", 3, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"MARK_STR, 0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"MARK_STR"/DNA", 1, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"MARK_STR"/Features", 12, exportMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
   return menu ;
-}
+}*/
 
 
 
@@ -3031,7 +3047,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
 
       if ((f2c = g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,GUINT_TO_POINTER(fset_id))))
           {
-          //zMapLogWarning("menu is_seq: %s -> %p",g_quark_to_string(fset_id),f2c);
           cbdata->req_id = f2c->column_id;
           blixem_col = get_menu_string(f2c->column_ID,'-');
           }
