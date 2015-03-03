@@ -1292,6 +1292,13 @@ static void zmap_windowfeatureitemlist_finalize(GObject *object)
   return ;
 }
 
+/*
+ * (sm23) Note that the second test below to add a feature previously
+ * ensured that only features with the same ZMapStyleMode as the zmap_tv
+ * could be added. This is incorrect, since we often have (for example)
+ * features from featuresets with different style modes in the same
+ * column, and wish to display them in the list window.
+ */
 static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
                             gpointer user_data)
 {
@@ -1303,10 +1310,10 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
 
   zmap_tv_feature = ZMAP_WINDOWFEATUREITEMLIST(zmap_tv);
 
-  if((feature))        // = zmapWindowItemGetFeature(item)))
+  if((feature))        /* = zmapWindowItemGetFeature(item))) */
     {
-      if(zmap_tv_feature->feature_type == ZMAPSTYLE_MODE_INVALID &&
-       feature->mode != ZMAPSTYLE_MODE_INVALID)
+      if (zmap_tv_feature->feature_type == ZMAPSTYLE_MODE_INVALID &&
+        feature->mode != ZMAPSTYLE_MODE_INVALID)
       {
         zmap_tv_feature->feature_type = feature->mode;
         setup_item_tree(zmap_tv_feature, feature->mode);
@@ -1317,14 +1324,16 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
       add_simple.item      = item;
 
       if(zmap_tv_feature->window &&
-       zmap_tv_feature->window->display_forward_coords)
+         zmap_tv_feature->window->display_forward_coords)
       add_simple.window  = zmap_tv_feature->window;
 
-
-      if(zmap_tv_feature->feature_type != ZMAPSTYLE_MODE_INVALID &&
-       zmap_tv_feature->feature_type == feature->mode &&
-       feature_item_parent_class_G->add_tuple_simple)
-      (* feature_item_parent_class_G->add_tuple_simple)(zmap_tv, &add_simple);
+      if (  zmap_tv_feature->feature_type != ZMAPSTYLE_MODE_INVALID &&
+            /* zmap_tv_feature->feature_type == feature->mode && */
+            feature->mode != ZMAPSTYLE_MODE_INVALID &&
+            feature_item_parent_class_G->add_tuple_simple)
+        {
+          (* feature_item_parent_class_G->add_tuple_simple)(zmap_tv, &add_simple);
+        }
     }
 
   return ;
