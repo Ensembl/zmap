@@ -347,7 +347,7 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
               GList *focus_items ;
               double rootx1, rooty1, rootx2, rooty2 ;
 
-              focus_items = zmapWindowFocusGetFocusItems(window->focus) ;
+              focus_items = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS) ;
 
               if(g_list_length(focus_items) == 1)
                 {

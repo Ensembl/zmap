@@ -931,10 +931,10 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
       ZMapFeatureSubPartSpan sub_feature = NULL ;
       ZMapWindowCanvasItem canvas_item ;
       ZMapFeatureStruct feature_copy = {};
-      ZMapFeatureAny my_feature = (ZMapFeatureAny) feature ;
-      gboolean control = FALSE;
+      ZMapFeatureAny xremote_feature = (ZMapFeatureAny)feature ;
+      gboolean highlight_sub_part = FALSE;
       ZMapWindowDisplayStyleStruct display_style = {ZMAPWINDOW_COORD_ONE_BASED, ZMAPWINDOW_PASTE_FORMAT_OTTERLACE,
-                                                    ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS} ;
+                                                    ZMAPWINDOW_PASTE_TYPE_SELECTED} ;
 
       canvas_item = ZMAP_CANVAS_ITEM(item);
       highlight_item = item;
@@ -949,7 +949,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
         {
           /* Only highlight the single item user clicked on. */
           highlight_same_names = FALSE ;
-          control = TRUE;
+          highlight_sub_part = TRUE;
 
           /* Annotators say they don't want subparts sub selections + multiple
            * selections for alignments. */
@@ -957,9 +957,11 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
             {
               highlight_item = sub_item ;
 
+
+              /* WHY ARE WE MAKING A COPY.....WHY ??????????????? */
               /* monkey around to get feature_copy to be the right correct data */
               featureCopySelectedItem(feature, &feature_copy, highlight_item);
-              my_feature = (ZMapFeatureAny) &feature_copy;
+              xremote_feature = (ZMapFeatureAny) &feature_copy;
             }
         }
 
@@ -998,7 +1000,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
         /* Pass information about the object clicked on back to the application. */
         zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
-                                  NULL, replace_highlight, highlight_same_names, control, &display_style) ;
+                                  NULL, replace_highlight, highlight_same_names, highlight_sub_part, &display_style) ;
 
         /* if we have an active dialog update it: they have to click on a feature not the column */
         zmapWindowSetStyleFeatureset(window, item, feature);
@@ -1013,12 +1015,12 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
               replace_highlight = FALSE ;
 
               if (window->xremote_client)
-                zmapWindowFeatureCallXRemote(window, my_feature, ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
+                zmapWindowFeatureCallXRemote(window, xremote_feature, ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
             }
           else
             {
               if (window->xremote_client)
-                zmapWindowFeatureCallXRemote(window, my_feature, ZACP_SELECT_FEATURE, highlight_item) ;
+                zmapWindowFeatureCallXRemote(window, xremote_feature, ZACP_SELECT_FEATURE, highlight_item) ;
 
               window->multi_select = TRUE ;
             }
@@ -1027,7 +1029,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
         {
           /* single select */
           if (window->xremote_client)
-            zmapWindowFeatureCallXRemote(window, my_feature, ZACP_SELECT_FEATURE, highlight_item) ;
+            zmapWindowFeatureCallXRemote(window, xremote_feature, ZACP_SELECT_FEATURE, highlight_item) ;
 
           window->multi_select = FALSE ;
         }
