@@ -45,7 +45,7 @@
 #include <zmapControl_P.h>
 
 
-typedef enum {EDIT_COPY, EDIT_PASTE} EditActionType ;
+typedef enum {EDIT_COPY, EDIT_COPY_CHR, EDIT_PASTE} EditActionType ;
 
 
 typedef enum {RT_INVALID, RT_ACEDB, RT_ANACODE, RT_SEQTOOLS, RT_ZMAP, RT_ZMAP_USER_TICKETS} RTQueueName ;
@@ -103,11 +103,9 @@ static GtkItemFactoryEntry menu_items[] = {
          { "/File/Quit",                            "<control>Q",        quitCB,                0,  NULL },
 
          { "/_Edit",                                NULL,                NULL,                  0,  "<Branch>" },
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-         { "/Edit/Cu_t",                     "<control>X", copyPasteCB, 0, NULL },
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-         { "/Edit/_Copy",                    "<control>C", copyPasteCB, EDIT_COPY, NULL },
-         { "/Edit/_Paste",   "<control>V", copyPasteCB, EDIT_PASTE, NULL },
+         { "/Edit/_Copy Feature Coords",            "<control>C",        copyPasteCB,           EDIT_COPY, NULL },
+         { "/Edit/_UCopy Feature Coords (CHR)",   "<control>U", copyPasteCB, EDIT_COPY_CHR, NULL },
+         { "/Edit/_Paste Feature Coords",         "<control>V", copyPasteCB, EDIT_PASTE, NULL },
 
          { "/Edit/_Redraw",  NULL,         redrawCB, 0, NULL },
          { "/Edit/sep1",     NULL,         NULL, 0, "<Separator>" },
@@ -539,10 +537,16 @@ static void copyPasteCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   switch (action)
     {
     case EDIT_COPY:
+    case EDIT_COPY_CHR:
       {
         char *selection_text ;
+        ZMapWindowDisplayStyleStruct display_style = {ZMAPWINDOW_COORD_NATURAL, ZMAPWINDOW_PASTE_FORMAT_BROWSER,
+                                                      ZMAPWINDOW_PASTE_TYPE_SELECTED} ;
 
-        if ((selection_text = zMapWindowGetSelectionText(curr_window)))
+        if (action == EDIT_COPY_CHR)
+          display_style.paste_style = ZMAPWINDOW_PASTE_FORMAT_BROWSER_CHR ;
+
+        if ((selection_text = zMapWindowGetSelectionText(curr_window, &display_style)))
           {
             /* Set on both common X clipboards. */
             zMapGUISetClipboard(zmap->toplevel, GDK_SELECTION_PRIMARY, selection_text) ;
