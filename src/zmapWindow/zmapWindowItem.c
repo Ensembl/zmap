@@ -142,7 +142,8 @@ GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand)
  */
 
 /* Highlight the given feature. */
-void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean highlight_same_names, gboolean replace)
+void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature,
+                                gboolean highlight_same_names, gboolean replace)
 {
   FooCanvasItem *feature_item ;
   ZMapStrand set_strand = ZMAPSTRAND_NONE;
@@ -190,8 +191,14 @@ gboolean zMapWindowUnhighlightFeature(ZMapWindow window, ZMapFeature feature)
 
 
 /* Highlight a feature or list of related features (e.g. all hits for same query sequence). */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
                                gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
+                               gboolean replace_highlight_item, gboolean highlight_same_names,
+                               ZMapFeatureSubPartSpan sub_part)
 {
   zmapWindowHighlightObject(window, item, replace_highlight_item, highlight_same_names, sub_part) ;
 
@@ -201,8 +208,14 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
                                gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
+                               gboolean replace_highlight_item, gboolean highlight_same_names,
+                               ZMapFeatureSubPartSpan sub_part)
 {
   ZMapWindowCanvasItem canvas_item ;
   ZMapFeature feature ;
@@ -236,7 +249,8 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
             set_strand = set_frame = "*" ;
 
-            set_items = zmapWindowFToIFindSameNameItems(window,window->context_to_item, set_strand, set_frame, feature) ;
+            set_items = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
+                                                        set_strand, set_frame, feature) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
             if (set_items)
@@ -256,8 +270,12 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       }
     default:
       {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
         /* Try highlighting both the item and its column. */
         zmapWindowFocusAddItem(window->focus, item, feature);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+        zmapWindowFocusAddItemType(window->focus, item, feature, sub_part, WINDOW_FOCUS_GROUP_FOCUS) ;
       }
       break ;
     }
@@ -277,12 +295,16 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     }
   else
     {
-        ZMapFrame frame = ZMAPFRAME_NONE;
-        ;
-      zmapWindowItemHighlightDNARegion(window, TRUE, sub_part, item,
+      ZMapFrame frame = ZMAPFRAME_NONE ;
+      gboolean sub_part_tmp = FALSE ;
+
+      if (sub_part)
+        sub_part_tmp = TRUE ;
+
+      zmapWindowItemHighlightDNARegion(window, TRUE, sub_part_tmp, item,
                                        ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
 
-      zmapWindowItemHighlightTranslationRegions(window, TRUE, sub_part, item,
+      zmapWindowItemHighlightTranslationRegions(window, TRUE, sub_part_tmp, item,
                                                 ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
 
 
@@ -299,7 +321,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-      zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part, item,
+      zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part_tmp, item,
                                                    frame, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
 
 
