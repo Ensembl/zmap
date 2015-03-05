@@ -4124,27 +4124,27 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
          * featuresets to call dump_gff_cb() as with the other dumping functions...
          */
 
-        //column_id = menu_data->container_set->unique_id ;
-        FooCanvasGroup *column = zmapWindowFocusGetHotColumn(menu_data->window->focus) ;
-
-
-        /* GIOChannel *file = NULL ;
+        GIOChannel *file = NULL ;
         GError *tmp_error = NULL ;
-        zMapFeatureSetsDump(menu_data->window->feature_context, menu_data->context_map->styles, file, tmp_error ) ; */
-
-        /* this will be used for dumping to find all featuresets in the column and correctly
-         * traverses all of the featuresets in the column
-         * the quantity container->featuresets is a GList* of all the featureset id's in the column
-         */
-        ZMapFeatureSet f_set = NULL ;
-        GList *l;
-        for (l = container->featuresets; l != NULL; l = l->next)
+        ZMapSpan region_span = NULL ;
+        file = g_io_channel_new_file("/nfs/users/nfs_s/sm23/asdf.gff", "w", &tmp_error) ;
+        region_span = g_new0(ZMapSpanStruct, 1) ;
+        region_span->x1 = 0 ;
+        region_span->x2 = 0 ;
+        if (!zMapGFFDumpFeaturesets((ZMapFeatureAny)menu_data->window->feature_context, menu_data->context_map->styles,
+                                    container->featuresets, region_span, file, &tmp_error) )
           {
-            GQuark fs_id = (GQuark) l->data ;
-            const char *name = g_quark_to_string(fs_id) ;
+            if (tmp_error)
+              {
+                g_error_free(tmp_error) ;
+              }
           }
+       if (file)
+         {
+           g_io_channel_shutdown(file, TRUE, &tmp_error) ;
+         }
 
-        //break ;
+
       }
     case ITEM_MENU_LIST_NAMED_FEATURES:
       {
@@ -4172,10 +4172,10 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
             /*
              * Set feature name to wild card to ensure we list all of them.
              *
-             * (sm23) The feature pointer must also be NULL for this to work.
-             * Note also that the featureset_id has to be zero or else the
-             * search function will only return features from the specified
-             * featureset (i.e. the first one found in that column).
+             * (sm23) The feature pointer must also be NULL for this to work
+             * AND the featureset_id has to be zero. Otherwise the search function
+             * will only return features from the specified featureset (i.e. the
+             * first one found in that column).
              */
             featureset_id = 0 ;
             feature_id = g_quark_from_string("*") ;

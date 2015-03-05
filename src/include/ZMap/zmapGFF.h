@@ -194,7 +194,10 @@ ZMapGFFVersion zMapGFFDumpVersionGet() ;
 gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out);
 gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
   ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
-gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, GIOChannel *file, GString *text_out, GError **error_out) ;
+gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence,
+  GIOChannel *file, GString *text_out, GError **error_out) ;
+gboolean zMapGFFDumpFeaturesets(ZMapFeatureAny, GHashTable *, GList*, ZMapSpan,
+  GIOChannel *, GError **) ;
 
 gboolean zMapWriteAttributeURL(ZMapFeature, GString *) ;
 gboolean zMapWriteAttributeName(ZMapFeature, GString *) ;

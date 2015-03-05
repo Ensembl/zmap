@@ -80,11 +80,33 @@ static const char *anon_source = "anon_source",
     *anon_source_ab = ".",
     *reserved_allowed = " ()+-:;@/" ;
 
-/* Functions to dump the header section of gff files */
+/*
+ * Some callbacks used for searching.
+ */
 static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file,
   ZMapGFFFormatData format_data, GError **error_out) ;
 static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark key, gpointer data,
   gpointer user_data, char **err_out) ;
+static ZMapFeatureContextExecuteStatus get_featuresets_from_ids_cb(GQuark key, gpointer data,
+  gpointer user_data, char **err_out) ;
+static void add_feature_to_list_cb(gpointer key, gpointer value, gpointer user_data) ;
+
+
+/*
+ * Data structures associated with searching; see comments with the related
+ * functions.
+ */
+typedef struct FeaturesetSearchStruct_
+  {
+    GList *results ;
+    GList *targets ;
+  } FeaturesetSearchStruct, *FeaturesetSearch ;
+
+typedef struct FeatureSearchStruct_
+  {
+    GList *results ;
+    ZMapSpan region_span ;
+  } FeatureSearchStruct, *FeatureSearch ;
 
 /* ZMapFeatureDumpFeatureFunc to dump gff. writes lines into gstring buffer... */
 static gboolean dump_gff_cb(ZMapFeatureAny feature_any, GHashTable *styles,
@@ -175,8 +197,85 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
   return result ;
 }
 
+
+
 /*
+ * Dumps a list of featuresets in a given region.
  *
+ * The featuresets to dump are passed in the GList* argument. If the region_span
+ * is NULL then use all features available, otherwise only output ones that overlap.
+ */
+gboolean zMapGFFDumpFeaturesets(ZMapFeatureAny feature_any, GHashTable *styles,
+  GList* featuresets, ZMapSpan region_span, GIOChannel *file, GError **error_out)
+{
+  gboolean result = FALSE ;
+  char *sequence = NULL ;
+  GList *list_pos = NULL ;
+
+  zMapReturnValIfFail(    feature_any
+                       && (feature_any->struct_type == ZMAPFEATURE_STRUCT_CONTEXT)
+                       && styles
+                       && featuresets
+                       && g_list_length(featuresets)
+                       && file,
+                          result ) ;
+
+  /*
+   * First search for the featuresets in the context that we wish to output.
+   */
+  FeaturesetSearch fs_data = g_new0(FeaturesetSearchStruct, 1) ;
+  fs_data->results = NULL ;
+  fs_data->targets = featuresets ;
+  zMapFeatureContextExecute(feature_any, ZMAPFEATURE_STRUCT_FEATURESET,
+                            get_featuresets_from_ids_cb, fs_data) ;
+
+  /*
+   * Now add all of the features from our hard-won search results to
+   * the features_list GList.
+   */
+  FeatureSearch f_data = g_new0(FeatureSearchStruct, 1 ) ;
+  f_data->results = NULL ;
+  f_data->region_span = region_span ;
+  if (fs_data->results && g_list_length(fs_data->results))
+    {
+      for (list_pos = fs_data->results; list_pos != NULL; list_pos = list_pos->next)
+        {
+          ZMapFeatureSet featureset = (ZMapFeatureSet) list_pos->data ;
+          const char *name = g_quark_to_string(featureset->unique_id) ; /* use this to check object names that were found */
+
+          g_hash_table_foreach(featureset->features, add_feature_to_list_cb, f_data);
+        }
+    }
+
+  int a = g_list_length(f_data->results) ;
+
+  if (!(result = zMapGFFDumpList(f_data->results, styles, sequence, file, NULL, error_out)) )
+    {
+      if (*error_out)
+        {
+          g_prefix_error(error_out, "Error in zMapGFFDumpFeaturesets() calling zMapGFFDumpList(); ") ;
+        }
+    }
+
+  /*
+   * Clear up on finish.
+   */
+  if (fs_data->results)
+    g_list_free(fs_data->results) ;
+  memset(fs_data, 0, sizeof(FeaturesetSearchStruct)) ;
+  g_free(fs_data) ;
+
+  if (f_data->results)
+    g_list_free(f_data->results) ;
+  memset(f_data, 0, sizeof(FeatureSearchStruct)) ;
+  g_free(f_data) ;
+
+  return result ;
+}
+
+
+/*
+ * Dump a list of features to file or string buffer.
  */
 gboolean zMapGFFDumpList(GList *dump_list,
                          GHashTable *styles,
@@ -204,8 +303,6 @@ gboolean zMapGFFDumpList(GList *dump_list,
       format_data->flags.over_write = FALSE ;
       if (!file && text_out)
         format_data->buffer = text_out ;
-      else
-        format_data = NULL ;
       result = dump_full_header(feature_any, file, format_data, error_out) ;
     }
 
@@ -279,6 +376,103 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any,
 
   return format_data->flags.status ;
 }
+
+/*
+ * This context execute callback descends the data structures. It uses the
+ * featureset ids to find pointers to the featuresets themselves. This is
+ * required if you want the features themselves (e.g. to list or output).
+ *
+ * Data required are in the FeaturesetSearchStruct.
+ *
+ * FeaturesetSearchStruct.targets     GList* of featureset->unique_id values
+ * FeaturesetSearchStruct.results     GList* of featureset pointer (if found)
+ */
+static ZMapFeatureContextExecuteStatus
+  get_featuresets_from_ids_cb(GQuark key, gpointer data,
+                              gpointer user_data, char **err_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny) data ;
+  FeaturesetSearch search_data = (FeaturesetSearch) user_data ;
+
+  if (!feature_any || !search_data || !search_data->targets)
+    return status ;
+
+  switch (feature_any->struct_type)
+    {
+      case ZMAPFEATURE_STRUCT_CONTEXT:
+      case ZMAPFEATURE_STRUCT_ALIGN:
+      case ZMAPFEATURE_STRUCT_BLOCK:
+        status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+        break;
+      case ZMAPFEATURE_STRUCT_FEATURESET:
+        {
+          ZMapFeatureSet featureset = (ZMapFeatureSet) feature_any ;
+          GList *l = NULL ;
+          gpointer id = GINT_TO_POINTER(featureset->unique_id) ;
+          for (l = search_data->targets; l != NULL; l = l->next)
+            {
+              if (id == l->data)
+                {
+                  /* const char *name = g_quark_to_string((GQuark)id) ; */
+                  search_data->results =
+                    g_list_prepend(search_data->results, (gpointer)featureset);
+                  break ;
+                }
+            }
+          status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+        }
+        break ;
+      case ZMAPFEATURE_STRUCT_FEATURE:
+      default:
+        status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
+        break;
+    } ;
+
+  return status ;
+}
+
+
+
+/*
+ * This is a callback used in the call of g_hash_foreach() on a featureset->features
+ * hash table. We take search data from an instance of FeatureSearchStruct; first
+ * check that we have a valid feature, check that the feature overlaps the ZMapSpan
+ * and then add the feature to the associated GList of results.
+ *
+ * FeatureSearchStruct.region_span      ZMapSpan; if valid check features against this
+ * FeatureSearchStruct.results          GList* of feature pointer (if any found)
+ */
+static void add_feature_to_list_cb(gpointer key, gpointer value, gpointer user_data)
+{
+  ZMapFeatureAny feature_any = NULL ;
+  ZMapFeature feature = NULL ;
+  ZMapSpan region_span = NULL ;
+  FeatureSearch f_data = NULL ;
+  gboolean include_feature = TRUE ;
+  if (!value || !user_data)
+    return ;
+
+  feature_any = (ZMapFeatureAny) value ;
+  f_data = (FeatureSearch) user_data ;
+  region_span = f_data->region_span ;
+
+  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      feature = (ZMapFeature) feature_any ;
+      if (region_span && region_span->x1 && region_span->x2)
+        {
+          if ((feature->x2 < region_span->x1) || (feature->x1 > region_span->x2))
+            include_feature = FALSE ;
+        }
+      if (include_feature)
+        {
+          f_data->results = g_list_prepend(f_data->results, (gpointer)feature_any) ;
+        }
+    }
+}
+
+
 
 static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark  key, gpointer data,
                                                               gpointer user_data, char **err_out)
