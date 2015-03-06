@@ -1033,7 +1033,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
             /* add the transcript to the evidence group */
             zmapWindowFocusAddItemType(menu_data->window->focus,
-                                       menu_data->item, menu_data->feature, WINDOW_FOCUS_GROUP_EVIDENCE) ;
+                                       menu_data->item, menu_data->feature, NULL, WINDOW_FOCUS_GROUP_EVIDENCE) ;
 
             /* Now call xremote to request the list of evidence features from otterlace. */
             highlight_data = g_new0(ZMapWindowHighlightDataStruct, 1) ;
@@ -2332,7 +2332,8 @@ static void copyPasteMenuCB(int menu_item_id, gpointer callback_data)
 
       if (menu_data->feature)
         {
-          clipboard_txt = zmapWindowMakeFeatureSelectionText(menu_data->window, &display_style, menu_data->feature) ;
+          clipboard_txt = zmapWindowMakeFeatureSelectionTextFromFeature(menu_data->window,
+                                                                        &display_style, menu_data->feature) ;
         }
       else
         {

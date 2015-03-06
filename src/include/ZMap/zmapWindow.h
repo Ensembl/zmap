@@ -148,6 +148,15 @@ typedef struct
 
 /* Selection/pasting of features, data returned to the focus callback routine and so on. */
 
+/* Feature info/coord display, selection, paste data. */
+
+/* Coord frame for coordinate display, exporting, pasting (coords are held internally in their
+ * natural frame). */
+typedef enum
+  {
+    ZMAPWINDOW_COORD_ONE_BASED,                             /* Convert coords to one-based. */
+    ZMAPWINDOW_COORD_NATURAL                                /* Leave coords as they are, e.g. chromosome. */
+  } ZMapWindowCoordFrame ;
 
 /* request a particular format for pasting of feature coords.... */
 typedef enum
@@ -163,8 +172,36 @@ typedef enum
     /* Show in universal browser chromsome coord format (chromosome and coords):
                                     "16:610422-615528"
     */
-    ZMAPWINDOW_PASTE_FORMAT_BROWSER
+    ZMAPWINDOW_PASTE_FORMAT_BROWSER,
+
+    /* As ZMAPWINDOW_PASTE_FORMAT_BROWSER but with a "CHR" prefix: "CHR16:610422-615528" */
+    ZMAPWINDOW_PASTE_FORMAT_BROWSER_CHR
   } ZMapWindowPasteStyleType ;
+
+
+/* Which part of feature should be pasted. */
+typedef enum
+  {
+    ZMAPWINDOW_PASTE_TYPE_SELECTED,                         /* paste whatever is selected (must == 0).  */
+    ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS,                      /* paste all subparts of feature. */
+    ZMAPWINDOW_PASTE_TYPE_SUBPART,                          /* paste single subpart clicked on. */
+    ZMAPWINDOW_PASTE_TYPE_EXTENT                            /* paste extent of feature. */
+  } ZMapWindowPasteFeatureType ;
+
+
+/* Use to specify how to paste, display, export features. */
+typedef struct ZMapWindowDisplayStyleStructName
+{
+  ZMapWindowCoordFrame coord_frame ;
+  ZMapWindowPasteStyleType paste_style ;
+  ZMapWindowPasteFeatureType paste_feature ;
+} ZMapWindowDisplayStyleStruct, *ZMapWindowDisplayStyle ;
+
+
+
+
+
+
 
 
 typedef enum {ZMAPWINDOW_SELECT_SINGLE, ZMAPWINDOW_SELECT_DOUBLE} ZMapWindowSelectType ;
@@ -188,8 +225,10 @@ typedef struct
                                                                features with the same name in the
                                                                same feature set. */
 
-  gboolean sub_part;                                        /* if selecting part of a feature w/
+  gboolean highlight_sub_part ;                             /* if selecting part of a feature w/
                                                                the control key */
+  ZMapFeatureSubPartSpan sub_part ;                         /* subpart to be highlighted. */
+
 
   ZMapFeatureDescStruct feature_desc ;                      /* Text descriptions of selected feature. */
 
@@ -438,25 +477,25 @@ typedef struct _ZMapWindowFocusStruct *ZMapWindowFocus ;
 
 typedef enum
 {
-      /* types of groups of features, used to index an array
-       * NOTE: these are in order of priority
-       */
-      WINDOW_FOCUS_GROUP_FOCUS = 0,
-      WINDOW_FOCUS_GROUP_EVIDENCE,
-      WINDOW_FOCUS_GROUP_TEXT,
+  /* types of groups of features, used to index an array
+   * NOTE: these are in order of priority
+   */
+  WINDOW_FOCUS_GROUP_FOCUS = 0,
+  WINDOW_FOCUS_GROUP_EVIDENCE,
+  WINDOW_FOCUS_GROUP_TEXT,
 
-      /* NOTE above = focus items, below = global colours see BITMASK and FOCUSSED below */
+  /* NOTE above = focus items, below = global colours see BITMASK and FOCUSSED below */
 
-        /* window focus has a cache of colours per window
-         * we can retrieve these by id which does note require out of scope data or headers
-         */
-      WINDOW_FOCUS_GROUP_MASKED,        /* use to store colours but not set as a focus type */
-      WINDOW_FOCUS_GROUP_FILTERED,
+  /* window focus has a cache of colours per window
+   * we can retrieve these by id which does note require out of scope data or headers
+   */
+  WINDOW_FOCUS_GROUP_MASKED,        /* use to store colours but not set as a focus type */
+  WINDOW_FOCUS_GROUP_FILTERED,
 
-/* NOTE this must be the first blurred one */
+  /* NOTE this must be the first blurred one */
 #define N_FOCUS_GROUPS_FOCUS WINDOW_FOCUS_GROUP_MASKED
 
-      N_FOCUS_GROUPS
+  N_FOCUS_GROUPS
 } ZMapWindowFocusType;
 
 
@@ -619,8 +658,15 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature) ;
 void zMapWindowHighlightFeature(ZMapWindow window,
                                 ZMapFeature feature, gboolean highlight_same_names, gboolean replace);
 gboolean zMapWindowUnhighlightFeature(ZMapWindow window, ZMapFeature feature) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
                                gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
+                               gboolean replace_highlight_item, gboolean highlight_same_names,
+                               ZMapFeatureSubPartSpan sub_part) ;
+
 void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select);
 
 void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int start, int end, int flanking);
@@ -646,11 +692,9 @@ gboolean zMapWindowXRemoteRegister(ZMapWindow window) ;
 char *zMapWindowRemoteReceiveAccepts(ZMapWindow window);
 void zMapWindowSetupXRemote(ZMapWindow window, GtkWidget *widget);
 
-
-char *zMapWindowGetSelectionText(ZMapWindow window) ;
+char *zMapWindowGetSelectionText(ZMapWindow window, ZMapWindowDisplayStyle display_style) ;
 
 ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNotebook parent);
-
 
 int zMapWindowFocusCacheGetSelectedColours(int id_flags,gulong *fill,gulong *outline);
 

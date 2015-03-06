@@ -31,6 +31,7 @@
 
 #include <ZMap/zmap.h>
 
+/* why is this defined here but not elsewhere ? */
 #define _ISOC99_SOURCE
 
 #include <sys/wait.h>

@@ -277,6 +277,8 @@ typedef struct ZMapWindowFeaturesetItemStructType
 
   gboolean link_sideways ;	/* has complex features */
   gboolean linked_sideways ;	/* that have been constructed */
+
+  /* OH GOSH....THIS DOESN'T LOOK GOOD..... */
   gboolean highlight_sideways ;/* temp bodge to allow old code to drive this */
   /* transcripts do alignments don't they get highlit by calling code */
 
