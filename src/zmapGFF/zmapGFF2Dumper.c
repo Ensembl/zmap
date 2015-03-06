@@ -70,6 +70,8 @@ typedef struct ZMapGFFFormatDataStruct_
     } flags ;
 
 } ZMapGFFFormatDataStruct ;
+static ZMapGFFFormatData createGFFFormatData() ;
+static void deleteGFFFormatData(ZMapGFFFormatData *) ;
 
 /*
  * A hack for sources that are input as '.',
@@ -101,19 +103,25 @@ typedef struct FeaturesetSearchStruct_
     GList *results ;
     GList *targets ;
   } FeaturesetSearchStruct, *FeaturesetSearch ;
+static FeaturesetSearch createFeaturesetSearch() ;
+static void deleteFeaturesetSearch(FeaturesetSearch *) ;
 
 typedef struct FeatureSearchStruct_
   {
     GList *results ;
     ZMapSpan region_span ;
   } FeatureSearchStruct, *FeatureSearch ;
+static FeatureSearch createFeatureSearch() ;
+static void deleteFeatureSearch(FeatureSearch *) ;
 
-/* ZMapFeatureDumpFeatureFunc to dump gff. writes lines into gstring buffer... */
+
+/*
+ * ZMapFeatureDumpFeatureFunc to dump gff. Writes lines into gstring buffer.
+ *
+ */
 static gboolean dump_gff_cb(ZMapFeatureAny feature_any, GHashTable *styles,
   GString *gff_string,  GError **error, gpointer user_data);
 
-static void deleteGFFFormatData(ZMapGFFFormatData *) ;
-static ZMapGFFFormatData createGFFFormatData() ;
 
 /*
  * Public interface function to set the version of GFF to output.
@@ -202,15 +210,19 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
 /*
  * Dumps a list of featuresets in a given region.
  *
- * The featuresets to dump are passed in the GList* argument. If the region_span
+ * The featuresets to dump are passed in the GList* argument which must contain
+ * values of the featureset->unique_id. If the region_span
  * is NULL then use all features available, otherwise only output ones that overlap.
  */
-gboolean zMapGFFDumpFeaturesets(ZMapFeatureAny feature_any, GHashTable *styles,
+gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny feature_any, GHashTable *styles,
   GList* featuresets, ZMapSpan region_span, GIOChannel *file, GError **error_out)
 {
   gboolean result = FALSE ;
   char *sequence = NULL ;
   GList *list_pos = NULL ;
+  FeaturesetSearch fs_data = NULL ;
+  FeatureSearch f_data = NULL ;
+  ZMapFeatureSet featureset = NULL ;
 
   zMapReturnValIfFail(    feature_any
                        && (feature_any->struct_type == ZMAPFEATURE_STRUCT_CONTEXT)
@@ -222,53 +234,74 @@ gboolean zMapGFFDumpFeaturesets(ZMapFeatureAny feature_any, GHashTable *styles,
 
   /*
    * First search for the featuresets in the context that we wish to output.
+   * This section will set result = TRUE if one or more featuresets were found.
    */
-  FeaturesetSearch fs_data = g_new0(FeaturesetSearchStruct, 1) ;
-  fs_data->results = NULL ;
-  fs_data->targets = featuresets ;
-  zMapFeatureContextExecute(feature_any, ZMAPFEATURE_STRUCT_FEATURESET,
-                            get_featuresets_from_ids_cb, fs_data) ;
-
-  /*
-   * Now add all of the features from our hard-won search results to
-   * the features_list GList.
-   */
-  FeatureSearch f_data = g_new0(FeatureSearchStruct, 1 ) ;
-  f_data->results = NULL ;
-  f_data->region_span = region_span ;
-  if (fs_data->results && g_list_length(fs_data->results))
+  fs_data = createFeaturesetSearch() ;
+  if (fs_data)
     {
-      for (list_pos = fs_data->results; list_pos != NULL; list_pos = list_pos->next)
+      fs_data->targets = featuresets ;
+      zMapFeatureContextExecute(feature_any, ZMAPFEATURE_STRUCT_FEATURESET,
+                                get_featuresets_from_ids_cb, fs_data) ;
+      if (fs_data->results && g_list_length(fs_data->results))
         {
-          ZMapFeatureSet featureset = (ZMapFeatureSet) list_pos->data ;
-          const char *name = g_quark_to_string(featureset->unique_id) ; /* use this to check object names that were found */
-
-          g_hash_table_foreach(featureset->features, add_feature_to_list_cb, f_data);
+          result = TRUE ;
         }
     }
 
-  int a = g_list_length(f_data->results) ;
-
-  if (!(result = zMapGFFDumpList(f_data->results, styles, sequence, file, NULL, error_out)) )
+  if (!result)
     {
-      if (*error_out)
+      *error_out = g_error_new(g_quark_from_string("ERROR in zMapGFFDumpFeatureSets(); "),
+                                   (gint)0, " no featuresets found.") ;
+    }
+
+  /*
+   * Now add all of the features from our hard-won search results to
+   * the features_list GList. This section will set result = FALSE if
+   * no features were found.
+   */
+  if (result)
+    {
+      f_data = createFeatureSearch() ;
+      if (f_data)
         {
-          g_prefix_error(error_out, "Error in zMapGFFDumpFeaturesets() calling zMapGFFDumpList(); ") ;
+          f_data->region_span = region_span ;
+          for (list_pos = fs_data->results; list_pos != NULL; list_pos = list_pos->next)
+            {
+              featureset = (ZMapFeatureSet) list_pos->data ;
+              g_hash_table_foreach(featureset->features, add_feature_to_list_cb, f_data);
+            }
+
+          if (!f_data->results || !g_list_length(f_data->results))
+            result = FALSE ;
+        }
+    }
+
+  if (!result)
+    {
+      *error_out = g_error_new(g_quark_from_string("ERROR in zMapGFFDumpFeatureSets(); "),
+                                   (gint)0, " no features found.") ;
+    }
+
+  /*
+   * Now dump the features to file.
+   */
+  if (result)
+    {
+      result = zMapGFFDumpList(f_data->results, styles, sequence, file, NULL, error_out) ;
+      if (!result)
+        {
+          if (*error_out)
+            {
+              g_prefix_error(error_out, "Error in zMapGFFDumpFeatureSets() calling zMapGFFDumpList(); ") ;
+            }
         }
     }
 
   /*
    * Clear up on finish.
    */
-  if (fs_data->results)
-    g_list_free(fs_data->results) ;
-  memset(fs_data, 0, sizeof(FeaturesetSearchStruct)) ;
-  g_free(fs_data) ;
-
-  if (f_data->results)
-    g_list_free(f_data->results) ;
-  memset(f_data, 0, sizeof(FeatureSearchStruct)) ;
-  g_free(f_data) ;
+  deleteFeaturesetSearch(&fs_data) ;
+  deleteFeatureSearch(&f_data) ;
 
   return result ;
 }
@@ -1669,6 +1702,72 @@ static void deleteGFFFormatData(ZMapGFFFormatData *p_format_data)
 
   return ;
 }
+
+
+/*
+ * Function to create the FeaturesetSearch object.
+ */
+static FeaturesetSearch createFeaturesetSearch()
+{
+  FeaturesetSearch result = NULL ;
+  result = (FeaturesetSearch) g_new0(FeaturesetSearchStruct, 1) ;
+  if (result)
+    {
+      result->results = NULL ;
+      result->targets = NULL ;
+    }
+  return result ;
+}
+
+/*
+ * This object only has ownership of the results GList.
+ */
+static void deleteFeaturesetSearch(FeaturesetSearch *p_featureset_search)
+{
+  if (!p_featureset_search || !*p_featureset_search)
+    return ;
+  FeaturesetSearch featureset_search = *p_featureset_search ;
+  if (featureset_search->results)
+    {
+      g_list_free(featureset_search->results) ;
+    }
+  memset(featureset_search, 0, sizeof(FeaturesetSearchStruct)) ;
+  g_free(featureset_search) ;
+  *p_featureset_search = NULL ;
+}
+
+/*
+ * Function to create the FeatureSearch object.
+ */
+static FeatureSearch createFeatureSearch()
+{
+  FeatureSearch result = NULL ;
+  result = (FeatureSearch) g_new0(FeatureSearchStruct, 1) ;
+  if (result)
+    {
+      result->region_span = NULL ;
+      result->results = NULL ;
+    }
+  return result ;
+}
+
+/*
+ * Note that this object only has ownership of the results GList.
+ */
+static void deleteFeatureSearch(FeatureSearch *p_feature_search)
+{
+  if (!p_feature_search || !*p_feature_search)
+    return ;
+  FeatureSearch feature_search = *p_feature_search ;
+  if (feature_search->results)
+    {
+      g_list_free(feature_search->results) ;
+    }
+  memset(feature_search, 0, sizeof(FeatureSearchStruct)) ;
+  g_free(feature_search) ;
+  *p_feature_search = NULL ;
+}
+
 
 /*
  * Function to return the Name attribute.

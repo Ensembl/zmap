@@ -65,7 +65,7 @@ typedef enum
 /* Default gff version parsed. */
 enum
 {
-  GFF_DEFAULT_VERSION = ZMAPGFF_VERSION_2
+  GFF_DEFAULT_VERSION = ZMAPGFF_VERSION_3
 } ;
 
 /*
@@ -196,7 +196,7 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
   ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
 gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence,
   GIOChannel *file, GString *text_out, GError **error_out) ;
-gboolean zMapGFFDumpFeaturesets(ZMapFeatureAny, GHashTable *, GList*, ZMapSpan,
+gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny, GHashTable *, GList*, ZMapSpan,
   GIOChannel *, GError **) ;
 
 gboolean zMapWriteAttributeURL(ZMapFeature, GString *) ;
