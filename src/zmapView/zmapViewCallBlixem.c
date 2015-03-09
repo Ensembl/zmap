@@ -465,7 +465,10 @@ gboolean zmapViewCallBlixem(ZMapView view,
 
   if (!status)
     {
-      zMapShowMsg(ZMAP_MSG_WARNING, err_msg) ;
+      if (err_msg)
+        zMapWarning("%s", err_msg) ;
+      else
+        zMapWarning("%s", "Error starting blixem") ;
     }
   else
     {
@@ -1129,7 +1132,6 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
       status = checkBlixArgNum(count) ;
     }
 
-  /* One of these two possibilities _must_ be given. */
   if (status && blixem_data->config_file )
     {
       paramString[count] = g_strdup("-c");
@@ -1156,10 +1158,6 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
           ++count ;
           status = checkBlixArgNum(count) ;
         }
-    }
-  else
-    {
-      status = FALSE ;
     }
 
   if (status && blixem_data->view->multi_screen)

@@ -1210,9 +1210,17 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
   va_list args ;
   char *msg_string ;
 
-  va_start(args, format) ;
-  msg_string = g_strdup_vprintf(format, args) ;
-  va_end(args) ;
+  if (format)
+    {
+      va_start(args, format) ;
+      msg_string = g_strdup_vprintf(format, args) ;
+      va_end(args) ;
+    }
+  else
+    {
+      zMapWarnIfReached() ;
+      msg_string = g_strdup("Unspecified error") ;
+    }
 
   /* print the message to stdout/stderr */
   printMessage(msg_type, msg_string);
