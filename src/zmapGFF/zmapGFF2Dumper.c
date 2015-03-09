@@ -919,7 +919,8 @@ gboolean zMapGFFFormatGap2GFF(GString *attribute, GArray *gaps, ZMapStrand q_str
 
               if (next_match > curr_match + 1)
                 {
-                  g_string_append_printf(attribute, "I%d ", (next_match - curr_match) - 1) ;
+                  coord = calcGapLength(match_seq_type, curr_match, next_match) ;
+                  g_string_append_printf(attribute, "I%d ", coord) ;
                 }
               else if (next_ref > curr_ref + 1)
                 {
