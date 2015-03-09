@@ -65,7 +65,7 @@ typedef enum
 /* Default gff version parsed. */
 enum
 {
-  GFF_DEFAULT_VERSION = ZMAPGFF_VERSION_3
+  GFF_DEFAULT_VERSION = ZMAPGFF_VERSION_2
 } ;
 
 /*

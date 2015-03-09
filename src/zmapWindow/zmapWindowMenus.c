@@ -3583,62 +3583,62 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
   if (result )
     {
 
-  /*
-   * Revcomp if required.
-   */
-  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+      /*
+       * Revcomp if required.
+      */
+      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+        zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
 
-  /*
-   * Do the filenames/path business and create the IOChannel.
-   * If a filepath is passed in, then we use that, otherwise must
-   * prompt for one.
-   */
-  if (filepath_inout && *filepath_inout)
-    filepath = g_strdup(*filepath_inout) ;
+      /*
+       * Do the filenames/path business and create the IOChannel.
+       * If a filepath is passed in, then we use that, otherwise must
+       * prompt for one.
+       */
+      if (filepath_inout && *filepath_inout)
+        filepath = g_strdup(*filepath_inout) ;
 
-  if (!filepath)
-    filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel), "Feature Export filename ?", NULL, "gff") ;
+      if (!filepath)
+        filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel), "Feature Export filename ?", NULL, "gff") ;
 
-  if (    filepath
-       && (file = g_io_channel_new_file(filepath, "w", error)))
-    {
-      result = TRUE ;
-    }
-
-  /*
-   * Now we finally get around to doing some output.
-   */
-  if (result && file)
-    {
-      result = zMapGFFDumpFeatureSets((ZMapFeatureAny)window->feature_context,
-                                      styles, featuresets, &mark_region, file, error) ;
-    }
-
-  /*
-   * Shutdown IO channel. Must be done whether the call to dump data
-   * succeeded or not.
-   */
-  if (file)
-    {
-      GError *tmp_error = NULL ;
-      GIOStatus status ;
-      if ((status = g_io_channel_shutdown(file, TRUE, &tmp_error)) != G_IO_STATUS_NORMAL)
+      if (    filepath
+           && (file = g_io_channel_new_file(filepath, "w", error)))
         {
-          if (tmp_error)
+          result = TRUE ;
+        }
+
+      /*
+       * Now we finally get around to doing some output.
+       */
+      if (result && file)
+        {
+          result = zMapGFFDumpFeatureSets((ZMapFeatureAny)window->feature_context,
+                                          styles, featuresets, &mark_region, file, error) ;
+        }
+
+      /*
+       * Shutdown IO channel. Must be done whether the call to dump data
+       * succeeded or not.
+       */
+      if (file)
+        {
+          GError *tmp_error = NULL ;
+          GIOStatus status ;
+          if ((status = g_io_channel_shutdown(file, TRUE, &tmp_error)) != G_IO_STATUS_NORMAL)
             {
-              zMapShowMsg(ZMAP_MSG_WARNING, "%s", tmp_error->message) ;
-              g_error_free(tmp_error) ;
+              if (tmp_error)
+                {
+                  zMapShowMsg(ZMAP_MSG_WARNING, "%s", tmp_error->message) ;
+                  g_error_free(tmp_error) ;
+                }
             }
         }
-    }
 
-  /*
-   * Revcomp if required. Must be done irrespective of whether anything above
-   * succeeded.
-   */
-  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+      /*
+       * Revcomp if required. Must be done irrespective of whether anything above
+       * succeeded.
+       */
+      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+        zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
 
     }
 
