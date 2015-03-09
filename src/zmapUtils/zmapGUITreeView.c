@@ -1256,9 +1256,9 @@ static void cell_edited_cb(GtkCellRendererText *renderer,
                            gpointer user_data)
 {
   CellEditedCBData edited_data = (CellEditedCBData)user_data ;
-  
+
   zMapReturnIfFail(edited_data && edited_data->zmap_tv) ;
-  
+
   ZMapGUITreeView zmap_tv = edited_data->zmap_tv ;
   GtkTreeView *tree_view = zMapGUITreeViewGetView(zmap_tv) ;
   GtkTreeModel *tree_model = zMapGUITreeViewGetModel(zmap_tv) ;
@@ -1290,7 +1290,7 @@ static void cell_edited_cb(GtkCellRendererText *renderer,
       GList *values_list = (GList*)g_list_nth_data(zmap_tv->tag_values_lists, row) ;
       if (values_list)
         tag_value = g_list_nth(values_list, tag_values_index) ;
-  
+
       /* Update the column_values */
       column_type  = zmap_tv->column_types[index];
       column_value = &(zmap_tv->column_values[index]);

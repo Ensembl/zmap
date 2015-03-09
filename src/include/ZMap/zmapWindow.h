@@ -80,7 +80,7 @@ typedef enum
 
 /* These flags are stored in an array in the ZMapView but the array is also passed to the window
  * level so they are accessible there */
-typedef enum 
+typedef enum
   {
     ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
     ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, /* True if filtered columns should be highlighted */
@@ -89,7 +89,7 @@ typedef enum
                                           * that have not been "saved" to a real featureset */
     ZMAPFLAG_ENABLE_ANNOTATION,          /* True if we should enable editing via the annotation column */
     ZMAPFLAG_ENABLE_ANNOTATION_INIT,     /* False until the enable-annotation flag has been initialised */
-    
+
     ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
   } ZMapFlag;
 
@@ -272,14 +272,14 @@ typedef struct
  *
  * Data returned by the "command" callback, note all command structs must start with the
  * CommandAny fields.
- * 
+ *
  * THIS NEEDS REDOING SO THE CALLER OF WINDOW KNOWS NOTHING ABOUT THE ACTUAL FUNCTION
  * TO BE CALLED OR ANYTHING ABOUT THE ARGS, IT NEEDS GENERALISING....
- * 
+ *
  * THERE SHOULD BE A SINGLE STRUCT WITH A CALLBACK AND A USER POINTER AND THAT'S IT.
- * 
+ *
  * ALL OF THESE STRUCTS SHOULD BE MOVED INTERNALLY TO ZMAPWINDOW AND BE USED THERE.
- * 
+ *
  */
 
 typedef enum
@@ -707,7 +707,11 @@ void zMapWindowUpdateColumnBackground(ZMapWindow window, ZMapFeatureSet feature_
 
 GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item) ;
 
-gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_region, ZMapFeatureAny feature_in, char **filepath_inout, GError **error) ;
+
+gboolean zMapWindowExportFeatureSets(ZMapWindow window,
+  GList* featuresets, gboolean marked_region, char **filepath_inout, GError **error) ;
+gboolean zMapWindowExportFeatures(ZMapWindow window,
+  gboolean marked_region, ZMapFeatureAny feature_in, char **filepath_inout, GError **error) ;
 gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GError **error) ;
 gboolean zMapWindowExportContext(ZMapWindow window, GError **error) ;
 

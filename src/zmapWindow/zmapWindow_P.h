@@ -51,7 +51,7 @@
 #define ZMAP_CANVAS_INIT_SIZE (100.0)
 
 
-#define FEATURE_SIZE_REQUEST	0	// see item factory
+#define FEATURE_SIZE_REQUEST	0	/* see item factory */
 #define USE_FACTORY	0
 
 /*
@@ -1267,7 +1267,7 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
 
 void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double y1, double y2) ;
 void zmapWindowSetPixelxy(ZMapWindow window, double pixels_per_unit_x, double pixels_per_unit_y) ;
-gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas, 
+gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas,
                                        int *layout_win_width, int *layout_win_height,
                                        int *layout_binwin_width, int *layout_binwin_height) ;
 
@@ -1453,9 +1453,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomolFeature(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuTranscriptTools(int *start_index_inout,
                                                   ZMapGUIMenuItemCallbackFunc callback_func,
                                                   gpointer callback_data);
-ZMapGUIMenuItem zmapWindowMakeMenuMarkExportOps(int *start_index_inout,
-						ZMapGUIMenuItemCallbackFunc callback_func,
-						gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 					     ZMapGUIMenuItemCallbackFunc callback_func,
 					     gpointer callback_data) ;
@@ -1516,7 +1513,7 @@ void zmapWindowBusyInternal(ZMapWindow window,
                           ? (WINDOW)->window_busy_cursor        \
                           : (WINDOW)->normal_cursor),           \
                          __FILE__,                              \
-                         (char *)__PRETTY_FUNCTION__)                    
+                         (char *)__PRETTY_FUNCTION__)
 #else
 #define zmapWindowBusy(WINDOW, BUSY)                            \
   zmapWindowBusyInternal((WINDOW),                              \

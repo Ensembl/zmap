@@ -619,7 +619,7 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
   ID2Canvas id2c = NULL;
 
   /* Required for minimum query. */
-  if (!feature_context_to_item) 
+  if (!feature_context_to_item)
     return id2c;
 
   /* Cascade down through the hashes until we reach the point the caller wants to stop at. */
@@ -790,7 +790,7 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 
   /* Required for minimum query. */
   if (!feature_context_to_item || !align_id)
-    return result ; 
+    return result ;
 
   align_search.search_quark = align_id ;
   if (align_id && isRegExp(align_id))
@@ -834,6 +834,10 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
           frame_id = g_quark_from_string(frame_spec) ;
         }
 
+      /*
+       * (sm23) As far as I can tell, this section is picking out the correct
+       * featureset names from the traversal.
+       */
       zMap_g_hash_table_iter_init(&iter,window->context_map->featureset_2_column);
       while(zMap_g_hash_table_iter_next(&iter,&key, &value))
         {
@@ -886,6 +890,7 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
                 if (strand_id == strand_reverse || strand_id == strand_both)
                   {
                     reverse_set_id = makeSetIDFromStr(featureset_id, ZMAPSTRAND_REVERSE, frame_id) ;
+                    const char * n2 = g_quark_to_string(reverse_set_id) ;
 
                     reverse_set_search.search_quark = reverse_set_id ;
 
@@ -944,6 +949,7 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 
   /* build the search list (terminal stop is needed to halt the search if none of the given
    * parameters is a stop). */
+  int a = g_list_length(result) ;
   if (!column_id
       || (strand_id == strand_none || strand_id == strand_forward || strand_id == strand_both))
     {
@@ -957,6 +963,7 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 
       /* Now do the recursive search */
       doHashSet(feature_context_to_item, search, &result) ;
+      a = g_list_length(result) ;
 
       g_list_free(search) ;
       search = NULL ;
@@ -1206,7 +1213,7 @@ void zmapWindowFToISetSearchDestroy(ZMapWindowFToISetSearchData search_data)
  * shows how to parse the list returned by that function. */
 void zmapWindowFToIPrintList(GList *item_list)
 {
-  if (!item_list) 
+  if (!item_list)
     return ;
 
   g_list_foreach(item_list, printGlist, NULL) ;
@@ -1355,7 +1362,7 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_ino
 
   /* I think this can't happen, we should stop recursing _before_ the current search becomes
    * stop. */
-  if (curr_search_id == stop) 
+  if (curr_search_id == stop)
     return ;
 
 #if MH17_SEARCH_DEBUG
@@ -1441,6 +1448,7 @@ printf("do hash set list %s ,reg = %d\n",g_quark_to_string(curr_search->search_q
     }
 
   *results_inout = results ;
+
 #if MH17_SEARCH_DEBUG
 printf("do_hash_set returns %d features\n",g_list_length(results));
 #endif

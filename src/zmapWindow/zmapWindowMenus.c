@@ -80,13 +80,8 @@
 #define FEATURE_PEPTIDE_EXPORT_STR FEATURE_PEPTIDE_STR
 #define FEATURE_PEPTIDE_SHOW_STR   FEATURE_PEPTIDE_STR
 
-
 #define CONTEXT_STR                "All Features"
-#define CONTEXT_EXPORT_STR         CONTEXT_STR
-
 #define MARK_STR                   "Marked Features"
-#define MARK_EXPORT_STR            MARK_STR
-
 #define DEVELOPER_STR              "Developer"
 
 
@@ -139,22 +134,19 @@
 enum
   {
     BLIX_INVALID,
-    BLIX_NONE,                /* Blixem on column with no aligns. */
-    BLIX_SELECTED,        /* Blixem all matches for selected features in this column. */
-    BLIX_EXPANDED,        /* selected features expanded into hidden underlying data */
-    BLIX_SET,                /* Blixem all matches for all features in this column. */
-    BLIX_MULTI_SETS,        /* Blixem all matches for all features in the list of columns in the blixem config file. */
-    BLIX_SEQ_COVERAGE,        /* Blixem a coverage column: find the real data column */
-//    BLIX_SEQ_SET                /* Blixem a paried read featureset */
+    BLIX_NONE,                              /* Blixem on column with no aligns. */
+    BLIX_SELECTED,                          /* Blixem all matches for selected features in this column. */
+    BLIX_EXPANDED,                          /* selected features expanded into hidden underlying data */
+    BLIX_SET,                               /* Blixem all matches for all features in this column. */
+    BLIX_MULTI_SETS,                        /* Blixem all matches for all features in the list of columns in the blixem config file. */
+    BLIX_SEQ_COVERAGE,                      /* Blixem a coverage column: find the real data column */
+    /*BLIX_SEQ_SET */                         /* Blixem a paired read featureset */
   } ;
 
 #define BLIX_SEQ                10000       /* Blixem short reads data base menu index */
 #define REQUEST_SELECTED 20000        /* data related to selected featureset in column */
 #define REQUEST_ALL_SEQ 20001                /* all data related to coverage featuresets in column */
 #define REQUEST_SEQ        20002                /* request SR data from mark from menu */
-    /* MH17 NOTE BLIX_SEQ etc is a range of values */
-    /* this is a temporary implementation till we can blixem a short reads column */
-    /* we assume that we have less than 10k datasets */
 
 
 /* Choose which way a transcripts dna is exported... */
@@ -219,8 +211,12 @@ enum
 /* Developer menu ops. */
 enum
   {
-    DEVELOPER_FEATURE_ONLY = 1,  DEVELOPER_FEATUREITEM_FEATURE, DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE,
-    DEVELOPER_PRINT_STYLE, DEVELOPER_PRINT_CANVAS, DEVELOPER_STATS
+    DEVELOPER_FEATURE_ONLY = 1,
+    DEVELOPER_FEATUREITEM_FEATURE,
+    DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE,
+    DEVELOPER_PRINT_STYLE,
+    DEVELOPER_PRINT_CANVAS,
+    DEVELOPER_STATS
   } ;
 
 
@@ -393,8 +389,11 @@ static void offsetTextAttr(gpointer data, gpointer user_data) ;
 static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window)
 {
   ZMapWindowContainerFeatureSet scratch_container = NULL ;
+  zMapReturnValIfFail(window, scratch_container) ;
 
   ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
+  zMapReturnValIfFail(scratch_featureset->parent && scratch_featureset->parent->parent,
+                      scratch_container) ;
 
   if (scratch_featureset)
     {
@@ -420,7 +419,11 @@ static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow wi
  * In the end this should be merged with column menu code so one function does both...
  */
 
-/* Build the menu for a feature item. */
+/*
+ * Build the menu for a feature item.
+ *
+ * Select/highlight a feature and then right click on it.
+ */
 void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
 {
   ZMapWindowContainerGroup column_group =  NULL ;
@@ -429,21 +432,20 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
       {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
-  char *menu_title ;
+  char *menu_title = NULL ;
   GList *menu_sets = NULL ;
-  ItemMenuCBData menu_data ;
-  ZMapFeature feature ;
-  ZMapFeatureTypeStyle style ;
-  ZMapFeatureSet feature_set;
-  ZMapWindowContainerFeatureSet container_set;
-  ZMapGUIMenuItem seq_menus ;
+  ItemMenuCBData menu_data = NULL ;
+  ZMapFeature feature = NULL ;
+  ZMapFeatureTypeStyle style = NULL ;
+  ZMapFeatureSet feature_set = NULL ;
+  ZMapWindowContainerFeatureSet container_set = NULL ;
+  ZMapGUIMenuItem seq_menus = NULL ;
 
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
    * from the canvas item. */
   feature = zMapWindowCanvasItemGetFeature(item);
-  if (!feature)
-    return ;
+  zMapReturnIfFail(window && feature && button_event) ;
 
 
   style = *feature->style;
@@ -542,7 +544,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
                             zmapWindowMakeMenuBump(NULL, NULL, menu_data,
                                                    zmapWindowContainerFeatureSetGetBumpMode(container_set))) ;
 
-  {
+    {
         GQuark parent_id = 0;
         ZMapFeatureTypeStyle parent = NULL;
 
@@ -558,14 +560,13 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
          */
         if(window->edit_styles || style->is_default || (parent && parent->is_default))
                 menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuStyle(NULL, NULL, menu_data, style, feature->mode));
-  }
+    }
 
   /* list all short reads data, temp access till we get wiggle plots running */
   if ((seq_menus = zmapWindowMakeMenuRequestBAM(NULL, NULL, menu_data)))
     menu_sets = g_list_append(menu_sets, seq_menus) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
-
 
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuSearchListOps(NULL, NULL, menu_data)) ;
 
@@ -588,9 +589,6 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuExportOps(NULL, NULL, menu_data)) ;
 
-  if (zmapWindowMarkIsSet(window->mark))
-    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuMarkExportOps(NULL, NULL, menu_data));
-
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
   g_free(menu_title) ;
@@ -599,7 +597,11 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 }
 
 
-/* Build the background menu for a column. */
+/*
+ * Build the background menu for a column.
+ *
+ * Select a column (but not a feature) and then right-click.
+ */
 void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
                         FooCanvasItem *item,
                         ZMapWindowContainerFeatureSet container_set,
@@ -610,99 +612,102 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
       {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
-  char *menu_title ;
+  char *menu_title = NULL ;
   GList *menu_sets = NULL ;
-  ItemMenuCBData cbdata ;
-  ZMapFeature feature;
-  ZMapFeatureSet feature_set ;
-  ZMapGUIMenuItem seq_menus ;
+  ItemMenuCBData cbdata = NULL ;
+  ZMapFeature feature = NULL ;
+  ZMapFeatureSet feature_set = NULL ;
+  ZMapGUIMenuItem seq_menus = NULL ;
 
+  zMapReturnIfFail(window && button_event && container_set) ;
 
   menu_title = (char *) g_quark_to_string(container_set->original_id);
 
   feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set) ;
 
-  cbdata = g_new0(ItemMenuCBDataStruct, 1) ;
-  cbdata->x = button_event->x ;
-  cbdata->y = button_event->y ;
-  cbdata->item_cb = FALSE ;
-  cbdata->window = window ;
-  cbdata->item = item ;
-  cbdata->feature_set = feature_set ;
-  cbdata->container_set = container_set;
-  cbdata->context_map = window->context_map ;
-
-  /* Make up the menu. */
-  if (zMapUtilsUserIsDeveloper())
+  if (feature_set)
     {
-      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDeveloperOps(NULL, NULL, cbdata)) ;
+
+      cbdata = g_new0(ItemMenuCBDataStruct, 1) ;
+      cbdata->x = button_event->x ;
+      cbdata->y = button_event->y ;
+      cbdata->item_cb = FALSE ;
+      cbdata->window = window ;
+      cbdata->item = item ;
+      cbdata->feature_set = feature_set ;
+      cbdata->container_set = container_set;
+      cbdata->context_map = window->context_map ;
+
+      /* Make up the menu. */
+      if (zMapUtilsUserIsDeveloper())
+        {
+          menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDeveloperOps(NULL, NULL, cbdata)) ;
+
+          menu_sets = g_list_append(menu_sets, separator) ;
+        }
+
+      /* Quite a big hack actually, we judge feature type and protein/dna on the first feature
+       * we find in the column..... */
+      if ((feature = zMap_g_hash_table_nth(feature_set->features, 0)))
+        {
+          if (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT)
+            {
+              menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, cbdata)) ;
+            }
+          else if (zMapStyleIsPfetchable(*feature->style))
+            {
+              menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixColCommon(NULL, NULL, cbdata)) ;
+
+              if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+                {
+                  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomol(NULL, NULL, cbdata)) ;
+                }
+              else
+                {
+                  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
+                  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
+                }
+            }
+          else if (zMapStyleBlixemType(*feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
+            {
+              menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
+            }
+
+          if ((seq_menus = zmapWindowMakeMenuBlixemBAM(NULL, NULL, cbdata)))
+            menu_sets = g_list_append(menu_sets, seq_menus) ;
+        }
+
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuFeatureOps(NULL, NULL, cbdata)) ;
+      menu_sets = g_list_append(menu_sets, separator) ;
+
+      /* Scratch column ops */
+      ZMapWindowContainerFeatureSet scratch_container = getScratchContainerFeatureset(window) ;
+
+      if (scratch_container &&
+          (scratch_container->display_state == ZMAPSTYLE_COLDISPLAY_SHOW ||
+           scratch_container->display_state == ZMAPSTYLE_COLDISPLAY_SHOW))
+        {
+          menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuScratchOps(NULL, NULL, cbdata)) ;
+          menu_sets = g_list_append(menu_sets, separator) ;
+        }
+
+      menu_sets
+        = g_list_append(menu_sets,
+                        zmapWindowMakeMenuBump(NULL, NULL, cbdata,
+                                               zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)item))) ;
+
+      if ((seq_menus = zmapWindowMakeMenuRequestBAM(NULL, NULL, cbdata)))
+        menu_sets = g_list_append(menu_sets, seq_menus);
 
       menu_sets = g_list_append(menu_sets, separator) ;
+
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuSearchListOps(NULL, NULL, cbdata)) ;
+
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuExportOps(NULL, NULL, cbdata)) ;
+
+      zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
+
     }
-
-  /* Quite a big hack actually, we judge feature type and protein/dna on the first feature
-   * we find in the column..... */
-  if ((feature = zMap_g_hash_table_nth(feature_set->features, 0)))
-    {
-      if (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT)
-        {
-          menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, cbdata)) ;
-        }
-      else if (zMapStyleIsPfetchable(*feature->style))
-        {
-          menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixColCommon(NULL, NULL, cbdata)) ;
-
-          if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
-            {
-              menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomol(NULL, NULL, cbdata)) ;
-            }
-          else
-            {
-              menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
-              menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
-            }
-        }
-      else if (zMapStyleBlixemType(*feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
-        {
-          menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
-        }
-
-      if ((seq_menus = zmapWindowMakeMenuBlixemBAM(NULL, NULL, cbdata)))
-        menu_sets = g_list_append(menu_sets, seq_menus) ;
-    }
-
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuFeatureOps(NULL, NULL, cbdata)) ;
-  menu_sets = g_list_append(menu_sets, separator) ;
-
-  /* Scratch column ops */
-  ZMapWindowContainerFeatureSet scratch_container = getScratchContainerFeatureset(window) ;
-
-  if (scratch_container &&
-      (scratch_container->display_state == ZMAPSTYLE_COLDISPLAY_SHOW ||
-       scratch_container->display_state == ZMAPSTYLE_COLDISPLAY_SHOW))
-    {
-      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuScratchOps(NULL, NULL, cbdata)) ;
-      menu_sets = g_list_append(menu_sets, separator) ;
-    }
-
-  menu_sets
-    = g_list_append(menu_sets,
-                    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
-                                           zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)item))) ;
-
-  if ((seq_menus = zmapWindowMakeMenuRequestBAM(NULL, NULL, cbdata)))
-    menu_sets = g_list_append(menu_sets, seq_menus);
-
-  menu_sets = g_list_append(menu_sets, separator) ;
-
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuSearchListOps(NULL, NULL, cbdata)) ;
-
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuExportOps(NULL, NULL, cbdata)) ;
-
-  if (zmapWindowMarkIsSet(window->mark))
-    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuMarkExportOps(NULL, NULL, cbdata));
-
-  zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
   return ;
 }
@@ -718,6 +723,9 @@ static void addMenuItem(ZMapGUIMenuItem menu,
                         ZMapGUIMenuItemCallbackFunc callback_func,
                         gpointer callback_data)
 {
+  if (!i)
+    return ;
+
   /* Check we're not trying to index out of range based on the maximum number
    * of elements we expect in this menu */
   if (*i < max_elements)
@@ -741,6 +749,8 @@ static void addMenuItem(ZMapGUIMenuItem menu,
  * one shared amongst all general menu functions...
  * NOTE HOW THE MENUS ARE DECLARED STATIC IN THE VARIOUS ROUTINES TO MAKE SURE THEY STAY
  * AROUND...OTHERWISE WE WILL HAVE TO KEEP ALLOCATING/DEALLOCATING THEM.....
+ *
+ * Called upon right-click on a selected feature.
  */
 ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
                                              ZMapGUIMenuItemCallbackFunc callback_func,
@@ -756,11 +766,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
     } ;
-  int i ;
+  int i = 0 ;
   int max_elements = 5 ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
-  i = 0;
+  zMapReturnValIfFail(menu_data && menu_data->window, menu );
+
   menu[i].type = ZMAPGUI_MENU_NONE;
 
   if (menu_data->feature)
@@ -776,8 +787,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 
       if (!style)
         {
-          // style should be attached to the feature, but if not don't fall over
-          // new features should also have styles attached
+          /* style should be attached to the feature, but if not don't fall over
+             new features should also have styles attached */
           zMapLogWarning("Feature menu item does not have style","");
         }
       else
@@ -822,7 +833,11 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 }
 
 
-/* Options for the scratch column */
+/*
+ * Options for the scratch column
+ *
+ * Called upon right-click within the editing/annotation/scratch column.
+ */
 ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
                                              ZMapGUIMenuItemCallbackFunc callback_func,
                                              gpointer callback_data)
@@ -842,6 +857,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
   int i ;
   int max_elements = 7 ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+
+  zMapReturnValIfFail(menu_data && menu_data->window, menu) ;
 
   i = 1;
   menu[i].type = ZMAPGUI_MENU_NONE;
@@ -907,6 +924,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeature feature ;
 
+  zMapReturnIfFail(menu_data && menu_data->window) ;
 
   /* Retrieve the feature item info from the canvas item. */
   feature = zmapWindowItemGetFeature(menu_data->item);
@@ -1188,7 +1206,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuSearchListOps(int *start_index_inout,
     } ;
   enum {NAMED_FEATURE_INDEX = 5} ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapFeatureAny feature_any ;
+  ZMapFeatureAny feature_any = NULL ;
+
+  zMapReturnValIfFail(menu_data, menu) ;
 
   /* If user clicked on a feature set then "List with name" option is not relevant. */
   feature_any = zmapWindowItemGetFeatureAny(menu_data->item);
@@ -1238,7 +1258,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "Unbump All Columns", 0, unbumpAllCB, NULL},
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}  // menu terminates on id = 0 in one loop below
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}  /* menu terminates on id = 0 in one loop below */
     } ;
   enum {MENU_INDEX_BUMP = 2, MENU_INDEX_MARK = 5,  MENU_INDEX_COMPRESS = 6} ;
                                                             /* Keep in step with menu[] positions. */
@@ -1248,10 +1268,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
   static int ind_hide_evidence = -1;
 #endif
   static int ind_mask = -1;
-  ZMapGUIMenuItem menu_item ;
+  ZMapGUIMenuItem menu_item = NULL ;
   static gboolean compress = FALSE ;
   ZMapWindowContainerGroup column_container, block_container;
   FooCanvasGroup *column_group =  NULL;
+
+  zMapReturnValIfFail(menu_data, menu) ;
 
 
   /* Set the initial toggle button correctly....make sure this stays in step with the array above.
@@ -1319,13 +1341,13 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
     }
 
 
-  // set toggle state of masked features for this column
+  /* set toggle state of masked features for this column */
   if (ind_mask >= 0)
     {
       menu_item = &(menu[ind_mask]) ;
 
-      // set toggle state of masked features for this column
-      // hide the menu item if it's not maskable
+      /* set toggle state of masked features for this column
+         hide the menu item if it's not maskable */
       menu_item->type = ZMAPGUI_MENU_TOGGLE ;
 
       if (!menu_data->container_set->maskable
@@ -1374,7 +1396,10 @@ gint style_menu_sort(gconstpointer a, gconstpointer b, gpointer data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) data;
   ZMapFeatureTypeStyle sa = (ZMapFeatureTypeStyle) a, sb = (ZMapFeatureTypeStyle) b;
-  const char *na, *nb;
+  const char *na  = NULL , *nb = NULL ;
+
+  if (!sa || !sb)
+    return 0 ;
 
   if(sa->mode != sb->mode)
     {
@@ -1397,6 +1422,8 @@ gint style_menu_sort(gconstpointer a, gconstpointer b, gpointer data)
 /* is a style comapatble with a feature type: need to avoid crashes due to wrong data */
 gboolean style_is_compatable(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
 {
+  if (!style)
+    return FALSE ;
   if(f_type == style->mode)
     return TRUE;
 
@@ -1433,10 +1460,14 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
   static int n_menu = 0;
   ItemMenuCBData cbdata  = (ItemMenuCBData)callback_data;
   ZMapGUIMenuItem m;
-  GHashTable *styles = cbdata->window->context_map->styles;
+  GHashTable *styles = NULL ;
   GList *style_list, *sl;
   int n_styles;
   int i = 0;
+
+  zMapReturnValIfFail(cbdata && cbdata->window && cbdata->window->context_map, NULL ) ;
+
+  styles = cbdata->window->context_map->styles;
 
   zMap_g_hash_table_get_data(&style_list,styles);
   style_list = g_list_sort_with_data(style_list, style_menu_sort, (gpointer) cur_style);
@@ -1473,7 +1504,7 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
   m->callback_func = colourMenuCB;
   m++;
 
-        /* add sub menu */
+  /* add sub menu */
   m->type = ZMAPGUI_MENU_BRANCH;
   m->name = g_strdup(COLUMN_CONFIG_STR"/"COLUMN_STYLE_OPTS);
   m->id = 0;
@@ -1483,29 +1514,29 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
   for( i = 0, sl = style_list;i < n_styles; i++, sl = sl->next)
     {
       char *name;
-        char *mode = "";
-        ZMapFeatureTypeStyle s = (ZMapFeatureTypeStyle) sl->data;
+      char *mode = "";
+      ZMapFeatureTypeStyle s = (ZMapFeatureTypeStyle) sl->data;
 
-        if(!style_is_compatable(s,f_type))
-                continue;
+      if (!style_is_compatable(s,f_type))
+        continue;
 
       m->type = ZMAPGUI_MENU_NORMAL;
 
-        name = get_menu_string(s->original_id, '-');
+      name = get_menu_string(s->original_id, '-');
 
-        if(s->mode != cur_style->mode)
-                mode = (char *) zmapStyleMode2ShortText(s->mode);
+      if(s->mode != cur_style->mode)
+        mode = (char *) zmapStyleMode2ShortText(s->mode);
 
-        m->name = g_strdup_printf(COLUMN_CONFIG_STR"/"COLUMN_STYLE_OPTS"/%s%s%s", mode, *mode ? "/" : "", name);
-        g_free(name);
+      m->name = g_strdup_printf(COLUMN_CONFIG_STR"/"COLUMN_STYLE_OPTS"/%s%s%s", mode, *mode ? "/" : "", name);
+      g_free(name);
 
-        m->id = s->unique_id;
-        m->callback_func = setStyleCB;
-        m++;
+      m->id = s->unique_id;
+      m->callback_func = setStyleCB;
+      m++;
     }
 
-  if(m <= menu + 3)        /* empty sub_menu or choice of current */
-          m = menu + 1;
+  if (m <= menu + 3)        /* empty sub_menu or choice of current */
+    m = menu + 1;
   m->type = ZMAPGUI_MENU_NONE;
   m->name = NULL;
 
@@ -1730,38 +1761,23 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
 }
 
 
+/*
+ * This is the right-click menu in a view (no feature selected)
+ *
+ * (sm23) I have altered this to output features only from the column in which
+ * the right-click is made (irrespective of whether a column is hot). Output is
+ * now all features in all featuresets in the column or all that overlap with
+ * the marked region if it is set.
+ */
 ZMapGUIMenuItem zmapWindowMakeMenuExportOps(int *start_index_inout,
                                           ZMapGUIMenuItemCallbackFunc callback_func,
                                           gpointer callback_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_BRANCH, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"CONTEXT_EXPORT_STR, 0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"CONTEXT_EXPORT_STR"/DNA", 1, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"CONTEXT_EXPORT_STR"/Features", 2, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"CONTEXT_EXPORT_STR"/Context", 3, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Features" , 2, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Features (marked)" , 12, exportMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
-    } ;
-
-  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
-
-  return menu ;
-}
-
-
-ZMapGUIMenuItem zmapWindowMakeMenuMarkExportOps(int *start_index_inout,
-                                              ZMapGUIMenuItemCallbackFunc callback_func,
-                                              gpointer callback_data)
-{
-  /* DNA AND CONTEXT SEEM NOT TO BE IMPLEMENTED..... */
-
-  static ZMapGUIMenuItemStruct menu[] =
-    {
-      {ZMAPGUI_MENU_BRANCH, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"MARK_EXPORT_STR, 0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"MARK_EXPORT_STR"/DNA", 1, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"MARK_EXPORT_STR"/Features", 12, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/"MARK_EXPORT_STR"/Context", 3, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -1783,17 +1799,22 @@ static void featureMenuCB(int menu_item_id, gpointer callback_data)
 static void dnaMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapFeature feature ;
-  gboolean spliced, cds ;
-  char *dna ;
-  ZMapFeatureContext context ;
-  char *seq_name, *molecule_type = NULL, *gene_name = NULL ;
-  int seq_len ;
-  int user_start = 0, user_end = 0 ;
+  ZMapFeature feature = NULL ;
+  gboolean spliced = FALSE, cds = FALSE ;
+  char *dna = NULL ;
+  ZMapFeatureContext context = NULL ;
+  char *seq_name = NULL , *molecule_type = NULL, *gene_name = NULL ;
+  int seq_len = 0, user_start = 0, user_end = 0 ;
   GError *error = NULL ;
+
+  if (!menu_data || !menu_data->window )
+    return ;
 
   /* Retrieve feature selected by user. */
   feature = zMapWindowCanvasItemGetFeature(menu_data->item) ;
+  if (!feature)
+    return ;
+
   user_start = feature->x1 ;
   user_end = feature->x2 ;
 
@@ -1947,9 +1968,12 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
   char *dna ;
   ZMapPeptide peptide ;
   ZMapFeatureContext context ;
-  char *seq_name, *molecule_type = NULL, *gene_name = NULL ;
+  char *seq_name = NULL , *molecule_type = NULL, *gene_name = NULL ;
   int pep_length, start_incr = 0 ;
   GError *error = NULL ;
+
+  if (!menu_data || !menu_data->item || !menu_data->window)
+    return ;
 
   feature = zMapWindowCanvasItemGetFeature(menu_data->item) ;
   if (feature->mode != ZMAPSTYLE_MODE_TRANSCRIPT)
@@ -2048,7 +2072,7 @@ gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GEr
   ZMapFeatureAny feature = feature_in ;
   ZMapFeatureBlock block = NULL ;
 
-  if (!feature)
+  if (!feature && window )
     {
       /* If no feature is given, use the selected feature (if there is one and only one) */
       GList *features = zmapWindowFocusGetFeatureList(window->focus) ;
@@ -2076,14 +2100,42 @@ gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GEr
 }
 
 
+/*
+ * This is the callback for export options when the user right-clicks in the
+ * view. It now only deals with exporting features from a specific column. It
+ * uses the column in which the right-click happens, not necessarily the same
+ * as the highlighted column.
+ *
+ * Options are:
+ *
+ * case 1:                 DNA (sm23) I've not altered this behaviour
+ * case 2:                 All features from all featuresets in the column
+ * case 12:                All features from all featuresets in the column that
+ *                         overlap the marked region. Error if mark not set.
+ */
 static void exportMenuCB(int menu_item_id, gpointer callback_data)
 {
   gboolean result = FALSE ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapFeatureAny feature ;
+  ZMapFeatureAny feature = NULL ;
   GError *error = NULL ;
+  FooCanvasGroup *featureset_group = NULL ;
+  ZMapWindowContainerFeatureSet container = NULL ;
+
+  if (!menu_data)
+    return ;
 
   feature = zmapWindowItemGetFeatureAny(menu_data->item);
+   if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+    {
+      featureset_group = FOO_CANVAS_GROUP(menu_data->item) ;
+    }
+  else
+    {
+      featureset_group = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(menu_data->item) ;
+    }
+
+  container = (ZMapWindowContainerFeatureSet)(featureset_group);
 
   switch (menu_item_id)
     {
@@ -2094,18 +2146,13 @@ static void exportMenuCB(int menu_item_id, gpointer callback_data)
       }
     case 2: /* export all features */
       {
-        result = zMapWindowExportFeatures(menu_data->window, FALSE, feature, NULL, &error) ;
+        result = zMapWindowExportFeatureSets(menu_data->window, container->featuresets, FALSE, NULL, &error) ;
         break ;
       }
     case 12: /* features in marked region */
       {
-        result = zMapWindowExportFeatures(menu_data->window, TRUE, feature, NULL, &error) ;
+        result = zMapWindowExportFeatureSets(menu_data->window, container->featuresets, TRUE, NULL, &error) ;
         break;
-      }
-    case 3: /* export context */
-      {
-        result = zMapWindowExportContext(menu_data->window, &error) ;
-        break ;
       }
     default:
       break ;
@@ -2225,6 +2272,8 @@ static void transcriptNavMenuCB(int menu_item_id, gpointer callback_data)
 static void markMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  if (!menu_data)
+    return ;
 
   zmapWindowToggleMark(menu_data->window, 0);
 
@@ -2236,6 +2285,9 @@ static void compressMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindowCompressMode compress_mode = (ZMapWindowCompressMode)menu_item_id  ;
   FooCanvasGroup *column_group = NULL ;
+
+  if (!menu_data)
+    return ;
 
   if (menu_data->item)
     column_group = FOO_CANVAS_GROUP(menu_data->item) ;
@@ -2262,6 +2314,9 @@ static void copyPasteMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindowCopyPasteType mode = (ZMapWindowCopyPasteType)menu_item_id  ;
+
+  if (!menu_data)
+    return ;
 
   if (mode == ZMAPWINDOW_PASTE)
     {
@@ -2307,6 +2362,9 @@ static void configureMenuCB(int menu_item_id, gpointer callback_data)
   ZMapWindowColConfigureMode configure_mode = (ZMapWindowColConfigureMode)menu_item_id  ;
   FooCanvasGroup *column_group = NULL ;
 
+  if (!menu_data)
+    return ;
+
   /* did user click on an item or on the column background ? */
   if(configure_mode != ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
       column_group = menuDataItemToColumn(menu_data->item);
@@ -2328,7 +2386,7 @@ static void colourMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
   zmapWindowShowStyleDialog(menu_data);
-        /* don't free the callback data, it's in use */
+  /* don't free the callback data, it's in use */
 
   return ;
 }
@@ -2378,7 +2436,10 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapStyleBumpMode bump_type = (ZMapStyleBumpMode)menu_item_id  ;
   ZMapWindowCompressMode compress_mode ;
-  FooCanvasItem *style_item ;
+  FooCanvasItem *style_item = NULL ;
+
+  if (!menu_data || !menu_data->window)
+    return ;
 
   style_item = menu_data->item ;
 
@@ -2405,6 +2466,9 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   FooCanvasGroup *column_group = NULL;
+
+  if (!menu_data)
+    return ;
 
   column_group = menuDataItemToColumn(menu_data->item);
 
@@ -2443,7 +2507,12 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
 static void maskToggleMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapWindowContainerFeatureSet container = menu_data->container_set;
+  ZMapWindowContainerFeatureSet container = NULL ;
+
+  if (!menu_data || !menu_data->window || !menu_data->container_set)
+    return ;
+
+  container = menu_data->container_set;
 
   zMapWindowContainerFeatureSetShowHideMaskedFeatures(container, container->masked, FALSE);
 
@@ -2458,11 +2527,16 @@ static void maskToggleMenuCB(int menu_item_id, gpointer callback_data)
 
 
 
-// unhighlight the evidence features
+/* un-highlight the evidence features */
 static void hideEvidenceMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapWindowFocus focus = menu_data->window->focus;
+  ZMapWindowFocus focus = NULL ;
+
+  if (!menu_data || !menu_data->window)
+    return ;
+
+  focus = menu_data->window->focus;
 
   if (focus)
     {
@@ -2503,6 +2577,9 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeatureAny feature_any ;
+
+  if (!menu_data)
+    return ;
 
   feature_any = zmapWindowItemGetFeatureAny(menu_data->item) ;
 
@@ -2846,16 +2923,21 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
   static int n_menu = 0;
   ItemMenuCBData cbdata  = (ItemMenuCBData)callback_data;
   ZMapGUIMenuItem m = NULL ;
-  GList *fs_list = cbdata->window->context_map->seq_data_featuresets;
-  GList *fsl;
-  int n_sets = g_list_length(fs_list);
+  GList *fs_list = NULL , *fsl = NULL ;
+  int n_sets = 0 ;
   int i = 0;
   char * related = NULL;        /* req data from coverage */
   char * blixem_col = NULL;        /* blixem related from coverage or directly from real data */
-  GQuark fset_id = 0,req_id = 0;
+  GQuark fset_id = 0, req_id = 0;
+
+  if (!cbdata || !cbdata->window || !cbdata->window->context_map )
+    return menu ;
+
+  fs_list = cbdata->window->context_map->seq_data_featuresets;
+  n_sets = g_list_length(fs_list);
 
   if (!n_sets)
-    return NULL;
+    return menu ;
 
   if(n_menu < n_sets)
     {
@@ -2899,7 +2981,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
 
       if ((f2c = g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,GUINT_TO_POINTER(fset_id))))
           {
-          //zMapLogWarning("menu is_seq: %s -> %p",g_quark_to_string(fset_id),f2c);
           cbdata->req_id = f2c->column_id;
           blixem_col = get_menu_string(f2c->column_ID,'-');
           }
@@ -2975,16 +3056,22 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
   static int n_menu = 0;
   ItemMenuCBData cbdata  = (ItemMenuCBData)callback_data;
   ZMapGUIMenuItem m;
-  GList *fs_list = cbdata->window->context_map->seq_data_featuresets;
-  GList *fsl;
-  int n_sets = g_list_length(fs_list);
+  GList *fs_list = NULL, *fsl = NULL ;
+  int n_sets = 0;
   int i = 0;
   char * related = NULL;        /* req data from coverage */
   char * blixem_col = NULL;        /* blixem related from coverage or directly from real data */
-  GQuark fset_id = 0,req_id = 0;
+  GQuark fset_id = 0,
+    req_id = 0;
+
+  if (!cbdata || !cbdata->window || !cbdata->window->context_map )
+    return menu ;
+
+  fs_list = cbdata->window->context_map->seq_data_featuresets;
+  n_sets = g_list_length(fs_list) ;
 
   if (!n_sets)
-    return NULL;
+    return menu ;
 
   if(n_menu < n_sets)
     {
@@ -3028,7 +3115,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
 
       if ((f2c = g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,GUINT_TO_POINTER(fset_id))))
           {
-          //zMapLogWarning("menu is_seq: %s -> %p",g_quark_to_string(fset_id),f2c);
           cbdata->req_id = f2c->column_id;
           blixem_col = get_menu_string(f2c->column_ID,'-');
           }
@@ -3051,8 +3137,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
   /* add menu item for all data in column id any of them have related featuresets */
   /* can't trigger off selected feature as we don't always have one */
   {
-    GQuark fset;
-    GList *l;
+    GQuark fset = 0 ;
+    GList *l = NULL ;
 
     l = zmapWindowContainerFeatureSetGetFeatureSets(cbdata->container_set);
     for(;l; l = l->next)
@@ -3116,10 +3202,10 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
 
 
 /* return string with / instead of _ */
-static char *get_menu_string(GQuark set_quark,char disguise)
+static char *get_menu_string(GQuark set_quark, char disguise)
 {
-  char *p;
-  char *seq_set;
+  char *p = NULL ;
+  char *seq_set = NULL ;
 
   seq_set = g_strdup ((char *) g_quark_to_string(GPOINTER_TO_UINT(set_quark)));
 
@@ -3145,13 +3231,13 @@ static char *get_menu_string(GQuark set_quark,char disguise)
 GQuark related_column(ZMapFeatureContextMap map,GQuark fset_id)
 {
   GQuark q = 0;
-  ZMapFeatureSource src;
+  ZMapFeatureSource src = NULL ;
 
   src = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
   if(src)
     q = src->related_column;
   else
-    zMapLogWarning("Can't find src data for %s",g_quark_to_string(fset_id));
+    zMapLogWarning("Can't find source data for featureset '%s'.",g_quark_to_string(fset_id));
 
   return q;
 }
@@ -3162,8 +3248,12 @@ GQuark related_column(ZMapFeatureContextMap map,GQuark fset_id)
 
 GList * add_column_featuresets(ZMapFeatureContextMap map, GList *list, GQuark column_id, gboolean unique_id)
 {
-  ZMapFeatureColumn column = g_hash_table_lookup(map->columns,(GUINT_TO_POINTER(column_id)));
+  ZMapFeatureColumn column = NULL ;
   GList *l = NULL;
+  if (!map || !column_id)
+    return list ;
+
+  column = g_hash_table_lookup(map->columns,(GUINT_TO_POINTER(column_id)));
 
   if(column)
     l = zMapFeatureGetColumnFeatureSets(map, column_id, unique_id);
@@ -3189,9 +3279,12 @@ GList * add_column_featuresets(ZMapFeatureContextMap map, GList *list, GQuark co
 static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  GList *l;
-  int i;
+  GList *l = NULL ;
+  int i = 0 ;
   GList *req_list = NULL;
+
+  if (!menu_data)
+    return ;
 
 #if 0
   if (!zmapWindowMarkIsSet(menu_data->window->mark))
@@ -3215,8 +3308,10 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
         {
 
           fset_id = GPOINTER_TO_UINT(l->data);
-          src = g_hash_table_lookup(menu_data->context_map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
-          req_id = src->related_column;
+          if ((src = g_hash_table_lookup(menu_data->context_map->source_2_sourcedata,GUINT_TO_POINTER(fset_id))))
+            {
+              req_id = src->related_column;
+            }
 
           if(req_id)
             req_list = add_column_featuresets(menu_data->context_map,req_list,req_id,TRUE);
@@ -3267,6 +3362,9 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindowAlignSetType requested_homol_set = BLIX_INVALID ;
   GList *seq_sets = NULL;
+
+  if (!menu_data)
+    return ;
 
   switch(menu_item_id)
     {
@@ -3373,12 +3471,15 @@ static FooCanvasGroup *menuDataItemToColumn(FooCanvasItem *item)
 static gboolean exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *sequence, char *seq_name, int seq_len,
                             char *molecule_name, char *gene_name, GError **error)
 {
+  static const char *error_prefix = "FASTA DNA export failed:" ;
   gboolean result = FALSE ;
   char *filepath = NULL ;
   GIOChannel *file = NULL ;
   GError *tmp_error = NULL ;
-  char *error_prefix = "FASTA DNA export failed:" ;
   GtkWidget *toplevel ;
+
+  if (!window)
+    return result ;
 
   toplevel = zMapGUIFindTopLevel(window->toplevel) ;
 
@@ -3418,14 +3519,144 @@ static gboolean exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *
   return result ;
 }
 
+
+/*
+ * This function exports a list of featuresets. Arguments are:
+ *   window                    ZMapWindow
+ *   featuresets               GList containing featureset->unique_id
+ *   marked_region             whether we are to use the marked region or all features
+ *   filepath_inout            may be set on entry, but does not have to be
+ *   error                     GError to propagate (this should be propagated to the
+ *                             caller and not deleted locally)
+ */
+gboolean zMapWindowExportFeatureSets(ZMapWindow window,
+   GList* featuresets, gboolean marked_region, char **filepath_inout, GError **error)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureAny context = NULL ;
+  GHashTable *styles = NULL ;
+  ZMapSpanStruct mark_region = {0,0};
+  GIOChannel *file = NULL ;
+  char *filepath = NULL ;
+
+  zMapReturnValIfFail(     window
+                        && window->feature_context
+                        && window->context_map
+                        && featuresets
+                        && g_list_length(featuresets)
+                        && error,
+                           result) ;
+
+  /*
+   * This should be the whole thing.
+   */
+  context = (ZMapFeatureAny) window->feature_context ;
+
+
+  zMapReturnValIfFail(    (context->struct_type == ZMAPFEATURE_STRUCT_CONTEXT)
+                       && window->context_map->styles,
+                          result ) ;
+
+  styles = window->context_map->styles ;
+
+  /*
+   * Fish out the marked region if it is available; otherwise leave its start
+   * and end zero.
+   */
+  if (marked_region)
+    {
+      if (zmapWindowMarkIsSet(window->mark))
+        {
+          zmapWindowMarkGetSequenceRange(window->mark, &(mark_region.x1), &(mark_region.x2));
+          result = TRUE ;
+        }
+      else
+        {
+          g_set_error(error, g_quark_from_string("ZMap"), 99, "The mark is not set") ;
+        }
+    }
+  else
+    {
+      result = TRUE ;
+    }
+
+  if (result )
+    {
+
+      /*
+       * Revcomp if required.
+      */
+      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+        zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+
+      /*
+       * Do the filenames/path business and create the IOChannel.
+       * If a filepath is passed in, then we use that, otherwise must
+       * prompt for one.
+       */
+      if (filepath_inout && *filepath_inout)
+        filepath = g_strdup(*filepath_inout) ;
+
+      if (!filepath)
+        filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel), "Feature Export filename ?", NULL, "gff") ;
+
+      if (    filepath
+           && (file = g_io_channel_new_file(filepath, "w", error)))
+        {
+          result = TRUE ;
+        }
+
+      /*
+       * Now we finally get around to doing some output.
+       */
+      if (result && file)
+        {
+          result = zMapGFFDumpFeatureSets((ZMapFeatureAny)window->feature_context,
+                                          styles, featuresets, &mark_region, file, error) ;
+        }
+
+      /*
+       * Shutdown IO channel. Must be done whether the call to dump data
+       * succeeded or not.
+       */
+      if (file)
+        {
+          GError *tmp_error = NULL ;
+          GIOStatus status ;
+          if ((status = g_io_channel_shutdown(file, TRUE, &tmp_error)) != G_IO_STATUS_NORMAL)
+            {
+              if (tmp_error)
+                {
+                  zMapShowMsg(ZMAP_MSG_WARNING, "%s", tmp_error->message) ;
+                  g_error_free(tmp_error) ;
+                }
+            }
+        }
+
+      /*
+       * Revcomp if required. Must be done irrespective of whether anything above
+       * succeeded.
+       */
+      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+        zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+
+    }
+
+  return result ;
+}
+
+
 /*
  * If the feature that is passed is NULL then the whole context is used.
  */
-gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_region, ZMapFeatureAny feature_in,
+gboolean zMapWindowExportFeatures(ZMapWindow window, gboolean marked_region, ZMapFeatureAny feature_in,
                                   char **filepath_inout, GError **error)
 {
   gboolean result = FALSE ;
   ZMapFeatureAny feature = feature_in ;
+
+  if (!window)
+    return result ;
 
   if (!feature)
     feature = (ZMapFeatureAny)window->feature_context ;
@@ -3457,18 +3688,21 @@ gboolean zMapWindowExportFeatures(ZMapWindow window, const gboolean marked_regio
 static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature_in,
                                char **filepath_inout, GError **error)
 {
+  static const char *error_prefix = "Features export failed:" ;
   gboolean result = FALSE ;
   char *filepath = NULL ;
   GIOChannel *file = NULL ;
   GError *tmp_error = NULL ;
-  char *error_prefix = "Features export failed:" ;
   ZMapFeatureAny feature = feature_in ;
+
+  if (!window)
+    return result ;
 
   if (filepath_inout && *filepath_inout)
     filepath = g_strdup(*filepath_inout) ;
 
   if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
-  //    || feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE
+      || feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE
      )
     {
       /* For features and featuresets, get the parent block */
@@ -3607,6 +3841,7 @@ void dumpConfig(GHashTable *f2c, GHashTable *f2s)
       printf("\n");
     }
 
+
   zMap_g_hashlist_destroy(cols);
 
   printf("\nf[featureset-style]\n");
@@ -3624,11 +3859,14 @@ void dumpConfig(GHashTable *f2c, GHashTable *f2s)
 
 gboolean zMapWindowExportContext(ZMapWindow window, GError **error)
 {
+  static const char *error_prefix = "Feature context export failed:" ;
   gboolean result = FALSE ;
   char *filepath = NULL ;
   GIOChannel *file = NULL ;
   GError *tmp_error = NULL ;
-  char *error_prefix = "Feature context export failed:" ;
+
+  if (!window || !window->context_map)
+    return result ;
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "Context Export filename ?", NULL, "zmap"))
       || !(file = g_io_channel_new_file(filepath, "w", &tmp_error))
@@ -3676,6 +3914,8 @@ static void insertSubMenus(GString *branch_point_string,
                            GArray **items_array)
 {
   int branch_length = 0;
+  if (!branch_point_string)
+    return ;
   branch_length = branch_point_string->len;
 
   while(sub_menus && sub_menus->name != NULL)
@@ -3713,6 +3953,9 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
   GArray **items_array = NULL;
   char *stem = NULL;
   AlignBlockMenu  all_data = (AlignBlockMenu)user_data;
+
+  if (!data || !user_data)
+    return ZMAP_CONTEXT_EXEC_STATUS_ERROR ;
 
   items_array = all_data->array;
   stem        = all_data->stem;
@@ -3824,6 +4067,8 @@ static gboolean getSeqColours(ZMapFeatureTypeStyle style,
                               GdkColor **split_5_out, GdkColor **split_3_out)
 {
   gboolean result =  FALSE ;
+  if (!style)
+    return result ;
 
   /* I'm sure this is not the way to access these...find out from Malcolm where we stand on this... */
   if (style->mode_data.sequence.non_coding.normal.fields_set.fill
@@ -3956,6 +4201,8 @@ static void createExonTextTag(gpointer data, gpointer user_data)
 static void offsetTextAttr(gpointer data, gpointer user_data)
 {
   ZMapGuiTextAttr text_attr = (ZMapGuiTextAttr)data ;
+  if (!data)
+    return ;
   int offset = GPOINTER_TO_INT(user_data) ;
 
   text_attr->start += offset ;
@@ -3975,13 +4222,15 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
   ZMapFeatureSet featureset ;
   ZMapFeature feature = NULL ;
   gboolean zoom_to_item = TRUE;
+  if (!menu_data)
+    return ;
 
 
   /* Retrieve the feature or featureset info from the canvas item. */
   feature_any = zmapWindowItemGetFeatureAny(menu_data->item);
   if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURESET
              && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
-  return ;
+    return ;
 
   if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
     {
@@ -4008,7 +4257,7 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
         ZMapFrame set_frame ;
         GQuark align_id = 0, block_id = 0, column_id = 0, featureset_id = 0, feature_id = 0 ;
         FooCanvasItem *current_item = NULL ;
-        char *title ;
+        char *title = NULL ;
         gpointer search_func ;
 
         column_id = menu_data->container_set->unique_id ;
@@ -4021,12 +4270,19 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 
         title = (char *)g_quark_to_string(container->original_id) ;
 
-
         if (menu_item_id == ITEM_MENU_LIST_ALL_FEATURES)
           {
-            /* Set feature name to wild card to ensure we list all of them. */
+            /*
+             * Set feature name to wild card to ensure we list all of them.
+             *
+             * (sm23) The feature pointer must also be NULL for this to work
+             * AND the featureset_id has to be zero. Otherwise the search function
+             * will only return features from the specified featureset (i.e. the
+             * first one found in that column).
+             */
+            featureset_id = 0 ;
             feature_id = g_quark_from_string("*") ;
-            feature = NULL ;                                    /* unset feature for "all" search. */
+            feature = NULL ;
             search_func = zmapWindowFToIFindItemSetFull ;
           }
         else

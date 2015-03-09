@@ -87,14 +87,14 @@ static GtkItemFactoryEntry menu_items[] = {
          { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
          { "/File/_Import",                         "<control>I",        importCB,              0,  NULL },/* or Read ? */
          { "/File/_Export",                         NULL,                NULL,                  0,  "<Branch>" },
-         //{ "/File/Export/_Data",                      NULL,                NULL,                  0,  "<Branch>" },
+         /*{ "/File/Export/_Data",                      NULL,                NULL,                  0,  "<Branch>" }, */
          { "/File/Export/_DNA",                  NULL,                exportCB,              1,  NULL },
          { "/File/Export/_Features",             "<control>E",        exportCB,              2,  NULL },
          { "/File/Export/_Features (marked)",    "<shift><control>E", exportCB,              12, NULL },
-         { "/File/Export/_Context",              NULL,                exportCB,              3,  NULL },
-         //{ "/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
-         //{ "/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
-         //{ "/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL },
+         /* { "/File/Export/_Context",              NULL,                exportCB,              3,  NULL },
+         { "/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
+         { "/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
+         { "/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL }, */
          { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
          { "/File/Save screen sho_t",               NULL,                dumpCB,                0,  NULL },
          { "/File/_Print screen shot",              "<control>P",        printCB,               0,  NULL },
@@ -127,7 +127,7 @@ static GtkItemFactoryEntry menu_items[] = {
          { "/Raise ticket/Acedb ticket",      NULL, rtTicket, RT_ACEDB, NULL },
 
          { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
-         //{ "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
+         /*{ "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL }, */
          { "/Help/Quick Start Guide", NULL,allHelpCB, ZMAPGUI_HELP_QUICK_START, NULL },
          { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
          { "/Help/Alignment Display", NULL, allHelpCB, ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
@@ -170,44 +170,49 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   gboolean result = FALSE ;
 
   zmap = (ZMap)cb_data ;
+  if (!zmap)
+    return ;
+
   curr_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
   curr_view = zMapViewGetView(zmap->focus_viewwindow) ;
 
   switch (callback_action)
     {
+    /* Export DNA */
     case 1:
       {
-        /* Export DNA */
         result = zMapWindowExportFASTA(curr_window, NULL, &error) ;
         break ;
       }
 
+    /* Export all features */
     case 2:
       {
-        /* Export all features */
         result = zMapWindowExportFeatures(curr_window, FALSE, NULL, NULL, &error) ;
         break ;
       }
 
+    /* Export features for marked region */
     case 12:
       {
-        /* Export features for marked region */
         result = zMapWindowExportFeatures(curr_window, TRUE, NULL, NULL, &error) ;
         break ;
       }
 
-    case 3:
+    /* Export context; (sm23) I've removed this since it's pointless for the
+     * user.
+     */
+    /*case 3:
       {
-        /* Export context */
         result = zMapWindowExportContext(curr_window, &error) ;
         break ;
-      }
+      }*/
 
+    /* Save - same as export all features but we pass the existing filename, if there is one;
+     * if there isn't then the file chooser will be shown and we'll save the file the user
+     * selects for future Save operations. */
     case 22:
       {
-        /* Save - same as export all features but we pass the existing filename, if there is one;
-         * if there isn't then the file chooser will be shown and we'll save the file the user
-         * selects for future Save operations. */
         char *filename = g_strdup(zMapViewGetSaveFile(curr_view, TRUE)) ;
         result = zMapWindowExportFeatures(curr_window, FALSE, NULL, &filename, &error) ;
 
@@ -220,9 +225,9 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
         break ;
       }
 
+    /* Save As - same as export all features but we save the filename for the next Save operation */
     case 23:
       {
-        /* Save As - same as export all features but we save the filename for the next Save operation */
         char *filename = NULL ;
         result = zMapWindowExportFeatures(curr_window, FALSE, NULL, &filename, &error) ;
 
@@ -272,7 +277,7 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   ZMapFeatureSequenceMap view_seq ;
   int start, end ;
 
-  zMapReturnIfFail(zmap->focus_viewwindow) ;
+  zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
 
   vw = zmap->focus_viewwindow ;
 
@@ -316,7 +321,7 @@ static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
   ZMap zmap = NULL ;
   zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
-  zMapReturnIfFail(zmap->focus_viewwindow) ;
+  zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
   ZMapWindow window ;
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
@@ -332,7 +337,7 @@ static void printCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
   ZMap zmap = NULL ;
   zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
-  zMapReturnIfFail(zmap->focus_viewwindow) ;
+  zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
   ZMapWindow window ;
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
@@ -349,7 +354,7 @@ static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   ZMap zmap = NULL ;
   zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
-  zMapReturnIfFail(zmap->focus_viewwindow) ;
+  zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
 
   zMapViewRedraw(zmap->focus_viewwindow) ;
 
@@ -376,6 +381,7 @@ static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *wind
   ZMap zmap = NULL ;
   zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
+  zMapReturnIfFail(zmap) ;
   char *passwd = NULL ;
   GtkResponseType result ;
 
@@ -399,6 +405,7 @@ static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *wi
   ZMap zmap = NULL ;
   zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
+  zMapReturnIfFail(zmap) ;
   GString *session_text ;
 
   session_text = g_string_new(NULL) ;
@@ -432,7 +439,7 @@ static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
   gboolean raise_ticket = TRUE ;
-  char *url_raise_ticket_base = "https://rt.sanger.ac.uk/rt/Ticket/Create.html?Queue=" ;
+  static const char *url_raise_ticket_base = "https://rt.sanger.ac.uk/rt/Ticket/Create.html?Queue=" ;
   char *web_page = NULL ;
   gboolean result ;
   GError *error = NULL ;
@@ -503,6 +510,7 @@ static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *window
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMap zmap = (ZMap)cb_data ;
+  zMapReturnIfFail(zmap) ;
 
   zmapControlSignalKill(zmap) ;
 
@@ -515,6 +523,7 @@ static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMap zmap = (ZMap)cb_data ;
+  zMapReturnIfFail(zmap && zmap->zmap_cbs_G) ;
 
   /* Call the application exit callback to get everything killed...including this zmap. */
   (*(zmap->zmap_cbs_G->quit_req))(zmap, zmap->app_data) ;
@@ -530,7 +539,7 @@ static void copyPasteCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   EditActionType action = (EditActionType)callback_action ;
   ZMapWindow curr_window ;
 
-  zMapReturnIfFail(zmap->focus_viewwindow) ;
+  zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
 
   curr_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
@@ -609,6 +618,7 @@ static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWi
   zMapReturnIfFail(cb_data) ;
 
   zmap = (ZMap)cb_data ;
+  zMapReturnIfFail(zmap) ;
 
   if (!(zmap->sequence_dialog))
     zmap->sequence_dialog = zMapAppGetSequenceView(makeSequenceViewCB, zmap, closeSequenceDialogCB, zmap,
@@ -621,8 +631,9 @@ static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWi
 static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_data)
 {
   ZMap zmap = (ZMap)user_data ;
-  ZMapView view ;
+  ZMapView view = NULL ;
   char *err_msg = NULL ;
+  zMapReturnIfFail(zmap) ;
 
   if ((view = zMapControlInsertView(zmap, seq_map, &err_msg)))
     {
@@ -645,6 +656,7 @@ static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_dat
 static void closeSequenceDialogCB(GtkWidget *toplevel, gpointer user_data)
 {
   ZMap zmap = (ZMap)user_data ;
+  zMapReturnIfFail(zmap) ;
 
   zmap->sequence_dialog = NULL ;
 
