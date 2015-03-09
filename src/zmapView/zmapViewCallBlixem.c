@@ -465,7 +465,10 @@ gboolean zmapViewCallBlixem(ZMapView view,
 
   if (!status)
     {
-      zMapShowMsg(ZMAP_MSG_WARNING, err_msg) ;
+      if (err_msg)
+        zMapWarning("%s", err_msg) ;
+      else
+        zMapWarning("%s", "Error starting blixem") ;
     }
   else
     {
