@@ -27,6 +27,11 @@
  *
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_FEATURE_H
 #define ZMAP_FEATURE_H
 
@@ -1397,3 +1402,7 @@ gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 void zMapFeatureFreeSubParts(GList *sub_parts) ;
 
 #endif /* ZMAP_FEATURE_H */
+
+#ifdef __cplusplus
+}
+#endif
