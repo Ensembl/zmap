@@ -1,29 +1,14 @@
 
-Git commits for  from commit "production" until commit "release/1.4.0"
+Git commits for  from commit "production" until commit "release/1.5.0"
 
-4033cca 2015-02-25 "fix at zmap end for feature ontology/blixem display problem - RT 452621"
-91e31a1 2015-02-18 fix to drag/drop feature to blixem
-1173481 2015-02-13 Replace 'annotools' email id with 'annosoft'
-25fc5d8 2015-02-11 small bug in dumper code
-bc0631d 2015-02-11 changed a couple of bitfield definitions to unsigned int
-270efea 2015-02-11 rearrangements to gff dumping flags
-93f37e1 2015-02-11 added mode=GRAPH features to the gff dumper
-905cb2a 2015-02-11 "move init message to be after version checking code so only version is shown."
-3efa194 2015-02-10 Merge branch 'feature/infopanel' into develop
-5169e53 2015-02-10 "Kind of fix for RT 378314: Zmap uses non fixed width font, put test early on in init."
-922a114 2015-02-10 "Fix RT 421191: zooming in on edge of assembly doesn't zoom in there."
-4ecd90e 2015-02-10 "Fix RT 430753: Reselecting a Search result does not scroll."
-8a69d2b 2015-02-10 "duh.....fix up ignore instruction."
-a52eae6 2015-02-10 "add an ignore file for generated zmapConfig/default_styles.c file."
-dc2f714 2015-02-10 generated file, should not be in git.
-86258be 2015-02-10 "fix copyright date."
-713ea46 2015-02-10 "Add style name to feature output."
-538d0ef 2015-02-10 "Fix wrong string in developer menu, should be 'Print Style'."
-824e4ce 2015-02-09 Merge branch 'feature/gffoutput' into develop
-65ef89a 2015-02-09 "replace now redundant window size getting code with new screen size routine."
-50e07ca 2015-02-09 "change to use new monitor size getting call."
-75f12d6 2015-02-09 "Add Gemma's code for getting physical monitor size into our screen size routine."
-85d8c5a 2015-01-28 correction to year in copyright statement
+1344efb 2015-03-12 fix to incorrect so-mode-map entry for SO term 'match' - BUG FIX
+156e5b9 2015-03-09 Merge branch 'feature/user_output' into develop
+1c4fe2e 2015-03-05 Merge branch 'feature/Feature_select_fix' into develop
+b31cd11 2015-02-25 "fix at zmap end for feature ontology/blixem display problem - RT 452621"
+5c383ef 2015-02-18 fix to drag/drop features into blixem
+72cb7e0 2015-02-17 Merge branch 'feature/user_output' into develop
+0f06a1d 2015-02-13 Merge branch 'feature/Main_Window' into develop
+fa41628 2015-02-13 Replace 'annotools' email id with 'annosoft'
 
 
 End of git commits
