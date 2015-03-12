@@ -170,6 +170,16 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/htslib-develop/libhts.a              \
 	$(top_builddir)/AceConn/src/.libs/libAceConn.a       
 
+# If we have gbtools in a subdirectory, add the .a file, otherwise
+# look for a locally installed version
+if USE_GBTOOLS
+zmap_LDADD +=                                                \
+	$(top_builddir)/gbtools/libgbtools.a            
+else
+zmap_LDADD +=                                                \
+	-lgbtools
+endif
+
 # The zeromq library has a different suffix on cygwin
 if ON_CYGWIN
 zmap_LDADD +=                                                \
