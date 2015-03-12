@@ -28,6 +28,10 @@
  *
  *-------------------------------------------------------------------
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_WINDOW_H
 #define ZMAP_WINDOW_H
 
@@ -716,3 +720,7 @@ gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GEr
 gboolean zMapWindowExportContext(ZMapWindow window, GError **error) ;
 
 #endif /* !ZMAP_WINDOW_H */
+
+#ifdef __cplusplus
+}
+#endif

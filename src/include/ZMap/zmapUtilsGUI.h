@@ -27,6 +27,11 @@
  *
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_UTILS_GUI_H
 #define ZMAP_UTILS_GUI_H
 
@@ -60,7 +65,7 @@ typedef struct
   gboolean hide_input ;					    /* hide text input, e.g. for passwords. */
   union
   {
-    gboolean bool ;
+    gboolean m_bool ;
     char *text ;
   } data ;
 } ZMapGUIMsgUserDataStruct, *ZMapGUIMsgUserData ;
@@ -452,7 +457,6 @@ gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *peer_cl
 char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event) ;
 
 gboolean zMapGUIGetScreenInfo(GtkWidget *widget, int *curr_screen_out, int *num_screens_out) ;
-gboolean zMapGUIGetTrueMonitorSize(GtkWidget *widget, int *width_out, int *height_out) ;
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
 void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
@@ -560,3 +564,7 @@ gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char 
 
 
 #endif /* ZMAP_UTILS_GUI_H */
+
+#ifdef __cplusplus
+}
+#endif

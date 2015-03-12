@@ -27,6 +27,11 @@
  *
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_WINDOW_P_H
 #define ZMAP_WINDOW_P_H
 
@@ -1798,3 +1803,7 @@ void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data) ;
 void foo_bug_set(void *key,char *id) ;
 
 #endif /* !ZMAP_WINDOW_P_H */
+
+#ifdef __cplusplus
+}
+#endif
