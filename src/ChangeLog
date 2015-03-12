@@ -1,3 +1,10 @@
+2015-03-12  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-60-g0ebff7f - Update RT and git commit reports
+ src/ChangeLog                                  |  577 ++++++++++++------------
+ src/build/release_docs/GIT_COMMITS.txt         |   35 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  437 +-----------------
+ 3 files changed, 314 insertions(+), 735 deletions(-)
+
 2015-03-12  Steve Miller  <sm23@sanger.ac.uk>
  editing of release notes - BUILD
  docs/user/release_notes.shtml |   12 ++++++++++++
