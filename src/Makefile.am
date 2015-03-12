@@ -27,7 +27,12 @@ ACLOCAL_AMFLAGS = -I m4
 
 
 # ZMAP_SRC_DIRS See configure.ac
-SUBDIRS = AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+if USE_GBTOOLS
+OPTIONAL_SUBDIRS = gbtools
+endif
+
+SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+
 
 CLEANFILES = $(pkgconfig_DATA)
 

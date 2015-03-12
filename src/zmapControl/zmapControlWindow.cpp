@@ -1,4 +1,4 @@
-/*  File: zmapControlWindow.c
+/*  File: zmapControlWindow.cpp
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -36,7 +36,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <zmapControl_P.h>
-
+#include <gbtools/gbtoolsGUI.hpp>
 
 
 static void setTooltips(ZMap zmap) ;
@@ -306,7 +306,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
  * buttons etc along the top of the window which results in a good horizontal size. The vertical
  * size is more tricky as lots of window managers provide tool bars etc which take up screen
  * space. In addition the user may have multiple actual monitors configured as one large
- * virtual screen. zMapGUIGetTrueMonitorSize() attempts to encapsulate all this.
+ * virtual screen. gbtools::GUIGetTrueMonitorSize() attempts to encapsulate all this.
  * 
  * Note that we set the size of width small, it will be expanded automatically as widgets
  * are added to display stuff like the info panel.
@@ -317,7 +317,7 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
   GtkWidget *toplevel = widget ;
   int window_width_guess = 300, window_height_guess ;
 
-  zMapGUIGetTrueMonitorSize(toplevel, NULL, &window_height_guess) ;
+  gbtools::GUIGetTrueMonitorSize(toplevel, NULL, &window_height_guess) ;
 
   gtk_window_resize(GTK_WINDOW(toplevel), window_width_guess, window_height_guess) ;
 
@@ -489,4 +489,3 @@ static gboolean rotateTextCB(gpointer user_data)
 
   return call_again ;
 }
-

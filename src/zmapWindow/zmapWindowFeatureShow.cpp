@@ -1,4 +1,4 @@
-/*  File: zmapWindowFeatureShow.c
+/*  File: zmapWindowFeatureShow.cpp
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -42,7 +42,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapXMLHandler.h>
 #include <zmapWindow_P.h>
-
+#include <gbtools/gbtoolsGUI.hpp>
 
 
 #define TOP_BORDER_WIDTH 5
@@ -290,8 +290,8 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
                         char *action, FooCanvasItem *real_item,
                         ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data) ;
 static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
-				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
-				  gpointer reply_handler_func_data) ;
+                                  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
+                                  gpointer reply_handler_func_data) ;
 
 static void getEvidenceReplyFunc(gboolean reply_ok, char *reply_error,
                                  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
@@ -1136,7 +1136,7 @@ static gboolean mapeventCB(GtkWidget *widget, GdkEvent  *event, gpointer   user_
   feature_show->notebook_mapevent_handler = 0 ;
 
   /* Get max possible window size and adjust for users preference. */
-  zMapGUIGetTrueMonitorSize(feature_show->window, &max_width, &max_height) ;
+  gbtools::GUIGetTrueMonitorSize(feature_show->window, &max_width, &max_height) ;
   max_width *= width_proportion ;
   max_height *= height_proportion ;
 

@@ -9,6 +9,7 @@ AM_CPPFLAGS = -g -I$(top_srcdir)/include \
 	-I$(top_builddir)  -I$(top_srcdir)/AceConn/include \
 	-I$(top_srcdir)/htslib-develop \
 	-I$(top_srcdir)/zeromq/include \
+	-I$(top_srcdir) \
 	@GTK_CFLAGS@ \
         @LIBCURL_CPPFLAGS@ \
         $(NULL)
