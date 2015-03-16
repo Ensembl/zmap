@@ -6,6 +6,18 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 1.5.0</h4>
+<ul>
+  <li> Make config file optional for blixem (SIRT:455638)
+  <li> Incorrect Gap string in output GFF (SIRT:455638)
+  <li> Addition of single exon selection and pasting of coords in 'CHR#:start,end' format (for codalign)
+  <li> Listing features; using the right-click menus in a column, the "list features" option now works
+       correctly
+  <li> User output of features; use the file menu for all columns in the view, and the right-click
+       menus for all features/featuresets in a given column (SIRT:398145)
+  <li> Add more informative error message when features not created because of a style mismatch (SIRT:451891)
+</ul>
+
 <h4>Version 1.4.0</h4>
 <ul>
   <li> Further developments to column filtering and splice highlighting
