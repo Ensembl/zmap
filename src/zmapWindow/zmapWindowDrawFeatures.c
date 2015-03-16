@@ -223,7 +223,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zMapPrintTimer(NULL, "About to create canvas features") ;
 
-  if (!window || !full_context || !diff_context) 
+  if (!window || !full_context || !diff_context)
     return ;
 
   zmapWindowBusy(window, TRUE) ;
@@ -725,9 +725,9 @@ gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group)
           (!zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(container))))
         {
           container = zmapWindowContainerGroupDestroy(container) ;
-          
+
           *col_group = (FooCanvasGroup *)container;
-          
+
           removed = TRUE ;
         }
     }
@@ -811,7 +811,7 @@ void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features, int seq
     {
       ZMapWindowContainerFeatureSet focus_container ;
       gboolean result ;
-      
+
       focus_container = (ZMapWindowContainerFeatureSet)focus_column ;
 
       if ((result = zmapWindowContainerFeatureSetSpliceHighlightFeatures(focus_container,
@@ -819,7 +819,7 @@ void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features, int seq
                                                                          seq_start, seq_end)))
         {
           zmapWindowFullReposition(window->feature_root_group, TRUE, "key s") ;
-          
+
           window->splice_highlight_on = TRUE ;
         }
      }
@@ -876,13 +876,13 @@ void container_mask_cb(ZMapWindowContainerGroup container, FooCanvasPoints *poin
   for (l = canvas_data->masked ; l ; l = l->next)
     {
       if (g_list_find(cfs->featuresets, l->data))
-	{
-	  // this does the lot!
-	  // mh17: cannot believe my luck -> or is it skill??
-	  zMapWindowContainerFeatureSetShowHideMaskedFeatures(cfs, !cfs->masked, TRUE) ;
+        {
+          // this does the lot!
+          // mh17: cannot believe my luck -> or is it skill??
+          zMapWindowContainerFeatureSetShowHideMaskedFeatures(cfs, !cfs->masked, TRUE) ;
 
-	  break;
-	}
+          break;
+        }
     }
 }
 
@@ -1101,8 +1101,8 @@ static FooCanvasGroup *produce_column(ZMapCanvasData  canvas_data,
 {
   FooCanvasGroup *new_column = NULL;
 
-  if (!canvas_data || !container) 
-    return new_column ; 
+  if (!canvas_data || !container)
+    return new_column ;
 
   new_column = find_or_create_column(canvas_data, container, feature_set_id,
                                      column_strand, column_frame, feature_set, TRUE) ;
@@ -1153,7 +1153,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
 
   /* This surely should be fixed by NOT calling this function if either of these are NULL !! */
-  if (!canvas_data || !strand_container) 
+  if (!canvas_data || !strand_container)
     return column ;
 
   window = canvas_data->window ;
@@ -1303,10 +1303,10 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
       /* SHOULD BE IN zmapWindowContainerFeatureset.c..... */
       if (!g_list_find(container_set->featuresets, GUINT_TO_POINTER(feature_set_id)))
-	{
-	  container_set->featuresets = g_list_prepend(container_set->featuresets,
-						      GUINT_TO_POINTER(feature_set_id)) ;
-	}
+        {
+          container_set->featuresets = g_list_prepend(container_set->featuresets,
+                                                      GUINT_TO_POINTER(feature_set_id)) ;
+        }
     }
 
   return column ;
@@ -1572,7 +1572,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
           }
 
         if (block_group)
-          { 
+          {
             container_block = (ZMapWindowContainerBlock)block_group;
 
             if (status == ZMAP_CONTEXT_EXEC_STATUS_OK)
@@ -1580,7 +1580,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
                 canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_group) ;
               }
           }
-        
+
         zMapStopTimer("DrawBlock","");
 
         break;
@@ -2179,22 +2179,40 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       GList *list;
       proceed = TRUE;
 
+      /* (sm23)
+       * the styles list for this column also has to be inspected for
+       * default_bump_mode to get a consensus for a column when a featureset
+       * has already been read in and its bump_mode is inappropriate for the
+       * subsequent ones...
+       */
+
+      ZMapStyleBumpMode bump_mode = ZMAPBUMP_INVALID ;
       if((list = g_list_first(style_list)))
-	{
-	  do
-	    {
-	      ZMapFeatureTypeStyle style;
+        {
+          do
+            {
+              ZMapFeatureTypeStyle style;
 
-	      style = ZMAP_FEATURE_STYLE(list->data);
+              style = ZMAP_FEATURE_STYLE(list->data);
+              const char * name = g_quark_to_string(style->unique_id) ;
 
-	      if(!zMapStyleIsDisplayable(style))
-		{
-                  zMapLogWarning("style %s for %s is not displayable", g_quark_to_string(style->unique_id),g_quark_to_string(column_id));
+              if (style->default_bump_mode == ZMAPBUMP_ALL)
+                bump_mode = ZMAPBUMP_ALL ;
+
+              if(!zMapStyleIsDisplayable(style))
+                {
+                  zMapLogWarning("style %s for %s is not displayable",
+                                 g_quark_to_string(style->unique_id),
+                                 g_quark_to_string(column_id));
                   proceed = FALSE; /* not displayable, so bomb out the rest of the code. */
                 }
             }
           while(proceed && (list = g_list_next(list)));
         }
+
+      /* wow this is the magic bit; I spent a week of my life tracking this down */
+      if (style->default_bump_mode == ZMAPBUMP_OVERLAP && bump_mode == ZMAPBUMP_ALL)
+        style->default_bump_mode = bump_mode ;
     }
 
   /* Can we still proceed? */
@@ -2246,20 +2264,20 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
         {
           FooCanvasItem *feature_set ;
 
-	  /* fixed width, colour already set to yellow, but need start and end as there are no features */
-	  feature_set = zmapWindowDrawSetGroupBackground(window, container,
+          /* fixed width, colour already set to yellow, but need start and end as there are no features */
+          feature_set = zmapWindowDrawSetGroupBackground(window, container,
                                                          start, end, style->width,
                                                          ZMAP_CANVAS_LAYER_SEPARATOR_BACKGROUND, colour, NULL) ;
-          
+
           window->separator_feature_set = ZMAP_WINDOW_FEATURESET_ITEM(feature_set) ;
-	}
+        }
       else
-	{
-	  /* white background that will not be added as block has a white background */
-	  zmapWindowDrawSetGroupBackground(window, container,
+        {
+          /* white background that will not be added as block has a white background */
+          zmapWindowDrawSetGroupBackground(window, container,
                                            start, end, 1.0,
                                            ZMAP_CANVAS_LAYER_COL_BACKGROUND, colour, NULL) ;
-	}
+        }
 
       g_signal_connect(G_OBJECT(container), "destroy", G_CALLBACK(containerDestroyCB), (gpointer)window) ;
 
@@ -2589,12 +2607,12 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
                       if ((feature_set_id = zMapWindowCanvasFeaturesetGetSetIDAtPos((ZMapWindowFeaturesetItem)item,
                                                                                     but_event->x)))
-                        full_name = g_strdup_printf("%s / %s", 
+                        full_name = g_strdup_printf("%s / %s",
                                                     column_name,
                                                     g_quark_to_string(feature_set_id)) ;
                       else
                         full_name = g_strdup(column_name) ;
-                                               
+
                       select.feature_desc.feature_set = full_name ;
                     }
 
@@ -2636,7 +2654,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
                                 select.filter.value = zMapWindowCanvasFeaturesetGetFilterValue((FooCanvasItem *)fi) ;
                                 select.filter.n_filtered =
                                   zMapWindowCanvasFeaturesetGetFilterCount((FooCanvasItem *)fi) ;
-                                select.filter.column =  item;		/* needed for re-bumping */
+                                select.filter.column =  item;                /* needed for re-bumping */
                                 select.filter.featureset = fi;
                                 select.filter.enable = TRUE;
                                 select.filter.window = window;
@@ -2672,7 +2690,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
 
 /* Implements a tooltip window that shows the column name as the pointer enters a column.
- * 
+ *
  * With the new version of tooltips as of gtk 2.12 you don't need to allocate/deallocate
  * the tooltip. Tooltips have become "per-widget" and some settings like "time before
  * tooltip is shown" have to be made using a whole new "settings" model.
@@ -2690,7 +2708,7 @@ static gboolean setColumnTooltip(FooCanvasItem *item, GdkEvent *event, gpointer 
           ZMapWindowContainerFeatureSet feature_set_container = (ZMapWindowContainerFeatureSet)item ;
           GQuark col_id ;
           char *col_name ;
-      
+
           col_id = zmapWindowContainerFeaturesetGetColumnId(feature_set_container) ;
           col_name = (char *)g_quark_to_string(col_id) ;
 

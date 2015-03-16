@@ -374,6 +374,10 @@ ZMapWindowFeaturesetItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanv
       else if(type == FEATURE_ALIGN)
         {
           featureset_item->link_sideways = TRUE;
+          /*
+             featureset_item->style->default_bump_mode = ZMAPBUMP_ALL ; this should be used for alignments, but is not
+             being propagated through to where it is used...
+           */
         }
       else if(type == FEATURE_TRANSCRIPT)
         {
@@ -426,6 +430,7 @@ ZMapWindowFeaturesetItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanv
       /* set our bounding box in canvas coordinates to be the whole column */
       foo_canvas_item_request_update (foo);
     }
+
 
   return featureset_item ;
 }
