@@ -17,7 +17,7 @@ AM_CPPFLAGS = -g -I$(top_srcdir)/include \
 INCLUDE_COMMON = -I$(top_srcdir) -I$(top_srcdir)/include -I.
 
 if USE_GBTOOLS
-INCLUDE_COMMON += -I$(top_srcdir)/gbtools/src/include
+AM_CPPFLAGS += -I$(top_srcdir)/gbtools/src/include
 endif
 
 # Required by the install-zmap-static-libs target.
