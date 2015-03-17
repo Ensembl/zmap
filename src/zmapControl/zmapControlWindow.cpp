@@ -36,7 +36,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <zmapControl_P.h>
-#include <gbtools/gbtoolsGUI.hpp>
+#include <gbtools/gbtools.hpp>
 
 
 static void setTooltips(ZMap zmap) ;

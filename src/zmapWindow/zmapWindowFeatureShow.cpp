@@ -42,7 +42,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapXMLHandler.h>
 #include <zmapWindow_P.h>
-#include <gbtools/gbtoolsGUI.hpp>
+#include <gbtools/gbtools.hpp>
 
 
 #define TOP_BORDER_WIDTH 5
