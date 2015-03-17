@@ -1294,20 +1294,18 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
         }
     }
 
-  /*
-   * Now add to the column style_table if we have looked up an existsing item.
-   */
-  if (existing_column_item)
-    {
-      add_featureset_style_to_column(f_col, feature_set) ;
-    }
-
   if (tmp_column)
     {
       /* Always attach the new feature set to the column. */
       /* creating a new column passes through... */
       zmapWindowContainerAttachFeatureAny((ZMapWindowContainerGroup)tmp_column, (ZMapFeatureAny)feature_set) ;
       column = tmp_column ;
+
+      if (!add_featureset_style_to_column(f_col, feature_set))
+        {
+          zMapLogWarning("Could not add featureset style to column %d\n",
+                             g_quark_to_string(column_id));
+        }
     }
 
   if (add_to_hash)
