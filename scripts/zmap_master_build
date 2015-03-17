@@ -100,8 +100,8 @@ zmap_message_out "finished cloning $branch$sub_branch of zmap repository..."
 # ZMap is set up to build the gbtools subdirectory if it is there, so we don't need to
 # do anything else here other than copy it in.
 #
-zmap_message_out "entering $repository_name/src"
-cd $repository_name/src || zmap_message_exit "Cannot cd to $repository_name/src"
+zmap_message_out "entering $respository_name/src"
+cd $respository_name/src || zmap_message_exit "Cannot cd to $respository_name/src"
 
 zmap_message_out "coping in a clone of gbtools repository..."
 git clone -b "$gbtools_branch" git.internal.sanger.ac.uk:/repos/git/annotools/gbtools.git gbtools || zmap_message_exit "git clone of gbtools failed"
