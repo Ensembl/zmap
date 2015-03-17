@@ -46,7 +46,20 @@ MOSTLYCLEANFILES = $(DX_CLEANFILES)
 
 
 # these will be installed alongside the programs
-dist_doc_DATA = $(srcdir)/doc/user/*
+USER_DIR=$(srcdir)/doc/user
+dist_doc_DATA = $(USER_DIR)/Splice_highlight_off.png \
+	$(USER_DIR)/config_file.shtml \
+	$(USER_DIR)/keyboard_mouse.shtml \
+	$(USER_DIR)/styles.shtml \
+	$(USER_DIR)/zmap_quick_start.shtml \
+	$(USER_DIR)/Splice_highlight_on.png \
+	$(USER_DIR)/configuration.shtml \
+	$(USER_DIR)/manual/ZMap_User_Manual.pdf \
+	$(USER_DIR)/this_links.ini \
+	$(USER_DIR)/align1.png \
+	$(USER_DIR)/index.shtml \
+	$(USER_DIR)/release_notes.shtml \
+	$(USER_DIR)/user_interface.shtml
 
 # these are included in the distribution, but are not installed
 EXTRA_DIST = INSTALL \
