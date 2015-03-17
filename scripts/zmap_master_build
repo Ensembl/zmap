@@ -41,7 +41,7 @@ while getopts ":df:g:opr:s:" opt ; do
 	     sub_branch="/$OPTARG"
 	     branch_arg="$branch$sub_branch"
 	     script='feature' ;;
-	g  ) gbtools_branch='$OPTARG';;
+	g  ) gbtools_branch=$OPTARG;;
 	o  ) branch='develop'
 	     headline='OVERNIGHT'
 	     script='overnight' ;;
