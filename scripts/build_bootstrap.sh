@@ -30,7 +30,7 @@ function zmap_message_rm_exit
 
 # default branches
 BRANCH='develop'
-GBTOOLS_BRANCH='develop'
+GBTOOLS_BRANCH=''
 
 GIT_VERSION_INFO=''
 
@@ -229,16 +229,18 @@ if [ "x$gen_checkout_script" != "x" ]; then
     _checkout_message_out "Running git clone of zmap.git, branch $BRANCH, into $MASTER_SRC_DIR"
     git clone -b $BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
-    # clone the gbtools repo as a subdirectory of src
-    cd $MASTER_SRC_DIR/src || _checkout_message_exit "Failed to cd to $MASTER_SRC_DIR/src"
+    if [ -n "$GBTOOLS_BRANCH" ] ; then
+        # clone the gbtools repo as a subdirectory of src
+        cd $MASTER_SRC_DIR/src || _checkout_message_exit "Failed to cd to $MASTER_SRC_DIR/src"
 
-    gbtools_repo="gbtools"
-    if [[ -d $gbtools_repo ]] ; then
-      rm -r $gbtools_repo
+        gbtools_repo="gbtools"
+        if [[ -d $gbtools_repo ]] ; then
+          rm -r $gbtools_repo
+        fi
+
+        git clone -b $GBTOOLS_BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo
+        cd ../..
     fi
-
-    git clone -b $GBTOOLS_BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo
-    cd ../..
 
     # get the production branch (but don't check it out)
     git branch production origin/production
