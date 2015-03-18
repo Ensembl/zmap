@@ -1,5 +1,15 @@
 
-Request Tracker Tickets Resolved from 11/02/2015 to 16/03/2015
+Request Tracker Tickets Resolved from 11/02/2015 to 18/03/2015
+
+ticket/371426
+id: ticket/371426
+Queue: zmap
+Subject: bumping bug
+Requestors: sm23@sanger.ac.uk
+Owner: sm23
+Resolved: Tue Mar 17 12:07:01 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
 
 ticket/377315
 id: ticket/377315
@@ -58,6 +68,16 @@ Subject: blixem off by 2 on protein alignments after ensembl_cigar 3D
 Requestors: jgrg@sanger.ac.uk
 Owner: gb10
 Resolved: Mon Mar 09 13:05:52 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/457337
+id: ticket/457337
+Queue: zmap
+Subject: opening new windows on new dual screen deskpro
+Requestors: th2@sanger.ac.uk
+Owner: gb10
+Resolved: Tue Mar 17 09:50:13 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

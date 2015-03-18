@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/1.5.0"
 
+91b8652 2015-03-18 added the feature source to the Feature Details window - RT 457778
 aebcc19 2015-03-16 "-mTemporarily remove code which causes incorrect window size - RT 457337"
 1344efb 2015-03-12 fix to incorrect so-mode-map entry for SO term 'match' - BUG FIX
 156e5b9 2015-03-09 Merge branch 'feature/user_output' into develop
