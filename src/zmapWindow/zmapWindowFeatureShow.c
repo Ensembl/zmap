@@ -799,7 +799,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
       paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
                                                  ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE, NULL, NULL) ;
 
-      /*! \todo If editable is true (i.e. we have a temp feature from the Annotation column), we 
+      /*! \todo If editable is true (i.e. we have a temp feature from the Annotation column), we
        * want the default feature name and featureset to be those of the feature the user
        * originally copied into the Annotation column, rather than the temp feature
        * details. Defaults will need to be passed through somehow because we don't want to pollute
@@ -821,7 +821,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
       if (show->editable)
         {
           /* When editing a feature, add an entry to allow the user to set the feature_set.
-           * By default it is the Annotation column but note that if the user saves back to 
+           * By default it is the Annotation column but note that if the user saves back to
            * the annotation column then a new feature is NOT created - rather the temp feature
            * in the annotation column is overwritten. This allows the user to edit things such
            * as the CDS or exon coords of the temp feature. */
@@ -847,6 +847,12 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
                                                     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                                     "string", g_strdup(zMapStyleGetName(style)), NULL) ;
 
+          if (feature && feature->parent )
+            {
+              tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Source", NULL,
+                                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                                        "string", g_strdup(g_quark_to_string(feature->parent->original_id)), NULL) ;
+            }
           if ((description = zMapStyleGetDescription(style)))
             {
               tag_value = zMapGUINotebookCreateTagValue(paragraph, "Style Description", NULL,
@@ -1044,13 +1050,13 @@ void featureShowDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer d
       /* Accept is the response to the Save button. We save the temp feature attributes. */
       saveCB(NULL, data) ;
       break;
-      
+
     case GTK_RESPONSE_CANCEL:
     case GTK_RESPONSE_CLOSE:
     case GTK_RESPONSE_REJECT:
       cancelCB(NULL, data) ;
       break;
-      
+
     default:
       break;
   };
@@ -1699,7 +1705,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 
                           col_ind++;
 
-                          
+
                         }
                       else
                         {
@@ -2510,7 +2516,7 @@ static ChapterFeature readChapter(ZMapGuiNotebookChapter chapter)
     {
       int i = 0;
       gboolean done = FALSE;
-      
+
       do
         {
           char *tag_name = g_strdup_printf("Exon%d", i) ;
@@ -2565,7 +2571,7 @@ static ZMapFeatureSet getFeaturesetFromName(ZMapWindow window, char *name)
  * otherwise just save them in the existing feature (which should be the temp feature in the
  * annotation column).  */
 /*! \todo Check that this is a transcript */
-static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_feature, 
+static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_feature,
                         ZMapWindowFeatureShow show, const gboolean create_feature)
 {
   zMapReturnIfFail(chapter_feature && show && show->feature && show->feature->parent) ;
@@ -2606,7 +2612,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
   if (create_feature)
     {
       /* Create a new feature with the given feature name and featureset. In standalone zmap,
-       * the featureset must not be the Annotation column (otherwise the user should hit Save 
+       * the featureset must not be the Annotation column (otherwise the user should hit Save
        * instead of Create to save attributes in the temp feature). */
       if (window->xremote_client || new_feature_set_id != temp_feature_set_id)
         {
@@ -2616,7 +2622,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
       else
         {
           ok = FALSE ;
-          g_set_error(&error, g_quark_from_string("ZMap"), 99, 
+          g_set_error(&error, g_quark_from_string("ZMap"), 99,
                       "You cannot create a new feature in the %s column.\n\nEither press Save Attributes instead to save the temp feature, or specify a\ndifferent feature set to create the new feature in.",
                       ZMAP_FIXED_STYLE_SCRATCH_NAME) ;
         }
@@ -2638,7 +2644,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
     {
       feature_set = getFeaturesetFromName(window, (char*)g_quark_to_string(feature_set_id)) ;
     }
-  
+
   if (ok && feature_set)
     {
       style = feature_set->style ;
@@ -2675,7 +2681,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
         {
           const int cds_start = atoi(chapter_feature->CDS) + offset ;
           char *cp = strchr(chapter_feature->CDS, ',') ;
-      
+
           if (strcmp(chapter_feature->CDS, NOT_SET_TEXT) == 0)
             {
               /* Not set - ignore */
@@ -2704,7 +2710,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
               ZMapSpan exon = g_new0(ZMapSpanStruct, 1) ;
               const int start = GPOINTER_TO_INT(compound->data) ;
               const int end = GPOINTER_TO_INT(compound->next->data) ;
-              
+
               if (revcomp && start < 0 && end < 0)
                 {
                   /* Coords are shown as negative when revcomp'd - need to un-negate them */
