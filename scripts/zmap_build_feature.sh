@@ -20,6 +20,7 @@ BUILD_PREFIX='FEATURE'
 SEQTOOLS_DIR='FEATURE'
 #ERROR_ID='edgrif@sanger.ac.uk'
 ERROR_ID=''
+GBTOOLS_BRANCH=''
 
 # Script takes 1 required arg which is the name of the feature branch,
 # and 1 optional arg which is the symlink name of the seqtools build
@@ -36,6 +37,10 @@ if (( $# > 1 )) ; then
   SEQTOOLS_DIR=$2
 fi
 
-./build_run.sh $ERROR_ID -b $FEATURE_BRANCH -g -m -s $SEQTOOLS_DIR $BUILD_PREFIX || RC=1
+if (( $# > 2 )) ; then
+  GBTOOLS_BRANCH="-t $3"
+fi
+
+./build_run.sh $ERROR_ID -b $FEATURE_BRANCH -g -m -s $SEQTOOLS_DIR $BUILD_PREFIX $GBTOOLS_BRANCH || RC=1
 
 exit $RC

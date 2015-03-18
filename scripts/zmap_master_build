@@ -101,7 +101,7 @@ zmap_message_out "finished cloning $branch$sub_branch of zmap repository..."
 # ZMap is set up to build the gbtools subdirectory if it is there, so we don't need to
 # do anything else here other than copy it in.
 #
-if [ -n "$gbtools_branch" ] ; then
+if [ ! -z "$gbtools_branch" ] ; then
     gbtools_repo="gbtools"
     zmap_message_out "entering $curr_dir/$respository_name/src"
     cd $curr_dir/$respository_name/src || zmap_message_exit "Cannot cd to $curr_dir/$respository_name/src"
@@ -123,7 +123,7 @@ cd $curr_dir/$script_dir || zmap_message_exit "Cannot cd to $curr_dir/$script_di
 # Launch the build....
 #
 zmap_message_out "Starting build: $build_script $branch_arg $seqtools_dir"
-$build_script $branch_arg $seqtools_dir || zmap_message_exit "build failed !"
+$build_script $branch_arg $seqtools_dir $gbtools_branch || zmap_message_exit "build failed !"
 zmap_message_out "Finished build....."
 
 

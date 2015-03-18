@@ -22,6 +22,7 @@ RC=0
 
 BUILD_PREFIX='OVERNIGHT'
 SEQTOOLS_DIR='DAILY'
+GBTOOLS_BRANCH=''
 
 # Script takes 1 optional arg which is the symlink name of the seqtools build
 # (without the "BUILD." prefix)
@@ -30,7 +31,11 @@ if (( $# > 0 )) ; then
   SEQTOOLS_DIR=$1
 fi
 
-./build_run.sh -c -e -g -s $SEQTOOLS_DIR $BUILD_PREFIX || RC=1
+if (( $# > 1 )) ; then
+  GBTOOLS_BRANCH="-t $2"
+fi
+
+./build_run.sh -c -e -g -s $SEQTOOLS_DIR $BUILD_PREFIX $GBTOOLS_BRANCH || RC=1
 
 
 exit $RC
