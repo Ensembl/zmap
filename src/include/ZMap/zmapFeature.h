@@ -858,7 +858,6 @@ typedef struct ZMapFeatureDescStructName
   /* Use these fields to interpret and give more info. for the feature parts. */
   ZMapFeatureLevelType struct_type ;
   ZMapStyleMode type ;
-  ZMapFeatureSubpartType subpart_type ;	                   /* want to remove so that the strings are self describing */
 
   /* general feature details (all strings) */
   char *feature_name ;

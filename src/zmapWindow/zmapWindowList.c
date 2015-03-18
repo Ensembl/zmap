@@ -234,7 +234,7 @@ void zmapWindowListWindowCreate(ZMapWindow                   window,
                                 gboolean                     zoom_to_item)
 {
   ZMapWindowList window_list = NULL ;
-  GList *items ;
+  GList *items = NULL ;
 
   if (!get_hash_func)
     {
@@ -288,7 +288,7 @@ void zmapWindowListWindow(ZMapWindow                   window,
                           gboolean                     zoom_to_item)
 {
   ZMapWindowList window_list = NULL ;
-  GList *items ;
+  GList *items = NULL ;
 
 
   if (!get_hash_func)

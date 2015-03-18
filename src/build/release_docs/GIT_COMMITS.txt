@@ -1,31 +1,14 @@
 
-Git commits for  from commit "production" until commit "release/1.3.0"
+Git commits for  from commit "production" until commit "release/1.5.0"
 
-48f9533 2015-01-21 Fix incorrect gap string for protein seqs sent to blixem
-6fd8c75 2015-01-12 "fix bug causing lowercasing of featureset names on user loading."
-315c026 2015-01-08 Update the copyright declarations to the year 2015.
-7ab1636 2015-01-06 "add text for lessons learned from zmap."
-64e8a9d 2015-01-05 Fix some "File: " header lines.
-7e9ac48 2015-01-05 "add range of years copyright text as per sanger software policy."
-c5bf469 2014-12-19 "fix bug in state processing, did not clear up correctly on intermediate timeouts."
-165fb2f 2014-12-19 Disable zeromq test which sometimes hangs on cygwin
-a5a92b9 2014-12-18 "add in -f flag option to pass to autoreconf."
-2374938 2014-12-18 "add in -lX11 to link flags for 64-bit ubuntu."
-6fcadd5 2014-12-02 "fix memory leak causing zmap process to grow when idle."
-6efdb1f 2014-11-25 "add clean-zmap target to makefile"
-d41007d 2014-11-25 Merge branch 'feature/cygwin' into develop
-a00ed49 2014-11-25 "fix bugs in handling errors, not calling zmap to clear up modal lock."
-d281062 2014-11-25 "fix small bug, should not set model when app is dying, window is already gone."
-c21d3cd 2014-11-24 Fix install target on cygwin
-be05419 2014-11-20 Docs: update broken links
-b69fde4 2014-11-20 Update links to Design directory
-ace60f3 2014-11-19 update install files using Gemma's write up from web pages.
-c849175 2014-11-17 Add cygwin to supported host types
-ce2ad16 2014-11-17 clean up docs dir, remove expat and others redundant files, move foocanvas to src/libzmapfoocanvas.
-ae48c7e 2014-11-17 "remove zmapStyle_I.h, my mistake, I thought I'd done this."
-e00838f 2014-11-17 Merge branch 'feature/GOBJ_CAST' into develop
-acc322f 2014-11-14 Merge branch 'feature/Canvas_feature' into develop
-e10eae8 2014-11-12 Fix regression with file import for non-otterlace zmap
+1344efb 2015-03-12 fix to incorrect so-mode-map entry for SO term 'match' - BUG FIX
+156e5b9 2015-03-09 Merge branch 'feature/user_output' into develop
+1c4fe2e 2015-03-05 Merge branch 'feature/Feature_select_fix' into develop
+b31cd11 2015-02-25 "fix at zmap end for feature ontology/blixem display problem - RT 452621"
+5c383ef 2015-02-18 fix to drag/drop features into blixem
+72cb7e0 2015-02-17 Merge branch 'feature/user_output' into develop
+0f06a1d 2015-02-13 Merge branch 'feature/Main_Window' into develop
+fa41628 2015-02-13 Replace 'annotools' email id with 'annosoft'
 
 
 End of git commits

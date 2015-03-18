@@ -188,11 +188,8 @@ char *zMapConfigDirGetDir(void)
   char *config_dir = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  /* if (!dir_context) 
-    return config_dir ; */
-  zMapReturnValIfFail(dir_context, config_dir) ; 
-
-  config_dir = dir_context->config_dir ;
+  if (dir_context) 
+    config_dir = dir_context->config_dir ;
 
   return config_dir ;
 }
@@ -203,11 +200,8 @@ char *zMapConfigDirGetFile(void)
   char *config_file = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  /* if (!dir_context) 
-    return config_file ; */
-  zMapReturnValIfFail(dir_context, config_file) ; 
-
-  config_file = dir_context->config_file ;
+  if (dir_context) 
+    config_file = dir_context->config_file ;
 
   return config_file ;
 }
@@ -218,11 +212,8 @@ char *zMapConfigDirFindFile(char *filename)
   char *file_path = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  /* if (!dir_context) 
-    return file_path ; */
-  zMapReturnValIfFail(dir_context, file_path) ; 
-
-  file_path = zMapGetFile(dir_context->config_dir, filename, FALSE, NULL) ;
+  if (dir_context) 
+    file_path = zMapGetFile(dir_context->config_dir, filename, FALSE, NULL) ;
 
   return file_path ;
 }
@@ -244,11 +235,8 @@ char *zMapConfigDirGetZmapHomeFile(void)
   char *config_file = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  /* if (!dir_context) 
-    return config_file ; */
-  zMapReturnValIfFail(dir_context, config_file) ; 
-
-  config_file = dir_context->zmap_conf_file ;
+  if (dir_context) 
+    config_file = dir_context->zmap_conf_file ;
 
   return config_file ;
 }
@@ -259,11 +247,8 @@ char *zMapConfigDirGetSysFile(void)
   char *config_file = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  /* if (!dir_context) 
-    return config_file ; */
-  zMapReturnValIfFail(dir_context, config_file) ; 
-
-  config_file = dir_context->sys_conf_file ;
+  if (dir_context) 
+    config_file = dir_context->sys_conf_file ;
 
   return config_file ;
 }
@@ -273,11 +258,8 @@ void zMapConfigDirDestroy(void)
 {
   ZMapConfigDir dir_context = dir_context_G ;
 
-  /* if (!dir_context) 
-    return ; */
-  zMapReturnIfFail(dir_context) ; 
-
-  g_free(dir_context) ;
+  if (dir_context) 
+    g_free(dir_context) ;
 
   return ;
 }

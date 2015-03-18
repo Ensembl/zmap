@@ -72,7 +72,7 @@ enum
 
 
 
-/* 
+/*
  * Structs for splice highlighting.
  */
 typedef struct SpliceHighlightStructType
@@ -84,7 +84,7 @@ typedef struct SpliceHighlightStructType
   ZMapWindowContainerFeatureSet selected_container_set ;
 
   ZMapWindowContainerFeatureSet current_container_set ;
- 
+
   double y1, y2 ;                                           /* Extent of highlight features. */
 
   GList *splices ;                                          /* The splices (i.e. start/ends) of the features. */
@@ -644,9 +644,7 @@ void zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet containe
   container_set->block_id  = block_id;
   container_set->unique_id = feature_set_unique_id;
   container_set->original_id = feature_set_original_id;
-
   container_set->style = style;
-
   container_set->splice_highlight = zMapStyleIsSpliceHighlight(container_set->style) ;
 
 
@@ -1099,14 +1097,14 @@ gboolean zmapWindowContainerFeatureSetDoSpliceHighlight(ZMapWindowContainerFeatu
 /* Adds splice highlighting data for all the splice matching features in the container_set,
  * the splices get highlighted when the column is redrawn. Any existing highlight data is
  * replaced with the new data.
- * 
+ *
  * Returns TRUE if there were splice-aware cols (regardless of whether any features were splice
  * highlighted), returns FALSE if there if there were no splice-aware cols. This latter should be
  * reported to the user otherwise they won't know why no splices appeared.
- * 
+ *
  * If splice_highlight_features is NULL this has the effect of turning off splice highlighting but
  * you should use zmapWindowContainerFeatureSetSpliceUnhighlightFeatures().
- * 
+ *
  * (See Splice_highlighting.html)
  *  */
 gboolean zmapWindowContainerFeatureSetSpliceHighlightFeatures(ZMapWindowContainerFeatureSet container_set,

@@ -51,7 +51,7 @@
 #define ZMAP_CANVAS_INIT_SIZE (100.0)
 
 
-#define FEATURE_SIZE_REQUEST	0	// see item factory
+#define FEATURE_SIZE_REQUEST	0	/* see item factory */
 #define USE_FACTORY	0
 
 /*
@@ -101,32 +101,38 @@ typedef enum
 
 
 
-/* Feature info/coord display, selection, paste data. */
 
-/* Coord frame for coordinate display, exporting, pasting (coords are held internally in their
- * natural frame). */
-typedef enum
-  {
-    ZMAPWINDOW_COORD_ONE_BASED,                             /* Convert coords to one-based. */
-    ZMAPWINDOW_COORD_NATURAL                                /* Leave coords as they are, e.g. chromosome. */
-  } ZMapWindowCoordFrame ;
-
-/* Which part of feature should be pasted. */
-typedef enum
-  {
-    ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS,                     /* paste all subparts of feature. */
-    ZMAPWINDOW_PASTE_TYPE_SUBPART,                         /* paste single subpart clicked on. */
-    ZMAPWINDOW_PASTE_TYPE_EXTENT                           /* paste extent of feature. */
-  } ZMapWindowPasteFeatureType ;
-
-
-/* Use to specify how to paste, display, export features. */
-typedef struct ZMapWindowDisplayStyleStructName
+/* Focus item struct, should be considered "read-only", you shouldn't fiddle with the fields. */
+typedef struct ZMapWindowFocusItemStructType
 {
-  ZMapWindowCoordFrame coord_frame ;
-  ZMapWindowPasteStyleType paste_style ;
-  ZMapWindowPasteFeatureType paste_feature ;
-} ZMapWindowDisplayStyleStruct, *ZMapWindowDisplayStyle ;
+  ZMapWindowContainerFeatureSet item_column ;   // column if on display: interacts w/ focus_column
+  FooCanvasItem *item ;
+
+  ZMapFeature feature ;
+  /* for density items we have one foo and many features
+   * and we need to store the feature
+   */
+
+  /* TRY REINSTATING SUBPART SELECTION.... */
+  ZMapFeatureSubPartSpanStruct sub_part ;
+
+
+
+  int flags;                                    // a bitmap of focus types and misc data
+  int display_state;
+  // selected flags if any
+  // all states need to be kept as more than one may be visible
+  // as some use fill and some use border
+
+  // if needed add this for data structs for any group
+  //      void *data[N_FOCUS_GROUPS];
+
+  // from the previous ZMapWindowFocusItemAreaStruct
+  //  gboolean        highlighted;    // this was used but never unset
+  //  gpointer        associated;     // this had set values preserved but never set
+
+} ZMapWindowFocusItemStruct, *ZMapWindowFocusItem ;
+
 
 
 
@@ -1134,10 +1140,11 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 				   double rootx1, double rooty1, double rootx2, double rooty2) ;
 gboolean zmapWindowZoomFromClipboard(ZMapWindow window, double curr_world_x, double curr_world_y) ;
 
-char *zmapWindowMakeFeatureSelectionText(ZMapWindow window,
-                                         ZMapWindowDisplayStyle display_style, ZMapFeature selected_feature) ;
 char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy, ZMapWindowDisplayStyle display_style,
                                         ZMapWindowContainerFeatureSet selected_column) ;
+char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
+                                                    ZMapWindowDisplayStyle display_style, ZMapFeature feature) ;
+char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWindowDisplayStyle display_style) ;
 
 void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
 				 double *rootx1, double *rooty1, double *rootx2, double *rooty2) ;
@@ -1260,7 +1267,7 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
 
 void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double y1, double y2) ;
 void zmapWindowSetPixelxy(ZMapWindow window, double pixels_per_unit_x, double pixels_per_unit_y) ;
-gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas, 
+gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas,
                                        int *layout_win_width, int *layout_win_height,
                                        int *layout_binwin_width, int *layout_binwin_height) ;
 
@@ -1446,9 +1453,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomolFeature(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuTranscriptTools(int *start_index_inout,
                                                   ZMapGUIMenuItemCallbackFunc callback_func,
                                                   gpointer callback_data);
-ZMapGUIMenuItem zmapWindowMakeMenuMarkExportOps(int *start_index_inout,
-						ZMapGUIMenuItemCallbackFunc callback_func,
-						gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 					     ZMapGUIMenuItemCallbackFunc callback_func,
 					     gpointer callback_data) ;
@@ -1509,7 +1513,7 @@ void zmapWindowBusyInternal(ZMapWindow window,
                           ? (WINDOW)->window_busy_cursor        \
                           : (WINDOW)->normal_cursor),           \
                          __FILE__,                              \
-                         (char *)__PRETTY_FUNCTION__)                    
+                         (char *)__PRETTY_FUNCTION__)
 #else
 #define zmapWindowBusy(WINDOW, BUSY)                            \
   zmapWindowBusyInternal((WINDOW),                              \
@@ -1591,13 +1595,22 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item) ;
 // also used for evidence highlight lists
 
 ZMapWindowFocus zmapWindowFocusCreate(ZMapWindow window) ;
-void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item,ZMapFeature feature, ZMapWindowFocusType type);
+
+
+/* add subpart flag...a little at a time....most uses use the macro so won't see the change... */
+void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item,
+                                ZMapFeature feature, ZMapFeatureSubPartSpan sub_part, ZMapWindowFocusType type);
 #define zmapWindowFocusAddItem(focus, item_list, feature) \
-      zmapWindowFocusAddItemType(focus, item_list, feature, WINDOW_FOCUS_GROUP_FOCUS);
+  zmapWindowFocusAddItemType(focus, item_list, feature, NULL, WINDOW_FOCUS_GROUP_FOCUS);
+
+
+
+
 void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasItem *hot,ZMapWindowFocusType type);
 #define zmapWindowFocusAddItems(focus, item_list, hot) \
       zmapWindowFocusAddItemsType(focus, item_list, hot, WINDOW_FOCUS_GROUP_FOCUS);
-void zmapWindowFocusForEachFocusItemType(ZMapWindowFocus focus, ZMapWindowFocusType type, GFunc callback, gpointer user_data) ;
+void zmapWindowFocusForEachFocusItemType(ZMapWindowFocus focus, ZMapWindowFocusType type,
+                                         GFunc callback, gpointer user_data) ;
 void zmapWindowFocusResetType(ZMapWindowFocus focus, ZMapWindowFocusType type);
 void zmapWindowFocusReset(ZMapWindowFocus focus) ;
 void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
@@ -1612,9 +1625,14 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus) ;
 gboolean zmapWindowFocusIsItemFocused(ZMapWindowFocus focus, FooCanvasItem *item) ;
+GList *zmapWindowFocusGetFocusItems(ZMapWindowFocus focus) ;
 GList *zmapWindowFocusGetFocusItemsType(ZMapWindowFocus focus, ZMapWindowFocusType type) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #define zmapWindowFocusGetFocusItems(focus) \
     zmapWindowFocusGetFocusItemsType(focus, WINDOW_FOCUS_GROUP_FOCUS)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *item) ;
 void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column, FooCanvasItem *item) ;
 FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
@@ -1635,8 +1653,15 @@ GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand);
 int zmapWindowItemListStartCoord(GList *item_list);
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
+			       gboolean replace_highlight_item, gboolean highlight_same_names,
+                               ZMapFeatureSubPartSpan sub_part) ;
+
 void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus) ;
 

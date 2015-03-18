@@ -1647,12 +1647,12 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
  */
 void zmapWindowUpdateInfoPanel(ZMapWindow window,
                                ZMapFeature feature_arg,
-                               GList *feature_list, FooCanvasItem *item,   ZMapFeatureSubPartSpan sub_feature,
+                               GList *feature_list, FooCanvasItem *item, ZMapFeatureSubPartSpan sub_part,
                                int sub_item_dna_start, int sub_item_dna_end,
                                int sub_item_coords_start, int sub_item_coords_end,
                                char *alternative_clipboard_text,
                                gboolean replace_highlight_item, gboolean highlight_same_names,
-                               gboolean sub_part, ZMapWindowDisplayStyle display_style)
+                               gboolean highlight_sub_part, ZMapWindowDisplayStyle display_style)
 {
   static const int max_variation_str_len = 20 ;
   char *p = NULL ;
@@ -1679,7 +1679,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   if (!display_style)
     display_style = &default_display_style ;
 
-  select.type = ZMAPWINDOW_SELECT_SINGLE;
+  select.type = ZMAPWINDOW_SELECT_SINGLE ;
 
   /* If feature_arg is NULL then this implies "reset the info data/panel". */
   if (!feature_arg || feature_arg->mode == ZMAPSTYLE_MODE_INVALID)
@@ -1688,6 +1688,12 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       return ;
     }
+
+
+
+  /* Not sure if this is the place to do this.... */
+  if (highlight_sub_part && sub_part)
+    select.sub_part = sub_part ;
 
 
 
@@ -1767,29 +1773,31 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     {
       /* non-sequence like feature. */
 
-//      sub_feature = zMapWindowCanvasItemIntervalGetData(item);
+
+      /* AHA.....THIS IS WHERE IT ALL GOT MESSED UP, WE STILL NEED THE SUB_FEATURE..... */
+      //      sub_feature = zMapWindowCanvasItemIntervalGetData(item);
       feature = zMapWindowCanvasItemGetFeature(item);
 
 
 #if 0
-//fixed by adding ZMWCI->set_feature() and zMapWindowCanvasItemSetFeature()
-/* mh17 NOTE
- * GRAPH_DENSITY items set thier feature when point() is called
- * if the mouse is moving while we are processing a click then the feature
- * pointed at by the canvas item can change causing an assertion
- * here we choose to dislay info about the one clicked on
- * the assertion is the check that a sub-item (eg exon) is really part of the containing group
- * and we break that with composite items
- * we have to ensure that the feature_arg data is passed through with any later functions
- * that update the canvas item (highlighting the feature in another window maybe?)
- * so that implicates zmapView.c/select and likely zmapControl.c too
- * note that we cannot simply choose to use feature instead of feature_arg as the mouse may be still moving
- */
+      //fixed by adding ZMWCI->set_feature() and zMapWindowCanvasItemSetFeature()
+      /* mh17 NOTE
+       * GRAPH_DENSITY items set thier feature when point() is called
+       * if the mouse is moving while we are processing a click then the feature
+       * pointed at by the canvas item can change causing an assertion
+       * here we choose to dislay info about the one clicked on
+       * the assertion is the check that a sub-item (eg exon) is really part of the containing group
+       * and we break that with composite items
+       * we have to ensure that the feature_arg data is passed through with any later functions
+       * that update the canvas item (highlighting the feature in another window maybe?)
+       * so that implicates zmapView.c/select and likely zmapControl.c too
+       * note that we cannot simply choose to use feature instead of feature_arg as the mouse may be still moving
+       */
       if(ZMAP_IS_WINDOW_GRAPH_DENSITY_ITEM(item))
-      feature = feature_arg;
+        feature = feature_arg;
       else
 #endif
-      top_canvas_item = zMapWindowCanvasItemIntervalGetObject(item);
+        top_canvas_item = zMapWindowCanvasItemIntervalGetObject(item);
 
       feature_group   = zmapWindowItemGetParentContainer(FOO_CANVAS_ITEM(top_canvas_item)) ;
 
@@ -1801,44 +1809,44 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
 
 #if !MH17_FEATURE_SET_NAME_IS_COLUMN_NAME
-        {
-            ZMapFeatureSetDesc gffset;
-            ZMapFeatureSet feature_set = (ZMapFeatureSet)
-                  zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET);
+      {
+        ZMapFeatureSetDesc gffset;
+        ZMapFeatureSet feature_set = (ZMapFeatureSet)
+          zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET);
 
-            if(feature_set)
-            {
-                  select.feature_desc.feature_set =
-                        g_strdup(g_quark_to_string(feature_set->original_id)) ;
+        if(feature_set)
+          {
+            select.feature_desc.feature_set =
+              g_strdup(g_quark_to_string(feature_set->original_id)) ;
 
-                  gffset = g_hash_table_lookup(window->context_map->featureset_2_column,
-                        GUINT_TO_POINTER(feature_set->unique_id));
-                  if(gffset)
+            gffset = g_hash_table_lookup(window->context_map->featureset_2_column,
+                                         GUINT_TO_POINTER(feature_set->unique_id));
+            if(gffset)
+              {
+                // got the featureset_2_column mapping, look up the column
+                gffset  = g_hash_table_lookup(window->context_map->columns,
+                                              GUINT_TO_POINTER(gffset->column_id));
+                if(gffset)
                   {
-                        // got the featureset_2_column mapping, look up the column
-                        gffset  = g_hash_table_lookup(window->context_map->columns,
-                              GUINT_TO_POINTER(gffset->column_id));
-                        if(gffset)
-                        {
-                              select.feature_desc.feature_set =
-                                    g_strdup(g_quark_to_string(gffset->column_ID));
-                        }
+                    select.feature_desc.feature_set =
+                      g_strdup(g_quark_to_string(gffset->column_ID));
                   }
+              }
 
-                  if (feature_set->description)
-                        select.feature_desc.feature_set_description = g_strdup(feature_set->description) ;
-            }
-        }
+            if (feature_set->description)
+              select.feature_desc.feature_set_description = g_strdup(feature_set->description) ;
+          }
+      }
 #else
       zmapWindowFeatureGetSetTxt(feature,
-                       &(select.feature_desc.feature_set),
-                       &(select.feature_desc.feature_set_description)) ;
+                                 &(select.feature_desc.feature_set),
+                                 &(select.feature_desc.feature_set_description)) ;
 #endif
 
 
       zmapWindowFeatureGetSourceTxt(feature,
-    &(select.feature_desc.feature_source),
-    &(select.feature_desc.feature_source_description)) ;
+                                    &(select.feature_desc.feature_source),
+                                    &(select.feature_desc.feature_source_description)) ;
 
       /* zero all of this. */
       feature_total_length = feature_start = feature_end = feature_length
@@ -1909,12 +1917,12 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
 
 
-      if (sub_feature)/* If sub_feature == NULL we'll only get the same as previous! */
+      if (sub_part)/* If sub_feature == NULL we'll only get the same as previous! */
         {
           feature_start = feature_end = feature_length = query_start = query_end =
             sub_feature_index = sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0 ;
 
-          if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
+          if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_part,
                                  "index",  &sub_feature_index,
                                  "start",  &sub_feature_start,
                                  "end",    &sub_feature_end,
@@ -1934,7 +1942,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
           if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
             {
-              if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
+              if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_part,
                                      "query-start",  &query_start,
                                      "query-end",    &query_end,
                                      "query-length", &query_length,
@@ -1956,8 +1964,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       if (ZMAPFEATURE_IS_BASIC(feature) && feature->feature.basic.flags.variation_str)
         {
           select.feature_desc.feature_name = g_strdup_printf("%s (%s)",
-            (char *)g_quark_to_string(feature->original_id),
-            (char *)(strlen(feature->feature.basic.variation_str) < max_variation_str_len ? feature->feature.basic.variation_str : "allele str") ) ;
+                                                             (char *)g_quark_to_string(feature->original_id),
+                                                             (char *)(strlen(feature->feature.basic.variation_str) < max_variation_str_len ? feature->feature.basic.variation_str : "allele str") ) ;
           if (strlen(feature->feature.basic.variation_str) >= max_variation_str_len)
             {
               /* select.feature_desc.feature_variation_string = g_strdup(feature->feature.basic.variation_str) ; */
@@ -2010,19 +2018,19 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       if (style)
         select.feature_desc.feature_type = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
 
-        select.highlight_item = item ;
+      select.highlight_item = item ;
 
-        select.feature_list = feature_list;
+      select.feature_list = feature_list;
 
 
       select.replace_highlight_item = replace_highlight_item ;
 
       select.highlight_same_names = highlight_same_names ;
 
-      select.sub_part = sub_part;
+      select.highlight_sub_part = highlight_sub_part ;
 
 
-/* dis/enable the filter by score widget and set min and max */
+      /* dis/enable the filter by score widget and set min and max */
       select.filter.enable = FALSE;
 
       if (style && zMapStyleIsFilter(style) && ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
@@ -2081,9 +2089,9 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       seq_name = g_strdup_printf("%d-%d", display_start, display_end);
 
       select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA,
-      seq_name, "DNA", NULL,
-      end - start + 1,
-      dna_string);
+                                              seq_name, "DNA", NULL,
+                                              end - start + 1,
+                                              dna_string);
       g_free(seq_name);
     }
   else if (zMapFeatureSequenceIsPeptide(feature))
@@ -2106,7 +2114,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     }
   else
     {
-      select.secondary_text = zmapWindowMakeFeatureSelectionText(window, display_style, NULL) ;
+      select.secondary_text = zmapWindowMakeFeatureSelectionTextFromSelection(window, display_style) ;
     }
 
   /* this puts the DNA in the clipbaord */
@@ -2115,7 +2123,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   g_free(select.secondary_text) ;
 
   if(feature_list)
-  g_list_free(feature_list);
+    g_list_free(feature_list);
 
   return ;
 }
@@ -4084,38 +4092,38 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
           }
         else if (guide)
           {
-    /* If we are a locked, _vertical_ split window then also show the ruler in the
-     * other windows. */
-    if (locked)
-      {
-        LockedRulerStruct locked_data = {0} ;
+            /* If we are a locked, _vertical_ split window then also show the ruler in the
+             * other windows. */
+            if (locked)
+              {
+                LockedRulerStruct locked_data = {0} ;
 
-        locked_data.action  = ZMAP_LOCKED_RULER_REMOVE ;
+                locked_data.action  = ZMAP_LOCKED_RULER_REMOVE ;
 
-        g_hash_table_foreach(window->sibling_locked_windows, lockedRulerCB, (gpointer)&locked_data) ;
-      }
-    else
-      {
-        removeRuler(window->horizon_guide_line, window->tooltip) ;
-      }
+                g_hash_table_foreach(window->sibling_locked_windows, lockedRulerCB, (gpointer)&locked_data) ;
+              }
+            else
+              {
+                removeRuler(window->horizon_guide_line, window->tooltip) ;
+              }
 
-    /* If windows are locked then this should scroll all of them.... */
-    if (in_window)
-      {
-        double y;
-        gboolean moved = FALSE;
-        y = but_event->y;
+            /* If windows are locked then this should scroll all of them.... */
+            if (in_window)
+              {
+                double y;
+                gboolean moved = FALSE;
+                y = but_event->y;
 
-        moved = recenter_scroll_window(window, &y);
+                moved = recenter_scroll_window(window, &y);
 
-        zMapWindowScrollToWindowPos(window, y) ;
+                zMapWindowScrollToWindowPos(window, y) ;
 
-        if(moved)
-          zMapWindowRedraw(window); /* this does zmapWindowUninterruptExpose()! */
-      }
+                if(moved)
+                  zMapWindowRedraw(window); /* this does zmapWindowUninterruptExpose()! */
+              }
 
-    guide = FALSE ;
-    locked = FALSE ;
+            guide = FALSE ;
+            locked = FALSE ;
 
             event_handled = TRUE ;    /* We _ARE_ handling */
           }
@@ -5298,14 +5306,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 {
   gboolean event_handled = FALSE ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  static FooCanvasGroup *focus_column_G = NULL ;            /* Used for flip-flopping focus. */
-  static FooCanvasItem *focus_item_G = NULL ;
-  static ZMapFeature focus_feature_G = NULL ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
   zMapReturnValIfFail(key_event, event_handled) ;
 
   switch (key_event->keyval)
@@ -6010,7 +6010,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                   {
                     GList *focus_items ;
 
-                    if ((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
+                    if ((focus_items = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS)))
                       {
                         zmapWindowZoomToItems(window, focus_items) ;
 
