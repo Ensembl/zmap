@@ -455,6 +455,12 @@ dotZMap:dotZmap.in
 #
 AC_CONFIG_SUBDIRS([AceConn])
 
+# Build the gbtools library, if it exists. (This can be optionally
+# copied into the zmap tree and we build it. Otherwise, the user
+# must make sure it is installed locally.)
+#
+AC_CONFIG_SUBDIRS([gbtools])
+AM_CONDITIONAL([USE_GBTOOLS], [test -d "$srcdir/gbtools/src"])
 
 # Build the zeromq package, complicated because we need to tell it to build the
 # static library as well as the dynamic. I got this recipe from:

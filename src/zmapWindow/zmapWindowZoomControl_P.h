@@ -27,6 +27,11 @@
  *
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAPWINDOWZOOMCONTROL_P_H
 #define ZMAPWINDOWZOOMCONTROL_P_H
 
@@ -79,4 +84,8 @@ typedef struct _ZMapWindowZoomControlStruct
 
 } ZMapWindowZoomControlStruct;
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

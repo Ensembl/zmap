@@ -31,6 +31,10 @@
  *
  *-------------------------------------------------------------------
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAPVIEW_H
 #define ZMAPVIEW_H
 
@@ -248,3 +252,7 @@ ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapView2Str, ZMapViewState) ;
 
 
 #endif /* !ZMAPVIEW_H */
+
+#ifdef __cplusplus
+}
+#endif

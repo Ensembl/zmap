@@ -73,6 +73,7 @@ CRON=''
 GIT_FEATURE_INFO=''
 ZMAP_BUILD_RELEASE_DOCS=''
 SEQTOOLS_DIR='DEVELOPMENT'
+GBTOOLS_BRANCH=''
 
 # try to load useful shared shell functions...after this we will have access to
 # common message funcs.
@@ -117,9 +118,9 @@ message_out "ZMap Build Started: $*"
 
 # Do args.
 #
-usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -e -g -i <input directory> -m -n -o <output directory> -s <seqtools directory> -t -r -u ]   <build prefix>"
+usage="$PROGNAME [ -a <user_mail_id> -b <git branch> -c -d -e -g -i <input directory> -m -n -o <output directory> -s <seqtools directory> -t <gbtools_branch> -r -u ]   <build prefix>"
 
-while getopts ":a:b:cdegi:mo:rs:u" opt ; do
+while getopts ":a:b:cdegi:mo:rs:t:u" opt ; do
     case $opt in
 	a  ) ERROR_RECIPIENT=$OPTARG ;;
 	b  ) BRANCH=$OPTARG ;;
@@ -131,6 +132,7 @@ while getopts ":a:b:cdegi:mo:rs:u" opt ; do
 	o  ) OUTPUT_DIR=$OPTARG ;;
 	r  ) INC_REL_VERSION='-r'    ;;
 	s  ) SEQTOOLS_DIR=$OPTARG ;;
+	t  ) GBTOOLS_BRANCH=$OPTARG ;;
 	u  ) INC_UPDATE_VERSION='-u' ;;
 	\? ) message_exit "Bad arg flag: $usage" ;;
     esac
@@ -247,6 +249,11 @@ if [ -n "$BRANCH" ] ; then
 
 fi
 
+if [ -n "$GBTOOLS_BRANCH" ] ; then
+
+  CMD_OPTIONS="$CMD_OPTIONS -t $GBTOOLS_BRANCH"
+
+fi
 
 
 # Set the directory for picking up seqtools binaries etc.
@@ -298,6 +305,7 @@ if [ -z "$CRON" ] ; then
     message_out "           FTP log: $FTP_LOG"
     message_out "Errors reported to: $ERROR_RECIPIENT"
     message_out "      Seqtools dir: $SEQTOOLS_DIR"
+    message_out "    gbtools branch: $GBTOOLS_BRANCH"
     message_out "==================="
 
 fi

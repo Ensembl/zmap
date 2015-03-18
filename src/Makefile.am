@@ -27,7 +27,12 @@ ACLOCAL_AMFLAGS = -I m4
 
 
 # ZMAP_SRC_DIRS See configure.ac
-SUBDIRS = AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+if USE_GBTOOLS
+OPTIONAL_SUBDIRS = gbtools
+endif
+
+SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+
 
 CLEANFILES = $(pkgconfig_DATA)
 
@@ -177,6 +182,16 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libPFetch.a                    \
 	$(top_builddir)/htslib-develop/libhts.a              \
 	$(top_builddir)/AceConn/src/.libs/libAceConn.a       
+
+# If we have gbtools in a subdirectory, add the .a file, otherwise
+# look for a locally installed version
+if USE_GBTOOLS
+zmap_LDADD +=                                                \
+	$(top_builddir)/gbtools/libgbtools.a            
+else
+zmap_LDADD +=                                                \
+	-lgbtools
+endif
 
 # The zeromq library has a different suffix on cygwin
 if ON_CYGWIN

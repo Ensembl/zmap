@@ -25,13 +25,14 @@ sub_branch=''
 branch_arg=''
 respository_name='./ZMap'
 seqtools_dir=''
+gbtools_branch=''
 
 
 # Do args.
 #
-usage="$PROGNAME [ -d -f <feature_sub_branch e.g. New_XRemote> -o -p -r <release_sub_branch e.g. 0.8.0> -s <seqtools_dir>]"
+usage="$PROGNAME [ -d -f <feature_sub_branch e.g. New_XRemote> -o -p -r <release_sub_branch e.g. 0.8.0> -s <seqtools_dir> -g <gbtools_branch> ]"
 
-while getopts ":df:opr:s:" opt ; do
+while getopts ":df:g:opr:s:" opt ; do
     case $opt in
 	d  ) branch='develop'
 	     headline='DEVELOP'
@@ -41,6 +42,7 @@ while getopts ":df:opr:s:" opt ; do
 	     sub_branch="/$OPTARG"
 	     branch_arg="$branch$sub_branch"
 	     script='feature' ;;
+	g  ) gbtools_branch=$OPTARG;;
 	o  ) branch='develop'
 	     headline='OVERNIGHT'
 	     script='overnight' ;;
@@ -93,8 +95,28 @@ zmap_message_out "cloning $branch$sub_branch of zmap repository..."
 git clone -b "$branch$sub_branch" git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $respository_name || zmap_message_exit "git clone failed"
 zmap_message_out "finished cloning $branch$sub_branch of zmap repository..."
 
+#
+# Copy our gbtools utilities repository into the src subdirectory in the zmap clone.
+# This is required to be part of the dist so users don't have to install it separately.
+# ZMap is set up to build the gbtools subdirectory if it is there, so we don't need to
+# do anything else here other than copy it in.
+#
+if [ -n "$gbtools_branch" ] ; then
+    gbtools_repo="gbtools"
+    zmap_message_out "entering $curr_dir/$respository_name/src"
+    cd $curr_dir/$respository_name/src || zmap_message_exit "Cannot cd to $curr_dir/$respository_name/src"
 
-cd $script_dir || zmap_message_exit "Cannot cd to $script_dir."
+    if [[ -d $gbtools_repo ]] ; then
+        rm -r $gbtools_repo
+    fi
+
+    zmap_message_out "coping in a clone of gbtools repository..."
+    git clone -b "$gbtools_branch" git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo || zmap_message_exit "git clone of gbtools failed"
+    zmap_message_out "finished cloning $gbtools_branch of gbtools repository"
+fi
+
+
+cd $curr_dir/$script_dir || zmap_message_exit "Cannot cd to $curr_dir/$script_dir."
 
 
 #

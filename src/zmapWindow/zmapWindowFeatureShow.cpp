@@ -1,4 +1,4 @@
-/*  File: zmapWindowFeatureShow.c
+/*  File: zmapWindowFeatureShow.cpp
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -42,7 +42,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapXMLHandler.h>
 #include <zmapWindow_P.h>
-
+#include <gbtools/gbtools.hpp>
 
 
 #define TOP_BORDER_WIDTH 5
@@ -290,8 +290,8 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
                         char *action, FooCanvasItem *real_item,
                         ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data) ;
 static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
-				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
-				  gpointer reply_handler_func_data) ;
+                                  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
+                                  gpointer reply_handler_func_data) ;
 
 static void getEvidenceReplyFunc(gboolean reply_ok, char *reply_error,
                                  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
@@ -316,14 +316,14 @@ static ChapterFeature readChapter(ZMapGuiNotebookChapter chapter);
 static GtkItemFactoryEntry menu_items_G[] =
   {
     /* File */
-    { "/_File",              NULL,         NULL,       0,          "<Branch>", NULL},
-    { "/File/_Preserve",      NULL,         preserveCB, 0,          NULL,       NULL},
-    { "/File/_Close",         "<control>W", requestDestroyCB, 0,    NULL,       NULL},
+    { "/_File",                 NULL,         NULL,                                     0,    "<Branch>",   NULL},
+    { "/File/_Preserve",        NULL,         (GtkItemFactoryCallback)preserveCB,       0,    NULL,         NULL},
+    { "/File/_Close",           "<control>W", (GtkItemFactoryCallback)requestDestroyCB, 0,    NULL,         NULL},
 
     /* Help */
-    { "/_Help",                NULL, NULL,       0,  "<LastBranch>", NULL},
-    { "/Help/_Feature Display", NULL, helpMenuCB, 1,  NULL,           NULL},
-    { "/Help/_About ZMap",      NULL, helpMenuCB, 2,  NULL,           NULL}
+    { "/_Help",                 NULL,         NULL,                                     0,  "<LastBranch>", NULL},
+    { "/Help/_Feature Display", NULL,         (GtkItemFactoryCallback)helpMenuCB,       1,  NULL,           NULL},
+    { "/Help/_About ZMap",      NULL,         (GtkItemFactoryCallback)helpMenuCB,       2,  NULL,           NULL}
   } ;
 
 
@@ -1007,7 +1007,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
                * refer to other calls to zMapFeaturePhase2Str()
                */
               if (feature->feature.transcript.flags.start_not_found)
-                tmp = g_strdup_printf("%s", zMapFeaturePhase2Str(feature->feature.transcript.start_not_found)) ;
+                tmp = g_strdup_printf("%s", zMapFeaturePhase2Str((ZMapPhase)feature->feature.transcript.start_not_found)) ;
               else
                 tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
 
@@ -1142,7 +1142,7 @@ static gboolean mapeventCB(GtkWidget *widget, GdkEvent  *event, gpointer   user_
   feature_show->notebook_mapevent_handler = 0 ;
 
   /* Get max possible window size and adjust for users preference. */
-  zMapGUIGetTrueMonitorSize(feature_show->window, &max_width, &max_height) ;
+  gbtools::GUIGetTrueMonitorSize(feature_show->window, &max_width, &max_height) ;
   max_width *= width_proportion ;
   max_height *= height_proportion ;
 
@@ -1371,7 +1371,7 @@ static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list, const gboo
           ZMapWindowFeatureShow show ;
 
           show_widg = (GtkWidget *)g_ptr_array_index(window_list, i) ;
-          show = g_object_get_data(G_OBJECT(show_widg), "zmap_feature_show") ;
+          show = (ZMapWindowFeatureShow)g_object_get_data(G_OBJECT(show_widg), "zmap_feature_show") ;
           if (show->reusable && show->editable == editable)
             {
               reusable_window = show ;
@@ -2259,7 +2259,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapXMLUtilsEventStack xml_elements ;
-  ZMapWindowSelectStruct select = {0} ;
+  ZMapWindowSelectStruct select = {ZMAPWINDOW_SELECT_SINGLE} ;
   ZMapFeatureSetStruct feature_set = {0} ;
   ZMapFeatureSet multi_set ;
   ZMapFeature feature_copy ;

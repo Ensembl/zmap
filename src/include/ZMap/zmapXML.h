@@ -27,6 +27,11 @@
  *
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_XML_H
 #define ZMAP_XML_H
 
@@ -390,3 +395,7 @@ char *zMapXMLUtilsUnescapeStrdup(char *str);	/* NOTE: incomplete */
 
 
 #endif /* ZMAP_XML_H */
+
+#ifdef __cplusplus
+}
+#endif
