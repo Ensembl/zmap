@@ -28,6 +28,11 @@
  *
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_CMDLINEARGS_H
 #define ZMAP_CMDLINEARGS_H
 
@@ -92,3 +97,7 @@ void zMapCmdLineArgsDestroy(void) ;
 
 #endif /* !ZMAP_CMDLINEARGS_H */
 
+
+#ifdef __cplusplus
+}
+#endif

@@ -27,6 +27,11 @@
  *
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_WINDOW_P_H
 #define ZMAP_WINDOW_P_H
 
@@ -1495,7 +1500,7 @@ gboolean zmapWindowZoomControlZoomByFactor(ZMapWindow window, double factor);
 void zmapWindowZoomControlHandleResize(ZMapWindow window);
 void zmapWindowZoomControlRegisterResize(ZMapWindow window) ;
 double zmapWindowZoomControlLimitSpan(ZMapWindow window, double y1, double y2) ;
-void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomControl new) ;
+void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig_zoom, ZMapWindowZoomControl new_zoom) ;
 void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
                                           double *x1_out, double *y1_out,
                                           double *x2_out, double *y2_out);
@@ -1798,3 +1803,7 @@ void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data) ;
 void foo_bug_set(void *key,char *id) ;
 
 #endif /* !ZMAP_WINDOW_P_H */
+
+#ifdef __cplusplus
+}
+#endif

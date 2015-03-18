@@ -11,7 +11,7 @@ zmapControlNavigator.c \
 zmapControlPreferences.c \
 zmapControlRemoteControl.c \
 zmapControlViews.c \
-zmapControlWindow.c \
+zmapControlWindow.cpp \
 zmapControlWindowButtons.c \
 zmapControlWindowFrame.c \
 zmapControlWindowInfoPanel.c \

@@ -20,6 +20,7 @@ BRANCH='develop'
 SEQTOOLS_DIR='DEVELOPMENT'
 BUILD_PREFIX='ONE_OFF'
 ERROR_RECIPIENT='edgrif@sanger.ac.uk'
+GBTOOLS_BRANCH=''
 
 # Two optional args: 1st specifies the FULL branch name and the 2nd is
 # the symlink id of the seqtools build to use (excluding the "BUILD."
@@ -33,6 +34,10 @@ if (( $# > 1 )) ; then
   SEQTOOLS_DIR=$2
 fi
 
-./build_run.sh -a $ERROR_RECIPIENT -b $BRANCH -g $SEQTOOLS_BUILD $BUILD_PREFIX || RC=1
+if (( $# > 2 )) ; then
+  GBTOOLS_BRANCH="-t $3"
+fi
+
+./build_run.sh -a $ERROR_RECIPIENT -b $BRANCH -g $SEQTOOLS_BUILD $GBTOOLS_BRANCH $BUILD_PREFIX || RC=1
 
 exit $RC

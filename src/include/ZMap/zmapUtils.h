@@ -25,6 +25,11 @@
  * Description: Utility functions for ZMap.
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_UTILS_H
 #define ZMAP_UTILS_H
 
@@ -274,3 +279,7 @@ gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromsome_out, int
 gboolean zMapUtilsBioParseChromNumber(char *chromosome_str, char **chromosome_out) ;
 
 #endif /* ZMAP_UTILS_H */
+
+#ifdef __cplusplus
+}
+#endif

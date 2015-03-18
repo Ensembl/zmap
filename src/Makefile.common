@@ -9,6 +9,7 @@ AM_CPPFLAGS = -g -I$(top_srcdir)/include \
 	-I$(top_builddir)  -I$(top_srcdir)/AceConn/include \
 	-I$(top_srcdir)/htslib-develop \
 	-I$(top_srcdir)/zeromq/include \
+	-I$(top_srcdir) \
 	-I$(top_srcdir)/samtools_parallel \
 	-I$(top_srcdir)/ensc-core/src/DataModel \
 	-I$(top_srcdir)/ensc-core/src/DataAdaptors \
@@ -23,6 +24,10 @@ AM_CPPFLAGS = -g -I$(top_srcdir)/include \
         $(NULL)
 
 INCLUDE_COMMON = -I$(top_srcdir) -I$(top_srcdir)/include -I.
+
+if USE_GBTOOLS
+AM_CPPFLAGS += -I$(top_srcdir)/gbtools/src/include
+endif
 
 # Required by the install-zmap-static-libs target.
 LIBS_ZMAP = $(top_builddir)/.libs/libZMapApp.a \

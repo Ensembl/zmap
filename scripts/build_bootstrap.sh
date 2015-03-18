@@ -28,8 +28,9 @@ function zmap_message_rm_exit
 
 
 
-# default branch
+# default branches
 BRANCH='develop'
+GBTOOLS_BRANCH=''
 
 GIT_VERSION_INFO=''
 
@@ -51,9 +52,9 @@ zmap_message_out "Start of build bootstrap, running in $PWD"
 #
 zmap_message_out "About to parse options: $*"
 
-usage="$0 -b <branch> -d -f <zmap feature dir> -g -p <build_prefix> -r -s <seqtools directory> -t -u VARIABLE=VALUE"
+usage="$0 -b <branch> -d -f <zmap feature dir> -g -p <build_prefix> -r -s <seqtools directory> -t -u VARIABLE=VALUE [-t <gbtools_branch>]"
 
-while getopts ":b:df:gp:rs:u" opt ; do
+while getopts ":b:df:gp:rs:t:u" opt ; do
     case $opt in
 	b  ) BRANCH=$OPTARG ;;
 	d  ) ZMAP_BUILD_RELEASE_DOCS="yes"   ;;
@@ -62,6 +63,7 @@ while getopts ":b:df:gp:rs:u" opt ; do
 	p  ) BUILD_PREFIX=$OPTARG ;;
 	r  ) ZMAP_MASTER_INC_REL_VERSION="yes"    ;;
 	s  ) ZMAP_SEQTOOLS_RELEASE_DIR=$OPTARG ;;
+	t  ) GBTOOLS_BRANCH=$OPTARG ;;
 	u  ) ZMAP_MASTER_INC_UPDATE_VERSION="yes" ;;
 	\? ) zmap_message_rm_exit "$usage"
     esac
@@ -226,6 +228,19 @@ if [ "x$gen_checkout_script" != "x" ]; then
     # clone the zmap repository and switch to named branch.
     _checkout_message_out "Running git clone of zmap.git, branch $BRANCH, into $MASTER_SRC_DIR"
     git clone -b $BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
+
+    if [ -n "$GBTOOLS_BRANCH" ] ; then
+        # clone the gbtools repo as a subdirectory of src
+        cd $MASTER_SRC_DIR/src || _checkout_message_exit "Failed to cd to $MASTER_SRC_DIR/src"
+
+        gbtools_repo="gbtools"
+        if [[ -d $gbtools_repo ]] ; then
+          rm -r $gbtools_repo
+        fi
+
+        git clone -b $GBTOOLS_BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo
+        cd ../..
+    fi
 
     # get the production branch (but don't check it out)
     git branch production origin/production
