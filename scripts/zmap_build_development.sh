@@ -35,6 +35,6 @@ if (( $# > 1 )) ; then
   GBTOOLS_BRANCH="-t $2"
 fi
 
-./build_run.sh $ERROR_ID -g -m -s $SEQTOOLS_DIR $BUILD_PREFIX $GBTOOLS_BRANCH || RC=1
+./build_run.sh $ERROR_ID -g -m -s $SEQTOOLS_DIR $GBTOOLS_BRANCH $BUILD_PREFIX || RC=1
 
 exit $RC

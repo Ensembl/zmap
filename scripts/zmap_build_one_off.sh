@@ -38,6 +38,6 @@ if (( $# > 2 )) ; then
   GBTOOLS_BRANCH="-t $3"
 fi
 
-./build_run.sh -a $ERROR_RECIPIENT -b $BRANCH -g $SEQTOOLS_BUILD $BUILD_PREFIX $GBTOOLS_BRANCH || RC=1
+./build_run.sh -a $ERROR_RECIPIENT -b $BRANCH -g $SEQTOOLS_BUILD $GBTOOLS_BRANCH $BUILD_PREFIX || RC=1
 
 exit $RC
