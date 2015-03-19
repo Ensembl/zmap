@@ -1,3 +1,15 @@
+2015-03-19  Steve Miller  <sm23@sanger.ac.uk>
+ fix for lasso selection of multiple features - RT 458109
+ src/zmapWindow/zmapWindowDisplayOps.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-03-18  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-65-g91b8652 - Update RT and git commit reports
+ src/ChangeLog                                  |   12 ++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   22 +++++++++++++++++++++-
+ 3 files changed, 34 insertions(+), 1 deletions(-)
+
 2015-03-18  Steve Miller  <sm23@sanger.ac.uk>
  added the feature source to the Feature Details window - RT 457778
  src/zmapWindow/zmapWindowFeatureShow.c |   30 ++++++++++++++++++------------

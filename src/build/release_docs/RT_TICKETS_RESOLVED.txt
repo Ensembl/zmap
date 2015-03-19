@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 11/02/2015 to 18/03/2015
+Request Tracker Tickets Resolved from 11/02/2015 to 19/03/2015
 
 ticket/371426
 id: ticket/371426
@@ -78,6 +78,16 @@ Subject: opening new windows on new dual screen deskpro
 Requestors: th2@sanger.ac.uk
 Owner: gb10
 Resolved: Tue Mar 17 09:50:13 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/457778
+id: ticket/457778
+Queue: zmap
+Subject: zebrafish ERS numbers
+Requestors: sb7@sanger.ac.uk
+Owner: sm23
+Resolved: Wed Mar 18 15:28:52 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
