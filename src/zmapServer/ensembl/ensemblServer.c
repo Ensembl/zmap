@@ -1206,7 +1206,7 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
   if (sequence)
     {
       char *tmp = sequence ;
-      sequence = g_ascii_strdown(sequence) ;
+      sequence = g_ascii_strdown(sequence, -1) ;
       g_free(tmp) ;
     }
 
