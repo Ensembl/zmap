@@ -1148,7 +1148,7 @@ static void eachAlignment(gpointer key, gpointer data, gpointer user_data)
   DoAllAlignBlocks all_data = (DoAllAlignBlocks)user_data ;
 
   if (all_data->server->result == ZMAP_SERVERRESPONSE_OK)
-    g_hash_table_foreach(alignment->blocks, all_data->each_block_func, all_data->each_block_func) ;
+    g_hash_table_foreach(alignment->blocks, all_data->each_block_func, all_data->each_block_data) ;
 
   return ;
 }
