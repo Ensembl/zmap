@@ -751,9 +751,9 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
     {
       ZMapSequence sequence = (ZMapSequence)(next_seq->data) ;
 
-      /* chromosome, clone, contig or supercontig */
       char *seq_name = g_strdup(g_quark_to_string(sequence->name)) ;
 
+      /* chromosome, clone, contig or supercontig */
       Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
                                                 seq_name, POS_UNDEF, POS_UNDEF, STRAND_UNDEF, NULL, 0);
       
@@ -774,7 +774,12 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
           result = ZMAP_SERVERRESPONSE_REQFAIL ;
         }
 
-      g_free(seq_name) ;
+      if (seq_name)
+        g_free(seq_name) ;
+      
+      if (slice)
+        Slice_free(slice) ;
+
       next_seq = g_list_next(next_seq) ;
     }
 
@@ -782,6 +787,7 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
 
   return result ;
 }
+
 
 /* It's possible for us to have reported an error and then another error to come along. */
 static void setErrMsg(EnsemblServer server, char *new_msg)
@@ -1167,17 +1173,25 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
   EnsemblServer server = (EnsemblServer) user_data ;
+  Slice *slice = NULL ;
+  char *sequence = NULL ;
 
   if (server->result != ZMAP_SERVERRESPONSE_OK)
     return ;
 
-  ZMapSequence sequence = NULL;
-  GQuark sequence_name = g_quark_from_string(server->sequence) ;
+  /* chromosome, clone, contig or supercontig */
+  slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
+                                     server->sequence, server->zmap_start, server->zmap_end, 
+                                     STRAND_UNDEF, NULL, 0);
+ 
+  if (slice)
+    sequence = SequenceAdaptor_fetchBySliceStartEndStrand(server->seq_adaptor, slice, POS_UNDEF, POS_UNDEF, 1);
 
-  if (!(sequence/* = zMapGFFGetSequence(server->parser, sequence_name)*/))
+  if (!sequence)
     {
-      const char *estr;
-      estr = "Error getting sequence";
+      char *estr;
+      estr = g_strdup_printf("Error getting sequence for '%s' (%d to %d)", 
+                             server->sequence, server->zmap_start, server->zmap_end);
 
       setErrMsg(server, estr) ;
 
@@ -1189,13 +1203,14 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
       ZMapFeatureContext context;
       ZMapFeatureSet feature_set;
       GHashTable *styles = NULL ; //zMapGFFParserGetStyles(server->parser);
+      int sequence_length = strlen(sequence) ;
 
       if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
         {
           ZMapFeatureTypeStyle dna_style = NULL;
 
           if (styles && (dna_style = g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
-            zMapFeatureDNACreateFeature(feature_block, dna_style, sequence->sequence, sequence->length);
+            zMapFeatureDNACreateFeature(feature_block, dna_style, sequence, sequence_length);
         }
 
 
@@ -1239,6 +1254,9 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 
       g_free(sequence);
     }
+
+  if (slice)
+    Slice_free(slice);
 
   return ;
 }
