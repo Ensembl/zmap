@@ -55,11 +55,10 @@
 
 #define ENSEMBL_PROTOCOL_STR "Ensembl"                            /* For error messages. */
 
+/* Data to pass to get-features callback function for each block */
 typedef struct GetFeaturesDataStructType
 {
   EnsemblServer server ;
-
-  ZMapServerResponseType result ;
 
   GList *feature_set_names ;
   GHashTable *source_2_sourcedata ;
@@ -67,9 +66,28 @@ typedef struct GetFeaturesDataStructType
   GHashTable *feature_styles ;
   GHashTable *sources ; 
 
-  char *err_msg ;
-
 } GetFeaturesDataStruct, *GetFeaturesData ;
+
+
+/* Data to pass to get-sequence callback function for each block */
+typedef struct GetSequenceDataStructType
+{
+  EnsemblServer server ;
+
+  GHashTable *styles ;
+} GetSequenceDataStruct, *GetSequenceData ;
+
+
+/* Struct to pass to callback function for each alignment. It calls the block 
+ * callback function with the block user data */
+typedef struct DoAllAlignBlocksStructType
+{
+  EnsemblServer server ;
+
+  GHFunc each_block_func ;
+  gpointer each_block_data ;
+
+} DoAllAlignBlocksStruct, *DoAllAlignBlocks ;
 
 
 /* These provide the interface functions for an ensembl server implementation, i.e. you
@@ -105,11 +123,9 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
 
 static void setErrMsg(EnsemblServer server, char *new_msg) ;
 
-static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
+static void eachAlignment(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
-
-static void eachAlignmentSequence(gpointer key, gpointer data, gpointer user_data) ;
-static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data) ;
+static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data) ;
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
@@ -564,20 +580,25 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   EnsemblServer server = (EnsemblServer)server_in ;
-  GetFeaturesDataStruct get_features_data = {server, result, NULL, 
-                                             server->source_2_sourcedata, 
-                                             server->featureset_2_column,
-                                             NULL,
-                                             NULL,
-                                             NULL} ;
-
-  get_features_data.feature_styles = g_hash_table_new(NULL,NULL) ;
-  get_features_data.sources = g_hash_table_new(NULL,NULL) ;
 
   addMapping(feature_context, server->zmap_start, server->zmap_end) ;
 
+  GetFeaturesDataStruct get_features_data ;
+
+  get_features_data.server = server ;
+  get_features_data.feature_set_names = NULL ;
+  get_features_data.source_2_sourcedata = server->source_2_sourcedata ;
+  get_features_data.featureset_2_column = server->featureset_2_column ;
+  get_features_data.feature_styles = g_hash_table_new(NULL,NULL) ;
+  get_features_data.sources = g_hash_table_new(NULL,NULL) ;
+
+  DoAllAlignBlocksStruct all_data ;
+  all_data.server = server ;
+  all_data.each_block_func = eachBlockGetFeatures ;
+  all_data.each_block_data = &get_features_data ;
+
   /* Fetch all the alignment blocks for all the sequences. */
-  g_hash_table_foreach(feature_context->alignments, eachAlignmentGetFeatures, (gpointer)&get_features_data) ;
+  g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)&all_data) ;
 
   feature_context->src_feature_set_names = get_features_data.feature_set_names ;
 
@@ -651,12 +672,19 @@ static ZMapServerResponseType getContextSequence(void *server_in,
 {
   EnsemblServer server = (EnsemblServer)server_in ;
 
+
   if (server->result == ZMAP_SERVERRESPONSE_OK)
     {
-      /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
-       * we would have to parse and reparse the stream....can be done but not needed this second. */
-      g_hash_table_foreach(feature_context_out->alignments, eachAlignmentSequence, (gpointer)server) ;
+      GetSequenceDataStruct get_sequence_data ;
+      get_sequence_data.server = server ;
+      get_sequence_data.styles = styles ;
 
+      DoAllAlignBlocksStruct all_data ;
+      all_data.server = server ;
+      all_data.each_block_func = eachBlockGetSequence ;
+      all_data.each_block_data = &get_sequence_data ;
+
+      g_hash_table_foreach(feature_context_out->alignments, eachAlignment, &all_data) ;
     }
 
   return server->result ;
@@ -796,49 +824,6 @@ static void setErrMsg(EnsemblServer server, char *new_msg)
     g_free(server->last_err_msg) ;
 
   server->last_err_msg = new_msg ;
-
-  return ;
-}
-
-
-/* Get Features in all blocks within an alignment. */
-static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data)
-{
-  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
-  GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
-
-  if (get_features_data->result == ZMAP_SERVERRESPONSE_OK)
-    g_hash_table_foreach(alignment->blocks, eachBlockGetFeatures, (gpointer)get_features_data) ;
-
-  return ;
-}
-
-
-/* Get features in a block */
-static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data)
-{
-  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
-  GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
-  EnsemblServer server = get_features_data->server ;
-
-  g_mutex_lock(server->mutex) ;
-  
-  //SimpleFeatureAdaptor *simple_feature_adaptor = DBAdaptor_getSimpleFeatureAdaptor(server->dba) ;
-  //DNAAlignFeatureAdaptor *dna_feature_adaptor = DBAdaptor_getDNAAlignFeatureAdaptor(server->dba) ;
-  //ProteinAlignFeatureAdaptor *pep_feature_adaptor = DBAdaptor_getProteinAlignFeatureAdaptor(server->dba) ;
-  //RepeatFeatureAdaptor *repeat_feature_adaptor = DBAdaptor_getRepeatFeatureAdaptor(server->dba) ;
-
-  //Vector *simple_features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
-  //Vector *dna_features =  Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-  Vector *pep_features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-  //Vector *repeat_features =  Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
-
-  //vectorGetSimpleFeatures(simple_features, server, feature_context, feature_sets);
-  //vectorGetDNAAlignFeatures(dna_features, server, feature_context, feature_sets);
-  vectorGetDNAPepAlignFeatures(pep_features, server, get_features_data, feature_block);
-  //vectorGetRepeatFeatures(repeat_features, server, feature_context, feature_sets);
-
-  g_mutex_unlock(server->mutex) ;
 
   return ;
 }
@@ -1157,22 +1142,53 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
 
 
 /* Process all the alignments in a context. */
-static void eachAlignmentSequence(gpointer key, gpointer data, gpointer user_data)
+static void eachAlignment(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
-  EnsemblServer server = (EnsemblServer)user_data ;
+  DoAllAlignBlocks all_data = (DoAllAlignBlocks)user_data ;
 
-  if (server->result == ZMAP_SERVERRESPONSE_OK)
-    g_hash_table_foreach(alignment->blocks, eachBlockSequence, (gpointer)server) ;
+  if (all_data->server->result == ZMAP_SERVERRESPONSE_OK)
+    g_hash_table_foreach(alignment->blocks, all_data->each_block_func, all_data->each_block_func) ;
 
   return ;
 }
 
 
-static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
+/* Get features in a block */
+static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
-  EnsemblServer server = (EnsemblServer) user_data ;
+  GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
+  EnsemblServer server = get_features_data->server ;
+
+  g_mutex_lock(server->mutex) ;
+  
+  //SimpleFeatureAdaptor *simple_feature_adaptor = DBAdaptor_getSimpleFeatureAdaptor(server->dba) ;
+  //DNAAlignFeatureAdaptor *dna_feature_adaptor = DBAdaptor_getDNAAlignFeatureAdaptor(server->dba) ;
+  //ProteinAlignFeatureAdaptor *pep_feature_adaptor = DBAdaptor_getProteinAlignFeatureAdaptor(server->dba) ;
+  //RepeatFeatureAdaptor *repeat_feature_adaptor = DBAdaptor_getRepeatFeatureAdaptor(server->dba) ;
+
+  //Vector *simple_features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
+  //Vector *dna_features =  Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+  Vector *pep_features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+  //Vector *repeat_features =  Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
+
+  //vectorGetSimpleFeatures(simple_features, server, feature_context, feature_sets);
+  //vectorGetDNAAlignFeatures(dna_features, server, feature_context, feature_sets);
+  vectorGetDNAPepAlignFeatures(pep_features, server, get_features_data, feature_block);
+  //vectorGetRepeatFeatures(repeat_features, server, feature_context, feature_sets);
+
+  g_mutex_unlock(server->mutex) ;
+
+  return ;
+}
+
+
+static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
+  GetSequenceData get_sequence_data = (GetSequenceData)user_data ;
+  EnsemblServer server = get_sequence_data->server ;
   Slice *slice = NULL ;
   char *sequence = NULL ;
 
@@ -1200,9 +1216,9 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
   else
     {
       /* the servers need styles to add DNA and 3FT */
-      ZMapFeatureContext context;
-      ZMapFeatureSet feature_set;
-      GHashTable *styles = NULL ; //zMapGFFParserGetStyles(server->parser);
+      ZMapFeatureContext context = NULL ;
+      ZMapFeatureSet feature_set = NULL ;
+      GHashTable *styles = get_sequence_data->styles ;
       int sequence_length = strlen(sequence) ;
 
       if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
