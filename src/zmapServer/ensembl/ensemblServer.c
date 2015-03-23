@@ -61,6 +61,12 @@ typedef struct GetFeaturesDataStructType
 
   ZMapServerResponseType result ;
 
+  GList *feature_set_names ;
+  GHashTable *source_2_sourcedata ;
+  GHashTable *featureset_2_column ;
+  GHashTable *feature_styles ;
+  GHashTable *sources ; 
+
   char *err_msg ;
 
 } GetFeaturesDataStruct, *GetFeaturesData ;
@@ -99,13 +105,14 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
 
 static void setErrMsg(EnsemblServer server, char *new_msg) ;
 
-//static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
-//static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
+static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
+static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
-static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf, ZMapFeatureContext feature_context, const char *source, GData *feature_sets) ;
-static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType homol_type, ZMapFeatureContext feature_context, const char *source, GData *feature_sets) ;
-static ZMapFeature makeFeature(SeqFeature *rsf, char *feature_name_id, char *feature_name, ZMapStyleMode feature_mode, ZMapFeatureContext feature_context, const char *source, GData *feature_sets) ;
+static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType homol_type, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeature makeFeature(SeqFeature *rsf, char *feature_name_id, char *feature_name, ZMapStyleMode feature_mode, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
 
 /*
  *             Server interface functions.
@@ -311,7 +318,7 @@ static gboolean vectorGetSimpleFeatures(Vector *features, EnsemblServer server, 
 //                 SimpleFeature_getDbID(rsf), SimpleFeature_getStart(rsf),SimpleFeature_getEnd(rsf),
 //                 SimpleFeature_getScore(rsf), SimpleFeature_getPhase(rsf), SimpleFeature_getEndPhase(rsf),
 //                 SimpleFeature_getStrand(rsf), SimpleFeature_getLength(rsf),
-//                 analysis->gffSource, analysis->gffFeature, analysis->module);
+//                 analysis->program, analysis->gffFeature, analysis->module);
         }
       else
         {
@@ -358,7 +365,7 @@ static gboolean vectorGetDNAAlignFeatures(Vector *features, EnsemblServer server
           //       DNAAlignFeature_getHitStart(rsf), DNAAlignFeature_getHitEnd(rsf),
           //       DNAAlignFeature_getScore(rsf), DNAAlignFeature_getCigarString(rsf),
           //       DNAAlignFeature_getStrand(rsf), DNAAlignFeature_getLength(rsf),
-          //       analysis->gffSource, analysis->gffFeature, analysis->module);
+          //       analysis->program, analysis->gffFeature, analysis->module);
         }
       else
         {
@@ -384,8 +391,8 @@ static gboolean vectorGetDNAAlignFeatures(Vector *features, EnsemblServer server
 
 static gboolean vectorGetDNAPepAlignFeatures(Vector *features, 
                                              EnsemblServer server, 
-                                             ZMapFeatureContext feature_context,
-                                             GData *feature_sets)
+                                             GetFeaturesData get_features_data,
+                                             ZMapFeatureBlock feature_block)
 {
   gboolean result = TRUE ;
   int i = 0 ;
@@ -397,20 +404,20 @@ static gboolean vectorGetDNAPepAlignFeatures(Vector *features,
       //long end   = DNAPepAlignFeature_getEnd(sf);
 
       //printf("slice start = %d end = %d\n",start,end);
-      DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"contig",NULL,NULL);
+      DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
       if (rsf)
         {
           Analysis *analysis = DNAPepAlignFeature_getAnalysis(rsf) ;
 
-          makeFeatureDNAPepAlign(rsf, feature_context, analysis->gffSource, feature_sets) ;
+          makeFeatureDNAPepAlign(rsf, analysis->program, get_features_data, feature_block) ;
           
 
           //printf("Start %ld, End %ld, Score %f, Cigar %s, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
           //       DNAPepAlignFeature_getStart(rsf),DNAPepAlignFeature_getEnd(rsf),
           //       DNAPepAlignFeature_getScore(rsf), DNAAlignFeature_getCigarString(rsf),
           //       DNAPepAlignFeature_getStrand(rsf), DNAPepAlignFeature_getLength(rsf),
-          //       analysis->gffSource, analysis->gffFeature, analysis->module);
+          //       analysis->program, analysis->gffFeature, analysis->module);
 
           //DNAPepAlignFeature *sf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)rsf, "chromosome", NULL, server->slice);
           //sf = (DNAPepAlignFeature*)SeqFeature_transfer((SeqFeature*)rsf, server->slice);
@@ -453,7 +460,7 @@ static gboolean vectorGetRepeatFeatures(Vector *features, EnsemblServer server, 
                  RepeatFeature_getStart(rsf),RepeatFeature_getEnd(rsf),
                  RepeatFeature_getScore(rsf), RepeatFeature_getPhase(rsf), RepeatFeature_getEndPhase(rsf),
                  RepeatFeature_getStrand(rsf), 
-                 analysis->gffSource, analysis->gffFeature, analysis->module);
+                 analysis->program, analysis->gffFeature, analysis->module);
         }
       else
         {
@@ -496,7 +503,10 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
                                                  GHashTable **source_2_sourcedata_inout)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  //EnsemblServer server = (EnsemblServer)server_in ;
+  EnsemblServer server = (EnsemblServer)server_in ;
+  
+  server->source_2_sourcedata = *source_2_sourcedata_inout;
+  server->featureset_2_column = *featureset_2_column_inout;
 
   result = ZMAP_SERVERRESPONSE_OK ;
   return result ;
@@ -551,33 +561,83 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   EnsemblServer server = (EnsemblServer)server_in ;
-  //GetFeaturesDataStruct get_features_data = {NULL} ;
+  GetFeaturesDataStruct get_features_data = {server, result, NULL, 
+                                             server->source_2_sourcedata, 
+                                             server->featureset_2_column,
+                                             NULL,
+                                             NULL,
+                                             NULL} ;
 
-  g_mutex_lock(server->mutex) ;
-  
-  SimpleFeatureAdaptor *simple_feature_adaptor = DBAdaptor_getSimpleFeatureAdaptor(server->dba) ;
-  DNAAlignFeatureAdaptor *dna_feature_adaptor = DBAdaptor_getDNAAlignFeatureAdaptor(server->dba) ;
-  ProteinAlignFeatureAdaptor *pep_feature_adaptor = DBAdaptor_getProteinAlignFeatureAdaptor(server->dba) ;
-  RepeatFeatureAdaptor *repeat_feature_adaptor = DBAdaptor_getRepeatFeatureAdaptor(server->dba) ;
+  get_features_data.feature_styles = g_hash_table_new(NULL,NULL) ;
+  get_features_data.sources = g_hash_table_new(NULL,NULL) ;
 
-  Vector *simple_features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
-  Vector *dna_features =  Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-  Vector *pep_features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-  Vector *repeat_features =  Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
-
-  GData *feature_sets = NULL ;
-
-  //vectorGetSimpleFeatures(simple_features, server, feature_context, feature_sets);
-  //vectorGetDNAAlignFeatures(dna_features, server, feature_context, feature_sets);
-  vectorGetDNAPepAlignFeatures(pep_features, server, feature_context, feature_sets);
-  //vectorGetRepeatFeatures(repeat_features, server, feature_context, feature_sets);
-
-      g_mutex_unlock(server->mutex) ;
+  addMapping(feature_context, server->zmap_start, server->zmap_end) ;
 
   /* Fetch all the alignment blocks for all the sequences. */
-      //g_hash_table_foreach(feature_context->alignments, eachAlignmentGetFeatures, (gpointer)&get_features_data) ;
+  g_hash_table_foreach(feature_context->alignments, eachAlignmentGetFeatures, (gpointer)&get_features_data) ;
+
+  feature_context->src_feature_set_names = get_features_data.feature_set_names ;
+
+  g_hash_table_destroy(get_features_data.feature_styles);
+
+
+  /* Merge the new features into the context */
+  //ZMapFeature feature_copy = NULL ;
+  //ZMapFeatureContext context_copy = zmapViewCopyContextAll(feature_context, feature, feature_set, &feature_list, &feature_copy) ;
+  //
+  //if (context_copy && feature_list)
+  //  zmapViewMergeNewFeatures(view, &context_copy, NULL, &feature_list) ;
+  //
+  //if (context_copy && feature_copy)
+  //  zmapViewDrawDiffContext(view, &context_copy, feature_copy) ;
+  //
+  //if (context_copy)
+  //  zMapFeatureContextDestroy(context_copy, TRUE) ;
 
   return result ;
+}
+
+/* A bit of a lash up for now, we need the parent->child mapping for a sequence and since
+ * the code in this file so far simply reads a GFF stream for now, we just fake it by setting
+ * everything to be the same for child/parent... */
+static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end)
+{
+  ZMapFeatureBlock feature_block = NULL;    // feature_context->master_align->blocks->data ;
+
+  feature_block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(feature_context->master_align->blocks, 0)) ;
+
+  /* We just override whatever is already there...this may not be the thing to do if there
+   * are several streams.... */
+  feature_context->parent_name = feature_context->sequence_name ;
+
+  // refer to comment in zmapFeature.h 'Sequences and Block Coordinates'
+  // NB at time of writing parent_span not always initialised
+  feature_context->parent_span.x1 = 1;
+  if (feature_context->parent_span.x2 < req_end)
+    feature_context->parent_span.x2 = req_end ;
+
+  // seq range  from parent sequence
+  if (!feature_context->master_align->sequence_span.x2)
+    {
+      feature_context->master_align->sequence_span.x1 = req_start ;
+      feature_context->master_align->sequence_span.x2 = req_end ;
+    }
+
+  // seq coords for our block NOTE must be block coords not features sub-sequence in case of req from mark
+  if (!feature_block->block_to_sequence.block.x2)
+    {
+      feature_block->block_to_sequence.block.x1 = req_start ;
+      feature_block->block_to_sequence.block.x2 = req_end ;
+    }
+
+  // parent sequence coordinates if not pre-specified
+  if (!feature_block->block_to_sequence.parent.x2)
+    {
+      feature_block->block_to_sequence.parent.x1 = req_start ;
+      feature_block->block_to_sequence.parent.x2 = req_end ;
+    }
+
+  return ;
 }
 
 /*
@@ -733,27 +793,46 @@ static void setErrMsg(EnsemblServer server, char *new_msg)
 
 
 /* Get Features in all blocks within an alignment. */
-//static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data)
-//{
-//  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
-//  GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
-//
-//  if (get_features_data->result == ZMAP_SERVERRESPONSE_OK)
-//    g_hash_table_foreach(alignment->blocks, eachBlockGetFeatures, (gpointer)get_features_data) ;
-//
-//  return ;
-//}
-//
-//
-///* Get features in a block */
-//static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data)
-//{
-//  //ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
-//  //GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
-//
-//
-//  return ;
-//}
+static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
+  GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
+
+  if (get_features_data->result == ZMAP_SERVERRESPONSE_OK)
+    g_hash_table_foreach(alignment->blocks, eachBlockGetFeatures, (gpointer)get_features_data) ;
+
+  return ;
+}
+
+
+/* Get features in a block */
+static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
+  GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
+  EnsemblServer server = get_features_data->server ;
+
+  g_mutex_lock(server->mutex) ;
+  
+  //SimpleFeatureAdaptor *simple_feature_adaptor = DBAdaptor_getSimpleFeatureAdaptor(server->dba) ;
+  //DNAAlignFeatureAdaptor *dna_feature_adaptor = DBAdaptor_getDNAAlignFeatureAdaptor(server->dba) ;
+  //ProteinAlignFeatureAdaptor *pep_feature_adaptor = DBAdaptor_getProteinAlignFeatureAdaptor(server->dba) ;
+  //RepeatFeatureAdaptor *repeat_feature_adaptor = DBAdaptor_getRepeatFeatureAdaptor(server->dba) ;
+
+  //Vector *simple_features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
+  //Vector *dna_features =  Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+  Vector *pep_features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+  //Vector *repeat_features =  Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
+
+  //vectorGetSimpleFeatures(simple_features, server, feature_context, feature_sets);
+  //vectorGetDNAAlignFeatures(dna_features, server, feature_context, feature_sets);
+  vectorGetDNAPepAlignFeatures(pep_features, server, get_features_data, feature_block);
+  //vectorGetRepeatFeatures(repeat_features, server, feature_context, feature_sets);
+
+  g_mutex_unlock(server->mutex) ;
+
+  return ;
+}
 
 
 static const char* featureGetSOTerm(SeqFeature *rsf)
@@ -820,45 +899,45 @@ static const char* featureGetSOTerm(SeqFeature *rsf)
 
 
 static ZMapFeature makeFeatureSimple(SimpleFeature *rsf, 
-                                     ZMapFeatureContext feature_context, 
                                      const char *source, 
-                                     GData *feature_sets)
+                                     GetFeaturesData get_features_data,
+                                     ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
 
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
 
-  feature = makeFeature((SeqFeature*)rsf, NULL, NULL, feature_mode, feature_context, source, feature_sets) ;
+  feature = makeFeature((SeqFeature*)rsf, NULL, NULL, feature_mode, source, get_features_data, feature_block) ;
 
   return feature ;
 }
 
 
 static ZMapFeature makeFeatureDNAAlign(DNAAlignFeature *rsf, 
-                                       ZMapFeatureContext feature_context, 
                                        const char *source, 
-                                       GData *feature_sets)
+                                       GetFeaturesData get_features_data,
+                                       ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
 
   ZMapHomolType homol_type = ZMAPHOMOL_N_HOMOL ;
 
-  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, homol_type, feature_context, source, feature_sets) ;
+  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, homol_type, source, get_features_data, feature_block) ;
 
   return feature ;
 }
 
 
 static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf, 
-                                          ZMapFeatureContext feature_context, 
                                           const char *source,
-                                          GData *feature_sets)
+                                          GetFeaturesData get_features_data,
+                                          ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
 
   ZMapHomolType homol_type = ZMAPHOMOL_X_HOMOL ;
 
-  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, homol_type, feature_context, source, feature_sets) ;
+  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, homol_type, source, get_features_data, feature_block) ;
 
   return feature ;
 }
@@ -866,9 +945,9 @@ static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf,
 
 static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, 
                                         ZMapHomolType homol_type, 
-                                        ZMapFeatureContext feature_context,
                                         const char *source,
-                                        GData *feature_sets)
+                                        GetFeaturesData get_features_data,
+                                        ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
 
@@ -879,7 +958,7 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf,
   char *feature_name = DNAPepAlignFeature_getHitSeqName(rsf) ;
 
   feature = makeFeature((SeqFeature*)rsf, feature_name_id, feature_name, 
-                        feature_mode, feature_context, source, feature_sets) ;
+                        feature_mode, source, get_features_data, feature_block) ;
 
   if (feature)
     {
@@ -924,9 +1003,9 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
                                char *feature_name_id_in,
                                char *feature_name_in,
                                ZMapStyleMode feature_mode,
-                               ZMapFeatureContext feature_context,
                                const char *source,
-                               GData *feature_sets)
+                               GetFeaturesData get_features_data,
+                               ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
 
@@ -935,13 +1014,11 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
   char *sequence = NULL ;
   const char *SO_accession = NULL ;
   ZMapFeatureTypeStyle *style  = NULL ;
-  int start = 0 ;
-  int end = 0 ;
+  long start = 0 ;
+  long end = 0 ;
   gboolean has_score = TRUE ;
   double score = 0.0 ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
-
-  //source = DNAPepAlignFeature_getDbDisplayName(rsf) ;
 
   /* todo: style = ??? */
   SO_accession = featureGetSOTerm(rsf) ;
@@ -972,18 +1049,85 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
                                  feature_mode, style,
                                  start, end, has_score, score, strand) ;
 
-      zMapLogMessage("Created feature: name %s, so %s, mode %d, start %d, end %d, score %f, strand %d", 
-                     feature_name, SO_accession, feature_mode, start, end, score, strand) ;
+      zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d", 
+                     feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
 
       /* Find the featureset */
       GQuark feature_set_id = zMapFeatureSetCreateID((char*)source) ;
 
       ZMapFeatureSet feature_set = 
-        (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny*)feature_context, feature_set_id, ZMAPFEATURE_STRUCT_FEATURESET) ;
+        (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block, feature_set_id, ZMAPFEATURE_STRUCT_FEATURESET) ;
 
       if (!feature_set)
         {
           feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL) ;
+          zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
+          get_features_data->feature_set_names = g_list_prepend(get_features_data->feature_set_names, GUINT_TO_POINTER(feature_set->unique_id)) ;
+
+          zMapLogMessage("Created feature set: %s", g_quark_to_string(feature_set_id)) ;
+
+          /*
+           * Now deal with the source -> data mapping referred to in the parser.
+           */
+          GQuark source_id = zMapFeatureSetCreateID((char*)source) ;
+          GQuark feature_style_id = 0 ;
+          ZMapFeatureSource source_data = NULL ;
+
+          if (get_features_data->source_2_sourcedata)
+            {
+              if (!(source_data = g_hash_table_lookup(get_features_data->source_2_sourcedata, GINT_TO_POINTER(source_id))))
+                {
+                  source_data = g_new0(ZMapFeatureSourceStruct,1);
+                  source_data->source_id = source_id;
+                  source_data->source_text = source_id;
+
+                  g_hash_table_insert(get_features_data->source_2_sourcedata,GINT_TO_POINTER(source_id), source_data);
+
+                  zMapLogMessage("Created source_data: %s", g_quark_to_string(source_id)) ;
+                }
+
+              if (source_data->style_id)
+                feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->style_id)) ;
+              else
+                feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->source_id)) ;
+
+              source_id = source_data->source_id ;
+              source_data->style_id = feature_style_id;
+              zMapLogMessage("Style id = %s", g_quark_to_string(source_data->style_id)) ;
+            }
+          else
+            {
+              source_id = feature_style_id = zMapStyleCreateID((char*)source) ;
+            }
+
+          ZMapFeatureTypeStyle feature_style = NULL ;
+
+          if (!(feature_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(get_features_data->feature_styles, GUINT_TO_POINTER(feature_style_id))))
+            {
+              if (!(feature_style = zMapFindFeatureStyle(get_features_data->sources, feature_style_id, feature_mode)))
+                {
+                  feature_style_id = g_quark_from_string(zmapStyleMode2ShortText(feature_mode)) ;
+                }
+
+              feature_style = zMapFindFeatureStyle(get_features_data->sources, feature_style_id, feature_mode) ;
+
+              if (feature_style)
+                {
+                  if (source_data)
+                    source_data->style_id = feature_style_id;
+                  
+                  g_hash_table_insert(get_features_data->feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
+                  
+                  if (source_data && feature_style->unique_id != feature_style_id)
+                    source_data->style_id = feature_style->unique_id;
+
+                }
+            }
+
+          if (feature_style)
+            {
+              feature_set->style = feature_style;
+            }
         }
 
       if (feature_set)
@@ -994,18 +1138,8 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
           if (!existing_feature)
             zMapFeatureSetAddFeature(feature_set, feature) ;
               
-         // GList *feature_list = NULL ;
-         // ZMapFeature feature_copy = NULL ;
-         // ZMapFeatureContext context_copy = zmapViewCopyContextAll(feature_context, feature, feature_set, &feature_list, &feature_copy) ;
-         //
-         // if (context_copy && feature_list)
-         //   zmapViewMergeNewFeatures(view, &context_copy, NULL, &feature_list) ;
-         //
-         // if (context_copy && feature_copy)
-         //   zmapViewDrawDiffContext(view, &context_copy, feature_copy) ;
-         //
-         // if (context_copy)
-         //   zMapFeatureContextDestroy(context_copy, TRUE) ;
+          //if (feature_list_inout)
+          //  *feature_list_inout = g_list_prepend(*feature_list_inout, feature) ;
         }
     }
 

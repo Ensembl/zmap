@@ -61,6 +61,9 @@ typedef struct _EnsemblServerStruct
   char *sequence ;                                          /* request sequence name for our one block */
   gint zmap_start, zmap_end ;				    /* request coordinates for our one block */
 
+  GHashTable *source_2_sourcedata ;
+  GHashTable *featureset_2_column ;
+
 } EnsemblServerStruct, *EnsemblServer;
 
 
