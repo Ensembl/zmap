@@ -1267,8 +1267,6 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
                 zMapFeatureShowTranslationSetCreateFeatures(feature_set, trans_style) ;
             }
         }
-
-      g_free(sequence);
     }
 
   if (slice)
