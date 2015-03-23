@@ -108,6 +108,9 @@ static void setErrMsg(EnsemblServer server, char *new_msg) ;
 static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 
+static void eachAlignmentSequence(gpointer key, gpointer data, gpointer user_data) ;
+static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data) ;
+
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType homol_type, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
@@ -652,7 +655,7 @@ static ZMapServerResponseType getContextSequence(void *server_in,
     {
       /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
        * we would have to parse and reparse the stream....can be done but not needed this second. */
-      //g_hash_table_foreach(feature_context_out->alignments, eachAlignmentSequence, (gpointer)server) ;
+      g_hash_table_foreach(feature_context_out->alignments, eachAlignmentSequence, (gpointer)server) ;
 
     }
 
@@ -1146,3 +1149,96 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
   return feature ;
 }
 
+
+/* Process all the alignments in a context. */
+static void eachAlignmentSequence(gpointer key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
+  EnsemblServer server = (EnsemblServer)user_data ;
+
+  if (server->result == ZMAP_SERVERRESPONSE_OK)
+    g_hash_table_foreach(alignment->blocks, eachBlockSequence, (gpointer)server) ;
+
+  return ;
+}
+
+
+static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
+  EnsemblServer server = (EnsemblServer) user_data ;
+
+  if (server->result != ZMAP_SERVERRESPONSE_OK)
+    return ;
+
+  ZMapSequence sequence = NULL;
+  GQuark sequence_name = g_quark_from_string(server->sequence) ;
+
+  if (!(sequence/* = zMapGFFGetSequence(server->parser, sequence_name)*/))
+    {
+      const char *estr;
+      estr = "Error getting sequence";
+
+      setErrMsg(server, estr) ;
+
+      ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg);
+    }
+  else
+    {
+      /* the servers need styles to add DNA and 3FT */
+      ZMapFeatureContext context;
+      ZMapFeatureSet feature_set;
+      GHashTable *styles = NULL ; //zMapGFFParserGetStyles(server->parser);
+
+      if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
+        {
+          ZMapFeatureTypeStyle dna_style = NULL;
+
+          if (styles && (dna_style = g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
+            zMapFeatureDNACreateFeature(feature_block, dna_style, sequence->sequence, sequence->length);
+        }
+
+
+      context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, ZMAPFEATURE_STRUCT_CONTEXT) ;
+
+      /* I'm going to create the three frame translation up front! */
+      if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
+        {
+          ZMapFeatureSet translation_fs = NULL;
+
+          if (zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set))
+          {
+            translation_fs = feature_set;
+            ZMapFeatureTypeStyle frame_style = NULL;
+
+            if(styles && (frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
+              zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
+          }
+
+          if (zMapFeatureORFCreateSet(feature_block, &feature_set))
+          {
+            ZMapFeatureTypeStyle orf_style = NULL;
+
+            if (styles && (orf_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
+              zMapFeatureORFSetCreateFeatures(feature_set, orf_style, translation_fs);
+          }
+        }
+
+      /* I'm going to create the show translation up front! */
+      if (zMap_g_list_find_quark(context->req_feature_set_names,
+                  zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
+        {
+          if ((zMapFeatureShowTranslationCreateSet(feature_block, &feature_set)))
+            {
+              ZMapFeatureTypeStyle trans_style = NULL;
+
+              if ((trans_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
+                zMapFeatureShowTranslationSetCreateFeatures(feature_set, trans_style) ;
+            }
+        }
+
+      g_free(sequence);
+    }
+
+  return ;
+}
