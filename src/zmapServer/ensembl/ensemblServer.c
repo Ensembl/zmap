@@ -434,7 +434,7 @@ static gboolean vectorGetDNAPepAlignFeatures(Vector *features,
 
           //printf("Start %ld, End %ld, Score %f, Cigar %s, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
           //       DNAPepAlignFeature_getStart(rsf),DNAPepAlignFeature_getEnd(rsf),
-          //       DNAPepAlignFeature_getScore(rsf), DNAAlignFeature_getCigarString(rsf),
+          //       DNAPepAlignFeature_getScore(rsf), DNAPepAlignFeature_getCigarString(rsf),
           //       DNAPepAlignFeature_getStrand(rsf), DNAPepAlignFeature_getLength(rsf),
           //       analysis->program, analysis->gffFeature, analysis->module);
 
@@ -948,8 +948,8 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf,
   /* Create the basic feature. We need to pass some alignment-specific fields */
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_ALIGNMENT ;
 
-  char *feature_name_id = DNAPepAlignFeature_getHitSeqName(rsf) ;
-  char *feature_name = DNAPepAlignFeature_getHitSeqName(rsf) ;
+  char *feature_name_id = BaseAlignFeature_getHitSeqName(rsf) ;
+  char *feature_name = BaseAlignFeature_getHitSeqName(rsf) ;
 
   feature = makeFeature((SeqFeature*)rsf, feature_name_id, feature_name, 
                         feature_mode, source, get_features_data, feature_block) ;
@@ -957,36 +957,55 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf,
   if (feature)
     {
       /* Add the alignment data */
-      GQuark clone_id = 0 ;
+      GQuark clone_id = 0 ; /*! \todo Add clone id? */
       double percent_id = 0.0 ;
-      int query_start = 0 ;
-      int query_end = 0 ;
-      int query_length = 0 ;
-      ZMapStrand query_strand = ZMAPSTRAND_NONE ;
-      ZMapPhase target_phase = 0;
-      GArray *align = NULL ;
+      int match_start = 0 ;
+      int match_end = 0 ;
+      int match_length = 0 ;
+      ZMapStrand match_strand = ZMAPSTRAND_NONE ;
+      ZMapPhase match_phase = 0;
+      GArray *align = NULL ; /* to do */
       unsigned int align_error = 0;
       gboolean has_local_sequence = FALSE ;
       char *sequence  = NULL ;
+      char *cigar = NULL ;
 
-      percent_id = DNAPepAlignFeature_getPercId(rsf) ;
-      query_start = DNAPepAlignFeature_getHitStart(rsf) ;
-      query_end = DNAPepAlignFeature_getHitEnd(rsf) ;
-      query_length = DNAPepAlignFeature_getLength(rsf) ;
+      percent_id = BaseAlignFeature_getPercId(rsf) ;
+      match_start = BaseAlignFeature_getHitStart(rsf) ;
+      match_end = BaseAlignFeature_getHitEnd(rsf) ;
+      match_length = match_end - match_start + 1 ; /*! todo: work out from cigar string? */
 
-      if (DNAPepAlignFeature_getHitStrand(rsf) > 0)
-        query_strand = ZMAPSTRAND_FORWARD ;
-      else if (DNAPepAlignFeature_getHitStrand(rsf) < 0)
-        query_strand = ZMAPSTRAND_REVERSE ;
+      if (BaseAlignFeature_getHitStrand(rsf) > 0)
+        match_strand = ZMAPSTRAND_FORWARD ;
+      else if (BaseAlignFeature_getHitStrand(rsf) < 0)
+        match_strand = ZMAPSTRAND_REVERSE ;
 
-      target_phase = SeqFeature_getPhase((SeqFeature*)rsf) ;
+      match_phase = SeqFeature_getPhase((SeqFeature*)rsf) ;
 
-      zMapFeatureAddAlignmentData(feature, clone_id, percent_id, query_start, query_end,
-                                  homol_type, query_length, query_strand, target_phase,
+      /* Get the align array from the cigar string */
+      cigar = BaseAlignFeature_getCigarString(rsf) ;
+
+      if (cigar)
+        {
+          if (!zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_ENSEMBL,
+                                               feature->strand, feature->x1, feature->x2,
+                                               match_strand, match_start, match_end,
+                                               cigar, &align))
+            {
+              zMapLogWarning("Error converting cigar string to gaps array: %s", cigar) ;
+            }
+        }
+      else
+        {
+          zMapLogWarning("%s", "Error getting cigar string") ;
+        }
+
+      zMapFeatureAddAlignmentData(feature, clone_id, percent_id, match_start, match_end,
+                                  homol_type, match_length, match_strand, match_phase,
                                   align, align_error, has_local_sequence, sequence) ;
       
       zMapLogMessage("Added align data: id %f, qstart %d, qend %d, qlen %d, qstrand %d, ph %d",
-                     percent_id, query_start, query_end, query_length, query_strand, target_phase) ;
+                     percent_id, match_start, match_end, match_length, match_strand, match_phase) ;
     }
 
   return feature ;
@@ -1025,14 +1044,14 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
       if (!feature_name)
         feature_name = SeqFeature_getSeqName(rsf) ;
 
-      start = DNAPepAlignFeature_getStart(rsf) ;
-      end = DNAPepAlignFeature_getEnd(rsf) ;
+      start = SeqFeature_getStart(rsf) ;
+      end = SeqFeature_getEnd(rsf) ;
       has_score = TRUE ;
-      score = DNAPepAlignFeature_getScore(rsf) ;  
+      score = SeqFeature_getScore(rsf) ;  
 
-      if (DNAPepAlignFeature_getStrand(rsf) > 0)
+      if (SeqFeature_getStrand(rsf) > 0)
         strand = ZMAPSTRAND_FORWARD ;
-      else if (DNAPepAlignFeature_getStrand(rsf) < 0)
+      else if (SeqFeature_getStrand(rsf) < 0)
         strand = ZMAPSTRAND_REVERSE ;
 
       /* ok, actually create the feature now */
