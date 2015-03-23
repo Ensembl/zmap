@@ -1203,6 +1203,13 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
   if (slice)
     sequence = SequenceAdaptor_fetchBySliceStartEndStrand(server->seq_adaptor, slice, POS_UNDEF, POS_UNDEF, 1);
 
+  if (sequence)
+    {
+      char *tmp = sequence ;
+      sequence = g_ascii_strdown(sequence) ;
+      g_free(tmp) ;
+    }
+
   if (!sequence)
     {
       char *estr;
