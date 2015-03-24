@@ -1,3 +1,20 @@
+2015-03-24  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix broken splice highlighting: out of date style resource name. - BUG FIX
+ src/include/ZMap/zmapStyle.h |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+2015-03-24  Steve Miller  <sm23@sanger.ac.uk>
+ small change to clipping logic for alignment features (related to rt:417362) - BUG FIX
+ src/zmapGFF/zmapGFF3parser.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
+
+2015-03-24  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-69-gd452de8 - Update RT and git commit reports
+ src/ChangeLog                                  |   12 ++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   14 ++++++++++++--
+ 3 files changed, 25 insertions(+), 2 deletions(-)
+
 2015-03-24  Steve Miller  <sm23@sanger.ac.uk>
  missing alignment features now correctly included in zmap - RT 417362
  src/zmapGFF/zmapGFF3parser.c |   13 +++++--------

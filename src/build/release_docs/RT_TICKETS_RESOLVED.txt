@@ -1,6 +1,16 @@
 
 Request Tracker Tickets Resolved from 11/02/2015 to 24/03/2015
 
+ticket/309181
+id: ticket/309181
+Queue: zmap
+Subject: Hits visible in blixem but not zmap
+Requestors: jh13@sanger.ac.uk, lw2@sanger.ac.uk
+Owner: sm23
+Resolved: Tue Mar 24 15:41:27 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
 ticket/371426
 id: ticket/371426
 Queue: zmap
@@ -8,6 +18,16 @@ Subject: bumping bug
 Requestors: sm23@sanger.ac.uk
 Owner: sm23
 Resolved: Tue Mar 17 12:07:01 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/372361
+id: ticket/372361
+Queue: zmap
+Subject: mRNA column partially bumped (78.06)
+Requestors: mpk@sanger.ac.uk
+Owner: sm23
+Resolved: Tue Mar 24 16:25:35 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
