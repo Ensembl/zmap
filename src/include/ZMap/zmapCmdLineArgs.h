@@ -90,7 +90,7 @@ typedef union
 
 
 void zMapCmdLineArgsCreate(int *argc, char *argv[]) ;
-gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result) ;
+gboolean zMapCmdLineArgsValue(const char *arg_name, ZMapCmdLineArgsType *result) ;
 char **zMapCmdLineFinalArg(void) ;
 void zMapCmdLineArgsDestroy(void) ;
 

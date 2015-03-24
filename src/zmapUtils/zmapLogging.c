@@ -375,9 +375,9 @@ int zMapLogFileSize(void)
 }
 
 
-void zMapLogMsg(char *domain, GLogLevelFlags log_level,
-                char *file, const char *function, int line,
-                char *format, ...)
+void zMapLogMsg(const char *domain, GLogLevelFlags log_level,
+                const char *file, const char *function, int line,
+                const char *format, ...)
 {
   ZMapLog log = log_G ;
   va_list args ;

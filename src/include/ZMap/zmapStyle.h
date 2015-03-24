@@ -1280,8 +1280,8 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 #define zMapStyleJoinThreshold(style)	 ((style)->mode_data.alignment.join_threshold)
 #define zMapStyleJoinMax(style)	 ((style)->mode_data.alignment.join_max)
 
-char *zMapStyleCreateName(char *style_name) ;
-GQuark zMapStyleCreateID(char *style_name) ;
+char *zMapStyleCreateName(const char *style_name) ;
+GQuark zMapStyleCreateID(const char *style_name) ;
 
 
 ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;

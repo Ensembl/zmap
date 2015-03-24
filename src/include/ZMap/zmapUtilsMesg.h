@@ -39,7 +39,7 @@ typedef enum {ZMAP_MSG_INFORMATION, ZMAP_MSG_WARNING, ZMAP_MSG_CRITICAL, ZMAP_MS
 
 
 /* Calling the message routine directly is deprecated, please use the macros below. */
-void zMapShowMsg(ZMapMsgType msg_type, char *format, ...) ;
+void zMapShowMsg(ZMapMsgType msg_type, const char *format, ...) ;
 
 
 

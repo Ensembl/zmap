@@ -873,7 +873,7 @@ void zMapStyleInitBumpMode(ZMapFeatureTypeStyle style,
  * case only betweens servers...perhaps we should not be merging....???
  * Caller must free returned string.
  *  */
-char *zMapStyleCreateName(char *style)
+char *zMapStyleCreateName(const char *style)
 {
   char *style_name ;
   GString *unique_style_name ;
@@ -890,7 +890,7 @@ char *zMapStyleCreateName(char *style)
 
 
 /* Like zMapStyleCreateName() but returns a quark representing the style name. */
-GQuark zMapStyleCreateID(char *style)
+GQuark zMapStyleCreateID(const char *style)
 {
   GQuark style_id = 0 ;
   char *style_name ;
