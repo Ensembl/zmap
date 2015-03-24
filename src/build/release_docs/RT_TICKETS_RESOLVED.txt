@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 11/02/2015 to 19/03/2015
+Request Tracker Tickets Resolved from 11/02/2015 to 24/03/2015
 
 ticket/371426
 id: ticket/371426
@@ -41,6 +41,16 @@ Resolved: Mon Mar 09 10:31:53 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
+ticket/417362
+id: ticket/417362
+Queue: zmap
+Subject: More 454-RNAseq matches in blixem than in zmap
+Requestors: lw2@sanger.ac.uk
+Owner: sm23
+Resolved: Tue Mar 24 09:58:51 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
 ticket/450420
 id: ticket/450420
 Queue: zmap
@@ -77,7 +87,7 @@ Queue: zmap
 Subject: opening new windows on new dual screen deskpro
 Requestors: th2@sanger.ac.uk
 Owner: gb10
-Resolved: Tue Mar 17 09:50:13 2015
+Resolved: Mon Mar 23 15:38:23 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

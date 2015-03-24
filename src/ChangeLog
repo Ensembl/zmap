@@ -1,3 +1,15 @@
+2015-03-24  Steve Miller  <sm23@sanger.ac.uk>
+ missing alignment features now correctly included in zmap - RT 417362
+ src/zmapGFF/zmapGFF3parser.c |   13 +++++--------
+ 1 files changed, 5 insertions(+), 8 deletions(-)
+
+2015-03-19  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-67-g0810c9b - Update RT and git commit reports
+ src/ChangeLog                                  |   12 ++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   12 +++++++++++-
+ 3 files changed, 24 insertions(+), 1 deletions(-)
+
 2015-03-19  Steve Miller  <sm23@sanger.ac.uk>
  fix for lasso selection of multiple features - RT 458109
  src/zmapWindow/zmapWindowDisplayOps.c |    2 +-
