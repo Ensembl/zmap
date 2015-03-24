@@ -129,7 +129,7 @@ char *zMapGetPath(char *path_in)
  * to do our own version one day....
  *
  *  */
-char *zMapGetBasename(char *path_in)
+char *zMapGetBasename(const char *path_in)
 {
   char *basename ;
 

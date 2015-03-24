@@ -1130,7 +1130,7 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
  * @param ...           The parameters matching the format string.
  * @return              nothing
  *  */
-void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
+void zMapShowMsg(ZMapMsgType msg_type, const char *format, ...)
 {
   va_list args ;
   char *msg_string ;

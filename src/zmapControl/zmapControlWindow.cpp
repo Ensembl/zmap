@@ -179,9 +179,9 @@ void zmapControlWindowSetStatus(ZMap zmap)
       {
         ZMapView view ;
         ZMapWindow window ;
-        char *strand_txt ;
+        const char *strand_txt = NULL ;
         int start = 0, end = 0 ;
-        char *coord_txt = "" ;
+        char *coord_txt = NULL ;
         char *tmp ;
 
         view = zMapViewGetView(zmap->focus_viewwindow) ;
