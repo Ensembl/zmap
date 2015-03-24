@@ -301,96 +301,6 @@ char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
  *
  * ZMapWindowPasteFeatureType of display_style must be ZMAPWINDOW_PASTE_TYPE_SELECTED.
  */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWindowDisplayStyle display_style)
-{
-  char *selection = NULL ;
-  GList *selected ;
-  gint length ;
-  GString *text ;
-  gboolean free_text ;
-  GArray *feature_coords ;
-  gboolean revcomped ;
-
-  zMapReturnValIfFailSafe((window && display_style->paste_feature == ZMAPWINDOW_PASTE_TYPE_SELECTED), NULL) ;
-
-  text = g_string_sized_new(512) ;
-  feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
-  revcomped = window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
-
-
-  /* If there are any focus items then make a selection string of their coords. */
-  if ((selected = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS))
-      && (length = g_list_length(selected)))
-    {
-      ID2Canvas id2c ;
-      FooCanvasItem *item ;
-      ZMapWindowCanvasItem canvas_item;
-      ZMapFeature item_feature ;
-      char *name ;
-
-      id2c = (ID2Canvas) selected->data;
-      item = FOO_CANVAS_ITEM(id2c->item) ;
-
-      if (ZMAP_IS_CANVAS_ITEM(item))
-        canvas_item = ZMAP_CANVAS_ITEM( item );
-      else
-        canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
-
-      item_feature = (ZMapFeature) id2c->feature_any ;
-
-      name = (char *)g_quark_to_string(item_feature->original_id) ;
-
-
-      /* We derive what to put into the text from what was selected.... */
-
-
-      /* Processing is different if there is only one item highlighted and it's a transcript. */
-      if (ZMAP_IS_CANVAS_ITEM(item) && length == 1 && item_feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-        {
-          setUpFeatureTranscript(revcomped, display_style, item_feature, feature_coords) ;
-
-          makeSelectionString(window, display_style, text, feature_coords) ;
-        }
-      else
-        {
-          while (selected)
-            {
-              id2c = (ID2Canvas)(selected->data) ;
-              item = FOO_CANVAS_ITEM(id2c->item) ;
-
-              if (ZMAP_IS_CANVAS_ITEM(item))
-                canvas_item = ZMAP_CANVAS_ITEM(item) ;
-              else
-                canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
-
-              item_feature = (ZMapFeature)(id2c->feature_any) ;
-
-              setUpFeatureOther(display_style, item_feature, feature_coords) ;
-
-              selected = selected->next ;
-            }
-
-          makeSelectionString(window, display_style, text, feature_coords) ;
-        }
-
-      selected = g_list_first(selected) ;
-      g_list_free(selected) ;
-    }
-
-  g_array_free(feature_coords, TRUE) ;
-
-  if (!(text->len))
-    free_text = TRUE ;
-  else
-    free_text = FALSE ;
-
-  selection = g_string_free(text, free_text) ;
-
-  return selection ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWindowDisplayStyle display_style_in)
 {
   char *selection = NULL ;
@@ -402,13 +312,11 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
   ZMapWindowDisplayStyleStruct display_style = *(display_style_in) ;
 
 
-  /*zMapReturnValIfFailSafe((window && display_style_in->paste_feature == ZMAPWINDOW_PASTE_TYPE_SELECTED), NULL) ;*/
+  zMapReturnValIfFailSafe((window && display_style_in->paste_feature == ZMAPWINDOW_PASTE_TYPE_SELECTED), NULL) ;
 
   text = g_string_sized_new(512) ;
   feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
   revcomped = window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
-
-
 
   /* If there are any focus items then make a selection string of their coords. */
   if ((selected = zmapWindowFocusGetFocusItems(window->focus)))

@@ -4038,6 +4038,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                             GList *feature_list;
                             FooCanvasItem *item;
                             double rootx1, rootx2, rooty1, rooty2 ;
+                            ZMapWindowDisplayStyleStruct display_style = {ZMAPWINDOW_COORD_ONE_BASED,
+                                                                          ZMAPWINDOW_PASTE_FORMAT_OTTERLACE,
+                                                                          ZMAPWINDOW_PASTE_TYPE_SELECTED} ;
 
 
                             /* Get size of item and convert to world coords, bounds are relative to item's parent */
@@ -4048,11 +4051,13 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                             /* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
                             // can-t do this as the canvas featureset point function returns n/a
                             // if there's no feature under the cursor no longer true....
-                            if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2)))
+                            if ((item = foo_canvas_get_item_at(window->canvas,
+                                                               (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2)))
                               {
                                 /* only finds features in a canvas featureset, old foo gives nothing */
                                 feature_list = zMapWindowFeaturesetFindItemAndFeatures(&item,
-                                                                                       rooty1, rooty2, rootx1, rootx2);
+                                                                                       rooty1, rooty2,
+                                                                                       rootx1, rootx2) ;
                               }
 
 
@@ -4060,7 +4065,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                             if (item)
                               zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item),
                                                         feature_list, item, NULL, 0, 0, 0, 0, NULL,
-                                                        !shift_on, FALSE, FALSE, NULL) ;
+                                                        !shift_on, FALSE, FALSE, &display_style) ;
 
                             event_handled = TRUE;    /* We _ARE_ handling */
                           }
