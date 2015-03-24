@@ -127,7 +127,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char * const ) ;
  * General function
  */
 #define CLIP_TRANSCRIPT_ON_PARSE 1
-#define CLIP_ALIGNMENT_ON_PARSE_GENERAL 1
+#define CLIP_ALIGNMENT_ON_PARSE 1
 #define CLIP_ASSEMBLYPATH_ON_PARSE 1
 #define CLIP_DEFAULT_ON_PARSE 1
 #define CLIP_LOCUS_ON_PARSE 1
@@ -136,7 +136,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char * const ) ;
 /*
  * new clipping behaviour
  */
-#define CLIP_ALIGNMENT_ON_PARSE_GENERAL 1
+/*#define CLIP_ALIGNMENT_ON_PARSE 1*/
 #define CLIP_LOCUS_ON_PARSE 1
 
 #endif
@@ -3821,22 +3821,19 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
         {
 
-#ifdef CLIP_ALIGNMENT_ON_PARSE_GENERAL
+#ifdef CLIP_ALIGNMENT_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
-#else
-          if ((bIncludeFeature = clipFeatureLogic_Complete(pParser, pFeatureData )))
-            {
 #endif
-
               pFeature = makeFeatureAlignment(pFeatureData, pFeatureSet, err_text) ;
               if (pFeature)
                 {
                   bResult = TRUE ;
                   ++pParser->num_features ;
                 }
-
+#ifdef CLIP_ALIGNMENT_ON_PARSE
             }
+#endif
 
         }
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)

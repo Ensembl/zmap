@@ -77,6 +77,17 @@ autoconf_generated='./config ./config.h.in ./Makefile.in'
 rm -rf $autoconf_generated
 
 
+# If the gbtools autogen.sh script exists then run that. This is necessary
+# for gbtools to create its gbtools_version.m4 file.
+#
+if [ -e "$BASE_DIR/gbtools/autogen.sh" ] ; then
+  cur_dir=`pwd`
+  cd $BASE_DIR/gbtools
+  ./autogen.sh
+  cd $cur_dir
+fi
+
+
 # set up zmap version number, this is arcane and horrible and all
 # autoconf's fault. See http://sources.redhat.com/automake/automake.html#Rebuilding
 # and the stuff about AC_INIT

@@ -465,8 +465,11 @@ AC_CONFIG_SUBDIRS([AceConn])
 # copied into the zmap tree and we build it. Otherwise, the user
 # must make sure it is installed locally.)
 #
+if test -e "$srcdir/gbtools/configure.ac"; then
 AC_CONFIG_SUBDIRS([gbtools])
-AM_CONDITIONAL([USE_GBTOOLS], [test -d "$srcdir/gbtools/src"])
+fi
+
+AM_CONDITIONAL([USE_GBTOOLS], [test -e "$srcdir/gbtools/configure.ac"])
 
 # Build the zeromq package, complicated because we need to tell it to build the
 # static library as well as the dynamic. I got this recipe from:
