@@ -2546,6 +2546,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
             if (g_ascii_strncasecmp(src->url,"pipe", 4) != 0
+                && g_ascii_strncasecmp(src->url,"ensembl", 7) != 0
 		&& g_ascii_strncasecmp(src->url,"file", 4) != 0)
 	      continue;
 
