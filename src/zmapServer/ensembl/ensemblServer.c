@@ -133,6 +133,8 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType hom
 static ZMapFeature makeFeature(SeqFeature *rsf, char *feature_name_id, char *feature_name, ZMapStyleMode feature_mode, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
 
+static ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, ZMapStyleMode feature_mode, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+
 /*
  *             Server interface functions.
  */
@@ -369,16 +371,10 @@ static gboolean vectorGetDNAAlignFeatures(Vector *features, EnsemblServer server
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       DNAAlignFeature *sf = Vector_getElementAt(features,i);
-      //long start = DNAAlignFeature_getStart(sf);
-      //long end   = DNAAlignFeature_getEnd(sf);
-
-      //printf("slice start = %d end = %d\n",start,end);
       DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"contig",NULL,NULL);
 
       if (rsf)
         {
-          //Analysis *analysis = DNAAlignFeature_getAnalysis(rsf) ;
-
           //printf("Hit name %s, Start %ld, End %ld, HitStart %d, HitEnd %d, Score %f, Cigar %s, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
           //       DNAAlignFeature_getHitSeqName(rsf), DNAAlignFeature_getStart(rsf),DNAAlignFeature_getEnd(rsf),
           //       DNAAlignFeature_getHitStart(rsf), DNAAlignFeature_getHitEnd(rsf),
@@ -419,34 +415,12 @@ static gboolean vectorGetDNAPepAlignFeatures(Vector *features,
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       DNAPepAlignFeature *sf = Vector_getElementAt(features,i);
-      //long start = DNAPepAlignFeature_getStart(sf);
-      //long end   = DNAPepAlignFeature_getEnd(sf);
-
-      //printf("slice start = %d end = %d\n",start,end);
       DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
       if (rsf)
         {
-          Analysis *analysis = DNAPepAlignFeature_getAnalysis(rsf) ;
-
-          makeFeatureDNAPepAlign(rsf, analysis->program, get_features_data, feature_block) ;
-          
-
-          //printf("Start %ld, End %ld, Score %f, Cigar %s, Strand %hhd, Length %ld, Source %s, Feature %s, Module %s\n",
-          //       DNAPepAlignFeature_getStart(rsf),DNAPepAlignFeature_getEnd(rsf),
-          //       DNAPepAlignFeature_getScore(rsf), DNAPepAlignFeature_getCigarString(rsf),
-          //       DNAPepAlignFeature_getStrand(rsf), DNAPepAlignFeature_getLength(rsf),
-          //       analysis->program, analysis->gffFeature, analysis->module);
-
-          //DNAPepAlignFeature *sf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)rsf, "chromosome", NULL, server->slice);
-          //sf = (DNAPepAlignFeature*)SeqFeature_transfer((SeqFeature*)rsf, server->slice);
-          //
-          //if (DNAPepAlignFeature_getStart(sf) != start || DNAPepAlignFeature_getEnd(sf) != end)
-          //  {
-          //    printf("Remapping to slice produced different coords start %ld v %ld   end %ld v %ld\n", 
-          //           DNAPepAlignFeature_getStart(sf),start, DNAPepAlignFeature_getEnd(sf),end);
-          //    result = FALSE;
-          //  }
+          const char *source = BaseAlignFeature_getDbDisplayName((BaseAlignFeature*)rsf) ;
+          makeFeatureDNAPepAlign(rsf, source, get_features_data, feature_block) ;
         }
       else
         {
@@ -1054,97 +1028,31 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
       else if (SeqFeature_getStrand(rsf) < 0)
         strand = ZMAPSTRAND_REVERSE ;
 
-      /* ok, actually create the feature now */
-      feature = zMapFeatureCreateEmpty() ;
-
-      /* cast away const of so_accession... ugh */
-      zMapFeatureAddStandardData(feature, feature_name_id, feature_name, sequence, (char*)SO_accession,
-                                 feature_mode, style,
-                                 start, end, has_score, score, strand) ;
-
-      zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d", 
-                     feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
-
-      /* Find the featureset */
+      /* Find the featureset, or create it if it doesn't exist */
       GQuark feature_set_id = zMapFeatureSetCreateID((char*)source) ;
 
-      ZMapFeatureSet feature_set = 
-        (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block, feature_set_id, ZMAPFEATURE_STRUCT_FEATURESET) ;
+      ZMapFeatureSet feature_set = (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block,
+                                                                                feature_set_id, 
+                                                                                ZMAPFEATURE_STRUCT_FEATURESET) ;
 
       if (!feature_set)
         {
-          feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL) ;
-          zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
-          get_features_data->feature_set_names = g_list_prepend(get_features_data->feature_set_names, GUINT_TO_POINTER(feature_set->unique_id)) ;
-
-          zMapLogMessage("Created feature set: %s", g_quark_to_string(feature_set_id)) ;
-
-          /*
-           * Now deal with the source -> data mapping referred to in the parser.
-           */
-          GQuark source_id = zMapFeatureSetCreateID((char*)source) ;
-          GQuark feature_style_id = 0 ;
-          ZMapFeatureSource source_data = NULL ;
-
-          if (get_features_data->source_2_sourcedata)
-            {
-              if (!(source_data = g_hash_table_lookup(get_features_data->source_2_sourcedata, GINT_TO_POINTER(source_id))))
-                {
-                  source_data = g_new0(ZMapFeatureSourceStruct,1);
-                  source_data->source_id = source_id;
-                  source_data->source_text = source_id;
-
-                  g_hash_table_insert(get_features_data->source_2_sourcedata,GINT_TO_POINTER(source_id), source_data);
-
-                  zMapLogMessage("Created source_data: %s", g_quark_to_string(source_id)) ;
-                }
-
-              if (source_data->style_id)
-                feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->style_id)) ;
-              else
-                feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->source_id)) ;
-
-              source_id = source_data->source_id ;
-              source_data->style_id = feature_style_id;
-              zMapLogMessage("Style id = %s", g_quark_to_string(source_data->style_id)) ;
-            }
-          else
-            {
-              source_id = feature_style_id = zMapStyleCreateID((char*)source) ;
-            }
-
-          ZMapFeatureTypeStyle feature_style = NULL ;
-
-          if (!(feature_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(get_features_data->feature_styles, GUINT_TO_POINTER(feature_style_id))))
-            {
-              if (!(feature_style = zMapFindFeatureStyle(get_features_data->sources, feature_style_id, feature_mode)))
-                {
-                  feature_style_id = g_quark_from_string(zmapStyleMode2ShortText(feature_mode)) ;
-                }
-
-              feature_style = zMapFindFeatureStyle(get_features_data->sources, feature_style_id, feature_mode) ;
-
-              if (feature_style)
-                {
-                  if (source_data)
-                    source_data->style_id = feature_style_id;
-                  
-                  g_hash_table_insert(get_features_data->feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
-                  
-                  if (source_data && feature_style->unique_id != feature_style_id)
-                    source_data->style_id = feature_style->unique_id;
-
-                }
-            }
-
-          if (feature_style)
-            {
-              feature_set->style = feature_style;
-            }
+          feature_set = makeFeatureSet(feature_name_id, feature_set_id, feature_mode, source, get_features_data, feature_block) ;
         }
 
       if (feature_set)
         {
+          /* ok, actually create the feature now */
+          feature = zMapFeatureCreateEmpty() ;
+
+          /* cast away const of so_accession... ugh */
+          zMapFeatureAddStandardData(feature, feature_name_id, feature_name, sequence, (char*)SO_accession,
+                                     feature_mode, style,
+                                     start, end, has_score, score, strand) ;
+
+          zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d", 
+                         feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
+
           /* add the new feature to the featureset */
           ZMapFeature existing_feature = g_hash_table_lookup(((ZMapFeatureAny)feature_set)->children, GINT_TO_POINTER(feature_name_id)) ;
           
@@ -1157,6 +1065,97 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
     }
 
   return feature ;
+}
+
+
+static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
+                                     GQuark feature_set_id, 
+                                     ZMapStyleMode feature_mode,
+                                     const char *source,
+                                     GetFeaturesData get_features_data,
+                                     ZMapFeatureBlock feature_block)
+{
+  ZMapFeatureSet feature_set = NULL ;
+
+  /*
+   * Now deal with the source -> data mapping referred to in the parser.
+   */
+  GQuark source_id = zMapFeatureSetCreateID((char*)source) ;
+  GQuark feature_style_id = 0 ;
+  ZMapFeatureSource source_data = NULL ;
+
+  if (get_features_data->source_2_sourcedata)
+    {
+      if (!(source_data = g_hash_table_lookup(get_features_data->source_2_sourcedata, GINT_TO_POINTER(source_id))))
+        {
+          source_data = g_new0(ZMapFeatureSourceStruct,1);
+          source_data->source_id = source_id;
+          source_data->source_text = source_id;
+
+          g_hash_table_insert(get_features_data->source_2_sourcedata,GINT_TO_POINTER(source_id), source_data);
+
+          zMapLogMessage("Created source_data: %s", g_quark_to_string(source_id)) ;
+        }
+
+      if (source_data->style_id)
+        feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->style_id)) ;
+      else
+        feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->source_id)) ;
+
+      source_id = source_data->source_id ;
+      source_data->style_id = feature_style_id;
+      zMapLogMessage("Style id = %s", g_quark_to_string(source_data->style_id)) ;
+    }
+  else
+    {
+      source_id = feature_style_id = zMapStyleCreateID((char*)source) ;
+    }
+
+  ZMapFeatureTypeStyle feature_style = NULL ;
+
+  if (!(feature_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(get_features_data->feature_styles, GUINT_TO_POINTER(feature_style_id))))
+    {
+      if (!(feature_style = zMapFindFeatureStyle(get_features_data->sources, feature_style_id, feature_mode)))
+        {
+          feature_style_id = g_quark_from_string(zmapStyleMode2ShortText(feature_mode)) ;
+        }
+
+      if (!(feature_style = zMapFindFeatureStyle(get_features_data->sources, feature_style_id, feature_mode)))
+        {
+          zMapLogWarning("Error loading feature \"%s\": Could not find style \"%s\" for feature set \"%s\".",
+                         feature_name_id, g_quark_to_string(feature_style_id), g_quark_to_string(feature_set_id)) ;
+        }
+
+      if (feature_style)
+        {
+          if (source_data)
+            source_data->style_id = feature_style_id;
+                  
+          g_hash_table_insert(get_features_data->feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
+                  
+          if (source_data && feature_style->unique_id != feature_style_id)
+            source_data->style_id = feature_style->unique_id;
+
+        }
+    }
+
+  if (feature_style)
+    {
+      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL) ;
+      zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
+      get_features_data->feature_set_names = g_list_prepend(get_features_data->feature_set_names, GUINT_TO_POINTER(feature_set->unique_id)) ;
+
+      zMapLogMessage("Created feature set: %s", g_quark_to_string(feature_set_id)) ;
+
+      feature_set->style = feature_style;
+    }
+  else
+    {
+      zMapLogWarning("Created feature set: %s; no feature style found for %s", 
+                     g_quark_to_string(feature_set_id), g_quark_to_string(feature_style_id)) ;
+    }
+
+  return feature_set ;
 }
 
 
