@@ -1168,6 +1168,10 @@ static gboolean add_featureset_style_to_column(ZMapFeatureColumn column, ZMapFea
       result = TRUE ;
 
     }
+  else
+    {
+      result = TRUE ;
+    }
 
   return result ;
 }
