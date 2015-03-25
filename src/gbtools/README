@@ -1,0 +1,12 @@
+
+ZMap now has a dependency on the gbtools common library code used for all of
+our applications.
+
+The ZMap build expects to find the gbtools code/makefiles etc in src/gbtools
+and the build will fail unless this is so.
+
+You can either copy the files/subdirectories of gbtools into src/gbtools
+yourself or you can run ZMap's autogen.sh bootstrap script with the "-g"
+flag. The latter will copy the current develop branch of gbtools into
+src/gbtools.
+
