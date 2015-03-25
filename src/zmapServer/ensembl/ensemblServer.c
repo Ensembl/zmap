@@ -1049,7 +1049,7 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
           feature = zMapFeatureCreateEmpty() ;
 
           /* cast away const of so_accession... ugh */
-          zMapFeatureAddStandardData(feature, unique_id, feature_name, sequence, (char*)SO_accession,
+          zMapFeatureAddStandardData(feature, g_quark_to_string(unique_id), feature_name, sequence, (char*)SO_accession,
                                      feature_mode, style,
                                      start, end, has_score, score, strand) ;
 
