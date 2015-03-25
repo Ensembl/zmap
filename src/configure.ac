@@ -518,9 +518,8 @@ echo \
      <program> - build specific program
 "
 
-if test "$HAVE_MYSQL" -eq 0; then
-echo " Warning: mysql not found; excluding ensembl server"
-fi
+AM_COND_IF([USE_MYSQL], [echo " Warning: mysql not found; excluding ensembl server"])
+
 
 echo "---------------------------------------------------------------------
 "
