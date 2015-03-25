@@ -64,7 +64,6 @@ typedef struct GetFeaturesDataStructType
   GHashTable *source_2_sourcedata ;
   GHashTable *featureset_2_column ;
   GHashTable *feature_styles ;
-  GHashTable *sources ; 
 
 } GetFeaturesDataStruct, *GetFeaturesData ;
 
@@ -563,8 +562,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   get_features_data.feature_set_names = NULL ;
   get_features_data.source_2_sourcedata = server->source_2_sourcedata ;
   get_features_data.featureset_2_column = server->featureset_2_column ;
-  get_features_data.feature_styles = g_hash_table_new(NULL,NULL) ;
-  get_features_data.sources = g_hash_table_new(NULL,NULL) ;
+  get_features_data.feature_styles = styles ;
 
   DoAllAlignBlocksStruct all_data ;
   all_data.server = server ;
@@ -575,8 +573,6 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)&all_data) ;
 
   feature_context->src_feature_set_names = get_features_data.feature_set_names ;
-
-  g_hash_table_destroy(get_features_data.feature_styles);
 
 
   /* Merge the new features into the context */
@@ -1113,34 +1109,18 @@ static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
 
   ZMapFeatureTypeStyle feature_style = NULL ;
 
-  if (!(feature_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(get_features_data->feature_styles, GUINT_TO_POINTER(feature_style_id))))
-    {
-      if (!(feature_style = zMapFindFeatureStyle(get_features_data->sources, feature_style_id, feature_mode)))
-        {
-          feature_style_id = g_quark_from_string(zmapStyleMode2ShortText(feature_mode)) ;
-        }
-
-      if (!(feature_style = zMapFindFeatureStyle(get_features_data->sources, feature_style_id, feature_mode)))
-        {
-          zMapLogWarning("Error loading feature \"%s\": Could not find style \"%s\" for feature set \"%s\".",
-                         feature_name_id, g_quark_to_string(feature_style_id), g_quark_to_string(feature_set_id)) ;
-        }
-
-      if (feature_style)
-        {
-          if (source_data)
-            source_data->style_id = feature_style_id;
-                  
-          g_hash_table_insert(get_features_data->feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
-                  
-          if (source_data && feature_style->unique_id != feature_style_id)
-            source_data->style_id = feature_style->unique_id;
-
-        }
-    }
+  feature_style = zMapFindFeatureStyle(get_features_data->feature_styles, feature_style_id, feature_mode) ;
 
   if (feature_style)
     {
+      if (source_data)
+        source_data->style_id = feature_style_id;
+                  
+      g_hash_table_insert(get_features_data->feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
+                  
+      if (source_data && feature_style->unique_id != feature_style_id)
+        source_data->style_id = feature_style->unique_id;
+
       feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL) ;
       zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
       get_features_data->feature_set_names = g_list_prepend(get_features_data->feature_set_names, GUINT_TO_POINTER(feature_set->unique_id)) ;
@@ -1151,8 +1131,8 @@ static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
     }
   else
     {
-      zMapLogWarning("Created feature set: %s; no feature style found for %s", 
-                     g_quark_to_string(feature_set_id), g_quark_to_string(feature_style_id)) ;
+      zMapLogWarning("Error creating feature %s (%s); no feature style found for %s", 
+                     feature_name_id, g_quark_to_string(feature_set_id), g_quark_to_string(feature_style_id)) ;
     }
 
   return feature_set ;
