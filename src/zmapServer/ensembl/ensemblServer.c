@@ -129,7 +129,7 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType homol_type, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeature(SeqFeature *rsf, char *feature_name_id, char *feature_name, ZMapStyleMode feature_mode, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeature makeFeature(SeqFeature *rsf, char *feature_name_id, char *feature_name, ZMapStyleMode feature_mode, const char *source, const int match_start, const int match_end, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
 
 static ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, ZMapStyleMode feature_mode, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
@@ -871,7 +871,7 @@ static ZMapFeature makeFeatureSimple(SimpleFeature *rsf,
 
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
 
-  feature = makeFeature((SeqFeature*)rsf, NULL, NULL, feature_mode, source, get_features_data, feature_block) ;
+  feature = makeFeature((SeqFeature*)rsf, NULL, NULL, feature_mode, source, 0, 0, get_features_data, feature_block) ;
 
   return feature ;
 }
@@ -920,9 +920,12 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf,
 
   char *feature_name_id = BaseAlignFeature_getHitSeqName(rsf) ;
   char *feature_name = BaseAlignFeature_getHitSeqName(rsf) ;
+  int match_start = BaseAlignFeature_getHitStart(rsf) ;
+  int match_end = BaseAlignFeature_getHitEnd(rsf) ;
 
   feature = makeFeature((SeqFeature*)rsf, feature_name_id, feature_name, 
-                        feature_mode, source, get_features_data, feature_block) ;
+                        feature_mode, source, match_start, match_end,
+                        get_features_data, feature_block) ;
 
   if (feature)
     {
@@ -941,8 +944,6 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf,
       char *cigar = NULL ;
 
       percent_id = BaseAlignFeature_getPercId(rsf) ;
-      match_start = BaseAlignFeature_getHitStart(rsf) ;
-      match_end = BaseAlignFeature_getHitEnd(rsf) ;
       match_length = match_end - match_start + 1 ; /*! todo: work out from cigar string? */
 
       if (BaseAlignFeature_getHitStrand(rsf) > 0)
@@ -987,12 +988,15 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
                                char *feature_name_in,
                                ZMapStyleMode feature_mode,
                                const char *source,
+                               const int match_start,
+                               const int match_end,
                                GetFeaturesData get_features_data,
                                ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
 
   char *feature_name_id = feature_name_id_in ;
+  GQuark unique_id = 0 ;
   char *feature_name = feature_name_in ;
   char *sequence = NULL ;
   const char *SO_accession = NULL ;
@@ -1024,6 +1028,9 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
       else if (SeqFeature_getStrand(rsf) < 0)
         strand = ZMAPSTRAND_REVERSE ;
 
+      /* Create the unique id from the name and coords */
+      unique_id = zMapFeatureCreateID(feature_mode, feature_name_id, strand, start, end, match_start, match_end);
+
       /* Find the featureset, or create it if it doesn't exist */
       GQuark feature_set_id = zMapFeatureSetCreateID((char*)source) ;
 
@@ -1042,7 +1049,7 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
           feature = zMapFeatureCreateEmpty() ;
 
           /* cast away const of so_accession... ugh */
-          zMapFeatureAddStandardData(feature, feature_name_id, feature_name, sequence, (char*)SO_accession,
+          zMapFeatureAddStandardData(feature, unique_id, feature_name, sequence, (char*)SO_accession,
                                      feature_mode, style,
                                      start, end, has_score, score, strand) ;
 
