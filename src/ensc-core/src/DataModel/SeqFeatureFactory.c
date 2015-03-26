@@ -26,6 +26,7 @@
 #include "PredictionExon.h"
 #include "Transcript.h"
 #include "SimpleFeature.h"
+#include "RepeatFeature.h"
 #include "Class.h"
 
 SeqFeature *SeqFeatureFactory_newFeature(ClassType type) {
