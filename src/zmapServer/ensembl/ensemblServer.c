@@ -126,10 +126,10 @@ static void eachAlignment(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data) ;
 
-static gboolean vectorGetSimpleFeatures(Vector *features, EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean vectorGetDNAAlignFeatures(Vector *features, EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean vectorGetDNAPepAlignFeatures(Vector *features, EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean vectorGetRepeatFeatures(Vector *features, EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static gboolean getAllSimpleFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static gboolean getAllDNAAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static gboolean getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 
@@ -446,12 +446,14 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   return result ;
 }
 
-static gboolean vectorGetSimpleFeatures(Vector *features, 
-                                        EnsemblServer server, 
-                                        GetFeaturesData get_features_data, 
-                                        ZMapFeatureBlock feature_block)
+static gboolean getAllSimpleFeatures(EnsemblServer server, 
+                                     GetFeaturesData get_features_data, 
+                                     ZMapFeatureBlock feature_block)
 {
   gboolean result = TRUE ;
+
+  Vector *features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
+
   int i = 0 ;
 
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
@@ -468,14 +470,15 @@ static gboolean vectorGetSimpleFeatures(Vector *features,
   return result;
 }
 
-static gboolean vectorGetDNAAlignFeatures(Vector *features, 
-                                          EnsemblServer server, 
-                                          GetFeaturesData get_features_data,
-                                          ZMapFeatureBlock feature_block)
+static gboolean getAllDNAAlignFeatures(EnsemblServer server, 
+                                       GetFeaturesData get_features_data,
+                                       ZMapFeatureBlock feature_block)
 {
   gboolean result = TRUE ;
-  int i = 0 ;
 
+  Vector *features =  Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+
+  int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       DNAAlignFeature *sf = Vector_getElementAt(features,i);
@@ -490,14 +493,15 @@ static gboolean vectorGetDNAAlignFeatures(Vector *features,
   return result;
 }
 
-static gboolean vectorGetDNAPepAlignFeatures(Vector *features, 
-                                             EnsemblServer server, 
-                                             GetFeaturesData get_features_data,
-                                             ZMapFeatureBlock feature_block)
+static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, 
+                                          GetFeaturesData get_features_data,
+                                          ZMapFeatureBlock feature_block)
 {
   gboolean result = TRUE ;
-  int i = 0 ;
 
+  Vector *features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+
+  int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       DNAPepAlignFeature *sf = Vector_getElementAt(features,i);
@@ -513,27 +517,24 @@ static gboolean vectorGetDNAPepAlignFeatures(Vector *features,
 }
 
 
-static gboolean vectorGetRepeatFeatures(Vector *features, 
-                                        EnsemblServer server, 
-                                        GetFeaturesData get_features_data,
-                                        ZMapFeatureBlock feature_block)
+static gboolean getAllRepeatFeatures(EnsemblServer server, 
+                                     GetFeaturesData get_features_data,
+                                     ZMapFeatureBlock feature_block)
 {
   gboolean result = TRUE ;
-  int i = 0 ;
 
+  Vector *features =  Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
+
+  int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       RepeatFeature *sf = Vector_getElementAt(features,i);
       RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
       if (rsf)
-        {
-          makeFeatureRepeat(rsf, get_features_data, feature_block) ;
-        }
+        makeFeatureRepeat(rsf, get_features_data, feature_block) ;
       else
-        {
-          printf("Failed to map feature '%s'\n", RepeatConsensus_getName(RepeatFeature_getConsensus(sf)));
-        }
+        printf("Failed to map feature '%s'\n", RepeatConsensus_getName(RepeatFeature_getConsensus(sf)));
     }  
 
   return result;
@@ -977,8 +978,8 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
       else if (SeqFeature_getStrand(rsf) < 0)
         strand = ZMAPSTRAND_REVERSE ;
 
-      /* Create the unique id from the name and coords */
-      unique_id = zMapFeatureCreateID(feature_mode, feature_name_id, strand, start, end, match_start, match_end);
+      /* Create the unique id from the name and coords (cast away const... ugh) */
+      unique_id = zMapFeatureCreateID(feature_mode, (char*)feature_name_id, strand, start, end, match_start, match_end);
 
       /* Find the featureset, or create it if it doesn't exist */
       GQuark feature_set_id = zMapFeatureSetCreateID((char*)source) ;
@@ -1000,11 +1001,11 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
           /* cast away const... ugh */
           zMapFeatureAddStandardData(feature,
                                      (char*)g_quark_to_string(unique_id), 
-                                     feature_name, 
+                                     (char*)feature_name, 
                                      sequence, 
                                      (char*)SO_accession,
                                      feature_mode, 
-                                     feature_set->style,
+                                     &feature_set->style,
                                      start,
                                      end,
                                      has_score,
@@ -1123,15 +1124,10 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
   g_mutex_lock(server->mutex) ;
 
-  Vector *simple_features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
-  Vector *dna_features =  Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-  Vector *pep_features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-  Vector *repeat_features =  Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
-
-  vectorGetSimpleFeatures(simple_features, server, get_features_data, feature_block);
-  vectorGetDNAAlignFeatures(dna_features, server, get_features_data, feature_block);
-  vectorGetDNAPepAlignFeatures(pep_features, server, get_features_data, feature_block);
-  vectorGetRepeatFeatures(repeat_features, server, get_features_data, feature_block);
+  getAllSimpleFeatures(server, get_features_data, feature_block);
+  getAllDNAAlignFeatures(server, get_features_data, feature_block);
+  getAllDNAPepAlignFeatures(server, get_features_data, feature_block);
+  getAllRepeatFeatures(server, get_features_data, feature_block);
 
   g_mutex_unlock(server->mutex) ;
 
