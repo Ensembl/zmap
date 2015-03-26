@@ -891,9 +891,9 @@ static ZMapFeature makeFeatureTranscript(Transcript *rsf,
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
 
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
-  const char *source = Analysis_getGFFSource(analysis) ;
+  const char *source = Analysis_getLogicName(analysis) ;
 
-  const char *feature_name = Transcript_getSeqRegionName(rsf) ;
+  const char *feature_name = Transcript_getExternalName(rsf) ;
 
   feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
                         feature_mode, source, 0, 0, 
