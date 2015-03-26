@@ -1673,9 +1673,9 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
   PangoFont **font_out, PangoFontDescription **desc_out)
 {
   gboolean found = FALSE, found_most_preferred = FALSE ;
-  PangoContext *context ;
-  PangoFontFamily **families;
-  gint n_families, i, most_preferred, current ;
+  PangoContext *context = NULL ;
+  PangoFontFamily **families = NULL;
+  gint n_families = 1, i = 0, most_preferred = 0, current = 0 ;
   PangoFontFamily *match_family = NULL ;
   PangoFont *font = NULL;
 
