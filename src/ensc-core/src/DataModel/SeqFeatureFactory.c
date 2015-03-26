@@ -117,6 +117,9 @@ SeqFeature *SeqFeatureFactory_newFeatureFromFeature(SeqFeature *sf) {
     case CLASS_INTRONSUPPORTINGEVIDENCE:
       feature = IntronSupportingEvidence_shallowCopy(sf);
       break;
+    case CLASS_REPEATFEATURE:
+      feature = RepeatFeature_shallowCopy((RepeatFeature*)sf);
+      break;
     default:
       fprintf(stderr,"Error: Unknown feature type %s in SeqFeatureFactory_newFeatureFromFeature\n",Class_findByType(sf->objectType)->name);
       exit(1);
