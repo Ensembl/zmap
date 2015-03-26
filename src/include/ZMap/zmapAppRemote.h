@@ -140,6 +140,8 @@ typedef void (*ZMapRemoteAppMakeRequestFunc)(gpointer caller_data,
                                              gpointer error_handler_func_data) ;
 
 
+typedef void (*ZMapAppRemoteExitFunc)(gpointer cb_data) ;
+
 
 /* Defines IDs that represent a "view" of the data, there is one of these for every
  * view, i.e. set of sequence data/features. */

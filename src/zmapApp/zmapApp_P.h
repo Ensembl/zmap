@@ -34,43 +34,15 @@
 #include <gdk/gdkx.h>
 
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapControl.h>
 #include <ZMap/zmapRemoteControl.h>
 #include <ZMap/zmapAppRemote.h>
-#include <ZMap/zmapManager.h>
 #include <ZMap/zmapAppServices.h>
-
 
 
 /* 
  *           App names/resources.
  */
-
-#define ZMAPLOG_FILENAME "zmap.log"
-
-
-/*
- * We follow glib convention in error domain naming:
- *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
- */
-#define ZMAP_APP_ERROR g_quark_from_string("ZMAP_APP_ERROR")
-
-typedef enum
-{
-  ZMAPAPP_ERROR_BAD_SEQUENCE_DETAILS,
-  ZMAPAPP_ERROR_BAD_COORDS,
-  ZMAPAPP_ERROR_NO_SEQUENCE,
-  ZMAPAPP_ERROR_GFF_HEADER,
-  ZMAPAPP_ERROR_GFF_PARSER,
-  ZMAPAPP_ERROR_GFF_VERSION,
-  ZMAPAPP_ERROR_OPENING_FILE,
-  ZMAPAPP_ERROR_CHECK_FILE,
-  ZMAPAPP_ERROR_NO_SOURCES
-} ZMapUtilsError;
-
-
-/* Minimum GTK version supported. */
-enum {ZMAP_GTK_MAJOR = 2, ZMAP_GTK_MINOR = 2, ZMAP_GTK_MICRO = 4} ;
-
 
 /* States for the application, needed especially because we can be waiting for threads to die. */
 typedef enum
@@ -82,52 +54,33 @@ typedef enum
   } ZMapAppState ;
 
 
-/* Some basic defines/defaults.. */
-enum
-  {
-    ZMAP_DEFAULT_EXIT_TIMEOUT = 10,			    /* Default time out (in seconds) for
-							       zmap to wait to quit, if exceeded we crash out */
-    ZMAP_DEFAULT_PING_TIMEOUT = 10,
 
-    ZMAP_APP_REMOTE_TIMEOUT_S = 3600,                       /* How long to wait before warning user that
-                                                               zmap has no sequence displayed and has
-                                                               had no interaction with its
-                                                               peer (seconds). */
+/* ZMapAppManager: allows user to manage zmaps and their views. */
 
-    ZMAP_DEFAULT_MAX_LOG_SIZE = 100                         /* Max size of log file before we
-                                                             * start warning user that log file is very
-                                                             * big (in megabytes). */
-  } ;
+/* Opaque type, controls interaction with all current ZMap windows. */
+typedef struct _ZMapManagerStruct *ZMapManager ;
 
+/* Specifies result of trying to add a new zmap to manager. */
+typedef enum
+ {
+   ZMAPMANAGER_ADD_INVALID,
+   ZMAPMANAGER_ADD_OK,					    /* Add succeeded, zmap connected. */
+   ZMAPMANAGER_ADD_FAIL,				    /* ZMap could not be added. */
+   ZMAPMANAGER_ADD_DISASTER				    /* There has been a serious error,
+							       caller should abort. */
+ } ZMapManagerAddResult ;
 
-/* Timeout list for remote control for sends. */
-#define ZMAP_WINDOW_REMOTECONTROL_TIMEOUT_LIST "333,1000,3000,9000"
-
-
-/* cols in connection list. */
-enum {ZMAP_NUM_COLS = 4} ;
-
-enum {
-  ZMAPID_COLUMN,
-  ZMAPSEQUENCE_COLUMN,
-  ZMAPSTATE_COLUMN,
-  ZMAPLASTREQUEST_COLUMN,
-  ZMAPDATA_COLUMN,
-  ZMAP_N_COLUMNS
-};
+/* Callback function prototype for zMapManagerForAllZMaps() */
+typedef void (*ZMapManagerForAllCallbackFunc)(ZMap zmap, void *user_data) ;
 
 
 
-/* General CB function typedef. */
-typedef void (*ZMapAppCBFunc)(void *cb_data) ;
 
-
-
-/* Initially we don't know the remote programs name so default to this... */
-#define ZMAP_APP_REMOTE_PEER "Remote Peer"
+/* Opaque type, controls remote peer interaction with all current ZMap windows. */
+typedef struct ZMapAppRemoteStructType *ZMapAppRemote ;
 
 /* Struct for zmap's remote control object. */
-typedef struct _ZMapAppRemoteStruct
+typedef struct ZMapAppRemoteStructType
 {
 
   /* Peer's names/text etc. */
@@ -141,7 +94,7 @@ typedef struct _ZMapAppRemoteStruct
   ZMapRemoteControl remote_controller ;
 
 
-  ZMapAppCBFunc exit_routine ;				    /* Called to exit application after we
+  ZMapAppRemoteExitFunc exit_routine ;                      /* Called to exit application after we
 							       have signalled to peer we are going. */
 
 
@@ -176,9 +129,6 @@ typedef struct _ZMapAppRemoteStruct
   gboolean deferred_action ;
 
 
-
-
-
   /* When operating with a peer we have an overall timeout time, this allows us to
    * warn the user if we have no view displayed and there has been no activity with
    * the peer for a long time. */
@@ -187,42 +137,7 @@ typedef struct _ZMapAppRemoteStruct
   time_t last_active_time_s ;                               /* Last remote request, in or out. */
 
 
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-
-
-  /* If our peer gave us a window id in the handshake then we check that window
-   * id to see if it is still there if we have timed out. 
-   * We only do this a configurable number of times before really timing out (to avoid deadlock),
-   * but note that counter is reset for each phase of sending/receiving. */
-  Window peer_window ;
-  char *peer_window_str ;
-  int window_retries_max ;
-  int window_retries_left ;
-
-
-
-
-  /* wrong ??? */
-  /* Reply from peer to a request from zmap, zmap_reply_func() is zmap sub-system callback
-   * that gets called with curr_reply. */
-  char *curr_reply ;
-
-
-
-
-  char *curr_zmap_command ;
-
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-} ZMapAppRemoteStruct, *ZMapAppRemote ;
-
+} ZMapAppRemoteStruct ;
 
 
 
@@ -244,49 +159,38 @@ typedef struct _ZMapAppContextStruct
   int exit_rc ;
   char *exit_msg ;
 
-
-  GtkWidget *app_widg ;
-
-  /* App level cursors, busy cursors get propagated down through all widgets. */
-  GdkCursor *normal_cursor ;
-  GdkCursor *remote_busy_cursor ;
-
   gboolean abbrev_title_prefix ;			    /* Is window title prefix abbreviated ? */
-
-  GtkTreeStore *tree_store_widg ;
-
+  gboolean show_mainwindow ;				    /* Should main window be displayed. */
+  gboolean defer_hiding ;				    /* Should hide of main window be deferred ? */
 
   /* Special colour to visually group zmap with it's peer window(s), colour is set by peer or user. */
   gboolean session_colour_set ;
   GdkColor session_colour ;
 
+  /* App level cursors, busy cursors get propagated down through all widgets. */
+  GdkCursor *normal_cursor ;
+  GdkCursor *remote_busy_cursor ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Is this needed any more ?? */
-  GError *info;                 /* This is an object to hold a code
-                                 * and a message as info for the
-                                 * remote control simple IPC stuff */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  GtkWidget *app_widg ;
 
   ZMapManager zmap_manager ;
-  ZMap selected_zmap ;
 
+  /* The list of opened zmaps. */
+  GtkTreeStore *tree_store_widg ;
+  ZMap selected_zmap ;
+  ZMapView selected_view ;
+
+  /* The new xremote. */
+  gboolean remote_ok ;					    /* Set to FALSE if communication with peer fails. */
+  ZMapAppRemote remote_control ;
+  gboolean xremote_debug ;				    /* Turn on/off debugging for xremote
+                                                               connections. */
 
 
   /* The func id for the map-event callback used to call functions that need
    * to be executed once the app has an X Window, e.g. remote control. */
   gulong mapCB_id ;
-
-
-  /* The new xremote. */
-  gboolean remote_ok ;					    /* Set to FALSE if communication with peer fails. */
-  ZMapAppRemote remote_control ;
-
-
-  gboolean show_mainwindow ;				    /* Should main window be displayed. */
-  gboolean defer_hiding ;				    /* Should hide of main window be deferred ? */
 
 
   /* Was a default sequence specified in the config. file.*/
@@ -298,20 +202,50 @@ typedef struct _ZMapAppContextStruct
 							     * can be set in [ZMap] or defaults to run-time directory
 							     */
 
-  gboolean xremote_debug ;				    /* Turn on/off debugging for xremote connections. */
-
-
 } ZMapAppContextStruct, *ZMapAppContext ;
 
+
+
+
+
+
+gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map,
+                           ZMap *zmap_out, ZMapView *view_out) ;
+void zmapAppQuitReq(ZMapAppContext app_context) ;
+void zmapAppRemoteLevelDestroy(ZMapAppContext app_context) ;
+void zmapAppDestroy(ZMapAppContext app_context) ;
+void zmapAppExit(ZMapAppContext app_context) ;
 
 int zmapMainMakeAppWindow(int argc, char *argv[]) ;
 GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context) ;
 GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
-gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map,
-                           ZMap *zmap_out, ZMapView *view_out) ;
-void zmapAppDestroy(ZMapAppContext app_context) ;
-void zmapAppExit(ZMapAppContext app_context) ;
+
+/* Add in all the manager stuff here..... */
+void zMapManagerInit(ZMapRemoteAppMakeRequestFunc remote_control_cb_func, void *remote_control_cb_data) ;
+ZMapManager zMapManagerCreate(void *gui_data) ;
+ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
+                                    ZMap *zmap_out, ZMapView *view_out, GError **error) ;
+
+ZMap zMapManagerFindZMap(ZMapManager manager, gpointer view_id, gpointer *view_ptr_out) ;
+gpointer zMapManagerFindView(ZMapManager manager, gpointer view_id) ;
+void zMapManagerDestroyView(ZMapManager zmaps, ZMap zmap, ZMapView view) ;
+guint zMapManagerCount(ZMapManager zmaps);
+gboolean zMapManagerReset(ZMap zmap) ;
+gboolean zMapManagerRaise(ZMap zmap) ;
+gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
+					 char *command_name, char *request,
+					 ZMap zmap, gpointer view_id,
+					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+void zMapManagerForAllZMaps(ZMapManager manager, ZMapManagerForAllCallbackFunc user_func_cb, void *user_func_data) ;
+gboolean zMapManagerCheckIfUnsaved(ZMapManager zmaps) ;
+void zMapManagerKill(ZMapManager zmaps, ZMap zmap) ;
+gboolean zMapManagerKillAllZMaps(ZMapManager zmaps);
+gboolean zMapManagerDestroy(ZMapManager zmaps) ;
+void zmapAppManagerUpdate(ZMapAppContext app_context, ZMap zmap, ZMapView view) ;
+void zmapAppManagerRemove(ZMapAppContext app_context, ZMap zmap, ZMapView view) ;
+
+
 
 void zmapAppPingStart(ZMapAppContext app_context) ;
 void zmapAppPingStop(ZMapAppContext app_context) ;
@@ -324,7 +258,7 @@ gboolean zmapAppRemoteControlInit(ZMapAppContext app_context) ;
 gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context) ;
 gboolean zmapAppRemoteControlDisconnect(ZMapAppContext app_context, gboolean app_exit) ;
 gboolean zmapAppRemoteControlPing(ZMapAppContext app_context) ;
-void zmapAppRemoteControlSetExitRoutine(ZMapAppContext app_context, ZMapAppCBFunc exit_routine) ;
+void zmapAppRemoteControlSetExitRoutine(ZMapAppContext app_context, ZMapAppRemoteExitFunc exit_routine) ;
 void zmapAppProcessAnyRequest(ZMapAppContext app_context, char *request,
 			      ZMapRemoteAppReturnReplyFunc replyHandlerFunc) ;
 void zmapAppProcessAnyReply(ZMapAppContext app_context, char *reply) ;

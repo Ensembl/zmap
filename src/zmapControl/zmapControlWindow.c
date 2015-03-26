@@ -315,11 +315,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
 void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
 {
   GtkWidget *toplevel = widget ;
-  GdkAtom geometry_atom, workarea_atom, max_atom_vert, max_atom_horiz ;
-  GdkScreen *screen ;
   int window_width_guess = 300, window_height_guess ;
-
-  screen = gtk_widget_get_screen(toplevel) ;
 
   zMapGUIGetTrueMonitorSize(toplevel, NULL, &window_height_guess) ;
 

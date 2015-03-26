@@ -2215,6 +2215,10 @@ GdkCursor *zMapGUIGetCursor(GtkWidget *widget)
 static gboolean getWorkAreaSize(GdkScreen *screen, gint *width_out, gint *height_out)
 {
   gboolean result = FALSE ;
+
+  /*! \todo This code causes strange crashing or incorrect window sizes. So far I've only
+   * seen the problem in optimised code on ubuntu trusty 64-bit dual monitor machines. */
+#ifdef CRASHES_IN_OPTIMISED_CODE
   GdkAtom geometry_atom, workarea_atom, max_atom_vert ;
   int window_width = 0, window_height = 0 ;
   float ZMAPWINDOW_HORIZ_PROP = 0.9, ZMAPWINDOW_VERT_PROP = 0.9 ;
@@ -2311,6 +2315,8 @@ static gboolean getWorkAreaSize(GdkScreen *screen, gint *width_out, gint *height
           *height_out = window_height ;
         }
     }
+
+#endif
 
   return result ;
 }

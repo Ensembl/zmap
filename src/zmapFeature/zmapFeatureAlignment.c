@@ -1159,7 +1159,7 @@ static gboolean parse_canon_valid(AlignStrCanonical canon)
    */
   if (result)
     {
-      if ((canon->num_operators / 2) == 0)
+      if ((canon->num_operators % 2) == 0)
         result = FALSE ;
     }
 

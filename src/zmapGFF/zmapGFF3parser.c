@@ -127,7 +127,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char * const ) ;
  * General function
  */
 #define CLIP_TRANSCRIPT_ON_PARSE 1
-#define CLIP_ALIGNMENT_ON_PARSE_GENERAL 1
+#define CLIP_ALIGNMENT_ON_PARSE 1
 #define CLIP_ASSEMBLYPATH_ON_PARSE 1
 #define CLIP_DEFAULT_ON_PARSE 1
 #define CLIP_LOCUS_ON_PARSE 1
@@ -136,7 +136,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char * const ) ;
 /*
  * new clipping behaviour
  */
-#define CLIP_ALIGNMENT_ON_PARSE_GENERAL 1
+#define CLIP_ALIGNMENT_ON_PARSE 1
 #define CLIP_LOCUS_ON_PARSE 1
 
 #endif
@@ -2334,8 +2334,6 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
   sErrText = NULL ;
   if (g_ascii_strcasecmp(sSequence, ".") == 0)
     sErrText = g_strdup("sSequence cannot be '.'") ;
-  //else if (g_ascii_strcasecmp(sSource, ".") == 0)
-  //  sErrText = g_strdup("sSource cannot be '.'") ;
   else if (g_ascii_strcasecmp(sType, ".") == 0)
     sErrText = g_strdup("sType cannot be '.'") ;
   else if (!zMapFeatureFormatType(pParser->SO_compliant, pParser->default_to_basic, sType, &cType))
@@ -2537,7 +2535,7 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
           pParser->error = NULL ;
         }
       pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
-                                   "GFF line %d (b) - %s (\"%s\")",  pParser->line_count, sErrText, sLine) ;
+                                   "GFF line %d. ERROR: %s (\"%s\")",  pParser->line_count, sErrText, sLine) ;
       g_free(sErrText) ;
       sErrText = NULL ;
 
@@ -3725,7 +3723,6 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char * co
 /*
  * Create a new feature and add it to the feature set.
  *
- *
  */
 static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                          char ** const err_text,
@@ -3734,8 +3731,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
 {
   unsigned int nAttributes = 0 ;
 
-  char *sMakeFeatureErrorText = NULL,
-    *sURL = NULL,
+  char *sURL = NULL,
     *sVariation = NULL,
     *sNote = NULL,
     *sSOType = NULL ;
@@ -3779,7 +3775,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
     {
       if (!(bResult = pFeatureSet->style->mode == cFeatureStyleMode ))
         {
-          sMakeFeatureErrorText = g_strdup_printf("makeNewFeature_V3(); feature StyleMode did not match FeatureSet; not created") ;
+          *err_text = g_strdup_printf("makeNewFeature_V3(); feature StyleMode did not match FeatureSet; feature not created") ;
         }
     }
 
@@ -3797,7 +3793,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
             {
 #endif
 
-              pFeature = makeFeatureTranscript(pParser, pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
+              pFeature = makeFeatureTranscript(pParser, pFeatureData, pFeatureSet, &bNewFeatureCreated, err_text) ;
               if (pFeature)
                 {
                   bResult = TRUE ;
@@ -3811,7 +3807,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   if (clipFeatureLogic_General(pParser, pFeatureData ))
                     {
 #endif
-                      bLocusFeature = makeFeatureLocus(pParserBase, pFeatureData, &sMakeFeatureErrorText) ;
+                      bLocusFeature = makeFeatureLocus(pParserBase, pFeatureData, err_text) ;
 #ifdef CLIP_LOCUS_ON_PARSE
                     }
 #endif
@@ -3824,23 +3820,19 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
         }
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
         {
-
-#ifdef CLIP_ALIGNMENT_ON_PARSE_GENERAL
-          if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
-            {
-#else
+#ifdef CLIP_ALIGNMENT_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_Complete(pParser, pFeatureData )))
             {
 #endif
-
-              pFeature = makeFeatureAlignment(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+              pFeature = makeFeatureAlignment(pFeatureData, pFeatureSet, err_text) ;
               if (pFeature)
                 {
                   bResult = TRUE ;
                   ++pParser->num_features ;
                 }
-
+#ifdef CLIP_ALIGNMENT_ON_PARSE
             }
+#endif
 
         }
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
@@ -3854,7 +3846,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
             {
 #endif
 
-              pFeature = makeFeatureAssemblyPath(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+              pFeature = makeFeatureAssemblyPath(pFeatureData, pFeatureSet, err_text) ;
               if (pFeature)
                 {
                   bResult = TRUE ;
@@ -3876,7 +3868,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
             {
 #endif
 
-              pFeature = makeFeatureDefault(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+              pFeature = makeFeatureDefault(pFeatureData, pFeatureSet, err_text) ;
               if (pFeature)
                 {
                   bResult = TRUE ;

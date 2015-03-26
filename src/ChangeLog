@@ -1,32 +1,368 @@
+2015-03-24  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix broken splice highlighting: out of date style resource name. - BUG FIX
+ src/include/ZMap/zmapStyle.h |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+2015-03-24  Steve Miller  <sm23@sanger.ac.uk>
+ small change to clipping logic for alignment features (related to rt:417362) - BUG FIX
+ src/zmapGFF/zmapGFF3parser.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
+
+2015-03-24  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-69-gd452de8 - Update RT and git commit reports
+ src/ChangeLog                                  |   12 ++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   14 ++++++++++++--
+ 3 files changed, 25 insertions(+), 2 deletions(-)
+
+2015-03-24  Steve Miller  <sm23@sanger.ac.uk>
+ missing alignment features now correctly included in zmap - RT 417362
+ src/zmapGFF/zmapGFF3parser.c |   13 +++++--------
+ 1 files changed, 5 insertions(+), 8 deletions(-)
+
+2015-03-19  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-67-g0810c9b - Update RT and git commit reports
+ src/ChangeLog                                  |   12 ++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   12 +++++++++++-
+ 3 files changed, 24 insertions(+), 1 deletions(-)
+
+2015-03-19  Steve Miller  <sm23@sanger.ac.uk>
+ fix for lasso selection of multiple features - RT 458109
+ src/zmapWindow/zmapWindowDisplayOps.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-03-18  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-65-g91b8652 - Update RT and git commit reports
+ src/ChangeLog                                  |   12 ++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   22 +++++++++++++++++++++-
+ 3 files changed, 34 insertions(+), 1 deletions(-)
+
+2015-03-18  Steve Miller  <sm23@sanger.ac.uk>
+ added the feature source to the Feature Details window - RT 457778
+ src/zmapWindow/zmapWindowFeatureShow.c |   30 ++++++++++++++++++------------
+ 1 files changed, 18 insertions(+), 12 deletions(-)
+
+2015-03-16  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-63-gaebcc19 - Update RT and git commit reports
+ src/ChangeLog                                  |   11 +++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 3 files changed, 13 insertions(+), 1 deletions(-)
+
+2015-03-16  Gemma Barson  <gb10@sanger.ac.uk>
+ "-mTemporarily remove code which causes incorrect window size - RT 457337"
+ src/zmapUtils/zmapGUIutils.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+2015-03-12  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-61-g147618e - Update RT and git commit reports
+ src/ChangeLog                                  |    7 +++++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 2 files changed, 8 insertions(+), 1 deletions(-)
+
+2015-03-12  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-60-g0ebff7f - Update RT and git commit reports
+ src/ChangeLog                                  |  577 ++++++++++++------------
+ src/build/release_docs/GIT_COMMITS.txt         |   35 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  437 +-----------------
+ 3 files changed, 314 insertions(+), 735 deletions(-)
+
+2015-03-12  Steve Miller  <sm23@sanger.ac.uk>
+ editing of release notes - BUILD
+ docs/user/release_notes.shtml |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+2015-03-12  Steve Miller  <sm23@sanger.ac.uk>
+ fix to incorrect so-mode-map entry for SO term 'match' - BUG FIX
+ scripts/so_to_mode_map.txt |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-03-09  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'production' into develop
+2015-03-09  Steve Miller  <sm23@sanger.ac.uk>
+ Merge branch 'feature/user_output' into develop
+2015-03-09  Steve Miller  <sm23@sanger.ac.uk>
+ "final test and small fix to user output/feature listing code - NEW FEATURE "feature/user_output""
+ src/include/ZMap/zmapGFF.h       |    2 +-
+ src/zmapWindow/zmapWindowMenus.c |   94 +++++++++++++++++++-------------------
+ 2 files changed, 48 insertions(+), 48 deletions(-)
+
+2015-03-09  Steve Miller  <sm23@sanger.ac.uk>
+ Merge branch 'develop' into feature/user_output
+2015-03-06  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'production' into develop
+2015-03-06  Steve Miller  <sm23@sanger.ac.uk>
+ Merge branch 'develop' into feature/user_output
+2015-03-06  Steve Miller  <sm23@sanger.ac.uk>
+ "final changes to user output menus for featuresets in a column - NEW FEATURE "user_output""
+ src/include/ZMap/zmapGFF.h       |    4 +-
+ src/include/ZMap/zmapWindow.h    |   18 ++-
+ src/zmapGFF/zmapGFF2Dumper.c     |  163 ++++++++++++++++----
+ src/zmapWindow/zmapWindowMenus.c |  302 +++++++++++++++++++++++++-------------
+ 4 files changed, 346 insertions(+), 141 deletions(-)
+
+2015-03-06  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "Big tidy up/removal of redundant unused code, bug fixes. - NEW FEATURE "src/zmapRemoteControl/remotetest/remotecontroltest.c""
+ .../remotetest/remotecontroltest.c                 |  664 ++++++++++----------
+ 1 files changed, 333 insertions(+), 331 deletions(-)
+
+2015-03-06  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove unnecessary warning/log messages and logic. - TRIVIAL"
+ src/zmapConfig/zmapConfigDir.c |   42 +++++++++++----------------------------
+ 1 files changed, 12 insertions(+), 30 deletions(-)
+
+2015-03-05  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "Extensive tidy up of old code, fixed crashing bugs. - NEW FEATURE "Remote Control Test""
+ .../remotetest/remotecontroltest.c                 | 2249 ++++++--------------
+ 1 files changed, 634 insertions(+), 1615 deletions(-)
+
+2015-03-05  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add comment/question about an include. - TRIVIAL"
+ src/zmapUtils/zmapUtils.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2015-03-05  Steve Miller  <sm23@sanger.ac.uk>
+ adding the column dumping code, and fixed bug in zMapGFFDumpList
+ src/include/ZMap/zmapGFF.h       |    5 +-
+ src/zmapGFF/zmapGFF2Dumper.c     |  200 +++++++++++++++++++++++++++++++++++++-
+ src/zmapWindow/zmapWindowMenus.c |   42 ++++----
+ 3 files changed, 222 insertions(+), 25 deletions(-)
+
+2015-03-05  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'feature/Feature_select_fix' into develop
+2015-03-05  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "re-add single exon selection, add pasting of coords in 'CHR#:start,end' format. - NEW FEATURE "src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c""
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |   95 ++++++++++++++++---
+ 1 files changed, 80 insertions(+), 15 deletions(-)
+
+2015-03-05  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "re-add single exon selection, add pasting of coords in 'CHR#:start,end' format. - NEW FEATURE "src/include/ZMap/zmapWindow.h""
+ src/include/ZMap/zmapWindow.h |   88 ++++++++++++++++++++++++++++++----------
+ 1 files changed, 66 insertions(+), 22 deletions(-)
+
+2015-03-05  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add Cntl-U short cut for pasting in  'CHR#:start,end' format. - NEW FEATURE "src/zmapControl/zmapControlWindowMenubar.c""
+ src/zmapControl/zmapControlWindowMenubar.c |   18 +++++++++++-------
+ 1 files changed, 11 insertions(+), 7 deletions(-)
+
+2015-03-05  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "re-add single exon selection, add pasting of coords in 'CHR#:start,end' format. - NEW FEATURE "src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c""
+ src/zmapWindow/zmapWindow.c           |  188 ++++++++--------
+ src/zmapWindow/zmapWindowDisplayOps.c |  340 ++++++++++++++++++++++------
+ src/zmapWindow/zmapWindowFeature.c    |   20 +-
+ src/zmapWindow/zmapWindowFocus.c      |  406 +++++++++++++++++++--------------
+ src/zmapWindow/zmapWindowItem.c       |   36 +++-
+ src/zmapWindow/zmapWindowMark.c       |    2 +-
+ src/zmapWindow/zmapWindowMenus.c      |    5 +-
+ src/zmapWindow/zmapWindow_P.h         |   82 +++++---
+ 8 files changed, 697 insertions(+), 382 deletions(-)
+
+2015-03-05  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add commentary to a hacky looking comment. - TRIVIAL"
+ .../canvas/zmapWindowCanvasFeatureset_I.h          |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+2015-03-05  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix trivial mistake in returnif macro. - TRIVIAL"
+ src/zmapAppServices/zmapAppSequenceView.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-03-05  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove unused field. - TRIVIAL"
+ src/include/ZMap/zmapFeature.h |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+2015-03-03  Steve Miller  <sm23@sanger.ac.uk>
+ "bug in the display of features of different mode in the list window - BUILD"
+ src/zmapUtils/zmapGUITreeView.c        |    6 +-
+ src/zmapWindow/zmapWindowFeatureList.c |   27 ++-
+ src/zmapWindow/zmapWindowItemHash.c    |   16 +-
+ src/zmapWindow/zmapWindowList.c        |    4 +-
+ src/zmapWindow/zmapWindowMenus.c       |  375 ++++++++++++++++++++++----------
+ 5 files changed, 290 insertions(+), 138 deletions(-)
+
+2015-02-27  Steve Miller  <sm23@sanger.ac.uk>
+ "simplified export menus; removed redundant and useless options - TRIVIAL"
+ src/zmapWindow/zmapWindowMenus.c |  113 +++++++++++++++++++++----------------
+ src/zmapWindow/zmapWindow_P.h    |    9 +--
+ 2 files changed, 67 insertions(+), 55 deletions(-)
+
+2015-02-26  Steve Miller  <sm23@sanger.ac.uk>
+ "removed the context output option; tidied up some error checking in zmapControlWindowMenubar.c - TRIVIAL"
+ src/zmapControl/zmapControlWindowMenubar.c |   58 +++++++++++++++++-----------
+ src/zmapWindow/zmapWindowMenus.c           |   12 ++++--
+ 2 files changed, 43 insertions(+), 27 deletions(-)
+
+2015-02-26  Steve Miller  <sm23@sanger.ac.uk>
+ Merge branch 'production' into develop
 2015-02-25  Steve Miller  <sm23@sanger.ac.uk>
  "fix at zmap end for feature ontology/blixem display problem - RT 452621"
  src/zmapView/zmapViewRemoteControl.c | 1376 +++++++++++++++++-----------------
  src/zmapView/zmapViewScratch.c       |   96 ++--
  2 files changed, 750 insertions(+), 722 deletions(-)
 
-2015-02-18  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.3.0-59-g91e31a1 - Update RT and git commit reports
- src/ChangeLog                                  |   17 ++++++++++++
- src/build/release_docs/GIT_COMMITS.txt         |    1 +
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |   32 +++++++++++++++++++++++-
- 3 files changed, 49 insertions(+), 1 deletions(-)
+2015-02-19  Steve Miller  <sm23@sanger.ac.uk>
+ SIRT:451891; inserted more informative error message
+ src/zmapGFF/zmapGFF3parser.c      |   20 ++++++++------------
+ src/zmapView/zmapViewCallBlixem.c |    3 ++-
+ 2 files changed, 10 insertions(+), 13 deletions(-)
 
 2015-02-18  Steve Miller  <sm23@sanger.ac.uk>
- fix to drag/drop feature to blixem
+ fix to drag/drop features into blixem
  src/include/ZMap/zmapFeature.h      |    2 +-
- src/include/ZMap/zmapGFF.h          |   24 +-
- src/zmapFeature/zmapFeatureOutput.c |   16 +-
- src/zmapGFF/zmapGFF2Dumper.c        | 1004 ++++++++++++++++++++++-------------
- src/zmapView/zmapViewCallBlixem.c   |   32 +-
- src/zmapWindow/zmapWindow.c         |   11 +-
- 6 files changed, 697 insertions(+), 392 deletions(-)
+ src/include/ZMap/zmapGFF.h          |   12 ++--
+ src/zmapFeature/zmapFeatureOutput.c |   16 ++++--
+ src/zmapGFF/zmapGFF2Dumper.c        |   89 +++++++++++++++++++++++-----------
+ src/zmapView/zmapViewCallBlixem.c   |   31 +++++++-----
+ src/zmapWindow/zmapWindow.c         |   11 ++--
+ 6 files changed, 103 insertions(+), 58 deletions(-)
 
-2015-02-13  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.3.0-57-g1173481 - Update RT and git commit reports
- src/ChangeLog                                  | 1944 ++++--------------------
- src/build/release_docs/GIT_COMMITS.txt         |   48 +-
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |  415 +++++-
- 3 files changed, 648 insertions(+), 1759 deletions(-)
+2015-02-17  Steve Miller  <sm23@sanger.ac.uk>
+ Merge branch 'feature/user_output' into develop
+2015-02-17  Steve Miller  <sm23@sanger.ac.uk>
+ some alterations to user export menus
+ src/zmapControl/zmapControlWindowMenubar.c |   18 +++++-----
+ src/zmapWindow/zmapWindowMenus.c           |   46 +++++++++++++--------------
+ 2 files changed, 31 insertions(+), 33 deletions(-)
+
+2015-02-16  Steve Miller  <sm23@sanger.ac.uk>
+ made some attribute generation functions public and altered user output menus
+ src/include/ZMap/zmapGFF.h                 |   12 +++++
+ src/zmapControl/zmapControlWindowMenubar.c |   22 ++++----
+ src/zmapGFF/zmapGFF2Dumper.c               |   69 ++++++++++++----------------
+ src/zmapGFF/zmapGFFAttribute.h             |    2 -
+ 4 files changed, 52 insertions(+), 53 deletions(-)
+
+2015-02-13  Steve Miller  <sm23@sanger.ac.uk>
+ removed a couple of unused variables in dumping code
+ src/zmapGFF/zmapGFF2Dumper.c |    7 +++----
+ 1 files changed, 3 insertions(+), 4 deletions(-)
+
+2015-02-13  Steve Miller  <sm23@sanger.ac.uk>
+ Merge branch 'develop' into feature/user_output
+2015-02-13  Steve Miller  <sm23@sanger.ac.uk>
+ code to catch some rare errors in dumping code
+ src/zmapGFF/zmapGFF2Dumper.c |  492 ++++++++++++++++++++++--------------------
+ 1 files changed, 262 insertions(+), 230 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'feature/Main_Window' into develop
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove static from an enum...not legal."
+ src/zmapControl/zmapControlWindowInfoPanel.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "moved defines from app header to here where they are used. Moved zmap list funcs to managepanel.c"
+ src/zmapApp/zmapAppwindow.c |  246 +++++++++++++++----------------------------
+ 1 files changed, 85 insertions(+), 161 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove a lot of redundant code that does nothing."
+ src/zmapApp/zmapAppmenubar.c |   82 ++++++++---------------------------------
+ 1 files changed, 16 insertions(+), 66 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "removed, intermediate file in rearrangements."
+ src/zmapApp/zmapAppmanage.c |  304 -------------------------------------------
+ 1 files changed, 0 insertions(+), 304 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "change mode to non-executable."
+ 0 files changed, 0 insertions(+), 0 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove stuff that should be in managepanel code."
+ src/zmapApp/zmapAppconnect.c |   20 +++++---------------
+ 1 files changed, 5 insertions(+), 15 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "big tidy up to remove redundant stuff, add stuff removed from zmapmanager, move stuff into only files where needed."
+ src/zmapApp/zmapApp_P.h |  210 ++++++++++++++++-------------------------------
+ 1 files changed, 72 insertions(+), 138 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add new typdef for exit routine."
+ src/zmapApp/zmapAppRemoteControl.c |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "augment callbacks with view. make sure deleted views are reported to app level."
+ src/zmapControl/zmapControl.c |  141 +++++++++++++++++++++++------------------
+ 1 files changed, 80 insertions(+), 61 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "get rid of compiler warnings for unused variables."
+ src/zmapControl/zmapControlWindow.c |    4 ----
+ 1 files changed, 0 insertions(+), 4 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add code to handle closing new sequence window and also adding a view."
+ src/zmapControl/zmapControlWindowMenubar.c |   24 ++++++++++++++++++++++--
+ 1 files changed, 22 insertions(+), 2 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add func to get zmap callbacks."
+ src/zmapControl/zmapControl_P.h |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "fix callback funcs for add/close view to include view pointer."
+ src/include/ZMap/zmapControl.h |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "manger panel functions moved from zmapmanager."
+ src/zmapApp/zmapAppmanagepanel.c |  378 ++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 378 insertions(+), 0 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "manger functions moved from zmapmanger."
+ src/zmapApp/zmapAppManager.c | 1003 ++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 1003 insertions(+), 0 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add new manager files transferred from zmapmanager."
+ src/zmapApp/Makefile.am |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add callbacks for handling closing of new sequence window."
+ src/include/ZMap/zmapAppServices.h        |    7 +++-
+ src/zmapAppServices/zmapAppSequenceView.c |   57 ++++++++++++++++++-----------
+ 2 files changed, 41 insertions(+), 23 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "add missing exit func typedef."
+ src/include/ZMap/zmapAppRemote.h |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "trivial, fix compiler warning."
+ src/zmapFeature/zmapFeatureUtils.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove zmapmanager, merged into zmapapp."
+ src/zmapManager/Makefile.am     |   18 -
+ src/zmapManager/README          |    7 -
+ src/zmapManager/zmapManager.c   |  997 ---------------------------------------
+ src/zmapManager/zmapManager_P.h |   49 --
+ 4 files changed, 0 insertions(+), 1071 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove zmapmanager header, now merged into zmapapp."
+ src/include/Makefile.am        |    1 -
+ src/include/ZMap/zmapManager.h |   98 ----------------------------------------
+ 2 files changed, 0 insertions(+), 99 deletions(-)
+
+2015-02-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ "remove zmapmanager from build, no merged into zmapapp."
+ src/Makefile.am  |    1 -
+ src/configure.ac |    2 --
+ 2 files changed, 0 insertions(+), 3 deletions(-)
 
 2015-02-13  Gemma Barson  <gb10@sanger.ac.uk>
  Replace 'annotools' email id with 'annosoft'
@@ -37,271 +373,7 @@
  4 files changed, 4 insertions(+), 4 deletions(-)
 
 2015-02-13  Steve Miller  <sm23@sanger.ac.uk>
- updating of release notes
- docs/user/release_notes.shtml |   11 +++++++++++
- 1 files changed, 11 insertions(+), 0 deletions(-)
-
-2015-02-11  Steve Miller  <sm23@sanger.ac.uk>
- small bug in dumper code
- src/zmapGFF/zmapGFF2Dumper.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2015-02-11  Gemma Barson  <gb10@sanger.ac.uk>
- Build: Fix problem finding default_styles.c target
- src/zmapConfig/Makefile.am |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-02-11  Steve Miller  <sm23@sanger.ac.uk>
- changed a couple of bitfield definitions to unsigned int
- src/include/ZMap/zmapGFF.h   |   22 +++++++++++-----------
- src/zmapGFF/zmapGFF2Dumper.c |    4 ++--
- 2 files changed, 13 insertions(+), 13 deletions(-)
-
-2015-02-11  Steve Miller  <sm23@sanger.ac.uk>
- rearrangements to gff dumping flags
- src/zmapGFF/zmapGFF2Dumper.c |  106 ++++++++++++++++++++++++++++++++----------
- 1 files changed, 81 insertions(+), 25 deletions(-)
-
-2015-02-11  Steve Miller  <sm23@sanger.ac.uk>
- added mode=GRAPH features to the gff dumper
- src/include/ZMap/zmapGFF.h   |    2 +
- src/zmapGFF/zmapGFF2Dumper.c |  178 ++++++++++++++++++++++++++++++++++++++++--
- 2 files changed, 174 insertions(+), 6 deletions(-)
-
-2015-02-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- "move init message to be after version checking code so only version is shown."
- src/zmapApp/zmapAppwindow.c |   10 ++++------
- 1 files changed, 4 insertions(+), 6 deletions(-)
-
-2015-02-10  Steve Miller  <sm23@sanger.ac.uk>
- typo in formatting strings for info panel
- src/zmapControl/zmapControlWindowInfoPanel.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-02-10  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'feature/infopanel' into develop
-2015-02-10  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'develop' into feature/infopanel
-2015-02-10  Steve Miller  <sm23@sanger.ac.uk>
- final bug in previous
- src/zmapControl/zmapControlWindowInfoPanel.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-02-10  Steve Miller  <sm23@sanger.ac.uk>
- more changes to info panel and tooltips display
- src/zmapControl/zmapControlWindowInfoPanel.c |   10 +++++-----
- src/zmapWindow/zmapWindow.c                  |   17 +++++++++--------
- 2 files changed, 14 insertions(+), 13 deletions(-)
-
-2015-02-10  Steve Miller  <sm23@sanger.ac.uk>
- further updates to tooltips and feature data truncation
- src/zmapControl/zmapControlWindowInfoPanel.c |  130 ++++++++++++++++++--------
- 1 files changed, 92 insertions(+), 38 deletions(-)
-
-2015-02-10  Steve Miller  <sm23@sanger.ac.uk>
- removal of memory leak in population of into panel
- src/zmapControl/zmapControlWindowInfoPanel.c |  127 +++++++++++++++-----------
- 1 files changed, 72 insertions(+), 55 deletions(-)
-
-2015-02-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- "Kind of fix for RT 378314: Zmap uses non fixed width font, put test early on in init."
- src/zmapApp/zmapAppwindow.c |   58 ++++++++++++++++++++++++++++---------------
- 1 files changed, 38 insertions(+), 20 deletions(-)
-
-2015-02-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- "Fix RT 421191: zooming in on edge of assembly doesn't zoom in there."
- src/zmapWindow/zmapWindow.c |   12 +++++++-----
- 1 files changed, 7 insertions(+), 5 deletions(-)
-
-2015-02-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- "Fix RT 430753: Reselecting a Search result does not scroll."
- src/zmapWindow/zmapWindowDNAList.c |   14 +++++++-------
- 1 files changed, 7 insertions(+), 7 deletions(-)
-
-2015-02-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- "duh.....fix up ignore instruction."
- src/zmapConfig/.gitignore |    6 +-----
- 1 files changed, 1 insertions(+), 5 deletions(-)
-
-2015-02-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add an ignore file for generated zmapConfig/default_styles.c file."
- src/zmapConfig/.gitignore |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
-
-2015-02-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- generated file, should not be in git.
- src/zmapConfig/default_styles.c |  371 ---------------------------------------
- 1 files changed, 0 insertions(+), 371 deletions(-)
-
-2015-02-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- "fix copyright date."
- src/zmapConfig/zmap_DefaultStyles.pl |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-02-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- "Add style name to feature output."
- src/zmapFeature/zmapFeatureOutput.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-2015-02-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- "Fix wrong string in developer menu, should be 'Print Style'."
- src/zmapWindow/zmapWindowMenus.c |   10 +---------
- 1 files changed, 1 insertions(+), 9 deletions(-)
-
-2015-02-09  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'feature/gffoutput' into develop
-2015-02-09  Steve Miller  <sm23@sanger.ac.uk>
- added some characters to list reserved from escaping
- src/zmapGFF/zmapGFF2Dumper.c |    9 +++++++--
- 1 files changed, 7 insertions(+), 2 deletions(-)
-
-2015-02-09  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'develop' into feature/gffoutput
-2015-02-09  Steve Miller  <sm23@sanger.ac.uk>
- final update to internals of gff output
- src/zmapGFF/zmapGFF2Dumper.c      |    5 +++--
- src/zmapView/zmapViewCallBlixem.c |    5 ++++-
- 2 files changed, 7 insertions(+), 3 deletions(-)
-
-2015-02-09  Ed Griffiths  <edgrif@sanger.ac.uk>
- "replace now redundant window size getting code with new screen size routine."
- src/zmapControl/zmapControlWindow.c |  229 +++++------------------------------
- src/zmapControl/zmapControl_P.h     |   12 +--
- 2 files changed, 32 insertions(+), 209 deletions(-)
-
-2015-02-09  Ed Griffiths  <edgrif@sanger.ac.uk>
- "change to use new monitor size getting call."
- src/zmapWindow/zmapWindowFeatureShow.c |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
-
-2015-02-09  Ed Griffiths  <edgrif@sanger.ac.uk>
- "Add Gemma's code for getting physical monitor size into our screen size routine."
- src/include/ZMap/zmapUtilsGUI.h |    2 +-
- src/zmapUtils/zmapGUIutils.c    |  357 +++++++++++++++++++++++----------------
- 2 files changed, 210 insertions(+), 149 deletions(-)
-
-2015-02-05  Steve Miller  <sm23@sanger.ac.uk>
- further internal rearrangements to call blixem and gff output code
- src/include/ZMap/zmapGFF.h        |   44 +-
- src/zmapGFF/zmapGFF2Dumper.c      | 1354 ++++++++-----------------------------
- src/zmapView/zmapViewCallBlixem.c |   16 +-
- 3 files changed, 309 insertions(+), 1105 deletions(-)
-
-2015-02-03  Steve Miller  <sm23@sanger.ac.uk>
- further updates to internals of gff output
- src/include/ZMap/zmapGFF.h        |   18 +-
- src/zmapGFF/zmapGFF2Dumper.c      |  552 ++++++++++++++++++++++++++++++++++---
- src/zmapView/zmapViewCallBlixem.c |  473 +-------------------------------
- 3 files changed, 527 insertions(+), 516 deletions(-)
-
-2015-01-30  Steve Miller  <sm23@sanger.ac.uk>
- fix of merge conflicts
-2015-01-29  Steve Miller  <sm23@sanger.ac.uk>
- more internal fiddling with CallBlixem code
- src/zmapView/zmapViewCallBlixem.c |  225 +++++++++++++++++--------------------
- 1 files changed, 101 insertions(+), 124 deletions(-)
-
-2015-01-29  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'production' into develop
-2015-01-28  Steve Miller  <sm23@sanger.ac.uk>
- further internal rearrangements of gff output code
- src/include/ZMap/zmapGFF.h        |    1 +
- src/zmapGFF/zmapGFF2Dumper.c      |  114 +++++++++++++++++++++++++++++--------
- src/zmapView/zmapViewCallBlixem.c |   42 +++++--------
- 3 files changed, 108 insertions(+), 49 deletions(-)
-
-2015-01-28  Steve Miller  <sm23@sanger.ac.uk>
- Merge remote branch 'origin/develop' into feature/gffoutput
-2015-01-28  Steve Miller  <sm23@sanger.ac.uk>
- correction to year in copyright statement
- src/zmapUtils/zmapUtils_P.h |    9 +++++----
- 1 files changed, 5 insertions(+), 4 deletions(-)
-
-2015-01-27  Steve Miller  <sm23@sanger.ac.uk>
- further updates to internals of feature dumping
- src/include/ZMap/zmapGFF.h   |    9 +
- src/zmapGFF/zmapGFF2Dumper.c |  338 ++++++++++++++++++++++--------------------
- 2 files changed, 184 insertions(+), 163 deletions(-)
-
-2015-01-27  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'develop' into feature/gffoutput
-2015-01-27  Steve Miller  <sm23@sanger.ac.uk>
- update to internals of feature dumping
- src/zmapFeature/zmapFeatureOutput.c |    7 +-
- src/zmapGFF/zmapGFF2Dumper.c        |  216 +++++++++++++++++++++--------------
- src/zmapView/zmapViewCallBlixem.c   |    8 --
- 3 files changed, 134 insertions(+), 97 deletions(-)
-
-2015-01-27  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'feature/build' into develop
-2015-01-26  Gemma Barson  <gb10@sanger.ac.uk>
- Copy tar to nfs before untar - should be faster?
- scripts/zmap_handle_release_tar.sh |   18 ++++++++++++------
- 1 files changed, 12 insertions(+), 6 deletions(-)
-
-2015-01-26  Gemma Barson  <gb10@sanger.ac.uk>
- Fix bug in build script that untars to wrong destination
- scripts/zmap_handle_release_tar.sh |   57 ++++++++++++++++++++++++++----------
- 1 files changed, 41 insertions(+), 16 deletions(-)
-
-2015-01-26  Steve Miller  <sm23@sanger.ac.uk>
- updates/rearrangements to the feature dumping
- src/include/ZMap/zmapGFF.h        |    4 +-
- src/zmapGFF/zmapGFF2Dumper.c      |  918 +++++++++++++++++--------------------
- src/zmapView/zmapViewCallBlixem.c |  446 ++++--------------
- 3 files changed, 522 insertions(+), 846 deletions(-)
-
-2015-01-21  Steve Miller  <sm23@sanger.ac.uk>
- fix of merge conflicts
-2015-01-21  Steve Miller  <sm23@sanger.ac.uk>
- typo in previous
- src/zmapGFF/zmapGFF2Dumper.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-01-21  Steve Miller  <sm23@sanger.ac.uk>
- more updates and rationalisation of output code
- src/zmapFeature/zmapFeatureUtils.c |    7 +-
- src/zmapGFF/zmapGFF2Dumper.c       |  395 ++++++++++++------------------------
- src/zmapView/zmapViewCallBlixem.c  |  188 ++++++------------
- 3 files changed, 193 insertions(+), 397 deletions(-)
-
-2015-01-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- "fix compiler warning."
- src/zmapView/zmapViewCallBlixem.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-01-20  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'develop' into feature/gffoutput
-2015-01-20  Steve Miller  <sm23@sanger.ac.uk>
- further changes to calls to blixem and formatting
- src/zmapGFF/zmapGFF2Dumper.c      |    2 +-
- src/zmapView/zmapViewCallBlixem.c |  267 +++++++++++++++----------------------
- 2 files changed, 111 insertions(+), 158 deletions(-)
-
-2015-01-16  Steve Miller  <sm23@sanger.ac.uk>
- re-writing of internals of call Blixem code
- src/include/ZMap/zmapFeature.h         |   10 +-
- src/include/ZMap/zmapGFF.h             |    9 +-
- src/zmapFeature/zmapFeatureAlignment.c |   12 +-
- src/zmapFeature/zmapFeatureUtils.c     |   86 ++--
- src/zmapGFF/zmapGFF2Dumper.c           |  278 +++++++++-
- src/zmapView/zmapViewCallBlixem.c      |  915 ++++++++++++++++++--------------
- 6 files changed, 853 insertions(+), 457 deletions(-)
-
-2015-01-13  Ed Griffiths  <edgrif@sanger.ac.uk>
- "tidy up startup/termination messages."
- src/zmapApp/zmapApp_P.h     |    3 ---
- src/zmapApp/zmapAppwindow.c |   41 ++++++++++++++++++++++++++---------------
- 2 files changed, 26 insertions(+), 18 deletions(-)
-
-2015-01-12  Steve Miller  <sm23@sanger.ac.uk>
- some changes to the way that blixem is called
- src/zmapView/zmapViewCallBlixem.c |  969 ++++++++----------------------------
- 1 files changed, 216 insertions(+), 753 deletions(-)
-
-2015-01-09  Steve Miller  <sm23@sanger.ac.uk>
- Merge remote branch 'origin/develop' into feature/gffoutput
-2015-01-09  Steve Miller  <sm23@sanger.ac.uk>
- change the way that the call to spawn blixem is made
- src/zmapView/zmapViewCallBlixem.c |  618 ++++++++++++++++---------------------
- 1 files changed, 259 insertions(+), 359 deletions(-)
+ some internal rearrangements of output code
+ src/zmapGFF/zmapGFF2Dumper.c      |  551 ++++++++++++++++++++++++++-----------
+ src/zmapView/zmapViewCallBlixem.c |    1 -
+ 2 files changed, 390 insertions(+), 162 deletions(-)

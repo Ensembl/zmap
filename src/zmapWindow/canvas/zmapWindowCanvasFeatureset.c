@@ -130,6 +130,14 @@ static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWi
 static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmpFunc compare_func,
 								      ZMapWindowFeaturesetItem fi,
 								      double y1, double y2) ;
+static ZMapWindowCanvasFeature findFeatureSubPart(ZMapWindowFeaturesetItem fi,
+                                                  ZMapFeature feature,
+                                                  ZMapFeatureSubPartSpan sub_feature) ;
+
+
+
+
+
 void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs);
 static guint32 gdk_color_to_rgba(GdkColor *color) ;
 
@@ -815,6 +823,13 @@ void zmapWindowCanvasFeaturesetDumpFeatures(ZMapWindowFeaturesetItem featureset)
 }
 
 
+void zmapWindowFeaturesetSetSubPartHighlight(ZMapWindowFeaturesetItem featureset, gboolean subpart_highlight)
+{
+  featureset->highlight_sideways = subpart_highlight ;
+
+  return ;
+}
+
 
 
 
@@ -823,13 +838,12 @@ void zmapWindowCanvasFeaturesetDumpFeatures(ZMapWindowFeaturesetItem featureset)
  * for normal faatures we only set the colour flags
  * for sequence  features we actually supply colours
  */
-void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
-				       ZMapFeature			feature,
-				       ZMapFeatureSubPartSpan sub_feature,
-				       ZMapStyleColourType    colour_type,
+void zmapWindowFeaturesetItemSetColour(FooCanvasItem *interval,
+                                       ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
+				       ZMapStyleColourType colour_type,
 				       int colour_flags,
-				       GdkColor              *default_fill,
-				       GdkColor              *default_border)
+				       GdkColor *default_fill,
+				       GdkColor *default_border)
 {
   ZMapWindowFeaturesetItem fi = NULL ;
   ZMapWindowCanvasFeature gs;
@@ -847,7 +861,13 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
   fi = (ZMapWindowFeaturesetItem) interval;
 
   func = _featureset_colour_G[fi->type];
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   gs = zmap_window_canvas_featureset_find_feature(fi,feature);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  gs = findFeatureSubPart(fi, feature, sub_feature) ;
+
+
   if(!gs)
     return;
 
@@ -871,6 +891,11 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
     }
   else
     {
+      /* TMP HACK.... */
+      if (sub_feature)
+        fi->highlight_sideways = FALSE ;
+
+
       if(fi->highlight_sideways)	/* ie transcripts as composite features */
 	{
 	  while(gs->left)
@@ -892,8 +917,19 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
 
 	  zmap_window_canvas_featureset_expose_feature(fi, gs);
 
+          /* HACK..... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if(!fi->highlight_sideways)		/* only doing the selected one */
 	    return;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  if(!fi->highlight_sideways)		/* only doing the selected one */
+            {
+              if (sub_feature)
+                fi->highlight_sideways = TRUE ;
+
+              return;
+            }
+
 
 	  gs = gs->right;
 	}
@@ -1928,7 +1964,7 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmp
 }
 
 
-static ZMapSkipList zmap_window_canvas_featureset_find_feature_index(ZMapWindowFeaturesetItem fi,ZMapFeature feature)
+static ZMapSkipList zmap_window_canvas_featureset_find_feature_index(ZMapWindowFeaturesetItem fi, ZMapFeature feature)
 {
   ZMapWindowCanvasFeature gs;
   ZMapSkipList sl = NULL ;
@@ -1998,24 +2034,23 @@ gboolean zmapWindowCanvasFeatureValid(ZMapWindowCanvasFeature feature)
 }
 
 
-static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWindowFeaturesetItem fi,ZMapFeature feature)
+static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWindowFeaturesetItem fi,
+                                                                          ZMapFeature feature)
 {
-  ZMapSkipList sl;
   ZMapWindowCanvasFeature gs = NULL;
+  ZMapSkipList sl ;
 
-  zMapReturnValIfFail(fi, gs ) ;
+  zMapReturnValIfFail(fi, NULL) ;
 
-  if(fi->last_added &&
-     zmapWindowCanvasFeatureValid(fi->last_added) &&
-     fi->last_added->feature == feature)
+  if(fi->last_added && zmapWindowCanvasFeatureValid(fi->last_added) && fi->last_added->feature == feature)
     {
       gs = fi->last_added;
     }
   else
     {
-      sl = zmap_window_canvas_featureset_find_feature_index(fi,feature);
+      sl = zmap_window_canvas_featureset_find_feature_index(fi, feature);
 
-      if(sl)
+      if (sl)
         {
           gs = (ZMapWindowCanvasFeature) sl->data;
 
@@ -2026,6 +2061,36 @@ static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWi
 
   return gs;
 }
+
+
+static ZMapWindowCanvasFeature findFeatureSubPart(ZMapWindowFeaturesetItem fi,
+                                                  ZMapFeature feature,
+                                                  ZMapFeatureSubPartSpan sub_feature)
+{
+  ZMapWindowCanvasFeature gs = NULL;
+
+
+  if ((gs = zmap_window_canvas_featureset_find_feature(fi, feature))
+      && sub_feature)
+    {
+      while(gs->left)
+        gs = gs->left ;
+
+      while(gs)
+	{
+          if (gs->y1 == sub_feature->start && gs->y2 == sub_feature->end)
+            break ;
+      
+	  gs = gs->right ;
+	}
+    }
+
+
+  return gs;
+}
+
+
+
 
 
 
