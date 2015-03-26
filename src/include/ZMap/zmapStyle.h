@@ -250,8 +250,12 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR "show-only-in-separator"
 #define ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS       "directional-ends"
 
-#define ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT            "splice-highlight"
-#define ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT_TOLERANCE  "splice-highlight-tolerance"
+/* Odd names but all gets sorted out in the next release.... */
+#define ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT            "column-filter-sensitive"
+#define ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT_TOLERANCE  "column-filter-tolerance"
+
+
+
 
 /* ... frame sensitivity */
 #define ZMAPSTYLE_PROPERTY_FRAME_MODE             "frame-mode"

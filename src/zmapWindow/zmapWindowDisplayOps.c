@@ -312,7 +312,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
   ZMapWindowDisplayStyleStruct display_style = *(display_style_in) ;
 
 
-  zMapReturnValIfFailSafe((window && display_style_in->paste_feature == ZMAPWINDOW_PASTE_TYPE_SELECTED), NULL) ;
+  /*zMapReturnValIfFailSafe((window && display_style_in->paste_feature == ZMAPWINDOW_PASTE_TYPE_SELECTED), NULL) ;*/
 
   text = g_string_sized_new(512) ;
   feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
