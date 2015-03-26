@@ -767,6 +767,7 @@ static const char* featureGetSOTerm(SeqFeature *rsf)
       SO_accession = "gene" ;
       break ;
     case CLASS_SIMPLEFEATURE: 
+      SO_accession = "sequence_feature"
       break ;
     case CLASS_INTRON: /* fall through */
     case CLASS_INTRONSUPPORTINGEVIDENCE: 
