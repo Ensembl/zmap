@@ -145,8 +145,7 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
 
 static ZMapFeature makeFeatureSimple(SimpleFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType homol_type, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureDNAAlign(DNAAlignFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
 
@@ -483,7 +482,7 @@ static gboolean vectorGetDNAAlignFeatures(Vector *features,
       DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
       if (rsf)
-        makeFeatureDNAAlign(rsf, get_features_data, feature_block) ;
+        feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
     }  
@@ -505,7 +504,7 @@ static gboolean vectorGetDNAPepAlignFeatures(Vector *features,
       DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
       if (rsf)
-        makeFeatureDNAPepAlign(rsf, get_features_data, feature_block) ;
+        feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
     }
@@ -525,14 +524,15 @@ static gboolean vectorGetRepeatFeatures(Vector *features,
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       RepeatFeature *sf = Vector_getElementAt(features,i);
-      
-      if (sf)
+      RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+
+      if (rsf)
         {
-          //makeFeature(sf, get_features_data, feature_block) ;
+          makeFeatureRepeat(rsf, get_features_data, feature_block) ;
         }
       else
         {
-          printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
+          printf("Failed to map feature '%s'\n", RepeatConsensus_getName(RepeatFeature_getConsensus(sf)));
         }
     }  
 
@@ -825,9 +825,6 @@ static ZMapFeature makeFeatureSimple(SimpleFeature *rsf,
 
   const char *feature_name = SimpleFeature_getDisplayLabel(rsf) ;
 
-  if (!feature_name)
-    feature_name = source ;
-
   feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
                         feature_mode, source, 0, 0, 
                         get_features_data, feature_block) ;
@@ -836,29 +833,23 @@ static ZMapFeature makeFeatureSimple(SimpleFeature *rsf,
 }
 
 
-static ZMapFeature makeFeatureDNAAlign(DNAAlignFeature *rsf, 
-                                       GetFeaturesData get_features_data,
-                                       ZMapFeatureBlock feature_block)
+static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf, 
+                                     GetFeaturesData get_features_data,
+                                     ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
 
-  ZMapHomolType homol_type = ZMAPHOMOL_N_HOMOL ;
+  ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
 
-  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, homol_type, get_features_data, feature_block) ;
+  Analysis *analysis = RepeatFeature_getAnalysis(rsf) ;
+  const char *source = Analysis_getGFFSource(analysis) ;
 
-  return feature ;
-}
+  RepeatConsensus *consensus = RepeatFeature_getConsensus(rsf) ;
+  const char *feature_name = RepeatConsensus_getName(consensus) ;
 
-
-static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf, 
-                                          GetFeaturesData get_features_data,
-                                          ZMapFeatureBlock feature_block)
-{
-  ZMapFeature feature = NULL ;
-
-  ZMapHomolType homol_type = ZMAPHOMOL_X_HOMOL ;
-
-  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, homol_type, get_features_data, feature_block) ;
+  feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
+                        feature_mode, source, 0, 0, 
+                        get_features_data, feature_block) ;
 
   return feature ;
 }
@@ -957,14 +948,12 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
   const char *feature_name = feature_name_in ;
   char *sequence = NULL ;
   const char *SO_accession = NULL ;
-  ZMapFeatureTypeStyle *style  = NULL ;
   long start = 0 ;
   long end = 0 ;
   gboolean has_score = TRUE ;
   double score = 0.0 ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
 
-  /* todo: style = ??? */
   SO_accession = featureGetSOTerm(rsf) ;
 
   if (SO_accession)
@@ -972,8 +961,11 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
       if (!feature_name_id)
         feature_name_id = SeqFeature_getSeqName(rsf) ;
 
+      if (!feature_name_id)
+        feature_name_id = source ;
+
       if (!feature_name)
-        feature_name = SeqFeature_getSeqName(rsf) ;
+        feature_name = feature_name_id ;
 
       start = SeqFeature_getStart(rsf) ;
       end = SeqFeature_getEnd(rsf) ;
@@ -1006,9 +998,18 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
           feature = zMapFeatureCreateEmpty() ;
 
           /* cast away const... ugh */
-          zMapFeatureAddStandardData(feature, (char*)g_quark_to_string(unique_id), feature_name, sequence, (char*)SO_accession,
-                                     feature_mode, style,
-                                     start, end, has_score, score, strand) ;
+          zMapFeatureAddStandardData(feature,
+                                     (char*)g_quark_to_string(unique_id), 
+                                     feature_name, 
+                                     sequence, 
+                                     (char*)SO_accession,
+                                     feature_mode, 
+                                     feature_set->style,
+                                     start,
+                                     end,
+                                     has_score,
+                                     score,
+                                     strand) ;
 
           zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d", 
                          feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
@@ -1018,9 +1019,6 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
           
           if (!existing_feature)
             zMapFeatureSetAddFeature(feature_set, feature) ;
-              
-          //if (feature_list_inout)
-          //  *feature_list_inout = g_list_prepend(*feature_list_inout, feature) ;
         }
     }
 
