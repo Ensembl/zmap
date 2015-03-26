@@ -130,6 +130,7 @@ static gboolean getAllSimpleFeatures(EnsemblServer server, GetFeaturesData get_f
 static gboolean getAllDNAAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static gboolean getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 
@@ -146,6 +147,7 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
 static ZMapFeature makeFeatureSimple(SimpleFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType homol_type, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeature makeFeatureTranscript(Transcript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
 
@@ -541,6 +543,30 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
 }
 
 
+static gboolean getAllTranscripts(EnsemblServer server, 
+                                  GetFeaturesData get_features_data,
+                                  ZMapFeatureBlock feature_block)
+{
+  gboolean result = TRUE ;
+
+  Vector *features = Slice_getAllTranscripts(server->slice, 1, NULL, NULL) ;
+
+  int i = 0 ;
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
+    {
+      Transcript *sf = Vector_getElementAt(features,i);
+      Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+
+      if (rsf)
+        makeFeatureTranscript(rsf, get_features_data, feature_block) ;
+      else
+        printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
+    }  
+
+  return result;
+}
+
+
 /* A bit of a lash up for now, we need the parent->child mapping for a sequence and since
  * the code in this file so far simply reads a GFF stream for now, we just fake it by setting
  * everything to be the same for child/parent... */
@@ -842,11 +868,32 @@ static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf,
 
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
 
-  Analysis *analysis = RepeatFeature_getAnalysis(rsf) ;
+  Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
   const char *source = Analysis_getGFFSource(analysis) ;
 
   RepeatConsensus *consensus = RepeatFeature_getConsensus(rsf) ;
   const char *feature_name = RepeatConsensus_getName(consensus) ;
+
+  feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
+                        feature_mode, source, 0, 0, 
+                        get_features_data, feature_block) ;
+
+  return feature ;
+}
+
+
+static ZMapFeature makeFeatureTranscript(Transcript *rsf, 
+                                         GetFeaturesData get_features_data,
+                                         ZMapFeatureBlock feature_block)
+{
+  ZMapFeature feature = NULL ;
+
+  ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
+
+  Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
+  const char *source = Analysis_getGFFSource(analysis) ;
+
+  const char *feature_name = Transcript_getSeqRegionName(rsf) ;
 
   feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
                         feature_mode, source, 0, 0, 
@@ -1124,10 +1171,11 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
   g_mutex_lock(server->mutex) ;
 
-  getAllSimpleFeatures(server, get_features_data, feature_block);
-  getAllDNAAlignFeatures(server, get_features_data, feature_block);
-  getAllDNAPepAlignFeatures(server, get_features_data, feature_block);
-  getAllRepeatFeatures(server, get_features_data, feature_block);
+  getAllSimpleFeatures(server, get_features_data, feature_block) ;
+  getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
+  getAllDNAPepAlignFeatures(server, get_features_data, feature_block) ;
+  getAllRepeatFeatures(server, get_features_data, feature_block) ;
+  getAllTranscripts(server, get_features_data, feature_block) ;
 
   g_mutex_unlock(server->mutex) ;
 
