@@ -133,11 +133,20 @@ static gboolean vectorGetRepeatFeatures(Vector *features, EnsemblServer server, 
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 
-static ZMapFeature makeFeature(SeqFeature *rsf, const char *feature_name_id, const char *feature_name, ZMapStyleMode feature_mode, const char *source, const int match_start, const int match_end, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureSimple(SimpleFeature *rsf, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType homol_type, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureDNAAlign(DNAAlignFeature *rsf, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeature makeFeature(SeqFeature *rsf, 
+                               const char *feature_name_id, 
+                               const char *feature_name, 
+                               ZMapStyleMode feature_mode, 
+                               const char *source, 
+                               const int match_start, 
+                               const int match_end, 
+                               GetFeaturesData get_features_data, 
+                               ZMapFeatureBlock feature_block) ;
+
+static ZMapFeature makeFeatureSimple(SimpleFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType homol_type, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeature makeFeatureDNAAlign(DNAAlignFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
 
@@ -452,14 +461,9 @@ static gboolean vectorGetSimpleFeatures(Vector *features,
       SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
       if (rsf)
-        {
-          const char *source = NULL ;//SeqFeature_getDbID((BaseAlignFeature*)rsf) ;
-          makeFeatureSimple(rsf, source, get_features_data, feature_block) ;
-        }
+        makeFeatureSimple(rsf, get_features_data, feature_block) ;
       else
-        {
-          printf("Failed to map feature '%s'\n", SimpleFeature_getDisplayLabel(sf));
-        }
+        printf("Failed to map feature '%s'\n", SimpleFeature_getDisplayLabel(sf));
     }  
 
   return result;
@@ -479,14 +483,9 @@ static gboolean vectorGetDNAAlignFeatures(Vector *features,
       DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
       if (rsf)
-        {
-          const char *source = BaseAlignFeature_getDbDisplayName((BaseAlignFeature*)rsf) ;
-          makeFeatureDNAAlign(rsf, source, get_features_data, feature_block) ;
-        }
+        makeFeatureDNAAlign(rsf, get_features_data, feature_block) ;
       else
-        {
-          printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
-        }
+        printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
     }  
 
   return result;
@@ -506,14 +505,9 @@ static gboolean vectorGetDNAPepAlignFeatures(Vector *features,
       DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
       if (rsf)
-        {
-          const char *source = BaseAlignFeature_getDbDisplayName((BaseAlignFeature*)rsf) ;
-          makeFeatureDNAPepAlign(rsf, source, get_features_data, feature_block) ;
-        }
+        makeFeatureDNAPepAlign(rsf, get_features_data, feature_block) ;
       else
-        {
-          printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
-        }
+        printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
     }
 
   return result;
@@ -531,12 +525,10 @@ static gboolean vectorGetRepeatFeatures(Vector *features,
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       RepeatFeature *sf = Vector_getElementAt(features,i);
-      RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
-
-      if (rsf)
+      
+      if (sf)
         {
-          const char *source = NULL ;//BaseAlignFeature_getDbDisplayName((BaseAlignFeature*)rsf) ;
-          //makeFeature(rsf, source, get_features_data, feature_block) ;
+          //makeFeature(sf, get_features_data, feature_block) ;
         }
       else
         {
@@ -820,15 +812,20 @@ static const char* featureGetSOTerm(SeqFeature *rsf)
 
 
 static ZMapFeature makeFeatureSimple(SimpleFeature *rsf, 
-                                     const char *source, 
                                      GetFeaturesData get_features_data,
                                      ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
 
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
+  
+  Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
+  const char *source = Analysis_getGFFSource(analysis) ;
 
   const char *feature_name = SimpleFeature_getDisplayLabel(rsf) ;
+
+  if (!feature_name)
+    feature_name = source ;
 
   feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
                         feature_mode, source, 0, 0, 
@@ -839,7 +836,6 @@ static ZMapFeature makeFeatureSimple(SimpleFeature *rsf,
 
 
 static ZMapFeature makeFeatureDNAAlign(DNAAlignFeature *rsf, 
-                                       const char *source, 
                                        GetFeaturesData get_features_data,
                                        ZMapFeatureBlock feature_block)
 {
@@ -847,14 +843,13 @@ static ZMapFeature makeFeatureDNAAlign(DNAAlignFeature *rsf,
 
   ZMapHomolType homol_type = ZMAPHOMOL_N_HOMOL ;
 
-  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, homol_type, source, get_features_data, feature_block) ;
+  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, homol_type, get_features_data, feature_block) ;
 
   return feature ;
 }
 
 
 static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf, 
-                                          const char *source,
                                           GetFeaturesData get_features_data,
                                           ZMapFeatureBlock feature_block)
 {
@@ -862,7 +857,7 @@ static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf,
 
   ZMapHomolType homol_type = ZMAPHOMOL_X_HOMOL ;
 
-  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, homol_type, source, get_features_data, feature_block) ;
+  feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, homol_type, get_features_data, feature_block) ;
 
   return feature ;
 }
@@ -870,7 +865,6 @@ static ZMapFeature makeFeatureDNAPepAlign(DNAPepAlignFeature *rsf,
 
 static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, 
                                         ZMapHomolType homol_type, 
-                                        const char *source,
                                         GetFeaturesData get_features_data,
                                         ZMapFeatureBlock feature_block)
 {
@@ -883,6 +877,7 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf,
   const char *feature_name = BaseAlignFeature_getHitSeqName(rsf) ;
   int match_start = BaseAlignFeature_getHitStart(rsf) ;
   int match_end = BaseAlignFeature_getHitEnd(rsf) ;
+  const char *source = BaseAlignFeature_getDbDisplayName((BaseAlignFeature*)rsf) ;
 
   feature = makeFeature((SeqFeature*)rsf, feature_name_id, feature_name, 
                         feature_mode, source, match_start, match_end,
