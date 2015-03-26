@@ -482,7 +482,7 @@ static gboolean vectorGetDNAAlignFeatures(Vector *features,
       DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
       if (rsf)
-        feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block) ;
+        makeFeatureBaseAlign((BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
     }  
@@ -504,7 +504,7 @@ static gboolean vectorGetDNAPepAlignFeatures(Vector *features,
       DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
       if (rsf)
-        feature = makeFeatureBaseAlign((BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block) ;
+        makeFeatureBaseAlign((BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
     }
