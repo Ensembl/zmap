@@ -162,7 +162,15 @@ ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
     }
   else if (context)
     {
-      const char *err_msg = context->error_message ? context->error_message : "no error message" ;
+      const char *err_msg = "no error message" ;
+
+      if (context->error_message)
+        err_msg = context->error_message ;
+      else if (context->config && context->config->sys_key_error)
+        err_msg = context->config->sys_key_error ;
+      else if (context->config && context->config->zmap_key_error)
+        err_msg = context->config->zmap_key_error ;
+
       zMapCritical("Error reading config file: %s", err_msg) ;
       zMapConfigIniContextDestroy(context) ;
       context = NULL ;
