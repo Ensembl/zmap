@@ -149,6 +149,8 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType hom
 static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureTranscript(Transcript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
+static void addTranscriptExons(Transcript *rsf, ZMapFeature feature) ;
+
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
 
 static ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, ZMapStyleMode feature_mode, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
@@ -899,7 +901,36 @@ static ZMapFeature makeFeatureTranscript(Transcript *rsf,
                         feature_mode, source, 0, 0, 
                         get_features_data, feature_block) ;
 
+  char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
+  char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
+  char cDNA_coding_start_is_set = Transcript_getcDNACodingStartIsSet(rsf) ;
+  char cDNA_coding_end_is_set = Transcript_getcDNACodingEndIsSet(rsf) ;
+  int coding_region_start = Transcript_getCodingRegionStart(rsf) ;
+  int coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
+  int cDNA_coding_start = Transcript_getCodingRegionStart(rsf) ;
+  int cDNA_coding_end = Transcript_getCodingRegionEnd(rsf) ;
+
+  zMapFeatureTranscriptInit(feature);
+  zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+
+  addTranscriptExons(rsf, feature) ;
+
   return feature ;
+}
+
+
+static void addTranscriptExons(Transcript *rsf, ZMapFeature feature)
+{
+  if (rsf && feature)
+    {
+      Vector *exons = Transcript_getAllExons(rsf) ;
+
+      int i = 0 ;
+      for (i = 0; i < Vector_getNumElement(exons); ++i) 
+        {
+          Exon *exon = Vector_getElementAt(exons,i);
+        }
+    }
 }
 
 
