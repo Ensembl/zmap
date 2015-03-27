@@ -125,9 +125,9 @@ static void stylesFreeList(GList *config_styles_list) ;
 
 ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
 {
-  ZMapConfigIniContext context = NULL;
+  ZMapConfigIniContext context = zMapConfigIniContextCreate(config_file) ;
 
-  if((context = zMapConfigIniContextCreate(config_file)))
+  if(context && context->config_read)
     {
       ZMapConfigIniContextKeyEntry stanza_group = NULL;
       char *stanza_name, *stanza_type;
@@ -159,6 +159,17 @@ ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
       if((stanza_group = get_blixem_group_data(&stanza_name, &stanza_type)))
         zMapConfigIniContextAddGroup(context, stanza_name,
      stanza_type, stanza_group);
+    }
+  else if (context)
+    {
+      const char *err_msg = context->error_message ? context->error_message : "no error message" ;
+      zMapCritical("Error reading config file: %s", err_msg) ;
+      zMapConfigIniContextDestroy(context) ;
+      context = NULL ;
+    }
+  else
+    {
+      zMapCritical("%s", "Error creating config file context") ;
     }
 
   return context;
