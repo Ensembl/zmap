@@ -48,7 +48,7 @@ typedef struct
 
 
 #define zmapFeatureInvert(COORD, SEQ_START, SEQ_END)	\
-  (COORD) = (SEQ_END) - (COORD) + 1
+  (COORD) = (SEQ_END) - (COORD) + (SEQ_START)
 
 
 #define zmapFeatureRevComp(TYPE, SEQ_START, SEQ_END, COORD_1, COORD_2)  \

@@ -167,9 +167,9 @@ ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
       if (context->error_message)
         err_msg = context->error_message ;
       else if (context->config && context->config->sys_key_error)
-        err_msg = context->config->sys_key_error ;
+        err_msg = context->config->sys_key_error->message ;
       else if (context->config && context->config->zmap_key_error)
-        err_msg = context->config->zmap_key_error ;
+        err_msg = context->config->zmap_key_error->message ;
 
       zMapCritical("Error reading config file: %s", err_msg) ;
     }
@@ -1708,10 +1708,6 @@ static gpointer create_config_style()
       {NULL}
     } ;
 
-
-  int dummy ;
-
-  dummy = sizeof(style_conf) ;
 
 
   /* Needs to return a block copy of this.... */

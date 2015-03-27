@@ -352,10 +352,8 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
   gboolean result = FALSE ;
   FeatureSubFeature feature_data = (FeatureSubFeature)user_data ;
   ZMapFeature feature ;
-  ZMapFeatureSubPartSpan sub_feature ;
 
   feature = (ZMapFeature)feature_data->feature_any;
-  sub_feature = feature_data->sub_feature ;
 
   switch(param_spec_id)
     {

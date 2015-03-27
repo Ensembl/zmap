@@ -805,14 +805,18 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
     {
       /* Original & Unique IDs need redoing as they include the frame which probably change on revcomp. */
       char *feature_name = NULL ;    /* Remember to free this */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       GQuark feature_id ;
+#endif
 
       /* Essentially this does nothing and needs removing... */
 
 
       feature_name = zMapFeature3FrameTranslationFeatureName((ZMapFeatureSet)(feature->parent),
      zMapFeatureFrame(feature)) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       feature_id = g_quark_from_string(feature_name) ;
+#endif
       g_free(feature_name) ;
 
 

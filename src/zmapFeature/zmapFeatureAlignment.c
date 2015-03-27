@@ -902,7 +902,6 @@ static gboolean parse_cigar_general(const char * const str,
                                     GError **error)
 {
   gboolean result = FALSE,
-    data_found = FALSE,
     bEnd = FALSE,
     bFirst = FALSE ;
   size_t iLength = 0,
@@ -1049,7 +1048,7 @@ static gboolean parse_cigar_general(const char * const str,
            * Get data between operators and parse for number
            */
           sBuff[0] = '\0' ;
-          data_found = parse_get_op_data(i, sBuff, num_buffer_size, pArray, iOperators, str, bDigitsLeft ) ;
+          parse_get_op_data(i, sBuff, num_buffer_size, pArray, iOperators, str, bDigitsLeft ) ;
           pAlignStrOp->length =
             parse_is_valid_op_data(sBuff, bMayOmit1, bDigitsLeft, bSpaces, bEnd, bFirst) ;
 

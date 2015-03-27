@@ -396,12 +396,11 @@ gboolean zMapFeatureAnyHasChildren(ZMapFeatureAny feature_any)
 
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature_any)
 {
-  gboolean result ;
 
   if (!zMapFeatureIsValid(feature_any))
     return ;
 
-  result = destroyFeatureAnyWithChildren(feature_any, TRUE) ;
+  destroyFeatureAnyWithChildren(feature_any, TRUE) ;
 
   return ;
 }
@@ -855,12 +854,10 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
  *  */
 void zMapFeatureDestroy(ZMapFeature feature)
 {
-  gboolean result = FALSE ;
-
   if (!feature)
     return ;
 
-  result = destroyFeatureAnyWithChildren((ZMapFeatureAny)feature, FALSE) ;
+  destroyFeatureAnyWithChildren((ZMapFeatureAny)feature, FALSE) ;
 
   return ;
 }
@@ -1095,12 +1092,10 @@ static void findFeaturesNameStrandCB(gpointer key, gpointer value, gpointer user
 
 void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data)
 {
-  gboolean result ;
-
   if (!feature_set)
     return ;
 
-  result = destroyFeatureAnyWithChildren((ZMapFeatureAny)feature_set, free_data) ;
+  destroyFeatureAnyWithChildren((ZMapFeatureAny)feature_set, free_data) ;
 
   return ;
 }
@@ -1230,11 +1225,10 @@ gboolean zMapFeatureAlignmentRemoveBlock(ZMapFeatureAlignment feature_align,
 
 void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_data)
 {
-  gboolean result ;
-
   if (!alignment)
     return ;
-  result = destroyFeatureAnyWithChildren((ZMapFeatureAny)alignment, free_data) ;
+  
+  destroyFeatureAnyWithChildren((ZMapFeatureAny)alignment, free_data) ;
 
   return ;
 }
@@ -1378,12 +1372,10 @@ gboolean zMapFeatureBlockRemoveFeatureSet(ZMapFeatureBlock feature_block,
 
 void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data)
 {
-  gboolean result ;
-
   if (!block)
     return ;
 
-  result = destroyFeatureAnyWithChildren((ZMapFeatureAny)block, free_data) ;
+  destroyFeatureAnyWithChildren((ZMapFeatureAny)block, free_data) ;
 
   return ;
 }
@@ -1754,8 +1746,6 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 
 void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free_data)
 {
-  gboolean result ;
-
   if (!feature_context || !zMapFeatureIsValid((ZMapFeatureAny)feature_context))
     return ;
 
@@ -1765,7 +1755,7 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free
     }
   else
     {
-      result = destroyFeatureAnyWithChildren((ZMapFeatureAny)feature_context, free_data) ;
+      destroyFeatureAnyWithChildren((ZMapFeatureAny)feature_context, free_data) ;
     }
 
   return ;
@@ -2162,7 +2152,6 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
   ZMapFeatureAny  feature_any = (ZMapFeatureAny)data;
   ZMapFeatureAny erased_feature_any;
   ZMapFeature erased_feature;
-  gboolean remove_status = FALSE;
   gboolean erase_feature_set = FALSE ;
 
 
@@ -2295,8 +2284,8 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
               {
                 erased_feature = (ZMapFeature)erased_feature_any ;
 
-                remove_status = zMapFeatureSetRemoveFeature((ZMapFeatureSet)merge_data->current_view_set,
-                                                            erased_feature);
+                zMapFeatureSetRemoveFeature((ZMapFeatureSet)merge_data->current_view_set,
+                                            erased_feature);
                 zMapFeatureSetAddFeature((ZMapFeatureSet)merge_data->current_diff_set,
                                          erased_feature) ;
               }
@@ -2788,7 +2777,9 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
     case ZMAPFEATURE_STRUCT_BLOCK:
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
+#ifdef NO_IDEA_WHAT_SHOULD_HAPPEN_HERE
         gboolean is_master_align = FALSE;
+#endif
 
         /* Annoyingly we have a issue with alignments */
         if (feature_any->struct_type == ZMAPFEATURE_STRUCT_ALIGN)
@@ -2796,7 +2787,9 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
             ZMapFeatureContext context = (ZMapFeatureContext)(feature_any->parent);
             if (context->master_align == (ZMapFeatureAlignment)feature_any)
               {
+#ifdef NO_IDEA_WHAT_SHOULD_HAPPEN_HERE
                 is_master_align = TRUE;
+#endif
                 context->master_align = NULL;
               }
           }

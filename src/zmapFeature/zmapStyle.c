@@ -866,13 +866,10 @@ gboolean zMapStyleSet(ZMapFeatureTypeStyle style, char *first_property_name, ...
 gboolean zMapStyleMergeProperty(ZMapFeatureTypeStyle dest_style, ZMapFeatureTypeStyle src_style, ZMapStyleParamId id)
 {
   gboolean result = FALSE ;
-  ZMapStyleParam param ;
 
   zMapReturnValIfFailSafe((ZMAP_IS_FEATURE_STYLE(dest_style) && ZMAP_IS_FEATURE_STYLE(src_style)
                            && PARAM_ID_IS_VALID(id)
                            && zMapStyleIsPropertySetId(src_style, id)), result) ;
-
-  param = &zmapStyleParams_G[id] ;
 
   result = styleMergeParam(dest_style, src_style, id) ;
 
