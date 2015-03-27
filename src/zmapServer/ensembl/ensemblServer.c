@@ -212,7 +212,7 @@ static gboolean createConnection(void **server_out,
   *server_out = (void *)server ;
 
   server->config_file = g_strdup(config_file) ;
-  server->mutex = g_mutex_new() ;
+  pthread_mutex_init(&server->mutex, NULL) ;
 
   server->host = g_strdup(url->host) ;
   server->port = url->port ;
@@ -265,7 +265,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
   zMapReturnValIfFail(server && req_open && req_open->sequence_map, result) ;
 
-  g_mutex_lock(server->mutex) ;
+  pthread_mutex_lock(&server->mutex) ;
 
   server->sequence = g_strdup(req_open->sequence_map->sequence) ;
   server->zmap_start = req_open->zmap_start ;
@@ -302,7 +302,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
       ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
     }
 
-  g_mutex_unlock(server->mutex) ;
+  pthread_mutex_unlock(&server->mutex) ;
 
   return result ;
 }
@@ -314,9 +314,9 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
 
   if (server && server->dba)
     {
-      g_mutex_lock(server->mutex) ;
+      pthread_mutex_lock(&server->mutex) ;
       char *assembly_type = DBAdaptor_getAssemblyType(server->dba) ;
-      g_mutex_unlock(server->mutex) ;
+      pthread_mutex_unlock(&server->mutex) ;
 
       if (assembly_type)
         {
@@ -698,9 +698,6 @@ static ZMapServerResponseType destroyConnection(void *server_in)
   if (server->passwd)
     g_free(server->passwd) ;
 
-  if (server->mutex)
-    g_mutex_free(server->mutex) ;
-
   g_free(server) ;
 
   return result ;
@@ -719,7 +716,7 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   GList *next_seq ;
 
-  g_mutex_lock(server->mutex) ;
+  pthread_mutex_lock(&server->mutex) ;
 
   /* We need to loop round finding each sequence and then fetching its dna... */
   next_seq = sequences_inout ;
@@ -759,7 +756,7 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
       next_seq = g_list_next(next_seq) ;
     }
 
-  g_mutex_unlock(server->mutex) ;
+  pthread_mutex_unlock(&server->mutex) ;
 
   return result ;
 }
@@ -1200,7 +1197,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
   EnsemblServer server = get_features_data->server ;
 
-  g_mutex_lock(server->mutex) ;
+  pthread_mutex_lock(&server->mutex) ;
 
   getAllSimpleFeatures(server, get_features_data, feature_block) ;
   getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
@@ -1208,7 +1205,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   getAllRepeatFeatures(server, get_features_data, feature_block) ;
   getAllTranscripts(server, get_features_data, feature_block) ;
 
-  g_mutex_unlock(server->mutex) ;
+  pthread_mutex_unlock(&server->mutex) ;
 
   return ;
 }

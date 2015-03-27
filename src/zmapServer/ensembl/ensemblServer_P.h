@@ -41,7 +41,8 @@ typedef struct _EnsemblServerStruct
   SliceAdaptor *slice_adaptor ;
   SequenceAdaptor *seq_adaptor ;
   Slice *slice ;
-  GMutex* mutex ;                                           /* lock to protect ensc-core library
+  //GMutex* mutex ;                                           /* lock to protect ensc-core library
+  pthread_mutex_t mutex ;                                   /* lock to protect ensc-core library
                                                              * calls as they are not thread safe,
                                                              * i.e. anything using dba, slice etc. */
 
