@@ -172,8 +172,6 @@ ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
         err_msg = context->config->zmap_key_error ;
 
       zMapCritical("Error reading config file: %s", err_msg) ;
-      zMapConfigIniContextDestroy(context) ;
-      context = NULL ;
     }
   else
     {
