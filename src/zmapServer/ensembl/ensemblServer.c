@@ -131,6 +131,7 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server, GetFeaturesData get
 static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 
@@ -148,8 +149,10 @@ static ZMapFeature makeFeatureSimple(SimpleFeature *rsf, GetFeaturesData get_fea
 static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType homol_type, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureTranscript(Transcript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeature makeFeatureGene(Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
-static void addTranscriptExons(Transcript *rsf, ZMapFeature feature) ;
+static void geneAddTranscripts(Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static void transcriptAddExons(Transcript *rsf, ZMapFeature feature) ;
 
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
 
@@ -569,6 +572,32 @@ static gboolean getAllTranscripts(EnsemblServer server,
 }
 
 
+static gboolean getAllGenes(EnsemblServer server, 
+                            GetFeaturesData get_features_data,
+                            ZMapFeatureBlock feature_block)
+{
+  gboolean result = TRUE ;
+
+  pthread_mutex_lock(&server->mutex) ;
+  Vector *features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
+  pthread_mutex_unlock(&server->mutex) ;
+
+  int i = 0 ;
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
+    {
+      Gene *sf = Vector_getElementAt(features,i);
+      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+
+      if (rsf)
+        makeFeatureGene(rsf, get_features_data, feature_block) ;
+      else
+        printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
+    }  
+
+  return result;
+}
+
+
 /* A bit of a lash up for now, we need the parent->child mapping for a sequence and since
  * the code in this file so far simply reads a GFF stream for now, we just fake it by setting
  * everything to be the same for child/parent... */
@@ -878,6 +907,45 @@ static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf,
                         get_features_data, feature_block) ;
 
   return feature ;
+}
+
+
+static ZMapFeature makeFeatureGene(Gene *rsf, 
+                                   GetFeaturesData get_features_data,
+                                   ZMapFeatureBlock feature_block)
+{
+  ZMapFeature feature = NULL ;
+
+  ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
+
+  Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
+  const char *source = Analysis_getLogicName(analysis) ;
+
+  const char *feature_name = Gene_getExternalName(rsf) ;
+
+  //feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
+  //                     feature_mode, source, 0, 0, 
+  //                     get_features_data, feature_block) ;
+
+  geneAddTranscripts(rsf, get_features_data, feature_block) ;
+
+  return feature ;
+}
+
+
+static void geneAddTranscripts(Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block)
+{
+  if (rsf)
+    {
+      Vector *transcripts = Gene_getAllTranscripts(rsf) ;
+
+      int i = 0 ;
+      for (i = 0; i < Vector_getNumElement(transcripts); ++i)
+        {
+          Transcript *transcript = Vector_getElementAt(transcripts, i);
+          makeFeatureTranscript(transcript, get_features_data, feature_block) ;
+        }
+    }
 }
 
 
@@ -1207,6 +1275,8 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
   pthread_mutex_unlock(&server->mutex) ;
 
+  //getAllGenes(server, get_features_data, feature_block) ;
+  
   return ;
 }
 
