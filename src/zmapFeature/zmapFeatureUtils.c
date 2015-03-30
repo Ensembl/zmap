@@ -714,6 +714,14 @@ ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, Z
     type = (char *) zMapStyleMode2ExactStr(feature_type);
     style_id = zMapStyleCreateID(type);
     feature_style = zMapFindStyle(styles, style_id);
+
+    if (!feature_style)
+      {
+        /* Try again with the short text version of the style name (e.g. "basic" instead of
+         * "zmapstyle_mode_basic" */
+        style_id = g_quark_from_string(zmapStyleMode2ShortText(feature_mode)) ;
+        feature_style = zMapFindFeatureStyle(get_features_data->feature_styles, feature_style_id, feature_mode) ;
+      }
   }
   return feature_style;
 }
