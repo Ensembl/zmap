@@ -426,7 +426,7 @@ IDType AttributeAdaptor_storeType(AttributeAdaptor *ata, Attribute *attrib) {
   StatementHandle *sth1 = ata->prepare((BaseAdaptor *)ata,qStr,strlen(qStr));
 
 // Not sure if this returns the num rows!
-  int rowsInserted = sth1->execute(sth1);
+  int rowsInserted = sth1->executeQuery(sth1);
 
   IDType atId = sth1->getInsertId(sth1);
 
@@ -436,7 +436,7 @@ IDType AttributeAdaptor_storeType(AttributeAdaptor *ata, Attribute *attrib) {
 
     StatementHandle *sth2 = ata->prepare((BaseAdaptor *)ata,qStr,strlen(qStr));
     
-    sth2->execute(sth2);
+    sth2->executeQuery(sth2);
  
     if (sth2->numRows(sth2) == 0) {
       atId = 0;

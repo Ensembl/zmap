@@ -283,7 +283,7 @@ Slice *SliceAdaptor_fetchByRegion(SliceAdaptor *sa, char *coordSystemName, char 
       
       StatementHandle *synSqlSth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
 
-      synSqlSth->execute(synSqlSth);
+      synSqlSth->executeQuery(synSqlSth);
 
       ResultRow *row;
       if ((row = synSqlSth->fetchRow(synSqlSth))) {

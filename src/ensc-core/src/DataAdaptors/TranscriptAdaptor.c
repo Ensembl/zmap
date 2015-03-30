@@ -1094,7 +1094,7 @@ IDType TranscriptAdaptor_store(TranscriptAdaptor *ta, Transcript *transcript, ID
 
   StatementHandle *tst = ta->prepare((BaseAdaptor *)ta,qStr,strlen(qStr));
 
-  tst->execute(tst);
+  tst->executeQuery(tst);
 
 // Swapped id fetch and finish statements
   IDType transcDbID = tst->getInsertId(tst);
@@ -1315,7 +1315,7 @@ IDType TranscriptAdaptor_store(TranscriptAdaptor *ta, Transcript *transcript, ID
   for (i=0; i<Transcript_getExonCount(transcript); i++) {
     Exon *exon = Transcript_getExonAt(transcript, i);
 
-    etst->execute(etst, Exon_getDbID(exon), transcDbID, rank);
+    etst->executeQuery(etst, Exon_getDbID(exon), transcDbID, rank);
     rank++;
   }
 

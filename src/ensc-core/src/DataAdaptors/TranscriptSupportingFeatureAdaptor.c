@@ -238,7 +238,7 @@ void TranscriptSupportingFeatureAdaptor_store(TranscriptSupportingFeatureAdaptor
       type     = "dna_align_feature";
 
       checkSth = dnaCheckSth;
-      checkSth->execute(checkSth, seqRegionId, 
+      checkSth->executeQuery(checkSth, seqRegionId, 
                         BaseAlignFeature_getSeqRegionStart((SeqFeature*)f), 
                         BaseAlignFeature_getSeqRegionEnd((SeqFeature*)f), 
                         BaseAlignFeature_getSeqRegionStrand((SeqFeature*)f), 
@@ -255,7 +255,7 @@ void TranscriptSupportingFeatureAdaptor_store(TranscriptSupportingFeatureAdaptor
       type     = "protein_align_feature";
 
       checkSth = pepCheckSth;
-      checkSth->execute(checkSth, seqRegionId, 
+      checkSth->executeQuery(checkSth, seqRegionId, 
                         BaseAlignFeature_getSeqRegionStart((SeqFeature*)f), 
                         BaseAlignFeature_getSeqRegionEnd((SeqFeature*)f), 
                         BaseAlignFeature_getSeqRegionStrand((SeqFeature*)f), 
@@ -289,10 +289,10 @@ void TranscriptSupportingFeatureAdaptor_store(TranscriptSupportingFeatureAdaptor
     }
 
     // now check association
-    assocCheckSth->execute(assocCheckSth, type, sfDbID);
+    assocCheckSth->executeQuery(assocCheckSth, type, sfDbID);
 
     if (checkSth->numRows(assocCheckSth) == 0) {
-      sfSth->execute(sfSth, transcriptDbID, sfDbID, type);
+      sfSth->executeQuery(sfSth, transcriptDbID, sfDbID, type);
     }
   }
 

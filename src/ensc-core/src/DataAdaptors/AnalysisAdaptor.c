@@ -260,7 +260,7 @@ IDType AnalysisAdaptor_store(AnalysisAdaptor *aa, Analysis *analysis) {
   sprintf(qStr, fmtStr, createdQStr, logicNameQStr, dbQStr, dbVerQStr, dbFileQStr, programQStr, progVerQStr, progFileQStr, paramQStr, moduleQStr, modVerQStr, gffSrcQStr, gffFeatQStr);
 
   sth = aa->prepare((BaseAdaptor *)aa,qStr,strlen(qStr));
-  int nQueryRowInserted = sth->execute(sth);
+  int nQueryRowInserted = sth->executeQuery(sth);
   dbID = sth->getInsertId(sth);
   sth->finish(sth);
 

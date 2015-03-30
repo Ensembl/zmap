@@ -404,7 +404,7 @@ void SupportingFeatureAdaptor_store(SupportingFeatureAdaptor *sfa, IDType exonDb
       type     = "dna_align_feature";
 
       checkSth = dnaCheckSth;
-      checkSth->execute(checkSth, seqRegionId, 
+      checkSth->executeQuery(checkSth, seqRegionId, 
                         BaseAlignFeature_getSeqRegionStart((SeqFeature*)f), 
                         BaseAlignFeature_getSeqRegionEnd((SeqFeature*)f), 
                         BaseAlignFeature_getSeqRegionStrand((SeqFeature*)f), 
@@ -421,7 +421,7 @@ void SupportingFeatureAdaptor_store(SupportingFeatureAdaptor *sfa, IDType exonDb
       type     = "protein_align_feature";
 
       checkSth = pepCheckSth;
-      checkSth->execute(checkSth, seqRegionId, 
+      checkSth->executeQuery(checkSth, seqRegionId, 
                         BaseAlignFeature_getSeqRegionStart((SeqFeature*)f), 
                         BaseAlignFeature_getSeqRegionEnd((SeqFeature*)f), 
                         BaseAlignFeature_getSeqRegionStrand((SeqFeature*)f), 
@@ -455,10 +455,10 @@ void SupportingFeatureAdaptor_store(SupportingFeatureAdaptor *sfa, IDType exonDb
     }
 
     // now check association
-    assocCheckSth->execute(assocCheckSth, type, sfDbID);
+    assocCheckSth->executeQuery(assocCheckSth, type, sfDbID);
 
     if (checkSth->numRows(assocCheckSth) == 0) {
-      sfSth->execute(sfSth, exonDbID, sfDbID, type);
+      sfSth->executeQuery(sfSth, exonDbID, sfDbID, type);
     }
   }
 
