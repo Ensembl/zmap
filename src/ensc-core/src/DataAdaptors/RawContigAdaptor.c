@@ -65,7 +65,7 @@ void RawContigAdaptor_fetchAttributes(RawContigAdaptor *rca, RawContig *rc) {
           "WHERE contig_id = " IDFMTSTR, RawContig_getDbID(rc));
 
   sth = rca->prepare((BaseAdaptor *)rca,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   row = sth->fetchRow(sth);
   if( row == NULL ) {
@@ -103,7 +103,7 @@ RawContig *RawContigAdaptor_fetchByName(RawContigAdaptor *rca, char *name) {
                            " FROM contig"
                            " WHERE name = '%s'",name );
   sth = rca->prepare((BaseAdaptor *)rca, qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if ((row = sth->fetchRow(sth))) {
     rawContig = RawContig_new();

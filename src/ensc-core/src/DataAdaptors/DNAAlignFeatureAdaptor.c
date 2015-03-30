@@ -260,7 +260,7 @@ int DNAAlignFeatureAdaptor_store(BaseFeatureAdaptor *bfa, Vector *features) {
 
 // Note using SeqRegionStart etc here rather than Start - should have same effect as perl's transfer
     
-    sth->execute(sth, (IDType)seqRegionId,
+    sth->executeQuery(sth, (IDType)seqRegionId,
                  DNAAlignFeature_getSeqRegionStart((SeqFeature*)feat),
                  DNAAlignFeature_getSeqRegionEnd((SeqFeature*)feat),
                  DNAAlignFeature_getSeqRegionStrand((SeqFeature*)feat),
@@ -385,7 +385,7 @@ sub save {
     $sth->bind_param(17,$extra_data,SQL_LONGVARCHAR);
 
 
-    $sth->execute();
+    $sth->executeQuery();
     $original->dbID($sth->{'mysql_insertid'});
     $original->adaptor($self);
   }
@@ -396,7 +396,7 @@ sub save {
   if( keys %analyses ) {
 
     my $sth = $self->prepare( 'select sr.coord_system_id, max(daf.seq_region_end-daf.seq_region_start) from seq_region as sr, dna_align_feature as daf where daf.seq_region_id=sr.seq_region_id and analysis_id in ('.join(',',keys %analyses).') group by coord_system_id' );
-    $sth->execute;
+    $sth->executeQuery;
 
     foreach( @{ $sth->fetchall_arrayref } ) {
       my $sth2 = $self->prepare( qq(insert ignore into meta_coord values("dna_align_feature",$_->[0],$_->[1])) );

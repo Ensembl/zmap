@@ -83,7 +83,7 @@ Vector *SyntenyAdaptor_getSyntenyForChromosome(SyntenyAdaptor *sa, char *chr, in
           extraSql);
 
   sth = sa->prepare((BaseAdaptor *)sa, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   data = Vector_new();
 

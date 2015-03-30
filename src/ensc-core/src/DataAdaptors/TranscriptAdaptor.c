@@ -234,7 +234,7 @@ Transcript *TranscriptAdaptor_fetchByTranslationStableId(TranscriptAdaptor *ta, 
                 "AND     tr.is_current = 1", translationStableId);
 
   StatementHandle *sth = ta->prepare((BaseAdaptor *)ta,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) == 0) {
     return NULL;
@@ -275,7 +275,7 @@ Transcript *TranscriptAdaptor_fetchByTranslationId(TranscriptAdaptor *ta, IDType
                 translationId);
 
   StatementHandle *sth = ta->prepare((BaseAdaptor *)ta,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) == 0) {
     return NULL;
@@ -512,7 +512,7 @@ Vector *TranscriptAdaptor_fetchAllBySlice(TranscriptAdaptor *ta, Slice *slice, i
     qStr[endPoint] = '\0';
   
     StatementHandle *sth = ta->prepare((BaseAdaptor *)ta,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
   
     ResultRow *row;
     while ((row = sth->fetchRow(sth))) {
@@ -837,7 +837,7 @@ Vector *TranscriptAdaptor_fetchByExonStableId(TranscriptAdaptor *ta, char *stabl
          "AND e.is_current = 1", stableId);
 
   StatementHandle *sth = ta->prepare((BaseAdaptor *)ta,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) == 0) {
     fprintf(stderr, "Failed fetching transcript using exon stable id %s - returning NULL\n",  stableId);
@@ -1192,7 +1192,7 @@ IDType TranscriptAdaptor_store(TranscriptAdaptor *ta, Transcript *transcript, ID
             Translation_getDbID(translation), transcDbID);
 
     StatementHandle *sth = ta->prepare((BaseAdaptor *)ta,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
     sth->finish(sth);
 
     // Set values of the original translation, we may have copied it when
@@ -1288,7 +1288,7 @@ IDType TranscriptAdaptor_store(TranscriptAdaptor *ta, Transcript *transcript, ID
 
       StatementHandle *sth = ta->prepare((BaseAdaptor *)ta,qStr,strlen(qStr));
 
-      sth->execute(sth);
+      sth->executeQuery(sth);
       sth->finish(sth);
 
       DBEntry_setDbID(displayXref, dxrefId);
@@ -1387,7 +1387,7 @@ sub get_Interpro_by_transid {
   ));
 
   $sth->bind_param(1, $trans_stable_id, SQL_VARCHAR);
-  $sth->execute();
+  $sth->executeQuery();
 
   my @out;
   my %h;
@@ -1424,7 +1424,7 @@ int TranscriptAdaptor_isTranscriptCanonical(TranscriptAdaptor *ta, Transcript *t
 
   sprintf(qStr, "select count(*) from gene where canonical_transcript_id = "IDFMTSTR, Transcript_getDbID(transcript));
   StatementHandle *sth = ta->prepare((BaseAdaptor *)ta,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) > 0) {
     flag =1;
@@ -1487,7 +1487,7 @@ sub remove {
                              "WHERE transcript_id = ?");
 
   $sfsth->bind_param(1, $transcript->dbID, SQL_INTEGER);
-  $sfsth->execute();
+  $sfsth->executeQuery();
 
   # statements to check for shared align_features
   my $sth1 = $self->prepare("SELECT count(*) FROM supporting_feature " .
@@ -1535,7 +1535,7 @@ sub remove {
 
   $sfsth = $self->prepare("DELETE FROM transcript_supporting_feature WHERE transcript_id = ?");
   $sfsth->bind_param(1, $transcript->dbID, SQL_INTEGER);
-  $sfsth->execute();
+  $sfsth->executeQuery();
   $sfsth->finish();
   
   # delete the associated IntronSupportingEvidence and if the ISE had no more
@@ -1578,7 +1578,7 @@ sub remove {
                                FROM   exon_transcript
                                WHERE  exon_id = ?" );
     $sth->bind_param(1, $exon->dbID, SQL_INTEGER);
-    $sth->execute();
+    $sth->executeQuery();
     my ($count) = $sth->fetchrow_array();
     $sth->finish();
 
@@ -1590,14 +1590,14 @@ sub remove {
   my $sth = $self->prepare( "DELETE FROM exon_transcript
                              WHERE transcript_id = ?" );
   $sth->bind_param(1, $transcript->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
   $sth->finish();
 
 
   $sth = $self->prepare( "DELETE FROM transcript
                           WHERE transcript_id = ?" );
   $sth->bind_param(1, $transcript->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
   $sth->finish();
 
   $transcript->dbID(undef);
@@ -1672,7 +1672,7 @@ sub update {
                     SQL_INTEGER );
   $sth->bind_param( 8, $transcript->dbID(), SQL_INTEGER );
 
-  $sth->execute();
+  $sth->executeQuery();
 } ## end sub update
 */
 
@@ -2111,7 +2111,7 @@ sub fetch_all_by_exon_supporting_evidence {
   $sth->bind_param(2, $hit_name, SQL_VARCHAR);
   $sth->bind_param(3, $analysis->dbID(), SQL_INTEGER) if ($analysis);
 
-  $sth->execute();
+  $sth->executeQuery();
 
   my @transcripts;
 
@@ -2177,7 +2177,7 @@ sub fetch_all_by_transcript_supporting_evidence {
   $sth->bind_param(2, $hit_name, SQL_VARCHAR);
   $sth->bind_param(3, $analysis->dbID(), SQL_INTEGER) if ($analysis);
 
-  $sth->execute();
+  $sth->executeQuery();
 
   my @transcripts;
 
@@ -2228,7 +2228,7 @@ sub get_display_xref {
   ));
   
   $sth->bind_param(1, $transcript->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
 
   my ($db_name, $display_label, $xref_id, $display_db_name ) =
     $sth->fetchrow_array();
@@ -2272,7 +2272,7 @@ sub get_stable_entry_info {
   ));
                             
   $sth->bind_param(1, $transcript->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
 
   my @array = $sth->fetchrow_array();
   $transcript->{'_stable_id'} = $array[0];

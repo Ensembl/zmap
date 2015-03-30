@@ -112,7 +112,7 @@ void GenomicAlignAdaptor_store(GenomicAlignAdaptor *gaa, Vector *genomicAligns) 
   }
   
   sth = gaa->prepare((BaseAdaptor *)gaa, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
   sth->finish(sth);
 
   free(qStr);
@@ -206,7 +206,7 @@ Vector *GenomicAlignAdaptor_fetchAllByDNAFragGenomeDBDirect( GenomicAlignAdaptor
     }
 
     sth = gaa->prepare((BaseAdaptor *)gaa, qStr, strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
 
     qres = GenomicAlignAdaptor_objectsFromStatementHandle(gaa, sth, 0);
     Vector_append(results,qres);
@@ -237,7 +237,7 @@ Vector *GenomicAlignAdaptor_fetchAllByDNAFragGenomeDBDirect( GenomicAlignAdaptor
       qStr = StrUtil_appendString(qStr, tmpStr);
     }
     sth = gaa->prepare((BaseAdaptor *)gaa, qStr, strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
 
     cres = GenomicAlignAdaptor_objectsFromStatementHandle(gaa, sth, 1);
     Vector_append(results,cres);
@@ -898,7 +898,7 @@ char *GenomicAlignAdaptor_alignmentTypeByMethodLinkId(GenomicAlignAdaptor *gaa, 
 
   sprintf(qStr,"SELECT type FROM method_link WHERE method_link_id = " IDFMTSTR, methodLinkId);
   sth = gaa->prepare((BaseAdaptor *)gaa, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if ((row = sth->fetchRow(sth))) {
     alignmentType = StrUtil_copyString(&alignmentType, row->getStringAt(row,0), 0); 
@@ -926,7 +926,7 @@ IDType GenomicAlignAdaptor_methodLinkIdByAlignmentType(GenomicAlignAdaptor *gaa,
   
   sprintf(qStr, "SELECT method_link_id FROM method_link WHERE type = '%s'", alignmentType);
   sth = gaa->prepare((BaseAdaptor *)gaa, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if ((row = sth->fetchRow(sth))) {
     methodLinkId = row->getLongLongAt(row,0); 

@@ -192,7 +192,7 @@ int ProteinAlignFeatureAdaptor_store(BaseFeatureAdaptor *bfa, Vector *features) 
 */
     IDType seqRegionId = BaseFeatureAdaptor_preStore(bfa, (SeqFeature*)feat);
 // Note using SeqRegionStart etc here rather than Start - should have same effect as perl's transfer
-    sth->execute(sth, (IDType)seqRegionId,
+    sth->executeQuery(sth, (IDType)seqRegionId,
                  DNAPepAlignFeature_getSeqRegionStart((SeqFeature*)feat),
                  DNAPepAlignFeature_getSeqRegionEnd((SeqFeature*)feat),
                  DNAPepAlignFeature_getSeqRegionStrand((SeqFeature*)feat),

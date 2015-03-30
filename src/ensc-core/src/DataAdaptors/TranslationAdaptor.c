@@ -103,7 +103,7 @@ Vector *TranslationAdaptor_fetchAllAlternativeByTranscript(TranslationAdaptor *t
 
   StatementHandle *sth = tlna->prepare((BaseAdaptor *)tlna,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   // Get all alternative translations.
   Vector *translations = Vector_new();
@@ -165,7 +165,7 @@ Translation *TranslationAdaptor_fetchByTranscript(TranslationAdaptor *tlna, Tran
 
   StatementHandle *sth = tlna->prepare((BaseAdaptor *)tlna,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) > 1) {
     fprintf(stderr, "Error: Expected one result when querying for translation with transcript\n");
@@ -406,7 +406,7 @@ IDType TranslationAdaptor_store(TranslationAdaptor *tlna, Translation *translati
 
   StatementHandle *sth = tlna->prepare((BaseAdaptor *)tlna,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
  
   IDType translDbID = sth->getInsertId(sth);
 
@@ -493,14 +493,14 @@ sub remove {
   my $sth = $self->prepare
     ("DELETE FROM protein_feature WHERE translation_id = ?");
   $sth->bind_param(1,$translation->dbID,SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
   $sth->finish();
 
   # remove the translation itself
 
   $sth = $self->prepare("DELETE FROM translation WHERE translation_id = ?" );
   $sth->bind_param(1,$translation->dbID,SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
   $sth->finish();
 
   $translation->dbID( undef );
@@ -758,7 +758,7 @@ Vector *TranslationAdaptor_fetchAllByTranscriptList(TranslationAdaptor *tlna, Ve
     char qStr[655500];
     sprintf(qStr,"SELECT transcript_id, canonical_translation_id FROM transcript WHERE transcript_id %s", idStr);
     StatementHandle *sth = tlna->prepare((BaseAdaptor *)tlna,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
     ResultRow *row;
     while ((row = sth->fetchRow(sth))) {
       IDType transcriptId           = row->getLongLongAt(row,0);
@@ -789,7 +789,7 @@ Vector *TranslationAdaptor_fetchAllByTranscriptList(TranslationAdaptor *tlna, Ve
                   "WHERE tl.transcript_id %s", idStr);
 
     sth = tlna->prepare((BaseAdaptor *)tlna,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
 
     while ((row = sth->fetchRow(sth))) {
       // Need transcriptId so fetch it here as well as in translationFromResultRow
@@ -912,7 +912,7 @@ sub get_stable_entry_info {
                             FROM   translation
                             WHERE  translation_id = ?");
   $sth->bind_param(1,$translation->dbID,SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
 
   my @array = $sth->fetchrow_array();
   $translation->{'_stable_id'} = $array[0];

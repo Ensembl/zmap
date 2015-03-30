@@ -97,7 +97,7 @@ void AssemblyMapperAdaptor_cacheSeqIdsWithMultAssemblies(AssemblyMapperAdaptor *
                   IDFMTSTR, speciesID);
 
   StatementHandle *sth = ama->prepare((BaseAdaptor *)ama,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   ResultRow *row;
   while ((row = sth->fetchRow(sth))) {
@@ -440,7 +440,7 @@ void AssemblyMapperAdaptor_registerAssembled(AssemblyMapperAdaptor *ama, Assembl
   
 
     StatementHandle *sth = ama->prepare((BaseAdaptor *)ama,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
 
 
     // 
@@ -503,7 +503,7 @@ IDType AssemblyMapperAdaptor_seqRegionNameToId(AssemblyMapperAdaptor *ama, char 
                  IDFMTSTR, srName, csId);
 
   StatementHandle *sth = ama->prepare((BaseAdaptor *)ama,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) != 1) {
     fprintf(stderr,"Ambiguous or non-existant seq_region [%s] in coord system "IDFMTSTR" (numRowss = "IDFMTSTR")\n", srName,csId,sth->numRows(sth));
@@ -544,7 +544,7 @@ char *AssemblyMapperAdaptor_seqRegionIdToName(AssemblyMapperAdaptor *ama, IDType
                  IDFMTSTR, srId);
 
   StatementHandle *sth = ama->prepare((BaseAdaptor *)ama,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
 
   if (sth->numRows(sth) != 1) {
@@ -621,7 +621,7 @@ void AssemblyMapperAdaptor_registerComponent(AssemblyMapperAdaptor *ama, Assembl
                  cmpSeqRegion, asmCsId);
 
   StatementHandle *sth = ama->prepare((BaseAdaptor *)ama,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) == 0) {
     //this component is not used in the assembled part i.e. gap
@@ -894,7 +894,7 @@ void AssemblyMapperAdaptor_registerChained(AssemblyMapperAdaptor *ama, ChainedAs
     long start = CoordPair_getStart(range);
     long end   = CoordPair_getEnd(range);
 
-    sth->execute(sth, seqRegionId, start, end, midCsId);
+    sth->executeQuery(sth, seqRegionId, start, end, midCsId);
 
     //load the start <-> mid mapper with the results and record the mid cs
     //ranges we just added to the mapper
@@ -1029,7 +1029,7 @@ void AssemblyMapperAdaptor_registerChained(AssemblyMapperAdaptor *ama, ChainedAs
     long start            = SeqRegionRange_getSeqRegionStart(midRange);
     long end              = SeqRegionRange_getSeqRegionEnd(midRange);
 
-    sth->execute(sth, midSeqRegionId, start, end, endCsId);
+    sth->executeQuery(sth, midSeqRegionId, start, end, endCsId);
 
     //load the end <-> mid mapper with the results and record the mid cs
     //ranges we just added to the mapper
@@ -1256,7 +1256,7 @@ void AssemblyMapperAdaptor_registerChainedSpecial(AssemblyMapperAdaptor *ama, Ch
       long start = CoordPair_getStart(range);
       long end   = CoordPair_getEnd(range);
 
-      sth->execute(sth, id1, start, end, CoordSystem_getDbID(toCs), id2);
+      sth->executeQuery(sth, id1, start, end, CoordSystem_getDbID(toCs), id2);
 
       long midStart, midEnd;
       IDType midSeqRegionId;
@@ -1412,7 +1412,7 @@ void AssemblyMapperAdaptor_registerAll(AssemblyMapperAdaptor *ama, AssemblyMappe
 
   StatementHandle *sth = ama->prepare((BaseAdaptor *)ama,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   // load the asmMapper with the assembly information
   IDHash *asmRegistered = IDHash_new(IDHASH_MEDIUM);
@@ -1564,7 +1564,7 @@ void AssemblyMapperAdaptor_registerAllChained(AssemblyMapperAdaptor *ama, Chaine
 
   sth->addFlag(sth, MYSQLFLAG_USE_RESULT);
 
-  sth->execute(sth, CoordSystem_getDbID(asmCs), CoordSystem_getDbID(cmpCs));
+  sth->executeQuery(sth, CoordSystem_getDbID(asmCs), CoordSystem_getDbID(cmpCs));
 
   long  midStart, midEnd;
   IDType midSeqRegionId;
@@ -1676,7 +1676,7 @@ void AssemblyMapperAdaptor_registerAllChained(AssemblyMapperAdaptor *ama, Chaine
   asmCs = Vector_getElementAt(path,0);
   cmpCs = Vector_getElementAt(path,1);
 
-  sth->execute(sth, CoordSystem_getDbID(asmCs), CoordSystem_getDbID(cmpCs));
+  sth->executeQuery(sth, CoordSystem_getDbID(asmCs), CoordSystem_getDbID(cmpCs));
 
   long endStart, endEnd;
   IDType endSeqRegionId;

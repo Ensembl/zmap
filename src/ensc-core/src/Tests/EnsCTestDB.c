@@ -406,7 +406,7 @@ sub test_db {
 			  ) or confess "Can't connect to server";
      my $sth = $db->prepare( "show databases" );
      my $dbexists = 0;
-     $sth->execute();
+     $sth->executeQuery();
 
      while( my $aref = $sth->fetchrow_arrayref ) {
        if( $aref->[0] eq $dbname ) {

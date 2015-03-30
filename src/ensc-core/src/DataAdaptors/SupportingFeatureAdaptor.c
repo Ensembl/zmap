@@ -91,7 +91,7 @@ Vector *SupportingFeatureAdaptor_fetchAllByExon(SupportingFeatureAdaptor *sfa, E
 
   sth = sfa->prepare((BaseAdaptor *)sfa, qStr, strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   pafa = DBAdaptor_getProteinAlignFeatureAdaptor(sfa->dba);
   dafa = DBAdaptor_getDNAAlignFeatureAdaptor(sfa->dba);
@@ -182,7 +182,7 @@ Vector *SupportingFeatureAdaptor_fetchAllByExonList(SupportingFeatureAdaptor *sf
   
   
     StatementHandle *sth = sfa->prepare((BaseAdaptor *)sfa,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
   
     ResultRow *row;
     while ((row = sth->fetchRow(sth))) {

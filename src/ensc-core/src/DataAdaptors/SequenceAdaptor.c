@@ -99,7 +99,7 @@ SequenceAdaptor *SequenceAdaptor_new(DBAdaptor *dba) {
 
   StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
   
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   IDHash *edits = IDHash_new(IDHASH_SMALL);
 
@@ -677,7 +677,7 @@ char * SequenceAdaptor_fetchSeq(SequenceAdaptor *sa, IDType seqRegionId, long st
 
         StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
 
-        sth->execute(sth);
+        sth->executeQuery(sth);
         ResultRow *row = sth->fetchRow(sth);
         char *tmpSeq   = row->getStringCopyAt(row, 0);
 //        long lenTmpSeq = row->getLongAt(row, 1);
@@ -718,7 +718,7 @@ char * SequenceAdaptor_fetchSeq(SequenceAdaptor *sa, IDType seqRegionId, long st
 
     StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
 
-    sth->execute(sth);
+    sth->executeQuery(sth);
     ResultRow *row = sth->fetchRow(sth);
     char *tmpSeq = row->getStringCopyAt(row, 0);
     sth->finish(sth);

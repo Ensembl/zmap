@@ -584,7 +584,7 @@ my $sth = $db->dbc->prepare(qq{INSERT INTO seq_region (coord_system_id, name,
                 FROM coord_system cs
                 WHERE cs.name in ('supercontig', 'chromosome')});
 
-$sth->execute();
+$sth->executeQuery();
 $sth->finish();
 
 $slice = $slice_adaptor->fetch_by_region('toplevel', 'TESTREGION');

@@ -1426,7 +1426,7 @@ Vector *getMappings(DBAdaptor *dba, char *seqName, char *fromAssName, char *toAs
   
     sth = dba->dbc->prepare(dba->dbc,qStr,strlen(qStr));
   
-    sth->execute(sth);
+    sth->executeQuery(sth);
   
     CoordSystemAdaptor *csa = DBAdaptor_getCoordSystemAdaptor(dba);
     SliceAdaptor *sa = DBAdaptor_getSliceAdaptor(dba);
@@ -1554,7 +1554,7 @@ Vector *getDestinationSlices(DBAdaptor *dba, char *assName) {
   if (verbosity > 2) printf("%s\n",qStr);
   sth = dba->dbc->prepare(dba->dbc,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   Vector *toplevelSliceVector = Vector_new();
 

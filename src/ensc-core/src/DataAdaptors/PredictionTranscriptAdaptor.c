@@ -249,7 +249,7 @@ Vector *PredictionTranscriptAdaptor_fetchAllBySlice(PredictionTranscriptAdaptor 
   free(uniqueIds);
 
   StatementHandle *sth = pta->prepare((BaseAdaptor *)pta,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   IDHash *exTrHash = IDHash_new(IDHASH_MEDIUM);
   ResultRow *row;
@@ -537,7 +537,7 @@ int PredictionTranscriptAdaptor_store(PredictionTranscriptAdaptor *pta, Vector *
     $ptstore_sth->bind_param(5,$analysis->dbID,SQL_INTEGER);
     $ptstore_sth->bind_param(6,$pt->display_label,SQL_VARCHAR);
 
-    $ptstore_sth->execute();
+    $ptstore_sthQuery->execute();
 
     my $pt_id = $ptstore_sth->{'mysql_insertid'};
     $original->dbID($pt_id);
@@ -555,7 +555,7 @@ int PredictionTranscriptAdaptor_store(PredictionTranscriptAdaptor *pta, Vector *
       my $display_label = uc($analysis->logic_name()) . $zeros . $pt_id;
       $ptupdate_sth->bind_param(1,$display_label,SQL_VARCHAR);
       $ptupdate_sth->bind_param(2,$pt_id,SQL_INTEGER);
-      $ptupdate_sth->execute();
+      $ptupdate_sthQuery->execute();
       $original->display_label($display_label);
     }
   }
@@ -602,7 +602,7 @@ sub remove {
   my $sth = $self->prepare( "DELETE FROM prediction_transcript
                              WHERE prediction_transcript_id = ?" );
   $sth->bind_param(1,$pre_trans->dbID,SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
 
   #unset the adaptor and internal id
   $pre_trans->dbID(undef);

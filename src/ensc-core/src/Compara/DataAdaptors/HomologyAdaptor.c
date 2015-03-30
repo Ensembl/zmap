@@ -196,7 +196,7 @@ Vector *HomologyAdaptor_listStableIdsFromSpecies(HomologyAdaptor *ha, char *sp) 
 
 
   sth = ha->prepare((BaseAdaptor *)ha, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   genes = Vector_new();
 
@@ -238,7 +238,7 @@ Vector *HomologyAdaptor_getHomologues(HomologyAdaptor *ha, char *qStr) {
   Vector *genes;
 
   sth = ha->prepare((BaseAdaptor *)ha, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   genes = Vector_new();
   while ((row = sth->fetchRow(sth))) {
@@ -265,7 +265,7 @@ int HomologyAdaptor_getRelationships(HomologyAdaptor *ha, char *qStr, IDType **i
   int nId = 0;
 
   sth = ha->prepare((BaseAdaptor *)ha, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if ((*idsP = (IDType *)calloc(nAlloced,sizeof(IDType))) == NULL) {
     fprintf(stderr,"Error: Failed allocating idsP\n");
@@ -297,7 +297,7 @@ IDType HomologyAdaptor_getRelationship(HomologyAdaptor *ha, char *qStr) {
   
 
   sth = ha->prepare((BaseAdaptor *)ha, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if ((row = sth->fetchRow(sth))) {
     relId = row->getLongLongAt(row,0);

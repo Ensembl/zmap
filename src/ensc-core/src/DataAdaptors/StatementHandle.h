@@ -41,7 +41,7 @@ typedef struct StatementHandleFuncsStruct {
   char *statementFormat; \
   char *currentStatement; \
   DBConnection *dbc; \
-  StatementHandle_ExecuteFunc execute; \
+  StatementHandle_ExecuteFunc executeQuery; \
   StatementHandle_FetchRowFunc fetchRow; \
   StatementHandle_NumRowsFunc numRows; \
   StatementHandle_FinishFunc finish; \

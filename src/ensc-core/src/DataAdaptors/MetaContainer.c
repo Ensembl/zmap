@@ -45,7 +45,7 @@ Vector *MetaContainer_listValueByKey(MetaContainer *mc, char *key) {
        " WHERE meta_key = '%s' ORDER BY meta_id",key);
 
   sth = mc->prepare((BaseAdaptor *)mc,qStr,strlen(qStr)); 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   while ((row = sth->fetchRow(sth))) {
     char *tmpStr;
@@ -68,7 +68,7 @@ int MetaContainer_getIntValueByKey(MetaContainer *mc, char *key, int *retVal) {
        " WHERE meta_key = '%s' ORDER BY meta_id",key);
 
   sth = mc->prepare((BaseAdaptor *)mc,qStr,strlen(qStr)); 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if ((row = sth->fetchRow(sth))) {
     *retVal = row->getIntAt(row,0); 
@@ -93,7 +93,7 @@ Species *MetaContainer_getSpecies(MetaContainer *mc) {
              " WHERE meta_key = 'species.common_name'");
 
   sth = mc->prepare((BaseAdaptor *)mc, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
   if ((row = sth->fetchRow(sth))) {
     commonName = row->getStringAt(row,0);
   } else {
@@ -119,7 +119,7 @@ char *MetaContainer_getDefaultAssembly(MetaContainer *mc) {
   StatementHandle *sth = mc->prepare((BaseAdaptor *)mc,qStr,strlen(qStr));
 
   if (sth) {
-    sth->execute(sth);
+    sth->executeQuery(sth);
     ResultRow *row = sth->fetchRow(sth);
     char *assStr;
 

@@ -114,7 +114,7 @@ GenomeDB *GenomeDBAdaptor_fetchByNameAssembly(GenomeDBAdaptor *gda, char *name, 
              " WHERE name = '%s' AND assembly = '%s'", name, assembly);
   sth = gda->prepare((BaseAdaptor *)gda, qStr, strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (!(row = sth->fetchRow(sth))) {
     fprintf(stderr,"Error: No GenomeDB with this name [%s] and " 
@@ -150,7 +150,7 @@ IDType GenomeDBAdaptor_store(GenomeDBAdaptor *gda, GenomeDB *gdb) {
       GenomeDB_getName(gdb), GenomeDB_getAssembly(gdb));
 
   sth = gda->prepare((BaseAdaptor *)gda, qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if ((row = sth->fetchRow(sth))) {
     dbID = row->getLongLongAt(row,0);
@@ -165,7 +165,7 @@ IDType GenomeDBAdaptor_store(GenomeDBAdaptor *gda, GenomeDB *gdb) {
         GenomeDB_getName(gdb),GenomeDB_getAssembly(gdb), GenomeDB_getTaxonId(gdb));
 
     sth = gda->prepare((BaseAdaptor *)gda, qStr, strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
     dbID = sth->getInsertId(sth);
     sth->finish(sth);
   }
@@ -194,7 +194,7 @@ void GenomeDBAdaptor_createGenomeDBs(GenomeDBAdaptor *gda) {
      " FROM genomic_align_genome");
 
   sth = gda->prepare((BaseAdaptor *)gda, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   while ((row = sth->fetchRow(sth))) {
     char cKey[512];
@@ -241,7 +241,7 @@ void GenomeDBAdaptor_createGenomeDBs(GenomeDBAdaptor *gda) {
      " FROM genome_db");
 
   sth = gda->prepare((BaseAdaptor *)gda, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   // build a genome db for each species
   while ((row = sth->fetchRow(sth))) {

@@ -87,7 +87,7 @@ Vector *BaseAdaptor_listDbIDs(BaseAdaptor *ba, char *table, char *pk, int ordere
 
   StatementHandle *sth = ba->prepare(ba,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   Vector *out = Vector_new();
 
@@ -222,7 +222,7 @@ Vector *BaseAdaptor_genericFetch(BaseAdaptor *ba, char *constraint, AssemblyMapp
 
   StatementHandle *sth = ba->prepare((BaseAdaptor *)ba,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   Vector *res = ba->objectsFromStatementHandle(ba, sth, mapper, slice);
   sth->finish(sth);
@@ -254,7 +254,7 @@ int BaseAdaptor_genericCount(BaseAdaptor *ba, char *constraint) {
   BaseAdaptor_generateSql(ba, constraint, countCols, qStr);
 
   StatementHandle *sth = ba->prepare(ba,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) != 1) {
     fprintf(stderr, "genericCount didn't return a row - bye!\n");

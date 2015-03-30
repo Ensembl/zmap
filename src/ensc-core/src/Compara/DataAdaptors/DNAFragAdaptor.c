@@ -49,7 +49,7 @@ DNAFrag *DNAFragAdaptor_fetchByDbID(DNAFragAdaptor *dfa, IDType dbID) {
      " WHERE dnafrag_id = " IDFMTSTR " limit 1", dbID);
 
   sth = dfa->prepare((BaseAdaptor *)dfa,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   dnaFrags = DNAFragAdaptor_objectsFromStatementHandle(dfa,sth);
 
@@ -113,7 +113,7 @@ Vector *DNAFragAdaptor_fetchAllByGenomeDBRegion(DNAFragAdaptor *dfa, GenomeDB *g
   }
 
   sth = dfa->prepare((BaseAdaptor *)dfa,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   return DNAFragAdaptor_objectsFromStatementHandle(dfa, sth);
 }
@@ -127,7 +127,7 @@ Vector *DNAFragAdaptor_fetchAll(DNAFragAdaptor *dfa) {
            "       name, start, end"
            " FROM dnafrag");
   sth = dfa->prepare((BaseAdaptor *)dfa,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   return DNAFragAdaptor_objectsFromStatementHandle(dfa, sth);
 }
@@ -202,7 +202,7 @@ IDType DNAFragAdaptor_store(DNAFragAdaptor *dfa, DNAFrag *dnaFrag) {
      DNAFrag_getEnd(dnaFrag));
 
   sth = dfa->prepare((BaseAdaptor *)dfa,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   DNAFrag_setDbID(dnaFrag, sth->getInsertId(sth));
   DNAFrag_setAdaptor(dnaFrag, (BaseAdaptor *)dfa);
@@ -256,7 +256,7 @@ IDType DNAFragAdaptor_storeIfNeeded(DNAFragAdaptor *dfa, DNAFrag *dnaFrag) {
      DNAFrag_getName(dnaFrag), gid, DNAFrag_getStart(dnaFrag), DNAFrag_getEnd(dnaFrag));
 
   sth = dfa->prepare((BaseAdaptor *)dfa, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if ((row = sth->fetchRow(sth))) {
     dnaFragId = row->getLongLongAt(row,0);

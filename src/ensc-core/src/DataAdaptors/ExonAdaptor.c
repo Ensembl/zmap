@@ -381,7 +381,7 @@ IDType ExonAdaptor_store(ExonAdaptor *ea, Exon *exon) {
   IDType exonId = 0;
 
   // store the exon
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   exonId = sth->getInsertId(sth);
   sth->finish(sth);
@@ -451,7 +451,7 @@ sub remove {
                            "FROM supporting_feature " .            
 			   "WHERE exon_id = ?");
   $sth->bind_param(1, $exon->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
 
   # statements to check for shared align_features
   my $sth1 = $self->prepare("SELECT count(*) FROM supporting_feature " .
@@ -499,7 +499,7 @@ sub remove {
 
   $sth = $self->prepare("DELETE FROM supporting_feature WHERE exon_id = ?");
   $sth->bind_param(1, $exon->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
   $sth->finish();
 
 
@@ -507,7 +507,7 @@ sub remove {
 
   $sth = $self->prepare( "DELETE FROM exon WHERE exon_id = ?" );
   $sth->bind_param(1, $exon->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
   $sth->finish();
 
   $exon->dbID(undef);
@@ -895,7 +895,7 @@ sub get_stable_entry_info {
                             WHERE  exon_id = ");
 
   $sth->bind_param(1, $exon->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
 
   # my @array = $sth->fetchrow_array();
   if( my $aref = $sth->fetchrow_arrayref() ) {
@@ -953,7 +953,7 @@ sub fetch_all_by_gene_id {
 
   my $sth = $self->prepare( $query );
   $sth->bind_param(1,$gene_id,SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
 
   while( $hashRef = $sth->fetchrow_hashref() ) {
     if( ! exists $exons{ $hashRef->{exon_id} } ) {

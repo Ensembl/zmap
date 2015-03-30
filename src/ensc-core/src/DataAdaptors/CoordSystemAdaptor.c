@@ -64,7 +64,7 @@ CoordSystemAdaptor *CoordSystemAdaptor_new(DBAdaptor *dba) {
                     IDFMTSTR, speciesID); 
 
   sth = csa->prepare((BaseAdaptor *)csa,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   while ((row = sth->fetchRow(sth))) {
     int seqLvl = 0;
@@ -191,7 +191,7 @@ void CoordSystemAdaptor_cacheSeqRegionMapping(CoordSystemAdaptor *csa) {
   $sth->bind_param( 1, $schema_build,       SQL_VARCHAR );
   $sth->bind_param( 2, $self->species_id(), SQL_INTEGER );
 
-  $sth->execute();
+  $sth->executeQuery();
 
   # Load the cache:
   foreach my $row ( @{ $sth->fetchall_arrayref() } ) {
@@ -1006,7 +1006,7 @@ sub store {
   $sth->bind_param( 4, $rank,               SQL_INTEGER );
   $sth->bind_param( 5, $self->species_id(), SQL_INTEGER );
 
-  $sth->execute();
+  $sth->executeQuery();
   my $dbID = $sth->{'mysql_insertid'};
   $sth->finish();
 

@@ -58,7 +58,7 @@ DBEntry *DBEntryAdaptor_fetchByDbID(DBEntryAdaptor *dbea, IDType dbID) {
 
   sth = dbea->prepare((BaseAdaptor *)dbea,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
   
 
   // Why???? my %duplicate;
@@ -114,7 +114,7 @@ IDType DBEntryAdaptor_store(DBEntryAdaptor *dbea, DBEntry *exObj,
      DBEntry_getRelease(exObj));
 
   sth = dbea->prepare((BaseAdaptor *)dbea,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
     
   row = sth->fetchRow(sth);
   if( row == NULL ) {
@@ -141,7 +141,7 @@ IDType DBEntryAdaptor_store(DBEntryAdaptor *dbea, DBEntry *exObj,
       DBEntry_getVersion(exObj));
 
   sth = dbea->prepare((BaseAdaptor *)dbea,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   row = sth->fetchRow(sth);
     
@@ -172,7 +172,7 @@ IDType DBEntryAdaptor_store(DBEntryAdaptor *dbea, DBEntry *exObj,
       );
     sth = dbea->prepare((BaseAdaptor *)dbea,qStr,strlen(qStr));
 
-    sth->execute(sth);
+    sth->executeQuery(sth);
     dbX = sth->getInsertId(sth);
 
     sth->finish(sth);
@@ -229,7 +229,7 @@ IDType DBEntryAdaptor_store(DBEntryAdaptor *dbea, DBEntry *exObj,
 
   sth = dbea->prepare((BaseAdaptor *)dbea,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   row = sth->fetchRow(sth);
 // NOTE row will be invalid after this call but will still
@@ -251,7 +251,7 @@ IDType DBEntryAdaptor_store(DBEntryAdaptor *dbea, DBEntry *exObj,
 
     sth = dbea->prepare((BaseAdaptor *)dbea,qStr,strlen(qStr));
 	
-    sth->execute(sth);
+    sth->executeQuery(sth);
     DBEntry_setDbID(exObj, dbX);
     DBEntry_setAdaptor(exObj, (BaseAdaptor *)dbea);
       
@@ -272,7 +272,7 @@ IDType DBEntryAdaptor_store(DBEntryAdaptor *dbea, DBEntry *exObj,
              IdentityXref_getTargetIdentity(idx));
 
       sth = dbea->prepare((BaseAdaptor *)dbea,qStr,strlen(qStr));
-      sth->execute(sth);
+      sth->executeQuery(sth);
       sth->finish(sth);
     }
   } 
@@ -304,7 +304,7 @@ IDType DBEntryAdaptor_exists(DBEntryAdaptor *dbea, DBEntry *dbe) {
 
   sth = dbea->prepare((BaseAdaptor *)dbea,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   row = sth->fetchRow(sth);
   if( row == NULL ) {
@@ -332,7 +332,7 @@ int DBEntryAdaptor_fetchAllByGene(DBEntryAdaptor *dbea, Gene *gene) {
 
   sth = dbea->prepare((BaseAdaptor *)dbea,qStr,strlen(qStr));
   
-  sth->execute(sth);
+  sth->executeQuery(sth);
   
   while ((row = sth->fetchRow(sth))) {
     IDType transcriptId = row->getLongLongAt(row,0);
@@ -388,7 +388,7 @@ int DBEntryAdaptor_fetchAllByTranscript(DBEntryAdaptor *dbea, Transcript *trans)
   
   sth = dbea->prepare((BaseAdaptor *)dbea,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   // 
   // Did this to be consistent with fetch_by_Gene, but don't like
@@ -459,7 +459,7 @@ Vector *DBEntryAdaptor_fetchByObjectType(DBEntryAdaptor *dbea, IDType ensObj, ch
   
   sth = dbea->prepare((BaseAdaptor *)dbea,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   seen = IDHash_new(IDHASH_SMALL);
   out = Vector_new();
@@ -625,7 +625,7 @@ sub _type_by_external_id{
   foreach( @queries ) {
     my $sth = $self->prepare( $_ );
   sth = dbea->prepare((BaseAdaptor *)dbea,qStr,strlen(qStr));
-    $sth->execute("$name", $ensType);
+    $sth->executeQuery("$name", $ensType);
     while( my $r = $sth->fetchrow_array() ) {
       $hash{$r} = 1;
     }

@@ -105,7 +105,7 @@ Vector *IntronSupportingEvidenceAdaptor_listLinkedTranscriptIds(IntronSupporting
                "WHERE intron_supporting_evidence_id = "IDFMTSTR, IntronSupportingEvidence_getDbID(ise));
 
   StatementHandle *sth = isea->prepare((BaseAdaptor *)isea,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   Vector *idVec = Vector_new();
   ResultRow *row;
@@ -148,7 +148,7 @@ Vector *IntronSupportingEvidenceAdaptor_fetchAllByTranscript(IntronSupportingEvi
                 "WHERE transcript_id = "IDFMTSTR, Transcript_getDbID(transcript));
 
   StatementHandle *sth = isea->prepare((BaseAdaptor *)isea,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   Vector *idVec = Vector_new();
   ResultRow *row;
@@ -204,7 +204,7 @@ IDType *IntronSupportingEvidenceAdaptor_fetchFlankingExonIds(IntronSupportingEvi
           Transcript_getDbID(transcript), IntronSupportingEvidence_getDbID(ise));
 
   StatementHandle *sth = isea->prepare((BaseAdaptor *)isea,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) == 0) {
     return NULL;
@@ -479,7 +479,7 @@ IDType IntronSupportingEvidenceAdaptor_store(IntronSupportingEvidenceAdaptor *is
 
   StatementHandle *sth = isea->prepare((BaseAdaptor *)isea,qStr,strlen(qStr));
   
-  sth->execute(sth);
+  sth->executeQuery(sth);
   IDType sfId = sth->getInsertId(sth);
   sth->finish(sth);
 
@@ -500,7 +500,7 @@ IDType IntronSupportingEvidenceAdaptor_store(IntronSupportingEvidenceAdaptor *is
                 IntronSupportingEvidence_getHitName(sf));
 
     sth = isea->prepare((BaseAdaptor *)isea,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
     if (sth->numRows(sth) > 0) {
       ResultRow *row = sth->fetchRow(sth);
       sfId = row->getLongLongAt(row, 0);
@@ -565,7 +565,7 @@ void IntronSupportingEvidenceAdaptor_storeTranscriptLinkage(IntronSupportingEvid
 
   StatementHandle *sth = isea->prepare((BaseAdaptor *)isea,qStr,strlen(qStr));
   
-  sth->execute(sth);
+  sth->executeQuery(sth);
   sth->finish(sth);
 
   Intron_free(intron);

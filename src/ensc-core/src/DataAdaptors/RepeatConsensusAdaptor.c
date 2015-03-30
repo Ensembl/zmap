@@ -98,7 +98,7 @@ Vector *RepeatConsensusAdaptor_genericFetch(RepeatConsensusAdaptor *rca, char *w
                " WHERE %s", whereClause);
 
   sth = rca->prepare((BaseAdaptor *)rca,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   consensi = Vector_new();
   
@@ -155,7 +155,7 @@ int RepeatConsensusAdaptor_store(RepeatConsensusAdaptor *rca, Vector *consensi) 
       exit(1);
     }
   
-    sth->execute(sth, name, class, type, seq);
+    sth->executeQuery(sth, name, class, type, seq);
     
     dbID = sth->getInsertId(sth);
     

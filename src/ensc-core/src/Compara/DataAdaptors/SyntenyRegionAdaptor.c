@@ -51,7 +51,7 @@ SyntenyRegion *SyntenyRegionAdaptor_fetchByDbID(SyntenyRegionAdaptor *sra, IDTyp
              dbID);
            
   sth = sra->prepare((BaseAdaptor *)sra, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (!(row = sth->fetchRow(sth))) {
     fprintf(stderr,"Error: No such dbID " IDFMTSTR "\n",dbID);
@@ -89,7 +89,7 @@ Vector *SyntenyRegionAdaptor_fetchByClusterId(SyntenyRegionAdaptor *sra, IDType 
             " where synteny_cluster_id = " IDFMTSTR, clusterId);
 
   sth = sra->prepare((BaseAdaptor *)sra, qStr, strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   out = Vector_new();
   while ((row = sth->fetchRow(sth))) {
@@ -141,7 +141,7 @@ IDType SyntenyRegionAdaptor_store(SyntenyRegionAdaptor *sra, IDType clusterId, S
                 SyntenyRegion_getSeqEnd(region));
   sth = sra->prepare((BaseAdaptor *)sra, qStr, strlen(qStr));
    
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   regionId = sth->getInsertId(sth);
    

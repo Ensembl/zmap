@@ -233,7 +233,7 @@ IDType PredictionExonAdaptor_store(PredictionExonAdaptor *pea, PredictionExon *p
   $sth->bind_param(8,$pexon->score,SQL_DOUBLE);
   $sth->bind_param(9,$pexon->p_value,SQL_DOUBLE);
 
-  $sth->execute();
+  $sth->executeQuery();
 
   my $dbID = $sth->{'mysql_insertid'};
 
@@ -275,7 +275,7 @@ sub remove {
   my $sth = $self->prepare(
             "DELETE FROM prediction_exon WHERE prediction_exon_id = ?");
   $sth->bind_param( 1, $pexon->dbID, SQL_INTEGER );
-  $sth->execute();
+  $sth->executeQuery();
 
   $pexon->dbID(undef);
   $pexon->adaptor(undef);

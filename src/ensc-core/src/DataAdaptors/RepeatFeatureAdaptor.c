@@ -520,7 +520,7 @@ int RepeatFeatureAdaptor_store(BaseFeatureAdaptor *bfa, Vector *repeats) {
 
     consId = RepeatConsensus_getDbID(RepeatFeature_getConsensus(rf));
     analId = Analysis_getDbID(RepeatFeature_getAnalysis(rf));
-    sth->execute(sth,
+    sth->executeQuery(sth,
           (IDType)seqRegionId,
                  RepeatFeature_getSeqRegionStart((SeqFeature*)rf),
                  RepeatFeature_getSeqRegionEnd((SeqFeature*)rf),

@@ -458,7 +458,7 @@ Gene *GeneAdaptor_fetchByExonStableId(GeneAdaptor *ga, char *stableId) {
          "AND e.is_current = 1", stableId);
 
   StatementHandle *sth = ga->prepare((BaseAdaptor *)ga,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) != 1) {
     fprintf(stderr, "Failed fetching gene using exon stable id %s - returning NULL\n",  stableId);
@@ -520,7 +520,7 @@ sub fetch_all_by_domain {
   $sth->bind_param(1, $self->species_id(), SQL_VARCHAR);
   $sth->bind_param(2, $domain,             SQL_VARCHAR);
 
-  $sth->execute();
+  $sth->executeQuery();
 
   my @array = @{$sth->fetchall_arrayref()};
   $sth->finish();
@@ -565,7 +565,7 @@ Vector *GeneAdaptor_fetchAllBySliceAndExternalDbnameLink(GeneAdaptor *ga, Slice 
   my $sth = $self->prepare("SELECT external_db_id FROM external_db WHERE db_name = ?");
 
   $sth->bind_param(1, $db_name, SQL_VARCHAR);
-  $sth->execute();
+  $sth->executeQuery();
 
   my $external_db_id;
   $sth->bind_columns(\$external_db_id);
@@ -580,7 +580,7 @@ Vector *GeneAdaptor_fetchAllBySliceAndExternalDbnameLink(GeneAdaptor *ga, Slice 
 
     $sth = $self->prepare("SELECT DISTINCT db_name FROM external_db");
 
-    $sth->execute();
+    $sth->executeQuery();
     $sth->bind_columns(\$external_db_id);
 
     while ($sth->fetch()) {
@@ -729,7 +729,7 @@ Vector *GeneAdaptor_fetchAllBySlice(GeneAdaptor *ga, Slice *slice, char *logicNa
   free(uniqueIds);
 
   StatementHandle *sth = ga->prepare((BaseAdaptor *)ga,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   IDHash *trGHash = IDHash_new(IDHASH_MEDIUM);
   ResultRow *row;
@@ -874,7 +874,7 @@ Gene *GeneAdaptor_fetchByTranscriptId(GeneAdaptor *ga, IDType transId) {
                "WHERE tr.transcript_id = "IDFMTSTR, transId);
 
   StatementHandle *sth = ga->prepare((BaseAdaptor *)ga,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) == 0) {
     return NULL;
@@ -913,7 +913,7 @@ Gene *GeneAdaptor_fetchByTranscriptStableId(GeneAdaptor *ga, char *transStableId
                "WHERE tr.is_current = 1 AND tr.stable_id = '%s'", transStableId);
 
   StatementHandle *sth = ga->prepare((BaseAdaptor *)ga,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) == 0) {
     return NULL;
@@ -953,7 +953,7 @@ Gene *GeneAdaptor_fetchByTranslationStableId(GeneAdaptor *ga, char *translationS
                 "AND     tr.is_current = 1", translationStableId);
 
   StatementHandle *sth = ga->prepare((BaseAdaptor *)ga,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) == 0) {
     return NULL;
@@ -1146,7 +1146,7 @@ Vector *GeneAdaptor_fetchAllAltAlleles(GeneAdaptor *ga, Gene *gene) {
                geneId, geneId);
 
   StatementHandle *sth = ga->prepare((BaseAdaptor *)ga,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
 
   Vector *altIds = Vector_new();
@@ -1184,7 +1184,7 @@ int GeneAdaptor_isRef(GeneAdaptor *ga, IDType geneId) {
   char qStr[1024];
   sprintf(qStr,"SELECT count(1) from alt_allele where gene_id = "IDFMTSTR" and is_ref = 0", geneId);
   StatementHandle *sth = ga->prepare((BaseAdaptor *)ga,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) == 0) {
     return 1;
@@ -1277,7 +1277,7 @@ sub store_alt_alleles {
   my $sth = $self->prepare("INSERT INTO alt_allele (gene_id, is_ref) VALUES (?,?)");
   $sth->bind_param(1, $gene_ids[0], SQL_INTEGER);
   $sth->bind_param(2, $is_ref[0],   SQL_INTEGER);
-  eval { $sth->execute(); };
+  eval { Query$sth->execute(); };
   my $alt_allele_id = $sth->{'mysql_insertid'};
 
   if (!$alt_allele_id || $@) {
@@ -1296,13 +1296,13 @@ sub store_alt_alleles {
     $sth->bind_param(1, $alt_allele_id, SQL_INTEGER);
     $sth->bind_param(2, $gene_ids[$i],  SQL_INTEGER);
     $sth->bind_param(3, $is_ref[$i],    SQL_INTEGER);
-    eval { $sth->execute(); };
+    eval { Query$sth->execute(); };
 
     if ($@) {
       # an error occured, revert the db to the previous state
       $sth = $self->prepare("DELETE FROM alt_allele WHERE alt_allele_id = ?");
       $sth->bind_param(1, $alt_allele_id, SQL_INTEGER);
-      $sth->execute();
+      $sth->executeQuery();
       $sth->finish();
       throw("An SQL error occured inserting alternative alleles:\n$@");
     }
@@ -1470,7 +1470,7 @@ IDType GeneAdaptor_store(GeneAdaptor *ga, Gene *gene, int ignoreRelease)  {
 
   StatementHandle *sth = ga->prepare((BaseAdaptor *)ga,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 // NIY??? Finish was before insert id call?? Moved before
   IDType geneId = sth->getInsertId(sth);
 
@@ -1552,7 +1552,7 @@ IDType GeneAdaptor_store(GeneAdaptor *ga, Gene *gene, int ignoreRelease)  {
 
     sth = ga->prepare((BaseAdaptor *)ga,qStr,strlen(qStr));
 
-    sth->execute(sth);
+    sth->executeQuery(sth);
     sth->finish(sth);
   }
 
@@ -1574,7 +1574,7 @@ IDType GeneAdaptor_store(GeneAdaptor *ga, Gene *gene, int ignoreRelease)  {
 
       StatementHandle *sth = ga->prepare((BaseAdaptor *)ga,qStr,strlen(qStr));
 
-      sth->execute(sth);
+      sth->executeQuery(sth);
       sth->finish(sth);
 
       DBEntry_setDbID(displayXref, dxrefId);
@@ -1654,7 +1654,7 @@ sub remove {
   # remove all alternative allele entries associated with this gene
   my $sth = $self->prepare("DELETE FROM alt_allele WHERE gene_id = ?");
   $sth->bind_param(1, $gene->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
   $sth->finish();
 
   # remove the attributes associated with this transcript
@@ -1671,14 +1671,14 @@ sub remove {
 
   $sth = $self->prepare("DELETE FROM unconventional_transcript_association " . "WHERE gene_id = ? ");
   $sth->bind_param(1, $gene->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
   $sth->finish();
 
   # remove this gene from the database
 
   $sth = $self->prepare("DELETE FROM gene WHERE gene_id = ? ");
   $sth->bind_param(1, $gene->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
   $sth->finish();
 
   # unset the gene identifier and adaptor thereby flagging it as unstored
@@ -1731,7 +1731,7 @@ sub get_Interpro_by_geneid {
 
   $sth->bind_param(1, $gene_stable_id, SQL_VARCHAR);
 
-  $sth->execute;
+  $sth->executeQuery;
 
   my @out;
   my %h;
@@ -1810,7 +1810,7 @@ sub update {
   $sth->bind_param(8, $gene->canonical_annotation(), SQL_VARCHAR);
   $sth->bind_param(9, $gene->dbID(), SQL_INTEGER);
 
-  $sth->execute();
+  $sth->executeQuery();
 
   # maybe should update stable id ???
 } ## end sub update
@@ -2150,7 +2150,7 @@ void GeneAdaptor_cacheGeneSeqMappings(GeneAdaptor *ga) {
           GeneAdaptor_getSpeciesId(ga));
 
   StatementHandle *sth = ga->prepare((BaseAdaptor *)ga,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   ResultRow *row = sth->fetchRow(sth);
   char *sequenceLevel = row->getStringCopyAt(row, 0);
@@ -2234,7 +2234,7 @@ sub fetch_all_by_exon_supporting_evidence {
   $sth->bind_param(2, $hit_name,     SQL_VARCHAR);
   $sth->bind_param(3, $analysis->dbID(), SQL_INTEGER) if ($analysis);
 
-  $sth->execute();
+  $sth->executeQuery();
 
   my @genes;
 
@@ -2299,7 +2299,7 @@ sub fetch_all_by_transcript_supporting_evidence {
   $sth->bind_param(2, $hit_name,     SQL_VARCHAR);
   $sth->bind_param(3, $analysis->dbID(), SQL_INTEGER) if ($analysis);
 
-  $sth->execute();
+  $sth->executeQuery();
 
   my @genes;
 
@@ -2361,7 +2361,7 @@ sub fetch_nearest_Gene_by_Feature {
     # MAYBE set the result of prepare to be static in case lots of calls.
     #
     my $sql1_sth = $self->prepare($sql1) || die "Could not prepare $sql1";
-    $sql1_sth->execute($start, $seq_region_id, $start)
+    $sql1_sthQuery->execute($start, $seq_region_id, $start)
       || die "Could not execute sql";
     $sql1_sth->bind_columns(\$gene_id, \$min_dist)
       || die "Could mot bin columns";
@@ -2384,7 +2384,7 @@ sub fetch_nearest_Gene_by_Feature {
     my $sql2_sth = $self->prepare($sql2) || die "could not prepare $sql2";
 
     my ($tmp_min_dist, $tmp_gene_id);
-    $sql2_sth->execute($end, $seq_region_id, $end)
+    $sql2_sthQuery->execute($end, $seq_region_id, $end)
       || die "Could not execute sql";
     $sql2_sth->bind_columns(\$tmp_gene_id, \$tmp_min_dist)
       || die "Could mot bin columns";
@@ -2414,7 +2414,7 @@ sub fetch_nearest_Gene_by_Feature {
     # MAYBE set the result of prepare to be static in case lots of calls.
     #
     my $sql1_sth = $self->prepare($sql1) || die "Could not prepare $sql1";
-    $sql1_sth->execute($start, $seq_region_id, $start)
+    $sql1_sthQuery->execute($start, $seq_region_id, $start)
       || die "Could not execute sql";
     $sql1_sth->bind_columns(\$gene_id, \$min_dist)
       || die "Could mot bin columns";
@@ -2442,7 +2442,7 @@ sub fetch_nearest_Gene_by_Feature {
     my $sql2_sth = $self->prepare($sql2) || die "could not prepare $sql2";
 
     my ($tmp_min_dist, $tmp_gene_id);
-    $sql2_sth->execute($end, $seq_region_id, $end)
+    $sql2_sthQuery->execute($end, $seq_region_id, $end)
       || die "Could not execute sql";
     $sql2_sth->bind_columns(\$tmp_gene_id, \$tmp_min_dist)
       || die "Could mot bin columns";
@@ -2535,7 +2535,7 @@ sub get_display_xref {
   ));
 
   $sth->bind_param(1, $gene->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
 
   my ($db_name, $display_label, $xref_id) = $sth->fetchrow_array();
   if (!defined $xref_id) {
@@ -2571,7 +2571,7 @@ sub get_description {
                             WHERE  gene_id = ?");
 
   $sth->bind_param(1, $dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
 
   my @array = $sth->fetchrow_array();
   return $array[0];
@@ -2612,7 +2612,7 @@ sub get_stable_entry_info {
   my $sth = $self->prepare("SELECT stable_id, " . $created_date . "," . $modified_date . ", version FROM gene WHERE gene_id = ?");
 
   $sth->bind_param(1, $gene->dbID, SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
 
   my @array = $sth->fetchrow_array();
   $gene->{'stable_id'} = $array[0];

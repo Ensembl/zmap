@@ -1580,7 +1580,7 @@ sub remove {
 
   my $sth = $self->prepare("DELETE FROM $table WHERE ${table}_id = ?");
   $sth->bind_param(1,$feature->dbID,SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
 
   #unset the feature dbID ad adaptor
   $feature->dbID(undef);
@@ -1632,7 +1632,7 @@ sub remove_by_Slice {
   $sth->bind_param(1,$seq_region_id,SQL_INTEGER);
   $sth->bind_param(2,$start,SQL_INTEGER);
   $sth->bind_param(3,$end,SQL_INTEGER);
-  $sth->execute();
+  $sth->executeQuery();
   $sth->finish();
 }
 */
@@ -1677,7 +1677,7 @@ Vector *BaseFeatureAdaptor_listSeqRegionIds(BaseFeatureAdaptor *bfa, char *table
 
   StatementHandle *sth = bfa->prepare((BaseAdaptor *)bfa,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   ResultRow *row;
   while ((row = sth->fetchRow(sth))) {
@@ -1766,7 +1766,7 @@ sub remove_by_analysis_id {
 #  warn "SQL : $sql";
       
   my $sth = $self->prepare($sql);
-  $sth->execute();
+  $sth->executeQuery();
   $sth->finish();
 }
 
@@ -1782,7 +1782,7 @@ sub remove_by_feature_id {
 #  warn "SQL : $sql";
       
   my $sth = $self->prepare($sql);
-  $sth->execute();
+  $sth->executeQuery();
   $sth->finish();
 }
 

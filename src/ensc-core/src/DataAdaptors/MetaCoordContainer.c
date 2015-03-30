@@ -63,7 +63,7 @@ MetaCoordContainer *MetaCoordContainer_new(DBAdaptor *dba) {
   strcat(qStr,")");
 
   sth = mcc->prepare((BaseAdaptor *)mcc,qStr,strlen(qStr)); 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   ResultRow *row;
   while ((row = sth->fetchRow(sth))) {
@@ -283,8 +283,8 @@ void MetaCoordContainer_addFeatureType(MetaCoordContainer *mcc, CoordSystem *cs,
                     length, CoordSystem_getDbID(cs), lcTable, length);
 
       StatementHandle *sth = mcc->prepare((BaseAdaptor *)mcc,qStr,strlen(qStr)); 
-      //$sth->execute( $cs->dbID(), $table );
-      sth->execute(sth);
+      //$sthQuery->execute( $cs->dbID(), $table );
+      sth->executeQuery(sth);
 
       long *maxLenP;
       if ((maxLenP = calloc(1,sizeof(long))) == NULL) {
@@ -314,9 +314,9 @@ void MetaCoordContainer_addFeatureType(MetaCoordContainer *mcc, CoordSystem *cs,
 
   StatementHandle *sth = mcc->prepare((BaseAdaptor *)mcc,qStr,strlen(qStr)); 
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
-  //$sth->execute($cs->dbID, $table, $length );
+  //$sthQuery->execute($cs->dbID, $table, $length );
 
   //update the internal cache
   // First the featureCache

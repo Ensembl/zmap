@@ -270,7 +270,7 @@ Slice *SliceAdaptor_fetchByRegion(SliceAdaptor *sa, char *coordSystemName, char 
 
     StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
 
-    sth->execute(sth);
+    sth->executeQuery(sth);
 
     if ( sth->numRows(sth) == 0 ) {
       sth->finish(sth);
@@ -326,7 +326,7 @@ Slice *SliceAdaptor_fetchByRegion(SliceAdaptor *sa, char *coordSystemName, char 
 
       sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
 
-      sth->execute(sth);
+      sth->executeQuery(sth);
 
       int prefixLen = strlen(seqRegionName) + 1;
       long highVer  = 0L;
@@ -1044,7 +1044,7 @@ Slice *SliceAdaptor_fetchBySeqRegionId(SliceAdaptor *sa, IDType seqRegionId, lon
                   "WHERE sr.seq_region_id = "IDFMTSTR, seqRegionId );
 
     StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
 
     if ( sth->numRows(sth) == 0 ) {
       sth->finish(sth);
@@ -1133,7 +1133,7 @@ IDType SliceAdaptor_getSeqRegionId(SliceAdaptor *sa, Slice *slice) {
   StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
 
   //force seq_region_name cast to string so mysql cannot treat as int
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   if (sth->numRows(sth) != 1) {
     fprintf(stderr, "Non existent or ambiguous seq_region:\n  coord_system=["IDFMTSTR"],\n   name=[%s]\n", csId, seqRegionName);
@@ -1241,7 +1241,7 @@ Vector *SliceAdaptor_fetchAll(SliceAdaptor *sa, char *csName, char *csVersion, i
                   "AND cs.species_id = "IDFMTSTR, SliceAdaptor_getSpeciesID(sa) );
 
     StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
 
     ResultRow *row;
     while ((row = sth->fetchRow(sth))) {
@@ -1270,7 +1270,7 @@ Vector *SliceAdaptor_fetchAll(SliceAdaptor *sa, char *csName, char *csVersion, i
                   "AND cs.species_id = "IDFMTSTR, SliceAdaptor_getSpeciesID(sa) );
 
     StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
 
     ResultRow *row;
     while ((row = sth->fetchRow(sth))) {
@@ -1303,7 +1303,7 @@ Vector *SliceAdaptor_fetchAll(SliceAdaptor *sa, char *csName, char *csVersion, i
                   "AND cs.species_id = "IDFMTSTR, SliceAdaptor_getSpeciesID(sa) );
 
     sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
   } else {
     sprintf(qStr,"SELECT sr.seq_region_id, sr.name, "
                         "sr.length, sr.coord_system_id "
@@ -1311,7 +1311,7 @@ Vector *SliceAdaptor_fetchAll(SliceAdaptor *sa, char *csName, char *csVersion, i
                  "WHERE sr.coord_system_id = "IDFMTSTR, CoordSystem_getDbID(origCs) );
 
     sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
   }
 
   int cacheCount = 0;
@@ -1414,7 +1414,7 @@ Vector *SliceAdaptor_fetchAllKaryotype(SliceAdaptor *sa) {
 
   StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   Vector *out = Vector_new();
 
@@ -1456,7 +1456,7 @@ int SliceAdaptor_isTopLevel(SliceAdaptor *sa, IDType id) {
 
   StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   int isTop = 0;
   if (sth->numRows(sth) > 0) {
@@ -1488,7 +1488,7 @@ int SliceAdaptor_hasKaryotype(SliceAdaptor *sa, IDType id) {
                "AND at.code = 'karyotype_rank'", id);
 
   StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   int hasKary = 0;
   if (sth->numRows(sth) > 0) {
@@ -1520,7 +1520,7 @@ int SliceAdaptor_getKaryotypeRank(SliceAdaptor *sa, IDType id) {
                 "AND at.code = 'karyotype_rank'", id);
 
   StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
 // NIY: perl has these lines which shouldn't be there
 //  my $code;
@@ -1559,7 +1559,7 @@ int SliceAdaptor_isReference(SliceAdaptor *sa, IDType id) {
                "AND at.code = 'non_ref'", id);
 
   StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   int isRef = 1;
   if (sth->numRows(sth) > 0) {
@@ -1616,7 +1616,7 @@ sub fetch_by_band {
          "where k.band like ? and k.seq_region_id = s.seq_region_id");
 
   $sth->bind_param(1,"$band%",SQL_VARCHAR);
-  $sth->execute();
+  $sth->executeQuery();
   my ( $seq_region_name, $discrepancy, $seq_region_start, $seq_region_end) = $sth->fetchrow_array;
 
   if($seq_region_name && $discrepancy>0) {
@@ -1654,7 +1654,7 @@ Slice *SliceAdaptor_fetchByChrBand(SliceAdaptor *sa, char *chr, char *band) {
                       "AND k.band LIKE '%s%%%%'", seqRegionId, band );
 
   StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
 // How can we have undefined ??? When no row???
   if (sth->numRows(sth) == 1) {
@@ -2361,7 +2361,7 @@ sub store {
   $sth->bind_param(2,$sr_len,SQL_INTEGER);
   $sth->bind_param(3,$cs->dbID,SQL_INTEGER);
 
-  $sth->execute();
+  $sth->executeQuery();
 
   my $seq_region_id = $sth->{'mysql_insertid'};
 
@@ -2491,7 +2491,7 @@ sub store_assembly{
   $sth->bind_param(6,$cmp_slice->end,SQL_INTEGER);
   $sth->bind_param(7,$ori,SQL_INTEGER);
 
-  $sth->execute();
+  $sth->executeQuery();
 
   #use Data::Dumper qw( Dumper );
   #warn Dumper( $self->db->{seq_region_cache} );
@@ -2544,7 +2544,7 @@ void SliceAdaptor_buildExceptionCache(SliceAdaptor *sa) {
 
   StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   sa->asmExcCache = IDHash_new(IDHASH_SMALL);
 
@@ -2596,7 +2596,7 @@ void SliceAdaptor_cacheTopLevelSeqMappings(SliceAdaptor *sa) {
                "AND   species_id = "IDFMTSTR, SliceAdaptor_getSpeciesID(sa));
 
   StatementHandle *sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   ResultRow *row = sth->fetchRow(sth);
 // think I need to make a copy of this
@@ -2623,7 +2623,7 @@ void SliceAdaptor_cacheTopLevelSeqMappings(SliceAdaptor *sa) {
                 "AND   cs.species_id = "IDFMTSTR, SliceAdaptor_getSpeciesID(sa));
 
   sth = sa->prepare((BaseAdaptor *)sa,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
 // csn in perl is now csName
   while ((row = sth->fetchRow(sth))) {
@@ -2653,7 +2653,7 @@ sub _build_circular_slice_cache {
                         . "WHERE code = 'circular_seq' and cs.species_id = ?");
 
   $sth->bind_param( 1, $self->species_id(), SQL_INTEGER );
-  $sth->execute();
+  $sth->executeQuery();
 
   my $id;
   my %hash;
@@ -2777,7 +2777,7 @@ sub fetch_by_clone_accession{
                      . "AND    cs.species_id = ?" );
 
     $sth->bind_param( 1, $self->species_id(), SQL_INTEGER );
-    $sth->execute();
+    $sth->executeQuery();
 
     if(!$sth->rows()) {
       $sth->finish();

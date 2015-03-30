@@ -167,7 +167,7 @@ int SimpleFeatureAdaptor_store(BaseFeatureAdaptor *bfa, Vector *features) {
 */
     IDType seqRegionId = BaseFeatureAdaptor_preStore(bfa, (SeqFeature*)feat);
 
-    sth->execute(sth, (IDType)(seqRegionId), 
+    sth->executeQuery(sth, (IDType)(seqRegionId), 
                  SimpleFeature_getSeqRegionStart((SeqFeature*)feat), 
                  SimpleFeature_getSeqRegionEnd((SeqFeature*)feat),
                  SimpleFeature_getSeqRegionStrand((SeqFeature*)feat),

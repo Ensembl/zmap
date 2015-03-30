@@ -52,7 +52,7 @@ Clone *CloneAdaptor_fetchByDbID(CloneAdaptor *ca, IDType dbID) {
     IDFMTSTR, dbID);
 
   sth = ca->prepare((BaseAdaptor *)ca,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   row = sth->fetchRow(sth);
   if( row == NULL ) {

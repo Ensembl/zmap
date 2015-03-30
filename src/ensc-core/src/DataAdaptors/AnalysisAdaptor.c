@@ -55,7 +55,7 @@ Analysis **AnalysisAdaptor_fetchAll(AnalysisAdaptor *aa) {
     " FROM   analysis");
 
   sth = aa->prepare((BaseAdaptor *)aa,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   while ((row = sth->fetchRow(sth))) {
     Analysis *anal = AnalysisAdaptor_analysisFromRow(aa, row);
@@ -94,7 +94,7 @@ Analysis *AnalysisAdaptor_fetchByDbID(AnalysisAdaptor *aa, IDType dbID) {
     
     sth = aa->prepare((BaseAdaptor *)aa,qStr,strlen(qStr));
   
-    sth->execute(sth);
+    sth->executeQuery(sth);
 
     row = sth->fetchRow(sth);
     if( row == NULL ) {
@@ -133,7 +133,7 @@ Analysis *AnalysisAdaptor_fetchByLogicName(AnalysisAdaptor *aa, char *logicName)
       " WHERE  logic_name = '%s'", logicName);
   
     sth = aa->prepare((BaseAdaptor *)aa,qStr,strlen(qStr));
-    sth->execute(sth);
+    sth->executeQuery(sth);
   
     row = sth->fetchRow(sth);
     if( row == NULL ) {
@@ -260,7 +260,7 @@ IDType AnalysisAdaptor_store(AnalysisAdaptor *aa, Analysis *analysis) {
   sprintf(qStr, fmtStr, createdQStr, logicNameQStr, dbQStr, dbVerQStr, dbFileQStr, programQStr, progVerQStr, progFileQStr, paramQStr, moduleQStr, modVerQStr, gffSrcQStr, gffFeatQStr);
 
   sth = aa->prepare((BaseAdaptor *)aa,qStr,strlen(qStr));
-  int nRowInserted = sth->execute(sth);
+  int nQueryRowInserted = sth->execute(sth);
   dbID = sth->getInsertId(sth);
   sth->finish(sth);
 
@@ -281,7 +281,7 @@ IDType AnalysisAdaptor_store(AnalysisAdaptor *aa, Analysis *analysis) {
 
       sprintf(qStr,"SELECT created FROM analysis WHERE analysis_id = " IDFMTSTR, dbID); 
       sth = aa->prepare((BaseAdaptor *)aa,qStr,strlen(qStr));
-      sth->execute(sth);
+      sth->executeQuery(sth);
       row = sth->fetchRow(sth);
       Analysis_setCreated(analysis, row->getStringAt(row,0));
       sth->finish(sth);

@@ -42,7 +42,7 @@ StatementHandle *MysqlStatementHandle_new(DBConnection *dbc, char *query) {
 
   sth->funcs = &mysqlStatementHandleFuncs;
 
-  sth->execute     = MysqlStatementHandle_execute;
+  sth->executeQuery     = MysqlStatementHandle_execute;
   sth->fetchRow    = MysqlStatementHandle_fetchRow;
   sth->numRows     = MysqlStatementHandle_numRows;
   sth->finish      = MysqlStatementHandle_finish;

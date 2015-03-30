@@ -83,7 +83,7 @@ Vector *TranscriptSupportingFeatureAdaptor_fetchAllByTranscript(TranscriptSuppor
 
   sth = tsfa->prepare((BaseAdaptor *)tsfa, qStr, strlen(qStr));
 
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   pafa = DBAdaptor_getProteinAlignFeatureAdaptor(tsfa->dba);
   dafa = DBAdaptor_getDNAAlignFeatureAdaptor(tsfa->dba);

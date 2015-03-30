@@ -194,7 +194,7 @@ void AttributeAdaptor_doStoreAllByTypeAndTableAndID(AttributeAdaptor *ata, char 
 
     IDType atId = AttributeAdaptor_storeType(ata, attrib);
 
-    sth->execute(sth, objectId, atId, Attribute_getValue(attrib));
+    sth->executeQuery(sth, objectId, atId, Attribute_getValue(attrib));
   }
 
   sth->finish(sth);
@@ -265,7 +265,7 @@ sub remove_from_{
                          "WHERE ".$type."_id = ?");
     $sth->bind_param(1,$object_id,SQL_INTEGER);
   }
-  $sth->execute();
+  $sth->executeQuery();
 
   $sth->finish();
 
@@ -363,7 +363,7 @@ Vector *AttributeAdaptor_doFetchAllByTypeAndTableAndID(AttributeAdaptor *ata, ch
 //  }
 		   
   StatementHandle *sth = ata->prepare((BaseAdaptor *)ata,qStr,strlen(qStr));
-  sth->execute(sth);
+  sth->executeQuery(sth);
 
   Vector *results = AttributeAdaptor_objectsFromStatementHandle(ata, sth);
 
