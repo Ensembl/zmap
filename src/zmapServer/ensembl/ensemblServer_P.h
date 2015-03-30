@@ -37,9 +37,6 @@ typedef struct _EnsemblServerStruct
   char *config_file ;
 
   /* Connection details. */
-  DBAdaptor *dba ;
-  SliceAdaptor *slice_adaptor ;
-  SequenceAdaptor *seq_adaptor ;
   Slice *slice ;
   //GMutex* mutex ;                                           /* lock to protect ensc-core library
   pthread_mutex_t mutex ;                                   /* lock to protect ensc-core library

@@ -158,6 +158,9 @@ static void addMapping(ZMapFeatureContext feature_context, int req_start, int re
 
 static ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, ZMapStyleMode feature_mode, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
+static Slice* getSlice(EnsemblServer server, const char *seq_name, long start, long end, int strand) ;
+static char* getSequence(EnsemblServer server, const char *seq_name, long start, long end, int strand) ;
+
 /*
  *             Server interface functions.
  */
@@ -263,12 +266,11 @@ static gboolean createConnection(void **server_out,
 
 static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen req_open)
 {
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   EnsemblServer server = (EnsemblServer)server_in ;
+  DBAdaptor *dba = NULL ;
 
   zMapReturnValIfFail(server && req_open && req_open->sequence_map, result) ;
-
-  pthread_mutex_lock(&server->mutex) ;
 
   server->sequence = g_strdup(req_open->sequence_map->sequence) ;
   server->zmap_start = req_open->zmap_start ;
@@ -276,36 +278,18 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
   ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, 
                  "Opening connection for '%s'", server->db_name) ;
+  server->slice = getSlice(server, server->sequence, server->zmap_start, server->zmap_end, STRAND_UNDEF) ;
 
-  server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
-
-  if (server->dba && server->dba->dbc)
+  if (server->slice)
     {
-      server->slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
-      server->seq_adaptor = DBAdaptor_getSequenceAdaptor(server->dba);
-
-      server->slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
-                                                 server->sequence, server->zmap_start, server->zmap_end, 
-                                                 STRAND_UNDEF, NULL, 0);
-
-      if (server->slice_adaptor && server->seq_adaptor && server->slice)
-        {
-          result = ZMAP_SERVERRESPONSE_OK ;
-        }
-      else
-        {
-          setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)", 
-                                            server->db_name, server->sequence, server->zmap_start, server->zmap_end)) ;
-          ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
-        }
+      result = ZMAP_SERVERRESPONSE_OK ;
     }
   else
     {
-      setErrMsg(server, g_strdup_printf("Failed to create database connection for %s", server->db_name)) ;
+      setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)", 
+                                        server->db_name, server->sequence, server->zmap_start, server->zmap_end)) ;
       ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
     }
-
-  pthread_mutex_unlock(&server->mutex) ;
 
   return result ;
 }
@@ -315,10 +299,14 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
-  if (server && server->dba)
+  pthread_mutex_lock(&server->mutex) ;
+  DBAdaptor *dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
+  pthread_mutex_unlock(&server->mutex) ;
+
+  if (server && dba)
     {
       pthread_mutex_lock(&server->mutex) ;
-      char *assembly_type = DBAdaptor_getAssemblyType(server->dba) ;
+      char *assembly_type = DBAdaptor_getAssemblyType(dba) ;
       pthread_mutex_unlock(&server->mutex) ;
 
       if (assembly_type)
@@ -445,7 +433,9 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
+  pthread_mutex_lock(&server->mutex) ;
   Vector *features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
+  pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
 
@@ -469,7 +459,9 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
+  pthread_mutex_lock(&server->mutex) ;
   Vector *features =  Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+  pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
@@ -491,8 +483,10 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
                                           ZMapFeatureBlock feature_block)
 {
   gboolean result = TRUE ;
-
+  
+  pthread_mutex_lock(&server->mutex) ;
   Vector *features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+  pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
@@ -516,7 +510,9 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
+  pthread_mutex_lock(&server->mutex) ;
   Vector *features =  Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
+  pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
@@ -540,7 +536,9 @@ static gboolean getAllTranscripts(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
+  pthread_mutex_lock(&server->mutex) ;
   Vector *features = Slice_getAllTranscripts(server->slice, 1, NULL, NULL) ;
+  pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
@@ -700,6 +698,9 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
+  
+  if (server->slice)
+    Slice_free(server->slice) ;
 
   if (server->sequence)
     g_free(server->sequence) ;
@@ -731,8 +732,6 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   GList *next_seq ;
 
-  pthread_mutex_lock(&server->mutex) ;
-
   /* We need to loop round finding each sequence and then fetching its dna... */
   next_seq = sequences_inout ;
   while (next_seq)
@@ -741,11 +740,7 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
 
       char *seq_name = g_strdup(g_quark_to_string(sequence->name)) ;
 
-      /* chromosome, clone, contig or supercontig */
-      Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
-                                                seq_name, POS_UNDEF, POS_UNDEF, STRAND_UNDEF, NULL, 0);
-      
-      char *seq = SequenceAdaptor_fetchBySliceStartEndStrand(server->seq_adaptor, slice, 1, POS_UNDEF, 1);
+      char *seq = getSequence(server, seq_name, 1, POS_UNDEF, STRAND_UNDEF) ;
 
       if (seq)
         {
@@ -765,13 +760,8 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
       if (seq_name)
         g_free(seq_name) ;
       
-      if (slice)
-        Slice_free(slice) ;
-
       next_seq = g_list_next(next_seq) ;
     }
-
-  pthread_mutex_unlock(&server->mutex) ;
 
   return result ;
 }
@@ -964,13 +954,13 @@ static ZMapFeature makeFeatureTranscript(Transcript *rsf,
   zMapFeatureTranscriptInit(feature);
   zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
 
-  addTranscriptExons(rsf, feature) ;
+  transcriptAddExons(rsf, feature) ;
 
   return feature ;
 }
 
 
-static void addTranscriptExons(Transcript *rsf, ZMapFeature feature)
+static void transcriptAddExons(Transcript *rsf, ZMapFeature feature)
 {
   if (rsf && feature)
     {
@@ -1251,16 +1241,11 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
   EnsemblServer server = get_features_data->server ;
 
-  pthread_mutex_lock(&server->mutex) ;
-
   getAllSimpleFeatures(server, get_features_data, feature_block) ;
   getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
   getAllDNAPepAlignFeatures(server, get_features_data, feature_block) ;
   getAllRepeatFeatures(server, get_features_data, feature_block) ;
   getAllTranscripts(server, get_features_data, feature_block) ;
-
-  pthread_mutex_unlock(&server->mutex) ;
-
   //getAllGenes(server, get_features_data, feature_block) ;
   
   return ;
@@ -1278,13 +1263,7 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
   if (server->result != ZMAP_SERVERRESPONSE_OK)
     return ;
 
-  /* chromosome, clone, contig or supercontig */
-  slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
-                                     server->sequence, server->zmap_start, server->zmap_end, 
-                                     STRAND_UNDEF, NULL, 0);
- 
-  if (slice)
-    sequence = SequenceAdaptor_fetchBySliceStartEndStrand(server->seq_adaptor, slice, POS_UNDEF, POS_UNDEF, 1);
+  sequence = getSequence(server, server->sequence, server->zmap_start, server->zmap_end, STRAND_UNDEF) ;
 
   if (sequence)
     {
@@ -1363,4 +1342,86 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
     Slice_free(slice);
 
   return ;
+}
+
+
+static Slice* getSlice(EnsemblServer server,
+                       const char *seq_name,
+                       long start,
+                       long end,
+                       int strand)
+{
+  Slice *slice = NULL ;
+
+  pthread_mutex_lock(&server->mutex) ; 
+  DBAdaptor *dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
+  pthread_mutex_unlock(&server->mutex) ;
+
+  if (dba && dba->dbc)
+    {
+      pthread_mutex_lock(&server->mutex) ;
+      SliceAdaptor *slice_adaptor = DBAdaptor_getSliceAdaptor(dba);
+
+      slice = SliceAdaptor_fetchByRegion(slice_adaptor, "chromosome", 
+                                         seq_name, start, end, 
+                                         strand, NULL, 0);
+      pthread_mutex_unlock(&server->mutex) ;
+      
+      if (slice_adaptor && slice)
+        {
+          server->result = ZMAP_SERVERRESPONSE_OK ;
+        }
+      else
+        {
+          setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)", 
+                                            server->db_name, server->sequence, server->zmap_start, server->zmap_end)) ;
+          ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+        }
+    }
+  else
+    {
+      setErrMsg(server, g_strdup_printf("Failed to create database connection for %s", server->db_name)) ;
+      ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+    }
+
+  return slice ;
+}
+
+
+static char* getSequence(EnsemblServer server, 
+                         const char *seq_name, 
+                         long start,
+                         long end,
+                         int strand)
+{
+  char *seq = NULL ;
+
+  pthread_mutex_lock(&server->mutex) ;
+    
+  DBAdaptor *dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
+  
+  if (dba && dba->dbc)
+    {
+      SliceAdaptor *slice_adaptor = DBAdaptor_getSliceAdaptor(dba);
+  
+      Slice *slice = SliceAdaptor_fetchByRegion(slice_adaptor, "chromosome", 
+                                                seq_name, start, end, 
+                                                strand, NULL, 0);
+      
+      if (slice_adaptor && slice)
+        {
+          SequenceAdaptor *seq_adaptor = DBAdaptor_getSequenceAdaptor(dba);
+
+          if (seq_adaptor)
+            {
+              seq = SequenceAdaptor_fetchBySliceStartEndStrand(seq_adaptor, slice, 1, POS_UNDEF, 1);
+            }
+
+          Slice_free(slice) ;
+        }
+    }
+  
+  pthread_mutex_unlock(&server->mutex) ;
+
+  return seq ;
 }
