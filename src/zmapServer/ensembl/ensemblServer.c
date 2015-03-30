@@ -268,7 +268,6 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   EnsemblServer server = (EnsemblServer)server_in ;
-  DBAdaptor *dba = NULL ;
 
   zMapReturnValIfFail(server && req_open && req_open->sequence_map, result) ;
 
@@ -892,16 +891,8 @@ static ZMapFeature makeFeatureGene(Gene *rsf,
 {
   ZMapFeature feature = NULL ;
 
-  ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
-
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
   const char *source = Analysis_getLogicName(analysis) ;
-
-  const char *feature_name = Gene_getExternalName(rsf) ;
-
-  //feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
-  //                     feature_mode, source, 0, 0, 
-  //                     get_features_data, feature_block) ;
 
   geneAddTranscripts(rsf, get_features_data, feature_block) ;
 
@@ -931,7 +922,7 @@ static ZMapFeature makeFeatureTranscript(Transcript *rsf,
 {
   ZMapFeature feature = NULL ;
 
-  ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
+  ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
 
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
   const char *source = Analysis_getLogicName(analysis) ;
@@ -970,7 +961,11 @@ static void transcriptAddExons(Transcript *rsf, ZMapFeature feature)
       for (i = 0; i < Vector_getNumElement(exons); ++i) 
         {
           Exon *exon = Vector_getElementAt(exons,i);
+          ZMapSpanStruct span = {exon->start + feature->x1, exon->end + feature->x1};
+          zMapFeatureAddTranscriptExonIntron(feature, &span, NULL) ;
         }
+
+      zMapFeatureTranscriptRecreateIntrons(feature) ;
     }
 }
 
