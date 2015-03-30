@@ -204,10 +204,10 @@ IDType DBEntryAdaptor_store(DBEntryAdaptor *dbea, DBEntry *exObj,
 
       for (i=0;i<Vector_getNumElement(synonyms); i++) {	    
         char *syn = Vector_getElementAt(synonyms,i);
-        checkSth->execute(checkSth, dbX, syn);
+        checkSth->executeQuery(checkSth, dbX, syn);
         row = checkSth->fetchRow(checkSth);
         if (!row) {
-          storeSth->execute(storeSth, dbX, syn);
+          storeSth->executeQuery(storeSth, dbX, syn);
         }
       }
   	
