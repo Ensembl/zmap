@@ -436,20 +436,6 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 
   feature_context->src_feature_set_names = get_features_data.feature_set_names ;
 
-
-  /* Merge the new features into the context */
-  //ZMapFeature feature_copy = NULL ;
-  //ZMapFeatureContext context_copy = zmapViewCopyContextAll(feature_context, feature, feature_set, &feature_list, &feature_copy) ;
-  //
-  //if (context_copy && feature_list)
-  //  zmapViewMergeNewFeatures(view, &context_copy, NULL, &feature_list) ;
-  //
-  //if (context_copy && feature_copy)
-  //  zmapViewDrawDiffContext(view, &context_copy, feature_copy) ;
-  //
-  //if (context_copy)
-  //  zMapFeatureContextDestroy(context_copy, TRUE) ;
-
   return result ;
 }
 
