@@ -149,7 +149,7 @@ void *zmapNewThread(void *thread_args)
           /* The handling below is not now correct, if a call fails we need to kill the thread
            * we can't cope with dangling threads....we will need to set the thread_died flag */
           switch (slave_response)
-          {
+            {
             case ZMAPTHREAD_RETURNCODE_OK:
               {
                 ZMAPTHREAD_DEBUG(thread, "%s: %s", zMapThreadReturnCode2ExactStr(slave_response), "got all data....") ;
@@ -160,8 +160,8 @@ void *zmapNewThread(void *thread_args)
                 break ;
               }
             case ZMAPTHREAD_RETURNCODE_SOURCEEMPTY:
-	           case ZMAPTHREAD_RETURNCODE_REQFAIL:
-	             {
+            case ZMAPTHREAD_RETURNCODE_REQFAIL:
+              {
                 char *error_msg ;
 
                 ZMAPTHREAD_DEBUG(thread, "%s", "request failed....") ;
@@ -236,14 +236,14 @@ void *zmapNewThread(void *thread_args)
                 char * error_msg = "OK";
 
                 /* this message goes to the otterlace features loaded message
-	              	   and no error gets mangled into a string that says (Server Pipe: - null)
-               		   there's no obvious way to get the real exit status here
-		                 due to the structure of the code and data
-		                 its unfeasably difficult to detect a sucessful server here and we can only report
-		                  "(no error: ( no error ( no error)))"
-                 */
+                   and no error gets mangled into a string that says (Server Pipe: - null)
+                   there's no obvious way to get the real exit status here
+                   due to the structure of the code and data
+                   its unfeasably difficult to detect a sucessful server here and we can only report
+                   "(no error: ( no error ( no error)))"
+                */
                 error_msg = g_strdup_printf("%s %s - %s (%s)", ZMAPTHREAD_SLAVEREQUEST,
-	                                   				    zMapThreadReturnCode2ExactStr(slave_response), "server terminated", slave_error) ;
+                                            zMapThreadReturnCode2ExactStr(slave_response), "server terminated", slave_error) ;
                 zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
 
                 call_clean = 0 ;
@@ -272,7 +272,7 @@ void *zmapNewThread(void *thread_args)
    * Most times we will not get here because we will be pthread_cancel'd and go straight into
    * our clean_up routine. */
 
-  clean_up:
+ clean_up:
 
   ZMAPTHREAD_DEBUG(thread, "%s", "main thread routine exitting....") ;
 
