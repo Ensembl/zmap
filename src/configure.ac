@@ -22,7 +22,7 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # Check if we have mysql
 AX_LIB_MYSQL()
-AM_CONDITIONAL([USE_MYSQL], [test "$HAVE_MYSQL" -eq 1])
+AM_CONDITIONAL([USE_MYSQL], [ test $HAVE_MYSQL -eq 1 ])
 
 
 # Check if this is a Git repository and, if so, use output
@@ -518,7 +518,7 @@ echo \
      <program> - build specific program
 "
 
-AM_COND_IF([USE_MYSQL], [echo " Warning: mysql not found; excluding ensembl server"])
+AM_COND_IF([USE_MYSQL], [], [echo " Warning: mysql not found; excluding ensembl server"; echo])
 
 
 echo "---------------------------------------------------------------------
