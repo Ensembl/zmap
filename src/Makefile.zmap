@@ -1,0 +1,12 @@
+#
+# Common defines for zmap only.
+#
+
+
+CC = g++
+
+
+
+include $(top_srcdir)/Makefile.common
+
+
