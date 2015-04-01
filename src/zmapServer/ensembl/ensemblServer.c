@@ -698,8 +698,8 @@ static ZMapServerResponseType destroyConnection(void *server_in)
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
   
-  if (server->slice)
-    Slice_free(server->slice) ;
+  //if (server->slice)
+  //  Slice_free(server->slice) ;
 
   if (server->sequence)
     g_free(server->sequence) ;
