@@ -879,15 +879,26 @@ static ZMapFeature makeFeatureSimple(SimpleFeature *rsf,
   ZMapFeature feature = NULL ;
 
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
-  
+  const char *feature_name = NULL ;
+  const char *source = NULL ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
-  const char *source = Analysis_getGFFSource(analysis) ;
 
-  const char *feature_name = SimpleFeature_getDisplayLabel(rsf) ;
+  feature_name = SimpleFeature_getDisplayLabel(rsf) ;
 
-  feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, 0, 0, 
-                        get_features_data, feature_block) ;
+  if (analysis)
+    source = Analysis_getGFFSource(analysis) ;
+
+  if (source && feature_name)
+    {
+      feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
+                            feature_mode, source, 0, 0, 
+                            get_features_data, feature_block) ;
+    }
+
+  if (!feature)
+    {
+      zMapLogWarning("Failed to create feature '%s' with source '%s'", feature_name, source) ;
+    }
 
   return feature ;
 }
@@ -900,16 +911,29 @@ static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf,
   ZMapFeature feature = NULL ;
 
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
-
-  Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
-  const char *source = Analysis_getGFFSource(analysis) ;
-
+  const char *feature_name = NULL ;
+  const char *source = NULL ;
   RepeatConsensus *consensus = RepeatFeature_getConsensus(rsf) ;
-  const char *feature_name = RepeatConsensus_getName(consensus) ;
+  Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
-  feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, 0, 0, 
-                        get_features_data, feature_block) ;
+  if (consensus)
+    feature_name = RepeatConsensus_getName(consensus) ;
+
+  if (analysis)
+    source = Analysis_getGFFSource(analysis) ;
+
+  if (source && feature_name)
+    {
+
+      feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
+                            feature_mode, source, 0, 0, 
+                            get_features_data, feature_block) ;
+    }
+
+  if (!feature)
+    {
+      zMapLogWarning("Failed to create feature '%s' with source '%s'", feature_name, source) ;
+    }
 
   return feature ;
 }
@@ -920,9 +944,6 @@ static ZMapFeature makeFeatureGene(Gene *rsf,
                                    ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
-
-  Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
-  //const char *source = Analysis_getLogicName(analysis) ;
 
   geneAddTranscripts(rsf, get_features_data, feature_block) ;
 
@@ -953,30 +974,41 @@ static ZMapFeature makeFeatureTranscript(Transcript *rsf,
   ZMapFeature feature = NULL ;
 
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
-
+  const char *feature_name = NULL ;
+  const char *source = NULL ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
-  const char *source = Analysis_getLogicName(analysis) ;
 
-  const char *feature_name = Transcript_getExternalName(rsf) ;
+  feature_name = Transcript_getExternalName(rsf) ;
 
-  feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, 0, 0, 
-                        get_features_data, feature_block) ;
+  if (analysis)
+    source = Analysis_getGFFSource(analysis) ;
 
-  char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
-  char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
-  int coding_region_start = Transcript_getCodingRegionStart(rsf) ;
-  int coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
-  char cDNA_coding_start_is_set = Transcript_getcDNACodingStartIsSet(rsf) ;
-  char cDNA_coding_end_is_set = Transcript_getcDNACodingEndIsSet(rsf) ;
-  int cDNA_coding_start = Transcript_getCodingRegionStart(rsf) ;
-  int cDNA_coding_end = Transcript_getCodingRegionEnd(rsf) ;
+  if (source)
+    {
+      feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
+                            feature_mode, source, 0, 0, 
+                            get_features_data, feature_block) ;
 
-  zMapFeatureTranscriptInit(feature);
-  zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+      char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
+      char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
+      int coding_region_start = Transcript_getCodingRegionStart(rsf) ;
+      int coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
+      char cDNA_coding_start_is_set = Transcript_getcDNACodingStartIsSet(rsf) ;
+      char cDNA_coding_end_is_set = Transcript_getcDNACodingEndIsSet(rsf) ;
+      int cDNA_coding_start = Transcript_getCodingRegionStart(rsf) ;
+      int cDNA_coding_end = Transcript_getCodingRegionEnd(rsf) ;
 
-  Vector *exons = Transcript_getAllExons(rsf) ;
-  transcriptAddExons(feature, exons) ;
+      zMapFeatureTranscriptInit(feature);
+      zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+
+      Vector *exons = Transcript_getAllExons(rsf) ;
+      transcriptAddExons(feature, exons) ;
+    }
+
+  if (!feature)
+    {
+      zMapLogWarning("Failed to create feature '%s' with source '%s'", feature_name, source) ;
+    }
 
   return feature ;
 }
@@ -989,28 +1021,39 @@ static ZMapFeature makeFeaturePredictionTranscript(PredictionTranscript *rsf,
   ZMapFeature feature = NULL ;
 
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
-
+  const char *feature_name = NULL ;
+  const char *source = NULL ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
-  const char *source = Analysis_getLogicName(analysis) ;
 
-  const char *feature_name = PredictionTranscript_getDisplayLabel(rsf) ;
+  feature_name = PredictionTranscript_getDisplayLabel(rsf) ;
 
-  feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, 0, 0, 
-                        get_features_data, feature_block) ;
+  if (analysis)
+    source = Analysis_getGFFSource(analysis) ;
 
-  char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
-  char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
-  int coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
-  int coding_region_end = PredictionTranscript_getCodingRegionEnd(rsf) ;
-  char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
-  char end_is_set = PredictionTranscript_getEndIsSet(rsf) ;
+  if (source && feature_name)
+    {
+      feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
+                            feature_mode, source, 0, 0, 
+                            get_features_data, feature_block) ;
 
-  zMapFeatureTranscriptInit(feature);
-  zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+      char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
+      char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
+      int coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
+      int coding_region_end = PredictionTranscript_getCodingRegionEnd(rsf) ;
+      char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
+      char end_is_set = PredictionTranscript_getEndIsSet(rsf) ;
 
-  Vector *exons = PredictionTranscript_getAllExons(rsf, 0) ;
-  transcriptAddExons(feature, exons) ;
+      zMapFeatureTranscriptInit(feature);
+      zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+
+      Vector *exons = PredictionTranscript_getAllExons(rsf, 0) ;
+      transcriptAddExons(feature, exons) ;
+    }
+
+  if (!feature)
+    {
+      zMapLogWarning("Failed to create feature '%s' with source '%s'", feature_name, source) ;
+    }
 
   return feature ;
 }
