@@ -888,6 +888,9 @@ static ZMapFeature makeFeatureSimple(SimpleFeature *rsf,
   if (analysis)
     source = Analysis_getGFFSource(analysis) ;
 
+  if (analysis && !source)
+    source = Analysis_getLogicName(analysis) ;
+
   if (source && feature_name)
     {
       feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
@@ -921,6 +924,9 @@ static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf,
 
   if (analysis)
     source = Analysis_getGFFSource(analysis) ;
+
+  if (analysis && !source)
+    source = Analysis_getLogicName(analysis) ;
 
   if (source && feature_name)
     {
@@ -983,6 +989,9 @@ static ZMapFeature makeFeatureTranscript(Transcript *rsf,
   if (analysis)
     source = Analysis_getGFFSource(analysis) ;
 
+  if (analysis && !source)
+    source = Analysis_getLogicName(analysis) ;
+
   if (source)
     {
       feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
@@ -1029,6 +1038,9 @@ static ZMapFeature makeFeaturePredictionTranscript(PredictionTranscript *rsf,
 
   if (analysis)
     source = Analysis_getGFFSource(analysis) ;
+
+  if (analysis && !source)
+    source = Analysis_getLogicName(analysis) ;
 
   if (source && feature_name)
     {
