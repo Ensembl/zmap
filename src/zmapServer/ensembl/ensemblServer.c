@@ -52,6 +52,8 @@
 #include <DNAAlignFeature.h>
 #include <DNAPepAlignFeature.h>
 #include <RepeatFeature.h>
+#include <Transcript.h>
+#include <PredictionTranscript.h>
 
 #define ENSEMBL_PROTOCOL_STR "Ensembl"                            /* For error messages. */
 
@@ -131,6 +133,7 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server, GetFeaturesData get
 static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static gboolean getAllPredictionTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
@@ -149,10 +152,11 @@ static ZMapFeature makeFeatureSimple(SimpleFeature *rsf, GetFeaturesData get_fea
 static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType homol_type, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureTranscript(Transcript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeature makeFeaturePredictionTranscript(PredictionTranscript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureGene(Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
 static void geneAddTranscripts(Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static void transcriptAddExons(Transcript *rsf, ZMapFeature feature) ;
+static void transcriptAddExons(ZMapFeature feature, Vector *exons) ;
 
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
 
@@ -555,6 +559,32 @@ static gboolean getAllTranscripts(EnsemblServer server,
 }
 
 
+static gboolean getAllPredictionTranscripts(EnsemblServer server, 
+                                            GetFeaturesData get_features_data,
+                                            ZMapFeatureBlock feature_block)
+{
+  gboolean result = TRUE ;
+
+  pthread_mutex_lock(&server->mutex) ;
+  Vector *features = Slice_getAllPredictionTranscripts(server->slice, NULL, 1, NULL) ;
+  pthread_mutex_unlock(&server->mutex) ;
+
+  int i = 0 ;
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
+    {
+      PredictionTranscript *sf = Vector_getElementAt(features,i);
+      PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+
+      if (rsf)
+        makeFeaturePredictionTranscript(rsf, get_features_data, feature_block) ;
+      else
+        printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
+    }  
+
+  return result;
+}
+
+
 static gboolean getAllGenes(EnsemblServer server, 
                             GetFeaturesData get_features_data,
                             ZMapFeatureBlock feature_block)
@@ -892,7 +922,7 @@ static ZMapFeature makeFeatureGene(Gene *rsf,
   ZMapFeature feature = NULL ;
 
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
-  const char *source = Analysis_getLogicName(analysis) ;
+  //const char *source = Analysis_getLogicName(analysis) ;
 
   geneAddTranscripts(rsf, get_features_data, feature_block) ;
 
@@ -935,32 +965,65 @@ static ZMapFeature makeFeatureTranscript(Transcript *rsf,
 
   char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
   char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
-  char cDNA_coding_start_is_set = Transcript_getcDNACodingStartIsSet(rsf) ;
-  char cDNA_coding_end_is_set = Transcript_getcDNACodingEndIsSet(rsf) ;
   int coding_region_start = Transcript_getCodingRegionStart(rsf) ;
   int coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
+  char cDNA_coding_start_is_set = Transcript_getcDNACodingStartIsSet(rsf) ;
+  char cDNA_coding_end_is_set = Transcript_getcDNACodingEndIsSet(rsf) ;
   int cDNA_coding_start = Transcript_getCodingRegionStart(rsf) ;
   int cDNA_coding_end = Transcript_getCodingRegionEnd(rsf) ;
 
   zMapFeatureTranscriptInit(feature);
   zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
 
-  transcriptAddExons(rsf, feature) ;
+  Vector *exons = Transcript_getAllExons(rsf) ;
+  transcriptAddExons(feature, exons) ;
 
   return feature ;
 }
 
 
-static void transcriptAddExons(Transcript *rsf, ZMapFeature feature)
+static ZMapFeature makeFeaturePredictionTranscript(PredictionTranscript *rsf, 
+                                                   GetFeaturesData get_features_data,
+                                                   ZMapFeatureBlock feature_block)
 {
-  if (rsf && feature)
-    {
-      Vector *exons = Transcript_getAllExons(rsf) ;
+  ZMapFeature feature = NULL ;
 
+  ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
+
+  Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
+  const char *source = Analysis_getLogicName(analysis) ;
+
+  const char *feature_name = PredictionTranscript_getDisplayLabel(rsf) ;
+
+  feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
+                        feature_mode, source, 0, 0, 
+                        get_features_data, feature_block) ;
+
+  char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
+  char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
+  int coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
+  int coding_region_end = PredictionTranscript_getCodingRegionEnd(rsf) ;
+  char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
+  char end_is_set = PredictionTranscript_getEndIsSet(rsf) ;
+
+  zMapFeatureTranscriptInit(feature);
+  zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+
+  Vector *exons = PredictionTranscript_getAllExons(rsf, 0) ;
+  transcriptAddExons(feature, exons) ;
+
+  return feature ;
+}
+
+
+static void transcriptAddExons(ZMapFeature feature, Vector *exons)
+{
+  if (feature && exons)
+    {
       int i = 0 ;
       for (i = 0; i < Vector_getNumElement(exons); ++i) 
         {
-          Exon *exon = Vector_getElementAt(exons,i);
+          SeqFeature *exon = (SeqFeature*)Vector_getElementAt(exons,i);
           ZMapSpanStruct span = {exon->start + feature->x1, exon->end + feature->x1};
           zMapFeatureAddTranscriptExonIntron(feature, &span, NULL) ;
         }
@@ -1241,6 +1304,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   getAllDNAPepAlignFeatures(server, get_features_data, feature_block) ;
   getAllRepeatFeatures(server, get_features_data, feature_block) ;
   getAllTranscripts(server, get_features_data, feature_block) ;
+  getAllPredictionTranscripts(server, get_features_data, feature_block) ;
   //getAllGenes(server, get_features_data, feature_block) ;
   
   return ;
