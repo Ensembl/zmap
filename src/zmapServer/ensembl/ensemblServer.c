@@ -1188,9 +1188,6 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
   if (SO_accession && source)
     {
       if (!feature_name_id || *feature_name_id == 0)
-        feature_name_id = SeqFeature_getSeqName(rsf) ;
-
-      if (!feature_name_id || *feature_name_id == 0)
         feature_name_id = source ;
 
       if (!feature_name || *feature_name == 0)
