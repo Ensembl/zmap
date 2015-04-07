@@ -872,7 +872,7 @@ int zMapGFFParserGetNumFeatures(ZMapGFFParser parser)
  */
 void zMapGFFParserIncrementNumFeatures(ZMapGFFParser parser)
 {
-  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), 0) ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser)) ;
   ++parser->num_features ;
 }
 
@@ -948,7 +948,39 @@ gboolean zMapGFFSequenceDestroy(ZMapSequence sequence)
   return bReturn ;
 }
 
+/*
+ * Return the number of sequence records that the parser has stored.
+ *
+ * Note that: for v2 this can only be 0 or 1, but for v3 can be 0,1,...
+ * and corresponds to the number of fasta records found in the GFF stream.
+ */
+int zMapGFFGetSequenceNum(ZMapGFFParser parser_base)
+{
+  int result = 0 ;
 
+  if (parser_base->gff_version == ZMAPGFF_VERSION_2)
+    {
+      ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+      if (parser->header_flags.done_header && g_quark_from_string(parser->sequence_name))
+        {
+          if(parser->seq_data.type != ZMAPSEQUENCE_NONE && parser->seq_data.sequence != NULL)
+            {
+              result = 1 ;
+            }
+        }
+    }
+  else if (parser_base->gff_version == ZMAPGFF_VERSION_3)
+    {
+      ZMapGFF3Parser parser = (ZMapGFF3Parser) parser_base ;
+      result = parser->nSequenceRecords ;
+    }
+
+  return result ;
+}
+
+/*
+ * Return a sequence item by name, or rather, GQuark representing the name.
+ */
 ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base, GQuark sequence_name)
 {
   /*

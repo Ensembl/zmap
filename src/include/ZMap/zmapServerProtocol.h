@@ -63,10 +63,15 @@ ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
 
 /* All requests return one of these responses.
  *
- * Additions have been made to represent:
+ * Additions have been made to replace NODATA with the following:
  *
- * NODATA ->  SOURCEEMPTY       means header was in source, but no features or other valid data
- *            SOUCEERROR        source completely empty (i.e. not even a header)
+ *            SOURCEEMPTY       (nothing in source at all - not even a header) OR
+ *                              ((no feature lines seen) AND (no features created) AND
+ *                              (no sequence directive lines seen) AND (no fasta lines seen))
+ *            SOUCEERROR        ((one or more feature lines seen) AND (no features created))    OR
+ *                              ((one or more fasta lines seen) AND (no sequence records created))  OR
+ *                              ((one or more sequence directive lines seen) AND (no sequence records created))
+ *                              source completely empty (i.e. not even a header)
  */
 #define ZMAP_SERVER_RESPONSE_LIST(_)                         \
     _(ZMAP_SERVERRESPONSE_OK,              , "ok",                       "", "")		\

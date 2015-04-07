@@ -172,6 +172,7 @@ gboolean zMapGFFParsingHeader(ZMapGFFParser parser) ;
  */
 gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser);
 ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser, GQuark sequence_name);
+int zMapGFFGetSequenceNum(ZMapGFFParser parser) ;
 gboolean zMapGFFSequenceDestroy(ZMapSequence sequence) ;
 GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser);
 void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error) ;

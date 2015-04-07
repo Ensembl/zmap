@@ -941,26 +941,12 @@ static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code)
       break ;
 
     /*
-     * This section was:
-     */
-    /*
-    case ZMAP_SERVERRESPONSE_NODATA:
-    case ZMAP_SERVERRESPONSE_REQFAIL:
-    case ZMAP_SERVERRESPONSE_UNSUPPORTED:
-      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-      break ;
-    */
-    /*
-     * Now modified to be:
-     *
-     * source error means completely empty source,
-     * no header, no lines of data of any kind
+     * Modified version; next step is to remove NODATA
      */
     case ZMAP_SERVERRESPONSE_NODATA:
     case ZMAP_SERVERRESPONSE_REQFAIL:
     case ZMAP_SERVERRESPONSE_UNSUPPORTED:
     case ZMAP_SERVERRESPONSE_SOURCEERROR:
-    case ZMAP_SERVERRESPONSE_SOURCEEMPTY: /* this is temporary */
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
       break ;
 
@@ -969,6 +955,7 @@ static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code)
      */
     case ZMAP_SERVERRESPONSE_SOURCEEMPTY:
       thread_rc = ZMAPTHREAD_RETURNCODE_SOURCEEMPTY ;
+      break ;
 
 
     case ZMAP_SERVERRESPONSE_TIMEDOUT:
