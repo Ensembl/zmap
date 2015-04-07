@@ -1185,15 +1185,15 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
 
   SO_accession = featureGetSOTerm(rsf) ;
 
-  if (SO_accession)
+  if (SO_accession && source)
     {
-      if (!feature_name_id)
+      if (!feature_name_id || *feature_name_id == 0)
         feature_name_id = SeqFeature_getSeqName(rsf) ;
 
-      if (!feature_name_id)
+      if (!feature_name_id || *feature_name_id == 0)
         feature_name_id = source ;
 
-      if (!feature_name)
+      if (!feature_name || *feature_name == 0)
         feature_name = feature_name_id ;
 
       start = SeqFeature_getStart(rsf) ;
@@ -1249,6 +1249,14 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
           if (!existing_feature)
             zMapFeatureSetAddFeature(feature_set, feature) ;
         }
+    }
+  else if (!SO_accession)
+    {
+      zMapLogWarning("Could not create feature: could not determine SO accession") ;
+    }
+  else
+    {
+      zMapLogWarning("Could not create feature: could not determine source") ;
     }
 
   return feature ;
