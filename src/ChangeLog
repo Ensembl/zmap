@@ -1,3 +1,67 @@
+2015-03-24  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix broken splice highlighting: out of date style resource name. - BUG FIX
+ src/include/ZMap/zmapStyle.h |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+2015-03-24  Steve Miller  <sm23@sanger.ac.uk>
+ small change to clipping logic for alignment features (related to rt:417362) - BUG FIX
+ src/zmapGFF/zmapGFF3parser.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
+
+2015-03-24  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-69-gd452de8 - Update RT and git commit reports
+ src/ChangeLog                                  |   12 ++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   14 ++++++++++++--
+ 3 files changed, 25 insertions(+), 2 deletions(-)
+
+2015-03-24  Steve Miller  <sm23@sanger.ac.uk>
+ missing alignment features now correctly included in zmap - RT 417362
+ src/zmapGFF/zmapGFF3parser.c |   13 +++++--------
+ 1 files changed, 5 insertions(+), 8 deletions(-)
+
+2015-03-19  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-67-g0810c9b - Update RT and git commit reports
+ src/ChangeLog                                  |   12 ++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   12 +++++++++++-
+ 3 files changed, 24 insertions(+), 1 deletions(-)
+
+2015-03-19  Steve Miller  <sm23@sanger.ac.uk>
+ fix for lasso selection of multiple features - RT 458109
+ src/zmapWindow/zmapWindowDisplayOps.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-03-18  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-65-g91b8652 - Update RT and git commit reports
+ src/ChangeLog                                  |   12 ++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   22 +++++++++++++++++++++-
+ 3 files changed, 34 insertions(+), 1 deletions(-)
+
+2015-03-18  Steve Miller  <sm23@sanger.ac.uk>
+ added the feature source to the Feature Details window - RT 457778
+ src/zmapWindow/zmapWindowFeatureShow.c |   30 ++++++++++++++++++------------
+ 1 files changed, 18 insertions(+), 12 deletions(-)
+
+2015-03-16  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-63-gaebcc19 - Update RT and git commit reports
+ src/ChangeLog                                  |   11 +++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 3 files changed, 13 insertions(+), 1 deletions(-)
+
+2015-03-16  Gemma Barson  <gb10@sanger.ac.uk>
+ "-mTemporarily remove code which causes incorrect window size - RT 457337"
+ src/zmapUtils/zmapGUIutils.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+2015-03-12  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.4.2-61-g147618e - Update RT and git commit reports
+ src/ChangeLog                                  |    7 +++++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 2 files changed, 8 insertions(+), 1 deletions(-)
+
 2015-03-12  zmap  <zmap@sanger.ac.uk>
  ZMap version 1.4.2-60-g0ebff7f - Update RT and git commit reports
  src/ChangeLog                                  |  577 ++++++++++++------------

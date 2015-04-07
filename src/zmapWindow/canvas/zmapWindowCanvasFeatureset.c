@@ -881,15 +881,11 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem *interval,
 
   zMapReturnIfFail(interval) ;
 
-  fi = (ZMapWindowFeaturesetItem) interval;
+  fi = (ZMapWindowFeaturesetItem)interval ;
 
-  func = _featureset_colour_G[fi->type];
+  func = _featureset_colour_G[fi->type] ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gs = zmap_window_canvas_featureset_find_feature(fi,feature);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   gs = findFeatureSubPart(fi, feature, sub_feature) ;
-
 
   if(!gs)
     return;
@@ -2086,15 +2082,17 @@ static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWi
 }
 
 
+
 static ZMapWindowCanvasFeature findFeatureSubPart(ZMapWindowFeaturesetItem fi,
-                                                  ZMapFeature feature,
-                                                  ZMapFeatureSubPartSpan sub_feature)
+                                                  ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature)
 {
-  ZMapWindowCanvasFeature gs = NULL;
+  ZMapWindowCanvasFeature gs = NULL ;
 
+  gs = zmap_window_canvas_featureset_find_feature(fi, feature) ;
 
-  if ((gs = zmap_window_canvas_featureset_find_feature(fi, feature))
-      && sub_feature)
+  /* Only find subparts for transcripts, we don't have any other features where this is useful
+   * currently. */
+  if (gs && ZMAPFEATURE_IS_TRANSCRIPT(feature) && sub_feature)
     {
       while(gs->left)
         gs = gs->left ;
@@ -2108,9 +2106,9 @@ static ZMapWindowCanvasFeature findFeatureSubPart(ZMapWindowFeaturesetItem fi,
         }
     }
 
-
   return gs;
 }
+
 
 
 

@@ -2,6 +2,7 @@ config.h.in
 config.h.in~
 config
 
-# Ignore everything in the gbtools subdir except its gitignore file
+# Ignore everything in the gbtools subdir except its gitignore and README files
 gbtools/*
 !gbtools/.gitignore
+!gbtools/README
