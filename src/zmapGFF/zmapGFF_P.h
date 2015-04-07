@@ -223,7 +223,11 @@ typedef struct ZMapGFFParserFeatureSetStruct_
                                                                                                      \
                                               int features_start,                                    \
                                                   features_end,                                      \
-                                                  line_count ,                                       \
+                                                  line_count,                                        \
+                                                  line_count_bod,                                    \
+                                                  line_count_dir,                                    \
+                                                  line_count_seq,                                    \
+                                                  line_count_fas,                                    \
                                                   num_features,                                      \
                                                   clip_start,                                        \
                                                   clip_end ;                                         \

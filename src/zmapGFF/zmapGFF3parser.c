@@ -184,6 +184,10 @@ ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int fea
           pParser->pHeader->flags.got_ver           = TRUE ;
           pParser->state                            = ZMAPGFF_PARSER_NON ;
           pParser->line_count                       = 0 ;
+          pParser->line_count_bod                   = 0 ;
+          pParser->line_count_dir                   = 0 ;
+          pParser->line_count_seq                   = 0 ;
+          pParser->line_count_fas                   = 0 ;
           pParser->num_features                     = 0 ;
           pParser->parse_only                       = FALSE ;
           pParser->free_on_destroy                  = TRUE ;
@@ -1221,6 +1225,15 @@ static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const s
   unsigned int nSequenceRecords = 0 ;
   static const char *sFmt = "%1000s%1000s" ;
   char sBuf01[1001], sBuf02[1001] ;
+
+  /*
+   * Increment counter for this line type.
+   */
+  zMapGFFIncrementLineFas(pParserBase) ;
+
+  /*
+   * Cast to concrete type.
+   */
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
   /*
@@ -1337,6 +1350,14 @@ static gboolean parseSequenceLine_V3(ZMapGFFParser pParserBase, const char * con
 {
   gboolean bResult = FALSE ;
 
+  /*
+   * Increment counter for this line type.
+   */
+  zMapGFFIncrementLineSeq(pParserBase) ;
+
+  /*
+   * Cast to concrete type.
+   */
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
   zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
@@ -1414,7 +1435,7 @@ static gboolean parseDirective_GFF_VERSION(ZMapGFFParser pParserBase, const char
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Duplicate ##gff-version pragma, line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }*/
@@ -1428,7 +1449,7 @@ static gboolean parseDirective_GFF_VERSION(ZMapGFFParser pParserBase, const char
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Bad ##gff-version line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }
@@ -1441,7 +1462,7 @@ static gboolean parseDirective_GFF_VERSION(ZMapGFFParser pParserBase, const char
        pParser->error =
          g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                      "Only GFF3 versions 2 or 3 supported, line %d: \"%s\"",
-                     pParser->line_count, line) ;
+                     zMapGFFGetLineNumber(pParserBase), line) ;
        bResult = FALSE ;
     }
   else
@@ -1492,7 +1513,7 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParserBase, const 
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Bad \"##sequence-region\" line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }
@@ -1516,7 +1537,7 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParserBase, const 
           pParser->error =
             g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                         "Invalid sequence/start/end:" " \"%s\" %d %d" " in header \"##sequence-region\" line %d: \"%s\"",
-                        pParser->sequence_name, iStart, iEnd, pParser->line_count, line) ;
+                        pParser->sequence_name, iStart, iEnd, zMapGFFGetLineNumber(pParserBase), line) ;
           bResult = FALSE ;
         }
       else if (iStart > pParser->features_end || iEnd < pParser->features_start)
@@ -1524,7 +1545,7 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParserBase, const 
           pParser->error =
             g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                         "No overlap between original sequence/start/end:" " \"%s\" %d %d" " and header \"##sequence-region\" line %d: \"%s\"",
-                        pParser->sequence_name, pParser->features_start, pParser->features_end, pParser->line_count, line) ;
+                        pParser->sequence_name, pParser->features_start, pParser->features_end, zMapGFFGetLineNumber(pParserBase), line) ;
           bResult = FALSE ;
         }
       else
@@ -1572,7 +1593,7 @@ static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser pParserBase , cons
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Duplicate ##feature-ontology directive, line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }
@@ -1585,7 +1606,7 @@ static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser pParserBase , cons
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Bad \"##feature-ontology\" line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }
@@ -1597,8 +1618,8 @@ static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser pParserBase , cons
     {
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
-                    "Extracted data is empty parseDirective_FEATURE_ONTOLOGY(); pParser->line_count = %i, line = '%s'",
-                    pParser->line_count, line) ;
+                    "Extracted data is empty parseDirective_FEATURE_ONTOLOGY(); line = %i, line = '%s'",
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
     }
   else
@@ -1636,7 +1657,7 @@ static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser pParserBase, con
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Duplicate ##attribute-ontology directive, line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }
@@ -1649,7 +1670,7 @@ static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser pParserBase, con
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Bad \"##attribute-ontology\" line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }
@@ -1661,8 +1682,8 @@ static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser pParserBase, con
     {
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
-                    "Extracted data is empty in parseDirective_ATTRIBUTE_ONTOLOGY(); pParser->line_count = %i, line = '%s'",
-                    pParser->line_count, line) ;
+                    "Extracted data is empty in parseDirective_ATTRIBUTE_ONTOLOGY(); line = %i, line = '%s'",
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
     }
   else
@@ -1700,7 +1721,7 @@ static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser pParserBase, const 
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Duplicate ##source-ontology directive, line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }
@@ -1713,7 +1734,7 @@ static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser pParserBase, const 
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Bad \"##source-ontology\" line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }
@@ -1725,8 +1746,8 @@ static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser pParserBase, const 
     {
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
-                    "Extracted data is empty in parseDirective_SOURCE_ONTOLOGY(); pParser->line_count = %i, line = '%s'",
-                    pParser->line_count, line) ;
+                    "Extracted data is empty in parseDirective_SOURCE_ONTOLOGY(); line = %i, line = '%s'",
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
     }
   else
@@ -1765,7 +1786,7 @@ static gboolean parseDirective_SPECIES(ZMapGFFParser pParserBase, const char * c
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Duplicate ##species directive, line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }
@@ -1778,7 +1799,7 @@ static gboolean parseDirective_SPECIES(ZMapGFFParser pParserBase, const char * c
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Bad \"##species\" line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }
@@ -1790,8 +1811,8 @@ static gboolean parseDirective_SPECIES(ZMapGFFParser pParserBase, const char * c
     {
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
-                    "Extracted data is empty in parseDirective_SPECIES(); pParser->line_count = %i, line = '%s'",
-                    pParser->line_count, line) ;
+                    "Extracted data is empty in parseDirective_SPECIES(); line = %i, line = '%s'",
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
     }
   else
@@ -1832,7 +1853,7 @@ static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser pParserBase, const cha
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Duplicate ##genome-build directive, line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }
@@ -1845,7 +1866,7 @@ static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser pParserBase, const cha
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                     "Bad \"##genome-build\" line %d: \"%s\"",
-                    pParser->line_count, line) ;
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
       return bResult ;
     }
@@ -1857,8 +1878,8 @@ static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser pParserBase, const cha
     {
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
-                    "Extracted data is empty in parseDirective_GENOME_BUILD(); pParser->line_count = %i, line = '%s'",
-                    pParser->line_count, line) ;
+                    "Extracted data is empty in parseDirective_GENOME_BUILD(); line = %i, line = '%s'",
+                    zMapGFFGetLineNumber(pParserBase), line) ;
       bResult = FALSE ;
     }
   else
@@ -1893,6 +1914,14 @@ static gboolean parseHeaderLine_V3(ZMapGFFParser pParserBase, const char * const
   gboolean bResult = FALSE ;
   ZMapGFFDirectiveName eDirName ;
 
+  /*
+   * Increment counter for this type of line
+   */
+  zMapGFFIncrementLineDir(pParserBase) ;
+
+  /*
+   * Cast to concrete type.
+   */
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
   zMapReturnValIfFail(pParser && pParser->pHeader, bResult ) ;
@@ -1993,7 +2022,7 @@ gboolean zMapGFFParse_V3(ZMapGFFParser pParserBase, char * const sLine)
   /*
    * Increment line count and skip over blank lines and comments.
    */
-  pParser->line_count++ ;
+  zMapGFFIncrementLineNumber(pParserBase) ;
   if (zMapStringBlank(sLine))
     return bResult ;
   if (isCommentLine(sLine))
@@ -2192,6 +2221,12 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
 #endif
 
   /*
+   * Increment counter for this type of line.
+   */
+  zMapGFFIncrementLineBod(pParserBase) ;
+
+
+  /*
    * Cast to concrete type for GFFV3.
    */
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
@@ -2213,7 +2248,8 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
           pParser->error = NULL ;
         }
       pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
-                    "Line length too long, line %d has length %d", pParser->line_count, iLineLength) ;
+                                   "Line length too long, line %d has length %d",
+                                   zMapGFFGetLineNumber(pParserBase), iLineLength) ;
       bResult = FALSE ;
       goto return_point;
     }
@@ -2273,7 +2309,8 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
           pParser->error = NULL ;
         }
       pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
-                                   "GFF line %d - Mandatory fields missing in: \"%s\"", pParser->line_count, sLine) ;
+                                   "GFF line %d - Mandatory fields missing in: \"%s\"",
+                                   zMapGFFGetLineNumber(pParserBase), sLine) ;
       bResult = FALSE ;
       goto return_point ;
     }
@@ -2307,7 +2344,8 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
           pParser->error = NULL ;
         }
       pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
-                                   "GFF line %d - too many \tab delimited fields in \"%s\"", pParser->line_count, sLine);
+                                   "GFF line %d - too many \tab delimited fields in \"%s\"",
+                                   zMapGFFGetLineNumber(pParserBase), sLine);
       bResult = FALSE ;
       goto return_point ;
     }
@@ -2358,7 +2396,8 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
       if (cPhase == ZMAPPHASE_NONE)
         {
           bResult = FALSE ;
-          sErrText = g_strdup_printf("CDS feature must not have ZMAPPHASE_NONE; line %i, '%s'", pParser->line_count, sLine) ;
+          sErrText = g_strdup_printf("CDS feature must not have ZMAPPHASE_NONE; line %i, '%s'",
+                                     zMapGFFGetLineNumber(pParserBase), sLine) ;
           pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY, "%s", sErrText) ;
           goto return_point ;
         }
@@ -2368,7 +2407,8 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
       if (cPhase != ZMAPPHASE_NONE)
         {
           bResult = FALSE ;
-          sErrText = g_strdup_printf("non-CDS feature must have ZMAPPHASE_NONE; line %i, '%s'", pParser->line_count, sLine) ;
+          sErrText = g_strdup_printf("non-CDS feature must have ZMAPPHASE_NONE; line %i, '%s'",
+                                     zMapGFFGetLineNumber(pParserBase), sLine) ;
           pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY, "%s", sErrText) ;
           goto return_point ;
         }
@@ -2440,11 +2480,12 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
       else if (cSOErrorLevel == ZMAPGFF_SOERRORLEVEL_WARN)
         {
           if (zMapGFFGetLogWarnings(pParserBase))
-            zMapLogWarning("SO Term at line %i is not valid; 'type' string is = '%s'", pParser->line_count, sType) ;
+            zMapLogWarning("SO Term at line %i is not valid; 'type' string is = '%s'",
+                           zMapGFFGetLineNumber(pParserBase), sType) ;
         }
       else if (cSOErrorLevel == ZMAPGFF_SOERRORLEVEL_ERR)
         {
-          sErrText = g_strdup_printf("SO Term at line %i is not valid; 'type' string is = '%s'", pParser->line_count, sType) ;
+          sErrText = g_strdup_printf("SO Term at line %i is not valid; 'type' string is = '%s'", zMapGFFGetLineNumber(pParserBase), sType) ;
         }
     }
 
@@ -2460,7 +2501,8 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
           pParser->error = NULL ;
         }
       pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
-                                   "GFF line %d (a)- %s (\"%s\")", pParser->line_count, sErrText, sLine) ;
+                                   "GFF line %d (a)- %s (\"%s\")",
+                                   zMapGFFGetLineNumber(pParserBase), sErrText, sLine) ;
       g_free(sErrText) ;
       bResult = FALSE ;
       goto return_point ;
@@ -2505,7 +2547,8 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
           pParser->error = NULL ;
         }
       pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
-                                   "GFF body line; invalid ZMapGFFFEatureData object constructed; %i, '%s'", pParser->line_count, sLine) ;
+                                   "GFF body line; invalid ZMapGFFFEatureData object constructed; %i, '%s'",
+                                   zMapGFFGetLineNumber(pParserBase), sLine) ;
       bResult = FALSE ;
       goto return_point ;
     }
@@ -2535,7 +2578,8 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
           pParser->error = NULL ;
         }
       pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
-                                   "GFF line %d. ERROR: %s (\"%s\")",  pParser->line_count, sErrText, sLine) ;
+                                   "GFF line %d. ERROR: %s (\"%s\")",
+                                   zMapGFFGetLineNumber(pParserBase), sErrText, sLine) ;
       g_free(sErrText) ;
       sErrText = NULL ;
 
@@ -3799,7 +3843,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   bResult = TRUE ;
                 }
               if (bNewFeatureCreated)
-                ++pParser->num_features ;
+                zMapGFFParserIncrementNumFeatures(pParserBase) ;
 
               if (requireLocusOperations(pParserBase, pFeatureData) && bNewFeatureCreated)
                 {
@@ -3828,7 +3872,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
               if (pFeature)
                 {
                   bResult = TRUE ;
-                  ++pParser->num_features ;
+                  zMapGFFParserIncrementNumFeatures(pParserBase) ;
                 }
 #ifdef CLIP_ALIGNMENT_ON_PARSE
             }
@@ -3850,7 +3894,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
               if (pFeature)
                 {
                   bResult = TRUE ;
-                  ++pParser->num_features ;
+                  zMapGFFParserIncrementNumFeatures(pParserBase) ;
                 }
 
             }
@@ -3872,7 +3916,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
               if (pFeature)
                 {
                   bResult = TRUE ;
-                  ++pParser->num_features ;
+                  zMapGFFParserIncrementNumFeatures(pParserBase) ;
                 }
 
             }

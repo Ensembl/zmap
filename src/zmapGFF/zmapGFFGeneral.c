@@ -720,6 +720,87 @@ int zMapGFFGetLineNumber(ZMapGFFParser parser)
   return parser->line_count ;
 }
 
+int zMapGFFGetLineBod(ZMapGFFParser parser)
+{
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), 0 );
+
+  return parser->line_count_bod ;
+}
+
+int zMapGFFGetLineDir(ZMapGFFParser parser)
+{
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), 0 );
+
+  return parser->line_count_dir ;
+}
+
+int zMapGFFGetLineSeq(ZMapGFFParser parser)
+{
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), 0 );
+
+  return parser->line_count_seq ;
+}
+
+int zMapGFFGetLineFas(ZMapGFFParser parser)
+{
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), 0 );
+
+  return parser->line_count_fas ;
+}
+
+
+/*
+ * Increment the general line counter.
+ */
+void zMapGFFIncrementLineNumber(ZMapGFFParser parser)
+{
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser)) ;
+
+  ++parser->line_count ;
+}
+
+/*
+ * Body/data line counter
+ */
+void zMapGFFIncrementLineBod(ZMapGFFParser parser)
+{
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser)) ;
+
+  ++parser->line_count_bod ;
+}
+
+/*
+ * Directive line counter
+ */
+void zMapGFFIncrementLineDir(ZMapGFFParser parser)
+{
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser)) ;
+
+  ++parser->line_count_dir ;
+}
+
+/*
+ * Sequence line counter
+ */
+void zMapGFFIncrementLineSeq(ZMapGFFParser parser)
+{
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser)) ;
+
+  ++parser->line_count_seq ;
+}
+
+/*
+ * Fasta line counter
+ */
+void zMapGFFIncrementLineFas(ZMapGFFParser parser)
+{
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser)) ;
+
+  ++parser->line_count_fas ;
+}
+
+
+
 
 /*
  * Used by both versions.
@@ -728,9 +809,7 @@ int zMapGFFGetLineNumber(ZMapGFFParser parser)
  */
 int zMapGFFGetFeaturesStart(ZMapGFFParser parser)
 {
-  if (!parser)
-    return 0 ;
-  if (!zMapGFFIsValidVersion(parser))
+  if (!parser || !zMapGFFIsValidVersion(parser))
     return 0 ;
 
   return parser->features_start ;
@@ -744,9 +823,7 @@ int zMapGFFGetFeaturesStart(ZMapGFFParser parser)
  */
 int zMapGFFGetFeaturesEnd(ZMapGFFParser parser)
 {
-  if (!parser)
-    return 0 ;
-  if (!zMapGFFIsValidVersion(parser))
+  if (!parser || !zMapGFFIsValidVersion(parser))
     return 0 ;
 
   return parser->features_end ;
@@ -760,9 +837,7 @@ int zMapGFFGetFeaturesEnd(ZMapGFFParser parser)
  */
 char* zMapGFFGetSequenceName(ZMapGFFParser parser)
 {
-  if (!parser)
-    return NULL ;
-  if (!zMapGFFIsValidVersion(parser))
+  if (!parser || !zMapGFFIsValidVersion(parser))
     return NULL ;
 
   return parser->sequence_name ;
@@ -783,11 +858,22 @@ GError *zMapGFFGetError(ZMapGFFParser parser)
 }
 
 
-
+/*
+ * Return the current number of features that have been created.
+ */
 int zMapGFFParserGetNumFeatures(ZMapGFFParser parser)
 {
   zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), 0) ;
   return(parser->num_features) ;
+}
+
+/*
+ * Increment the number of features that have been created.
+ */
+void zMapGFFParserIncrementNumFeatures(ZMapGFFParser parser)
+{
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser)) ;
+  ++parser->num_features ;
 }
 
 
@@ -862,7 +948,39 @@ gboolean zMapGFFSequenceDestroy(ZMapSequence sequence)
   return bReturn ;
 }
 
+/*
+ * Return the number of sequence records that the parser has stored.
+ *
+ * Note that: for v2 this can only be 0 or 1, but for v3 can be 0,1,...
+ * and corresponds to the number of fasta records found in the GFF stream.
+ */
+int zMapGFFGetSequenceNum(ZMapGFFParser parser_base)
+{
+  int result = 0 ;
 
+  if (parser_base->gff_version == ZMAPGFF_VERSION_2)
+    {
+      ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+      if (parser->header_flags.done_header && g_quark_from_string(parser->sequence_name))
+        {
+          if(parser->seq_data.type != ZMAPSEQUENCE_NONE && parser->seq_data.sequence != NULL)
+            {
+              result = 1 ;
+            }
+        }
+    }
+  else if (parser_base->gff_version == ZMAPGFF_VERSION_3)
+    {
+      ZMapGFF3Parser parser = (ZMapGFF3Parser) parser_base ;
+      result = parser->nSequenceRecords ;
+    }
+
+  return result ;
+}
+
+/*
+ * Return a sequence item by name, or rather, GQuark representing the name.
+ */
 ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base, GQuark sequence_name)
 {
   /*
