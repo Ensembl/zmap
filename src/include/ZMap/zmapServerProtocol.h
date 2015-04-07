@@ -75,7 +75,6 @@ ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
  */
 #define ZMAP_SERVER_RESPONSE_LIST(_)                         \
     _(ZMAP_SERVERRESPONSE_OK,              , "ok",                       "", "")		\
-    _(ZMAP_SERVERRESPONSE_NODATA,          , "no data returned",         "", "")		\
     _(ZMAP_SERVERRESPONSE_SOURCEEMPTY,     , "no data in source",        "", "")		\
     _(ZMAP_SERVERRESPONSE_SOURCEERROR,     , "nothing in source",        "", "")		\
     _(ZMAP_SERVERRESPONSE_BADREQ,          , "error in request args",    "", "")		\

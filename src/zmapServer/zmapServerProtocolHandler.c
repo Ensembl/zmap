@@ -943,7 +943,6 @@ static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code)
     /*
      * Modified version; next step is to remove NODATA
      */
-    case ZMAP_SERVERRESPONSE_NODATA:
     case ZMAP_SERVERRESPONSE_REQFAIL:
     case ZMAP_SERVERRESPONSE_UNSUPPORTED:
     case ZMAP_SERVERRESPONSE_SOURCEERROR:

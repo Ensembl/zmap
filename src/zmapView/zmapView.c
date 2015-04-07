@@ -3474,8 +3474,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                   req_any = (ZMapServerReqAny)data ;
                   request_type = req_any->type ;
 
-                  if (req_any->response == ZMAP_SERVERRESPONSE_NODATA ||
-                      req_any->response == ZMAP_SERVERRESPONSE_SOURCEEMPTY)
+                  if (req_any->response == ZMAP_SERVERRESPONSE_SOURCEEMPTY)
                     is_empty = TRUE ;
                   else
                     is_empty = FALSE ;
@@ -3885,10 +3884,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         {
                           /* Note that load_features is cleaned up by sendViewLoaded() */
                           LoadFeaturesData loaded_features ;
-
-                          /* CAN WE GET RID OF THIS HACK NOW ??? */
-                          /* Hack to support otterlace for this release....otterlace is expecting
-                           * no features to mean "it's all ok"...not really true.... */
                           if (is_empty)
                             connect_data->loaded_features->status = TRUE ;
 

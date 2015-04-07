@@ -339,17 +339,16 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   GError *gff_pipe_err = NULL ;
   GIOStatus pipe_status = G_IO_STATUS_NORMAL ;
 
+  zMapReturnValIfFail(server && req_open, result ) ;
+
   if (server->gff_pipe)
     {
-      char *err_msg ;
-
-      err_msg = g_strdup_printf("Feature script \"%s\" already active.", server->script_path) ;
-
-      gff_pipe_err->message = err_msg ;
-
-      setErrorMsgGError(server, &gff_pipe_err) ;
+      char *err_msg = g_strdup_printf("Feature script \"%s\" already active.", server->script_path) ;
 
       zMapLogWarning("%s", err_msg) ;
+
+      if (err_msg)
+        g_free(err_msg) ;
 
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
     }
