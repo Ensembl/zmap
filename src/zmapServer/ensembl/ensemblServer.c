@@ -295,14 +295,17 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
-  pthread_mutex_lock(&server->mutex) ;
-  DBAdaptor *dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
-  pthread_mutex_unlock(&server->mutex) ;
-
-  if (server && dba)
+  if (!server->dba)
     {
       pthread_mutex_lock(&server->mutex) ;
-      char *assembly_type = DBAdaptor_getAssemblyType(dba) ;
+      server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
+      pthread_mutex_unlock(&server->mutex) ;
+    }
+
+  if (server && server->dba && server->dba->dbc)
+    {
+      pthread_mutex_lock(&server->mutex) ;
+      char *assembly_type = DBAdaptor_getAssemblyType(server->dba) ;
       pthread_mutex_unlock(&server->mutex) ;
 
       if (assembly_type)
@@ -1460,21 +1463,27 @@ static Slice* getSlice(EnsemblServer server,
 {
   Slice *slice = NULL ;
 
-  pthread_mutex_lock(&server->mutex) ; 
-  DBAdaptor *dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
-  pthread_mutex_unlock(&server->mutex) ;
-
-  if (dba && dba->dbc)
+  if (!server->dba)
     {
-      pthread_mutex_lock(&server->mutex) ;
-      SliceAdaptor *slice_adaptor = DBAdaptor_getSliceAdaptor(dba);
+      pthread_mutex_lock(&server->mutex) ; 
+      server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
+      pthread_mutex_unlock(&server->mutex) ;
+    }
 
-      slice = SliceAdaptor_fetchByRegion(slice_adaptor, "chromosome", 
-                                         seq_name, start, end, 
-                                         strand, NULL, 0);
+  if (server->dba && server->dba->dbc)
+    {
+      if (!server->slice_adaptor)
+        {
+          pthread_mutex_lock(&server->mutex) ;
+          server->slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
+          pthread_mutex_unlock(&server->mutex) ;
+        }
+      
+      pthread_mutex_lock(&server->mutex) ; 
+      slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", seq_name, start, end, strand, NULL, 0);
       pthread_mutex_unlock(&server->mutex) ;
       
-      if (slice_adaptor && slice)
+      if (server->slice_adaptor && slice)
         {
           server->result = ZMAP_SERVERRESPONSE_OK ;
         }
@@ -1503,32 +1512,49 @@ static char* getSequence(EnsemblServer server,
 {
   char *seq = NULL ;
 
-  pthread_mutex_lock(&server->mutex) ;
-    
-  DBAdaptor *dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
-  
-  if (dba && dba->dbc)
+  if (!server->dba)
     {
-      SliceAdaptor *slice_adaptor = DBAdaptor_getSliceAdaptor(dba);
-  
-      Slice *slice = SliceAdaptor_fetchByRegion(slice_adaptor, "chromosome", 
-                                                seq_name, start, end, 
-                                                strand, NULL, 0);
-      
-      if (slice_adaptor && slice)
+      pthread_mutex_lock(&server->mutex) ;
+      server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
+      pthread_mutex_unlock(&server->mutex) ;
+    }
+
+  if (server->dba && server->dba->dbc)
+    {
+      if (!server->slice_adaptor)
         {
-          SequenceAdaptor *seq_adaptor = DBAdaptor_getSequenceAdaptor(dba);
+          pthread_mutex_lock(&server->mutex) ;
+          server->slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
+          pthread_mutex_unlock(&server->mutex) ;
+        }
 
-          if (seq_adaptor)
+      if (!server->seq_adaptor)
+        {
+          pthread_mutex_lock(&server->mutex) ; 
+          server->seq_adaptor = DBAdaptor_getSequenceAdaptor(server->dba);
+          pthread_mutex_unlock(&server->mutex) ;
+        }
+
+      if (server->slice_adaptor && server->seq_adaptor)
+        {
+          pthread_mutex_lock(&server->mutex) ; 
+          Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
+                                                    seq_name, start, end, 
+                                                    strand, NULL, 0);
+          pthread_mutex_unlock(&server->mutex) ;
+
+          if (slice)
             {
-              seq = SequenceAdaptor_fetchBySliceStartEndStrand(seq_adaptor, slice, 1, POS_UNDEF, 1);
-            }
+              pthread_mutex_lock(&server->mutex) ; 
+              
+              seq = SequenceAdaptor_fetchBySliceStartEndStrand(server->seq_adaptor, slice, 1, POS_UNDEF, 1);
+              Slice_free(slice) ;
 
-          Slice_free(slice) ;
+              pthread_mutex_unlock(&server->mutex) ;
+            }
         }
     }
   
-  pthread_mutex_unlock(&server->mutex) ;
 
   return seq ;
 }
