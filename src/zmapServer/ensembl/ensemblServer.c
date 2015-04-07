@@ -1252,11 +1252,11 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
     }
   else if (!SO_accession)
     {
-      zMapLogWarning("Could not create feature: could not determine SO accession") ;
+      zMapLogWarning("%s", "Could not create feature: could not determine SO accession") ;
     }
   else
     {
-      zMapLogWarning("Could not create feature: could not determine source") ;
+      zMapLogWarning("%s", "Could not create feature: could not determine source") ;
     }
 
   return feature ;
