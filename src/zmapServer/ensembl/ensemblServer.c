@@ -206,6 +206,11 @@ static gboolean globalInit(void)
 {
   gboolean result = TRUE ;
 
+  /* Initialise the ensembl C API */
+  char *prog_name = g_strdup("zmap") ;
+  initEnsC(1, &prog_name) ;
+  g_free(prog_name) ;
+
   return result ;
 }
 
@@ -236,18 +241,6 @@ static gboolean createConnection(void **server_out,
     server->passwd = g_strdup(url->passwd) ;
 
   server->db_name = zMapURLGetQueryValue(url->query, "db_name") ;
-
-  /* Initialise the ensembl C API the first time we are called
-   * put this but we need to make sure  */
-  static gboolean first = TRUE ;
-
-  if (first)
-    {
-      char *prog_name = g_strdup("zmap") ;
-      initEnsC(1, &prog_name) ;
-      g_free(prog_name) ;
-      first = FALSE ;
-    }
 
   if (server->host && server->db_name)
     {
