@@ -555,7 +555,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
         result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
       else if (   (!num_features && n_lines_bod)
                || (n_lines_fas && !zMapGFFGetSequenceNum(server->parser))
-               || (n_lines_seq && !zMapGFFGetSequenceNum(server->parser))  )
+               || (n_lines_seq && !zMapGFFGetSequenceNum(server->parser) && zMapGFFGetVersion(server->parser) == ZMAPGFF_VERSION_2)  )
         result = server->result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
 
       /*
