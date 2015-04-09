@@ -227,7 +227,6 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement zmap_eleme
 static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_return_true_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_column_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
-static gboolean xml_column_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 
 static void copyAddFeature(gpointer key, gpointer value, gpointer user_data) ;
 static ZMapFeature createLocusFeature(ZMapFeatureContext context, ZMapFeature feature,
@@ -298,7 +297,6 @@ static ZMapXMLObjTagFunctionsStruct view_ends_G[] =
     { "featureset", xml_featureset_end_cb },
     { "feature",    xml_feature_end_cb    },
     { "subfeature", xml_subfeature_end_cb },
-    { "column",     xml_column_end_cb     },
     {NULL, NULL}
   } ;
 
@@ -1669,7 +1667,17 @@ static gboolean xml_featureset_end_cb(gpointer user_data, ZMapXMLElement set_ele
   return result ;
 }
 
-
+/*
+ * This is the handler for the "column" element, used in the column_[hide,show]
+ * commands. These are expected to be of the form:
+ *
+ * <request command="column_show" view_id="0x85d78c8">
+ *   <column name="a_name_here"/>
+ * </request>
+ *
+ * so all we expecting for the column is a "name" attribute. No handler for the
+ * column element "end" event is required.
+ */
 static gboolean xml_column_start_cb(gpointer user_data, ZMapXMLElement column_element, ZMapXMLParser parser)
 {
   gboolean result = TRUE ;
@@ -1678,14 +1686,13 @@ static gboolean xml_column_start_cb(gpointer user_data, ZMapXMLElement column_el
   GQuark column_name_id = 0 ;
   char * column_name = NULL ;
 
-  /*
-   * All we need for this is a name...
-   */
   if (result && (attr = zMapXMLElementGetAttributeByName(column_element, "name")))
     {
       column_name_id = zMapXMLAttributeGetValue(attr) ;
-      column_name = (char *)g_quark_to_string(column_name_id) ;
-      request_data->column_id = column_name_id ;
+      if (column_name_id && strlen(g_quark_to_string(column_name_id)))
+        {
+          request_data->column_id = column_name_id ;
+        }
     }
   else
     {
@@ -1693,13 +1700,6 @@ static gboolean xml_column_start_cb(gpointer user_data, ZMapXMLElement column_el
       zMapXMLParserRaiseParsingError(parser, "\"name\" is a required attribute for column.") ;
       result = FALSE ;
     }
-
-  return result ;
-}
-
-static gboolean xml_column_end_cb(gpointer user_data, ZMapXMLElement column_element, ZMapXMLParser parser)
-{
-  gboolean result = TRUE ;
 
   return result ;
 }
