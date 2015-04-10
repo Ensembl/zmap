@@ -196,6 +196,9 @@ static gboolean window_draw_context_debug_G = FALSE;
 /************************ external functions ************************************************/
 
 
+
+
+
 /* REMEMBER WHEN YOU READ THIS CODE THAT THIS ROUTINE MAY BE CALLED TO UPDATE THE FEATURES
  * IN A CANVAS WITH NEW FEATURES FROM A SEPARATE SERVER. */
 
@@ -2985,6 +2988,9 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
           {
             GList *l;
             container_set = (ZMapWindowContainerFeatureSet)container;
+
+            const char *n1 = g_quark_to_string(container_set->unique_id) ;
+            const char *n2 = g_quark_to_string(container_set->original_id) ;
 
             /* need to remove all the featuresets held in the column
              * fortunately we have a handy list of these

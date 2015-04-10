@@ -869,6 +869,7 @@ static void draw_failed_make_message(gpointer list_data, gpointer user_data)
   return ;
 }
 
+
 static void delete_failed_make_message(gpointer list_data, gpointer user_data)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)list_data;
@@ -919,8 +920,14 @@ static ZMapFeatureContextExecuteStatus sanity_check_context(GQuark key,
  */
 static void hideColumn(ZMapView view, RequestData request_data)
 {
-  char * a = "a" ;
-  double x = (double)*a ;
+  if (!view || !view->window_list || !request_data || !request_data->column_id)
+    return ;
+  GList *list = view->window_list ;
+  for ( ; list!=NULL ; list = list->next)
+    {
+      ZMapViewWindow view_window = (ZMapViewWindow) list->data ;
+      zMapWindowColumnHide(view_window->window, request_data->column_id) ;
+    }
 }
 
 /*
@@ -928,8 +935,14 @@ static void hideColumn(ZMapView view, RequestData request_data)
  */
 static void showColumn(ZMapView view, RequestData request_data)
 {
-  char * a = "a" ;
-  double x = (double)*a ;
+  if (!view || !view->window_list || !request_data || !request_data->column_id)
+    return ;
+  GList *list = view->window_list ;
+  for ( ; list!=NULL ; list = list->next)
+    {
+      ZMapViewWindow view_window = (ZMapViewWindow) list->data ;
+      zMapWindowColumnShow(view_window->window, request_data->column_id) ;
+    }
 }
 
 

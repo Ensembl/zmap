@@ -140,6 +140,9 @@ void zmapWindowContainerFeatureSetDisplay(ZMapWindowContainerFeatureSet containe
 
 ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet container_set);
 
+void zMapWindowContainerFeatureSetColumnHide(ZMapWindow window, GQuark column_id) ;
+void zMapWindowContainerFeatureSetColumnShow(ZMapWindow window, GQuark column_id) ;
+
 void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeatureSet container, gboolean show, gboolean set_colour);
 gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set, ZMapStyleBumpMode bump_mode);
 
