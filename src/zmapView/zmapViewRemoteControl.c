@@ -172,6 +172,7 @@ typedef struct RequestDataStructName
 
   GQuark source_id ;
   GQuark style_id ;
+  GQuark column_id ;
   ZMapFeatureTypeStyle style ;
 
   GList *locations ;
@@ -225,6 +226,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement zmap_ele
 static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_return_true_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
+static gboolean xml_column_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 
 static void copyAddFeature(gpointer key, gpointer value, gpointer user_data) ;
 static ZMapFeature createLocusFeature(ZMapFeatureContext context, ZMapFeature feature,
@@ -242,6 +244,8 @@ static void loadFeatures(ZMapView view, RequestData request_data) ;
 static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data) ;
 static void findUniqueCB(gpointer data, gpointer user_data) ;
 static void makeUniqueListCB(gpointer key, gpointer value, gpointer user_data) ;
+static void hideColumn(ZMapView view, RequestData request_data) ;
+static void showColumn(ZMapView view, RequestData request_data) ;
 
 
 
@@ -264,6 +268,8 @@ static CommandDescriptorStruct command_table_G[] =
     {ZACP_LOAD_FEATURES,     0, TRUE,  FEATURE_DONT_CARE, FALSE},
     {ZACP_DUMP_FEATURES,     0, FALSE, FEATURE_DONT_CARE, FALSE},
     {ZACP_REVCOMP,           0, FALSE, FEATURE_DONT_CARE, FALSE},
+    {ZACP_COLUMN_SHOW,       0, FALSE, FEATURE_DONT_CARE, FALSE},
+    {ZACP_COLUMN_HIDE,       0, FALSE, FEATURE_DONT_CARE, FALSE},
 
     {NULL, 0, FALSE, FALSE}                                    /* Terminator record. */
   } ;
@@ -278,6 +284,7 @@ static ZMapXMLObjTagFunctionsStruct view_starts_G[] =
     { "block",      xml_block_start_cb                 },
     { "featureset", xml_featureset_start_cb            },
     { "feature",    xml_feature_start_cb               },
+    { "column",     xml_column_start_cb                },
     {NULL, NULL}
   };
 
@@ -315,7 +322,9 @@ gboolean zMapViewProcessRemoteRequest(ZMapViewWindow view_window,
       || strcmp(command_name, ZACP_DELETE_FEATURE) == 0
       || strcmp(command_name, ZACP_FIND_FEATURE) == 0
       || strcmp(command_name, ZACP_LOAD_FEATURES) == 0
-      || strcmp(command_name, ZACP_REVCOMP) == 0)
+      || strcmp(command_name, ZACP_REVCOMP) == 0
+      || strcmp(command_name, ZACP_COLUMN_HIDE) == 0
+      || strcmp(command_name, ZACP_COLUMN_SHOW) == 0)
     {
       localProcessRemoteRequest(view_window,
                                 command_name, request,
@@ -486,6 +495,18 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
       zMapViewReverseComplement(view) ;
 
       request_data->msg = "Reverse complemented view." ;
+    }
+  else if (request_data->command_id == g_quark_from_string(ZACP_COLUMN_HIDE))
+    {
+      hideColumn(view, request_data) ;
+
+      request_data->msg = "Column hide command." ;
+    }
+  else if (request_data->command_id == g_quark_from_string(ZACP_COLUMN_SHOW))
+    {
+      showColumn(view, request_data) ;
+
+      request_data->msg = "Column show command." ;
     }
 
   if (request_data->edit_context)
@@ -848,6 +869,7 @@ static void draw_failed_make_message(gpointer list_data, gpointer user_data)
   return ;
 }
 
+
 static void delete_failed_make_message(gpointer list_data, gpointer user_data)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)list_data;
@@ -892,6 +914,43 @@ static ZMapFeatureContextExecuteStatus sanity_check_context(GQuark key,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+/*
+ * Function to hide a column in all windows attached to this view.
+ *
+ *
+ * This is calling code that's implemented in the file
+ * zmapWindowContainerFeatureSet.c, specifically the two
+ * functions that do most of the work are the callbacks
+ * column_hide_cb() and column_show_cb().
+ *
+ */
+static void hideColumn(ZMapView view, RequestData request_data)
+{
+  if (!view || !view->window_list || !request_data || !request_data->column_id)
+    return ;
+  GList *list = view->window_list ;
+  for ( ; list!=NULL ; list = list->next)
+    {
+      ZMapViewWindow view_window = (ZMapViewWindow) list->data ;
+      zMapWindowColumnHide(view_window->window, request_data->column_id) ;
+    }
+}
+
+/*
+ * Function to show a column in all windows attached to this view.
+ */
+static void showColumn(ZMapView view, RequestData request_data)
+{
+  if (!view || !view->window_list || !request_data || !request_data->column_id)
+    return ;
+  GList *list = view->window_list ;
+  for ( ; list!=NULL ; list = list->next)
+    {
+      ZMapViewWindow view_window = (ZMapViewWindow) list->data ;
+      zMapWindowColumnShow(view_window->window, request_data->column_id) ;
+    }
+}
 
 
 /* Load features on request from a client. */
@@ -1627,6 +1686,45 @@ static gboolean xml_featureset_end_cb(gpointer user_data, ZMapXMLElement set_ele
 
   return result ;
 }
+
+/*
+ * This is the handler for the "column" element, used in the column_[hide,show]
+ * commands. These are expected to be of the form:
+ *
+ * <request command="column_show" view_id="0x85d78c8">
+ *   <column name="a_name_here"/>
+ * </request>
+ *
+ * so all we expecting for the column is a "name" attribute. No handler for the
+ * column element "end" event is required.
+ */
+static gboolean xml_column_start_cb(gpointer user_data, ZMapXMLElement column_element, ZMapXMLParser parser)
+{
+  gboolean result = TRUE ;
+  ZMapXMLAttribute attr = NULL;
+  RequestData request_data = (RequestData)user_data;
+  GQuark column_name_id = 0 ;
+  char * column_name = NULL ;
+
+  if (result && (attr = zMapXMLElementGetAttributeByName(column_element, "name")))
+    {
+      column_name_id = zMapXMLAttributeGetValue(attr) ;
+      if (column_name_id && strlen(g_quark_to_string(column_name_id)))
+        {
+          request_data->column_id = column_name_id ;
+        }
+    }
+  else
+    {
+      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+      zMapXMLParserRaiseParsingError(parser, "\"name\" is a required attribute for column.") ;
+      result = FALSE ;
+    }
+
+  return result ;
+}
+
+
 
 
 

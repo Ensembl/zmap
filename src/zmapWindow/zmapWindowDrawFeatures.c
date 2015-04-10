@@ -196,6 +196,9 @@ static gboolean window_draw_context_debug_G = FALSE;
 /************************ external functions ************************************************/
 
 
+
+
+
 /* REMEMBER WHEN YOU READ THIS CODE THAT THIS ROUTINE MAY BE CALLED TO UPDATE THE FEATURES
  * IN A CANVAS WITH NEW FEATURES FROM A SEPARATE SERVER. */
 
