@@ -1562,7 +1562,6 @@ static void column_hide_cb(ZMapWindowContainerGroup container, FooCanvasPoints *
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
         GQuark column_id = (GQuark) user_data ;
-        gboolean setable = FALSE ;
         ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet)container ;
 
         if (column_id == container_set->unique_id)
@@ -1571,7 +1570,7 @@ static void column_hide_cb(ZMapWindowContainerGroup container, FooCanvasPoints *
             FooCanvasGroup *column_group = FOO_CANVAS_GROUP(item) ;
             if (column_group && FOO_IS_CANVAS_GROUP(column_group))
               {
-                setable = zmapWindowContainerSetVisibility(column_group, FALSE) ;
+                zmapWindowContainerSetVisibility(column_group, FALSE) ;
               }
           }
       }
@@ -1591,7 +1590,6 @@ static void column_show_cb(ZMapWindowContainerGroup container, FooCanvasPoints *
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
         GQuark column_id = (GQuark) user_data ;
-        gboolean setable = FALSE ;
         ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet)container ;
 
         if (column_id == container_set->unique_id)
@@ -1600,7 +1598,7 @@ static void column_show_cb(ZMapWindowContainerGroup container, FooCanvasPoints *
             FooCanvasGroup *column_group = FOO_CANVAS_GROUP(item) ;
             if (column_group && FOO_IS_CANVAS_GROUP(column_group))
               {
-                setable = zmapWindowContainerSetVisibility(column_group, TRUE) ;
+                zmapWindowContainerSetVisibility(column_group, TRUE) ;
               }
           }
       }

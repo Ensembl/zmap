@@ -917,6 +917,13 @@ static ZMapFeatureContextExecuteStatus sanity_check_context(GQuark key,
 
 /*
  * Function to hide a column in all windows attached to this view.
+ *
+ *
+ * This is calling code that's implemented in the file
+ * zmapWindowContainerFeatureSet.c, specifically the two
+ * functions that do most of the work are the callbacks
+ * column_hide_cb() and column_show_cb().
+ *
  */
 static void hideColumn(ZMapView view, RequestData request_data)
 {

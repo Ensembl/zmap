@@ -2989,9 +2989,6 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
             GList *l;
             container_set = (ZMapWindowContainerFeatureSet)container;
 
-            const char *n1 = g_quark_to_string(container_set->unique_id) ;
-            const char *n2 = g_quark_to_string(container_set->original_id) ;
-
             /* need to remove all the featuresets held in the column
              * fortunately we have a handy list of these
              */
