@@ -1709,9 +1709,10 @@ static gboolean xml_column_start_cb(gpointer user_data, ZMapXMLElement column_el
   if (result && (attr = zMapXMLElementGetAttributeByName(column_element, "name")))
     {
       column_name_id = zMapXMLAttributeGetValue(attr) ;
-      if (column_name_id && strlen(g_quark_to_string(column_name_id)))
+      const char *name = g_quark_to_string(column_name_id) ;
+      if (column_name_id && strlen(name))
         {
-          request_data->column_id = column_name_id ;
+          request_data->column_id = zMapFeatureSetCreateID((char*)name) ;
         }
     }
   else
