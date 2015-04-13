@@ -4643,108 +4643,85 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
   foo_canvas_w2c(window->canvas, rootx1, rooty1, &beforex, &beforey);
 
   /* work out the zoom factor to show all the area (vertically) and
-     calculate how much we need to zoom by to achieve that. */
+   * calculate how much we need to zoom by to achieve that.
+   *
+   * (sm23) Note that these values are most often going to be the
+   * feature start and end coordinates, and these may be equal.
+   * Previously the code was doing nothing if the difference was
+   * less than ZOOM_SENSITIVITY, which is clearly wrong.
+   */
   ydiff = rooty2 - rooty1;
+  ydiff = ydiff < ZOOM_SENSITIVITY ? ZOOM_SENSITIVITY : ydiff ;
+  area_middle = rooty1 + (ydiff / 2.0) ; /* So we can make this the centre later */
+  target_zoom_factor = (double)(win_height / ydiff);
+  zoom_by_factor = (target_zoom_factor / current);
 
-  if (ydiff >= ZOOM_SENSITIVITY)
+  /* Actually do the zoom */
+  /* possible bug here with width and scrolling, need to check. */
+  if (window->locked_display)
     {
-      area_middle = rooty1 + (ydiff / 2.0) ; /* So we can make this the centre later */
+      LockedDisplayStruct locked_data = { NULL };
 
-      target_zoom_factor = (double)(win_height / ydiff);
+      locked_data.window      = window ;
+      locked_data.type        = ZMAP_LOCKED_ZOOM_TO;
+      locked_data.zoom_factor = zoom_by_factor ;
+      locked_data.position    = area_middle ;
+      locked_data.border = border;
+      locked_data.start = rooty1;
+      locked_data.end = rooty2;
+      locked_data.border_size = border_size;
 
-      zoom_by_factor = (target_zoom_factor / current);
-
-
-      /* Actually do the zoom */
-      /* possible bug here with width and scrolling, need to check. */
-      if (window->locked_display)
-        {
-          //ZMapWindowState prev_state;
-          LockedDisplayStruct locked_data = { NULL };
-          //gboolean use_queue = TRUE;
-
-#if POINTLESS
-          double half_win_span = ((window->canvas_maxwin_size / target_zoom_factor) / 2.0);
-          double min_seq = area_middle - half_win_span;
-          double max_seq = area_middle + half_win_span - 1;
-#endif
-          locked_data.window      = window ;
-          locked_data.type        = ZMAP_LOCKED_ZOOM_TO;
-          locked_data.zoom_factor = zoom_by_factor ;
-          locked_data.position    = area_middle ;
-          locked_data.border = border;
-          locked_data.start = rooty1;
-          locked_data.end = rooty2;
-          locked_data.border_size = border_size;
-
-#if STUPID
-          /* erm... if we are restoring a zoom position the we need to feed that into this function from the top
-             this makes this function ignore its arguments */
-
-          if(use_queue && zmapWindowStateQueueIsRestoring(window->history) &&
-             zmapWindowStateGetPrevious(window, &prev_state, FALSE))
-            {
-              double ry1, ry2;/* restore scroll region */
-              zmapWindowStateGetScrollableArea(prev_state,
-                                               NULL, &ry1,
-                                               NULL, &ry2);
-              locked_data.position = ((ry2 - ry1) / 2 ) + ry1;
-            }
-#endif
-
-          g_hash_table_foreach(window->sibling_locked_windows, lockedDisplayCB, (gpointer)&locked_data) ;
-        }
-      else
-        {
-
-          foo_canvas_busy(window->canvas,TRUE);
-          myWindowZoomTo(window, zoom_by_factor, rooty1, rooty2, border, border_size) ;
-          foo_canvas_busy(window->canvas,FALSE);
-        }
+      g_hash_table_foreach(window->sibling_locked_windows, lockedDisplayCB, (gpointer)&locked_data) ;
+    }
+  else
+    {
+      foo_canvas_busy(window->canvas,TRUE);
+      myWindowZoomTo(window, zoom_by_factor, rooty1, rooty2, border, border_size) ;
+      foo_canvas_busy(window->canvas,FALSE);
+    }
 
 
-      /* Now we need to find where the original top of the area is in
-       * canvas coords after the effect of the zoom. Hence the w2c calls
-       * below.
-       * And scroll there:
-       * We use this rather than zMapWindowScrollTo as we may have zoomed
-       * in so far that we can't just sroll the current canvas buffer to
-       * where we clicked. We actually need to check we haven't zoomed off.
-       * If we have then we need to move there first, otherwise scroll_to
-       * doesn't do anything.
-       */
-      foo_canvas_get_scroll_region(window->canvas, &wx1, &wy1, &wx2, &wy2); /* ok, but can we refactor? */
-      if (rooty1 > wy1 && rooty2 < wy2)
-        {                           /* We're still in the same area, */
-          foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
+  /* Now we need to find where the original top of the area is in
+   * canvas coords after the effect of the zoom. Hence the w2c calls
+   * below.
+   * And scroll there:
+   * We use this rather than zMapWindowScrollTo as we may have zoomed
+   * in so far that we can't just sroll the current canvas buffer to
+   * where we clicked. We actually need to check we haven't zoomed off.
+   * If we have then we need to move there first, otherwise scroll_to
+   * doesn't do anything.
+   */
+  foo_canvas_get_scroll_region(window->canvas, &wx1, &wy1, &wx2, &wy2); /* ok, but can we refactor? */
+  if (rooty1 > wy1 && rooty2 < wy2)
+    {                           /* We're still in the same area, */
+      foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
 
-          /* If we had a border we need to take this into account,
-           * otherwise the feature just ends up at the top of the
-           * window with 2 border widths at the bottom! */
-          if (border)
-            canvasy -= border_size;
+      /* If we had a border we need to take this into account,
+       * otherwise the feature just ends up at the top of the
+       * window with 2 border widths at the bottom! */
+      if (border)
+        canvasy -= border_size;
 
-          foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
-        }
-      else
-        {                           /* This takes a lot of time.... */
-          double half_win_span = ((window->canvas_maxwin_size / target_zoom_factor) / 2.0);
-          double min_seq = area_middle - half_win_span;
-          double max_seq = area_middle + half_win_span - 1;
+      foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
+    }
+  else
+    { /* This takes a lot of time.... */
+      double half_win_span = ((window->canvas_maxwin_size / target_zoom_factor) / 2.0);
+      double min_seq = area_middle - half_win_span;
+      double max_seq = area_middle + half_win_span - 1;
 
-          /* unfortunately freeze/thaw child-notify doesn't stop flicker */
-          /* can we do something else to make it busy?? */
-          zMapWindowMove(window, min_seq, max_seq);
+      /* unfortunately freeze/thaw child-notify doesn't stop flicker */
+      /* can we do something else to make it busy?? */
+      zMapWindowMove(window, min_seq, max_seq);
 
-          foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
+      foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
 
-          /* Do the right thing with the border again. */
-          if (border)
-            canvasy -= border_size;
+      /* Do the right thing with the border again. */
+      if (border)
+        canvasy -= border_size;
 
-          /* No need to worry about border here as we're using the centre of the window. */
-          foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
-        }
+      /* No need to worry about border here as we're using the centre of the window. */
+      foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
     }
 
   return ;
