@@ -1001,12 +1001,25 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
 
       char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
       char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
-      int coding_region_start = Transcript_getCodingRegionStart(rsf) ;
-      int coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
+      int coding_region_start = 0;
+      int coding_region_end = 0;
+
+      if (coding_region_start_is_set)
+        coding_region_start = Transcript_getCodingRegionStart(rsf) ;
+
+      if (coding_region_end_is_set)
+        coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
+
       char cDNA_coding_start_is_set = Transcript_getcDNACodingStartIsSet(rsf) ;
       char cDNA_coding_end_is_set = Transcript_getcDNACodingEndIsSet(rsf) ;
-      int cDNA_coding_start = Transcript_getCodingRegionStart(rsf) ;
-      int cDNA_coding_end = Transcript_getCodingRegionEnd(rsf) ;
+      int cDNA_coding_start = 0;
+      int cDNA_coding_end = 0;
+
+      if (cDNA_coding_start_is_set)
+        cDNA_coding_start = Transcript_getCodingRegionStart(rsf) ;
+
+      if (cDNA_coding_end_is_set)
+        cDNA_coding_end = Transcript_getCodingRegionEnd(rsf) ;
 
       zMapLogMessage("coding startset=%c endset=%c start=%d end=%d\ncdna startset=%c endset=%c start=%d end=%d\n", 
                      coding_region_start_is_set, coding_region_end_is_set, coding_region_start, coding_region_end,
@@ -1063,8 +1076,15 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
 
       char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
       char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
-      int coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
-      int coding_region_end = PredictionTranscript_getCodingRegionEnd(rsf) ;
+      int coding_region_start = 0;
+      int coding_region_end = 0;
+
+      if (coding_region_start_is_set)
+        coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
+
+      if (coding_region_end_is_set)
+        coding_region_end = PredictionTranscript_getCodingRegionEnd(rsf) ;
+
       char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
       char end_is_set = PredictionTranscript_getEndIsSet(rsf) ;
 
