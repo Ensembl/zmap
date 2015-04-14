@@ -159,6 +159,7 @@ void *zmapNewThread(void *thread_args)
                 request = NULL ;			    /* Reset, we don't free this data. */
                 break ;
               }
+            case ZMAPTHREAD_RETURNCODE_SOURCEEMPTY:
 	           case ZMAPTHREAD_RETURNCODE_REQFAIL:
 	             {
                 char *error_msg ;

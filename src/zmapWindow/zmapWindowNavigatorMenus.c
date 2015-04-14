@@ -67,8 +67,8 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
   GQuark locus_quark = 0;
   char *wild_card = "*";
 
-  if (!navigate || !navigate->current_window || !item) 
-    return ; 
+  if (!navigate || !navigate->current_window || !item)
+    return ;
 
   feature = zmapWindowItemGetFeature(item);
   if (!feature)
@@ -121,11 +121,11 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
   wild_card_id = g_quark_from_string(wild_card) ;
 
 
-  if (!navigate || !navigate->current_window || !item ) 
-    return ; 
+  if (!navigate || !navigate->current_window || !item )
+    return ;
 
   feature = zmapWindowItemGetFeature(item) ;
-  if (!feature) 
+  if (!feature)
     return ;
 
   set_item = FOO_CANVAS_ITEM(zmapWindowContainerCanvasItemGetContainer(item));
@@ -173,7 +173,7 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 
   if(result)
     {
-      gboolean zoom_to_item = FALSE;
+      gboolean zoom_to_item = TRUE ;
       /* We have to access the window->context_to_item in the
        * WindowList and it does that with a callback. It must
        * be the same window! */
@@ -189,7 +189,7 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 
   {
     ZMapWindowFToISetSearchData search_data;
-    gboolean zoom_to_item = FALSE;
+    gboolean zoom_to_item = TRUE ;
     char *wild_name ;
     GQuark wild_name_id ;
 
@@ -369,7 +369,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
         ZMapWindowContainerFeatureSet container;
         ZMapWindowFToISetSearchData search_data;
         FooCanvasItem *set_item = menu_data->item;
-        gboolean zoom_to_item = FALSE;
+        gboolean zoom_to_item = TRUE ;
 
         feature = zmapWindowItemGetFeatureAny(menu_data->item);
 

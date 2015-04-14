@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -36,24 +36,24 @@
 #define ZMAP_REMOTE_PROTOCOL_H
 
 
-/* 
+/*
  *     ZMap Annotation Command Protocol (ZACP)
- * 
+ *
  * Note that _all_ element and attribute keywords must be in lowercase
  * because XML is case sensitive.
- * 
- * 
+ *
+ *
  */
 
 
 
-/* 
+/*
  *    Data type descriptors for the GtkSelectionData used for passing requests/replies.
  */
 
 
 /* Protocol "types", describe what type of message it is.
- * 
+ *
  * This is version 3 of the protocol because there will be some incompatible changes
  * from version 1.
  *  */
@@ -109,6 +109,8 @@
 #define ZACP_FIND_FEATURE         "find_feature"
 #define ZACP_DELETE_FEATURE       "delete_feature"
 
+#define ZACP_COLUMN_HIDE       "column_hide"
+#define ZACP_COLUMN_SHOW       "column_show"
 
 #define ZACP_GOODBYE       "goodbye"
 #define ZACP_SHUTDOWN      "shutdown"
@@ -180,9 +182,9 @@
 /* uM....NOT REALLY USEFUL AS XML WRITER DOES ALL THIS........ */
 
 /* Protocol envelope format:
- * 
+ *
  *   <zmap version="v.r" type=["request" | "reply"] peer_id="xxxxx" request_id="nnnnn" [timeout="secs"]>
- * 
+ *
  */
 #define ZACP_ENVELOPE_FORMAT "<" ZACP_TAG " version=\"" ZACP_VERSION "\" type=\"%s\" peer_id=\"%s\" request_id=\"%s\">"
 

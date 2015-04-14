@@ -719,6 +719,9 @@ gboolean zMapWindowExportFeatures(ZMapWindow window,
 gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GError **error) ;
 gboolean zMapWindowExportContext(ZMapWindow window, GError **error) ;
 
+void zMapWindowColumnHide(ZMapWindow window, GQuark column_id) ;
+void zMapWindowColumnShow(ZMapWindow window, GQuark column_id) ;
+
 #endif /* !ZMAP_WINDOW_H */
 
 #ifdef __cplusplus

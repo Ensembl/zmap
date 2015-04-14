@@ -127,6 +127,10 @@ static void processSpliceColumns(ZMapWindowContainerGroup container, FooCanvasPo
                               ZMapContainerLevelType level, gpointer user_data) ;
 static void highlightFeature(gpointer data, gpointer user_data) ;
 static void addSplicesCB(gpointer data, gpointer user_data) ;
+static void column_hide_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
+                        ZMapContainerLevelType level, gpointer user_data) ;
+static void column_show_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
+                        ZMapContainerLevelType level, gpointer user_data) ;
 
 
 
@@ -143,6 +147,29 @@ static GObjectClass *parent_class_G = NULL ;
 /*
  *                 External routines
  */
+
+
+
+
+void zMapWindowContainerFeatureSetColumnHide(ZMapWindow window, GQuark column_id)
+{
+  zMapReturnIfFail(window && window->feature_root_group && column_id) ;
+  zmapWindowContainerUtilsExecute(window->feature_root_group,
+                                  ZMAPCONTAINER_LEVEL_FEATURESET,
+                                  column_hide_cb,
+                                  (gpointer)column_id);
+}
+
+
+void zMapWindowContainerFeatureSetColumnShow(ZMapWindow window, GQuark column_id)
+{
+  zMapReturnIfFail(window && window->feature_root_group && column_id) ;
+  zmapWindowContainerUtilsExecute(window->feature_root_group,
+                                  ZMAPCONTAINER_LEVEL_FEATURESET,
+                                  column_show_cb,
+                                  (gpointer)column_id);
+}
+
 
 
 
@@ -1523,4 +1550,62 @@ static void addSplicesCB(gpointer data, gpointer user_data)
 
 
 
+/*
+ * These two callbacks traverse the FI levels and show/hide the column where the
+ * ID matches.
+ */
+static void column_hide_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
+                        ZMapContainerLevelType level, gpointer user_data)
+{
+  switch(level)
+    {
+    case ZMAPCONTAINER_LEVEL_FEATURESET:
+      {
+        GQuark column_id = (GQuark) user_data ;
+        ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet)container ;
 
+        if (column_id == container_set->unique_id)
+          {
+            FooCanvasItem *item = FOO_CANVAS_ITEM(container_set) ;
+            FooCanvasGroup *column_group = FOO_CANVAS_GROUP(item) ;
+            if (column_group && FOO_IS_CANVAS_GROUP(column_group))
+              {
+                zmapWindowContainerSetVisibility(column_group, FALSE) ;
+              }
+          }
+      }
+      break ;
+    default:
+      break ;
+    }
+
+  return ;
+}
+
+static void column_show_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
+                        ZMapContainerLevelType level, gpointer user_data)
+{
+  switch(level)
+    {
+    case ZMAPCONTAINER_LEVEL_FEATURESET:
+      {
+        GQuark column_id = (GQuark) user_data ;
+        ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet)container ;
+
+        if (column_id == container_set->unique_id)
+          {
+            FooCanvasItem *item = FOO_CANVAS_ITEM(container_set) ;
+            FooCanvasGroup *column_group = FOO_CANVAS_GROUP(item) ;
+            if (column_group && FOO_IS_CANVAS_GROUP(column_group))
+              {
+                zmapWindowContainerSetVisibility(column_group, TRUE) ;
+              }
+          }
+      }
+      break ;
+    default:
+      break ;
+    }
+
+  return ;
+}

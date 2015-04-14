@@ -328,8 +328,16 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   if (!parser_version)
     {
       int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
-      zMapDataSourceGetGFFVersion(server->data_source, &gff_version ) ;
-      server->gff_version = gff_version ;
+      if (!zMapDataSourceGetGFFVersion(server->data_source, &gff_version ))
+        {
+          /* sourceempty error */
+          server->last_err_msg = g_strdup("No data returned from file.") ;
+          result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
+        }
+      else
+        {
+          server->gff_version = gff_version ;
+        }
     }
   else
     server->gff_version = parser_version ;
@@ -353,6 +361,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   /*
    * Get the header data if there are any.
    */
+  result = ZMAP_SERVERRESPONSE_OK ;
   result = fileGetHeader(server) ;
 
   /*
@@ -508,7 +517,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 
       ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
 
-      result = server->result = ZMAP_SERVERRESPONSE_NODATA ;
+      result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
     }
   else
     {
@@ -530,19 +539,31 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
       g_hash_table_foreach(feature_context->alignments, eachAlignmentGetFeatures, &get_features_data) ;
 
 
-      if ((num_features = zMapGFFParserGetNumFeatures(server->parser)) == 0)
+      int num_features = zMapGFFParserGetNumFeatures(server->parser) ,
+        n_lines_bod = zMapGFFGetLineBod(server->parser),
+        n_lines_fas = zMapGFFGetLineFas(server->parser),
+        n_lines_seq = zMapGFFGetLineSeq(server->parser) ;
+
+      if (!num_features)
         {
           setErrMsg(server, "No features found.") ;
 
           ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
-
-          result = server->result = ZMAP_SERVERRESPONSE_NODATA ;
         }
-      else
-        {
-          /* get the list of source featuresets */
-          feature_context->src_feature_set_names = zMapGFFGetFeaturesets(server->parser);
 
+      if (!num_features && !n_lines_bod && !n_lines_fas && !n_lines_seq)
+        result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
+      else if (   (!num_features && n_lines_bod)
+               || (n_lines_fas && !zMapGFFGetSequenceNum(server->parser))
+               || (n_lines_seq && !zMapGFFGetSequenceNum(server->parser) && zMapGFFGetVersion(server->parser) == ZMAPGFF_VERSION_2)  )
+        result = server->result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
+
+      /*
+       * get the list of source featuresets
+       */
+      if (num_features)
+        {
+          feature_context->src_feature_set_names = zMapGFFGetFeaturesets(server->parser);
           result = server->result ;
         }
     }
@@ -794,7 +815,7 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
             err_msg = g_strdup_printf("EOF reached while trying to read header, at line %d",
                                       zMapGFFGetLineNumber(server->parser)) ;
 
-          result = ZMAP_SERVERRESPONSE_NODATA ;
+          result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
         }
       else
         {

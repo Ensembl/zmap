@@ -19,7 +19,7 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *              
+ *
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
@@ -61,16 +61,27 @@
 ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
 
 
-/* All requests return one of these responses. */
-/* WE SHOULD ADD AN  INVALID  AT THE START BUT REQUIRES CHECKING ALL USE OF  OK  !! */
+/* All requests return one of these responses.
+ *
+ * Additions have been made to replace NODATA with the following:
+ *
+ *            SOURCEEMPTY       (nothing in source at all - not even a header) OR
+ *                              ((no feature lines seen) AND (no features created) AND
+ *                              (no sequence directive lines seen) AND (no fasta lines seen))
+ *            SOUCEERROR        ((one or more feature lines seen) AND (no features created))    OR
+ *                              ((one or more fasta lines seen) AND (no sequence records created))  OR
+ *                              ((one or more sequence directive lines seen) AND (no sequence records created))
+ *                              source completely empty (i.e. not even a header)
+ */
 #define ZMAP_SERVER_RESPONSE_LIST(_)                         \
-  _(ZMAP_SERVERRESPONSE_OK, , "ok", "", "")				      \
-    _(ZMAP_SERVERRESPONSE_NODATA, , "no data returned", "", "")		\
-    _(ZMAP_SERVERRESPONSE_BADREQ, , "error in request args", "", "")		\
-    _(ZMAP_SERVERRESPONSE_UNSUPPORTED, , "unsupported request", "", "")		\
-    _(ZMAP_SERVERRESPONSE_REQFAIL, , "request failed", "", "")			\
-    _(ZMAP_SERVERRESPONSE_TIMEDOUT, , "timed out", "", "")			\
-    _(ZMAP_SERVERRESPONSE_SERVERDIED, , "server died", "", "")
+    _(ZMAP_SERVERRESPONSE_OK,              , "ok",                       "", "")		\
+    _(ZMAP_SERVERRESPONSE_SOURCEEMPTY,     , "no data in source",        "", "")		\
+    _(ZMAP_SERVERRESPONSE_SOURCEERROR,     , "nothing in source",        "", "")		\
+    _(ZMAP_SERVERRESPONSE_BADREQ,          , "error in request args",    "", "")		\
+    _(ZMAP_SERVERRESPONSE_UNSUPPORTED,     , "unsupported request",      "", "")		\
+    _(ZMAP_SERVERRESPONSE_REQFAIL,         , "request failed",           "", "")		\
+    _(ZMAP_SERVERRESPONSE_TIMEDOUT,        , "timed out",                "", "")		\
+    _(ZMAP_SERVERRESPONSE_SERVERDIED,      , "server died",              "", "")
 
 ZMAP_DEFINE_ENUM(ZMapServerResponseType, ZMAP_SERVER_RESPONSE_LIST) ;
 
