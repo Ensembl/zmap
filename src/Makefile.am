@@ -323,7 +323,8 @@ $(top_srcdir)/config.h.in $(top_srcdir)/configure $(top_srcdir)/zmap_version.m4
 # To remove directories and other more complex lists of files we use the standard
 # maintainer-clean-local target which is run after all the stuff in maintainer-clean
 #
-GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/* $(top_srcdir)/config
+GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/* $(top_srcdir)/config \
+$(top_srcdir)/autom4te.cache
 
 maintainer-clean-local:
 	@echo 'maintainer-clean-local: Removing all generated files....'
