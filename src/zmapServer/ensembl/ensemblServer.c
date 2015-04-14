@@ -1003,8 +1003,13 @@ static ZMapFeature makeFeatureTranscript(Transcript *rsf,
       int cDNA_coding_start = Transcript_getCodingRegionStart(rsf) ;
       int cDNA_coding_end = Transcript_getCodingRegionEnd(rsf) ;
 
+      zMapLogMessage("coding startset=%c endset=%c start=%d end=%d\ncdna startset=%c endset=%c start=%d end=%d\n", 
+                     coding_region_start_is_set, coding_region_end_is_set, coding_region_start, coding_region_end,
+                     cDNA_coding_start_is_set, cDNA_coding_end_is_set, cDNA_coding_start, cDNA_coding_end);
+
       zMapFeatureTranscriptInit(feature);
       zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+      //zMapFeatureAddTranscriptCDS(feature, cds, coding_region_start, coding_region_end);
 
       Vector *exons = Transcript_getAllExons(rsf) ;
       transcriptAddExons(feature, exons) ;
@@ -1077,6 +1082,8 @@ static void transcriptAddExons(ZMapFeature feature, Vector *exons)
           SeqFeature *exon = (SeqFeature*)Vector_getElementAt(exons,i);
           ZMapSpanStruct span = {exon->start + feature->x1, exon->end + feature->x1};
           zMapFeatureAddTranscriptExonIntron(feature, &span, NULL) ;
+          zMapLogMessage("Added exon %d, %d (%d, %d)", 
+                         exon->start + feature->x1, exon->end + feature->x1, exon->start, exon->end);
         }
 
       zMapFeatureTranscriptRecreateIntrons(feature) ;
