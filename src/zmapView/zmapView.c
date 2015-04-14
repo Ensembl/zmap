@@ -3526,7 +3526,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                     /* Recover the stepRequest from the view connection and process the data from
                      * the request. */
-                    if (!req_any || !view_con || (request = zmapViewStepListFindRequest(view_con->step_list, req_any->type, view_con)))
+                    if (!req_any || !view_con || !(request = zmapViewStepListFindRequest(view_con->step_list, req_any->type, view_con)))
                       {
                         zMapLogCritical("Request of type %s for connection %s not found in view %s step list !",
                                         (req_any ? zMapServerReqType2ExactStr(req_any->type) : ""),
