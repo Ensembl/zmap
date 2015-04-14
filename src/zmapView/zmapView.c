@@ -3529,12 +3529,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 		    /* Recover the stepRequest from the view connection and process the data from
 		     * the request. */
-                    if (!(request = zmapViewStepListFindRequest(view_con->step_list, req_any->type, view_con)))
+                    if (!req_any || !view_conn || (request = zmapViewStepListFindRequest(view_con->step_list, req_any->type, view_con)))
 		      {
 			zMapLogCritical("Request of type %s for connection %s not found in view %s step list !",
-					zMapServerReqType2ExactStr(req_any->type),
-					view_con->url,
-					zmap_view->view_name) ;
+					(req_any ? zMapServerReqType2ExactStr(req_any->type) : ""),
+					(view_con ? view_con->url : ""),
+					(zmap_view ? zmap_view->view_name : "")) ;
 
 			kill_connection = TRUE ;
 		      }
