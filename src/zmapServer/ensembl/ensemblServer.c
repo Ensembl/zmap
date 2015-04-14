@@ -572,7 +572,7 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
       PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
       if (rsf)
-        makeFeaturePredictionTranscript(rsf, get_features_data, feature_block) ;
+        makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
     }  
@@ -1026,7 +1026,8 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
 }
 
 
-static ZMapFeature makeFeaturePredictionTranscript(PredictionTranscript *rsf, 
+static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server, 
+                                                   PredictionTranscript *rsf, 
                                                    GetFeaturesData get_features_data,
                                                    ZMapFeatureBlock feature_block)
 {
@@ -1087,7 +1088,7 @@ static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector
           zMapFeatureAddTranscriptExonIntron(feature, &span, NULL) ;
 
           zMapLogMessage("Added exon %d, %d (%d, %d)", 
-                         span->x1, span->x2, exon->start, exon->end);
+                         span.x1, span.x2, exon->start, exon->end);
         }
 
       zMapFeatureTranscriptRecreateIntrons(feature) ;
