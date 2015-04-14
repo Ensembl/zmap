@@ -879,7 +879,10 @@ static ZMapFeature makeFeatureSimple(SimpleFeature *rsf,
   const char *source = NULL ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
-  feature_name = SimpleFeature_getDisplayLabel(rsf) ;
+  feature_name = SeqFeature_getStableId((SeqFeature*)rsf);
+
+  if (!feature_name)
+    feature_name = SimpleFeature_getDisplayLabel(rsf) ;
 
   if (analysis)
     source = Analysis_getGFFSource(analysis) ;
@@ -915,7 +918,9 @@ static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf,
   RepeatConsensus *consensus = RepeatFeature_getConsensus(rsf) ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
-  if (consensus)
+  feature_name = SeqFeature_getStableId((SeqFeature*)rsf);
+
+  if (!feature_name && consensus)
     feature_name = RepeatConsensus_getName(consensus) ;
 
   if (analysis)
@@ -984,6 +989,9 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
 
   feature_name = Transcript_getExternalName(rsf) ;
 
+  if (!feature_name)
+    feature_name = SeqFeature_getStableId((SeqFeature*)rsf);
+
   if (analysis)
     source = Analysis_getGFFSource(analysis) ;
 
@@ -1039,6 +1047,9 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
   feature_name = PredictionTranscript_getDisplayLabel(rsf) ;
+
+  if (!feature_name)
+    feature_name = SeqFeature_getStableId((SeqFeature*)rsf);
 
   if (analysis)
     source = Analysis_getGFFSource(analysis) ;
@@ -1106,8 +1117,12 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf,
   /* Create the basic feature. We need to pass some alignment-specific fields */
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_ALIGNMENT ;
 
-  const char *feature_name_id = BaseAlignFeature_getHitSeqName(rsf) ;
+  const char *feature_name_id = SeqFeature_getStableId((SeqFeature*)rsf);
   const char *feature_name = BaseAlignFeature_getHitSeqName(rsf) ;
+
+  if (!feature_name_id)
+    feature_name_id = feature_name;
+
   int match_start = BaseAlignFeature_getHitStart(rsf) ;
   int match_end = BaseAlignFeature_getHitEnd(rsf) ;
   const char *source = BaseAlignFeature_getDbDisplayName((BaseAlignFeature*)rsf) ;
