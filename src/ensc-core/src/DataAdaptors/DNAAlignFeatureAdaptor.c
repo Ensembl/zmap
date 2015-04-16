@@ -114,7 +114,7 @@ char *DNAAlign_cols[] = {
             "daf.external_db_id",
             "daf.hcoverage",
 	    "daf.external_data",
-	    "daf.pair_dna_align_feature_id",
+	    //"daf.pair_dna_align_feature_id",
 	    "exdb.db_name",
 	    "exdb.db_display_name",
             NULL };
@@ -175,8 +175,8 @@ int DNAAlignFeatureAdaptor_store(BaseFeatureAdaptor *bfa, Vector *features) {
                     "evalue,"
                     "perc_ident,"
                     "external_db_id,"
-                    "hcoverage,"
-                    "pair_dna_align_feature_id) "
+                    "hcoverage) "
+          //"pair_dna_align_feature_id) "
                     "VALUES (%" IDFMTSTR ",%%d,%%d,%%d,%%d,%%d,%%d,'%%s','%%s',%"IDFMTSTR
                              ",%%s,%%s,%%s,%%s,%%s,%%s)", tableName);
                             // changed to strings to allow for nulls ",%%f,%%f,%%f,%" IDFMTSTR ",%%f,%" IDFMTSTR ")", tableName);
