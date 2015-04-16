@@ -41,29 +41,29 @@
 #include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasAlignment_I.h>
-#include <zmapWindowCanvasGlyph_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
-#define INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT 1
+
+
 
 #define DEBUG_SPLICE 0
 
 
 static void alignmentColumnInit(ZMapWindowFeaturesetItem featureset) ;
 static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featureset,
-  ZMapWindowCanvasFeature feature,
-  GdkDrawable *drawable, GdkEventExpose *expose) ;
+                                                  ZMapWindowCanvasFeature feature,
+                                                  GdkDrawable *drawable, GdkEventExpose *expose) ;
 static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width) ;
 static void zmapWindowCanvasAlignmentPreZoom(ZMapWindowFeaturesetItem featureset) ;
 static void zMapWindowCanvasAlignmentZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
 static ZMapWindowCanvasFeature zMapWindowCanvasAlignmentAddFeature(ZMapWindowFeaturesetItem featureset,
    ZMapFeature feature, double y1, double y2) ;
 static void zMapWindowCanvasAlignmentFreeSet(ZMapWindowFeaturesetItem featureset) ;
-static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasItem *foo,
-      ZMapFeature feature, double x, double y) ;
+static ZMapFeatureSubPart zmapWindowCanvasAlignmentGetSubPart(FooCanvasItem *foo,
+                                                              ZMapFeature feature, double x, double y) ;
 static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
-     double item_x, double item_y, int cx, int cy,
-     double local_x, double local_y, double x_off) ;
+                             double item_x, double item_y, int cx, int cy,
+                             double local_x, double local_y, double x_off) ;
 static gboolean hasNCSplices(ZMapFeature left, ZMapFeature right, gboolean *left_nc, gboolean *right_nc) ;
 static void align_gap_free(AlignGap ag) ;
 static AlignGap align_gap_alloc(void) ;
@@ -75,39 +75,8 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
  *                   Globals
  */
 
-
-/*
- * Glyphs to represent the trunction of a feature at the ZMap boundary. One for
- * truncation at the start and one for truncation at the end.
- */
-static ZMapStyleGlyphShapeStruct truncation_shape_alignment_instance_start =
-  {
-    {
-      0, 0,      5, -5,        0, -10,       -5, -5,      0, 0,          0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    },                                                      /* length 32 coordinate array */
-    5,                                                      /* number of coordinates */
-    10, 10,                                                 /* width and height */
-    0,                                                      /* quark ID */
-    GLYPH_DRAW_LINES                                        /* LINES == OUTLINE, POLYGON == filled */
-  }  ;
-
-static ZMapStyleGlyphShapeStruct truncation_shape_alignment_instance_end =
-  {
-    {
-      0, 0,      -5, 5,        0, 10,       5, 5,      0, 0,          0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    },
-    5,
-    10, 10,
-    0,
-    GLYPH_DRAW_LINES
-  }  ;
-
-static ZMapStyleGlyphShapeStruct * truncation_shape_alignment_start = &truncation_shape_alignment_instance_start ;
-static ZMapStyleGlyphShapeStruct * truncation_shape_alignment_end = &truncation_shape_alignment_instance_end ;
-static ZMapWindowCanvasGlyph truncation_glyph_alignment_start = NULL ;
-static ZMapWindowCanvasGlyph truncation_glyph_alignment_end = NULL ;
+static ZMapWindowCanvasGlyph truncation_glyph_alignment_start_G = NULL ;
+static ZMapWindowCanvasGlyph truncation_glyph_alignment_end_G = NULL ;
 
 /* optimise setting of colours, thes have to be GdkParsed and mapped to the canvas */
 /* we has a flag to set these on the first draw operation which requires map and relaise of the
@@ -147,7 +116,7 @@ void zMapWindowCanvasAlignmentInit(void)
 
 
   feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = zMapWindowCanvasAlignmentGetFeatureExtent ;
-  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = zmapWindowCanvasAlignmentGetSubPartSpan ;
+  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = zmapWindowCanvasAlignmentGetSubPart ;
 
   zMapWindowCanvasFeatureSetSize(FEATURE_ALIGN, feature_funcs, sizeof(zmapWindowCanvasAlignmentStruct)) ;
 
@@ -253,8 +222,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
     x1_cache = 0.0,
     x2_cache = 0.0,
     y1_cache = 0.0,
-    y2_cache = 0.0,
-    col_width = 0.0 ;
+    y2_cache = 0.0 ;
 
 
   zMapReturnIfFail(featureset && feature && feature->feature && drawable && expose) ;
@@ -279,29 +247,27 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   foo_canvas_w2c (foo->canvas, x1, 0, &cx1, NULL);
   foo_canvas_w2c (foo->canvas, x2, 0, &cx2, NULL);
 
+
+  /* ouch...can't we do this earlier.....rather than return here..... */
   if (cx2 < expose->area.x || cx1 > expose->area.x + expose->area.width)
     return;
 
-#ifdef INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT
   /*
    * Instantiate glyph objects.
    */
-  if (truncation_glyph_alignment_start == NULL)
+  if (truncation_glyph_alignment_start_G == NULL)
     {
-      truncation_glyph_alignment_start = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
-      truncation_glyph_alignment_start->sub_feature = TRUE ;
-      truncation_glyph_alignment_start->shape = truncation_shape_alignment_start ;
-      truncation_glyph_alignment_start->which = ZMAP_GLYPH_TRUNCATED_START ;
+      ZMapStyleGlyphShape start_shape, end_shape ;
+
+      zMapWindowCanvasGlyphGetTruncationShapes(&start_shape, &end_shape) ;
+
+      truncation_glyph_alignment_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_TRUNCATED_START,
+                                                                      FALSE, TRUE) ;
+
+      truncation_glyph_alignment_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_TRUNCATED_END,
+                                                                    FALSE, TRUE) ;
     }
-  if (truncation_glyph_alignment_end == NULL)
-    {
-      truncation_glyph_alignment_end = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
-      truncation_glyph_alignment_end->sub_feature = TRUE ;
-      truncation_glyph_alignment_end->shape = truncation_shape_alignment_end ;
-      truncation_glyph_alignment_end->which = ZMAP_GLYPH_TRUNCATED_END ;
-    }
-  col_width = zMapStyleGetWidth(featureset->style) ;
-#endif
+
 
 
   /*
@@ -339,7 +305,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
     }
 
 
-#ifdef INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT
+
   /*
    * Store feature coordintes.
    */
@@ -365,24 +331,28 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
   if (!ignore_truncation_glyphs)
     {
+      double col_width ;
+
+      col_width = zMapStyleGetWidth(featureset->style) ;
+
       if (truncated_start)
         {
-          zMapWindowCanvasGlyphDrawTruncationGlyph(foo, featureset, feature,
-                                                   style, truncation_glyph_alignment_start,
-                                                   drawable, col_width) ;
+          zMapWindowCanvasGlyphDrawGlyph(featureset, feature,
+                                         style, truncation_glyph_alignment_start_G,
+                                         drawable, col_width, 0.0) ;
         }
       if (truncated_end)
         {
-          zMapWindowCanvasGlyphDrawTruncationGlyph(foo, featureset, feature,
-                                                   style, truncation_glyph_alignment_end,
-                                                   drawable, col_width) ;
+          zMapWindowCanvasGlyphDrawGlyph(featureset, feature,
+                                         style, truncation_glyph_alignment_end_G,
+                                         drawable, col_width, 0.0) ;
         }
 
       if (truncated_start || truncated_end)
         featureset->draw_truncation_glyphs = TRUE ;
 
     }
-#endif
+
 
   /*
    * Draw the alignment boxes.
@@ -430,7 +400,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
           align->gapped = makeGapped(feature->feature, featureset->dy - featureset->start, foo, forward) ;
 
-#ifdef INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT
           for (ag = align->gapped ; ag ; ag = ag->next )
             {
               /* treat start of box */
@@ -444,7 +413,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
               ag->y1 = ag->y1 > cy2 ? cy2 : ag->y1 ;
               ag->y2 = ag->y2 > cy2 ? cy2 : ag->y2 ;
             }
-#endif
         }
 
       /* draw them */
@@ -523,7 +491,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
     }
 
 
-#ifdef INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT
   /*
    * Reset to cached values before attempting anything else.
    */
@@ -531,7 +498,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   feature->feature->x2 = x2_cache ;
   feature->y1 = y1_cache ;
   feature->y2 = y2_cache ;
-#endif
 
 
   /*
@@ -581,7 +547,10 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
                 score = homol->length - homol->y2;
 
               if (score)
-                align->glyph5 = zMapWindowCanvasGetGlyph(featureset, homology, feature->feature, 5, score);
+                align->glyph5 = zMapWindowCanvasGetGlyph(featureset,
+                                                         homology,
+                                                         feature->feature->strand,
+                                                         ZMAP_GLYPH_FIVEPRIME, score);
             }
 
           /* Draw any non-canonical splices markers, can only be done if we have the DNA. */
@@ -594,10 +563,16 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
                   ZMapWindowCanvasAlignment next = (ZMapWindowCanvasAlignment) feature->right ;
 
                   if (left_nc)
-                    align->glyph3 = zMapWindowCanvasGetGlyph(featureset, nc_splice, feature->feature, 3, 0.0) ;
+                    align->glyph3 = zMapWindowCanvasGetGlyph(featureset,
+                                                             nc_splice,
+                                                             feature->feature->strand,
+                                                             ZMAP_GLYPH_THREEPRIME, 0.0) ;
 
                   if (right_nc)
-                    next->glyph5 = zMapWindowCanvasGetGlyph(featureset, nc_splice, next->feature.feature, 5, 0.0) ;
+                    next->glyph5 = zMapWindowCanvasGetGlyph(featureset,
+                                                            nc_splice,
+                                                            next->feature.feature->strand,
+                                                            ZMAP_GLYPH_FIVEPRIME, 0.0) ;
                 }
             }
 
@@ -611,7 +586,9 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
                 score = homol->y1 - 1;
 
               if (score)
-                align->glyph3 = zMapWindowCanvasGetGlyph(featureset, homology, feature->feature, 3, score);
+                align->glyph3 = zMapWindowCanvasGetGlyph(featureset,
+                                                         homology, feature->feature->strand,
+                                                         ZMAP_GLYPH_THREEPRIME, score);
             }
 
           align->bump_set = TRUE;
@@ -818,10 +795,10 @@ static void zMapWindowCanvasAlignmentFreeSet(ZMapWindowFeaturesetItem featureset
 
 /* Returns a newly-allocated ZMapFeatureSubPartSpan, which the caller must free with g_free,
  * or NULL. */
-static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasItem *foo,
-                                                                      ZMapFeature feature, double x, double y)
+static ZMapFeatureSubPart zmapWindowCanvasAlignmentGetSubPart(FooCanvasItem *foo,
+                                                              ZMapFeature feature, double x, double y)
 {
-  ZMapFeatureSubPartSpan sub_part = NULL ;
+  ZMapFeatureSubPart sub_part = NULL ;
   ZMapWindowFeaturesetItem fi = NULL ;
   ZMapAlignBlock ab, prev_ab ;
   int i = 0, match_num = 0, gap_num = 0 ;
