@@ -134,7 +134,7 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData 
 static gboolean getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllPredictionTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+//static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 
@@ -153,7 +153,7 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf, ZMapHomolType hom
 static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureTranscript(EnsemblServer server, Transcript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server, PredictionTranscript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+//static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
 static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector *exons) ;
@@ -581,30 +581,30 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 }
 
 
-static gboolean getAllGenes(EnsemblServer server, 
-                            GetFeaturesData get_features_data,
-                            ZMapFeatureBlock feature_block)
-{
-  gboolean result = TRUE ;
-
-  pthread_mutex_lock(&server->mutex) ;
-  Vector *features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
-  pthread_mutex_unlock(&server->mutex) ;
-
-  int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
-    {
-      Gene *sf = Vector_getElementAt(features,i);
-      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
-
-      if (rsf)
-        makeFeatureGene(server, rsf, get_features_data, feature_block) ;
-      else
-        printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
-    }  
-
-  return result;
-}
+//static gboolean getAllGenes(EnsemblServer server, 
+//                            GetFeaturesData get_features_data,
+//                            ZMapFeatureBlock feature_block)
+//{
+//  gboolean result = TRUE ;
+//
+//  pthread_mutex_lock(&server->mutex) ;
+//  Vector *features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
+//  pthread_mutex_unlock(&server->mutex) ;
+//
+//  int i = 0 ;
+//  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
+//    {
+//      Gene *sf = Vector_getElementAt(features,i);
+//      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+//
+//      if (rsf)
+//        makeFeatureGene(server, rsf, get_features_data, feature_block) ;
+//      else
+//        printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
+//    }  
+//
+//  return result;
+//}
 
 
 /* A bit of a lash up for now, we need the parent->child mapping for a sequence and since
@@ -941,17 +941,17 @@ static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf,
 }
 
 
-static ZMapFeature makeFeatureGene(EnsemblServer server, 
-                                   Gene *rsf, 
-                                   GetFeaturesData get_features_data,
-                                   ZMapFeatureBlock feature_block)
-{
-  ZMapFeature feature = NULL ;
-
-  geneAddTranscripts(server, rsf, get_features_data, feature_block) ;
-
-  return feature ;
-}
+//static ZMapFeature makeFeatureGene(EnsemblServer server, 
+//                                   Gene *rsf, 
+//                                   GetFeaturesData get_features_data,
+//                                   ZMapFeatureBlock feature_block)
+//{
+//  ZMapFeature feature = NULL ;
+//
+//  geneAddTranscripts(server, rsf, get_features_data, feature_block) ;
+//
+//  return feature ;
+//}
 
 
 static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block)
@@ -1066,7 +1066,7 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
     source = Analysis_getLogicName(analysis) ;
 
   if (!source)
-    source = featureGetSOTerm(rsf) ;
+    source = featureGetSOTerm((SeqFeature*)rsf) ;
   
   if (source)
     {
@@ -1074,19 +1074,19 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
                             feature_mode, source, 0, 0, 
                             get_features_data, feature_block) ;
 
-      char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
-      char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
-      int coding_region_start = 0;
-      int coding_region_end = 0;
-
-      if (coding_region_start_is_set)
-        coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
-
-      if (coding_region_end_is_set)
-        coding_region_end = PredictionTranscript_getCodingRegionEnd(rsf) ;
-
-      char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
-      char end_is_set = PredictionTranscript_getEndIsSet(rsf) ;
+      //char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
+      //char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
+      //int coding_region_start = 0;
+      //int coding_region_end = 0;
+      //
+      //if (coding_region_start_is_set)
+      //  coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
+      //
+      //if (coding_region_end_is_set)
+      //  coding_region_end = PredictionTranscript_getCodingRegionEnd(rsf) ;
+      //
+      //char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
+      //char end_is_set = PredictionTranscript_getEndIsSet(rsf) ;
 
       zMapFeatureTranscriptInit(feature);
       zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
@@ -1526,10 +1526,16 @@ static Slice* getSlice(EnsemblServer server,
           pthread_mutex_unlock(&server->mutex) ;
         }
       
+      /* copy seq_name because function takes non-const arg... ugh */
+      char *seq_name_copy = g_strdup(seq_name);
+
       pthread_mutex_lock(&server->mutex) ; 
-      slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", seq_name, start, end, strand, NULL, 0);
+      slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", seq_name_copy, start, end, strand, NULL, 0);
       pthread_mutex_unlock(&server->mutex) ;
       
+      g_free(seq_name_copy);
+      seq_name_copy = NULL;
+
       if (server->slice_adaptor && slice)
         {
           server->result = ZMAP_SERVERRESPONSE_OK ;
@@ -1584,12 +1590,18 @@ static char* getSequence(EnsemblServer server,
 
       if (server->slice_adaptor && server->seq_adaptor)
         {
+          /* copy seq_name because function takes non-const arg... ugh */
+          char *seq_name_copy = g_strdup(seq_name);
+
           pthread_mutex_lock(&server->mutex) ; 
           Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
-                                                    seq_name, start, end, 
+                                                    seq_name_copy, start, end, 
                                                     strand, NULL, 0);
           pthread_mutex_unlock(&server->mutex) ;
 
+          g_free(seq_name_copy);
+          seq_name_copy = NULL;
+          
           if (slice)
             {
               pthread_mutex_lock(&server->mutex) ; 
