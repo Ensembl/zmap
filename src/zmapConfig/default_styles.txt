@@ -17,6 +17,11 @@ rev3-tri = <0,0 ;-4,4 ;4,4 ;0,0>
 dn-hook = <0,0; 8,0; 8,8>
 up-hook = <0,0; 8,0; 8,-8>
 
+# feature junctions offset to hit ends of feature.
+junction-5 = <0,0; 0,-6; 6,-6; 6,0; 0,0>
+junction-3 = <0,0; 0, 6; 6, 6; 6,0; 0,0>
+
+
 
 # generic styles lifted from otterlace
 

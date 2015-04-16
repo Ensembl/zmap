@@ -215,15 +215,79 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
 
 
 
+<h3 id="feature_filtering">Feature Filtering</h3>
+
+<p>Features can be filtered by a variety of different criteria with the results
+being displayed in different ways according to the criteria. Filtering is accessed
+via the "Column Filtering" menu:</p>
+
+<!--# IMAGE NEEDED HERE....DO AT WORK..... -->
+<img src="Filter_menu.png" class="img" alt="Filter menu options">
+
+<p>The following table explains what each does:</p>
+
+<table border cellpadding=10>
+
+  <tr>
+    <th colspan=3>control keys</th>
+  </tr>
+  <tr>
+    <th>Filter Option</th> <th>Description</th> <th>Action</th>
+  </tr>
+  <tr>
+    <td><b>Common Splices</b></td>
+    <td>All splices that match splices in the currently selected feature are highlighted.</td>
+    <td>Matching splices are highlighted with a red box.</td>
+  </tr>
+  <tr>
+    <td><b>Non-matching Introns</b></td>
+    <td>Select features with "introns" (transcripts, alignments) that do <b>not</b> match the selected feature.</td>
+    <td>Features with any matching introns are hidden.</td>
+  </tr>
+  <tr>
+    <td><b>Non-matching Exons</b></td>
+    <td>Select features with "exons" (transcripts, alignments) that do <b>not</b> match the selected feature.</td>
+    <td>Features with any matching exons are hidden.</td>
+  </tr>
+  <tr>
+    <td><b>Non-matching Confirmed Introns</b></td>
+    <td>Select features with introns objects that do <b>not</b> match the selected feature.</td>
+    <td>Any matching intron objects are hidden.</td>
+  </tr>
+  <tr>
+    <td><b>Matching Exons</b></td>
+    <td>Select features with "exons" (transcripts, alignments) that match the selected feature.</td>
+    <td>Features with any exons that don't match are hidden.</td>
+  </tr>
+  <tr>
+    <td><b>Matching CDS</b></td>
+    <td>Select features with CDS exons that match the selected feature.</td>
+    <td>Features with any CDS exons that don't match are hidden.</td>
+  </tr>
+  <tr>
+    <td><b>Unfilter</b></td>
+    <td>Re-display all features.</td>
+    <td>Unhide all features.</td>
+  </tr>
+
+</table>
 
 
 
-<h3 id="splice_highlighting">Splice Highlighting</h3>
 
-<p>You can select a feature and then by pressing 's' you will see highlighted
-in red all the start/ends of features in other columns that match the
-highlighted features start/ends, e.g. highlight a transcript, press 's' and you
-will be able to see all the EST's, mRNA's etc that line up with the transcript.</p>
+
+
+
+
+
+
+
+
+<p id="splice_highlighting">You can select a feature and then by pressing 's'
+you will see highlighted in red all the start/ends of features in other columns
+that match the highlighted features start/ends, e.g. highlight a transcript,
+press 's' and you will be able to see all the EST's, mRNA's etc that line up
+with the transcript.</p>
 
 <p>The below images show before and afer highlighting:</p>
 

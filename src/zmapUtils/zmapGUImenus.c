@@ -177,11 +177,12 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
    * menu to its vital that i starts at zero. */
   for (i = 0 ; i < num_menu_items ; i++)
     {
-      if(menu_items[i].type == ZMAPGUI_MENU_HIDE)
-      {
-            num_hide++;
-            continue;
-      }
+      if (menu_items[i].type == ZMAPGUI_MENU_HIDE)
+        {
+          num_hide++;
+          continue;
+        }
+
 
       /* User does not have to set a name for a separator but to make our code more uniform
        * we add one. */
@@ -198,6 +199,13 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
           case ZMAPGUI_MENU_BRANCH:
             {
               item->item_type = "<Branch>" ;
+              item->callback = NULL ;
+              item->callback_action = -1 ;
+              break ;
+            }
+          case ZMAPGUI_MENU_TITLE:
+            {
+              item->item_type = "<Title>" ;
               item->callback = NULL ;
               item->callback_action = -1 ;
               break ;
@@ -335,9 +343,8 @@ void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
   ZMapGUIMenuItem menu_item ;
   int index ;
 
-  /* zMapAssert(menu) ; */
-  if (!menu)
-    return ;
+  zMapReturnIfFail(menu) ;
+
 
   if (start_index_inout)
     index = *start_index_inout ;

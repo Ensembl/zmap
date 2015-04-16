@@ -40,22 +40,22 @@
 /* This absolutely should NOT be in here..... */
 #include <ZMap/zmapWindow.h>	/* ZMapWindow type */
 
-
 /* Temp, make things compile.... */
 #include <zmapWindowCanvasItem.h>
 
 
 #define ZMAP_WINDOW_CONTAINER_FEATURESET_NAME 	"ZMapWindowContainerFeatureSet"
-
-
 #define ZMAP_TYPE_CONTAINER_FEATURESET           (zmapWindowContainerFeatureSetGetType())
-
-#define ZMAP_CONTAINER_FEATURESET(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet))
-#define ZMAP_CONTAINER_FEATURESET_CONST(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet const))
-
-#define ZMAP_CONTAINER_FEATURESET_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSetClass))
-#define ZMAP_IS_CONTAINER_FEATURESET(obj)	 (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CONTAINER_FEATURESET))
-#define ZMAP_CONTAINER_FEATURESET_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSetClass))
+#define ZMAP_CONTAINER_FEATURESET(obj)                                  \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet))
+#define ZMAP_CONTAINER_FEATURESET_CONST(obj)                            \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSet const))
+#define ZMAP_CONTAINER_FEATURESET_CLASS(klass)                          \
+  (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSetClass))
+#define ZMAP_IS_CONTAINER_FEATURESET(obj)                               \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CONTAINER_FEATURESET))
+#define ZMAP_CONTAINER_FEATURESET_GET_CLASS(obj)                        \
+  (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_CONTAINER_FEATURESET, zmapWindowContainerFeatureSetClass))
 
 
 /* Instance */
@@ -68,6 +68,54 @@ zmapWindowContainerFeatureSetClass, *ZMapWindowContainerFeatureSetClass ;
 
 
 typedef ColinearityType (*ZMapFeatureCompareFunc)(ZMapFeature feature_a, ZMapFeature feature_b, gpointer user_data);
+
+
+
+/* What part of the feature will be used to filter. */
+typedef enum
+  {
+    ZMAP_CANVAS_FILTER_INVALID,
+    ZMAP_CANVAS_FILTER_NONE,                                /* None => undo any existing filter. */
+    ZMAP_CANVAS_FILTER_PARTS,                               /* Find features with same matches or exons. */
+    ZMAP_CANVAS_FILTER_GAPS,                                /* Find features with same gaps or introns. */
+    ZMAP_CANVAS_FILTER_FEATURE                              /* Find features with same overall start/end. */
+  } ZMapWindowContainerFilterType ;
+
+
+/* What action to perform on filtered features. */
+typedef enum
+  {
+    ZMAP_CANVAS_ACTION_INVALID,
+    ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE,                    /* Highlight matching splices. */
+    ZMAP_CANVAS_ACTION_HIDE,                                /* Hide features with matches. */
+    ZMAP_CANVAS_ACTION_SHOW,                                /* Show features with matches (=> hide non-matching). */
+    ZMAP_CANVAS_ACTION_CREATE_NEW                           /* Create new features with matches. */
+  } ZMapWindowContainerActionType ;
+
+
+/* Which features to perform the action on, where "source" is the feature against which
+ * other features are filtered. */
+typedef enum
+  {
+    ZMAP_CANVAS_TARGET_INVALID,
+    ZMAP_CANVAS_TARGET_NOT_SOURCE_FEATURES,                 /* Do not apply to source features. */
+    ZMAP_CANVAS_TARGET_NOT_SOURCE_COLUMN,                   /* Do not apply to source column. */
+    ZMAP_CANVAS_TARGET_ALL,                                 /* Apply to all features in all columns. */
+  } ZMapWindowContainerTargetType ;
+
+
+/* Return code from filtering...it seems important to be able to indicate to the user
+ * whether nothing happened because the selected column is not "filter-sensitive"
+ * (needs style resource "filter-sensitive" to be to TRUE for filtering)
+ * or just because there were no matches. */
+typedef enum
+  {
+    ZMAP_CANVAS_FILTER_FAILED,                              /* Serious error, see log file. */
+    ZMAP_CANVAS_FILTER_NOT_SENSITIVE,                       /* The column is not filter-sensitive. */
+    ZMAP_CANVAS_FILTER_NO_MATCHES,                          /* No features matched the filter. */
+    ZMAP_CANVAS_FILTER_OK                                   /* Features were filtered. */
+  } ZMapWindowContainerFilterRC ;
+
 
 
 /* Public funcs */
@@ -114,18 +162,14 @@ GQuark zmapWindowContainerFeaturesetGetColumnUniqueId(ZMapWindowContainerFeature
 
 /* style properties for the whole column,  */
 ZMapStrand zmapWindowContainerFeatureSetGetStrand(ZMapWindowContainerFeatureSet container_set);
-ZMapFrame zmapWindowContainerFeatureSetGetFrame (ZMapWindowContainerFeatureSet container_set);
+ZMapFrame zmapWindowContainerFeatureSetGetFrame(ZMapWindowContainerFeatureSet container_set);
 double zmapWindowContainerFeatureSetGetWidth(ZMapWindowContainerFeatureSet container_set);
 double zmapWindowContainerFeatureGetBumpSpacing(ZMapWindowContainerFeatureSet container_set);
 gboolean zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet container_set,
                                                    double *min_mag_out, double *max_mag_out);
 ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpUnmarked(ZMapWindowContainerFeatureSet container_set) ;
-
-gboolean zmapWindowContainerFeatureSetDoSpliceHighlight(ZMapWindowContainerFeatureSet container_set) ;
-gboolean zmapWindowContainerFeatureSetSpliceHighlightFeatures(ZMapWindowContainerFeatureSet container_set,
-                                                              GList *splice_highlight_features,
-                                                              int seq_start, int seq_end) ;
-gboolean zmapWindowContainerFeatureSetSpliceUnhighlightFeatures(ZMapWindowContainerFeatureSet container_set) ;
+gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set,
+                                                  ZMapStyleBumpMode bump_mode);
 
 ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowContainerFeatureSet container_set);
 void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet container_set,
@@ -136,12 +180,10 @@ void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet conta
 void zmapWindowContainerFeatureSetDisplay(ZMapWindowContainerFeatureSet container_set,
 					  ZMapStyleColumnDisplayState state);
 
-
-
 ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet container_set);
 
-void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeatureSet container, gboolean show, gboolean set_colour);
-gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set, ZMapStyleBumpMode bump_mode);
+void zMapWindowContainerFeatureSetColumnHide(ZMapWindow window, GQuark column_id) ;
+void zMapWindowContainerFeatureSetColumnShow(ZMapWindow window, GQuark column_id) ;
 
 ZMapStyleBumpMode zMapWindowContainerFeatureSetGetContainerBumpMode(ZMapWindowContainerFeatureSet container_set);
 
@@ -157,6 +199,25 @@ ZMapStyleBumpMode zmapWindowContainerFeatureSetGetDefaultBumpMode(ZMapWindowCont
 ZMapStyleBumpMode zmapWindowContainerFeatureSetResetBumpModes(ZMapWindowContainerFeatureSet container_set);
 gboolean zmapWindowContainerFeatureSetJoinAligns(ZMapWindowContainerFeatureSet container_set, unsigned int *threshold);
 gboolean zmapWindowContainerFeatureSetGetDeferred(ZMapWindowContainerFeatureSet container_set);
+
+void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeatureSet container,
+                                                         gboolean show, gboolean set_colour);
+
+gboolean zMapWindowContainerFeatureSetIsFilterable(ZMapWindowContainerFeatureSet container_set) ;
+ZMapWindowContainerFilterType zMapWindowContainerFeatureSetGetSelectedType(ZMapWindowContainerFeatureSet container_set) ;
+ZMapWindowContainerFilterType zMapWindowContainerFeatureSetGetFilterType(ZMapWindowContainerFeatureSet container_set) ;
+ZMapWindowContainerActionType zMapWindowContainerFeatureSetGetActionType(ZMapWindowContainerFeatureSet container_set) ;
+gboolean zMapWindowContainerFeatureSetIsCDSMatch(ZMapWindowContainerFeatureSet container_set) ;
+ZMapWindowContainerFilterRC zMapWindowContainerFeatureSetFilterFeatures(ZMapWindowContainerFilterType selected_type,
+                                                                        ZMapWindowContainerFilterType filter_type,
+                                                                        ZMapWindowContainerActionType filter_action,
+                                                                        ZMapWindowContainerTargetType filter_target,
+                                                                        ZMapWindowContainerFeatureSet filter_column,
+                                                                        GList *filter_features,
+                                                                        ZMapWindowContainerFeatureSet target_column,
+                                                                        int seq_start, int seq_end,
+                                                                        gboolean cds_match) ;
+
 
 /* hidden stack code */
 void zmapWindowContainerFeatureSetFeatureRemove(ZMapWindowContainerFeatureSet item_feature_set,
@@ -186,8 +247,17 @@ void zMapWindowContainerFeatureSetAddColinearMarkers(ZMapWindowContainerFeatureS
 						     GList *feature_list,
 						     ZMapFeatureCompareFunc compare_func,
 						     gpointer compare_data, int block_offset) ;
+
 void zMapWindowContainerFeatureSetAddIncompleteMarkers(ZMapWindowContainerFeatureSet container_set,
-						       GList *feature_list, gboolean revcomped_features, int block_offset) ;
-void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet container_set, GList *feature_list, int block_offset) ;
+						       GList *feature_list, gboolean revcomped_features,
+                                                       int block_offset) ;
+void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet container_set,
+                                                   GList *feature_list, int block_offset) ;
+
+
+gboolean zMapWindowContainerFeatureSetHasHiddenBumpFeatures(FooCanvasItem *feature_item) ;
+gboolean zMapWindowContainerFeatureSetIsUserHidden(FooCanvasItem *feature_item) ;
+  gboolean zMapWindowContainerFeatureSetIsVisible(FooCanvasItem *feature_item) ;
+
 
 #endif /* ZMAP_WINDOW_CONTAINER_FEATURESET_H */

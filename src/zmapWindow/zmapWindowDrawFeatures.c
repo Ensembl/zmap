@@ -196,6 +196,9 @@ static gboolean window_draw_context_debug_G = FALSE;
 /************************ external functions ************************************************/
 
 
+
+
+
 /* REMEMBER WHEN YOU READ THIS CODE THAT THIS ROUTINE MAY BE CALLED TO UPDATE THE FEATURES
  * IN A CANVAS WITH NEW FEATURES FROM A SEPARATE SERVER. */
 
@@ -814,12 +817,17 @@ void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features, int seq
 
       focus_container = (ZMapWindowContainerFeatureSet)focus_column ;
 
-      if ((result = zmapWindowContainerFeatureSetSpliceHighlightFeatures(focus_container,
-                                                                         highlight_features,
-                                                                         seq_start, seq_end)))
+      if ((result = zMapWindowContainerFeatureSetFilterFeatures(ZMAP_CANVAS_FILTER_PARTS,
+                                                                ZMAP_CANVAS_FILTER_PARTS,
+                                                                ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE,
+                                                                ZMAP_CANVAS_TARGET_ALL,
+                                                                focus_container,
+                                                                NULL,
+                                                                NULL,
+                                                                seq_start, seq_end, FALSE)))
         {
-          zmapWindowFullReposition(window->feature_root_group, TRUE, "key s") ;
-
+          zmapWindowFullReposition(window->feature_root_group, TRUE, "col filter") ;
+          
           window->splice_highlight_on = TRUE ;
         }
      }

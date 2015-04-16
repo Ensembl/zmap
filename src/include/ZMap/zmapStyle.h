@@ -104,8 +104,8 @@ typedef enum
     STYLE_PROP_SHOW_ONLY_IN_SEPARATOR,
     STYLE_PROP_DIRECTIONAL_ENDS,
 
-    STYLE_PROP_SPLICE_HIGHLIGHT,
-    STYLE_PROP_SPLICE_HIGHLIGHT_TOLERANCE,
+    STYLE_PROP_COL_FILTER,
+    STYLE_PROP_COL_FILTER_TOLERANCE,
 
 #if MH17_NO_DEFERRED
     STYLE_PROP_DEFERRED,
@@ -118,7 +118,10 @@ typedef enum
 
     STYLE_PROP_OFFSET,
 
-    // mode dependant data
+
+    /* 
+     * mode dependant data follows
+     */
 
 
     STYLE_PROP_GLYPH_NAME,
@@ -131,10 +134,20 @@ typedef enum
     STYLE_PROP_GLYPH_SHAPE_3,
     STYLE_PROP_GLYPH_NAME_3_REV,
     STYLE_PROP_GLYPH_SHAPE_3_REV,
+
+    STYLE_PROP_GLYPH_NAME_JUNCTION_5,
+    STYLE_PROP_GLYPH_SHAPE_JUNCTION_5,
+    STYLE_PROP_GLYPH_NAME_JUNCTION_3,
+    STYLE_PROP_GLYPH_SHAPE_JUNCTION_3,
+
+
+
     STYLE_PROP_GLYPH_ALT_COLOURS,
     STYLE_PROP_GLYPH_THRESHOLD,
     STYLE_PROP_GLYPH_STRAND,
     STYLE_PROP_GLYPH_ALIGN,
+
+
 
     STYLE_PROP_GRAPH_MODE,
     STYLE_PROP_GRAPH_BASELINE,
@@ -250,12 +263,8 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR "show-only-in-separator"
 #define ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS       "directional-ends"
 
-/* Odd names but all gets sorted out in the next release.... */
-#define ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT            "column-filter-sensitive"
-#define ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT_TOLERANCE  "column-filter-tolerance"
-
-
-
+#define ZMAPSTYLE_PROPERTY_COL_FILTER             "column-filter-sensitive"
+#define ZMAPSTYLE_PROPERTY_COL_FILTER_TOLERANCE   "column-filter-tolerance"
 
 /* ... frame sensitivity */
 #define ZMAPSTYLE_PROPERTY_FRAME_MODE             "frame-mode"
@@ -269,9 +278,8 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_FOO			  "foo"		/* normal foo canvas items or columns wide composite */
 
 
-#define ZMAPSTYLE_PROPERTY_FILTER			  "filter"		/*filter column by score */
-
-#define ZMAPSTYLE_PROPERTY_OFFSET			  "offset"		/* move contentt right by x pixels */
+#define ZMAPSTYLE_PROPERTY_FILTER "filter"                  /* filter column by score */
+#define ZMAPSTYLE_PROPERTY_OFFSET "offset"                  /* move content right by x pixels */
 
 
 /* glyph properties - can be for mode glyph or as sub-features */
@@ -285,6 +293,12 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3          "glyph-shape-3"
 #define ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV       "glyph-3-rev"
 #define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3_REV      "glyph-shape-3-rev"
+
+#define ZMAPSTYLE_PROPERTY_GLYPH_NAME_JUNCTION_5           "glyph-junction-5"
+#define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_JUNCTION_5          "glyph-shape-junction-5"
+#define ZMAPSTYLE_PROPERTY_GLYPH_NAME_JUNCTION_3           "glyph-junction-3"
+#define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_JUNCTION_3          "glyph-shape-junction-3"
+
 
 #define ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS      "glyph-alt-colours"
 #define ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD        "glyph-threshold"
@@ -465,6 +479,7 @@ ZMAP_DEFINE_ENUM(ZMapStyleScale, ZMAP_STYLE_SCALE_LIST);
 _(ZMAPSTYLE_SUB_FEATURE_INVALID, , "invalid", "Not used. ", "") \
 _(ZMAPSTYLE_SUB_FEATURE_HOMOLOGY,  , "homology" , "Incomplete-homology-marker" , "") \
 _(ZMAPSTYLE_SUB_FEATURE_NON_CONCENCUS_SPLICE,  , "non-concensus-splice" , "Non concensus splice marker" , "") \
+_(ZMAPSTYLE_SUB_FEATURE_JUNCTION,  , "junction" , "Junction marker." , "") \
 _(ZMAPSTYLE_SUB_FEATURE_POLYA,  , "polyA" , "Poly A tail on RNA seq"   , "") \
 _(ZMAPSTYLE_SUB_FEATURE_MAX , ,"do-not-use" ,"" , "")
 
@@ -673,11 +688,10 @@ typedef struct ZMapStyleGraphStructType
 
 
 
-/*! @struct ZMapStyleGlyph zmapStyle_P.h
- *  @brief Glyph feature
- *
- * Draws shapes of various kinds, e.g. splice site indicators etc. */
-// glyph shape definitions
+/*
+ * Glyphs of various kinds, e.g. splice site indicators etc.
+ */
+
 #define GLYPH_SHAPE_MAX_POINT       32          // max number of points ie 16 coordinates including breaks
 #define GLYPH_SHAPE_MAX_COORD       16
 #define GLYPH_COORD_INVALID         1000        // or maybe -128 and store them as char
@@ -694,9 +708,7 @@ typedef enum
 
 } ZMapStyleGlyphDrawType;
 
-
-/*
- * this could be made dynamic but really we don't want to have 100 points in a glyph
+/* This could be made dynamic but really we don't want to have 100 points in a glyph
  * they are meant to be small and quick to draw
  * 16 points is plenty and we don't expect a huge number of shapes
  */
@@ -718,16 +730,30 @@ typedef struct _ZMapStyleGlyphShapeStruct      // defined here so that config ca
 
 typedef struct ZMapStyleGlyphStructType
 {
-      // sub feature glyphs or glyphs for glyph mode
-  GQuark glyph_name,glyph_name_5,glyph_name_5_rev,glyph_name_3,glyph_name_3_rev;
+  // sub feature glyphs or glyphs for glyph mode
+  GQuark glyph_name ;
+  GQuark glyph_name_5, glyph_name_5_rev ;
+  GQuark glyph_name_3, glyph_name_3_rev ;
+  GQuark junction_name_5, junction_name_3 ;
+
   ZMapStyleGlyphShapeStruct glyph;        // single glyph or unspecified 5' or 3' end
+
+  /* Glyphs to show at 5' and 3' prime ends of features. */
   ZMapStyleGlyphShapeStruct glyph5;       // shape for 5' end
   ZMapStyleGlyphShapeStruct glyph3;       // shape for 3' end
   ZMapStyleGlyphShapeStruct glyph5rev;    // optional shape for 5' end on reverse strand
   ZMapStyleGlyphShapeStruct glyph3rev;    // optional shape for 3' end on reverse strand
+
+  /* Showing junctions separately from 5' and 3' markers. */
+  ZMapStyleGlyphShapeStruct junction_5 ;
+  ZMapStyleGlyphShapeStruct junction_3 ;
+
   ZMapStyleFullColourStruct glyph_alt_colours;
+
   ZMapStyleGlyphStrand glyph_strand;
+
   ZMapStyleGlyphAlign glyph_align;
+
   guint glyph_threshold;
   gboolean is_splice;				// is is a GF_SPLICE glyph: faster if we set this here
 
@@ -738,6 +764,8 @@ typedef struct ZMapStyleGlyphStructType
 GType zMapStyleGlyphShapeGetType (void);
 
 
+/* WHAT IS THE RELATIONSHIP BETWEEN THIS AND THE dn-hook/up-hook IN ZMAPCONFIG DIR ?
+ * CAN WE GET RID OF THIS NOW ?? */
 
 /* Splice markers replicate the acedb fmap display of splice sites found by the
  * Phil Green genefinder code. */
@@ -745,7 +773,7 @@ GType zMapStyleGlyphShapeGetType (void);
 
 #define ZMAPSTYLE_SPLICE_MIN_LEN 5
 
-/* What is the relationship between this and the dn-hook/up-hook in zmapConfig dir ? */
+
 #define ZMAPSTYLE_SPLICE_GLYPH_5   "<0,0 ; 8,0 ; 8,8>"
 #define ZMAPSTYLE_SPLICE_GLYPH_3   "<0,0 ; 8,0 ; 8,-8>"
 
@@ -945,8 +973,8 @@ typedef struct ZMapFeatureTypeStyleStructType
 
   gboolean directional_end;                   /*!< Display pointy ends on exons etc. */
 
-  gboolean splice_highlight ;                               /* TRUE => highlight matching splices. */
-  guint splice_highlight_tolerance ;                        /* Highlight if within this tolerance (bases). */
+  gboolean col_filter_sensitive ;                           /* TRUE => allow filtering of column. */
+  guint col_filter_tolerance ;                              /* Filter within this tolerance (bases). */
 
 
   /* IS THIS USED ????? SEE IF WE CAN REMOVE IT...... */
@@ -1244,8 +1272,8 @@ gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsFrameOneColumn(style)   ((style)->frame_mode == ZMAPSTYLE_3_FRAME_ONLY_1)
 #define zMapStyleGetFrameMode(style)      ((style)->frame_mode)
 
-#define zMapStyleIsSpliceHighlight(style)   ((style)->splice_highlight)
-#define zMapStyleSpliceHighlightTolerance(style) ((style)->splice_highlight_tolerance)
+#define zMapStyleIsFilterSensitive(style)   ((style)->col_filter_sensitive)
+#define zMapStyleFilterTolerance(style) ((style)->col_filter_tolerance)
 
 //double zMapStyleBaseline(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGraphFill(style)   ((style)->mode_data.graph.fill)

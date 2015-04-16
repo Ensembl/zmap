@@ -216,7 +216,6 @@ zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
 
 # zeromq is C++ so we need to link with g++, not gcc.
 #zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-#zmap_LINK         = g++ $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 zmap_LINK         = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
 zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
@@ -324,7 +323,8 @@ $(top_srcdir)/config.h.in $(top_srcdir)/configure $(top_srcdir)/zmap_version.m4
 # To remove directories and other more complex lists of files we use the standard
 # maintainer-clean-local target which is run after all the stuff in maintainer-clean
 #
-GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/* $(top_srcdir)/config
+GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/* $(top_srcdir)/config \
+$(top_srcdir)/autom4te.cache
 
 maintainer-clean-local:
 	@echo 'maintainer-clean-local: Removing all generated files....'
@@ -333,14 +333,22 @@ maintainer-clean-local:
 	@echo 'maintainer-clean-local: Finished removing all generated files....'
 
 
-clean-zmap:
+ZMAP_BUILD_FILES = $(top_builddir)/zmapApp/*.o $(top_builddir)/zmapAppServices/*.o $(top_builddir)/zmapConfig/*.o \
+$(top_builddir)/zmapControl/*.o $(top_builddir)/zmapDAS/*.o $(top_builddir)/zmapDraw/*.o $(top_builddir)/zmapFeature/*.o \
+$(top_builddir)/zmapGFF/*.o $(top_builddir)/zmapManager/*.o $(top_builddir)/zmapRemoteControl/*.o \
+$(top_builddir)/zmapServer/*.o $(top_builddir)/zmapThreads/*.o $(top_builddir)/zmapUtils/*.o \
+$(top_builddir)/zmapView/*.o $(top_builddir)/zmapWindow/*.o $(top_builddir)/zmapXML/*.o
+
+zmap-clean:
 	@echo 'clean-zmap: cleaning up all generated zmap files....'
 	rm -f $(top_builddir)/.libs/libZMap*.a
 	rm -f $(top_builddir)/libZMap*.la
 	rm -f $(top_builddir)/zmap $(top_builddir)/remotecontrol
 	rm -f $(top_builddir)/zmap-zmapAppmain_c.o $(top_builddir)/remotecontrol-remotecontroltest.o $(top_builddir)/zmap.pc
 	rm -f $(top_builddir)/zmap*/lib* rm -rf $(top_builddir)/zmap*/.libs
+	rm -rf $(ZMAP_BUILD_FILES)
 	@echo 'clean-zmap: Finished cleaning up all generated zmap files.'
+
 
 
 mkdocdir:

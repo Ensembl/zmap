@@ -122,7 +122,7 @@ static gboolean zMapWindowResetWindowWidth(ZMapWindow window, FooCanvasItem *ite
 
 
 
-/* 
+/*
  *                       External Routines
  */
 
@@ -220,7 +220,27 @@ void zMapWindowRequestReposition(FooCanvasItem *foo)
 
 
 
-/* 
+/*
+ * External interface to hide a column based on its id as a GQuark.
+ */
+void zMapWindowColumnHide(ZMapWindow window, GQuark column_id)
+{
+  zMapWindowContainerFeatureSetColumnHide(window, column_id) ;
+  zmapWindowFullReposition(window->feature_root_group, TRUE, "hide") ;
+}
+
+/*
+ * External interface to show a column based on its id as a GQuark.
+ */
+void zMapWindowColumnShow(ZMapWindow window, GQuark column_id)
+{
+  zMapWindowContainerFeatureSetColumnShow(window, column_id) ;
+  zmapWindowFullReposition(window->feature_root_group, TRUE, "show") ;
+}
+
+
+
+/*
  *                          Package routines
  */
 
@@ -369,7 +389,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 {
   ZMapWindowContainerFeatureSet container;
-  if (!window || !FOO_IS_CANVAS_GROUP(col_group)) 
+  if (!window || !FOO_IS_CANVAS_GROUP(col_group))
     return ;
 
   container = (ZMapWindowContainerFeatureSet)col_group;
@@ -526,7 +546,7 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
   ZMapStyle3FrameMode frame_mode;
   gboolean frame_specific ;
 
-  if (!window || !ZMAP_IS_CONTAINER_FEATURESET(col_group)) 
+  if (!window || !ZMAP_IS_CONTAINER_FEATURESET(col_group))
     return displayed;
 
   container = (ZMapWindowContainerFeatureSet)col_group ;
@@ -556,7 +576,7 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
 gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group)
 {
   gboolean visible = TRUE ;
-  
+
   if (ZMAP_IS_CONTAINER_FEATURESET(col_group))
     {
       ZMapWindowContainerGroup container = ZMAP_CONTAINER_GROUP(col_group);
@@ -568,9 +588,9 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
             {
               double min_mag = 0.0, max_mag = 0.0 ;
               double curr_bases ;
-              
+
               curr_bases = zMapWindowGetZoomMagAsBases(window) ;
-              
+
               if (zmapWindowContainerFeatureSetGetMagValues(featureset, &min_mag, &max_mag))
                 {
                   if ((min_mag && curr_bases < min_mag)
@@ -579,10 +599,10 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
                       visible = FALSE ;
                     }
                 }
-            }      
+            }
         }
     }
-    
+
   return visible ;
 }
 
@@ -598,7 +618,7 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
  */
 void zmapWindowColumnHide(FooCanvasGroup *column_group)
 {
-  if (!column_group || !FOO_IS_CANVAS_GROUP(column_group)) 
+  if (!column_group || !FOO_IS_CANVAS_GROUP(column_group))
     return ;
 
   zmapWindowContainerSetVisibility(column_group, FALSE) ;
@@ -608,7 +628,7 @@ void zmapWindowColumnHide(FooCanvasGroup *column_group)
 
 void zmapWindowColumnShow(FooCanvasGroup *column_group)
 {
-  if (!column_group || !FOO_IS_CANVAS_GROUP(column_group)) 
+  if (!column_group || !FOO_IS_CANVAS_GROUP(column_group))
     return ;
 
   zmapWindowContainerSetVisibility(column_group, TRUE) ;
@@ -726,7 +746,7 @@ void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, ch
           zmapWindowGetScrollableArea(window, &x1, &y1, &x2, &y2);
           foo_canvas_w2c(((FooCanvasItem *) root)->canvas, poscol->left, y1, &cx1, &cy1);
           foo_canvas_w2c(((FooCanvasItem *) root)->canvas, x2, y2, &cx2, &cy2);
-        
+
           foo_canvas_request_redraw(((FooCanvasItem *) root)->canvas, cx1, cy1, cx2, cy2);
           //printf("full repos request redraw %d %d - %d %d\n",cx1, cy1, cx2, cy2);
         }
@@ -819,7 +839,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
 
 
-/* 
+/*
  *                   Internal routines
  */
 
@@ -944,15 +964,15 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
           if (ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
             {
               gint layer;
-        
+
               cfs = (ZMapWindowFeaturesetItem) foo;
               layer = zMapWindowCanvasFeaturesetGetLayer(cfs);
-        
+
               if( !(layer & ZMAP_CANVAS_LAYER_DECORATION) || !(layer & ZMAP_CANVAS_LAYER_STRETCH_X))
                 {
                   width = zMapWindowCanvasFeaturesetGetWidth(cfs);
                   width += zMapWindowCanvasFeaturesetGetOffset(cfs);
-                
+
                   if(width > col_width)
                     col_width = width;
                 }
@@ -1220,7 +1240,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
                    zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(frame_column))))
                 {
                   ZMapStyleColumnDisplayState show_hide_state ;
-                  
+
                   if (force && force_to)
                     show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
                   else if (force && !force_to)
@@ -1229,7 +1249,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
                     show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
                   else
                     show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
-                  
+
                   zmapWindowColumnSetState(window,
                                            FOO_CANVAS_GROUP(frame_column),
                                            show_hide_state,

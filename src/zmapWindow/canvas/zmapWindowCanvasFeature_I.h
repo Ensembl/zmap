@@ -136,6 +136,10 @@ typedef struct _zmapWindowCanvasFeatureStruct
    * need to be drawn within feature if highlighting is on. */
   GList *splice_positions ;
 
+  /* NOT SURE IF WE NEED A SEPARATE LIST, THESE TWO THING MIGHT BE MUTUALLY EXCLUSIVE.... */
+  GList *non_splice_positions ;
+
+
 
 } zmapWindowCanvasFeatureStruct;
 

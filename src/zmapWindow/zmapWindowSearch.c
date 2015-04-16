@@ -814,13 +814,6 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Left for debugging.... */
-  printf("Search parameters -    align: %s   block: %s  strand: %s  frame: %s  column: %s  feature: %s\n",
-         align_txt, block_txt, strand_spec, frame_spec, column_txt, feature_txt) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
     {
       ZMapWindowFToISetSearchData search_set_data = NULL;
       SearchPredCBData search_pred_data = NULL ;
@@ -841,10 +834,6 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
                                                           align_id, block_id, column_id, set_id, feature_id,
                                                           strand_spec, frame_spec,
                                                           callback, search_pred_data, g_free);
-
-#ifndef REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION
-      zoom_to_item = FALSE;
-#endif /* REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION */
 
       zmapWindowListWindow(search_data->window, NULL, title,
                            search_data->get_hash_func,

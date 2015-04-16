@@ -119,7 +119,7 @@ typedef struct ZMapWindowFocusItemStructType
    */
 
   /* TRY REINSTATING SUBPART SELECTION.... */
-  ZMapFeatureSubPartSpanStruct sub_part ;
+  ZMapFeatureSubPartStruct sub_part ;
 
 
 
@@ -137,6 +137,75 @@ typedef struct ZMapWindowFocusItemStructType
   //  gpointer        associated;     // this had set values preserved but never set
 
 } ZMapWindowFocusItemStruct, *ZMapWindowFocusItem ;
+
+
+
+
+
+/* 
+ * ok...this is messed up...all the window command stuff needs sorting out.....some commands
+ * need to be exposed...others not.....sigh....
+ */
+/* Try having all the command structs in here ? opaque to the outside...??? */
+
+/* Filter features. */
+typedef struct ZMapWindowCallbackCommandFilterStructType
+{
+  /* Common section. */
+  ZMapWindowCommandType cmd ;
+  gboolean result ;
+  /* should err_msg be here....???? */
+
+
+  /* Command specific section. */
+  ZMapWindowContainerFilterRC filter_result ;
+
+  gboolean do_filter ;                                      /* FALSE => undo filtering */
+
+  ZMapWindowContainerFilterType selected ;                  /* Which part of selected feature to use for filtering. */
+  ZMapWindowContainerFilterType filter ;                    /* Type of filtering. */
+  ZMapWindowContainerActionType action ;                    /* What to do to filtered features. */
+  ZMapWindowContainerTargetType target_type ;               /* What should filtering be applied to. */
+
+  /* Column/feature(s) whose coordinates are used to filter other features. */
+  ZMapWindowContainerFeatureSet filter_column ;
+  GList *filter_features ;
+
+  /* Column that is the target of the filtering, note that if this is NULL then all "filter aware"
+   * columns are filtered. */
+  ZMapWindowContainerFeatureSet target_column ;
+  int seq_start, seq_end ;                                  /* filter between start/end. */
+
+  /* Attributes of the filtering..... */
+  gboolean exact_match ;                                    /* TRUE => all parts of feature must match. */
+  gboolean cds_match ;                                      /* TRUE => for transcripts match on CDS part only. */
+
+
+} ZMapWindowCallbackCommandFilterStruct, *ZMapWindowCallbackCommandFilter ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Splice features. */
+typedef struct ZMapWindowCallbackCommandSpliceStructType
+{
+  /* Common section. */
+  ZMapWindowCommandType cmd ;
+  gboolean result ;
+
+  gboolean do_highlight ;
+
+  GList *highlight_features ;
+
+  int seq_start, seq_end ;                                  /* highlight between start/end. */
+
+} ZMapWindowCallbackCommandSpliceStruct, *ZMapWindowCallbackCommandSplice ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+
 
 
 
@@ -291,37 +360,37 @@ typedef struct
 /* used by item factory for drawing features from one featureset */
 typedef struct _zmapWindowFeatureStack
 {
-      ZMapFeatureContext context;
-      ZMapFeatureAlignment align;
-      ZMapFeatureBlock block;
-      ZMapFeatureSet set;
-      ZMapFeature feature;
-      GQuark id;        /* used for density plots, set to zero */
-      GQuark maps_to;	/* used by density plots for virtual featuresets */
-      int set_index;	/* used by density plots for stagger */
-      ZMapStrand strand;
-      ZMapFrame frame;
-	gboolean filter;	/* don't add to camvas if hidden */
+  ZMapFeatureContext context;
+  ZMapFeatureAlignment align;
+  ZMapFeatureBlock block;
+  ZMapFeatureSet set;
+  ZMapFeature feature;
+  GQuark id;        /* used for density plots, set to zero */
+  GQuark maps_to;	/* used by density plots for virtual featuresets */
+  int set_index;	/* used by density plots for stagger */
+  ZMapStrand strand;
+  ZMapFrame frame;
+  gboolean filter;	/* don't add to camvas if hidden */
 
-	/* NOTE there's a struct defined privately in zmapWindowDrawFeatures.c that would be better having these
-	 * as this is nominally related to the feature context not the camvas
-	 * but as want to pass this data around eg to windowFeature.c it can't go there
-	 * the idea here is to cache the column features group and column hash for each feature in the set
-	 * instead of recalculating it for every feature
-	 * these pointers also act as flags: they hold valid pointers if the frame/strand combination means draw the feature
-	 */
+  /* NOTE there's a struct defined privately in zmapWindowDrawFeatures.c that would be better having these
+   * as this is nominally related to the feature context not the camvas
+   * but as want to pass this data around eg to windowFeature.c it can't go there
+   * the idea here is to cache the column features group and column hash for each feature in the set
+   * instead of recalculating it for every feature
+   * these pointers also act as flags: they hold valid pointers if the frame/strand combination means draw the feature
+   */
 #if ALL_FRAMES
-// 3-frame gets drawn via 3 scans of the featureset
-// it's a toss up whether this is fatser/slower than calculating where to send a feature out of 12 possible columns
-// or to calculate only 3 and do it 3x
-//      ZMapWindowContainerFeatures set_columns[N_FRAME * N_STRAND];	/* all possible strand and frame combinations */
-//      GHashTable *col_hash[N_FRAME * N_STRAND];
+  // 3-frame gets drawn via 3 scans of the featureset
+  // it's a toss up whether this is fatser/slower than calculating where to send a feature out of 12 possible columns
+  // or to calculate only 3 and do it 3x
+  //      ZMapWindowContainerFeatures set_columns[N_FRAME * N_STRAND];	/* all possible strand and frame combinations */
+  //      GHashTable *col_hash[N_FRAME * N_STRAND];
 #else
-	// just handle the strand / frame conbo's is in the original code structre - set gets drawn 3x in 3 Frame mode
-      ZMapWindowContainerFeatureSet set_column[N_STRAND_ALLOC];	/* all possible strand and frame combinations */
-      ZMapWindowContainerFeatures set_features[N_STRAND_ALLOC];
-	FooCanvasItem *col_featureset[N_STRAND_ALLOC];			/* the canvas featureset as allocated by the item factory */
-	GHashTable *col_hash[N_STRAND_ALLOC];
+  // just handle the strand / frame conbo's is in the original code structre - set gets drawn 3x in 3 Frame mode
+  ZMapWindowContainerFeatureSet set_column[N_STRAND_ALLOC];	/* all possible strand and frame combinations */
+  ZMapWindowContainerFeatures set_features[N_STRAND_ALLOC];
+  FooCanvasItem *col_featureset[N_STRAND_ALLOC];			/* the canvas featureset as allocated by the item factory */
+  GHashTable *col_hash[N_STRAND_ALLOC];
 
 #endif
 
@@ -722,8 +791,19 @@ typedef struct ZMapWindowStructType
   FooCanvasItem *focus_item ;
   ZMapFeature focus_feature ;
 
+
+  /* THERE'S GOING TO BE SLIGHTLY COMPLEX RELATIONSHIP HERE......work this out.... */
+
   /* Highlighting state for flip-flopping splice highlighting. */
   gboolean splice_highlight_on ;
+
+  /* TRY HOLDING Filtering data here for 'F' shortcut key........ */
+  ZMapWindowContainerFeatureSet filter_feature_set ;
+  gboolean filter_on ;                                      /* TRUE => col is filtered */
+  ZMapWindowContainerFilterType filter_selected ;           /* Which part of selected feature to use for filtering. */
+  ZMapWindowContainerFilterType filter_filter ;             /* Type of filtering. */
+  ZMapWindowContainerActionType filter_action ;             /* What to do to filtered features. */
+  ZMapWindowContainerTargetType filter_target ;             /* What should filtering be applied to. */
 
 
   /* Some default colours, good for hiding boxes/lines. */
@@ -880,7 +960,7 @@ typedef struct ZMapWindowStructType
 
   GdkColor colour_filtered_column ; 	 /* to highlight the filter widget */
 
-/* Holds the marked region or item. */
+  /* Holds the marked region or item. */
   ZMapWindowMark mark ;
 
   ZMapWindowStateQueue history ;
@@ -911,6 +991,7 @@ typedef struct ZMapWindowStructType
    * featureset then we need to do some special processing before/after editing the scratch
    * feature.)*/
   GQuark highlight_evidence_featureset_id ;
+
 
 } ZMapWindowStruct ;
 
@@ -1293,7 +1374,7 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 			       gboolean isExon);
 
 void zmapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
-			       GList *feature_list, FooCanvasItem *item,  ZMapFeatureSubPartSpan sub_feature,
+			       GList *feature_list, FooCanvasItem *item,  ZMapFeatureSubPart sub_feature,
 			       int sub_item_dna_start, int sub_item_dna_end,
 			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
@@ -1428,6 +1509,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuExportOps(int *start_index_inout,
 					    ZMapGUIMenuItemCallbackFunc callback_func,
 					    gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
+					       ZMapGUIMenuItemCallbackFunc callback_func,
+					       gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuColFilterOps(int *start_index_inout,
 					       ZMapGUIMenuItemCallbackFunc callback_func,
 					       gpointer callback_data) ;
 
@@ -1604,7 +1688,7 @@ ZMapWindowFocus zmapWindowFocusCreate(ZMapWindow window) ;
 
 /* add subpart flag...a little at a time....most uses use the macro so won't see the change... */
 void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item,
-                                ZMapFeature feature, ZMapFeatureSubPartSpan sub_part, ZMapWindowFocusType type);
+                                ZMapFeature feature, ZMapFeatureSubPart sub_part, ZMapWindowFocusType type);
 #define zmapWindowFocusAddItem(focus, item_list, feature) \
   zmapWindowFocusAddItemType(focus, item_list, feature, NULL, WINDOW_FOCUS_GROUP_FOCUS);
 
@@ -1665,7 +1749,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 			       gboolean replace_highlight_item, gboolean highlight_same_names,
-                               ZMapFeatureSubPartSpan sub_part) ;
+                               ZMapFeatureSubPart sub_part) ;
 
 void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus) ;

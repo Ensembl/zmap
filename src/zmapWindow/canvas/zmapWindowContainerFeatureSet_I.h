@@ -42,6 +42,11 @@
 /* This all needs renaming to be xxxxColumnxxxxx, not "featureset".... */
 
 
+
+/* 
+ *           Class struct.
+ */
+
 typedef struct _zmapWindowContainerFeatureSetClassStruct
 {
   zmapWindowContainerGroupClass __parent__ ;
@@ -49,6 +54,10 @@ typedef struct _zmapWindowContainerFeatureSetClassStruct
 } zmapWindowContainerFeatureSetClassStruct ;
 
 
+
+/* 
+ *           Instance struct.
+ */
 
 typedef struct _zmapWindowContainerFeatureSetStruct
 {
@@ -75,14 +84,6 @@ typedef struct _zmapWindowContainerFeatureSetStruct
                                         featureset */
 
 
-  /* Does this column respond to splice highlighting ? If so we then look in the featuresets
-   * within this column to see if they do and if they have a tolerance set.
-   * Any features highlighted are recorded here for efficiency in unhighlighting. */
-  gboolean splice_highlight ;
-  GList *splice_highlighted_features ;                      /* list of zmapWindowCanvasFeature. */
-
-
-
   /* Empty columns are only hidden ATM and as they have no
    * ZMapFeatureSet removing them from the FToI hash becomes difficult
    * without the align, block and set ids. No doubt it'l be true for
@@ -95,6 +96,8 @@ typedef struct _zmapWindowContainerFeatureSetStruct
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Never referenced anywhere.... */
+
   /* We keep the features sorted by position and size so we can cursor through them... */
   gboolean    sorted ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -111,25 +114,22 @@ typedef struct _zmapWindowContainerFeatureSetStruct
   gboolean has_feature_set ;
 
 
-  /* list of featureset ids displayed in this column
+  /* list of ZMapFeatureset ids displayed in this column, this is not the ZMapWindowFeaturesetItem
+   * for each featureset....AGH....this is so hard to follow.....
    * 
    * HORRIFICALLY THIS IS ACCESSED DIRECTLY AND POPULATED IN zmapWindowDrawFeatures.c....
    *  */
   GList *featuresets ;
 
 
+  /* Features hidden for filtering by user. */
+  gboolean col_filter_sensitive ;
+  ZMapWindowContainerFilterType curr_selected_type ;
+  ZMapWindowContainerFilterType curr_filter_type ;
+  ZMapWindowContainerActionType curr_filter_action ;
+  gboolean cds_match ;
+  GList *filtered_features ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Extra items used for displaying colinearity lines and markers, note that we can end up
-   * with the colinear markers becoming long items so we need to record them too. */
-  GList *colinear_markers ;
-  GList *incomplete_markers ;
-  GList *splice_markers ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* THESE ARE ALSO ACCESSED DIRECTLY FROM zmapWindowFeatureList.c, oh dear.... */
 
   /* Features hidden by user, should stay hidden until unhidden by user. */
   GQueue *user_hidden_stack ;
@@ -140,6 +140,7 @@ typedef struct _zmapWindowContainerFeatureSetStruct
 
 
 } zmapWindowContainerFeatureSetStruct ;
+
 
 
 
