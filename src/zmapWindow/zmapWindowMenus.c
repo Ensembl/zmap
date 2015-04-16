@@ -414,11 +414,6 @@ static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow wi
   return scratch_container ;
 }
 
-
-/*
- * In the end this should be merged with column menu code so one function does both...
- */
-
 /*
  * Build the menu for a feature item.
  *
@@ -426,13 +421,21 @@ static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow wi
  */
 void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
 {
+  static const int max_name_length = 20 ;
+  static const char* filler =  "[...]" ;
+  int name_length = 0, fill_length = 0 ;
   ZMapWindowContainerGroup column_group =  NULL ;
   static ZMapGUIMenuItemStruct separator[] =
     {
       {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
-  char *menu_title = NULL ;
+  char *menu_title = NULL,
+    *the_name = NULL,
+    *temp_name1 = NULL,
+    *temp_name2 = NULL ;
+  gboolean trunc1 = FALSE,
+    trunc2 = FALSE ;
   GList *menu_sets = NULL ;
   ItemMenuCBData menu_data = NULL ;
   ZMapFeature feature = NULL ;
@@ -446,13 +449,49 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
    * from the canvas item. */
   feature = zMapWindowCanvasItemGetFeature(item);
   zMapReturnIfFail(window && feature && button_event) ;
-
+  feature_set = (ZMapFeatureSet)(feature->parent);
 
   style = *feature->style;
 
-  feature_set = (ZMapFeatureSet)(feature->parent);
-  menu_title = g_strdup_printf("%s (%s)", zMapFeatureName((ZMapFeatureAny)feature),
-                         zMapFeatureSetGetName(feature_set)) ;
+  /*
+   * Make sure that the menu title cannot exceed a certain length due to a long
+   * feature name or featureset name.
+   */
+  fill_length = strlen(filler) ;
+  temp_name1 = g_new0(char, max_name_length+1+fill_length) ;
+  temp_name2 = g_new0(char, max_name_length+1+fill_length) ;
+
+  the_name = zMapFeatureName((ZMapFeatureAny) feature) ;
+  name_length = strlen(the_name) ;
+  if (name_length >= max_name_length)
+    {
+      strncpy(temp_name1, the_name, max_name_length) ;
+      strncat(temp_name1, filler, fill_length) ;
+    }
+  else
+    {
+      strncpy(temp_name1, the_name, max_name_length) ;
+    }
+
+  the_name = zMapFeatureSetGetName(feature_set) ;
+  name_length = strlen(the_name) ;
+  if (name_length >= max_name_length)
+    {
+      strncpy(temp_name2, the_name, max_name_length) ;
+      strncat(temp_name2, filler, fill_length) ;
+    }
+  else
+    {
+      strncpy(temp_name2, the_name, max_name_length) ;
+    }
+
+  menu_title = g_strdup_printf("%s (%s)", temp_name1, temp_name2 ) ;
+
+  if (temp_name1)
+    g_free(temp_name1) ;
+  if (temp_name2)
+    g_free(temp_name2) ;
+
 
   column_group  = zmapWindowContainerCanvasItemGetContainer(item) ;
   container_set = (ZMapWindowContainerFeatureSet) column_group;
