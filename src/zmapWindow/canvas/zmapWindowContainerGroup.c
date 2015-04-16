@@ -64,7 +64,7 @@ typedef struct EachIntervalDataStructType
 {
   ZMapWindowCanvasItem parent;
   ZMapFeature          feature;
-  ZMapFeatureSubPartSpan sub_feature;
+  ZMapFeatureSubPart sub_feature;
   ZMapStyleColourType  style_colour_type;
   int                   colour_flags;
   GdkColor            *default_fill_colour;
@@ -858,7 +858,7 @@ void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
  * which is a user requirement possibly implemented by fluke due the structure of the data given to ZMap
  */
 void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item,
-                                            ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
+                                            ZMapFeature feature, ZMapFeatureSubPart sub_feature,
                                             ZMapStyleColourType colour_type,
                                             int colour_flags,
                                             GdkColor *default_fill_colour,
@@ -893,7 +893,7 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item,
 
 FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
                                                double x, double y,
-                                               ZMapFeatureSubPartSpan *sub_feature_out)
+                                               ZMapFeatureSubPart *sub_feature_out)
 {
   FooCanvasItem *matching_interval = NULL;
   FooCanvasItem *item, *check;
@@ -954,7 +954,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
       if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval) && zMapWindowCanvasItemGetFeature(item))
         {
           *sub_feature_out =
-            zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
+            zMapWindowCanvasFeaturesetGetSubPart(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
         }
     }
 
@@ -1471,7 +1471,7 @@ static void setColours(gpointer list_data, gpointer user_data)
 
   if(interval_data->feature)
     {
-      ZMapFeatureSubPartSpan sub_feature = NULL;
+      ZMapFeatureSubPart sub_feature = NULL;
 
 
       /* new interface via calling stack */
