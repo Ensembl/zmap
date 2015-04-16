@@ -98,13 +98,13 @@ static void zmap_window_featureset_item_item_bounds(FooCanvasItem *item,
 static void zmap_window_featureset_item_item_draw(FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose) ;
 static gboolean zmap_window_featureset_item_set_style(FooCanvasItem *item, ZMapFeatureTypeStyle style) ;
 static void zmap_window_featureset_item_set_colour(ZMapWindowCanvasItem   thing,
-                                                   FooCanvasItem         *interval,
-                                                   ZMapFeature                        feature,
-                                                   ZMapFeatureSubPartSpan sub_feature,
-                                                   ZMapStyleColourType    colour_type,
-                                                   int colour_flags,
-                                                   GdkColor              *default_fill,
-                                                   GdkColor              *border);
+						   FooCanvasItem         *interval,
+						   ZMapFeature			feature,
+						   ZMapFeatureSubPart sub_feature,
+						   ZMapStyleColourType    colour_type,
+						   int colour_flags,
+						   GdkColor              *default_fill,
+						   GdkColor              *border);
 static gboolean zmap_window_featureset_item_set_feature(FooCanvasItem *item, double x, double y);
 static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gboolean show);
 
@@ -132,7 +132,7 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmp
                                                                       double y1, double y2) ;
 static ZMapWindowCanvasFeature findFeatureSubPart(ZMapWindowFeaturesetItem fi,
                                                   ZMapFeature feature,
-                                                  ZMapFeatureSubPartSpan sub_feature) ;
+                                                  ZMapFeatureSubPart sub_feature) ;
 
 
 
@@ -149,6 +149,8 @@ static gint setNameCmp(gconstpointer a, gconstpointer b) ;
 static void printCanvasFeature(void *data, void *user_data_unused) ;
 
 static void findNameAtPosCB(gpointer data, gpointer user_data) ;
+
+static void groupListFreeCB(gpointer data, gpointer user_data_unused) ;
 
 
 
@@ -501,8 +503,8 @@ GString *zMapWindowCanvasFeatureset2Txt(ZMapWindowFeaturesetItem featureset_item
   g_string_append_printf(canvas_featureset_text, "%sLongest Feature: " CANVAS_FORMAT_DOUBLE "\n",
                          indent, featureset_item->longest) ;
 
-    g_string_append_printf(canvas_featureset_text, "%sx_offset = %g, width = %g, bump_width = %g\n",
-                           indent, featureset_item->x_off, featureset_item->width, featureset_item->bump_width) ;
+  g_string_append_printf(canvas_featureset_text, "%sx_offset = %g, width = %g, bump_width = %g\n",
+                         indent, featureset_item->x_off, featureset_item->width, featureset_item->bump_width) ;
 
   g_string_append_printf(canvas_featureset_text, "%soverlap ?, bump_overlap: %s " CANVAS_FORMAT_DOUBLE "\n",
                          indent,
@@ -861,23 +863,24 @@ void zmapWindowFeaturesetSetSubPartHighlight(ZMapWindowFeaturesetItem featureset
  * for normal faatures we only set the colour flags
  * for sequence  features we actually supply colours
  */
-void zmapWindowFeaturesetItemSetColour(FooCanvasItem *interval,
-                                       ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
-                                       ZMapStyleColourType colour_type,
-                                       int colour_flags,
-                                       GdkColor *default_fill,
-                                       GdkColor *default_border)
+void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
+				       ZMapFeature			feature,
+				       ZMapFeatureSubPart sub_feature,
+				       ZMapStyleColourType    colour_type,
+				       int colour_flags,
+				       GdkColor              *default_fill,
+				       GdkColor              *default_border)
 {
   ZMapWindowFeaturesetItem fi = NULL ;
   ZMapWindowCanvasFeature gs;
 
   void (*func) (FooCanvasItem         *interval,
-                ZMapFeature                        feature,
-                ZMapFeatureSubPartSpan sub_feature,
-                ZMapStyleColourType    colour_type,
-                int colour_flags,
-                GdkColor              *default_fill,
-                GdkColor              *default_border);
+		ZMapFeature			feature,
+		ZMapFeatureSubPart sub_feature,
+		ZMapStyleColourType    colour_type,
+		int colour_flags,
+		GdkColor              *default_fill,
+		GdkColor              *default_border);
 
   zMapReturnIfFail(interval) ;
 
@@ -1080,7 +1083,15 @@ ZMapWindowCanvasFeature zMapWindowCanvasFeaturesetGetPointFeatureItem(ZMapWindow
 }
 
 
+zmapWindowCanvasFeatureType zMapWindowCanvasFeaturesetGetFeatureType(ZMapWindowFeaturesetItem featureset_item)
+{
+  zmapWindowCanvasFeatureType canvas_feature_type ;
 
+  canvas_feature_type = featureset_item->type ;
+
+
+  return canvas_feature_type ;
+}
 
 
 
@@ -1541,16 +1552,23 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset,
 
 
 /* HACK WHILE I GET SPLICE STUFF WORKING....NEED TO ADD SPLICE IN PROPERLY...TO STYLE AND EVERYTHING... */
-gboolean zMapWindowCanvasFeaturesetGetSpliceColour(ZMapWindowFeaturesetItem featureset, gulong *splice_pixel)
+gboolean zMapWindowCanvasFeaturesetGetSpliceColour(ZMapWindowFeaturesetItem featureset, gboolean match,
+                                                   gulong *border_pixel, gulong *fill_pixel)
 {
   gboolean result = FALSE ;
   static gboolean splice_allocated = FALSE ;
-  static GdkColor splice_colour ;
+  static GdkColor border_colour ;
+  static GdkColor match_fill_colour ;
+  static GdkColor non_match_fill_colour ;
 
   if (!splice_allocated)
     {
-      if ((result = gdk_color_parse("red", &splice_colour))
-          && (result = gdk_colormap_alloc_color(gdk_colormap_get_system(), &splice_colour, FALSE, TRUE)))
+      if (((result = gdk_color_parse("black", &border_colour))
+           && (result = gdk_colormap_alloc_color(gdk_colormap_get_system(), &border_colour, FALSE, TRUE)))
+          && ((result = gdk_color_parse("green", &match_fill_colour))
+              && (result = gdk_colormap_alloc_color(gdk_colormap_get_system(), &match_fill_colour, FALSE, TRUE)))
+          && ((result = gdk_color_parse("red", &non_match_fill_colour))
+              && (result = gdk_colormap_alloc_color(gdk_colormap_get_system(), &non_match_fill_colour, FALSE, TRUE))))
         {
           splice_allocated = TRUE ;
         }
@@ -1558,7 +1576,12 @@ gboolean zMapWindowCanvasFeaturesetGetSpliceColour(ZMapWindowFeaturesetItem feat
 
   if (splice_allocated)
     {
-      *splice_pixel = splice_colour.pixel ;
+      *border_pixel = border_colour.pixel ;
+
+      if (match)
+        *fill_pixel = match_fill_colour.pixel ;
+      else
+        *fill_pixel = non_match_fill_colour.pixel ;
       result = TRUE ;
     }
 
@@ -2084,7 +2107,8 @@ static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWi
 
 
 static ZMapWindowCanvasFeature findFeatureSubPart(ZMapWindowFeaturesetItem fi,
-                                                  ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature)
+                                                  ZMapFeature feature,
+                                                  ZMapFeatureSubPart sub_feature)
 {
   ZMapWindowCanvasFeature gs = NULL ;
 
@@ -2204,11 +2228,14 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
 }
 
 
-/* NOTE this function interfaces to user show/hide via zmapWindow/unhideItemsCB() and zmapWindowFocus/hideFocusItemsCB()
+/* NOTE this function interfaces to user show/hide via zmapWindow/unhideItemsCB()
+ * and zmapWindowFocus/hideFocusItemsCB()
  * and could do other things if appropriate if we include some other flags
- * current best guess is that this is not best practice: eg summarise is an internal function and does not need an external interface
+ * current best guess is that this is not best practice: eg summarise is
+ * an internal function and does not need an external interface
  */
-void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, gboolean show, ZMapWindowCanvasFeaturesetHideType how)
+void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo,
+                                      ZMapFeature feature, gboolean show, ZMapWindowCanvasFeaturesetHideType how)
 {
   ZMapWindowFeaturesetItem fi = NULL ;
   ZMapWindowCanvasFeature gs;
@@ -2236,21 +2263,22 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
           gs->flags &= ~FEATURE_HIDDEN & ~FEATURE_HIDE_REASON;
         }
       else
-        {
-          switch(how)
-            {
-            case ZMWCF_HIDE_USER:
-              gs->flags |= FEATURE_HIDDEN | FEATURE_USER_HIDE;
-              break;
+	{
+	  switch(how)
+	    {
+	    case ZMWCF_HIDE_USER:
+	      gs->flags |= FEATURE_HIDDEN | FEATURE_USER_HIDE;
+	      break;
 
-            case ZMWCF_HIDE_EXPAND:
-              /* NOTE as expanded features get deleted if unbumped we can be fairly slack not testing for other flags */
-              gs->flags |= FEATURE_HIDDEN | FEATURE_HIDE_EXPAND;
-              break;
-            default:
-              break;
-            }
-        }
+	    case ZMWCF_HIDE_EXPAND:
+	      /* NOTE as expanded features get deleted if unbumped we can be
+               * fairly slack not testing for other flags */
+	      gs->flags |= FEATURE_HIDDEN | FEATURE_HIDE_EXPAND;
+	      break;
+	    default:
+	      break;
+	    }
+	}
       //printf("gs->flags: %lx\n", gs->flags);
       zmap_window_canvas_featureset_expose_feature(fi, gs);
 
@@ -2260,6 +2288,73 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
       gs = gs->right;
     }
 }
+
+/* THIS WAS MALCOLM'S COMMENTARY.....FOR THE ORIGINAL zmapWindowFeaturesetItemShowHide() */
+/* NOTE this function interfaces to user show/hide via zmapWindow/unhideItemsCB()
+ * and zmapWindowFocus/hideFocusItemsCB()
+ * and could do other things if appropriate if we include some other flags
+ * current best guess is that this is not best practice: eg summarise is
+ * an internal function and does not need an external interface
+ */
+/* HERE'S MINE.... */
+/* Function to hide a feature..... */
+void zmapWindowFeaturesetItemCanvasFeatureShowHide(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature feature_item,
+                                                   gboolean show, ZMapWindowCanvasFeaturesetHideType how)
+{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  ZMapWindowCanvasFeature gs ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  if(fi->highlight_sideways)	/* ie transcripts as composite features */
+    {
+      while(feature_item->left)
+	feature_item = feature_item->left ;
+    }
+
+  while(feature_item)
+    {
+      if(show)
+	{
+	  /* due to calling code these flgs are not operated correctly, so always show */
+	  feature_item->flags &= ~FEATURE_HIDDEN & ~FEATURE_HIDE_REASON ;
+	}
+      else
+	{
+	  switch(how)
+	    {
+	    case ZMWCF_HIDE_USER:
+	      feature_item->flags |= FEATURE_HIDDEN | FEATURE_USER_HIDE ;
+	      break;
+
+	    case ZMWCF_HIDE_EXPAND:
+	      /* NOTE as expanded features get deleted if unbumped we can be
+               * fairly slack not testing for other flags */
+	      feature_item->flags |= FEATURE_HIDDEN | FEATURE_HIDE_EXPAND ;
+	      break ;
+
+	    default: 
+	      break;
+	    }
+	}
+
+      //printf("feature_item->flags: %lx\n", feature_item->flags);
+      zmap_window_canvas_featureset_expose_feature(fi, feature_item) ;
+
+      if(!fi->highlight_sideways)                           /* only doing the selected one */
+	break ;
+
+      feature_item = feature_item->right ;
+    }
+
+  return ;
+}
+
+
+
+
+
 
 
 /* return the foo canvas item under the lassoo, and a list of more features if included
@@ -2392,6 +2487,7 @@ GList *zMapWindowFeaturesetFindItemAndFeatures(FooCanvasItem **item, double y1, 
 
 /* THIS NEEDS TO BE COMBINED WITH THE ROUTINE ABOVE...BUT FOR NOW LET'S JUST GET ON.... */
 
+/* Returns a list of ZMapWindowFeaturesetItem that overlap the range y1, y2. */
 GList *zMapWindowFeaturesetFindFeatures(ZMapWindowFeaturesetItem featureset_item, double y1, double y2)
 {
   GList *feature_list = NULL ;
@@ -2463,16 +2559,23 @@ GList *zMapWindowFeaturesetFindFeatures(ZMapWindowFeaturesetItem featureset_item
     {
       sl = zmap_window_canvas_featureset_find_feature_coords(NULL, featureset_item, y1, y2) ;
 
-      for( ; sl ; sl = sl->next)
+      for ( ; sl ; sl = sl->next)
         {
           ZMapWindowCanvasFeature gs;
 
           gs = sl->data;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          char *name ;
+
+          name = g_quark_to_string(gs->feature->original_id) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
           if(gs->flags & FEATURE_HIDDEN)        /* we are setting focus on visible features ! */
             continue;
 
-          if(gs->y1 > y2)
+          if (gs->y1 > y2)
             break;
 
           /* ADDING A TEST FOR NON-OVERLAPPING AT THE START, REMOVING OVERLAPS AS WE NEED THEM,
@@ -2487,9 +2590,9 @@ GList *zMapWindowFeaturesetFindFeatures(ZMapWindowFeaturesetItem featureset_item
           if(gs->y2 > y2)
             continue;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          
 
-
-          if(!feature_list)
+          if (!feature_list)
             {
               zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem)featureset_item, gs->feature) ;
 
@@ -2499,13 +2602,32 @@ GList *zMapWindowFeaturesetFindFeatures(ZMapWindowFeaturesetItem featureset_item
               featureset_item->point_canvas_feature = gs;
             }
 
-          //     else        // why? item has the first one and feature list is the others if present
+
+          /* BUGGER...HERE'S MY PROBLEM...MALCOLM WAS ADDING THE _FEATURE_ TO THE LIST WHICH IS UNIQUE..BUT EACH
+             FEATURE WHEN IT'S A TRANSCRIPT HAS MULTIPLE gs POINTERS AND SO IS ADDED MULTIPLE TIMES....BUGGER....
+
+             NOTE, I NEED ALL THE gs POINTERS TO MAKE SURE I HIDE THEM ALL BUT I NEED NOT TO DO MATCHING ON THEM
+             ALL....BOTHER........*/
+
+
+          //     else	// why? item has the first one and feature list is the others if present
           // mh17: always include the first in the list to filter duplicates eg transcript exons
           {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
             feature_list = zMap_g_list_append_unique(feature_list, gs->feature);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+            /* let's append some debugging...... */
+            if (zMapFeatureIsValid((ZMapFeatureAny)(gs->feature)))
+              zMapDebugPrintf("Feature Item:  %p,/tfeature:  %s", gs, zMapFeatureName((ZMapFeatureAny)(gs->feature))) ;
+            else
+              zMapDebugPrintf("Feature Item:  %p,/thas invalid feature !!", gs) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
             /* ok...let's return the canvasfeature instead..... */
             feature_list = zMap_g_list_append_unique(feature_list, gs) ;
@@ -2517,6 +2639,155 @@ GList *zMapWindowFeaturesetFindFeatures(ZMapWindowFeaturesetItem featureset_item
 
   return feature_list ;
 }
+
+
+
+
+
+/* My new super-duper call..... */
+/* Returns a list of 'lists of ZMapWindowFeaturesetItem' that overlap y1, y2. Each sublist
+ * contains a list of ZMapWindowFeaturesetItem's that all originate from the same
+ * genomic feature, e.g. an EST.
+ * 
+ * If canonical_only is TRUE then any non-canonical features in the span will be excluded.
+ * 
+ * 
+ * Notes
+ *  - only supported for FEATURE_BASIC, FEATURE_ALIGN, FEATURE_TRANSCRIPT currently.
+ * 
+ *  */
+GList *zMapWindowFeaturesetFindGroupedFeatures(ZMapWindowFeaturesetItem featureset_item,
+                                               double y1, double y2, gboolean canonical_only)
+{
+  GList *feature_list = NULL ;
+  ZMapSkipList sl ;
+
+  zMapReturnValIfFail((featureset_item || (featureset_item->start < y1 || featureset_item->end > y2)), NULL) ;
+
+
+  if ((featureset_item->type == FEATURE_BASIC || featureset_item->type == FEATURE_ALIGN
+       || featureset_item->type == FEATURE_TRANSCRIPT))
+    {
+      GHashTable *feature_items_found ;
+
+      feature_items_found = g_hash_table_new(NULL, NULL) ;
+
+
+      sl = zmap_window_canvas_featureset_find_feature_coords(NULL, featureset_item, y1, y2) ;
+
+      for ( ; sl ; sl = sl->next)
+        {
+          ZMapWindowCanvasFeature gs ;
+
+          gs = sl->data ;
+
+          if (gs->flags & FEATURE_HIDDEN)	/* we are setting focus on visible features ! */
+            continue;
+
+          if (gs->y1 > y2)
+            break;
+
+          if (gs->y2 < y1)
+            continue ;
+
+
+          /* I DO NOT UNDERSTAND MALCOLM'S CODE HERE..... */
+          if (!feature_list)
+            {
+              zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem)featureset_item, gs->feature) ;
+
+
+              /* rather boringly these could get revived later and overwrite the canvas item feature ?? */
+              /* NOTE probably not, the bug was a missing * in the line above */
+              featureset_item->point_feature = gs->feature;
+              featureset_item->point_canvas_feature = gs;
+            }
+
+
+
+
+          //     else	// why? item has the first one and feature list is the others if present
+          // mh17: always include the first in the list to filter duplicates eg transcript exons
+          {
+            GList *grouped_features = NULL ;
+
+            do
+              {
+                /* oh dear repeating tests from above for first time round loop....rationalise... */
+                if (gs->flags & FEATURE_HIDDEN)	/* we are setting focus on visible features ! */
+                  continue;
+                    
+                if (gs->y1 > y2)
+                  break;
+                    
+                if (gs->y2 < y1)
+                  continue ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                /* Not correct at the moment... */
+
+                if (canonical_only)
+                  {
+                    if (gs->y1 < prev_y2)
+                      continue ;
+
+                    prev_y1 = gs->y1 ;
+                    prev_y2 = gs->y2 ;
+                  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+                /* If feature is already there stop, otherwise insert. */
+                if ((g_hash_table_lookup(feature_items_found, gs)))
+                  {
+                    break ;
+                  }
+                else
+                  {
+                    grouped_features = g_list_append(grouped_features, gs) ;
+
+                    g_hash_table_insert(feature_items_found, gs, gs) ;
+                  }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                gs = gs->right ;
+
+              } while (gs) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          } while ((gs = gs->right)) ;
+
+
+
+
+            if (grouped_features)
+              feature_list = g_list_append(feature_list, grouped_features) ;
+
+          }
+        }
+
+      g_hash_table_destroy(feature_items_found) ;
+    }
+
+
+  return feature_list ;
+}
+
+
+void zMapWindowFeaturesetFreeGroupedFeatures(GList *grouped_features)
+{
+  g_list_foreach(grouped_features, groupListFreeCB, NULL) ;
+
+  g_list_free(grouped_features) ;
+
+  return ;
+}
+
+
+
+
+
 
 
 /* I'm not sure how closely ->display and ->display_index are linked, if the first exists does
@@ -2844,13 +3115,13 @@ static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gbool
 
 
 static void zmap_window_featureset_item_set_colour(ZMapWindowCanvasItem   item,
-                                                   FooCanvasItem         *interval,
-                                                   ZMapFeature                        feature,
-                                                   ZMapFeatureSubPartSpan sub_feature,
-                                                   ZMapStyleColourType    colour_type,
-                                                   int colour_flags,
-                                                   GdkColor              *fill,
-                                                   GdkColor              *border)
+						   FooCanvasItem         *interval,
+						   ZMapFeature			feature,
+						   ZMapFeatureSubPart sub_feature,
+						   ZMapStyleColourType    colour_type,
+						   int colour_flags,
+						   GdkColor              *fill,
+						   GdkColor              *border)
 {
   if (g_type_is_a(G_OBJECT_TYPE(interval), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
     {
@@ -4397,6 +4668,14 @@ static void findNameAtPosCB(gpointer data, gpointer user_data)
 }
 
 
+/* A GFunc() to free a list which is an element of another list. */
+static void groupListFreeCB(gpointer data, gpointer user_data_unused)
+{
+  GList *grouped_features = (GList *)data ;
 
+  g_list_free(grouped_features) ;
+
+  return ;
+}
 
 

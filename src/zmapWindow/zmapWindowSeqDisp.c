@@ -658,7 +658,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
       ZMapFeature feature = zMapWindowCanvasItemGetFeature(sequence_feature);
       ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) sequence_feature;
       GdkColor *fill;
-      ZMapFeatureSubPartSpanStruct span ;
+      ZMapFeatureSubPartStruct span ;
       GQuark feature_style_id = 0 ;
       GQuark show_translation_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
 
@@ -896,7 +896,7 @@ gboolean zMapWindowSeqDispSelectByRegion(FooCanvasItem *sequence_feature,
     {
       ZMapFeature feature = zMapWindowCanvasItemGetFeature(sequence_feature);
       GdkColor *fill;
-      ZMapFeatureSubPartSpanStruct span ;
+      ZMapFeatureSubPartStruct span ;
 
       /* previous code did this as part of the select operation
        * inside the TextItem inside the sequnece feature

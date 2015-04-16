@@ -92,8 +92,8 @@ typedef struct ZMapStyleParamStructName
 {
   ZMapStyleParamId id ;
   ZMapStyleParamType type ;
-
   gchar *name ;
+
   gchar *nick ;            // if NULL or "" defaults to name
   gchar *blurb ;
 

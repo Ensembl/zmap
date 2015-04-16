@@ -416,27 +416,99 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
  *            Package routines.
  */
 
+
+
+ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds)
+{
+  ZMapFeaturePartsList subparts = NULL ;
+  GArray *gaps_array ;
+
+  zMapReturnValIfFail((feature->mode == ZMAPSTYLE_MODE_ALIGNMENT), NULL) ;
+
+  zMapReturnValIfFailSafe((feature->feature.homol.align), NULL) ;
+
+  gaps_array = feature->feature.homol.align ;
+  subparts = g_new0(ZMapFeaturePartsListStruct, 1) ;
+
+  if (requested_bounds == ZMAPFEATURE_SUBPART_MATCH)
+    {
+      int i ;
+
+      for (i = 0 ; i < gaps_array->len ; i++)
+        {
+          ZMapAlignBlock block = NULL ;
+          ZMapFeatureSubPart span ;
+
+          block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i)) ;
+          span = zMapFeatureSubPartCreate(ZMAPFEATURE_SUBPART_MATCH, i, block->t1, block->t2) ;
+          subparts->parts = g_list_append(subparts->parts, span) ;
+
+          if (i == 0)
+            subparts->min = block->t1 ;
+          else if (i == (gaps_array->len - 1))
+            subparts->max = block->t2 ;
+        }
+    }
+  else if (requested_bounds == ZMAPFEATURE_SUBPART_GAP)
+    {
+      int i ;
+
+      for (i = 0 ; i < (gaps_array->len - 1) ; i++)
+        {
+          ZMapAlignBlock block1 = NULL, block2 = NULL ;
+          ZMapFeatureSubPart span ;
+
+          block1 = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i)) ;
+          block2 = &(g_array_index(gaps_array, ZMapAlignBlockStruct, (i + 1))) ;
+          span = zMapFeatureSubPartCreate(ZMAPFEATURE_SUBPART_GAP, i, (block1->t2 + 1), (block2->t1 - 1)) ;
+          subparts->parts = g_list_append(subparts->parts, span) ;
+
+          if (i == 0)
+            subparts->min = (block1->t2 + 1) ;
+          else if (i == (gaps_array->len - 2))
+            subparts->max = (block2->t1 - 1) ;
+        }
+    }
+  else if (requested_bounds == ZMAPFEATURE_SUBPART_FEATURE)
+    {
+      subparts = zmapFeatureBasicSubPartsGet(feature, requested_bounds) ;
+    }
+
+  return subparts ;
+}
+
+
+
+
+
+
 /* Do any of boundaries match the start/end of the alignment or any of the
- * gapped blocks (if there are any) within the alignment.Return a list of ZMapSpanStruct with those
- * that do.
- *
+ * gapped blocks (if there are any) within the alignment.
+ * Return a list of ZMapFeatureSubPart's of those that do.
+ * 
  * Note in the code below that we can avoid unnecessary comparisons because
  * both boundaries and the exons in the transcript are sorted into ascending
  * sequence position.
  * Note also that a zero value boundary means "no boundary".
  */
-GList *zmapFeatureAlignmentHasMatchingBoundaries(ZMapFeature feature, GList *boundaries)
+gboolean zmapFeatureAlignmentMatchingBoundaries(ZMapFeature feature,
+                                                ZMapFeatureSubPartType part_type, gboolean exact_match, int slop,
+                                                ZMapFeaturePartsList boundaries,
+                                                ZMapFeaturePartsList *matching_boundaries_out,
+                                                ZMapFeaturePartsList *non_matching_boundaries_out)
 {
-  GList *matching_boundaries = NULL ;
-  int slop ;
+  gboolean result = FALSE ;
+
 
   zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
+  zMapReturnValIfFail((part_type == ZMAPFEATURE_SUBPART_MATCH || part_type == ZMAPFEATURE_SUBPART_GAP
+                       || part_type == ZMAPFEATURE_SUBPART_FEATURE), FALSE) ;
 
-  slop = zMapStyleSpliceHighlightTolerance(*(feature->style)) ;
-
-  if (!(feature->feature.homol.align))
+  if (!(feature->feature.homol.align) && part_type == ZMAPFEATURE_SUBPART_FEATURE)
     {
-      matching_boundaries = zmapFeatureCoordsListMatch(feature, slop, boundaries) ;
+      result = zmapFeatureMatchingBoundaries(feature, exact_match, slop,
+                                             boundaries,
+                                             matching_boundaries_out, non_matching_boundaries_out) ;
     }
   else
     {
@@ -444,40 +516,46 @@ GList *zmapFeatureAlignmentHasMatchingBoundaries(ZMapFeature feature, GList *bou
       GArray *gaps_array = feature->feature.homol.align ;
       GList *curr ;
       int i ;
+      gboolean error = FALSE ;
+      ZMapFeaturePartsList matching_boundaries ;
 
-      slop = zMapStyleSpliceHighlightTolerance(*(feature->style)) ;
+      matching_boundaries = zMapFeaturePartsListCreate((ZMapFeatureFreePartFunc)zMapFeatureBoundaryMatchDestroy) ;
 
-      curr = boundaries ;
+      slop = zMapStyleFilterTolerance(*(feature->style)) ;
+
+      curr = boundaries->parts ;
       i = 0 ;
       while (curr)
         {
-          ZMapSpan curr_boundary = (ZMapSpan)(curr->data) ;
+          ZMapFeatureSubPart curr_boundary = (ZMapFeatureSubPart)(curr->data) ;
 
-          if ((curr_boundary->x1) && feature->x2 < curr_boundary->x1)
+          if ((curr_boundary->start) && feature->x2 < curr_boundary->start)
             {
               /* Feature is before current splice. */
               ;
             }
-          else if ((curr_boundary->x2) && feature->x1 > curr_boundary->x2)
+          else if ((curr_boundary->end) && feature->x1 > curr_boundary->end)
             {
               /* curr splice is beyond feature so stop compares. */
               break ;
             }
           else
             {
+              int index = 0 ;
+
               /* Compare blocks. */
               while (i < gaps_array->len)
                 {
                   ZMapAlignBlock block ;
 
                   block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i)) ;
-
-                  if ((curr_boundary->x1) && block->t2 < curr_boundary->x1)
+              
+                  if ((curr_boundary->start) && block->t2 < curr_boundary->start)
                     {
                       /* Block is before current splice. */
                       ;
                     }
-                  else if ((curr_boundary->x2) && block->t1 > curr_boundary->x2)
+                  else if ((curr_boundary->end) && block->t1 > curr_boundary->end)
                     {
                       /* curr splice is beyond feature so stop compares. */
                       break ;
@@ -486,20 +564,27 @@ GList *zmapFeatureAlignmentHasMatchingBoundaries(ZMapFeature feature, GList *bou
                     {
                       int match_boundary_start = 0, match_boundary_end = 0 ;
 
-                      if (zmapFeatureCoordsMatch(slop, curr_boundary->x1, curr_boundary->x2,
-                                                 block->t1, block->t2,
-                                                 &match_boundary_start, &match_boundary_end))
+                      /* Duh....don't seem to have implemented gaps/parts matching properly,
+                       * the gaps align is not done.... */
+
+                      if (zmapFeatureCoordsMatch(slop, TRUE, curr_boundary->start, curr_boundary->end,
+                                                 block->t1, block->t2, &match_boundary_start, &match_boundary_end))
                         {
-                          ZMapSpan match_boundary ;
+                          ZMapFeatureSubPart match_boundary ;
 
-                          match_boundary = g_new0(ZMapSpanStruct, 1) ;
+                          match_boundary = zMapFeatureSubPartCreate(curr_boundary->subpart, index,
+                                                                    block->t1, block->t2) ;
 
-                          if (match_boundary_start)
-                            match_boundary->x1 = match_boundary_start ;
-                          if (match_boundary_end)
-                            match_boundary->x2 = match_boundary_end ;
-
-                          matching_boundaries = g_list_append(matching_boundaries, match_boundary) ;
+                          if (zMapFeaturePartsListAdd(matching_boundaries, (ZMapFeaturePart)match_boundary))
+                            {
+                              index++ ;
+                            }
+                          else
+                            {
+                              error = TRUE ;
+                              
+                              break ;
+                            }
                         }
                     }
 
@@ -509,9 +594,24 @@ GList *zmapFeatureAlignmentHasMatchingBoundaries(ZMapFeature feature, GList *bou
 
           curr = g_list_next(curr) ;
         }
+
+      /* It's possible to have a feature sit wholly in a gap (or match if checking gap matches)
+       * and hence for there to be no error but no match either, hence the subpart test. */
+      if (error || !(matching_boundaries->parts))
+        {
+          zMapFeaturePartsListDestroy(matching_boundaries) ;
+          matching_boundaries = NULL ;
+        }
+      else
+        {
+          if (matching_boundaries_out)
+            *matching_boundaries_out = matching_boundaries ;
+
+          result = TRUE ;
+        }
     }
 
-  return matching_boundaries ;
+  return result ;
 }
 
 

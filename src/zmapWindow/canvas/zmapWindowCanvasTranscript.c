@@ -40,44 +40,8 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasTranscript_I.h>
-#include <zmapWindowCanvasGlyph_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
-#define INCLUDE_TRUNCATION_GLYPHS_TRANSCRIPT 1
-
-/*
- * Glyphs to represent the trunction of a feature at the ZMap boundary. One for
- * truncation at the start and one for truncation at the end.
- */
-
-static ZMapStyleGlyphShapeStruct truncation_shape_transcript_instance_start =
-{
-  {
-    0, 0,      5, -5,        0, -10,       -5, -5,      0, 0,          0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-  },                                                                               /* length 32 coordinate array */
-  5,                                                                               /* number of coordinates */
-  10, 10,                                                                          /* width and height */
-  0,                                                                               /* quark ID */
-  GLYPH_DRAW_LINES                                                                 /* ZMapStyleGlyphDrawType; LINES == OUTLINE, POLYGON == filled */
-}  ;
-
-static ZMapStyleGlyphShapeStruct truncation_shape_transcript_instance_end =
-{
-  {
-    0, 0,      -5, 5,        0, 10,       5, 5,      0, 0,          0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-  },
-  5,
-  10, 10,
-  0,
-  GLYPH_DRAW_LINES
-}  ;
-
-static ZMapStyleGlyphShapeStruct * truncation_shape_transcript_start = &truncation_shape_transcript_instance_start ;
-static ZMapStyleGlyphShapeStruct * truncation_shape_transcript_end = &truncation_shape_transcript_instance_end ;
-static ZMapWindowCanvasGlyph truncation_glyph_transcript_start = NULL ;
-static ZMapWindowCanvasGlyph truncation_glyph_transcript_end = NULL ;
 
 
 static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
@@ -85,16 +49,25 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
                                    GdkDrawable *drawable, GdkEventExpose *expose) ;
 static ZMapWindowCanvasFeature transcriptAddFeature(ZMapWindowFeaturesetItem featureset,
                                                     ZMapFeature feature, double y1, double y2) ;
-static ZMapFeatureSubPartSpan transcriptGetSubPartSpan(FooCanvasItem *foo,
-                                                       ZMapFeature feature, double x, double y) ;
+static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo, ZMapFeature feature, double x, double y) ;
 static void transcriptGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width) ;
+
+
+
+/* 
+ *            Globals
+ */
+
+static ZMapWindowCanvasGlyph truncation_glyph_transcript_start_G = NULL ;
+static ZMapWindowCanvasGlyph truncation_glyph_transcript_end_G = NULL ;
+
 
 
 
 /*
  *                    External interface
  *
- * Note some functions have internal linkage but form part of the external interface.
+ * (Note some functions have internal linkage but form part of the external interface.)
  */
 
 void zMapWindowCanvasTranscriptInit(void)
@@ -108,7 +81,7 @@ void zMapWindowCanvasTranscriptInit(void)
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, 0) ;
 
   feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = transcriptGetFeatureExtent ;
-  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = transcriptGetSubPartSpan;
+  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = transcriptGetSubPart;
   zMapWindowCanvasFeatureSetSize(FEATURE_TRANSCRIPT, feature_funcs, sizeof(zmapWindowCanvasTranscriptStruct)) ;
 
   return ;
@@ -195,15 +168,13 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
       feature->y2 = y2 = featureset->end ;
     }
 
-#ifdef INCLUDE_TRUNCATION_GLYPHS_TRANSCRIPT
-  /*
-   * Quick hack for features that are completely outside of the sequence
+
+  /* Quick hack for features that are completely outside of the sequence
    * region. These should not really be passed in, but occasionally are
    * due to bugs on the otterlace side (Feb. 20th 2014). We ignore truncation
    * glyphs completely for these cases.
    */
-  if (    (feature->feature->x2 < featureset->start)
-      ||  (feature->feature->x1 > featureset->end)  )
+  if ((feature->feature->x2 < featureset->start) || (feature->feature->x1 > featureset->end))
     {
       ignore_truncation_glyphs = TRUE ;
     }
@@ -217,43 +188,42 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
       /*
        * Instantiate glyph objects.
        */
-      if (truncation_glyph_transcript_start == NULL)
+      if (truncation_glyph_transcript_start_G == NULL)
         {
-          truncation_glyph_transcript_start = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
-          truncation_glyph_transcript_start->sub_feature = TRUE ;
-          truncation_glyph_transcript_start->shape = truncation_shape_transcript_start ;
-          truncation_glyph_transcript_start->which = ZMAP_GLYPH_TRUNCATED_START ;
+          ZMapStyleGlyphShape start_shape, end_shape ;
+
+          zMapWindowCanvasGlyphGetTruncationShapes(&start_shape, &end_shape) ;
+
+          truncation_glyph_transcript_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_TRUNCATED_START,
+                                                                           FALSE, TRUE) ;
+ 
+          truncation_glyph_transcript_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_TRUNCATED_END,
+                                                                         FALSE, TRUE) ;
         }
-      if (truncation_glyph_transcript_end == NULL)
-        {
-          truncation_glyph_transcript_end = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
-          truncation_glyph_transcript_end->sub_feature = TRUE ;
-          truncation_glyph_transcript_end->shape = truncation_shape_transcript_end ;
-          truncation_glyph_transcript_end->which = ZMAP_GLYPH_TRUNCATED_END ;
-        }
-      col_width = zMapStyleGetWidth(featureset->style) ;
 
       /*
        * Draw glyphs at start and end if required.
        */
+      col_width = zMapStyleGetWidth(featureset->style) ;
+
       if (truncated_start)
         {
-          zMapWindowCanvasGlyphDrawTruncationGlyph(foo, featureset, feature,
-                                                   style, truncation_glyph_transcript_start,
-                                                   drawable, col_width) ;
+          zMapWindowCanvasGlyphDrawGlyph(featureset, feature,
+                                         style, truncation_glyph_transcript_start_G,
+                                         drawable, col_width, 0.0) ;
         }
       if (truncated_end)
         {
-          zMapWindowCanvasGlyphDrawTruncationGlyph(foo, featureset, feature,
-                                                   style, truncation_glyph_transcript_end,
-                                                   drawable, col_width) ;
+          zMapWindowCanvasGlyphDrawGlyph(featureset, feature,
+                                         style, truncation_glyph_transcript_end_G,
+                                         drawable, col_width, 0.0) ;
         }
 
       if (truncated_start || truncated_end)
         featureset->draw_truncation_glyphs = TRUE ;
 
     }
-#endif
+
 
   /*
    * Draw any UTR sections of an exon.
@@ -341,7 +311,8 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
            * It is a hack to get around what looks like a bug in some part of the drawing code
            * or perhas the canvas itself.
            */
-          zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, (featureset->draw_truncation_glyphs ? cy1_5+1 : cy1_5));
+          zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, (featureset->draw_truncation_glyphs
+                                                                 ? cy1_5+1 : cy1_5));
           zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
         }
       else if(tr->sub_type == TRANSCRIPT_INTRON_START_NOT_FOUND)
@@ -512,10 +483,10 @@ static ZMapWindowCanvasFeature transcriptAddFeature(ZMapWindowFeaturesetItem fea
 
 
 
-static ZMapFeatureSubPartSpan transcriptGetSubPartSpan(FooCanvasItem *foo,
-                                                       ZMapFeature feature, double x, double y)
+static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo,
+                                               ZMapFeature feature, double x, double y)
 {
-  ZMapFeatureSubPartSpan sub_part = NULL;
+  ZMapFeatureSubPart sub_part = NULL;
 
   /* the interface to this is via zMapWindowCanvasItemGetInterval(), so here we have to look up the feature again */
   /*! \todo #warning revisit this when canvas items are simplified */

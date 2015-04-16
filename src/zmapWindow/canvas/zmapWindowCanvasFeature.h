@@ -84,10 +84,10 @@ ZMapWindowCanvasFeature zMapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 ZMapFeature zMapWindowCanvasFeatureGetFeature(ZMapWindowCanvasFeature feature) ;
 gboolean zMapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean complex,
                                                  ZMapSpan span, double *width) ;
-ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,
-                                                                ZMapFeature feature, double x, double y) ;
-void zMapWindowCanvasFeatureAddSplicePos(ZMapWindowCanvasFeature feature_item,
-                                         int splice_pos, ZMapBoundaryType boundary_type) ;
+ZMapFeatureSubPart zMapWindowCanvasFeaturesetGetSubPart(FooCanvasItem *foo,
+                                                        ZMapFeature feature, double x, double y) ;
+void zMapWindowCanvasFeatureAddSplicePos(ZMapWindowCanvasFeature feature_item, int splice_pos,
+                                         gboolean match, ZMapBoundaryType boundary_type) ;
 void zMapWindowCanvasFeatureRemoveSplicePos(ZMapWindowCanvasFeature feature_item) ;
 GString *zMapWindowCanvasFeature2Txt(ZMapWindowCanvasFeature canvas_feature) ;
 

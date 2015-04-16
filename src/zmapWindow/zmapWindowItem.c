@@ -198,7 +198,7 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
                                gboolean replace_highlight_item, gboolean highlight_same_names,
-                               ZMapFeatureSubPartSpan sub_part)
+                               ZMapFeatureSubPart sub_part)
 {
   zmapWindowHighlightObject(window, item, replace_highlight_item, highlight_same_names, sub_part) ;
 
@@ -215,7 +215,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
                                gboolean replace_highlight_item, gboolean highlight_same_names,
-                               ZMapFeatureSubPartSpan sub_part)
+                               ZMapFeatureSubPart sub_part)
 {
   ZMapWindowCanvasItem canvas_item ;
   ZMapFeature feature ;

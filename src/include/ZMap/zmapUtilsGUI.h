@@ -119,7 +119,8 @@ typedef void (*ZMapGUIRadioButtonCBFunc)(GtkWidget *button, gpointer data, gbool
 
 
 /*! Types of menu entry. */
-typedef enum {ZMAPGUI_MENU_NONE, ZMAPGUI_MENU_BRANCH, ZMAPGUI_MENU_SEPARATOR,
+typedef enum {ZMAPGUI_MENU_NONE,
+              ZMAPGUI_MENU_TITLE, ZMAPGUI_MENU_BRANCH, ZMAPGUI_MENU_SEPARATOR,
 	      ZMAPGUI_MENU_TOGGLE, ZMAPGUI_MENU_TOGGLEACTIVE,
 	      ZMAPGUI_MENU_RADIO, ZMAPGUI_MENU_RADIOACTIVE,
 	      ZMAPGUI_MENU_NORMAL, ZMAPGUI_MENU_HIDE } ZMapGUIMenuType ;
@@ -154,7 +155,7 @@ typedef struct
 
 /*!
  * Defines a menu item. */
-typedef struct
+typedef struct ZMapGUIMenuItemStructType
 {
   ZMapGUIMenuType type ;				    /* Title, separator etc. */
   char *name ;						    /*!< Title string of menu item. */

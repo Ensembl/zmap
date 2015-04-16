@@ -59,19 +59,46 @@
  */
 
 
-/* Do any of the supplied boundaries match the start/end of the basic feature ? */
-GList *zmapFeatureBasicHasMatchingBoundaries(ZMapFeature feature, GList *boundaries)
+ZMapFeaturePartsList zmapFeatureBasicSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds)
 {
-  GList *matching_boundaries = NULL ;
-  int slop ;
+  ZMapFeaturePartsList subparts = NULL ;
 
-  zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
+  if (requested_bounds == ZMAPFEATURE_SUBPART_FEATURE)
+    {
+      ZMapFeatureSubPart feature_span ;
 
-  slop = zMapStyleSpliceHighlightTolerance(*(feature->style)) ;
+      subparts = g_new0(ZMapFeaturePartsListStruct, 1) ;
 
-  matching_boundaries = zmapFeatureCoordsListMatch(feature, slop, boundaries) ;
+      feature_span = zMapFeatureSubPartCreate(ZMAPFEATURE_SUBPART_FEATURE, 0, feature->x1, feature->x2) ;
 
-  return matching_boundaries ;
+      subparts->min = feature->x1 ;
+      subparts->max = feature->x2 ;
+      subparts->parts = g_list_append(subparts->parts, feature_span) ;
+    }
+
+  return subparts ;
+}
+
+
+
+
+
+/* Do any of the supplied boundaries match the start/end of the basic feature ? */
+gboolean zmapFeatureBasicMatchingBoundaries(ZMapFeature feature,
+                                            ZMapFeatureSubPartType part_type, gboolean exact_match, int slop,
+                                            ZMapFeaturePartsList boundaries,
+                                            ZMapFeaturePartsList *matching_boundaries_out,
+                                            ZMapFeaturePartsList *non_matching_boundaries_out)
+{
+  gboolean result = FALSE ;
+
+  if (part_type == ZMAPFEATURE_SUBPART_FEATURE)
+    {
+      result = zmapFeatureMatchingBoundaries(feature, exact_match, slop, boundaries,
+                                             matching_boundaries_out, non_matching_boundaries_out) ;
+    }
+
+  return result ;
 }
 
 

@@ -262,6 +262,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
    * output when user asks for version. */
   consoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, "ZMap starting.") ;
 
+
   /* The main control block. */
   app_context = createAppContext() ;
 

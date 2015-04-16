@@ -1938,8 +1938,8 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
               {
                 new_feature->feature.transcript.exons =
                   g_array_sized_new(FALSE, TRUE,
-                    sizeof(ZMapSpanStruct),
-                    orig_feature->feature.transcript.exons->len);
+                                    sizeof(ZMapSpanStruct),
+                                    orig_feature->feature.transcript.exons->len);
 
                 for (i = 0; i < orig_feature->feature.transcript.exons->len; i++)
                   {

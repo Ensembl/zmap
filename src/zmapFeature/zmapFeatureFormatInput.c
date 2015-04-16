@@ -261,7 +261,7 @@ char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type)
 
 
 
-char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart)
+char *zMapFeatureSubPart2Str(ZMapFeatureSubPartType subpart)
 {
   char *subpart_str = NULL ;
 
@@ -276,17 +276,17 @@ char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart)
 
   /* Ok, for now the subpart enum has shifted values to allow OR'ing of other flags into it,
    * hence we need to do these tests...this may change back sometime. */
-  if (subpart & ZMAPFEATURE_SUBPART_EXON_CDS)
+  if (subpart == ZMAPFEATURE_SUBPART_EXON_CDS)
     subpart_str = "Exon (CDS)" ;
-  else if (subpart & ZMAPFEATURE_SUBPART_EXON)
+  else if (subpart == ZMAPFEATURE_SUBPART_EXON)
     subpart_str = "Exon" ;
-  else if (subpart & ZMAPFEATURE_SUBPART_INTRON_CDS)
+  else if (subpart == ZMAPFEATURE_SUBPART_INTRON_CDS)
     subpart_str = "Intron (CDS)" ;
-  else if (subpart & ZMAPFEATURE_SUBPART_INTRON)
+  else if (subpart == ZMAPFEATURE_SUBPART_INTRON)
     subpart_str = "Intron" ;
-  else if (subpart & ZMAPFEATURE_SUBPART_GAP)
+  else if (subpart == ZMAPFEATURE_SUBPART_GAP)
     subpart_str = "Gap" ;
-  else if (subpart & ZMAPFEATURE_SUBPART_MATCH)
+  else if (subpart == ZMAPFEATURE_SUBPART_MATCH)
     subpart_str = "Match" ;
   else
     zMapWarnIfReached() ;

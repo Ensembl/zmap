@@ -121,15 +121,15 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
 
 FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 					       double x, double y,
-					       ZMapFeatureSubPartSpan *sub_feature_out);
+					       ZMapFeatureSubPart *sub_feature_out);
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetObject(FooCanvasItem *item);
-ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item,
-                                                           ZMapFeature feature, double x, double y) ;
+ZMapFeatureSubPart zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item,
+                                                       ZMapFeature feature, double x, double y) ;
 
 gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidden);
 
 void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *canvas_item,
-                                            ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
+                                            ZMapFeature feature, ZMapFeatureSubPart sub_feature,
 					    ZMapStyleColourType colour_type,
 					    int colour_flags,
 					    GdkColor *default_fill_colour,

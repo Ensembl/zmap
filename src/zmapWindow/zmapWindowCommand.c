@@ -1,5 +1,5 @@
 /*  File: zmapWindowCommand.c
- *  Author: ed (edgrif@sanger.ac.uk)
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -39,10 +39,8 @@
 #include <zmapWindow_P.h>
 
 
+static gboolean doFilter(ZMapWindow window, ZMapWindowCallbackCommandFilter filter_data, char **err_msg_out) ;
 
-
-
-static gboolean doSplice(ZMapWindow window, ZMapWindowCallbackCommandSplice splice_data, char **err_msg_out) ;
 
 
 
@@ -50,24 +48,38 @@ static gboolean doSplice(ZMapWindow window, ZMapWindowCallbackCommandSplice spli
  *                        External interface
  */
 
+
 /* Called to execute a command on the given window, this is usually a request from View which is
  * often in response to a request from a ZMapWindow user action. Seems topsy-turvy but some
  * actions need to be executed on all windows within a view. */
 gboolean zMapWindowExecuteCommand(ZMapWindow window, ZMapWindowCallbackCommandAny cmd_any, char **err_msg_out)
 {
   gboolean result = FALSE ;
+  ZMapWindowCallbackCommandFilter filter_data = (ZMapWindowCallbackCommandFilter)cmd_any ;
 
-  switch (cmd_any->cmd)
+    switch (cmd_any->cmd)
     {
-    case ZMAPWINDOW_CMD_SPLICE:
+    case ZMAPWINDOW_CMD_COLFILTER:
       {
-        ZMapWindowCallbackCommandSplice splice_data = (ZMapWindowCallbackCommandSplice)cmd_any ;
+        if ((result = doFilter(window, filter_data, err_msg_out)))
+          {
+            /* Is there just one filtered column.....can only do it for one currently...
+             * and filtering is being turned on then record the type of filtering...
+             *  */
+            window->filter_on = filter_data->do_filter ;
 
-        result = doSplice(window, splice_data, err_msg_out) ;
+            if (filter_data->target_column && filter_data->do_filter)
+              {
+                window->filter_feature_set = filter_data->target_column ;
+                window->filter_selected = filter_data->selected ;
+                window->filter_filter = filter_data->filter ;
+                window->filter_action = filter_data->action ;
+                window->filter_target = filter_data->target_type ;
+              }
+          }
 
         break ;
       }
-
     default:
       {
         zMapWarnIfReached() ;
@@ -81,71 +93,37 @@ gboolean zMapWindowExecuteCommand(ZMapWindow window, ZMapWindowCallbackCommandAn
 
 
 
-
-
 /* 
  *                    Internal routines.
  */
 
-
-/* Add or remove splice highlighting to a window. */
-static gboolean doSplice(ZMapWindow window, ZMapWindowCallbackCommandSplice splice_data, char **err_msg_out)
+/* Add or remove filtering to a column. */
+static gboolean doFilter(ZMapWindow window, ZMapWindowCallbackCommandFilter filter_data, char **err_msg_out)
 {
   gboolean result = FALSE ;
-  FooCanvasGroup *focus_column ;
-  ZMapWindowContainerFeatureSet focus_container ;
 
-  if (splice_data->do_highlight)
+  filter_data->filter_result = zMapWindowContainerFeatureSetFilterFeatures(filter_data->selected,
+                                                                           filter_data->filter,
+                                                                           filter_data->action,
+                                                                           filter_data->target_type,
+                                                                           filter_data->filter_column,
+                                                                           filter_data->filter_features,
+                                                                           filter_data->target_column,
+                                                                           filter_data->seq_start,
+                                                                           filter_data->seq_end,
+                                                                           filter_data->cds_match) ;
+
+  /* Need reposition because we will have unfiltered the features first so they will need to
+   * be redrawn even if we subsequently find no matches. */
+  if (filter_data->filter_result == ZMAP_CANVAS_FILTER_OK
+      || filter_data->filter_result == ZMAP_CANVAS_FILTER_NO_MATCHES)
     {
-      FooCanvasItem *focus_item  ;
-
-      if ((focus_column = zmapWindowFocusGetHotColumn(window->focus))
-          && (focus_item = zmapWindowFocusGetHotItem(window->focus)))
-        {
-          ZMapWindowContainerFeatureSet focus_container ;
-          gboolean result ;
-
-          /* Record the current hot item. */
-          window->focus_column = focus_column ;
-          window->focus_item = focus_item ;
-          window->focus_feature = zMapWindowCanvasItemGetFeature(focus_item) ;
-
-          focus_container = (ZMapWindowContainerFeatureSet)focus_column ;
-
-          if ((result = zmapWindowContainerFeatureSetSpliceHighlightFeatures(focus_container,
-                                                                             splice_data->highlight_features,
-                                                                             splice_data->seq_start,
-                                                                             splice_data->seq_end)))
-            {
-              zmapWindowFullReposition(window->feature_root_group, TRUE, "key s") ;
-
-              window->splice_highlight_on = TRUE ;
-            }
-          else
-            {
-              *err_msg_out = g_strdup_printf("%s", "No columns configured to show splice highlights.") ;
-            }
-        }
+      zmapWindowFullReposition(window->feature_root_group, TRUE, "col filter") ;
     }
-  else
-    {
-      if ((focus_column = zmapWindowFocusGetHotColumn(window->focus))
-          || (focus_column = zmapWindowGetFirstColumn(window, ZMAPSTRAND_FORWARD)))
-        {
-          focus_container = (ZMapWindowContainerFeatureSet)focus_column ;
 
-          if ((result = zmapWindowContainerFeatureSetSpliceUnhighlightFeatures(focus_container)))
-            {
-              zmapWindowFullReposition(window->feature_root_group, TRUE, "key S") ;
-
-              window->splice_highlight_on = FALSE ;
-            }
-          else
-            {
-              *err_msg_out = g_strdup_printf("%s", "No columns configured to show splice highlights.") ;
-            }
-        }
-    }
+  if (filter_data->filter_result == ZMAP_CANVAS_FILTER_OK)
+    result = filter_data->result = TRUE ;
 
   return result ;
 }
+

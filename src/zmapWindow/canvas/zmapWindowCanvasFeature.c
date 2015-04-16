@@ -208,24 +208,26 @@ gboolean zMapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature
  * to the user.
  * 
  * These positions probably indicate where the feature splices match some other
- * feature  selected by the user. */
-void zMapWindowCanvasFeatureAddSplicePos(ZMapWindowCanvasFeature feature_item,
-                                         int feature_pos, ZMapBoundaryType boundary_type)
+ * feature selected by the user. */
+void zMapWindowCanvasFeatureAddSplicePos(ZMapWindowCanvasFeature feature_item, int feature_pos,
+                                         gboolean match, ZMapBoundaryType boundary_type)
 {
   ZMapSplicePosition splice_pos ;
+  int splice_width = 10 ;
 
   splice_pos = g_new0(ZMapSplicePositionStruct, 1) ;
+  splice_pos->match = match ;
   splice_pos->boundary_type = boundary_type ;
 
   if (boundary_type == ZMAPBOUNDARY_5_SPLICE)
     {
-      splice_pos->start = feature_pos - 3 ;
+      splice_pos->start = feature_pos - splice_width ;
       splice_pos->end = feature_pos - 1 ;
     }
   else
     {
       splice_pos->start = feature_pos + 1 ;
-      splice_pos->end = feature_pos + 3 ;
+      splice_pos->end = feature_pos + splice_width ;
     }
 
   feature_item->splice_positions = g_list_append(feature_item->splice_positions, splice_pos) ;
@@ -289,10 +291,10 @@ GString *zMapWindowCanvasFeature2Txt(ZMapWindowCanvasFeature canvas_feature)
 
 
 /* return a span struct for the feature */
-ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo, ZMapFeature feature,
-								double x, double y)
+ZMapFeatureSubPart zMapWindowCanvasFeaturesetGetSubPart(FooCanvasItem *foo, ZMapFeature feature,
+                                                        double x, double y)
 {
-  ZMapFeatureSubPartSpan (*func) (FooCanvasItem *foo,ZMapFeature feature,double x,double y) = NULL;
+  ZMapFeatureSubPart (*func) (FooCanvasItem *foo,ZMapFeature feature,double x,double y) = NULL;
   //	ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
   zMapReturnValIfFail(feature, NULL) ;
 
@@ -319,7 +321,6 @@ ZMapFeature zMapWindowCanvasFeatureGetFeature(ZMapWindowCanvasFeature feature_it
 
   return feature ;
 }
-
 
 
 

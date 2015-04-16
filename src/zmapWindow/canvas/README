@@ -1,9 +1,19 @@
 
-----------------------------------------------------------------------
+--------------------------------------------------------------------------------
 Canvas
 
 
-This directory contains code to display the features in a ZMapWindow.
+This directory contains code that is in essence our interface to the foocanvas
+and does the display of features within the context of a single ZMapWindow,
+i.e. there is one foocanvas for each ZMapWindow.
+
+This "canvas" code should form a strict layer _below_ ZMapWindow,
+i.e. ZMapWindow may directly call functions in this layer but NOT vice
+versa. There should be NO ZMapWindow header includes in this code. (Currently
+there are just a few left, I've got rid of most of them, edgrif)
+
+The interface is very incomplete and there are native foocanvas calls in the
+ZMapWindow layer above this code, this is unlikely ever to be rectified sadly.
 
 
 The code is divided up into the following groups:
@@ -45,9 +55,9 @@ handle the situation where the scrolled region becomes bigger than the 32k in
 any one direction meaning that we have to have a whole load of code to detect
 and manage all this.
 
-3) The underlying data structures in the foocanvas are inefficient when
-you get up to the stage of drawing many 1,000's of objects because they
-rely on flat lists.
+3) The underlying data structures in the foocanvas are inefficient when you
+get up to the stage of drawing many 1,000's of objects because they rely on
+flat lists.
 
 4) The foocanvas uses old style GTK2 drawing calls and converting it to use
 the new GTK3 calls would be a major rewrite.
