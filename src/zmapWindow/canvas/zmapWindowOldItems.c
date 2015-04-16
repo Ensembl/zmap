@@ -65,7 +65,7 @@ typedef struct EachIntervalDataStructType
 {
   ZMapWindowCanvasItem parent;
   ZMapFeature          feature;
-  ZMapFeatureSubPartSpan sub_feature;
+  ZMapFeatureSubPart sub_feature;
   ZMapStyleColourType  style_colour_type;
   int                         colour_flags;
   GdkColor            *default_fill_colour;

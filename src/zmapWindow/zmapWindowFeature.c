@@ -928,7 +928,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
     {
       FooCanvasItem *sub_item = NULL, *highlight_item = NULL ;
       gboolean replace_highlight = TRUE, highlight_same_names = TRUE ;
-      ZMapFeatureSubPartSpan sub_feature = NULL ;
+      ZMapFeatureSubPart sub_feature = NULL ;
       ZMapWindowCanvasItem canvas_item ;
       ZMapFeatureStruct feature_copy = {};
       ZMapFeatureAny xremote_feature = (ZMapFeatureAny)feature ;

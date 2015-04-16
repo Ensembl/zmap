@@ -1647,7 +1647,7 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
  */
 void zmapWindowUpdateInfoPanel(ZMapWindow window,
                                ZMapFeature feature_arg,
-                               GList *feature_list, FooCanvasItem *item, ZMapFeatureSubPartSpan sub_part,
+                               GList *feature_list, FooCanvasItem *item, ZMapFeatureSubPart sub_part,
                                int sub_item_dna_start, int sub_item_dna_end,
                                int sub_item_coords_start, int sub_item_coords_end,
                                char *alternative_clipboard_text,
@@ -5621,6 +5621,125 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       break;
 #endif
 
+
+
+    case GDK_f:
+    case GDK_F:
+      {
+        FooCanvasGroup *focus_column ;
+
+        if (!(focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+          {
+            /* We can't do anything if there is no highlight feature. */
+            
+            zMapMessage("%s", "No features selected.") ;
+          }
+        else
+          {
+            ZMapWindowCallbackCommandFilterStruct filter_data = {ZMAPWINDOW_CMD_COLFILTER, FALSE} ;
+            ZMapWindowCallbacks window_cbs_G ;
+
+            if (window->filter_feature_set)
+              {
+                window_cbs_G = zmapWindowGetCBs() ;
+
+                if (window->filter_on)
+                  {
+
+                    /* Not sure yet what to put here...check out correct values..... */
+                    filter_data.selected = ZMAP_CANVAS_FILTER_NONE ;
+                    filter_data.filter = ZMAP_CANVAS_FILTER_NONE ;
+                    filter_data.action = ZMAP_CANVAS_ACTION_SHOW ;
+                    filter_data.target_type = ZMAP_CANVAS_TARGET_NOT_SOURCE_FEATURES ;
+                    filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
+                    filter_data.target_column = window->filter_feature_set ;
+
+                    (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
+                
+                    window->filter_on = FALSE ;
+                  }
+                else
+                  {
+                    FooCanvasItem *focus_item ;
+                    GList *highlight_features = NULL ;
+
+                    if (!((focus_item = zmapWindowFocusGetHotItem(window->focus))
+                          && (highlight_features = zmapWindowFocusGetFeatureList(window->focus))))
+                      {
+                        /* We can't do anything if there is no highlight feature. */
+
+                        zMapMessage("%s", "No features selected.") ;
+                      }
+                    else
+                      {
+                        /* focus list is not always position sorted so do that now.... */
+                        highlight_features = g_list_sort(highlight_features, zMapFeatureSortFeatures) ;
+
+                        if (zmapWindowMarkIsSet(window->mark) && zmapWindowMarkGetSequenceRange(window->mark,
+                                                                                                &(filter_data.seq_start),
+                                                                                                &(filter_data.seq_end)))
+                          {
+                            /* Exclude any features not overlapping the given region.... */
+                            highlight_features = zMapFeatureGetOverlapFeatures(highlight_features,
+                                                                               filter_data.seq_start, filter_data.seq_end,
+                                                                               ZMAPFEATURE_OVERLAP_ALL) ;
+                          }
+
+                        if (highlight_features)
+                          {
+                            /* Record the current hot item. */
+                            window->focus_column = focus_column ;
+                            window->focus_item = focus_item ;
+                            window->focus_feature = zMapWindowCanvasItemGetFeature(focus_item) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                            /* OK, NEED TO GET THIS STUFF FROM STUFF STORED ON WINDOW STRUCT.... */
+
+                            filter_data.selected = ZMAP_CANVAS_FILTER_PARTS ;
+                            filter_data.filter = ZMAP_CANVAS_FILTER_PARTS ;
+                            filter_data.action = ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE ;
+                            filter_data.target_type = ZMAP_CANVAS_TARGET_ALL ;
+
+                            filter_data.do_filter = TRUE ;
+                            filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
+                            filter_data.filter_features = highlight_features ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+                            /* How does target col get set ??????? */
+                            filter_data.target_column = window->filter_feature_set ;
+
+                            filter_data.selected = window->filter_selected ;
+                            filter_data.filter = window->filter_filter ;
+                            filter_data.action = window->filter_action ;
+                            filter_data.target_type = window->filter_target ;
+                            
+
+                            
+
+                            filter_data.do_filter = TRUE ;
+                            filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
+                            filter_data.filter_features = highlight_features ;
+
+                            (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
+
+                            if (filter_data.result)
+                              window->filter_on = TRUE ;
+
+                            g_list_free(highlight_features) ;
+                          }
+                      }
+                  }
+              }
+          }
+
+        event_handled = TRUE ;
+
+        break;
+      }
+
+
+
     case GDK_h:
       {
         /* Flip flop highlighting.... */
@@ -5649,7 +5768,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                   {
                     /* If there's a recorded focus then use that. */
                     gboolean replace_highlight = TRUE, highlight_same_names = TRUE ;
-                    ZMapFeatureSubPartSpan sub_feature = NULL ;
+                    ZMapFeatureSubPart sub_feature = NULL ;
                     int start = window->focus_feature->x1, end = window->focus_feature->x2;
                     gboolean control = FALSE;
                     ZMapWindowDisplayStyleStruct display_style = {ZMAPWINDOW_COORD_ONE_BASED,
@@ -5696,7 +5815,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
             if (window->focus_item)
               {
                 gboolean replace_highlight = TRUE, highlight_same_names = TRUE ;
-                ZMapFeatureSubPartSpan sub_feature = NULL ;
+                ZMapFeatureSubPart sub_feature = NULL ;
                 int start = window->focus_feature->x1, end = window->focus_feature->x2;
                 gboolean control = FALSE;
                 ZMapWindowDisplayStyleStruct display_style = {ZMAPWINDOW_COORD_ONE_BASED,
@@ -5826,47 +5945,88 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         /* If user presses 's'/'S' we toggle the splice highlight according to the
          * current state of splice highlighting. If splices are on, they're turned off,
          * if they are on then splice highlighting is done based on currently highlighted feature. */
-        ZMapWindowCallbackCommandSpliceStruct splice_data = {ZMAPWINDOW_CMD_SPLICE, FALSE, NULL} ;
+        ZMapWindowCallbackCommandFilterStruct filter_data = {ZMAPWINDOW_CMD_COLFILTER, FALSE} ;
         ZMapWindowCallbacks window_cbs_G ;
+
 
         window_cbs_G = zmapWindowGetCBs() ;
 
         if (window->splice_highlight_on)
           {
-            (*(window_cbs_G->command))(window, window->app_data, &splice_data) ;
+            FooCanvasGroup *focus_column ;
+
+            if (!(focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+              {
+                /* We can't do anything if there is no highlight feature. */
+
+                zMapMessage("%s", "No features selected.") ;
+              }
+            else
+              {
+                filter_data.filter = ZMAP_CANVAS_FILTER_PARTS ;
+                filter_data.action = ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE ;
+                filter_data.target_type = ZMAP_CANVAS_TARGET_ALL ;
+                filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
+
+
+                (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
+                
+                window->splice_highlight_on = FALSE ;
+              }
           }
         else
           {
             FooCanvasGroup *focus_column ;
             FooCanvasItem *focus_item ;
-            GList *highlight_features ;
+            GList *highlight_features = NULL ;
 
-            if ((focus_column = zmapWindowFocusGetHotColumn(window->focus))
-                && (focus_item = zmapWindowFocusGetHotItem(window->focus))
-                && (highlight_features = zmapWindowFocusGetFeatureList(window->focus)))
-              {
-                int start, end ;
-
-                if (zmapWindowMarkIsSet(window->mark) && zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
-                  {
-                    /* Exclude any features not overlapping the given region.... */
-                    highlight_features = zMapFeatureGetOverlapFeatures(highlight_features,
-                                                                       start, end, ZMAPFEATURE_OVERLAP_ALL) ;
-
-                    splice_data.seq_start = start ;
-                    splice_data.seq_end = end ;
-                  }
-
-                splice_data.do_highlight = TRUE ;
-                splice_data.highlight_features = highlight_features ;
-
-                (*(window_cbs_G->command))(window, window->app_data, &splice_data) ;
-              }
-            else
+            if (!((focus_column = zmapWindowFocusGetHotColumn(window->focus))
+                  && (focus_item = zmapWindowFocusGetHotItem(window->focus))
+                  && (highlight_features = zmapWindowFocusGetFeatureList(window->focus))))
               {
                 /* We can't do anything if there is no highlight feature. */
 
                 zMapMessage("%s", "No features selected.") ;
+              }
+            else
+              {
+                /* focus list is not always position sorted so do that now.... */
+                highlight_features = g_list_sort(highlight_features, zMapFeatureSortFeatures) ;
+
+                if (zmapWindowMarkIsSet(window->mark) && zmapWindowMarkGetSequenceRange(window->mark,
+                                                                                        &(filter_data.seq_start),
+                                                                                        &(filter_data.seq_end)))
+                  {
+                    /* Exclude any features not overlapping the given region.... */
+                    highlight_features = zMapFeatureGetOverlapFeatures(highlight_features,
+                                                                       filter_data.seq_start, filter_data.seq_end,
+                                                                       ZMAPFEATURE_OVERLAP_ALL) ;
+                  }
+
+                if (highlight_features)
+                  {
+                    /* Record the current hot item. */
+                    window->focus_column = focus_column ;
+                    window->focus_item = focus_item ;
+                    window->focus_feature = zMapWindowCanvasItemGetFeature(focus_item) ;
+
+                    /* do the splice stuff... */
+                    filter_data.selected = ZMAP_CANVAS_FILTER_PARTS ;
+                    filter_data.filter = ZMAP_CANVAS_FILTER_PARTS ;
+                    filter_data.action = ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE ;
+                    filter_data.target_type = ZMAP_CANVAS_TARGET_ALL ;
+
+                    filter_data.do_filter = TRUE ;
+                    filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
+                    filter_data.filter_features = highlight_features ;
+                
+                    (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
+
+                    if (filter_data.result)
+                      window->splice_highlight_on = TRUE ;
+
+                    g_list_free(highlight_features) ;
+                  }
               }
           }
 
@@ -6043,39 +6203,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         break ;
       }
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* If these are ever used then they need a new letter as the shortcut. */
-
-    case GDK_d:
-    case GDK_D:
-      //      g_hash_table_foreach(NULL,lockedDisplayCB,NULL);
-      printf("sizes: gtkobject %zu foocanvasitem %zu foocanvasgroup %zu"
-     " zmapcanvasitem %zu zmapwindowcontainergroup %zu"
-     " zmapwindowalignmentfeature %zu\n",
-     sizeof(GtkObject), sizeof(struct _FooCanvasItem), sizeof(struct _FooCanvasGroup),
-     sizeof(zmapWindowCanvasItemStruct), sizeof(zmapWindowContainerGroupStruct),
-     sizeof(zmapWindowAlignmentFeatureStruct)) ;
-      break;
-#endif
-#if 0
-    case GDK_d:
-    case GDK_D:
-    {
-    extern ZMapWindowContainerGroup nav_root;
-
-    nav_root = window->feature_root_group;
-    print_offsets("normal window");
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
     default:
-      event_handled = FALSE ;
-      break ;
+      {
+        event_handled = FALSE ;
+        break ;
+      }
     }
 
   return event_handled ;

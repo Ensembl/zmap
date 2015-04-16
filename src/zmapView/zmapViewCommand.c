@@ -43,12 +43,16 @@ static void callWindowCommandCB(gpointer data, gpointer user_data) ;
  */
 
 
-/* Interface needs to be broadened to allow operation on a single or all windows. */
-gboolean zmapViewExecuteCommand(ZMapView view, gpointer user_data)
+/* Interface needs to be broadened to allow operation on a single or all windows.
+ * 
+ * Note we just pass the command through...we just use view as a vehicle to pass
+ * the command to all the windows....
+ *  */
+gboolean zmapViewPassCommandToAllWindows(ZMapView view, gpointer user_data)
 {
-  gboolean result = TRUE ;
+  gboolean result = TRUE ;                                  /* HACK FOR NOW... */
 
-  /* Need error handling added here.....??? or should it be per window ?? */
+  /* Need to sort out errors..... */
 
   g_list_foreach(view->window_list, callWindowCommandCB, user_data) ;
 

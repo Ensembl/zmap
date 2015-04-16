@@ -144,13 +144,13 @@ typedef struct _zmapWindowFocusCacheStruct
 
 static void focusItemDestroy(ZMapWindowFocusItem list_item);
 static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
-                                      FooCanvasItem *item, ZMapFeature feature, ZMapFeatureSubPartSpan sub_part,
+                                      FooCanvasItem *item, ZMapFeature feature, ZMapFeatureSubPart sub_part,
                                       ZMapWindowFocusType type);
 static void freeFocusItems(ZMapWindowFocus focus, ZMapWindowFocusType type);
 static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
 static void hideFocusItemsCB(gpointer data, gpointer user_data) ;
 static void highlightCB(gpointer data, gpointer user_data) ;
-static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item, ZMapFeatureSubPartSpan sub_part) ;
+static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item, ZMapFeatureSubPart sub_part) ;
 
 
 
@@ -545,7 +545,7 @@ void zmapWindowFocusDestroy(ZMapWindowFocus focus)
 /* N.B. unless there are no items, then item is added to end of list,
  * it is _not_ the new hot item so we do not reset the focus column for instance. */
 void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item,
-                                ZMapFeature feature, ZMapFeatureSubPartSpan sub_part, ZMapWindowFocusType type)
+                                ZMapFeature feature, ZMapFeatureSubPart sub_part, ZMapWindowFocusType type)
 {
   if (item)  // in case we add GetHotItem() which could return NULL
     {
@@ -958,7 +958,18 @@ void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus)
 
 void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus)
 {
+  /* NOTE these items remain in the focus list as normal but are not visible
+   * arguably it would be better to handle the hidden items lists in this module
+   * but it's done in zmapWindow.c due to history
+   * for a review of this see notepad.html
+   * NB this is not critical as when features are hidden and others selected others the focus will be cleared anyway
+   */
+
+  /* I DONT' UNDERSTAND THIS MERGE........ */
+
+  /* THIS IS WHAT'S IN DEVEL */
   ZMapWindowContainerGroup column = (ZMapWindowContainerGroup) zmapWindowFocusGetHotColumn(focus);
+
 
   if (column)
     {
@@ -970,6 +981,11 @@ void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus)
       zmapWindowDrawSetGroupBackground(focus->window, column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
       foo_canvas_item_request_redraw((FooCanvasItem *) column);
     }
+
+  /* THIS IS WHAT i USED TO HAVE.... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zmapWindowFocusForEachFocusItemType(focus, WINDOW_FOCUS_GROUP_FOCUS, hideFocusItemsCB, hidden_items) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 }
 
@@ -1039,7 +1055,7 @@ static void hideFocusItemsCB(gpointer data, gpointer user_data)
 /* Do the right thing with groups and items
  * also does unhighlight and is called on free
  */
-static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item, ZMapFeatureSubPartSpan sub_part)
+static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item, ZMapFeatureSubPart sub_part)
 {
   GdkColor *fill = NULL, *border = NULL;
   int n_focus;
@@ -1114,7 +1130,7 @@ static void highlightCB(gpointer list_data, gpointer user_data)
 // add a struct to the list, no duplicates
 // return the list and a pointer to the struct
 static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
-                                      FooCanvasItem *item, ZMapFeature feature, ZMapFeatureSubPartSpan sub_part,
+                                      FooCanvasItem *item, ZMapFeature feature, ZMapFeatureSubPart sub_part,
                                       ZMapWindowFocusType type)
 {
   GList *gl;

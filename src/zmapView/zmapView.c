@@ -5830,12 +5830,11 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 
 
   /* TEMP CODE...... */
-  if (cmd_any->cmd == ZMAPWINDOW_CMD_SPLICE)
+  if (cmd_any->cmd == ZMAPWINDOW_CMD_COLFILTER)
     {
-      /* Need error handling added here.....??? or should it be per window ?? */
-      gboolean result ;
+      gboolean status ;
 
-      result = zmapViewExecuteCommand(view, window_data) ;
+      status = zmapViewPassCommandToAllWindows(view, window_data) ;
     }
   else
   switch (cmd_any->cmd)
