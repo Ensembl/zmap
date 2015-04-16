@@ -97,6 +97,10 @@ static void removeList(gpointer data, gpointer user_data_unused) ;
 static gboolean in_user_hidden_stack(GQueue *queue, FooCanvasItem *item) ;
 static gint find_item_in_user_hidden_stack(gconstpointer list_data, gconstpointer item_data) ;
 
+static void column_hide_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
+                           ZMapContainerLevelType level, gpointer user_data) ;
+static void column_show_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
+                           ZMapContainerLevelType level, gpointer user_data) ;
 
 
 
@@ -1216,7 +1220,6 @@ static gint find_item_in_user_hidden_stack(gconstpointer list_data, gconstpointe
     result = 0;
   return result;
 }
-<<<<<<< HEAD
 
 
 
@@ -1228,7 +1231,7 @@ static gint find_item_in_user_hidden_stack(gconstpointer list_data, gconstpointe
  * ID matches.
  */
 static void column_hide_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-                        ZMapContainerLevelType level, gpointer user_data)
+                           ZMapContainerLevelType level, gpointer user_data)
 {
   switch(level)
     {
@@ -1282,13 +1285,3 @@ static void column_show_cb(ZMapWindowContainerGroup container, FooCanvasPoints *
 
   return ;
 }
-|||||||
-
-
-
-
-
-
-
-=======
->>>>>>> Add support for splice match/no match markers. - NEW FEATURE 'New_splices_for_Adam'
