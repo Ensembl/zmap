@@ -33,22 +33,62 @@
 #define ZMAP_CANVAS_GLYPH_H
 
 
-#include <ZMap/zmap.h>
+/* Opaque pointer to glyph struct. */
+typedef struct ZMapWindowCanvasGlyphStructType *ZMapWindowCanvasGlyph ;
 
 
-typedef struct _zmapWindowCanvasGlyphStruct *ZMapWindowCanvasGlyph ;
+/* Enum for glyph 5' or 3' orientation, start or end truncation or junction. */
+typedef enum
+  {
+    ZMAP_GLYPH_NONE,
+    ZMAP_GLYPH_THREEPRIME,
+    ZMAP_GLYPH_FIVEPRIME,
+    ZMAP_GLYPH_TRUNCATED_START,
+    ZMAP_GLYPH_TRUNCATED_END,
+    ZMAP_GLYPH_JUNCTION_START,
+    ZMAP_GLYPH_JUNCTION_END
+  } ZMapGlyphWhichType ;
+
+
+/* HACK TEMP. FUNCTION.... */
+void zMapWindowCanvasGlyphGetTruncationShapes(ZMapStyleGlyphShape *start, ZMapStyleGlyphShape *end) ;
+
 
 void zMapWindowCanvasGlyphInit(void) ;
-GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature feature, int which, double score) ;
+ZMapWindowCanvasGlyph zMapWindowCanvasGlyphAlloc(ZMapStyleGlyphShape shape, ZMapGlyphWhichType which,
+                                                 gboolean scale_to_feature_width, gboolean sub_feature) ;
+
+gboolean zMapWindowCanvasGlyphSetColours(ZMapWindowCanvasGlyph glyph, gulong line_pixel, gulong area_pixel) ;
+
 ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem featureset,
-					       ZMapFeatureTypeStyle style, ZMapFeature feature,
-					       int which, double score) ;
+					       ZMapFeatureTypeStyle style,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                                               ZMapFeature feature,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+                                               ZMapStrand feature_strand,
+					       ZMapGlyphWhichType which, double score) ;
+
+void zMapWindowCanvasGlyphDrawGlyph(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                    ZMapFeatureTypeStyle style, ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable,
+                                    double col_width, double optional_ypos) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+void zMapWindowCanvasGlyphDrawTruncationGlyph(FooCanvasItem *foo, ZMapWindowFeaturesetItem featureset,
+                                              ZMapWindowCanvasFeature feature, ZMapFeatureTypeStyle style,
+                                              ZMapWindowCanvasGlyph glyph,
+                                              GdkDrawable *drawable, double col_width) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+void zMapWindowCanvasGlyphTruncationGlyph(FooCanvasItem *foo, ZMapWindowFeaturesetItem featureset,
+                                          ZMapWindowCanvasFeature feature, ZMapFeatureTypeStyle style,
+                                          ZMapWindowCanvasGlyph glyph,
+                                          GdkDrawable *drawable, double col_width) ;
+
 void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 					  ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable) ;
 void zMapWindowCanvasGlyphSetColData(ZMapWindowFeaturesetItem featureset) ;
-void zMapWindowCanvasGlyphDrawTruncationGlyph(FooCanvasItem *foo, ZMapWindowFeaturesetItem featureset,
-  ZMapWindowCanvasFeature feature, ZMapFeatureTypeStyle style, ZMapWindowCanvasGlyph glyph,
-  GdkDrawable *drawable, double col_width) ;
 
 
 #endif /* !ZMAP_CANVAS_GLYPH_H */
