@@ -5875,6 +5875,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       }
       break;
 
+      /* N/n see GDK_p for combined code. */
+
     case GDK_o:
     case GDK_O:
       {
@@ -5892,9 +5894,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         break ;
       }
 
+    case GDK_n:
+    case GDK_N:
     case GDK_p:
     case GDK_P:
-      {
+    {
         /* Use the current focus item and display translation of it. */
         FooCanvasItem *focus_item ;
 
@@ -5903,27 +5907,33 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
           {
             ZMapFeatureAny context;
             ZMapFeature feature ;
-            char *peptide_fasta;
+            char *fasta;
+            ZMapSequenceType sequence_type ;
+
+            if (key_event->keyval == GDK_n || key_event->keyval == GDK_N)
+              sequence_type = ZMAPSEQUENCE_DNA ;
+            else
+              sequence_type = ZMAPSEQUENCE_PEPTIDE ;
 
             feature = zmapWindowItemGetFeature(focus_item);
             context = zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
                                                 ZMAPFEATURE_STRUCT_CONTEXT);
 
-            if ((peptide_fasta = zmapWindowFeatureTranscriptFASTA(feature, TRUE, TRUE)))
+            if ((fasta = zmapWindowFeatureTranscriptFASTA(feature, sequence_type, TRUE, TRUE)))
               {
                 char *seq_name = NULL, *gene_name = NULL, *title;
 
-                seq_name  = (char *)g_quark_to_string(context->original_id);
-                gene_name = (char *)g_quark_to_string(feature->original_id);
+                seq_name  = (char *)g_quark_to_string(context->original_id) ;
+                gene_name = (char *)g_quark_to_string(feature->original_id) ;
 
                 title = g_strdup_printf("ZMap - %s%s%s",
                                         seq_name,
                                         gene_name ? ":" : "",
                                         gene_name ? gene_name : "");
-                                        zMapGUIShowText(title, peptide_fasta, FALSE);
+                                        zMapGUIShowText(title, fasta, FALSE);
 
                                         g_free(title);
-                                        g_free(peptide_fasta);
+                                        g_free(fasta);
               }
 
           }
