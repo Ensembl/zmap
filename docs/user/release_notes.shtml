@@ -6,6 +6,26 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 1.6.0</h4>
+<ul>
+  <li>Add n/N shortcut key to get nucleotide sequence for a feature
+  <li>New splices for Adam
+  <li>Bug fix for long feature and featureset names in right-click menus - RT 463363
+  <li>Fix a bug with zooming to small features - RT 462835
+  <li>Fix a crash when searching for all features in all featuresets - RT 462835
+  <li>Add a column hide command for remote protocol - RT 455660
+  <li>Bug fix to server return codes
+  <li>Bug fix where ZMap scrolls to the wrong place when selecting a search result - RT 461328
+  <li>ZMap now reports a features_loaded error if no features are loaded because they have been discarded - RT 456865
+  <li>Fix to gap string parsing
+  <li>Small change to clipping logic for alignment features (related to RT 417362)
+  <li>Missing alignment features now correctly included in zmap - RT 417362
+  <li>Fix for lasso select evidence on test release - RT 458109
+  <li>Code reorganisation: move some code into a new 'gbtools' library of utility functions
+  <li>Fix a bug with bumping columns with a mixture of alignment and basic features - RT 371426
+  
+</ul>
+
 <h4>Version 1.5.0</h4>
 <ul>
   <li> Make config file optional for blixem (SIRT:455638)
