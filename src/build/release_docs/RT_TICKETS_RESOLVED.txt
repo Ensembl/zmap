@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 11/02/2015 to 24/03/2015
+Request Tracker Tickets Resolved from 12/03/2015 to 17/04/2015
 
 ticket/309181
 id: ticket/309181
@@ -31,33 +31,13 @@ Resolved: Tue Mar 24 16:25:35 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/377315
-id: ticket/377315
+ticket/398119
+id: ticket/398119
 Queue: zmap
-Subject: ~edgrif/TEST/LAURENS doesn't deal well with multi-zmap
-Requestors: lw2@sanger.ac.uk
+Subject: UI improvement request: feature selection by lassoing
+Requestors: lw2@sanger.ac.uk, mms@sanger.ac.uk
 Owner: edgrif
-Resolved: Mon Feb 16 11:03:50 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/377937
-id: ticket/377937
-Queue: zmap
-Subject: multi-zmap: closing one session doesn't remove info bar
-Requestors: lw2@sanger.ac.uk
-Owner: edgrif
-Resolved: Mon Feb 16 15:14:59 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/398145
-id: ticket/398145
-Queue: zmap
-Subject: feature request: more refined export options
-Requestors: lw2@sanger.ac.uk
-Owner: sm23
-Resolved: Mon Mar 09 10:31:53 2015
+Resolved: Wed Apr 01 14:09:08 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -71,33 +51,23 @@ Resolved: Tue Mar 24 09:58:51 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/450420
-id: ticket/450420
+ticket/455660
+id: ticket/455660
 Queue: zmap
-Subject: sort out zmap main window
-Requestors: edgrif@sanger.ac.uk
-Owner: edgrif
-Resolved: Mon Feb 16 10:25:45 2015
+Subject: Column hide command for remote protocol
+Requestors: jgrg@sanger.ac.uk
+Owner: sm23
+Resolved: Fri Apr 10 16:10:00 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/451891
-id: ticket/451891
+ticket/456865
+id: ticket/456865
 Queue: zmap
-Subject: zmap discards features with wrong style
+Subject: zmap should report a features_loaded error if no features are loaded because they have been discarded
 Requestors: jgrg@sanger.ac.uk, mg13@sanger.ac.uk
 Owner: sm23
-Resolved: Thu Feb 19 16:18:56 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/455638
-id: ticket/455638
-Queue: zmap
-Subject: blixem off by 2 on protein alignments after ensembl_cigar 3D
-Requestors: jgrg@sanger.ac.uk
-Owner: gb10
-Resolved: Mon Mar 09 13:05:52 2015
+Resolved: Tue Apr 07 15:44:37 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -118,6 +88,56 @@ Subject: zebrafish ERS numbers
 Requestors: sb7@sanger.ac.uk
 Owner: sm23
 Resolved: Wed Mar 18 15:28:52 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/460362
+id: ticket/460362
+Queue: zmap
+Subject: Latest release not highlighting exons?
+Requestors: jel@sanger.ac.uk
+Owner: edgrif
+Resolved: Tue Mar 31 10:12:22 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/460731
+id: ticket/460731
+Queue: zmap
+Subject: Problem with new machines and Zmap
+Requestors: gm5@sanger.ac.uk
+Owner: gb10
+Resolved: Tue Mar 31 16:19:50 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/461328
+id: ticket/461328
+Queue: zmap
+Subject: ZMap scrolls to the wrong place when selecting a search result
+Requestors: gb10@sanger.ac.uk
+Owner: sm23
+Resolved: Wed Apr 08 11:55:14 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/462835
+id: ticket/462835
+Queue: zmap
+Subject: zooming bugs
+Requestors: sm23@sanger.ac.uk
+Owner: sm23
+Resolved: Mon Apr 13 16:39:44 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/463363
+id: ticket/463363
+Queue: zmap
+Subject: super wide menu titles
+Requestors: edgrif@sanger.ac.uk
+Owner: sm23
+Resolved: Thu Apr 16 12:01:04 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
