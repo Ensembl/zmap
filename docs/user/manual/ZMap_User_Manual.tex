@@ -244,10 +244,10 @@
 \clearpage
 \section{Introduction}
 
-Zmap is a software package that provides a visualisation tool for genomic features. The software is written in C, utilising the gnome toolkit (GTK2) to draw features on a canvas. Zmap accepts input from multiple sources in multiple formats across multiple genomes and is written in a way so that the addition of further formats is made as trivial as possible. Currently the list of formats includes GFF and DAS, which may reside in any one of; a file, an acedb instance, an http server. Multiple genomes and their associated features can be displayed in a single view as aligned blocks providing support for comparative annotation. Zmap does not include any utility for editing the features that it displays. It does however provide a powerful external interface with which to modify the features displayed on the canvas. Using this interface, Otterlace is used to annotate sequences present in the Otter database. This in turn updates to the Vertebrate Genome Annotation (VEGA) website (http://vega.sanger.ac.uk/index.html)
+ZMap is a software package that provides a visualisation tool for genomic features. The software is written in C/C++, utilising the gnome toolkit (GTK2) to draw features on a canvas. ZMap accepts input from multiple sources in multiple formats across multiple genomes and is written in a way so that the addition of further formats is made as trivial as possible. Currently the list of formats includes GFF and DAS, which may reside in any one of; a file, an acedb instance, an http server. Multiple genomes and their associated features can be displayed in a single view as aligned blocks providing support for comparative annotation. ZMap does not include any utility for editing the features that it displays. It does however provide a powerful external interface with which to modify the features displayed on the canvas. Using this interface, Otterlace is used to annotate sequences present in the Otter database. This in turn updates to the Vertebrate Genome Annotation (VEGA) website (http://vega.sanger.ac.uk/index.html)
 
-\section{Using Zmap}
-Zmap is opened via the Tools menu bar in Otterlace (figure \ref{img_open_from_otterlace}).
+\section{Using ZMap}
+ZMap is opened via the Tools menu bar in Otterlace (figure \ref{img_open_from_otterlace}).
 
 \begin{figure}
 \centering
@@ -266,9 +266,9 @@ Zmap is opened via the Tools menu bar in Otterlace (figure \ref{img_open_from_ot
 \caption{The main ZMap interface}
 \end{figure}
 
-\subsection{Navigating in Zmap and zooming options}
+\subsection{Navigating in ZMap and zooming options}
 \begin{enumerate}
-\item Navigate by using the scroll bars or the middle mouse button. By clicking the middle mouse anywhere in Zmap you will see a horizontal line. You can move this up and down and the relative position in bp will be displayed along the line. When the button is released, the window will refresh, centering on the position of the line. You can also click in the window to make it active and use the scroll wheel to navigate up and down or achieve the same result using the scroll bar on the right hand side of the window. If you release the mouse outside the Zmap window, you can then check the sequence position displayed, without re-centering. See Figure \ref{img_navigating}.
+\item Navigate by using the scroll bars or the middle mouse button. By clicking the middle mouse anywhere in ZMap you will see a horizontal line. You can move this up and down and the relative position in bp will be displayed along the line. When the button is released, the window will refresh, centering on the position of the line. You can also click in the window to make it active and use the scroll wheel to navigate up and down or achieve the same result using the scroll bar on the right hand side of the window. If you release the mouse outside the ZMap window, you can then check the sequence position displayed, without re-centering. See Figure \ref{img_navigating}.
 \item Zoom in by using the Zoom in/Zoom out buttons at the top, or by drawing a rectangle around the area of interest with the left mouse button. Use the ``z'' key on the keyboard to zoom to whatever feature is highlighted. Use the ``Z'' key to zoom to a whole transcript if you have an exon (s) highlighted or all HSPs if you have one HSP highlighted (HSPs are the "blocks" that you see in the homology columns, such as ESTs and protein hits). See figure \ref{img_zooming}.
 \end{enumerate}
 
@@ -291,7 +291,7 @@ Zmap is opened via the Tools menu bar in Otterlace (figure \ref{img_open_from_ot
 \subsection{The Focus Feature vs the Marked Feature}
 If you click on a column background then that column becomes the "focus" column and you can do various short cut operations on it such as pressing "b" to bump it. If you click on a feature then that feature becomes the "focus" feature and similarly you can do various short cut operations on it such as zooming in to it. (Note when you select a feature then its column automatically becomes the focus column.)
 
-While the focus facility is useful, the focus changes every time you click on a new feature. Sometimes you want to select a "working" feature or area more permanently. To do this you can "mark" the feature or area and it will stay ``marked'' until you unmark it. ``Marking'' an area within Zmap to work on is essential, allowing you to work much faster. The "marked" area is left clear while the unmarked area above and below is marked with a blue overlay (see figure \ref{img_focus_and_mark}):
+While the focus facility is useful, the focus changes every time you click on a new feature. Sometimes you want to select a "working" feature or area more permanently. To do this you can "mark" the feature or area and it will stay ``marked'' until you unmark it. ``Marking'' an area within ZMap to work on is essential, allowing you to work much faster. The "marked" area is left clear while the unmarked area above and below is marked with a blue overlay (see figure \ref{img_focus_and_mark}):
 
 \begin{figure}
 \centering
@@ -330,7 +330,7 @@ You can manually change the borders of the marked area by putting your cursor ov
 \subsubsection{Unmark a feature}
 Press "m" or "M" again, i.e. the mark key toggles marking on and off.
 
-\subsection{General Zmap display features}
+\subsection{General ZMap display features}
 Different features are displayed in distinct columns as shown in figure \ref{img_features}.
 
 Note - you may see more or fewer features and columns depending on how your preferences are set up. For descriptions of all column types such as DAS sources, visit this URL:
@@ -405,7 +405,7 @@ Right click on a gene object or 'o' key when highlighted to see information on o
 \end{figure}
 
 \subsection{Exporting features for gene objects}
-As described on the previous page, if you right click over any feature (or type "o" when a feature is highlighted) you get further information. These screen shots show how you can view and export an annotated sequence to your home directory in various different ways, such as dumping features directly. In the main Zmap window, right click on an annotated gene object. From the drop down menu select \textbf{Export Feature DNA} and choose sequence required from CDS, transcript, unspliced and with flanking sequence. Alternatively select \textbf{Export Feature peptide} and choose either CDS or transcript. Here you can see how to \textbf{Show Feature DNA} for annotated gene object AC008073.1-001 in FASTA format; firstly, the section of the transcript that corresponds to the CDS and secondly the whole transcript, including the untranslated region (UTR). See figure \ref{img_exporting_features}.
+As described on the previous page, if you right click over any feature (or type "o" when a feature is highlighted) you get further information. These screen shots show how you can view and export an annotated sequence to your home directory in various different ways, such as dumping features directly. In the main ZMap window, right click on an annotated gene object. From the drop down menu select \textbf{Export Feature DNA} and choose sequence required from CDS, transcript, unspliced and with flanking sequence. Alternatively select \textbf{Export Feature peptide} and choose either CDS or transcript. Here you can see how to \textbf{Show Feature DNA} for annotated gene object AC008073.1-001 in FASTA format; firstly, the section of the transcript that corresponds to the CDS and secondly the whole transcript, including the untranslated region (UTR). See figure \ref{img_exporting_features}.
 
 \begin{figure}
 \centering
@@ -417,7 +417,7 @@ As described on the previous page, if you right click over any feature (or type 
 
 
 \subsection{Bumping features}
-This section describes how to select a feature, mark it and then zoom in to it and examine evidence that overlaps that feature. The default setting for Zmap is to show HSPs drawn on top of each other. This saves space on the canvas making it easier to see the general features of the region of interest. The bump option allows you to see the HSPs as multiple alignments.
+This section describes how to select a feature, mark it and then zoom in to it and examine evidence that overlaps that feature. The default setting for ZMap is to show HSPs drawn on top of each other. This saves space on the canvas making it easier to see the general features of the region of interest. The bump option allows you to see the HSPs as multiple alignments.
 \begin{enumerate}
 \item Click on the feature you are interested in (perhaps a transcript)
 \item Mark it by pressing "m"
@@ -445,10 +445,10 @@ If you use the default bumping mode (i.e. you pressed "b") then you will find al
 \item \textcolor{red}{\textbf{Red}}: the matches are not colinear, e.g. 100, 230 ---> 141, 423
 \end{enumerate}
 
-Alignment quality of the HSPs is depicted by the width of every alignment displayed since the width is a measure of that HSP's score. Therefore, the wider it is the closer the score is to 100\%. The precise score is displayed in the Zmap details bar by clicking on the alignment. If HSPs are missing either the first or last Blast alignments in the set, they are marked with a red diamond at their start/end respectively. This indicates if they do not start at the first base/amino acid and/or do not end with the last base/amino acid of the alignment sequence. The screen shot below shows what options you get when you right click over a homology - note that you can also select an HSP and type ``o''. You also get further options such as retrieving the EMBL file for that homology using pfetch and starting \textbf{Blixem}, see later section (note, HSPs do not need to be bumped to use Blixem).
+Alignment quality of the HSPs is depicted by the width of every alignment displayed since the width is a measure of that HSP's score. Therefore, the wider it is the closer the score is to 100\%. The precise score is displayed in the ZMap details bar by clicking on the alignment. If HSPs are missing either the first or last Blast alignments in the set, they are marked with a red diamond at their start/end respectively. This indicates if they do not start at the first base/amino acid and/or do not end with the last base/amino acid of the alignment sequence. The screen shot below shows what options you get when you right click over a homology - note that you can also select an HSP and type ``o''. You also get further options such as retrieving the EMBL file for that homology using pfetch and starting \textbf{Blixem}, see later section (note, HSPs do not need to be bumped to use Blixem).
 
-\subsection{Searching for a sequence in Zmap}
-DNA and peptide search windows are provided from within Zmap and can be accessed by right clicking on Zmap space and selecting the option at the bottom of the menu. Both search windows are shown in figure \ref{img_sequence_search}.
+\subsection{Searching for a sequence in ZMap}
+DNA and peptide search windows are provided from within ZMap and can be accessed by right clicking on ZMap space and selecting the option at the bottom of the menu. Both search windows are shown in figure \ref{img_sequence_search}.
 
 \begin{figure}
 \centering
@@ -458,7 +458,7 @@ DNA and peptide search windows are provided from within Zmap and can be accessed
 \label{img_sequence_search}
 \end{figure}
 
-\subsection{Searching for a feature in Zmap}
+\subsection{Searching for a feature in ZMap}
 This option allows you to list all the features contained in a column in one window. There are further options for you to search within these results to find a specific feature. The list of column features can be exported as a GFF file via the File menu. See figures \ref{img_feature_search} amd \ref{img_feature_search_results}.
 
 \begin{figure}
@@ -479,9 +479,9 @@ This option allows you to list all the features contained in a column in one win
 
 \subsection{Selecting single or multiple features and hiding/showing them}
 \begin{enumerate}
-\item If you left click once on a feature in Zmap, you will highlight all of its exons, the coordinates of which are now stored in the paste buffer and can be copied elsewhere, such as into the transcript editing window in Otterlace.
-\item You can select multiple features by holding the Shift key down and left clicking with mouse (same as for multi select on the Mac, Windows etc). This option will highlight a single exon at a time for each feature, but the accession numbers of each feature and the individual exon coordinates are held in the paste buffer. This is a particularly useful way of selecting Zmap hits to use in the OTF alignment tool, as all selected homologies will be held in the paste buffer and automatically pasted into the OTF accession window. Each of the exon coordinates can also be pasted into the transcript editing window in Otterlace. See figure \ref{img_show_hide}.
-\item You can remove selected features in Zmap by pressing \textbf{Delete} on the keyboard and restore them by pressing \textbf{Shift-Delete} (note on the Mac you need to press \textbf{Fn-Delete} and \textbf{Shift-Fn-Delete}). This is a particularly useful way of removing evidence that you have already assigned to a transcript object.
+\item If you left click once on a feature in ZMap, you will highlight all of its exons, the coordinates of which are now stored in the paste buffer and can be copied elsewhere, such as into the transcript editing window in Otterlace.
+\item You can select multiple features by holding the Shift key down and left clicking with mouse (same as for multi select on the Mac, Windows etc). This option will highlight a single exon at a time for each feature, but the accession numbers of each feature and the individual exon coordinates are held in the paste buffer. This is a particularly useful way of selecting ZMap hits to use in the OTF alignment tool, as all selected homologies will be held in the paste buffer and automatically pasted into the OTF accession window. Each of the exon coordinates can also be pasted into the transcript editing window in Otterlace. See figure \ref{img_show_hide}.
+\item You can remove selected features in ZMap by pressing \textbf{Delete} on the keyboard and restore them by pressing \textbf{Shift-Delete} (note on the Mac you need to press \textbf{Fn-Delete} and \textbf{Shift-Fn-Delete}). This is a particularly useful way of removing evidence that you have already assigned to a transcript object.
 \end{enumerate}
 
 
@@ -495,7 +495,7 @@ This option allows you to list all the features contained in a column in one win
 
 
 \subsection{Rapid variant construction}
-Otterlace and Zmap can be used together to generate variant objects quickly. Existing transcript objects can be used as a template for a new object while a Zmap HSP can be used to provide the coordinates for the new variant. The new object will take its transcript type from the parent. See figures \ref{img_variant_construction} and \ref{img_variant_construction2}.
+Otterlace and ZMap can be used together to generate variant objects quickly. Existing transcript objects can be used as a template for a new object while a ZMap HSP can be used to provide the coordinates for the new variant. The new object will take its transcript type from the parent. See figures \ref{img_variant_construction} and \ref{img_variant_construction2}.
 
 \begin{figure}
 \centering
@@ -513,7 +513,7 @@ Otterlace and Zmap can be used together to generate variant objects quickly. Exi
 \label{img_variant_construction2}
 \end{figure}
 
-\subsection{Splitting windows in Zmap}
+\subsection{Splitting windows in ZMap}
 Use the \textbf{split} window function to effectively reduce the size of the window when looking at homologies. This is of particular use when you have to deal with very large introns because you can essentially reduce the introns to whatever size you wish, or when there are very many HSPs, because you can keep your gene object in view and static, but still scroll across the evidence. See figure \ref{img_split_window}.
 
 \begin{figure}
@@ -524,8 +524,8 @@ Use the \textbf{split} window function to effectively reduce the size of the win
 \label{img_split_window}
 \end{figure}
 
-\subsection{Launching in a Zmap}
-This function allows you to open two or more sequences alongside each other (such as a human region and the syntenic region in mouse, or two haplotypes), so that simultaneous investigation can be carried out. To do this you will need to open both sets of clones in the same Otterlace session. To open both Zmap windows in one window as shown below, you need to select "Launch In A Zmap" option in one clone set. These clones will open to the left of the already open Otterlace session. This screen shot shows human gene SF3B14 and the syntenic region in mouse. The gene copy and paste function (referred to in the Otterlace section) is of much use here, saving time when building gene objects. See figure \ref{img_launch_in_zmap}.
+\subsection{Launching in a ZMap}
+This function allows you to open two or more sequences alongside each other (such as a human region and the syntenic region in mouse, or two haplotypes), so that simultaneous investigation can be carried out. To do this you will need to open both sets of clones in the same Otterlace session. To open both ZMap windows in one window as shown below, you need to select "Launch In A ZMap" option in one clone set. These clones will open to the left of the already open Otterlace session. This screen shot shows human gene SF3B14 and the syntenic region in mouse. The gene copy and paste function (referred to in the Otterlace section) is of much use here, saving time when building gene objects. See figure \ref{img_launch_in_zmap}.
 
 \begin{figure}
 \centering
@@ -536,7 +536,7 @@ This function allows you to open two or more sequences alongside each other (suc
 \end{figure}
 
 \section{Keyboard and mouse shortcuts}
-In general Zmap will be faster for zooming, bumping etc if you make good use of the built in short cuts. These can often avoid the need for Zmap to redraw large amounts of data that you may not even be interested in. For example, click once (highlight) on a feature and a carriage return will bring up evidence. Another example is to press T for translation.
+In general ZMap will be faster for zooming, bumping etc if you make good use of the built in short cuts. These can often avoid the need for ZMap to redraw large amounts of data that you may not even be interested in. For example, click once (highlight) on a feature and a carriage return will bring up evidence. Another example is to press T for translation.
 
 \subsection{All windows}
 
@@ -549,7 +549,7 @@ Cntl-Q & quit ZMap \\
 \hline
 \end{supertabular}
 
-\subsection{Zmap Window}
+\subsection{ZMap Window}
 
 \begin{supertabular}{|m{6cm}|m{8.5cm}|}
 \hline
@@ -596,7 +596,7 @@ Z & Zoom to whole transcript or all HSPs of a selected feature.\\
 \hline
 \end{supertabular}
 
-\subsection{Zmap Mouse Usage}
+\subsection{ZMap Mouse Usage}
 \begin{supertabular}{|m{4.8cm}|m{4.8cm}|m{4.8cm}|}
 \hline
 Left & Middle & Right\\
@@ -605,7 +605,7 @@ Left & Middle & Right\\
 highlight a feature or column
 Plus drag: draw a rectangle around an object for zoom &
 horizontal ruler with sequence position displayed, on button release centre on mouse position.
-Release mouse outside Zmap window to prevent re-centering.&
+Release mouse outside ZMap window to prevent re-centering.&
 show feature or column menu - for options such as pfetch, show feature DNA, show peptide, export peptide\\
 \hline
 \textit{Double mouse button click} & & \\\hline
@@ -621,10 +621,10 @@ same as single click\\
 \hline
 \end{supertabular}
 
-\section{Tips for a speedier Zmap}
+\section{Tips for a speedier ZMap}
 \begin{enumerate}
-\item Specifically: zoom and mark within Zmap early on after launching. Either select a gene object and press 'z' to zoom OR select a rectangle to zoom in by dragging the left mouse button around it. Reverse complement now if necessary, then press 'm' to mark the region.
-\item The quickest way to zoom out of Zmap again is to right mouse click on the 'zoom out' buttons at the top of zmap and choose one of the options (this is definitely much quicker that doing individual 'zoom outs' with the left mouse button). Likewise for 'zooming in' again (or use keyboard equivalents).
+\item Specifically: zoom and mark within ZMap early on after launching. Either select a gene object and press 'z' to zoom OR select a rectangle to zoom in by dragging the left mouse button around it. Reverse complement now if necessary, then press 'm' to mark the region.
+\item The quickest way to zoom out of ZMap again is to right mouse click on the 'zoom out' buttons at the top of zmap and choose one of the options (this is definitely much quicker that doing individual 'zoom outs' with the left mouse button). Likewise for 'zooming in' again (or use keyboard equivalents).
 \item Bump within a marked region only. Bumping without marking is slow and removes the lines connecting Blast matches.
 \item When you have finished working within a marked region, unbump the evidence you have been working on (e.g. ESTs) and unmark that region before you go on to select the next region to mark and bump - or you could miss visualising the evidence in the new region.
 \item If you want to get rid of some white space try the compress 'c' function or alternatively toggle off some of the columns. \textcolor{red}{Warning - this may hide features as well}. If a column (e.g ESTs) is bumped and you want to lose it temporarily, it is quicker to turn the column off (when you turn it on again it will still be bumped when it re-appears) than unbump then rebump again later.
