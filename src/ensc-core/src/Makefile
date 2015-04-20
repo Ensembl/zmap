@@ -60,15 +60,6 @@ BINDIR=../bin
 BUILT_PROGRAMS = \
           directories \
           libensc.a \
-          Programs/testdbc \
-          Programs/bamcount \
-          Programs/bamcount_exon \
-          Programs/bamcov \
-          Programs/bammap \
-          Programs/countsnps \
-          Programs/indicate \
-          Programs/fastasplit \
-          Programs/moveperl \
           Tests/AssemblyMapperTest \
           Tests/CacheTest \
           Tests/ChainedAssemblyMapperTest \
@@ -96,6 +87,18 @@ BUILT_PROGRAMS = \
           Tests/TopLevelAssemblyMapperTest \
           Tests/TranslateTest \
           Tests/VectorTest
+
+# Don't compile Programs because they require samtools_parallel. We could include this but it
+# would be better to use htslib instead if possible, but that requires some work.
+#          Programs/testdbc \
+#          Programs/bamcount \
+#          Programs/bamcount_exon \
+#          Programs/bamcov \
+#          Programs/bammap \
+#          Programs/countsnps \
+#          Programs/indicate \
+#          Programs/fastasplit \
+#          Programs/moveperl \
 
 # These don't currently compile because we don't have libtcmalloc and libconfig by 
 # default. It should be easy to install them if we need to
