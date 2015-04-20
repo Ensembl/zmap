@@ -29,11 +29,12 @@ MYSQLLIBS=${shell mysql_config --libs_r}
 #SAMDIR=/nfs/ensembl/searle/progs/production_code/ensembl-trunk_0713/samtools_parallel
 #SAMDIR=/nfs/users/nfs_e/edgrif/CHECKOUT/STEVE_SEARLES_CODE/samtools_parallel
 #SAMDIR=/nfs/zmap/3rd_party_code/Searle_Code/samtools_parallel
-SAMDIR=../../samtools_parallel
+#SAMDIR=../../samtools_parallel
+SAMDIR=../../htslib-develop
 
 
 # *gb10* /software/ensembl/central does not exist
-ZLIBDIR=../../samtools_parallel
+ZLIBDIR=../../htslib-develop
 #ZLIBDIR=/nfs/zmap/3rd_party_code/Searle_Code/samtools_parallel
 #ZLIBDIR=/software/ensembl/central/include
 
