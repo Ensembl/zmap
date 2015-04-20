@@ -1,3 +1,20 @@
+2015-04-17  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor update to release notes - DOC
+ docs/user/release_notes.shtml |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+2015-04-17  Gemma Barson  <gb10@sanger.ac.uk>
+ Update release notes for 1.6.0 - DOC
+ docs/user/release_notes.shtml |   20 ++++++++++++++++++++
+ 1 files changed, 20 insertions(+), 0 deletions(-)
+
+2015-04-17  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.5.1-83-g5259eb8 - Update RT and git commit reports
+ src/ChangeLog                                  |  856 ++++++++++++++----------
+ src/build/release_docs/GIT_COMMITS.txt         |   35 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  112 ++--
+ 3 files changed, 593 insertions(+), 410 deletions(-)
+
 2015-04-16  Gemma Barson  <gb10@sanger.ac.uk>
  Update gbtools README file - DOC
  src/gbtools/README |   11 +++++++++--

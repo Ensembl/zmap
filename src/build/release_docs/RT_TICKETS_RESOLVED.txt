@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 12/03/2015 to 17/04/2015
+Request Tracker Tickets Resolved from 12/03/2015 to 20/04/2015
 
 ticket/309181
 id: ticket/309181
@@ -138,6 +138,16 @@ Subject: super wide menu titles
 Requestors: edgrif@sanger.ac.uk
 Owner: sm23
 Resolved: Thu Apr 16 12:01:04 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/464024
+id: ticket/464024
+Queue: zmap
+Subject: long feature names in search results window
+Requestors: sm23@sanger.ac.uk
+Owner: sm23
+Resolved: Fri Apr 17 16:16:00 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
