@@ -28,7 +28,7 @@ if USE_GBTOOLS
 OPTIONAL_SUBDIRS = gbtools
 endif
 
-SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop samtools_parallel ensc-core/src include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop ensc-core/src include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
 
 
 CLEANFILES = $(pkgconfig_DATA)
@@ -178,7 +178,6 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
 	$(top_builddir)/htslib-develop/libhts.a              \
-	$(top_builddir)/samtools_parallel/libbam.a           \
 	$(top_builddir)/ensc-core/src/libensc.a              \
 	$(top_builddir)/AceConn/src/.libs/libAceConn.a       
 
