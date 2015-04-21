@@ -885,7 +885,7 @@ static ZMapFeature makeFeatureSimple(SimpleFeature *rsf,
   if (analysis)
     source = Analysis_getGFFSource(analysis) ;
 
-  if (analysis && !source)
+  if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
 
   if (source)
@@ -922,7 +922,7 @@ static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf,
   if (analysis)
     source = Analysis_getGFFSource(analysis) ;
 
-  if (analysis && !source)
+  if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
 
   if (source)
@@ -978,24 +978,26 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
   ZMapFeature feature = NULL ;
 
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
+  const char *feature_name_id = NULL ;
   const char *feature_name = NULL ;
   const char *source = NULL ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
+  feature_name_id = Transcript_getStableId(rsf);
   feature_name = Transcript_getExternalName(rsf) ;
 
   if (!feature_name || *feature_name == '\0')
-    feature_name = Transcript_getStableId(rsf);
+    feature_name = feature_name_id ;
 
   if (analysis)
     source = Analysis_getGFFSource(analysis) ;
 
-  if (analysis && !source)
+  if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
 
   if (source)
     {
-      feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
+      feature = makeFeature((SeqFeature*)rsf, feature_name_id, feature_name, 
                             feature_mode, source, 0, 0, 
                             get_features_data, feature_block) ;
 
@@ -1049,27 +1051,29 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
   ZMapFeature feature = NULL ;
 
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
+  const char *feature_name_id = NULL ;
   const char *feature_name = NULL ;
   const char *source = NULL ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
+  feature_name = PredictionTranscript_getStableId(rsf);
   feature_name = PredictionTranscript_getDisplayLabel(rsf) ;
 
   if (!feature_name || *feature_name == '\0')
-    feature_name = PredictionTranscript_getStableId(rsf);
+    feature_name = feature_name_id ;
 
   if (analysis)
     source = Analysis_getGFFSource(analysis) ;
 
-  if (analysis && !source)
+  if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
 
-  if (!source)
+  if (!source || *source == '\0')
     source = featureGetSOTerm((SeqFeature*)rsf) ;
   
   if (source)
     {
-      feature = makeFeature((SeqFeature*)rsf, feature_name, feature_name, 
+      feature = makeFeature((SeqFeature*)rsf, feature_name_id, feature_name, 
                             feature_mode, source, 0, 0, 
                             get_features_data, feature_block) ;
 
