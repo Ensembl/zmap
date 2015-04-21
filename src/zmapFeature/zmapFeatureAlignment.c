@@ -141,7 +141,7 @@ static int parse_is_valid_op_data(char * sBuff,
                                   gboolean bSpaces,
                                   gboolean bEnd,
                                   gboolean bFirst) ;
-static gboolean parse_canon_valid(AlignStrCanonical canon) ;
+static gboolean parse_canon_valid(AlignStrCanonical canon, GError **error) ;
 
 /*
  * (sm23) I've put in the new code for this within defines in order that
@@ -1136,7 +1136,7 @@ static gboolean parse_remove_invalid_operators(AlignStrCanonical canon,
  *     cases of ZMapFeatureAlignFormat.
  *
  */
-static gboolean parse_canon_valid(AlignStrCanonical canon)
+static gboolean parse_canon_valid(AlignStrCanonical canon, GError **error)
 {
   gboolean result = FALSE ;
   char cOp = '\0' ;
@@ -1159,7 +1159,17 @@ static gboolean parse_canon_valid(AlignStrCanonical canon)
   if (result)
     {
       if ((canon->num_operators % 2) == 0)
-        result = FALSE ;
+        {
+          /* gb10: We get a lot of cigar strings from ensembl that return even numbers of
+           * operators, either because there are two M operators next to each other (sounds like
+           * an error but is something we can understand) or there is a D and an I next to each
+           * other (sounds like it could be valid but ZMap doesn't handle these very well).
+           * I've made it still succeed here but set an error message. */
+          /*result = FALSE ;*/
+
+          g_set_error(error, g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
+                      "Alignment string has an even number of operators") ;
+        }
     }
 
   /*
@@ -2089,7 +2099,15 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
   /*
    * final test of validity
    */
-  result = parse_canon_valid(canon) ;
+  GError *error = NULL;
+  result = parse_canon_valid(canon, &error) ;
+
+  if (error)
+    {
+      zMapLogWarning("Error processing alignment string '%s': %s", match_str, error->message);
+      g_error_free(error);
+      error = NULL;
+    }
 
   if (!result)
     {
