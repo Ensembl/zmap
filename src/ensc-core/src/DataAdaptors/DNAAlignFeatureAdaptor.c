@@ -602,7 +602,7 @@ Vector *DNAAlignFeatureAdaptor_objectsFromStatementHandle(BaseFeatureAdaptor *bf
     DNAAlignFeature_setDbName(daf, externalDbName);
     DNAAlignFeature_setDbDisplayName(daf, externalDbDisplayName);
 
-    DNAAlignFeature_setPairDNAAlignFeatureId(daf, pairDnaAlignFeatureId);
+    //DNAAlignFeature_setPairDNAAlignFeatureId(daf, pairDnaAlignFeatureId);
 
     Vector_addElement(features, daf); 
   } 
