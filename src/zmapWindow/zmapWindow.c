@@ -3822,28 +3822,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
                     if(window->sequence)
                       {
-                        /*! \todo #warning need a flag here to say chromosome coords have been set */
-                        if(window->sequence->start == 1)
-                          /* not using chromo coords internally?? */
-                          {
-                            int start;
-                            char *p;
-
-                            /*! \todo #warning move this to seq req/load and set sequence coords, then remove from here */
-                            /* using zmap coords internally */
-                            for(p = window->sequence->sequence; *p && *p != '_'; p++)
-                              continue;
-                            if(p) p++;
-                            start = atoi(p);
-
-                            if(start)
-                              {
-                                if(bp < 0)
-                                  chr_bp = start - bp + 1;
-                                else
-                                  chr_bp = start + bp - 1;
-                              }
-                          }
                         if(bp != chr_bp)
                           tip = g_strdup_printf("%d bp (%d)", bp, chr_bp);
                         else
@@ -5631,7 +5609,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         if (!(focus_column = zmapWindowFocusGetHotColumn(window->focus)))
           {
             /* We can't do anything if there is no highlight feature. */
-            
+
             zMapMessage("%s", "No features selected.") ;
           }
         else
@@ -5655,7 +5633,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                     filter_data.target_column = window->filter_feature_set ;
 
                     (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
-                
+
                     window->filter_on = FALSE ;
                   }
                 else
@@ -5713,9 +5691,9 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                             filter_data.filter = window->filter_filter ;
                             filter_data.action = window->filter_action ;
                             filter_data.target_type = window->filter_target ;
-                            
 
-                            
+
+
 
                             filter_data.do_filter = TRUE ;
                             filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
@@ -5980,7 +5958,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 
                 (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
-                
+
                 window->splice_highlight_on = FALSE ;
               }
           }
@@ -6029,7 +6007,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                     filter_data.do_filter = TRUE ;
                     filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
                     filter_data.filter_features = highlight_features ;
-                
+
                     (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
 
                     if (filter_data.result)
