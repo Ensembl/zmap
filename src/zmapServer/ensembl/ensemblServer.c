@@ -1140,7 +1140,7 @@ static ZMapFeature makeFeatureBaseAlign(BaseAlignFeature *rsf,
 
   int match_start = BaseAlignFeature_getHitStart(rsf) ;
   int match_end = BaseAlignFeature_getHitEnd(rsf) ;
-  const char *source = BaseAlignFeature_getDbDisplayName((BaseAlignFeature*)rsf) ;
+  const char *source = BaseAlignFeature_getDbName((BaseAlignFeature*)rsf) ;
 
   feature = makeFeature((SeqFeature*)rsf, feature_name_id, feature_name, 
                         feature_mode, source, match_start, match_end,
