@@ -879,7 +879,7 @@ static ZMapFeature makeFeatureSimple(SimpleFeature *rsf,
   const char *source = NULL ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
-  if (!feature_name)
+  if (!feature_name || *feature_name == '\0')
     feature_name = SimpleFeature_getDisplayLabel(rsf) ;
 
   if (analysis)
@@ -916,7 +916,7 @@ static ZMapFeature makeFeatureRepeat(RepeatFeature *rsf,
   RepeatConsensus *consensus = RepeatFeature_getConsensus(rsf) ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
-  if (!feature_name && consensus)
+  if ((!feature_name || *feature_name == '\0') && consensus)
     feature_name = RepeatConsensus_getName(consensus) ;
 
   if (analysis)
@@ -984,7 +984,7 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
 
   feature_name = Transcript_getExternalName(rsf) ;
 
-  if (!feature_name)
+  if (!feature_name || *feature_name == '\0')
     feature_name = Transcript_getStableId(rsf);
 
   if (analysis)
@@ -1001,8 +1001,12 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
 
       char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
       char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
+      char cDNA_coding_start_is_set = Transcript_getcDNACodingStartIsSet(rsf) ;
+      char cDNA_coding_end_is_set = Transcript_getcDNACodingEndIsSet(rsf) ;
       int coding_region_start = 0;
       int coding_region_end = 0;
+      int cDNA_coding_start = 0;
+      int cDNA_coding_end = 0;
 
       if (coding_region_start_is_set)
         coding_region_start = Transcript_getCodingRegionStart(rsf) ;
@@ -1010,16 +1014,11 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
       if (coding_region_end_is_set)
         coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
 
-      char cDNA_coding_start_is_set = Transcript_getcDNACodingStartIsSet(rsf) ;
-      char cDNA_coding_end_is_set = Transcript_getcDNACodingEndIsSet(rsf) ;
-      int cDNA_coding_start = 0;
-      int cDNA_coding_end = 0;
-
       if (cDNA_coding_start_is_set)
-        cDNA_coding_start = Transcript_getCodingRegionStart(rsf) ;
+        cDNA_coding_start = Transcript_getcDNACodingStart(rsf) ;
 
       if (cDNA_coding_end_is_set)
-        cDNA_coding_end = Transcript_getCodingRegionEnd(rsf) ;
+        cDNA_coding_end = Transcript_getcDNACodingEnd(rsf) ;
 
       zMapLogMessage("coding startset=%c endset=%c start=%d end=%d\ncdna startset=%c endset=%c start=%d end=%d\n", 
                      coding_region_start_is_set, coding_region_end_is_set, coding_region_start, coding_region_end,
@@ -1056,7 +1055,7 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
 
   feature_name = PredictionTranscript_getDisplayLabel(rsf) ;
 
-  if (!feature_name)
+  if (!feature_name || *feature_name == '\0')
     feature_name = PredictionTranscript_getStableId(rsf);
 
   if (analysis)
@@ -1229,10 +1228,10 @@ static ZMapFeature makeFeature(SeqFeature *rsf,
 
   if (SO_accession && source)
     {
-      if (!feature_name_id || *feature_name_id == 0)
+      if (!feature_name_id || *feature_name_id == '\0')
         feature_name_id = source ;
 
-      if (!feature_name || *feature_name == 0)
+      if (!feature_name || *feature_name == '\0')
         feature_name = feature_name_id ;
 
       start = SeqFeature_getStart(rsf) ;
