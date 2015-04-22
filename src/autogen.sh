@@ -32,6 +32,11 @@ gb_tools_repos='gbtools'
 gb_tools_dir='gbtools'
 gb_tools_checkout_dir='gbtools_develop'
 
+ensc_core_repos='ensc-core'
+ensc_core_branch='-f zmap'
+ensc_core_dir='ensc-core'
+ensc_core_checkout_dir='ensc-core_feature_zmap'
+
 
 # Load common functions/settings.
 #
@@ -84,7 +89,7 @@ if [[ "$gb_tools" == "yes" ]] ; then
 
    rm -rf ./$gb_tools_dir/*
 
-   touch ./$gb_tools_dir/.gitignore
+   git checkout ./$gb_tools_dir
 
 fi
 
@@ -117,6 +122,24 @@ if [ -e "$BASE_DIR/gbtools/autogen.sh" ] ; then
   cd $cur_dir
 fi
 
+
+# Set up ensc-core subdirectory. This is the ensembl C API code.
+#
+zmap_message_out "Removing an old copy of $ensc_core_repos"
+
+rm -rf ./$ensc_core_dir/*
+
+git checkout ./$ensc_core_dir/
+
+zmap_message_out "Cloning $ensc_core_repos into $ensc_core_checkout_dir"
+
+gitclone -o $ensc_core_repos $ensc_core_branch || zmap_message_exit "could not clone $ensc_core_repos into $PWD."
+
+cp -rf ./$ensc_core_checkout_dir/* ./$ensc_core_dir
+
+rm -rf ./$ensc_core_checkout_dir
+
+zmap_message_out "Copied $ensc_core_checkout_dir files to $ensc_core_dir"
 
 
 # Remove any files/dirs from previous builds, necessary because different
