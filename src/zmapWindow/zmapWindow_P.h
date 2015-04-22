@@ -142,7 +142,7 @@ typedef struct ZMapWindowFocusItemStructType
 
 
 
-/* 
+/*
  * ok...this is messed up...all the window command stuff needs sorting out.....some commands
  * need to be exposed...others not.....sigh....
  */
@@ -850,6 +850,7 @@ typedef struct ZMapWindowStructType
   /* I'm trying these out as using the sequence start/end is not correct for window stuff. */
   double min_coord ;					    /* min/max canvas coords */
   double max_coord ;
+  double display_origin ;   /* set in chromosome coordinates */
 
   double align_gap ;					    /* horizontal gap between alignments. */
   double column_gap ;					    /* horizontal gap between columns. */

@@ -56,18 +56,20 @@ enum
 
   };
 
-
+/*
 typedef struct
 {
   ZMapFeatureAny feature;
   ZMapWindow     window;
 } AddSimpleDataAnyStruct, *AddSimpleDataAny;
+*/
 
 typedef struct
 {
   ZMapFeatureAny feature;
   ZMapWindow     window;
 } AddSimpleDataFeatureStruct, *AddSimpleDataFeature;
+
 
 static void zmap_windowfeaturelist_class_init(ZMapWindowFeatureListClass zmap_tv_class);
 static void zmap_windowfeaturelist_init(ZMapWindowFeatureList zmap_tv);
@@ -375,11 +377,16 @@ static void feature_name_to_value(GValue *value, gpointer feature_data)
   char *temp_name = NULL ;
   int name_length = 0, fill_length = 0 ;
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeatureAny    feature_any = add_data->feature;
+  ZMapFeatureAny    feature = NULL ;
+
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = add_data->feature;
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
-      the_name = g_quark_to_string(feature_any->original_id) ;
+      the_name = g_quark_to_string(feature->original_id) ;
       name_length = strlen(the_name) ;
       fill_length = strlen(filler) ;
       temp_name = g_new0(char, max_name_length+1+fill_length) ;
@@ -407,18 +414,24 @@ static void feature_name_to_value(GValue *value, gpointer feature_data)
 static void feature_start_to_value(GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
-  ZMapWindow             window = add_data->window;
+  ZMapFeature       feature = NULL ;
+  ZMapWindow         window = NULL ;
+
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature);
+  window = add_data->window;
 
   if(G_VALUE_TYPE(value) == G_TYPE_INT)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         if(window)
-          g_value_set_int(value, zmapWindowCoordToDisplay(window, feature_any->x1));
+          g_value_set_int(value, zmapWindowCoordToDisplay(window, feature->x1));
         else
-          g_value_set_int(value, feature_any->x1);
+          g_value_set_int(value, feature->x1);
         break;
       default:
         g_value_set_int(value, 0);
@@ -436,18 +449,24 @@ static void feature_start_to_value(GValue *value, gpointer feature_data)
 static void feature_end_to_value(GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
-  ZMapWindow            window  = add_data->window;
+  ZMapFeature       feature = NULL ;
+  ZMapWindow        window  = NULL ;
+
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature);
+  window  = add_data->window;
 
   if(G_VALUE_TYPE(value) == G_TYPE_INT)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         if(window)
-          g_value_set_int(value, zmapWindowCoordToDisplay(window, feature_any->x2));
+          g_value_set_int(value, zmapWindowCoordToDisplay(window, feature->x2));
         else
-          g_value_set_int(value, feature_any->x2);
+          g_value_set_int(value, feature->x2);
         break;
       default:
         g_value_set_int(value, 0);
@@ -465,15 +484,20 @@ static void feature_end_to_value(GValue *value, gpointer feature_data)
 static void feature_strand_to_value(GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
+  ZMapFeature       feature = NULL ;
+
+  if (!add_data || !add_data->feature || !add_data->window)
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature);
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
         {
         case ZMAPFEATURE_STRUCT_FEATURE:
           g_value_set_string(value, zMapFeatureStrand2Str(zmapWindowStrandToDisplay(add_data->window,
-                                                                                    feature_any->strand))) ;
+                                                                                    feature->strand))) ;
           break;
         default:
           g_value_set_string(value, ".");
@@ -491,15 +515,20 @@ static void feature_strand_to_value(GValue *value, gpointer feature_data)
 static void feature_frame_to_value(GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
+  ZMapFeature       feature = NULL ;
+
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature) ;
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         /*! \todo #warning this used to use strand!  and this function i think has never been called */
-        g_value_set_string(value, zMapFeatureFrame2Str(zMapFeatureFrame(feature_any)));
+        g_value_set_string(value, zMapFeatureFrame2Str(zMapFeatureFrame(feature)));
         break;
       default:
         g_value_set_string(value, ".");
@@ -517,14 +546,19 @@ static void feature_frame_to_value(GValue *value, gpointer feature_data)
 static void feature_phase_to_value(GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
+  ZMapFeature       feature = NULL ;
+
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature);
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
-        g_value_set_string(value, zMapFeaturePhase2Str(zMapFeaturePhase(feature_any)));
+        g_value_set_string(value, zMapFeaturePhase2Str(zMapFeaturePhase(feature)));
         break;
       default:
         g_value_set_string(value, ".");
@@ -542,18 +576,23 @@ static void feature_phase_to_value(GValue *value, gpointer feature_data)
 static void feature_qstart_to_value(GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
+  ZMapFeature       feature = NULL ;
+
+  if (!add_data || !add_data->feature )
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature) ;
 
   if(G_VALUE_TYPE(value) == G_TYPE_INT)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         {
-          switch(feature_any->mode)
+          switch(feature->mode)
             {
             case ZMAPSTYLE_MODE_ALIGNMENT:
-            g_value_set_int(value, feature_any->feature.homol.y1);
+            g_value_set_int(value, feature->feature.homol.y1);
             break;
             default:
             g_value_set_int(value, 0);
@@ -577,19 +616,23 @@ static void feature_qstart_to_value(GValue *value, gpointer feature_data)
 static void feature_qend_to_value(GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
+  ZMapFeature       feature = NULL ;
 
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature) ;
 
   if(G_VALUE_TYPE(value) == G_TYPE_INT)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         {
-          switch(feature_any->mode)
+          switch(feature->mode)
             {
             case ZMAPSTYLE_MODE_ALIGNMENT:
-            g_value_set_int(value, feature_any->feature.homol.y2);
+            g_value_set_int(value, feature->feature.homol.y2);
             break;
             default:
             g_value_set_int(value, 0);
@@ -613,18 +656,23 @@ static void feature_qend_to_value(GValue *value, gpointer feature_data)
 static void feature_qstrand_to_value(GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
+  ZMapFeature       feature = NULL ;
+
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature) ;
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         {
-          switch(feature_any->mode)
+          switch(feature->mode)
             {
             case ZMAPSTYLE_MODE_ALIGNMENT:
-            g_value_set_string(value, zMapFeatureStrand2Str(feature_any->feature.homol.strand));
+            g_value_set_string(value, zMapFeatureStrand2Str(feature->feature.homol.strand));
             break;
             default:
             g_value_set_string(value, ".");
@@ -648,14 +696,19 @@ static void feature_qstrand_to_value(GValue *value, gpointer feature_data)
 static void feature_score_to_value(GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
+  ZMapFeature       feature = NULL ;
+
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature);
 
   if(G_VALUE_TYPE(value) == G_TYPE_FLOAT)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
-        g_value_set_float(value, feature_any->score);
+        g_value_set_float(value, feature->score);
         break;
       default:
         g_value_set_float(value, 0.0);
@@ -673,17 +726,22 @@ static void feature_score_to_value(GValue *value, gpointer feature_data)
 static void feature_featureset_to_value(GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
+  ZMapFeature       feature = NULL ;
+
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature) ;
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
-        add_data->feature = feature_any->parent;
+        add_data->feature = feature->parent;
         feature_name_to_value(value, add_data);
         /* Need to reset this! */
-        add_data->feature = (ZMapFeatureAny)feature_any;
+        add_data->feature = (ZMapFeatureAny)feature;
         break;
       case ZMAPFEATURE_STRUCT_FEATURESET:
         feature_name_to_value(value, add_data);
@@ -703,14 +761,19 @@ static void feature_featureset_to_value(GValue *value, gpointer feature_data)
 static void feature_type_to_value(GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
+  ZMapFeature       feature = NULL ;
+
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature);
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
-        g_value_set_string(value, zMapStyleMode2ExactStr(feature_any->mode));
+        g_value_set_string(value, zMapStyleMode2ExactStr(feature->mode));
         break;
       default:
         break;
@@ -727,14 +790,19 @@ static void feature_type_to_value(GValue *value, gpointer feature_data)
 static void feature_source_to_value (GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
+  ZMapFeature       feature =  NULL ;
+
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature);
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
-        g_value_set_string(value, g_quark_to_string(feature_any->source_id));
+        g_value_set_string(value, g_quark_to_string(feature->source_id));
         break;
       default:
         break;
@@ -751,14 +819,19 @@ static void feature_source_to_value (GValue *value, gpointer feature_data)
 static void feature_style_to_value (GValue *value, gpointer feature_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
-  ZMapFeature       feature_any = (ZMapFeature)(add_data->feature);
+  ZMapFeature       feature = NULL ;
+
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = (ZMapFeature)(add_data->feature);
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
-      switch(feature_any->struct_type)
+      switch(feature->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
-        g_value_set_string(value, g_quark_to_string((*feature_any->style)->unique_id));
+        g_value_set_string(value, g_quark_to_string((*feature->style)->unique_id));
         break;
       default:
         break;
@@ -775,7 +848,12 @@ static void feature_style_to_value (GValue *value, gpointer feature_data)
 static void feature_pointer_to_value(GValue *value, gpointer feature_item_data)
 {
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_item_data;
-  ZMapFeatureAny        feature = add_data->feature;
+  ZMapFeatureAny        feature = NULL ;
+
+  if (!add_data || !add_data->feature)
+    return ;
+
+  feature = add_data->feature;
 
   g_value_set_pointer(value, feature);
 

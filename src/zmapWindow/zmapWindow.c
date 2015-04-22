@@ -477,6 +477,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
   new_window->canvas_maxwin_size = original_window->canvas_maxwin_size ;
   new_window->min_coord = original_window->min_coord ;
   new_window->max_coord = original_window->max_coord ;
+  new_window->display_origin = new_window->display_origin ;
 
   new_window->seqLength = original_window->seqLength ;
 
@@ -1074,6 +1075,25 @@ void zMapWindowZoomToMin(ZMapWindow window)
   zmapWindowZoomControlHandleResize(window) ;
 
   return ;
+}
+
+/*
+ * These two functions return and set the value for the origin
+ * of the user display coordinates, and is defined in terms
+ * of the internal ZMap chromosome coordinates.
+ */
+double zMapWindowGetDisplayOrigin(ZMapWindow window)
+{
+  double result = 0.0 ;
+  zMapReturnValIfFail(window, result ) ;
+  result = window->display_origin ;
+  return result ;
+}
+
+void zMapWindowSetDisplayOrigin(ZMapWindow window, double origin)
+{
+  zMapReturnIfFail(window) ;
+  window->display_origin = origin ;
 }
 
 
@@ -2321,6 +2341,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->canvas_maxwin_size = ZMAP_WINDOW_MAX_WINDOW ;
 
   window->min_coord = window->max_coord = 0.0 ;
+  window->display_origin = 0.0 ;
 
   /* Some things for window can be specified in the configuration file. */
   getConfiguration(window) ;
