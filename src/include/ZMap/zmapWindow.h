@@ -49,6 +49,7 @@ extern "C" {
 #include <ZMap/zmapAppRemote.h>
 #include <ZMap/zmapXMLHandler.h>
 
+
 #define SCRATCH_FEATURE_NAME "temp_feature"
 
 
@@ -131,19 +132,20 @@ typedef int (*ZMapWindowFilterCallbackFunc)(gpointer filter, double value, gbool
 
 typedef struct
 {
-        double min,max;                 /* for the spin button */
-        double value;
-        ZMapWindow window;
-        gpointer featureset;            /* where to filter, is a ZMapWindowCanvasFeatureset... scope :-( */
-        gpointer column;                        /* where to filter, is a ZMapWindowCanvasFeaturesetItem... scope :-( */
+  double min,max;                                           /* for the spin button */
+  double value;
+  ZMapWindow window;
+  gpointer featureset;                                      /* where to filter, is a ZMapWindowCanvasFeatureset... scope :-( */
+  gpointer column;                                          /* where to filter, is a ZMapWindowCanvasFeaturesetItem... scope :-( */
 
-        ZMapWindowFilterCallbackFunc func;              /* function to do it */
+  ZMapWindowFilterCallbackFunc func;                        /* function to do it */
 
-        int n_filtered;                 /* how many we hid */
-        gboolean enable;
+  int n_filtered;                                           /* how many we hid */
+  gboolean enable;
 
-        /* be good to implement this oe day, currently we look it up from config every time someone click the filter button */
-        GdkColor fill;                  /* background for widget and also filtered column */
+  /* be good to implement this oe day, currently we look it up from config
+   * every time someone click the filter button */
+  GdkColor fill;                                            /* background for widget and also filtered column */
 
 } ZMapWindowFilterStruct, *ZMapWindowFilter;
 
@@ -231,7 +233,7 @@ typedef struct
 
   gboolean highlight_sub_part ;                             /* if selecting part of a feature w/
                                                                the control key */
-  ZMapFeatureSubPartSpan sub_part ;                         /* subpart to be highlighted. */
+  ZMapFeatureSubPart sub_part ;                             /* subpart to be highlighted. */
 
 
   ZMapFeatureDescStruct feature_desc ;                      /* Text descriptions of selected feature. */
@@ -292,7 +294,7 @@ typedef enum
     ZMAPWINDOW_CMD_GETFEATURES,
     ZMAPWINDOW_CMD_SHOWALIGN,
     ZMAPWINDOW_CMD_REVERSECOMPLEMENT,
-    ZMAPWINDOW_CMD_SPLICE,
+    ZMAPWINDOW_CMD_COLFILTER,
     ZMAPWINDOW_CMD_COPYTOSCRATCH,
     ZMAPWINDOW_CMD_DELETEFROMSCRATCH,
     ZMAPWINDOW_CMD_CLEARSCRATCH,
@@ -317,6 +319,9 @@ typedef enum
 typedef struct
 {
   ZMapWindowCommandType cmd ;
+
+  gboolean result ;
+
 } ZMapWindowCallbackCommandAnyStruct, *ZMapWindowCallbackCommandAny ;
 
 
@@ -337,6 +342,9 @@ typedef struct ZMapWindowCallbackCommandAlignStructName
 {
   /* Common section. */
   ZMapWindowCommandType cmd ;
+  gboolean result ;
+
+
 
   ZMapFeatureBlock block ;
 
@@ -373,6 +381,8 @@ typedef struct
 {
   /* Common section. */
   ZMapWindowCommandType cmd ;
+  gboolean result ;
+
 
   ZMapFeatureBlock block ;                                  /* Block for which features should be fetched. */
   GList *feature_set_ids ;                                  /* List of names as quarks. */
@@ -387,38 +397,21 @@ typedef struct
 {
   /* Common section. */
   ZMapWindowCommandType cmd ;
+  gboolean result ;
 
   /* No extra data needed for rev. comp. */
 
 } ZMapWindowCallbackCommandRevCompStruct, *ZMapWindowCallbackCommandRevComp ;
 
 
-/* Splice features. */
-typedef struct ZMapWindowCallbackCommandSpliceStructType
-{
-  /* Common section. */
-  ZMapWindowCommandType cmd ;
-
-  gboolean do_highlight ;
-
-  GList *highlight_features ;
-
-  int seq_start, seq_end ;                                  /* highlight between start/end. */
-
-} ZMapWindowCallbackCommandSpliceStruct, *ZMapWindowCallbackCommandSplice ;
-
-
-
-
-
 
 typedef void (*ZMapWindowGetEvidenceCB)(GList *evidence, gpointer user_data) ;
-
 
 typedef struct ZMapWindowCallbackCommandScratchStructName
 {
   /* Common section. */
   ZMapWindowCommandType cmd ;
+  gboolean result ;
 
   ZMapFeatureBlock block ;
 
@@ -426,7 +419,7 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
   GList *features;      /* clicked feature(s) */
   long seq_start;       /* sequence coordinate that was clicked (sequence features only) */
   long seq_end;         /* sequence coordinate that was clicked */
-  ZMapFeatureSubPartSpan subpart; /* the subpart to use, if applicable */
+  ZMapFeatureSubPart subpart; /* the subpart to use, if applicable */
   gboolean use_subfeature; /* if true, use the clicked subfeature; otherwise use the entire
                               feature */
 
@@ -669,7 +662,7 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
                                gboolean replace_highlight_item, gboolean highlight_same_names,
-                               ZMapFeatureSubPartSpan sub_part) ;
+                               ZMapFeatureSubPart sub_part) ;
 
 void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select);
 
@@ -721,6 +714,8 @@ gboolean zMapWindowExportContext(ZMapWindow window, GError **error) ;
 
 void zMapWindowColumnHide(ZMapWindow window, GQuark column_id) ;
 void zMapWindowColumnShow(ZMapWindow window, GQuark column_id) ;
+double zMapWindowGetDisplayOrigin(ZMapWindow window) ;
+void zMapWindowSetDisplayOrigin(ZMapWindow window, double origin) ;
 
 #endif /* !ZMAP_WINDOW_H */
 

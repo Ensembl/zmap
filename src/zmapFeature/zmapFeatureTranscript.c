@@ -19,7 +19,7 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -125,11 +125,17 @@ static void exonCreateSection(const int feature_start, ExonRegionType region_typ
                               int *curr_feature_pos, int *curr_spliced_pos,
                               int *curr_cds_pos, int *curr_trans_pos,
                               GList **exon_list_out) ;
+static ZMapFeature findOverlappingVariation(ZMapFeature variation, GList *compare_list) ;
 static void createTranslationForCDS(ItemShowTranslationTextData full_data, GList *full_exon_cds_list) ;
 static void exonDestroy(ZMapFullExon exon) ;
 static void exonListFree(gpointer data, gpointer user_data_unused) ;
 static void printDetailedExons(gpointer exon_data, gpointer user_data) ;
 
+
+
+static gboolean addMatch(ZMapFeaturePartsList parts_list, ZMapFeatureSubPartType subpart_type,
+                         int index, ZMapFeatureBoundaryMatchType match_type,
+                         int start, int end) ;
 
 
 
@@ -161,6 +167,9 @@ gboolean zMapFeatureTranscriptInit(ZMapFeature feature)
 
   return result ;
 }
+
+
+
 
 /*
  * Adds CDS start and end to a feature but tests values as we go along to make sure
@@ -311,7 +320,7 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
  * exceed these coords.
  *  */
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
-    ZMapSpanStruct *exon, ZMapSpanStruct *intron)
+                                            ZMapSpanStruct *exon, ZMapSpanStruct *intron)
 {
   gboolean result = FALSE ;
 
@@ -341,26 +350,6 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 }
 
 
-/* Returns a variation in the list that overlaps the given variation (or null if none) */
-static ZMapFeature findOverlappingVariation(ZMapFeature variation, GList *compare_list)
-{
-  ZMapFeature result = NULL ;
-
-  GList *compare_item = compare_list ;
-
-  for ( ; compare_item && !result; compare_item = compare_item->next)
-    {
-      ZMapFeature compare_feature = (ZMapFeature)(compare_item->data) ;
-      if ((compare_feature->x1 >= variation->x1 && compare_feature->x1 <= variation->x2) ||
-          (compare_feature->x2 >= variation->x1 && compare_feature->x2 <= variation->x2))
-        {
-          result = compare_feature ;
-        }
-    }
-  
-  return result ;
-}
-
 /* Remove all the variation metadata in a transcript. */
 gboolean zMapFeatureRemoveTranscriptVariations(ZMapFeature feature, 
                                                GError **error)
@@ -377,19 +366,16 @@ gboolean zMapFeatureRemoveTranscriptVariations(ZMapFeature feature,
 
 /* Add a variation to a transcript feature. Stores the variation as metadata which is used
  * to modify the transcript sequence. Only applies the variation if it lies within an exon. */
-gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, 
-                                           ZMapFeature variation,
-                                           GError **error)
+gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, ZMapFeature variation, GError **error)
 {
   gboolean result = FALSE ;
+  GArray *exons = feature->feature.transcript.exons;
+  int i = 0 ;
 
   zMapReturnValIfFail(feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT, result) ;
   zMapReturnValIfFail(variation && variation->mode == ZMAPSTYLE_MODE_BASIC, result) ;
 
   /* Find which exon the variation lies in */
-  GArray *exons = feature->feature.transcript.exons;
-  int i = 0 ;
-
   for ( ; i < exons->len; ++i)
     {
       ZMapSpan exon = &(g_array_index(exons, ZMapSpanStruct, i)) ;
@@ -398,7 +384,8 @@ gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature,
         {
           /* Ok, found the exon. Add the variation to the transcript (but
            * disallow adding of overlapping variations). */
-          ZMapFeature overlapping_variation = findOverlappingVariation(variation, feature->feature.transcript.variations) ;
+          ZMapFeature overlapping_variation = findOverlappingVariation(variation,
+                                                                       feature->feature.transcript.variations) ;
 
           if (!overlapping_variation)
             {
@@ -910,92 +897,370 @@ gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature transcript, Co
  */
 
 
-/* Do any of boundaries match the start/end of the transcript or any of the
- * exons within the transcript ? Return a list of ZMapSpanStruct with those
- * that do.
+/* Do any of boundaries match the exons or introns of the transcript ?
  * 
- * Note in the code below that we can avoid unnecessary comparisons because
- * both boundaries and the exons in the transcript are sorted into ascending
- * sequence position.
- * Note also that a zero value boundary means "no boundary".
+ * Always returns FALSE if the feature is not in the same range as the boundaries.
+ * 
+ * If exact_match is TRUE then:
+ *    Returns TRUE if all matches are correct and returns the matches
+ *    in matching_boundaries_out.
+ *    Returns FALSE if there are any mismatches and returns the matches
+ *    (if any) in matching_boundaries_out and the mismatches in non_matching_boundaries_out.
+ * otherwise
+ *    Returns TRUE and  returns the matches (if any) in matching_boundaries_out
+ *    and the mismatches in non_matching_boundaries_out.
+ * 
+ * Notes:
+ * - If cds_only is TRUE then only the cds parts are compared.
+ * - In the code below that we can avoid unnecessary comparisons because
+ *   both boundaries and the exons in the transcript are sorted into ascending
+ *   sequence position.
+ * - transcripts always have at least one exon, if there is a single exon there are no introns.
+ * - A zero value boundary means "no boundary".
  *  */
-GList *zmapFeatureTranscriptHasMatchingBoundaries(ZMapFeature feature, GList *boundaries)
+gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
+                                                 ZMapFeatureSubPartType part_type, gboolean exact_match, int slop,
+                                                 ZMapFeaturePartsList boundaries,
+                                                 ZMapFeaturePartsList *matching_boundaries_out,
+                                                 ZMapFeaturePartsList *non_matching_boundaries_out)
 {
-  GList *matching_boundaries = NULL ;
-  int slop ;
-  GArray *array = feature->feature.transcript.exons;
+  gboolean result = FALSE ;
+  ZMapFeaturePartsList matching_boundaries = NULL, non_matching_boundaries = NULL ;
+  GArray *array ;
   GList *curr ;
-  int i ;
+  int i, index ;
+  gboolean status ;
+  int cds_start, cds_end ;
+  gboolean bad_match = FALSE ;
 
-  zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
 
-  slop = zMapStyleSpliceHighlightTolerance(*(feature->style)) ;
+  zMapReturnValIfFail(ZMAPFEATURE_IS_TRANSCRIPT(feature), FALSE) ;
+  zMapReturnValIfFail(boundaries, FALSE) ;
 
-  curr = boundaries ;
+
+  non_matching_boundaries = zMapFeaturePartsListCreate((ZMapFeatureFreePartFunc)zMapFeatureBoundaryMatchDestroy) ;
+
+  /* Return FALSE if it's a CDS comparison and the feature has no CDS
+   * or it's an intron comparison and the feature has no introns. */
+  if (((part_type == ZMAPFEATURE_SUBPART_EXON_CDS || part_type == ZMAPFEATURE_SUBPART_INTRON_CDS)
+       && !ZMAPFEATURE_HAS_CDS(feature))
+      || ((part_type == ZMAPFEATURE_SUBPART_INTRON || part_type == ZMAPFEATURE_SUBPART_INTRON_CDS)
+          && !(feature->feature.transcript.introns->len)))
+    {
+      return FALSE ;
+    }
+
+
+  matching_boundaries = zMapFeaturePartsListCreate((ZMapFeatureFreePartFunc)zMapFeatureBoundaryMatchDestroy) ;
+
+  if (part_type == ZMAPFEATURE_SUBPART_EXON || part_type == ZMAPFEATURE_SUBPART_EXON_CDS)
+    {
+      cds_start = feature->feature.transcript.cds_start ;
+      cds_end = feature->feature.transcript.cds_end ;
+    }
+
+
+  if (part_type == ZMAPFEATURE_SUBPART_EXON || part_type == ZMAPFEATURE_SUBPART_EXON_CDS)
+    array = feature->feature.transcript.exons ;
+  else
+    array = feature->feature.transcript.introns ;
+
   i = 0 ;
+  index = 0 ;
+  status = TRUE ;
+  curr = boundaries->parts ;
   while (curr)
     {
-      ZMapSpan curr_boundary = (ZMapSpan)(curr->data) ;
+      ZMapFeatureSubPart curr_boundary = (ZMapFeatureSubPart)(curr->data) ;
 
-      if ((curr_boundary->x1) && feature->x2 < curr_boundary->x1)
+      if ((curr_boundary->end) && feature->x1 > curr_boundary->end)
         {
-          /* Feature is before current splice. */
-          ;
+          /* Have not reached feature yet so go to next curr_boundary.... */
+          curr = g_list_next(curr) ;
+
+          continue ;
         }
-      else if ((curr_boundary->x2) && feature->x1 > curr_boundary->x2)
+      else if ((curr_boundary->start) && feature->x2 < curr_boundary->start)
         {
-          /* curr splice is beyond feature so stop compares. */
+          /* Gone past feature so stop... */
+
           break ;
         }
       else
         {
+          /* Note that we move down the exons or introns as we do the comparision to avoid comparing all with all. */
           while (i < array->len)
             {
-              ZMapSpan exon ;
+              ZMapSpan trans_part ;
+              int start, end ;
+              int match_boundary_start = 0, match_boundary_end = 0 ;
+              ZMapFeatureBoundaryMatch match_boundary ;
+              ZMapFeaturePartsList parts_list ;
+              ZMapFeatureBoundaryMatchType match_type = ZMAPBOUNDARY_MATCH_TYPE_NONE ;
 
-              exon = &(g_array_index(array, ZMapSpanStruct, i)) ;
+              trans_part = &(g_array_index(array, ZMapSpanStruct, i)) ;
+              start = trans_part->x1 ;
+              end = trans_part->x2 ;
 
-              if ((curr_boundary->x1) && exon->x2 < curr_boundary->x1)
+              if (part_type == ZMAPFEATURE_SUBPART_EXON_CDS || part_type == ZMAPFEATURE_SUBPART_INTRON_CDS)
                 {
-                  /* Block is before current splice. */
-                  ;
-                }
-              else if ((curr_boundary->x2) && exon->x1 > curr_boundary->x2)
-                {
-                  /* curr splice is beyond feature so stop compares. */
-                  break ;
-                }
-              else
-                {
-                  int match_boundary_start = 0, match_boundary_end = 0 ;
-
-                  if (zmapFeatureCoordsMatch(slop, curr_boundary->x1, curr_boundary->x2,
-                                             exon->x1, exon->x2,
-                                             &match_boundary_start, &match_boundary_end))
+                  if (end < cds_start)
                     {
-                      ZMapSpan match_boundary ;
-
-                      match_boundary = g_new0(ZMapSpanStruct, 1) ;
-              
-                      if (match_boundary_start)
-                        match_boundary->x1 = match_boundary_start ;
-                      if (match_boundary_end)
-                        match_boundary->x2 = match_boundary_end ;
-
-                      matching_boundaries = g_list_append(matching_boundaries, match_boundary) ;
+                      i++ ;
+                      continue ;
+                    }
+                  else if (start > cds_end)             /* Should just break out completely. */
+                    {
+                      break ;
                     }
                 }
 
+              if (!exact_match)
+                {
+                  if ((curr_boundary->end) && start > curr_boundary->end)
+                    {
+                      /* curr_boundary is before trans_part so go to next curr_boundary.... */
+                      break ;
+                    }
+                  else if ((curr_boundary->start) && end < curr_boundary->start)
+                    {
+                      /* trans_part is before curr_boundary so go to next trans_part.... */
+                      i++ ;
+                      continue ;
+                    }
+                }
+
+
+              /* Correct for cds if required.... */
+              if (part_type == ZMAPFEATURE_SUBPART_EXON_CDS || part_type == ZMAPFEATURE_SUBPART_INTRON_CDS)
+                {
+                  if (part_type == ZMAPFEATURE_SUBPART_EXON_CDS)
+                    {
+                      if (cds_start > start && cds_start <= end)
+                        start = cds_start ;
+
+                      if (cds_end >= start && cds_end < end)
+                        end = cds_end ;
+                    }
+                  else
+                    {
+                      if (start > cds_end)
+                        {
+                          break ;
+                        }
+                      else if (end < cds_start)
+                        {
+                          i++ ;
+                          continue ;
+                        }
+                    }
+                }
+
+              result = zmapFeatureCoordsMatch(slop, exact_match, curr_boundary->start, curr_boundary->end,
+                                              start, end,
+                                              &match_boundary_start, &match_boundary_end) ;
+
+              if (match_boundary_start)
+                match_type |= ZMAPBOUNDARY_MATCH_TYPE_5_MATCH ;
+
+              if (match_boundary_end)
+                match_type |= ZMAPBOUNDARY_MATCH_TYPE_3_MATCH ;
+
+
+              if (result)
+                parts_list = matching_boundaries ;
+              else
+                parts_list = non_matching_boundaries ;
+
+              if ((status = addMatch(parts_list, curr_boundary->subpart,
+                                     index, match_type, start, end)))
+                {
+                  index++ ;
+                }
+              else
+                {
+                  break ;
+                }
+
+
+              /* If there's a bad match for any comparision then record that. */
+              if (!bad_match && !result && exact_match)
+                {
+                  bad_match = TRUE ;
+                }
+
               i++ ;
+
+              /* For exact matches we can only compare each coord set once. */
+              if (exact_match)
+                break ;
             }
-
-
         }
+
+      if (!status)
+        break ;
 
       curr = g_list_next(curr) ;
     }
 
-  return matching_boundaries ;
+  /* If there were no processing errors then set the result according to what matches were found. */
+  if (status)
+    {
+      result = TRUE ;
+
+      if (matching_boundaries->parts && matching_boundaries_out)
+        *matching_boundaries_out = matching_boundaries ;
+      else
+        {
+          zMapFeaturePartsListDestroy(matching_boundaries) ;
+          matching_boundaries = NULL ;
+        }
+
+      if (non_matching_boundaries->parts && non_matching_boundaries_out)
+        *non_matching_boundaries_out = non_matching_boundaries ;
+      else
+        {
+          zMapFeaturePartsListDestroy(non_matching_boundaries) ;
+          non_matching_boundaries = NULL ;
+        }
+
+      /* If there were any bad matches or no matches then the result is FALSE. */
+      if (exact_match && bad_match)
+        result = FALSE ;
+      else if (!matching_boundaries && !non_matching_boundaries)
+        result = FALSE ;
+    }
+
+  return result ;
+}
+
+
+
+
+
+ZMapFeaturePartsList zmapFeatureTranscriptSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds)
+{
+  ZMapFeaturePartsList subparts = NULL ;
+  GArray *array ;
+  int i ;
+  gboolean cds_only = FALSE ;
+  int cds_start, cds_end ;
+
+  zMapReturnValIfFail(ZMAPFEATURE_IS_TRANSCRIPT(feature), NULL) ;
+
+  if (((requested_bounds == ZMAPFEATURE_SUBPART_EXON_CDS || requested_bounds == ZMAPFEATURE_SUBPART_INTRON_CDS)
+       && !ZMAPFEATURE_HAS_CDS(feature))
+      || ((requested_bounds == ZMAPFEATURE_SUBPART_INTRON || requested_bounds == ZMAPFEATURE_SUBPART_INTRON_CDS)
+          && !(feature->feature.transcript.introns->len)))
+    return NULL ;
+
+
+  if (requested_bounds == ZMAPFEATURE_SUBPART_EXON_CDS || requested_bounds == ZMAPFEATURE_SUBPART_INTRON_CDS)
+    {
+      cds_only = TRUE ;
+      cds_start = feature->feature.transcript.cds_start ;
+      cds_end = feature->feature.transcript.cds_end ;
+    }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  subparts = g_new0(ZMapFeatureSubPartsStruct, 1) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  subparts = zMapFeaturePartsListCreate((ZMapFeatureFreePartFunc)zMapFeatureSubPartDestroy) ;
+
+  if (requested_bounds == ZMAPFEATURE_SUBPART_EXON || requested_bounds == ZMAPFEATURE_SUBPART_EXON_CDS)
+    {
+      array = feature->feature.transcript.exons ;
+
+      for (i = 0 ; i < array->len; ++i)
+        {
+          ZMapSpan exon ;
+          ZMapFeatureSubPart new_exon ;
+          int start, end ;
+
+          exon = &(g_array_index(array, ZMapSpanStruct, i)) ;
+
+          start = exon->x1 ;
+          end = exon->x2 ;
+
+          if (cds_only)
+            {
+              if (end < cds_start)
+                continue ;
+              else if (start > cds_end)
+                break ;
+            }
+
+          /* Correct for cds if required.... */
+          if (cds_only)
+            {
+              if (cds_start > start && cds_start <= end)
+                start = cds_start ;
+
+              if (cds_end >= start && cds_end < end)
+                end = cds_end ;
+            }
+
+          new_exon = zMapFeatureSubPartCreate(ZMAPFEATURE_SUBPART_EXON, i, start, end) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          subparts->parts = g_list_append(subparts->parts, new_exon) ;
+
+          if (i == 0)
+            subparts->min = start ;
+          else if (i == (array->len - 1))
+            subparts->max = end ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          zMapFeaturePartsListAdd(subparts, (ZMapFeaturePart)new_exon) ;
+
+        }
+    }
+  else if (requested_bounds == ZMAPFEATURE_SUBPART_INTRON || requested_bounds == ZMAPFEATURE_SUBPART_INTRON_CDS)
+    {
+      array = feature->feature.transcript.introns ;
+
+      for (i = 0 ; i < array->len ; ++i)
+        {
+          ZMapSpan intron ;
+          ZMapFeatureSubPart new_intron ;
+          int start, end ;
+
+          intron = &(g_array_index(array, ZMapSpanStruct, i)) ;
+
+          start = intron->x1 ;
+          end = intron->x2 ;
+
+          if (cds_only)
+            {
+              if (start > cds_end)
+                break ;
+              else if (end < cds_start)
+                continue ;
+            }
+
+          new_intron = zMapFeatureSubPartCreate(ZMAPFEATURE_SUBPART_INTRON, i, start, end) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          subparts->parts = g_list_append(subparts->parts, new_intron) ;
+
+          if (i == 0)
+            subparts->min = start ;
+          else if (i == (array->len - 1))
+            subparts->max = end ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          zMapFeaturePartsListAdd(subparts, (ZMapFeaturePart)new_intron) ;
+        }
+    }
+  else if (requested_bounds == ZMAPFEATURE_SUBPART_FEATURE)
+    {
+      /* N.B. not adjusted for cds....doesn't make sense to... */
+
+      subparts = zmapFeatureBasicSubPartsGet(feature, requested_bounds) ;
+    }
+
+
+  return subparts ;
 }
 
 
@@ -1003,6 +1268,27 @@ GList *zmapFeatureTranscriptHasMatchingBoundaries(ZMapFeature feature, GList *bo
 /* 
  *           Internal routines
  */
+
+
+/* Returns a variation in the list that overlaps the given variation (or null if none) */
+static ZMapFeature findOverlappingVariation(ZMapFeature variation, GList *compare_list)
+{
+  ZMapFeature result = NULL ;
+
+  GList *compare_item = compare_list ;
+
+  for ( ; compare_item && !result; compare_item = compare_item->next)
+    {
+      ZMapFeature compare_feature = (ZMapFeature)(compare_item->data) ;
+      if ((compare_feature->x1 >= variation->x1 && compare_feature->x1 <= variation->x2) ||
+          (compare_feature->x2 >= variation->x1 && compare_feature->x2 <= variation->x2))
+        {
+          result = compare_feature ;
+        }
+    }
+  
+  return result ;
+}
 
 
 
@@ -1988,5 +2274,24 @@ static void extendTranscript(ZMapFeature transcript, ZMapSpanStruct * span)
     transcript->x2 = span->x2 ;
 
   return ;
+}
+
+
+
+static gboolean addMatch(ZMapFeaturePartsList parts_list, ZMapFeatureSubPartType subpart_type,
+                         int index, ZMapFeatureBoundaryMatchType match_type,
+                         int start, int end)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureBoundaryMatch match_boundary ;
+
+  
+  match_boundary = zMapFeatureBoundaryMatchCreate(subpart_type, index,
+                                                  start, end,
+                                                  match_type) ;
+
+  result = zMapFeaturePartsListAdd(parts_list, (ZMapFeaturePart)match_boundary) ;
+
+  return result ;
 }
 

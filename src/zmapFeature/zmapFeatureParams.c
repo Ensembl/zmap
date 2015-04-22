@@ -90,7 +90,7 @@ ZMAP_DEFINE_ENUM(ZMapFeatureDataProperty, PROP_DATA_PARAM_LIST);
 typedef struct
 {
   ZMapFeatureAny         feature_any;
-  ZMapFeatureSubPartSpan sub_feature; /* Can be NULL */
+  ZMapFeatureSubPart sub_feature; /* Can be NULL */
 } FeatureSubFeatureStruct, *FeatureSubFeature;
 
 typedef struct
@@ -380,7 +380,7 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
     case PROP_DATA_QUERY_LENGTH:
       {
         GArray *gaps_array ;
-        ZMapFeatureSubPartSpan sub_feature;
+        ZMapFeatureSubPart sub_feature;
 
         if ((sub_feature = feature_data->sub_feature) && (gaps_array  = feature->feature.homol.align))
           {
@@ -627,14 +627,14 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
  * g_object_get would do.
  *
  * \param feature_any The ZMapFeatureAny feature to inspect.
- * \param sub_feature The ZMapFeatureSubPartSpan to inspect (can be NULL)
+ * \param sub_feature The ZMapFeatureSubPart to inspect (can be NULL)
  * \param first_property_name name of the property.
  *
  * \return TRUE on success, FALSE on failure.
  */
 
 gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,
-    ZMapFeatureSubPartSpan sub_feature,
+    ZMapFeatureSubPart sub_feature,
     const gchar           *first_property_name,
     ...)
 {

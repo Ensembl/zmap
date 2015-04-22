@@ -101,7 +101,8 @@ static gchar *zmapStyleValueSubFeatures(GQuark *quarks);
 
 static gboolean styleMergeParam( ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle src, ZMapStyleParamId id) ;
 
-
+static gpointer glyph_shape_copy(gpointer src) ;
+static void glyph_shape_free(gpointer thing) ;
 
 
 /* 
@@ -242,6 +243,7 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
   { STYLE_PROP_SHOW_TEXT, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_SHOW_TEXT,
     "show-text",  "Show as Text",
     offsetof(ZMapFeatureTypeStyleStruct, showText) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
+
   { STYLE_PROP_SUB_FEATURES, STYLE_PARAM_TYPE_SUB_FEATURES, ZMAPSTYLE_PROPERTY_SUB_FEATURES,
     "sub-features",  "Sub-features (glyphs)",
     offsetof(ZMapFeatureTypeStyleStruct, sub_features) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
@@ -262,13 +264,12 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     "directional-ends", "Display pointy \"short sides\"",
     offsetof(ZMapFeatureTypeStyleStruct, directional_end),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
-  { STYLE_PROP_SPLICE_HIGHLIGHT, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT,
-    "splice highlighting", "Show Splice Highlighting",
-    offsetof(ZMapFeatureTypeStyleStruct, splice_highlight), ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
-  { STYLE_PROP_SPLICE_HIGHLIGHT_TOLERANCE, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT_TOLERANCE,
-    "splice tolerance", "Tolerance allowable in coords match with splice.",
-    offsetof(ZMapFeatureTypeStyleStruct, splice_highlight_tolerance), ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
-
+  { STYLE_PROP_COL_FILTER, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_COL_FILTER,
+    "column filtering", "Column can be filtered",
+    offsetof(ZMapFeatureTypeStyleStruct, col_filter_sensitive), ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
+  { STYLE_PROP_COL_FILTER_TOLERANCE, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_COL_FILTER_TOLERANCE,
+    "filter tolerance", "Tolerance allowable in coords match for filtering.",
+    offsetof(ZMapFeatureTypeStyleStruct, col_filter_tolerance), ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_FOO, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_FOO,
     "as Foo Canvas Items", "use old technology",
@@ -281,6 +282,13 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
   { STYLE_PROP_OFFSET, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_OFFSET,
     "offset contents by x pixels", "offset contents by x pixels",
     offsetof(ZMapFeatureTypeStyleStruct, offset), ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
+
+
+  /*
+   * mode dependant data
+   */
+
+  /* Glyph */
 
   { STYLE_PROP_GLYPH_NAME, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME,
     "glyph-name", "Glyph name used to reference glyphs config stanza",
@@ -322,6 +330,22 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     "glyph-type-3-rev", "Type of glyph to show at 3' end on reverse strand.",
     offsetof(ZMapFeatureTypeStyleStruct, mode_data.glyph.glyph3rev), ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
+  { STYLE_PROP_GLYPH_NAME_JUNCTION_5, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_JUNCTION_5,
+    ZMAPSTYLE_PROPERTY_GLYPH_NAME_JUNCTION_5, "Glyph name used to reference glyph in config stanza.",
+    offsetof(ZMapFeatureTypeStyleStruct, mode_data.glyph.junction_name_5),ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
+
+  { STYLE_PROP_GLYPH_SHAPE_JUNCTION_5, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_JUNCTION_5,
+    ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_JUNCTION_5, "Type of glyph to show for 5' junction.",
+    offsetof(ZMapFeatureTypeStyleStruct, mode_data.glyph.junction_5), ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
+
+  { STYLE_PROP_GLYPH_NAME_JUNCTION_3, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_JUNCTION_3,
+    ZMAPSTYLE_PROPERTY_GLYPH_NAME_JUNCTION_3, "Glyph name used to reference in config stanza.",
+    offsetof(ZMapFeatureTypeStyleStruct, mode_data.glyph.junction_name_3),ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
+
+  { STYLE_PROP_GLYPH_SHAPE_JUNCTION_3, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_JUNCTION_3,
+    ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_JUNCTION_3, "Type of glyph to show at 3' junction.",
+    offsetof(ZMapFeatureTypeStyleStruct, mode_data.glyph.junction_3), ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
+
   { STYLE_PROP_GLYPH_ALT_COLOURS, STYLE_PARAM_TYPE_COLOUR,ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,
     "alternate glyph colour", "Colours used to show glyphs when below thrashold.",
     offsetof(ZMapFeatureTypeStyleStruct, mode_data.glyph.glyph_alt_colours), ZMAPSTYLE_MODE_GLYPH,
@@ -339,9 +363,7 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     "glyph-align", "where to centre the glyph",
     offsetof(ZMapFeatureTypeStyleStruct, mode_data.glyph.glyph_align) ,ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
-
-
-  // mode dependant data
+  /* Graph */
 
   { STYLE_PROP_GRAPH_MODE, STYLE_PARAM_TYPE_GRAPH_MODE, ZMAPSTYLE_PROPERTY_GRAPH_MODE,
     "graph-mode", "Graph Mode",
@@ -510,27 +532,6 @@ static GQuark splice_style_id_G = 0 ;
 
 
 
-// G_BOXED data type for glyph styles
-// defined here as glyphs include styles not versa vice
-// can we do a G_OBJECT_TYPE() on these to check??
-
-gpointer glyph_shape_copy(gpointer src)
-{
-  ZMapStyleGlyphShape dest = NULL;
-
-  dest = g_new0(ZMapStyleGlyphShapeStruct,1);
-  memcpy((void *) dest,(void *) src,sizeof(ZMapStyleGlyphShapeStruct));
-
-  return(dest);
-}
-
-void glyph_shape_free(gpointer thing)
-{
-  g_free(thing);
-}
-
-
-
 
 /* 
  *                  External Interface Routines
@@ -544,7 +545,7 @@ GType zMapStyleGlyphShapeGetType(void)
 
   if (!type)
     {
-      type = g_boxed_type_register_static("glyph-shape",glyph_shape_copy,glyph_shape_free) ;
+      type = g_boxed_type_register_static("glyph-shape", glyph_shape_copy, glyph_shape_free) ;
     }
 
   return type ;
@@ -1021,20 +1022,17 @@ gboolean zMapStyleHasDrawableMode(ZMapFeatureTypeStyle style)
  * Function returns FALSE if there style is not valid and the GError says
  * what the problem was.
  *  */
-/* (mh17) NOTE this function is only called from obscure places and is not run for the majority of drawing operations
- * so attempting to add style defaults here is doomed to failure
+/* (mh17) NOTE THIS FUNCTION IS ONLY CALLED FROM OBSCURE PLACES AND IS NOT RUN FOR THE MAJORITY OF DRAWING OPERATIONS
+ * SO ATTEMPTING TO ADD STYLE DEFAULTS HERE IS DOOMED TO FAILURE
  */
 gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 {
-  gboolean valid = FALSE ; 
+  gboolean valid = TRUE ; 
   GQuark domain ;
   gint code = 0 ;
   char *message ;
 
-  if (!(style && error && !(*error)) ) 
-    return valid ;
-
-  valid = TRUE ; 
+  zMapReturnValIfFail(((style && error && !(*error))), FALSE) ;
 
   domain = g_quark_from_string("ZmapStyle") ;
 
@@ -1094,9 +1092,11 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
           }
         case ZMAPSTYLE_MODE_GLYPH:
           {
-            if (style->mode_data.glyph.glyph.n_coords < 2 &&
-                style->mode_data.glyph.glyph5.n_coords < 2 &&
-                style->mode_data.glyph.glyph3.n_coords < 2)
+            /* THIS IS RUBBISH...SHOULD HAVE A FLAG SET WHEN A GLYPH STYLE IS SET UP.... */
+
+            if (style->mode_data.glyph.glyph.n_coords < 2
+                && style->mode_data.glyph.glyph5.n_coords < 2
+                && style->mode_data.glyph.glyph3.n_coords < 2)
               {
                 valid = FALSE ;
                 code = 10 ;
@@ -1198,49 +1198,6 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
         }
     }
 
-#if 0 // see comment at the top of this function
-  /* Now do some mode specific stuff.... */
-  if (valid)
-    {
-      switch (style->mode)
-{
-case ZMAPSTYLE_MODE_META:
-  {
-    break ;
-  }
-case ZMAPSTYLE_MODE_BASIC:
-case ZMAPSTYLE_MODE_ALIGNMENT:
-  {
-    /* default summarise to 1000 to get round lack of configuration */
-    if(!zMapStyleIsPropertySetId(style,STYLE_PROP_SUMMARISE))
-      {
-zmapStyleSetIsSet(style,STYLE_PROP_SUMMARISE);
-style->summarise = 1000.0 ;
-      }
-    break;
-  }
-
-case ZMAPSTYLE_MODE_TRANSCRIPT:
-  {
-    break ;
-  }
-case ZMAPSTYLE_MODE_TEXT:
-  {
-    break ;
-  }
-case ZMAPSTYLE_MODE_GRAPH:
-  {
-    break ;
-  }
-default:
-  {
-            valid = FALSE ;
-            message = g_strdup("Invalid style mode.") ;
-            zMapWarnIfReached() ;
-  }
-}
-    }
-#endif
 
   /* Construct the error if there was one. */
   if (!valid)
@@ -1323,13 +1280,13 @@ gboolean zMapStyleMakeDrawable(char *config_file, ZMapFeatureTypeStyle style)
           }
         case ZMAPSTYLE_MODE_GLYPH:
           {
-                    // originally we had glyph_mode = 3frame_splice
-                    // and there were no others
-                    // now we have glyph shapes as configured
-                    // see zmapFeature.c/addFeatureModeCB() which patches up the style if it's not good enough
-                    // or rather it doesn't
-                    // So for backwards compatability if [ZMap] legacy_styles=true
-                    // we add in glyphs to the style
+            // originally we had glyph_mode = 3frame_splice
+            // and there were no others
+            // now we have glyph shapes as configured
+            // see zmapFeature.c/addFeatureModeCB() which patches up the style if it's not good enough
+            // or rather it doesn't
+            // So for backwards compatability if [ZMap] legacy_styles=true
+            // we add in glyphs to the style
         
             if (zMapStyleIsSpliceStyle(style))
               {
@@ -1809,11 +1766,14 @@ static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, cha
 // store coordinate pairs in the struct and work out type
 ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
 {
-  gchar **spec = NULL, **segments = NULL, **s = NULL, **points = NULL, **p = NULL, *q = NULL;
-  gboolean syntax = FALSE;
-  gint x,y,n;
-  gint *cp;
-  ZMapStyleGlyphShape glyph_shape = g_new0(ZMapStyleGlyphShapeStruct,1);
+  ZMapStyleGlyphShape glyph_shape = NULL ;
+  gchar **spec = NULL, **segments = NULL, **s = NULL, **points = NULL, **p = NULL, *q = NULL ;
+  gboolean syntax = FALSE ;
+  gint x,y,n ;
+  gint *cp ;
+
+
+  glyph_shape = g_new0(ZMapStyleGlyphShapeStruct,1) ;
 
   while(*shape && *shape <= ' ')
     shape++;
@@ -1837,17 +1797,17 @@ ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
 
       for(s = segments;*s;s++)
         {
-  if(glyph_shape->n_coords)
-    {
-      glyph_shape->n_coords++;
-      *cp++ = GLYPH_COORD_INVALID;
-      *cp++ = GLYPH_COORD_INVALID;
-      glyph_shape->type = GLYPH_DRAW_BROKEN;
-    }
+          if(glyph_shape->n_coords)
+            {
+              glyph_shape->n_coords++;
+              *cp++ = GLYPH_COORD_INVALID;
+              *cp++ = GLYPH_COORD_INVALID;
+              glyph_shape->type = GLYPH_DRAW_BROKEN;
+            }
 
-  points = g_strsplit_set(*s,";",0);
+          points = g_strsplit_set(*s,";",0);
 
-  for(p = points;*p;p++)
+          for(p = points;*p;p++)
             {
               q = *p;
               if(!*q)
@@ -1867,6 +1827,7 @@ ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
             }
         }
     }
+
   if(glyph_shape->type == GLYPH_DRAW_ARC)
     {
       // coords are TL and BR of bounding box, 0,0 = anchor point
@@ -1882,6 +1843,7 @@ ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
           syntax = TRUE;
         }
     }
+
   if(spec)
     g_strfreev(spec);
   if(segments)
@@ -1889,22 +1851,23 @@ ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
   if(points)
     g_strfreev(points);
 
-  if(!syntax)
+  if (!syntax)
     {
       int minx = 0, maxx = 0, miny = 0,maxy = 0;/* anchor size to origin */
       int i,coord;
 
-      for(i = 0; i < glyph_shape->n_coords * 2;i++)
+      for (i = 0; i < glyph_shape->n_coords * 2;i++)
         {
           coord = glyph_shape->coords[i];
 
-          if(coord == GLYPH_COORD_INVALID)
+          if (coord == GLYPH_COORD_INVALID)
             coord = (int) GLYPH_CANVAS_COORD_INVALID; // zero, will be ignored
 
-          if(i & 1)/* Y coord */
+          if (i & 1)/* Y coord */
             {
               if(miny > coord)
                 miny = coord;
+
               if(maxy < coord)
                 maxy = coord;
             }
@@ -1912,22 +1875,38 @@ ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
             {
               if(minx > coord)
                 minx = coord;
+
               if(maxx < coord)
                 maxx = coord;
             }
         }
+
       glyph_shape->width  = maxx - minx + 1;
       glyph_shape->height = maxy - miny + 1;
 
-      if(glyph_shape->type == GLYPH_DRAW_LINES && x == glyph_shape->coords[0] && y == glyph_shape->coords[1])
+      if (glyph_shape->type == GLYPH_DRAW_LINES && x == glyph_shape->coords[0] && y == glyph_shape->coords[1])
         {
           glyph_shape->type = GLYPH_DRAW_POLYGON;
         }
-      return(glyph_shape);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      return(glyph_shape) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      syntax = TRUE ;
+
     }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_free(glyph_shape);
-  return(NULL);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (!syntax)
+    {
+      g_free(glyph_shape) ;
+      glyph_shape = NULL ;
+    }
+
+  return glyph_shape ;
 }
 
 
@@ -1938,14 +1917,14 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *config_file, char *name)
 {
   static ZMapFeatureTypeStyle s_homology = NULL;
   static ZMapFeatureTypeStyle s_3frame = NULL;
-  static int got = 0;
+  static gboolean got = FALSE ;
   char *hn;
 
   hn = (char *) zmapStyleSubFeature2ExactStr(ZMAPSTYLE_SUB_FEATURE_HOMOLOGY);
 
   if (!got)
     {
-      got = 1;
+      got = TRUE ;
 
       if (zMapConfigLegacyStyles(config_file))  // called here as we want to do it only once
         {
@@ -1953,19 +1932,18 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *config_file, char *name)
           s_homology = zMapStyleCreate(hn, "homology - legacy style");
 
           g_object_set(G_OBJECT(s_homology),
-               ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
-
-               ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-tri",
-               ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5,
-               zMapStyleGetGlyphShape("<0,-4 ;-4,0 ;4,0 ;0,-4>", g_quark_from_string("up-tri")),
-               ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn-tri",
-               ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,
-               zMapStyleGetGlyphShape("<0,4; -4,0 ;4,0; 0,4>", g_quark_from_string("dn-tri")),
-               ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSTYLE_SCORE_ALT,
-               ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD, 5,
-               ZMAPSTYLE_PROPERTY_COLOURS, "normal fill red; normal border black",
-               ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS, "normal fill green; normal border black",
-               NULL);
+                       ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
+                       ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-tri",
+                       ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,-4 ;-4,0 ;4,0 ;0,-4>",
+                                                                                g_quark_from_string("up-tri")),
+                       ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn-tri",
+                       ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,4; -4,0 ;4,0; 0,4>",
+                                                                                g_quark_from_string("dn-tri")),
+                       ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSTYLE_SCORE_ALT,
+                       ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD, 5,
+                       ZMAPSTYLE_PROPERTY_COLOURS, "normal fill red; normal border black",
+                       ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS, "normal fill green; normal border black",
+                       NULL);
 
           /* Markers for splice features, produced by genefinders.
            * The default shapes are |_ and same thing upside down, the arms are 10 pixels long.
@@ -2969,5 +2947,28 @@ static void formatColours(GString *colour_string, char *type, ZMapStyleColour co
 
   return ;
 }
+
+
+// G_BOXED data type for glyph styles
+// defined here as glyphs include styles not versa vice
+// can we do a G_OBJECT_TYPE() on these to check??
+
+static gpointer glyph_shape_copy(gpointer src)
+{
+  ZMapStyleGlyphShape dest = NULL;
+
+  dest = g_new0(ZMapStyleGlyphShapeStruct,1);
+  memcpy((void *) dest,(void *) src,sizeof(ZMapStyleGlyphShapeStruct));
+
+  return(dest);
+}
+
+static void glyph_shape_free(gpointer thing)
+{
+  g_free(thing);
+}
+
+
+
 
 

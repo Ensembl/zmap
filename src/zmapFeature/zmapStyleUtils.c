@@ -439,8 +439,8 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 
   PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_DIRECTIONAL_ENDS), directional_end, "Directional Ends", "%s", PRINTBOOL) ;
 
-  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_SPLICE_HIGHLIGHT), splice_highlight, "Splice Highlight", "%s", PRINTBOOL) ;
-  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_SPLICE_HIGHLIGHT_TOLERANCE), splice_highlight_tolerance, "Splice Highlight Tolerance", "%d", (unsigned int)) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_COL_FILTER), col_filter_sensitive, "Splice Highlight", "%s", PRINTBOOL) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_COL_FILTER_TOLERANCE), col_filter_tolerance, "Splice Highlight Tolerance", "%d", (unsigned int)) ;
 
 
 
@@ -471,7 +471,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
       {
 
       PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_NAME), mode_data.glyph.glyph_name,
-               "Glyph name", "%s", g_quark_to_string) ;
+                 "Glyph name", "%s", g_quark_to_string) ;
 
         break ;
       }

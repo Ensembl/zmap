@@ -818,48 +818,64 @@ char *zmapWindowFeatureDescription(ZMapFeature feature)
 
 /* Get the peptide as a fasta string.  All contained in a function so
  * there's no falling over phase values and stop codons... */
-char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gboolean cds_only)
+char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, ZMapSequenceType sequence_type,
+                                       gboolean spliced, gboolean cds_only)
 {
-  char *peptide_fasta = NULL ;
+  char *fasta = NULL ;
   ZMapFeatureContext context ;
 
-  zMapReturnValIfFail(feature, peptide_fasta ) ;
+  zMapReturnValIfFail(feature, NULL) ;
 
 
   if((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
      && ((context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
                                                                   ZMAPFEATURE_STRUCT_CONTEXT))))
     {
-      ZMapPeptide peptide;
       char *dna, *seq_name = NULL, *gene_name = NULL;
-      int pep_length, start_incr = 0;
 
       seq_name  = (char *)g_quark_to_string(context->original_id);
       gene_name = (char *)g_quark_to_string(feature->original_id);
 
       if ((dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds_only)))
         {
-          /* Adjust for when its known that the start exon is incomplete.... */
-          if (feature->feature.transcript.flags.start_not_found)
-            start_incr = feature->feature.transcript.start_not_found - 1 ; /* values are 1 <= start_not_found <= 3 */
+          int dna_len ;
 
-          peptide = zMapPeptideCreate(seq_name, gene_name, (dna + start_incr), NULL, TRUE) ;
+          dna_len = strlen(dna) ;
 
-          /* Note that we do not include the "Stop" in the peptide length, is this the norm ? */
-          pep_length = zMapPeptideLength(peptide) ;
-          if (zMapPeptideHasStopCodon(peptide))
-            pep_length-- ;
+          if (sequence_type == ZMAPSEQUENCE_DNA)
+            {
+              fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA,
+                                      seq_name, "Nucleotide",
+                                      gene_name, dna_len,
+                                      dna) ;
+            }
+          else
+            {
+              ZMapPeptide peptide ;
+              int pep_length, start_incr = 0 ;
 
-          peptide_fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA,
-                                          seq_name, "Protein",
-                                          gene_name, pep_length,
-                                          zMapPeptideSequence(peptide));
+              /* Adjust for when its known that the start exon is incomplete.... */
+              if (feature->feature.transcript.flags.start_not_found)
+                start_incr = feature->feature.transcript.start_not_found - 1 ; /* values are 1 <= start_not_found <= 3 */
+
+              peptide = zMapPeptideCreate(seq_name, gene_name, (dna + start_incr), NULL, TRUE) ;
+
+              /* Note that we do not include the "Stop" in the peptide length, is this the norm ? */
+              pep_length = zMapPeptideLength(peptide) ;
+              if (zMapPeptideHasStopCodon(peptide))
+                pep_length-- ;
+
+              fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA,
+                                      seq_name, "Protein",
+                                      gene_name, pep_length,
+                                      zMapPeptideSequence(peptide));
+            }
 
           g_free(dna) ;
         }
     }
 
-  return peptide_fasta;
+  return fasta ;
 }
 
 
@@ -928,7 +944,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
     {
       FooCanvasItem *sub_item = NULL, *highlight_item = NULL ;
       gboolean replace_highlight = TRUE, highlight_same_names = TRUE ;
-      ZMapFeatureSubPartSpan sub_feature = NULL ;
+      ZMapFeatureSubPart sub_feature = NULL ;
       ZMapWindowCanvasItem canvas_item ;
       ZMapFeatureStruct feature_copy = {};
       ZMapFeatureAny xremote_feature = (ZMapFeatureAny)feature ;

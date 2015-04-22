@@ -72,30 +72,6 @@ enum
 
 
 
-/*
- * Structs for splice highlighting.
- */
-typedef struct SpliceHighlightStructType
-{
-  int seq_start, seq_end ;                                  /* only mark splices in this range. */
-
-  gboolean found_splice_cols ;                              /* Were any splices columns found ? */
-
-  ZMapWindowContainerFeatureSet selected_container_set ;
-
-  ZMapWindowContainerFeatureSet current_container_set ;
-
-  double y1, y2 ;                                           /* Extent of highlight features. */
-
-  GList *splices ;                                          /* The splices (i.e. start/ends) of the features. */
-
-  GList *curr_splices ;                                     /* As we move through splices we do not need
-                                                               to do all splices so we move down through list. */
-
-
-} SpliceHighlightStruct, *SpliceHighlight ;
-
-
 
 
 static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSetClass container_set_class) ;
@@ -118,19 +94,14 @@ static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,
                                              GQuark id, ZMapStrand strand, ZMapFrame frame) ;
 static void removeList(gpointer data, gpointer user_data_unused) ;
 
-static void getFeatureCoords(gpointer data, gpointer user_data) ;
-static GList *clipSubParts(GList *subpart_list, int start, int end) ;
-static void unhighlightFeatures(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-                                ZMapContainerLevelType level, gpointer user_data) ;
-static void unhighlightFeatureCB(gpointer data, gpointer user_data) ;
-static void processSpliceColumns(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-                              ZMapContainerLevelType level, gpointer user_data) ;
-static void highlightFeature(gpointer data, gpointer user_data) ;
-static void addSplicesCB(gpointer data, gpointer user_data) ;
+static gboolean in_user_hidden_stack(GQueue *queue, FooCanvasItem *item) ;
+static gint find_item_in_user_hidden_stack(gconstpointer list_data, gconstpointer item_data) ;
+
 static void column_hide_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-                        ZMapContainerLevelType level, gpointer user_data) ;
+                           ZMapContainerLevelType level, gpointer user_data) ;
 static void column_show_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-                        ZMapContainerLevelType level, gpointer user_data) ;
+                           ZMapContainerLevelType level, gpointer user_data) ;
+
 
 
 
@@ -260,6 +231,11 @@ static void zmap_window_item_feature_set_init(ZMapWindowContainerFeatureSet cont
 
   //  container_set->style_table       = zmapWindowStyleTableCreate();
   container_set->user_hidden_stack = g_queue_new();
+
+
+  container_set->curr_selected_type = ZMAP_CANVAS_FILTER_NONE ;
+  container_set->curr_filter_type = ZMAP_CANVAS_FILTER_NONE ;
+  container_set->curr_filter_action = ZMAP_CANVAS_ACTION_INVALID ;
 
   return ;
 }
@@ -410,6 +386,58 @@ GType zmapWindowContainerFeatureSetGetType(void)
   return group_type;
 }
 
+
+
+gboolean zMapWindowContainerFeatureSetHasHiddenBumpFeatures(FooCanvasItem *feature_item)
+{
+  gboolean result = FALSE ;
+  ZMapWindowContainerGroup feature_set_container ;
+  ZMapWindowContainerFeatureSet container ;
+
+  if ((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
+    {
+      container = (ZMapWindowContainerFeatureSet)feature_set_container ;
+      
+      result = container->hidden_bump_features ;
+    }
+
+  return result ;
+}
+
+
+
+gboolean zMapWindowContainerFeatureSetIsUserHidden(FooCanvasItem *feature_item)
+{
+  gboolean result = FALSE ;
+  ZMapWindowContainerGroup feature_set_container;
+  ZMapWindowContainerFeatureSet container;
+
+  if((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
+    {
+      container = (ZMapWindowContainerFeatureSet)feature_set_container;
+
+      result = in_user_hidden_stack(container->user_hidden_stack, feature_item);
+    }
+
+  return result ;
+}
+
+
+gboolean zMapWindowContainerFeatureSetIsVisible(FooCanvasItem *feature_item)
+{
+  gboolean result = FALSE ;
+  ZMapWindowContainerGroup feature_set_container;
+  ZMapWindowContainerFeatureSet container;
+
+  if ((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
+    {
+      container = (ZMapWindowContainerFeatureSet)feature_set_container;
+
+      result = (feature_item->object.flags & FOO_CANVAS_ITEM_VISIBLE) ;
+    }
+
+  return result ;
+}
 
 
 FooCanvasItem *zmapWindowContainerFeatureSetFindCanvasColumn(ZMapWindowContainerGroup group,
@@ -672,7 +700,8 @@ void zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet containe
   container_set->unique_id = feature_set_unique_id;
   container_set->original_id = feature_set_original_id;
   container_set->style = style;
-  container_set->splice_highlight = zMapStyleIsSpliceHighlight(container_set->style) ;
+
+  container_set->col_filter_sensitive = zMapStyleIsFilterSensitive(container_set->style) ;
 
 
   /* For the annotation column, set the visibility from the enable-annotation flag. This is
@@ -1039,7 +1068,7 @@ gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet 
 
   zMapReturnValIfFail(container_set, result ) ;
 
-  if(bump_mode >=ZMAPBUMP_INVALID && bump_mode <= ZMAPBUMP_END)
+  if(bump_mode >= ZMAPBUMP_INVALID && bump_mode <= ZMAPBUMP_END)
     {
       container_set->bump_mode = bump_mode;
       result = TRUE;
@@ -1047,6 +1076,8 @@ gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet 
 
   return(result);
 }
+
+
 
 
 /*!
@@ -1106,111 +1137,6 @@ gboolean zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet
 
   return mag_sens ;
 }
-
-
-/* If TRUE then this column should be splice highlighted. */
-gboolean zmapWindowContainerFeatureSetDoSpliceHighlight(ZMapWindowContainerFeatureSet container_set)
-{
-  gboolean slice_highlight = FALSE ;
-
-  zMapReturnValIfFail(container_set, FALSE) ;
-
-  slice_highlight = container_set->splice_highlight ;
-
-  return slice_highlight ;
-}
-
-
-/* Adds splice highlighting data for all the splice matching features in the container_set,
- * the splices get highlighted when the column is redrawn. Any existing highlight data is
- * replaced with the new data.
- *
- * Returns TRUE if there were splice-aware cols (regardless of whether any features were splice
- * highlighted), returns FALSE if there if there were no splice-aware cols. This latter should be
- * reported to the user otherwise they won't know why no splices appeared.
- *
- * If splice_highlight_features is NULL this has the effect of turning off splice highlighting but
- * you should use zmapWindowContainerFeatureSetSpliceUnhighlightFeatures().
- *
- * (See Splice_highlighting.html)
- *  */
-gboolean zmapWindowContainerFeatureSetSpliceHighlightFeatures(ZMapWindowContainerFeatureSet container_set,
-                                                              GList *splice_highlight_features,
-                                                              int seq_start, int seq_end)
-{
-  gboolean highlight = FALSE ;
-  ZMapWindowContainerGroup container_strand ;
-
-  zMapReturnValIfFail((container_set || splice_highlight_features), FALSE) ;
-
-  if ((container_strand = zmapWindowContainerUtilsItemGetParentLevel(FOO_CANVAS_ITEM(container_set),
-                                                                     ZMAPCONTAINER_LEVEL_BLOCK)))
-    {
-      SpliceHighlightStruct splice_data = {0, 0, FALSE, NULL, NULL, INT_MAX, 0, NULL} ;
-
-      splice_data.seq_start = seq_start ;
-      splice_data.seq_end = seq_end ;
-
-      splice_data.selected_container_set = container_set ;
-
-      /* Unhighlight first, this wastes a few (but not many) CPU cycles if highlighting is not on. */
-      zmapWindowContainerUtilsExecute(container_strand,
-                                      ZMAPCONTAINER_LEVEL_FEATURESET,
-                                      unhighlightFeatures, &splice_data) ;
-
-      /* Get the splice coords of all the splice features. */
-      g_list_foreach(splice_highlight_features, getFeatureCoords, &splice_data) ;
-
-
-      /* TEST THIS....I think this shouldn't be needed now ?? Clamp to given any extent given. */
-      if (seq_start && (seq_start > splice_data.y1))
-        splice_data.y1 = seq_start ;
-      if (seq_end && (seq_end < splice_data.y1))
-        splice_data.y1 = seq_end ;
-
-
-      /* Look for matching splices in features in all columns that display splices. */
-      zmapWindowContainerUtilsExecute(container_strand,
-                                      ZMAPCONTAINER_LEVEL_FEATURESET,
-                                      processSpliceColumns, &splice_data) ;
-
-      /* Record if any splice aware cols were found. */
-      highlight = splice_data.found_splice_cols ;
-
-      /* Tidy up ! */
-      zMapFeatureFreeSubParts(splice_data.splices) ;
-    }
-
-  return highlight ;
-}
-
-gboolean zmapWindowContainerFeatureSetSpliceUnhighlightFeatures(ZMapWindowContainerFeatureSet container_set)
-{
-  gboolean unhighlight = FALSE ;
-  ZMapWindowContainerGroup container_strand ;
-
-  zMapReturnValIfFail(container_set, FALSE) ;
-
-  if ((container_strand = zmapWindowContainerUtilsItemGetParentLevel(FOO_CANVAS_ITEM(container_set),
-                                                                     ZMAPCONTAINER_LEVEL_BLOCK)))
-    {
-      SpliceHighlightStruct splice_data = {0, 0, FALSE, NULL, NULL, INT_MAX, 0, NULL} ;
-
-      /* Unhighlight all existing splice highlights. */
-      zmapWindowContainerUtilsExecute(container_strand,
-                                      ZMAPCONTAINER_LEVEL_FEATURESET,
-                                      unhighlightFeatures, &splice_data) ;
-
-      /* Record if any splice cols were found. */
-      unhighlight = splice_data.found_splice_cols ;
-    }
-
-  return unhighlight ;
-}
-
-
-
-
 
 
 
@@ -1275,274 +1201,24 @@ static void removeList(gpointer data, gpointer user_data_unused)
 
 
 
-/*            Splice highlighting routines            */
-
-/* A GFunc() called to get the coordinates of the features in a list, note that
- * these coords are clipped to the seq_start/end if supplied, this allows us
- * to support clipping to the mask. */
-static void getFeatureCoords(gpointer data, gpointer user_data)
+static gboolean in_user_hidden_stack(GQueue *queue, FooCanvasItem *item)
 {
-  ZMapFeature feature = (ZMapFeature)data ;
-  SpliceHighlight splice_data = (SpliceHighlight)user_data ;
-  int seq_start, seq_end ;
-  int start = 0, end = 0 ;
-  GList *subparts = NULL ;
-
-  if (splice_data->seq_start)
-    seq_start = splice_data->seq_start ;
-  else
-    seq_start = feature->x1 ;
-  if (splice_data->seq_end)
-    seq_end = splice_data->seq_end ;
-  else
-    seq_end = feature->x2;
-
-  if (!(feature->x1 > seq_end || feature->x2 < seq_start))
-    {
-      /* Get extent of feature and also coords of any subparts, note that both will
-       * be clipped to seq_start/end. */
-      if (zMapFeatureGetBoundaries(feature, &start, &end, &subparts))
-        {
-          /* If there are no subparts then create a part using the start/end of the feature,
-           * n.b. subparts are assumed to span the entire feature. */
-          if (!subparts)
-            {
-              ZMapSpan feature_span ;
-
-              feature_span = g_new0(ZMapSpanStruct, 1) ;
-
-              if (start < seq_start)
-                start = seq_start ;
-              if (end > seq_end)
-                end = seq_end ;
-
-              feature_span->x1 = start ;
-              feature_span->x2 = end ;
-
-              subparts = g_list_append(subparts, feature_span) ;
-            }
-          else
-            {
-              subparts = clipSubParts(subparts, seq_start, seq_end) ;
-            }
-
-
-          splice_data->splices = g_list_concat(splice_data->splices, subparts) ;
-
-          /* splice_data y1 and y2 need to be the extent of all features/subparts so reduce as necessary. */
-          if (start < splice_data->y1)
-            splice_data->y1 = start ;
-          if (end > splice_data->y2)
-            splice_data->y2 = end ;
-        }
-    }
-
-  return ;
-}
-
-/* Clip the subpart list of ZMapSpanStruct to lie with start/end, suparts
- * outside of start/end are removed, subparts spanning start/end are
- * clamped to start/end. */
-static GList *clipSubParts(GList *subpart_list, int start, int end)
-{
-  GList *clip_list ;
-  GList *curr, *next ;
-
-  clip_list = curr = subpart_list ;
-
-  while (curr)
-    {
-      ZMapSpan span = (ZMapSpan)(curr->data) ;
-
-      next = g_list_next(curr) ;
-
-      if (span->x1 > end || span->x2 < start)
-        {
-          g_free(curr->data) ;
-          clip_list = g_list_delete_link(clip_list, curr) ;
-        }
-      else if (span->x1 >= start && span->x2 <= end)
-        {
-          ;
-        }
-      else
-        {
-          if (span->x1 < start)
-            span->x1 = start ;
-          if (span->x2 < end)
-            span->x2 = end ;
-        }
-
-      curr = next ;
-    }
-
-  return clip_list ;
+  gboolean result = FALSE;
+  GList *found;
+  if((found = g_queue_find_custom(queue, item, find_item_in_user_hidden_stack)))
+    result = TRUE;
+  return result;
 }
 
 
 
-/* Called for each column to see if it is splice-aware and on the same strand as container.
- * If it is then any features that are splice highlighted are unhighlighted.  */
-static void unhighlightFeatures(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-                                ZMapContainerLevelType level, gpointer user_data)
+static gint find_item_in_user_hidden_stack(gconstpointer list_data, gconstpointer item_data)
 {
-  switch(level)
-    {
-    case ZMAPCONTAINER_LEVEL_FEATURESET:
-      {
-        ZMapWindowContainerFeatureSet container_set ;
-        SpliceHighlight splice_data = (SpliceHighlight)user_data ;
-
-        container_set = ZMAP_CONTAINER_FEATURESET(zmapWindowContainerChildGetParent(FOO_CANVAS_ITEM(container))) ;
-
-        /* Are there any features to be unhighlighted ? */
-        if (container_set->splice_highlight && container_set->splice_highlighted_features)
-          {
-            /* Record that there was at least one splice-aware column. */
-            splice_data->found_splice_cols = TRUE ;
-
-            splice_data->current_container_set = container_set ;
-
-            /* Remove all splice highlight positions from features in this column. */
-            g_list_foreach(container_set->splice_highlighted_features, unhighlightFeatureCB, splice_data) ;
-
-            g_list_free(container_set->splice_highlighted_features) ;
-            container_set->splice_highlighted_features = NULL ;
-          }
-
-        break ;
-      }
-
-    default:
-      {
-        break ;
-      }
-    }
-
-  return ;
-}
-
-static void unhighlightFeatureCB(gpointer data, gpointer user_data)
-{
-  ZMapWindowCanvasFeature feature_item = (ZMapWindowCanvasFeature)data ;
-
-  zMapWindowCanvasFeatureRemoveSplicePos(feature_item) ;
-
-  return ;
-}
-
-
-
-/* Called for each column to see if it is to be splice-highlighted and on the same strand as container.
- * If it is then any features that share splices are marked for highlighting.  */
-static void processSpliceColumns(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-                                 ZMapContainerLevelType level, gpointer user_data)
-{
-  switch(level)
-    {
-    case ZMAPCONTAINER_LEVEL_FEATURESET:
-      {
-        ZMapWindowContainerFeatureSet container_set ;
-        SpliceHighlight splice_data = (SpliceHighlight)user_data ;
-        ZMapWindowContainerFeatureSet selected_container_set = splice_data->selected_container_set ;
-        ZMapWindowFeaturesetItem featureset_item ;
-
-        /* Record that there was at least one splice-aware column. */
-        splice_data->found_splice_cols = TRUE ;
-
-        container_set = ZMAP_CONTAINER_FEATURESET(zmapWindowContainerChildGetParent(FOO_CANVAS_ITEM(container))) ;
-
-        /* For all columns on same strand, highlight all features including the selected column
-         * itself as this may have other features that splice e.g. multiple transcripts. */
-        if (container_set->splice_highlight && container_set->strand == selected_container_set->strand
-            && (featureset_item = zmapWindowContainerGetFeatureSetItem(container_set)))
-          {
-            GList *feature_list ;
-            char *col_name ;
-
-            splice_data->current_container_set = container_set ;
-
-            col_name = zmapWindowContainerFeaturesetGetColumnName(container_set) ;
-
-            /* Get all features that overlap with the splice highlight features. */
-            feature_list = zMapWindowFeaturesetFindFeatures(featureset_item, splice_data->y1, splice_data->y2) ;
-
-            /* highlight all splices for those features that match the splice highlight features. */
-            splice_data->curr_splices = splice_data->splices ;
-            g_list_foreach(feature_list, highlightFeature, splice_data) ;
-
-            g_list_free(feature_list) ;
-          }
-
-        break ;
-      }
-
-    default:
-      {
-        break ;
-      }
-    }
-
-  return ;
-}
-
-
-/* Called for each feature in the target column that overlaps the splice list. */
-static void highlightFeature(gpointer data, gpointer user_data)
-{
-  ZMapWindowCanvasFeature feature_item = (ZMapWindowCanvasFeature)data ;
-  SpliceHighlight splice_data = (SpliceHighlight)user_data ;
-  ZMapFeature feature = zMapWindowCanvasFeatureGetFeature(feature_item) ;
-  ZMapWindowContainerFeatureSet current_container_set = splice_data->current_container_set ;
-  GList *curr ;
-  GList *splice_matches ;
-
-  /* Keep the head of the splices to be compared moving down through the coords list
-   * as we move through the features, note we can do this because splices and features are
-   * position sorted. */
-  curr = splice_data->curr_splices ;
-  while (curr)
-    {
-      ZMapSpan splice_span = (ZMapSpan)(curr->data) ;
-
-      if (feature->x1 > splice_span->x2)
-        {
-          curr = g_list_next(curr) ;
-
-          splice_data->curr_splices = curr ;
-        }
-      else
-        {
-          /* ok, found a splice to compare. */
-          break ;
-        }
-    }
-
-  if ((splice_matches = zMapFeatureHasMatchingBoundaries(feature, curr)))
-    {
-      /* record this feature item in the list of splice highlighted features. */
-      current_container_set->splice_highlighted_features
-        = g_list_append(current_container_set->splice_highlighted_features, feature_item) ;
-
-      g_list_foreach(splice_matches, addSplicesCB, feature_item) ;
-    }
-
-  return ;
-}
-
-/* Add splice position/type to the feature_item representing the feature. */
-static void addSplicesCB(gpointer data, gpointer user_data)
-{
-  ZMapSpan splice_span = (ZMapSpan)data ;
-  ZMapWindowCanvasFeature feature_item = (ZMapWindowCanvasFeature)user_data ;
-
-  if (splice_span->x1)
-    zMapWindowCanvasFeatureAddSplicePos(feature_item, splice_span->x1, ZMAPBOUNDARY_5_SPLICE) ;
-
-  if (splice_span->x2)
-    zMapWindowCanvasFeatureAddSplicePos(feature_item, splice_span->x2, ZMAPBOUNDARY_3_SPLICE) ;
-
-  return ;
+  GList *list = (GList *)list_data, *found;;
+  gint result = -1;
+  if((found = g_list_find(list, item_data)))
+    result = 0;
+  return result;
 }
 
 
@@ -1555,7 +1231,7 @@ static void addSplicesCB(gpointer data, gpointer user_data)
  * ID matches.
  */
 static void column_hide_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-                        ZMapContainerLevelType level, gpointer user_data)
+                           ZMapContainerLevelType level, gpointer user_data)
 {
   switch(level)
     {

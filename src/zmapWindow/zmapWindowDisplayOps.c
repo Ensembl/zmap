@@ -53,7 +53,7 @@ typedef struct FeatureCoordStructType
 
 
 static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle display_style,
-                                   ZMapFeature feature,  ZMapFeatureSubPartSpan sub_part, GArray *feature_coords) ;
+                                   ZMapFeature feature,  ZMapFeatureSubPart sub_part, GArray *feature_coords) ;
 static void setUpFeatureOther(ZMapWindowDisplayStyle display_style, ZMapFeature feature, GArray *feature_coords) ;
 static void makeSelectionString(ZMapWindow window, ZMapWindowDisplayStyle display_style,
                                 GString *selection_str, GArray *feature_coords) ;
@@ -333,7 +333,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
         {
           ZMapWindowFocusItem focus_item ;
           ZMapFeature feature ;
-          ZMapFeatureSubPartSpan sub_part = NULL ;
+          ZMapFeatureSubPart sub_part = NULL ;
 
           focus_item = (ZMapWindowFocusItem)selected->data ;
 
@@ -367,7 +367,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
           ZMapWindowFocusItem focus_item ;
           FooCanvasItem *item ;
           ZMapFeature feature ;
-          ZMapFeatureSubPartSpan sub_part = NULL ;
+          ZMapFeatureSubPart sub_part = NULL ;
           char *name ;
 
           focus_item = (ZMapWindowFocusItem)selected->data ;
@@ -401,7 +401,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
               ZMapWindowFocusItem focus_item ;
               FooCanvasItem *item ;
               ZMapFeature feature ;
-              ZMapFeatureSubPartSpan sub_part = NULL ;
+              ZMapFeatureSubPart sub_part = NULL ;
               char *name ;
 
               focus_item = (ZMapWindowFocusItem)selected->data ;
@@ -453,7 +453,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
 
 /* Return an array of feature coords, name, start/end, for the given transcript feature. */
 static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle display_style,
-                                   ZMapFeature feature,  ZMapFeatureSubPartSpan sub_part,
+                                   ZMapFeature feature,  ZMapFeatureSubPart sub_part,
                                    GArray *feature_coords)
 {
   char *name ;
@@ -525,7 +525,7 @@ static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle di
 static void setUpFeatureOther(ZMapWindowDisplayStyle display_style, ZMapFeature feature, GArray *feature_coords)
 {
   int selected_start, selected_end, selected_length ;
-  ZMapFeatureSubpartType item_type_int ;
+  ZMapFeatureSubPartType item_type_int ;
   FeatureCoordStruct feature_coord ;
 
   /* this is not a get sub part issue, we want the whole canvas feature which is a

@@ -56,7 +56,7 @@ typedef struct
 {
   long start,end;
   gulong colour;
-  ZMapFeatureSubpartType type;
+  ZMapFeatureSubPartType type;
 
 } zmapSequenceHighlightStruct, *ZMapSequenceHighlight;
 

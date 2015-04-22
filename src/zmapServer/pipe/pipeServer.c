@@ -355,7 +355,8 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   else
     {
       gboolean status = FALSE ;
-      const char* filename = server->url + 8 ; /* remove file:/// prefix */
+      const char* filename = server->url + 8 ; /* remove "file:///" prefix */
+
       GQuark file_quark = g_quark_from_string(filename) ;
       ZMapFeatureParserCache parser_cache = NULL ;
 
@@ -848,21 +849,21 @@ static void getConfiguration(PipeServer server)
 
       /* default directory to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                       ZMAPSTANZA_APP_DATA, &tmp_string))
-        {
-          server->data_dir = tmp_string;
-        }
+                                        ZMAPSTANZA_APP_DATA, &tmp_string))
+	{
+	  server->data_dir = tmp_string;
+	}
       else
         {
           server->data_dir = g_get_current_dir();
         }
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                       ZMAPSTANZA_APP_CSVER, &tmp_string))
-        {
-          if (!g_ascii_strcasecmp(tmp_string,"Otter"))
-            server->is_otter = TRUE;
-        }
+                                        ZMAPSTANZA_APP_CSVER, &tmp_string))
+	{
+	  if (!g_ascii_strcasecmp(tmp_string,"Otter"))
+	    server->is_otter = TRUE;
+	}
 
       zMapConfigIniContextDestroy(context);
     }
@@ -1462,7 +1463,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
                     g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
                                     zMapGFFGetLineNumber(parser), gff_line->str) ;
                   ZMAPSERVER_LOG(Critical, server->protocol, server->script_path,server->script_args,
-                                     "%s", server->last_err_msg) ;
+                                 "%s", server->last_err_msg) ;
 
                   result = FALSE ;
                 }

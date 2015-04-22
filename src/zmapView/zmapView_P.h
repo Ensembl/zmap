@@ -446,7 +446,7 @@ gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context
 void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
 
-gboolean zmapViewExecuteCommand(ZMapView view, gpointer user_data) ;
+gboolean zmapViewPassCommandToAllWindows(ZMapView view, gpointer user_data) ;
 
 /* Context Window Hash (CWH) for the correct timing of the call to zMapFeatureContextDestroy */
 GHashTable *zmapViewCWHHashCreate(void);
@@ -517,10 +517,15 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *feature_set_names);
 gboolean zMapViewCollapseFeatureSets(ZMapView view, ZMapFeatureContext diff_context);
 
 /* zmapViewScratch.c */
-void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context, ZMapFeatureBlock block);
+void zmapViewScratchInit(ZMapView zmap_view,
+                         ZMapFeatureSequenceMap sequence, ZMapFeatureContext context, ZMapFeatureBlock block);
 void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean force);
-gboolean zmapViewScratchCopyFeatures(ZMapView zmap_view, GList *features, const long seq_start, const long seq_end, ZMapFeatureSubPartSpan subpart, const gboolean use_subfeature);
-gboolean zmapViewScratchDeleteFeatures(ZMapView zmap_view, GList *features, const long seq_start, const long seq_end, ZMapFeatureSubPartSpan subpart, const gboolean use_subfeature);
+gboolean zmapViewScratchCopyFeatures(ZMapView zmap_view, GList *features,
+                                     const long seq_start, const long seq_end,
+                                     ZMapFeatureSubPart subpart, const gboolean use_subfeature);
+gboolean zmapViewScratchDeleteFeatures(ZMapView zmap_view, GList *features,
+                                       const long seq_start, const long seq_end,
+                                       ZMapFeatureSubPart subpart, const gboolean use_subfeature);
 gboolean zmapViewScratchUndo(ZMapView zmap_view);
 gboolean zmapViewScratchRedo(ZMapView zmap_view);
 gboolean zmapViewScratchClear(ZMapView zmap_view);

@@ -359,7 +359,7 @@ GHashTable * zmapConfigIniGetDefaultStyles(void)
 
 /* get style stanzas in styles_list of all from the file */
 gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, char *styles_file,
-GHashTable **styles_out, char * buffer)
+                                        GHashTable **styles_out, char * buffer)
 {
   gboolean result = FALSE ;
   GHashTable *styles = NULL ;
@@ -1627,8 +1627,8 @@ static gpointer create_config_style()
 
       { ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
-      { ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT, FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT_TOLERANCE, FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_COL_FILTER, FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_COL_FILTER_TOLERANCE, FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
       { ZMAPSTYLE_PROPERTY_FOO,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_FILTER,FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -1799,8 +1799,8 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,   G_TYPE_BOOLEAN, style_set_property, FALSE },
 
-    { ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT,   G_TYPE_BOOLEAN, style_set_property, FALSE },
-    { ZMAPSTYLE_PROPERTY_SPLICE_HIGHLIGHT_TOLERANCE,   G_TYPE_INT, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_COL_FILTER,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_COL_FILTER_TOLERANCE,   G_TYPE_INT, style_set_property, FALSE },
 
     { ZMAPSTYLE_PROPERTY_FOO,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_FILTER,G_TYPE_BOOLEAN, style_set_property, FALSE },
