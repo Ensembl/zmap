@@ -5860,10 +5860,8 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 
             /* rev comp the request to get the right features, we request as fwd strand */
 
-            req_start = zmapFeatureRevCompCoord(req_start,
-                                                view->features->parent_span.x1,view->features->parent_span.x2);
-            req_end   = zmapFeatureRevCompCoord(req_end,
-                                                view->features->parent_span.x1,view->features->parent_span.x2);
+            zmapFeatureRevCompCoord(&req_start, view->features->parent_span.x1,view->features->parent_span.x2);
+            zmapFeatureRevCompCoord(&req_end, view->features->parent_span.x1,view->features->parent_span.x2);
 
             tmp = req_start;
             req_start = req_end;

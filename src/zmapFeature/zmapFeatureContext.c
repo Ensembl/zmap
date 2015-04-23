@@ -205,7 +205,7 @@ void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_i
   my_start = *start_inout ;
   my_end = *end_inout ;
 
-  zmapFeatureRevComp(Coord, start, end, my_start, my_end) ;
+  zmapFeatureRevComp(start, end, &my_start, &my_end) ;
 
   *start_inout = my_start ;
   *end_inout = my_end ;
@@ -555,9 +555,9 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
 
 
 /* provide access to private macro, NB start is not used but defined by the macro */
-int zmapFeatureRevCompCoord(int coord, int start, int end)
+int zmapFeatureRevCompCoord(int *coord, const int start, const int end)
 {
-  return(zmapFeatureInvert(coord,start,end));
+  zmapFeatureInvert(coord,start,end);
 }
 
 
@@ -642,9 +642,9 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 
         /* THIS LOOKS DEEPLY INCORRECT TO ME..... */
 
-        zmapFeatureRevComp(Coord, cb_data->start, cb_data->end,
-                           feature_align->sequence_span.x1,
-                           feature_align->sequence_span.x2) ;
+        zmapFeatureRevComp(cb_data->start, cb_data->end,
+                           &feature_align->sequence_span.x1,
+                           &feature_align->sequence_span.x2) ;
 
         break;
       }
@@ -666,9 +666,9 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
             zMapDNAReverseComplement(feature_block->sequence.sequence, feature_block->sequence.length) ;
           }
 
-        zmapFeatureRevComp(Coord, cb_data->start, cb_data->end,
-                           feature_block->block_to_sequence.block.x1,
-                           feature_block->block_to_sequence.block.x2) ;
+        zmapFeatureRevComp(cb_data->start, cb_data->end,
+                           &feature_block->block_to_sequence.block.x1,
+                           &feature_block->block_to_sequence.block.x2) ;
         feature_block->revcomped = !feature_block->revcomped;
 
         break;
@@ -685,7 +685,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
         for (l = feature_set->loaded;l;l = l->next)
           {
             span = (ZMapSpan) l->data;
-            zmapFeatureRevComp(Coord, cb_data->start, cb_data->end, span->x1, span->x2) ;
+            zmapFeatureRevComp(cb_data->start, cb_data->end, &span->x1, &span->x2) ;
           }
 
 
@@ -769,7 +769,7 @@ static void revcompSpan(GArray *spans, int seq_start, int seq_end)
 
       span = &g_array_index(spans, ZMapSpanStruct, i) ;
 
-      zmapFeatureRevComp(Coord, seq_start, seq_end, span->x1, span->x2) ;
+      zmapFeatureRevComp(seq_start, seq_end, &span->x1, &span->x2) ;
     }
 
   for (i = 0, j = spans->len - 1 ; i < j ; i++,j--)
@@ -794,7 +794,7 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
   if (!feature)
     return ;
 
-  zmapFeatureRevComp(Coord, start_coord, end_coord, feature->x1, feature->x2) ;
+  zmapFeatureRevComp(start_coord, end_coord, &feature->x1, &feature->x2) ;
 
   if (feature->strand == ZMAPSTRAND_FORWARD)
     feature->strand = ZMAPSTRAND_REVERSE ;
@@ -847,9 +847,9 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
         revcompSpan(feature->feature.transcript.introns, start_coord, end_coord) ;
 
       if(feature->feature.transcript.flags.cds)
-        zmapFeatureRevComp(Coord, start_coord, end_coord,
-                           feature->feature.transcript.cds_start,
-                           feature->feature.transcript.cds_end);
+        zmapFeatureRevComp(start_coord, end_coord,
+                           &feature->feature.transcript.cds_start,
+                           &feature->feature.transcript.cds_end);
     }
   else if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT
            && feature->feature.homol.align)
@@ -862,7 +862,7 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 
           align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i) ;
 
-          zmapFeatureRevComp(Coord, start_coord, end_coord, align->t1, align->t2) ;
+          zmapFeatureRevComp(start_coord, end_coord, &align->t1, &align->t2) ;
           /*! \todo #warning why does this not change t_strand? */
         }
 

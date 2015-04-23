@@ -376,7 +376,7 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
 
 void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2)
 {
-  zmapFeatureRevComp(Coord, seq_start, seq_end, *coord_1, *coord_2) ;
+  zmapFeatureRevComp(seq_start, seq_end, *coord_1, *coord_2) ;
 
   return ;
 }
@@ -2033,3 +2033,19 @@ static void printChildCB(gpointer key, gpointer value, gpointer user_data_unused
 }
 
 
+
+void zmapFeatureInvert(int *coord, const int seq_start, const int seq_end)
+{
+  *coord = seq_end - *coord + seq_start ;
+}
+
+
+void zmapFeatureRevComp(const int seq_start, const int seq_end, int *coord1, int *coord2)  
+{ 
+  int tmp = *coord1;
+  *coord1 = *coord2;
+  *coord2 = tmp;
+
+  zmapFeatureInvert(coord1, seq_start, seq_end) ;
+  zmapFeatureInvert(coord2, seq_start, seq_end) ;
+}
