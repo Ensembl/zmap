@@ -2033,13 +2033,15 @@ static void printChildCB(gpointer key, gpointer value, gpointer user_data_unused
 }
 
 
-
+/* Invert the coordinates within the given range. Also converts them to 1-based coordinates. */
 void zmapFeatureInvert(int *coord, const int seq_start, const int seq_end)
 {
-  *coord = seq_end - *coord + seq_start ;
+  /* Subtract 1 here instead of seq_start in order to make the coord 1-based */
+  *coord = seq_end - *coord + 1 ;
 }
 
 
+/* Revcomp the feature coords (swops, inverts, and makes them 1-based) */
 void zmapFeatureRevComp(const int seq_start, const int seq_end, int *coord1, int *coord2)  
 { 
   int tmp = *coord1;
