@@ -69,14 +69,30 @@ typedef struct
  */
 int zmapWindowCoordToDisplay(ZMapWindow window, int coord)
 {
+  /*
+   * TRUE     means our "normal" way of looking at the interval
+   * FALSE    means chromosome coordinates
+   */
+  gboolean normal_coords = TRUE ;
   /* min_coord is the start of the sequence even if revcomp'ed
    * window->sequence->start is fwd strand
    * but note that max_coord has been incremented to cover beyond the last base
    */
-  coord = coord - window->display_origin + 1 ;
+  if (normal_coords)
+    coord = coord - window->min_coord + 1 ;
+  else
+    coord = coord ;
 
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    coord -= window->sequence->end - window->sequence->start + 2 ;
+    {
+      if (normal_coords)
+        coord -= window->sequence->end - window->sequence->start + 2 ;
+      else
+        {
+          coord = -window->sequence->start -
+                   (window->max_coord - window->min_coord - coord) ;
+        }
+    }
 
   return(coord);
 }

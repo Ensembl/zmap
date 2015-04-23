@@ -3843,7 +3843,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
                     if(window->sequence)
                       {
-                        if(bp != chr_bp)
+                        if(abs(bp) != chr_bp)
                           tip = g_strdup_printf("%d bp (%d)", bp, chr_bp);
                         else
                           tip = g_strdup_printf("%d bp", bp);
