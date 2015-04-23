@@ -174,7 +174,6 @@ $SPECIFIC_CONFIGURE_ARGS \
 #ln -s ../../htslib-develop
 cp -r ../../htslib-develop .
 cp -r ../../ensc-core .
-cp -r ../../samtools_parallel .
 
 exit 0
 
