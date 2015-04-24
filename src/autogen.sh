@@ -28,14 +28,25 @@ install_missing='-i'
 verbose=''
 version_arg=''
 
+# Location of git repositories
+git_host='git.internal.sanger.ac.uk'
+git_root='/repos/git/annotools'
+
+# gbtools repository info
 gb_tools_repos='gbtools'
 gb_tools_dir='gbtools'
 gb_tools_checkout_dir='gbtools_develop'
+gb_tools_branch='' # set this to '-b <branch>' to use another branch than the default (develop)
 
+# ensembl repository info
 ensc_core_repos='ensc-core'
-ensc_core_branch='-f zmap'
 ensc_core_dir='ensc-core'
 ensc_core_checkout_dir='ensc-core_feature_zmap'
+
+# For now we hard-code ensembl to use the feature/zmap branch because we have
+# some customisations (e.g. disabling certain stuff that we don't require)
+# which we can't push to the default branch
+ensc_core_branch='-b feature/zmap' 
 
 
 # Load common functions/settings.
@@ -99,7 +110,7 @@ if [[ "$gb_tools" == "yes" || "$gb_tools" == "maybe" ]] ; then
   
      zmap_message_out "Cloning $gb_tools_repos into $gb_tools_checkout_dir"
   
-     gitclone -o $gb_tools_repos || zmap_message_exit "could not clone $gb_tools_repos into $PWD."
+     git clone $gb_tools_branch $git_host:$git_root/$gb_tools_repos $gb_tools_checkout_dir || zmap_message_exit "could not clone $gb_tools_repos into $PWD."
   
      cp -rf ./$gb_tools_checkout_dir/* ./$gb_tools_dir
   
@@ -133,7 +144,7 @@ git checkout ./$ensc_core_dir/
 
 zmap_message_out "Cloning $ensc_core_repos into $ensc_core_checkout_dir"
 
-gitclone -o $ensc_core_repos $ensc_core_branch || zmap_message_exit "could not clone $ensc_core_repos into $PWD."
+git clone $ensc_core_branch $git_host:$git_root/$ensc_core_repos $ensc_core_checkout_dir || zmap_message_exit "could not clone $ensc_core_repos into $PWD."
 
 cp -rf ./$ensc_core_checkout_dir/* ./$ensc_core_dir
 
