@@ -57,13 +57,9 @@ enum
   };
 
 /*
-typedef struct
-{
-  ZMapFeatureAny feature;
-  ZMapWindow     window;
-} AddSimpleDataAnyStruct, *AddSimpleDataAny;
-*/
-
+ * These are the data required to add a feature to the list; i.e.
+ * the feature itself and the window that it's drawn in.
+ */
 typedef struct
 {
   ZMapFeatureAny feature;

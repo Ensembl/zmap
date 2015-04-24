@@ -3285,14 +3285,27 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
         }
 
 
-      /* Reread the data in any feature list windows we might have. */
-      for (i = 0 ; i < window->featureListWindows->len ; i++)
+      /*
+       * Reread the data in any feature list windows we might have.
+       * (sm23) The function zmapWindowListWindowReread() does not
+       * work; indeed it gives a segmentation fault when executed
+       * with a search result window open. I've disabled this for now.
+       * Instead, the featureListWindows are destroyed, since they
+       * no longer refer to valid foo canvas items.
+       */
+      if (window->featureListWindows)
         {
-          GtkWidget *widget ;
+          for (i = 0 ; i < window->featureListWindows->len ; i++)
+            {
+              GtkWidget *widget = NULL ;
 
-          widget = g_ptr_array_index(window->featureListWindows, i) ;
+              widget = g_ptr_array_index(window->featureListWindows, i) ;
 
-          zmapWindowListWindowReread(widget) ;
+              /* zmapWindowListWindowReread(widget) ;*/
+              gtk_widget_destroy(GTK_WIDGET(widget));
+            }
+          /* destroy the featureListWindow objects (but not the array object itself) */
+          window->featureListWindows = g_array_set_size(window->featureListWindows, 0) ;
         }
 
 
