@@ -55,9 +55,10 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
   ZMapServerFuncs serverfuncs ;
 
   zMapReturnValIfFail((server_global_data_out), result) ;
+
   zMapReturnValIfFail((url->scheme == SCHEME_ACEDB || url->scheme == SCHEME_HTTP
                        || url->scheme == SCHEME_FILE || url->scheme == SCHEME_PIPE
-                       || url->scheme == SCHEME_ENSEMBL), 
+                       || url->scheme == SCHEME_ENSEMBL),
                       result) ;
 
   serverfuncs = g_new0(ZMapServerFuncsStruct, 1) ;
@@ -94,7 +95,11 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
       break;
 
     case SCHEME_ENSEMBL:
+#ifdef HAVE_MYSQL
       ensemblGetServerFuncs(serverfuncs);
+#else
+      zMapCritical("Cannot load source type 'ensembl': mysql is not available.");
+#endif
       break;
 
     default:
