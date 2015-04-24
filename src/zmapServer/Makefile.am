@@ -3,8 +3,7 @@ include $(top_srcdir)/Makefile.common
 
 SUBDIRS = acedb das pipe file
 
-# Only compile ensembl server if we have mysql installed
-if USE_MYSQL
+if USE_ENSEMBL
 SUBDIRS += ensembl
 endif
 
@@ -30,8 +29,11 @@ acedb/libAcedbServer.la \
 pipe/libPipeServer.la   \
 file/libFileServer.la   \
 das/libDasServer.la     \
-ensembl/libEnsemblServer.la     \
 $(NULL)
+
+if USE_ENSEMBL
+libZMapServers_la_LIBADD += ensembl/libEnsemblServer.la
+endif
 
 libZMapServers_la_CFLAGS  = 
 libZMapServers_la_LDFLAGS = 

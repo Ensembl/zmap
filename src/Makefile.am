@@ -30,8 +30,7 @@ endif
 
 SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop 
 
-# Only compile ensembl API code if we have mysql installed
-if USE_MYSQL
+if USE_ENSEMBL
 SUBDIRS += ensc-core/src 
 endif
 
@@ -185,17 +184,18 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
 	$(top_builddir)/htslib-develop/libhts.a              \
-	$(top_builddir)/ensc-core/src/libensc.a              \
 	$(top_builddir)/AceConn/src/.libs/libAceConn.a       
+
+if USE_ENSEMBL
+zmap_LDADD += $(top_builddir)/ensc-core/src/libensc.a
+endif
 
 # If we have gbtools in a subdirectory, add the .a file, otherwise
 # look for a locally installed version
 if USE_GBTOOLS
-zmap_LDADD +=                                                \
-	$(top_builddir)/gbtools/libgbtools.a            
+zmap_LDADD += $(top_builddir)/gbtools/libgbtools.a            
 else
-zmap_LDADD +=                                                \
-	-lgbtools
+zmap_LDADD += -lgbtools
 endif
 
 # The zeromq library has a different suffix on cygwin
