@@ -98,7 +98,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 #ifdef HAVE_MYSQL
       ensemblGetServerFuncs(serverfuncs);
 #else
-      zMapCritical("Cannot load source type 'ensembl': mysql is not available.");
+      zMapCritical("%s", "Cannot load source type 'ensembl': mysql is not available.");
 #endif
       break;
 
