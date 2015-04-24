@@ -1,9 +1,6 @@
 
 include $(top_srcdir)/Makefile.common
 
-# Only compile ensembl server if we have mysql installed
-#if USE_MYSQL
-
 SUBDIRS = .
 
 noinst_LTLIBRARIES = libEnsemblServer.la
@@ -21,5 +18,3 @@ libEnsemblServer_la_LDFLAGS = -L$(ENSC_CORE_DIR) -lensc $(MYSQL_LDFLAGS)
 # Extra files to remove for the maintainer-clean target.
 #
 MAINTAINERCLEANFILES = $(top_srcdir)/zmapServer/ensembl/Makefile.in
-
-#endif

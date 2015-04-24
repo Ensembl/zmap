@@ -28,7 +28,14 @@ if USE_GBTOOLS
 OPTIONAL_SUBDIRS = gbtools
 endif
 
-SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop ensc-core/src include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop 
+
+# Only compile ensembl API code if we have mysql installed
+if USE_MYSQL
+SUBDIRS += ensc-core/src 
+endif
+
+SUBDIRS += include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
 
 
 CLEANFILES = $(pkgconfig_DATA)

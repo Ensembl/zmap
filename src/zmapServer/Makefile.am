@@ -1,7 +1,12 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = acedb das pipe file ensembl
+SUBDIRS = acedb das pipe file
+
+# Only compile ensembl server if we have mysql installed
+if USE_MYSQL
+SUBDIRS += ensembl
+endif
 
 noinst_LTLIBRARIES = libZMapServer.la libZMapServers.la
 

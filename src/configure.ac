@@ -516,7 +516,7 @@ echo \
      <program> - build specific program
 "
 
-AM_COND_IF([USE_MYSQL], [], [echo " Warning: mysql not found; excluding ensembl server"; echo])
+AM_COND_IF([USE_MYSQL], [echo "mysql found"; echo], [echo " Warning: mysql not found; excluding ensembl server"; echo])
 
 
 echo "---------------------------------------------------------------------
