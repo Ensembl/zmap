@@ -1243,9 +1243,6 @@ static ZMapFeature makeFeature(EnsemblServer server,
       if (!feature_name || *feature_name == '\0')
         feature_name = feature_name_id ;
 
-      /* Add the db name to the feature name id to make sure it's unique */
-      feature_name_id = g_strdup_printf("%s%s", (server ? server->db_name : ""), feature_name_id) ;
-
       start = SeqFeature_getStart(rsf) ;
       end = SeqFeature_getEnd(rsf) ;
       has_score = TRUE ;
@@ -1299,9 +1296,6 @@ static ZMapFeature makeFeature(EnsemblServer server,
           if (!existing_feature)
             zMapFeatureSetAddFeature(feature_set, feature) ;
         }
-
-      if (feature_name_id)
-        g_free(feature_name_id) ;
     }
   else if (!SO_accession)
     {
