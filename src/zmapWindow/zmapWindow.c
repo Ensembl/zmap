@@ -2225,10 +2225,6 @@ static void panedResizeCB(gpointer data, gpointer userdata)
 
   current_position = gtk_paned_get_position(GTK_PANED( window->pane ));
 
-#if RDS_DONT_INCLUDE
-  printf(" |-- panedResizeCB: got current of %d want to set to %d\n", current_position, *new_position);
-#endif /* RDS_DONT_INCLUDE */
-
   gtk_paned_set_position(GTK_PANED( window->pane ),
                          *new_position);
 
@@ -2425,23 +2421,24 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
     }
 
 
+  /*
+   * This is setting up the scale bar; it appears to need the
+   * parent window.
+   */
+  ZMapWindowScaleCanvasCallbackListStruct callbacks = {NULL};
+  GtkAdjustment *vadjust = NULL;
 
-  {
-    ZMapWindowScaleCanvasCallbackListStruct callbacks = {NULL};
-    GtkAdjustment *vadjust = NULL;
+  vadjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
+  callbacks.paneResize = panedResizeCB;
+  callbacks.user_data  = (gpointer)window;
 
-    vadjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
-    callbacks.paneResize = panedResizeCB;
-    callbacks.user_data  = (gpointer)window;
-
-    window->ruler = zmapWindowScaleCanvasCreate(&callbacks);
-    zmapWindowScaleCanvasInit(window->ruler, window->pane, vadjust);
-  }
+  window->ruler = zmapWindowScaleCanvasCreate(&callbacks);
+  zmapWindowScaleCanvasInit(window->ruler, window->pane, vadjust);
 
   /* Attach callback to monitor size changes in canvas, this works but bizarrely
    * "configure-event" callbacks which are the pucker size change event are never called. */
   g_signal_connect(GTK_OBJECT(window->canvas), "size-allocate",
-   GTK_SIGNAL_FUNC(canvasSizeAllocateCB), (gpointer)window) ;
+                   GTK_SIGNAL_FUNC(canvasSizeAllocateCB), (gpointer)window) ;
 
 
   /* NONE OF THIS SHOULD BE HARD CODED constants it should be based on window size etc... */
@@ -3285,14 +3282,27 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
         }
 
 
-      /* Reread the data in any feature list windows we might have. */
-      for (i = 0 ; i < window->featureListWindows->len ; i++)
+      /*
+       * Reread the data in any feature list windows we might have.
+       * (sm23) The function zmapWindowListWindowReread() does not
+       * work; indeed it gives a segmentation fault when executed
+       * with a search result window open. I've disabled this for now.
+       * Instead, the featureListWindows are destroyed, since they
+       * no longer refer to valid foo canvas items.
+       */
+      if (window->featureListWindows)
         {
-          GtkWidget *widget ;
+          for (i = 0 ; i < window->featureListWindows->len ; i++)
+            {
+              GtkWidget *widget = NULL ;
 
-          widget = g_ptr_array_index(window->featureListWindows, i) ;
+              widget = g_ptr_array_index(window->featureListWindows, i) ;
 
-          zmapWindowListWindowReread(widget) ;
+              /* zmapWindowListWindowReread(widget) ;*/
+              gtk_widget_destroy(GTK_WIDGET(widget));
+            }
+          /* destroy the featureListWindow objects (but not the array object itself) */
+          g_ptr_array_set_size(window->featureListWindows, 0) ;
         }
 
 
@@ -3843,7 +3853,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
                     if(window->sequence)
                       {
-                        if(bp != chr_bp)
+                        if(abs(bp) != chr_bp)
                           tip = g_strdup_printf("%d bp (%d)", bp, chr_bp);
                         else
                           tip = g_strdup_printf("%d bp", bp);
