@@ -140,8 +140,6 @@ zmap_message_out "Removing an old copy of $ensc_core_repos"
 
 rm -rf ./$ensc_core_dir/*
 
-git checkout ./$ensc_core_dir/
-
 zmap_message_out "Cloning $ensc_core_repos into $ensc_core_checkout_dir"
 
 git clone $ensc_core_branch $git_host:$git_root/$ensc_core_repos $ensc_core_checkout_dir || zmap_message_exit "could not clone $ensc_core_repos into $PWD."
@@ -149,6 +147,10 @@ git clone $ensc_core_branch $git_host:$git_root/$ensc_core_repos $ensc_core_chec
 cp -rf ./$ensc_core_checkout_dir/* ./$ensc_core_dir
 
 rm -rf ./$ensc_core_checkout_dir
+
+# Make sure the placeholder files (.gitignore, README) are at their 
+# original versions
+git checkout ./$ensc_core_dir/
 
 zmap_message_out "Copied $ensc_core_checkout_dir files to $ensc_core_dir"
 
