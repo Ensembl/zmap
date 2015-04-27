@@ -2138,9 +2138,12 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     }
 
   /* this puts the DNA in the clipbaord */
-  zMapGUISetClipboard(window->toplevel, GDK_SELECTION_PRIMARY, select.secondary_text) ;
+  if (select.secondary_text)
+    {
+      zMapGUISetClipboard(window->toplevel, GDK_SELECTION_PRIMARY, select.secondary_text) ;
 
-  g_free(select.secondary_text) ;
+      g_free(select.secondary_text) ;
+    }
 
   if(feature_list)
     g_list_free(feature_list);
