@@ -1644,11 +1644,6 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
     }
   else
     {
-      int feature_pos, exon_start, exon_end ;
-
-      feature_pos = exon_start = exon_span->x1 ;
-      exon_end = exon_span->x2 ;
-
       calculateExonPositions(full_data, exon_span, variations, exons_data) ;
 
 

@@ -136,7 +136,6 @@ ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_m
   GtkWidget *curr_container, *view_container ;
   char *view_title ;
   GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;   /* arbitrary for first window. */
-  GtkWidget *parent ;
 
   zMapReturnValIfFail(zmap, view_window) ; 
 
@@ -149,12 +148,6 @@ ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_m
 
   view_title = zMapViewGetSequenceName(sequence_map) ;
 
-  /* Record what your current parent is. */
-  if (curr_container)
-    parent = gtk_widget_get_parent(curr_container) ;
-  else
-    parent = zmap->pane_vbox ;
-
 
   /* Create a new container that will hold the new view window. */
   view_container = zmapControlAddWindow(zmap, curr_container, orientation, ZMAPCONTROL_SPLIT_FIRST, view_title) ;
@@ -162,9 +155,7 @@ ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_m
   if (!(view_window = zMapViewCreate(view_container, sequence_map, (void *)zmap)))
     {
       /* remove window we just added....not sure we need to do anything with remaining view... */
-      ZMapViewWindow remaining_view ;
-
-      remaining_view = closeWindow(zmap, view_container) ;
+      closeWindow(zmap, view_container) ;
     }
   else
     {
@@ -385,16 +376,9 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **dest
   GtkWidget *close_container ;
   ZMapViewWindow remaining_view ;
   ZMapView view = NULL ;
-  gboolean remove ;
-  int num_views, num_windows ;
-  gboolean last_window = FALSE ;
+  int num_windows ;
 
-  num_views = zmapControlNumViews(zmap) ;
   num_windows = zMapViewNumWindows(view_window) ;
-
-  /* If this is the last window we will need to do some special clearing up. */
-  if (num_windows == 1)
-    last_window = TRUE ;
 
   view = zMapViewGetView(view_window) ;
 
@@ -429,7 +413,7 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **dest
   remaining_view = closeWindow(zmap, close_container) ;
 
   /* Remove from hash of viewwindows to frames */
-  remove = g_hash_table_remove(zmap->viewwindow_2_parent, view_window) ;
+  g_hash_table_remove(zmap->viewwindow_2_parent, view_window) ;
 
   /* Having removed one window we need to refocus on another, if there is one....... */
   if (remaining_view)

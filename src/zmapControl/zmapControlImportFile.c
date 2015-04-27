@@ -281,6 +281,9 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
               s->args = argp;
               s->allocd = args;*/
             }
+
+          if (freethis)
+            g_strfreev(freethis) ;
         }
     }
 

@@ -28,9 +28,25 @@ install_missing='-i'
 verbose=''
 version_arg=''
 
+# Location of git repositories
+git_host='git.internal.sanger.ac.uk'
+git_root='/repos/git/annotools'
+
+# gbtools repository info
 gb_tools_repos='gbtools'
 gb_tools_dir='gbtools'
 gb_tools_checkout_dir='gbtools_develop'
+gb_tools_branch='' # set this to '-b <branch>' to use another branch than the default (develop)
+
+# ensembl repository info
+ensc_core_repos='ensc-core'
+ensc_core_dir='ensc-core'
+ensc_core_checkout_dir='ensc-core_feature_zmap'
+
+# For now we hard-code ensembl to use the feature/zmap branch because we have
+# some customisations (e.g. disabling certain stuff that we don't require)
+# which we can't push to the default branch
+ensc_core_branch='-b feature/zmap' 
 
 
 # Load common functions/settings.
@@ -84,7 +100,7 @@ if [[ "$gb_tools" == "yes" ]] ; then
 
    rm -rf ./$gb_tools_dir/*
 
-   touch ./$gb_tools_dir/.gitignore
+   git checkout ./$gb_tools_dir
 
 fi
 
@@ -94,7 +110,7 @@ if [[ "$gb_tools" == "yes" || "$gb_tools" == "maybe" ]] ; then
   
      zmap_message_out "Cloning $gb_tools_repos into $gb_tools_checkout_dir"
   
-     gitclone -o $gb_tools_repos || zmap_message_exit "could not clone $gb_tools_repos into $PWD."
+     git clone $gb_tools_branch $git_host:$git_root/$gb_tools_repos $gb_tools_checkout_dir || zmap_message_exit "could not clone $gb_tools_repos into $PWD."
   
      cp -rf ./$gb_tools_checkout_dir/* ./$gb_tools_dir
   
@@ -117,6 +133,26 @@ if [ -e "$BASE_DIR/gbtools/autogen.sh" ] ; then
   cd $cur_dir
 fi
 
+
+# Set up ensc-core subdirectory. This is the ensembl C API code.
+#
+zmap_message_out "Removing an old copy of $ensc_core_repos"
+
+rm -rf ./$ensc_core_dir/*
+
+zmap_message_out "Cloning $ensc_core_repos into $ensc_core_checkout_dir"
+
+git clone $ensc_core_branch $git_host:$git_root/$ensc_core_repos $ensc_core_checkout_dir || zmap_message_exit "could not clone $ensc_core_repos into $PWD."
+
+cp -rf ./$ensc_core_checkout_dir/* ./$ensc_core_dir
+
+rm -rf ./$ensc_core_checkout_dir
+
+# Make sure the placeholder files (.gitignore, README) are at their 
+# original versions
+git checkout ./$ensc_core_dir/
+
+zmap_message_out "Copied $ensc_core_checkout_dir files to $ensc_core_dir"
 
 
 # Remove any files/dirs from previous builds, necessary because different

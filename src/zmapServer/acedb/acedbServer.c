@@ -238,10 +238,6 @@ static void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_d
 static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, GHashTable *styles) ;
 static void loadableCB(gpointer data, gpointer user_data) ;
 
-static char *get_url_query_value(char *full_query, char *key) ;
-static gboolean get_url_query_boolean(char *full_query, char *key) ;
-static int get_url_query_int(char *full_query, char *key) ;
-
 static void freeDataCB(gpointer data) ;
 static void freeSetCB(gpointer data) ;
 
@@ -336,7 +332,7 @@ static gboolean createConnection(void **server_out,
 
   server->has_new_tags = TRUE ;
 
-  use_methods = get_url_query_boolean(url->query, "use_methods") ;
+  use_methods = zMapURLGetQueryBoolean(url->query, "use_methods") ;
 
   server->has_new_tags = !use_methods;
 
@@ -352,7 +348,7 @@ static gboolean createConnection(void **server_out,
 
   server->stylename_from_methodname = isStyleFromMethod(server->config_file) ;
 
-  if (!(server->gff_version = get_url_query_int(url->query, "gff_version")))
+  if (!(server->gff_version = zMapURLGetQueryInt(url->query, "gff_version")))
     server->gff_version = 3 ;
 
   server->zmap_start = 1;
@@ -4632,74 +4628,6 @@ static void resetErr(AcedbServer server)
   server->last_err_status = ACECONN_OK ;
 
   return ;
-}
-
-
-/* YEH WELL THIS IS BROKEN...THANKS A LOT..... */
-static char *get_url_query_value(char *full_query, char *key)
-{
-  char *value = NULL, **split   = NULL, **ptr     = NULL ;
-
-  if ((full_query && *full_query) && (key && *key))
-    {
-      split = ptr = g_strsplit(full_query, "&", 0) ;
-
-      while(ptr && *ptr != '\0')
-	{
-          char **key_value = NULL, **kv_ptr, *real_key ;
-
-	  key_value = kv_ptr = g_strsplit(*ptr, "=", 0);
-
-          /* Can this actually happen ? */
-          if (key_value[0])
-            {
-              real_key = *key_value ;
-              if (*real_key == '?')
-                real_key++ ;
-            
-              if (g_ascii_strcasecmp(real_key, key) == 0)
-                value = g_strdup(key_value[1]) ;
-            }
-
-          g_strfreev(kv_ptr) ;
-
-          ptr++ ;
-	}
-
-      g_strfreev(split) ;
-    }
-
-  return value;
-}
-
-static gboolean get_url_query_boolean(char *full_query, char *key)
-{
-  gboolean result = FALSE;
-  char *value = NULL;
-
-  if((value = get_url_query_value(full_query, key)))
-    {
-      if(g_ascii_strcasecmp("true", value) == 0)
-	result = TRUE;
-      g_free(value);
-    }
-
-  return result;
-}
-
-static int get_url_query_int(char *full_query, char *key)
-{
-  int result = 0 ;
-  char *value = NULL ;
-
-  if ((value = get_url_query_value(full_query, key)))
-    {
-      result = atoi(value) ;
-
-      g_free(value) ;
-    }
-
-  return result ;
 }
 
 

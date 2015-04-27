@@ -1140,7 +1140,6 @@ gboolean zMapGFFWriteFeatureAlignment(ZMapFeature feature, ZMapGFFAttributeFlags
     *type = NULL ;
   GString *attribute = NULL ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
-  float percent_id = (float) 0.0 ;
 
   if (   !feature
       || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT)

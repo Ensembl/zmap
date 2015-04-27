@@ -785,14 +785,12 @@ static gboolean makeGroupsFromFeature(ZMapXMLParser parser,
   ZMapXMLElement sub_element = NULL;
   ZMapXMLAttribute attr      = NULL;
   ZMapDAS1Group group_ptr    = NULL;
-  int groups_found = 0, 
-    current_group  = 0;
+  int current_group  = 0;
 
   /* Check this works, and we don't get one too many! */
   group_elements = zMapXMLElementGetChildrenByName(feature_element, 
                                                    g_quark_from_string("group"), 
                                                    stack_list_length);
-  groups_found = g_list_length(group_elements);
   group_ptr    = groups;
 
   while((group_elements != NULL))

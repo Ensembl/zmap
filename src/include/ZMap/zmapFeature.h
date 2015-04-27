@@ -1323,7 +1323,7 @@ void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
  * Utils funcs
  */
 
-int zmapFeatureRevCompCoord(int coord, int start, int end);
+int zmapFeatureRevCompCoord(int *coord, const int start, const int end);
 void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2) ;
 void zMapGetFeatureExtent(ZMapFeature feature, gboolean complex, ZMapSpan span);
 void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;

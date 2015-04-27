@@ -173,7 +173,7 @@ $SPECIFIC_CONFIGURE_ARGS \
 #
 #ln -s ../../htslib-develop
 cp -r ../../htslib-develop .
-
+cp -r ../../ensc-core .
 
 exit 0
 
