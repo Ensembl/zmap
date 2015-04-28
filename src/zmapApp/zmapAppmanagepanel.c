@@ -266,11 +266,10 @@ static void viewOnDoubleClickCB(GtkTreeView        *treeview,
                                 gpointer            userdata)
 {
   ZMapAppContext app_context = (ZMapAppContext)userdata ;
-  GtkTreeModel *model;
 
   /* probably will need to change later, but for now, seems
      reasonable. */
-  model = gtk_tree_view_get_model(treeview);
+  gtk_tree_view_get_model(treeview);
 
   zMapManagerRaise(app_context->selected_zmap);
   

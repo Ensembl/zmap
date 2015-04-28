@@ -376,7 +376,7 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
 
 void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2)
 {
-  zmapFeatureRevComp(Coord, seq_start, seq_end, *coord_1, *coord_2) ;
+  zmapFeatureRevComp(seq_start, seq_end, *coord_1, *coord_2) ;
 
   return ;
 }
@@ -714,6 +714,14 @@ ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, Z
     type = (char *) zMapStyleMode2ExactStr(feature_type);
     style_id = zMapStyleCreateID(type);
     feature_style = zMapFindStyle(styles, style_id);
+
+    if (!feature_style)
+      {
+        /* Try again with the short text version of the style name (e.g. "basic" instead of
+         * "zmapstyle_mode_basic" */
+        style_id = g_quark_from_string(zmapStyleMode2ShortText(feature_type)) ;
+        feature_style = zMapFindStyle(styles, style_id) ;
+      }
   }
   return feature_style;
 }
@@ -1498,12 +1506,8 @@ ZMapPhase zMapFeaturePhase(ZMapFeature feature)
 char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length, gboolean pad)
 {
   char *pep_str = NULL ;
-  ZMapFeatureContext context ;
   ZMapPeptide peptide ;
   char *dna_str, *name, *free_me ;
-
-  context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-   ZMAPFEATURE_STRUCT_CONTEXT));
 
   if ((dna_str = zMapFeatureGetTranscriptDNA(feature, TRUE, feature->feature.transcript.flags.cds)))
     {
@@ -1696,7 +1700,7 @@ static ZMapFullExon feature_find_closest_exon_at_coord(ZMapFeature feature, int 
   zMapReturnValIfFail(feature && feature->mode == ZMAPSTYLE_MODE_SEQUENCE, result) ;
 
   gboolean first_time = TRUE;
-  gboolean found = FALSE;
+  /*gboolean found = FALSE;*/
   int closest_dist = 0;
   GList *exon_item = feature->feature.sequence.exon_list;
 
@@ -1717,7 +1721,7 @@ static ZMapFullExon feature_find_closest_exon_at_coord(ZMapFeature feature, int 
               /* Inside the exon - done */
               //zMapDebugPrintf("Coord %d found in exon %d,%d", y, x1, x2) ;
               result = current_exon ;
-              found = TRUE ;
+              /*found = TRUE ;*/
               break ;
             }
           else if (y < x1)
@@ -2029,3 +2033,21 @@ static void printChildCB(gpointer key, gpointer value, gpointer user_data_unused
 }
 
 
+/* Invert the coordinates within the given range. Also converts them to 1-based coordinates. */
+void zmapFeatureInvert(int *coord, const int seq_start, const int seq_end)
+{
+  /* Subtract 1 here instead of seq_start in order to make the coord 1-based */
+  *coord = seq_end - *coord + 1 ;
+}
+
+
+/* Revcomp the feature coords (swops, inverts, and makes them 1-based) */
+void zmapFeatureRevComp(const int seq_start, const int seq_end, int *coord1, int *coord2)  
+{ 
+  int tmp = *coord1;
+  *coord1 = *coord2;
+  *coord2 = tmp;
+
+  zmapFeatureInvert(coord1, seq_start, seq_end) ;
+  zmapFeatureInvert(coord2, seq_start, seq_end) ;
+}

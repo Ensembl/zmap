@@ -46,18 +46,13 @@
 #define ZMAP_FORCE_FIVES TRUE
 #define ZMAP_SCALE_BAR_GROUP_TYPE_KEY "scale_group_type"
 
-/* For printing lots to the terminal and debugging
-#define VERBOSE_1
-#define VERBOSE_2
-#define VERBOSE_3
-*/
-
-#define debug printf
-#define SCALE_DEBUG        0
-#define FOO_SCALE_DEBUG        0
 
 
-/* Privatise  */
+
+/* Privatise
+ *
+ * what, the NHS? if I were in charge...
+ */
 typedef struct _ZMapWindowScaleCanvasStruct
 {
   FooCanvas *canvas;            /* The Canvas */
@@ -67,10 +62,6 @@ typedef struct _ZMapWindowScaleCanvasStruct
 
   int default_position;
   gboolean freeze, text_left;
-  //  double line_height;
-#if ZOOM_SCROLL
-  gulong visibilityHandlerCB;
-#endif
 
   PangoFont *font;
   PangoFontDescription *font_desc;
@@ -101,20 +92,7 @@ typedef enum
     ZMAP_SCALE_BAR_GROUP_RIGHT,
   } ZMapScaleBarGroupType;
 
-
-
-
-
-//static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right);
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
-//static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data);
-#if ZOOM_SCROLL
-static gboolean rulerMaxVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data);
-
-static void freeze_notify(ZMapWindowScaleCanvas ruler);
-static void thaw_notify(ZMapWindowScaleCanvas ruler);
-#endif
-
 
 
 /* CODE... */
@@ -135,10 +113,6 @@ ZMapWindowScaleCanvas zmapWindowScaleCanvasCreate(ZMapWindowScaleCanvasCallbackL
 
   ruler->default_position = DEFAULT_PANE_POSITION;
   ruler->text_left        = TRUE; /* TRUE = put the text on the left! */
-
-#if ZOOM_SCROLL
-  ruler->visibilityHandlerCB = 0;
-#endif
 
   ruler->last_draw_coords.y1 = ruler->last_draw_coords.y2 = 0.0;
   ruler->last_draw_coords.x1 = ruler->last_draw_coords.x2 = 0.0;
@@ -174,9 +148,9 @@ void zmapWindowScaleCanvasInit(ZMapWindowScaleCanvas ruler,
   if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(paned),
                                g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY), ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
                                &(ruler->font), &(ruler->font_desc)))
-    printf("Couldn't get fixed width font\n");
+    zMapLogWarning("%s", "Couldn't get fixed width font\n") ;
   else
-    zMapGUIGetFontWidth(ruler->font, &(ruler->font_width));
+    zMapGUIGetFontWidth(ruler->font, &(ruler->font_width)) ;
 
 
   return ;
@@ -199,19 +173,6 @@ void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas ruler)
 {
   int open = zMapWindowScaleCanvasGetWidth(ruler) + 1;
 
-#if ZOOM_SCROLL
-  /* If there's one set, disconnect it */
-  if(ruler->visibilityHandlerCB)
-    g_signal_handler_disconnect(G_OBJECT(ruler->canvas), ruler->visibilityHandlerCB);
-
-  /* Reconnect the maximising one... */
-  ruler->visibilityHandlerCB =
-    g_signal_connect(G_OBJECT(ruler->canvas),
-                     "visibility-notify-event",
-                     G_CALLBACK(rulerMaxVisibilityHandlerCB),
-                     (gpointer)ruler);
-#endif
-
   /* Now open it, which will result in the above getting called... */
   if(ruler->callbacks->paneResize &&
      ruler->callbacks->user_data)
@@ -219,60 +180,6 @@ void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas ruler)
 
   return ;
 }
-
-
-#if ZOOM_SCROLL
-void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas ruler, double y1, double y2)
-{
-  double x2, max_x2,
-    ix1 = 0.0,
-    iy1 = y1,
-    iy2 = y2;
-
-  if(ruler->scaleParent)
-    {
-      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(ruler->scaleParent),
-                                 NULL, NULL, &max_x2, NULL);
-      if(!max_x2)
-        max_x2 = ruler->last_draw_coords.x2 + 1;
-      /* somehow max_x2 is always 0, bit we'd like to maximise only if they have-nt shrunk it */
-
-      if(iy1 == iy2 && iy1 == ix1)
-        foo_canvas_get_scroll_region(FOO_CANVAS(ruler->canvas),
-                                     NULL, &iy1, &x2, &iy2);
-      else
-        foo_canvas_get_scroll_region(FOO_CANVAS(ruler->canvas),
-                                     NULL, NULL, &x2, NULL);
-#if SCALE_DEBUG
-      debug("scaleCanvas set scroll: %1.f %1.f - %1.f %1.f %1.f %1.f\n", x2, max_x2, ix1, ruler->last_draw_coords.x2, iy1, iy2);
-#endif /* VERBOSE_1 */
-
-      /* NOTE this canvas has nothing except the scale bar */
-      foo_canvas_set_scroll_region(FOO_CANVAS(ruler->canvas),
-                                   ix1, iy1, max_x2, iy2);
-
-      if(max_x2 > 0.0)
-        {
-          ruler->default_position = max_x2;
-
-          if(ruler->callbacks->paneResize &&
-             ruler->callbacks->user_data)
-            {
-              int floored = (int) max_x2;
-              freeze_notify(ruler);
-              (*(ruler->callbacks->paneResize))(&floored, ruler->callbacks->user_data);
-              thaw_notify(ruler);
-            }
-        }
-    }
-
-  return ;
-}
-#endif
-
-#if FOO_SCALE_DEBUG
-extern gpointer scale_thing;
-#endif
 
 /* I don't like the dependence on window here! */
 /* MH17 NOTE this is called from zmapWindow.c */
@@ -297,10 +204,6 @@ gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas ruler, int start, int e
           gtk_object_destroy(GTK_OBJECT(ruler->scaleParent));
           ruler->scaleParent = ruler->horizon = NULL;
         }
-
-#if SCALE_DEBUG
-      printf("scaleCanvasDraw %d %d %d %d\n", start, end, seq_start, seq_end);
-#endif
 
       ruler->scaleParent = foo_canvas_item_new(foo_canvas_root(ruler->canvas),
                                                foo_canvas_group_get_type(),
@@ -327,22 +230,7 @@ gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas ruler, int start, int e
       ruler->last_draw_coords.pixels_per_unit_y = ruler->canvas->pixels_per_unit_y;
       ruler->last_draw_coords.revcomped = ruler->revcomped;
 
-#if 0        // this doesn't work, no idea why
-        /* somehow wihtout this we get an expose 1 pixel wide, prob due to the style not speciying width
-         * canvasfeaturesets hide the width of features and thier width is onyl taken into account during and update
-         * the foo canvas queue extra exposes on update but somehow this isn't working */
-      {
-        int x1,x2,y1,y2;
-        foo_canvas_w2c(ruler->canvas,0, start,&x1,&y1);
-        foo_canvas_w2c(ruler->canvas, width, end, &x2, &y2);
-        foo_canvas_request_redraw(ruler->canvas, x1, y1, x2, y2);
-      }
-#endif
     }
-
-#if FOO_SCALE_DEBUG
-  scale_thing = ruler->canvas;
-#endif
 
   return drawn;
 }
@@ -356,8 +244,6 @@ double zMapWindowScaleCanvasGetWidth(ZMapWindowScaleCanvas ruler)
 
 void zMapWindowScaleCanvasSetScroll(ZMapWindowScaleCanvas ruler, double x1, double y1, double x2, double y2)
 {
-  //printf("scale set scroll %f %f %f %f\n", x1, y1, x2, y2);
-
   /* NOTE this canvas has nothing except the scale bar */
   foo_canvas_set_scroll_region(FOO_CANVAS(ruler->canvas), x1, y1, x2, y2);
 
@@ -371,20 +257,9 @@ void zMapWindowScaleCanvasSetScroll(ZMapWindowScaleCanvas ruler, double x1, doub
 
 }
 
-#if NOT_USED
-void zmapWindowScaleCanvasZoom(ZMapWindowScaleCanvas ruler, double x, double y)
-{
-
-  zmapWindowScaleCanvasSetPixelsPerUnit(ruler, x, y);
-
-  return ;
-}
-#endif
-
-
 void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas ruler, gboolean revcomped)
 {
-  if (!ruler) 
+  if (!ruler)
     return ;
 
   ruler->display_forward_coords = TRUE ;
@@ -392,20 +267,6 @@ void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas ruler, gboolean rev
 
   return ;
 }
-
-
-#if NOT_USED
-/* set seq start, end to handle high zoom level with non 1-based first display coord */
-void zmapWindowScaleCanvasSetSpan(ZMapWindowScaleCanvas ruler, int start,int end)
-{
-  if (!ruler) 
-    return ;
-
-  ruler->seq_start = start;
-  ruler->seq_end = end;
-}
-#endif
-
 
 void zmapWindowScaleCanvasSetVAdjustment(ZMapWindowScaleCanvas ruler, GtkAdjustment *vadjustment)
 {
@@ -425,65 +286,6 @@ void zmapWindowScaleCanvasSetPixelsPerUnit(ZMapWindowScaleCanvas ruler, double x
   return ;
 }
 
-#if NOT_USED
-void zmapWindowScaleCanvasSetLineHeight(ZMapWindowScaleCanvas ruler,
-                                        double line_height)
-{
-  if (!ruler)
-    return ;
-#ifdef VERBOSE_3
-  printf("setLineHeight: setting line_height = %f\n", line_height);
-#endif
-  ruler->line_height = line_height;
-
-  return ;
-}
-#endif
-
-
-#if NOT_USED
-
-void zmapWindowScaleCanvasRepositionHorizon(ZMapWindowScaleCanvas ruler,
-                                            double y_position)
-{
-  /*  double x1, x2; */
-  FooCanvasPoints *points = NULL;
-
-  points = foo_canvas_points_new(2);
-  points->coords[0] = 0.0;
-  points->coords[1] = y_position;
-  points->coords[2] = ruler->default_position - 2.0;
-  points->coords[3] = y_position;
-
-  if(!ruler->horizon)
-    {
-      ruler->horizon = foo_canvas_item_new(FOO_CANVAS_GROUP(ruler->scaleParent),
-                                           foo_canvas_line_get_type(),
-                                           "fill_color", "red",
-                                           "width_pixels", 1,
-                                           "cap_style", GDK_CAP_NOT_LAST,
-                                           NULL);
-      foo_canvas_item_lower_to_bottom(ruler->horizon);
-    }
-
-  foo_canvas_item_set(ruler->horizon,
-                      "points", points,
-                      NULL);
-  foo_canvas_item_show(ruler->horizon);
-  return ;
-}
-
-
-void zmapWindowScaleCanvasHideHorizon(ZMapWindowScaleCanvas ruler)
-{
-  if(ruler->horizon)
-    foo_canvas_item_hide(ruler->horizon);
-  return ;
-}
-
-#endif
-
-
 
 /* INTERNALS */
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data)
@@ -491,10 +293,6 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
   ZMapWindowScaleCanvas ruler = (ZMapWindowScaleCanvas)user_data;
   FooCanvasItem *scale = NULL;
   gboolean cancel = FALSE;
-
-#ifdef VERBOSE_1
-  debug("notifyPos: enter notify for %s.\n", g_param_spec_get_name(scroll));
-#endif /* VERBOSE_1 */
 
   if(ruler->scaleParent && (scale = FOO_CANVAS_ITEM(ruler->scaleParent)) != NULL)
     cancel = TRUE;
@@ -528,53 +326,11 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
               ruler->callbacks->paneResize &&
               ruler->callbacks->user_data)
         (*(ruler->callbacks->paneResize))(&max, ruler->callbacks->user_data);
-#if 0
-      else if(position == 0 && ruler->visibilityHandlerCB == 0)
-        ruler->visibilityHandlerCB =
-          g_signal_connect(G_OBJECT(ruler->canvas),
-                           "visibility-notify-event",
-                           G_CALLBACK(rulerVisibilityHandlerCB),
-                           (gpointer)ruler);
-#endif
     }
 
  leave:
-#ifdef VERBOSE_1
-  debug("notifyPos: leave\n");
-#endif /* VERBOSE_1 */
   return ;
 }
-
-
-
-#if ZOOM_SCROLL
-/* And a version which WILL maximise after calling the other one. */
-static gboolean rulerMaxVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
-{
-  ZMapWindowScaleCanvas ruler = (ZMapWindowScaleCanvas)user_data;
-  gboolean handled = FALSE;
-
-  zmapWindowScaleCanvasMaximise(ruler, 0.0, 0.0);
-
-  return handled;
-}
-#endif
-
-
-#if ZOOM_SCROLL
-
-static void freeze_notify(ZMapWindowScaleCanvas ruler)
-{
-  ruler->freeze = TRUE;
-  return ;
-}
-static void thaw_notify(ZMapWindowScaleCanvas ruler)
-{
-  ruler->freeze = FALSE;
-  return ;
-}
-
-#endif
 
 
 
@@ -629,9 +385,6 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
   int n_pixels;        /* cannot be more than 30k due to foo */
   int gap;                /* pixels between ticks */
   int digit;                /* which tick out of 10 */
-#if SCALE_DEBUG
-  int digits;                /* how many digits in fractional part */
-#endif
   int nudge;                /* tick is 5th? make bigger */
   char label [32];        /* only need ~8 but there you go */
   char *unit;
@@ -679,10 +432,6 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
       zMapStyleSetDisplayable(scale_style, TRUE);        /* (always drawable) */
     }
 
-#if SCALE_DEBUG
-  debug("draw scale %p\n",((FooCanvasItem *) group)->canvas);
-#endif
-
   /* get unique id. and create.... if windows get destroyed then so should the featuresets */
   sprintf(buf,"scalebar%c%p", revcomped ? '-' : '+', ((FooCanvasItem *) group)->canvas);
   fid = g_quark_from_string(buf);
@@ -717,8 +466,6 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
       font_height = 14.0;        /* don't just give up ! */
       font_width = 8.0;
       text_height = 14;
-      //                zMapLogWarning("DrawScale get font size failed","");
-      /*! \todo #warning fix the font size to work centrally */
     }
 
   /* get the highest order ticks:  sequence and scroll are in chromosome coordinates but we
@@ -737,9 +484,6 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
 
     for(tick = 1,n_levels = 0; s != e;tick *= 10, s /= 10, e /= 10, n_levels++)
       {
-#if SCALE_DEBUG
-        debug("units: %d %d = %d/%d\n", s, e, tick, n_levels);
-#endif
         continue;
       }
     tick /= 10;
@@ -754,29 +498,13 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
 
 
   tick_max = tick_inc * (n_levels - n_hide);        /* max tick width */
-#if SCALE_DEBUG
-  debug("hide = %d\n", n_hide);
-#endif
 
   /* choose units */
   base = 1;
-#if SCALE_DEBUG
-  digits = 1;
-#endif
-  for(i = 1;base <= tick && i < 5;i++,base *= 1000
-#if SCALE_DEBUG
-        , digits += 2
-#endif
-      )
+  for(i = 1;base <= tick && i < 5;i++,base *= 1000)
     continue;
   unit = units[--i];
   base /= 1000;
-
-#if SCALE_DEBUG
-  digits -= 2;
-  debug("levels, hide = %d %d %d %d (%s)\n", n_levels,n_hide, base, digits, unit);
-#endif
-
   /* work out space needed for labels */
 
   for(n_text_hide = n_levels, gap = n_pixels * tick / scroll_len ;
@@ -811,24 +539,12 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
 
     foo_canvas_item_request_update(foo);
   }
-#if SCALE_DEBUG
-  printf("text width: %.1f %.1f %d %d %s\n",font_width, text_max, i, base, unit);
-  printf("tick width: %.1f %.1f\n",tick_max, scale_width);
-#endif
-
 
   /* do we assume there are enough pixels for the highest order ticks?
    * no: if they shrink the window so that you can't read it then don't display
    */
 
   gap = (int) (((double) n_pixels) * tick / scroll_len );        /* (double) or else would get overflow on big sequences */
-
-#if SCALE_DEBUG
-  debug("scale bar: %d bases (%d-%d) @(%d,%d)  tick = %d, levels= %d,%d, %d pixels font %d, zoom %f, rev %d\n",
-        seq_len, seq_start, seq_end,  scroll_start, scroll_end,
-        tick, n_levels,n_hide, n_pixels, text_height, zoom_factor, revcomped);
-#endif
-
 
   /* we need a lot of levels to cope with large sequences zoomed in a lot */
   /* to get down to single base level */
@@ -837,7 +553,6 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
       if(!gap)
         break;
 
-      //debug("level %d gap = %d, tick = %d, base = %d, digits = %d\n",level,gap,tick,base,digits);
       if(revcomped)
         {
           if(zoomed)
@@ -866,9 +581,7 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
               tick_end =  seq_len;
             }
         }
-#if SCALE_DEBUG
-      debug("tick start,end = %d %d\n",tick_start, tick_end);
-#endif
+
       for(tick_coord = tick_start; tick_coord <= tick_end ;tick_coord += tick)
         {
           int slice_coord = tick_coord;
@@ -897,9 +610,7 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
 
                   label[0] = 0;
                   canvas_coord = (double) draw_at;
-#if SCALE_DEBUG
-                  if(top) debug("coord: %.1f %d (%d,%d) = %d\n", canvas_coord, digit, seq_start,seq_end, tick_coord);
-#endif
+
                   tick_width = tick_inc * (level - n_hide);
                   colour = &black;
                   if(nudge)
@@ -920,19 +631,13 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
 
                   if((slice_coord && gap > text_height * 2))
                     {
-                      //                                              FooCanvasItem *item = NULL;
-                      //                                                double x = 0.0;
                       int num,frac;
                       char *sign = "";
                       double offset = revcomped ? -0.5 : 0.5;
                       ZMapWindowCanvasGraphics gfx;
 
                       num = slice_coord / base;
-                      //                                                if(num < 0)
-                      //                                                        num = -num;
                       frac = slice_coord % base;
-                      //                                                if(frac < 0)
-                      //                                                        frac = -frac;
                       if(revcomped)
                         sign = "-";
 
@@ -949,12 +654,11 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
                           for(digits = 1; f < base ; f *= 10)
                             digits++;
 
-                          /* gb10: the original printf which treats the fraction 
+                          /* gb10: the original printf which treats the fraction
                            * separately doesn't always work (RT333321) so I've
                            * changed it to use a decimal instead. Not sure if there
                            * are drawbacks with this that the original code intended
                            * to avoid... */
-                          //p = label + sprintf(label,"%s%d.%0*d",sign,num,digits,frac);
                           float val = (float)slice_coord / (float)base;
                           p = label + sprintf(label,"%s%.*f",sign, digits, val);
 
@@ -975,10 +679,6 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
                                                             text_max, canvas_coord + offset + 1,
                                                             NULL, &black, g_strdup(label));
                     }
-
-#if SCALE_DEBUG
-                  if(top) debug("tick @ %d %f (%d, %d) level %d: %s\n",tick_coord,canvas_coord,base,tick,level,label);
-#endif
                 }
             }
         }
@@ -1008,19 +708,13 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
                                           scale_width, canvas_coord,
                                           NULL, &black, NULL);
         }
-#if SCALE_DEBUG
-      else
-        debug("lines start at %.1f\n",canvas_coord);
-#endif
+
       first = 0;
       prev = canvas_coord;
 
       if(tick_coord >= scroll_end + 1)
         break;
     }
-#if SCALE_DEBUG
-  debug("lines stop at %.1f (%d %d)\n",canvas_coord, tick_coord, scroll_end);
-#endif
 
   return scale_width;
 }

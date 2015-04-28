@@ -43,24 +43,13 @@ typedef struct
 } ZMapFeatureStr2EnumStruct, *ZMapFeatureStr2Enum ;
 
 
-#define zmapFeatureSwop(TYPE, FIRST, SECOND)   \
-  { TYPE tmp = (FIRST) ; (FIRST) = (SECOND) ; (SECOND) = tmp ; }
-
-
-#define zmapFeatureInvert(COORD, SEQ_START, SEQ_END)	\
-  (COORD) = (SEQ_END) - (COORD) + 1
-
-
-#define zmapFeatureRevComp(TYPE, SEQ_START, SEQ_END, COORD_1, COORD_2)  \
-  { \
-    zmapFeatureSwop(TYPE, COORD_1, COORD_2) ;              \
-    zmapFeatureInvert(COORD_1, SEQ_START, SEQ_END) ;       \
-    zmapFeatureInvert(COORD_2, SEQ_START, SEQ_END) ;       \
-  }
-
 
 #define zmapFeature2HashKey(FEATURE_ANY)  \
   GINT_TO_POINTER((FEATURE_ANY)->unique_id)
+
+
+void zmapFeatureRevComp(const int seq_start, const int seq_end, int *coord1, int *coord2) ;
+void zmapFeatureInvert(int *coord, const int seq_start, const int seq_end) ;
 
 void zmapPrintFeatureContext(ZMapFeatureContext context) ;
 gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_out) ;

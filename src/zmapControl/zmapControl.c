@@ -766,10 +766,8 @@ void zmapControlResetCB(ZMap zmap)
   if (zmap->state == ZMAP_VIEWS)
     {
       ZMapView curr_view ;
-      ZMapViewState view_state ;
 
       curr_view = zMapViewGetView(zmap->focus_viewwindow) ;
-      view_state = zMapViewGetStatus(curr_view) ;
 
       /* for now we are just doing the current view but this will need to change to allow a kind
        * of global load of all views if there is no current selected view, or perhaps be an error

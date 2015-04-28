@@ -335,14 +335,14 @@ void filterSetHighlight(ZMap zmap)
 void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
 {
   ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
-  gboolean filter, general, revcomp,  unsplit, unlock, stop, reload, frame3, dna, back ;
+  gboolean general, revcomp,  unsplit, unlock, stop, reload, frame3, dna, back ;
   ZMapView view = NULL ;
   ZMapWindow window = NULL ;
   ZMapViewState view_state ;
 
   zMapReturnIfFail(zmap || zmap->focus_viewwindow) ; 
 
-  filter = general = revcomp =  unsplit = unlock = stop = reload = frame3 = dna = back = FALSE ;
+  general = revcomp =  unsplit = unlock = stop = reload = frame3 = dna = back = FALSE ;
 
   switch(zmap->state)
     {

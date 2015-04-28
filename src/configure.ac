@@ -20,6 +20,12 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 
+# Check if we have mysql
+AX_LIB_MYSQL()
+
+# Only enable ensembl if we have mysql available
+AM_CONDITIONAL([USE_ENSEMBL], [ test -n "$MYSQL_VERSION" ])
+
 # Check if this is a Git repository and, if so, use output
 # of git describe abbreviated to just tag which for us is the version string.
 # otherwise use PACKAGE_VERSION which will include info about the current
@@ -428,6 +434,7 @@ zmapServer/acedb/Makefile
 zmapServer/das/Makefile
 zmapServer/pipe/Makefile
 zmapServer/file/Makefile
+zmapServer/ensembl/Makefile
 zmapThreads/Makefile
 zmapUtils/Makefile
 zmapUtils/tests/Makefile
@@ -509,6 +516,12 @@ echo \
      install   - build and install everything
      <program> - build specific program
 "
+
+if test -z "$MYSQL_VERSION"
+then
+  echo " Warning: MySql is not installed; Ensembl server will be disabled"
+  echo
+fi
 
 echo "---------------------------------------------------------------------
 "

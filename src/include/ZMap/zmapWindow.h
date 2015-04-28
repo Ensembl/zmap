@@ -714,6 +714,8 @@ gboolean zMapWindowExportContext(ZMapWindow window, GError **error) ;
 
 void zMapWindowColumnHide(ZMapWindow window, GQuark column_id) ;
 void zMapWindowColumnShow(ZMapWindow window, GQuark column_id) ;
+double zMapWindowGetDisplayOrigin(ZMapWindow window) ;
+void zMapWindowSetDisplayOrigin(ZMapWindow window, double origin) ;
 
 #endif /* !ZMAP_WINDOW_H */
 

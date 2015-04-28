@@ -142,7 +142,7 @@ typedef struct ZMapWindowFocusItemStructType
 
 
 
-/* 
+/*
  * ok...this is messed up...all the window command stuff needs sorting out.....some commands
  * need to be exposed...others not.....sigh....
  */
@@ -850,6 +850,7 @@ typedef struct ZMapWindowStructType
   /* I'm trying these out as using the sequence start/end is not correct for window stuff. */
   double min_coord ;					    /* min/max canvas coords */
   double max_coord ;
+  double display_origin ;   /* set in chromosome coordinates */
 
   double align_gap ;					    /* horizontal gap between alignments. */
   double column_gap ;					    /* horizontal gap between columns. */
@@ -1640,13 +1641,11 @@ void zmapWindowFeatureGetSetTxt(ZMapFeature feature, char **set_name_out, char *
 void zmapWindowFeatureGetSourceTxt(ZMapFeature feature, char **source_name_out, char **source_description_out) ;
 char *zmapWindowFeatureDescription(ZMapFeature feature) ;
 
-char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gboolean cds_only);
-/*
-void zmapWindowzoomControlClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
-*/
+char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, ZMapSequenceType sequence_type,
+                                       gboolean spliced, gboolean cds_only);
 void zmapWindowDebugWindowCopy(ZMapWindow window);
 void zmapWindowGetBorderSize(ZMapWindow window, double *border);
-/* End of zmapWindowZoomControl.c functions */
+
 
 double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window, FooCanvasGroup *group,
 			      int scroll_start, int scroll_end,

@@ -344,9 +344,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   {
     /* Check locale setting, vital for message handling, text parsing and much else. */
     char *default_locale = "POSIX";
-    char *locale_in_use, *user_req_locale, *new_locale;
+    char *user_req_locale, *new_locale;
 
-    locale_in_use = setlocale(LC_ALL, NULL);
+    setlocale(LC_ALL, NULL);
 
     if (!(user_req_locale = app_context->locale))
       user_req_locale = app_context->locale = g_strdup(default_locale);
@@ -595,13 +595,12 @@ void zmapAppExit(ZMapAppContext app_context)
 
 void zmapAppPingStart(ZMapAppContext app_context)
 {
-  guint timeout_func_id ;
   int interval = app_context->ping_timeout * 1000 ;    /* glib needs time in milliseconds. */
 
   app_context->stop_pinging = FALSE ;
 
   /* try setting a timer to ping periodically.... */
-  timeout_func_id = g_timeout_add(interval, pingHandler, (gpointer)app_context) ;
+  g_timeout_add(interval, pingHandler, (gpointer)app_context) ;
 
   return ;
 }
@@ -816,7 +815,6 @@ static void topLevelDestroy(ZMapAppContext app_context)
 /* Signal all views to die (including their widgets). */
 static void killZMaps(ZMapAppContext app_context)
 {
-  guint timeout_func_id ;
   int interval = app_context->exit_timeout * 1000 ;    /* glib needs time in milliseconds. */
 
   consoleLogMsg(TRUE, EXIT_FORMAT, "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
@@ -827,7 +825,7 @@ static void killZMaps(ZMapAppContext app_context)
                      GTK_JUSTIFY_CENTER, 2, FALSE) ;
 
   /* time out func makes sure that we exit if threads fail to report back. */
-  timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
+  g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
 
   /* Tell all our zmaps to die, they will tell all their threads to die, once they
    * are all gone we will be called back to exit. */

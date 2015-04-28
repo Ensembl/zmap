@@ -970,11 +970,9 @@ static void checkListName(gpointer data, gpointer user_data)
 {
   CheckSetList check_list = (CheckSetList)user_data ;
   GList *style_item ;
-  ZMapFeatureTypeStyle style ;
 
   if ((style_item = g_list_find_custom(*(check_list->styles), data, compareNameToStyle)))
     {
-      style = (ZMapFeatureTypeStyle)(style_item->data) ;
       check_list->any_style_found = TRUE ;
     }
   else

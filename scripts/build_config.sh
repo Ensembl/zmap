@@ -210,7 +210,7 @@ ZMAP_WEBSITE_TARGET=$WEBROOT/Software/analysis/ZMap
 NEED_LIBTOOLIZE=yes
 
 
-ZMAP_BOOTSTRAP_SCRIPT='autogen.sh'
+ZMAP_BOOTSTRAP_SCRIPT='autogen.sh -n'
 ZMAP_RUNCONFIG_SCRIPT='runconfig'
 
 # runconfig variables

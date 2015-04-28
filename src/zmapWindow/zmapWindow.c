@@ -477,6 +477,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
   new_window->canvas_maxwin_size = original_window->canvas_maxwin_size ;
   new_window->min_coord = original_window->min_coord ;
   new_window->max_coord = original_window->max_coord ;
+  new_window->display_origin = new_window->display_origin ;
 
   new_window->seqLength = original_window->seqLength ;
 
@@ -1074,6 +1075,25 @@ void zMapWindowZoomToMin(ZMapWindow window)
   zmapWindowZoomControlHandleResize(window) ;
 
   return ;
+}
+
+/*
+ * These two functions return and set the value for the origin
+ * of the user display coordinates, and is defined in terms
+ * of the internal ZMap chromosome coordinates.
+ */
+double zMapWindowGetDisplayOrigin(ZMapWindow window)
+{
+  double result = 0.0 ;
+  zMapReturnValIfFail(window, result ) ;
+  result = window->display_origin ;
+  return result ;
+}
+
+void zMapWindowSetDisplayOrigin(ZMapWindow window, double origin)
+{
+  zMapReturnIfFail(window) ;
+  window->display_origin = origin ;
 }
 
 
@@ -2118,9 +2138,12 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     }
 
   /* this puts the DNA in the clipbaord */
-  zMapGUISetClipboard(window->toplevel, GDK_SELECTION_PRIMARY, select.secondary_text) ;
+  if (select.secondary_text)
+    {
+      zMapGUISetClipboard(window->toplevel, GDK_SELECTION_PRIMARY, select.secondary_text) ;
 
-  g_free(select.secondary_text) ;
+      g_free(select.secondary_text) ;
+    }
 
   if(feature_list)
     g_list_free(feature_list);
@@ -2204,10 +2227,6 @@ static void panedResizeCB(gpointer data, gpointer userdata)
   zMapReturnIfFail(window) ;
 
   current_position = gtk_paned_get_position(GTK_PANED( window->pane ));
-
-#if RDS_DONT_INCLUDE
-  printf(" |-- panedResizeCB: got current of %d want to set to %d\n", current_position, *new_position);
-#endif /* RDS_DONT_INCLUDE */
 
   gtk_paned_set_position(GTK_PANED( window->pane ),
                          *new_position);
@@ -2321,6 +2340,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->canvas_maxwin_size = ZMAP_WINDOW_MAX_WINDOW ;
 
   window->min_coord = window->max_coord = 0.0 ;
+  window->display_origin = 0.0 ;
 
   /* Some things for window can be specified in the configuration file. */
   getConfiguration(window) ;
@@ -2404,23 +2424,24 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
     }
 
 
+  /*
+   * This is setting up the scale bar; it appears to need the
+   * parent window.
+   */
+  ZMapWindowScaleCanvasCallbackListStruct callbacks = {NULL};
+  GtkAdjustment *vadjust = NULL;
 
-  {
-    ZMapWindowScaleCanvasCallbackListStruct callbacks = {NULL};
-    GtkAdjustment *vadjust = NULL;
+  vadjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
+  callbacks.paneResize = panedResizeCB;
+  callbacks.user_data  = (gpointer)window;
 
-    vadjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
-    callbacks.paneResize = panedResizeCB;
-    callbacks.user_data  = (gpointer)window;
-
-    window->ruler = zmapWindowScaleCanvasCreate(&callbacks);
-    zmapWindowScaleCanvasInit(window->ruler, window->pane, vadjust);
-  }
+  window->ruler = zmapWindowScaleCanvasCreate(&callbacks);
+  zmapWindowScaleCanvasInit(window->ruler, window->pane, vadjust);
 
   /* Attach callback to monitor size changes in canvas, this works but bizarrely
    * "configure-event" callbacks which are the pucker size change event are never called. */
   g_signal_connect(GTK_OBJECT(window->canvas), "size-allocate",
-   GTK_SIGNAL_FUNC(canvasSizeAllocateCB), (gpointer)window) ;
+                   GTK_SIGNAL_FUNC(canvasSizeAllocateCB), (gpointer)window) ;
 
 
   /* NONE OF THIS SHOULD BE HARD CODED constants it should be based on window size etc... */
@@ -3264,14 +3285,27 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
         }
 
 
-      /* Reread the data in any feature list windows we might have. */
-      for (i = 0 ; i < window->featureListWindows->len ; i++)
+      /*
+       * Reread the data in any feature list windows we might have.
+       * (sm23) The function zmapWindowListWindowReread() does not
+       * work; indeed it gives a segmentation fault when executed
+       * with a search result window open. I've disabled this for now.
+       * Instead, the featureListWindows are destroyed, since they
+       * no longer refer to valid foo canvas items.
+       */
+      if (window->featureListWindows)
         {
-          GtkWidget *widget ;
+          for (i = 0 ; i < window->featureListWindows->len ; i++)
+            {
+              GtkWidget *widget = NULL ;
 
-          widget = g_ptr_array_index(window->featureListWindows, i) ;
+              widget = g_ptr_array_index(window->featureListWindows, i) ;
 
-          zmapWindowListWindowReread(widget) ;
+              /* zmapWindowListWindowReread(widget) ;*/
+              gtk_widget_destroy(GTK_WIDGET(widget));
+            }
+          /* destroy the featureListWindow objects (but not the array object itself) */
+          g_ptr_array_set_size(window->featureListWindows, 0) ;
         }
 
 
@@ -3822,29 +3856,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
                     if(window->sequence)
                       {
-                        /*! \todo #warning need a flag here to say chromosome coords have been set */
-                        if(window->sequence->start == 1)
-                          /* not using chromo coords internally?? */
-                          {
-                            int start;
-                            char *p;
-
-                            /*! \todo #warning move this to seq req/load and set sequence coords, then remove from here */
-                            /* using zmap coords internally */
-                            for(p = window->sequence->sequence; *p && *p != '_'; p++)
-                              continue;
-                            if(p) p++;
-                            start = atoi(p);
-
-                            if(start)
-                              {
-                                if(bp < 0)
-                                  chr_bp = start - bp + 1;
-                                else
-                                  chr_bp = start + bp - 1;
-                              }
-                          }
-                        if(bp != chr_bp)
+                        if(abs(bp) != chr_bp)
                           tip = g_strdup_printf("%d bp (%d)", bp, chr_bp);
                         else
                           tip = g_strdup_printf("%d bp", bp);
@@ -5631,7 +5643,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         if (!(focus_column = zmapWindowFocusGetHotColumn(window->focus)))
           {
             /* We can't do anything if there is no highlight feature. */
-            
+
             zMapMessage("%s", "No features selected.") ;
           }
         else
@@ -5655,7 +5667,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                     filter_data.target_column = window->filter_feature_set ;
 
                     (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
-                
+
                     window->filter_on = FALSE ;
                   }
                 else
@@ -5713,9 +5725,9 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                             filter_data.filter = window->filter_filter ;
                             filter_data.action = window->filter_action ;
                             filter_data.target_type = window->filter_target ;
-                            
 
-                            
+
+
 
                             filter_data.do_filter = TRUE ;
                             filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
@@ -5875,6 +5887,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       }
       break;
 
+      /* N/n see GDK_p for combined code. */
+
     case GDK_o:
     case GDK_O:
       {
@@ -5892,9 +5906,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         break ;
       }
 
+    case GDK_n:
+    case GDK_N:
     case GDK_p:
     case GDK_P:
-      {
+    {
         /* Use the current focus item and display translation of it. */
         FooCanvasItem *focus_item ;
 
@@ -5903,27 +5919,33 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
           {
             ZMapFeatureAny context;
             ZMapFeature feature ;
-            char *peptide_fasta;
+            char *fasta;
+            ZMapSequenceType sequence_type ;
+
+            if (key_event->keyval == GDK_n || key_event->keyval == GDK_N)
+              sequence_type = ZMAPSEQUENCE_DNA ;
+            else
+              sequence_type = ZMAPSEQUENCE_PEPTIDE ;
 
             feature = zmapWindowItemGetFeature(focus_item);
             context = zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
                                                 ZMAPFEATURE_STRUCT_CONTEXT);
 
-            if ((peptide_fasta = zmapWindowFeatureTranscriptFASTA(feature, TRUE, TRUE)))
+            if ((fasta = zmapWindowFeatureTranscriptFASTA(feature, sequence_type, TRUE, TRUE)))
               {
                 char *seq_name = NULL, *gene_name = NULL, *title;
 
-                seq_name  = (char *)g_quark_to_string(context->original_id);
-                gene_name = (char *)g_quark_to_string(feature->original_id);
+                seq_name  = (char *)g_quark_to_string(context->original_id) ;
+                gene_name = (char *)g_quark_to_string(feature->original_id) ;
 
                 title = g_strdup_printf("ZMap - %s%s%s",
                                         seq_name,
                                         gene_name ? ":" : "",
                                         gene_name ? gene_name : "");
-                                        zMapGUIShowText(title, peptide_fasta, FALSE);
+                                        zMapGUIShowText(title, fasta, FALSE);
 
                                         g_free(title);
-                                        g_free(peptide_fasta);
+                                        g_free(fasta);
               }
 
           }
@@ -5970,7 +5992,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 
                 (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
-                
+
                 window->splice_highlight_on = FALSE ;
               }
           }
@@ -6019,7 +6041,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                     filter_data.do_filter = TRUE ;
                     filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
                     filter_data.filter_features = highlight_features ;
-                
+
                     (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
 
                     if (filter_data.result)

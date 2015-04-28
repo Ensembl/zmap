@@ -239,6 +239,11 @@ if [ "x$gen_checkout_script" != "x" ]; then
         fi
 
         git clone -b $GBTOOLS_BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo
+
+        # Do a git-checkout on the gbtools directory to restore the original placeholder files
+        # i.e. README and .gitignore        
+        git checkout $gbtools_repo
+
         cd ../..
     fi
 

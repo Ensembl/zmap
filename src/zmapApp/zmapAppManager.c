@@ -583,7 +583,6 @@ static void destroyedCB(ZMap zmap, ZMapView view, void *cb_data)
 static void quitReqCB(ZMap zmap, void *cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
-  ZMapManager zmaps = app_context->zmap_manager ;
 
   zmapAppQuitReq(app_context) ;
 
@@ -781,7 +780,6 @@ static ZMapManagerAddResult addNewView(ZMapManager zmaps,
   ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
   ZMap zmap ;
   ZMapView view = NULL ;
-  ZMapWindow window = NULL ;
   ZMapAppContext app_context = (ZMapAppContext)(zmaps->gui_data) ;
 
 
@@ -829,8 +827,6 @@ static ZMapManagerAddResult addNewView(ZMapManager zmaps,
                       && (view = zMapViewGetView(view_window))
               && zMapConnectView(zmap, view, NULL))
             {
-              window = zMapViewGetWindow(view_window) ;
-
               result = ZMAPMANAGER_ADD_OK ;
             }
           else
