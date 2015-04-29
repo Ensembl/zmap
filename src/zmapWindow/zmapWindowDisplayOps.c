@@ -53,6 +53,7 @@ typedef struct FeatureCoordStructType
 
 
 static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle display_style,
+                                   gboolean use_mark, int mark_x, int mark_y,
                                    ZMapFeature feature,  ZMapFeatureSubPart sub_part, GArray *feature_coords) ;
 static void setUpFeatureOther(ZMapWindowDisplayStyle display_style, ZMapFeature feature, GArray *feature_coords) ;
 static void makeSelectionString(ZMapWindow window, ZMapWindowDisplayStyle display_style,
@@ -272,7 +273,21 @@ char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
 
   if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
-      setUpFeatureTranscript(revcomped, display_style, feature, NULL, feature_coords) ;
+      int mark_x = 0, mark_y = 0 ;
+      gboolean use_mark = FALSE ;
+
+      if (zmapWindowMarkIsSet(window->mark)
+          && zmapWindowMarkGetSequenceRange(window->mark, &mark_x, &mark_y))
+        {
+          if (mark_x && mark_y
+              && ((mark_x >= feature->x1 && mark_x <= feature->x2)
+                  || (mark_y >= feature->x1 && mark_y <= feature->x2)))
+          use_mark = TRUE ;
+        }
+
+      setUpFeatureTranscript(revcomped, display_style,
+                             use_mark, mark_x, mark_y,
+                             feature, NULL, feature_coords) ;
 
       makeSelectionString(window, display_style, text, feature_coords) ;
     }
@@ -321,48 +336,10 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
   /* If there are any focus items then make a selection string of their coords. */
   if ((selected = zmapWindowFocusGetFocusItems(window->focus)))
     {
-      gint length ;
+      /* Construction of the string is different according whether a single selection or
+       * multiple selections were made. */
 
-      length = g_list_length(selected) ;
-
-      if (length > 1)
-        {
-          display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
-        }
-      else
-        {
-          ZMapWindowFocusItem focus_item ;
-          ZMapFeature feature ;
-          ZMapFeatureSubPart sub_part = NULL ;
-
-          focus_item = (ZMapWindowFocusItem)selected->data ;
-
-          feature = focus_item->feature ;
-
-          if (focus_item->sub_part.subpart != ZMAPFEATURE_SUBPART_INVALID)
-            sub_part = &(focus_item->sub_part) ;
-
-          switch (feature->mode)
-            {
-            case ZMAPSTYLE_MODE_TRANSCRIPT:
-              {
-                if (sub_part)
-                  display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_SUBPART ;
-                else
-                  display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS ;
-
-                break ;
-              }
-            default:
-              {
-                display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
-
-                break ;
-              }
-            }
-        }
-
-      if (length == 1)
+      if (g_list_length(selected) == 1)
         {
           ZMapWindowFocusItem focus_item ;
           FooCanvasItem *item ;
@@ -371,9 +348,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
           char *name ;
 
           focus_item = (ZMapWindowFocusItem)selected->data ;
-
           item = FOO_CANVAS_ITEM(focus_item->item) ;
-
           feature = focus_item->feature ;
 
           if (focus_item->sub_part.subpart != ZMAPFEATURE_SUBPART_INVALID)
@@ -383,12 +358,35 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
 
           if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
             {
-              setUpFeatureTranscript(revcomped, &display_style, feature, sub_part, feature_coords) ;
+              int mark_x = 0, mark_y = 0 ;
+              gboolean use_mark = FALSE ;
+
+              if (sub_part)
+                display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_SUBPART ;
+              else
+                display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS ;
+
+              /* If the mark is set then any exons not wholly inside the mark are not added
+               * to the selection text. */
+              if (zmapWindowMarkIsSet(window->mark)
+                  && zmapWindowMarkGetSequenceRange(window->mark, &mark_x, &mark_y))
+                {
+                  if (mark_x && mark_y
+                      && ((mark_x >= feature->x1 && mark_x <= feature->x2)
+                          || (mark_y >= feature->x1 && mark_y <= feature->x2)))
+                    use_mark = TRUE ;
+                }
+
+              setUpFeatureTranscript(revcomped, &display_style,
+                                     use_mark, mark_x, mark_y,
+                                     feature, sub_part, feature_coords) ;
 
               makeSelectionString(window, &display_style, text, feature_coords) ;
             }
           else
             {
+              display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
+
               setUpFeatureOther(&display_style, feature, feature_coords) ;
 
               makeSelectionString(window, &display_style, text, feature_coords) ;
@@ -404,6 +402,10 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
               ZMapFeatureSubPart sub_part = NULL ;
               char *name ;
 
+              /* Not supporting mark for multiple features at the moment.... */
+              int mark_x = 0, mark_y = 0 ;
+              gboolean use_mark = FALSE ;
+
               focus_item = (ZMapWindowFocusItem)selected->data ;
 
               item = FOO_CANVAS_ITEM(focus_item->item) ;
@@ -415,7 +417,24 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
 
               name = (char *)g_quark_to_string(feature->original_id) ;
 
-              setUpFeatureOther(&display_style, feature, feature_coords) ;
+              /* For transcript subparts put the subpart in the selection, not the whole transcript. */
+              if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+                {
+                  if (sub_part)
+                    display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_SUBPART ;
+                  else
+                    display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
+
+                  setUpFeatureTranscript(revcomped, &display_style,
+                                         use_mark, mark_x, mark_y,
+                                         feature, sub_part, feature_coords) ;
+                }
+              else
+                {
+                  display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
+
+                  setUpFeatureOther(&display_style, feature, feature_coords) ;
+                }
 
               selected = selected->next ;
             }
@@ -453,6 +472,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
 
 /* Return an array of feature coords, name, start/end, for the given transcript feature. */
 static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle display_style,
+                                   gboolean use_mark, int mark_x, int mark_y,
                                    ZMapFeature feature,  ZMapFeatureSubPart sub_part,
                                    GArray *feature_coords)
 {
@@ -506,12 +526,16 @@ static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle di
 
             span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, index) ;
 
-            feature_coord.name = name ;
-            feature_coord.start = span->x1 ;
-            feature_coord.end = span->x2 ;
-            feature_coord.length = (span->x2 - span->x1 + 1) ;
+            if (!use_mark 
+                || (span->x1 > mark_x && span->x2 < mark_y))
+              {
+                feature_coord.name = name ;
+                feature_coord.start = span->x1 ;
+                feature_coord.end = span->x2 ;
+                feature_coord.length = (span->x2 - span->x1 + 1) ;
 
-            feature_coords = g_array_append_val(feature_coords, feature_coord) ;
+                feature_coords = g_array_append_val(feature_coords, feature_coord) ;
+              }
           }
 
         break ;
