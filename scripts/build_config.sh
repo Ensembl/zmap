@@ -118,8 +118,15 @@ ZMAP_MASTER_NOTIFY_MAIL=annosoft@sanger.ac.uk
 
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 
-# tviewsrv and lucid-dev64 are now ubuntu....
-ZMAP_BUILD_MACHINES="tviewsrv mac106229i lucid-dev64 t119-win-build"
+# This is the full list of architectures from /software/noarch/architectures
+# and the machines we build on:
+#   linux-i386       - tviewsrv
+#   linux-ia64       - not supported
+#   linux-x86_64     - lucid-dev64
+#   precise-x86_64   - precise-dev64
+#   macosx-10-i386   - mac106229i
+#   trusty-x86_64    - precise-dev64
+ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64 precise-dev64 mac106229i t119-win-build"
 
 
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \

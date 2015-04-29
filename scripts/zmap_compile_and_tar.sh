@@ -188,7 +188,16 @@ then
           ;;
   
         "x86_64")
-          arch_subdir="linux-x86_64"
+          lsb_release=`lsb_release -sc`
+          case $lsb_release in
+            "lucid")
+                  # for historical reasons, lucid builds are named 'linux'
+                  arch_subdir="linux-x86_64"
+                  ;;
+              *)
+                  # other builds are named after the architecture
+                  arch_subdir="$lsb_release-x86_64"
+                  ;;
           ;;
   
         "i686")
@@ -240,14 +249,13 @@ then
     ssh $dev_machine "$copy_script $server_dir $project_area/bin"
     wait
   
-    # We don't currently build on other 64 bit ubuntu because the lucid build works there.
-    # This means we need to copy the linux build to these (note that we only have 64-bit 
-    # precise and trusty machines).
-    if [ $arch_subdir == "linux-x86_64" ]
+    # We don't currently build on trusty 64-bit ubuntu because the precise build works there.
+    # This means we need to copy the precise build to the trusty destination on /software.
+    if [ $arch_subdir == "precise-x86_64" ]
     then
-      other_64_subdirs="precise-x86_64 trusty-x86_64"
+      copy_subdirs="trusty-x86_64"
 
-      for dest_subdir in $other_64_subdirs; do
+      for dest_subdir in $copy_subdirs; do
         dest_project_area=$software_root_dir/$dest_subdir/$annotools_subdir$build_subdir
 
         zmap_message_out "Running: ssh $dev_machine $copy_script $source_dir $dest_project_area"
