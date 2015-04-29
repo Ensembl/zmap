@@ -139,7 +139,8 @@ if [ "x$TAR_TARGET" != "x" ]; then
 
     zmap_message_out $TAR_TARGET_HOST $TAR_TARGET_PATH
     TAR_TARGET_CVS=$CVS_MODULE.$(hostname -s)
-    UNAME_DIR=$(uname -ms | sed -e 's/ /_/g')
+    config_set_ZMAP_ARCH `hostname -s`
+    UNAME_DIR=$ZMAP_ARCH
 
     [ "x$TAR_TARGET_CVS"  != "x" ] || zmap_message_exit "No CVS set."
 
@@ -178,45 +179,8 @@ then
   arch_subdir=""                        # the subdirectory for the current machine architecture
   annotools_subdir="annotools"          # the subdirectory for annotools
 
-  opsys=`uname -s`
-  
-  case $opsys in
-    "Linux")
-      case `uname -m` in
-        "ia64")
-          arch_subdir="linux-ia64"
-          ;;
-  
-        "x86_64")
-          lsb_release=`lsb_release -sc`
-          case $lsb_release in
-            "lucid")
-                  # for historical reasons, lucid builds are named 'linux'
-                  arch_subdir="linux-x86_64"
-                  ;;
-              *)
-                  # other builds are named after the architecture
-                  arch_subdir="$lsb_release-x86_64"
-                  ;;
-          esac
-          ;;
-  
-        "i686")
-          arch_subdir="linux-i386"
-          ;;
-  
-        *)
-          ;;
-      esac
-      ;;
-  
-    "Darwin")
-      arch_subdir="macosx-10-i386"
-      ;;
-  
-    *)
-      ;;
-  esac
+  config_set_PROJECT_ARCH `hostname -s`
+  arch_subdir=$PROJECT_ARCH
   
   if [[ $arch_subdir != "" ]]
   then

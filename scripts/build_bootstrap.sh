@@ -701,7 +701,8 @@ fi
 # Looks like success... Checking versions match (non-fatal errors)
 if [ -d $RELEASE_LOCATION ]; then
 
-    zmap_uname_location=$RELEASE_LOCATION/$(uname -ms | sed -e "s/ /_/g")/bin/zmap
+    config_set_ZMAP_ARCH `hostname -s`
+    zmap_uname_location=$RELEASE_LOCATION/$ZMAP_ARCH/bin/zmap
 
     if [ -x $zmap_uname_location ]; then
 	zmap_message_out "Checking zmap binary version..."

@@ -70,6 +70,109 @@ function _config_set_ZMAP_HOST_TYPE
 	    ;;
     esac
 }
+# Usage: config_set_ZMAP_ARCH <machine_name>
+# Sets ZMAP_ARCH for the zmap naming conventions for architecture for the given machine 
+# e.g. Linux-i686 (lucid 32-bit), Linux_x86_64 (lucid 64-bit), precise_x86_64 (precise 64-bit) etc.
+function config_set_ZMAP_ARCH
+{
+    local opsys arch lsb_release separator host
+    host=$1
+    opsys=`ssh $host uname -s`
+    arch=`ssh $host uname -m`
+    separator="_"
+
+    case $opsys in
+        "Linux")
+            lsb_release=`ssh $host lsb_release -cs`
+            case $lsb_release in
+                "lucid")
+                    ZMAP_ARCH="Linux"$separator$arch
+                    ;;
+                *)
+                    ZMAP_ARCH=$opsys$separator$arch
+                    ;;
+            esac
+            ;;
+        *)
+            ZMAP_ARCH=$opsys$separator$arch
+            ;;
+    esac
+}
+# Usage: config_set_SEQTOOLS_ARCH <machine_name>
+# Sets SEQTOOLS_ARCH for the seqtools naming conventions for architecture for the given machine 
+# e.g. Linux-i686 (lucid 32-bit), Linux_x86_64 (all linux 64-bit)
+function config_set_SEQTOOLS_ARCH
+{
+    local opsys arch lsb_release separator host
+    host=$1
+    opsys=`ssh $host uname -s`
+    arch=`ssh $host uname -m`
+    separator="-"
+
+    case $opsys in
+        "Linux")
+            lsb_release=`ssh $host lsb_release -cs`
+            case $lsb_release in
+                "lucid")
+                    ZMAP_ARCH="Linux"$separator$arch
+                    ;;
+                *)
+                    ZMAP_ARCH=$opsys$separator$arch
+                    ;;
+            esac
+            ;;
+        *)
+            ZMAP_ARCH=$opsys$separator$arch
+            ;;
+    esac
+}
+# Usage: config_set_PROJECT_ARCH <machine_name>
+# Sets PROJECT_ARCH for the project-software naming convention for architectures 
+# e.g. linux-i386 (lucid 32-bit), linux-x86_64 (lucid 64-bit), precise-x86_64 (precise 64-bit) etc.
+# Sets the result to empty string if there is no appropriate destination on /software.
+function config_set_PROJECT_ARCH
+{
+    local opsys arch lsb_release separator host
+    host=$1
+    opsys=`ssh $host uname -s`
+    arch=`ssh $host uname -m`
+    separator="-"
+
+    case $opsys in
+        "Linux")
+            case $arch in
+                "ia64")
+                    PROJECT_ARCH="linux"$separator"ia64"
+                    ;;
+
+                "i686")
+                    PROJECT_ARCH="linux"$separator"i386"
+                    ;;
+
+                "x86_64")
+                    lsb_release=`ssh $host lsb_release -cs`
+                    case $lsb_release in
+                        "lucid")
+                            PROJECT_ARCH="linux"$separator$arch
+                            ;;
+                        *)
+                            PROJECT_ARCH=$lsb_release$separator$arch
+                            ;;
+                    esac
+                    ;;
+            esac
+            ;;
+
+        "Darwin")
+            PROJECT_ARCH="macosx-10"$separator"i386"
+            ;;
+  
+        *)
+            # there is no project software for e.g. cygwin.
+            PROJECT_ARCH=""
+            ;;
+    esac
+}
 # Usage: _config_source_file <file>
 function _config_source_file
 {
