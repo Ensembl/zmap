@@ -143,7 +143,7 @@ typedef struct _zmapWindowFocusCacheStruct
 
 
 static void focusItemDestroy(ZMapWindowFocusItem list_item);
-static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
+static ZMapWindowFocusItem addUnique(ZMapWindowFocus focus,
                                       FooCanvasItem *item, ZMapFeature feature, ZMapFeatureSubPart sub_part,
                                       ZMapWindowFocusType type);
 static void freeFocusItems(ZMapWindowFocus focus, ZMapWindowFocusType type);
@@ -549,7 +549,7 @@ void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item,
 {
   if (item)  // in case we add GetHotItem() which could return NULL
     {
-      add_unique(focus, item, feature, sub_part, type) ;
+      addUnique(focus, item, feature, sub_part, type) ;
 
       if (!focus->hot_item && type == WINDOW_FOCUS_GROUP_FOCUS)
         zmapWindowFocusSetHotItem(focus, item, feature) ;
@@ -575,7 +575,7 @@ void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasIt
       foo = FOO_CANVAS_ITEM(id2c->item);
       if(hot == foo)
               hotfeature = (ZMapFeature) id2c->feature_any;
-      add_unique(focus, foo, (ZMapFeature)id2c->feature_any, NULL, type) ;
+      addUnique(focus, foo, (ZMapFeature)id2c->feature_any, NULL, type) ;
     }
 
   if (hot && !focus->hot_item && first && type == WINDOW_FOCUS_GROUP_FOCUS)
@@ -1129,29 +1129,31 @@ static void highlightCB(gpointer list_data, gpointer user_data)
 
 // add a struct to the list, no duplicates
 // return the list and a pointer to the struct
-static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
-                                      FooCanvasItem *item, ZMapFeature feature, ZMapFeatureSubPart sub_part,
-                                      ZMapWindowFocusType type)
+static ZMapWindowFocusItem addUnique(ZMapWindowFocus focus,
+                                     FooCanvasItem *item, ZMapFeature feature, ZMapFeatureSubPart sub_part,
+                                     ZMapWindowFocusType type)
 {
   GList *gl;
   ZMapWindowFocusItem list_item = NULL;
 
-  for(gl = focus->focus_item_set ; gl ; gl = gl->next)
+  for (gl = focus->focus_item_set ; gl ; gl = gl->next)
     {
       list_item = (ZMapWindowFocusItem) gl->data ;
 
-      if (list_item->item == item && list_item->feature == feature)
+      if (list_item->item == item && list_item->feature == feature
+          && ((sub_part && list_item->sub_part.start)
+              && sub_part->start == list_item->sub_part.start && sub_part->end == list_item->sub_part.end))
         break ;
     }
 
   if (!gl)     // didn't find it
     {
-      list_item = g_new0(ZMapWindowFocusItemStruct,1);
-      focus->focus_item_set = g_list_prepend(focus->focus_item_set,list_item);
+      list_item = g_new0(ZMapWindowFocusItemStruct,1) ;
+      focus->focus_item_set = g_list_prepend(focus->focus_item_set,list_item) ;
     }
 
   if(!feature)
-    feature = zMapWindowCanvasItemGetFeature(item);
+    feature = zMapWindowCanvasItemGetFeature(item) ;
 
   list_item->flags |= focus_group_mask[type] | (focus->cache_id << 16) ;
   list_item->item = item ;
