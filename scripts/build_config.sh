@@ -76,10 +76,18 @@ function _config_set_ZMAP_HOST_TYPE
 function config_set_ZMAP_ARCH
 {
     local opsys arch lsb_release separator host
+
     host=$1
-    opsys=`ssh $host uname -s`
-    arch=`ssh $host uname -m`
+    current_host=`hostname -s`
     separator="_"
+
+    if [ "$host" == "$current_host" ] ; then
+        opsys=`uname -s`
+        arch=`uname -m`
+    else
+        opsys=`ssh $host uname -s`
+        arch=`ssh $host uname -m`
+    fi
 
     case $opsys in
         "Linux")
@@ -104,10 +112,18 @@ function config_set_ZMAP_ARCH
 function config_set_SEQTOOLS_ARCH
 {
     local opsys arch lsb_release separator host
+
     host=$1
-    opsys=`ssh $host uname -s`
-    arch=`ssh $host uname -m`
+    current_host=`hostname -s`
     separator="-"
+
+    if [ "$host" == "$current_host" ] ; then
+        opsys=`uname -s`
+        arch=`uname -m`
+    else
+        opsys=`ssh $host uname -s`
+        arch=`ssh $host uname -m`
+    fi
 
     case $opsys in
         "Linux")
@@ -133,10 +149,18 @@ function config_set_SEQTOOLS_ARCH
 function config_set_PROJECT_ARCH
 {
     local opsys arch lsb_release separator host
+
     host=$1
-    opsys=`ssh $host uname -s`
-    arch=`ssh $host uname -m`
+    current_host=`hostname -s`
     separator="-"
+
+    if [ "$host" == "$current_host" ] ; then
+        opsys=`uname -s`
+        arch=`uname -m`
+    else
+        opsys=`ssh $host uname -s`
+        arch=`ssh $host uname -m`
+    fi
 
     case $opsys in
         "Linux")
