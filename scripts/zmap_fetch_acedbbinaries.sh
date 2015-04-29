@@ -311,7 +311,7 @@ fi
 suffix=''
 cygwin_pattern="*CYGWIN*"
 
-if [[ $hostarch == $cygwin_pattern ]]; then
+if [[ $SEQTOOLS_ARCH == $cygwin_pattern ]]; then
     suffix='.exe'
 fi
 
