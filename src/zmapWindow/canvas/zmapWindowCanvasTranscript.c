@@ -111,14 +111,6 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
   transcript = &feature->feature->feature.transcript;
   style = *feature->feature->style;
 
-
-
-  char *name, *set_name ;
-
-  name = g_quark_to_string(feature->feature->original_id) ;
-  set_name = g_quark_to_string(featureset->id) ;
-
-
   /* draw a box */
 
   /* colours are not defined for the CanvasFeatureSet
