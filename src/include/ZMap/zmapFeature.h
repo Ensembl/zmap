@@ -902,13 +902,13 @@ typedef enum
 typedef struct ZMapFeatureSubPartStructType
 {
   /* Parts common fields */
-  int start, end ;                                         /* start/end of subpart in sequence coords. */
+  int start, end ;                                          /* start/end of subpart in sequence coords. */
 
   /* subpart specific fields */
-  ZMapFeatureSubPartType subpart ;                         /* Exon, Intron etc. */
+  ZMapFeatureSubPartType subpart ;                          /* Exon, Intron etc. */
 
-  int index ;                                              /* Index number of intron/exon
-                                                              etc. starts at 1. */
+  int index ;                                               /* Index number of intron/exon
+                                                               etc. starts at 1. */
 
 } ZMapFeatureSubPartStruct, *ZMapFeatureSubPart ;
 
