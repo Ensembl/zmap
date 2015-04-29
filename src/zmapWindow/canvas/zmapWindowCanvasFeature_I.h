@@ -113,9 +113,7 @@ typedef struct _zmapWindowCanvasFeatureStruct
   zmapWindowCanvasFeatureType type ;
   double y1, y2;    	/* top, bottom of item (box or line) */
 
-
   ZMapFeature feature ;
-
 
   //  GList *from;		/* the list node that holds the feature */
   /* refer to comment above zmapWindowCanvasFeatureset.c/zMapWindowFeaturesetItemRemoveFeature() */
