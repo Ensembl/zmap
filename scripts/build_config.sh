@@ -114,15 +114,15 @@ function config_set_SEQTOOLS_ARCH
             lsb_release=`ssh $host lsb_release -cs`
             case $lsb_release in
                 "lucid")
-                    ZMAP_ARCH="Linux"$separator$arch
+                    SEQTOOLS_ARCH="Linux"$separator$arch
                     ;;
                 *)
-                    ZMAP_ARCH=$opsys$separator$arch
+                    SEQTOOLS_ARCH=$opsys$separator$arch
                     ;;
             esac
             ;;
         *)
-            ZMAP_ARCH=$opsys$separator$arch
+            SEQTOOLS_ARCH=$opsys$separator$arch
             ;;
     esac
 }
