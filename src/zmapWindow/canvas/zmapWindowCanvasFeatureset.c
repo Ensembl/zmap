@@ -863,16 +863,13 @@ void zmapWindowFeaturesetSetSubPartHighlight(ZMapWindowFeaturesetItem featureset
  * for normal faatures we only set the colour flags
  * for sequence  features we actually supply colours
  */
-void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
-				       ZMapFeature			feature,
-				       ZMapFeatureSubPart sub_feature,
-				       ZMapStyleColourType    colour_type,
-				       int colour_flags,
-				       GdkColor              *default_fill,
-				       GdkColor              *default_border)
+void zmapWindowFeaturesetItemSetColour(FooCanvasItem *interval,
+				       ZMapFeature feature, ZMapFeatureSubPart sub_feature,
+				       ZMapStyleColourType colour_type, int colour_flags,
+				       GdkColor *default_fill, GdkColor *default_border)
 {
   ZMapWindowFeaturesetItem fi = NULL ;
-  ZMapWindowCanvasFeature gs;
+  ZMapWindowCanvasFeature gs ;
 
   void (*func) (FooCanvasItem         *interval,
 		ZMapFeature			feature,
@@ -890,8 +887,8 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
 
   gs = findFeatureSubPart(fi, feature, sub_feature) ;
 
-  if(!gs)
-    return;
+  if (!gs)
+    return ;
 
   if(func)
     {
@@ -927,7 +924,7 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
       while(gs)
         {
           /* set the focus flags (on or off) */
-          /* zmapWindowFocus.c maintans these and we set/clear then all at once */
+          /* zmapWindowFocus.c maintains these and we set/clear then all at once */
           /* NOTE some way up the call stack in zmapWindowFocus.c add_unique()
            * colour flags has a window id set into it
            */
@@ -2105,10 +2102,13 @@ static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWi
 }
 
 
-
+/* This function currently finds the gs for a feature and then if it's a transcript feature
+ * looks for the gs that represents an exon.
+ * 
+ * Note the subfeature passed in may be just the coding or non-coding part of an exon and not the
+ * whole exon. */
 static ZMapWindowCanvasFeature findFeatureSubPart(ZMapWindowFeaturesetItem fi,
-                                                  ZMapFeature feature,
-                                                  ZMapFeatureSubPart sub_feature)
+                                                  ZMapFeature feature, ZMapFeatureSubPart sub_feature)
 {
   ZMapWindowCanvasFeature gs = NULL ;
 
@@ -2118,19 +2118,36 @@ static ZMapWindowCanvasFeature findFeatureSubPart(ZMapWindowFeaturesetItem fi,
    * currently. */
   if (gs && ZMAPFEATURE_IS_TRANSCRIPT(feature) && sub_feature)
     {
+      ZMapTranscript transcript = &feature->feature.transcript ;
+      gboolean cds = transcript->flags.cds ;
+
       while(gs->left)
         gs = gs->left ;
 
-      while(gs)
+      while (gs)
         {
-          if (gs->y1 == sub_feature->start && gs->y2 == sub_feature->end)
+          int start, end ;
+
+          start = sub_feature->start ;
+          end = sub_feature->end ;
+
+          if (cds
+              && (start >= gs->y1 && end <= gs->y2)
+              && ((transcript->cds_start >= gs->y1 && transcript->cds_start <= gs->y2)
+                  || (transcript->cds_end >= gs->y1 && transcript->cds_end <= gs->y2)))
+            {
+              start = gs->y1 ;
+              end = gs->y2 ;
+            }
+
+          if (gs->y1 == start && gs->y2 == end)
             break ;
 
           gs = gs->right ;
         }
     }
 
-  return gs;
+  return gs ;
 }
 
 
