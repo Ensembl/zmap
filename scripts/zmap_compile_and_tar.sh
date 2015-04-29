@@ -198,6 +198,7 @@ then
                   # other builds are named after the architecture
                   arch_subdir="$lsb_release-x86_64"
                   ;;
+          esac
           ;;
   
         "i686")
