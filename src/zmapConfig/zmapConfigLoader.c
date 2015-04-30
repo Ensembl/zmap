@@ -94,7 +94,7 @@ static void free_source_list_item(gpointer list_data, gpointer unused_data);
 static void source_set_property(char *current_stanza_name, const char *key, GType type,
 gpointer parent_data, GValue *property_value) ;
 static gpointer create_config_style() ;
-static void style_set_property(char *current_stanza_name, char *key, GType type,
+static void style_set_property(char *current_stanza_name, const char *key, GType type,
        gpointer parent_data, GValue *property_value) ;
 static void free_style_list_item(gpointer list_data, gpointer unused_data)  ;
 static void free_source_names(gpointer list_data, gpointer unused_user_data) ;
@@ -1878,7 +1878,7 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
 
 
 /* We can be called with key == NULL if the stanza is empty. */
-static void style_set_property(char *current_stanza_name, char *key, GType type,
+static void style_set_property(char *current_stanza_name, const char *key, GType type,
        gpointer parent_data, GValue *property_value)
 {
   ZMapKeyValue config_style = (ZMapKeyValue)parent_data ;

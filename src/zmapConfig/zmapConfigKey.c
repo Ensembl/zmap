@@ -55,7 +55,7 @@ static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
                                           gboolean merge_files);
 static gboolean get_merged_key_value(ZMapConfigIni config,
                                      char * stanza_name,
-                                     char * key_name,
+                                     const char * key_name,
                                      GValue *value,
                                      GType type);
 static gboolean get_value(GKeyFile *key_file,
@@ -213,7 +213,7 @@ static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
 
 static gboolean get_merged_key_value(ZMapConfigIni config,
      char * stanza_name,
-     char * key_name,
+     const char * key_name,
      GValue *value,
      GType type)
 {
