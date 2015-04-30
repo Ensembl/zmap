@@ -125,22 +125,9 @@ function config_set_SEQTOOLS_ARCH
         arch=`ssh $host uname -m`
     fi
 
-    case $opsys in
-        "Linux")
-            lsb_release=`ssh $host lsb_release -cs`
-            case $lsb_release in
-                "lucid")
-                    SEQTOOLS_ARCH="Linux"$separator$arch
-                    ;;
-                *)
-                    SEQTOOLS_ARCH=$lsb_release$separator$arch
-                    ;;
-            esac
-            ;;
-        *)
-            SEQTOOLS_ARCH=$opsys$separator$arch
-            ;;
-    esac
+    # Currently seqtools just uses the opsys name i.e. the Linux 64-bit build
+    # works on all 64-bit platforms etc.
+    SEQTOOLS_ARCH=$opsys$separator$arch
 }
 # Usage: config_set_PROJECT_ARCH <machine_name>
 # Sets PROJECT_ARCH for the project-software naming convention for architectures 
