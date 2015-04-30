@@ -80,7 +80,7 @@ typedef struct _ZMapViewCallbacksStruct
   ZMapViewCallbackFunc destroy ;
 
   ZMapRemoteAppMakeRequestFunc remote_request_func ;
-  ZMapRemoteAppMakeRequestFunc remote_request_func_data ;
+  void *remote_request_func_data ;
 
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 
