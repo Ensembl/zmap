@@ -746,7 +746,7 @@ static void createZMap(ZMapManager manager, ZMap zmap, gpointer view_id,
 static void closeZMap(ZMapManager manager, ZMap zmap, gpointer view_id,
       RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out)
 {
-  ZMapView view = view_id ;
+  ZMapView view = (ZMapView)view_id ;
 
   /* Delete the named view, if it's the last view in the zmap then destroy the zmap
    * too. */

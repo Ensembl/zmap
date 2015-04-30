@@ -528,7 +528,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
                           ZMapStyleGlyphShape shape = NULL;
                 
                           if(shapes)
-                            shape = g_hash_table_lookup(shapes,GINT_TO_POINTER(q));
+                            shape = (ZMapStyleGlyphShape)g_hash_table_lookup(shapes,GINT_TO_POINTER(q));
                 
                           if(shape)
                             {
@@ -738,7 +738,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
           normalkey = zMapConfigNormaliseWhitespace(*keys,FALSE); /* changes in situ: get names first */
           column = g_quark_from_string(normalkey);
           column_id = zMapFeatureSetCreateID(normalkey);
-          f_col = g_hash_table_lookup(columns,GUINT_TO_POINTER(column_id));
+          f_col = (ZMapFeatureColumn)g_hash_table_lookup(columns,GUINT_TO_POINTER(column_id));
 
           if (!f_col)
             {
@@ -778,7 +778,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
               /* get featureset if present */
               GQuark key = zMapFeatureSetCreateID((char *)
                   g_quark_to_string(GPOINTER_TO_UINT(sources->data)));
-              GFFset = g_hash_table_lookup(hash,GUINT_TO_POINTER(key));
+              GFFset = (ZMapFeatureSetDesc)g_hash_table_lookup(hash,GUINT_TO_POINTER(key));
         
               if (!GFFset)
                 GFFset = g_new0(ZMapFeatureSetDescStruct,1);
@@ -853,7 +853,7 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
           /* this featureset will not actually exist, it's virtual */
           set_id = zMapFeatureSetCreateID(*keys);
         
-          if (fset2col && !(virtual_f2c = g_hash_table_lookup(fset2col, GUINT_TO_POINTER(set_id))))
+          if (fset2col && !(virtual_f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(fset2col, GUINT_TO_POINTER(set_id))))
             {
               /* should have been config'd to appear in a column */
               zMapLogWarning("cannot find virtual featureset %s",*keys);
@@ -872,14 +872,14 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
               // get featureset if present
               GQuark key = zMapFeatureSetCreateID((char *)
                   g_quark_to_string(GPOINTER_TO_UINT(sources->data)));
-              f_src = g_hash_table_lookup(fset_src,GUINT_TO_POINTER(key));
+              f_src = (ZMapFeatureSource)g_hash_table_lookup(fset_src,GUINT_TO_POINTER(key));
         
               if(f_src)
                 {
                   f_src->maps_to = set_id;
         
                   /* now set up featureset to column mapping to allow the column to paint and styles to be found */
-                  if (fset2col && !(real_f2c = g_hash_table_lookup(fset2col, GUINT_TO_POINTER(key))))
+                  if (fset2col && !((ZMapFeatureSetDesc)real_f2c = g_hash_table_lookup(fset2col, GUINT_TO_POINTER(key))))
                     {
                       real_f2c = g_new0(ZMapFeatureSetDescStruct,1);
                       g_hash_table_insert(fset2col,GUINT_TO_POINTER(key),real_f2c);
@@ -948,7 +948,7 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
       desc = (char *) g_quark_to_string(f_col->column_id);
       f_col->unique_id = zMapFeatureSetCreateID(desc);
 
-      f_col->column_desc = g_hash_table_lookup(col_desc, GUINT_TO_POINTER(f_col->column_id));
+      f_col->column_desc = (char*)g_hash_table_lookup(col_desc, GUINT_TO_POINTER(f_col->column_id));
       if(!f_col->column_desc)
         f_col->column_desc = desc;
 
@@ -1381,7 +1381,7 @@ static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context, char 
     {
       char **strings_list = NULL;
 
-      if ((strings_list = g_value_get_pointer(value)))
+      if ((strings_list = (char**)g_value_get_pointer(value)))
         {
           char **ptr = strings_list;
         
