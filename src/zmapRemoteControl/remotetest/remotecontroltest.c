@@ -159,7 +159,7 @@ enum
 
 
 /* Command line args struct. */
-typedef struct
+typedef struct XRemoteCmdLineArgsStructType
 {
   int argc;
   char **argv;
@@ -168,21 +168,21 @@ typedef struct
 
   /* and the commandline args for remote control */
   gboolean version;
-  char *config_file;
-  char *command_file;
+  const char *config_file;
+  const char *command_file;
   gboolean debugger ;
   gboolean xremote_debug ;
   gboolean cmd_debug ;
 
   /* and those to be passed to zmap */
-  char *sleep_seconds ;
+  const char *sleep_seconds ;
   char *zmap_config_file ;
-  char *sequence ;
-  char *start ;
-  char *end ;
-  char *remote_debug ;
+  const char *sequence ;
+  const char *start ;
+  const char *end ;
+  const char *remote_debug ;
   gboolean timeout ;
-  char *zmap_path ;
+  const char *zmap_path ;
 } XRemoteCmdLineArgsStruct, *XRemoteCmdLineArgs;
 
 
@@ -221,7 +221,7 @@ typedef struct AppDataStructType
 
 
   /* ZMap peer */
-  char *zmap_path ;
+  const char *zmap_path ;
   int zmap_pid ;
 
   guint stop_zmap_func_id ;
@@ -234,8 +234,8 @@ typedef struct AppDataStructType
   char *our_app_name ;
   char *our_socket_str ;
 
-  char *peer_app_name ;
-  char *peer_socket_str ;
+  const char *peer_app_name ;
+  const char *peer_socket_str ;
 
   ZMapRemoteControl remote_cntl ;
   gboolean send_interface_init ;                            /* Have we init'd the send interface. */
@@ -291,9 +291,9 @@ static void getZMapConfiguration(AppData app_data) ;
 static GtkWidget *makeTestWindow(AppData app_data) ;
 static GtkWidget *makeMainReqResp(AppData app_data) ;
 static GtkWidget *makeReqRespBox(AppData app_data,
-				 GtkBox *parent_box, char *box_title,
-				 ReqRespText text_widgs, char *request_title, char *response_title) ;
-static void addTextArea(AppData app_data, GtkBox *parent_box, char *text_title,
+				 GtkBox *parent_box, const char *box_title,
+				 ReqRespText text_widgs, const char *request_title, const char *response_title) ;
+static void addTextArea(AppData app_data, GtkBox *parent_box, const char *text_title,
 			GtkWidget **text_area_out, GtkTextBuffer **text_buffer_out) ;
 static GtkWidget *makeStateBox(AppData app_data) ;
 
@@ -372,7 +372,7 @@ static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context);
 
 
 static ZMapConfigIniContext loadRemotecontrolConfig(AppData app_data);
-static ZMapConfigIniContextKeyEntry get_programs_group_data(char **stanza_name, char **stanza_type);
+static ZMapConfigIniContextKeyEntry get_programs_group_data(const char **stanza_name, const char **stanza_type);
 
 
 
@@ -385,33 +385,33 @@ static gboolean command_debug_G = TRUE ;
 
 static GtkItemFactoryEntry menu_items_G[] =
   {
-    {"/_File",                   NULL,         NULL,       0,                  "<Branch>", NULL},
-    {"/File/Read",               NULL,         NULL,       0,                  NULL,       NULL},
-    {"/File/Quit",               "<control>Q", menuQuitCB, 0,                  NULL,       NULL},
-    {"/_ZMap Control",               NULL,         NULL,  0,             "<Branch>", NULL},
-    {"/_ZMap Control/New ZMap",  NULL,         runZMapCB,  0,             NULL, NULL},
-    {"/_ZMap Control/Kill ZMap",  NULL,        killZMapCB,  0,             NULL, NULL},
-    {"/_Commands",               NULL,         NULL,       0,                  "<Branch>", NULL},
-    {"/Commands/ping",           NULL,         cmdCB,      XREMOTE_PING,       NULL,       NULL},
+    {(gchar *)"/_File",                   NULL,         NULL,       0,                  (gchar *)"<Branch>", NULL},
+    {(gchar *)"/File/Read",               NULL,         NULL,       0,                  NULL,       NULL},
+    {(gchar *)"/File/Quit",               (gchar *)"<control>Q", (GtkItemFactoryCallback)menuQuitCB, 0,                  NULL,       NULL},
+    {(gchar *)"/_ZMap Control",               NULL,         NULL,  0,             (gchar *)"<Branch>", NULL},
+    {(gchar *)"/_ZMap Control/New ZMap",  NULL,         (GtkItemFactoryCallback)runZMapCB,  0,             NULL, NULL},
+    {(gchar *)"/_ZMap Control/Kill ZMap",  NULL,        (GtkItemFactoryCallback)killZMapCB,  0,             NULL, NULL},
+    {(gchar *)"/_Commands",               NULL,         NULL,       0,                  (gchar *)"<Branch>", NULL},
+    {(gchar *)"/Commands/ping",           NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_PING,       NULL,       NULL},
 
-    {"/Commands/new_view",       NULL,         cmdCB,      XREMOTE_NEW_VIEW,   NULL,       NULL},
-    {"/Commands/add_to_view",    NULL,         cmdCB,      XREMOTE_ADD_VIEW,   NULL,       NULL},
-    {"/Commands/close_view",     NULL,         cmdCB,      XREMOTE_CLOSE_VIEW, NULL,       NULL},
+    {(gchar *)"/Commands/new_view",       NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_NEW_VIEW,   NULL,       NULL},
+    {(gchar *)"/Commands/add_to_view",    NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_ADD_VIEW,   NULL,       NULL},
+    {(gchar *)"/Commands/close_view",     NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_CLOSE_VIEW, NULL,       NULL},
 
-    {"/Commands/load_features",  NULL,         cmdCB,      XREMOTE_LOAD_FEATURES, NULL,       NULL},
-    {"/Commands/zoom_to",        NULL,         cmdCB,      XREMOTE_ZOOM_TO,    NULL,       NULL},
-    {"/Commands/get_mark",       NULL,         cmdCB,      XREMOTE_GET_MARK,   NULL,       NULL},
-    {"/Commands/rev_comp",       NULL,         cmdCB,      XREMOTE_REVCOMP,   NULL,       NULL},
+    {(gchar *)"/Commands/load_features",  NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_LOAD_FEATURES, NULL,       NULL},
+    {(gchar *)"/Commands/zoom_to",        NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_ZOOM_TO,    NULL,       NULL},
+    {(gchar *)"/Commands/get_mark",       NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_GET_MARK,   NULL,       NULL},
+    {(gchar *)"/Commands/rev_comp",       NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_REVCOMP,   NULL,       NULL},
 
-    {"/Commands/Feature Create (simple)", NULL,         cmdCB,      XREMOTE_CREATE_SIMPLE,   NULL,       NULL},
-    {"/Commands/Feature Create", NULL,         cmdCB,      XREMOTE_CREATE,   NULL,       NULL},
-    {"/Commands/Feature Replace",NULL,         cmdCB,      XREMOTE_REPLACE,     NULL,       NULL},
-    {"/Commands/Feature Delete", NULL,         cmdCB,      XREMOTE_DELETE,   NULL,       NULL},
-    {"/Commands/Feature Find",   NULL,         cmdCB,      XREMOTE_FIND,     NULL,       NULL},
+    {(gchar *)"/Commands/Feature Create (simple)", NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_CREATE_SIMPLE,   NULL,       NULL},
+    {(gchar *)"/Commands/Feature Create", NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_CREATE,   NULL,       NULL},
+    {(gchar *)"/Commands/Feature Replace",NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_REPLACE,     NULL,       NULL},
+    {(gchar *)"/Commands/Feature Delete", NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_DELETE,   NULL,       NULL},
+    {(gchar *)"/Commands/Feature Find",   NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_FIND,     NULL,       NULL},
 
-    {"/Commands/goodbye",        NULL,         cmdCB,      XREMOTE_GOODBYE,   NULL,       NULL},
-    {"/Commands/shutdown",       NULL,         cmdCB,      XREMOTE_SHUTDOWN,   NULL,       NULL},
-    {"/Commands/abort",          NULL,         cmdCB,      XREMOTE_ABORT,      NULL,       NULL},
+    {(gchar *)"/Commands/goodbye",        NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_GOODBYE,   NULL,       NULL},
+    {(gchar *)"/Commands/shutdown",       NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_SHUTDOWN,   NULL,       NULL},
+    {(gchar *)"/Commands/abort",          NULL,         (GtkItemFactoryCallback)cmdCB,      XREMOTE_ABORT,      NULL,       NULL},
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     {"/Commands/Zoom In",        NULL,         cmdCB,      XREMOTE_ZOOMIN,   NULL,       NULL},
@@ -595,8 +595,8 @@ static void initRemote(AppData app_data)
   gboolean result = FALSE ;
 
   if ((app_data->remote_cntl = zMapRemoteControlCreate(REMOTECONTROL_APPNAME,
-                                                          errorCB, app_data,
-                                                          NULL, NULL)))
+                                                       errorCB, app_data,
+                                                       NULL, NULL)))
     result = TRUE ;
 
   if (result)
@@ -653,7 +653,7 @@ static gboolean createZMapProcess(AppData app_data, char **command)
 {
   char **ptr;
   char *cwd = NULL, **envp = NULL; /* inherit from parent */
-  GSpawnFlags flags = (G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD) ;
+  GSpawnFlags flags = (GSpawnFlags)(G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD) ;
   GSpawnChildSetupFunc pre_exec = NULL;
   gpointer user_data = NULL;
   GError *error = NULL;
@@ -733,12 +733,12 @@ static void clearUpZMap(AppData app_data)
 static char **buildZMapCmd(AppData app_data)
 {
   char **zmap_command = NULL ;
-  char *zmap_path  = NULL;
+  const char *zmap_path  = NULL;
   char *tmp_string = NULL;
   gboolean debugger = app_data->cmd_line_args->debugger ;
   GString *cmd_str ;
-  char *sleep = app_data->cmd_line_args->sleep_seconds ;
-  char *remote_debug = app_data->cmd_line_args->remote_debug ;
+  const char *sleep = app_data->cmd_line_args->sleep_seconds ;
+  const char *remote_debug = app_data->cmd_line_args->remote_debug ;
   int screen_num ;
 
   /* Have to do all this as user may blank out the path or change it or indeed lose it.... */
@@ -919,9 +919,9 @@ static GtkWidget *makeMainReqResp(AppData app_data)
 
 /* Make a pair of request/response windows. */
 static GtkWidget *makeReqRespBox(AppData app_data,
-				 GtkBox *parent_box, char *box_title,
+				 GtkBox *parent_box, const char *box_title,
 				 ReqRespText text_widgs,
-				 char *request_title, char *response_title)
+				 const char *request_title, const char *response_title)
 {
   GtkWidget *vbox = NULL ;
   GtkWidget *frame ;
@@ -948,7 +948,7 @@ static GtkWidget *makeReqRespBox(AppData app_data,
 }
 
 
-static void addTextArea(AppData app_data, GtkBox *parent_box, char *text_title,
+static void addTextArea(AppData app_data, GtkBox *parent_box, const char *text_title,
 			GtkWidget **text_area_out, GtkTextBuffer **text_buffer_out)
 {
   GtkWidget *our_vbox, *frame, *scrwin, *textarea ;
@@ -1450,7 +1450,7 @@ void processRequest(AppData app_data, char *request,
     {
       app_data->reply_rc = REMOTE_COMMAND_RC_BAD_XML ;
 
-      app_data->error = "Cannot find \"command\" in request." ;
+      app_data->error = g_strdup("Cannot find \"command\" in request.") ;
     }
   else
     {
@@ -1525,7 +1525,7 @@ void processRequest(AppData app_data, char *request,
 	    {
 	      app_data->reply_rc = REMOTE_COMMAND_RC_FAILED ;
 
-	      app_data->error = "No feature details available." ;
+	      app_data->error = g_strdup("No feature details available.") ;
 	    }
 	  else
 	    {
@@ -1598,7 +1598,7 @@ void processRequest(AppData app_data, char *request,
 
 	  app_data->reply_rc = REMOTE_COMMAND_RC_CMD_UNKNOWN ;
 
-	  app_data->error = "Unsupported command !" ;
+	  app_data->error = g_strdup("Unsupported command !") ;
 	}
 
 
@@ -1636,11 +1636,11 @@ static gboolean handleHandshake(char *command_text, AppData app_data)
     result_message[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_MESSAGE, ZMAPXML_EVENT_DATA_NONE,    {0}},
 			{ZMAPXML_CHAR_DATA_EVENT,     NULL,       ZMAPXML_EVENT_DATA_STRING,  {0}},
 			{ZMAPXML_END_ELEMENT_EVENT,   ZACP_MESSAGE, ZMAPXML_EVENT_DATA_NONE,    {0}},
-			{0}},
+			{ZMAPXML_NULL_EVENT}},
     peer[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_PEER,      ZMAPXML_EVENT_DATA_NONE,    {0}},
 	      {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_SOCKET_ID,    ZMAPXML_EVENT_DATA_QUARK,   {0}},
 	      {ZMAPXML_END_ELEMENT_EVENT,   ZACP_PEER,      ZMAPXML_EVENT_DATA_NONE,    {0}},
-	      {0}} ;
+	      {ZMAPXML_NULL_EVENT}} ;
 
 
 
@@ -1828,12 +1828,12 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 
     req_start[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_REQUEST,   ZMAPXML_EVENT_DATA_NONE,  {0}},
 		   {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_CMD, ZMAPXML_EVENT_DATA_QUARK, {0}},
-		   {0}},
+		   {ZMAPXML_NULL_EVENT}},
 
     featureset[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
 		    {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {0}},
+		    {ZMAPXML_NULL_EVENT}},
 
     feature_simple[] = {{ZMAPXML_START_ELEMENT_EVENT, "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
 			{ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
@@ -1841,7 +1841,7 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 			{ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
 			{ZMAPXML_ATTRIBUTE_EVENT,     "strand",     ZMAPXML_EVENT_DATA_QUARK,   {0}},
 			{ZMAPXML_END_ELEMENT_EVENT,   "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
-			{0}},
+			{ZMAPXML_NULL_EVENT}},
 
     feature[] = {{ZMAPXML_START_ELEMENT_EVENT, "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
@@ -1854,7 +1854,7 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 		 {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {0}},
 		 {ZMAPXML_END_ELEMENT_EVENT,   "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {ZMAPXML_END_ELEMENT_EVENT,   "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
-		 {0}},
+		 {ZMAPXML_NULL_EVENT}},
 
     sequence[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_SEQUENCE_TAG,    ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_NAME,   ZMAPXML_EVENT_DATA_STRING,  {0}},
@@ -1862,20 +1862,20 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_END,    ZMAPXML_EVENT_DATA_INTEGER, {0}},
 		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_CONFIG, ZMAPXML_EVENT_DATA_STRING,  {0}},
 		 {ZMAPXML_END_ELEMENT_EVENT,    ZACP_SEQUENCE_TAG,    ZMAPXML_EVENT_DATA_NONE,    {0}},
-		 {0}},
+		 {ZMAPXML_NULL_EVENT}},
 
     abort[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_SHUTDOWN_TAG,   ZMAPXML_EVENT_DATA_NONE,    {0}},
 	       {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_SHUTDOWN_TYPE,  ZMAPXML_EVENT_DATA_QUARK,  {0}},
 	       {ZMAPXML_END_ELEMENT_EVENT,   ZACP_SHUTDOWN_TAG,   ZMAPXML_EVENT_DATA_NONE,    {0}},
-	       {0}} ;
+	       {ZMAPXML_NULL_EVENT}} ;
 
 
-  char *default_feature_set = "curated" ;
-  char *default_feature_name = "eds_feature" ;
-  char *default_replace_feature_name = "eds_replace_feature" ;
+  const char *default_feature_set = "curated" ;
+  const char *default_feature_name = "eds_feature" ;
+  const char *default_replace_feature_name = "eds_replace_feature" ;
   int default_start = 5000 ;
   int default_end = 6000 ;
-  char *default_strand = "+" ;
+  const char *default_strand = "+" ;
     
 
   AppData app_data = (AppData)data;
@@ -1885,12 +1885,12 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
   gboolean do_replace_xml = FALSE ;
 
   /* New stuff.... */
-  char *command = NULL ;
-  char *view_id = NULL ;
+  const char *command = NULL ;
+  const char *view_id = NULL ;
   GArray *request_stack ;
   char *request ;
   char *err_msg = NULL ;
-  char *next_element ;
+  const char *next_element ;
 
   action = &(req_start[1].value.q) ;
 
@@ -2485,7 +2485,7 @@ static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context)
 }
 
 
-static ZMapConfigIniContextKeyEntry get_programs_group_data(char **stanza_name, char **stanza_type)
+static ZMapConfigIniContextKeyEntry get_programs_group_data(const char **stanza_name, const char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
     { XREMOTE_PROG_ZMAP,        G_TYPE_STRING,  NULL, FALSE },
@@ -2494,15 +2494,15 @@ static ZMapConfigIniContextKeyEntry get_programs_group_data(char **stanza_name, 
     { XREMOTE_PROG_SERVER_OPTS, G_TYPE_STRING,  NULL, FALSE },
     { NULL }
   };
-  static char *name = XREMOTE_PROG_CONFIG;
-  static char *type = XREMOTE_PROG_CONFIG;
+  static const char *name = XREMOTE_PROG_CONFIG;
+  static const char *type = XREMOTE_PROG_CONFIG;
 
-  if(stanza_name)
-    *stanza_name = name;
-  if(stanza_type)
-    *stanza_type = type;
+  if (stanza_name)
+    *stanza_name = name ;
+  if (stanza_type)
+    *stanza_type = type ;
 
-  return stanza_keys;
+  return stanza_keys ;
 }
 
 static void getZMapConfiguration(AppData app_data)
@@ -2558,7 +2558,7 @@ static ZMapConfigIniContext loadRemotecontrolConfig(AppData app_data)
       if ((context = zMapConfigIniContextCreate(NULL)))
 	{
 	  ZMapConfigIniContextKeyEntry stanza_group = NULL;
-	  char *stanza_name, *stanza_type;
+	  const char *stanza_name, *stanza_type;
 
 	  if ((stanza_group = get_programs_group_data(&stanza_name, &stanza_type)))
 	    zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group) ;
