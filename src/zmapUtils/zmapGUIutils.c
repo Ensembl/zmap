@@ -1166,7 +1166,7 @@ void zMapShowMsg(ZMapMsgType msg_type, const char *format, ...)
  *
  * @return  void
  *  */
-void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
+void zMapGUIShowMsg(ZMapMsgType msg_type, const char *msg)
 {
   gboolean modal ;
 
