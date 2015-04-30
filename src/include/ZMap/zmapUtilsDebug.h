@@ -357,7 +357,7 @@ void zMapLogTime(int what, int how, long data, char *string);
 
 
 
-void zMapUtilsDebugPrintf(FILE *stream, char *format, ...) ;
+void zMapUtilsDebugPrintf(FILE *stream, const char *format, ...) ;
 
 
 #endif /* ZMAP_UTILS_DEBUG_H */

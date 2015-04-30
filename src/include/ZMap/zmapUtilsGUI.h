@@ -487,8 +487,8 @@ GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title);
 
 gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
 
-void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg) ;
-void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
+void zMapGUIShowMsg(ZMapMsgType msg_type, const char *msg) ;
+void zMapGUIShowMsgFull(GtkWindow *parent, const char *msg,
 			ZMapMsgType msg_type, GtkJustification justify, int display_timeout, gboolean close_button) ;
 gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
 gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
@@ -505,7 +505,7 @@ void zMapGUIShowAbout(void) ;
 void zMapGUIShowHelp(ZMapHelpType help_contents) ;
 void zMapGUISetHelpURL(char *URL_base) ;
 
-void zMapGUIShowText(char *title, char *text, gboolean edittable) ;
+void zMapGUIShowText(const char *title, const char *text, gboolean edittable) ;
 GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GList *text_attributes,
 			       GtkTextBuffer **buffer_out);
 
