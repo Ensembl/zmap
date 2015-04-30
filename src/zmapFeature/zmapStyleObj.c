@@ -96,7 +96,7 @@ typedef struct
 static void checkListName(gpointer data, gpointer user_data) ;
 static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data) ;
 
-static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new) ;
+static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new_style) ;
 static void mergeStyle(gpointer style_id, gpointer data, gpointer user_data_unused) ;
 static gboolean destroyStyle(gpointer style_id, gpointer data, gpointer user_data_unused) ;
 
@@ -106,7 +106,7 @@ static void setStrandFrameAttrs(ZMapFeatureTypeStyle type,
 gboolean *strand_specific_in,
 gboolean *show_rev_strand_in,
 ZMapStyle3FrameMode *frame_mode_in) ;
-static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new) ;
+static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new_style) ;
 
 static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTable *root_styles, int depth) ;
 static void clear_inherited(gpointer key, gpointer item, gpointer user) ;
@@ -169,7 +169,7 @@ gboolean zMapStyleInheritAllStyles(GHashTable *style_set)
 {
   gboolean result = TRUE ;
   GList *iter ;
-  ZMapFeatureTypeStyle old, new ;
+  ZMapFeatureTypeStyle old, new_style ;
 
   g_hash_table_foreach(style_set, clear_inherited, style_set) ;
 
@@ -187,8 +187,8 @@ gboolean zMapStyleInheritAllStyles(GHashTable *style_set)
       old = (ZMapFeatureTypeStyle)g_hash_table_lookup(style_set, iter->data) ;
 
       /* recursively inherit parent while not already done */ 
-      new = inherit_parent(old, style_set, 0) ;
-      if(!new)
+      new_style = inherit_parent(old, style_set, 0) ;
+      if(!new_style)
         result = FALSE ;
     }
 
@@ -218,7 +218,7 @@ gboolean zMapStyleSetSubStyles(GHashTable *style_set)
       {
             if(style->sub_features[i])
             {
-                  sub = g_hash_table_lookup(style_set,GUINT_TO_POINTER(style->sub_features[i]));
+              sub = (ZMapFeatureTypeStyle)g_hash_table_lookup(style_set,GUINT_TO_POINTER(style->sub_features[i]));
                   style->sub_style[i] = sub;
             }
       }
@@ -300,8 +300,8 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 
             case STYLE_PARAM_TYPE_QUARK_LIST_ID:
               {
-                  GList **l = (GList **) (((void *) curr_style) + param->offset);
-                  GList **ln = (GList **) (((void *) new_style) + param->offset);
+                  GList **l = (GList **) ((void *) (curr_style + param->offset));
+                  GList **ln = (GList **) ((void *) (new_style + param->offset));
 
                   /* free old list before overwriting */ 
                   if(*l)
@@ -317,12 +317,12 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
                  if(zMapStyleIsPropertySetId(curr_style,param->id))
                   {
 
-                    str = (gchar **) (((void *) curr_style) + param->offset);
+                    str = (gchar **) ((void *) (curr_style + param->offset));
                     g_free(*str) ;
                   }
 
-                str = (gchar **) (((void *) new_style) + param->offset);
-                * (gchar **) (((void *) curr_style) + param->offset) = g_strdup(*str);
+                str = (gchar **) ((void *) (new_style + param->offset));
+                * (gchar **) ((void *) (curr_style + param->offset)) = g_strdup(*str);
                 break;
               }
 
@@ -330,8 +330,8 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
               {
                 ZMapStyleFullColour src_colour,dst_colour;
 
-                src_colour = (ZMapStyleFullColour) (((void *) new_style) + param->offset);
-                dst_colour = (ZMapStyleFullColour) (((void *) curr_style) + param->offset);
+                src_colour = (ZMapStyleFullColour) ((void *) (new_style + param->offset));
+                dst_colour = (ZMapStyleFullColour) ((void *) (curr_style + param->offset));
 
                 mergeColours(dst_colour,src_colour);
                 break;
@@ -342,8 +342,8 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
                 void *src,*dst;
 
 
-                src = ((void *) new_style) + param->offset;
-                dst = ((void *) curr_style) + param->offset;
+                src = (void *) (new_style + param->offset);
+                dst = (void *) (curr_style + param->offset);
 
                 memcpy(dst,src,param->size);
 
@@ -934,7 +934,7 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles)
 GHashTable *zMapStyleMergeStyles(GHashTable *curr_styles, GHashTable *new_styles, ZMapStyleMergeMode merge_mode)
 {
   GHashTable *merged_styles = NULL ;
-  MergeStyleCBStruct merge_data = {FALSE} ;
+  MergeStyleCBStruct merge_data = {ZMAPSTYLE_MERGE_INVALID} ;
 
   merge_data.merge_mode = merge_mode ;
   merge_data.curr_styles = curr_styles ;
@@ -1008,7 +1008,7 @@ static void mergeStyle(gpointer style_id, gpointer data, gpointer user_data)
 
 
   /* If we find the style then process according to merge_mode, if not then add a copy to the curr_styles. */
-  if ((curr_style = g_hash_table_lookup(curr_styles, GUINT_TO_POINTER(new_style->unique_id))))
+  if ((curr_style =(ZMapFeatureTypeStyle) g_hash_table_lookup(curr_styles, GUINT_TO_POINTER(new_style->unique_id))))
     {
       switch (merge_data->merge_mode)
         {
@@ -1191,39 +1191,39 @@ static void clear_inherited(gpointer key, gpointer item, gpointer user)
 }
 
 
-static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new)
+static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new_style)
 {
 
-  if (new->normal.fields_set.fill)
+  if (new_style->normal.fields_set.fill)
     {
-      curr->normal.fill = new->normal.fill ;
+      curr->normal.fill = new_style->normal.fill ;
       curr->normal.fields_set.fill = TRUE ;
     }
-  if (new->normal.fields_set.draw)
+  if (new_style->normal.fields_set.draw)
     {
-      curr->normal.draw = new->normal.draw ;
+      curr->normal.draw = new_style->normal.draw ;
       curr->normal.fields_set.draw = TRUE ;
     }
-  if (new->normal.fields_set.border)
+  if (new_style->normal.fields_set.border)
     {
-      curr->normal.border = new->normal.border ;
+      curr->normal.border = new_style->normal.border ;
       curr->normal.fields_set.border = TRUE ;
     }
 
 
-  if (new->selected.fields_set.fill)
+  if (new_style->selected.fields_set.fill)
     {
-      curr->selected.fill = new->selected.fill ;
+      curr->selected.fill = new_style->selected.fill ;
       curr->selected.fields_set.fill = TRUE ;
     }
-  if (new->selected.fields_set.draw)
+  if (new_style->selected.fields_set.draw)
     {
-      curr->selected.draw = new->selected.draw ;
+      curr->selected.draw = new_style->selected.draw ;
       curr->selected.fields_set.draw = TRUE ;
     }
-  if (new->selected.fields_set.border)
+  if (new_style->selected.fields_set.border)
     {
-      curr->selected.border = new->selected.border ;
+      curr->selected.border = new_style->selected.border ;
       curr->selected.fields_set.border = TRUE ;
     }
 
