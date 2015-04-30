@@ -148,9 +148,9 @@ GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsE
  * 
  *  */
 GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
-   char *element_name, int element_index,
-   char *attribute_name, char *attribute_value,
-   ZMapXMLUtilsEventStackStruct *event_stack)
+                                                   const char *element_name, int element_index,
+                                                   const char *attribute_name, const char *attribute_value,
+                                                   ZMapXMLUtilsEventStackStruct *event_stack)
 {
   GArray *result = NULL ;
   ZMapXMLUtilsEventStack input ;
