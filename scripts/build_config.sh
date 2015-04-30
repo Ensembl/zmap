@@ -97,7 +97,7 @@ function config_set_ZMAP_ARCH
                     ZMAP_ARCH="Linux"$separator$arch
                     ;;
                 *)
-                    ZMAP_ARCH=$opsys$separator$arch
+                    ZMAP_ARCH=$lsb_release$separator$arch
                     ;;
             esac
             ;;
@@ -133,7 +133,7 @@ function config_set_SEQTOOLS_ARCH
                     SEQTOOLS_ARCH="Linux"$separator$arch
                     ;;
                 *)
-                    SEQTOOLS_ARCH=$opsys$separator$arch
+                    SEQTOOLS_ARCH=$lsb_release$separator$arch
                     ;;
             esac
             ;;
