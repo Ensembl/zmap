@@ -129,7 +129,7 @@ typedef void (*ZMapRemoteControlReplyHandlerFunc)(ZMapRemoteControl remote_contr
 /* 
  *            The RemoteControl interface.
  */
-ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
+ZMapRemoteControl zMapRemoteControlCreate(const char *app_id,
 					  ZMapRemoteControlErrorHandlerFunc error_func, gpointer error_data,
 					  ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data) ;
 
@@ -160,7 +160,7 @@ gboolean zMapRemoteControlReset(ZMapRemoteControl remote_control) ;
 gboolean zMapRemoteControlHasFailed(ZMapRemoteControl remote_control) ;
 
 gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, ZMapRemoteControlDebugLevelType debug_level) ;
-gboolean zMapRemoteControlSetTimeoutList(ZMapRemoteControl remote_control, char *peer_timeout_list) ;
+gboolean zMapRemoteControlSetTimeoutList(ZMapRemoteControl remote_control, const char *peer_timeout_list) ;
 gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
 				     ZMapRemoteControlErrorReportFunc err_func, gpointer err_data) ;
 gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control) ;
