@@ -172,7 +172,8 @@ EOF
 
 for host in $ZMAP_BUILD_MACHINES;
   do
-  HOST_UNAME=$(ssh $host 'uname -ms | sed -e "s/ /_/g"')
+  config_set_ZMAP_ARCH $host
+  HOST_UNAME=$ZMAP_ARCH
   cat >> README <<EOF
   ZMap.$host/  - build dir from $host
   $HOST_UNAME/ - prefix install for OS $HOST_UNAME

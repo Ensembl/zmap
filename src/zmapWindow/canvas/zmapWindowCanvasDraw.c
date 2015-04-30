@@ -468,16 +468,6 @@ static void highlightSplice(gpointer data, gpointer user_data)
   HighlightData highlight_data = (HighlightData)user_data ;
   double col_width ;  
 
-  char *name ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  zMapCanvasFeaturesetDrawBoxMacro(highlight_data->featureset, highlight_data->x1, highlight_data->x2,
-                                   splice_pos->start, splice_pos->end,
-                                   highlight_data->drawable,
-                                   TRUE, TRUE, highlight_data->splice_pixel, highlight_data->splice_pixel) ;
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   /*
    * Draw the truncation glyph subfeatures.
@@ -485,9 +475,6 @@ static void highlightSplice(gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style = *(highlight_data->feature->feature->style) ;
 
   ZMapWindowCanvasGlyph start, end ;
-
-  name = g_quark_to_string(highlight_data->feature->feature->original_id) ;
-
 
   col_width = zMapStyleGetWidth(highlight_data->featureset->style) ;
 

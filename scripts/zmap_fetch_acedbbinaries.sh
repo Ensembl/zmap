@@ -93,7 +93,7 @@ else
 fi
 
 # get 3rd parameter, the host machine
-this_host=`hostname`
+this_host=`hostname -s`
 
 if [ "x$3" == "x" ]; then
   zmap_message_err "Host machine not specified; using $this_host"
@@ -128,9 +128,7 @@ zmap_message_out "Starting copying acedb source/binaries and Seqtools dist files
 # Get the ACEDB_MACHINE env var on the host machine
 acedbmachine=`ssh $this_host 'echo $ACEDB_MACHINE'`
 
-# Get host machine architecture in zmap format.
-hostarch=`ssh $this_host 'uname -ms'`
-ZMAP_ARCH=$(echo $hostarch | sed -e 's/ /_/g')
+config_set_ZMAP_ARCH $this_host
 
 
 zmap_message_out "Using '$ZMAP_ARCH' for zmap architecture dir."
@@ -292,14 +290,14 @@ fi
 zmap_message_out "Copying Seqtools dist file..."
 
 
-# Horrible naming mismatch in dir names....note the use of "-" instead of "_" in the sed...
-ZMAP_ARCH=$(echo $hostarch | sed -e 's/ /-/g')
+# Horrible naming mismatch in dir names....seqtools uses "-" instead of "_"...
+config_set_SEQTOOLS_ARCH $this_host
 
 
 seqtools_dist_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/Dist"
 seqtools_dist_file=`ls $seqtools_dist_dir/seqtools*.tar.gz` # Should match only one file.
-seqtools_bin_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/$ZMAP_ARCH/bin"
-seqtools_share_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/$ZMAP_ARCH/share"
+seqtools_bin_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/$SEQTOOLS_ARCH/bin"
+seqtools_share_dir="$ZMAP_SEQTOOLS_RELEASE_CONTAINER/$ZMAP_SEQTOOLS_RELEASE_DIR/$SEQTOOLS_ARCH/share"
 
 
 if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
@@ -313,7 +311,7 @@ fi
 suffix=''
 cygwin_pattern="*CYGWIN*"
 
-if [[ $hostarch == $cygwin_pattern ]]; then
+if [[ $SEQTOOLS_ARCH == $cygwin_pattern ]]; then
     suffix='.exe'
 fi
 

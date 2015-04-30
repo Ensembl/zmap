@@ -1067,8 +1067,6 @@ static void highlightFeature(gpointer data, gpointer user_data)
 
   feature = zMapWindowCanvasFeatureGetFeature(feature_item) ;
 
-  char *name = g_quark_to_string(feature->original_id) ;
-
   /* Keep the head of the splices to be compared moving down through the coords list
    * as we move through the features, note we can do this because splices and features are
    * position sorted. */

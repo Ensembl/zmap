@@ -376,7 +376,7 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
 
 void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2)
 {
-  zmapFeatureRevComp(seq_start, seq_end, *coord_1, *coord_2) ;
+  zmapFeatureRevComp(seq_start, seq_end, coord_1, coord_2) ;
 
   return ;
 }

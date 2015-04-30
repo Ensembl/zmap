@@ -133,6 +133,12 @@ the selected zmap and zmap will then automatically zoom to those coordinates.</p
 	</ul>
   </tr>
   <tr>
+    <td><b>f or F</b></td>
+    <td>Toggles the last <b>f</b>ilter applied to a column on/off allowing the user to explore the
+	effect of that filter. Seeing the full effect can be difficult when there are a lot
+	of features.</td>
+  </tr>
+  <tr>
     <td><b>h</b></td>
     <td>Toggles <b>h</b>ighlighting off/on. When toggling on the currently stored feature
         is reselected or if there isn't one then highlights the first forward strand column.
