@@ -359,8 +359,8 @@ static void xml_parse(ZMapXMLParser parser, char *buffer, int size, enum XML_Sta
 }
 
 gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser, 
-  void *data, 
-  int size)
+                                  void *data, 
+                                  int size)
 {
   gboolean result = TRUE ;
   int isFinal;
