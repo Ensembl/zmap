@@ -1675,8 +1675,8 @@ static gboolean styleMergeParam( ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle
           {
             gchar **srcstr, **dststr;
 
-            srcstr = (gchar **) (((void *)src) + param->offset);
-            dststr = (gchar **) (((void *)dest) + param->offset);
+            srcstr = (gchar **) ((void *)(src + param->offset));
+            dststr = (gchar **) ((void *)(dest + param->offset));
 
             *dststr = g_strdup(*srcstr);
 
@@ -1686,8 +1686,8 @@ static gboolean styleMergeParam( ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle
           {
             GList **sl,**dl;
 
-            sl = (GList **) (((void *) src) + param->offset);
-            dl = (GList **) (((void *) dest) + param->offset);
+            sl = (GList **) ((void *)(src + param->offset));
+            dl = (GList **) ((void *)(dest + param->offset));
 
             *dl = g_list_copy(*sl);   // ok as the list is shallow
 
@@ -1703,8 +1703,8 @@ static gboolean styleMergeParam( ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle
           {
             void *srcval,*dstval;
 
-            srcval = ((void *)src) + param->offset ;
-            dstval = ((void *)dest) + param->offset ;
+            srcval = ((void *)(src + param->offset)) ;
+            dstval = ((void *)(dest + param->offset)) ;
 
             memcpy(dstval, srcval, param->size) ;
 
