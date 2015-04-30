@@ -128,11 +128,11 @@ static GtkItemFactoryEntry menu_items[] = {
 
          { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
          /*{ "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL }, */
-         { "/Help/Quick Start Guide", NULL,allHelpCB, ZMAPGUI_HELP_QUICK_START, NULL },
-         { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
-         { "/Help/Alignment Display", NULL, allHelpCB, ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
-         { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
-         { "/Help/About ZMap",    NULL,    aboutCB, 0, NULL }
+         { "/Help/Quick Start Guide", NULL, G_CALLBACK(allHelpCB), ZMAPGUI_HELP_QUICK_START, NULL },
+         { "/Help/Keyboard & Mouse", NULL,  G_CALLBACK(allHelpCB), ZMAPGUI_HELP_KEYBOARD, NULL },
+         { "/Help/Alignment Display", NULL, G_CALLBACK(allHelpCB), ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
+         { "/Help/Release Notes", NULL,     G_CALLBACK(allHelpCB), ZMAPGUI_HELP_RELEASE_NOTES, NULL },
+         { "/Help/About ZMap",    NULL,     G_CALLBACK(aboutCB), 0, NULL }
 };
 
 

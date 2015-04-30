@@ -434,7 +434,7 @@ char *zMapPeptideGeneName(ZMapPeptide peptide)
 
 
 gboolean zMapPeptideMatch(char *cp, char *end,
-  char *template, ZMapStrand strand, ZMapGeneticCode translation_table,
+                          char *match_template_in), ZMapStrand strand, ZMapGeneticCode translation_table,
   char **start_out, char **end_out, char **match_str)
 {
   gboolean result = FALSE ;
@@ -442,7 +442,7 @@ gboolean zMapPeptideMatch(char *cp, char *end,
   int i ;
 
   /* Create the template for matching... */
-  match_template = g_strdup_printf("*%s*", template) ;
+  match_template = g_strdup_printf("*%s*", match_template_in) ;
   if (strand == ZMAPSTRAND_REVERSE)
     match_template = g_strreverse(match_template) ;
 

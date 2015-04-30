@@ -578,7 +578,7 @@ static void translationPopulate(ZMapFeatureBlock feature_block,
   /* Get the peptide length in complete codons....WHY....CHECK THIS..... */
   peptide_length = zMapPeptideFullCodonAALength(pep) ;
 
-  peptide_str = g_malloc0(peptide_length + 1) ;
+  peptide_str = (char*)g_malloc0(peptide_length + 1) ;
 
   memset(peptide_str, (int)'=', peptide_length) ;
 

@@ -386,8 +386,8 @@ static void prePrepareDASParser(ZMapDAS1Parser das, ZMapDAS1QueryType query)
     (das->destroy_notify)(das->handler_data); 
 
   /* Make sure they don't get referred 2 again */
-  das->destroy_notify = 
-    das->handler_data = NULL;
+  das->destroy_notify = NULL;
+  das->handler_data = NULL;
 
   das->primed_for     = query;
 
@@ -642,7 +642,7 @@ static gboolean glyphEnd(void *userData,
 {
   styleSheetHandler data = (styleSheetHandler)userData;
   ZMapXMLElement sub_element = NULL, common_ele = NULL, specific_ele = NULL;
-  ZMapDAS1GlyphStruct glyph = {0};
+  ZMapDAS1GlyphStruct glyph = {ZMAP_DAS1_NONE_GLYPH};
   ZMapDAS1StylesheetStruct style = {0};
   ZMapDAS1StyleTypeStruct type = {0};
   ZMapDAS1StyleCategoryStruct category = {0};

@@ -239,7 +239,7 @@ gboolean zMapFeatureAnyFindFeature(ZMapFeatureAny feature_set, ZMapFeatureAny fe
   if (!feature_set || !feature )
     return result ;
 
-  if ((hash_feature = g_hash_table_lookup(feature_set->children, zmapFeature2HashKey(feature))))
+  if ((hash_feature = (ZMapFeature)g_hash_table_lookup(feature_set->children, zmapFeature2HashKey(feature))))
     result = TRUE ;
 
   return result ;
@@ -252,7 +252,7 @@ ZMapFeatureAny zMapFeatureParentGetFeatureByID(ZMapFeatureAny feature_parent, GQ
   ZMapFeatureAny feature = NULL ;
   zMapReturnValIfFail(feature_parent, feature) ;
 
-  feature = g_hash_table_lookup(feature_parent->children, GINT_TO_POINTER(feature_id)) ;
+  feature = (ZMapFeatureAny)g_hash_table_lookup(feature_parent->children, GINT_TO_POINTER(feature_id)) ;
 
   return feature ;
 }
@@ -932,11 +932,11 @@ gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature featur
 static void copy_to_new_featureset(gpointer key, gpointer hash_data, gpointer user_data)
 {
   ZMapFeatureSet set = (ZMapFeatureSet)user_data;
-  ZMapFeature    new;
+  ZMapFeature    new_feature;
 
-  new = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)hash_data);
+  new_feature = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)hash_data);
 
-  zMapFeatureSetAddFeature(set, new);
+  zMapFeatureSetAddFeature(set, new_feature);
 
   return ;
 }
@@ -1814,12 +1814,12 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
    * deep copy of.... */
   if (USE_SLICE_ALLOC)
     {
-      new_feature_any = g_slice_alloc0(bytes) ;
+      new_feature_any = (ZMapFeatureAny)g_slice_alloc0(bytes) ;
       g_memmove(new_feature_any, orig_feature_any, bytes) ;
     }
   else
     {
-      new_feature_any = g_memdup(orig_feature_any, bytes) ;
+      new_feature_any = (ZMapFeatureAny)g_memdup(orig_feature_any, bytes) ;
     }
   logMemCalls(TRUE, new_feature_any) ;
 
@@ -1877,7 +1877,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
 
         for(l = new_set->loaded;l;l = l->next)
           {
-            span = g_memdup(l->data,sizeof(ZMapSpanStruct));
+            span = (ZMapSpan)g_memdup(l->data,sizeof(ZMapSpanStruct));
             copy = g_list_append(copy,span);    /* must preserve the order */
           }
 
@@ -2599,7 +2599,7 @@ gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block,  GQuark unique_id
       {
             for(l = fset->loaded;l;l = l->next)
             {
-                  span = l->data;
+              span = (ZMapSpan)(l->data);
                         continue;
 
                   if(span->x1 > start)
@@ -2727,7 +2727,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
   MergeContextData merge_data = (MergeContextData)user_data ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
-  gboolean new = FALSE, children = FALSE ;
+  gboolean have_new = FALSE, children = FALSE ;
   ZMapFeatureAny *view_path_parent_ptr;
   ZMapFeatureAny *view_path_ptr = NULL;
   ZMapFeatureAny *diff_path_parent_ptr;
@@ -2814,7 +2814,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
                  * and stop recursing.... */
 
 
-                merge_data->new_features = new = TRUE;/* This is a NEW feature. */
+                merge_data->new_features = have_new = TRUE;/* This is a NEW feature. */
 
                 /* We would use featureAnyAddFeature, but it does another
                  * g_hash_table_lookup... */
@@ -2840,7 +2840,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
               }
             else
               {
-                new = FALSE;/* Nothing new here */
+                have_new = FALSE;/* Nothing new here */
                 /* If the feature is there we need to copy it and then recurse down until
                  * we get to the individual feature level. */
                 diff_feature_any = featureAnyCopy(feature_any, NULL);
@@ -2858,7 +2858,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
             *diff_path_ptr = diff_feature_any;
 
             /* keep diff feature -> parent up to date with the view parent */
-            if(new)
+            if(have_new)
               (*diff_path_ptr)->parent = *view_path_parent_ptr;
 
 #if MH17_OLD_CODE
@@ -2876,7 +2876,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 // BUT: this code should only run if not a new block 'cos if it's new then we've just
 // assigned the pointer
 // this is a block which may hold a sequence, the dna featureset is another struct
-            if (!new && feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK &&
+            if (!have_new && feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK &&
                                 (*view_path_ptr)->unique_id == feature_any->unique_id)
               {
                ZMapFeatureBlock vptr = (ZMapFeatureBlock)(*view_path_ptr);
@@ -2923,7 +2923,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
             context->src_feature_set_names = g_list_prepend(context->src_feature_set_names, GUINT_TO_POINTER(feature_any->unique_id));
 
-            if(!new)
+            if(!have_new)
             {
                   mergeFeatureSetLoaded((ZMapFeatureSet)*view_path_ptr, (ZMapFeatureSet) feature_any);
             }
@@ -2949,7 +2949,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
         if (!(zMapFeatureParentGetFeatureByID(*view_path_parent_ptr, feature_any->unique_id)))
           {
-            merge_data->new_features = new = TRUE ;
+            merge_data->new_features = have_new = TRUE ;
             merge_data->feature_count++ ;
 
             featureAnyAddFeature(*diff_path_parent_ptr, feature_any) ;
@@ -2963,7 +2963,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
           }
         else
           {
-            new = FALSE ;
+            have_new = FALSE ;
           }
 
         break;
@@ -2982,14 +2982,14 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
                zMapFeatureLevelType2Str(feature_any->struct_type),
                feature_any,
                g_quark_to_string(feature_any->unique_id),
-               (new == TRUE ? "new" : "old"),
+               (have_new == TRUE ? "new" : "old"),
                (children ? "children and was added" : "no children and was not added"));
 #if 0
     printf("%s (%p) '%s' is %s and has %s\n",
                zMapFeatureLevelType2Str(feature_any->struct_type),
                feature_any,
                g_quark_to_string(feature_any->unique_id),
-               (new == TRUE ? "new" : "old"),
+               (have_new == TRUE ? "new" : "old"),
                (children ? "children and was added" : "no children and was not added"));
 #endif
 

@@ -410,7 +410,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Now we have a widget, check for fixed width fonts, fatal if we can't find any
    * because we won't be able to display DNA or peptide sequence correctly. */
   GList *pref_families = NULL ;
-  pref_families = g_list_append(pref_families, ZMAP_ZOOM_FONT_FAMILY) ;
+  char *zoom_font_family = g_strdup(ZMAP_ZOOM_FONT_FAMILY) ;
+  pref_families = g_list_append(pref_families, zoom_font_family) ;
 
   if(zMapGUIGetFixedWidthFont(GTK_WIDGET(toplevel),
                               pref_families,
@@ -425,6 +426,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       consoleMsg(TRUE, "Failed to find fixed width font: '%s'", ZMAP_ZOOM_FONT_FAMILY) ;
       doTheExit(EXIT_FAILURE) ;
     }
+
+  g_free(zoom_font_family) ;
+  zoom_font_family = NULL ;
 
   g_list_free(pref_families) ;
   pref_families = NULL ;

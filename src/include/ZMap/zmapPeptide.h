@@ -60,7 +60,7 @@ char *zMapPeptideSequence(ZMapPeptide peptide) ;
 char *zMapPeptideSequenceName(ZMapPeptide peptide) ;
 char *zMapPeptideGeneName(ZMapPeptide peptide) ;
 gboolean zMapPeptideMatch(char *cp, char *end,
-			  char *template, ZMapStrand strand, ZMapGeneticCode translation_table,
+			  char *match_template_in, ZMapStrand strand, ZMapGeneticCode translation_table,
 			  char **start_out, char **end_out, char **match_str) ;
 GList *zMapPeptideMatchFindAll(char *target, char *query, gboolean rev_comped,
 			       ZMapStrand strand, ZMapFrame orig_frame,

@@ -612,7 +612,7 @@ gboolean zmapFeatureMatchingBoundaries(ZMapFeature feature,
  * ZMapFeatureSubPartStruct but we don't really need to know that. */
 static void freeSubPart(gpointer data, gpointer user_data_unused)
 {
-  zMapFeatureSubPartDestroy(data) ;
+  zMapFeatureSubPartDestroy((ZMapFeatureSubPart)data) ;
 
   return ;
 }

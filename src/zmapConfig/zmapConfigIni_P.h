@@ -202,10 +202,10 @@ gboolean zMapConfigIniGetUserValue(ZMapConfigIni config,
                            GValue **value_out,
                            GType type);
 gboolean zMapConfigIniGetValue(ZMapConfigIni config,
-                         char * stanza_name,
-                         char * key_name,
-                         GValue **value_out,
-                         GType type);
+                               char * stanza_name,
+                               const char * key_name,
+                               GValue **value_out,
+                               GType type);
 void zMapConfigIniSetValue(ZMapConfigIni config,
                      char *stanza_name,
                      char *key_name,

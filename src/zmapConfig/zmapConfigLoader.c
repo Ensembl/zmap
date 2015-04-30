@@ -91,7 +91,7 @@ static ZMapConfigIniContextKeyEntry get_window_group_data(char **stanza_name, ch
 static ZMapConfigIniContextKeyEntry get_blixem_group_data(char **stanza_name, char **stanza_type);
 static gpointer create_config_source();
 static void free_source_list_item(gpointer list_data, gpointer unused_data);
-static void source_set_property(char *current_stanza_name, char *key, GType type,
+static void source_set_property(char *current_stanza_name, const char *key, GType type,
 gpointer parent_data, GValue *property_value) ;
 static gpointer create_config_style() ;
 static void style_set_property(char *current_stanza_name, char *key, GType type,
@@ -184,7 +184,7 @@ ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
 
 
 
-ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *config_file, char *stanza_name_in)
+ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, char *stanza_name_in)
 {
   ZMapConfigIniContext context = NULL;
 
@@ -879,7 +879,7 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
                   f_src->maps_to = set_id;
         
                   /* now set up featureset to column mapping to allow the column to paint and styles to be found */
-                  if (fset2col && !((ZMapFeatureSetDesc)real_f2c = g_hash_table_lookup(fset2col, GUINT_TO_POINTER(key))))
+                  if (fset2col && !(real_f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(fset2col, GUINT_TO_POINTER(key))))
                     {
                       real_f2c = g_new0(ZMapFeatureSetDescStruct,1);
                       g_hash_table_insert(fset2col,GUINT_TO_POINTER(key),real_f2c);
@@ -1989,7 +1989,7 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, ch
 }
 
 
-static void source_set_property(char *current_stanza_name, char *key, GType type,
+static void source_set_property(char *current_stanza_name, const char *key, GType type,
 gpointer parent_data, GValue *property_value)
 {
   ZMapConfigSource config_source = (ZMapConfigSource)parent_data ;

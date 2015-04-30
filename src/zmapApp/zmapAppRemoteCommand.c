@@ -201,7 +201,7 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
         {
           if (zMapAppRemoteViewParseIDStr(id_str, (void **)&view_id))
             {
-              remote->curr_view_id = view_id ;
+              remote->curr_view_id = (ZMapView)view_id ;
             }
           else
             {
