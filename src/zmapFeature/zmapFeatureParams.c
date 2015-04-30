@@ -179,7 +179,7 @@ GType zMapFeatureDataGetType(void)
 
       type = g_type_register_static (G_TYPE_OBJECT,
                                      ZMAP_FEATURE_DATA_NAME,
-                                     &info, 0);
+                                     &info, (GTypeFlags)0);
     }
 
   return type;
@@ -297,8 +297,8 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
 
       for(i = PROP_DATA_ZERO; i < PROP_DATA_FINAL; i++, table++)
         {
-          name  = zmapFeatureDataPropertyNick(i);
-          nick  = zmapFeatureDataPropertyNick(i);
+          name  = zmapFeatureDataPropertyNick((ZMapFeatureDataProperty)i);
+          nick  = zmapFeatureDataPropertyNick((ZMapFeatureDataProperty)i);
 #ifdef RDS_DONT_INCLUDE
           blurb = zmapFeatureDataPropertyBlurb(i);
 #endif
@@ -334,7 +334,7 @@ static char *gtype_to_message_string(GType feature_any_gtype)
       for(i = ZMAPSTYLE_MODE_BASIC; i <= ZMAPSTYLE_MODE_GLYPH; i++)
         {
           string_array[FEATURE_DATA_TYPE_FEATURE + (i << FEATURE_DATA_FEATURE_SHAPE_SHIFT)] =
-            g_strdup_printf("ZMapFeature [%s]", zMapStyleMode2ExactStr(i));
+            g_strdup_printf("ZMapFeature [%s]", zMapStyleMode2ExactStr((ZMapStyleMode)i));
         }
     }
 

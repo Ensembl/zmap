@@ -488,7 +488,7 @@ void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature)
         {
           ZMapSpan intron ;
 
-          intron = g_malloc0(sizeof *intron);
+          intron = (ZMapSpan)g_malloc0(sizeof *intron);
           intron->x1 = exon1->x2 + 1 ;
           intron->x2 = exon2->x1 - 1 ;
 
@@ -810,7 +810,7 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
    * if we didn't overlap any exons at all (i.e. inside an intron) */
   if (replace || !overlaps)
     {
-      ZMapSpan new_exon = g_malloc0(sizeof *new_exon);
+      ZMapSpan new_exon = (ZMapSpan)g_malloc0(sizeof *new_exon);
       new_exon->x1 = start;
       new_exon->x2 = end;
 
@@ -1302,7 +1302,7 @@ static ZMapBoundaryType showTrimStartEndConfirmation()
 
   GtkWidget *dialog = gtk_dialog_new_with_buttons("Confirm edit operation",
                                                   NULL,
-                                                  GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                  (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
                                                   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
                                                   "5'", ZMAP_TRIM_RESPONSE_START,
                                                   "3'", ZMAP_TRIM_RESPONSE_END,

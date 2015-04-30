@@ -666,7 +666,7 @@ ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src)
 
   zMapReturnValIfFailSafe((ZMAP_IS_FEATURE_STYLE(src)), dest) ;
 
-  dest = g_object_new(ZMAP_TYPE_FEATURE_STYLE, NULL) ;
+  dest = (ZMapFeatureTypeStyle)g_object_new(ZMAP_TYPE_FEATURE_STYLE, NULL) ;
 
   for (i = 1 ; i < _STYLE_PROP_N_ITEMS ; i++, param++)
     {
