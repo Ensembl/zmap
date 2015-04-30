@@ -84,7 +84,7 @@ ZMAP_DEFINE_ENUM(RemoteEnvelopeAttrType, REMOTE_ENVELOPE_ATTR_LIST) ;
 
 
 GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
-                                       char *command, int timeout_secs, ...) ;
+                                       const char *command, int timeout_secs, ...) ;
 GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control,
                                                 char *original_request,
                                                 RemoteCommandRCType return_code, char *reason,
@@ -96,7 +96,7 @@ GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote
 							ZMapXMLUtilsEventStack reply,
 							char **error_out) ;
 ZMapXMLUtilsEventStack zMapRemoteCommandCreateElement(char *element, char *attribute, char *attribute_value) ;
-ZMapXMLUtilsEventStack zMapRemoteCommandMessage2Element(char *message) ;
+ZMapXMLUtilsEventStack zMapRemoteCommandMessage2Element(const char *message) ;
 GArray *zMapRemoteCommandAddBody(GArray *request_in_out, char *req_or_reply,
 				 ZMapXMLUtilsEventStack request_body) ;
 char *zMapRemoteCommandStack2XML(GArray *xml_stack, char **error_out) ;
@@ -124,13 +124,13 @@ char *zMapRemoteCommandRequestGetRequestID(char *request) ;
 
 
 
-gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
+gboolean zMapRemoteCommandReplyGetAttributes(const char *reply,
 					     char **command_out,
 					     RemoteCommandRCType *return_code_out, char **reason_out,
 					     char **reply_body_out,
 					     char **error_out) ;
-gboolean zMapRemoteCommandGetAttribute(char *message,
-				       char *element, char *attribute, char **attribute_value_out,
+gboolean zMapRemoteCommandGetAttribute(const char *message,
+				       const char *element, const char *attribute, char **attribute_value_out,
 				       char **error_out) ;
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapRemoteCommandRC2Str, RemoteCommandRCType) ;

@@ -140,7 +140,7 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
 				      ZMapRemoteControlReplySentFunc reply_sent_func,
 				      gpointer reply_sent_func_data) ;
 gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
-                                   char *peer_socket,
+                                   const char *peer_socket,
 				   ZMapRemoteControlRequestSentFunc req_sent_func,
 				   gpointer req_sent_func_data,
 				   ZMapRemoteControlReplyHandlerFunc reply_handler_func,
