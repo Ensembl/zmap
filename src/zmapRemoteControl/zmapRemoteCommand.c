@@ -105,11 +105,11 @@ typedef struct ParseSingleDataStructName
 
 /* Struct giving command attributes, could be extended to hold others if useful. */
 
-typedef enum {COMMAND_PRIORITY_LOW = 1, COMMAND_PRIORITY_HIGH = 100} CommandPriorityType ;
+typedef enum {COMMAND_PRIORITY_INVALID, COMMAND_PRIORITY_LOW = 1, COMMAND_PRIORITY_HIGH = 100} CommandPriorityType ;
 
 typedef struct CommandAttributeStructType
 {
-  char *command ;
+  const char *command ;
 
   CommandPriorityType priority ;
 
@@ -120,15 +120,15 @@ typedef struct CommandAttributeStructType
 
 static GArray *createRequestReply(EnvelopeType type, GQuark version,
                                   GQuark app_id, GQuark socket_id,
-                                  char *request_id, char *request_time,
-                                  char *command, int timeout_secs,
-                                  RemoteCommandRCType return_code, char *reason, ZMapXMLUtilsEventStack result,
+                                  const char *request_id, const char *request_time,
+                                  const char *command, int timeout_secs,
+                                  RemoteCommandRCType return_code, const char *reason, ZMapXMLUtilsEventStack result,
                                   ...) ;
 static GArray *vCreateRequestReply(EnvelopeType type, GQuark version,
                                    GQuark app_id, GQuark socket_id,
-                                   char *request_id, char *request_time,
-                                   char *command, int timeout_secs,
-                                   RemoteCommandRCType return_code, char *reason, ZMapXMLUtilsEventStack result,
+                                   const char *request_id, const char *request_time,
+                                   const char *command, int timeout_secs,
+                                   RemoteCommandRCType return_code, const char *reason, ZMapXMLUtilsEventStack result,
                                    va_list argp) ;
 static gboolean getRequestAttrs(char *xml_request, GQuark *req_version,
 				GQuark *app_id, GQuark *req_socket_id,
@@ -139,7 +139,7 @@ static gboolean getReplyAttrs(char *xml_request, GQuark *reply_version,
                               char **reply_id, char **reply_time,
                               char **reply_command, char **error_out) ;
 static gboolean checkAttribute(ZMapXMLParser parser, ZMapXMLElement element,
-			       char *attribute, GQuark expected_value, char **error_out) ;
+			       const char *attribute, GQuark expected_value, char **error_out) ;
 static gboolean compareRequests(ZMapRemoteControl remote_control,
 				char *request_1, char *request_2, char **error_out) ;
 static gboolean checkReplyAttrs(ZMapRemoteControl remote_control,
@@ -207,7 +207,7 @@ CommandAttributeStruct cmd_attrs_G[] =
     {ZACP_FEATURES_LOADED, COMMAND_PRIORITY_LOW},
     {ZACP_DUMP_FEATURES, COMMAND_PRIORITY_LOW},
 
-    {NULL, 0}                                               /* Marks end of array. */
+    {NULL, COMMAND_PRIORITY_INVALID}                        /* Marks end of array. */
 
   } ;
 
@@ -321,7 +321,7 @@ static ZMapXMLObjTagFunctionsStruct parse_single_attr_ends_G[] =
  *
  *  */
 GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
-                                       char *command, int timeout_secs, ...)
+                                       const char *command, int timeout_secs, ...)
 {
   GArray *envelope = NULL ;
   char *request_id ;
@@ -454,7 +454,7 @@ GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote
 	  }
 	else
 	  {
-	    char *command ;
+	    const char *command ;
 
 	    if (valid_rc == REMOTE_VALIDATE_RC_BODY_COMMAND)
 	      command = "**error**" ;
@@ -558,7 +558,7 @@ ZMapXMLUtilsEventStack zMapRemoteCommandCreateElement(char *element, char *attri
  * the need for allocation/free. The stack is "read-only", if you need
  * to alter it then you need to take a copy of it.
  *  */
-ZMapXMLUtilsEventStack zMapRemoteCommandMessage2Element(char *message)
+ZMapXMLUtilsEventStack zMapRemoteCommandMessage2Element(const char *message)
 {
   static ZMapXMLUtilsEventStackStruct
     message_stack[] =
@@ -950,8 +950,8 @@ gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
  * error should be g_free'd when finished with.
  *
  *  */
-gboolean zMapRemoteCommandGetAttribute(char *message,
-                                       char *element, char *attribute, char **attribute_value_out,
+gboolean zMapRemoteCommandGetAttribute(const char *message,
+                                       const char *element, const char *attribute, char **attribute_value_out,
                                        char **error_out)
 {
   gboolean result = FALSE ;
@@ -1048,12 +1048,12 @@ static GArray *vCreateRequestReply(EnvelopeType type,
                                    GQuark version,
                                    GQuark app_id,
                                    GQuark socket_id,
-                                   char *request_id,
-                                   char *request_time,
-                                   char *command,
+                                   const char *request_id,
+                                   const char *request_time,
+                                   const char *command,
                                    int timeout_secs,
                                    RemoteCommandRCType return_code,
-                                   char *reason,
+                                   const char *reason,
                                    ZMapXMLUtilsEventStack result,
                                    va_list argp)
 {

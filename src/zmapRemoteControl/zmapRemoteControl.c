@@ -387,7 +387,7 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
  * peer though can choose how it makes the sting unique but it must be _globally_ unique in
  * context of an X Windows server. */
 gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
-				   char *socket_string,
+				   const char *socket_string,
 				   ZMapRemoteControlRequestSentFunc req_sent_func,
 				   gpointer req_sent_func_data,
 				   ZMapRemoteControlReplyHandlerFunc process_reply_func,
