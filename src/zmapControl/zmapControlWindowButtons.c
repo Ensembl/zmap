@@ -1102,7 +1102,7 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
     }
 
   /* What on earth is this test about ????? */
-  if ((window = data->original_data))
+  if ((window = (ZMapWindow)data->original_data))
     {
       if (menu_item_id == SHOW_3FEATURES
 	  || menu_item_id == SHOW_3FT || menu_item_id == HIDE_3ALL

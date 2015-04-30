@@ -922,7 +922,7 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
   if(main_frame->file_type == FILE_BIGWIG)
     {
       /*GQuark f_id;*/
-      char * strand_txt = NULL ;
+      const char * strand_txt = NULL ;
 
       /*f_id = zMapFeatureSetCreateID("bigWig");
       src = zMapViewGetFeatureSetSource(view, f_id);
