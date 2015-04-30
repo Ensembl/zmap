@@ -70,6 +70,133 @@ function _config_set_ZMAP_HOST_TYPE
 	    ;;
     esac
 }
+# Usage: config_set_ZMAP_ARCH <machine_name>
+# Sets ZMAP_ARCH for the zmap naming conventions for architecture for the given machine 
+# e.g. Linux-i686 (lucid 32-bit), Linux_x86_64 (lucid 64-bit), precise_x86_64 (precise 64-bit) etc.
+function config_set_ZMAP_ARCH
+{
+    local opsys arch lsb_release separator host
+
+    host=$1
+    current_host=`hostname -s`
+    separator="_"
+
+    if [ "$host" == "$current_host" ] ; then
+        opsys=`uname -s`
+        arch=`uname -m`
+    else
+        opsys=`ssh $host uname -s`
+        arch=`ssh $host uname -m`
+    fi
+
+    case $opsys in
+        "Linux")
+            lsb_release=`ssh $host lsb_release -cs`
+            case $lsb_release in
+                "lucid")
+                    ZMAP_ARCH="Linux"$separator$arch
+                    ;;
+                *)
+                    ZMAP_ARCH=$lsb_release$separator$arch
+                    ;;
+            esac
+            ;;
+        *)
+            ZMAP_ARCH=$opsys$separator$arch
+            ;;
+    esac
+}
+# Usage: config_set_SEQTOOLS_ARCH <machine_name>
+# Sets SEQTOOLS_ARCH for the seqtools naming conventions for architecture for the given machine 
+# e.g. Linux-i686 (lucid 32-bit), Linux_x86_64 (all linux 64-bit)
+function config_set_SEQTOOLS_ARCH
+{
+    local opsys arch lsb_release separator host
+
+    host=$1
+    current_host=`hostname -s`
+    separator="-"
+
+    if [ "$host" == "$current_host" ] ; then
+        opsys=`uname -s`
+        arch=`uname -m`
+    else
+        opsys=`ssh $host uname -s`
+        arch=`ssh $host uname -m`
+    fi
+
+    case $opsys in
+        "Linux")
+            lsb_release=`ssh $host lsb_release -cs`
+            case $lsb_release in
+                "lucid")
+                    SEQTOOLS_ARCH="Linux"$separator$arch
+                    ;;
+                *)
+                    SEQTOOLS_ARCH=$lsb_release$separator$arch
+                    ;;
+            esac
+            ;;
+        *)
+            SEQTOOLS_ARCH=$opsys$separator$arch
+            ;;
+    esac
+}
+# Usage: config_set_PROJECT_ARCH <machine_name>
+# Sets PROJECT_ARCH for the project-software naming convention for architectures 
+# e.g. linux-i386 (lucid 32-bit), linux-x86_64 (lucid 64-bit), precise-x86_64 (precise 64-bit) etc.
+# Sets the result to empty string if there is no appropriate destination on /software.
+function config_set_PROJECT_ARCH
+{
+    local opsys arch lsb_release separator host
+
+    host=$1
+    current_host=`hostname -s`
+    separator="-"
+
+    if [ "$host" == "$current_host" ] ; then
+        opsys=`uname -s`
+        arch=`uname -m`
+    else
+        opsys=`ssh $host uname -s`
+        arch=`ssh $host uname -m`
+    fi
+
+    case $opsys in
+        "Linux")
+            case $arch in
+                "ia64")
+                    PROJECT_ARCH="linux"$separator"ia64"
+                    ;;
+
+                "i686")
+                    PROJECT_ARCH="linux"$separator"i386"
+                    ;;
+
+                "x86_64")
+                    lsb_release=`ssh $host lsb_release -cs`
+                    case $lsb_release in
+                        "lucid")
+                            PROJECT_ARCH="linux"$separator$arch
+                            ;;
+                        *)
+                            PROJECT_ARCH=$lsb_release$separator$arch
+                            ;;
+                    esac
+                    ;;
+            esac
+            ;;
+
+        "Darwin")
+            PROJECT_ARCH="macosx-10"$separator"i386"
+            ;;
+  
+        *)
+            # there is no project software for e.g. cygwin.
+            PROJECT_ARCH=""
+            ;;
+    esac
+}
 # Usage: _config_source_file <file>
 function _config_source_file
 {
@@ -118,8 +245,15 @@ ZMAP_MASTER_NOTIFY_MAIL=annosoft@sanger.ac.uk
 
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 
-# tviewsrv and lucid-dev64 are now ubuntu....
-ZMAP_BUILD_MACHINES="tviewsrv mac106229i lucid-dev64 t119-win-build"
+# This is the full list of architectures from /software/noarch/architectures
+# and the machines we build on:
+#   linux-i386       - tviewsrv
+#   linux-ia64       - not supported
+#   linux-x86_64     - lucid-dev64
+#   precise-x86_64   - precise-dev64
+#   macosx-10-i386   - mac106229i
+#   trusty-x86_64    - precise-dev64
+ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64 precise-dev64 mac106229i t119-win-build"
 
 
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \
