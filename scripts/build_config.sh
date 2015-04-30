@@ -72,7 +72,7 @@ function _config_set_ZMAP_HOST_TYPE
 }
 # Usage: config_set_ZMAP_ARCH <machine_name>
 # Sets ZMAP_ARCH for the zmap naming conventions for architecture for the given machine 
-# e.g. Linux-i686 (lucid 32-bit), Linux_x86_64 (lucid 64-bit), precise_x86_64 (precise 64-bit) etc.
+# e.g. Linux_i686 (lucid 32-bit), Linux_x86_64 (lucid 64-bit), precise_x86_64 (precise 64-bit) etc.
 function config_set_ZMAP_ARCH
 {
     local opsys arch lsb_release separator host
@@ -108,7 +108,7 @@ function config_set_ZMAP_ARCH
 }
 # Usage: config_set_SEQTOOLS_ARCH <machine_name>
 # Sets SEQTOOLS_ARCH for the seqtools naming conventions for architecture for the given machine 
-# e.g. Linux-i686 (lucid 32-bit), Linux_x86_64 (all linux 64-bit)
+# e.g. Linux-i686 (lucid 32-bit), Linux-x86_64 (all linux 64-bit)
 function config_set_SEQTOOLS_ARCH
 {
     local opsys arch lsb_release separator host
