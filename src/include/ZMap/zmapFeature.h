@@ -926,7 +926,14 @@ _(ZMAPBOUNDARY_MATCH_TYPE_NONE,     =      0, "no_match", "No boundaries match",
 _(ZMAPBOUNDARY_MATCH_TYPE_5_MATCH,  = 1 << 0, "5'_match", "5' boundary matches", "") \
 _(ZMAPBOUNDARY_MATCH_TYPE_3_MATCH,  = 1 << 1, "3'_match", "3' boundary matches", "")
 
-ZMAP_DEFINE_ENUM(ZMapFeatureBoundaryMatchType, ZMAP_BOUNDARY_MATCH_TYPE_LIST) ;
+ZMAP_DEFINE_ENUM(ZMapFeatureBoundaryMatchTypeEnum, ZMAP_BOUNDARY_MATCH_TYPE_LIST) ;
+
+/* ZMapFeatureBoundaryMatchTypeEnum results are combined together with
+ * bit operators so they are no longer values from the ZMapFeatureBoundaryMatchTypeEnum
+ * itself. We therefore can't use this enum to store the results and must use an int
+ * instead. However, partly for historic reasons and partly because it's useful to know 
+ * they're related to the enum, let's create a specific type name for these int results. */
+typedef int ZMapFeatureBoundaryMatchType ;
 
 
 typedef struct ZMapFeatureBoundaryMatchStructType
@@ -1022,7 +1029,14 @@ typedef enum
     ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE    = 1 << 0,
     ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND = 1 << 1,
     ZMAP_CONTEXT_EXEC_STATUS_ERROR        = 1 << 2
-  } ZMapFeatureContextExecuteStatus;
+  } ZMapFeatureContextExecuteStatusType;
+
+/* ZMapFeatureContextExecuteStatusType results are combined together with
+ * bit operators so they are no longer values from the ZMapFeatureContextExecuteStatusType
+ * enum itself. We therefore can't use this enum to store the results and must use an int
+ * instead. However, partly for historic reasons and partly because it's useful to know 
+ * they're related to the enum, let's create a specific type name for these int results. */
+typedef int ZMapFeatureContextExecuteStatus ;
 
 typedef ZMapFeatureContextExecuteStatus (*ZMapGDataRecurseFunc)(GQuark   key_id,
                                                                 gpointer list_data,
