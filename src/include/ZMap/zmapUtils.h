@@ -120,7 +120,7 @@ typedef struct  _ZMapLogStruct *ZMapLog ;
  * ZMAP_MAGIC_RESET(struct->magic) ;
  * 
  */
-typedef char* ZMapMagic ;
+typedef const char * ZMapMagic ;
 
 #define ZMAP_MAGIC_NEW(magic_var_name, type_name) static ZMapMagic magic_var_name = ZMAP_MAKESTRING((type_name))  " in file " __FILE__
 #define ZMAP_MAGIC_IS_VALID(magic_var_name, magic_ptr) ((magic_var_name) == (magic_ptr))
