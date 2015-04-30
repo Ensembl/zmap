@@ -49,6 +49,7 @@
 
 /* Return code values from command processing function. */
 #define REMOTE_COMMAND_RC_LIST(_)                                                           \
+_(REMOTE_COMMAND_RC_INVALID,   = -1, "invalid",        "Invalid rc.",                   "") \
 _(REMOTE_COMMAND_RC_OK,            , "ok",             "Command succeeded.",            "") \
 _(REMOTE_COMMAND_RC_FAILED,        , "cmd_failed",     "Command failed.",               "") \
 _(REMOTE_COMMAND_RC_BAD_ARGS,      , "bad_args",       "Command args are wrong.",       "") \

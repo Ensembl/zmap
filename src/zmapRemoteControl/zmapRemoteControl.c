@@ -137,7 +137,7 @@ static RemoteReceive createReceive(GQuark app_id,
 				   ZMapRemoteControlReplySentFunc reply_sent_func,
 				   gpointer reply_sent_func_data) ;
 static void destroyReceive(ZMapRemoteControl remote_control) ;
-static gboolean createSend(ZMapRemoteControl remote_control, char *socket_string,
+static gboolean createSend(ZMapRemoteControl remote_control, const char *socket_string,
                            ZMapRemoteControlRequestSentFunc req_sent_func, gpointer req_sent_func_data,
                            ZMapRemoteControlReplyHandlerFunc process_reply_func, gpointer process_reply_func_data,
                            char **err_msg_out) ;
@@ -151,7 +151,7 @@ static void receiveReplyFromAppCB(void *remote_data, gboolean abort, char *reply
 static gboolean setToFailed(ZMapRemoteControl remote_control) ;
 static gboolean setToInactive(ZMapRemoteControl remote_control) ;
 
-static char *headerCreate(char *request_type, char *request_id, int retry_num, char *request_time) ;
+static char *headerCreate(const char *request_type, char *request_id, int retry_num, char *request_time) ;
 static char *headerSetRetry(char *curr_header, int retry_num) ;
 
 static RemoteZeroMQMessage zeroMQMessageCreate(char *header, char *body) ;
@@ -188,7 +188,7 @@ static void reqReplyDestroy(ReqReply req_reply) ;
 
 int reqIsEarlier(char *request_1_time, char *request_2_time) ;
 
-static gboolean zeroMQSocketRequestorCreate(void *zmq_context, char *end_point,
+static gboolean zeroMQSocketRequestorCreate(void *zmq_context, const char *end_point,
                                             void **socket_out, char **err_msg_out) ;
 static gboolean zeroMQSocketReplierCreate(void *zmq_context,
                                           void **socket_out, char **end_point_out, char **err_msg_out) ;
@@ -199,7 +199,7 @@ static gboolean zeroMQSocketSendMessage(void *zmq_socket, char *header, char *bo
 static gboolean zeroMQSocketSendFrame(void *zmq_socket, void *msg, int msg_len, gboolean send_more,
                                       char **err_msg_out) ;
 static SocketFetchRC zeroMQSocketFetchFrame(void *socket, char **msg_out, char **err_msg_out) ;
-static SocketFetchRC zeroMQSocketFetchMessage(void *socket, char **header_out, char **body_out, char **err_msg_out) ;
+static SocketFetchRC zeroMQSocketFetchMessage(void *socket, char **header_out, char **body_out, const char **err_msg_out) ;
 static gboolean zeroMQSocketClose(void *zmq_socket, char *endpoint, gboolean disconnect, char **err_msg_out) ;
 
 static void timeoutStartTimer(ZMapRemoteControl remote_control) ;
@@ -209,12 +209,12 @@ static void timeoutGetCurrTimeout(ZMapRemoteControl remote_control, int *timeout
 
 static void errorHandler(ZMapRemoteControl remote_control,
 			 const char *file_name, const char *func_name,
-			 ZMapRemoteControlRCType error_rc, char *format_str, ...) ;
+			 ZMapRemoteControlRCType error_rc, const char *format_str, ...) ;
 static gboolean stderrOutputCB(gpointer user_data, char *err_msg) ;
 static void errorMsg(ZMapRemoteControl remote_control,
-                     const char *file_name, const char *func_name, char *format_str, ...) ;
+                     const char *file_name, const char *func_name, const char *format_str, ...) ;
 static void logMsg(ZMapRemoteControl remote_control,
-		   const char *file_name, const char *func_name, char *format_str, va_list args) ;
+		   const char *file_name, const char *func_name, const char *format_str, va_list args) ;
 
 
 
@@ -774,7 +774,7 @@ static gboolean waitForRequestCB(gpointer user_data)
   SocketFetchRC result = SOCKET_FETCH_FAILED ;
   char *header = NULL ;
   char *request = NULL ;
-  char *err_msg = NULL ;
+  const char *err_msg = NULL ;
 
   if ((result = zeroMQSocketFetchMessage(receive->zmq_socket, &header, &request, &err_msg)) == SOCKET_FETCH_FAILED)
     {
@@ -818,7 +818,7 @@ static gboolean waitForReplyCB(gpointer user_data)
   gboolean result ;
   char *header = NULL ;
   char *reply = NULL ;
-  char *err_msg = NULL ;
+  const char *err_msg = NULL ;
 
 
   if ((result = zeroMQSocketFetchMessage(send->zmq_socket, &header, &reply, &err_msg)) == SOCKET_FETCH_FAILED)
@@ -928,7 +928,7 @@ static gboolean setToFailed(ZMapRemoteControl remote_control)
 static gboolean setToInactive(ZMapRemoteControl remote_control)
 {
   gboolean result = TRUE ;
-  char *msg ;
+  const char *msg ;
 
   /* Stop monitoring for new requests/replies in the queues. */
   if ((remote_control->queue_monitor_cb_id) && !g_source_remove(remote_control->queue_monitor_cb_id))
@@ -1821,7 +1821,7 @@ static RemoteZeroMQMessage queueRemove(GQueue *queue)
 {
   RemoteZeroMQMessage req_resp = NULL ;
 
-  req_resp = g_queue_pop_head(queue) ;
+  req_resp = (RemoteZeroMQMessage)g_queue_pop_head(queue) ;
 
   return req_resp ;
 }
@@ -1830,7 +1830,7 @@ static RemoteZeroMQMessage queuePeek(GQueue *queue)
 {
   RemoteZeroMQMessage req_resp = NULL ;
 
-  req_resp = g_queue_peek_head(queue) ;
+  req_resp = (RemoteZeroMQMessage)g_queue_peek_head(queue) ;
 
   return req_resp ;
 }
@@ -1880,7 +1880,7 @@ static void queueDestroy(GQueue *queue)
  */
 
 /* Laborious but important to have good error reporting.... */
-static gboolean zeroMQSocketRequestorCreate(void *zmq_context, char *end_point, void **socket_out, char **err_msg_out)
+static gboolean zeroMQSocketRequestorCreate(void *zmq_context, const char *end_point, void **socket_out, char **err_msg_out)
 {
   gboolean result = TRUE ;
   void *socket = NULL ;
@@ -2019,7 +2019,7 @@ static char *zeroMQSocketGetAddress(void *zmq_socket, char **err_msg_out)
       char *buffer ;
       size_t str_len ;
 
-      buffer = g_malloc0(buf_len) ;                         /* Allows for terminating NULL. */
+      buffer = (char *)g_malloc0(buf_len) ;                         /* Allows for terminating NULL. */
       str_len = buf_len - 1 ;
 
       if (zmq_getsockopt(zmq_socket, ZMQ_LAST_ENDPOINT, buffer, &str_len) != 0)
@@ -2184,7 +2184,7 @@ static gboolean zeroMQSocketSendFrame(void *zmq_socket, void *msg, int msg_len, 
 /* Peer to peer messages are sent in two frames in the zmq version of the communications, we
  * completely assume that if we get the header then the body should be there. That seems to be
  * part of zmq's guarantee to us, if this fails we do not try to recover but record errors. */
-static SocketFetchRC zeroMQSocketFetchMessage(void *socket, char **header_out, char **body_out, char **err_msg_out)
+static SocketFetchRC zeroMQSocketFetchMessage(void *socket, char **header_out, char **body_out, const char **err_msg_out)
 {
   SocketFetchRC result = SOCKET_FETCH_FAILED ;
   char *header = NULL ;
@@ -2313,7 +2313,7 @@ static SocketFetchRC zeroMQSocketFetchFrame(void *zmq_socket, char **msg_out, ch
 
                   msg_data = zmq_msg_data(&zmq_msg) ;
                   
-                  *msg_out = g_strndup(msg_data, rc) ;      /* Turns message into a C string. */
+                  *msg_out = g_strndup((const gchar *)msg_data, rc) ;      /* Turns message into a C string. */
 
                   result = SOCKET_FETCH_OK ;
                 }
@@ -2361,7 +2361,7 @@ static gboolean zeroMQSocketClose(void *zmq_socket, char *endpoint, gboolean dis
  * reset so that the send or receive is aborted. */
 static void errorHandler(ZMapRemoteControl remote_control,
                          const char *file_name, const char *func_name,
-                         ZMapRemoteControlRCType error_rc, char *format_str, ...)
+                         ZMapRemoteControlRCType error_rc, const char *format_str, ...)
 {
   va_list args1, args2 ;
   int bytes_printed ;
@@ -2426,7 +2426,7 @@ static gboolean stderrOutputCB(gpointer user_data_unused, char *err_msg)
  * in a standard format.
  *  */
 static void errorMsg(ZMapRemoteControl remote_control,
-                     const char *file_name, const char *func_name, char *format_str, ...)
+                     const char *file_name, const char *func_name, const char *format_str, ...)
 {
   va_list args ;
 
@@ -2451,7 +2451,7 @@ static void errorMsg(ZMapRemoteControl remote_control,
  * 
  */
 static void logMsg(ZMapRemoteControl remote_control,
-                   const char *file_name, const char *func_name, char *format_str, va_list args)
+                   const char *file_name, const char *func_name, const char *format_str, va_list args)
 {
   GString *msg ;
   char *name ;
@@ -2558,7 +2558,7 @@ static void destroyReceive(ZMapRemoteControl remote_control)
 
 
 /* Create send interface struct. */
-static gboolean createSend(ZMapRemoteControl remote_control, char *socket_string,
+static gboolean createSend(ZMapRemoteControl remote_control, const char *socket_string,
                            ZMapRemoteControlRequestSentFunc req_sent_func, gpointer req_sent_func_data,
                            ZMapRemoteControlReplyHandlerFunc process_reply_func, gpointer process_reply_func_data,
                            char **err_msg_out)
@@ -2749,10 +2749,10 @@ static void timeoutGetCurrTimeout(ZMapRemoteControl remote_control, int *timeout
  * 
  * Time is seconds,microseconds.
  *  */
-static char *headerCreate(char *request_type, char *request_id, int retry_num, char *request_time)
+static char *headerCreate(const char *request_type, char *request_id, int retry_num, char *request_time)
 {
   char *header ;
-  char *header_type ;
+  const char *header_type ;
 
 
   if (strcmp(request_type, ZACP_REQUEST) == 0)
