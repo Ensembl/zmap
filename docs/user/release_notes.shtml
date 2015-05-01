@@ -9,7 +9,7 @@
 <h4>Version 1.6.0</h4>
 <ul>
   <li>Add n/N shortcut key to get nucleotide sequence for a feature
-  <li>New splices for Adam
+  <li>Feature filtering: a new menu feature to allow the filtering of a set of features in comparision to a selected feature in serveral ways (show mismatching introns, show mismatching exons, show matching exons, or show matching cds).
   <li>Add a column hide command for remote protocol - RT 455660
   <li>ZMap now reports a features_loaded error if no features are loaded because they have been discarded - RT 456865
   <li>Small change to clipping logic for alignment features (related to RT 417362)
