@@ -2470,7 +2470,7 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
 // set non zero default vaues for mode data
         if(style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
           {
-            style->mode_data.alignment.unmarked_colinear = TRUE;
+            style->mode_data.alignment.unmarked_colinear = ZMAPSTYLE_COLDISPLAY_HIDE;
           }
         break;
       default:
@@ -2532,35 +2532,35 @@ static void zmap_feature_type_style_get_property(GObject *gobject, guint param_i
   switch(param->type)
     {
     case STYLE_PARAM_TYPE_BOOLEAN:
-      g_value_set_boolean(value, * (gboolean *) (((void *) style) + param->offset));
+      g_value_set_boolean(value, * (gboolean *) ((void *) (style + param->offset)));
       break;
     case STYLE_PARAM_TYPE_DOUBLE:
-      g_value_set_double(value, * (double *) (((void *) style) + param->offset));
+      g_value_set_double(value, * (double *) ((void *) (style + param->offset)));
       break;
 
     case STYLE_PARAM_TYPE_STRING:              // gchar *
-      g_value_set_string(value, (gchar *) (((void *) style) + param->offset));
+      g_value_set_string(value, (gchar *) ((void *) (style + param->offset)));
       break;
 
     case STYLE_PARAM_TYPE_QUARK:
-      g_value_set_uint(value, (guint) (* (GQuark *) (((void *) style) + param->offset)));
+      g_value_set_uint(value, (guint) (* (GQuark *) ((void *) (style + param->offset))));
       break;
 
     case STYLE_PARAM_TYPE_SQUARK:              // gchar * stored as a quark
-      g_value_set_string(value, g_quark_to_string(* (GQuark *) (((void *) style) + param->offset)));
+      g_value_set_string(value, g_quark_to_string(* (GQuark *) ((void *) (style + param->offset))));
       break;
 
     case STYLE_PARAM_TYPE_FLAGS:               // bitmap of is_set flags (array of uchar)
-      flags = g_malloc(STYLE_IS_SET_SIZE * 2 + 1);
+      flags = (char*)g_malloc(STYLE_IS_SET_SIZE * 2 + 1);
 
-      zmap_bin_to_hex(flags,(((void *) style) + param->offset), STYLE_IS_SET_SIZE);
+      zmap_bin_to_hex(flags,((void *) (style + param->offset), STYLE_IS_SET_SIZE));
 
       g_value_set_string(value,flags);
       g_free(flags);
       break;
 
     case STYLE_PARAM_TYPE_COLOUR:              // ZMapStyleFullColourStruct
-      colour = zmapStyleValueColour((ZMapStyleFullColour) (((void *) style) + param->offset));
+      colour = zmapStyleValueColour((ZMapStyleFullColour) ((void *) (style + param->offset)));
       if(colour)
         {
           //           g_value_set_string(value, strdup(colour));
@@ -2574,7 +2574,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject, guint param_i
       break;
 
     case STYLE_PARAM_TYPE_SUB_FEATURES:        // GQuark[]
-      subs = zmapStyleValueSubFeatures((GQuark *)(((void *) style) + param->offset));
+      subs = zmapStyleValueSubFeatures((GQuark *)((void *) (style + param->offset)));
       if(subs)
         {
           //           g_value_set_string(value, strdup(subs));
@@ -2590,7 +2590,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject, guint param_i
     case STYLE_PARAM_TYPE_QUARK_LIST_ID:
       {
         gchar *str;
-        str = zMap_g_list_quark_to_string(*(GList **)(((void *) style) + param->offset), NULL);
+        str = zMap_g_list_quark_to_string(*(GList **)(((=void *) (style + param->offset)), NULL);
         g_value_set_string(value, str);
         g_free(str);
       }
@@ -2604,7 +2604,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject, guint param_i
       // enums treated as uint. This is a pain: can we know how big an enum is? (NO)
       // Some pretty choice code but it's not safe to do it the easy way
 #define STYLE_GET_PROP(s_param,s_type)\
-      case s_param : g_value_set_uint(value, (guint) (* (s_type *) (((void *) style) + param->offset))); \
+      case s_param : g_value_set_uint(value, (guint) (* (s_type *) ((void *) (style + param->offset)))); \
       break
 
       STYLE_GET_PROP (STYLE_PARAM_TYPE_MODE            , ZMapStyleMode);
