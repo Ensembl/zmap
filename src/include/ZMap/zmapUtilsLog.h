@@ -75,9 +75,9 @@
 
 /* The base logging routine, you should use the below macros which automatically
  * include the stuff you need instead of this routine. */
-void zMapLogMsg(char *domain, GLogLevelFlags log_level,
-		char *file, const char *function, int line,
-		char *format, ...) ;
+void zMapLogMsg(const char *domain, GLogLevelFlags log_level,
+		const char *file, const char *function, int line,
+		const char *format, ...) ;
 
 
 /* Use these macros like this:

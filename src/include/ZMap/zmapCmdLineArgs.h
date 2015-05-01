@@ -28,6 +28,11 @@
  *
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_CMDLINEARGS_H
 #define ZMAP_CMDLINEARGS_H
 
@@ -85,10 +90,14 @@ typedef union
 
 
 void zMapCmdLineArgsCreate(int *argc, char *argv[]) ;
-gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result) ;
+gboolean zMapCmdLineArgsValue(const char *arg_name, ZMapCmdLineArgsType *result) ;
 char **zMapCmdLineFinalArg(void) ;
 void zMapCmdLineArgsDestroy(void) ;
 
 
 #endif /* !ZMAP_CMDLINEARGS_H */
 
+
+#ifdef __cplusplus
+}
+#endif

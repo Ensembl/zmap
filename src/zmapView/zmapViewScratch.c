@@ -59,7 +59,7 @@ typedef struct _EditOperationStruct
                                 * so we take ownership of it. */
   long seq_start;              /* sequence coord (sequence features only) */
   long seq_end;                /* sequence coord (sequence features only) */
-  ZMapFeatureSubPartSpan subpart; /* the subpart to use, if applicable */
+  ZMapFeatureSubPart subpart;  /* the subpart to use, if applicable */
   gboolean use_subfeature;     /* if true, use the clicked subfeature; otherwise use the entire feature */
   ZMapBoundaryType boundary;   /* the boundary type for a single-coord feature */
 } EditOperationStruct, *EditOperation;
@@ -1254,7 +1254,7 @@ gboolean zmapViewScratchCopyFeatures(ZMapView view,
                                      GList *features,
                                      const long seq_start,
                                      const long seq_end,
-                                     ZMapFeatureSubPartSpan subpart,
+                                     ZMapFeatureSubPart subpart,
                                      const gboolean use_subfeature)
 {
   if (features)
@@ -1295,7 +1295,7 @@ gboolean zmapViewScratchDeleteFeatures(ZMapView view,
                                        GList *features,
                                        const long seq_start,
                                        const long seq_end,
-                                       ZMapFeatureSubPartSpan subpart,
+                                       ZMapFeatureSubPart subpart,
                                        const gboolean use_subfeature)
 {
   /* Disallow this operation if the Annotation column is not enabled. (Should only happen after a

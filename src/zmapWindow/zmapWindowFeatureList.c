@@ -21,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Implements a sortable list of feature(s) displaying
  *              coords, strand and much else.
@@ -37,10 +37,6 @@
 #include <ZMap/zmapBase.h>
 #include <zmapWindowFeatureList_I.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainerUtils.h>
-
-/* agh....there is no way this should be here................ */
-#include <zmapWindowContainerFeatureSet_I.h>
 
 
 
@@ -108,10 +104,17 @@ static void feature_pointer_to_value    (GValue *value, gpointer feature_data);
 static void setup_tree(ZMapWindowFeatureList zmap_tv, ZMapStyleMode feature_type);
 /* from the hard coded lists in */
 static void feature_type_get_titles_types_funcs(ZMapStyleMode feature_type,
-                                    GList **titles_out,
-                                    GList **types_out,
-                                    GList **funcs_out,
-                                    GList **vis_out);
+                                                GList **titles_out,
+                                                GList **types_out,
+                                                GList **funcs_out,
+                                                GList **vis_out);
+
+
+static void featureItem2BumpHidden(GValue *value, gpointer feature_item_data) ;
+static void featureItem2UserHidden(GValue *value, gpointer feature_item_data) ;
+  static void featureItem2IsVisible(GValue *value, gpointer feature_item_data) ;
+
+
 
 /* faster than g_type_class_peek_parent all the time */
 static ZMapGUITreeViewClass parent_class_G = NULL;
@@ -1379,13 +1382,6 @@ static void setup_item_tree(ZMapWindowFeatureItemList zmap_tv,
   return ;
 }
 
-#define DEBUG_MISSING_OBJECTS
-#ifdef DEBUG_MISSING_OBJECTS
-static void feature_item_to_bump_hidden_value(GValue *value, gpointer feature_item_data);
-static void feature_item_to_user_hidden_value(GValue *value, gpointer feature_item_data);
-static void feature_item_to_is_visible_value (GValue *value, gpointer feature_item_data);
-#endif      /* DEBUG_MISSING_OBJECTS */
-
 /* GLists _must_ be freed, but all contents are static (DO NOT FREE) */
 static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
                                          GList **titles_out,
@@ -1513,25 +1509,25 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   flags  = g_list_append(flags, GINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
 
-#ifdef DEBUG_MISSING_OBJECTS
+  /* ONLY THIS BIT FOR DEVELOPERS ??????? */
   if(feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       titles = g_list_append(titles, "-bump-hidden-");
       types  = g_list_append(types,  GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs,  feature_item_to_bump_hidden_value);
+      funcs  = g_list_append(funcs,  featureItem2BumpHidden) ;
       flags  = g_list_append(flags,  GINT_TO_POINTER(flags_set));
 
       titles = g_list_append(titles, "-user-hidden-");
       types  = g_list_append(types,  GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs,  feature_item_to_user_hidden_value);
+      funcs  = g_list_append(funcs,  featureItem2UserHidden) ;
       flags  = g_list_append(flags,  GINT_TO_POINTER(flags_set));
 
       titles = g_list_append(titles, "-is-visible-");
       types  = g_list_append(types,  GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs,  feature_item_to_is_visible_value);
+      funcs  = g_list_append(funcs,  featureItem2IsVisible) ;
       flags  = g_list_append(flags,  GINT_TO_POINTER(flags_set));
     }
-#endif      /* DEBUG_MISSING_OBJECTS */
+
 
   /* FeatureSet Data Frame*/
   titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_STYLE_COLUMN_NAME);
@@ -1569,7 +1565,8 @@ static void feature_item_data_strand_to_value(GValue *value, gpointer feature_it
   if((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
     {
       container = (ZMapWindowContainerFeatureSet)feature_set_container;
-      g_value_set_uint(value, container->strand);
+
+      g_value_set_uint(value, zmapWindowContainerFeatureSetGetStrand(container)) ;
     }
   else
     g_warning("%s", "Failed to get Parent Contianer.");
@@ -1587,7 +1584,8 @@ static void feature_item_data_frame_to_value(GValue *value, gpointer feature_ite
   if((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
     {
       container = (ZMapWindowContainerFeatureSet)feature_set_container;
-      g_value_set_uint(value, container->frame);
+
+      g_value_set_uint(value, zmapWindowContainerFeatureSetGetFrame(container)) ;
     }
   else
     g_warning("%s", "Failed to get Parent Contianer.");
@@ -1635,95 +1633,6 @@ static void feature_pointer_serialised_to_value (GValue *value, gpointer feature
 
   return ;
 }
-
-#ifdef DEBUG_MISSING_OBJECTS
-static void feature_item_to_bump_hidden_value(GValue *value, gpointer feature_item_data)
-{
-  AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data;
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item);
-  ZMapWindowContainerGroup feature_set_container;
-  ZMapWindowContainerFeatureSet container;
-
-  if((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
-    {
-      container = (ZMapWindowContainerFeatureSet)feature_set_container;
-      char *yes = "yes";
-      char *no  = "no";
-      g_value_set_string(value, (container->hidden_bump_features ? yes : no));
-    }
-  else
-    g_warning("%s", "Failed to get Parent Contianer.");
-
-  return ;
-}
-
-static gint find_item_in_user_hidden_stack(gconstpointer list_data, gconstpointer item_data)
-{
-  GList *list = (GList *)list_data, *found;;
-  gint result = -1;
-  if((found = g_list_find(list, item_data)))
-    result = 0;
-  return result;
-}
-static gboolean in_user_hidden_stack(GQueue *queue, FooCanvasItem *item)
-{
-  gboolean result = FALSE;
-  GList *found;
-  if((found = g_queue_find_custom(queue, item, find_item_in_user_hidden_stack)))
-    result = TRUE;
-  return result;
-}
-static void feature_item_to_user_hidden_value(GValue *value, gpointer feature_item_data)
-{
-  AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data;
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item);
-  ZMapWindowContainerGroup feature_set_container;
-  ZMapWindowContainerFeatureSet container;
-
-  if((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
-    {
-      gboolean in_stack;
-      char *yes = "yes";
-      char *no  = "no";
-
-      container = (ZMapWindowContainerFeatureSet)feature_set_container;
-
-      in_stack = in_user_hidden_stack(container->user_hidden_stack, feature_item);
-
-      g_value_set_string(value, (in_stack ? yes : no));
-    }
-  else
-    g_warning("%s", "Failed to get Parent Contianer.");
-
-  return ;
-}
-
-static void feature_item_to_is_visible_value(GValue *value, gpointer feature_item_data)
-{
-  AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data;
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item);
-  ZMapWindowContainerGroup feature_set_container;
-  ZMapWindowContainerFeatureSet container;
-
-  if((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
-    {
-      char *yes = "yes";
-      char *no  = "no";
-      gboolean is_visible = FALSE;
-
-      container = (ZMapWindowContainerFeatureSet)feature_set_container;
-
-      if(feature_item->object.flags & FOO_CANVAS_ITEM_VISIBLE)
-      is_visible = TRUE;
-
-      g_value_set_string(value, (is_visible ? yes : no));
-    }
-  else
-    g_warning("%s", "Failed to get Parent Contianer.");
-
-  return ;
-}
-#endif      /* DEBUG_MISSING_OBJECTS */
 
 static gboolean update_foreach_cb(GtkTreeModel *model,
                           GtkTreePath  *path,
@@ -1899,4 +1808,39 @@ static gboolean fetch_lookup_data(ZMapWindowFeatureItemList zmap_tv,
     }
 
   return data_fetched;
+}
+
+
+
+static void featureItem2BumpHidden(GValue *value, gpointer feature_item_data)
+{
+  AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data ;
+  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item) ;
+
+  g_value_set_string(value, 
+                     (zMapWindowContainerFeatureSetHasHiddenBumpFeatures(feature_item) ? "yes" : "no")) ;
+
+  return ;
+}
+
+
+static void featureItem2UserHidden(GValue *value, gpointer feature_item_data)
+{
+  AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data;
+  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item);
+
+  g_value_set_string(value, (zMapWindowContainerFeatureSetIsUserHidden(feature_item) ? "yes" : "no")) ;
+
+  return ;
+}
+
+
+static void featureItem2IsVisible(GValue *value, gpointer feature_item_data)
+{
+  AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data;
+  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item);
+
+  g_value_set_string(value, (zMapWindowContainerFeatureSetIsVisible(feature_item) ? "yes" : "no")) ;
+
+  return ;
 }

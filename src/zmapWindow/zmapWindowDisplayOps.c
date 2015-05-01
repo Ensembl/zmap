@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -25,7 +25,7 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: This file is a bit of an experiment, it's supposed to
- *              contain display related functions such as "zoom to 
+ *              contain display related functions such as "zoom to
  *              position from coords on clipboard" and other such things
  *              that don't sit happily in other files.
  *
@@ -53,7 +53,7 @@ typedef struct FeatureCoordStructType
 
 
 static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle display_style,
-                                   ZMapFeature feature,  ZMapFeatureSubPartSpan sub_part, GArray *feature_coords) ;
+                                   ZMapFeature feature,  ZMapFeatureSubPart sub_part, GArray *feature_coords) ;
 static void setUpFeatureOther(ZMapWindowDisplayStyle display_style, ZMapFeature feature, GArray *feature_coords) ;
 static void makeSelectionString(ZMapWindow window, ZMapWindowDisplayStyle display_style,
                                 GString *selection_str, GArray *feature_coords) ;
@@ -63,7 +63,7 @@ static gint sortCoordsCB(gconstpointer a, gconstpointer b) ;
 
 
 
-/* 
+/*
  *                      External routines
  */
 
@@ -86,7 +86,7 @@ gboolean zMapWindowZoomFromClipboard(ZMapWindow window)
 /* If there is a selected feature then returns appropriate string for clipboard for that feature,
  * if there is no feature then returns the mark coords to the clipboard, if there is no mark
  * then returns the name of any selected column, failing that returns the empty string.
- * 
+ *
  * ALL returned strings should be g_free'd when no longer wanted. */
 char *zMapWindowGetSelectionText(ZMapWindow window, ZMapWindowDisplayStyle display_style)
 {
@@ -103,7 +103,7 @@ char *zMapWindowGetSelectionText(ZMapWindow window, ZMapWindowDisplayStyle displ
 
 
 
-/* 
+/*
  *                      Package routines
  */
 
@@ -112,15 +112,15 @@ char *zMapWindowGetSelectionText(ZMapWindow window, ZMapWindowDisplayStyle displ
 /* Get contents of clipboard and see if it parses as a chromosome
  * location in the form "21:36,444,999-37,666,888", if it does
  * then zoom to it.
- * 
+ *
  * To do this we need the clipboard contents but.....which one ?
- * 
+ *
  * Cntl-C seems always to go to GDK_SELECTION_CLIPBOARD
- * 
+ *
  * cursor selecting with mouse seems to go to GDK_SELECTION_PRIMARY
- * 
+ *
  * We use curr_world_x to try to stay located on the original column.
- * 
+ *
  *  */
 gboolean zmapWindowZoomFromClipboard(ZMapWindow window, double curr_world_x, double curr_world_y)
 {
@@ -158,17 +158,17 @@ gboolean zmapWindowZoomFromClipboard(ZMapWindow window, double curr_world_x, dou
 }
 
 
-/* Makes text for posting to clipboard when there is no feature selected. 
+/* Makes text for posting to clipboard when there is no feature selected.
  *
  * Logic is slightly arcane in an attempt to "do the right thing":
- * 
+ *
  * If the mark is set and wy is within the top or bottom
  * shaded area of the mark or there is no selected column then the mark coords
  * are returned otherwise if there is a selected column then the column name
  * is returned otherwise NULL is returned.
- * 
+ *
  * Note: wy == 0  (no position) is assumed to mean within the mark.
- * 
+ *
  *  */
 char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy, ZMapWindowDisplayStyle display_style,
                                         ZMapWindowContainerFeatureSet selected_column)
@@ -250,9 +250,9 @@ char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy,
 
 
 /* Makes text for posting to clipboard from the supplied feature.
- * 
+ *
  * ZMapWindowPasteFeatureType of display_style cannot be ZMAPWINDOW_PASTE_TYPE_SELECTED.
- * 
+ *
  */
 char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
                                                     ZMapWindowDisplayStyle display_style, ZMapFeature feature)
@@ -289,7 +289,7 @@ char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
     free_text = TRUE ;
   else
     free_text = FALSE ;
-    
+
   selection = g_string_free(text, free_text) ;
 
   return selection ;
@@ -298,99 +298,9 @@ char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
 
 /* Makes text for posting to clipboard for any selected features, returns NULL
  * if there are none.
- * 
+ *
  * ZMapWindowPasteFeatureType of display_style must be ZMAPWINDOW_PASTE_TYPE_SELECTED.
  */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWindowDisplayStyle display_style)
-{
-  char *selection = NULL ;
-  GList *selected ;
-  gint length ;
-  GString *text ;
-  gboolean free_text ;
-  GArray *feature_coords ;
-  gboolean revcomped ;
-
-  zMapReturnValIfFailSafe((window && display_style->paste_feature == ZMAPWINDOW_PASTE_TYPE_SELECTED), NULL) ;
-
-  text = g_string_sized_new(512) ;
-  feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
-  revcomped = window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
-
-
-  /* If there are any focus items then make a selection string of their coords. */
-  if ((selected = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS))
-      && (length = g_list_length(selected)))
-    {
-      ID2Canvas id2c ;
-      FooCanvasItem *item ;
-      ZMapWindowCanvasItem canvas_item;
-      ZMapFeature item_feature ;
-      char *name ;
-
-      id2c = (ID2Canvas) selected->data;
-      item = FOO_CANVAS_ITEM(id2c->item) ;
-
-      if (ZMAP_IS_CANVAS_ITEM(item))
-        canvas_item = ZMAP_CANVAS_ITEM( item );
-      else
-        canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
-
-      item_feature = (ZMapFeature) id2c->feature_any ;
-
-      name = (char *)g_quark_to_string(item_feature->original_id) ;
-
-
-      /* We derive what to put into the text from what was selected.... */
-
-
-      /* Processing is different if there is only one item highlighted and it's a transcript. */
-      if (ZMAP_IS_CANVAS_ITEM(item) && length == 1 && item_feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-        {
-          setUpFeatureTranscript(revcomped, display_style, item_feature, feature_coords) ;
-
-          makeSelectionString(window, display_style, text, feature_coords) ;
-        }
-      else
-        {
-          while (selected)
-            {
-              id2c = (ID2Canvas)(selected->data) ;
-              item = FOO_CANVAS_ITEM(id2c->item) ;
-
-              if (ZMAP_IS_CANVAS_ITEM(item))
-                canvas_item = ZMAP_CANVAS_ITEM(item) ;
-              else
-                canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
-
-              item_feature = (ZMapFeature)(id2c->feature_any) ;
-
-              setUpFeatureOther(display_style, item_feature, feature_coords) ;
-
-              selected = selected->next ;
-            }
-
-          makeSelectionString(window, display_style, text, feature_coords) ;
-        }
-
-      selected = g_list_first(selected) ;
-      g_list_free(selected) ;
-    }
-
-  g_array_free(feature_coords, TRUE) ;
-
-  if (!(text->len))
-    free_text = TRUE ;
-  else
-    free_text = FALSE ;
-    
-  selection = g_string_free(text, free_text) ;
-
-  return selection ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWindowDisplayStyle display_style_in)
 {
   char *selection = NULL ;
@@ -408,8 +318,6 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
   feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
   revcomped = window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
 
-
-
   /* If there are any focus items then make a selection string of their coords. */
   if ((selected = zmapWindowFocusGetFocusItems(window->focus)))
     {
@@ -425,8 +333,8 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
         {
           ZMapWindowFocusItem focus_item ;
           ZMapFeature feature ;
-          ZMapFeatureSubPartSpan sub_part = NULL ;
-  
+          ZMapFeatureSubPart sub_part = NULL ;
+
           focus_item = (ZMapWindowFocusItem)selected->data ;
 
           feature = focus_item->feature ;
@@ -459,7 +367,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
           ZMapWindowFocusItem focus_item ;
           FooCanvasItem *item ;
           ZMapFeature feature ;
-          ZMapFeatureSubPartSpan sub_part = NULL ;
+          ZMapFeatureSubPart sub_part = NULL ;
           char *name ;
 
           focus_item = (ZMapWindowFocusItem)selected->data ;
@@ -493,7 +401,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
               ZMapWindowFocusItem focus_item ;
               FooCanvasItem *item ;
               ZMapFeature feature ;
-              ZMapFeatureSubPartSpan sub_part = NULL ;
+              ZMapFeatureSubPart sub_part = NULL ;
               char *name ;
 
               focus_item = (ZMapWindowFocusItem)selected->data ;
@@ -526,7 +434,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
     free_text = TRUE ;
   else
     free_text = FALSE ;
-    
+
   selection = g_string_free(text, free_text) ;
 
   return selection ;
@@ -537,7 +445,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
 
 
 
-/* 
+/*
  *                         Internal routines
  */
 
@@ -545,7 +453,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
 
 /* Return an array of feature coords, name, start/end, for the given transcript feature. */
 static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle display_style,
-                                   ZMapFeature feature,  ZMapFeatureSubPartSpan sub_part,
+                                   ZMapFeature feature,  ZMapFeatureSubPart sub_part,
                                    GArray *feature_coords)
 {
   char *name ;
@@ -562,7 +470,7 @@ static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle di
         feature_coord.start = feature->x1 ;
         feature_coord.end = feature->x2 ;
         feature_coord.length = (feature_coord.end - feature_coord.start + 1) ;
-              
+
         feature_coords = g_array_append_val(feature_coords, feature_coord) ;
 
         break ;
@@ -575,7 +483,7 @@ static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle di
         feature_coord.start = sub_part->start ;
         feature_coord.end = sub_part->end ;
         feature_coord.length = (feature_coord.end - feature_coord.start + 1) ;
-              
+
         feature_coords = g_array_append_val(feature_coords, feature_coord) ;
 
         break ;
@@ -617,7 +525,7 @@ static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle di
 static void setUpFeatureOther(ZMapWindowDisplayStyle display_style, ZMapFeature feature, GArray *feature_coords)
 {
   int selected_start, selected_end, selected_length ;
-  ZMapFeatureSubpartType item_type_int ;
+  ZMapFeatureSubPartType item_type_int ;
   FeatureCoordStruct feature_coord ;
 
   /* this is not a get sub part issue, we want the whole canvas feature which is a
@@ -631,7 +539,7 @@ static void setUpFeatureOther(ZMapWindowDisplayStyle display_style, ZMapFeature 
   feature_coord.start = selected_start ;
   feature_coord.end = selected_end ;
   feature_coord.length = selected_length ;
-                
+
   feature_coords = g_array_append_val(feature_coords, feature_coord) ;
 
   return ;
@@ -694,7 +602,7 @@ static void makeSelectionString(ZMapWindow window, ZMapWindowDisplayStyle displa
   else
     {
       /* We can do this because the feature_coords array is sorted on position. */
-      int multi_start, multi_end ;      
+      int multi_start, multi_end ;
       FeatureCoord feature_coord ;
 
       feature_coord = &g_array_index(feature_coords, FeatureCoordStruct, 0) ;

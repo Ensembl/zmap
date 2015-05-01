@@ -33,7 +33,7 @@ zmapWindowFeatureFuncs.c \
 zmapWindowFeatureList.c \
 zmapWindowFeatureList.h \
 zmapWindowFeatureList_I.h \
-zmapWindowFeatureShow.c \
+zmapWindowFeatureShow.cpp \
 zmapWindowFocus.c \
 zmapWindowItem.c \
 zmapWindowItemDebug.c \
@@ -67,6 +67,7 @@ $(NULL)
 
 #libZMapWindowGUI_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items -I$(top_srcdir)/zmapWindow/canvas
 libZMapWindowGUI_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/canvas
+libZMapWindowGUI_la_CPPFLAGS = $(AM_CPPFLAGS) $(libZMapWindowGUI_la_CFLAGS)
 
 libZMapWindowCanvas_la_SOURCES = \
 canvas/zmapWindowAllBase.h \
@@ -115,6 +116,7 @@ canvas/zmapWindowContainerBlock_I.h \
 canvas/zmapWindowContainerContext.h \
 canvas/zmapWindowContainerContext_I.h \
 canvas/zmapWindowContainerFeatureSet.c \
+canvas/zmapWindowContainerFeatureSetFeatureFuncs.c \
 canvas/zmapWindowContainerFeatureSet.h \
 canvas/zmapWindowContainerFeatureSet_I.h \
 canvas/zmapWindowContainerGroup.c \
@@ -138,6 +140,7 @@ $(NULL)
 
 #libZMapWindowCanvas_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils  -I$(top_srcdir)/zmapWindow/canvas -I$(top_srcdir)/zmapWindow/items
 libZMapWindowCanvas_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils  -I$(top_srcdir)/zmapWindow/canvas
+libZMapWindowCanvas_la_CPPFLAGS = $(AM_CPPFLAGS) $(libZMapWindowCanvas_la_CFLAGS)
 
 libZMapWindowCanvas_la_DEPENDENCIES = $(nodist_libZMapWindowCanvas_la_SOURCES)
 

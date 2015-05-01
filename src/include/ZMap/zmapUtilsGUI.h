@@ -27,6 +27,11 @@
  *
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_UTILS_GUI_H
 #define ZMAP_UTILS_GUI_H
 
@@ -60,7 +65,7 @@ typedef struct
   gboolean hide_input ;					    /* hide text input, e.g. for passwords. */
   union
   {
-    gboolean bool ;
+    gboolean m_bool ;
     char *text ;
   } data ;
 } ZMapGUIMsgUserDataStruct, *ZMapGUIMsgUserData ;
@@ -114,7 +119,8 @@ typedef void (*ZMapGUIRadioButtonCBFunc)(GtkWidget *button, gpointer data, gbool
 
 
 /*! Types of menu entry. */
-typedef enum {ZMAPGUI_MENU_NONE, ZMAPGUI_MENU_BRANCH, ZMAPGUI_MENU_SEPARATOR,
+typedef enum {ZMAPGUI_MENU_NONE,
+              ZMAPGUI_MENU_TITLE, ZMAPGUI_MENU_BRANCH, ZMAPGUI_MENU_SEPARATOR,
 	      ZMAPGUI_MENU_TOGGLE, ZMAPGUI_MENU_TOGGLEACTIVE,
 	      ZMAPGUI_MENU_RADIO, ZMAPGUI_MENU_RADIOACTIVE,
 	      ZMAPGUI_MENU_NORMAL, ZMAPGUI_MENU_HIDE } ZMapGUIMenuType ;
@@ -149,7 +155,7 @@ typedef struct
 
 /*!
  * Defines a menu item. */
-typedef struct
+typedef struct ZMapGUIMenuItemStructType
 {
   ZMapGUIMenuType type ;				    /* Title, separator etc. */
   char *name ;						    /*!< Title string of menu item. */
@@ -452,7 +458,6 @@ gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *peer_cl
 char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event) ;
 
 gboolean zMapGUIGetScreenInfo(GtkWidget *widget, int *curr_screen_out, int *num_screens_out) ;
-gboolean zMapGUIGetTrueMonitorSize(GtkWidget *widget, int *width_out, int *height_out) ;
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
 void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
@@ -560,3 +565,7 @@ gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char 
 
 
 #endif /* ZMAP_UTILS_GUI_H */
+
+#ifdef __cplusplus
+}
+#endif

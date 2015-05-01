@@ -462,12 +462,12 @@ double zmapWindowZoomControlLimitSpan(ZMapWindow window,
 
 /* Is this function really needed.....it's only called in one place...check the two
  * objects, perhaps we can just do a bulk copy... */
-void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomControl new)
+void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig_zoom, ZMapWindowZoomControl new_zoom)
 {
-  new->zF = orig->zF ;
-  new->minZF = orig->minZF ;
+  new_zoom->zF = orig_zoom->zF ;
+  new_zoom->minZF = orig_zoom->minZF ;
 
-  setZoomStatus(new) ;
+  setZoomStatus(new_zoom) ;
 
   return ;
 }

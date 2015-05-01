@@ -23,6 +23,10 @@
   @NOTATION@
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef LIBFOOCANVAS_H
 #define LIBFOOCANVAS_H
 
@@ -47,3 +51,7 @@ GType foo_canvas_points_get_type (void);
 G_END_DECLS
 
 #endif /* LIBFOOCANVAS_H */
+
+#ifdef __cplusplus
+}
+#endif

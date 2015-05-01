@@ -672,100 +672,77 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
 
           gtk_tree_view_scroll_to_cell(treeView, path, NULL, FALSE, 0.0, 0.0);
 
-            /* if a feature is masked then make sure it's visible */
-      if (zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_ALIGNMENT &&
-            (!feature->feature.homol.flags.displayed))
-#if MH17_SHOW_ALL_MASKED
-        {
-            /* most disconcerting to ask for one feature and get hundreds */
+          /* if a feature is masked then make sure it's visible */
+          if (zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_ALIGNMENT &&
+                (!feature->feature.homol.flags.displayed))
+            {
+              ZMapStyleBumpMode bump_mode = ZMAPBUMP_INVALID;
+              GList *items;
 
-            zMapWindowContainerFeatureSetShowHideMaskedFeatures(cfs,TRUE,FALSE);
-
-            /* un/bumped features might be wider */
-            zmapWindowFullReposition(window->feature_root_group,TRUE, "show masked") ;
-        }
-#else
-        {
-            ZMapStyleBumpMode bump_mode = ZMAPBUMP_INVALID;
-            GList *items;
-
-            bump_mode = zMapWindowContainerFeatureSetGetContainerBumpMode(cfs);
+              bump_mode = zMapWindowContainerFeatureSetGetContainerBumpMode(cfs);
 
 
-            if(bump_mode > ZMAPBUMP_UNBUMP)
-                  zmapWindowColumnBump(FOO_CANVAS_ITEM(cfs),ZMAPBUMP_UNBUMP);
+              if(bump_mode > ZMAPBUMP_UNBUMP)
+                zmapWindowColumnBump(FOO_CANVAS_ITEM(cfs),ZMAPBUMP_UNBUMP);
 
                   /* we need to show all items of the same name */
-            items = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
+              items = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
                   zMapFeatureStrand2Str(zmapWindowContainerFeatureSetGetStrand(cfs)),
                   zMapFeatureFrame2Str (zmapWindowContainerFeatureSetGetFrame(cfs)),
                   feature) ;
-            if(!items)
+              if(!items)
                   return(FALSE);
 
-            for(;items;items = items->next)
-            {
-                    ID2Canvas id2c = (ID2Canvas) items->data;
+              for(;items;items = items->next)
+                {
+                  ID2Canvas id2c = (ID2Canvas) items->data;
 
-                 /* they want to see it so remove the mask */
+                  /* they want to see it so remove the mask */
                   feature = (ZMapFeature) id2c->feature_any;
                   feature->feature.homol.flags.masked = FALSE;
-
-/* MH17:
- *
- * there's some problem with gapped items that have to get redisplayed
- * (see addGapsCB in ColBump.c)
- * but the bump code should take care of this
- * NOTE here we only display one feature and not all with the same name
- * if an alignment is gapped then it does not display although red triangles do
- * foo_canvas_item_show does a repick, but that is a delayed action thing
- * the bump code should re-do items and features so this should work
- */
-
-            /* MH17: not sure how much of this is needed
-             * we have to cope with bumped and unbumped columns
-             * bumping redisplays alignments and changes (re-allocates) features and items
-             * but non bumped columns should have features displayed here
-             */
-
+                  /* MH17: not sure how much of this is needed
+                   * we have to cope with bumped and unbumped columns
+                   * bumping redisplays alignments and changes (re-allocates) features and items
+                   * but non bumped columns should have features displayed here
+                   */
                   zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) id2c->item, feature);
                   zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem) id2c->item,TRUE);
+                }
 
-            }
-
-            if(bump_mode > ZMAPBUMP_UNBUMP)
-            {
+              if(bump_mode > ZMAPBUMP_UNBUMP)
+                {
                   zmapWindowColumnBump(FOO_CANVAS_ITEM(cfs),bump_mode);
 
                   /* un/bumped features might be wider */
                   zmapWindowFullReposition(window->feature_root_group,TRUE, "selection func") ;
+                }
+            }
+
+          /* in case the col got bumped (by the user or the code above)
+           * we have to find the item from the feature as the item is not the same one
+           * see RT 205912 and 205744
+           */
+          item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+                          zmapWindowContainerFeatureSetGetStrand(cfs),
+                          zmapWindowContainerFeatureSetGetFrame(cfs),
+                          feature) ;
+          if(!item)
+            return FALSE;
+          else if (feature->x1 > window->max_coord || feature->x2 < window->min_coord)
+            return TRUE ;
+          else
+            {
+              if (windowList->zoom_to_item)
+                zmapWindowZoomToWorldPosition(window, TRUE, 0.0, feature->x1, 100.0, feature->x2);
+              else
+                zmapWindowItemCentreOnItem(window, item, FALSE, FALSE) ;
+
+              zMapWindowHighlightObject(window, item, TRUE, TRUE, FALSE) ;
+
+              zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, 0, 0, 0, 0, NULL, TRUE, TRUE, FALSE, FALSE);
             }
         }
-#endif
-
-        /* in case the col got bumped (by the user or the code above)
-         * we have to find the item from the feature as the item is not the same one
-         * see RT 205912 and 205744
-         */
-        /*! \todo #warning possible memory allocation error here if the item was changed eg by bumping */
-
-        item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
-                        zmapWindowContainerFeatureSetGetStrand(cfs),
-                        zmapWindowContainerFeatureSetGetFrame(cfs),
-                        feature) ;
-        if(!item)
-            return(FALSE);
-
-        if (windowList->zoom_to_item)
-              zmapWindowZoomToWorldPosition(window, TRUE, 0.0, feature->x1, 100.0, feature->x2);
-          else
-              zmapWindowItemCentreOnItem(window, item, FALSE, FALSE) ;
-
-        zMapWindowHighlightObject(window, item, TRUE, TRUE, FALSE) ;
-
-        zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, 0, 0, 0, 0, NULL, TRUE, TRUE, FALSE, FALSE);
     }
-  }
 
   return TRUE ;
 }

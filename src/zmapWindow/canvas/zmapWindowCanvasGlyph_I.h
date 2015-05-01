@@ -49,20 +49,6 @@ typedef enum
     ZMAP_GLYPH_SHAPE_GFSPLICE,				    /* acedb-style GF Splices */
   } ZMapGlyphShapeType ;
 
-/*
- * Enum for the glyph "which" data member. Represents 3', 5' or
- * truncated at start or end. Note that the numerical values are
- * important here as they are tested for explicitly in much of
- * the drawing code.
- */
-typedef enum
-  {
-    ZMAP_GLYPH_THREEPRIME      = 3,
-    ZMAP_GLYPH_FIVEPRIME       = 5,
-    ZMAP_GLYPH_TRUNCATED_START = 999,
-    ZMAP_GLYPH_TRUNCATED_END   = 1000
-  } ZMapGlyphWhichType ;
-
 
 /* General struct for per column data, all other structs must have matching fields at the
  * start of their structs. */
@@ -118,7 +104,7 @@ typedef struct GFSpliceColumnDataStructName
  * As the CanvasFeatureset code is generic we start with a feature pointer
  * and evaluate the points on demand and cache these. (lazy evaluation)
  */
-typedef struct _zmapWindowCanvasGlyphStruct
+typedef struct ZMapWindowCanvasGlyphStructType
 {
   zmapWindowCanvasFeatureStruct feature ;		    /* all the common stuff */
   GQuark sig ;						    /* signature: for debugging */
@@ -128,12 +114,14 @@ typedef struct _zmapWindowCanvasGlyphStruct
   gboolean sub_feature ;				    /* or free standing? */
 
   /* scale by this factor, -ve values imply flipping around the anchor point,
-   * used for all glyphs except splices. */
+   * used for all glyphs except splices. If to_feature_width is TRUE then width of glyph
+   * is scaled to feature width. */
+  gboolean scale_to_feature_width ;
   double width, height ;
 
   double origin ;                                           /* relative to the centre of the column */
 
-  int which ;						    /* generic or 5' or 3' ? */
+  ZMapGlyphWhichType which ;                                /* generic or 5' or 3' ? */
 
   ZMapStyleGlyphShape shape ;				    /* pointer to relevant style shape struct */
 
@@ -142,13 +130,13 @@ typedef struct _zmapWindowCanvasGlyphStruct
   GdkPoint points[GLYPH_SHAPE_MAX_COORD] ;		    /* offset to the canvas for gdk_draw */
 
   /* non selected colours */
-  gboolean line_set ;
-  gboolean area_set ;
+  gboolean border_set ;
+  gboolean fill_set ;
 
-  gulong line_pixel ;
-  gulong area_pixel ;
+  gulong border_pixel ;
+  gulong fill_pixel ;
 
-} zmapWindowCanvasGlyphStruct ;
+} ZMapWindowCanvasGlyphStruct ;
 
 
 

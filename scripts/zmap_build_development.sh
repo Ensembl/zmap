@@ -20,6 +20,7 @@ BUILD_PREFIX='DEVELOPMENT'
 SEQTOOLS_DIR='DEVELOPMENT'
 #ERROR_ID='-a edgrif@sanger.ac.uk'
 ERROR_ID=''
+GBTOOLS_BRANCH=''
 
 
 
@@ -30,6 +31,10 @@ if (( $# > 0 )) ; then
   SEQTOOLS_DIR=$1
 fi
 
-./build_run.sh $ERROR_ID -g -m -s $SEQTOOLS_DIR $BUILD_PREFIX || RC=1
+if (( $# > 1 )) ; then
+  GBTOOLS_BRANCH="-t $2"
+fi
+
+./build_run.sh $ERROR_ID -g -m -s $SEQTOOLS_DIR $GBTOOLS_BRANCH $BUILD_PREFIX || RC=1
 
 exit $RC

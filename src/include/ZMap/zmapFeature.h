@@ -27,6 +27,11 @@
  *
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_FEATURE_H
 #define ZMAP_FEATURE_H
 
@@ -96,27 +101,20 @@ typedef enum {TYPE_ENUM, STRAND_ENUM, PHASE_ENUM, HOMOLTYPE_ENUM } ZMapEnumType 
 
 
 
-typedef enum
-  {
-    ZMAPFEATURE_SUBPART_INVALID    = 0,
-    ZMAPFEATURE_SUBPART_INTRON     = 1 << 0,
-    ZMAPFEATURE_SUBPART_INTRON_CDS = 1 << 1,
-    ZMAPFEATURE_SUBPART_EXON       = 1 << 2,
-    ZMAPFEATURE_SUBPART_EXON_CDS   = 1 << 3,
-    ZMAPFEATURE_SUBPART_GAP        = 1 << 4,
-    ZMAPFEATURE_SUBPART_MATCH      = 1 << 5,
-
-    /* following added by mh17 to allow easier snazzy display of split codons */
-    ZMAPFEATURE_SUBPART_SPLIT_3_CODON = 1 << 6,            /*NOTE: is 3' end of exon = 5' end of split codon */
-    ZMAPFEATURE_SUBPART_SPLIT_5_CODON = 1 << 7,
-  } ZMapFeatureSubpartType ;
-
+/* What on earth are these N_XXXX  things.....    */
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
+typedef enum {N_STRAND_ALLOC = ZMAPSTRAND_REVERSE + 1} ZMapStrandNumber ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #define N_STRAND_ALLOC	3	/* we get to handle NONE as a strand */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 #define FRAME_PREFIX "FRAME-"				    /* For text versions. */
 typedef enum {ZMAPFRAME_NONE = 0, ZMAPFRAME_0, ZMAPFRAME_1, ZMAPFRAME_2} ZMapFrame ;
-#define N_FRAME_ALLOC	4	/* we get to handle NONE as a frame */
+
 
 typedef enum {ZMAPPHASE_NONE = 0, ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPhase ;
 
@@ -216,13 +214,19 @@ typedef struct ZMapSequenceStruct_
 } ZMapSequenceStruct, *ZMapSequence ;
 
 
-/* A splice. */
+
+
+
 typedef struct ZMapSplicePositionStructType
 {
+  gboolean match ;
+
   ZMapBoundaryType boundary_type ;                          /* 5' or 3' */
 
   Coord start, end ;                                        /* base positions either side of splice. */
 } ZMapSplicePositionStruct, *ZMapSplicePosition ;
+
+
 
 
 
@@ -238,6 +242,9 @@ typedef struct ZMapExonStructType
 {
   Coord x1, x2 ;
 } ZMapExonStruct, *ZMapExon ;
+
+
+
 
 
 
@@ -836,23 +843,114 @@ typedef struct ZMapFeatureStructType
 
 
 /*
- *          Structs/types for outputting information about features.
+ *          Structs/types for handling suparts/matches of/about features.
  */
 
-typedef struct ZMapFeatureSubPartSpanStructType
+
+/* These are general structs used by list handling code, so long as other code (e.g. subpart,
+ * matches etc.) maintains the common fields then they can use the list code. */
+
+typedef void (*ZMapFeatureFreePartFunc)(void *part_ptr) ;
+
+
+typedef struct ZMapFeaturePartStructType
 {
-  ZMapFeatureSubpartType subpart ;                         /* Exon, Intron etc. */
+  int start, end ;                                         /* start/end of subpart in sequence coords. */
+
+} ZMapFeaturePartStruct, *ZMapFeaturePart ;
+
+
+/* A list of subparts, used for checking boundary overlaps with features. subparts are sorted
+ * by sequence position, min to max. The min and max positions are held separately to help
+ * with quick overlap comparisons. */
+typedef struct ZMapFeaturePartsListStructType
+{
+  int min, max ;
+
+  GList *parts ;
+
+  ZMapFeatureFreePartFunc free_part_func ;
+} ZMapFeaturePartsListStruct, *ZMapFeaturePartsList ;
+
+
+
+
+/* Structs for handling parts of features, used in code where we need to process list of exons etc
+ * outside of a feature struct. */
+
+typedef enum
+  {
+    ZMAPFEATURE_SUBPART_INVALID,
+
+    ZMAPFEATURE_SUBPART_INTRON,
+    ZMAPFEATURE_SUBPART_INTRON_CDS,
+    ZMAPFEATURE_SUBPART_EXON,
+    ZMAPFEATURE_SUBPART_EXON_CDS,
+
+    ZMAPFEATURE_SUBPART_GAP,
+    ZMAPFEATURE_SUBPART_MATCH,
+
+    /* following added by mh17 to allow easier snazzy display of split codons */
+    ZMAPFEATURE_SUBPART_SPLIT_3_CODON,            /*NOTE: is 3' end of exon = 5' end of split codon */
+    ZMAPFEATURE_SUBPART_SPLIT_5_CODON,
+
+    ZMAPFEATURE_SUBPART_FEATURE
+
+  } ZMapFeatureSubPartType ;
+
+
+typedef struct ZMapFeatureSubPartStructType
+{
+  /* Parts common fields */
+  int start, end ;                                         /* start/end of subpart in sequence coords. */
+
+  /* subpart specific fields */
+  ZMapFeatureSubPartType subpart ;                         /* Exon, Intron etc. */
 
   int index ;                                              /* Index number of intron/exon
                                                               etc. starts at 1. */
 
+} ZMapFeatureSubPartStruct, *ZMapFeatureSubPart ;
+
+
+
+
+
+/*
+ *          Structs/types for handling matching parts/subparts of features.
+ */
+
+/* A splice. */
+#define ZMAP_BOUNDARY_MATCH_TYPE_LIST(_)					\
+_(ZMAPBOUNDARY_MATCH_TYPE_NONE,     =      0, "no_match", "No boundaries match", "") \
+_(ZMAPBOUNDARY_MATCH_TYPE_5_MATCH,  = 1 << 0, "5'_match", "5' boundary matches", "") \
+_(ZMAPBOUNDARY_MATCH_TYPE_3_MATCH,  = 1 << 1, "3'_match", "3' boundary matches", "")
+
+ZMAP_DEFINE_ENUM(ZMapFeatureBoundaryMatchType, ZMAP_BOUNDARY_MATCH_TYPE_LIST) ;
+
+
+typedef struct ZMapFeatureBoundaryMatchStructType
+{
+  /* Parts common fields */
   int start, end ;                                         /* start/end of subpart in sequence coords. */
 
-} ZMapFeatureSubPartSpanStruct, *ZMapFeatureSubPartSpan ;
+  /* match specific fields */
+  ZMapFeatureSubPartType subpart ;                         /* Exon, Intron etc. */
+
+  int index ;                                              /* Index number of intron/exon
+                                                              etc. starts at 1. */
+  ZMapFeatureBoundaryMatchType match_type ;
+
+} ZMapFeatureBoundaryMatchStruct, *ZMapFeatureBoundaryMatch ;
 
 
-/* Struct that supplies text descriptions of the parts of a feature, which fields are filled
- * in depends on the feature type. */
+
+
+/* 
+ * Struct that supplies text descriptions of the parts of a feature, which fields are filled
+ * in depends on the feature type.
+ */
+
 typedef struct ZMapFeatureDescStructName
 {
   /* Use these fields to interpret and give more info. for the feature parts. */
@@ -1020,7 +1118,7 @@ void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature);
 gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature) ;
 
 gboolean zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data) ;
-gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpartType child_type,
+gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubPartType child_type,
 					   GFunc function, gpointer user_data) ;
 void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpointer user_data);
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
@@ -1327,7 +1425,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
                                char *feature_type, ZMapStyleMode *type_out);
 char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type) ;
 char *zMapFeatureType2Str(ZMapStyleMode type) ;
-char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart) ;
+char *zMapFeatureSubPart2Str(ZMapFeatureSubPartType subpart) ;
 gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out);
 gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand);
 char *zMapFeatureStrand2Str(ZMapStrand strand) ;
@@ -1376,7 +1474,7 @@ ZMapFeature zmapFeatureContextGetFeatureFromId(ZMapFeatureContext context, GQuar
 
 GType zMapFeatureDataGetType(void);
 gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,
-			    ZMapFeatureSubPartSpan sub_feature,
+			    ZMapFeatureSubPart sub_feature,
 			    const gchar           *first_property_name,
 			    ...);
 
@@ -1385,15 +1483,46 @@ gboolean zMapAlignBlockArrayDestroy(GArray* const) ;
 ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray* const, int index) ;
 gboolean zMapAlignBlockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
 
-gboolean zMapFeatureGetBoundaries(ZMapFeature feature, int *start_out, int *end_out, GList **subparts_out) ;
-void zMapFeatureFreeSubParts(GList *sub_parts) ;
-GList *zMapFeatureHasMatchingBoundaries(ZMapFeature feature, GList *boundaries) ;
-int zMapFeatureVariationGetSections(const char *variation_str,
-                                    char **old_str_out, char **new_str_out,
+
+ZMapFeaturePartsList zMapFeaturePartsListCreate(ZMapFeatureFreePartFunc free_part_func) ;
+gboolean zMapFeaturePartsListAdd(ZMapFeaturePartsList parts, ZMapFeaturePart part) ;
+void zMapFeaturePartsListDestroy(ZMapFeaturePartsList parts) ;
+
+ZMapFeatureSubPart zMapFeatureSubPartCreate(ZMapFeatureSubPartType subpart_type,
+                                            int index, int start, int end) ;
+ZMapFeaturePartsList zMapFeatureSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds) ;
+void zMapFeatureSubPartListFree(GList *sub_parts) ;
+void zMapFeatureSubPartDestroy(ZMapFeatureSubPart subpart) ;
+
+ZMapFeatureBoundaryMatch zMapFeatureBoundaryMatchCreate(ZMapFeatureSubPartType subpart_type,
+                                                        int index, int start, int end,
+                                                        ZMapFeatureBoundaryMatchType match_type) ;
+void zMapFeatureBoundaryMatchDestroy(ZMapFeatureBoundaryMatch match) ;
+
+
+
+
+gboolean zMapFeatureGetBoundaries(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds,
+                                  int *start_out, int *end_out, GList **subparts_out) ;
+gboolean zMapFeatureHasMatchingBoundaries(ZMapFeature feature,
+                                          ZMapFeatureSubPartType part_type,
+                                          gboolean exact_match, gboolean cds_only, int slop,
+                                          GList *boundaries, int boundary_start, int boundary_end,
+                                          ZMapFeaturePartsList *matching_boundaries_out,
+                                          ZMapFeaturePartsList *non_matching_boundaries_out) ;
+
+int zMapFeatureVariationGetSections(const char *variation_str, 
+                                    char **old_str_out, char **new_str_out, 
                                     int *old_len_out, int *new_len_out) ;
 
+/* rationalise these two..... */
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
+gint zMapFeatureSortFeatures(gconstpointer a, gconstpointer b) ;
 
-void zMapFeatureFreeSubParts(GList *sub_parts) ;
+
 
 #endif /* ZMAP_FEATURE_H */
+
+#ifdef __cplusplus
+}
+#endif

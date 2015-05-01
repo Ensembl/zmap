@@ -27,6 +27,11 @@
  *
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_UTILS_DEBUG_H
 #define ZMAP_UTILS_DEBUG_H
 
@@ -356,3 +361,7 @@ void zMapUtilsDebugPrintf(FILE *stream, char *format, ...) ;
 
 
 #endif /* ZMAP_UTILS_DEBUG_H */
+
+#ifdef __cplusplus
+}
+#endif

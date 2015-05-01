@@ -37,6 +37,9 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasFeature_I.h>
 #include <zmapWindowCanvasDraw.h>
+#include <zmapWindowCanvasGlyph.h>
+
+
 
 
 /* For highlighting of common splices across columns. */
@@ -49,13 +52,27 @@ typedef struct HighlightDataStructType
   ZMapBoundaryType boundary_type ;                          /* 5' or 3' */
   double x1, x2 ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   gulong splice_pixel ;                                    /* splice colour. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 } HighlightDataStruct, *HighlightData ;
 
 
 
 static void highlightSplice(gpointer data, gpointer user_data) ;
+
+
+
+
+/* 
+ *                Globals
+ */
+
+static ZMapWindowCanvasGlyph match_junction_glyph_start_G = NULL, match_junction_glyph_end_G = NULL ;
+static ZMapWindowCanvasGlyph non_match_junction_glyph_start_G = NULL, non_match_junction_glyph_end_G = NULL ;
 
 
 
@@ -389,7 +406,47 @@ void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featurese
   highlight_data.x1 = x1 ;
   highlight_data.x2 = x2 ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapWindowCanvasFeaturesetGetSpliceColour(featureset, &(highlight_data.splice_pixel)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /*
+   * Construct glyph object from shape given,
+   * once and once only.
+   */
+  if (match_junction_glyph_start_G == NULL)
+    {
+      /* this all quite hacky until I sort out the glyphs properly..... */
+      gulong border_pixel = 0, fill_pixel = 0 ;
+      ZMapStyleGlyphShape start_shape, end_shape ;
+
+
+      zMapWindowCanvasGlyphGetJunctionShapes(&start_shape, &end_shape) ;
+
+      match_junction_glyph_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_JUNCTION_START, TRUE, TRUE) ;
+                                                                    
+      match_junction_glyph_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_JUNCTION_END, TRUE, TRUE) ;
+
+      non_match_junction_glyph_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_JUNCTION_START, TRUE, TRUE) ;
+                                                                    
+      non_match_junction_glyph_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_JUNCTION_END, TRUE, TRUE) ;
+
+      if (zMapWindowCanvasFeaturesetGetSpliceColour(featureset, TRUE, &border_pixel, &fill_pixel))
+        {
+          zMapWindowCanvasGlyphSetColours(match_junction_glyph_start_G, border_pixel, fill_pixel) ;
+
+          zMapWindowCanvasGlyphSetColours(match_junction_glyph_end_G, border_pixel, fill_pixel) ;
+        }
+
+      if (zMapWindowCanvasFeaturesetGetSpliceColour(featureset, FALSE, &border_pixel, &fill_pixel))
+        {
+          zMapWindowCanvasGlyphSetColours(non_match_junction_glyph_start_G, border_pixel, fill_pixel) ;
+
+          zMapWindowCanvasGlyphSetColours(non_match_junction_glyph_end_G, border_pixel, fill_pixel) ;
+        }
+    }
 
   g_list_foreach(feature->splice_positions, highlightSplice, &highlight_data) ;
 
@@ -409,11 +466,52 @@ static void highlightSplice(gpointer data, gpointer user_data)
 {
   ZMapSplicePosition splice_pos = (ZMapSplicePosition)data ;
   HighlightData highlight_data = (HighlightData)user_data ;
+  double col_width ;  
+
+  char *name ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
   zMapCanvasFeaturesetDrawBoxMacro(highlight_data->featureset, highlight_data->x1, highlight_data->x2,
                                    splice_pos->start, splice_pos->end,
                                    highlight_data->drawable,
                                    TRUE, TRUE, highlight_data->splice_pixel, highlight_data->splice_pixel) ;
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /*
+   * Draw the truncation glyph subfeatures.
+   */
+  ZMapFeatureTypeStyle style = *(highlight_data->feature->feature->style) ;
+
+  ZMapWindowCanvasGlyph start, end ;
+
+  name = g_quark_to_string(highlight_data->feature->feature->original_id) ;
+
+
+  col_width = zMapStyleGetWidth(highlight_data->featureset->style) ;
+
+  /* HACKED POSITIONS BECAUSE THEY HAVE ALREADY BEEN OFFSET.....IN THE SPLICE POS.... */
+  if (splice_pos->match)
+    {
+      start = match_junction_glyph_start_G ;
+      end = match_junction_glyph_end_G ;
+    }
+  else
+    {
+      start = non_match_junction_glyph_start_G ;
+      end = non_match_junction_glyph_end_G ;
+    }
+
+  if (splice_pos->boundary_type == ZMAPBOUNDARY_5_SPLICE)
+    zMapWindowCanvasGlyphDrawGlyph(highlight_data->featureset, highlight_data->feature,
+                                   style, start,
+                                   highlight_data->drawable, col_width, splice_pos->end + 1) ;
+  else
+    zMapWindowCanvasGlyphDrawGlyph(highlight_data->featureset, highlight_data->feature,
+                                   style, end,
+                                   highlight_data->drawable, col_width, splice_pos->start) ;
+
 
   return ;
 }

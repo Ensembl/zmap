@@ -48,10 +48,10 @@ static void zmapWindowCanvasSequencePreZoom(ZMapWindowFeaturesetItem featureset)
 static void zmapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable_unused) ;
 static void zmapWindowCanvasSequenceFreeSet(ZMapWindowFeaturesetItem featureset) ;
 static void zmapWindowCanvasSequenceSetColour(FooCanvasItem *foo,
-                                              ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
+                                              ZMapFeature feature, ZMapFeatureSubPart sub_feature,
                                               ZMapStyleColourType colour_type, int colour_flags,
                                               GdkColor *default_fill, GdkColor *default_border) ;
-static ZMapFeatureSubPartSpan zmapWindowCanvasSequenceGetSubPartSpan(FooCanvasItem *foo,
+static ZMapFeatureSubPart zmapWindowCanvasSequenceGetSubPartSpan(FooCanvasItem *foo,
                                                                      ZMapFeature feature, double x, double y) ;
 
 
@@ -697,7 +697,7 @@ static void zmapWindowCanvasSequenceFreeSet(ZMapWindowFeaturesetItem featureset)
 
 
 static void zmapWindowCanvasSequenceSetColour(FooCanvasItem *foo,
-                                              ZMapFeature feature, ZMapFeatureSubPartSpan sub_feature,
+                                              ZMapFeature feature, ZMapFeatureSubPart sub_feature,
                                               ZMapStyleColourType colour_type, int colour_flags,
                                               GdkColor *default_fill, GdkColor *default_border)
 {
@@ -773,10 +773,10 @@ static void zmapWindowCanvasSequenceSetColour(FooCanvasItem *foo,
 
 
 
-static ZMapFeatureSubPartSpan zmapWindowCanvasSequenceGetSubPartSpan(FooCanvasItem *foo,
-                                                                     ZMapFeature feature, double x, double y)
+static ZMapFeatureSubPart zmapWindowCanvasSequenceGetSubPartSpan(FooCanvasItem *foo,
+                                                                 ZMapFeature feature, double x, double y)
 {
-  ZMapFeatureSubPartSpan sub_part = NULL ;
+  ZMapFeatureSubPart sub_part = NULL ;
 
   /*! \todo #warning revisit this when canvas items are simplified */
 

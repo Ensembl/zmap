@@ -884,7 +884,7 @@ static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData
 
   /* - Get the correct strand container for labels */
   strand = zmapWindowContainerFeatureSetGetStrand(ZMAP_CONTAINER_FEATURESET(cb_data->column_group)) ;
-  if (strand != ZMAPSTRAND_FORWARD && strand != ZMAPSTRAND_REVERSE) 
+  if (strand != ZMAPSTRAND_FORWARD && strand != ZMAPSTRAND_REVERSE)
     return ;
 
   switch(mode)
@@ -957,7 +957,7 @@ static void activate_matching_column(gpointer list_data, gpointer user_data)
           if (!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)))
             {
               gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE) ;
-        
+
               cb_data->button_found = TRUE ;
             }
         }
@@ -1200,7 +1200,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page, GList *columns
           if(column_name && !g_list_find_custom(make_unique, column_name, find_name_cb))
             {
               label = create_label(label_box, column_name);
-        
+
               button_box = gtk_hbox_new(FALSE, 0);
 
               gtk_box_pack_start(GTK_BOX(column_box), button_box, TRUE, TRUE, 0);
@@ -1398,7 +1398,7 @@ static FooCanvasGroup *configure_get_point_block_container(ColConfigure configur
 gint col_sort_by_name(gconstpointer a, gconstpointer b)
 {
   int result = 0 ;
-  
+
   /* we sort by unique but display original; the result should be the same */
   if (!a && !b)
     result = 0 ;
@@ -1794,13 +1794,13 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
 
               /* create the actual radio buttons... */
               loaded_radio_buttons(button_box, column_group, &show_data, &default_data, &hide_data);
-        
+
 #if INCLUDE_RADIO_DEFAULT
               default_data->show_hide_data =
 #endif
                 show_data->show_hide_data      =
                 hide_data->show_hide_data    = (ShowHidePageData)(notebook_page->page_data);
-        
+
               show_list    = g_list_append(show_list, show_data);
 #if INCLUDE_RADIO_DEFAULT
               default_list = g_list_append(default_list, default_data);
@@ -2088,7 +2088,7 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
               ZMapWindow window;
 
               window = configure_data->window;
-        
+
               if (IS_3FRAME(window->display_3_frame))
                 {
                   ZMapWindowContainerFeatureSet container;
@@ -2107,7 +2107,7 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
                        * Hmmm... this was always the case, but all the features were in one context featureset
                        *
                        */
-                
+
                       for(i = ZMAPFRAME_NONE ; i <= ZMAPFRAME_2; i++)
                         {
                           FooCanvasItem *frame_column;
@@ -2116,7 +2116,7 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
                           frame_column = zmapWindowFToIFindSetItem(window, window->context_to_item,feature_set,
                            zmapWindowContainerFeatureSetGetStrand(container), frame);
 
-                          if(frame_column && 
+                          if(frame_column &&
                              ZMAP_IS_CONTAINER_GROUP(frame_column) &&
                              (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(frame_column)) ||
                               zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(frame_column))))
@@ -2133,7 +2133,7 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
                     }
                   else
                     {
-                
+
                     }
                 }
               else
@@ -2199,7 +2199,7 @@ static void select_all_buttons(GtkWidget *button, gpointer user_data)
 
   return ;
 }
-        
+
 
 
 /* Direct copy from zmapWindowContainer.c ... with additions ...*/
@@ -2271,7 +2271,7 @@ static void notebook_foreach_page(GtkWidget       *notebook_widget,
             case NOTEBOOK_APPLY_FUNC:
               {
                 NotebookPageFunc apply_func;
-        
+
                 if((apply_func = page_data->page_apply))
                   {
                     (apply_func)(page_data);
@@ -2281,7 +2281,7 @@ static void notebook_foreach_page(GtkWidget       *notebook_widget,
             case NOTEBOOK_POPULATE_FUNC:
               {
                 NotebookPageColFunc pop_func;
-        
+
                 if((pop_func = page_data->page_populate))
                   {
                     (pop_func)(page_data, FOO_CANVAS_GROUP(foreach_data));
@@ -2291,7 +2291,7 @@ static void notebook_foreach_page(GtkWidget       *notebook_widget,
             case NOTEBOOK_UPDATE_FUNC:
               {
                 NotebookPageUpdateFunc pop_func;
-        
+
                 if((pop_func = page_data->page_update))
                   {
                     (pop_func)(page_data, foreach_data) ;
@@ -2301,7 +2301,7 @@ static void notebook_foreach_page(GtkWidget       *notebook_widget,
             case NOTEBOOK_CLEAR_FUNC:
               {
                 NotebookPageFunc clear_func;
-        
+
                 if((clear_func = page_data->page_clear))
                   {
                     (clear_func)(page_data);

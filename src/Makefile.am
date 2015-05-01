@@ -27,7 +27,12 @@ ACLOCAL_AMFLAGS = -I m4
 
 
 # ZMAP_SRC_DIRS See configure.ac
-SUBDIRS = AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+if USE_GBTOOLS
+OPTIONAL_SUBDIRS = gbtools
+endif
+
+SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+
 
 CLEANFILES = $(pkgconfig_DATA)
 
@@ -41,7 +46,20 @@ MOSTLYCLEANFILES = $(DX_CLEANFILES)
 
 
 # these will be installed alongside the programs
-dist_doc_DATA = $(srcdir)/doc/user/*
+USER_DIR=$(srcdir)/doc/user
+dist_doc_DATA = $(USER_DIR)/Splice_highlight_off.png \
+	$(USER_DIR)/config_file.shtml \
+	$(USER_DIR)/keyboard_mouse.shtml \
+	$(USER_DIR)/styles.shtml \
+	$(USER_DIR)/zmap_quick_start.shtml \
+	$(USER_DIR)/Splice_highlight_on.png \
+	$(USER_DIR)/configuration.shtml \
+	$(USER_DIR)/manual/ZMap_User_Manual.pdf \
+	$(USER_DIR)/this_links.ini \
+	$(USER_DIR)/align1.png \
+	$(USER_DIR)/index.shtml \
+	$(USER_DIR)/release_notes.shtml \
+	$(USER_DIR)/user_interface.shtml
 
 # these are included in the distribution, but are not installed
 EXTRA_DIST = INSTALL \
@@ -165,6 +183,16 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/htslib-develop/libhts.a              \
 	$(top_builddir)/AceConn/src/.libs/libAceConn.a       
 
+# If we have gbtools in a subdirectory, add the .a file, otherwise
+# look for a locally installed version
+if USE_GBTOOLS
+zmap_LDADD +=                                                \
+	$(top_builddir)/gbtools/libgbtools.a            
+else
+zmap_LDADD +=                                                \
+	-lgbtools
+endif
+
 # The zeromq library has a different suffix on cygwin
 if ON_CYGWIN
 zmap_LDADD +=                                                \
@@ -188,7 +216,6 @@ zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
 
 # zeromq is C++ so we need to link with g++, not gcc.
 #zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-#zmap_LINK         = g++ $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 zmap_LINK         = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
 zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
@@ -296,7 +323,8 @@ $(top_srcdir)/config.h.in $(top_srcdir)/configure $(top_srcdir)/zmap_version.m4
 # To remove directories and other more complex lists of files we use the standard
 # maintainer-clean-local target which is run after all the stuff in maintainer-clean
 #
-GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/* $(top_srcdir)/config
+GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/* $(top_srcdir)/config \
+$(top_srcdir)/autom4te.cache
 
 maintainer-clean-local:
 	@echo 'maintainer-clean-local: Removing all generated files....'
@@ -305,14 +333,22 @@ maintainer-clean-local:
 	@echo 'maintainer-clean-local: Finished removing all generated files....'
 
 
-clean-zmap:
+ZMAP_BUILD_FILES = $(top_builddir)/zmapApp/*.o $(top_builddir)/zmapAppServices/*.o $(top_builddir)/zmapConfig/*.o \
+$(top_builddir)/zmapControl/*.o $(top_builddir)/zmapDAS/*.o $(top_builddir)/zmapDraw/*.o $(top_builddir)/zmapFeature/*.o \
+$(top_builddir)/zmapGFF/*.o $(top_builddir)/zmapManager/*.o $(top_builddir)/zmapRemoteControl/*.o \
+$(top_builddir)/zmapServer/*.o $(top_builddir)/zmapThreads/*.o $(top_builddir)/zmapUtils/*.o \
+$(top_builddir)/zmapView/*.o $(top_builddir)/zmapWindow/*.o $(top_builddir)/zmapXML/*.o
+
+zmap-clean:
 	@echo 'clean-zmap: cleaning up all generated zmap files....'
 	rm -f $(top_builddir)/.libs/libZMap*.a
 	rm -f $(top_builddir)/libZMap*.la
 	rm -f $(top_builddir)/zmap $(top_builddir)/remotecontrol
 	rm -f $(top_builddir)/zmap-zmapAppmain_c.o $(top_builddir)/remotecontrol-remotecontroltest.o $(top_builddir)/zmap.pc
 	rm -f $(top_builddir)/zmap*/lib* rm -rf $(top_builddir)/zmap*/.libs
+	rm -rf $(ZMAP_BUILD_FILES)
 	@echo 'clean-zmap: Finished cleaning up all generated zmap files.'
+
 
 
 mkdocdir:

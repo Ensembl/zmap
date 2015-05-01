@@ -137,7 +137,7 @@ char **zMapCmdLineFinalArg(void)
  * @return           TRUE if arg_name was found in the args array, FALSE otherwise.
  *
  *  */
-gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
+gboolean zMapCmdLineArgsValue(const char *arg_name, ZMapCmdLineArgsType *result)
 {
   gboolean val_set = FALSE ;
   ZMapCmdLineArgs arg_context ;

@@ -21,11 +21,16 @@ else
 fi
 
 RC=0
-run_autoupdate=''					    # don't run autoupdate by default.
 force_remake_all=''
+gb_tools=''
+run_autoupdate=''					    # don't run autoupdate by default.
 install_missing='-i'
 verbose=''
 version_arg=''
+
+gb_tools_repos='gbtools'
+gb_tools_dir='gbtools'
+gb_tools_checkout_dir='gbtools_develop'
 
 
 # Load common functions/settings.
@@ -42,9 +47,10 @@ set -o history
 #
 usage="$SCRIPT_NAME [ -u ]"
 
-while getopts ":fiuv" opt ; do
+while getopts ":fgiuv" opt ; do
     case $opt in
 	f  ) force_remake_all='-f' ;;
+	g  ) gb_tools='yes' ;;
 	i  ) install_missing='-i' ;;
 	u  ) run_autoupdate='yes' ;;
 	v  ) verbose='-v' ;;
@@ -67,6 +73,36 @@ fi
 #
 zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "bootstrap starting...."
+
+
+# set up gbtools, this is our general tools package.
+#
+
+if [ -n "$gb_tools" ] ; then
+
+  zmap_message_out "Cloning $gb_tools_repos into $gb_tools_checkout_dir"
+
+  gitclone -o $gb_tools_repos || zmap_message_exit "could not clone $gb_tools_repos into $PWD."
+
+  cp -rf ./$gb_tools_checkout_dir/* ./$gb_tools_dir
+
+  rm -rf ./$gb_tools_checkout_dir
+
+  zmap_message_out "Copied $gb_tools_checkout_dir files to $gb_tools_dir"
+
+fi
+
+
+# If the gbtools autogen.sh script exists then run that. This is necessary
+# for gbtools to create its gbtools_version.m4 file.
+#
+if [ -e "$BASE_DIR/gbtools/autogen.sh" ] ; then
+  cur_dir=`pwd`
+  cd $BASE_DIR/gbtools
+  ./autogen.sh
+  cd $cur_dir
+fi
+
 
 
 # Remove any files/dirs from previous builds, necessary because different

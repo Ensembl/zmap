@@ -224,10 +224,6 @@ then
     # Set the destination for the current host machine type
     project_area=$software_root_dir/$arch_subdir/$annotools_subdir$build_subdir
 
-    # Set the destination for precise builds
-    precise_subdir="precise-x86_64"
-    precise_project_area=$software_root_dir/$precise_subdir/$annotools_subdir$build_subdir
-
     # Do the copy. (Hack to hard-code path to copy script - can't find it in the
     # local checkout for some reason.)
     copy_script=~zmap/BUILD_CHECKOUT/ZMap_develop/scripts/copy_directory.sh
@@ -244,18 +240,24 @@ then
     ssh $dev_machine "$copy_script $server_dir $project_area/bin"
     wait
   
-    # We don't currently build on ubuntu precise because the ubuntu lucid build works there.
-    # This means we need to copy the linux build to precise (note that we only have 64-bit 
-    # precise machines).
+    # We don't currently build on other 64 bit ubuntu because the lucid build works there.
+    # This means we need to copy the linux build to these (note that we only have 64-bit 
+    # precise and trusty machines).
     if [ $arch_subdir == "linux-x86_64" ]
     then
-      zmap_message_out "Running: ssh $dev_machine $copy_script $source_dir $precise_project_area"
-      ssh $dev_machine "$copy_script $source_dir $precise_project_area"
-      wait  
+      other_64_subdirs="precise-x86_64 trusty-x86_64"
 
-      zmap_message_out "Running: ssh $dev_machine $copy_script $server_dir $precise_project_area/bin"
-      ssh $dev_machine "$copy_script $server_dir $precise_project_area/bin"
-      wait  
+      for dest_subdir in $other_64_subdirs; do
+        dest_project_area=$software_root_dir/$dest_subdir/$annotools_subdir$build_subdir
+
+        zmap_message_out "Running: ssh $dev_machine $copy_script $source_dir $dest_project_area"
+        ssh $dev_machine "$copy_script $source_dir $dest_project_area"
+        wait  
+
+        zmap_message_out "Running: ssh $dev_machine $copy_script $server_dir $dest_project_area/bin"
+        ssh $dev_machine "$copy_script $server_dir $dest_project_area/bin"
+        wait  
+      done
     fi    
   fi
 else

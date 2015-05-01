@@ -25,6 +25,11 @@
  * Description: Utility functions for ZMap.
  *-------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_UTILS_H
 #define ZMAP_UTILS_H
 
@@ -195,7 +200,7 @@ void zMapSignalHandler(int sig_no) ;
 char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir) ;
 char *zMapGetFile(char *directory, char *filename, gboolean make_file, GError **error) ;
 char *zMapGetPath(char *path_in) ;
-char *zMapGetBasename(char *path_in) ;
+char *zMapGetBasename(const char *path_in) ;
 char *zMapExpandFilePath(char *path_in) ;
 gboolean zMapFileAccess(char *filepath, char *mode) ;
 gboolean zMapFileEmpty(char *filepath) ;
@@ -274,3 +279,7 @@ gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromsome_out, int
 gboolean zMapUtilsBioParseChromNumber(char *chromosome_str, char **chromosome_out) ;
 
 #endif /* ZMAP_UTILS_H */
+
+#ifdef __cplusplus
+}
+#endif

@@ -65,15 +65,8 @@ typedef struct
 void zmapPrintFeatureContext(ZMapFeatureContext context) ;
 gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_out) ;
 
-GList *zmapFeatureCoordsListMatch(ZMapFeature feature, int match_tolerance, GList *boundaries) ;
-gboolean zmapFeatureCoordsMatch(int slop, int boundary_start, int boundary_end,
-                                int start, int end, int *match_start_out, int *match_end_out) ;
 
-GList *zmapFeatureBasicHasMatchingBoundaries(ZMapFeature feature, GList *boundaries) ;
-GList *zmapFeatureAlignmentHasMatchingBoundaries(ZMapFeature feature, GList *boundaries) ;
-GList *zmapFeatureTranscriptHasMatchingBoundaries(ZMapFeature feature, GList *boundaries) ;
 
-GList *zmapFeatureGetSubparts(ZMapFeature feature) ;
 
 void zmapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int block_start, int block_end) ;
 void zmapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet translation_fs) ;
@@ -82,6 +75,36 @@ void zmapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet transla
 int zmapFeatureDNACalculateVariationDiff(const int start, 
                                          const int end,
                                          GList *variations) ;
+
+
+gboolean zmapFeatureCoordsMatch(int slop,  gboolean full_match,
+                                int boundary_start, int boundary_end, int start, int end,
+                                int *match_out, int *end_inout) ;
+gboolean zmapFeatureMatchingBoundaries(ZMapFeature feature,
+                                       gboolean exact_match, int slop,
+                                       ZMapFeaturePartsList boundaries,
+                                       ZMapFeaturePartsList *matching_boundaries_out,
+                                       ZMapFeaturePartsList *non_matching_boundaries_out) ;
+gboolean zmapFeatureBasicMatchingBoundaries(ZMapFeature feature,
+                                            ZMapFeatureSubPartType part_type, gboolean exact_match, int slop,
+                                            ZMapFeaturePartsList boundaries,
+                                            ZMapFeaturePartsList *matching_boundaries_out,
+                                            ZMapFeaturePartsList *non_matching_boundaries_out) ;
+gboolean zmapFeatureAlignmentMatchingBoundaries(ZMapFeature feature,
+                                                ZMapFeatureSubPartType part_type, gboolean exact_match, int slop,
+                                                ZMapFeaturePartsList boundaries,
+                                                ZMapFeaturePartsList *matching_boundaries_out,
+                                                ZMapFeaturePartsList *non_matching_boundaries_out) ;
+gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
+                                                 ZMapFeatureSubPartType part_type, gboolean exact_match, int slop,
+                                                 ZMapFeaturePartsList boundaries,
+                                                 ZMapFeaturePartsList *matching_boundaries_out,
+                                                 ZMapFeaturePartsList *non_matching_boundaries_out) ;
+
+ZMapFeaturePartsList zmapFeatureBasicSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds) ;
+ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds) ;
+ZMapFeaturePartsList zmapFeatureTranscriptSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds) ;
+
 
 
 #endif /* !ZMAP_FEATURE_P_H */
