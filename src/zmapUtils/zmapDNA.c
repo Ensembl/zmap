@@ -359,7 +359,7 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
       offset = search_start - dna ;
 
       /* Make a revcomp'd copy of the forward strand section. */
-      revcomp_dna = g_memdup(search_start, length) ;
+      revcomp_dna = (char *)g_memdup(search_start, length) ;
       zMapDNAReverseComplement(revcomp_dna, length) ;
 
       /* Set the pointers and search. */
