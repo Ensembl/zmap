@@ -133,10 +133,10 @@ static char *zmapXRemoteErrorText = NULL;
 
 static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
 static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
-   gboolean modal, int display_timeout,
-                                   char *first_button, char *second_button, char *third_button,
-   ZMapMsgType msg_type, GtkJustification justify,
-   ZMapGUIMsgUserData user_data) ;
+                                   gboolean modal, int display_timeout,
+                                   const char *first_button, const char *second_button, const char *third_button,
+                                   ZMapMsgType msg_type, GtkJustification justify,
+                                   ZMapGUIMsgUserData user_data) ;
 static void printMessage(ZMapMsgType msg_type, char *message) ;
 static void butClick(GtkButton *button, gpointer user_data) ;
 static gboolean timeoutHandlerModal(gpointer data) ;
@@ -1230,7 +1230,7 @@ gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
 /* The first button is the text that represents TRUE and the second FALSE so be
  * sure to word the button text accordingly ! */
 gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
-                               char* first_button, char *second_button)
+                               const char* first_button, const char *second_button)
 {
   gboolean result = FALSE ;
   ZMapGUIMsgUserDataStruct user_data = {ZMAPGUI_USERDATA_BOOL, FALSE, {FALSE}} ;
@@ -2238,7 +2238,7 @@ static void printMessage(ZMapMsgType msg_type, char *message)
  *  */
 static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
                                    gboolean modal, int display_timeout,
-                                   char *first_button, char *second_button, char *third_button,
+                                   const char *first_button, const char *second_button, const char *third_button,
                                    ZMapMsgType msg_type, GtkJustification justify,
                                    ZMapGUIMsgUserData user_data)
 {

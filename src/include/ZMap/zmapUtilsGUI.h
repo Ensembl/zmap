@@ -492,7 +492,7 @@ void zMapGUIShowMsgFull(GtkWindow *parent, const char *msg,
 			ZMapMsgType msg_type, GtkJustification justify, int display_timeout, gboolean close_button) ;
 gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
 gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
-                               char* first_button, char *second_button) ;
+                               const char* first_button, const char *second_button) ;
 GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text,
 				  char **text_out) ;
 GtkResponseType zMapGUIMsgGetYesNoCancel(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
