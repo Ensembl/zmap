@@ -1508,7 +1508,7 @@ static void checkInputFileForSequenceDetails(const char* const filename,
                                     &gff_version,
                                     &status, &gff_pipe_err))
         {
-          char *tmp ;
+          const char *tmp ;
 
           if (status == G_IO_STATUS_EOF)
             tmp = "No data returned from pipe" ;
