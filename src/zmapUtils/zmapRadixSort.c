@@ -57,83 +57,84 @@
 #define N_DIGITS  256               /* this will never change, so don't even think about it */
 
 /* int zmapUtils.h
-typedef guint (ZMapRadixKeyFunc (gconstpointer thing,int digit);
+   typedef guint (ZMapRadixKeyFunc (gconstpointer thing,int digit);
 */
 
-typedef struct
+typedef struct ZMapRadixSorterStructType
 {
-      GList *heads[N_DIGITS+1];     /* the lists that comprise our bins */
-      GList *tails[N_DIGITS+1];     /* ... + and extra one for a zero terminator */
-      GList *data;                  /* input and output list */
-}
-ZMapRadixSorterStruct, *ZMapRadixSorter;
+  GList *heads[N_DIGITS+1];     /* the lists that comprise our bins */
+  GList *tails[N_DIGITS+1];     /* ... + and extra one for a zero terminator */
+  GList *data;                  /* input and output list */
+} ZMapRadixSorterStruct, *ZMapRadixSorter;
 
 
 
-GList * zMapRadixSort(GList *list, ZMapRadixKeyFunc key_func,int n_digit)
+GList *zMapRadixSort(GList *list, ZMapRadixKeyFunc key_func,int n_digit)
 {
-      ZMapRadixSorter this = g_new0(ZMapRadixSorterStruct,1);
-      int i;
-      int digit;
-      GList *item;
-      GList *cur;
-      int cur_digit = 0;
+  ZMapRadixSorter radix_sort ;
+  int i ;
+  int digit ;
+  GList *item ;
+  GList *cur ;
+  int cur_digit = 0 ;
 
-      this->data = list;
+  radix_sort = g_new0(ZMapRadixSorterStruct, 1) ;
+  radix_sort->data = list ;
 
-      while(cur_digit < n_digit)
-      {
-                  /* sort the list into 256 bins */
-            for(item = this->data; item; )
+  while(cur_digit < n_digit)
+    {
+      /* sort the list into 256 bins */
+      for(item = radix_sort->data; item; )
+        {
+          digit = key_func(item->data,cur_digit);
+
+          cur = item;
+          item = item->next;
+
+          /* here for efficiency we code the next and prev pointers directly */
+          /* as GLib can't append without major grief, it would be quadratic */
+
+          cur->next = 0;
+          cur->prev = radix_sort->tails[digit];
+          if(cur->prev)
+            cur->prev->next = cur;
+          radix_sort->tails[digit] = cur;
+          if(!radix_sort->heads[digit])
+            radix_sort->heads[digit] = cur;
+        }
+
+      /* join the bins into a single list in order */
+
+      for(item = 0,i = N_DIGITS;i > 0;)
+        {
+          GList *digit_list = radix_sort->heads[--i];
+
+          if(digit_list)
             {
-                  digit = key_func(item->data,cur_digit);
-
-                  cur = item;
-                  item = item->next;
-
-                  /* here for efficiency we code the next and prev pointers directly */
-                  /* as GLib can't append without major grief, it would be quadratic */
-
-                  cur->next = 0;
-                  cur->prev = this->tails[digit];
-                  if(cur->prev)
-                        cur->prev->next = cur;
-                  this->tails[digit] = cur;
-                  if(!this->heads[digit])
-                        this->heads[digit] = cur;
+              GList *tail = radix_sort->tails[i];
+              tail->next = item;
+              if(item)
+                item->prev = tail;
+              item = digit_list;
             }
+        }
 
-                  /* join the bins into a single list in order */
+      radix_sort->data = item;
 
-            for(item = 0,i = N_DIGITS;i > 0;)
-            {
-                  GList *digit_list = this->heads[--i];
+      cur_digit++;
+      if(cur_digit < n_digit)
+        {
+          /* empty the bins and do some more */
+          int size = sizeof(GList *) * N_DIGITS;
+          memset(radix_sort->heads,0,size);
+          memset(radix_sort->tails,0,size);
+        }
+    }
 
-                  if(digit_list)
-                  {
-                        GList *tail = this->tails[i];
-                        tail->next = item;
-                        if(item)
-                              item->prev = tail;
-                        item = digit_list;
-                  }
-            }
+  list = radix_sort->data;
+  g_free(radix_sort);
 
-            this->data = item;
-
-            cur_digit++;
-            if(cur_digit < n_digit)
-            {
-                  /* empty the bins and do some more */
-                  int size = sizeof(GList *) * N_DIGITS;
-                  memset(this->heads,0,size);
-                  memset(this->tails,0,size);
-            }
-      }
-
-      list = this->data;
-      g_free(this);
-      return(list);
+  return(list);
 }
 
 
@@ -144,86 +145,86 @@ GList * zMapRadixSort(GList *list, ZMapRadixKeyFunc key_func,int n_digit)
  * generating a byte addressable key in the thing object would speed this up probably a lot
  * eg:
 
-      guchar key[sizeof guint) * 2];
-      guint *x = (giunt *) &key;
-      *x++ = feature->x1;
-      *x++ = G_MAXINT - feature->x2;
+ guchar key[sizeof guint) * 2];
+ guint *x = (giunt *) &key;
+ *x++ = feature->x1;
+ *x++ = G_MAXINT - feature->x2;
 
-test results:
------------------------------------------------------------
-set         #feat times in ms ratio #feat/time
-                  merge radix       merge radix
-------------8 byte key sorting 1000 times------------------
-est_mouse   87    7     34    x 5   /12   /3
-est_mouse   87    7     33    x 5   /12   /3
-est_other   322   54    124   x 2.5 /6    /3
-est_other   322   31    111   x 3.5 /10   /3
-est_human   528   54    269   x 5   /10   /2
-est human   528   55    192   x 4   /10   /2.5
-------------6 byte key sorting 100 times-----(adjust ratio/data x 10)
-swissprot   9563  173   423   * 2.5 /5   /2
-trembl      28292 683   2177  * 3.5 /4   /1.2
------------------------------------------------------------
+ test results:
+ -----------------------------------------------------------
+ set         #feat times in ms ratio #feat/time
+ merge radix       merge radix
+ ------------8 byte key sorting 1000 times------------------
+ est_mouse   87    7     34    x 5   /12   /3
+ est_mouse   87    7     33    x 5   /12   /3
+ est_other   322   54    124   x 2.5 /6    /3
+ est_other   322   31    111   x 3.5 /10   /3
+ est_human   528   54    269   x 5   /10   /2
+ est human   528   55    192   x 4   /10   /2.5
+ ------------6 byte key sorting 100 times-----(adjust ratio/data x 10)
+ swissprot   9563  173   423   * 2.5 /5   /2
+ trembl      28292 683   2177  * 3.5 /4   /1.2
+ -----------------------------------------------------------
 
-run time stats look very flaky
-There's inaccuracies in the timing due to scheduling (results are real time)
-But both merge sort and radix sort operate as worst case == best case
-There has to be a mistake somewhere...
-      merge sort should get slower as data increases (it does)
-      radix sort should be consistently linear (it's not)
+ run time stats look very flaky
+ There's inaccuracies in the timing due to scheduling (results are real time)
+ But both merge sort and radix sort operate as worst case == best case
+ There has to be a mistake somewhere...
+ merge sort should get slower as data increases (it does)
+ radix sort should be consistently linear (it's not)
 
-The theory was that this could be used in column summarise and run faster but it doesn't!
+ The theory was that this could be used in column summarise and run faster but it doesn't!
 
-raw data:
-est_other has 322 items
-Start 8.700 normal sort
-Stop  8.754 normal sort
-Start 8.754 radix sort
-Stop  8.878 radix sort
+ raw data:
+ est_other has 322 items
+ Start 8.700 normal sort
+ Stop  8.754 normal sort
+ Start 8.754 radix sort
+ Stop  8.878 radix sort
 
-est_other has 322 items
-Start 8.878 normal sort
-Stop  8.909 normal sort
-Start 8.909 radix sort
-Stop  9.020 radix sort
+ est_other has 322 items
+ Start 8.878 normal sort
+ Stop  8.909 normal sort
+ Start 8.909 radix sort
+ Stop  9.020 radix sort
 
-est_mouse has 87 items
-Start 9.020 normal sort
-Stop  9.027 normal sort
-Start 9.027 radix sort
-Stop  9.061 radix sort
+ est_mouse has 87 items
+ Start 9.020 normal sort
+ Stop  9.027 normal sort
+ Start 9.027 radix sort
+ Stop  9.061 radix sort
 
-est_mouse has 87 items
-Start 9.061 normal sort
-Stop  9.068 normal sort
-Start 9.068 radix sort
-Stop  9.101 radix sort
+ est_mouse has 87 items
+ Start 9.061 normal sort
+ Stop  9.068 normal sort
+ Start 9.068 radix sort
+ Stop  9.101 radix sort
 
-est_human has 528 items
-Start 9.102 normal sort
-Stop  9.156 normal sort
-Start 9.156 radix sort
-Stop  9.325 radix sort
+ est_human has 528 items
+ Start 9.102 normal sort
+ Stop  9.156 normal sort
+ Start 9.156 radix sort
+ Stop  9.325 radix sort
 
-est_human has 528 items
-Start 9.326 normal sort
-Stop  9.381 normal sort
-Start 9.381 radix sort
-Stop  9.573 radix sort
+ est_human has 528 items
+ Start 9.326 normal sort
+ Stop  9.381 normal sort
+ Start 9.381 radix sort
+ Stop  9.573 radix sort
 
-swissprot has 9563 items
-Start 8.923 normal sort
-Stop  9.096 normal sort
-Start 9.098 radix sort
-Stop  9.519 radix sort
-summarise swissprot: 444+9119/9563, max was 2
+ swissprot has 9563 items
+ Start 8.923 normal sort
+ Stop  9.096 normal sort
+ Start 9.098 radix sort
+ Stop  9.519 radix sort
+ summarise swissprot: 444+9119/9563, max was 2
 
-trembl has 28292 items
-Start 9.595 normal sort
-Stop  10.277      normal sort
-Start 10.280      radix sort
-Stop  12.457      radix sort
-summarise trembl: 492+27800/28292, max was 3
+ trembl has 28292 items
+ Start 9.595 normal sort
+ Stop  10.277      normal sort
+ Start 10.280      radix sort
+ Stop  12.457      radix sort
+ summarise trembl: 492+27800/28292, max was 3
 
 
- */
+*/
