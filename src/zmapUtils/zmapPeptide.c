@@ -434,8 +434,8 @@ char *zMapPeptideGeneName(ZMapPeptide peptide)
 
 
 gboolean zMapPeptideMatch(char *cp, char *end,
-                          char *match_template_in), ZMapStrand strand, ZMapGeneticCode translation_table,
-  char **start_out, char **end_out, char **match_str)
+                          char *match_template_in, ZMapStrand strand, ZMapGeneticCode translation_table,
+                          char **start_out, char **end_out, char **match_str)
 {
   gboolean result = FALSE ;
   char *match_template ;
@@ -735,7 +735,7 @@ static ZMapGeneticCode pepGetTranslationTable(void)
 
 
   /* TEMP CODE... */
-  translationTable = g_ptr_array_index(maps, 0) ;
+  translationTable = (ZMapGeneticCode)g_ptr_array_index(maps, 0) ;
 
 
 
@@ -854,7 +854,7 @@ static ZMapGeneticCode pepGetTranslationTable(void)
  * in order to do the translation the dna needs to be encoded and then decoded back so it
  * stays the same. */
 static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboolean include_stop,
-    gboolean *incomplete_final_codon)
+                            gboolean *incomplete_final_codon)
 {
   GArray *peptide = NULL ;
 
@@ -862,8 +862,17 @@ static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboole
   if (!dna || !*dna || !incomplete_final_codon) 
     return peptide ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* AGHHHHHHHH, in this call "TRUE" should be a strand enum...I've put in what I think is correct.... */
   peptide = translateDNASegment(dna, 0, -1, TRUE,
-        translation_table, include_stop, incomplete_final_codon) ;
+                                translation_table, include_stop, incomplete_final_codon) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  peptide = translateDNASegment(dna, 0, -1, ZMAPSTRAND_FORWARD,
+                                translation_table, include_stop, incomplete_final_codon) ;
+
+
+
 
   return peptide ;
 }
@@ -880,8 +889,8 @@ static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboole
  *
  *  */
 static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStrand strand,
-   ZMapGeneticCode translation_table, gboolean include_stop,
-   gboolean *incomplete_final_codon)
+                                   ZMapGeneticCode translation_table, gboolean include_stop,
+                                   gboolean *incomplete_final_codon)
 {
   GArray *peptide = NULL ;
   char *dna ;
