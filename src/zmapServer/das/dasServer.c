@@ -66,7 +66,7 @@ typedef struct
 
 typedef struct
 {
-  char *url;
+  const char *url;
   ZMapDAS1QueryType request_type;
   gpointer filter;
   gpointer filter_data;
@@ -101,7 +101,7 @@ static ZMapServerResponseType setContext(void *server, ZMapFeatureContext featur
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 					  ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context) ;
-static char *lastErrorMsg(void *server) ;
+static const char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server) ;
@@ -144,14 +144,17 @@ static void applyGlyphToEachType(gpointer style_id, gpointer data, gpointer user
 static gboolean getRequestedDSN(DasServer das, ZMapDAS1DSN *dsn_out);
 
 /* helpers */
-static char *dsnRequestURL(DasServer server);
-static char *dsnFullURL(DasServer server,
-                        char *query);
+static const char *dsnRequestURL(DasServer server);
+static char *dsnFullURL(DasServer server, const char *query);
+
+
 #ifdef RDS_DONT_INCLUDE
 static gboolean serverHasCapabilityLevel(DasServer server,
                                   char *capability,
                                   double minimum);
 #endif
+
+
 static gint compareExonCoords(gconstpointer a, gconstpointer b, gpointer feature_data);
 static void fixFeatureCache(gpointer key, gpointer data, gpointer user_data);
 static void fixUpFeaturesAndClearCache(DasServer server, ZMapFeatureBlock block);
@@ -348,9 +351,10 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
         return result;
 
       detail.url          = dsnRequestURL(server);
-      detail.filter       = dsnFilter;
-      detail.filter_data  = server;
       detail.request_type = ZMAP_DAS1_DSN;
+      detail.filter       = (void *)dsnFilter;
+      detail.filter_data  = server;
+
       if(!requestAndParseOverHTTP(server, &detail))
         result = ZMAP_SERVERRESPONSE_REQFAIL;
     }
@@ -361,11 +365,11 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   if((result == ZMAP_SERVERRESPONSE_OK) && dsn->entry_point == NULL)
     {
       if(detail.url)
-        g_free(detail.url);
+        g_free((void *)(detail.url));
 
       detail.url          = dsnFullURL(server, "entry_points");
       detail.request_type = ZMAP_DAS1_ENTRY_POINTS;
-      detail.filter       = entryFilter;
+      detail.filter = (void *)entryFilter;
 
       if((requestAndParseOverHTTP(server, &detail) == TRUE))
         result = ZMAP_SERVERRESPONSE_OK;
@@ -374,7 +378,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
     }
 
   if(detail.url)
-    g_free(detail.url);
+    g_free((void *)(detail.url));
 
   return result ;
 }
@@ -404,14 +408,14 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **types)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
   DasServer server = (DasServer)server_in;
-  DasServerTypesStruct server_types = { 0 };
+  DasServerTypesStruct server_types = { ZMAP_SERVERRESPONSE_INVALID };
   requestParseDetailStruct detail = {0};
 
   server_types.server = server;
   server_types.output = NULL;
 
   detail.url          = dsnFullURL(server, "types");
-  detail.filter       = typesFilter;
+  detail.filter       = (void *)typesFilter;
   detail.filter_data  = &server_types;
   detail.request_type = ZMAP_DAS1_TYPES;
 
@@ -420,11 +424,11 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **types)
   else if (types)
     {
       if(detail.url)
-        g_free(detail.url);
+        g_free((void *)(detail.url));
 
       detail.url          = dsnFullURL(server, "stylesheet");
       detail.request_type = ZMAP_DAS1_STYLESHEET;
-      detail.filter       = stylesheetFilter;
+      detail.filter       = (void *)stylesheetFilter;
 
       if(!requestAndParseOverHTTP(server, &detail))
         result = ZMAP_SERVERRESPONSE_REQFAIL;
@@ -435,7 +439,7 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **types)
     }
 
   if(detail.url)
-    g_free(detail.url);
+    g_free((void *)(detail.url));
 
   return result;
 }
@@ -506,15 +510,15 @@ static ZMapServerResponseType getFeatureSets(void *server,
 }
 
 
-static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context)
+static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
-  DasServer das = (DasServer)server ;
+  DasServer das = (DasServer)server_in ;
   gboolean status ;
 
   das->req_context = feature_context ;
 
-  if(!(status = setSequenceMapping(server, feature_context)))
+  if(!(status = setSequenceMapping(das, feature_context)))
     result = ZMAP_SERVERRESPONSE_REQFAIL;
   else
     das->cur_context = feature_context;
@@ -552,7 +556,7 @@ static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *st
 }
 
 /* N.B. last error may be NULL. */
-static char *lastErrorMsg(void *server_in)
+static const char *lastErrorMsg(void *server_in)
 {
   DasServer server = (DasServer)server_in ;
 
@@ -594,9 +598,9 @@ static ZMapServerResponseType destroyConnection(void *server_in)
   DasServer server = (DasServer)server_in ;
 
   if(server->last_errmsg)
-    g_free(server->last_errmsg);
+    g_free((void *)(server->last_errmsg)) ;
   if(server->curl_errmsg)
-    g_free(server->curl_errmsg);
+    g_free((void *)(server->curl_errmsg)) ;
 
   g_free(server) ;
 
@@ -835,7 +839,7 @@ static size_t WriteMemoryCallback(void *xml, size_t size, size_t nmemb, void *ap
 static size_t WriteHeaderCallback(void *hdr_in, size_t size, size_t nmemb, void *data)
 {
   int realsize     = size * nmemb;
-  char *wantKey    = "X-DAS-Capabilities:";
+  const char *wantKey    = "X-DAS-Capabilities:";
   DasServer server = (DasServer)data ;
   char *hdr = (char *)hdr_in ;
 
@@ -874,7 +878,7 @@ static gboolean requestAndParseOverHTTP(DasServer server,
 {
   gboolean response = FALSE, result = TRUE;
   ZMapDAS1QueryType type;
-  char *url = NULL;
+  const char *url = NULL;
 
   if((url = detail->url) && !(*url))
     {
@@ -889,32 +893,32 @@ static gboolean requestAndParseOverHTTP(DasServer server,
         {
         case ZMAP_DAS1_DSN:
           zMapDAS1ParserDSNPrepareXMLParser(server->das,
-                                            detail->filter,
+                                            (ZMapDAS1DSNCB)detail->filter,
                                             detail->filter_data);
           break;
         case ZMAP_DAS1_DNA:
           zMapDAS1ParserDNAPrepareXMLParser(server->das,
-                                            detail->filter,
+                                            (ZMapDAS1DNACB)detail->filter,
                                             detail->filter_data);
           break;
         case ZMAP_DAS1_ENTRY_POINTS:
           zMapDAS1ParserEntryPointsPrepareXMLParser(server->das,
-                                                    detail->filter,
+                                                    (ZMapDAS1EntryPointsCB)detail->filter,
                                                     detail->filter_data);
           break;
         case ZMAP_DAS1_TYPES:
           zMapDAS1ParserTypesPrepareXMLParser(server->das,
-                                              detail->filter,
+                                              (ZMapDAS1TypesCB)detail->filter,
                                               detail->filter_data);
           break;
         case ZMAP_DAS1_FEATURES:
           zMapDAS1ParserFeaturesPrepareXMLParser(server->das,
-                                                 detail->filter,
+                                                 (ZMapDAS1FeaturesCB)detail->filter,
                                                  detail->filter_data);
           break ;
         case ZMAP_DAS1_STYLESHEET:
           zMapDAS1ParserStylesheetPrepareXMLParser(server->das,
-                                                   detail->filter,
+                                                   (ZMapDAS1StylesheetCB)detail->filter,
                                                    detail->filter_data);
           break ;
         case ZMAP_DAS1_LINK:
@@ -1084,7 +1088,7 @@ static gboolean fetchFeatures(DasServer server, GHashTable *styles, ZMapFeatureB
 
       detail.url          = url;
       detail.request_type = ZMAP_DAS1_FEATURES;
-      detail.filter       = featureFilter;
+      detail.filter       = (void *)featureFilter;
       detail.filter_data  = &block_server;
 
       if(!(requestAndParseOverHTTP(server, &detail)))
@@ -1142,9 +1146,9 @@ static char *makeCurrentSegmentString(DasServer das, ZMapFeatureContext fc)
   return query;
 }
 
-static char *dsnRequestURL(DasServer server)
+static const char *dsnRequestURL(DasServer server)
 {
-  char *url = NULL, *preDASPath = "";
+  const char *url = NULL, *preDASPath = "";
   /* Need to work out what preDASPath is
    * Not all servers are http://das.host.tld/das/dasSourceName
    * Some are set up as http://das.host.tld/web/dataAccess/das/dasSourceName
@@ -1176,7 +1180,7 @@ static char *dsnRequestURL(DasServer server)
 }
 
 /* Must free me when done with me!!! */
-static char *dsnFullURL(DasServer server, char *query)
+static char *dsnFullURL(DasServer server, const char *query)
 {
   char *url = NULL;
   if(server->user && server->passwd)
@@ -1430,7 +1434,7 @@ static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
       feature_id = g_quark_from_string(feature_name);
 
 
-      if(!(new_feature = g_hash_table_lookup(server->feature_cache, GINT_TO_POINTER(group_id))))
+      if(!(new_feature = (ZMapFeature)g_hash_table_lookup(server->feature_cache, GINT_TO_POINTER(group_id))))
         {
           new_feature = zMapFeatureCreateEmpty();
 
@@ -1451,7 +1455,7 @@ static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
       /* No group information for this feature */
       feature_id = g_quark_from_string(feature_name);
 
-      if(!(new_feature = g_hash_table_lookup(feature_set->features, GINT_TO_POINTER(feature_id))))
+      if(!(new_feature = (ZMapFeature)g_hash_table_lookup(feature_set->features, GINT_TO_POINTER(feature_id))))
         {
           new_feature = zMapFeatureCreateEmpty();
 
@@ -1472,7 +1476,7 @@ static void applyGlyphToEachType(gpointer style_id, gpointer data, gpointer user
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data;
   ZMapDAS1Glyph glyph = (ZMapDAS1Glyph)user_data;
-  char *outline = "black", *fg = NULL, *bg = NULL;
+  const char *outline = "black", *fg = NULL, *bg = NULL;
 
   if(glyph->fg)
     fg = (char *)g_quark_to_string(glyph->fg);
@@ -1629,7 +1633,7 @@ static void fixFeatureCache(gpointer key, gpointer data, gpointer user_data)
   style_id  = (*feature->style)->unique_id;
   type_name = (char *)g_quark_to_string(style_id);
 
-  if((feature_set = g_hash_table_lookup(block->feature_sets, GINT_TO_POINTER(style_id))) == NULL)
+  if((feature_set = (ZMapFeatureSet)g_hash_table_lookup(block->feature_sets, GINT_TO_POINTER(style_id))) == NULL)
     {
       feature_set  = zMapFeatureSetCreate(type_name, NULL);
       zMapFeatureBlockAddFeatureSet(block, feature_set);
