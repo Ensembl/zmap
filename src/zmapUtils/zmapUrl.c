@@ -2091,7 +2091,7 @@ char *zMapURLGetQueryValue(char *full_query, char *key)
   return value;
 }
 
-gboolean zMapURLGetQueryBoolean(char *full_query, char *key)
+gboolean zMapURLGetQueryBoolean(const char *full_query, const char *key)
 {
   gboolean result = FALSE;
   char *value = NULL;
@@ -2106,7 +2106,7 @@ gboolean zMapURLGetQueryBoolean(char *full_query, char *key)
   return result;
 }
 
-int zMapURLGetQueryInt(char *full_query, char *key)
+int zMapURLGetQueryInt(const char *full_query, const char *key)
 {
   int result = 0 ;
   char *value = NULL ;
