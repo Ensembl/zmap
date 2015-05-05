@@ -533,17 +533,17 @@ void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gp
 /* Note book functions. */
 ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean editable,
 					      ZMapGUINotebookCallbackFunc cleanup_cb, void *user_cleanup_data) ;
-ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book, char *chapter_name,
+ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book, const char *chapter_name,
 						    ZMapGuiNotebookCB user_callbacks) ;
-ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, char *page_name) ;
+ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, const char *page_name) ;
 ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage page, char *subsection_name) ;
 ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsection subsection,
 							char *paragraph_name,
 							ZMapGuiNotebookParagraphDisplayType display_type,
 							GList *headers, GList *types) ;
 ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph paragraph,
-						      char *tag_value_name,
-                                                      char *tooltip,
+						      const char *tag_value_name,
+                                                      const char *tooltip,
 						      ZMapGuiNotebookTagValueDisplayType display_type,
 						      const char *arg_type, ...) ;
 void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage page) ;

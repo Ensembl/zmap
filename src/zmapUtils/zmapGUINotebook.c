@@ -114,7 +114,7 @@ typedef struct
 } TreeViewSizeCBDataStruct, *TreeViewSizeCBData ;
 
 
-static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name) ;
+static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, const char *name) ;
 static GtkWidget *makeMenuBar(MakeNotebook make_notebook) ;
 static void makeChapterCB(gpointer data, gpointer user_data) ;
 static void makePageCB(gpointer data, gpointer user_data) ;
@@ -314,7 +314,7 @@ ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
  * @param page_name  String displayed at top of notebook page.
  * @return           ZMapGuiNotebookPage
  */
-ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, char *page_name)
+ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, const char *page_name)
 {
   ZMapGuiNotebookPage page = NULL ;
 
@@ -412,8 +412,8 @@ GList *headers, GList *types)
  *
  *  */
 ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph paragraph,
-      char *tag_value_name,
-      char *tooltip,
+      const char *tag_value_name,
+      const char *tooltip,
       ZMapGuiNotebookTagValueDisplayType display_type,
       const gchar *arg_type, ...)
 {
@@ -927,7 +927,7 @@ void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book)
 
 
 /* Create the bare bones, canonical notebook structs. */
-static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name)
+static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, const char *name)
 {
   ZMapGuiNotebookAny book_any = NULL ;
   int size = 0 ;

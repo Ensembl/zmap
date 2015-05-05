@@ -324,7 +324,7 @@ gboolean zMapControlProcessRemoteRequest(ZMap zmap,
 	  /* Something went wrong. */
 	  if (!parse_view_id)
 	    {
-	      reason = "Badly formed view_id !" ;
+	      reason = g_strdup("Badly formed view_id !") ;
 	      result = FALSE ;
 	    }
 	  else						    /* !view_found */
@@ -334,6 +334,8 @@ gboolean zMapControlProcessRemoteRequest(ZMap zmap,
 	    }
 
 	  (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
+
+          g_free(reason) ;
 	}
 
     }
