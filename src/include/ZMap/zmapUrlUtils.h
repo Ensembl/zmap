@@ -159,7 +159,7 @@ char *xstrdup_real(const char *) ;
   const char *BTA_beg = (beg);			\
   int BTA_len = (end) - BTA_beg;		\
   char **BTA_dest = &(place);			\
-  *BTA_dest = alloca (BTA_len + 1);		\
+  *BTA_dest = (char *)alloca (BTA_len + 1);     \
   memcpy (*BTA_dest, BTA_beg, BTA_len);		\
   (*BTA_dest)[BTA_len] = '\0';			\
 } while (0)

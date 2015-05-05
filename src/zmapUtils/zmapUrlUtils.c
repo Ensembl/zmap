@@ -169,7 +169,7 @@ xstrdup_real (const char *s)
 
 #ifndef HAVE_STRDUP
   int l = strlen (s);
-  copy = malloc (l + 1);
+  copy = (char *)malloc (l + 1);
   if (!copy)
     memfatal ("strdup");
   memcpy (copy, s, l + 1);

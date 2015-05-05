@@ -77,7 +77,7 @@ typedef struct _ZMapURLStruct
   /* URL components (URL-quoted). */
   char *path;
   char *params;
-  const char *query;
+  char *query;
   char *fragment;
 
   /* Extracted path info (unquoted). */

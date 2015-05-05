@@ -62,7 +62,7 @@ extern int errno;
 
 struct scheme_data
 {
-  char *leading_string;
+  const char *leading_string;
   int default_port;
   int enabled;
 };
@@ -395,7 +395,7 @@ reencode_escapes (const char *s)
   /* Each encoding adds two characters (hex digits), while each
      decoding removes two characters.  */
   newlen = oldlen + 2 * (encode_count - decode_count);
-  newstr = xmalloc (newlen + 1);
+  newstr = (char *)xmalloc(newlen + 1);
 
   p1 = s;
   p2 = newstr;
@@ -510,7 +510,7 @@ parse_credentials (const char *beg, const char *end, char **user, char **passwd)
   if (beg == end)
     return 0;/* empty user name */
 
-  colon = memchr (beg, ':', end - beg);
+  colon = (char *)memchr(beg, ':', end - beg);
   if (colon == beg)
     return 0;/* again empty user name */
 
@@ -572,7 +572,7 @@ rewrite_shorthand_url (const char *url)
         goto http;
 
       /* Prepend "ftp://" to the entire URL... */
-      res = xmalloc (6 + strlen (url) + 1);
+      res = (char *)xmalloc (6 + strlen (url) + 1);
       sprintf (res, "ftp://%s", url);
       /* ...and replace ':' with '/'. */
       res[6 + (p - url)] = '/';
@@ -583,7 +583,7 @@ rewrite_shorthand_url (const char *url)
       char *res;
     http:
       /* Just prepend "http://" to what we have. */
-      res = xmalloc (7 + strlen (url) + 1);
+      res = (char *)xmalloc (7 + strlen (url) + 1);
       sprintf (res, "http://%s", url);
       return res;
     }
@@ -640,7 +640,7 @@ lowercase_str (char *str)
   return change;
 }
 
-static char *parse_errors[] = {
+static const char *parse_errors[] = {
 #define PE_NO_ERROR 0
   N_("No error"),
 #define PE_UNSUPPORTED_SCHEME 1
@@ -822,11 +822,10 @@ is_valid_ipv4_address(curtok, end) == 1) {
  *******************************************************************************
  */
 
-ZMapURL
-url_parse (const char *url, int *error)
+ZMapURL url_parse (const char *url, int *error)
 {
   ZMapURL u;
-  const char *p;
+  char *p;
   int path_modified, host_modified;
 
   ZMapURLScheme scheme;
@@ -1108,7 +1107,8 @@ url_error (int error_code)
 static void
 split_path (const char *path, char **dir, char **file)
 {
-  char *last_slash = strrchr (path, '/');
+  char *last_slash = strrchr ((char *)path, '/');
+
   if (!last_slash)
     {
       *dir = xstrdup ("");
@@ -1245,7 +1245,7 @@ sync_path (ZMapURL u)
       int filelen = strlen (efile);
 
       /* Copy "DIR/FILE" to newpath. */
-      char *p = newpath = xmalloc (dirlen + 1 + filelen + 1);
+      char *p = newpath = (char *)xmalloc (dirlen + 1 + filelen + 1);
       memcpy (p, edir, dirlen);
       p += dirlen;
       *p++ = '/';
@@ -1293,7 +1293,7 @@ url_free (ZMapURL url)
   xfree (url->url);
 
   FREE_MAYBE (url->params);
-  FREE_MAYBE (url->query);
+  FREE_MAYBE ((char *)(url->query));
   FREE_MAYBE (url->fragment);
   FREE_MAYBE (url->user);
   FREE_MAYBE (url->passwd);
@@ -1421,12 +1421,12 @@ UWC,  C,  C,  C,   C,  C,  C,  C,   /* NUL SOH STX ETX  EOT ENQ ACK BEL */
    for non-standard port numbers.  On Unix this is normally ':', as in
    "www.xemacs.org:4001/index.html".  Under Windows, we set it to +
    because Windows can't handle ':' in file names.  */
-#define FN_PORT_SEP  (opt_G.restrict_files_os != restrict_windows ? ':' : '+')
+#define FN_PORT_SEP  (opt_G.restrict_files_os != opt_G.restrict_windows ? ':' : '+')
 
 /* FN_QUERY_SEP is the separator between the file name and the URL
    query, normally '?'.  Since Windows cannot handle '?' as part of
    file name, we use '@' instead there.  */
-#define FN_QUERY_SEP (opt_G.restrict_files_os != restrict_windows ? '?' : '@')
+#define FN_QUERY_SEP (opt_G.restrict_files_os != opt_G.restrict_windows ? '?' : '@')
 
 /* Quote path element, characters in [b, e), as file name, and append
    the quoted string to DEST.  Each character is quoted as per
@@ -1443,7 +1443,7 @@ append_uri_pathel (const char *b, const char *e, int escaped_p,
   int quoted, outlen;
 
   int mask;
-  if (opt_G.restrict_files_os == restrict_unix)
+  if (opt_G.restrict_files_os == opt_G.restrict_unix)
     mask = filechr_not_unix;
   else
     mask = filechr_not_windows;
@@ -1454,6 +1454,7 @@ append_uri_pathel (const char *b, const char *e, int escaped_p,
   if (escaped_p)
     {
       char *unescaped;
+
       BOUNDED_TO_ALLOCA (b, e, unescaped);
       url_unescape (unescaped);
       b = unescaped;
@@ -1544,7 +1545,7 @@ url_file_name (const ZMapURL u)
 {
   struct growable fnres;
 
-  char *u_file, *u_query;
+  const char *u_file, *u_query;
   char *fname;
 
   fnres.base = NULL;
@@ -1604,9 +1605,9 @@ url_file_name (const ZMapURL u)
    terminated by one of '?', ';', '#', or by the end of the
    string.  */
 static int
-path_length (const char *url)
+path_length (char *url)
 {
-  const char *q = strpbrk_or_eos (url, "?;#");
+  char *q = strpbrk_or_eos (url, "?;#");
   return q - url;
 }
 
@@ -1731,14 +1732,14 @@ char *
 uri_merge (const char *base, const char *link)
 {
   int linklength;
-  const char *end;
+  char *end;
   char *merge;
 
   if (url_has_scheme (link))
     return xstrdup (link);
 
   /* We may not examine BASE past END. */
-  end = base + path_length (base);
+  end = (char *)(base + path_length ((char *)base)) ;
   linklength = strlen (link);
 
   if (!*link)
@@ -1755,7 +1756,7 @@ uri_merge (const char *base, const char *link)
       /* uri_merge("path?foo#bar", "?new") -> "path?new"     */
       /* uri_merge("path#foo",     "?new") -> "path?new"     */
       int baselength = end - base;
-      merge = xmalloc (baselength + linklength + 1);
+      merge = (char *)xmalloc (baselength + linklength + 1);
       memcpy (merge, base, baselength);
       memcpy (merge + baselength, link, linklength);
       merge[baselength + linklength] = '\0';
@@ -1771,7 +1772,7 @@ uri_merge (const char *base, const char *link)
       if (!end1)
         end1 = base + strlen (base);
       baselength = end1 - base;
-      merge = xmalloc (baselength + linklength + 1);
+      merge = (char *)xmalloc (baselength + linklength + 1);
       memcpy (merge, base, baselength);
       memcpy (merge + baselength, link, linklength);
       merge[baselength + linklength] = '\0';
@@ -1791,7 +1792,7 @@ uri_merge (const char *base, const char *link)
       const char *start_insert;
 
       /* Look for first slash. */
-      slash = memchr (base, '/', end - base);
+      slash = (char *)memchr (base, '/', end - base);
       /* If found slash and it is a double slash, then replace
  from this point, else default to replacing from the
  beginning.  */
@@ -1823,7 +1824,7 @@ uri_merge (const char *base, const char *link)
       /* We're looking for the first slash, but want to ignore
          double slash. */
     again:
-      slash = memchr (pos, '/', end - pos);
+      slash = (char *)memchr (pos, '/', end - pos);
       if (slash && !seen_slash_slash)
         if (*(slash + 1) == '/')
           {
@@ -1946,10 +1947,10 @@ url_string (const ZMapURL url, int hide_password)
 {
   int size;
   char *result, *p;
-  char *quoted_user = NULL, *quoted_passwd = NULL;
+  const char *quoted_user = NULL, *quoted_passwd = NULL;
 
   int scheme_port  = supported_schemes[url->scheme].default_port;
-  char *scheme_str = supported_schemes[url->scheme].leading_string;
+  char *scheme_str = (char *)supported_schemes[url->scheme].leading_string;
   int fplen = full_path_length (url);
 
   int brackets_around_host = 0;
@@ -1986,7 +1987,7 @@ url_string (const ZMapURL url, int hide_password)
         size += 1 + strlen (quoted_passwd);
     }
 
-  p = result = xmalloc (size);
+  p = result = (char *)xmalloc (size);
 
   APPEND (p, scheme_str);
   if (quoted_user)
@@ -2018,10 +2019,10 @@ url_string (const ZMapURL url, int hide_password)
   assert (p - result == size);
 
   if (quoted_user && quoted_user != url->user)
-    xfree (quoted_user);
+    xfree ((void *)quoted_user);
   if (quoted_passwd && !hide_password
       && quoted_passwd != url->passwd)
-    xfree (quoted_passwd);
+    xfree ((void *)quoted_passwd);
 
   return result;
 }
@@ -2048,7 +2049,7 @@ static char *
 protocol_from_scheme(ZMapURLScheme scheme)
 {
   char *tmp = NULL;
-  tmp = supported_schemes[scheme].leading_string;
+  tmp = (char *)supported_schemes[scheme].leading_string;
   if(tmp)
     return strdupdelim(tmp, tmp + strlen(tmp) - 3);
   return tmp;
