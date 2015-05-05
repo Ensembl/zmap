@@ -87,7 +87,7 @@ typedef ZMapServerResponseType (*ZMapServerGetStatusFunc)(void *server_conn, gin
 typedef ZMapServerResponseType (*ZMapServerGetConnectStateFunc)(void *server_conn,
 								ZMapServerConnectStateType *connect_state) ;
 
-typedef char *(*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
+typedef const char *(*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType (*ZMapServerCloseFunc)(void *server_conn) ;
 
