@@ -934,7 +934,7 @@ void zmapStyleUnsetIsSet(ZMapFeatureTypeStyle style, ZMapStyleParamId id)
 /* Converts a numerical paramid to it's corresponding string name. */
 const char *zmapStyleParam2Name(ZMapStyleParamId id)
 {
-  char *param_name = NULL ;
+  const char *param_name = NULL ;
 
   zMapReturnValIfFailSafe((PARAM_ID_IS_VALID(id)), param_name) ;
 

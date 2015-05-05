@@ -92,10 +92,10 @@ typedef struct ZMapStyleParamStructName
 {
   ZMapStyleParamId id ;
   ZMapStyleParamType type ;
-  gchar *name ;
+  const gchar *name ;
 
-  gchar *nick ;            // if NULL or "" defaults to name
-  gchar *blurb ;
+  const gchar *nick ;            // if NULL or "" defaults to name
+  const gchar *blurb ;
 
   guint offset ;           // of the data in the style struct
   ZMapStyleMode mode ;     // non zero if mode dependant
