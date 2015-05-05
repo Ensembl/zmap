@@ -1331,7 +1331,7 @@ static gboolean configureLog(char *config_file, GError **error)
   GError *g_error = NULL ;
   ZMapConfigIniContext context ;
   gboolean logging, log_to_file, show_process, show_code, show_time, catch_glib, echo_glib ;
-  char *full_dir, *log_name, *logfile_path ;
+  char *full_dir = NULL, *log_name = NULL, *logfile_path = NULL ;
 
   /* ZMap's default values (as opposed to the logging packages...). */
   logging = TRUE ;
@@ -1341,10 +1341,6 @@ static gboolean configureLog(char *config_file, GError **error)
   show_time = FALSE ;
   catch_glib = TRUE ;
   echo_glib = TRUE ;
-  /* if we run config free we use .ZMap, creating it if necessary */
-  full_dir = ZMAP_USER_CONFIG_DIR ;
-  log_name = g_strdup(ZMAPLOG_FILENAME) ;
-
 
   if (config_file && (context = zMapConfigIniContextProvide(config_file)))
     {
@@ -1411,7 +1407,6 @@ static gboolean configureLog(char *config_file, GError **error)
                                         ZMAPSTANZA_LOG_CONFIG,
                                         ZMAPSTANZA_LOG_FILENAME, &tmp_string))
         {
-          g_free(log_name) ;
           log_name = tmp_string;
         }
 
@@ -1424,6 +1419,13 @@ static gboolean configureLog(char *config_file, GError **error)
       /* Use the default directory. Create the full path and mkdir if necessary. */
       full_dir = zMapGetDir(full_dir, TRUE, TRUE) ;
     }
+
+  /* if we run config free we use .ZMap, creating it if necessary */
+  if (!full_dir)
+    full_dir = g_strdup(ZMAP_USER_CONFIG_DIR) ;
+
+  if (!log_name)
+    log_name = g_strdup(ZMAPLOG_FILENAME) ;
 
   logfile_path = zMapGetFile(full_dir, log_name, TRUE, &g_error) ;
 

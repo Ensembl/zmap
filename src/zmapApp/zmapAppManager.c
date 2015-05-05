@@ -106,7 +106,7 @@ static void processRequest(ZMapManager app_context,
    ZMap zmap, gpointer view_id,
    RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 
-static ZMapXMLUtilsEventStack makeMessageElement(char *message_text) ;
+static ZMapXMLUtilsEventStack makeMessageElement(const char *message_text) ;
 static gboolean start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 static gboolean end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 static gboolean req_start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
@@ -856,7 +856,7 @@ static ZMapManagerAddResult addNewView(ZMapManager zmaps,
  * is completely responsible for memory managing message-text, it must
  * be around long enough for the xml string to be created, after that it
  * can be free'd. */
-static ZMapXMLUtilsEventStack makeMessageElement(char *message_text)
+static ZMapXMLUtilsEventStack makeMessageElement(const char *message_text)
 {
   static ZMapXMLUtilsEventStackStruct
     message[] =

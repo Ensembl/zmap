@@ -88,17 +88,17 @@ GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
                                        const char *command, int timeout_secs, ...) ;
 GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control,
                                                 char *original_request,
-                                                RemoteCommandRCType return_code, char *reason,
+                                                RemoteCommandRCType return_code, const char *reason,
                                                 ZMapXMLUtilsEventStack reply,
                                                 char **error_out) ;
 GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote_control,
 							char *xml_request,
-							RemoteCommandRCType return_code, char *reason,
+							RemoteCommandRCType return_code, const char *reason,
 							ZMapXMLUtilsEventStack reply,
 							char **error_out) ;
-ZMapXMLUtilsEventStack zMapRemoteCommandCreateElement(char *element, char *attribute, char *attribute_value) ;
+ZMapXMLUtilsEventStack zMapRemoteCommandCreateElement(const char *element, const char *attribute, const char *attribute_value) ;
 ZMapXMLUtilsEventStack zMapRemoteCommandMessage2Element(const char *message) ;
-GArray *zMapRemoteCommandAddBody(GArray *request_in_out, char *req_or_reply,
+GArray *zMapRemoteCommandAddBody(GArray *request_in_out, const char *req_or_reply,
 				 ZMapXMLUtilsEventStack request_body) ;
 char *zMapRemoteCommandStack2XML(GArray *xml_stack, char **error_out) ;
 

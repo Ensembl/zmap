@@ -131,7 +131,6 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
   gpointer view_ptr = NULL ;
   char *err_msg = NULL ;
   RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_OK ;
-  char *reason = NULL ;
   ZMapXMLUtilsEventStack reply = NULL ;
 
 
@@ -147,6 +146,7 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
       != REMOTE_VALIDATE_RC_OK)
     {
       gboolean abort ;
+      char *reason = NULL ;
 
       if (valid_rc == REMOTE_VALIDATE_RC_ENVELOPE_XML || valid_rc == REMOTE_VALIDATE_RC_ENVELOPE_CONTENT)
         abort = TRUE ;
@@ -172,6 +172,8 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
     {
       if (!(command_name = zMapRemoteCommandRequestGetCommand(remote->curr_peer_request)))
         {
+          const char *reason = NULL ;
+
           command_rc = REMOTE_COMMAND_RC_BAD_XML ;
           reason = "Command is a required attribute for the \"request\" attribute." ;
           reply = NULL ;
@@ -205,6 +207,8 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
             }
           else
             {
+              const char *reason = NULL ;
+
               command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
               reason = "Bad view_id !" ;
               reply = NULL ;
@@ -232,6 +236,7 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
         
               (replyHandlerFunc)(command_name, FALSE, command_rc, reason, reply, app_context) ;
         
+              g_free(reason) ;
               result = FALSE ;
             }
         }
@@ -255,7 +260,7 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
                                                           replyHandlerFunc, app_context)))
         {
           RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_CMD_UNKNOWN ;
-          char *reason = "Command not known !" ;
+          const char *reason = "Command not known !" ;
           ZMapXMLUtilsEventStack reply = NULL ;
         
           (replyHandlerFunc)(command_name, FALSE, command_rc, reason, reply, app_context) ;

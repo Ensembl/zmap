@@ -362,7 +362,7 @@ GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
  *  */
 GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control,
                                                 char *xml_request,
-                                                RemoteCommandRCType return_code, char *reason,
+                                                RemoteCommandRCType return_code, const char *reason,
                                                 ZMapXMLUtilsEventStack reply,
                                                 char **error_out)
 {
@@ -419,7 +419,7 @@ GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control
  *  */
 GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote_control,
                                                         char *xml_request,
-                                                        RemoteCommandRCType return_code, char *reason,
+                                                        RemoteCommandRCType return_code, const char *reason,
                                                         ZMapXMLUtilsEventStack reply,
                                                         char **error_out)
 {
@@ -485,7 +485,7 @@ GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote
 /* Just a cover func for correct xml call...saves caller needing to know the xml package.
  *
  *  */
-GArray *zMapRemoteCommandAddBody(GArray *request_in_out, char *req_or_reply,
+GArray *zMapRemoteCommandAddBody(GArray *request_in_out, const char *req_or_reply,
                                  ZMapXMLUtilsEventStack request_body)
 {
   GArray *xml_stack = request_in_out ;
@@ -515,7 +515,7 @@ GArray *zMapRemoteCommandAddBody(GArray *request_in_out, char *req_or_reply,
  * The element, attribute and attribute_value you supply need to be around until the xml
  * has been made.
  *  */
-ZMapXMLUtilsEventStack zMapRemoteCommandCreateElement(char *element, char *attribute, char *attribute_value)
+ZMapXMLUtilsEventStack zMapRemoteCommandCreateElement(const char *element, const char *attribute, const char *attribute_value)
 {
   static ZMapXMLUtilsEventStackStruct
     stack[] =

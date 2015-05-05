@@ -84,7 +84,7 @@ typedef struct ZMapAppRemoteStructType
 {
 
   /* Peer's names/text etc. */
-  char *peer_name ;
+  const char *peer_name ;
   char *peer_socket ;
 
   /* Our names/text etc. */
@@ -253,7 +253,7 @@ void zmapAppPingStop(ZMapAppContext app_context) ;
 /* New remote control interface */
 ZMapRemoteAppMakeRequestFunc zmapAppRemoteControlGetRequestCB(void) ;
 gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context,
-				    char *peer_socket, char *peer_timeout_list) ;
+				    char *peer_socket, const char *peer_timeout_list) ;
 gboolean zmapAppRemoteControlInit(ZMapAppContext app_context) ;
 gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context) ;
 gboolean zmapAppRemoteControlDisconnect(ZMapAppContext app_context, gboolean app_exit) ;

@@ -61,13 +61,13 @@
 static void receivedPeerRequestCB(ZMapRemoteControl remote_control,
                                   ZMapRemoteControlReturnReplyFunc remote_reply_func, void *remote_reply_data,
                                   char *request, void *user_data) ;
-static void sendZmapReplyCB(char *command, gboolean abort, RemoteCommandRCType result, char *reason,
+static void sendZmapReplyCB(const char *command, gboolean abort, RemoteCommandRCType result, const char *reason,
                             ZMapXMLUtilsEventStack reply, gpointer app_reply_data) ;
 static void zmapReplySentCB(void *user_data) ;
 
 static void sendZMapRequestCB(gpointer caller_data,
                               gpointer sub_system_ptr,
-                              char *command, ZMapXMLUtilsEventStack request_body,
+                              const char *command, ZMapXMLUtilsEventStack request_body,
                               ZMapRemoteAppProcessReplyFunc reply_func, gpointer reply_func_data,
                               ZMapRemoteAppErrorHandlerFunc error_handler_func, gpointer error_handler_func_data) ;
 static void zmapRequestSentCB(void *user_data) ;
@@ -112,7 +112,7 @@ ZMapRemoteAppMakeRequestFunc zmapAppRemoteControlGetRequestCB(void)
 
 
 /* Set up the remote controller object. */
-gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_socket, char *peer_timeout_list)
+gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_socket, const char *peer_timeout_list_in)
 {
   gboolean result = FALSE ;
   ZMapRemoteControl remote_control ;
@@ -137,8 +137,11 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_socke
 
       remote->remote_controller = remote_control ;
 
+      const char *peer_timeout_list = peer_timeout_list_in ;
+
       if (!peer_timeout_list)
         peer_timeout_list = ZMAP_WINDOW_REMOTECONTROL_TIMEOUT_LIST ;
+
       zMapRemoteControlSetTimeoutList(remote->remote_controller, peer_timeout_list) ;
 
       /* Only set debug from cmdline the first time around otherwise it overrides what
@@ -270,9 +273,9 @@ static void receivedPeerRequestCB(ZMapRemoteControl remote_control,
  * function passes the abort to remotecontrol which terminates the transaction.
  * 
  *  */
-static void sendZmapReplyCB(char *command,
+static void sendZmapReplyCB(const char *command,
                             gboolean abort,
-                            RemoteCommandRCType command_rc, char *reason,
+                            RemoteCommandRCType command_rc, const char *reason,
                             ZMapXMLUtilsEventStack reply,
                             gpointer app_reply_data)
 {
@@ -357,7 +360,7 @@ static void zmapReplySentCB(void *user_data)
  *  */
 static void sendZMapRequestCB(gpointer caller_data,
                               gpointer sub_system_ptr,
-                              char *command, ZMapXMLUtilsEventStack request_body,
+                              const char *command, ZMapXMLUtilsEventStack request_body,
                               ZMapRemoteAppProcessReplyFunc process_reply_func, gpointer process_reply_func_data,
                               ZMapRemoteAppErrorHandlerFunc error_handler_func,
                               gpointer error_handler_func_data)
