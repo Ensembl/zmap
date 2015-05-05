@@ -495,7 +495,7 @@ gboolean zMapStr2Bool(char *str, gboolean *bool_out)
 }
 
 
-gboolean zMapStr2Int(char *str, int *int_out)
+gboolean zMapStr2Int(const char *str, int *int_out)
 {
   gboolean result = FALSE ;
   long int retval ;
@@ -538,7 +538,7 @@ gboolean zMapInt2Str(int int_in, char **str_out)
 }
 
 
-gboolean zMapStr2LongInt(char *str, long int *long_int_out)
+gboolean zMapStr2LongInt(const char *str, long int *long_int_out)
 {
   gboolean result = FALSE ;
   char *endptr = NULL;

@@ -232,9 +232,9 @@ void *zMapUtilsStr2Ptr(char *ptr_str) ;
 char zMapInt2Char(int num) ;
 
 gboolean zMapStr2Bool(char *str, gboolean *bool_out) ;
-gboolean zMapStr2Int(char *str_in, int *int_out) ;
+gboolean zMapStr2Int(const char *str_in, int *int_out) ;
 gboolean zMapInt2Str(int int_in, char **str_out) ;
-gboolean zMapStr2LongInt(char *str, long int *long_int_out) ;
+gboolean zMapStr2LongInt(const char *str, long int *long_int_out) ;
 gboolean zMapStr2Float(char *str, float *float_out) ;
 gboolean zMapStr2Double(char *str, double *double_out) ;
 
