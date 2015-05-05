@@ -459,7 +459,7 @@ char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event) ;
 
 gboolean zMapGUIGetScreenInfo(GtkWidget *widget, int *curr_screen_out, int *num_screens_out) ;
 
-void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
+void zMapGUIMakeMenu(const char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
 void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
 			 int *start_index_inout,
 			 ZMapGUIMenuItemCallbackFunc callback_func,

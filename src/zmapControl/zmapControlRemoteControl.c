@@ -51,7 +51,9 @@
 
 
 
-
+#ifdef NOT_USED
+/* gb10: this is not currently used so commented out to avoid a compiler
+ * warning. Not sure if it should be removed. */
 enum
   {
     ZMAPCONTROL_REMOTE_INVALID,
@@ -63,6 +65,8 @@ enum
     /* ...but above here */
     ZMAPCONTROL_REMOTE_UNKNOWN
   }ZMapControlValidXRemoteActions;
+#endif
+
 
 typedef struct
 {

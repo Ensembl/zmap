@@ -89,8 +89,8 @@ typedef struct
 } CallbackDataStruct, *CallbackData ;
 
 
-static char *makeMenuItemName(const char *string) ;
-static char *makeMenuTitleName(const char *string, const char *escape_chars) ;
+static char *makeMenuItemName(char *string) ;
+static char *makeMenuTitleName(char *string, char *escape_chars) ;
 
 static ZMapGUIMenuItem makeSingleMenu(GList *menu_item_sets, int *menu_items_out) ;
 static ZMapGUIMenuItem copyMenu2NewMenu(ZMapGUIMenuItem new_menu, ZMapGUIMenuItem old_menu) ;
@@ -133,7 +133,7 @@ static void deToggleButCB(gpointer data, gpointer user_data) ;
  * @param button_event  The button event that triggered the menu to be popped up.
  * @return              <nothing>
  *  */
-void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *button_event)
+void zMapGUIMakeMenu(const char *menu_title, GList *menu_item_sets, GdkEventButton *button_event)
 {
   int num_menu_items, num_factory_items, i ;
   ZMapGUIMenuItem menu_items ;

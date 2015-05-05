@@ -79,7 +79,7 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
 
 
 static void control_gtk_tooltips_set_tip(GtkTooltips *tooltip, GtkWidget *widget,
-					 char *simple, char *shortcut, char *full) ;
+					 const char *simple, const char *shortcut, const char *full) ;
 
 static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data);
 static gboolean filterSpinButtonCB(GtkWidget *entry, GdkEvent *event, gpointer user_data);
@@ -542,7 +542,7 @@ void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status
  */
 
 static void control_gtk_tooltips_set_tip(GtkTooltips *tooltip, GtkWidget *widget,
-					 char *simple, char *shortcut, char *full)
+					 const char *simple, const char *shortcut, const char *full)
 {
   char *simple_with_shortcut = NULL;
 
@@ -863,7 +863,7 @@ static void backButtonCB(GtkWidget *wigdet, gpointer data)
 
 static void makeZoomMenu(GdkEventButton *button_event, ZMapWindow window)
 {
-  char *menu_title = "Zoom menu" ;
+  const char *menu_title = "Zoom menu" ;
   GList *menu_sets = NULL ;
   ZoomMenuCBData menu_data ;
 
