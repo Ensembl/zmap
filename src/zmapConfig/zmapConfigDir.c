@@ -207,7 +207,7 @@ char *zMapConfigDirGetFile(void)
 }
 
 
-char *zMapConfigDirFindFile(char *filename)
+char *zMapConfigDirFindFile(const char *filename)
 {
   char *file_path = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;

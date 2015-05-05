@@ -180,7 +180,7 @@ char *zMapExpandFilePath(char *path_in)
 
 /* Construct file path from directory and filename and check if it can be accessed, if it
  * doesn't exist then create the file as read/writeable but empty.  */
-char *zMapGetFile(char *directory, char *filename, gboolean make_file, GError **error)
+char *zMapGetFile(char *directory, const char *filename, gboolean make_file, GError **error)
 {
   gboolean status = FALSE ;
   GError *g_error = NULL ;

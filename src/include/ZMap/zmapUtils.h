@@ -198,7 +198,7 @@ gboolean zMapStack2fd(unsigned int remove, int fd) ;
 void zMapSignalHandler(int sig_no) ;
 
 char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir) ;
-char *zMapGetFile(char *directory, char *filename, gboolean make_file, GError **error) ;
+char *zMapGetFile(char *directory, const char *filename, gboolean make_file, GError **error) ;
 char *zMapGetPath(char *path_in) ;
 char *zMapGetBasename(const char *path_in) ;
 char *zMapExpandFilePath(char *path_in) ;
