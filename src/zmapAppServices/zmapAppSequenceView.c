@@ -387,7 +387,8 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 /* Insert start/end etc. into entry fields for sequence to be displayed. */
 static void setSequenceEntries(MainFrame main_data)
 {
-  char *sequence = "", *start = "", *end = "", *config_file = "" ;
+  const char *sequence = "", *config_file = "" ;
+  char *start = NULL, *end = NULL ;
 
   if (main_data->sequence_map.sequence)
     sequence = main_data->sequence_map.sequence ;
@@ -399,13 +400,13 @@ static void setSequenceEntries(MainFrame main_data)
     config_file = main_data->sequence_map.config_file ;
 
   gtk_entry_set_text(GTK_ENTRY(main_data->sequence_widg), sequence) ;
-  gtk_entry_set_text(GTK_ENTRY(main_data->start_widg), start) ;
-  gtk_entry_set_text(GTK_ENTRY(main_data->end_widg), end) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->start_widg), (start ? start : "")) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->end_widg), (end ? end : "")) ;
   gtk_entry_set_text(GTK_ENTRY(main_data->config_widg), config_file) ;
 
-  if (*start)
+  if (start)
     g_free(start) ;
-  if (*end)
+  if (end)
     g_free(end) ;
 
   return ;
@@ -425,8 +426,8 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
   gboolean status = TRUE ;
-  char *err_msg = NULL ;
-  char *sequence = "", *start_txt, *end_txt, *config_txt ;
+  const char *err_msg = NULL ;
+  const char *sequence = "", *start_txt, *end_txt, *config_txt ;
   int start = 1, end = 0 ;
   GError *tmp_error = NULL ;
 
@@ -488,7 +489,7 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
        * a sequence/start/end and optionally a config file. */
       ZMapFeatureSequenceMap seq_map ;
       gboolean sequence_ok = FALSE ;
-      char *err_msg = NULL ;
+      const char *err_msg = NULL ;
 
       seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
 

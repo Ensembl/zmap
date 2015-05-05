@@ -660,7 +660,7 @@ void notebookDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data
  * @param notebook_spec  The notebook tree.
  * @return               dialog widget
  */
-GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text)
+GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, const char *help_title, const char *help_text)
 {
   GtkWidget *dialog = NULL ;
   GtkWidget *vbox, *note_widg ;

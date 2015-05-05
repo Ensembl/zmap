@@ -158,7 +158,7 @@ typedef struct
 typedef struct ZMapGUIMenuItemStructType
 {
   ZMapGUIMenuType type ;				    /* Title, separator etc. */
-  char *name ;						    /*!< Title string of menu item. */
+  const char *name ;					    /*!< Title string of menu item. */
   int id ;						    /*!< Number uniquely identifying this
 							      menu item within a menu. */
   ZMapGUIMenuItemCallbackFunc callback_func ;		    /*!< Function to call when this item
@@ -477,7 +477,7 @@ gboolean zMapGUIGetAbbrevTitlePrefix(void) ;
 char *zMapGUIMakeTitleString(const char *window_type, const char *message) ;
 void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, const char *zmap_win_text) ;
 GtkWidget *zMapGUIDialogNew(char *zmap_win_type, const char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data) ;
-GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text) ;
+GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, const char *zmap_win_text) ;
 
 GdkCursor *zMapGUICreateCursor(const char *cursor_name) ;
 gboolean zMapGUISetCursor(GtkWidget *widget, GdkCursor *cursor) ;
@@ -554,7 +554,7 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
 void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book) ;
 void zMapGUINotebookDestroyAny(ZMapGuiNotebookAny note_any) ;
 void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new) ;
-GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text) ;
+GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, const char *help_title, const char *help_text) ;
 GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec) ;
 
 GtkWidget *zMapGUINotebookGetNoteBookWidg(GtkWidget *compound_note_widget) ;

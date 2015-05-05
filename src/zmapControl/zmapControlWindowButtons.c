@@ -549,11 +549,11 @@ static void control_gtk_tooltips_set_tip(GtkTooltips *tooltip, GtkWidget *widget
   if(shortcut)
     simple_with_shortcut = g_strdup_printf("%s\t[%s]", simple, shortcut);
   else
-    simple_with_shortcut = simple;
+    simple_with_shortcut = g_strdup(simple);
 
   gtk_tooltips_set_tip(tooltip, widget, simple_with_shortcut, full);
 
-  if(shortcut && simple_with_shortcut)
+  if(simple_with_shortcut)
     g_free(simple_with_shortcut);
 
   return ;
@@ -1014,7 +1014,7 @@ static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer dat
 
 static void makeSequenceMenu(GdkEventButton *button_event, ZMapWindow window)
 {
-  char *menu_title = "" ;
+  const char *menu_title = "" ;
   GList *menu_sets = NULL ;
   static ZMapGUIMenuSubMenuData sub_data = NULL;
 
