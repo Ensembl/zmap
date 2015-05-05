@@ -67,9 +67,9 @@ MAINTAINERCLEANFILES = $(top_srcdir)/zmapUtils/Makefile.in
 #
 ZMAP_COMPILEDATE_FILE = zmapCompileDate.c
 ZMAP_COMPILEDATE_PATH = zmapUtils/$(ZMAP_COMPILEDATE_FILE)
-ZMAP_COMPILEDATE_FILE_CODE =                            \
+ZMAP_COMPILEDATE_FILE_CODE =                        \
                                                     \
-char *zmapCompileString(void)                       \
+const char *zmapCompileString(void)                 \
 {                                                   \
   return ZMAP_COMPILE_STRING() ;                    \
 }
