@@ -1073,7 +1073,7 @@ void zmapStyleUnsetIsSet(ZMapFeatureTypeStyle style, ZMapStyleParamId id);
 const char *zmapStyleParam2Name(ZMapStyleParamId id) ;
 
 gboolean zMapStyleGet(ZMapFeatureTypeStyle style, char *first_property_name, ...) ;
-gboolean zMapStyleSet(ZMapFeatureTypeStyle style, char *first_property_name, ...) ;
+gboolean zMapStyleSet(ZMapFeatureTypeStyle style, const char *first_property_name, ...) ;
 
 gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style) ;
 gboolean zMapStyleMergeProperty(ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle src, ZMapStyleParamId id) ;
@@ -1172,7 +1172,7 @@ gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target
 gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
 			     GdkColor *fill, GdkColor *draw, GdkColor *border) ;
 gboolean zMapStyleSetColoursStr(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
-                                char *fill, char *draw, char *border) ;
+                                const char *fill, const char *draw, const char *border) ;
 gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
                                     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
 char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *normal_border,
