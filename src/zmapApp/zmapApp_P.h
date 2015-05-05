@@ -157,7 +157,7 @@ typedef struct _ZMapAppContextStruct
   gboolean stop_pinging ;
 
   int exit_rc ;
-  char *exit_msg ;
+  const char *exit_msg ;
 
   gboolean abbrev_title_prefix ;			    /* Is window title prefix abbreviated ? */
   gboolean show_mainwindow ;				    /* Should main window be displayed. */

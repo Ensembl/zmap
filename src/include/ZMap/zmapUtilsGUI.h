@@ -479,7 +479,7 @@ void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zma
 GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data) ;
 GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text) ;
 
-GdkCursor *zMapGUICreateCursor(char *cursor_name) ;
+GdkCursor *zMapGUICreateCursor(const char *cursor_name) ;
 gboolean zMapGUISetCursor(GtkWidget *widget, GdkCursor *cursor) ;
 GdkCursor *zMapGUIGetCursor(GtkWidget *widget) ;
 

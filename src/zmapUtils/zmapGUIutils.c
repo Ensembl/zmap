@@ -153,8 +153,8 @@ static void handle_original_parent_destroy_cb(GtkWidget *widget, gpointer cb_dat
 static void radioButtonCB(GtkWidget *button, gpointer radio_data) ;
 static void radioButtonCBDataDestroy(gpointer data) ;
 
-static GdkCursor *makeCustomCursor(char *cursor_name) ;
-static GdkCursor *makeStandardCursor(char *cursor_name) ;
+static GdkCursor *makeCustomCursor(const char *cursor_name) ;
+static GdkCursor *makeStandardCursor(const char *cursor_name) ;
 
 static void setTextAttrs(gpointer data, gpointer user_data) ;
 
@@ -2055,7 +2055,7 @@ void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gp
  * If cursor name begins with "zmap_" then look in list of custom cursors
  * otherwise look in list of standard X Windows cursors.
  */
-GdkCursor *zMapGUICreateCursor(char *cursor_name)
+GdkCursor *zMapGUICreateCursor(const char *cursor_name)
 {
   GdkCursor *cursor = NULL ;
 
@@ -2603,7 +2603,7 @@ static void radioButtonCBDataDestroy(gpointer data)
  * insert it below as for the other cursors.
  *
  *  */
-static GdkCursor *makeCustomCursor(char *cursor_name)
+static GdkCursor *makeCustomCursor(const char *cursor_name)
 {
   GdkCursor *cursor = NULL ;
 
@@ -2776,7 +2776,7 @@ static unsigned char zmap_noentry_mask_bits[] = {
 }
 
 
-GdkCursor *makeStandardCursor(char *cursor_name)
+GdkCursor *makeStandardCursor(const char *cursor_name)
 {
   GdkCursor *cursor = NULL ;
   CursorNameStruct cursors[] =

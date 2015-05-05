@@ -155,7 +155,7 @@ static gboolean timeoutHandler(gpointer data) ;
 static void remoteLevelDestroy(ZMapAppContext app_context) ;
 static void exitApp(ZMapAppContext app_context) ;
 static void crashExitApp(ZMapAppContext app_context) ;
-static void contextLevelDestroy(ZMapAppContext app_context, int exit_rc, char *exit_msg) ;
+static void contextLevelDestroy(ZMapAppContext app_context, int exit_rc, const char *exit_msg) ;
 static void killContext(ZMapAppContext app_context) ;
 static void doTheExit(int exit_code) ;
 
@@ -166,7 +166,7 @@ static gboolean remoteInactiveHandler(gpointer data) ;
 static gboolean pingHandler(gpointer data) ;
 
 static gboolean configureLog(char *config_file, GError **error) ;
-static void consoleMsg(gboolean err_msg, char *format, ...) ;
+static void consoleMsg(gboolean err_msg, const char *format, ...) ;
 
 static void hideMainWindow(ZMapAppContext app_context) ;
 
@@ -343,7 +343,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   {
     /* Check locale setting, vital for message handling, text parsing and much else. */
-    char *default_locale = "POSIX";
+    const char *default_locale = "POSIX";
     char *user_req_locale, *new_locale;
 
     setlocale(LC_ALL, NULL);
@@ -907,7 +907,7 @@ static void exitApp(ZMapAppContext app_context)
  * cleaned up and the application does not exit cleanly. */
 static void crashExitApp(ZMapAppContext app_context)
 {
-  char *exit_msg = "Exit timed out - WARNING: Zmap clean up of threads timed out, exit has been forced !" ;
+  const char *exit_msg = "Exit timed out - WARNING: Zmap clean up of threads timed out, exit has been forced !" ;
 
   contextLevelDestroy(app_context, EXIT_FAILURE, exit_msg) ;    /* exits app. */
 
@@ -917,7 +917,7 @@ static void crashExitApp(ZMapAppContext app_context)
 
 /* By now all asychronous stuff is over and it's a straight forward
  * freeing/releasing of all the resources. */
-static void contextLevelDestroy(ZMapAppContext app_context, int exit_rc, char *exit_msg)
+static void contextLevelDestroy(ZMapAppContext app_context, int exit_rc, const char *exit_msg)
 {
   app_context->exit_rc = exit_rc ;
   app_context->exit_msg = exit_msg ;
@@ -942,7 +942,7 @@ static void contextLevelDestroy(ZMapAppContext app_context, int exit_rc, char *e
 static void killContext(ZMapAppContext app_context)
 {
   int exit_rc = app_context->exit_rc ;
-  char *exit_msg = app_context->exit_msg ;
+  const char *exit_msg = app_context->exit_msg ;
 
   zMapConfigDirDestroy();
   destroyAppContext(app_context) ;
@@ -1788,7 +1788,7 @@ static gboolean checkSequenceArgs(int argc, char *argv[],
 }
 
 
-static void consoleMsg(gboolean err_msg, char *format, ...)
+static void consoleMsg(gboolean err_msg, const char *format, ...)
 {
   va_list args ;
   char *msg_string ;

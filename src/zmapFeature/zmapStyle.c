@@ -85,7 +85,7 @@ static void zmap_feature_type_style_finalize(GObject *object);
 
 static ZMapFeatureTypeStyle styleCreate(guint n_parameters, GParameter *parameters) ;
 
-static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, char *fill) ;
+static gboolean setColours(ZMapStyleColour colour, const char *border, const char *draw, const char *fill) ;
 static gboolean parseColours(ZMapFeatureTypeStyle style, guint param_id, GValue *value) ;
 //static gboolean isColourSet(ZMapFeatureTypeStyle style, int param_id, char *subpart) ;
 static gboolean validSplit(char **strings,
@@ -1449,7 +1449,7 @@ ZMapStyleColour zmapStyleColour(ZMapStyleFullColour full_colour,ZMapStyleColourT
 /* I'm going to try these more generalised functions.... */
 
 gboolean zMapStyleSetColoursStr(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
-                                char *fill, char *draw, char *border)
+                                const char *fill, const char *draw, const char *border)
 {
   gboolean result = FALSE ;
   ZMapStyleFullColour full_colour = NULL ;
@@ -1722,7 +1722,7 @@ static gboolean styleMergeParam( ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle
 
 
 
-static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, char *fill)
+static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, const char *fill)
 {
   gboolean status = FALSE ;
   ZMapStyleColourStruct tmp_colour = {{0}} ;
