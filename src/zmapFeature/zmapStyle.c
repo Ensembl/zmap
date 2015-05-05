@@ -2553,10 +2553,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject, guint param_i
     case STYLE_PARAM_TYPE_FLAGS:               // bitmap of is_set flags (array of uchar)
       flags = (char*)g_malloc(STYLE_IS_SET_SIZE * 2 + 1);
 
-      /* gb10: C++ conversion showed up an error here performing arithmetic on a void
-       * pointer and passing void* to the function. Not sure what the intent is but 
-       * for now pass gchar* which is what the function expects. */
-      zmap_bin_to_hex(flags,((gchar *) (style + param->offset), STYLE_IS_SET_SIZE));
+      zmap_bin_to_hex(flags, (guchar*)((void *) (style + param->offset)), (int)STYLE_IS_SET_SIZE);
 
       g_value_set_string(value,flags);
       g_free(flags);
@@ -2593,7 +2590,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject, guint param_i
     case STYLE_PARAM_TYPE_QUARK_LIST_ID:
       {
         gchar *str;
-        str = zMap_g_list_quark_to_string(*(GList **)(((void *) (style + param->offset)), NULL);
+        str = zMap_g_list_quark_to_string(*(GList **)((void *) (style + param->offset)), NULL);
         g_value_set_string(value, str);
         g_free(str);
       }
