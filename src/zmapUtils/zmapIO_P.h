@@ -38,7 +38,7 @@ typedef enum {ZMAPIO_INVALID, ZMAPIO_STRING, ZMAPIO_FILE, ZMAPIO_SOCKET} ZMapIOT
 
 typedef struct ZMapIOOutStruct_
 {
-  char *valid ;
+  const char *valid ;
   ZMapIOType type ;
 
   union

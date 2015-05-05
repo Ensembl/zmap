@@ -321,7 +321,7 @@ static ZMapIOOut allocIOOut(ZMapIOType type)
 {
   ZMapIOOut out ;
 
-  out = g_slice_alloc0(sizeof(ZMapIOOutStruct)) ;
+  out = (ZMapIOOut)g_slice_alloc0(sizeof(ZMapIOOutStruct)) ;
   out->valid = IO_valid_str_G ;
   out->type = type ;
 
