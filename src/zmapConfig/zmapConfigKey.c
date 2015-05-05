@@ -48,18 +48,18 @@
 
 
 static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
-                                          char * stanza_name,
+                                          const char * stanza_name,
                                           const char * key_name,
                                           GValue *value,
                                           GType type,
                                           gboolean merge_files);
 static gboolean get_merged_key_value(ZMapConfigIni config,
-                                     char * stanza_name,
+                                     const char * stanza_name,
                                      const char * key_name,
                                      GValue *value,
                                      GType type);
 static gboolean get_value(GKeyFile *key_file,
-                          char *stanza_name,
+                          const char *stanza_name,
                           const char *key_name,
                           GValue *value,
                           GType type,
@@ -97,7 +97,7 @@ gboolean zMapConfigIniGetUserValue(ZMapConfigIni config,
 }
 
 gboolean zMapConfigIniGetValue(ZMapConfigIni config,
-       char * stanza_name,
+       const char * stanza_name,
        const char * key_name,
        GValue **value_out,
        GType type)
@@ -181,7 +181,7 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
 
 
 static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
-  char * stanza_name,
+  const char * stanza_name,
   const char * key_name,
   GValue *value,
   GType type,
@@ -212,7 +212,7 @@ static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
    expense of having multiple GKeyFile instances around */
 
 static gboolean get_merged_key_value(ZMapConfigIni config,
-     char * stanza_name,
+     const char * stanza_name,
      const char * key_name,
      GValue *value,
      GType type)
@@ -266,7 +266,7 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
 }
 
 static gboolean get_value(GKeyFile *key_file,
-                          char *stanza_name,
+                          const char *stanza_name,
                           const char *key_name,
                           GValue *value,
                           GType type,

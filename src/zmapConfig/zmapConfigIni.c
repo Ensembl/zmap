@@ -51,8 +51,8 @@
 
 typedef struct
 {
-  char *stanza_name;
-  char *stanza_type;
+  const char *stanza_name;
+  const char *stanza_type;
   GList *keys;
 }ZMapConfigIniContextStanzaEntryStruct, *ZMapConfigIniContextStanzaEntry;
 

@@ -493,12 +493,12 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
 
       seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
 
-      seq_map->config_file = config_txt ;
+      seq_map->config_file = g_strdup(config_txt) ;
 
       if (*sequence)
         {
           sequence_ok = TRUE ;
-          seq_map->sequence = sequence ;
+          seq_map->sequence = g_strdup(sequence) ;
           seq_map->start = start ;
           seq_map->end = end ;
         }

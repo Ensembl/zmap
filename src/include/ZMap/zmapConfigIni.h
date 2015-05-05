@@ -133,7 +133,7 @@ GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
 
 GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
                                     ZMapConfigIniUserDataCreateFunc object_create_func,
-                                    char *styles_list,char * child_type);
+                                    char *styles_list, const char * child_type);
 
 
 // zmapConfigLoader.c
@@ -154,10 +154,10 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
 gboolean zMapConfigLegacyStyles(char *config_file) ;
 
 char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical);
-GList *zMapConfigString2QuarkList(char *string_list,gboolean cannonical);
+GList *zMapConfigString2QuarkList(const char *string_list,gboolean cannonical);
 GList *zMapConfigString2QuarkIDList(char *string_list);
 
-GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza,int how);
+GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context, const char *stanza,int how);
 #define QQ_STRING 0
 #define QQ_QUARK  1
 #define QQ_STYLE  2

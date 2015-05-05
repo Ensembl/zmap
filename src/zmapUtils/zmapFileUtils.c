@@ -50,7 +50,7 @@ static char *getRelOrAbsPath(char *path_in, gboolean home_relative) ;
 /* this function also only copes with one level of directory creating.... */
 /* this function is whacky at the moment and needs work.....e.g. on directory permissions... */
 /* Check directory. */
-char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir)
+char *zMapGetDir(const char *directory_in, gboolean home_relative, gboolean make_dir)
 {
   char *directory = NULL ;
   gboolean status = FALSE ;
@@ -150,7 +150,7 @@ char *zMapGetBasename(const char *path_in)
  * is returned otherwise the expanded filepath is returned, this string
  * should be released with g_free() when no longer needed.
  */
-char *zMapExpandFilePath(char *path_in)
+char *zMapExpandFilePath(const char *path_in)
 {
   char *filepath = NULL ;
 

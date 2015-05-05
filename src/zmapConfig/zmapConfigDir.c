@@ -176,7 +176,7 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
 /* DO NOT FREE THE RESULTING STRING...COPY IF NEED BE.... */
 const char *zMapConfigDirDefaultName(void)
 {
-  char *dir_name = ZMAP_USER_CONFIG_DIR ;
+  const char *dir_name = ZMAP_USER_CONFIG_DIR ;
 
   return dir_name ;
 }

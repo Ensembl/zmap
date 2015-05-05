@@ -260,7 +260,7 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
 }
 
 
-gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name,GKeyFile **which)
+gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name,GKeyFile **which)
 {
   GKeyFile *files[FILE_COUNT];
   gboolean result = FALSE;

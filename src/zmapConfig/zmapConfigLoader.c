@@ -50,8 +50,8 @@
 
 typedef struct
 {
-  char *stanza_name;
-  char *stanza_type;
+  const char *stanza_name;
+  const char *stanza_type;
   GList *keys;
 } ZMapConfigIniContextStanzaEntryStruct, *ZMapConfigIniContextStanzaEntry ;
 
@@ -101,7 +101,7 @@ static void free_source_names(gpointer list_data, gpointer unused_user_data) ;
 static gint match_type(gconstpointer list_data, gconstpointer user_data);
 static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data) ;
 static void fetchStanzas(FetchReferencedStanzas full_data, GKeyFile *key_file, char *stanza_name) ;
-static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, char *stanza_type) ;
+static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, const char *stanza_type) ;
 static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context, char *parent_name, char *parent_key) ;
 static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, char *stanza_type) ;
 static void set_is_default(gpointer key, gpointer value, gpointer data) ;
@@ -109,7 +109,7 @@ static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext
 static GList *get_names_as_list(char *styles) ;
 static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
      ZMapConfigIniUserDataCreateFunc object_create_func,
-     char *stanza_type, GKeyFile *extra_styles_keyfile) ;
+     const char *stanza_type, GKeyFile *extra_styles_keyfile) ;
 static GList *contextGetStyleList(ZMapConfigIniContext context, char *styles_list, GKeyFile *extra_styles_keyfile) ;
 static GHashTable *configIniGetGlyph(ZMapConfigIniContext context, GKeyFile *extra_styles_keyfile) ;
 static void stylesFreeList(GList *config_styles_list) ;
@@ -312,7 +312,7 @@ char *child_type)
 
 GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
     ZMapConfigIniUserDataCreateFunc object_create_func,
-    char *styles_list,char *child_type)
+    char *styles_list,const char *child_type)
 {
   FetchReferencedStanzasStruct data = {NULL};
   GList *styles      = NULL;
@@ -505,7 +505,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
                   /* if we have a glyph shape defined by name we need to add the shape data as well */
                   if (enum_value)
                     {
-                      char *shape_param = NULL;
+                      const char *shape_param = NULL;
                 
                       if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME,curr_config_style->name))
                         shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE;
@@ -627,7 +627,7 @@ char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical)
  * however it seems to run
  */
 
-GList *zmapConfigString2QuarkListExtra(char *string_list, gboolean cannonical,gboolean unique_id)
+GList *zmapConfigString2QuarkListExtra(const char *string_list, gboolean cannonical,gboolean unique_id)
 {
   GList *list = NULL;
   gchar **str_array,**strv;
@@ -665,7 +665,7 @@ GList *zmapConfigString2QuarkListExtra(char *string_list, gboolean cannonical,gb
   return list ;
 }
 
-GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
+GList *zMapConfigString2QuarkList(const char *string_list, gboolean cannonical)
 {
   return zmapConfigString2QuarkListExtra(string_list,cannonical,FALSE);
 }
@@ -976,7 +976,7 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
  */
 
 // how: string for throwaway values, or styleId or quark
-GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza, int how)
+GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context, const char *stanza, int how)
 {
   GHashTable *hash = NULL;
   GKeyFile *gkf;
@@ -1144,7 +1144,7 @@ static GList *contextGetStyleList(ZMapConfigIniContext context, char *styles_lis
 /* used when we don't have a styles list */
 static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
      ZMapConfigIniUserDataCreateFunc object_create_func,
-     char *stanza_type, GKeyFile *extra_styles_keyfile)
+     const char *stanza_type, GKeyFile *extra_styles_keyfile)
 {
   GList *styles = NULL ;
   FetchReferencedStanzasStruct data = {NULL} ;
@@ -1271,7 +1271,7 @@ static gint match_type(gconstpointer list_data, gconstpointer user_data)
 
 
 
-static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, char *stanza_type)
+static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, const char *stanza_type)
 {
   ZMapConfigIniContextStanzaEntryStruct user_request = {NULL};
   ZMapConfigIniContextStanzaEntry stanza = NULL;
