@@ -476,7 +476,7 @@ void zMapGUISetAbbrevTitlePrefix(gboolean abbrev_prefix) ;
 gboolean zMapGUIGetAbbrevTitlePrefix(void) ;
 char *zMapGUIMakeTitleString(const char *window_type, const char *message) ;
 void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, const char *zmap_win_text) ;
-GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data) ;
+GtkWidget *zMapGUIDialogNew(char *zmap_win_type, const char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data) ;
 GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text) ;
 
 GdkCursor *zMapGUICreateCursor(const char *cursor_name) ;
@@ -490,8 +490,8 @@ gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
 void zMapGUIShowMsg(ZMapMsgType msg_type, const char *msg) ;
 void zMapGUIShowMsgFull(GtkWindow *parent, const char *msg,
 			ZMapMsgType msg_type, GtkJustification justify, int display_timeout, gboolean close_button) ;
-gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
-gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
+gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, const char *msg) ;
+gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, const char *msg,
                                const char* first_button, const char *second_button) ;
 GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text,
 				  char **text_out) ;

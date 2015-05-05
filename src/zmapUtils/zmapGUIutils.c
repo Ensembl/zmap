@@ -774,7 +774,7 @@ gboolean zMapGUIGetAbbrevTitlePrefix(void)
  * message      Very short text, e.g. "Please Reply" or a feature name or....
  * returns      the title string.
  *  */
-char *zMapGUIMakeTitleString(const char *window_type, const char *message)
+char *zMapGUIMakeTitleString(char *window_type, char *message)
 {
   char *title = NULL ;
 
@@ -798,7 +798,7 @@ char *zMapGUIMakeTitleString(const char *window_type, const char *message)
  * message      Very short text, e.g. "Please Reply" or a feature name or....
  * returns      nothing.
  */
-void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zmap_win_text)
+void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, const char *zmap_win_text)
 {
   char *title ;
 
@@ -817,7 +817,7 @@ void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zma
  * message      Very short text, e.g. "Please Reply" or a feature name or....
  * returns      the toplevel widget.
  */
-GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data)
+GtkWidget *zMapGUIDialogNew(char *zmap_win_type, const char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data)
 {
   GtkWidget *dialog = NULL ;
   
@@ -1215,7 +1215,7 @@ GtkJustification justify, int display_timeout, gboolean close)
  *
  * @return  gboolean, TRUE if user selected "ok", FALSE otherwise.
  */
-gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
+gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, const char *msg)
 {
   gboolean result = FALSE ;
 
@@ -1229,7 +1229,7 @@ gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
 
 /* The first button is the text that represents TRUE and the second FALSE so be
  * sure to word the button text accordingly ! */
-gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
+gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, const char *msg,
                                const char* first_button, const char *second_button)
 {
   gboolean result = FALSE ;
@@ -2249,7 +2249,7 @@ static void printMessage(ZMapMsgType msg_type, char *message)
  *
  * returns TRUE if user data not required or if user data returned, FALSE otherwise.
  *  */
-static GtkResponseType messageFull(GtkWindow *parent, const char *title_in, const char *msg,
+static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
                                    gboolean modal, int display_timeout,
                                    const char *first_button, const char *second_button, const char *third_button,
                                    ZMapMsgType msg_type, GtkJustification justify,

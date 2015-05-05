@@ -272,7 +272,7 @@ ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean edit
  * @return                ZMapGuiNotebookChapter
  */
 ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
-    char *chapter_name, ZMapGuiNotebookCB user_callbacks)
+    const char *chapter_name, ZMapGuiNotebookCB user_callbacks)
 {
   ZMapGuiNotebookChapter chapter = NULL ;
 

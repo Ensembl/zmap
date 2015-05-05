@@ -58,8 +58,8 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap) ;
  *                  Globals
  */
 
-static char *help_title_G = "ZMap Configuration" ;
-static char *help_text_G =
+static const char *help_title_G = "ZMap Configuration" ;
+static const char *help_text_G =
   "The ZMap Configuration Window allows you to configure the appearance\n"
   " and operation of certains parts of ZMap.\n\n"
   "The Configuration Window has the following sections:\n\n"
