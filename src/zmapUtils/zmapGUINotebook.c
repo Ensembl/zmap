@@ -180,14 +180,14 @@ static GtkWidget *notebookNewFrameIn(const char *frame_name, GtkWidget *parent_c
 static GtkItemFactoryEntry menu_items_G[] =
   {
     /* File */
-    { "/_File",         NULL,                NULL,              0,    "<Branch>", NULL},
-    { "/File/Save",     "<control>S",        saveChapterCB,     0,    NULL,       NULL},
-    { "/File/Save All", "<control><shift>S", saveAllChaptersCB, 0,    NULL,       NULL},
-    { "/File/Close",    "<control>W",        requestDestroyCB,  0,    NULL,       NULL},
+    { (gchar *)"/_File",         NULL,                NULL,              0,    (gchar *)"<Branch>", NULL},
+    { (gchar *)"/File/Save",     (gchar *)"<control>S",        (GtkItemFactoryCallback)saveChapterCB,     0,    NULL,       NULL},
+    { (gchar *)"/File/Save All", (gchar *)"<control><shift>S", (GtkItemFactoryCallback)saveAllChaptersCB, 0,    NULL,       NULL},
+    { (gchar *)"/File/Close",    (gchar *)"<control>W",        (GtkItemFactoryCallback)requestDestroyCB,  0,    NULL,       NULL},
 
     /* Help */
-    { "/_Help",         NULL, NULL,       0,  "<LastBranch>", NULL},
-    { "/Help/Overview", NULL, helpMenuCB, 0,  NULL,           NULL},
+    { (gchar *)"/_Help",         NULL, NULL,       0,  (gchar *)"<LastBranch>", NULL},
+    { (gchar *)"/Help/Overview", NULL, (GtkItemFactoryCallback)helpMenuCB, 0,  NULL,           NULL},
   } ;
 
 
@@ -614,7 +614,7 @@ GtkWidget *zMapGUINotebookGetNoteBookWidg(GtkWidget *compound_note_widget)
 {
   GtkWidget *notebook_widg = NULL ;
 
-  notebook_widg = g_object_get_data(G_OBJECT(compound_note_widget), GUI_NOTEBOOK_STACK_SETDATA) ;
+  notebook_widg = (GtkWidget *)g_object_get_data(G_OBJECT(compound_note_widget), GUI_NOTEBOOK_STACK_SETDATA) ;
 
   return notebook_widg ;
 }
@@ -625,7 +625,7 @@ GtkWidget *zMapGUINotebookGetCurrChapterWidg(GtkWidget *compound_note_widget)
 {
   GtkWidget *notebook_widg = NULL ;
 
-  notebook_widg = g_object_get_data(G_OBJECT(compound_note_widget), GUI_NOTEBOOK_CURR_SETDATA) ;
+  notebook_widg = (GtkWidget *)g_object_get_data(G_OBJECT(compound_note_widget), GUI_NOTEBOOK_CURR_SETDATA) ;
 
   return notebook_widg ;
 }
@@ -959,7 +959,7 @@ static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name)
 
   if (size)
     {
-      book_any = g_malloc0(size) ;
+      book_any = (ZMapGuiNotebookAny)g_malloc0(size) ;
       book_any->type = type ;
 
       if (name)
@@ -1229,8 +1229,8 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
       make_notebook->zmap_tree_view = zMapGUITreeViewCreate();
 
       /* Create a list of the functions to update the start/end values. */
-      column_funcs = g_list_append(column_funcs, cellEditedCB) ;
-      column_funcs = g_list_append(column_funcs, cellEditedCB) ;
+      column_funcs = g_list_append(column_funcs, (void *)cellEditedCB) ;
+      column_funcs = g_list_append(column_funcs, (void *)cellEditedCB) ;
 
       g_object_set(G_OBJECT(make_notebook->zmap_tree_view),
                    "row-counter-column", TRUE,
@@ -1273,7 +1273,7 @@ static gboolean editing_finished_cb(GtkWidget *widget, GdkEventFocus *event, gpo
   ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)user_data ;
   const char *entry_text ;
 
-  g_signal_handlers_block_by_func (widget, editing_finished_cb, user_data) ;
+  g_signal_handlers_block_by_func(widget, (void *)editing_finished_cb, user_data) ;
 
   entry_text = gtk_entry_get_text(entry) ;
 
@@ -1331,7 +1331,7 @@ static gboolean editing_finished_cb(GtkWidget *widget, GdkEventFocus *event, gpo
         }
     }
 
-  g_signal_handlers_unblock_by_func (widget, editing_finished_cb, user_data) ;
+  g_signal_handlers_unblock_by_func(widget, (void *)editing_finished_cb, user_data) ;
 
   /* Gtk-WARNING **: GtkEntry - did not receive focus-out-event. If you
    * connect a handler to this signal, it must return
@@ -1428,8 +1428,8 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
                                1,
                                make_notebook->curr_paragraph_rows - 1,
                                make_notebook->curr_paragraph_rows,
-                               GUI_NOTEBOOK_TABLE_XOPTIONS,
-                               GUI_NOTEBOOK_TABLE_YOPTIONS,
+                               (GtkAttachOptions)GUI_NOTEBOOK_TABLE_XOPTIONS,
+                               (GtkAttachOptions)GUI_NOTEBOOK_TABLE_YOPTIONS,
                                GUI_NOTEBOOK_BOX_PADDING,
                                GUI_NOTEBOOK_BOX_PADDING) ;
 
@@ -1439,8 +1439,8 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
                              2,
                              make_notebook->curr_paragraph_rows - 1,
                              make_notebook->curr_paragraph_rows,
-                             GUI_NOTEBOOK_TABLE_XOPTIONS,
-                             GUI_NOTEBOOK_TABLE_YOPTIONS,
+                             (GtkAttachOptions)GUI_NOTEBOOK_TABLE_XOPTIONS,
+                             (GtkAttachOptions)GUI_NOTEBOOK_TABLE_YOPTIONS,
                              GUI_NOTEBOOK_BOX_PADDING,
                              GUI_NOTEBOOK_BOX_PADDING) ;
           }
@@ -1504,9 +1504,9 @@ static void changeNotebookCB(GtkWidget *widget, gpointer make_notebook_data)
 
   /* Get hold of the notebook, the notebook_stack and the position of the notebook within
    * the notebook_stack. */
-  notebook = g_object_get_data(G_OBJECT(widget), GUI_NOTEBOOK_BUTTON_SETDATA) ;
+  notebook = (GtkWidget *)g_object_get_data(G_OBJECT(widget), GUI_NOTEBOOK_BUTTON_SETDATA) ;
 
-  notebook_stack = g_object_get_data(G_OBJECT(notebook), GUI_NOTEBOOK_STACK_SETDATA) ;
+  notebook_stack = (GtkWidget *)g_object_get_data(G_OBJECT(notebook), GUI_NOTEBOOK_STACK_SETDATA) ;
 
   if ((notebook_pages = gtk_notebook_get_n_pages(GTK_NOTEBOOK(notebook_stack))) > 1)
     {
@@ -2089,7 +2089,7 @@ static void mergeChildren(void *data, void *user_data)
        * merging of anonymous items. */
       if (parent->children)
         {
-          child = parent->children->data ;
+          child = (ZMapGuiNotebookAny)(parent->children->data) ;
           mergeAny(child, new_child) ;
         }
     }
