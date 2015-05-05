@@ -442,7 +442,7 @@ ZMapServerResponseType zMapServerFreeConnection(ZMapServer server)
 }
 
 
-char *zMapServerLastErrorMsg(ZMapServer server)
+const char *zMapServerLastErrorMsg(ZMapServer server)
 {
   return server->last_error_msg ;
 }
