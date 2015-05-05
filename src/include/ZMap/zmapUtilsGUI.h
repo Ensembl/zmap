@@ -474,8 +474,8 @@ gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour
 
 void zMapGUISetAbbrevTitlePrefix(gboolean abbrev_prefix) ;
 gboolean zMapGUIGetAbbrevTitlePrefix(void) ;
-char *zMapGUIMakeTitleString(char *window_type, char *message) ;
-void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zmap_win_text) ;
+char *zMapGUIMakeTitleString(const char *window_type, const char *message) ;
+void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, const char *zmap_win_text) ;
 GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data) ;
 GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text) ;
 
@@ -509,8 +509,8 @@ void zMapGUIShowText(const char *title, const char *text, gboolean edittable) ;
 GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GList *text_attributes,
 			       GtkTextBuffer **buffer_out);
 
-char *zmapGUIFileChooser(GtkWidget *toplevel, char *title, char *directory, char *file_suffix) ;
-char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory, char *file_suffix,
+char *zmapGUIFileChooser(GtkWidget *toplevel, const char *title, char *directory, char *file_suffix) ;
+char *zmapGUIFileChooserFull(GtkWidget *toplevel, const char *title, char *directory, char *file_suffix,
 			     ZMapFileChooserContentAreaCB content_func, gpointer content_data) ;
 
 void zMapGUICreateRadioGroup(GtkWidget *gtkbox,

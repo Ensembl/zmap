@@ -202,7 +202,7 @@ char *zMapGetFile(char *directory, const char *filename, gboolean make_file, GEr
 char *zMapGetPath(char *path_in) ;
 char *zMapGetBasename(const char *path_in) ;
 char *zMapExpandFilePath(char *path_in) ;
-gboolean zMapFileAccess(char *filepath, char *mode) ;
+gboolean zMapFileAccess(const char *filepath, const char *mode) ;
 gboolean zMapFileEmpty(char *filepath) ;
 
 
