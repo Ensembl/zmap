@@ -2377,7 +2377,7 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       break;
 
     case STYLE_PARAM_TYPE_FLAGS:               // bitmap of is_set flags (array of uchar)
-      zmap_hex_to_bin(((void *) (style + param->offset)), (gchar *) g_value_get_string(value), STYLE_IS_SET_SIZE);
+      zmap_hex_to_bin(((guchar *) (style + param->offset)), (gchar *) g_value_get_string(value), STYLE_IS_SET_SIZE);
       break;
 
     case STYLE_PARAM_TYPE_COLOUR:              // ZMapStyleFullColourStruct
@@ -2553,7 +2553,10 @@ static void zmap_feature_type_style_get_property(GObject *gobject, guint param_i
     case STYLE_PARAM_TYPE_FLAGS:               // bitmap of is_set flags (array of uchar)
       flags = (char*)g_malloc(STYLE_IS_SET_SIZE * 2 + 1);
 
-      zmap_bin_to_hex(flags,((void *) (style + param->offset), STYLE_IS_SET_SIZE));
+      /* gb10: C++ conversion showed up an error here performing arithmetic on a void
+       * pointer and passing void* to the function. Not sure what the intent is but 
+       * for now pass gchar* which is what the function expects. */
+      zmap_bin_to_hex(flags,((gchar *) (style + param->offset), STYLE_IS_SET_SIZE));
 
       g_value_set_string(value,flags);
       g_free(flags);
@@ -2590,7 +2593,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject, guint param_i
     case STYLE_PARAM_TYPE_QUARK_LIST_ID:
       {
         gchar *str;
-        str = zMap_g_list_quark_to_string(*(GList **)(((=void *) (style + param->offset)), NULL);
+        str = zMap_g_list_quark_to_string(*(GList **)(((void *) (style + param->offset)), NULL);
         g_value_set_string(value, str);
         g_free(str);
       }
@@ -2619,7 +2622,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject, guint param_i
       STYLE_GET_PROP (STYLE_PARAM_TYPE_GLYPH_ALIGN     , ZMapStyleGlyphAlign);
 
     case STYLE_PARAM_TYPE_UINT:
-      g_value_set_uint(value, * (guint *) (((void *) style) + param->offset));
+      g_value_set_uint(value, * (guint *) ((void *) (style + param->offset)));
       break;
 
     default:
@@ -2670,7 +2673,7 @@ static gchar *zmapStyleValueSubFeatures(GQuark *quarks)
       if(quarks[i])
         {
           g_string_append_printf(subs_string, "%s:%s ; ",
-                                 zmapStyleSubFeature2ExactStr(i),
+                                 zmapStyleSubFeature2ExactStr((ZMapStyleSubFeature)i),
                                  g_quark_to_string(quarks[i]));
         }
     }
@@ -2769,7 +2772,7 @@ static gboolean parseColours(ZMapFeatureTypeStyle style, guint param_id, GValue 
               ZMapStyleFullColour full_colour = NULL;
               ZMapStyleColour type_colour = NULL;
 
-              full_colour = zmapStyleFullColour(style,param_id);
+              full_colour = zmapStyleFullColour(style, (ZMapStyleParamId)param_id);
               type_colour = zmapStyleColour(full_colour,type);
 
               switch (context)
