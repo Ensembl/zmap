@@ -191,7 +191,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
       }
     }
 
-  req_any = g_malloc0(size) ;
+  req_any = (ZMapServerReqAny)g_malloc0(size) ;
 
 
   /* Fill in the struct. */
@@ -649,7 +649,9 @@ static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
       protocols->protocol_list = g_list_prepend(protocols->protocol_list, init) ;
     }
   else
-    init = curr_ptr->data ;
+    {
+      init = (ZMapProtocolInit)(curr_ptr->data) ;
+    }
 
   /* Call the init routine if its not been called yet and either way return the global_init_data. */
   if (!init->init_called)
