@@ -77,9 +77,9 @@ GList *zMap_g_list_split(GList *list, GList *new_list_head) ;
 GList *zMap_g_list_append_unique(GList *list, gpointer data);
 GList *zMap_g_list_merge(GList *a, GList *b);
 
-void zMap_g_list_quark_print(GList *quark_list, char *list_name, gboolean new_line) ;
+void zMap_g_list_quark_print(GList *quark_list, const char *list_name, gboolean new_line) ;
 GList *zMap_g_list_find_quark(GList *list, GQuark str_quark) ;
-gchar *zMap_g_list_quark_to_string(GList *l, char *delimiter);
+gchar *zMap_g_list_quark_to_string(GList *l, const char *delimiter);
 GList *zMap_g_list_remove_quarks(GList *quark_target_list, GList *quarks) ;
 
 gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth) ;

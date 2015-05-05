@@ -521,7 +521,7 @@ void zMap_g_list_quark_print(GList *quark_list, char *list_name, gboolean new_li
 /* Return a list of quarks delimited by the string given in delimiter,
  * if delimiter is NULL the string " ; " is used.
  * g_free() this string when finished. */
-gchar *zMap_g_list_quark_to_string(GList *l, char *delimiter)
+gchar *zMap_g_list_quark_to_string(GList *l, const char *delimiter)
 {
   char *str = NULL ;
 
@@ -800,7 +800,7 @@ gboolean zMap_g_hash_table_iter_next(GList **iter, gpointer *key, gpointer *valu
 
   if(list)
     {
-      data = list->data;
+      data = (ZMapGHashIter)(list->data) ;
       *iter = g_list_remove_link(*iter,list);
       g_list_free_1(list);
 
