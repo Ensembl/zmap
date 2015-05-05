@@ -114,7 +114,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
                                           ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles,
                                                  ZMapFeatureContext feature_context_out) ;
-static char *lastErrorMsg(void *server) ;
+static const char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_in, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
@@ -679,7 +679,7 @@ static ZMapServerResponseType getContextSequence(void *server_in,
 
 
 /* Return the last error message. */
-static char *lastErrorMsg(void *server_in)
+static const char *lastErrorMsg(void *server_in)
 {
   char *err_msg = NULL ;
   EnsemblServer server = (EnsemblServer)server_in ;
@@ -1221,8 +1221,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
-
-  char *feature_name_id = feature_name_id_in ;
+  const char *feature_name_id = feature_name_id_in ;
   GQuark unique_id = 0 ;
   const char *feature_name = feature_name_in ;
   char *sequence = NULL ;
