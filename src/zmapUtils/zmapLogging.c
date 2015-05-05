@@ -322,7 +322,7 @@ void zMapLogTime(int what, int how, long data, char *string)
 
   /* THERE IS A WHOLE ENUMS MECHANISM TO AVOID HAVING TO DO THIS....SEE zmapEnum.h */
   /* these mirror the #defines in zmapUtilsDebug.h */
-  char *which[] = { "none", "foo-expose", "foo-update",
+  const char *which[] = { "none", "foo-expose", "foo-update",
     "foo-draw", "draw_context", "revcomp", "zoom", "bump", "setvis", "load", 0 } ;
 
   if (zmap_timing_G)
@@ -382,7 +382,7 @@ void zMapLogMsg(const char *domain, GLogLevelFlags log_level,
   ZMapLog log = log_G ;
   va_list args ;
   GString *format_str ;
-  char *msg_level = NULL ;
+  const char *msg_level = NULL ;
 
 
   /* zMapAssert(log) ;*/
@@ -585,7 +585,7 @@ static ZMapLog createLog(void)
 
   log->userid = g_strdup(g_get_user_name()) ;
 
-  log->nodeid = g_malloc0(MAXHOSTNAMELEN + 2) ;    /* + 2 for safety, interface not clear. */
+  log->nodeid = (char *)g_malloc0(MAXHOSTNAMELEN + 2) ;    /* + 2 for safety, interface not clear. */
   if (gethostname(log->nodeid, (MAXHOSTNAMELEN + 1)) == -1)
     {
       zMapLogCritical("%s", "Cannot retrieve hostname for this computer.") ;
@@ -638,8 +638,8 @@ static gboolean startLogging(ZMapLog log, GError **error)
           if (openLogFile(log, &g_error))
             {
               log->active_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
-                                                            G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-                                                            | G_LOG_FLAG_RECURSION,
+                                                            (GLogLevelFlags)(G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
+                                                                             | G_LOG_FLAG_RECURSION),
                                                             log->active_handler.log_cb,
                                                             (gpointer)log) ;
 
@@ -691,10 +691,10 @@ static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers)
       if (!remove_all_handlers)
         {
           log->inactive_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
-                                                          G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-                                                        | G_LOG_FLAG_RECURSION,
-                                                        log->inactive_handler.log_cb,
-                                                        (gpointer)log) ;
+                                                          (GLogLevelFlags)(G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
+                                                                           | G_LOG_FLAG_RECURSION),
+                                                          log->inactive_handler.log_cb,
+                                                          (gpointer)log) ;
 
           /* try to get the glib critical errors handled */
           if (log->catch_glib)
