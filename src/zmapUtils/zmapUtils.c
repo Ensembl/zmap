@@ -122,7 +122,7 @@ char *zMapGetAppTitle(void)
  * @param test_version           The version string to be tested.
  * @return                       TRUE or FALSE
  *  */
-gboolean zMapCompareVersionStings(char *reference_version, char *test_version, GError **error)
+gboolean zMapCompareVersionStings(const char *reference_version, const char *test_version, GError **error)
 {
   gboolean result = FALSE ;
   GError *tmp_error = NULL ;
