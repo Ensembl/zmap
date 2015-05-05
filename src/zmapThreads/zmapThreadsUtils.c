@@ -315,7 +315,7 @@ void zmapVarSetValueWithData(ZMapReply thread_state, ZMapThreadReply new_state, 
 }
 
 
-void zmapVarSetValueWithError(ZMapReply thread_state, ZMapThreadReply new_state, char *err_msg)
+void zmapVarSetValueWithError(ZMapReply thread_state, ZMapThreadReply new_state, const char *err_msg)
 {
   int status ;
 
@@ -370,7 +370,7 @@ void zmapVarSetValueWithErrorAndData(ZMapReply thread_state, ZMapThreadReply new
  * is returned in data_out and if there is an err_msg it is returned in err_msg_out,
  * returns FALSE if it could not read the value. */
 gboolean zmapVarGetValueWithData(ZMapReply thread_state, ZMapThreadReply *state_out,
-				 void **data_out, char **err_msg_out)
+				 void **data_out, const char **err_msg_out)
 {
   gboolean unlocked = TRUE ;
   int status ;
