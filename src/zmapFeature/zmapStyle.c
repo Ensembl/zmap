@@ -834,7 +834,7 @@ gboolean zMapStyleGet(ZMapFeatureTypeStyle style, char *first_property_name, ...
  *                               (see g_object_set() for format of list).
  * @return  gboolean       TRUE if all properties set, FALSE otherwise.
  *  */
-gboolean zMapStyleSet(ZMapFeatureTypeStyle style, char *first_property_name, ...)
+gboolean zMapStyleSet(ZMapFeatureTypeStyle style, const char *first_property_name, ...)
 {
   gboolean result = FALSE ;
   va_list args1, args2 ;
