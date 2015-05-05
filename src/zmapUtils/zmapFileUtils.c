@@ -229,7 +229,7 @@ char *zMapGetFile(char *directory, const char *filename, gboolean make_file, GEr
 
 /* Can the given file be accessed for read or write or execute ?
  * If no mode then test is for "rwx". */
-gboolean zMapFileAccess(char *filepath, char *mode)
+gboolean zMapFileAccess(const char *filepath, const char *mode)
 {
   gboolean access = FALSE ;
   struct stat stat_buf ;
