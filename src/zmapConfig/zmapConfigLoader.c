@@ -348,7 +348,7 @@ GHashTable * zmapConfigIniGetDefaultStyles(void)
 
 /* get style stanzas in styles_list of all from the file */
 gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, char *styles_file,
-                                        GHashTable **styles_out, char * buffer)
+                                        GHashTable **styles_out, const char * buffer)
 {
   gboolean result = FALSE ;
   GHashTable *styles = NULL ;

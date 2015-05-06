@@ -556,7 +556,8 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock block, ZMapFeatureTypeS
 
   if ((dna_feature_set = zMapFeatureBlockGetSetByID(block, dna_set_id)))
     {
-      char *feature_name, *sequence, *ontology;
+      char *feature_name, *sequence ;
+      const char *ontology;
       GQuark dna_id;
       int block_start, block_end;
 
@@ -582,7 +583,7 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock block, ZMapFeatureTypeS
           ZMapStrand strand = ZMAPSTRAND_FORWARD; /* DNA is forward */
         
           /* check dna length == block length? */
-          sequence = ontology = NULL;
+          sequence = NULL;
           ontology = "dna";
         
           dna_feature_set->style = style;

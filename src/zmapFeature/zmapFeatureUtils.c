@@ -524,7 +524,8 @@ char *zMapFeatureCreateName(ZMapStyleMode feature_type,
     ZMapStrand strand, int start, int end, int query_start, int query_end)
 {
   char *feature_unique_name = NULL ;
-  char *strand_str, *ptr ;
+  const char *strand_str ;
+  char *ptr ;
   int len ;
 
   if (!feature_type || !feature || !*feature)
@@ -534,7 +535,7 @@ char *zMapFeatureCreateName(ZMapStyleMode feature_type,
 
   if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     feature_unique_name = g_strdup_printf("%s_'%s'_%d.%d_%d.%d", feature,
-  strand_str, start, end, query_start, query_end) ;
+                                          strand_str, start, end, query_start, query_end) ;
   else
     feature_unique_name = g_strdup_printf("%s_'%s'_%d.%d", feature, strand_str, start, end) ;
 
@@ -2025,9 +2026,9 @@ static void printChildCB(gpointer key, gpointer value, gpointer user_data_unused
   ZMapFeatureAny feature_any = (ZMapFeatureAny)value ;
 
   zMapDebugPrint(debug, "Feature %s - %s (%s)",
-  zMapFeatureLevelType2Str(feature_any->struct_type),
-  zMapFeatureName(feature_any),
-  g_quark_to_string(feature_any->unique_id)) ;
+                 zMapFeatureLevelType2Str(feature_any->struct_type),
+                 zMapFeatureName(feature_any),
+                 g_quark_to_string(feature_any->unique_id)) ;
 
   return ;
 }

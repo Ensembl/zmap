@@ -776,7 +776,7 @@ FooCanvasItem *zmapWindowFToIFindItemColumn(ZMapWindow window, GHashTable *featu
  *  */
 GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_context_to_item,
                                      GQuark align_id, GQuark block_id, GQuark column_id,
-                                     GQuark set_id, char *strand_spec, char *frame_spec,
+                                     GQuark set_id, const char *strand_spec, char *frame_spec,
                                      GQuark feature_id,
                                      ZMapWindowFToIPredFuncCB pred_func, gpointer user_data)
 {
@@ -1000,7 +1000,7 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
  * as all features match at least themselves.
  *  */
 GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_context_to_item,
-                                       char *set_strand, char *set_frame,
+                                       const char *set_strand, char *set_frame,
                                        ZMapFeature feature)
 {
   GList *item_list    = NULL ;
@@ -1149,7 +1149,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_fun
                                                           GQuark      column_id,
                                                           GQuark      set_id,
                                                           GQuark      feature_id,
-                                                          char       *strand_str,
+                                                          const char *strand_str,
                                                           char       *frame_str)
 {
   ZMapWindowFToISetSearchData search_data;

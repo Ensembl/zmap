@@ -243,10 +243,10 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 }
 
 
-char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type)
+const char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type)
 {
-  static char *struct_types[] = {".", "Context", "Alignment", "Block", "FeatureSet", "Feature"} ;
-  char *type_str = NULL ;
+  static const char *struct_types[] = {".", "Context", "Alignment", "Block", "FeatureSet", "Feature"} ;
+  const char *type_str = NULL ;
 
   if ((type != ZMAPFEATURE_STRUCT_INVALID) && (type != ZMAPFEATURE_STRUCT_CONTEXT)
       && (type != ZMAPFEATURE_STRUCT_ALIGN) && (type != ZMAPFEATURE_STRUCT_BLOCK)
@@ -261,9 +261,9 @@ char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type)
 
 
 
-char *zMapFeatureSubPart2Str(ZMapFeatureSubPartType subpart)
+const char *zMapFeatureSubPart2Str(ZMapFeatureSubPartType subpart)
 {
-  char *subpart_str = NULL ;
+  const char *subpart_str = NULL ;
 
   if ((subpart != ZMAPFEATURE_SUBPART_INVALID)
       && (subpart != ZMAPFEATURE_SUBPART_INTRON)
@@ -342,10 +342,10 @@ gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand)
 }
 
 
-char *zMapFeatureStrand2Str(ZMapStrand strand)
+const char *zMapFeatureStrand2Str(ZMapStrand strand)
 {
-  static char *strands[] = {".", "+", "-" } ;
-  char *strand_str = NULL ;
+  static const char *strands[] = {".", "+", "-" } ;
+  const char *strand_str = NULL ;
 
   if ((strand != ZMAPSTRAND_NONE) && (strand != ZMAPSTRAND_FORWARD) && (strand != ZMAPSTRAND_REVERSE) ) 
     return strand_str ;

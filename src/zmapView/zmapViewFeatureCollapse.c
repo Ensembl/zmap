@@ -1533,7 +1533,7 @@ static void dumpFeaturesCB(gpointer data, gpointer user_data)
   ZMapFeature feature = (ZMapFeature)data ;
   ZMapFeature composite = (ZMapFeature)user_data ;
   int start, end, num_gaps = 0 ;
-  char *strand ;
+  const char *strand ;
   gboolean gaps ;
   char *gap_str ;
   char *strand_diff = "", *overlap = "" ;

@@ -552,10 +552,7 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
 /* 
  *                  Package routines
  */
-
-
-/* provide access to private macro, NB start is not used but defined by the macro */
-int zmapFeatureRevCompCoord(int *coord, const int start, const int end)
+void zmapFeatureRevCompCoord(int *coord, const int start, const int end)
 {
   zmapFeatureInvert(coord,start,end);
 }

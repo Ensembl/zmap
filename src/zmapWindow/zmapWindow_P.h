@@ -1172,11 +1172,11 @@ FooCanvasItem *zmapWindowFToIFindItemColumn(ZMapWindow window, GHashTable *featu
 					  ZMapStrand set_strand, ZMapFrame set_frame);
 GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark column_id, GQuark set_id,
-				     char *strand_spec, char *frame_spec,
+				     const char *strand_spec, char *frame_spec,
 				     GQuark feature_id,
 				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data) ;
 GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_to_context_hash,
-				       char *set_strand, char *set_frame, ZMapFeature feature) ;
+				       const char *set_strand, char *set_frame, ZMapFeature feature) ;
 
 ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search_function,
 							      ZMapFeature feature,
@@ -1197,7 +1197,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_fun
 							  GQuark      column_id,
 							  GQuark      set_id,
 							  GQuark      feature_id,
-							  char       *strand_str,
+							  const char *strand_str,
 							  char       *frame_str);
 GList *zmapWindowFToISetSearchPerform(ZMapWindow window,GHashTable *feature_to_context_hash,
 				      ZMapWindowFToISetSearchData search_data);

@@ -976,13 +976,13 @@ typedef struct ZMapFeatureDescStructName
   char *feature_start ;
   char *feature_end ;
   char *feature_length ;
-  char *feature_strand ;
+  const char *feature_strand ;
   char *feature_frame ;
 
   char *feature_query_start ;
   char *feature_query_end ;
   char *feature_query_length ;
-  char *feature_query_strand ;
+  const char *feature_query_strand ;
 
 
   /* sub feature details (still all strings) */
@@ -1093,14 +1093,14 @@ GQuark zMapFeatureCreateID(ZMapStyleMode feature_type,
                            int start, int end,
 			   int query_start, int query_end) ;
 ZMapFeature zMapFeatureCreateEmpty(void) ;
-ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *ontology,
+ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, const char *ontology,
 					      ZMapStyleMode feature_type,
                                               ZMapFeatureTypeStyle *style,
                                               int start, int end,
                                               gboolean has_score, double score,
 					      ZMapStrand strand) ;
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, const char *feature_name_id, const char *name,
-				    char *sequence, char *ontology,
+				    char *sequence, const char *ontology,
 				    ZMapStyleMode feature_type,
 				    ZMapFeatureTypeStyle *style,
 				    int start, int end,
@@ -1337,7 +1337,7 @@ void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
  * Utils funcs
  */
 
-int zmapFeatureRevCompCoord(int *coord, const int start, const int end);
+void zmapFeatureRevCompCoord(int *coord, const int start, const int end);
 void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2) ;
 void zMapGetFeatureExtent(ZMapFeature feature, gboolean complex, ZMapSpan span);
 void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
@@ -1437,12 +1437,12 @@ gboolean zMapFeatureTranscriptsEqual(ZMapFeature feature1, ZMapFeature feature2,
 
 gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
                                char *feature_type, ZMapStyleMode *type_out);
-char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type) ;
+const char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type) ;
 char *zMapFeatureType2Str(ZMapStyleMode type) ;
-char *zMapFeatureSubPart2Str(ZMapFeatureSubPartType subpart) ;
+const char *zMapFeatureSubPart2Str(ZMapFeatureSubPartType subpart) ;
 gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out);
 gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand);
-char *zMapFeatureStrand2Str(ZMapStrand strand) ;
+const char *zMapFeatureStrand2Str(ZMapStrand strand) ;
 gboolean zMapFeatureFormatFrame(char *frame_str, ZMapFrame *frame_out);
 gboolean zMapFeatureStr2Frame(char *string, ZMapFrame *frame);
 char *zMapFeatureFrame2Str(ZMapFrame frame) ;
