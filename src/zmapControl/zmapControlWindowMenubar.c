@@ -79,60 +79,60 @@ GtkItemFactory *item_factory;
 
 
 static GtkItemFactoryEntry menu_items[] = {
-         { "/_File",                                NULL,                NULL,                              0,  "<Branch>" },
-         { "/File/_New Sequence",                   NULL,                G_CALLBACK(newSequenceByConfigCB), 2,  NULL },
-         { "/File/sep1",                            NULL,                NULL,                              0,  "<Separator>" },
-         { "/File/_Save",                           "<control>S",        G_CALLBACK(exportCB),              22, NULL },
-         { "/File/Save _As",                        "<shift><control>S", G_CALLBACK(exportCB),              23, NULL },
-         { "/File/sep1",                            NULL,                NULL,                              0,  "<Separator>" },
-         { "/File/_Import",                         "<control>I",        G_CALLBACK(importCB),              0,  NULL },/* or Read ? */
-         { "/File/_Export",                         NULL,                NULL,                              0,  "<Branch>" },
-         /*{ "/File/Export/_Data",                      NULL,                NULL,                  0,  "<Branch>" }, */
-         { "/File/Export/_DNA",                  NULL,                   G_CALLBACK(exportCB),              1,  NULL },
-         { "/File/Export/_Features",             "<control>E",           G_CALLBACK(exportCB),              2,  NULL },
-         { "/File/Export/_Features (marked)",    "<shift><control>E",    G_CALLBACK(exportCB),              12, NULL },
-         /* { "/File/Export/_Context",              NULL,                exportCB,              3,  NULL },
-         { "/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
-         { "/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
-         { "/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL }, */
-         { "/File/sep1",                            NULL,                NULL,                              0,  "<Separator>" },
-         { "/File/Save screen sho_t",               NULL,                G_CALLBACK(dumpCB),                0,  NULL },
-         { "/File/_Print screen shot",              "<control>P",        G_CALLBACK(printCB),               0,  NULL },
-         { "/File/sep1",                            NULL,                NULL,                              0,  "<Separator>" },
-         { "/File/Close",                           "<control>W",        G_CALLBACK(closeCB),               0,  NULL },
-         { "/File/Quit",                            "<control>Q",        G_CALLBACK(quitCB),                0,  NULL },
+  { (char*)"/_File",                                NULL,                NULL,                              0,  (char*)"<Branch>" },
+         { (char*)"/File/_New Sequence",                   NULL,                G_CALLBACK(newSequenceByConfigCB), 2,  NULL },
+         { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
+         { (char*)"/File/_Save",                           (char*)"<control>S", G_CALLBACK(exportCB),              22, NULL },
+         { (char*)"/File/Save _As",                        (char*)"<shift><control>S", G_CALLBACK(exportCB),       23, NULL },
+         { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
+         { (char*)"/File/_Import",                         (char*)"<control>I", G_CALLBACK(importCB),              0,  NULL },/* or Read ? */
+         { (char*)"/File/_Export",                         NULL,                NULL,                              0,  (char*)"<Branch>" },
+         /*{ (char*)"/File/Export/_Data",                      NULL,                NULL,                  0,  "<Branch>" }, */
+         { (char*)"/File/Export/_DNA",                     NULL,                G_CALLBACK(exportCB),              1,  NULL },
+         { (char*)"/File/Export/_Features",                (char*)"<control>E", G_CALLBACK(exportCB),              2,  NULL },
+         { (char*)"/File/Export/_Features (marked)",       (char*)"<shift><control>E", G_CALLBACK(exportCB),              12, NULL },
+         /* { (char*)"/File/Export/_Context",              NULL,                exportCB,              3,  NULL },
+         { (char*)"/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
+         { (char*)"/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
+         { (char*)"/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL }, */
+         { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
+         { (char*)"/File/Save screen sho_t",               NULL,                G_CALLBACK(dumpCB),                0,  NULL },
+         { (char*)"/File/_Print screen shot",              (char*)"<control>P", G_CALLBACK(printCB),               0,  NULL },
+         { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
+         { (char*)"/File/Close",                           (char*)"<control>W", G_CALLBACK(closeCB),               0,  NULL },
+         { (char*)"/File/Quit",                            (char*)"<control>Q", G_CALLBACK(quitCB),                0,  NULL },
 
-         { "/_Edit",                                NULL,                NULL,                              0,  "<Branch>" },
-         { "/Edit/_Copy Feature Coords",            "<control>C",        G_CALLBACK(copyPasteCB),           EDIT_COPY, NULL },
-         { "/Edit/_UCopy Feature Coords (CHR)",     "<control>U",        G_CALLBACK(copyPasteCB),           EDIT_COPY_CHR, NULL },
-         { "/Edit/_Paste Feature Coords",           "<control>V",        G_CALLBACK(copyPasteCB),           EDIT_PASTE, NULL },
+         { (char*)"/_Edit",                                NULL,                NULL,                              0,  (char*)"<Branch>" },
+         { (char*)"/Edit/_Copy Feature Coords",            (char*)"<control>C", G_CALLBACK(copyPasteCB),           EDIT_COPY, NULL },
+         { (char*)"/Edit/_UCopy Feature Coords (CHR)",     (char*)"<control>U", G_CALLBACK(copyPasteCB),           EDIT_COPY_CHR, NULL },
+         { (char*)"/Edit/_Paste Feature Coords",           (char*)"<control>V", G_CALLBACK(copyPasteCB),           EDIT_PASTE, NULL },
 
-         { "/Edit/_Redraw",                NULL, G_CALLBACK(redrawCB),       0, NULL },
-         { "/Edit/sep1",                   NULL, NULL,                       0, "<Separator>" },
-         { "/Edit/P_references",           NULL, G_CALLBACK(preferencesCB),  0, NULL },
-         { "/Edit/_Set Developer status",  NULL, G_CALLBACK(developerCB),    0, NULL },
+         { (char*)"/Edit/_Redraw",                NULL, G_CALLBACK(redrawCB),       0, NULL },
+         { (char*)"/Edit/sep1",                   NULL, NULL,                       0, (char*)"<Separator>" },
+         { (char*)"/Edit/P_references",           NULL, G_CALLBACK(preferencesCB),  0, NULL },
+         { (char*)"/Edit/_Set Developer status",  NULL, G_CALLBACK(developerCB),    0, NULL },
 
-         { "/_View",                       NULL, NULL,                       0, "<Branch>" },
-         { "/View/Session Details",        NULL, G_CALLBACK(showSessionCB),  0, NULL },
+         { (char*)"/_View",                       NULL, NULL,                       0, (char*)"<Branch>" },
+         { (char*)"/View/Session Details",        NULL, G_CALLBACK(showSessionCB),  0, NULL },
 
 #ifdef ALLOW_POPOUT_PANEL
-         { "/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL },
+         { (char*)"/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL },
 #endif/* ALLOW_POPOUT_PANEL */
 
-         { "/_Raise ticket",                               NULL, NULL,                 0, "<LastBranch>" },
-         { "/Raise ticket/See ZMap tickets",               NULL, G_CALLBACK(rtTicket), RT_ZMAP_USER_TICKETS, NULL },
-         { "/Raise ticket/ZMap ticket",                    NULL, G_CALLBACK(rtTicket), RT_ZMAP, NULL },
-         { "/Raise ticket/Anacode ticket",                 NULL, G_CALLBACK(rtTicket), RT_ANACODE, NULL },
-         { "/Raise ticket/Blixem, Dotter or Belvu ticket", NULL, G_CALLBACK(rtTicket), RT_SEQTOOLS, NULL },
-         { "/Raise ticket/Acedb ticket",                   NULL, G_CALLBACK(rtTicket), RT_ACEDB, NULL },
+         { (char*)"/_Raise ticket",                               NULL, NULL,                 0, (char*)"<LastBranch>" },
+         { (char*)"/Raise ticket/See ZMap tickets",               NULL, G_CALLBACK(rtTicket), RT_ZMAP_USER_TICKETS, NULL },
+         { (char*)"/Raise ticket/ZMap ticket",                    NULL, G_CALLBACK(rtTicket), RT_ZMAP, NULL },
+         { (char*)"/Raise ticket/Anacode ticket",                 NULL, G_CALLBACK(rtTicket), RT_ANACODE, NULL },
+         { (char*)"/Raise ticket/Blixem, Dotter or Belvu ticket", NULL, G_CALLBACK(rtTicket), RT_SEQTOOLS, NULL },
+         { (char*)"/Raise ticket/Acedb ticket",                   NULL, G_CALLBACK(rtTicket), RT_ACEDB, NULL },
 
-         { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
-         /*{ "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL }, */
-         { "/Help/Quick Start Guide", NULL, G_CALLBACK(allHelpCB), ZMAPGUI_HELP_QUICK_START, NULL },
-         { "/Help/Keyboard & Mouse", NULL,  G_CALLBACK(allHelpCB), ZMAPGUI_HELP_KEYBOARD, NULL },
-         { "/Help/Alignment Display", NULL, G_CALLBACK(allHelpCB), ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
-         { "/Help/Release Notes", NULL,     G_CALLBACK(allHelpCB), ZMAPGUI_HELP_RELEASE_NOTES, NULL },
-         { "/Help/About ZMap",    NULL,     G_CALLBACK(aboutCB), 0, NULL }
+         { (char*)"/_Help",         NULL,         NULL, 0, (char*)"<LastBranch>" },
+         /*{ (char*)"/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL }, */
+         { (char*)"/Help/Quick Start Guide", NULL, G_CALLBACK(allHelpCB), ZMAPGUI_HELP_QUICK_START, NULL },
+         { (char*)"/Help/Keyboard & Mouse", NULL,  G_CALLBACK(allHelpCB), ZMAPGUI_HELP_KEYBOARD, NULL },
+         { (char*)"/Help/Alignment Display", NULL, G_CALLBACK(allHelpCB), ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
+         { (char*)"/Help/Release Notes", NULL,     G_CALLBACK(allHelpCB), ZMAPGUI_HELP_RELEASE_NOTES, NULL },
+         { (char*)"/Help/About ZMap",    NULL,     G_CALLBACK(aboutCB), 0, NULL }
 };
 
 
