@@ -81,14 +81,14 @@ typedef struct
 
 
 
-static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type);
-static ZMapConfigIniContextKeyEntry get_peer_group_data(char **stanza_name, char **stanza_type);
-static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, char **stanza_type);
-static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, char **stanza_type);
-static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, char **stanza_type) ;
-static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, char **stanza_type);
-static ZMapConfigIniContextKeyEntry get_window_group_data(char **stanza_name, char **stanza_type);
-static ZMapConfigIniContextKeyEntry get_blixem_group_data(char **stanza_name, char **stanza_type);
+static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name, const char **stanza_type);
+static ZMapConfigIniContextKeyEntry get_peer_group_data(const char **stanza_name, const char **stanza_type);
+static ZMapConfigIniContextKeyEntry get_logging_group_data(const char **stanza_name, const char **stanza_type);
+static ZMapConfigIniContextKeyEntry get_debug_group_data(const char **stanza_name, const char **stanza_type);
+static ZMapConfigIniContextKeyEntry get_style_group_data(const char **stanza_name, const char **stanza_type) ;
+static ZMapConfigIniContextKeyEntry get_source_group_data(const char **stanza_name, const char **stanza_type);
+static ZMapConfigIniContextKeyEntry get_window_group_data(const char **stanza_name, const char **stanza_type);
+static ZMapConfigIniContextKeyEntry get_blixem_group_data(const char **stanza_name, const char **stanza_type);
 static gpointer create_config_source();
 static void free_source_list_item(gpointer list_data, gpointer unused_data);
 static void source_set_property(char *current_stanza_name, const char *key, GType type,
@@ -130,35 +130,28 @@ ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
   if(context && context->config_read)
     {
       ZMapConfigIniContextKeyEntry stanza_group = NULL;
-      char *stanza_name, *stanza_type;
+      const char *stanza_name, *stanza_type;
 
       if((stanza_group = get_logging_group_data(&stanza_name, &stanza_type)))
-        zMapConfigIniContextAddGroup(context, stanza_name,
-     stanza_type, stanza_group);
+        zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group);
 
       if((stanza_group = get_app_group_data(&stanza_name, &stanza_type)))
-        zMapConfigIniContextAddGroup(context, stanza_name,
-     stanza_type, stanza_group);
+        zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group);
 
       if((stanza_group = get_peer_group_data(&stanza_name, &stanza_type)))
-        zMapConfigIniContextAddGroup(context, stanza_name,
-     stanza_type, stanza_group);
+        zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group);
 
       if((stanza_group = get_debug_group_data(&stanza_name, &stanza_type)))
-        zMapConfigIniContextAddGroup(context, stanza_name,
-     stanza_type, stanza_group);
+        zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group);
 
       if((stanza_group = get_source_group_data(&stanza_name, &stanza_type)))
-        zMapConfigIniContextAddGroup(context, stanza_name,
-     stanza_type, stanza_group);
+        zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group);
 
       if((stanza_group = get_window_group_data(&stanza_name, &stanza_type)))
-        zMapConfigIniContextAddGroup(context, stanza_name,
-     stanza_type, stanza_group);
+        zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group);
 
       if((stanza_group = get_blixem_group_data(&stanza_name, &stanza_type)))
-        zMapConfigIniContextAddGroup(context, stanza_name,
-     stanza_type, stanza_group);
+        zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group);
     }
   else if (context)
     {
@@ -197,14 +190,13 @@ ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, c
   if ((context = zMapConfigIniContextCreate(config_file)))
     {
       ZMapConfigIniContextKeyEntry stanza_group = NULL;
-      char *stanza_name, *stanza_type;
+      const char *stanza_name, *stanza_type;
 
 
       if (g_ascii_strcasecmp(stanza_name_in, ZMAPSTANZA_SOURCE_CONFIG) == 0)        /* unused */
         {
           if((stanza_group = get_source_group_data(&stanza_name, &stanza_type)))
-            zMapConfigIniContextAddGroup(context, stanza_name,
-         stanza_type, stanza_group);
+            zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group);
         }
 
       if (g_ascii_strcasecmp(stanza_name_in, ZMAPSTANZA_STYLE_CONFIG) == 0)
@@ -212,8 +204,7 @@ ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, c
           /* this requires [glyphs] from main config file
              but it's not a standard key-value format where we know the keys */
           if ((stanza_group = get_style_group_data(&stanza_name, &stanza_type)))
-            zMapConfigIniContextAddGroup(context, stanza_name,
-         stanza_type, stanza_group) ;
+            zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group) ;
         }
 
       /* OK...NOW ADD THE OTHERS... */
@@ -1440,7 +1431,7 @@ static void set_is_default(gpointer key, gpointer value, gpointer data)
 
 
 
-static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type)
+static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name, const char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
     { ZMAPSTANZA_APP_MAINWINDOW,         G_TYPE_BOOLEAN, NULL, FALSE },
@@ -1475,8 +1466,8 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
     { ZMAPSTANZA_APP_SEQ_DATA,           G_TYPE_STRING,  NULL, FALSE },
     {NULL}
   };
-  static char *name = ZMAPSTANZA_APP_CONFIG;
-  static char *type = ZMAPSTANZA_APP_CONFIG;
+  static const char *name = ZMAPSTANZA_APP_CONFIG;
+  static const char *type = ZMAPSTANZA_APP_CONFIG;
 
   if(stanza_name)
     *stanza_name = name;
@@ -1487,7 +1478,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
 }
 
 
-static ZMapConfigIniContextKeyEntry get_peer_group_data(char **stanza_name, char **stanza_type)
+static ZMapConfigIniContextKeyEntry get_peer_group_data(const char **stanza_name, const char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
 
@@ -1507,8 +1498,8 @@ static ZMapConfigIniContextKeyEntry get_peer_group_data(char **stanza_name, char
 
     {NULL}
   };
-  static char *name = ZMAPSTANZA_PEER_CONFIG ;
-  static char *type = ZMAPSTANZA_PEER_CONFIG ;
+  static const char *name = ZMAPSTANZA_PEER_CONFIG ;
+  static const char *type = ZMAPSTANZA_PEER_CONFIG ;
 
   if(stanza_name)
     *stanza_name = name;
@@ -1518,7 +1509,7 @@ static ZMapConfigIniContextKeyEntry get_peer_group_data(char **stanza_name, char
   return stanza_keys ;
 }
 
-static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, char **stanza_type)
+static ZMapConfigIniContextKeyEntry get_logging_group_data(const char **stanza_name, const char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
     { ZMAPSTANZA_LOG_LOGGING,      G_TYPE_BOOLEAN, NULL, FALSE },
@@ -1533,8 +1524,8 @@ static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, c
     {NULL}
   };
 
-  static char *name = ZMAPSTANZA_LOG_CONFIG;
-  static char *type = ZMAPSTANZA_LOG_CONFIG;
+  static const char *name = ZMAPSTANZA_LOG_CONFIG;
+  static const char *type = ZMAPSTANZA_LOG_CONFIG;
 
   if(stanza_name)
     *stanza_name = name;
@@ -1544,7 +1535,7 @@ static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, c
   return stanza_keys;
 }
 
-static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, char **stanza_type)
+static ZMapConfigIniContextKeyEntry get_debug_group_data(const char **stanza_name, const char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
     { ZMAPSTANZA_DEBUG_APP_THREADS, G_TYPE_BOOLEAN, NULL, FALSE },
@@ -1554,8 +1545,8 @@ static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, cha
     { ZMAPSTANZA_DEBUG_APP_DEVELOP, G_TYPE_BOOLEAN, NULL, FALSE },
     { NULL }
   };
-  static char *name = ZMAPSTANZA_DEBUG_CONFIG;
-  static char *type = ZMAPSTANZA_DEBUG_CONFIG;
+  static const char *name = ZMAPSTANZA_DEBUG_CONFIG;
+  static const char *type = ZMAPSTANZA_DEBUG_CONFIG;
 
   if(stanza_name)
     *stanza_name = name;
@@ -1749,10 +1740,10 @@ default:
 
 
 /* This might seem a little long winded, but then so is all the gobject gubbins... */
-static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, char **stanza_type)
+static ZMapConfigIniContextKeyEntry get_style_group_data(const char **stanza_name, const char **stanza_type)
 {
-  static char *name = "*";
-  static char *type = ZMAPSTANZA_STYLE_CONFIG;
+  static const char *name = "*";
+  static const char *type = ZMAPSTANZA_STYLE_CONFIG;
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
     { ZMAPSTYLE_PROPERTY_NAME, G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_DESCRIPTION, G_TYPE_STRING, style_set_property, FALSE },
@@ -1958,7 +1949,7 @@ static void free_source_list_item(gpointer list_data, gpointer unused_data)
 
 
 /* This might seem a little long winded, but then so is all the gobject gubbins... */
-static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, char **stanza_type)
+static ZMapConfigIniContextKeyEntry get_source_group_data(const char **stanza_name, const char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
     { ZMAPSTANZA_SOURCE_URL,           G_TYPE_STRING,  source_set_property, FALSE },
@@ -1977,8 +1968,8 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, ch
     {NULL}
   };
 
-  static char *name = "*";
-  static char *type = ZMAPSTANZA_SOURCE_CONFIG;
+  static const char *name = "*";
+  static const char *type = ZMAPSTANZA_SOURCE_CONFIG;
 
   if(stanza_name)
     *stanza_name = name;
@@ -2064,7 +2055,7 @@ gpointer parent_data, GValue *property_value)
 
 /* ZMapWindow */
 
-static ZMapConfigIniContextKeyEntry get_window_group_data(char **stanza_name, char **stanza_type)
+static ZMapConfigIniContextKeyEntry get_window_group_data(const char **stanza_name, const char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
     { ZMAPSTANZA_WINDOW_CURSOR,       G_TYPE_STRING,  NULL, FALSE },
@@ -2106,8 +2097,8 @@ static ZMapConfigIniContextKeyEntry get_window_group_data(char **stanza_name, ch
     { ZMAPSTANZA_WINDOW_FILTERED_COLUMN,   G_TYPE_STRING,  NULL, FALSE },
     { NULL }
   };
-  static char *name = ZMAPSTANZA_WINDOW_CONFIG;
-  static char *type = ZMAPSTANZA_WINDOW_CONFIG;
+  static const char *name = ZMAPSTANZA_WINDOW_CONFIG;
+  static const char *type = ZMAPSTANZA_WINDOW_CONFIG;
 
   if(stanza_name)
     *stanza_name = name;
@@ -2119,7 +2110,7 @@ static ZMapConfigIniContextKeyEntry get_window_group_data(char **stanza_name, ch
 
 
 
-static ZMapConfigIniContextKeyEntry get_blixem_group_data(char **stanza_name, char **stanza_type)
+static ZMapConfigIniContextKeyEntry get_blixem_group_data(const char **stanza_name, const char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
     { ZMAPSTANZA_BLIXEM_NETID,       G_TYPE_STRING,  NULL, FALSE },
@@ -2139,8 +2130,8 @@ static ZMapConfigIniContextKeyEntry get_blixem_group_data(char **stanza_name, ch
     { ZMAPSTANZA_BLIXEM_FS,          G_TYPE_STRING,  NULL, FALSE },
     { NULL }
   };
-  static char *name = ZMAPSTANZA_BLIXEM_CONFIG;
-  static char *type = ZMAPSTANZA_BLIXEM_CONFIG;
+  static const char *name = ZMAPSTANZA_BLIXEM_CONFIG;
+  static const char *type = ZMAPSTANZA_BLIXEM_CONFIG;
 
   if(stanza_name)
     *stanza_name = name;
