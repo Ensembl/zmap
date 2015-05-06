@@ -994,7 +994,6 @@ gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
               ZMapSpan trans_part ;
               int start, end ;
               int match_boundary_start = 0, match_boundary_end = 0 ;
-              ZMapFeatureBoundaryMatch match_boundary ;
               ZMapFeaturePartsList parts_list ;
               ZMapFeatureBoundaryMatchType match_type = ZMAPBOUNDARY_MATCH_TYPE_NONE ;
 
