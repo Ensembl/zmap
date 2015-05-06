@@ -620,7 +620,7 @@ gboolean zMapFeatureBlockDecodeID(GQuark id,
   return valid ;
 }
 
-GQuark zMapFeatureSetCreateID(char *set_name)
+GQuark zMapFeatureSetCreateID(const char *set_name)
 {
   return zMapStyleCreateID(set_name);
 }

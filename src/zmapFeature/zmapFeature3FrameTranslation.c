@@ -237,7 +237,7 @@ char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFr
   char *feature_name = NULL ;
   zMapReturnValIfFail(feature_set, feature_name) ;
 
-  char *frame_str ;
+  const char *frame_str ;
 
   switch (frame)
     {
@@ -517,7 +517,7 @@ static void translationPopulate(ZMapFeatureBlock feature_block,
 #endif
   ZMapPeptide pep ;
   ZMapFeature translation ;
-  char *feature_name = NULL ;    /* Remember to free this */
+  const char *feature_name = NULL ;    /* Remember to free this */
   GQuark feature_id ;
   char *peptide_str ;
   int peptide_length ;

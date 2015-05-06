@@ -155,7 +155,7 @@ static gboolean withdrawFeatureAny(gpointer key, gpointer value, gpointer user_d
 
 /* datalist debug stuff */
 
-static void printDestroyDebugInfo(ZMapFeatureAny any, char *who) ;
+static void printDestroyDebugInfo(ZMapFeatureAny any, const char *who) ;
 
 static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
                                                       gpointer data,
@@ -475,8 +475,8 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
  *
  *
  */
-gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
-    char *sequence, char *SO_accession,
+gboolean zMapFeatureAddStandardData(ZMapFeature feature, const char *feature_name_id, const char *name,
+    char *sequence, const char *SO_accession,
     ZMapStyleMode feature_mode,
     ZMapFeatureTypeStyle *style,
     int start, int end,
@@ -870,7 +870,7 @@ void zMapFeatureDestroy(ZMapFeature feature)
  */
 
 /* Features can be NULL if there are no features yet..... */
-ZMapFeatureSet zMapFeatureSetCreate(char *source, GHashTable *features)
+ZMapFeatureSet zMapFeatureSetCreate(const char *source, GHashTable *features)
 {
   ZMapFeatureSet feature_set ;
   GQuark original_id, unique_id ;
@@ -2109,7 +2109,7 @@ static void destroyFeatureAny(gpointer data)
 
 
 
-static void printDestroyDebugInfo(ZMapFeatureAny feature_any, char *who)
+static void printDestroyDebugInfo(ZMapFeatureAny feature_any, const char *who)
 {
   int length = 0 ;
 
@@ -3291,7 +3291,7 @@ gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any)
 
 static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any)
 {
-  char *func ;
+  const char *func ;
 
   if (LOG_MEM_CALLS)
     {

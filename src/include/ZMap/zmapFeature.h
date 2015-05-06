@@ -1099,7 +1099,7 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
                                               int start, int end,
                                               gboolean has_score, double score,
 					      ZMapStrand strand) ;
-gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
+gboolean zMapFeatureAddStandardData(ZMapFeature feature, const char *feature_name_id, const char *name,
 				    char *sequence, char *ontology,
 				    ZMapStyleMode feature_type,
 				    ZMapFeatureTypeStyle *style,
@@ -1198,8 +1198,8 @@ GList *zMapFeatureGetOverlapFeatures(GList *feature_list, int start, int end, ZM
 /*
  * FeatureSet funcs
  */
-GQuark zMapFeatureSetCreateID(char *feature_set_name) ;
-ZMapFeatureSet zMapFeatureSetCreate(char *source, GHashTable *features) ;
+GQuark zMapFeatureSetCreateID(const char *feature_set_name) ;
+ZMapFeatureSet zMapFeatureSetCreate(const char *source, GHashTable *features) ;
 ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
 				      ZMapFeatureTypeStyle style, GHashTable *features) ;
 gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
