@@ -119,7 +119,7 @@ static void zmap_feature_data_init (ZMapFeatureData data);
 static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class);
 
 
-static char *gtype_to_message_string(GType feature_any_gtype);
+static const char *gtype_to_message_string(GType feature_any_gtype);
 static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_spec_id,
        GValue *value, GParamSpec *pspec);
 static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_spec_id,
@@ -316,10 +316,10 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
 
 
 
-static char *gtype_to_message_string(GType feature_any_gtype)
+static const char *gtype_to_message_string(GType feature_any_gtype)
 {
   static char *string_array[1 << 16] = {NULL};
-  char *message = NULL;
+  const char *message = NULL;
 
   if(string_array[FEATURE_DATA_TYPE_FEATURE_CONTEXT] == NULL)
     {
