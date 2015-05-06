@@ -103,9 +103,7 @@ static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data) ;
 static void fetchStanzas(FetchReferencedStanzas full_data, GKeyFile *key_file, char *stanza_name) ;
 static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, const char *stanza_type) ;
 static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context, char *parent_name, char *parent_key) ;
-static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, char *stanza_type) ;
 static void set_is_default(gpointer key, gpointer value, gpointer data) ;
-static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, char *stanza_type) ;
 static GList *get_names_as_list(char *styles) ;
 static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
      ZMapConfigIniUserDataCreateFunc object_create_func,
@@ -338,7 +336,7 @@ GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
 GHashTable * zmapConfigIniGetDefaultStyles(void)
 {
   GHashTable *styles = NULL ;
-  extern char * default_styles;/* in a generated source file */
+  extern const char * default_styles;/* in a generated source file */
 
   zMapConfigIniGetStylesFromFile(NULL, NULL, NULL, &styles, default_styles) ;
 
@@ -2021,11 +2019,11 @@ gpointer parent_data, GValue *property_value)
 
           // painful bit of code but there you go
           *int_ptr = SOURCE_GROUP_NEVER;
-          char *value = "";
+          const char *value = "";
           if(type == G_TYPE_STRING)
-            value = (char *)g_value_get_string(property_value);
+            value = g_value_get_string(property_value);
 
-          if     (!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_ALWAYS))
+          if (!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_ALWAYS))
             *int_ptr = SOURCE_GROUP_ALWAYS;
           else if(!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_START))
             *int_ptr = SOURCE_GROUP_START;
