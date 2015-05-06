@@ -304,6 +304,8 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
 
   if(insanity_explained)
     *insanity_explained = insanity;
+  else if (insanity)
+    g_free(insanity) ;
 
   return sane;
 }
@@ -318,9 +320,9 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
   if (sane && !zMapFeatureIsValid(feature))
     {
       if (feature->original_id == ZMAPFEATURE_NULLQUARK)
-        insanity = "Feature has bad name.";
+        insanity = g_strdup("Feature has bad name.") ;
       else if (feature->unique_id == ZMAPFEATURE_NULLQUARK)
-        insanity = "Feature has bad identifier.";
+        insanity = g_strdup("Feature has bad identifier.") ;
       else
         insanity = g_strdup_printf("Feature '%s' [%s] has bad type.",
                                    (char *)g_quark_to_string(feature->original_id),
@@ -363,9 +365,9 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
   if (insanity)
     {
       if (insanity_explained)
-        *insanity_explained = g_strdup(insanity);
-
-      g_free(insanity);
+        *insanity_explained = insanity;
+      else
+        g_free(insanity);
     }
 
   return sane;
