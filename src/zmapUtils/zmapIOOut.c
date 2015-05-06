@@ -184,7 +184,7 @@ gboolean zMapOutWrite(ZMapIOOut out, char *text)
 
 
 
-gboolean zMapOutWriteFormat(ZMapIOOut out, char *format, ...)
+gboolean zMapOutWriteFormat(ZMapIOOut out, const char *format, ...)
 {
   gboolean result = FALSE ;
   va_list args ;

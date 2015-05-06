@@ -1057,7 +1057,7 @@ ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleMode2ShortText, ZMapStyleMode) ;
 
 
 
-ZMapFeatureTypeStyle zMapStyleCreate(char *name, const char *description) ;
+ZMapFeatureTypeStyle zMapStyleCreate(const char *name, const char *description) ;
 ZMapFeatureTypeStyle zMapStyleCreateV(guint n_parameters, GParameter *parameters) ;
 void zMapStyleDestroy(ZMapFeatureTypeStyle style);
 

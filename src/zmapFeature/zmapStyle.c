@@ -593,7 +593,7 @@ GType zMapFeatureTypeStyleGetType(void)
 }
 
 
-ZMapFeatureTypeStyle zMapStyleCreate(char *name, const char *description)
+ZMapFeatureTypeStyle zMapStyleCreate(const char *name, const char *description)
 {
   ZMapFeatureTypeStyle style = NULL ;
   GParameter params[2] ;

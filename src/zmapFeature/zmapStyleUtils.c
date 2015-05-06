@@ -44,7 +44,7 @@
 /* For colour spec building. */
 typedef struct ColourSpecStructName
 {
-  char *colour_type ;
+  const char *colour_type ;
   char *colour ;
 } ColourSpecStruct, *ColourSpec ;
 
@@ -370,7 +370,7 @@ void zMapStyleListPrintAll(ZMapIOOut dest, GList *styles, char *user_string, gbo
  *  */
 void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gboolean full)
 {
-  char *indent = "" ;
+  const char *indent = "" ;
 
   #define TEST 0
   #define INDENT_STR indent

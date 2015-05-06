@@ -318,7 +318,7 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
 
 static const char *gtype_to_message_string(GType feature_any_gtype)
 {
-  static char *string_array[1 << 16] = {NULL};
+  static const char *string_array[1 << 16] = {NULL};
   const char *message = NULL;
 
   if(string_array[FEATURE_DATA_TYPE_FEATURE_CONTEXT] == NULL)
