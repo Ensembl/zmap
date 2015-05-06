@@ -236,7 +236,7 @@
 #define ZMAP_ENUM_FROM_SHORT_TEXT_FUNC(FNAME, TYPE, INVALID_VALUE, LIST, dummy0, dummy1) \
   TYPE FNAME(const char* str)                                           \
   {                                                                     \
-    typedef struct {TYPE enum_value ; char *string ;} TYPE##Enum2StrStruct ; \
+    typedef struct {TYPE enum_value ; const char *string ;} TYPE##Enum2StrStruct ; \
                                                                         \
     TYPE result = INVALID_VALUE ;                                       \
     TYPE##Enum2StrStruct values[] =                                     \
