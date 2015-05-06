@@ -162,7 +162,7 @@ typedef struct
 
     struct{
       int linewidth;
-      char *direction;
+      const char *direction;
     }triangle;                  /* a triangle pointing N,S,E or W */
 
   }shape;

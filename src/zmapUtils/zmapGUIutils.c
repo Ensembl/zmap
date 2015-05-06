@@ -1256,7 +1256,7 @@ gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, const ch
  *
  * @return  char *, users text or NULL if no text.
  */
-GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text,
+GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, const char *msg, gboolean hide_text,
   char **text_out)
 {
   GtkResponseType result = GTK_RESPONSE_CANCEL ;
@@ -2249,7 +2249,7 @@ static void printMessage(ZMapMsgType msg_type, char *message)
  *
  * returns TRUE if user data not required or if user data returned, FALSE otherwise.
  *  */
-static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
+static GtkResponseType messageFull(GtkWindow *parent, char *title_in, const char *msg,
                                    gboolean modal, int display_timeout,
                                    const char *first_button, const char *second_button, const char *third_button,
                                    ZMapMsgType msg_type, GtkJustification justify,
