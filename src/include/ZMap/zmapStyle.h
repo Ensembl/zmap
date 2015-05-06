@@ -1057,7 +1057,7 @@ ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleMode2ShortText, ZMapStyleMode) ;
 
 
 
-ZMapFeatureTypeStyle zMapStyleCreate(char *name, char *description) ;
+ZMapFeatureTypeStyle zMapStyleCreate(char *name, const char *description) ;
 ZMapFeatureTypeStyle zMapStyleCreateV(guint n_parameters, GParameter *parameters) ;
 void zMapStyleDestroy(ZMapFeatureTypeStyle style);
 
@@ -1082,8 +1082,8 @@ gboolean zMapStyleMergeProperty(ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle 
 gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name) ;
 gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style) ;
 
-ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id);
-ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *config_file, char *name);
+ZMapStyleGlyphShape zMapStyleGetGlyphShape(const gchar *shape, GQuark id);
+ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *config_file, const char *name);
 gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style) ;
 
 

@@ -90,7 +90,7 @@ static gboolean parseColours(ZMapFeatureTypeStyle style, guint param_id, GValue 
 //static gboolean isColourSet(ZMapFeatureTypeStyle style, int param_id, char *subpart) ;
 static gboolean validSplit(char **strings,
                      ZMapStyleColourType *type_out, ZMapStyleDrawContext *context_out, char **colour_out) ;
-static void formatColours(GString *colour_string, char *type, ZMapStyleColour colour) ;
+static void formatColours(GString *colour_string, const char *type, ZMapStyleColour colour) ;
 
 
 
@@ -593,7 +593,7 @@ GType zMapFeatureTypeStyleGetType(void)
 }
 
 
-ZMapFeatureTypeStyle zMapStyleCreate(char *name, char *description)
+ZMapFeatureTypeStyle zMapStyleCreate(char *name, const char *description)
 {
   ZMapFeatureTypeStyle style = NULL ;
   GParameter params[2] ;
@@ -1721,8 +1721,7 @@ static gboolean styleMergeParam( ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle
 }
 
 
-
-static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, const char *fill)
+static gboolean setColours(ZMapStyleColour colour, const char *border, const char *draw, const char *fill)
 {
   gboolean status = FALSE ;
   ZMapStyleColourStruct tmp_colour = {{0}} ;
@@ -1762,9 +1761,8 @@ static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, con
 }
 
 
-
 // store coordinate pairs in the struct and work out type
-ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
+ZMapStyleGlyphShape zMapStyleGetGlyphShape(const gchar *shape, GQuark id)
 {
   ZMapStyleGlyphShape glyph_shape = NULL ;
   gchar **spec = NULL, **segments = NULL, **s = NULL, **points = NULL, **p = NULL, *q = NULL ;
@@ -1913,7 +1911,7 @@ ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
 // allow old ACEDB interface to use new configurable glyph styles
 // we invent two styles pre3viosuly hard coded in bits
 // only do this if [ZMap] legacy_styles=TRUE
-ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *config_file, char *name)
+ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *config_file, const char *name)
 {
   static ZMapFeatureTypeStyle s_homology = NULL;
   static ZMapFeatureTypeStyle s_3frame = NULL;
@@ -2928,22 +2926,22 @@ static gboolean validSplit(char **strings,
 
 
 /* Format colours into standard triplet format. */
-static void formatColours(GString *colour_string, char *type, ZMapStyleColour colour)
+static void formatColours(GString *colour_string, const char *type, ZMapStyleColour colour)
 {
   if (colour->fields_set.fill)
     g_string_append_printf(colour_string, "%s %s #%04X%04X%04X ; ",
-   type, "fill",
-   colour->fill.red, colour->fill.green, colour->fill.blue) ;
+                           type, "fill",
+                           colour->fill.red, colour->fill.green, colour->fill.blue) ;
 
   if (colour->fields_set.draw)
     g_string_append_printf(colour_string, "%s %s #%04X%04X%04X ; ",
-   type, "draw",
-   colour->draw.red, colour->draw.green, colour->draw.blue) ;
+                           type, "draw",
+                           colour->draw.red, colour->draw.green, colour->draw.blue) ;
 
   if (colour->fields_set.border)
     g_string_append_printf(colour_string, "%s %s #%04X%04X%04X ; ",
-   type, "border",
-   colour->border.red, colour->border.green, colour->border.blue) ;
+                           type, "border",
+                           colour->border.red, colour->border.green, colour->border.blue) ;
 
   return ;
 }

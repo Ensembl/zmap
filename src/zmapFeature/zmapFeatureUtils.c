@@ -597,7 +597,7 @@ gboolean zMapFeatureBlockDecodeID(GQuark id,
 {
   gboolean valid = FALSE ;
   char *block_id ;
-  char *format_str = "%d.%d.%1c_%d.%d.%1c" ;
+  const char *format_str = "%d.%d.%1c_%d.%d.%1c" ;
   char ref_strand_str[2] = {'\0'}, non_strand_str[2] = {'\0'} ;
   int fields ;
   enum {EXPECTED_FIELDS = 6} ;
