@@ -184,7 +184,8 @@ void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas ruler)
 /* I don't like the dependence on window here! */
 /* MH17 NOTE this is called from zmapWindow.c */
 /* MH17 NOTE start and end are the foo canvas scroll region */
-gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas ruler, int start, int end,int seq_start,int seq_end)
+gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas ruler, int start, int end,int seq_start,int seq_end,
+                                   int true_start, int true_end)
 {
   gboolean drawn = FALSE;
   double zoom_factor = 0.0;
@@ -219,7 +220,9 @@ gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas ruler, int start, int e
 
       width = zMapWindowDrawScaleBar(ruler->scrolled_window,
                                      FOO_CANVAS_GROUP(ruler->scaleParent),
-                                     start, end, seq_start, seq_end, zoom_factor, ruler->revcomped, zoomed) ;
+                                     start, end, seq_start, seq_end,
+                                     true_start, true_end,
+                                     zoom_factor, ruler->revcomped, zoomed) ;
 
       drawn = TRUE;
 
