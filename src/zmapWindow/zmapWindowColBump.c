@@ -182,7 +182,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mod
 
   g_return_if_fail(ZMAP_IS_CONTAINER_FEATURESET(column_item));
 
-  window = g_object_get_data(G_OBJECT(column_item), ZMAP_WINDOW_POINTER) ;
+  window = (ZMapWindow)g_object_get_data(G_OBJECT(column_item), ZMAP_WINDOW_POINTER) ;
   if (!window)
     return ;
 
@@ -240,7 +240,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
   if (container)
     {
-      window = g_object_get_data(G_OBJECT(container), ZMAP_WINDOW_POINTER) ;
+      window = (ZMapWindow)g_object_get_data(G_OBJECT(container), ZMAP_WINDOW_POINTER) ;
     }
 
   if (window)
@@ -481,8 +481,8 @@ static gboolean containerBumpStyle(ZMapWindow window,
 
       if(bump)
         col_style
-          = g_hash_table_lookup(window->context_map->styles,
-                                GUINT_TO_POINTER(zMapStyleCreateID( (char *)g_quark_to_string(col_style->bump_style))));
+          = (ZMapFeatureTypeStyle)g_hash_table_lookup(window->context_map->styles,
+                                                      GUINT_TO_POINTER(zMapStyleCreateID( (char *)g_quark_to_string(col_style->bump_style))));
 
 
       /* Umm....hateful coding, truly hateful....Ed */
@@ -511,8 +511,8 @@ static gboolean containerBumpStyle(ZMapWindow window,
           if(bump)
             {
               bump_style
-                = g_hash_table_lookup(window->context_map->styles,
-                                      GUINT_TO_POINTER(zMapStyleCreateID((char *)g_quark_to_string(style->bump_style))));
+                = (ZMapFeatureTypeStyle)g_hash_table_lookup(window->context_map->styles,
+                                                            GUINT_TO_POINTER(zMapStyleCreateID((char *)g_quark_to_string(style->bump_style))));
               if(!bump_style)
                 bump_style = col_style;
             }

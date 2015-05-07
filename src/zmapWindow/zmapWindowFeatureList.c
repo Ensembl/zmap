@@ -187,7 +187,7 @@ static void zmap_windowfeaturelist_class_init(ZMapWindowFeatureListClass zmap_tv
 
   gobject_class  = (GObjectClass *)zmap_tv_class;
   parent_class   = ZMAP_GUITREEVIEW_CLASS(zmap_tv_class);
-  parent_class_G = g_type_class_peek_parent(zmap_tv_class);
+  parent_class_G = (ZMapGUITreeViewClass)g_type_class_peek_parent(zmap_tv_class);
 
   gobject_class->set_property = zmap_windowfeaturelist_set_property;
   gobject_class->get_property = zmap_windowfeaturelist_get_property;
@@ -238,7 +238,7 @@ static void zmap_windowfeaturelist_set_property(GObject *gobject,
       {
       ZMapStyleMode feature_type;
       /* Should be g_value_get_enum(value) */
-      feature_type = g_value_get_uint(value);
+      feature_type = (ZMapStyleMode)g_value_get_uint(value);
 
       if(zmap_tv->feature_type == ZMAPSTYLE_MODE_INVALID &&
          feature_type != ZMAPSTYLE_MODE_INVALID)
@@ -875,41 +875,41 @@ static void feature_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   /* N.B. Order here creates order of columns */
 
   /* Feature Name */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_NAME_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_NAME_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_name_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_name_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Feature Start */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_START_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_START_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, feature_start_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_start_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Feature End */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_END_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_END_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, feature_end_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_end_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Feature Strand */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_STRAND_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_STRAND_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_strand_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_strand_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   if(frame_and_phase)
     {
       /* Feature Frame */
-      titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_FRAME_COLUMN_NAME);
+      titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_FRAME_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs, feature_frame_to_value);
+      funcs  = g_list_append(funcs, (void *)feature_frame_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
       /* Feature Phase */
-      titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_PHASE_COLUMN_NAME);
+      titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_PHASE_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs, feature_phase_to_value);
+      funcs  = g_list_append(funcs, (void *)feature_phase_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
     }
 
@@ -920,27 +920,27 @@ static void feature_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   else if(feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       /* Feature Query Start */
-      titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_QSTART_COLUMN_NAME);
+      titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_QSTART_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-      funcs  = g_list_append(funcs, feature_qstart_to_value);
+      funcs  = g_list_append(funcs, (void *)feature_qstart_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
       /* Feature Query End */
-      titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_QEND_COLUMN_NAME);
+      titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_QEND_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-      funcs  = g_list_append(funcs, feature_qend_to_value);
+      funcs  = g_list_append(funcs, (void *)feature_qend_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
       /* Feature Query Strand */
-      titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_QSTRAND_COLUMN_NAME);
+      titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_QSTRAND_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs, feature_qstrand_to_value);
+      funcs  = g_list_append(funcs, (void *)feature_qstrand_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
       /* Feature Score */
-      titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_SCORE_COLUMN_NAME);
+      titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_SCORE_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_FLOAT));
-      funcs  = g_list_append(funcs, feature_score_to_value);
+      funcs  = g_list_append(funcs, (void *)feature_score_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
     }
   else if(feature_type == ZMAPSTYLE_MODE_BASIC)
@@ -949,23 +949,23 @@ static void feature_type_get_titles_types_funcs(ZMapStyleMode feature_type,
     }
 
   /* Feature's feature set  */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_SET_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_SET_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_featureset_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_featureset_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Feature's Type */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_SOURCE_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_SOURCE_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_source_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_source_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
 
   /* Feature pointer */
   /* Using ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME make g_object_get() work :) */
-  titles = g_list_append(titles, ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_POINTER));
-  funcs  = g_list_append(funcs, feature_pointer_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_pointer_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
 
@@ -1249,7 +1249,7 @@ static void zmap_windowfeatureitemlist_class_init(ZMapWindowFeatureItemListClass
 
   gobject_class = (GObjectClass *)zmap_tv_class;
   parent_class  = ZMAP_GUITREEVIEW_CLASS(zmap_tv_class);
-  feature_item_parent_class_G = g_type_class_peek_parent(zmap_tv_class);
+  feature_item_parent_class_G = (ZMapGUITreeViewClass)g_type_class_peek_parent(zmap_tv_class);
 
   gobject_class->set_property = zmap_windowfeatureitemlist_set_property;
   gobject_class->get_property = zmap_windowfeatureitemlist_get_property;
@@ -1314,7 +1314,7 @@ static void zmap_windowfeatureitemlist_set_property(GObject *gobject,
       {
       ZMapStyleMode feature_type;
       /* Should be g_value_get_enum(value) */
-      feature_type = g_value_get_uint(value);
+      feature_type = (ZMapStyleMode)g_value_get_uint(value);
 
       if(zmap_tv->feature_type == ZMAPSTYLE_MODE_INVALID &&
          feature_type != ZMAPSTYLE_MODE_INVALID)
@@ -1501,41 +1501,41 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   /* N.B. Order here dictates order of columns */
 
   /* Feature Name */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_NAME_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_NAME_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_name_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_name_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Feature Start */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_START_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_START_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, feature_start_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_start_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Feature End */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_END_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_END_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, feature_end_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_end_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Feature Strand */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_STRAND_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_STRAND_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_strand_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_strand_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   if(frame_and_phase)
     {
       /* Feature Frame */
-      titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_FRAME_COLUMN_NAME);
+      titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_FRAME_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs, feature_frame_to_value);
+      funcs  = g_list_append(funcs, (void *)feature_frame_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
       /* Feature Phase */
-      titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_PHASE_COLUMN_NAME);
+      titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_PHASE_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs, feature_phase_to_value);
+      funcs  = g_list_append(funcs, (void *)feature_phase_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
     }
 
@@ -1546,27 +1546,27 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   else if(feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       /* Feature Query Start */
-      titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_QSTART_COLUMN_NAME);
+      titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_QSTART_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-      funcs  = g_list_append(funcs, feature_qstart_to_value);
+      funcs  = g_list_append(funcs, (void *)feature_qstart_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
       /* Feature Query End */
-      titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_QEND_COLUMN_NAME);
+      titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_QEND_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-      funcs  = g_list_append(funcs, feature_qend_to_value);
+      funcs  = g_list_append(funcs, (void *)feature_qend_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
       /* Feature Query Strand */
-      titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_QSTRAND_COLUMN_NAME);
+      titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_QSTRAND_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs, feature_qstrand_to_value);
+      funcs  = g_list_append(funcs, (void *)feature_qstrand_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
       /* Feature Score */
-      titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_SCORE_COLUMN_NAME);
+      titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_SCORE_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_FLOAT));
-      funcs  = g_list_append(funcs, feature_score_to_value);
+      funcs  = g_list_append(funcs, (void *)feature_score_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
     }
   else if(feature_type == ZMAPSTYLE_MODE_BASIC)
@@ -1575,70 +1575,70 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
     }
 
   /* Feature's feature set  */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_SET_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_SET_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_featureset_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_featureset_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Feature's Type */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_SOURCE_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_SOURCE_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_source_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_source_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Columns not visible */
 
   /* These should be enums, not uints */
   /* FeatureSet Data Strand */
-  titles = g_list_append(titles, ZMAP_WFL_SETDATASTRAND_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WFL_SETDATASTRAND_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_UINT));
-  funcs  = g_list_append(funcs, feature_item_data_strand_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_item_data_strand_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
   /* FeatureSet Data Frame*/
-  titles = g_list_append(titles, ZMAP_WFL_SETDATAFRAME_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WFL_SETDATAFRAME_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_UINT));
-  funcs  = g_list_append(funcs, feature_item_data_frame_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_item_data_frame_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
   /* Feature pointer */
   /* Using ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME make g_object_get() work :) */
-  titles = g_list_append(titles, ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_POINTER));
-  funcs  = g_list_append(funcs, feature_pointer_serialised_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_pointer_serialised_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
 
   /* ONLY THIS BIT FOR DEVELOPERS ??????? */
   if(feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
-      titles = g_list_append(titles, "-bump-hidden-");
+      titles = g_list_append(titles, (void *)"-bump-hidden-");
       types  = g_list_append(types,  GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs,  featureItem2BumpHidden) ;
+      funcs  = g_list_append(funcs,  (void *)featureItem2BumpHidden) ;
       flags  = g_list_append(flags,  GINT_TO_POINTER(flags_set));
 
-      titles = g_list_append(titles, "-user-hidden-");
+      titles = g_list_append(titles, (void *)"-user-hidden-");
       types  = g_list_append(types,  GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs,  featureItem2UserHidden) ;
+      funcs  = g_list_append(funcs,  (void *)featureItem2UserHidden) ;
       flags  = g_list_append(flags,  GINT_TO_POINTER(flags_set));
 
-      titles = g_list_append(titles, "-is-visible-");
+      titles = g_list_append(titles, (void *)"-is-visible-");
       types  = g_list_append(types,  GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs,  featureItem2IsVisible) ;
+      funcs  = g_list_append(funcs,  (void *)featureItem2IsVisible) ;
       flags  = g_list_append(flags,  GINT_TO_POINTER(flags_set));
     }
 
 
   /* FeatureSet Data Frame*/
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_STYLE_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_STYLE_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_style_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_style_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* feature->mode ... */
-  titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_TYPE_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWFEATURELIST_TYPE_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_type_to_value);
+  funcs  = g_list_append(funcs, (void *)feature_type_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
 

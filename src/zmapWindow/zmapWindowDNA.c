@@ -89,11 +89,11 @@ static void nSpinCB(GtkSpinButton *spinbutton, gpointer user_data) ;
 static GtkWidget *makeMenuBar(DNASearchData search_data) ;
 
 static GtkWidget *makeSpinPanel(DNASearchData search_data,
-char *title,
-char *strand_title,
-char *frame_title,
-char *spin_label, int min, int max, int init, GtkSignalFunc func,
-char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2) ;
+                                const char *title,
+                                const char *strand_title,
+                                const char *frame_title,
+                                const char *spin_label, int min, int max, int init, GtkSignalFunc func,
+                                const char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2) ;
 
 static void remapCoords(gpointer data, gpointer user_data) ;
 static void printCoords(gpointer data, gpointer user_data) ;
@@ -107,10 +107,10 @@ static void setColoursInStyle(DNASearchData search_data, ZMapFeatureTypeStyle st
 
 
 static GtkItemFactoryEntry menu_items_G[] = {
-  { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
-  { "/File/Close",      "<control>W",  requestDestroyCB,    0, NULL,            NULL},
-  { "/_Help",           NULL,          NULL,          0, "<LastBranch>",  NULL},
-  { "/Help/Overview",   NULL,          helpCB,      0, NULL,            NULL}
+  { (gchar *)"/_File",           NULL,          NULL,          0, (gchar *)"<Branch>",      NULL},
+  { (gchar *)"/File/Close",      (gchar *)"<control>W",  (GtkItemFactoryCallback)requestDestroyCB,    0, NULL,            NULL},
+  { (gchar *)"/_Help",           NULL,          NULL,          0, (gchar *)"<LastBranch>",  NULL},
+  { (gchar *)"/Help/Overview",   NULL,          (GtkItemFactoryCallback)helpCB,      0, NULL,            NULL}
 };
 
 static gboolean window_dna_debug_G = FALSE;
@@ -143,7 +143,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
   ZMapFeatureAny feature_any = NULL ;
   ZMapFeatureBlock block = NULL ;
   int max_errors, max_Ns ;
-  char *text, *frame_label, *frame_text ;
+  const char *text, *frame_label, *frame_text ;
   int screen_search_end, screen_search_start;
   gboolean proceed = TRUE;
 
@@ -417,8 +417,8 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
   separator_featureset->style = style ;
 
   /* set up featureset2_column and anything else needed */
-  f2c = g_hash_table_lookup(window->context_map->featureset_2_column,
-                            GUINT_TO_POINTER(separator_featureset->unique_id));
+  f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(window->context_map->featureset_2_column,
+                                                GUINT_TO_POINTER(separator_featureset->unique_id));
   if(!f2c)/* these just accumulate  and should be removed from the hash table on clear */
     {
       f2c = g_new0(ZMapFeatureSetDescStruct,1);
@@ -431,8 +431,8 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
                           GUINT_TO_POINTER(separator_featureset->unique_id), f2c);
     }
 
-  src = g_hash_table_lookup(window->context_map->source_2_sourcedata,
-                            GUINT_TO_POINTER(separator_featureset->unique_id));
+  src = (ZMapFeatureSource)g_hash_table_lookup(window->context_map->source_2_sourcedata,
+                                               GUINT_TO_POINTER(separator_featureset->unique_id));
   if(!src)
     {
       src = g_new0(ZMapFeatureSourceStruct,1);
@@ -447,14 +447,14 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
     }
 
 
-  list = g_hash_table_lookup(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
+  list = (GList *)g_hash_table_lookup(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
   if(!list)
     {
       list = g_list_prepend(list,GUINT_TO_POINTER(src->style_id));
       g_hash_table_insert(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), list);
     }
 
-  column = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+  column = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
   if(!column)
     {
       column = g_new0(ZMapFeatureColumnStruct,1);
@@ -502,11 +502,11 @@ static GtkWidget *makeMenuBar(DNASearchData search_data)
 
 
 static GtkWidget *makeSpinPanel(DNASearchData search_data,
-                                char *title,
-                                char *combo_label,
-                                char *combo_label2,
-                                char *spin_label, int min, int max, int init, GtkSignalFunc func,
-                                char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2)
+                                const char *title,
+                                const char *combo_label,
+                                const char *combo_label2,
+                                const char *spin_label, int min, int max, int init, GtkSignalFunc func,
+                                const char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2)
 {
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *label, *error_spinbox, *n_spinbox ;
@@ -898,8 +898,8 @@ static void keepHitsCB(GtkToggleButton *toggle_button, gpointer user_data)
 /* This is not the way to do help, we should really used html and have a set of help files. */
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
 {
-  char *title = "DNA Search Window" ;
-  char *help_text =
+  const char *title = "DNA Search Window" ;
+  const char *help_text =
     "The ZMap DNA Search Window allows you to search for DNA. You can cut/paste DNA into the\n"
     "DNA text field or type it in. You can specify the maximum number of mismatches\n"
     "and the maximum number of ambiguous/unknown bases acceptable in the match.\n" ;
@@ -1035,7 +1035,7 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
   ZMapFeatureSet feature_set;
   ZMapFeatureTypeStyle style;
   ZMapFeature current_feature;
-  char *sequence = NULL, *ontology = "";
+  const char *sequence = NULL, *ontology = "";
   double score = 100.0;
   int start, end;
   gboolean has_score = TRUE;
@@ -1050,13 +1050,13 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
     feature_set->style = style;
 
   current_feature = zMapFeatureCreateFromStandardData(current_match->match,
-      sequence,
-      ontology,
-      ZMAPSTYLE_MODE_BASIC,
-      &feature_set->style,
-      start, end,
-      has_score, score,
-      current_match->strand) ;
+                                                      sequence,
+                                                      ontology,
+                                                      ZMAPSTYLE_MODE_BASIC,
+                                                      &feature_set->style,
+                                                      start, end,
+                                                      has_score, score,
+                                                      current_match->strand) ;
 
   zMapFeatureSetAddFeature(feature_set, current_feature);
 
@@ -1097,18 +1097,22 @@ static ZMapFeatureContextExecuteStatus undisplaySearchFeatureSetsCB(GQuark key,
       break;
 
     case ZMAPFEATURE_STRUCT_FEATURESET:
-      set = (ZMapFeatureSet) feature_any;
+      {
+        FooCanvasItem *foo ;
 
-      FooCanvasItem *foo = zmapWindowFToIFindSetItem(stuff->window,stuff->window->context_to_item,
-                                                     set,ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
+        set = (ZMapFeatureSet)feature_any;
 
-      zmapWindowFToIRemoveSet(stuff->window->context_to_item,
-                              stuff->align_id, stuff->block_id, set->unique_id,
-                              ZMAPSTRAND_NONE, ZMAPFRAME_NONE, TRUE);
+        foo = zmapWindowFToIFindSetItem(stuff->window,stuff->window->context_to_item,
+                                        set,ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
 
-      zMapWindowFeaturesetItemRemoveSet(foo, set, FALSE);
+        zmapWindowFToIRemoveSet(stuff->window->context_to_item,
+                                stuff->align_id, stuff->block_id, set->unique_id,
+                                ZMAPSTRAND_NONE, ZMAPFRAME_NONE, TRUE);
 
-      break;
+        zMapWindowFeaturesetItemRemoveSet(foo, set, FALSE);
+
+        break;
+      }
 
     default:
       break;
@@ -1237,10 +1241,10 @@ static void setColoursInStyle(DNASearchData search_data, ZMapFeatureTypeStyle st
   char *forward_colour_spec, *reverse_colour_spec ;
 
   forward_colour_spec = zMapStyleMakeColourString(search_data->forward_colour_str, "black", NULL,
-  search_data->forward_colour_str, "black", NULL) ;
+                                                  search_data->forward_colour_str, "black", NULL) ;
 
   reverse_colour_spec = zMapStyleMakeColourString(search_data->reverse_colour_str, "black", NULL,
-  search_data->reverse_colour_str, "black", NULL) ;
+                                                  search_data->reverse_colour_str, "black", NULL) ;
 
   g_object_set(G_OBJECT(style),
                ZMAPSTYLE_PROPERTY_COLOURS, forward_colour_spec,

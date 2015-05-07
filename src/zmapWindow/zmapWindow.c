@@ -316,7 +316,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
                                                            char **err_out) ;
 static void invokeVisibilityChange(ZMapWindow window) ;
 
-static void foo_bug_print(void *key, char *where) ;
+static void foo_bug_print(void *key, const char *where) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printWindowSizeDebug(char *prefix, ZMapWindow window,
@@ -1551,7 +1551,7 @@ void zmapWindowGetScrollableArea(ZMapWindow window,
 
 void zmapWindowSetScrollableArea(ZMapWindow window,
                                  double *x1_inout, double *y1_inout,
-                                 double *x2_inout, double *y2_inout, char *where)
+                                 double *x2_inout, double *y2_inout, const char *where)
 {
   ZMapWindowVisibilityChangeStruct vis_change ;
   ZMapGUIClampType clamp = ZMAPGUI_CLAMP_INIT;
@@ -1680,7 +1680,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   ZMapWindowCanvasItem top_canvas_item;
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
-  ZMapWindowSelectStruct select = {0} ;
+  ZMapWindowSelectStruct select = {(ZMapWindowSelectType)0} ;
   FooCanvasGroup *feature_group;
   ZMapStrand query_strand = ZMAPSTRAND_NONE;
   char *feature_term, *sub_feature_term;
@@ -1732,7 +1732,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   if (feature_arg->mode == ZMAPSTYLE_MODE_SEQUENCE)
     {
       /* sequence like feature. */
-      char *seq_term ;
+      const char *seq_term ;
 
 
       feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(item)) ;
@@ -1839,13 +1839,13 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
             select.feature_desc.feature_set =
               g_strdup(g_quark_to_string(feature_set->original_id)) ;
 
-            gffset = g_hash_table_lookup(window->context_map->featureset_2_column,
+            gffset = (ZMapFeatureSetDesc)g_hash_table_lookup(window->context_map->featureset_2_column,
                                          GUINT_TO_POINTER(feature_set->unique_id));
             if(gffset)
               {
                 // got the featureset_2_column mapping, look up the column
-                gffset  = g_hash_table_lookup(window->context_map->columns,
-                                              GUINT_TO_POINTER(gffset->column_id));
+                gffset  = (ZMapFeatureSetDesc)g_hash_table_lookup(window->context_map->columns,
+                                                                  GUINT_TO_POINTER(gffset->column_id));
                 if(gffset)
                   {
                     select.feature_desc.feature_set =
@@ -2199,7 +2199,7 @@ or when setting the mark
 
 
 /* One of Malcolm's routines...breaking our naming conventions completely.... */
-void foo_bug_set(void *key,char *id)
+void foo_bug_set(void *key, const char *id)
 {
 #if 0
   struct fooBug * fb = foo_wins + n_foo_wins++;
@@ -2238,7 +2238,7 @@ static void panedResizeCB(gpointer data, gpointer userdata)
 
 
 
-static void foo_bug_print(void *key, char *where)
+static void foo_bug_print(void *key, const char *where)
 {
   int i;
   struct fooBug * fb;
@@ -3178,7 +3178,11 @@ static void sendClientEvent(ZMapWindow window, FeatureSetsState feature_sets, gp
   {
     void **dummy ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     dummy = (void *)&window_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    dummy = (void **)&window_data ;
     memmove(&(event.data.b[0]), dummy, sizeof(void *)) ;
   }
 
@@ -3258,7 +3262,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       /* Retrieve the data pointer from the event struct */
       memmove(&window_data, &(event->data.b[0]), sizeof(void *)) ;
       window = window_data->window ;
-      feature_sets = window_data->data ;
+      feature_sets = (FeatureSetsState)window_data->data ;
 
       zmapWindowBusy(window, TRUE) ;
 
@@ -3299,7 +3303,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
             {
               GtkWidget *widget = NULL ;
 
-              widget = g_ptr_array_index(window->featureListWindows, i) ;
+              widget = (GtkWidget *)g_ptr_array_index(window->featureListWindows, i) ;
 
               /* zmapWindowListWindowReread(widget) ;*/
               gtk_widget_destroy(GTK_WIDGET(widget));
@@ -3313,7 +3317,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 
       /* adding G_SIGNAL_MATCH_DETAIL to mask results in failure here, despite using the same detail! */
       signal_detail = g_quark_from_string("event");
-      signal_match_mask = (G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA);
+      signal_match_mask = (GSignalMatchType)(G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA);
       /* We rely on function and data only :( */
       /* We should probably be using signal_id instead! */
       if(g_signal_handler_find(GTK_OBJECT(window->canvas),
@@ -3321,7 +3325,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
                                0,                 /* signal id. */
                                signal_detail,     /* detail */
                                NULL,              /* closure */
-                               GTK_SIGNAL_FUNC(canvasWindowEventCB), /* handler */
+                               (void *)canvasWindowEventCB, /* handler */
                                window             /* user data */
                        ) == 0)
         {
@@ -3527,9 +3531,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
     control_mask = GDK_CONTROL_MASK,
     alt_mask = GDK_MOD1_MASK,
     meta_mask = GDK_META_MASK,
-    unwanted_masks = (GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
-                      | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
-                      | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
+    unwanted_masks = (GdkModifierType)(GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
+                                       | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
+                                       | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
     locks_mask ;
 
   zMapReturnValIfFail(event, event_handled) ;
@@ -3559,12 +3563,12 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
        * This includes the shift lock and num lock. Depending on the setup of X these might be mapped
        * to other things which is why MODs 2-5 are included This in theory should include the new (since 2.10)
        * GDK_SUPER_MASK, GDK_HYPER_MASK and GDK_META_MASK */
-      if ((locks_mask = (but_event->state & unwanted_masks)))
+      if ((locks_mask = (GdkModifierType)(but_event->state & unwanted_masks)))
         {
-          shift_mask |= locks_mask ;
-          control_mask |= locks_mask ;
-          alt_mask |= locks_mask ;
-          meta_mask |= locks_mask ;
+          shift_mask = (GdkModifierType)(shift_mask | locks_mask) ;
+          control_mask = (GdkModifierType)(control_mask | locks_mask) ;
+          alt_mask = (GdkModifierType)(alt_mask | locks_mask) ;
+          meta_mask = (GdkModifierType)(meta_mask | locks_mask) ;
         }
     }
 
@@ -3720,7 +3724,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                    * of them. */
                   if (window->locked_display && window->curr_locking == ZMAP_WINLOCK_VERTICAL)
                     {
-                      LockedRulerStruct locked_data = {0} ;
+                      LockedRulerStruct locked_data = {(ZMapWindowLockRulerActionType)0} ;
 
                       locked_data.action   = ZMAP_LOCKED_RULER_SETUP ;
                       locked_data.origin_y = origin_y ;
@@ -3867,7 +3871,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                  * other windows. */
                 if (locked)
                   {
-                    LockedRulerStruct locked_data = {0} ;
+                    LockedRulerStruct locked_data = {(ZMapWindowLockRulerActionType)0} ;
 
                     locked_data.action   = ZMAP_LOCKED_RULER_MOVING ;
                     locked_data.world_x  = wx ;
@@ -4113,7 +4117,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
              * other windows. */
             if (locked)
               {
-                LockedRulerStruct locked_data = {0} ;
+                LockedRulerStruct locked_data = {(ZMapWindowLockRulerActionType)0} ;
 
                 locked_data.action  = ZMAP_LOCKED_RULER_REMOVE ;
 
@@ -5199,9 +5203,9 @@ void zmapWindowFetchData(ZMapWindow window,
         {
           FooCanvasItem *block_group;
 
-          if((block_group = zmapWindowFToIFindItemFull(window,window->context_to_item,
+          if((block_group = zmapWindowFToIFindItemFull(window, window->context_to_item,
                                                        block->parent->unique_id,
-                                                       block->unique_id, 0, 0, 0, 0)))
+                                                       block->unique_id, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
             {
 
               /*! \todo #warning need to optimise requests so as to not req data we already have */
@@ -5252,29 +5256,29 @@ void zmapWindowFetchData(ZMapWindow window,
            */
           /* expand any virtual featursets into real ones */
           {
-            GList *virtual;
+            GList *virtual_featureset ;
 
-            for(virtual = fset_list;virtual; virtual = virtual->next)
+            for(virtual_featureset = fset_list ; virtual_featureset ; virtual_featureset = virtual_featureset->next)
               {
-                GList *real = g_hash_table_lookup(window->context_map->virtual_featuresets,virtual->data);
+                GList *real = (GList *)g_hash_table_lookup(window->context_map->virtual_featuresets, virtual_featureset->data) ;
 
-                if(real)
+                if (real)
                   {
                     GList *copy = g_list_copy(real);/* so it can be freed with the rest later */
-                    GList *l = virtual;
+                    GList *l = virtual_featureset;
 
-                    copy->prev = virtual->prev;
+                    copy->prev = virtual_featureset->prev;
                     if(copy->prev)
                       copy->prev->next = copy;
                     else
                       fset_list = copy;
 
                     copy = g_list_last(copy);
-                    copy->next = virtual->next;
+                    copy->next = virtual_featureset->next;
                     if(copy->next)
                       copy->next->prev = copy;
 
-                    virtual = copy;
+                    virtual_featureset = copy;
 
                     g_list_free_1(l);
                   }
@@ -5582,7 +5586,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
             if (!dna)
               {
-                char *err_msg ;
+                const char *err_msg ;
 
                 if (is_transcript && (cds && !(feature->feature.transcript.flags.cds)))
                   err_msg = "Transcript has no CDS" ;
@@ -6716,7 +6720,7 @@ static void printStats(ZMapWindowContainerGroup container_parent, FooCanvasPoint
           {
             ZMapWindowStats stats ;
 
-            stats = g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_STATS) ;
+            stats = (ZMapWindowStats)g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_STATS) ;
             zmapWindowStatsPrint(text, stats) ;
 
             break ;

@@ -239,7 +239,7 @@ char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy,
 
       column_id = zmapWindowContainerFeaturesetGetColumnUniqueId(selected_column) ;
 
-      gff = g_hash_table_lookup(window->context_map->columns, GUINT_TO_POINTER(column_id)) ;
+      gff = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns, GUINT_TO_POINTER(column_id)) ;
 
       if (gff && gff->column_desc)
         selection_txt = g_strdup(gff->column_desc) ;

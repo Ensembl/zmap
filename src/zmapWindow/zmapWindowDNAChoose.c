@@ -93,20 +93,20 @@ static void updateSpinners(DNASearchData dna_data) ;
 
 static GtkWidget *makeMenuBar(DNASearchData dna_data) ;
 static GtkWidget *makeSpinPanel(DNASearchData dna_data,
-char *title,
-char *spin_label, int min, int max, int init, GtkSignalFunc func,
-char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2,
-char *spin_label3, int min3, int max3, int init3, GtkSignalFunc func3) ;
+                                const char *title,
+                                const char *spin_label, int min, int max, int init, GtkSignalFunc func,
+                                const char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2,
+                                const char *spin_label3, int min3, int max3, int init3, GtkSignalFunc func3) ;
 static void getDNA(DNASearchData dna_data) ;
 
 
 
 
 static GtkItemFactoryEntry menu_items_G[] = {
- { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
- { "/File/Close",      "<control>W",  requestDestroyCB,    0, NULL,            NULL},
- { "/_Help",           NULL,          NULL,          0, "<LastBranch>",  NULL},
- { "/Help/Overview",   NULL,          helpCB,      0, NULL,            NULL}
+ { (gchar *)"/_File",           NULL,          NULL,          0, (gchar *)"<Branch>",      NULL},
+ { (gchar *)"/File/Close",      (gchar *)"<control>W",  (GtkItemFactoryCallback)requestDestroyCB,    0, NULL,            NULL},
+ { (gchar *)"/_Help",           NULL,          NULL,          0, (gchar *)"<LastBranch>",  NULL},
+ { (gchar *)"/Help/Overview",   NULL,          (GtkItemFactoryCallback)helpCB,      0, NULL,            NULL}
 };
 
 
@@ -114,7 +114,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
 
 /* Returns the DNA chosen by the user with the start/end coords. */
 char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWindowDialogType dialog_type,
-  int *sequence_start_out, int *sequence_end_out)
+                          int *sequence_start_out, int *sequence_end_out)
 {
   char *dna = NULL ;
   GtkWidget *toplevel, *vbox, *menubar, *topbox, *hbox, *frame, *entry, *start_end ;
@@ -126,7 +126,7 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   ZMapWindowContainerGroup container;
   FooCanvasItem *parent ;
   gint block_start, block_end ;
-  char *button_text ;
+  const char *button_text ;
   gint dialog_result ;
 
 
@@ -304,10 +304,10 @@ static GtkWidget *makeMenuBar(DNASearchData dna_data)
 
 
 static GtkWidget *makeSpinPanel(DNASearchData dna_data,
-char *title,
-char *spin_label, int min, int max, int init, GtkSignalFunc func,
-char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2,
-char *spin_label3, int min3, int max3, int init3, GtkSignalFunc func3)
+                                const  char *title,
+                                const char *spin_label, int min, int max, int init, GtkSignalFunc func,
+                                const char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2,
+                                const char *spin_label3, int min3, int max3, int init3, GtkSignalFunc func3)
 {
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *label, *start_spinbox, *end_spinbox, *flanking_spinbox ;
@@ -464,8 +464,8 @@ static void getDNA(DNASearchData dna_data)
 /* This is not the way to do help, we should really used html and have a set of help files. */
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
 {
-  char *title = "DNA Export Window" ;
-  char *help_text =
+  const char *title = "DNA Export Window" ;
+  const char *help_text =
     "The ZMap DNA Export Window allows you to export a section of DNA from a block.\n"
     "The fields are filled in with the name and start/end coords of the feature you\n"
     "selected but you can type in your own values if you wish to change any of these fields.\n"

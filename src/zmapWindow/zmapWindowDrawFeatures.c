@@ -138,7 +138,7 @@ static gboolean containerDestroyCB(FooCanvasItem *item_in_hash, gpointer data) ;
 
 static void setColours(ZMapWindow window) ;
 
-static void zmapWindowHideEmpty(ZMapWindow window, char * where);
+static void hideEmpty(ZMapWindow window, const char *where);
 static void hideEmptyCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                         ZMapContainerLevelType level, gpointer user_data);
 
@@ -412,7 +412,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zMapPrintTimer(NULL, "Finished creating canvas features") ;
 
-  zmapWindowHideEmpty(window, "draw features");
+  hideEmpty(window, "draw features");
 
   zmapWindowBusy(window, FALSE) ;
 
@@ -519,6 +519,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   CreateFeatureSetDataStruct featureset_data = {NULL} ;
   ZMapFeatureSet view_feature_set = NULL;
   gboolean bump_required = TRUE;
+  ZMapFeatureSource f_src ;
 
   /* We shouldn't be called if there is no forward _AND_ no reverse col..... */
   if (!(forward_col_wcp || reverse_col_wcp))
@@ -587,7 +588,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   featureset_data.feature_stack.filter = TRUE;
 
 
-  ZMapFeatureSource f_src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
+  f_src = (ZMapFeatureSource)g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(feature_set->unique_id));
 
   if(zMapStyleDensityStagger(feature_set->style))
     {
@@ -776,7 +777,7 @@ void zmapWindowDraw3FrameFeatures(ZMapWindow window)
    so these get created within justMergeContext() if they do not exist.
    So we have to hide empty columns after displaying all the featuresets
 */
-static void zmapWindowHideEmpty(ZMapWindow window, char *where)
+static void hideEmpty(ZMapWindow window, const char *where)
 {
   zmapWindowContainerUtilsExecute(window->feature_root_group,
                                   ZMAPCONTAINER_LEVEL_FEATURESET,
@@ -929,7 +930,7 @@ void zMapWindowDrawContext(ZMapCanvasData     canvas_data,
 
   zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_STOP,canvas_data->feature_count,"");
 
-  //  zmapWindowHideEmpty(canvas_data->window);        /* done by caller */
+  //  hideEmpty(canvas_data->window);        /* done by caller */
 
   return ;
 }
@@ -997,7 +998,7 @@ void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset)
                                     NULL, &canvas_data);
 
 #endif
-  zmapWindowHideEmpty(window, "redraw featureset");
+  hideEmpty(window, "redraw featureset");
 }
 
 
@@ -1228,11 +1229,11 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   {
     ZMapFeatureSetDesc set_data ;
 
-    set_data = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(feature_set_id));
+    set_data = (ZMapFeatureSetDesc)g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(feature_set_id));
     {
       column_id = set_data->column_id;      /* the display column as a key */
       display_id = set_data->column_ID;
-      f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(column_id));
+      f_col = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(column_id));
     }
     /* else we use the original feature_set_id
        which should never happen as the view creates a 1-1 mapping regardless */
@@ -1699,8 +1700,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
 
                 /* find_or_create_column() needs f_col->style */
-                f2c = g_hash_table_lookup(window->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
-                f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+                f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(window->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
+                f_col = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
                 if(f_col)
                   {
                     if(!f_col->style)
@@ -1905,7 +1906,7 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
   static ZMapFeatureTypeStyle style = NULL;
   GList *l;
   GQuark id;
-  char *x,*y,*name = "?";
+  const char *x,*y,*name = "?";
   ZMapWindowFeaturesetItem cfs = NULL;
   FooCanvasItem *foo = (FooCanvasItem *) container;
   FooCanvasGroup *group = (FooCanvasGroup *) container;
@@ -2092,7 +2093,7 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
         foo_canvas_item_hide((FooCanvasItem *) cfs);
     }
 
-  g_free(x);
+  g_free((char *)x) ;
 
   return((FooCanvasItem *) cfs);
 }
@@ -2188,7 +2189,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       /* for strand separator this is hard coded in zmapView/getIniData(); */
       ZMapFeatureTypeStyle s;
 
-      s = g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
+      s = (ZMapFeatureTypeStyle)g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
       if(s)
         {
           GdkColor *fill = NULL;
@@ -2566,16 +2567,16 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
           else if (event->type == GDK_BUTTON_RELEASE && but_event->button == 1)
             {
               /* Highlight a column. */
-              ZMapWindowSelectStruct select = {0} ;
+              ZMapWindowSelectStruct select = {(ZMapWindowSelectType)0} ;
               char *clipboard_text = NULL;
 
               GdkModifierType shift_mask = GDK_SHIFT_MASK,
                 control_mask = GDK_CONTROL_MASK,
                 alt_mask = GDK_MOD1_MASK,
                 meta_mask = GDK_META_MASK,
-                unwanted_masks = (GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
-                                  | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
-                                  | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
+                unwanted_masks = (GdkModifierType)(GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
+                                                   | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
+                                                   | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
                 locks_mask ;
 
               ZMapWindowDisplayStyleStruct display_style = {ZMAPWINDOW_COORD_ONE_BASED, ZMAPWINDOW_PASTE_FORMAT_OTTERLACE,
@@ -2586,12 +2587,12 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
                * This includes the shift lock and num lock. Depending on the setup of X these might be mapped
                * to other things which is why MODs 2-5 are included This in theory should include the new (since 2.10)
                * GDK_SUPER_MASK, GDK_HYPER_MASK and GDK_META_MASK */
-              if ((locks_mask = (but_event->state & unwanted_masks)))
+              if ((locks_mask = (GdkModifierType)(but_event->state & unwanted_masks)))
                 {
-                  shift_mask |= locks_mask ;
-                  control_mask |= locks_mask ;
-                  alt_mask |= locks_mask ;
-                  meta_mask |= locks_mask ;
+                  shift_mask = (GdkModifierType)(shift_mask | locks_mask) ;
+                  control_mask = (GdkModifierType)(control_mask | locks_mask) ;
+                  alt_mask = (GdkModifierType)(alt_mask | locks_mask) ;
+                  meta_mask = (GdkModifierType)(meta_mask | locks_mask) ;
                 }
 
 

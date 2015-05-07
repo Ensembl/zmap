@@ -71,7 +71,7 @@ typedef struct RemoteDataStructType
 {
   ZMapWindow window ;
 
-  char *command ;
+  const char *command ;
 
   ZMapFeatureAny feature_any ;
 
@@ -338,9 +338,9 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
   static gboolean dnd_in_progress = FALSE ;                 /* Drag and drop is in progress */
   static GtkTargetEntry targetentries[] =                   /* Set up targets for drag and drop */
     {
-      { "STRING",        0, TARGET_STRING },
-      { "text/plain",    0, TARGET_STRING },
-      { "text/uri-list", 0, TARGET_URL },
+      { (gchar *)"STRING",        0, TARGET_STRING },
+      { (gchar *)"text/plain",    0, TARGET_STRING },
+      { (gchar *)"text/uri-list", 0, TARGET_URL },
     };
   static GtkTargetList *targetlist = NULL;
 
@@ -488,7 +488,7 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
           if (zmapWindowFocusIsItemFocused(window->focus, item))
             {
               gtk_drag_begin(GTK_WIDGET(window->canvas), targetlist, 
-                             GDK_ACTION_COPY|GDK_ACTION_MOVE|GDK_ACTION_LINK,
+                             (GdkDragAction)(GDK_ACTION_COPY|GDK_ACTION_MOVE|GDK_ACTION_LINK),
                              1, (GdkEvent*)event);
               
               dnd_in_progress = TRUE ;
@@ -922,21 +922,21 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
     control_mask = GDK_CONTROL_MASK,
     alt_mask = GDK_MOD1_MASK,
     meta_mask = GDK_META_MASK,
-    unwanted_masks = (GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
-                      | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
-                      | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
+    unwanted_masks = (GdkModifierType)(GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
+                                       | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
+                                       | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
     locks_mask ;
 
   /* In order to make the modifier only checks work we need to OR in the unwanted masks that might be on.
    * This includes the shift lock and num lock. Depending on the setup of X these might be mapped
    * to other things which is why MODs 2-5 are included This in theory should include the new (since 2.10)
    * GDK_SUPER_MASK, GDK_HYPER_MASK and GDK_META_MASK */
-  if ((locks_mask = (but_event->state & unwanted_masks)))
+  if ((locks_mask = (GdkModifierType)(but_event->state & unwanted_masks)))
     {
-      shift_mask |= locks_mask ;
-      control_mask |= locks_mask ;
-      alt_mask |= locks_mask ;
-      meta_mask |= locks_mask ;
+      shift_mask = (GdkModifierType)(shift_mask | locks_mask) ;
+      control_mask = (GdkModifierType)(control_mask | locks_mask) ;
+      alt_mask = (GdkModifierType)(alt_mask | locks_mask) ;
+      meta_mask = (GdkModifierType)(meta_mask | locks_mask) ;
     }
 
   /* Button 1 and 3 are handled, 2 is left for a general handler which could be the root handler. */
@@ -1275,11 +1275,11 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item, GCallback feature
 /* Called by select and edit code to call xremote with "select", "edit" etc commands
  * for peer. The peers reply is handled in handleXRemoteReply() */
 void zmapWindowFeatureCallXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
-                                  char *command, FooCanvasItem *real_item)
+                                  const char *command, FooCanvasItem *real_item)
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapXMLUtilsEventStack xml_elements ;
-  ZMapWindowSelectStruct select = {0} ;
+  ZMapWindowSelectStruct select = {(ZMapWindowSelectType)0} ;
   ZMapFeatureSetStruct feature_set = {0} ;
   ZMapFeatureSet multi_set ;
   ZMapFeature feature_copy ;
