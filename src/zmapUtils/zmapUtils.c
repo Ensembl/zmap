@@ -817,7 +817,7 @@ void zMapLogQuark(GQuark quark)
  * @param str           String to be compared.
  * @return              TRUE if compared worked, FALSE otherwise.
  */
-gboolean zMapLogQuarkIsStr(GQuark quark, char *str)
+gboolean zMapLogQuarkIsStr(GQuark quark, const char *str)
 {
   gboolean result = FALSE ;
 

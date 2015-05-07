@@ -798,7 +798,7 @@ char *zMapGUIMakeTitleString(char *window_type, char *message)
  * message      Very short text, e.g. "Please Reply" or a feature name or....
  * returns      nothing.
  */
-void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, const char *zmap_win_text)
+void zMapGUISetToplevelTitle(GtkWidget *toplevel, const char *zmap_win_type, const char *zmap_win_text)
 {
   char *title ;
 
@@ -817,7 +817,7 @@ void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, const cha
  * message      Very short text, e.g. "Please Reply" or a feature name or....
  * returns      the toplevel widget.
  */
-GtkWidget *zMapGUIDialogNew(char *zmap_win_type, const char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data)
+GtkWidget *zMapGUIDialogNew(const char *zmap_win_type, const char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data)
 {
   GtkWidget *dialog = NULL ;
   
@@ -838,7 +838,7 @@ GtkWidget *zMapGUIDialogNew(char *zmap_win_type, const char *zmap_win_text, GCal
  * message      Very short text, e.g. "Please Reply" or a feature name or....
  * returns      the toplevel widget.
  */
-GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, const char *zmap_win_text)
+GtkWidget *zMapGUIToplevelNew(const char *zmap_win_type, const char *zmap_win_text)
 {
   GtkWidget *toplevel = NULL ;
 
@@ -1326,7 +1326,7 @@ GtkResponseType zMapGUIMsgGetSave(GtkWindow *parent, ZMapMsgType msg_type, char 
  * @return  char *, users text or NULL if no text.
  */
 GtkResponseType zMapGUIMsgGetSaveFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
-                                      char *first_button, char *second_button, char* third_button)
+                                      const char *first_button, const char *second_button, const char* third_button)
 {
   GtkResponseType result = GTK_RESPONSE_CANCEL ;
   gboolean modal = TRUE ;
@@ -1373,8 +1373,9 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
  * @param buffer_out   location to return the text buffer to.
  * @return             the GtkWidget *dialog
  */
-GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GList *text_attributes,
-       GtkTextBuffer **buffer_out)
+GtkWidget *zMapGUIShowTextFull(char *title, const char *text,
+                               gboolean edittable, GList *text_attributes,
+                               GtkTextBuffer **buffer_out)
 {
   enum {TEXT_X_BORDERS = 32, TEXT_Y_BORDERS = 50} ;
   char *full_title ;
@@ -1602,8 +1603,8 @@ static char *zmapGUIFileChooserFullStandard(GtkWidget *toplevel, const char *tit
 /* Returns path of file chosen by user which can be used directly to open the file,
  * it is the callers responsibility to free the filepath using g_free().
  * Caller can optionally specify a default directory. */
-char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_in, char *file_suffix,
-     ZMapFileChooserContentAreaCB content_func, gpointer content_data)
+char *zmapGUIFileChooserFull(GtkWidget *toplevel, const char *title, const char *directory_in, const char *file_suffix,
+                             ZMapFileChooserContentAreaCB content_func, gpointer content_data)
 {
   char *result = NULL ;
 
@@ -1617,7 +1618,7 @@ char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_i
 }
 
 
-char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, char *file_suffix)
+char *zmapGUIFileChooser(GtkWidget *toplevel,  const char *title, const char *directory_in, const char *file_suffix)
 {
   char *file = NULL;
 
@@ -1633,7 +1634,7 @@ char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, 
  * (the contents of which are overwritten).
  *
  * Returns TRUE if all worked, FALSE otherwise. */
-gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour_inout)
+gboolean zMapGUIGetColour(GtkWidget *widget, const char *colour_spec, GdkColor *colour_inout)
 {
   gboolean result = FALSE ;
   GdkColormap *colourmap ;
@@ -1669,8 +1670,8 @@ gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour
  * @return               TRUE if font found, FALSE otherwise.
  */
 gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
-  GList *pref_families, gint points, PangoWeight weight,
-  PangoFont **font_out, PangoFontDescription **desc_out)
+                                  GList *pref_families, gint points, PangoWeight weight,
+                                  PangoFont **font_out, PangoFontDescription **desc_out)
 {
   gboolean found = FALSE, found_most_preferred = FALSE ;
   PangoContext *context = NULL ;

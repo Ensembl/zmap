@@ -617,7 +617,7 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
 
 
 /* Supported values for data_format_str are: "gquark", "pointer"  */
-void zMap_g_hash_table_print(GHashTable *hash_table, char *data_format_str)
+void zMap_g_hash_table_print(GHashTable *hash_table, const char *data_format_str)
 {
   g_hash_table_foreach(hash_table, hashPrintTableCB, data_format_str) ;
 

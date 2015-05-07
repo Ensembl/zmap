@@ -314,7 +314,7 @@ gboolean zMapLogStart(GError **error)
 
 
 
-void zMapLogTime(int what, int how, long data, char *string)
+void zMapLogTime(int what, int how, long data, const char *string)
 {
   static double times[N_TIMES];
   static double when[N_TIMES];

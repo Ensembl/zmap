@@ -271,8 +271,8 @@ gboolean zMapPeptideValidate(char *peptide)
  * If include_stop is TRUE then the peptide will include an "*" to show
  * the terminating stop codon (assuming the dna ends with a stop codon).
  */
-ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
-      char *dna, ZMapGeneticCode translation_table, gboolean include_stop)
+ZMapPeptide zMapPeptideCreate(const char *sequence_name, const char *gene_name,
+                              const char *dna, ZMapGeneticCode translation_table, gboolean include_stop)
 {
   ZMapPeptide pep = NULL ;
 

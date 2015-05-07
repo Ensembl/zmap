@@ -272,7 +272,7 @@ ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean edit
  * @return                ZMapGuiNotebookChapter
  */
 ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
-    const char *chapter_name, ZMapGuiNotebookCB user_callbacks)
+                                                    const char *chapter_name, ZMapGuiNotebookCB user_callbacks)
 {
   ZMapGuiNotebookChapter chapter = NULL ;
 
@@ -336,7 +336,7 @@ ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, co
  * @param subsection_name  String displayed at top of notebook subsection.
  * @return                 ZMapGuiNotebookSubsection
  */
-ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage page, char *subsection_name)
+ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage page, const char *subsection_name)
 {
   ZMapGuiNotebookSubsection subsection = NULL ;
 
@@ -365,9 +365,9 @@ ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage pa
  * @return                ZMapGuiNotebookParagraph
  */
 ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsection subsection,
-char *paragraph_name,
-ZMapGuiNotebookParagraphDisplayType display_type,
-GList *headers, GList *types)
+                                                        const char *paragraph_name,
+                                                        ZMapGuiNotebookParagraphDisplayType display_type,
+                                                        GList *headers, GList *types)
 {
   ZMapGuiNotebookParagraph paragraph = NULL ;
 
@@ -412,10 +412,10 @@ GList *headers, GList *types)
  *
  *  */
 ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph paragraph,
-      const char *tag_value_name,
-      const char *tooltip,
-      ZMapGuiNotebookTagValueDisplayType display_type,
-      const gchar *arg_type, ...)
+                                                      const char *tag_value_name,
+                                                      const char *tooltip,
+                                                      ZMapGuiNotebookTagValueDisplayType display_type,
+                                                      const gchar *arg_type, ...)
 {
   ZMapGuiNotebookTagValue tag_value = NULL ;
   va_list args ;
