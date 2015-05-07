@@ -883,7 +883,8 @@ static void drawScale(NavigateDraw draw_data)
       zoom_factor = item->canvas->pixels_per_unit_y;
 
       zMapWindowDrawScaleBar(zmapWindowScaleCanvasGetScrolledWindow(draw_data->navigate->current_window->ruler),
-                             features, min, max, min, max, zoom_factor, draw_data->navigate->is_reversed, FALSE);
+                             features, min, max, min, max, min, max,
+                             zoom_factor, draw_data->navigate->is_reversed, FALSE);
     }
 
   return ;

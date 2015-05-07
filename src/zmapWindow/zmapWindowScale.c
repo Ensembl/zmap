@@ -376,6 +376,7 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
                               FooCanvasGroup *group,
                               int scroll_start, int scroll_end,
                               int seq_start, int seq_end,
+                              int true_start, int true_end,
                               double zoom_factor, gboolean revcomped, gboolean zoomed)
 {
   int seq_len;        /* # bases in the scroll region */

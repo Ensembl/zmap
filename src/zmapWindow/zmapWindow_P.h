@@ -1650,6 +1650,7 @@ void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window, FooCanvasGroup *group,
 			      int scroll_start, int scroll_end,
 			      int seq_start, int seq_end,
+         int true_start, int true_end,
 			      double zoom_factor, gboolean revcomped, gboolean zoomed);
 
 double zMapWindowScaleCanvasGetWidth(ZMapWindowScaleCanvas ruler);
@@ -1839,7 +1840,8 @@ void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas obj, double y1, double 
 void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas obj);
 void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas obj, gboolean revcomped) ;
 void zmapWindowScaleCanvasSetSpan(ZMapWindowScaleCanvas ruler, int start,int end);
-gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, int x, int y,int seq_start, int seq_end);
+gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, int x, int y,int seq_start, int seq_end,
+                                   int true_start, int true_end);
 void zmapWindowScaleCanvasSetVAdjustment(ZMapWindowScaleCanvas obj, GtkAdjustment *vadjustment);
 void zmapWindowScaleCanvasSetPixelsPerUnit(ZMapWindowScaleCanvas obj, double x, double y);
 void zmapWindowScaleCanvasSetLineHeight(ZMapWindowScaleCanvas obj, double border);
