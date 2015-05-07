@@ -343,10 +343,10 @@ gboolean zMapConfigIniContextGetBoolean(ZMapConfigIniContext context,
 }
 
 gboolean zMapConfigIniContextGetString(ZMapConfigIniContext context,
-       char *stanza_name,
-       char *stanza_type,
-       char *key_name,
-       char **value)
+                                       const char *stanza_name,
+                                       const char *stanza_type,
+                                       const char *key_name,
+                                       char **value)
 {
   GValue *value_out = NULL;
   gboolean success = FALSE;
