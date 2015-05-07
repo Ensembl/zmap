@@ -154,7 +154,8 @@ char *zMapFASTATitle(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_t
  * supplied sequence and adds to it....so not good for dumping a huge dna
  * sequence to file, use zMapFASTAFile() instead.
  */
-char *zMapFASTAString(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_type, char *gene_name,
+char *zMapFASTAString(ZMapFASTASeqType seq_type, const char *seq_name,
+                      const char *molecule_type, char *gene_name,
 		      int sequence_length, char *sequence)
 {
   char *fasta_string = NULL ;
