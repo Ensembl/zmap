@@ -212,7 +212,7 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window)
 
 
   if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(window->toplevel),
-                               g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY),
+                               g_list_append(NULL, (void *)ZMAP_ZOOM_FONT_FAMILY),
                                ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
                                &(tmp_font), &(tmp_font_desc)))
     {

@@ -88,7 +88,7 @@ typedef struct
 
 
 
-static GList *getPrinters(char *sys_print_file, GError **print_file_err_inout) ;
+static GList *getPrinters(const char *sys_print_file, GError **print_file_err_inout) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void  printNames(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -110,7 +110,7 @@ static gboolean getConfiguration(PrintCBData print_cb) ;
 gboolean zMapWindowPrint(ZMapWindow window)
 {
   gboolean result = TRUE ;
-  char *sys_printers = SYSTEM_PRINT_FILE ;                    /* May require alternative names for porting. */
+  const char *sys_printers = SYSTEM_PRINT_FILE ;                    /* May require alternative names for porting. */
   PrintCBDataStruct print_cb = {NULL} ;
 
 
@@ -391,7 +391,7 @@ static void setSensitive(GtkWidget *button, gpointer data, gboolean active)
  * The code should end up with printers "lp", "d204bw", "lp2", "lp3".
  * 
  *  */
-GList *getPrinters(char *sys_print_file, GError **print_file_err_inout)
+GList *getPrinters(const char *sys_print_file, GError **print_file_err_inout)
 {
   GList *printer_list = NULL ;
   GIOChannel* print_file ;
@@ -514,7 +514,7 @@ static gint mySortFunc(gconstpointer a, gconstpointer b)
 {
   gint result ;
 
-  result = g_ascii_strcasecmp(a, b) ;
+  result = g_ascii_strcasecmp((char *)a, (char *)b) ;
 
   return result ;
 }

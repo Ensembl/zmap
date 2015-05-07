@@ -56,14 +56,14 @@ static void handleHightlightDNA(gboolean on, gboolean item_highlight, gboolean s
 static void highlightTranslationRegion(ZMapWindow window,
                                        gboolean highlight, gboolean item_highlight, gboolean sub_feature,
                                        FooCanvasItem *item,
-                                       char *required_col, ZMapFrame required_frame,
+                                       const char *required_col, ZMapFrame required_frame,
                                        ZMapSequenceType coords_type, int region_start, int region_end, int flanking) ;
 
 static void unHighlightTranslation(ZMapWindow window, FooCanvasItem *item,
-                                   char *required_col, ZMapFrame required_frame) ;
+                                   const char *required_col, ZMapFrame required_frame) ;
 static void handleHighlightTranslation(gboolean highlight,  gboolean item_highlight, gboolean sub_feature,
                                        ZMapWindow window, FooCanvasItem *item,
-                                       char *required_col, ZMapFrame required_frame,
+                                       const char *required_col, ZMapFrame required_frame,
                                        ZMapSequenceType coords_type, int region_start, int region_end, int flanking) ;
 static void handleHighlightTranslationSeq(gboolean highlight, gboolean item_highlight, gboolean sub_feature,
                                           FooCanvasItem *translation_item, FooCanvasItem *item,
@@ -71,8 +71,8 @@ static void handleHighlightTranslationSeq(gboolean highlight, gboolean item_high
                                           gboolean cds_only, ZMapSequenceType coords_type,
                                           int region_start, int region_end, int flanking ) ;
 static FooCanvasItem *getTranslationItemFromItemFrame(ZMapWindow window,
-                                                      ZMapFeatureBlock block, char *required_col, ZMapFrame frame) ;
-static FooCanvasItem *translation_from_block_frame(ZMapWindow window, char *column_name,
+                                                      ZMapFeatureBlock block, const char *required_col, ZMapFrame frame) ;
+static FooCanvasItem *translation_from_block_frame(ZMapWindow window, const char *column_name,
                                                    gboolean require_visible,
                                                    ZMapFeatureBlock block, ZMapFrame frame) ;
 
@@ -222,7 +222,7 @@ void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_
 
       highlightTranslationRegion(window,
                                  highlight, item_highlight, sub_feature,  item,
-                                 ZMAP_FIXED_STYLE_3FT_NAME, frame,
+                                 ZMAP_FIXED_STYLE_3FT_NAME, (ZMapFrame)frame,
                                  coords_type, region_start, region_end, flanking) ;
     }
 
@@ -236,7 +236,7 @@ void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *ite
 
   for (frame = ZMAPFRAME_0 ; frame < ZMAPFRAME_2 + 1 ; frame++)
     {
-      unHighlightTranslation(window, item, ZMAP_FIXED_STYLE_3FT_NAME, frame) ;
+      unHighlightTranslation(window, item, ZMAP_FIXED_STYLE_3FT_NAME, (ZMapFrame)frame) ;
     }
 
   return ;
@@ -580,12 +580,12 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 
         if ((item = zmapWindowFToIFindItemFull(window,window->context_to_item,
                                                block->parent->unique_id, block->unique_id,
-                                               set_id, tmp_strand, frame_num, 0)))
+                                               set_id, tmp_strand, (ZMapFrame)frame_num, 0)))
           {
             if (seq_type == ZMAPSEQUENCE_DNA)
               {
                 highlightTranslationRegion(window, TRUE, FALSE, FALSE,
-                                           item, ZMAP_FIXED_STYLE_3FT_NAME, frame_num, seq_type, pep_start, pep_end, flanking) ;
+                                           item, ZMAP_FIXED_STYLE_3FT_NAME, (ZMapFrame)frame_num, seq_type, pep_start, pep_end, flanking) ;
               }
             else
               {
@@ -600,7 +600,7 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
                   unHighlightTranslation(window, item, ZMAP_FIXED_STYLE_3FT_NAME, frame_num) ;
 #else
                 highlightTranslationRegion(window, TRUE, FALSE, FALSE, item,
-                                           ZMAP_FIXED_STYLE_3FT_NAME, frame_num, seq_type, pep_start, pep_end, flanking) ;
+                                           ZMAP_FIXED_STYLE_3FT_NAME, (ZMapFrame)frame_num, seq_type, pep_start, pep_end, flanking) ;
 #endif
               }
           }
@@ -987,7 +987,7 @@ static void handleHightlightDNA(gboolean on, gboolean item_highlight, gboolean s
 /* This _only_ highlights in the current window! */
 static void highlightTranslationRegion(ZMapWindow window,
                                        gboolean highlight, gboolean item_highlight, gboolean sub_feature, FooCanvasItem *item,
-                                       char *required_col, ZMapFrame required_frame,
+                                       const char *required_col, ZMapFrame required_frame,
                                        ZMapSequenceType coords_type, int region_start, int region_end, int flanking)
 {
   handleHighlightTranslation(highlight, item_highlight, sub_feature, window, item,
@@ -998,7 +998,7 @@ static void highlightTranslationRegion(ZMapWindow window,
 
 
 static void unHighlightTranslation(ZMapWindow window, FooCanvasItem *item,
-                                   char *required_col, ZMapFrame required_frame)
+                                   const char *required_col, ZMapFrame required_frame)
 {
   handleHighlightTranslation(FALSE, FALSE, FALSE,  window, item, required_col, required_frame, ZMAPSEQUENCE_NONE, 0, 0, 0) ;
 
@@ -1008,7 +1008,7 @@ static void unHighlightTranslation(ZMapWindow window, FooCanvasItem *item,
 
 static void handleHighlightTranslation(gboolean highlight, gboolean item_highlight, gboolean sub_feature,
                                        ZMapWindow window, FooCanvasItem *item,
-                                       char *required_col, ZMapFrame required_frame,
+                                       const char *required_col, ZMapFrame required_frame,
                                        ZMapSequenceType coords_type, int region_start, int region_end, int flanking)
 {
   FooCanvasItem *translation_item = NULL;
@@ -1078,7 +1078,7 @@ static void handleHighlightTranslationSeq(gboolean highlight, gboolean item_high
 
 static FooCanvasItem *getTranslationItemFromItemFrame(ZMapWindow window,
                                                       ZMapFeatureBlock block,
-                                                      char *req_col_name, ZMapFrame req_frame)
+                                                      const char *req_col_name, ZMapFrame req_frame)
 {
   FooCanvasItem *translation = NULL;
 
@@ -1089,7 +1089,7 @@ static FooCanvasItem *getTranslationItemFromItemFrame(ZMapWindow window,
 }
 
 
-static FooCanvasItem *translation_from_block_frame(ZMapWindow window, char *column_name,
+static FooCanvasItem *translation_from_block_frame(ZMapWindow window, const char *column_name,
                                                    gboolean require_visible,
                                                    ZMapFeatureBlock block, ZMapFrame frame)
 {

@@ -188,30 +188,30 @@ static gboolean window_list_selection_get_features(ZMapWindowList window_list,
 /* menu GLOBAL! */
 static GtkItemFactoryEntry menu_items_G[] = {
  /* File */
- { "/_File",              NULL,         NULL,       0,          "<Branch>", NULL},
- { "/File/Search",        NULL,         searchCB,   0,          NULL,       NULL},
- { "/File/Preserve",      NULL,         preserveCB, 0,          NULL,       NULL},
- { "/File/Export",        NULL,         NULL,       0,          "<Branch>", NULL},
- { "/File/Export/GFF",    NULL,         exportCB,   WINLISTGFF, NULL,       NULL},
+ { (gchar *)"/_File",              NULL,         NULL,       0,          (gchar *)"<Branch>", NULL},
+ { (gchar *)"/File/Search",        NULL,         (GtkItemFactoryCallback)searchCB,   0,          NULL,       NULL},
+ { (gchar *)"/File/Preserve",      NULL,         (GtkItemFactoryCallback)preserveCB, 0,          NULL,       NULL},
+ { (gchar *)"/File/Export",        NULL,         NULL,       0,          (gchar *)"<Branch>", NULL},
+ { (gchar *)"/File/Export/GFF",    NULL,         (GtkItemFactoryCallback)exportCB,   WINLISTGFF, NULL,       NULL},
 #ifdef MORE_FORMATS
- { "/File/Export/XFF",    NULL,         exportCB,   WINLISTXFF, NULL,       NULL},
+ { (gchar *)"/File/Export/XFF",    NULL,         (GtkItemFactoryCallback)exportCB,   WINLISTXFF, NULL,       NULL},
 #endif /* MORE_FORMATS */
- { "/File/Close",         "<control>W", requestDestroyCB, 0,          NULL,       NULL},
+ { (gchar *)"/File/Close",         (gchar *)"<control>W", (GtkItemFactoryCallback)requestDestroyCB, 0,          NULL,       NULL},
  /* View */
- { "/_View",                 NULL, NULL,      0,                                 "<Branch>",    NULL},
+ { (gchar *)"/_View",                 NULL, NULL,      0,                                 (gchar *)"<Branch>",    NULL},
  /* Operate */
- { "/_Operate",                  NULL, NULL,      0,                      "<Branch>",                   NULL},
- { "/Operate/On Results",        NULL, NULL,      0,                      "<Branch>",                   NULL},
- { "/Operate/On Results/Show",   NULL, operateCB, WINLIST_RESULTS_SHOW,   "<RadioItem>",                NULL},
- { "/Operate/On Results/Hide",   NULL, operateCB, WINLIST_RESULTS_HIDE,   "/Operate/On Results/Show",   NULL},
- { "/Operate/On Selection",      NULL, NULL,      0,                      "<Branch>",                   NULL},
- { "/Operate/On Selection/Show", NULL, operateCB, WINLIST_SELECTION_SHOW, "<RadioItem>",                NULL},
- { "/Operate/On Selection/Hide", NULL, operateCB, WINLIST_SELECTION_HIDE, "/Operate/On Selection/Show", NULL},
+ { (gchar *)"/_Operate",                  NULL, NULL,      0,                      (gchar *)"<Branch>",                   NULL},
+ { (gchar *)"/Operate/On Results",        NULL, NULL,      0,                      (gchar *)"<Branch>",                   NULL},
+ { (gchar *)"/Operate/On Results/Show",   NULL, (GtkItemFactoryCallback)operateCB, WINLIST_RESULTS_SHOW,   (gchar *)"<RadioItem>",                NULL},
+ { (gchar *)"/Operate/On Results/Hide",   NULL, (GtkItemFactoryCallback)operateCB, WINLIST_RESULTS_HIDE,   (gchar *)"/Operate/On Results/Show",   NULL},
+ { (gchar *)"/Operate/On Selection",      NULL, NULL,      0,                      (gchar *)"<Branch>",                   NULL},
+ { (gchar *)"/Operate/On Selection/Show", NULL, (GtkItemFactoryCallback)operateCB, WINLIST_SELECTION_SHOW, (gchar *)"<RadioItem>",                NULL},
+ { (gchar *)"/Operate/On Selection/Hide", NULL, (GtkItemFactoryCallback)operateCB, WINLIST_SELECTION_HIDE, (gchar *)"/Operate/On Selection/Show", NULL},
  /* Help */
- { "/_Help",             NULL, NULL,       0,            "<LastBranch>", NULL},
- { "/Help/Feature List", NULL, helpMenuCB, WINLISTHELP,  NULL,           NULL},
- { "/Help/1-----------", NULL, NULL,       0,            "<Separator>",  NULL},
- { "/Help/About",        NULL, helpMenuCB, WINLISTABOUT, NULL,           NULL}
+ { (gchar *)"/_Help",             NULL, NULL,       0,            (gchar *)"<LastBranch>", NULL},
+ { (gchar *)"/Help/Feature List", NULL, (GtkItemFactoryCallback)helpMenuCB, WINLISTHELP,  NULL,           NULL},
+ { (gchar *)"/Help/1-----------", NULL, NULL,       0,            (gchar *)"<Separator>",  NULL},
+ { (gchar *)"/Help/About",        NULL, (GtkItemFactoryCallback)helpMenuCB, WINLISTABOUT, NULL,           NULL}
 };
 
 
@@ -336,7 +336,7 @@ void zmapWindowListWindowReread(GtkWidget *toplevel)
 {
   ZMapWindowList window_list ;
 
-  window_list = g_object_get_data(G_OBJECT(toplevel), ZMAP_WINDOW_LIST_OBJ_KEY) ;
+  window_list = (ZMapWindowList)g_object_get_data(G_OBJECT(toplevel), ZMAP_WINDOW_LIST_OBJ_KEY) ;
 
   window_list->context_to_item = (window_list->get_hash_func)(window_list->get_hash_data);
 
@@ -1324,7 +1324,7 @@ static ZMapWindowList findReusableList(GPtrArray *window_list)
           ZMapWindowList list ;
 
           list_widg = (GtkWidget *)g_ptr_array_index(window_list, i) ;
-          list = g_object_get_data(G_OBJECT(list_widg), ZMAP_WINDOW_LIST_OBJ_KEY) ;
+          list = (ZMapWindowList)g_object_get_data(G_OBJECT(list_widg), ZMAP_WINDOW_LIST_OBJ_KEY) ;
           if (list->reusable)
             {
               reusable_window = list ;

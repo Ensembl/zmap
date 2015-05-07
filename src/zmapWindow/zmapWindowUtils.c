@@ -363,7 +363,7 @@ void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_arr
         {
           GtkWidget *widget ;
 
-          widget = g_ptr_array_index(window_array, 0) ;
+          widget = (GtkWidget *)g_ptr_array_index(window_array, 0) ;
 
           gtk_widget_destroy(widget) ;
         }
@@ -503,7 +503,7 @@ ZMapFeatureColumn zMapWindowGetColumn(ZMapFeatureContextMap map,GQuark col_id)
 {
   ZMapFeatureColumn column = NULL;
 
-  column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(col_id));
+  column = (ZMapFeatureColumn)g_hash_table_lookup(map->columns,GUINT_TO_POINTER(col_id));
   if(!column)
     zMapLogWarning("no column for featureset %s",g_quark_to_string(col_id));
 
@@ -527,7 +527,7 @@ void zmapWindowGenColumnStyle(ZMapWindow window,ZMapFeatureColumn column)
         {
           ZMapFeatureTypeStyle s;
 
-          s = g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
+          s = (ZMapFeatureTypeStyle)g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
           if(column->style && s && (!s->mode || s->mode == column->style->mode))
             {
               zMapStyleMerge(column->style, s);
@@ -582,7 +582,7 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
   GList *styles_quark_list = NULL;
   int i;
 
-  if ((styles_quark_list = g_hash_table_lookup(map->column_2_styles,GUINT_TO_POINTER(column_id))))
+  if ((styles_quark_list = (GList *)g_hash_table_lookup(map->column_2_styles,GUINT_TO_POINTER(column_id))))
     {
       GList *list;
 
@@ -625,9 +625,9 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
 
 
 
-char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type)
+const char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type)
 {
-  char *dialog_text = NULL ;
+  const char *dialog_text = NULL ;
 
   switch (dialog_type)
     {
@@ -749,7 +749,7 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
   ZMapGuiNotebookChapter chapter = NULL;
   ZMapGuiNotebookPage page = NULL;
   ZMapConfigIniContext context = NULL;
-  char *colour = NULL;
+  char *colour = NULL ;
   ZMapGuiNotebookCBStruct callbacks = {
     /* data must be set later */
     window_cancel_cb, NULL,
@@ -819,7 +819,7 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
 
   if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
                                     ZMAPSTANZA_WINDOW_SEPARATOR, &colour))
-    colour   = ZMAP_WINDOW_STRAND_DIVIDE_COLOUR;
+    colour = (char *)ZMAP_WINDOW_STRAND_DIVIDE_COLOUR;
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_separator", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
@@ -858,7 +858,7 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
 
   if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
                                     ZMAPSTANZA_WINDOW_ITEM_HIGH, &colour))
-    colour   = ZMAP_WINDOW_COLUMN_HIGHLIGHT;
+    colour = (char *)ZMAP_WINDOW_COLUMN_HIGHLIGHT;
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_item_highlight", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
@@ -866,7 +866,7 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
 
   if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
                                     ZMAPSTANZA_WINDOW_COL_HIGH, &colour))
-    colour   = ZMAP_WINDOW_COLUMN_HIGHLIGHT;
+    colour = (char *)ZMAP_WINDOW_COLUMN_HIGHLIGHT;
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_column_highlight", NULL,
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,

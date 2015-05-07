@@ -49,7 +49,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data);
 static GHashTable *access_navigator_context_to_item(gpointer user_data);
 static GHashTable *access_window_context_to_item(gpointer user_data);
 
-static GtkWidget *zmapWindowNavigatorNewToplevel(char *title);
+static GtkWidget *newTopLevel(const char *title);
 static void destroyFilterCB(GtkWidget *widget, gpointer user_data);
 static void filter_checkbox_toggled_cb(GtkWidget *checkbox, gpointer user_data);
 static void makeFilterPanel(ZMapWindowNavigator navigator, GtkWidget *parent);
@@ -65,7 +65,7 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
   ZMapWindowFToIPredFuncCB callback = NULL ;
   GList *result = NULL, *feature_list;
   GQuark locus_quark = 0;
-  char *wild_card = "*";
+  const char *wild_card = "*";
 
   if (!navigate || !navigate->current_window || !item)
     return ;
@@ -114,7 +114,7 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
   ZMapWindow window = NULL;
   ZMapFeature feature = NULL;
   GQuark locus_quark = 0, wild_card_id ;
-  char *wild_card = "*" ;
+  const char *wild_card = "*" ;
   FooCanvasItem *set_item ;
   ZMapWindowContainerFeatureSet container;
 
@@ -200,7 +200,7 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
     locus_quark = g_quark_from_string(wild_card);
 
 
-    search_data = zmapWindowFToISetSearchCreateFull(zmapWindowFToIFindItemSetFull,
+    search_data = zmapWindowFToISetSearchCreateFull((void *)zmapWindowFToIFindItemSetFull,
                                                     NULL,
                                                     feature->parent->parent->parent->unique_id,
                                                     feature->parent->parent->unique_id,
@@ -382,7 +382,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
 
         container = (ZMapWindowContainerFeatureSet)set_item;
 
-        search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
+        search_data = zmapWindowFToISetSearchCreate((void *)zmapWindowFToIFindItemSetFull, NULL,
                                                     feature->parent->parent->unique_id,
                                                     feature->parent->unique_id,
                                                     container->unique_id,
@@ -452,7 +452,7 @@ static GHashTable *access_window_context_to_item(gpointer user_data)
   return context_to_item;
 }
 
-static GtkWidget *zmapWindowNavigatorNewToplevel(char *title)
+static GtkWidget *newTopLevel(const char *title)
 {
   GtkWidget *window;
 
@@ -468,7 +468,7 @@ static void destroyFilterCB(GtkWidget *widget, gpointer user_data)
 {
   GList *copied_list;
 
-  if((copied_list = g_object_get_data(G_OBJECT(widget), FILTER_CANCEL_DATA_KEY)))
+  if((copied_list = (GList *)g_object_get_data(G_OBJECT(widget), FILTER_CANCEL_DATA_KEY)))
     g_list_free(copied_list);
 
   return ;
@@ -483,7 +483,7 @@ static void filter_checkbox_toggled_cb(GtkWidget *checkbox, gpointer user_data)
   gboolean button_pressed;
 
   button_pressed = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbox));
-  filter = g_object_get_data(G_OBJECT(checkbox), FILTER_DATA_KEY);
+  filter = (char *)g_object_get_data(G_OBJECT(checkbox), FILTER_DATA_KEY);
 
   if (!filter)
     return ;
@@ -562,7 +562,7 @@ static void cancel_destroy_cb(GtkWidget *widget, gpointer user_data)
        * the toplevel g_object_set_data version... */
       tmp = navigator->hide_filter;
 
-      navigator->hide_filter = g_object_get_data(G_OBJECT(toplevel), FILTER_CANCEL_DATA_KEY);
+      navigator->hide_filter = (GList *)g_object_get_data(G_OBJECT(toplevel), FILTER_CANCEL_DATA_KEY);
 
       /* Hope this works... It should, we're not destroying yet... */
       g_object_set_data(G_OBJECT(toplevel), FILTER_CANCEL_DATA_KEY, tmp);
@@ -603,7 +603,7 @@ static void zmapWindowNavigatorLocusFilterEditorCreate(ZMapWindowNavigator navig
     *cancel_button,
     *apply_button;
 
-  toplevel = zmapWindowNavigatorNewToplevel("ZMap - Filter Loci By Name");
+  toplevel = newTopLevel("ZMap - Filter Loci By Name");
 
   vbox_1   = gtk_vbox_new(FALSE, 0);
 

@@ -185,7 +185,7 @@ GArray *addFeatureSet(GArray *xml_array, ZMapFeature feature)
     featureset[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
                     {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
                     {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
-                    {0}} ;
+                    {(ZMapXMLWriterEventType)0}} ;
   int index ;
   GQuark featureset_id ;
 
@@ -217,7 +217,7 @@ GArray *addFeature(GArray *xml_array, ZMapFeature feature)
                  {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
                  {ZMAPXML_ATTRIBUTE_EVENT,     "strand",     ZMAPXML_EVENT_DATA_QUARK,   {0}},
                  {ZMAPXML_END_ELEMENT_EVENT,   "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
-                 {0}} ;
+                 {(ZMapXMLWriterEventType)0}} ;
   int index ;
 
   /* Add feature start */
@@ -260,7 +260,7 @@ GArray *addTranscriptSubFeatures(GArray *xml_array, ZMapFeature feature)
                     {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
                     {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {0}},
                     {ZMAPXML_END_ELEMENT_EVENT,   "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
-                    {0}} ;
+                    {(ZMapXMLWriterEventType)0}} ;
   enum {OPEN_INDEX, START_INDEX, END_INDEX, ONT_INDEX, CLOSE_INDEX} ; /* keep in step with subfeature array ! */
   GArray *span_array = NULL;
   int i;

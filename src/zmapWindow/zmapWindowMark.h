@@ -51,7 +51,7 @@ gboolean zmapWindowMarkIsSet(ZMapWindowMark mark) ;
 void zmapWindowMarkReset(ZMapWindowMark mark) ;
 
 /* Get/Set Colour */
-void      zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour) ;
+void      zmapWindowMarkSetColour(ZMapWindowMark mark, const char *colour) ;
 GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark) ;
 
 /* Get/Set Stipple */

@@ -245,7 +245,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
         if (highlight_same_names)
           {
             GList *set_items ;
-            char *set_strand, *set_frame ;
+            const char *set_strand, *set_frame ;
 
             set_strand = set_frame = "*" ;
 

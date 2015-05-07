@@ -193,7 +193,7 @@ void zMapWindowNavigatorSetWindowNavigator(GtkWidget *widget,ZMapWindowNavigator
 {
   ZMapNavigatorClassData class_data = NULL;
 
-  class_data = g_object_get_data(G_OBJECT(widget), ZMAP_NAVIGATOR_CLASS_DATA);
+  class_data = (ZMapNavigatorClassData)g_object_get_data(G_OBJECT(widget), ZMAP_NAVIGATOR_CLASS_DATA);
   if(class_data)
   {
       class_data->window_navigator = navigator;
@@ -224,7 +224,7 @@ void zmapWindowNavigatorWidthChanged(GtkWidget *widget, double left, double righ
 {
   ZMapNavigatorClassData class_data = NULL;
 
-  class_data = g_object_get_data(G_OBJECT(widget), ZMAP_NAVIGATOR_CLASS_DATA);
+  class_data = (ZMapNavigatorClassData)g_object_get_data(G_OBJECT(widget), ZMAP_NAVIGATOR_CLASS_DATA);
   if (!class_data)
     return ;
 
@@ -281,7 +281,7 @@ void zmapWindowNavigatorSizeRequest(GtkWidget *widget, double x, double y,double
 
   canvas = FOO_CANVAS(widget);
 
-  class_data = g_object_get_data(G_OBJECT(canvas), ZMAP_NAVIGATOR_CLASS_DATA);
+  class_data = (ZMapNavigatorClassData)g_object_get_data(G_OBJECT(canvas), ZMAP_NAVIGATOR_CLASS_DATA);
   if (!class_data)
     return ;
 
@@ -306,7 +306,7 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
 
   canvas = FOO_CANVAS(widget);
 
-  class_data = g_object_get_data(G_OBJECT(canvas), ZMAP_NAVIGATOR_CLASS_DATA);
+  class_data = (ZMapNavigatorClassData)g_object_get_data(G_OBJECT(canvas), ZMAP_NAVIGATOR_CLASS_DATA);
   if (!class_data)
     return ;
 
@@ -374,7 +374,7 @@ void zmapWindowNavigatorTextSize(GtkWidget *widget, double *x, double *y)
 
   canvas = FOO_CANVAS(widget);
 
-  class_data = g_object_get_data(G_OBJECT(canvas), ZMAP_NAVIGATOR_CLASS_DATA);
+  class_data = (ZMapNavigatorClassData)g_object_get_data(G_OBJECT(canvas), ZMAP_NAVIGATOR_CLASS_DATA);
   if (!class_data)
     return ;
 
@@ -529,7 +529,7 @@ static gboolean getTextOnCanvasDimensions(FooCanvas *canvas,
   */
 
   if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(canvas),
-                               g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY), ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
+                               g_list_append(NULL, (void *)ZMAP_ZOOM_FONT_FAMILY), ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
                                &font, &font_desc))
     printf("Couldn't get fixed width font\n");
   else

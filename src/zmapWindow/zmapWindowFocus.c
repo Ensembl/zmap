@@ -516,7 +516,7 @@ void zmapWindowFocusDestroy(ZMapWindowFocus focus)
   if (!focus) 
     return ;
 
-  freeFocusItems(focus,WINDOW_FOCUS_GROUP_FOCUSSED) ;
+  freeFocusItems(focus, (ZMapWindowFocusType)WINDOW_FOCUS_GROUP_FOCUSSED) ;
 
   for(l = focus_cache_G;l;l = l->next)
     {
@@ -939,7 +939,9 @@ void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus)
 
       if(hot_column && column->style_id)
         {
-          ZMapFeatureTypeStyle s = g_hash_table_lookup(focus->window->context_map->styles,GUINT_TO_POINTER(column->style_id));
+          ZMapFeatureTypeStyle s ;
+
+          s = (ZMapFeatureTypeStyle)g_hash_table_lookup(focus->window->context_map->styles,GUINT_TO_POINTER(column->style_id));
 
           if(s)
             zMapStyleGetColours(s, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &colour, NULL, NULL);

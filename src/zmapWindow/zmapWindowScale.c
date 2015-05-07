@@ -146,7 +146,7 @@ void zmapWindowScaleCanvasInit(ZMapWindowScaleCanvas ruler,
                    NULL);
 
   if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(paned),
-                               g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY), ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
+                               g_list_append(NULL, (void *)ZMAP_ZOOM_FONT_FAMILY), ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
                                &(ruler->font), &(ruler->font_desc)))
     zMapLogWarning("%s", "Couldn't get fixed width font\n") ;
   else
@@ -387,7 +387,6 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
   int digit;                /* which tick out of 10 */
   int nudge;                /* tick is 5th? make bigger */
   char label [32];        /* only need ~8 but there you go */
-  char *unit;
   int base;
   PangoFontDescription *font_desc;
   double font_width,font_height;
@@ -399,7 +398,8 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
   int n_levels;        /* number of levels needed for BP resolution */
   int n_hide;         /* number we can't see at current zoom level */
   int n_text_hide;        /* text we can't display due to overlap */
-  char *units[] = { "","","k","M","G" };
+  const char *unit;
+  const char *units[] = { "","","k","M","G" };
   int i;
   int tick_start;
   int tick_end;
@@ -632,7 +632,7 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
                   if((slice_coord && gap > text_height * 2))
                     {
                       int num,frac;
-                      char *sign = "";
+                      const char *sign = "";
                       double offset = revcomped ? -0.5 : 0.5;
                       ZMapWindowCanvasGraphics gfx;
 

@@ -329,8 +329,8 @@ typedef struct
   GQuark set_id;
   GQuark feature_id;
 
-  char *strand_str;
-  char *frame_str;
+  const char *strand_str;
+  const char *frame_str;
 
   ZMapWindowFToIPredFuncCB predicate_func;
   gpointer                 predicate_data;
@@ -1172,11 +1172,11 @@ FooCanvasItem *zmapWindowFToIFindItemColumn(ZMapWindow window, GHashTable *featu
 					  ZMapStrand set_strand, ZMapFrame set_frame);
 GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark column_id, GQuark set_id,
-				     const char *strand_spec, char *frame_spec,
+				     const char *strand_spec, const char *frame_spec,
 				     GQuark feature_id,
 				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data) ;
 GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_to_context_hash,
-				       const char *set_strand, char *set_frame, ZMapFeature feature) ;
+				       const char *set_strand, const char *set_frame, ZMapFeature feature) ;
 
 ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search_function,
 							      ZMapFeature feature,
@@ -1185,8 +1185,8 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search
 							      GQuark column_id,
 							      GQuark      set_id,
 							      GQuark      feature_id,
-							      char       *strand_str,
-							      char       *frame_str,
+							      const char       *strand_str,
+							      const char       *frame_str,
 							      ZMapWindowFToIPredFuncCB predicate_func,
 							      gpointer                 predicate_data,
 							      GDestroyNotify           predicate_free);
@@ -1350,7 +1350,7 @@ void zmapWindowGetScrollableArea(ZMapWindow window,
 				 double *x2_inout, double *y2_inout);
 void zmapWindowSetScrollableArea(ZMapWindow window,
 				 double *x1_inout, double *y1_inout,
-				 double *x2_inout, double *y2_inout,char *where);
+				 double *x2_inout, double *y2_inout, const char *where);
 
 void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double y1, double y2) ;
 void zmapWindowSetPixelxy(ZMapWindow window, double pixels_per_unit_x, double pixels_per_unit_y) ;
@@ -1394,14 +1394,21 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 void zmapWindowColumnConfigureDestroy(ZMapWindow window) ;
 
 void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_data, FooCanvasGroup *container) ;
-gboolean zmapWindowContainerBlockIsCompressedColumn(ZMapWindowContainerBlock block_data) ;
 GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock block_data) ;
+void zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_data, FooCanvasGroup *container) ;
+GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock block_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+gboolean zmapWindowContainerBlockIsCompressedColumn(ZMapWindowContainerBlock block_data) ;
+
 
 void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode) ;
-void zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_data, FooCanvasGroup *container) ;
+
 gboolean zmapWindowContainerBlockIsBumpedColumn(ZMapWindowContainerBlock block_data) ;
-GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock block_data) ;
+
 
 void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item);
 void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item);
@@ -1444,9 +1451,17 @@ void zMapWindowContainerSummariseClear(ZMapWindow window,ZMapFeatureSet fset);
 gboolean zMapWindowContainerSummarise(ZMapWindow window,ZMapFeatureTypeStyle style);
 GList *zMapWindowContainerSummariseSortFeatureSet(ZMapFeatureSet fset);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapFeatureTypeStyle zMapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFeatureSet container);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 gboolean zMapWindowContainerFeatureSetSetBumpMode(ZMapWindowContainerFeatureSet container_set,
                                                   ZMapStyleBumpMode bump_mode);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
                                ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
@@ -1827,7 +1842,7 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
 //GList *zmapWindowFeatureSetStyles(ZMapWindow window, GHashTable *all_styles, GQuark feature_set_id);
 
 void zmapWindowFeatureCallXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
-                                  char *command, FooCanvasItem *real_item) ;
+                                  const char *command, FooCanvasItem *real_item) ;
 
 
 /* Ruler Functions */
@@ -1857,14 +1872,14 @@ void zmapWindowStatsDestroy(ZMapWindowStats stats) ;
 
 void zmapWindowShowStyle(ZMapFeatureTypeStyle style) ;
 
-char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type) ;
+const char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type) ;
 void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature);
 
 void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
 
 
-void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, char *where) ;
+void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, const char *where) ;
 
 
 
@@ -1883,7 +1898,7 @@ void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data) ;
 
 /* Malcolms.... */
-void foo_bug_set(void *key,char *id) ;
+void foo_bug_set(void *key, const char *id) ;
 
 #endif /* !ZMAP_WINDOW_P_H */
 

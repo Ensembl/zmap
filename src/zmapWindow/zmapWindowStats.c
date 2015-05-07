@@ -83,7 +83,7 @@ ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any)
   ZMapWindowStats stats ;
   int nbytes = sizeof(ZMapWindowStatsStruct) ;
 
-  stats = g_slice_alloc0(nbytes) ;
+  stats = (ZMapWindowStats)g_slice_alloc0(nbytes) ;
 
   stats->feature_id = feature_any->original_id ;
 
@@ -145,7 +145,7 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 
           if (num_bytes)
             {
-              stats_any = g_slice_alloc0(num_bytes) ;
+              stats_any = (ZMapWindowStatsAny)g_slice_alloc0(num_bytes) ;
               stats_any->feature_type = feature->mode ;
               stats_any->style_id = (*feature->style)->unique_id ;
 

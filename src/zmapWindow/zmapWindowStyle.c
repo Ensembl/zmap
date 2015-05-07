@@ -100,7 +100,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   StyleChange my_data = g_new0(StyleChangeStruct,1);
   /* theoretically we could have more than one dialog active. How confusing that would be */
   ZMapFeatureTypeStyle style;
-  char *text;
+  const char *text;
   GtkWidget *toplevel, *top_vbox, *vbox, *hbox, *frame, *button, *label;
   GdkColor colour = {0} ;
   GdkColor *fill = &colour, *border = &colour;
@@ -397,7 +397,7 @@ static void cancelCB(GtkWidget *widget, gpointer cb_data)
                 clear_style(my_data);                /* free the created style: cannot be ref'd anywhere else */
 
                 /* find the parent */
-                style = g_hash_table_lookup(styles, GUINT_TO_POINTER(id));
+                style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(id));
         }
         else                                /* restore the existing style */
         {
@@ -568,59 +568,58 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
   ZMapFeatureSet feature_set = menu_data->feature_set;
   ZMapFeatureTypeStyle style;
   FooCanvasItem *set_item, *canvas_item;
-  ZMapStrand set_strand;
-  ZMapFrame set_frame;
+  int set_strand, set_frame;
   ID2Canvas id2c;
   int ok = FALSE;
 
 
-  style = g_hash_table_lookup( menu_data->context_map->styles, GUINT_TO_POINTER(menu_item_id));
+  style = (ZMapFeatureTypeStyle)g_hash_table_lookup( menu_data->context_map->styles, GUINT_TO_POINTER(menu_item_id));
   if(style)
-  {
-          ZMapFeatureColumn column;
-          ZMapFeatureSource s2s;
-          ZMapFeatureSetDesc f2c;
-          GList *c2s;
+    {
+      ZMapFeatureColumn column;
+      ZMapFeatureSource s2s;
+      ZMapFeatureSetDesc f2c;
+      GList *c2s;
 
-          /* now tweak featureset & column styles in various places */
-          s2s = g_hash_table_lookup(menu_data->context_map->source_2_sourcedata,GUINT_TO_POINTER(feature_set->unique_id));
-          f2c = g_hash_table_lookup(menu_data->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
-          if(s2s && f2c)
-          {
-                s2s->style_id = style->unique_id;
-                column = g_hash_table_lookup(menu_data->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
-                if(column)
+      /* now tweak featureset & column styles in various places */
+      s2s = (ZMapFeatureSource)g_hash_table_lookup(menu_data->context_map->source_2_sourcedata,GUINT_TO_POINTER(feature_set->unique_id));
+      f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(menu_data->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
+      if(s2s && f2c)
+        {
+          s2s->style_id = style->unique_id;
+          column = (ZMapFeatureColumn)g_hash_table_lookup(menu_data->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+          if(column)
+            {
+
+              c2s = (GList *)g_hash_table_lookup(menu_data->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
+              if(c2s)
                 {
+                  g_list_free(column->style_table);
+                  column->style_table = NULL;
+                  column->style = NULL;        /* must clear this to trigger style table calculation */
+                  /* NOTE column->style_id is column specific not related to a featureset, set by config */
 
-                        c2s = g_hash_table_lookup(menu_data->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
-                        if(c2s)
+                  for( ; c2s; c2s = c2s->next)
+                    {
+                      if(GPOINTER_TO_UINT(c2s->data) == feature_set->style->unique_id)
                         {
-                                g_list_free(column->style_table);
-                                column->style_table = NULL;
-                                column->style = NULL;        /* must clear this to trigger style table calculation */
-                                /* NOTE column->style_id is column specific not related to a featureset, set by config */
-
-                                for( ; c2s; c2s = c2s->next)
-                                {
-                                        if(GPOINTER_TO_UINT(c2s->data) == feature_set->style->unique_id)
-                                        {
-                                                c2s->data = GUINT_TO_POINTER(style->unique_id);
-                                                break;
-                                        }
-                                }
-                                ok = TRUE;
+                          c2s->data = GUINT_TO_POINTER(style->unique_id);
+                          break;
                         }
-
-                        zMapWindowGetSetColumnStyle(menu_data->window, feature_set->unique_id);
+                    }
+                  ok = TRUE;
                 }
-          }
-  }
+
+              zMapWindowGetSetColumnStyle(menu_data->window, feature_set->unique_id);
+            }
+        }
+    }
 
   if(!ok)
-  {
-          zMapWarning("cannot set new style","");
-          return;
-  }
+    {
+      zMapWarning("cannot set new style","");
+      return;
+    }
 
 
   /* get current style strand and frame status and operate on 1 or more columns
@@ -634,69 +633,74 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
    * strand and frame will be handled by the display code
    */
 
-          /* yes really: reverse is bigger than forwards despite appearing on the left */
+  /* yes really: reverse is bigger than forwards despite appearing on the left */
   for(set_strand = ZMAPSTRAND_NONE; set_strand <= ZMAPSTRAND_REVERSE; set_strand++)
-  {
-          /* yes really: frames are numbered 0,1,2 and have the values 1,2,3 */
-    for(set_frame = ZMAPFRAME_NONE; set_frame <= ZMAPFRAME_2; set_frame++)
+    {
+      /* yes really: frames are numbered 0,1,2 and have the values 1,2,3 */
+      for(set_frame = ZMAPFRAME_NONE; set_frame <= ZMAPFRAME_2; set_frame++)
         {
-                /* this is really frustrating:
-                 * every operation of the ftoi hash involves
-                 * repeating the same nested hash table lookups
-                 */
+          ZMapStrand strand = (ZMapStrand)set_strand ;
+          ZMapFrame frame = (ZMapFrame)set_frame ;
 
-                /* does the set appear in a column ? */
-                /* set item is a ContainerFeatureset */
-                set_item = zmapWindowFToIFindSetItem(menu_data->window,
-                                        menu_data->window->context_to_item,
-                                             menu_data->feature_set, set_strand, set_frame);
-                if(!set_item)
-                        continue;
+          /* this is really frustrating:
+           * every operation of the ftoi hash involves
+           * repeating the same nested hash table lookups
+           */
+          
 
-                /* find the canvas item (CanvasFeatureset) containing a feature in this set */
-                id2c = zmapWindowFToIFindID2CFull(menu_data->window, menu_data->window->context_to_item,
-                                    feature_set->parent->parent->unique_id,
-                                    feature_set->parent->unique_id,
-                                    feature_set->unique_id,
-                                    set_strand, set_frame,0);
 
-                canvas_item = NULL;
-                if(id2c)
+          /* does the set appear in a column ? */
+          /* set item is a ContainerFeatureset */
+          set_item = zmapWindowFToIFindSetItem(menu_data->window,
+                                               menu_data->window->context_to_item,
+                                               menu_data->feature_set, strand, frame);
+          if(!set_item)
+            continue;
+
+          /* find the canvas item (CanvasFeatureset) containing a feature in this set */
+          id2c = zmapWindowFToIFindID2CFull(menu_data->window, menu_data->window->context_to_item,
+                                            feature_set->parent->parent->unique_id,
+                                            feature_set->parent->unique_id,
+                                            feature_set->unique_id,
+                                            strand, frame,0);
+
+          canvas_item = NULL;
+          if(id2c)
+            {
+              ID2Canvas feat = (ID2Canvas)zMap_g_hash_table_nth(id2c->hash_table,0);
+              if(feat)
+                canvas_item = feat->item;
+            }
+
+
+          /* look it up again to delete it :-( */
+          zmapWindowFToIRemoveSet(menu_data->window->context_to_item,
+                                  feature_set->parent->parent->unique_id,
+                                  feature_set->parent->unique_id,
+                                  feature_set->unique_id,
+                                  strand, frame, TRUE);
+
+
+          if(canvas_item)
+            {
+              FooCanvasGroup *group = (FooCanvasGroup *) set_item;
+
+              /* remove this featureset from the CanvasFeatureset */
+              /* if it's empty it will perform hari kiri */
+              if(ZMAP_IS_WINDOW_FEATURESET_ITEM(canvas_item))
                 {
-                        ID2Canvas feat = zMap_g_hash_table_nth(id2c->hash_table,0);
-                        if(feat)
-                                canvas_item = feat->item;
+                  zMapWindowFeaturesetItemRemoveSet(canvas_item, feature_set, TRUE);
                 }
 
+              /* destroy set item if empty ? */
+              if(!group->item_list)
+                zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup) set_item);
+            }
 
-                /* look it up again to delete it :-( */
-                zmapWindowFToIRemoveSet(menu_data->window->context_to_item,
-                                    feature_set->parent->parent->unique_id,
-                                    feature_set->parent->unique_id,
-                                    feature_set->unique_id,
-                                    set_strand, set_frame, TRUE);
-
-
-                if(canvas_item)
-                {
-                        FooCanvasGroup *group = (FooCanvasGroup *) set_item;
-
-                        /* remove this featureset from the CanvasFeatureset */
-                        /* if it's empty it will perform hari kiri */
-                        if(ZMAP_IS_WINDOW_FEATURESET_ITEM(canvas_item))
-                        {
-                                zMapWindowFeaturesetItemRemoveSet(canvas_item, feature_set, TRUE);
-                        }
-
-                        /* destroy set item if empty ? */
-                        if(!group->item_list)
-                                zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup) set_item);
-                }
-
-                zmapWindowRemoveIfEmptyCol((FooCanvasGroup **) &set_item) ;
+          zmapWindowRemoveIfEmptyCol((FooCanvasGroup **) &set_item) ;
 
         }
-  }
+    }
 
 
   feature_set->style = style;
@@ -705,5 +709,7 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
 
   zmapWindowColOrderColumns(menu_data->window) ;        /* put this column (deleted then created) back into the right place */
   zmapWindowFullReposition(menu_data->window->feature_root_group,TRUE, "window style") ;                /* adjust sizing and shuffle left / right */
+
+  return ;
 }
 

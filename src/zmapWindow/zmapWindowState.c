@@ -82,7 +82,7 @@ typedef struct
 {
   SerializedItemStruct column;
   ZMapStyleBumpMode bump_mode;
-  gboolean             strand_specific;
+  gboolean strand_specific;
 } StyleBumpModeStruct;
 
 typedef struct
@@ -136,7 +136,7 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *position);
 static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialStruct *serialized);
 static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateStruct *serialized);
-static void print_position(ZMapWindowPositionStruct *position, char *from);
+static void print_position(ZMapWindowPositionStruct *position, const char *from);
 static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serialize);
 /* update stuff is so that queue doesn't get cleared under the feet of a restore... */
 /* Main reason though is to not save whilst doing restore. endless history, no thanks */
@@ -361,7 +361,7 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 
   if(level == ZMAPCONTAINER_LEVEL_FEATURESET)
     {
-      StyleBumpModeStruct bump_data = {{0}, 0};
+      StyleBumpModeStruct bump_data = {{0}, (ZMapStyleBumpMode)0, FALSE};
       ZMapWindowContainerFeatureSet container_set;
       ZMapStyleBumpMode default_bump;
       ZMapFeatureAny feature_any;
@@ -754,7 +754,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
   return ;
 }
 
-static void print_position(ZMapWindowPositionStruct *position, char *from)
+static void print_position(ZMapWindowPositionStruct *position, const char *from)
 {
   printf("%s: position is\n", from);
 
@@ -872,9 +872,9 @@ gboolean zmapWindowStateGetPrevious(ZMapWindow window, ZMapWindowState *state_ou
   if(zMapWindowHasHistory(window))
     {
       if(pop)
-        state = g_queue_pop_tail(window->history);
+        state = (ZMapWindowState)g_queue_pop_tail(window->history);
       else
-        state = g_queue_peek_tail(window->history);
+        state = (ZMapWindowState)g_queue_peek_tail(window->history);
     }
 
   if(state_out && state)
@@ -927,7 +927,7 @@ void zmapWindowStateQueueClear(ZMapWindowStateQueue queue)
   ZMapWindowState state = NULL;
 
   while(zmapWindowStateQueueLength(queue) &&
-        (state = g_queue_pop_tail(queue)))
+        (state = (ZMapWindowState)g_queue_pop_tail(queue)))
     {
       state = zmapWindowStateDestroy(state);
     }
@@ -950,7 +950,7 @@ ZMapWindowStateQueue zmapWindowStateQueueDestroy(ZMapWindowStateQueue queue)
 
   zmapWindowStateQueueClear(queue);
 
-  if((head_state = g_queue_pop_head(queue)))
+  if((head_state = (ZMapWindowState)g_queue_pop_head(queue)))
     zmapWindowStateDestroy(head_state);
 
   g_queue_free(queue);
@@ -967,7 +967,7 @@ static gboolean queue_doing_update(ZMapWindowStateQueue queue)
   ZMapWindowState head_state;
   gboolean doing_update = FALSE;
 
-  if((head_state = g_queue_peek_head(queue)))
+  if((head_state = (ZMapWindowState)g_queue_peek_head(queue)))
     {
       doing_update = head_state->in_state_restore;
     }
@@ -979,7 +979,7 @@ static void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag
 {
   ZMapWindowState head_state;
 
-  if((head_state = g_queue_peek_head(queue)))
+  if((head_state = (ZMapWindowState)g_queue_peek_head(queue)))
     {
       head_state->in_state_restore = update_flag;
       if(queue_doing_update(queue) != update_flag)

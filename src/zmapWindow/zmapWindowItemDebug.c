@@ -45,9 +45,9 @@
 
 static void printGroup(FooCanvasGroup *group, int indent, GString *buf) ;
 static void printItem(FooCanvasItem *item) ;
-static gboolean get_container_type_as_string(FooCanvasItem *item, char **str_out) ;
-static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out) ;
-static gboolean get_feature_type_as_string(FooCanvasItem *item, char **str_out) ;
+static gboolean get_container_type_as_string(FooCanvasItem *item, const char **str_out) ;
+static gboolean get_item_type_as_string(FooCanvasItem *item, const char **str_out) ;
+static gboolean get_feature_type_as_string(FooCanvasItem *item, const char **str_out) ;
 static GString *getItemCoords(GString *str, FooCanvasItem *item, gboolean local_only) ;
 
 
@@ -96,7 +96,7 @@ void zmapWindowPrintGroups(FooCanvas *canvas)
 void zmapWindowItemDebugItemToString(GString *string, FooCanvasItem *item)
 {
   gboolean has_feature = FALSE, is_container = FALSE ;
-  char *str = NULL ;
+  const char *str = NULL ;
 
   if ((is_container = get_container_type_as_string(item, &str)))
     g_string_append_printf(string, "%s", str) ;
@@ -332,7 +332,7 @@ static void printItem(FooCanvasItem *item)
 
 
 
-static gboolean get_container_type_as_string(FooCanvasItem *item, char **str_out)
+static gboolean get_container_type_as_string(FooCanvasItem *item, const char **str_out)
 {
   gboolean has_type = TRUE ;
 
@@ -353,7 +353,7 @@ static gboolean get_container_type_as_string(FooCanvasItem *item, char **str_out
 
 
 
-static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out)
+static gboolean get_item_type_as_string(FooCanvasItem *item, const char **str_out)
 {
   gboolean has_type = TRUE ;
 
@@ -363,7 +363,7 @@ static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out)
 }
 
 
-static gboolean get_feature_type_as_string(FooCanvasItem *item, char **str_out)
+static gboolean get_feature_type_as_string(FooCanvasItem *item, const char **str_out)
 {
   ZMapFeatureAny feature_any ;
   gboolean has_type = FALSE ;

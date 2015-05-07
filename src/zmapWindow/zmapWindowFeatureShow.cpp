@@ -257,7 +257,7 @@ static gboolean xml_paragraph_end_cb(gpointer user_data, ZMapXMLElement element,
                                      ZMapXMLParser parser) ;
 static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
                                     ZMapXMLParser parser) ;
-static void printWarning(char *element, char *handler) ;
+static void printWarning(const char *element, const char *handler) ;
 
 
 static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title) ;
@@ -287,7 +287,7 @@ static void addTagValue(gpointer data, gpointer user_data) ;
 static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature feature, const gboolean editable) ;
 
 static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
-                        char *action, FooCanvasItem *real_item,
+                        const char *action, FooCanvasItem *real_item,
                         ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data) ;
 static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
                                   char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
@@ -316,14 +316,14 @@ static ChapterFeature readChapter(ZMapGuiNotebookChapter chapter);
 static GtkItemFactoryEntry menu_items_G[] =
   {
     /* File */
-    { "/_File",                 NULL,         NULL,                                     0,    "<Branch>",   NULL},
-    { "/File/_Preserve",        NULL,         (GtkItemFactoryCallback)preserveCB,       0,    NULL,         NULL},
-    { "/File/_Close",           "<control>W", (GtkItemFactoryCallback)requestDestroyCB, 0,    NULL,         NULL},
+    { (gchar *)"/_File",                 NULL,         NULL,                                     0,    (gchar *)"<Branch>",   NULL},
+    { (gchar *)"/File/_Preserve",        NULL,         (GtkItemFactoryCallback)preserveCB,       0,    NULL,         NULL},
+    { (gchar *)"/File/_Close",           (gchar *)"<control>W", (GtkItemFactoryCallback)requestDestroyCB, 0,    NULL,         NULL},
 
     /* Help */
-    { "/_Help",                 NULL,         NULL,                                     0,  "<LastBranch>", NULL},
-    { "/Help/_Feature Display", NULL,         (GtkItemFactoryCallback)helpMenuCB,       1,  NULL,           NULL},
-    { "/Help/_About ZMap",      NULL,         (GtkItemFactoryCallback)helpMenuCB,       2,  NULL,           NULL}
+    { (gchar *)"/_Help",                 NULL,         NULL,                                     0,  (gchar *)"<LastBranch>", NULL},
+    { (gchar *)"/Help/_Feature Display", NULL,         (GtkItemFactoryCallback)helpMenuCB,       1,  NULL,           NULL},
+    { (gchar *)"/Help/_About ZMap",      NULL,         (GtkItemFactoryCallback)helpMenuCB,       2,  NULL,           NULL}
   } ;
 
 
@@ -678,7 +678,7 @@ static void featureShowReset(ZMapWindowFeatureShow show, ZMapWindow window, char
   show->item = NULL ;
   show->feature = NULL ;
 
-  zMapGUISetToplevelTitle(show->window,"Feature Show", title) ;
+  zMapGUISetToplevelTitle(show->window, "Feature Show", title) ;
 
   return ;
 }
@@ -722,7 +722,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
   ZMapGuiNotebookParagraph paragraph = NULL ;
   ZMapGuiNotebookTagValue tag_value = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
-  char *chapter_title = NULL, *page_title = NULL, *description = NULL ;
+  const char *chapter_title = NULL, *page_title = NULL, *description = NULL ;
   char *tmp = NULL ;
   char *notes = NULL ;
 
@@ -2054,7 +2054,7 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
 }
 
 
-static void printWarning(char *element, char *handler)
+static void printWarning(const char *element, const char *handler)
 {
   if (alert_client_debug_G)
     zMapLogWarning("In zmap %s %s Handler.", element, handler) ;
@@ -2254,8 +2254,8 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature featu
 /* It is probably just about worth having this here as a unified place to handle requests but
  * that may need revisiting.... */
 static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
-                        char *action, FooCanvasItem *real_item,
-                         ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data)
+                        const char *action, FooCanvasItem *real_item,
+                        ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data)
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapXMLUtilsEventStack xml_elements ;

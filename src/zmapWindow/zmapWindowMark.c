@@ -123,7 +123,7 @@ ZMAP_MAGIC_NEW(mark_magic_G, ZMapWindowMarkStruct) ;
 
 
 /*! mark_bitmap_bits_G is the definition of the default stipple. */
-static char mark_bitmap_bits_G[] =
+static unsigned char mark_bitmap_bits_G[] =
   {
     0x11, 0x11,
     0x22, 0x22,
@@ -217,7 +217,7 @@ ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
 
   zmapWindowMarkSetColour(mark, ZMAP_WINDOW_ITEM_MARK) ;
 
-  mark->stipple = gdk_bitmap_create_from_data(NULL, &mark_bitmap_bits_G[0], mark_bitmap_width, mark_bitmap_height) ;
+  mark->stipple = gdk_bitmap_create_from_data(NULL, (gchar *)&mark_bitmap_bits_G[0], mark_bitmap_width, mark_bitmap_height) ;
 
   return mark ;
 }
@@ -439,7 +439,7 @@ void zmapWindowMarkShowMark(ZMapWindowMark mark)
  *
  * \return nothing.
  */
-void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour)
+void zmapWindowMarkSetColour(ZMapWindowMark mark, const char *colour)
 {
   if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
     return ;

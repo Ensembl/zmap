@@ -204,7 +204,7 @@ gboolean zmapWindowFToIRemoveRoot(GHashTable *feature_context_to_item)
 
   root_id = rootCanvasID() ;
 
-  if ((root = g_hash_table_lookup(feature_context_to_item, GUINT_TO_POINTER(root_id))))
+  if ((root = (ID2Canvas)g_hash_table_lookup(feature_context_to_item, GUINT_TO_POINTER(root_id))))
     {
       result = g_hash_table_remove(feature_context_to_item, GUINT_TO_POINTER(root_id)) ;
     }
@@ -447,7 +447,7 @@ gboolean zmapWindowFToIAddSetFeature(GHashTable *set,        GQuark feature_id, 
       g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
     }
 #else
-  ID2C = g_hash_table_lookup(set, GUINT_TO_POINTER(feature_id));
+  ID2C = (ID2Canvas)g_hash_table_lookup(set, GUINT_TO_POINTER(feature_id));
   if(!ID2C)
     {
       ID2C = g_new0(ID2CanvasStruct, 1) ;
@@ -776,7 +776,8 @@ FooCanvasItem *zmapWindowFToIFindItemColumn(ZMapWindow window, GHashTable *featu
  *  */
 GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_context_to_item,
                                      GQuark align_id, GQuark block_id, GQuark column_id,
-                                     GQuark set_id, const char *strand_spec, char *frame_spec,
+                                     GQuark set_id,
+                                     const char *strand_spec, const char *frame_spec,
                                      GQuark feature_id,
                                      ZMapWindowFToIPredFuncCB pred_func, gpointer user_data)
 {
@@ -1000,7 +1001,7 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
  * as all features match at least themselves.
  *  */
 GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_context_to_item,
-                                       const char *set_strand, char *set_frame,
+                                       const char *set_strand, const char *set_frame,
                                        ZMapFeature feature)
 {
   GList *item_list    = NULL ;
@@ -1054,8 +1055,8 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search
                                                               GQuark      column_id,
                                                               GQuark      set_id,
                                                               GQuark      feature_id,
-                                                              char       *strand_str,
-                                                              char       *frame_str,
+                                                              const char       *strand_str,
+                                                              const char       *frame_str,
                                                               ZMapWindowFToIPredFuncCB predicate_func,
                                                               gpointer                 predicate_data,
                                                               GDestroyNotify           predicate_free)
@@ -1248,7 +1249,7 @@ void zmapWindowFToIDestroy(GHashTable *feature_context_to_item)
 static GQuark makeSetID(GQuark set_id, ZMapStrand strand, ZMapFrame frame)
 {
   GQuark full_set_id = 0 ;
-  char *set_str, *strand_str, *frame_str ;
+  const char *set_str, *strand_str, *frame_str ;
 
   if (strand == ZMAPSTRAND_NONE || strand == ZMAPSTRAND_FORWARD)
     strand_str = "FORWARD" ;
@@ -1276,7 +1277,7 @@ static GQuark makeSetID(GQuark set_id, ZMapStrand strand, ZMapFrame frame)
 
   full_set_id = g_quark_from_string(set_str) ;
 
-  g_free(set_str) ;
+  g_free((void *)set_str) ;
 
   return full_set_id ;
 }
@@ -1286,7 +1287,7 @@ static GQuark makeSetID(GQuark set_id, ZMapStrand strand, ZMapFrame frame)
 static GQuark makeSetIDFromStr(GQuark set_id, ZMapStrand strand, GQuark frame_id)
 {
   GQuark full_set_id = 0 ;
-  char *set_str, *strand_str, *frame_str ;
+  const char *set_str, *strand_str, *frame_str ;
 
   /* Need to check frame id here.... */
 
@@ -1303,7 +1304,7 @@ static GQuark makeSetIDFromStr(GQuark set_id, ZMapStrand strand, GQuark frame_id
 
   full_set_id = g_quark_from_string(set_str) ;
 
-  g_free(set_str) ;
+  g_free((void *)set_str) ;
 
   return full_set_id ;
 }
@@ -1509,7 +1510,7 @@ static void printGlist(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
   ZMapFeatureAny feature_any ;
-  char *feature_type =  NULL ;
+  const char *feature_type =  NULL ;
   GQuark feature_id = 0 ;
 
   if ((feature_any = zmapWindowItemGetFeatureAny(item)))
