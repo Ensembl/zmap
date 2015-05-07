@@ -40,7 +40,7 @@
 
 
 static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest) ;
-static gboolean hasAttribute(GArray *events_array, int element_index, char *attribute_name, char *attribute_value) ;
+static gboolean hasAttribute(GArray *events_array, int element_index, const char *attribute_name, const char *attribute_value) ;
 
 
 
@@ -89,7 +89,7 @@ GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack
 GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack)
 {
   ZMapXMLUtilsEventStack input;
-  ZMapXMLWriterEventStruct single = {0};
+  ZMapXMLWriterEventStruct single = {(ZMapXMLWriterEventType)0};
   gint size = 0;
 
   input = event_stack;
@@ -114,7 +114,7 @@ GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtil
 GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack)
 {
   ZMapXMLUtilsEventStack input;
-  ZMapXMLWriterEventStruct single = {0};
+  ZMapXMLWriterEventStruct single = {(ZMapXMLWriterEventType)0};
 
   input = event_stack;
 
@@ -154,7 +154,7 @@ GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
 {
   GArray *result = NULL ;
   ZMapXMLUtilsEventStack input ;
-  ZMapXMLWriterEventStruct single = {0} ;
+  ZMapXMLWriterEventStruct single = {(ZMapXMLWriterEventType)0} ;
   int insert_pos ;
   int i ;
   gboolean found_element ;
@@ -252,7 +252,7 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
 {
   GArray *result = NULL ;
   ZMapXMLUtilsEventStack input ;
-  ZMapXMLWriterEventStruct single = {0} ;
+  ZMapXMLWriterEventStruct single = {(ZMapXMLWriterEventType)0} ;
   int insert_pos ;
   int i ;
   gboolean found_element ;
@@ -397,6 +397,7 @@ char *zMapXMLWriterEvent2Txt(ZMapXMLWriterEvent event)
 {
   char *event_text = NULL ;
   static GString *event_str = NULL ;
+  const char *str ;
 
   if (!event_str)
     event_str = g_string_sized_new(1024) ;
@@ -407,16 +408,14 @@ char *zMapXMLWriterEvent2Txt(ZMapXMLWriterEvent event)
 
   switch (event->data.comp.data)
     {
-      char *str ;
-
     case ZMAPXML_EVENT_DATA_QUARK:
       g_string_append(event_str,
-      ((str = (char *)g_quark_to_string(event->data.comp.value.quark))
-       ? str : "No Value")) ;
+                      ((str = (char *)g_quark_to_string(event->data.comp.value.quark))
+                       ? str : "No Value")) ;
       break ;
     case ZMAPXML_EVENT_DATA_STRING:
       g_string_append(event_str,
-      ((str = event->data.comp.value.s) ? str : "No Value"))  ;
+                      ((str = event->data.comp.value.s) ? str : "No Value"))  ;
       break ;
     case ZMAPXML_EVENT_DATA_INTEGER:
       g_string_append_printf(event_str, "%d", event->data.comp.value.integer) ;
@@ -561,7 +560,7 @@ static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest)
  * 
  * Note, routine expects index to point to start of the element, _not_ the first attribute.
  *  */
-static gboolean hasAttribute(GArray *events_array, int element_index, char *attribute_name, char *attribute_value)
+static gboolean hasAttribute(GArray *events_array, int element_index, const char *attribute_name, const char *attribute_value)
 {
   gboolean result = FALSE ;
   ZMapXMLWriterEvent event ;

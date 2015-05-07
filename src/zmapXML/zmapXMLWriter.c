@@ -225,7 +225,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *eleme
 ZMapXMLWriterErrorCode zMapXMLWriterStartDocument(ZMapXMLWriter writer, char *document_root_tag)
 {
   ZMapXMLWriterErrorCode code;
-  char *version = "1.1", *encoding = "UTF-8";
+  const char *version = "1.1", *encoding = "UTF-8";
   char *doctype = NULL;
 
   g_string_append(writer->xml_output, "<?xml");
@@ -277,7 +277,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
 
   for (i = 0, event_count = events->len ; ((status == ZMAPXMLWRITER_OK) && (i < event_count)) ; i++)
     {
-      char *first = NULL, *second = NULL;
+      const char *first = NULL, *second = NULL;
       event = &(g_array_index(events, ZMapXMLWriterEventStruct, i));
 
       zMapDebugPrint(debug, "element: %s, attribute: %s",
@@ -341,7 +341,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
               status = zMapXMLWriterAttribute(writer, first, second);
 
             if(free_second && second)
-              g_free(second);
+              g_free((void *)second);
           }
           break;
         case ZMAPXML_NULL_EVENT:
@@ -401,7 +401,8 @@ ZMapXMLWriterErrorCode zMapXMLWriterDestroy(ZMapXMLWriter writer)
 {
   ZMapXMLWriterErrorCode code = ZMAPXMLWRITER_OK;
 
-  writer->output_callback = writer->output_userdata = NULL;
+  writer->output_callback = NULL;
+  writer->output_userdata = NULL;
 
   g_string_free(writer->xml_output, TRUE);
 

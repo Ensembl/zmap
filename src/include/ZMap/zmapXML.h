@@ -206,7 +206,7 @@ typedef struct _ZMapXMLWriterEventStruct
         int    integer ;
         double flt ;
         GQuark quark ;
-	char *s ;
+	const char *s ;
       } value;
     } comp ;                    /* complex for attributes and namespaced elements */
 

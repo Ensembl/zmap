@@ -59,7 +59,7 @@ static void initAttributes(GArray *array);
 static void freeUpTheQueue(ZMapXMLParser parser);
 static void freeTagHandlers(gpointer data, gpointer un_used_data);
 static char *getOffendingXML(ZMapXMLParser parser, int context);
-static void abortParsing(ZMapXMLParser parser, char *reason, ...);
+static void abortParsing(ZMapXMLParser parser, const char *reason, ...);
 static ZMapXMLElement parserFetchNewElement(ZMapXMLParser parser, 
                                             const XML_Char *name);
 static ZMapXMLAttribute parserFetchNewAttribute(ZMapXMLParser parser,
@@ -257,7 +257,7 @@ FILE *file)
       if (ferror(file))
         {
           if (parser->last_errmsg)
-            g_free(parser->last_errmsg) ;
+            g_free((void *)(parser->last_errmsg)) ;
           parser->last_errmsg = g_strdup_printf("File Read error");
           return 0;
         }
@@ -387,7 +387,7 @@ gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser,
         char *offend = NULL;
 
         if (parser->last_errmsg)
-          g_free(parser->last_errmsg);
+          g_free((void *)(parser->last_errmsg)) ;
 
         error = XML_GetErrorCode(parser->expat);
       
@@ -477,14 +477,16 @@ void zMapXMLParserSetMarkupObjectTagHandlers(ZMapXMLParser parser,
 
 char *zMapXMLParserLastErrorMsg(ZMapXMLParser parser)
 {
-  return parser->last_errmsg;
+  return (char *)(parser->last_errmsg) ;
 }
 
 void zMapXMLParserRaiseParsingError(ZMapXMLParser parser,
                                     char *error_string)
 {
   parser->error_free_abort = FALSE;
+
   abortParsing(parser, "%s", error_string);
+
   return ;
 }
 
@@ -578,9 +580,9 @@ void zMapXMLParserDestroy(ZMapXMLParser parser)
   freeUpTheQueue(parser);
 
   if (parser->last_errmsg)
-    g_free(parser->last_errmsg) ;
+    g_free((void *)(parser->last_errmsg)) ;
   if (parser->aborted_msg)
-    g_free(parser->aborted_msg) ;
+    g_free((void *)(parser->aborted_msg)) ;
 
   parser->user_data = NULL;
 
@@ -739,7 +741,8 @@ static void start_handler(void *userData,
   else
     {
       ZMapXMLElement parent_ele;
-      parent_ele = g_queue_peek_head(parser->elementStack);
+
+      parent_ele = (ZMapXMLElement)g_queue_peek_head(parser->elementStack);
       zmapXMLElementAddChild(parent_ele, current_ele);
     }
     
@@ -868,7 +871,7 @@ static void character_handler(void *userData,
   ZMapXMLElement content4ele;
   ZMapXMLParser parser = (ZMapXMLParser)userData ; 
 
-  content4ele = g_queue_peek_head(parser->elementStack);
+  content4ele = (ZMapXMLElement)g_queue_peek_head(parser->elementStack);
 
   zmapXMLElementAddContent(content4ele, s, len);
 
@@ -1074,7 +1077,7 @@ static char *getOffendingXML(ZMapXMLParser parser, int context)
   return bad_xml;               /* PLEASE free me later */
 }
 
-static void abortParsing(ZMapXMLParser parser, char *reason, ...)
+static void abortParsing(ZMapXMLParser parser, const char *reason, ...)
 {
   enum XML_Status stop_status;
   va_list args;

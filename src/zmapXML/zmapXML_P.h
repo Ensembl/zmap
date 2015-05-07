@@ -74,7 +74,7 @@ typedef struct _zmapXMLParserStruct
 #endif
   ZMapXMLDocument document;
 
-  char *last_errmsg, *aborted_msg ;
+  const char *last_errmsg, *aborted_msg ;
   void *user_data ;       /* Caller stores any data they need here. */
 
   GArray *elements, *attributes;

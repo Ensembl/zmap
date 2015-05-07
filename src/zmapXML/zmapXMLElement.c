@@ -119,7 +119,7 @@ ZMapXMLElement zMapXMLElementNextSibling(ZMapXMLElement ele)
   current = g_list_find(ele->parent->children, ele);
   sibling = g_list_next(current);
       
-  return (sibling ? sibling->data : NULL);
+  return (sibling ? (ZMapXMLElement)(sibling->data) : NULL);
 }
 
 ZMapXMLElement zMapXMLElementPreviousSibling(ZMapXMLElement ele)
@@ -129,7 +129,7 @@ ZMapXMLElement zMapXMLElementPreviousSibling(ZMapXMLElement ele)
   current = g_list_find(ele->parent->children, ele);
   sibling = g_list_previous(current);
       
-  return (sibling ? sibling->data : NULL);
+  return (sibling ? (ZMapXMLElement)(sibling->data) : NULL);
 }
 
 /* This can only get first Child path. Probably not commonly used, but
@@ -182,7 +182,7 @@ ZMapXMLElement zMapXMLElementGetChildByName1(ZMapXMLElement parent,
 
   list = zMapXMLElementGetChildrenByName(parent, name, 1);
 
-  return (list ? list->data : NULL);
+  return (list ? (ZMapXMLElement)(list->data) : NULL);
 }
 
 /* Exists to help above, but mainly as the following is possible in xml
