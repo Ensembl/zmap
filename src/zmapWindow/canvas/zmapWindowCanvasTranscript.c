@@ -75,13 +75,13 @@ void zMapWindowCanvasTranscriptInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_PAINT] = transcriptPaintFeature;
-  funcs[FUNC_ADD]   = transcriptAddFeature;
+  funcs[FUNC_PAINT] = (void *)transcriptPaintFeature;
+  funcs[FUNC_ADD]   = (void *)transcriptAddFeature;
 
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, 0) ;
 
-  feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = transcriptGetFeatureExtent ;
-  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = transcriptGetSubPart;
+  feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = (void *)transcriptGetFeatureExtent ;
+  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = (void *)transcriptGetSubPart;
   zMapWindowCanvasFeatureSetSize(FEATURE_TRANSCRIPT, feature_funcs, sizeof(zmapWindowCanvasTranscriptStruct)) ;
 
   return ;

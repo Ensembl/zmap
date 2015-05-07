@@ -235,14 +235,14 @@ void zMapWindowCanvasGlyphInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_SET_INIT] = glyphColumnInit ;
-  funcs[FUNC_SET_PAINT] = glyphSetPaint ;
-  funcs[FUNC_PAINT] = glyphPaintFeature ;
-  funcs[FUNC_PRE_ZOOM] = glyphPreZoom ;
-  funcs[FUNC_ZOOM] = glyphZoom ;
-  funcs[FUNC_POINT] = glyphPoint ;
-  funcs[FUNC_FREE] = glyphColumnFree ;
-  funcs[FUNC_ADD] = glyphAddFeature ;
+  funcs[FUNC_SET_INIT] = (void *)glyphColumnInit ;
+  funcs[FUNC_SET_PAINT] = (void *)glyphSetPaint ;
+  funcs[FUNC_PAINT] = (void *)glyphPaintFeature ;
+  funcs[FUNC_PRE_ZOOM] = (void *)glyphPreZoom ;
+  funcs[FUNC_ZOOM] = (void *)glyphZoom ;
+  funcs[FUNC_POINT] = (void *)glyphPoint ;
+  funcs[FUNC_FREE] = (void *)glyphColumnFree ;
+  funcs[FUNC_ADD] = (void *)glyphAddFeature ;
 
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GLYPH, funcs, 0) ;
 
@@ -318,7 +318,7 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
   if (siggy)
     {
       if(glyph_cache_G)
-	glyph = g_hash_table_lookup(glyph_cache_G,GUINT_TO_POINTER(siggy)) ;
+	glyph = (ZMapWindowCanvasGlyph)g_hash_table_lookup(glyph_cache_G,GUINT_TO_POINTER(siggy)) ;
       else
 	glyph_cache_G = g_hash_table_new(NULL,NULL) ;
     }
@@ -706,7 +706,7 @@ static ZMapWindowCanvasFeature glyphAddFeature(ZMapWindowFeaturesetItem features
   GlyphAnyColumnData any_glyph_col = NULL ;
   ZMapWindowCanvasFeature feat = NULL ;
   ZMapStyleGlyphShape shape ;
-  int boundary_type = 0 ;
+  ZMapGlyphWhichType boundary_type = (ZMapGlyphWhichType)0 ;
 
   zMapReturnValIfFail(featureset && featureset->per_column_data && feature, feat) ;
 

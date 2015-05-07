@@ -88,14 +88,14 @@ static long n_feature_free = 0;
 
 void zMapWindowCanvasFeatureInit(void)
 {
-  ZMapWindowCanvasFeatureClass class ;
+  ZMapWindowCanvasFeatureClass feature_class ;
 
-  class = g_new0(ZMapWindowCanvasFeatureClassStruct, 1) ;
+  feature_class = g_new0(ZMapWindowCanvasFeatureClassStruct, 1) ;
 
   /* set size of unspecified features structs to just the base */
-  class->struct_size[FEATURE_INVALID] = sizeof(zmapWindowCanvasFeatureStruct);
+  feature_class->struct_size[FEATURE_INVALID] = sizeof(zmapWindowCanvasFeatureStruct);
 
-  feature_class_G = class ;
+  feature_class_G = feature_class ;
 
   return ;
 }
@@ -177,14 +177,19 @@ gboolean zMapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature
 {
   gboolean result = TRUE ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   void (*func) (ZMapWindowCanvasFeature feature, ZMapSpan span, double *width) = NULL;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapWindowCanvasGetExtentFunc func = NULL ;
+
 
   zMapReturnValIfFail(zmapWindowCanvasFeatureValid(feature), FALSE) ;
 
 
   /* oh dear....perhaps we can move this wholly into there from featureset.c....not a standard
      func so should be ok.... */
-  func = feature_extent_G[feature->type];
+  func = (ZMapWindowCanvasGetExtentFunc)feature_extent_G[feature->type];
 
   if(!complex)		/* reset any compund feature extents */
     feature->y2 = feature->feature->x2;
@@ -252,7 +257,7 @@ void zMapWindowCanvasFeatureRemoveSplicePos(ZMapWindowCanvasFeature feature_item
 GString *zMapWindowCanvasFeature2Txt(ZMapWindowCanvasFeature canvas_feature)
 {
   GString *canvas_feature_text = NULL ;
-  char *indent = "" ;
+  const char *indent = "" ;
 
   zMapReturnValIfFail(canvas_feature, NULL) ;
 
@@ -295,13 +300,14 @@ ZMapFeatureSubPart zMapWindowCanvasFeaturesetGetSubPart(FooCanvasItem *foo, ZMap
                                                         double x, double y)
 {
   ZMapFeatureSubPart sub_part = NULL ;
-  ZMapFeatureSubPart (*func) (FooCanvasItem *foo, ZMapFeature feature, double x, double y) = NULL ;
+  ZMapWindowCanvasGetSubPartFunc func = NULL ;
 
   zMapReturnValIfFail((foo && feature && x && y), NULL) ;
 
   /* oh dear...another func to move into here from featureset.c I think..... */
 
-  if (feature->mode > 0 && feature->mode < FEATURE_N_TYPE && (func = feature_subpart_G[feature->mode]))
+  if (feature->mode > 0 && (zmapWindowCanvasFeatureType)(feature->mode) < FEATURE_N_TYPE
+      && (func = (ZMapWindowCanvasGetSubPartFunc)feature_subpart_G[feature->mode]))
     sub_part = func(foo, feature, x, y) ;
 
   return sub_part ;

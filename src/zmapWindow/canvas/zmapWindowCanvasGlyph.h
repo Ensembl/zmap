@@ -90,5 +90,6 @@ void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, Z
 					  ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable) ;
 void zMapWindowCanvasGlyphSetColData(ZMapWindowFeaturesetItem featureset) ;
 
+void zMapWindowCanvasGlyphGetJunctionShapes(ZMapStyleGlyphShape *start_out, ZMapStyleGlyphShape *end_out) ;
 
 #endif /* !ZMAP_CANVAS_GLYPH_H */

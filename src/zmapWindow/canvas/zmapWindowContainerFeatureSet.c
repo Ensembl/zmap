@@ -166,7 +166,7 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
   gobject_class->set_property = zmap_window_item_feature_set_set_property;
   gobject_class->get_property = zmap_window_item_feature_set_get_property;
 
-  parent_class_G = g_type_class_peek_parent(container_set_class);
+  parent_class_G = (GObjectClass *)g_type_class_peek_parent(container_set_class);
 
   group_class->obj_size = sizeof(zmapWindowContainerFeatureSetStruct) ;
   group_class->obj_total = 0 ;
@@ -292,10 +292,10 @@ static void zmap_window_item_feature_set_set_property(GObject      *gobject,
       //      container_feature_set->style_table = g_value_get_pointer(value) ;
       //      break ;
     case ITEM_FEATURE_SET_USER_HIDDEN_ITEMS:
-      container_feature_set->user_hidden_stack = g_value_get_pointer(value) ;
+      container_feature_set->user_hidden_stack = (GQueue *)g_value_get_pointer(value) ;
       break ;
     case ITEM_FEATURE_SET_VISIBLE:
-      container_feature_set->display_state = g_value_get_uint(value) ;
+      container_feature_set->display_state = (ZMapStyleColumnDisplayState)g_value_get_uint(value) ;
       break ;
     case ITEM_FEATURE_SET_HIDDEN_BUMP_FEATURES:
       container_feature_set->hidden_bump_features = g_value_get_boolean(value) ;
@@ -380,7 +380,7 @@ GType zmapWindowContainerFeatureSetGetType(void)
       group_type = g_type_register_static (ZMAP_TYPE_CONTAINER_GROUP,
                                            ZMAP_WINDOW_CONTAINER_FEATURESET_NAME,
                                            &group_info,
-                                           0);
+                                           (GTypeFlags)0);
     }
 
   return group_type;
@@ -779,7 +779,7 @@ GList *zmapWindowContainerFeatureSetPopHiddenStack(ZMapWindowContainerFeatureSet
 
   zMapReturnValIfFail(container_set, hidden_items) ;
 
-  hidden_items = g_queue_pop_head(container_set->user_hidden_stack);
+  hidden_items = (GList *)g_queue_pop_head(container_set->user_hidden_stack);
 
   return hidden_items;
 }

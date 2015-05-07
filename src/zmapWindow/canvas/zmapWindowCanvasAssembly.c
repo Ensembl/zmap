@@ -80,7 +80,7 @@ void zMapWindowCanvasAssemblyInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL };
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_PAINT] = zMapWindowCanvasAssemblyPaintFeature;
+  funcs[FUNC_PAINT] = (void *)zMapWindowCanvasAssemblyPaintFeature;
 
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ASSEMBLY, funcs, 0) ;
 

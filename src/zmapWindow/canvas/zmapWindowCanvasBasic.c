@@ -70,7 +70,7 @@ void zMapWindowCanvasBasicInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_PAINT] = basicPaintFeature ;
+  funcs[FUNC_PAINT] = (void *)basicPaintFeature ;
 
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, 0) ;
 

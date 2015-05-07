@@ -120,19 +120,19 @@ void zMapWindowCanvasGraphInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_SET_INIT] = graphInit ;
-  funcs[FUNC_PREPARE] = graphPaintPrepare ;
-  funcs[FUNC_PAINT] = graphPaintFeature ;
-  funcs[FUNC_FLUSH] = graphPaintFlush ;
-  funcs[FUNC_PRE_ZOOM] = graphPreZoom ;
-  funcs[FUNC_ZOOM] = graphZoom ;
-  funcs[FUNC_POINT] = graphPoint ;
+  funcs[FUNC_SET_INIT] = (void *)graphInit ;
+  funcs[FUNC_PREPARE] = (void *)graphPaintPrepare ;
+  funcs[FUNC_PAINT] = (void *)graphPaintFeature ;
+  funcs[FUNC_FLUSH] = (void *)graphPaintFlush ;
+  funcs[FUNC_PRE_ZOOM] = (void *)graphPreZoom ;
+  funcs[FUNC_ZOOM] = (void *)graphZoom ;
+  funcs[FUNC_POINT] = (void *)graphPoint ;
 
   /* And again encapsulation is broken..... */
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPH, funcs, sizeof(ZMapWindowCanvasGraphStruct)) ;
 
 
-  feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = graphGetFeatureExtent ;
+  feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = (void *)graphGetFeatureExtent ;
 
   zMapWindowCanvasFeatureSetSize(FEATURE_GRAPH, feature_funcs, 0) ;
 
@@ -716,7 +716,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
 
       if (graph_set->n_points < 1)              /* no features, draw baseline */
         {
-          zmapWindowCanvasFeatureStruct dummy = { 0 };
+          zmapWindowCanvasFeatureStruct dummy = { (zmapWindowCanvasFeatureType)0 };
           FooCanvasItem *foo = (FooCanvasItem *) featureset;
 
           foo_canvas_c2w (foo->canvas, 0, featureset->clip_y1, NULL, &dummy.y2);
@@ -750,7 +750,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
           /* draw back to baseline from last point and add trailing line */
           if (!feature)
             {
-              zmapWindowCanvasFeatureStruct dummy = {0} ;
+              zmapWindowCanvasFeatureStruct dummy = {(zmapWindowCanvasFeatureType)0} ;
 
               if (end > featureset->end)
                 {

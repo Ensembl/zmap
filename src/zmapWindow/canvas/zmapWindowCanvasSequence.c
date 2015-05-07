@@ -80,11 +80,11 @@ void zMapWindowCanvasSequenceInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL };
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_PAINT]   = zmapWindowCanvasSequencePaintFeature;
-  funcs[FUNC_PRE_ZOOM] = zmapWindowCanvasSequencePreZoom ;
-  funcs[FUNC_ZOOM]    = zmapWindowCanvasSequenceZoomSet;
-  funcs[FUNC_COLOUR]  = zmapWindowCanvasSequenceSetColour;
-  funcs[FUNC_FREE]    = zmapWindowCanvasSequenceFreeSet;
+  funcs[FUNC_PAINT]   = (void *)zmapWindowCanvasSequencePaintFeature;
+  funcs[FUNC_PRE_ZOOM] = (void *)zmapWindowCanvasSequencePreZoom ;
+  funcs[FUNC_ZOOM]    = (void *)zmapWindowCanvasSequenceZoomSet;
+  funcs[FUNC_COLOUR]  = (void *)zmapWindowCanvasSequenceSetColour;
+  funcs[FUNC_FREE]    = (void *)zmapWindowCanvasSequenceFreeSet;
 
 
   /* it would have been better to make a SequenceSet struct to wrap the Pango in case we ant to add anything,
@@ -93,7 +93,7 @@ void zMapWindowCanvasSequenceInit(void)
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_SEQUENCE, funcs, sizeof(zmapWindowCanvasPangoStruct)) ;
 
 
-  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = zmapWindowCanvasSequenceGetSubPartSpan ;
+  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = (void *)zmapWindowCanvasSequenceGetSubPartSpan ;
 
   zMapWindowCanvasFeatureSetSize(FEATURE_SEQUENCE, feature_funcs, sizeof(zmapWindowCanvasSequenceStruct)) ;
   
@@ -219,7 +219,7 @@ static void zmapWindowCanvasSequenceSetRow(ZMapWindowFeaturesetItem featureset, 
           if(seq->text)
             g_free(seq->text);
           seq->n_text = seq->row_size > MAX_SEQ_TEXT ? seq->row_size : MAX_SEQ_TEXT;        /* avoid reallocation, maybe we first do this zoomned in */
-          seq->text = g_malloc(seq->n_text);
+          seq->text = (char *)g_malloc(seq->n_text);
         }
 
       featureset->width = seq->row_disp * pango->text_width;
@@ -780,7 +780,7 @@ static ZMapFeatureSubPart zmapWindowCanvasSequenceGetSubPartSpan(FooCanvasItem *
 
   /*! \todo #warning revisit this when canvas items are simplified */
 
-  sub_part = g_malloc0(sizeof *sub_part) ;
+  sub_part = g_new0(ZMapFeatureSubPartStruct, 1) ;
   sub_part->start = y;
   sub_part->end = y;
   sub_part->index = 1;

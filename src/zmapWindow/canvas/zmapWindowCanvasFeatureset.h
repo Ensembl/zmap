@@ -77,8 +77,26 @@ typedef struct _zmapWindowCanvasGraphicsStruct *ZMapWindowCanvasGraphics;
 
 typedef void (*ZMapWindowFeatureItemSetInitFunc)(ZMapWindowFeaturesetItem featureset) ;
 
+typedef void (*ZMapWindowFeatureItemPaintPrepare)(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                                  GdkDrawable *drawable, GdkEventExpose *expose) ;
+typedef void (*ZMapWindowFeatureItemPaintFeature)(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                                  GdkDrawable *drawable, GdkEventExpose *expose) ;
+
+typedef void (*ZMapWindowFeatureItemPaintFlush)(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                                GdkDrawable *drawable, GdkEventExpose *expose) ;
+
+
 typedef void (*ZMapWindowFeatureItemSetPaintFunc)(ZMapWindowFeaturesetItem featureset,
 						  GdkDrawable *drawable, GdkEventExpose *expose) ;
+typedef void (*ZMapWindowFeatureItemSetColourFunc)(FooCanvasItem *interval,
+                                                   ZMapFeature feature, ZMapFeatureSubPart sub_feature,
+                                                   ZMapStyleColourType colour_type, int colour_flags,
+                                                   GdkColor *default_fill, GdkColor *default_border) ;
+
+typedef ZMapWindowCanvasFeature (*ZMapWindowFeatureItemAddFeatureFunc)(ZMapWindowFeaturesetItem featureset,
+                                                                       ZMapFeature feature, double y1, double y2) ;
+
+
 
 typedef void (*ZMapWindowFeatureItemPreZoomFunc)(ZMapWindowFeaturesetItem featureset) ;
 typedef void (*ZMapWindowFeatureItemZoomFunc)(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
@@ -89,6 +107,8 @@ typedef double (*ZMapWindowFeatureItemPointFunc)(ZMapWindowFeaturesetItem fi, ZM
 
 typedef void (*ZMapWindowFeatureFreeFunc)(ZMapWindowFeaturesetItem featureset) ;
 
+typedef void (*ZMapWindowCanvasGetExtentFunc)(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width) ;
+typedef ZMapFeatureSubPart (*ZMapWindowCanvasGetSubPartFunc) (FooCanvasItem *foo, ZMapFeature feature, double x, double y) ;
 
 
 
@@ -135,7 +155,7 @@ GString *zMapWindowCanvasFeatureset2Txt(ZMapWindowFeaturesetItem featureset_item
 
 void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable,
                                          ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango,
-                                         char *family, int size, GdkColor *draw);
+                                         const char *family, int size, GdkColor *draw);
 void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango);
 
 void zMapWindowCanvasFeaturesetExpose(ZMapWindowFeaturesetItem fi);

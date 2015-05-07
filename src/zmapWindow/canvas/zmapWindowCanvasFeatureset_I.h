@@ -68,6 +68,11 @@ typedef enum
 
 
 
+
+
+
+
+
 /* Default feature colours, suitably boring to prompt user to set their own. */
 #define CANVAS_DEFAULT_COLOUR_FILL   "grey"
 #define CANVAS_DEFAULT_COLOUR_BORDER "black"

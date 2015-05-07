@@ -799,7 +799,7 @@ static GList *removeSelectedFeatures(GList *filter_features, GList *feature_list
 
 static void removeCB(gpointer data, gpointer user_data)
 {
-  GList **feature_list_p = user_data ;
+  GList **feature_list_p = (GList **)user_data ;
   GList *feature_list = *feature_list_p ;
   GList *found_feature_item ;
   GList *curr ;
@@ -1205,7 +1205,7 @@ static void feature2Match(gpointer data, gpointer user_data)
 
   feature_name = zMapFeatureUniqueName((ZMapFeatureAny)feature) ;
 
-  if (!(match_data = g_hash_table_lookup(filter_data->match_features, GUINT_TO_POINTER(feature->unique_id))))
+  if (!(match_data = (MatchData)g_hash_table_lookup(filter_data->match_features, GUINT_TO_POINTER(feature->unique_id))))
     {
       match_data = g_new0(MatchDataStruct, 1) ;
 

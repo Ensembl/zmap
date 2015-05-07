@@ -180,17 +180,17 @@ void zMapWindowCanvasGraphicsInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL };
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_ZOOM] = graphicsZoomSet;
+  funcs[FUNC_ZOOM] = (void *)graphicsZoomSet;
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPHICS, funcs,sizeof(zmapWindowCanvasPangoStruct));
   zMapWindowCanvasFeatureSetSize(FEATURE_GRAPHICS, feature_funcs, 0) ;
 
   funcs[FUNC_ZOOM] = NULL;        /* not needed by the others but no harm done  if it's left in?? */
 
-  funcs[FUNC_PAINT] = linePaint;
+  funcs[FUNC_PAINT] = (void *)linePaint;
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LINE, funcs, 0) ;
   zMapWindowCanvasFeatureSetSize(FEATURE_LINE, feature_funcs, 0) ;
 
-  funcs[FUNC_PAINT] = textPaint;
+  funcs[FUNC_PAINT] = (void *)textPaint;
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TEXT, funcs, 0);
   zMapWindowCanvasFeatureSetSize(FEATURE_TEXT, feature_funcs, 0) ;
 

@@ -179,11 +179,11 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
   if (zmapWindowCanvasFeatureValid(feature))
     {
       FooCanvasItem *foo = (FooCanvasItem *) &featureset->__parent__;
-      PixRect this;
+      PixRect curr;
       PixRect blocks = NULL;
       PixRect pr,del,last = NULL;
-      gboolean always_gapped = (zMapStyleGetMode(featureset->style) == ZMAPSTYLE_MODE_ALIGNMENT) &&
-        zMapStyleIsAlwaysGapped(featureset->style) && feature->feature->feature.homol.align;
+      gboolean always_gapped = (zMapStyleGetMode(featureset->style) == ZMAPSTYLE_MODE_ALIGNMENT)
+        && zMapStyleIsAlwaysGapped(featureset->style) && feature->feature->feature.homol.align ;
 
       /*
        * NOTE this was originally written for simple features, and alignments split into separate features
@@ -214,31 +214,31 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
             {
               ab = & g_array_index(gaps,ZMapAlignBlockStruct, i);
 
-              this = alloc_pix_rect();
+              curr = alloc_pix_rect();
 
-              foo_canvas_w2c (foo->canvas, 0,ab->t1, NULL, &this->y1);
-              //			this->start = this->y1;
-              foo_canvas_w2c (foo->canvas, feature->width, ab->t2, &this->x2, &this->y2);
-              this->feature = feature;
+              foo_canvas_w2c (foo->canvas, 0,ab->t1, NULL, &curr->y1);
+              //			curr->start = curr->y1;
+              foo_canvas_w2c (foo->canvas, feature->width, ab->t2, &curr->x2, &curr->y2);
+              curr->feature = feature;
 
               if(last)
-                last->next = this;
+                last->next = curr;
               /* we don't care about the prev pointer */
 
-              last = this;
+              last = curr;
               if(!blocks)
-                blocks = this;
+                blocks = curr;
             }
 	}
       else
 	{
-          this = alloc_pix_rect();
+          curr = alloc_pix_rect();
 
-          foo_canvas_w2c (foo->canvas, 0,feature->y1, NULL, &this->y1);
-          //		this->start = this->y1;
-          foo_canvas_w2c (foo->canvas, feature->width, feature->y2, &this->x2, &this->y2);
-          this->feature = feature;
-          blocks = this;
+          foo_canvas_w2c (foo->canvas, 0,feature->y1, NULL, &curr->y1);
+          //		curr->start = curr->y1;
+          foo_canvas_w2c (foo->canvas, feature->width, feature->y2, &curr->x2, &curr->y2);
+          curr->feature = feature;
+          blocks = curr;
 	}
 
       /* new revised algorithm !
@@ -257,19 +257,19 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
 
       while(blocks)
 	{
-          this = blocks;
+          curr = blocks;
           blocks = blocks->next;		/* one feature only, or a list of always gapped blocks in the feature */
-          this->next = this->prev = NULL;
+          curr->next = curr->prev = NULL;
           last = NULL;
 
 #if PIX_LIST_DEBUG
-          printf("this = %d\n",this->which);
+          printf("curr = %d\n",curr->which);
 #endif
 
           /* original code now in a loop */
 
           /* trim out of scope visible rectangles off the start of the list */
-          while(pix && pix->y1 < this->y1)
+          while(pix && pix->y1 < curr->y1)
             {
               /* feature is visible */
               n_summarise_show++;
@@ -300,10 +300,10 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
               printf("testing %d\n",pr->which);
 #endif
 
-              if(this->x2 >= pr->x2)		/* enough overlap to care about */
+              if(curr->x2 >= pr->x2)		/* enough overlap to care about */
                 {
-                  if(pr->y1 >= this->y1)
-                    pr->y1 = this->y2 + 1;	/* shrink visible region: hidden cannot be after start */
+                  if(pr->y1 >= curr->y1)
+                    pr->y1 = curr->y2 + 1;	/* shrink visible region: hidden cannot be after start */
 
                   if(pr->y1 > pr->y2)	/* feature is hidden by features on top of it */
                     {
@@ -346,12 +346,12 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
 
           if(last)
             {
-              last->next = this;
-              this->prev = last;
+              last->next = curr;
+              curr->prev = last;
             }
           else
             {
-              pix = this;
+              pix = curr;
             }
 	}
     }

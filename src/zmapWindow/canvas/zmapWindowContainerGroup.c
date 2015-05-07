@@ -200,7 +200,7 @@ GType zmapWindowContainerGroupGetType(void)
     group_type = g_type_register_static (FOO_TYPE_CANVAS_GROUP,
                                          ZMAP_WINDOW_CONTAINER_GROUP_NAME,
                                          &group_info,
-                                         0);
+                                         (GTypeFlags)0);
   }
 
   return group_type;
@@ -583,8 +583,8 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
       parent = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)parent);
       parent_container = (ZMapWindowContainerGroup) parent;
 
-      this_spacing     = parent_container->child_spacing;
-      level            = parent_container->level + 1;
+      this_spacing = parent_container->child_spacing;
+      level = (ZMapContainerLevelType)(parent_container->level + 1) ;
     }
 
   container_type = ZMAP_TYPE_CONTAINER_GROUP;
@@ -1297,7 +1297,7 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
                                          ZMapContainerUtilsExecFunc container_leave_cb,
                                          gpointer                   container_leave_data)
 {
-  ContainerRecursionDataStruct data  = {0,NULL};
+  ContainerRecursionDataStruct data  = {(ZMapContainerLevelType)0, NULL} ;
   //  ZMapWindowCanvas zmap_canvas;
   FooCanvasItem *parent;
 

@@ -104,19 +104,19 @@ void zMapWindowCanvasAlignmentInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL };
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_SET_INIT] = alignmentColumnInit ;
-  funcs[FUNC_PAINT]  = zMapWindowCanvasAlignmentPaintFeature;
-  funcs[FUNC_PRE_ZOOM] = zmapWindowCanvasAlignmentPreZoom ;
-  funcs[FUNC_ZOOM]   = zMapWindowCanvasAlignmentZoomSet;
-  funcs[FUNC_FREE]   = zMapWindowCanvasAlignmentFreeSet;
-  funcs[FUNC_ADD]    = zMapWindowCanvasAlignmentAddFeature;
-  funcs[FUNC_POINT]   = alignmentPoint;
+  funcs[FUNC_SET_INIT] = (void *)alignmentColumnInit ;
+  funcs[FUNC_PAINT]  = (void *)zMapWindowCanvasAlignmentPaintFeature;
+  funcs[FUNC_PRE_ZOOM] = (void *)zmapWindowCanvasAlignmentPreZoom ;
+  funcs[FUNC_ZOOM]   = (void *)zMapWindowCanvasAlignmentZoomSet;
+  funcs[FUNC_FREE]   = (void *)zMapWindowCanvasAlignmentFreeSet;
+  funcs[FUNC_ADD]    = (void *)zMapWindowCanvasAlignmentAddFeature;
+  funcs[FUNC_POINT]   = (void *)alignmentPoint;
 
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ALIGN, funcs, 0) ;
 
 
-  feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = zMapWindowCanvasAlignmentGetFeatureExtent ;
-  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = zmapWindowCanvasAlignmentGetSubPart ;
+  feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = (void *)zMapWindowCanvasAlignmentGetFeatureExtent ;
+  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = (void *)zmapWindowCanvasAlignmentGetSubPart ;
 
   zMapWindowCanvasFeatureSetSize(FEATURE_ALIGN, feature_funcs, sizeof(zmapWindowCanvasAlignmentStruct)) ;
 
@@ -839,7 +839,7 @@ static ZMapFeatureSubPart zmapWindowCanvasAlignmentGetSubPart(FooCanvasItem *foo
       end = ab->t2 + 1 ;                                    /* full extent of gap is end + 1. */
       if (y >= start && y < end)
         {
-          sub_part = g_malloc0(sizeof *sub_part) ;
+          sub_part = (ZMapFeatureSubPart)g_malloc0(sizeof *sub_part) ;
 
           if (feature->strand == ZMAPSTRAND_FORWARD)
             sub_part->index = i + 1 ;
@@ -861,7 +861,7 @@ static ZMapFeatureSubPart zmapWindowCanvasAlignmentGetSubPart(FooCanvasItem *foo
 
           if (y >= start && y < end)
             {
-              sub_part = g_malloc0(sizeof *sub_part) ;
+              sub_part = (ZMapFeatureSubPart)g_malloc0(sizeof *sub_part) ;
 
               if (feature->strand == ZMAPSTRAND_FORWARD)
                 sub_part->index = i ;
