@@ -118,7 +118,7 @@ typedef struct ZMapBlixemDataStruct_
 
   int            homol_max;                /* score cutoff point */
 
-  char          *opts;
+  const char          *opts;
   char          *errorMsg;
 
   gboolean      keep_tmpfiles ;
@@ -951,7 +951,7 @@ static gboolean setBlixemScope(ZMapBlixemData blixem_data)
           if (blixem_data->features)
             feature = (ZMapFeature)(blixem_data->features->data) ;
           else
-            feature = zMap_g_hash_table_nth(blixem_data->feature_set->features, 0) ;
+            feature = (ZMapFeature)zMap_g_hash_table_nth(blixem_data->feature_set->features, 0) ;
 
           if (feature->strand == ZMAPSTRAND_REVERSE)
             blixem_data->opts = "X-BR";
@@ -1583,7 +1583,7 @@ static void processSetHash(gpointer key, gpointer data, gpointer user_data)
 
   canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
 
-  feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id));
+  feature_set = (ZMapFeatureSet)g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id));
 
   if (feature_set)
     {
@@ -1604,7 +1604,7 @@ static void processSetList(gpointer data, gpointer user_data)
 
   canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
 
-  feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id));
+  feature_set = (ZMapFeatureSet)g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id));
 
   if (feature_set)
     {
@@ -1740,7 +1740,7 @@ static void getSetList(gpointer data, gpointer user_data)
 
   canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
 
-  feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id));
+  feature_set = (ZMapFeatureSet)g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id));
 
   if(feature_set)
     {
@@ -1760,7 +1760,7 @@ static void getSetList(gpointer data, gpointer user_data)
 
       for(;column_2_featureset;column_2_featureset = column_2_featureset->next)
         {
-          if((feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, column_2_featureset->data)))
+          if((feature_set = (ZMapFeatureSet)g_hash_table_lookup(blixem_data->block->feature_sets, column_2_featureset->data)))
             {
                   g_hash_table_foreach(feature_set->features, getFeatureCB, blixem_data) ;
             }

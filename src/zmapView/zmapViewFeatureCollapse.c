@@ -850,7 +850,7 @@ static int makeConcensusSequence(ZMapFeature composite)
       ZMapFeature f;
       int i;
       char *seq;
-      char *base = "nacgt";
+      const char *base = "nacgt";
       GList *fl;
 
 
@@ -899,7 +899,7 @@ static int makeConcensusSequence(ZMapFeature composite)
 
 	  n_bases = n_seq + 10;	/* prevent petty re-alloc's */
 
-	  bases = g_malloc(sizeof(int) * n_bases * N_ALPHABET);
+	  bases = (int *)g_malloc(sizeof(int) * n_bases * N_ALPHABET);
 	}
 
       memset(bases, 0, sizeof(int) * n_bases * N_ALPHABET);
@@ -950,7 +950,7 @@ static int makeConcensusSequence(ZMapFeature composite)
 	}
 
       /* must not free old sequence as it's copied from a real feature */
-      composite->feature.homol.sequence = seq = g_malloc(n_seq + 1);
+      composite->feature.homol.sequence = seq = (char *)g_malloc(n_seq + 1);
       for(bp = bases, i = 0; i < n_seq; i++)
 	{
 	  int base_ind, max, j;
@@ -1535,8 +1535,8 @@ static void dumpFeaturesCB(gpointer data, gpointer user_data)
   int start, end, num_gaps = 0 ;
   const char *strand ;
   gboolean gaps ;
-  char *gap_str ;
-  char *strand_diff = "", *overlap = "" ;
+  const char *gap_str ;
+  const char *strand_diff = "", *overlap = "" ;
 
   start = feature->x1 ;
   end = feature->x2 ;

@@ -109,7 +109,7 @@
 /* Struct describing features loaded. */
 typedef struct LoadFeaturesDataStructType
 {
-  char *err_msg;                                            /* from the server mainly */
+  const char *err_msg;                                      /* from the server mainly */
   gchar *stderr_out;
   gint exit_code;
 
@@ -698,7 +698,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
           if ((feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, NULL)))
             {
-              style = g_hash_table_lookup(zmap_view->context_map.styles, GUINT_TO_POINTER(style_id)) ;
+              style = (ZMapFeatureTypeStyle)g_hash_table_lookup(zmap_view->context_map.styles, GUINT_TO_POINTER(style_id)) ;
 
               zMapFeatureSetStyle(feature_set,style);
 
@@ -1181,7 +1181,7 @@ ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
   ZMapFeatureAlignment align_copy = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)context->master_align) ;
   zMapFeatureContextAddAlignment(context_copy, align_copy, FALSE) ;
 
-  ZMapFeatureBlock block = zMap_g_hash_table_nth(context->master_align->blocks, 0) ;
+  ZMapFeatureBlock block = (ZMapFeatureBlock)zMap_g_hash_table_nth(context->master_align->blocks, 0) ;
   g_return_val_if_fail(block, NULL) ;
 
   ZMapFeatureBlock block_copy = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block) ;
@@ -1281,7 +1281,7 @@ void zMapViewRedraw(ZMapViewWindow view_window)
         {
           ZMapViewWindow view_window ;
 
-          view_window = list_item->data ;
+          view_window = (ZMapViewWindow)(list_item->data) ;
 
           zMapWindowRedraw(view_window->window) ;
         }
@@ -1308,7 +1308,7 @@ void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
         {
           ZMapViewWindow view_window ;
 
-          view_window = list_item->data ;
+          view_window = (ZMapViewWindow)(list_item->data) ;
 
           zMapWindowFeatureSaveState(view_window->window, revcomp) ;
         }
@@ -1322,7 +1322,7 @@ void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
         {
           ZMapViewWindow view_window ;
 
-          view_window = list_item->data ;
+          view_window = (ZMapViewWindow)(list_item->data) ;
 
           zMapWindowFeatureReset(view_window->window, revcomp) ;
         }
@@ -1346,29 +1346,29 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
 //  if (zmap_view->state == ZMAPVIEW_LOADED)
 // data is processed only when idle so this should be safe
-    if(zmap_view->features)
+  if(zmap_view->features)
     {
       GList* list_item ;
 
       zmapViewBusy(zmap_view, TRUE) ;
 
-        zMapLogTime(TIMER_REVCOMP,TIMER_CLEAR,0,"Revcomp");
-        zMapLogTime(TIMER_EXPOSE,TIMER_CLEAR,0,"Revcomp");
-        zMapLogTime(TIMER_UPDATE,TIMER_CLEAR,0,"Revcomp");
-        zMapLogTime(TIMER_DRAW,TIMER_CLEAR,0,"Revcomp");
-        zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_CLEAR,0,"Revcomp");
-        zMapLogTime(TIMER_SETVIS,TIMER_CLEAR,0,"Revcomp");
-
-        zmapViewResetWindows(zmap_view, TRUE);
+      zMapLogTime(TIMER_REVCOMP,TIMER_CLEAR,0,"Revcomp");
+      zMapLogTime(TIMER_EXPOSE,TIMER_CLEAR,0,"Revcomp");
+      zMapLogTime(TIMER_UPDATE,TIMER_CLEAR,0,"Revcomp");
+      zMapLogTime(TIMER_DRAW,TIMER_CLEAR,0,"Revcomp");
+      zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_CLEAR,0,"Revcomp");
+      zMapLogTime(TIMER_SETVIS,TIMER_CLEAR,0,"Revcomp");
+      
+      zmapViewResetWindows(zmap_view, TRUE);
 
       zMapWindowNavigatorReset(zmap_view->navigator_window);
 
-        zMapLogTime(TIMER_REVCOMP,TIMER_START,0,"Context");
+      zMapLogTime(TIMER_REVCOMP,TIMER_START,0,"Context");
 
       /* Call the feature code that will do the revcomp. */
       zMapFeatureContextReverseComplement(zmap_view->features, zmap_view->context_map.styles) ;
 
-        zMapLogTime(TIMER_REVCOMP,TIMER_STOP,0,"Context");
+      zMapLogTime(TIMER_REVCOMP,TIMER_STOP,0,"Context");
 
       /* Set our record of reverse complementing. */
       zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES] = !(zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES]) ;
@@ -1382,7 +1382,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
             {
               ZMapViewWindow view_window ;
 
-              view_window = list_item->data ;
+              view_window = (ZMapViewWindow)(list_item->data) ;
 
               zMapWindowFeatureRedraw(view_window->window, zmap_view->features,TRUE) ;
             }
@@ -1393,7 +1393,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       /* signal our caller that we have data. */
       (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, NULL) ;
 
-        zMapLogTime(TIMER_REVCOMP,TIMER_ELAPSED,0,"");
+      zMapLogTime(TIMER_REVCOMP,TIMER_ELAPSED,0,"");
       zmapViewBusy(zmap_view, FALSE);
 
       result = TRUE ;
@@ -1483,7 +1483,7 @@ void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom)
             {
               ZMapViewWindow view_window ;
 
-              view_window = list_item->data ;
+              view_window = (ZMapViewWindow)(list_item->data) ;
 
               zMapWindowZoom(view_window->window, zoom) ;
             }
@@ -1791,12 +1791,12 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
                         zmap_view->view_sequence ? zmap_view->view_sequence->sequence : "<null>") ;
 
       response = zMapGUIMsgGetSaveFull(parent,
-        ZMAP_MSG_WARNING,
-        msg,
-        GTK_STOCK_QUIT,
-        GTK_STOCK_CANCEL,
-        GTK_STOCK_SAVE) ;
-
+                                       ZMAP_MSG_WARNING,
+                                       msg,
+                                       GTK_STOCK_QUIT,
+                                       GTK_STOCK_CANCEL,
+                                       GTK_STOCK_SAVE) ;
+      
       g_free(msg) ;
 
       if (response == GTK_RESPONSE_CLOSE)
@@ -1972,7 +1972,8 @@ static GHashTable *zmapViewGetFeatureSourceHash(GList *sources)
   // for each source extract featuresets and add a hash to the source
   for(;sources; sources = g_list_next(sources))
     {
-      src = sources->data;
+      src = (ZMapConfigSource)(sources->data) ;
+
       if(!src->featuresets)
             continue;
       features = g_strsplit(src->featuresets,";",0); // this will give null entries eg 'aaa ; bbbb' -> 5 strings
@@ -2012,7 +2013,7 @@ ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash, GQuark featur
 {
   ZMapConfigSource config_source ;
 
-  config_source = g_hash_table_lookup(hash, GUINT_TO_POINTER(featurequark)) ;
+  config_source = (ZMapConfigSource)g_hash_table_lookup(hash, GUINT_TO_POINTER(featurequark)) ;
 
   return config_source ;
 }
@@ -2104,7 +2105,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
                * there is some possibility of collision if mis-configured
                * and what will happen will be no data
                */
-              if ((GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(unique_id))))
+              if ((GFFset = (ZMapFeatureSetDesc)g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(unique_id))))
 
                 {
                   featureset = GFFset->column_id;
@@ -2143,7 +2144,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
                         {
                           ZMapFeatureSetDesc GFFset = NULL;
 
-                          GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(fset)) ;
+                          GFFset = (ZMapFeatureSetDesc)g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(fset)) ;
                           if (GFFset)
                             {
                               fset = GFFset->column_id;
@@ -2699,7 +2700,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
         /* add a flag for each seq_data featureset */
         for(iter = view->context_map.seq_data_featuresets; iter; iter = iter->next)
           {
-            gff_source = g_hash_table_lookup(source_2_sourcedata,iter->data);
+            gff_source = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,iter->data);
             //zMapLogWarning("view is_seq: %s -> %p",g_quark_to_string(GPOINTER_TO_UINT(iter->data)),gff_source);
             if(gff_source)
               gff_source->is_seq = TRUE;
@@ -2768,7 +2769,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 
                 // key is featureset quark, value is column GFFSet struct
 
-                gff_source = g_hash_table_lookup(source_2_sourcedata,key);
+                gff_source = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,key);
                 if(gff_source)
                   {
                     style_id = gff_source->style_id;
@@ -2841,7 +2842,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
           ZMapFeatureSetDesc f2c ;
 
           /* hard coded column style for strand separator */
-          if ((column = g_hash_table_lookup(view->context_map.columns, GUINT_TO_POINTER(col_id))))
+          if ((column = (ZMapFeatureColumn)g_hash_table_lookup(view->context_map.columns, GUINT_TO_POINTER(col_id))))
             {
               column->style_id = col_id ;
 
@@ -2856,7 +2857,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
           /* hard coded default column for search hit markers */
           if (view->context_map.featureset_2_column)
             {
-              if (!(f2c = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(set_id))))
+              if (!(f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(set_id))))
                 {
                   /* NOTE this is the strand separator column which used to be the third strand
                    * it used to have a Search Hit Markers column in it sometimes
@@ -2893,8 +2894,8 @@ static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
   ZMapFeatureColumn pa,pb;
   GHashTable *hash = (GHashTable *) user_data;
 
-  pa = g_hash_table_lookup(hash,a);
-  pb = g_hash_table_lookup(hash,b);
+  pa = (ZMapFeatureColumn)g_hash_table_lookup(hash,a);
+  pb = (ZMapFeatureColumn)g_hash_table_lookup(hash,b);
   if(pa && pb)
     {
       if(pa->order < pb->order)
@@ -3045,7 +3046,7 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
   ZMapWindowSelect window_select = (ZMapWindowSelect)window_data ;
-  ZMapViewSelectStruct view_select = {0} ;
+  ZMapViewSelectStruct view_select = {(ZMapWindowSelectType)0} ;
 
   /* I DON'T UNDERSTAND HOW WE CAN BE CALLED IF THERE IS NO SELECT...SOUNDS DUBIOUS... */
 
@@ -3068,7 +3069,7 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
                   FooCanvasItem *item ;
                   GList *l;
 
-                  view_window = list_item->data ;
+                  view_window = (ZMapViewWindow)(list_item->data) ;
 
                   if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
                     {
@@ -3402,7 +3403,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
           ZMapThread thread ;
           ZMapThreadReply reply = ZMAPTHREAD_REPLY_DIED ;
           void *data = NULL ;
-          char *err_msg = NULL ;
+          const char *err_msg = NULL ;
           gboolean thread_has_died = FALSE ;
           gboolean all_steps_finished = FALSE ;
           gboolean this_step_finished = FALSE ;
@@ -3411,7 +3412,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
           ConnectionData connect_data = NULL ;
           gboolean is_empty = FALSE ;
 
-          view_con = list_item->data ;
+          view_con = (ZMapViewConnection)(list_item->data) ;
           thread = view_con->thread ;
 
           data = NULL ;
@@ -3902,7 +3903,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
           if (err_msg)
             {
-              g_free(err_msg) ;
+              g_free((void *)err_msg) ;
               err_msg = NULL ;
             }
 
@@ -4124,7 +4125,7 @@ GList *get_required_styles_list(GHashTable *srchash,GList *fsets)
   zMap_g_hash_table_iter_init(&iter,srchash);
   while(zMap_g_hash_table_iter_next(&iter,&key,&value))
     {
-      src = g_hash_table_lookup(srchash,key);
+      src = (ZMapFeatureSource)g_hash_table_lookup(srchash, key);
       if(src)
         value = GUINT_TO_POINTER(src->style_id);
       styles = g_list_prepend(styles,value);
@@ -4306,7 +4307,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
             ZMapFeatureSource src;
             GQuark fid = zMapStyleCreateID((char *) g_quark_to_string( GPOINTER_TO_UINT(fset->data)));
 
-            if (!(src = g_hash_table_lookup(feature_sets->source_2_sourcedata_inout,GUINT_TO_POINTER(fid))))
+            if (!(src = (ZMapFeatureSource)g_hash_table_lookup(feature_sets->source_2_sourcedata_inout,GUINT_TO_POINTER(fid))))
               {
                 GQuark src_unique_id ;
 
@@ -4400,7 +4401,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
               fset = (ZMapFeatureSetDesc) value;
 
               /* construct a reverse col 2 featureset mapping */
-              column = g_hash_table_lookup(zmap_view->context_map.columns,GUINT_TO_POINTER(fset->column_id));
+              column = (ZMapFeatureColumn)g_hash_table_lookup(zmap_view->context_map.columns,GUINT_TO_POINTER(fset->column_id));
               if(column)
                 {
                   fset->column_ID = column->column_id;      /* upper cased display name */
@@ -4409,7 +4410,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
                   /* but don't add featuresets that get virtualised */
                   if(!g_list_find(column->featuresets_unique_ids,key))
                     {
-                      fsrc = g_hash_table_lookup(zmap_view->context_map.source_2_sourcedata,key);
+                      fsrc = (ZMapFeatureSource)g_hash_table_lookup(zmap_view->context_map.source_2_sourcedata,key);
                       if(fsrc && !fsrc->maps_to)
                         {
                           /* NOTE this is an ordered list */
@@ -4680,7 +4681,7 @@ static void killGUI(ZMapView view)
     {
       ZMapViewWindow view_window ;
 
-      view_window = view->window_list->data ;
+      view_window = (ZMapViewWindow)(view->window_list->data) ;
 
       destroyWindow(view, view_window) ;
     }
@@ -4701,7 +4702,7 @@ static void killConnections(ZMapView zmap_view)
           ZMapViewConnection view_con ;
           ZMapThread thread ;
 
-          view_con = list_item->data ;
+          view_con = (ZMapViewConnection)(list_item->data) ;
           thread = view_con->thread ;
 
           /* NOTE, we do a _kill_ here, not a destroy. This just signals the thread to die, it
@@ -5020,7 +5021,7 @@ static void resetWindows(ZMapView zmap_view)
     {
       ZMapViewWindow view_window ;
 
-      view_window = list_item->data ;
+      view_window = (ZMapViewWindow)(list_item->data) ;
 
       zMapWindowReset(view_window->window) ;
     }
@@ -5055,7 +5056,7 @@ void displayDataWindows(ZMapView zmap_view,
     {
       ZMapViewWindow view_window ;
 
-      view_window = list_item->data ;
+      view_window = (ZMapViewWindow)(list_item->data) ;
 
       if (!undisplay)
         {
@@ -5581,7 +5582,7 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
       /* we need a context with a master_align with a block, all with valid sequence coordinates */
       /* this is all back to front, we only know what we requested when the answer comes back */
       /* and we need to have asked the same qeusrtion 3 times */
-      ZMapFeatureBlock block = zMap_g_hash_table_nth(new_features->master_align->blocks, 0) ;
+      ZMapFeatureBlock block = (ZMapFeatureBlock)zMap_g_hash_table_nth(new_features->master_align->blocks, 0) ;
 
       view->features = zMapFeatureContextCopyWithParents((ZMapFeatureAny) block) ;
     }
@@ -5618,7 +5619,7 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
           char *set_name = (char *) g_quark_to_string(set_id);
           set_id = zMapFeatureSetCreateID(set_name);
 
-          if (!(column = g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_id))))
+          if (!(column = (ZMapFeatureColumn)g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_id))))
             {
               ZMapFeatureSetDesc set_desc ;
 
@@ -5626,8 +5627,8 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
 
               /* If merge request came directly from otterlace then need to look up feature set
                * in column/featureset hash. */
-              if ((set_desc = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(set_id))))
-                column = g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_desc->column_id)) ;
+              if ((set_desc = (ZMapFeatureSetDesc)g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(set_id))))
+                column = (ZMapFeatureColumn)g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_desc->column_id)) ;
             }
 
 
@@ -6677,7 +6678,7 @@ static ZMapFeatureContextExecuteStatus updateColumnBackgroundCB(GQuark key,
 
         for ( ; list_item; list_item = g_list_next(list_item))
           {
-            ZMapViewWindow view_window = list_item->data ;
+            ZMapViewWindow view_window = (ZMapViewWindow)(list_item->data) ;
             zMapWindowUpdateColumnBackground(view_window->window, feature_set, highlight_filtered_columns);
           }
 
