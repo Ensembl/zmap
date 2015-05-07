@@ -261,7 +261,7 @@ gboolean zMapUtilsUserSetDeveloper(char *passwd) ;
 
 void zMapPrintQuark(GQuark quark) ;
 void zMapLogQuark(GQuark quark) ;
-gboolean zMapLogQuarkIsStr(GQuark quark, char *str) ;
+gboolean zMapLogQuarkIsStr(GQuark quark, const char *str) ;
 gboolean zMapLogQuarkIsExactStr(GQuark quark, char *str) ;
 gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str) ;
 

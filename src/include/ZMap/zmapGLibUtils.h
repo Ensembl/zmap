@@ -83,7 +83,7 @@ gchar *zMap_g_list_quark_to_string(GList *l, const char *delimiter);
 GList *zMap_g_list_remove_quarks(GList *quark_target_list, GList *quarks) ;
 
 gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth) ;
-void zMap_g_hash_table_print(GHashTable *hash_table, char *data_format_str) ;
+void zMap_g_hash_table_print(GHashTable *hash_table, const char *data_format_str) ;
 void zMap_g_hash_table_iter_init(GList **iter, GHashTable *h);
 gboolean zMap_g_hash_table_iter_next(GList **iter,gpointer *key, gpointer *value);
 void zMap_g_hash_table_iter_free(GList **list);       // not implemented

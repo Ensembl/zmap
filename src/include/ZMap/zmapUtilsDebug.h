@@ -351,7 +351,7 @@ extern gboolean zmap_timing_G;
 #define TIMER_STOP	2
 #define TIMER_ELAPSED	3
 
-void zMapLogTime(int what, int how, long data, char *string);
+void zMapLogTime(int what, int how, long data, const char *string);
 
 #endif /* ZMAP_DISABLE_TIMER */
 

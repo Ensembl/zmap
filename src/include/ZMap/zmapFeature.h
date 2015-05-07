@@ -993,7 +993,7 @@ typedef struct ZMapFeatureDescStructName
   char *sub_feature_query_end ;
   char *sub_feature_length ;
   char *sub_feature_none_txt ;                             /* If no subfeature, gives reason.... */
-  char *sub_feature_term;                                  /* Avoid monkeying all over the shop. */
+  const char *sub_feature_term;                                  /* Avoid monkeying all over the shop. */
 
   /* more specific details (more strings) */
 
@@ -1093,7 +1093,7 @@ GQuark zMapFeatureCreateID(ZMapStyleMode feature_type,
                            int start, int end,
 			   int query_start, int query_end) ;
 ZMapFeature zMapFeatureCreateEmpty(void) ;
-ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, const char *ontology,
+ZMapFeature zMapFeatureCreateFromStandardData(const char *name, const char *sequence, const char *ontology,
 					      ZMapStyleMode feature_type,
                                               ZMapFeatureTypeStyle *style,
                                               int start, int end,
@@ -1184,7 +1184,7 @@ int zMapFeatureSplitCodonOffset(ZMapFeature feature, int coord) ;
 gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_string) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
-gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_text, char *feature_text) ;
+gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, const char *source_text, char *feature_text) ;
 gboolean zMapFeatureAddDescription(ZMapFeature feature, char *data ) ;
 void zMapFeatureSortGaps(GArray *gaps) ;
 int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
@@ -1362,7 +1362,8 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 /* Probably should be merged at some time.... */
 char *zMapFeatureAsString(ZMapFeature feature) ;
 gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GHashTable *styles, GError **error_out) ;
-gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *filename,char *header, GHashTable *styles, GError **error_out);
+gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context, const char *filename, const char *header,
+                                   GHashTable *styles, GError **error_out);
 gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GHashTable *styles,
 				GIOChannel *file, GError **error_out) ;
 
