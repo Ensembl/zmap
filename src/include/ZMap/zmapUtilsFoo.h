@@ -42,7 +42,11 @@ void zMap_foo_canvas_sort_items(FooCanvasGroup *group, GCompareFunc compare_func
 int zMap_foo_canvas_find_item(FooCanvasGroup *group, FooCanvasItem *item) ;
 GList *zMap_foo_canvas_find_list_item(FooCanvasGroup *group, FooCanvasItem *item) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 guint32 zMap_gdk_color_to_rgba(GdkColor *color);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 #endif /* ZMAP_UTILS_FOO_H */

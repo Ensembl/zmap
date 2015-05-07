@@ -155,8 +155,12 @@ void zMapLogMsg(const char *domain, GLogLevelFlags log_level,
 	     __VA_ARGS__)
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* make logging from totalview evaluations a lot easier... */
 void zMapLogQuark(GQuark quark);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
