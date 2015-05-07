@@ -476,12 +476,12 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, const 
  *
  */
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, const char *feature_name_id, const char *name,
-    char *sequence, const char *SO_accession,
-    ZMapStyleMode feature_mode,
-    ZMapFeatureTypeStyle *style,
-    int start, int end,
-    gboolean has_score, double score,
-    ZMapStrand strand)
+                                    char *sequence, const char *SO_accession,
+                                    ZMapStyleMode feature_mode,
+                                    ZMapFeatureTypeStyle *style,
+                                    int start, int end,
+                                    gboolean has_score, double score,
+                                    ZMapStrand strand)
 {
   gboolean result = FALSE ;
 
@@ -712,7 +712,7 @@ gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id)
 /*!
  * Adds descriptive text the object.
  *  */
-gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_text, char *feature_text)
+gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, const char *source_text, char *feature_text)
 {
   gboolean result = FALSE ;
 
