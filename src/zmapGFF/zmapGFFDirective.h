@@ -66,7 +66,7 @@ typedef struct ZMapGFFDirectiveStruct_
 typedef struct ZMapGFFDirectiveInfoStruct_
   {
     ZMapGFFDirectiveName eName ;
-    char *pPrefixString ;
+    const char *pPrefixString ;
     unsigned int iInts ;
     unsigned int iStrings ;
   } ZMapGFFDirectiveInfoStruct ;

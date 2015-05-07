@@ -531,7 +531,7 @@ static gboolean resizeBuffers(ZMapGFFParser pParser, gsize iLineLength)
         sBuf[i] = NULL ;
       for (i=0; i<ZMAPGFF_NUMBER_PARSEBUF; ++i)
         {
-          sBuf[i] = g_malloc0(iNewLineLength) ;
+          sBuf[i] = (char*) g_malloc0(iNewLineLength) ;
           if (!sBuf[i])
             {
               bNewAlloc = FALSE ;
@@ -2163,9 +2163,10 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
     *sStrand                          = NULL,
     *sPhase                           = NULL,
     *sAttributes                      = NULL,
-    *sSOIDName                        = NULL,
     *sErrText                         = NULL,
     **sTokens                         = NULL ;
+
+  const char *sSOIDName               = NULL ;
 
   double
     dScore                            = 0.0
@@ -2701,7 +2702,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
   int iStart = 0,
     iEnd = 0,
     iStartNotFound = 0 ;
-  char * sSOType = NULL,
+  const char * sSOType = NULL,
     *sFeatureName = NULL,
     *sFeatureNameID = NULL,
     *sSequence = NULL,
@@ -2823,7 +2824,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
    * Lookup to see if a feature with this gqThisID is already in the
    * feature set.
    */
-  pFeature = g_hash_table_lookup(((ZMapFeatureAny)pFeatureSet)->children, GINT_TO_POINTER(gqThisUniqueID)) ;
+  pFeature = (ZMapFeature) g_hash_table_lookup(((ZMapFeatureAny)pFeatureSet)->children, GINT_TO_POINTER(gqThisUniqueID)) ;
   if (pFeature)
     bFeaturePresent = TRUE ;
 
@@ -2852,10 +2853,10 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
                          gqThisID, gqThisUniqueID, sFeatureName, sFeatureNameID) ;
         }
       bDataAdded = zMapFeatureAddStandardData(pFeature,
-                                              sFeatureNameID,
-                                              sFeatureName,
-                                              sSequence,
-                                              sSOType,
+                                              (char*)sFeatureNameID,
+                                              (char*)sFeatureName,
+                                              (char*)sSequence,
+                                              (char*)sSOType,
                                               cFeatureStyleMode,
                                               &pFeatureSet->style,
                                               iStart,
@@ -2874,7 +2875,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
                                      (int)gqThisID, sFeatureName) ;
         }
 
-      zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
+      zMapFeatureAddText(pFeature, g_quark_from_string(sSource), (char*)sSource, NULL) ;
     }
   else if ((cCase == SECOND) && bFeaturePresent)
     {
@@ -2939,7 +2940,11 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
       /*
        * We have names already so can add standard data.
        */
-      bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
+      bDataAdded = zMapFeatureAddStandardData(pFeature,
+                                              (char*)sFeatureNameID,
+                                              (char*)sFeatureName,
+                                              (char*)sSequence,
+                                              (char*)sSOType,
                                               cFeatureStyleMode, &pFeatureSet->style,
                                               iStart, iEnd, bHasScore, dScore, cStrand) ;
 
@@ -2950,7 +2955,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
                                      (int)gqThisID, sFeatureName) ;
         }
 
-      zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
+      zMapFeatureAddText(pFeature, g_quark_from_string(sSource), (char*)sSource, NULL) ;
 
       /*
        * Now add an exon to it.
@@ -3147,10 +3152,10 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
     iTargetStart = 0,
     iTargetEnd = 0,
     iLength = 0 ;
-  char *sSequence = NULL,
+  const char *sSequence = NULL,
     *sSource = NULL,
-    *sSOType = NULL,
-    *sFeatureName = NULL,
+    *sSOType = NULL ;
+  char *sFeatureName = NULL,
     *sFeatureNameID = NULL ;
   const char * sIdentifier = NULL ;
   double dScore = 0.0,
@@ -3300,7 +3305,11 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
       sFeatureName = g_strdup(sIdentifier) ;
       sFeatureNameID = zMapFeatureCreateName(cFeatureStyleMode, sFeatureName, cStrand, iStart, iEnd, iTargetStart, iTargetEnd) ;
 
-      bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
+      bDataAdded = zMapFeatureAddStandardData(pFeature,
+                                              (char*)sFeatureNameID,
+                                              (char*)sFeatureName,
+                                              (char*)sSequence,
+                                              (char*)sSOType,
                                            cFeatureStyleMode, &pFeatureSet->style,
                                            iStart, iEnd, bHasScore, dScore, cStrand) ;
 
@@ -3362,7 +3371,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
                                      (int)pFeature->unique_id, sFeatureName) ;
         }
 
-      zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
+      zMapFeatureAddText(pFeature, g_quark_from_string(sSource), (char*)sSource, NULL) ;
     }
 
   /*
@@ -3400,13 +3409,13 @@ static ZMapFeature makeFeatureAssemblyPath(ZMapGFFFeatureData pFeatureData,
 static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData pFeatureData,
   const ZMapFeatureSet pFeatureSet, char **psError)
 {
-  char *sName = NULL,
-    *sFeatureName = NULL,
-    *sFeatureNameID = NULL,
-    *sSequence = NULL,
+  const char *sSequence = NULL,
     *sSource = NULL,
     *sSOType = NULL,
     *sAttributes = NULL ;
+  char *sName = NULL,
+    *sFeatureName = NULL,
+    *sFeatureNameID = NULL ;
   unsigned int nAttributes = 0 ;
   int iStart = 0,
     iEnd = 0,
@@ -3503,7 +3512,11 @@ static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData pFeatureData,
   /*
    * Add standard data to the feature.
    */
-  bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
+  bDataAdded = zMapFeatureAddStandardData(pFeature,
+                                          (char*)sFeatureNameID,
+                                          (char*)sFeatureName,
+                                          (char*)sSequence,
+                                          (char*)sSOType,
                                        cFeatureStyleMode, &pFeatureSet->style,
                                        iStart, iEnd, bHasScore, dScore, cStrand);
 
@@ -3532,7 +3545,7 @@ static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData pFeatureData,
                                      (int)pFeature->unique_id, sFeatureName) ;
     }
 
-  zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
+  zMapFeatureAddText(pFeature, g_quark_from_string(sSource), (char*)sSource, NULL) ;
 
   /*
    * If a new feature was created, but could not be added to the featureset,
@@ -3628,7 +3641,7 @@ static gboolean clipFeatureLogic_General(ZMapGFF3Parser  pParser, ZMapGFFFeature
     iEnd = 0,
     iClipStart = 0,
     iClipEnd = 0 ;
-  char *sSOType = NULL ;
+  const char *sSOType = NULL ;
   gboolean bFeatureOutside = FALSE,
     bFeatureOverlapStart = FALSE,
     bFeatureOverlapEnd = FALSE ;
@@ -3777,8 +3790,8 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
 
   char *sURL = NULL,
     *sVariation = NULL,
-    *sNote = NULL,
-    *sSOType = NULL ;
+    *sNote = NULL ;
+  const char *sSOType = NULL ;
 
   gboolean bResult = FALSE,
     bNewFeatureCreated = FALSE,
@@ -3931,7 +3944,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
         {
 
           if(!zMapStyleGetGFFFeature(pFeatureSet->style))
-            zMapStyleSetGFF(pFeatureSet->style, NULL, sSOType);
+            zMapStyleSetGFF(pFeatureSet->style, NULL, (char*)sSOType);
 
           /*
            * URL attribute.
@@ -4036,7 +4049,7 @@ static gboolean findFeatureset(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatur
     {
       gqSourceID = zMapFeatureSetCreateID(sSource);
 
-      if (!(pSourceData = g_hash_table_lookup(pParser->source_2_sourcedata, GINT_TO_POINTER(gqSourceID))))
+      if (!(pSourceData = (ZMapFeatureSource) g_hash_table_lookup(pParser->source_2_sourcedata, GINT_TO_POINTER(gqSourceID))))
         {
           pSourceData = g_new0(ZMapFeatureSourceStruct,1);
           pSourceData->source_id = gqSourceID;
@@ -4206,7 +4219,7 @@ gboolean zMapGFFSetSOErrorLevel(ZMapGFFParser pParserBase, ZMapSOErrorLevel cErr
 ZMapSOErrorLevel zMapGFFGetSOErrorLevel(ZMapGFFParser pParserBase )
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  zMapReturnValIfFail(pParser && pParser->pHeader, 0);
+  zMapReturnValIfFail(pParser && pParser->pHeader, ZMAPGFF_SOERRORLEVEL_UNK);
   return pParser->cSOErrorLevel ;
 }
 

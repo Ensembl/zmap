@@ -57,30 +57,30 @@
 static gboolean parseHeaderLine(ZMapGFFParser parser, char *line) ;
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_length) ;
 static gboolean parseSequenceLine(ZMapGFFParser parser, char *line) ;
-static gboolean makeNewFeature(ZMapGFFParser parser, char *line, NameFindType name_find,
-       char *sequence, char *source, char *ontology,
+static gboolean makeNewFeature(ZMapGFFParser parser, const char *line, NameFindType name_find,
+       const char *sequence, const char *source, const char *ontology,
        ZMapStyleMode feature_type,
        int start, int end,
        gboolean has_score, double score,
        ZMapStrand strand, ZMapPhase phase, char *attributes,
        char **err_text) ;
-static gboolean getFeatureName(NameFindType name_find, char *sequence, char *attributes,
-       char *given_name, char *source,
+static gboolean getFeatureName(NameFindType name_find, const char *sequence, const char *attributes,
+       const char *given_name, const char *source,
        ZMapStyleMode feature_type,
        ZMapStrand strand, int start, int end, int query_start, int query_end,
        char **feature_name, char **feature_name_id) ;
-static char *getURL(char *attributes) ;
-static GQuark getClone(char *attributes) ;
-static GQuark getLocus(char *attributes) ;
-static gboolean getKnownName(char *attributes, char **known_name_out) ;
-static gboolean getHomolLength(char *attributes, int *length_out) ;
-static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
+static char *getURL(const char *attributes) ;
+static GQuark getClone(const char *attributes) ;
+static GQuark getLocus(const char *attributes) ;
+static gboolean getKnownName(const char *attributes, char **known_name_out) ;
+static gboolean getHomolLength(const char *attributes, int *length_out) ;
+static gboolean getHomolAttrs(const char *attributes, ZMapHomolType *homol_type_out,
       int *start_out, int *end_out, ZMapStrand *strand_out, double *percent_ID_out) ;
-static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unused,
+static gboolean getAssemblyPathAttrs(const char *attributes, char **assembly_name_unused,
      ZMapStrand *strand_out, int *length_out, GArray **path_out) ;
-static gboolean getCDSStartAttr(char *attributes, gboolean *start_not_found_out, int *start_start_not_found_out) ;
-static gboolean getCDSEndAttr(char *attributes, gboolean *end_not_found_out) ;
-static gboolean getVariationString(char *attributes,
+static gboolean getCDSStartAttr(const char *attributes, gboolean *start_not_found_out, int *start_start_not_found_out) ;
+static gboolean getCDSEndAttr(const char *attributes, gboolean *end_not_found_out) ;
+static gboolean getVariationString(const char *attributes,
    GQuark *SO_acc_out, char **name_str_out, char **variation_str_out) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -89,7 +89,7 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 
 static void destroyFeatureArray(gpointer data) ;
 
-static gboolean loadGaps(char *currentPos, GArray *gaps,
+static gboolean loadGaps(const char *currentPos, GArray *gaps,
  ZMapStrand ref_strand, ZMapStrand match_strand) ;
 static gboolean loadAlignString(ZMapGFFParser parser,
 ZMapFeatureAlignFormat align_format, char *attributes, GArray **gaps_out,
@@ -101,8 +101,8 @@ static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
 static gboolean getNameFromAttr(char *attributes, char **name) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static gboolean getNameFromNote(char *attributes, char **name) ;
-static char *getNoteText(char *attributes) ;
+static gboolean getNameFromNote(const char *attributes, char **name) ;
+static char *getNoteText(const char *attributes) ;
 static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length) ;
 static gboolean resizeFormatStrs(ZMapGFFParser parser) ;
 
@@ -117,7 +117,7 @@ static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_u
 static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static char *find_tag(char * str, char *tag) ;
+static const char *find_tag(const char * str, const char *tag) ;
 
 
 
@@ -547,7 +547,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser_base, char *line)
       else
         {
           int fields = 0 ;
-          char *format_str = NULL ;
+          const char *format_str = NULL ;
 
           /* There may be other header comments that we are not interested in so we just return TRUE. */
           result = TRUE ;
@@ -595,7 +595,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser_base, char *line)
                         }
                       else
                         {
-                          parser->gff_version = version ;
+                          parser->gff_version = (ZMapGFFVersion) version ;
                           parser->header_flags.got_gff_version = TRUE ;
                         }
                     }
@@ -1034,7 +1034,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser_base, char *line, gsize line_
               if (parser->locus_set_id && (locus_id = getLocus(attributes)))
                 {
                   if (!zMapFeatureFormatType(parser->SO_compliant, parser->default_to_basic,
-                     ZMAP_FIXED_STYLE_LOCUS_NAME, &type))
+                     (char*)ZMAP_FIXED_STYLE_LOCUS_NAME, &type))
                     err_text = g_strdup_printf("feature_type not recognised: %s", ZMAP_FIXED_STYLE_LOCUS_NAME) ;
 
 
@@ -1058,8 +1058,8 @@ static gboolean parseBodyLine(ZMapGFFParser parser_base, char *line, gsize line_
 }
 
 
-static gboolean makeNewFeature(ZMapGFFParser parser_base, char *line, NameFindType name_find,
-       char *sequence, char *source, char *ontology,
+static gboolean makeNewFeature(ZMapGFFParser parser_base, const char *line, NameFindType name_find,
+       const char *sequence, const char *source, const char *ontology,
        ZMapStyleMode feature_type,
        int start, int end,
        gboolean has_score, double score,
@@ -1107,7 +1107,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, char *line, NameFindTy
     {
       source_id = zMapFeatureSetCreateID(source);
 
-      if (!(source_data = g_hash_table_lookup(parser->source_2_sourcedata,GINT_TO_POINTER(source_id))))
+      if (!(source_data = (ZMapFeatureSource) g_hash_table_lookup(parser->source_2_sourcedata,GINT_TO_POINTER(source_id))))
         {
 #if 0
           *err_text = g_strdup_printf("feature ignored, could not find data for source \"%s\".", source) ;
@@ -1180,7 +1180,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, char *line, NameFindTy
   /* don't map to column but instead make a note of the column id for later */
   /* this turns put to be needed for FToI hash functions */
 
-  feature_set_name = source ;
+  feature_set_name = (char *)source ;
   /*
     column_id = zMapStyleCreateID(source);
 
@@ -1474,7 +1474,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, char *line, NameFindTy
           *err_text = g_strdup_printf("feature ignored as it has no name");
         }
       else if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
-                                                    sequence, ontology,
+                                                    (char*) sequence, (char*)ontology,
                                                     feature_type, &parser_feature_set->feature_set->style, // feature_style,
                                                     start, end,
                                                     has_score, score,
@@ -1483,7 +1483,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, char *line, NameFindTy
           zMapFeatureSetAddFeature(feature_set, feature);
 
           if(!zMapStyleGetGFFFeature(feature_style))
-            zMapStyleSetGFF(feature_style,NULL,ontology);
+            zMapStyleSetGFF(feature_style,NULL,(char*)ontology);
 
           if (url)
             zMapFeatureAddURL(feature, url) ;
@@ -1541,14 +1541,15 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, char *line, NameFindTy
             {
 
 
-              char *local_sequence_str ;
-              char *seq_str;
+              const char *local_sequence_str ;
+              const char *seq_str = NULL;
+              char *result_str ;
               gboolean local_sequence = FALSE ;
 
               /* I am not sure if we ever have target_phase from GFF output....check this out... "*/
               if (zMapStyleIsParseGaps(feature_style))
                 {
-                  static char *gaps_tag = ZMAPSTYLE_ALIGNMENT_GAPS " " ;
+                  static const char *gaps_tag = ZMAPSTYLE_ALIGNMENT_GAPS " " ;
                   enum {GAP_STR_LEN = 5} ;
 
                   if ((gaps_onwards = strstr(attributes, gaps_tag)) != NULL)
@@ -1603,15 +1604,16 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, char *line, NameFindTy
               /* Why isn't Malcolm using the normal way of doing this....sigh...strstr is fine...??? */
               if ((seq_str = find_tag(attributes, "sequence")))
                 {
-                  char *p;
+                  const char *p;
 
                   for (p = seq_str; *p > ';' ; p++)
                     continue;
 
-                  seq_str = g_strdup_printf("%.*s", (int)(p - seq_str), seq_str);
+                  result_str = g_strdup_printf("%.*s", (int)(p - seq_str), seq_str);
 
-                  for(p = seq_str; *p > ';'; )
-                    *p++ |= 0x20;/* need to be lower case else rev comp gives zeroes */
+                  char * pp = NULL ;
+                  for(pp = result_str; *pp > ';'; )
+                    *pp++ |= 0x20;/* need to be lower case else rev comp gives zeroes */
                 }
 
               result = zMapFeatureAddAlignmentData(feature, clone_id,
@@ -1620,7 +1622,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, char *line, NameFindTy
                                                    homol_type, query_length, query_strand, ZMAPPHASE_0,
                                                    gaps,
                                                    zMapStyleGetWithinAlignError(feature_style),
-                                                   local_sequence, seq_str) ;
+                                                   local_sequence, result_str ) ;
             }
           else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
             {
@@ -1701,12 +1703,12 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, char *line, NameFindTy
  *
  * Gap coords are positive, 1-based, start < end and in the order: ref_start ref_end match_start match_end
  */
-static gboolean loadGaps(char *attributes, GArray *gaps, ZMapStrand ref_strand, ZMapStrand match_strand)
+static gboolean loadGaps(const char *attributes, GArray *gaps, ZMapStrand ref_strand, ZMapStrand match_strand)
 {
   gboolean valid = TRUE ;
-  char *attr_str = attributes ;
+  const char *attr_str = attributes ;
   ZMapAlignBlockStruct gap = { 0 };
-  char *gaps_format_str = "%d%d%d%d" ;
+  const char *gaps_format_str = "%d%d%d%d" ;
   int fields;
 
   /* Check rather rigidly that we are at start of number string. */
@@ -1838,14 +1840,14 @@ static gboolean loadAlignString(ZMapGFFParser parser_base,
  * and so on....
  *
  *  */
-static gboolean getFeatureName(NameFindType name_find, char *sequence, char *attributes,
-       char *given_name, char *source,
+static gboolean getFeatureName(NameFindType name_find, const char *sequence, const char *attributes,
+       const char *given_name, const char *source,
        ZMapStyleMode feature_type,
        ZMapStrand strand, int start, int end, int query_start, int query_end,
        char **feature_name, char **feature_name_id)
 {
   gboolean has_name = FALSE ;
-  char *tag_pos ;
+  const char *tag_pos ;
   gboolean name_at_start ;
 
   /* Probably we should do some checking to make sure start/end are in correct order....and
@@ -1911,7 +1913,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
   else if (name_find != ZMAPGFF_NAME_USE_GIVEN_OR_NAME)
     {
       /* chicken: for BAM we have a basic feature with name so let's bodge this in */
-      char *tag_pos ;
+      const char *tag_pos ;
 
       if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
         {
@@ -1939,7 +1941,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
             {
               /* In acedb output at least, homologies all have the same format. */
               int attr_fields ;
-              char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
+              const char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
               char name[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
               attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
@@ -1958,7 +1960,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
           if ((tag_pos = strstr(attributes, "Assembly_source")))
             {
               int attr_fields ;
-              char *attr_format_str = "Assembly_source %*[\"]%*[^:]%*[:]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
+              const char *attr_format_str = "Assembly_source %*[\"]%*[^:]%*[:]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
               char name[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
               attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
@@ -2009,10 +2011,11 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
             {
               /* Named feature such as a gene. */
               int attr_fields ;
-              char *attr_format_str = "%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "s %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
-              char class[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+              const char *attr_format_str = "%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "s %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
+              char asdf[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'},
+                   name[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
-              attr_fields = sscanf(attributes, attr_format_str, &class[0], &name[0]) ;
+              attr_fields = sscanf(attributes, attr_format_str, &asdf[0], &name[0]) ;
 
               if (attr_fields == 2)
                 {
@@ -2063,7 +2066,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
     {
       *feature_name = g_strdup(sequence) ;
       *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-       start, end, query_start, query_end) ;
+                                               start, end, query_start, query_end) ;
     }
 
   return has_name ;
@@ -2079,15 +2082,15 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
  *
  *
  *  */
-static char *getURL(char *attributes)
+static char *getURL(const char *attributes)
 {
   char *url = NULL ;
-  char *tag_pos ;
+  const char *tag_pos ;
 
   if ((tag_pos = strstr(attributes, "URL")))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FREETEXT_CHARS) "[^\"]%*s[;]" ;
+      const char *attr_format_str = "%*s %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FREETEXT_CHARS) "[^\"]%*s[;]" ;
       char url_field[257] = {'\0'} ;
 
       if ((attr_fields = sscanf(tag_pos, attr_format_str, &url_field[0])) == 1)
@@ -2107,15 +2110,15 @@ static char *getURL(char *attributes)
  * Format string extracts locus name returns it as a quark.
  *
  *  */
-static GQuark getLocus(char *attributes)
+static GQuark getLocus(const char *attributes)
 {
   GQuark locus_id = 0 ;
-  char *tag_pos ;
+  const char *tag_pos ;
 
   if ((tag_pos = strstr(attributes, "Locus")))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*s[;]" ;
+      const char *attr_format_str = "%*s %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*s[;]" ;
       char locus_field[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
       if ((attr_fields = sscanf(tag_pos, attr_format_str, &locus_field[0])) == 1)
@@ -2135,15 +2138,15 @@ static GQuark getLocus(char *attributes)
  * Format string extracts clone name returns it as a quark.
  *
  *  */
-static GQuark getClone(char *attributes)
+static GQuark getClone(const char *attributes)
 {
   GQuark clone_id = 0 ;
-  char *tag_pos ;
+  const char *tag_pos ;
 
   if ((tag_pos = strstr(attributes, "Clone")))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*s[;]" ;
+      const char *attr_format_str = "%*s %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*s[;]" ;
       char clone_field[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
       if ((attr_fields = sscanf(tag_pos, attr_format_str, &clone_field[0])) == 1)
@@ -2163,15 +2166,15 @@ static GQuark getClone(char *attributes)
  * Format string extracts known name returns it as a string that must be g_free'd.
  *
  *  */
-static gboolean getKnownName(char *attributes, char **known_name_out)
+static gboolean getKnownName(const char *attributes, char **known_name_out)
 {
   gboolean result = FALSE ;
-  char *tag_pos ;
+  const char *tag_pos ;
 
   if ((tag_pos = strstr(attributes, "Known_name")))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*s[;]" ;
+      const char *attr_format_str = "%*s %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*s[;]" ;
       char known_field[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
       if ((attr_fields = sscanf(tag_pos, attr_format_str, &known_field[0])) == 1)
@@ -2210,12 +2213,12 @@ chr14-04    encode    read    20781639    20781714    .    -    .    Target "JOH
        Name "MICHAELJACKSON_0008:2:20:8069:5465#0" ; cigar "13M1265N63M" ; Align "1 76 -" ; Length "76" ; percentID "100"
  *
  */
-static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
+static gboolean getHomolAttrs(const char *attributes, ZMapHomolType *homol_type_out,
       int *start_out, int *end_out, ZMapStrand *query_strand,
       double *percent_ID_out)
 {
   gboolean result = FALSE ;
-  char *tag_pos ;
+  const char *tag_pos ;
   ZMapHomolType homol_type = ZMAPHOMOL_NONE ;
   int attr_fields ;
 
@@ -2252,7 +2255,7 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
       if ((tag_pos = strstr(attributes, "percentID")))
         {
           /* Parse "percentID 89.3" */
-          char *attr_format_str = "%*s %lg" ;
+          const char *attr_format_str = "%*s %lg" ;
           double percent_ID = 0 ;
 
           if ((attr_fields = sscanf(tag_pos, attr_format_str, &percent_ID)) == 1)
@@ -2276,7 +2279,7 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
       if ((tag_pos = strstr(attributes, "Align")))
         {
           /* Parse "Align 157 197 +" */
-          char *attr_format_str = "%*s %d%d %c" ;
+          const char *attr_format_str = "%*s %d%d %c" ;
           int start = 0, end = 0 ;
           char strand ;
 
@@ -2349,11 +2352,11 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
  * N.B. Assembly_source has already been extracted.
  *
  *  */
-static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unused,
+static gboolean getAssemblyPathAttrs(const char *attributes, char **assembly_name_unused,
      ZMapStrand *strand_out, int *length_out, GArray **path_out)
 {
   gboolean result = TRUE ;
-  char *tag_pos ;
+  const char *tag_pos = NULL ;
   ZMapStrand strand ;
   int length = 0 ;
   GArray *path = NULL ;
@@ -2361,7 +2364,7 @@ static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unus
   if (result && (result = GPOINTER_TO_INT(tag_pos = strstr(attributes, "Assembly_strand"))))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s%s" ;
+      const char *attr_format_str = "%*s%s" ;
       char strand_str[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
       if ((attr_fields = sscanf(tag_pos, attr_format_str, &strand_str[0])) != 1
@@ -2376,7 +2379,7 @@ static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unus
   if (result && (result = GPOINTER_TO_INT(tag_pos = strstr(attributes, "Assembly_length"))))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s%d" ;
+      const char *attr_format_str = "%*s%d" ;
 
       if ((attr_fields = sscanf(tag_pos, attr_format_str, &length)) != 1)
         {
@@ -2389,8 +2392,8 @@ static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unus
   if (result && (result = GPOINTER_TO_INT(tag_pos = strstr(attributes, "Assembly_regions"))))
     {
       int attr_fields ;
-      char *cp ;
-      char *attr_format_str = "%d%d" ;
+      const char *cp ;
+      const char *attr_format_str = "%d%d" ;
 
       path = g_array_new(FALSE, TRUE, sizeof(ZMapSpanStruct)) ;
 
@@ -2443,15 +2446,15 @@ static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unus
  * Format string extracts position for start_not_found
  *
  *  */
-static gboolean getCDSStartAttr(char *attributes, gboolean *start_not_found_flag_out, int *start_not_found_out)
+static gboolean getCDSStartAttr(const char *attributes, gboolean *start_not_found_flag_out, int *start_not_found_out)
 {
   gboolean result = FALSE ;
-  char *target ;
+  const char *target = NULL ;
 
   if ((target = strstr(attributes, "start_not_found")))
     {
-      int attr_fields ;
-      char *attr_format_str = "%*s %d %*s" ;
+      int attr_fields = 0 ;
+      const char *attr_format_str = "%*s %d %*s" ;
       int start_not_found = 0 ;
 
       attr_fields = sscanf(target, attr_format_str, &start_not_found) ;
@@ -2474,10 +2477,10 @@ static gboolean getCDSStartAttr(char *attributes, gboolean *start_not_found_flag
 
 
 
-static gboolean getCDSEndAttr(char *attributes, gboolean *end_not_found_flag_out)
+static gboolean getCDSEndAttr(const char *attributes, gboolean *end_not_found_flag_out)
 {
   gboolean result = FALSE ;
-  char *target ;
+  const char *target = NULL ;
 
   if ((target = strstr(attributes, "end_not_found")))
     {
@@ -2497,15 +2500,15 @@ static gboolean getCDSEndAttr(char *attributes, gboolean *end_not_found_flag_out
  * Format string extracts the integer length.
  *
  *  */
-static gboolean getHomolLength(char *attributes, int *length_out)
+static gboolean getHomolLength(const char *attributes, int *length_out)
 {
   gboolean result = FALSE ;
-  char *target ;
+  const char *target = NULL ;
 
   if ((target = strstr(attributes, "Length")))
     {
-      int attr_fields ;
-      char *attr_format_str = "%*s %d %*s" ;
+      int attr_fields = 0 ;
+      const char *attr_format_str = "%*s %d %*s" ;
       int length = 0 ;
 
       if ((attr_fields = sscanf(target, attr_format_str, &length)) == 1)
@@ -2557,11 +2560,11 @@ static gboolean getHomolLength(char *attributes, int *length_out)
  * Format string extracts the variation string.
  *
  *  */
-static gboolean getVariationString(char *attributes,
+static gboolean getVariationString(const char *attributes,
    GQuark *SO_acc_out, char **name_str_out, char **variation_str_out)
 {
   gboolean result = FALSE ;
-  char *target ;
+  const char *target = NULL ;
 
   if ((target = strstr(attributes, " Name")) ||
       (target = strstr(attributes, ";Name")) ||
@@ -2575,7 +2578,7 @@ static gboolean getVariationString(char *attributes,
       ++target;
 
       int attr_fields ;
-      char *attr_format_str = "Name " "%*[\"]%s - %" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
+      const char *attr_format_str = "Name " "%*[\"]%s - %" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
       char name_str[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
       char variation_str[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
@@ -2717,13 +2720,13 @@ static gboolean getNameFromAttr(char *attributes, char **name_out)
  * where a valid name starts with a letter and contains only alphanumberics and '_' or ':'.
  *
  *  */
-static gboolean getNameFromNote(char *attributes, char **name)
+static gboolean getNameFromNote(const char *attributes, char **name)
 {
   gboolean result = FALSE ;
-  int attr_fields ;
-  char *note_format_str = "Note %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FREETEXT_CHARS) "[^\"]" ;
+  int attr_fields = 0 ;
+  const char *note_format_str = "Note %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FREETEXT_CHARS) "[^\"]" ;
   char note[ZMAPGFF_MAX_FREETEXT_CHARS + 1] = {'\0'} ;
-  char *name_format_str = "%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "s%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "s" ;
+  const char *name_format_str = "%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "s%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FIELD_CHARS) "s" ;
   char feature_name[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'}, rest[ZMAPGFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
   /* I couldn't find a way to do this in one sscanf() so I do it in two, getting the note text
@@ -2770,11 +2773,11 @@ static gboolean getNameFromNote(char *attributes, char **name)
  * should be g_free'd by caller.
  *
  *  */
-static char *getNoteText(char *attributes)
+static char *getNoteText(const char *attributes)
 {
   char *note_text = NULL ;
-  int attr_fields ;
-  char *note_format_str = "Note %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FREETEXT_CHARS) "[^\"]" ;
+  int attr_fields = 0 ;
+  const char *note_format_str = "Note %*[\"]%" ZMAP_MAKESTRING(ZMAPGFF_MAX_FREETEXT_CHARS) "[^\"]" ;
   char note[ZMAPGFF_MAX_FREETEXT_CHARS + 1] = {'\0'} ;
 
 
@@ -2820,7 +2823,7 @@ static gboolean resizeBuffers(ZMapGFFParser parser_base, gsize line_length)
 
           g_free(buf_ptr) ;    /* g_free() handles NULL pointers. */
 
-          buf_ptr = g_malloc0(new_line_length) ;
+          buf_ptr = (char*) g_malloc0(new_line_length) ;
 
           parser->buffers[i] = buf_ptr ;
         }
@@ -2867,7 +2870,7 @@ static gboolean resizeFormatStrs(ZMapGFFParser parser_base)
 {
   gboolean resized = TRUE ;    /* Everything will work or abort(). */
   GString *format_str ;
-  char *align_format_str ;
+  const char *align_format_str = "%%*[\"]" "%%%d" "[^\"]%%*[\"]%%*s" ;
   gsize length ;
 
   ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
@@ -2920,8 +2923,7 @@ static gboolean resizeFormatStrs(ZMapGFFParser parser_base)
    *
    *       XXXXXXX "M335ID55M"  where XXXXX will be one of the supported alignment formats.
    *  */
-  align_format_str = "%%*[\"]" "%%%d" "[^\"]%%*[\"]%%*s" ;
-                          g_string_append_printf(format_str,
+  g_string_append_printf(format_str,
                          align_format_str,
                          length) ;
 
@@ -2994,9 +2996,9 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
  * we can get tags in quoted strings, and maybe ';' too
  * i'm assuming that quotes cannot appear in quoted strings even with '\'
  */
-static char *find_tag(char * str, char *tag)
+static const char *find_tag(const char * str, const char *tag)
 {
-  char *p = str ;
+  const char *p = str ;
   int len ;
   int n_quote ;
 

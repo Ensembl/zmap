@@ -135,7 +135,7 @@ ZMapGFFAttributeName zMapGFFGetAttributeName(ZMapGFFVersion eVersion, const char
 /*
  * Do a lookup of the string identifier of an attribute from the name (enum).
  */
-char * zMapGFFAttributeGetString(ZMapGFFAttributeName eName)
+const char * zMapGFFAttributeGetString(ZMapGFFAttributeName eName)
 {
   unsigned int iAtt;
   for (iAtt=0; iAtt<ZMAPGFF_NUMBER_ATTRIBUTE_TYPES; ++iAtt)

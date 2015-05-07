@@ -114,7 +114,7 @@ DEFINE_ATTRIBUTE(sAttributeName, read_pair_id)
 typedef struct ZMapGFFAttributeInfoStruct_
   {
     ZMapGFFAttributeName eName ;
-    char *sName ;
+    const char *sName ;
     gboolean bIsMultivalued ;
   } ZMapGFFAttributeInfoStruct ;
 
@@ -142,7 +142,7 @@ gboolean zMapGFFDestroyAttribute(ZMapGFFAttribute) ;
 ZMapGFFAttributeName zMapGFFAttributeGetName(ZMapGFFAttribute) ;
 char * zMapGFFAttributeGetNamestring(ZMapGFFAttribute ) ;
 char * zMapGFFAttributeGetTempstring(ZMapGFFAttribute) ;
-char * zMapGFFAttributeGetString(ZMapGFFAttributeName) ;
+const char * zMapGFFAttributeGetString(ZMapGFFAttributeName) ;
 
 gboolean zMapGFFAttributeGetIsMultivalued(ZMapGFFAttributeName) ;
 gboolean zMapGFFAttributeIsValid(ZMapGFFAttribute) ;
