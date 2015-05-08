@@ -46,8 +46,11 @@
 #define ZMAP_FORCE_FIVES TRUE
 #define ZMAP_SCALE_BAR_GROUP_TYPE_KEY "scale_group_type"
 
-
-
+/*
+ * This is for my scale bar drawing experiments that are
+ * being kept on the develop branch for the moment.
+ */
+/* #define SM23_EXPERIMENT 1 */
 
 /* Privatise
  *
@@ -382,6 +385,7 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
                               int true_start, int true_end,
                               double zoom_factor, gboolean revcomped, gboolean zoomed)
 {
+  double scale_width = 70.0;
   int seq_len;        /* # bases in the scroll region */
   int tick;
   int tick_coord;
@@ -398,7 +402,6 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
   int text_height;
   double canvas_coord;
   GdkColor black,grey,*colour;
-  double scale_width = 70.0;
   double tick_width;
   int n_levels;        /* number of levels needed for BP resolution */
   int n_hide;         /* number we can't see at current zoom level */
@@ -549,6 +552,11 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
    */
 
   gap = (int) (((double) n_pixels) * tick / scroll_len );        /* (double) or else would get overflow on big sequences */
+
+
+
+#ifndef SM23_EXPERIMENT
+
 
   /* we need a lot of levels to cope with large sequences zoomed in a lot */
   /* to get down to single base level */
@@ -719,6 +727,95 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
       if(tick_coord >= scroll_end + 1)
         break;
     }
+
+
+#else
+
+  /*
+   * We need to know something about the resolution of the display; this
+   * in fact comes from
+   *   zoom_factor = ruler->canvas->pixels_per_unit_y
+   * in the caller.
+   */
+  int interval_length = 0,
+    interval_start = 0,
+    interval_end = 0,
+    pixels_limit = 3,
+    pixels_per_interval = 0 ;
+  interval_start = (scroll_start > seq_start ? scroll_start : seq_start) ;  /* max at start of interval */
+  interval_end = (scroll_end < seq_end ? scroll_end : seq_end) ;            /* min at end of interval   */
+  interval_length = interval_end - interval_start  + 1 ;
+  int interval = 1 ;
+  for (interval = 1; interval<1000000000 ; interval*=10 )
+    {
+      pixels_per_interval = (int) (zoom_factor * (double) interval );
+      if (pixels_per_interval > pixels_limit)
+        break ;
+    }
+
+  /*
+   * Some experimental stuff to try out different ideas about how
+   * this might be reworked.
+   */
+  int coord_draw = 0,
+      coord_slice = 0,
+      coord_chrom = 0,
+      coord_used = 0,
+      tick_interval = interval,
+      numbering_interval = 10 * tick_interval ;
+  printf("tick_interval = %d, numbering_interval = %d\n", tick_interval, numbering_interval) ;
+  tick_width = 4.0 ;
+
+  /*
+   * Modify this so we're not looping over every base.
+   * This can be done by simply finding the first point and then
+   * looping in tick intervals and checking arithmetic mod
+   * the numbering interval at each iteration; or by doing
+   * a second loop for the latter.
+   */
+  for (coord_draw=interval_start; coord_draw<=interval_end; coord_draw++)
+    {
+
+      if (revcomped)
+        {
+          coord_slice = (seq_end-seq_start+1) - (coord_draw-1) ;
+          coord_chrom = (seq_end-seq_start+1) - coord_draw + true_start ;
+        }
+      else
+        {
+          coord_slice = coord_draw - seq_start + 1;
+          coord_chrom = coord_draw ;
+        }
+
+      /*
+       * Choose the coordinate that will be used to draw as labels and
+       * that is also used to decide where the ticks and labels are drawn
+       * in the parent canvas.
+       */
+      coord_used = coord_chrom ;
+
+      if (coord_used && !(coord_used%tick_interval))
+        {
+          zMapWindowFeaturesetAddGraphics(featureset, FEATURE_LINE,
+                                      scale_width-tick_width, (double)coord_draw,
+                                      scale_width, (double)coord_draw,
+                                      NULL, &black, NULL);
+        }
+
+      if (coord_used && !(coord_used%numbering_interval))
+        {
+          sprintf(label, "%d", coord_used) ;
+          zMapWindowFeaturesetAddGraphics(featureset, FEATURE_TEXT,
+                                      0, (double)coord_draw,
+                                      text_max, (double)coord_draw,
+                                      NULL, &black, g_strdup(label));
+
+        }
+    }
+
+#endif
+
+
 
   return scale_width;
 }
