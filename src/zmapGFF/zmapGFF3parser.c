@@ -641,7 +641,7 @@ static gboolean resizeFormatStrs(ZMapGFFParser pParser)
    */
   g_string_append_printf(format_str,
                     "%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%d%%d%%%"
-                    G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s %%%"G_GSSIZE_FORMAT "[^\n]s",
+                    G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s %%%" G_GSSIZE_FORMAT "[^\n]s",
                     iLength, iLength, iLength, iLength, iLength, iLength, iLength) ;
 
   pParser->format_str = g_string_free(format_str, FALSE) ;
