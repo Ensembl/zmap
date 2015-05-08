@@ -619,7 +619,7 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
 /* Supported values for data_format_str are: "gquark", "pointer"  */
 void zMap_g_hash_table_print(GHashTable *hash_table, const char *data_format_str)
 {
-  g_hash_table_foreach(hash_table, hashPrintTableCB, data_format_str) ;
+  g_hash_table_foreach(hash_table, hashPrintTableCB, (void *)data_format_str) ;
 
   return ;
 }
@@ -935,7 +935,7 @@ gpointer zMap_g_array_element(GArray **array_inout, guint index)
  * @param source                 The string to be inserted.
  * @return                       TRUE if a string was replaced, FALSE otherwise.
  *  */
-gboolean zMap_g_string_replace(GString *string, char *target, char *source)
+gboolean zMap_g_string_replace(GString *string, const char *target, const char *source)
 {
   gboolean result = FALSE ;
   int source_len ;

@@ -1547,7 +1547,7 @@ static char *zmapGUIFileChooserFullCygwin(GtkWidget *toplevel, char *title, char
 }
 #else
 /* Implementation of zmapGUIFileChooserFull for non-Windows */
-static char *zmapGUIFileChooserFullStandard(GtkWidget *toplevel, const char *title, char *directory_in, char *file_suffix,
+static char *zmapGUIFileChooserFullStandard(GtkWidget *toplevel, const char *title, const char *directory_in, const char *file_suffix,
                                             ZMapFileChooserContentAreaCB content_func, gpointer content_data)
 {
   char *full_title ;
@@ -2250,7 +2250,7 @@ static void printMessage(ZMapMsgType msg_type, char *message)
  *
  * returns TRUE if user data not required or if user data returned, FALSE otherwise.
  *  */
-static GtkResponseType messageFull(GtkWindow *parent, char *title_in, const char *msg,
+static GtkResponseType messageFull(GtkWindow *parent, const char *title_in, const char *msg,
                                    gboolean modal, int display_timeout,
                                    const char *first_button, const char *second_button, const char *third_button,
                                    ZMapMsgType msg_type, GtkJustification justify,

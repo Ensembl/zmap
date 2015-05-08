@@ -100,11 +100,11 @@ typedef struct _ZMapGeneticCodeStruct
 typedef char (*CodonTranslatorFunc)(char *codon, ZMapGeneticCode genetic_code, int *index_out) ;
 
 
-static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboolean include_stop,
-    gboolean *incomplete_final_codon) ;
-static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStrand strand,
-   ZMapGeneticCode translation_table, gboolean include_stop,
-   gboolean *incomplete_final_codon) ;
+static GArray *translateDNA(const char *dna, ZMapGeneticCode translation_table, gboolean include_stop,
+                            gboolean *incomplete_final_codon) ;
+static GArray *translateDNASegment(const char *dna_in, int from, int length, ZMapStrand strand,
+                                   ZMapGeneticCode translation_table, gboolean include_stop,
+                                   gboolean *incomplete_final_codon) ;
 
 static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMapStrand strand,
 gboolean encode, gboolean include_stop) ;
@@ -853,7 +853,7 @@ static ZMapGeneticCode pepGetTranslationTable(void)
 /* Note that I have just used the code from acedb which held dna in a compact encoded form so
  * in order to do the translation the dna needs to be encoded and then decoded back so it
  * stays the same. */
-static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboolean include_stop,
+static GArray *translateDNA(const char *dna, ZMapGeneticCode translation_table, gboolean include_stop,
                             gboolean *incomplete_final_codon)
 {
   GArray *peptide = NULL ;
@@ -888,7 +888,7 @@ static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboole
  *          -3 <= frame < 3 (makes for easier loop coding)
  *
  *  */
-static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStrand strand,
+static GArray *translateDNASegment(const char *dna_in, int from, int length, ZMapStrand strand,
                                    ZMapGeneticCode translation_table, gboolean include_stop,
                                    gboolean *incomplete_final_codon)
 {

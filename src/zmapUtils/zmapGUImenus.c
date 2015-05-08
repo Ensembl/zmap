@@ -89,8 +89,8 @@ typedef struct
 } CallbackDataStruct, *CallbackData ;
 
 
-static char *makeMenuItemName(char *string) ;
-static char *makeMenuTitleName(char *string, char *escape_chars) ;
+static char *makeMenuItemName(const char *string) ;
+static char *makeMenuTitleName(const char *string, const char *escape_chars) ;
 
 static ZMapGUIMenuItem makeSingleMenu(GList *menu_item_sets, int *menu_items_out) ;
 static ZMapGUIMenuItem copyMenu2NewMenu(ZMapGUIMenuItem new_menu, ZMapGUIMenuItem old_menu) ;
@@ -164,7 +164,7 @@ void zMapGUIMakeMenu(const char *menu_title, GList *menu_item_sets, GdkEventButt
 
   /* Do title/separator, the title needs to have any '_' or '/' chars escaped to stop them being
    * interpretted as keyboard shortcuts or submenu indicators. */
-  item->path = (char *)makeMenuTitleName(menu_title, "/_") ;
+  item->path = makeMenuTitleName(menu_title, "/_") ;
   item->item_type = (char *)"<Title>" ;
   item->accelerator = (char *)"O";
   item++ ;
@@ -267,7 +267,7 @@ void zMapGUIMakeMenu(const char *menu_title, GList *menu_item_sets, GdkEventButt
         radio_title = NULL ;
 
       if(menu_items[i].accelerator)
-        item->accelerator = menu_items[i].accelerator;
+        item->accelerator = (char *)menu_items[i].accelerator;
 
       item++ ;
     }
@@ -581,7 +581,7 @@ static void destroyMenu(ZMapGUIMenuItem menu)
 
   for (i = 0, menu_item = menu ; i < num_menu_items ; i++, menu_item++)
     {
-      g_free(menu_item->name) ;
+      g_free((void *)(menu_item->name)) ;
     }
   g_free(menu) ;
 

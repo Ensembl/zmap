@@ -77,7 +77,7 @@ gboolean zmap_development_G = FALSE;    // switch on/off features while testing
  * @param   void  None.
  * @return        The applications name as a string.
  *  */
-char *zMapGetAppName(void)
+const char *zMapGetAppName(void)
 {
   return ZMAP_TITLE ;
 }
@@ -88,9 +88,9 @@ char *zMapGetAppName(void)
  * The string will be in the form produced by the configure.ac file,
  * see the version section near the top.
  */
-char *zMapGetAppVersionString(void)
+const char *zMapGetAppVersionString(void)
 {
-  char *version_string = NULL ;
+  const char *version_string = NULL ;
 
   version_string = ZMAP_VERSION_NUMBER ;
 
@@ -104,9 +104,9 @@ char *zMapGetAppVersionString(void)
  * @param   void  None.
  * @return        The applications description as a string.
  *  */
-char *zMapGetAppTitle(void)
+const char *zMapGetAppTitle(void)
 {
-  char *title = ZMAP_TITLE " - "ZMAP_VERSION_NUMBER ;
+  const char *title = ZMAP_TITLE " - "ZMAP_VERSION_NUMBER ;
 
   return title ;
 }
@@ -179,7 +179,7 @@ gboolean zMapCompareVersionStings(const char *reference_version, const char *tes
  * @param void  None.
  * @return      The copyright as a string.
  *  */
-char *zMapGetCopyrightString(void)
+const char *zMapGetCopyrightString(void)
 {
   return ZMAP_COPYRIGHT_STRING() ;
 }
@@ -188,9 +188,9 @@ char *zMapGetCopyrightString(void)
 /* Returns the Sanger ZMap website URL as a string.
  *
  *  */
-char *zMapGetWebSiteString(void)
+const char *zMapGetWebSiteString(void)
 {
-  char *website_string = NULL ;
+  const char *website_string = NULL ;
 
   /* PACKAGE_URL is an automake/conf generated #define from information given to the AC_INIT
    * macro....on some of our systems the version of autoconf is too old to do this....hence
@@ -210,7 +210,7 @@ char *zMapGetWebSiteString(void)
  * @param void  None.
  * @return      The website as a string.
  *  */
-char *zMapGetDevWebSiteString(void)
+const char *zMapGetDevWebSiteString(void)
 {
   return ZMAP_WEBSITE_STRING() ;
 }
@@ -222,9 +222,9 @@ char *zMapGetDevWebSiteString(void)
  * @param void  None.
  * @return      The comments as a string.
  *  */
-char *zMapGetCommentsString(void)
+const char *zMapGetCommentsString(void)
 {
-  char *comment_string =
+  const char *comment_string =
     "ZMap is a multi-threaded genome viewer program\n"
     "that can be used stand alone or be driven from\n"
     "an external program to provide a seamless annotation\n"
@@ -241,7 +241,7 @@ char *zMapGetCommentsString(void)
  * @param void  None.
  * @return      The license as a string.
  *  */
-char *zMapGetLicenseString(void)
+const char *zMapGetLicenseString(void)
 {
   return ZMAP_LICENSE_STRING() ;
 }
@@ -288,9 +288,9 @@ void *zMapUtilsStr2Ptr(char *ptr_str)
 /* Note this function calls zmapCompileString() which is created by the Makefile
  * each time zmap is recompiled. The file is dynamically created so that it is not
  * constantly needing to be committed to GIT our source code control system. */
-char *zMapGetCompileString(void)
+const char *zMapGetCompileString(void)
 {
-  static char *compile_str = NULL ;
+  static const char *compile_str = NULL ;
 
   if (!compile_str)
     compile_str = g_strdup_printf("(compiled on %s)", zmapCompileString()) ;
@@ -320,7 +320,7 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
   char *time_str = NULL ;
   enum {MAX_TIMESTRING = 1024} ;
   struct timeval tv;
-  char *format_str ;
+  const char *format_str ;
   char buffer[MAX_TIMESTRING] = {0} ;
   size_t buf_size = MAX_TIMESTRING ;
   time_t curtime ;

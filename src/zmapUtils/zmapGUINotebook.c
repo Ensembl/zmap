@@ -67,8 +67,8 @@ typedef struct
   GtkWidget *notebook_stack ;
   GtkWidget *notebook ;
 
-  char *help_title ;
-  char *help_text ;
+  const char *help_title ;
+  const char *help_text ;
 
   GFunc destroy_func ;
   GFunc non_destroy_func ;

@@ -46,9 +46,9 @@
 /* Describes various browsers, crude at the moment, we will probably need more options later. */
 typedef struct
 {
-  char *system ;    /* system name as in "uname -s" */
-  char *executable ;    /* executable name or full path. */
-  char *open_command ;    /* alternative command to start browser. */
+  const char *system ;    /* system name as in "uname -s" */
+  const char *executable ;    /* executable name or full path. */
+  const char *open_command ;    /* alternative command to start browser. */
 } BrowserConfigStruct, *BrowserConfig ;
 
 

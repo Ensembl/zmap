@@ -207,15 +207,15 @@ gboolean zMapFileEmpty(char *filepath) ;
 
 
 /* routines to return basic version/information about zmap. */
-char *zMapGetAppName(void) ;
-char *zMapGetAppVersionString(void) ;
-char *zMapGetAppTitle(void) ;
-char *zMapGetCopyrightString(void) ;
-char *zMapGetWebSiteString(void) ;
-char *zMapGetCommentsString(void) ;
-char *zMapGetLicenseString(void) ;
+const char *zMapGetAppName(void) ;
+const char *zMapGetAppVersionString(void) ;
+const char *zMapGetAppTitle(void) ;
+const char *zMapGetCopyrightString(void) ;
+const char *zMapGetWebSiteString(void) ;
+const char *zMapGetCommentsString(void) ;
+const char *zMapGetLicenseString(void) ;
 gboolean zMapCompareVersionStings(const char *reference_version, const char *test_version, GError **error) ;
-char *zMapGetCompileString(void) ;
+const char *zMapGetCompileString(void) ;
 
 gboolean zMapUtilsConfigDebug(char *config_file) ;
 
