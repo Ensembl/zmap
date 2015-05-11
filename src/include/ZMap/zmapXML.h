@@ -144,7 +144,7 @@ typedef enum
     ZMAPXMLWRITER_MISMATCHED_TAG
   } ZMapXMLWriterErrorCode;
 
-  enum ZMapXMLWriterEventType 
+typedef enum ZMapXMLWriterEventType 
   {
     ZMAPXML_NULL_EVENT          = 0,
 
