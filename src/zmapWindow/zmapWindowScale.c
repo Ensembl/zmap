@@ -42,9 +42,6 @@
 
 
 #define DEFAULT_PANE_POSITION 100
-#define ZMAP_SCALE_MINORS_PER_MAJOR 10
-#define ZMAP_FORCE_FIVES TRUE
-#define ZMAP_SCALE_BAR_GROUP_TYPE_KEY "scale_group_type"
 
 /*
  * This is for my scale bar drawing experiments that are
@@ -338,6 +335,34 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
   return ;
 }
 
+
+/*
+ * This function is to convert the integer base coordinate (which we imagine
+ * is either a 1-based slice coordinate or a chromosome coordinate) into
+ * a string to be written into the ruler. The functions returns the strlen()
+ * of the string that is written. For revcomped data we stick a '-' sign
+ * at the start; simply a convention.
+ */
+static int number_to_text(int num, char *label, gboolean revcomped)
+{
+  static const int n = 4,
+    powers[] = {1000000000,
+                   1000000,
+                      1000,
+                         1 } ;
+  static const char unit_chars[] = {'G', 'M', 'k', '\0'} ;
+  int i = 0, j = 0 ;
+
+  for (i=0; i<n ; ++i)
+    if ((j = num/powers[i]))
+      break ;
+  if (revcomped)
+      sprintf(label, "-%g%c", (double)num/(double)powers[i], unit_chars[i]) ;
+  else
+      sprintf(label, "%g%c", (double)num/(double)powers[i], unit_chars[i]) ;
+
+  return strlen(label) ;
+}
 
 
 
@@ -741,12 +766,14 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
     interval_start = 0,
     interval_end = 0,
     pixels_limit = 3,
-    pixels_per_interval = 0 ;
+    pixels_per_interval = 0,
+    interval = 0 ;
   interval_start = (scroll_start > seq_start ? scroll_start : seq_start) ;  /* max at start of interval */
   interval_end = (scroll_end < seq_end ? scroll_end : seq_end) ;            /* min at end of interval   */
   interval_length = interval_end - interval_start  + 1 ;
-  int interval = 1 ;
-  for (interval = 1; interval<1000000000 ; interval*=10 )
+  const int interval_max = pow(10, 8) ;
+  printf("interval_max = %d\n", interval_max) ;
+  for (interval = 1; interval<interval_max ; interval*=10 )
     {
       pixels_per_interval = (int) (zoom_factor * (double) interval );
       if (pixels_per_interval > pixels_limit)
@@ -761,19 +788,19 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
       coord_slice = 0,
       coord_chrom = 0,
       coord_used = 0,
+      coord_draw_step_size = 0,
       tick_interval = interval,
-      numbering_interval = 10 * tick_interval ;
+      numbering_interval = 10 * tick_interval,
+      str_length = 0 ;
   printf("tick_interval = %d, numbering_interval = %d\n", tick_interval, numbering_interval) ;
   tick_width = 4.0 ;
 
   /*
-   * Modify this so we're not looping over every base.
-   * This can be done by simply finding the first point and then
-   * looping in tick intervals and checking arithmetic mod
-   * the numbering interval at each iteration; or by doing
-   * a second loop for the latter.
+   * This loop is not checking every value of the coordinate; note the usage
+   * of the variable "coord_draw_step_size" below.
    */
-  for (coord_draw=interval_start; coord_draw<=interval_end; coord_draw++)
+  coord_draw_step_size = 1 ;
+  for (coord_draw=interval_start; coord_draw<=interval_end; coord_draw+=coord_draw_step_size)
     {
 
       if (revcomped)
@@ -794,17 +821,18 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
        */
       coord_used = coord_chrom ;
 
-      if (coord_used && !(coord_used%tick_interval))
+      if (!(coord_used%tick_interval))
         {
           zMapWindowFeaturesetAddGraphics(featureset, FEATURE_LINE,
                                       scale_width-tick_width, (double)coord_draw,
                                       scale_width, (double)coord_draw,
                                       NULL, &black, NULL);
+          coord_draw_step_size = tick_interval ;
         }
 
-      if (coord_used && !(coord_used%numbering_interval))
+      if (!(coord_used%numbering_interval))
         {
-          sprintf(label, "%d", coord_used) ;
+          str_length = number_to_text(coord_used, label, revcomped) ;
           zMapWindowFeaturesetAddGraphics(featureset, FEATURE_TEXT,
                                       0, (double)coord_draw,
                                       text_max, (double)coord_draw,
