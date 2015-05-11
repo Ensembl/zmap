@@ -244,18 +244,56 @@
 \clearpage
 \section{Introduction}
 
-ZMap is a software package that provides a visualisation tool for genomic features. The software is written in C/C++, utilising the gnome toolkit (GTK2) to draw features on a canvas. ZMap accepts input from multiple sources in multiple formats across multiple genomes and is written in a way so that the addition of further formats is made as trivial as possible. Currently the list of formats includes GFF and DAS, which may reside in any one of; a file, an acedb instance, an http server. Multiple genomes and their associated features can be displayed in a single view as aligned blocks providing support for comparative annotation.
+ZMap is a software package that provides a visualisation and editing tool for genomic features. The software is written in C/C++, utilising the gnome toolkit (GTK2) to draw features on a canvas. ZMap accepts input from multiple sources in multiple formats across multiple genomes and is written in a way so that the addition of further formats is made as trivial as possible. Currently the list of formats includes GFF and DAS, which may reside in any one of; a file, an acedb instance, an http server. Multiple genomes and their associated features can be displayed in a single view as aligned blocks providing support for comparative annotation. ZMap privides facilities for editing and creating features, which can then be saved to a GFF file.
 
-ZMap does not include any utility for editing the features that it displays. It does however provide a powerful external interface with which to modify the features displayed on the canvas. Using this interface, Otterlace is used to annotate sequences present in the Otter database. This in turn updates to the Vertebrate Genome Annotation (VEGA) website (http://vega.sanger.ac.uk/index.html)
+ZMap is part of the Otter annotation suite and contains a protocol for two-way communication with Otter so that it operates seamlessly as an additional display within Otter.
+
+ZMap can call tools from the SeqTools suite of sequence visualisation tools to analyse alignments in more detail.
 
 \section{Using ZMap}
-ZMap is opened via the Tools menu bar in Otterlace (figure \ref{img_open_from_otterlace}).
+\subsection{Running ZMap on a GFF file}
+To run ZMap standalone on one or more GFF files, simply pass the file name(s) on the command line:
+\begin{verbatim}
+zmap file1.gff file2.gff
+\end{verbatim}
+
+The sequence region will default to the region available in the GFF file. Alternatively, you can specify the sequence/region by passing the \texttt{--sequence}, \texttt{--start} and \texttt{--end} arguments on the command-line.
+
+If all of the files contain the same reference sequence, then their contents will be shown in the same view. If the files contain multiple sequences/regions, then they will be shown in multiple views.
+
+\subsection{Running ZMap with a config file}
+If you have several sources, it can be convenient to specify them in a config file rather than typing them on the command-line. You can also then set up many different options and styles to use for these sources. To use a local GFF file as a source, a simple config file would look something like this:
+\begin{verbatim}
+[ZMap]
+# The list of sources
+sources=chr6-18
+
+# Sequence name/start/end can be specified here, on the command-line, or
+# omitted if they are to be taken from the file
+sequence=chr6-18
+start=2696324
+end=2864370
+
+# Source stanzas (one per source)
+[chr6-18]
+url=file:////Users/gb10/work/checkout/zmap/examples/features.gff
+\end{verbatim}
+
+ZMap can then be started by passing the config file on the command line:
+\begin{verbatim}
+zmap --conf_file=/path/to/file
+\end{verbatim}
+
+Alternatively, the config file can be saved as \texttt{~/.ZMap/ZMap} and will be picked up by default.
+
+\subsection{Operation within Otter}
+ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterlace}).
 
 \begin{figure}
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
 \includegraphics[width=15.231cm]{img_open_from_otterlace.png}
-\caption{Opening ZMap from Otterlace}
+\caption{Opening ZMap from Otter}
 \label{img_open_from_otterlace}
 \end{figure}
 
