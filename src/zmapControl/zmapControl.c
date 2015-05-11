@@ -983,7 +983,7 @@ static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, 
   GtkWidget *window_container = NULL;
   ZMapSplitPattern pattern = NULL;
   char *title = NULL;
-  int i;
+  unsigned int i;
 
   for(i = 0; i < split->split_patterns->len; i++)
     {

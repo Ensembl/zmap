@@ -798,7 +798,7 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
 
         if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.exons)
           {
-            int i ;
+            unsigned int i ;
             ZMapSpan span ;
             GArray *exons = feature->feature.transcript.exons ;
 
@@ -806,15 +806,15 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
 
             for (i = 0 ; i < exons->len ; i++)
               {
-        span = &g_array_index(exons, ZMapSpanStruct, i) ;
+                span = &g_array_index(exons, ZMapSpanStruct, i) ;
 
-        length += (span->x2 - span->x1 + 1) ;
+                length += (span->x2 - span->x1 + 1) ;
               }
 
           }
         else if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.align)
           {
-            int i ;
+            unsigned int i ;
             ZMapAlignBlock align ;
             GArray *gaps = feature->feature.homol.align ;
 
@@ -1903,7 +1903,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
             if (orig_feature->feature.homol.align != NULL
                                 && orig_feature->feature.homol.align->len > (guint)0)
               {
-                int i ;
+                unsigned int i ;
 
                 new_feature->feature.homol.align =
                   g_array_sized_new(FALSE, TRUE,
@@ -1921,7 +1921,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
         else if (new_feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
           {
             ZMapSpanStruct span;
-            int i ;
+            unsigned int i ;
 
 
             if (orig_feature->feature.transcript.exons != NULL)
