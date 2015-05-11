@@ -117,7 +117,7 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_socke
   gboolean result = FALSE ;
   ZMapRemoteControl remote_control ;
   static gboolean debug_set = FALSE ;  
-  char *app_id ;
+  const char *app_id ;
 
   app_id = zMapGetAppName() ;
 

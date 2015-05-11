@@ -147,7 +147,7 @@ typedef struct _ZMapAppContextStruct
 {
   ZMapAppState state ;					    /* Needed to control exit in a clean way. */
 
-  char *app_id ;					    /* zmap app name. */
+  const char *app_id ;					    /* zmap app name. */
 
   int exit_timeout ;					    /* time (s) to wait before forced exit. */
 

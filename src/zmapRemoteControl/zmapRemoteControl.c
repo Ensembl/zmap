@@ -243,7 +243,7 @@ static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG
  * If args are wrong returns NULL otherwise the interface is ready to be used.
  * 
  */
-ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
+ZMapRemoteControl zMapRemoteControlCreate(const char *app_id,
 					  ZMapRemoteControlErrorHandlerFunc error_func, gpointer error_func_data,
 					  ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data)
 {
