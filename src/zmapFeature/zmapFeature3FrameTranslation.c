@@ -146,8 +146,8 @@ gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatu
 
 void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style, ZMapFeatureSet translation_fs)
 {
-  ZMapStrand strand = ZMAPSTRAND_NONE;
-  ZMapFrame frame = ZMAPFRAME_NONE;
+  int strand = ZMAPSTRAND_NONE;
+  int frame = ZMAPFRAME_NONE;
 
   for (strand = ZMAPSTRAND_FORWARD ; strand <= ZMAPSTRAND_REVERSE; ++strand)
     {
@@ -159,7 +159,7 @@ void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureType
           ZMapFrame curr_frame = ZMAPFRAME_NONE;
 
 
-          curr_frame = frame ; //   = zMapFeatureFrameFromCoords(translation_block->block_to_sequence.block.x1, block_position) ;/* ref to zMapFeatureFrame(): these are block relative frames */
+          curr_frame = (ZMapFrame)frame ; //   = zMapFeatureFrameFromCoords(translation_block->block_to_sequence.block.x1, block_position) ;/* ref to zMapFeatureFrame(): these are block relative frames */
 
           translation_name = zMapFeature3FrameTranslationFeatureName(translation_fs, curr_frame) ;
           translation_id   = g_quark_from_string(translation_name) ;
@@ -189,7 +189,7 @@ void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureType
                           zMapFeatureAddStandardData(orf_feature, feature_name, feature_name,
                                                      NULL, NULL,
                                                      ZMAPSTYLE_MODE_BASIC, &feature_set->style,
-                                                     start + translation->x1, end + translation->x1, FALSE, 0.0, strand);
+                                                     start + translation->x1, end + translation->x1, FALSE, 0.0, (ZMapStrand)strand);
 
                           zMapFeatureSetAddFeature(feature_set, orf_feature);
                        }
