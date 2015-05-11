@@ -128,7 +128,7 @@ void zMapWindowContainerFeatureSetColumnHide(ZMapWindow window, GQuark column_id
   zmapWindowContainerUtilsExecute(window->feature_root_group,
                                   ZMAPCONTAINER_LEVEL_FEATURESET,
                                   column_hide_cb,
-                                  (gpointer)column_id);
+                                  GINT_TO_POINTER(column_id));
 }
 
 
@@ -138,7 +138,7 @@ void zMapWindowContainerFeatureSetColumnShow(ZMapWindow window, GQuark column_id
   zmapWindowContainerUtilsExecute(window->feature_root_group,
                                   ZMAPCONTAINER_LEVEL_FEATURESET,
                                   column_show_cb,
-                                  (gpointer)column_id);
+                                  GINT_TO_POINTER(column_id));
 }
 
 
@@ -1237,7 +1237,7 @@ static void column_hide_cb(ZMapWindowContainerGroup container, FooCanvasPoints *
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-        GQuark column_id = (GQuark) user_data ;
+        GQuark column_id = (GQuark) GPOINTER_TO_INT(user_data) ;
         ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet)container ;
 
         if (column_id == container_set->unique_id)
@@ -1265,7 +1265,7 @@ static void column_show_cb(ZMapWindowContainerGroup container, FooCanvasPoints *
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-        GQuark column_id = (GQuark) user_data ;
+        GQuark column_id = (GQuark) GPOINTER_TO_INT(user_data) ;
         ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet)container ;
 
         if (column_id == container_set->unique_id)
