@@ -443,8 +443,14 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
 
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
-      SimpleFeature *sf = Vector_getElementAt(features,i);
-      SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      /* copy coord system name because function takes non-const arg... ugh */
+      char *coord_system = g_strdup("chromosome") ;
+
+      SimpleFeature *sf = (SimpleFeature*)Vector_getElementAt(features,i) ;
+      SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf, coord_system, NULL ,NULL) ;
+
+      g_free(coord_system) ;
+      coord_system = NULL ;
 
       if (rsf)
         makeFeatureSimple(server, rsf, get_features_data, feature_block) ;
@@ -468,8 +474,14 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
-      DNAAlignFeature *sf = Vector_getElementAt(features,i);
-      DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      /* copy coord system name because function takes non-const arg... ugh */
+      char *coord_system = g_strdup("chromosome") ;
+
+      DNAAlignFeature *sf = (DNAAlignFeature*)Vector_getElementAt(features,i);
+      DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, coord_system, NULL, NULL);
+
+      g_free(coord_system) ;
+      coord_system = NULL ;
 
       if (rsf)
         makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block) ;
@@ -493,8 +505,14 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
-      DNAPepAlignFeature *sf = Vector_getElementAt(features,i);
-      DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      /* copy coord system name because function takes non-const arg... ugh */
+      char *coord_system = g_strdup("chromosome") ;
+
+      DNAPepAlignFeature *sf = (DNAPepAlignFeature*)Vector_getElementAt(features,i);
+      DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, coord_system, NULL, NULL);
+
+      g_free(coord_system) ;
+      coord_system = NULL ;
 
       if (rsf)
         makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block) ;
@@ -519,8 +537,14 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
-      RepeatFeature *sf = Vector_getElementAt(features,i);
-      RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      /* copy coord system name because function takes non-const arg... ugh */
+      char *coord_system = g_strdup("chromosome") ;
+
+      RepeatFeature *sf = (RepeatFeature*)Vector_getElementAt(features,i);
+      RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, coord_system, NULL, NULL);
+
+      g_free(coord_system) ;
+      coord_system = NULL ;
 
       if (rsf)
         makeFeatureRepeat(server, rsf, get_features_data, feature_block) ;
@@ -545,8 +569,14 @@ static gboolean getAllTranscripts(EnsemblServer server,
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
-      Transcript *sf = Vector_getElementAt(features,i);
-      Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      /* copy coord system name because function takes non-const arg... ugh */
+      char *coord_system = g_strdup("chromosome") ;
+
+      Transcript *sf = (Transcript*)Vector_getElementAt(features,i);
+      Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, coord_system, NULL, NULL);
+
+      g_free(coord_system) ;
+      coord_system = NULL ;
 
       if (rsf)
         makeFeatureTranscript(server, rsf, get_features_data, feature_block) ;
@@ -571,8 +601,14 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
-      PredictionTranscript *sf = Vector_getElementAt(features,i);
-      PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      /* copy coord system name because function takes non-const arg... ugh */
+      char *coord_system = g_strdup("chromosome") ;
+
+      PredictionTranscript *sf = (PredictionTranscript*)Vector_getElementAt(features,i);
+      PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, coord_system, NULL, NULL);
+
+      g_free(coord_system) ;
+      coord_system = NULL ;
 
       if (rsf)
         makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block) ;
@@ -1125,7 +1161,11 @@ static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector
       for (i = 0; i < Vector_getNumElement(exons); ++i) 
         {
           SeqFeature *exon = (SeqFeature*)Vector_getElementAt(exons,i);
-          ZMapSpanStruct span = {exon->start + server->zmap_start, exon->end + server->zmap_start};
+
+          ZMapSpanStruct span = {
+            (int)exon->start + server->zmap_start, 
+            (int)exon->end + server->zmap_start
+          };
 
           zMapFeatureAddTranscriptExonIntron(feature, &span, NULL) ;
 
@@ -1169,7 +1209,7 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
       int match_end = 0 ;
       int match_length = 0 ;
       ZMapStrand match_strand = ZMAPSTRAND_NONE ;
-      ZMapPhase match_phase = 0;
+      ZMapPhase match_phase = ZMAPPHASE_NONE;
       GArray *align = NULL ; /* to do */
       unsigned int align_error = 0;
       gboolean has_local_sequence = FALSE ;
@@ -1184,7 +1224,8 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
       else if (BaseAlignFeature_getHitStrand(rsf) < 0)
         match_strand = ZMAPSTRAND_REVERSE ;
 
-      match_phase = SeqFeature_getPhase((SeqFeature*)rsf) ;
+      /*! \todo Not sure if we can cast to ZMapPhase here from the seq feature's phase (unsigned char) */
+      match_phase = (ZMapPhase)SeqFeature_getPhase((SeqFeature*)rsf) ;
 
       /* Get the align array from the cigar string */
       cigar = BaseAlignFeature_getCigarString(rsf) ;
@@ -1297,7 +1338,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
                          feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
 
           /* add the new feature to the featureset */
-          ZMapFeature existing_feature = g_hash_table_lookup(((ZMapFeatureAny)feature_set)->children, GINT_TO_POINTER(feature_name_id)) ;
+          ZMapFeature existing_feature = (ZMapFeature)g_hash_table_lookup(((ZMapFeatureAny)feature_set)->children, GINT_TO_POINTER(feature_name_id)) ;
           
           if (!existing_feature)
             zMapFeatureSetAddFeature(feature_set, feature) ;
@@ -1334,7 +1375,7 @@ static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
 
   if (get_features_data->source_2_sourcedata)
     {
-      if (!(source_data = g_hash_table_lookup(get_features_data->source_2_sourcedata, GINT_TO_POINTER(source_id))))
+      if (!(source_data = (ZMapFeatureSource)g_hash_table_lookup(get_features_data->source_2_sourcedata, GINT_TO_POINTER(source_id))))
         {
           source_data = g_new0(ZMapFeatureSourceStruct,1);
           source_data->source_id = source_id;
@@ -1465,7 +1506,7 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
         {
           ZMapFeatureTypeStyle dna_style = NULL;
 
-          if (styles && (dna_style = g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
+          if (styles && (dna_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
             zMapFeatureDNACreateFeature(feature_block, dna_style, sequence, sequence_length);
         }
 
@@ -1540,15 +1581,18 @@ static Slice* getSlice(EnsemblServer server,
           pthread_mutex_unlock(&server->mutex) ;
         }
       
-      /* copy seq_name because function takes non-const arg... ugh */
+      /* copy seq_name and coord system name because function takes non-const arg... ugh */
       char *seq_name_copy = g_strdup(seq_name);
+      char *coord_system = g_strdup("chromosome") ;
 
       pthread_mutex_lock(&server->mutex) ; 
-      slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", seq_name_copy, start, end, strand, NULL, 0);
+      slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, coord_system, seq_name_copy, start, end, strand, NULL, 0);
       pthread_mutex_unlock(&server->mutex) ;
       
-      g_free(seq_name_copy);
-      seq_name_copy = NULL;
+      g_free(seq_name_copy) ;
+      g_free(coord_system) ;
+      seq_name_copy = NULL ;
+      coord_system = NULL ;
 
       if (server->slice_adaptor && slice)
         {
@@ -1604,17 +1648,20 @@ static char* getSequence(EnsemblServer server,
 
       if (server->slice_adaptor && server->seq_adaptor)
         {
-          /* copy seq_name because function takes non-const arg... ugh */
-          char *seq_name_copy = g_strdup(seq_name);
+          /* copy seq_name and coord system because function takes non-const arg... ugh */
+          char *seq_name_copy = g_strdup(seq_name) ;
+          char *coord_system = g_strdup("chromosome") ;
 
           pthread_mutex_lock(&server->mutex) ; 
-          Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
+          Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, coord_system, 
                                                     seq_name_copy, start, end, 
                                                     strand, NULL, 0);
           pthread_mutex_unlock(&server->mutex) ;
 
-          g_free(seq_name_copy);
-          seq_name_copy = NULL;
+          g_free(seq_name_copy) ;
+          g_free(coord_system) ;
+          seq_name_copy = NULL ;
+          coord_system = NULL ;
           
           if (slice)
             {
