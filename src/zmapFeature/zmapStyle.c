@@ -2110,7 +2110,7 @@ void zmap_param_spec_init(ZMapStyleParam param)
     case STYLE_PARAM_TYPE_GLYPH_SHAPE:         // ZMapStyleGlyphShapeStruct
 
       gps = g_param_spec_boxed (param->name, param->nick,param->blurb,
-                                zMapStyleGlyphShapeGetType(), G_PARAM_READWRITE);
+                                zMapStyleGlyphShapeGetType(), (GParamFlags)G_PARAM_READWRITE);
       break;
 
 
