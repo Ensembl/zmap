@@ -891,7 +891,6 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
                 if (strand_id == strand_reverse || strand_id == strand_both)
                   {
                     reverse_set_id = makeSetIDFromStr(featureset_id, ZMAPSTRAND_REVERSE, frame_id) ;
-                    const char * n2 = g_quark_to_string(reverse_set_id) ;
 
                     reverse_set_search.search_quark = reverse_set_id ;
 

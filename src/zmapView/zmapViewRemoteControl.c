@@ -1704,7 +1704,6 @@ static gboolean xml_column_start_cb(gpointer user_data, ZMapXMLElement column_el
   ZMapXMLAttribute attr = NULL;
   RequestData request_data = (RequestData)user_data;
   GQuark column_name_id = 0 ;
-  char * column_name = NULL ;
 
   if (result && (attr = zMapXMLElementGetAttributeByName(column_element, "name")))
     {

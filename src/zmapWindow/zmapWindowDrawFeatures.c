@@ -2224,7 +2224,6 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
               ZMapFeatureTypeStyle featureset_style;
 
               featureset_style = ZMAP_FEATURE_STYLE(list->data);
-              const char * name = g_quark_to_string(featureset_style->unique_id) ;
 
               if(!zMapStyleIsDisplayable(featureset_style))
                 {

@@ -169,8 +169,6 @@ static void removeCB(gpointer data, gpointer user_data) ;
 static void printFeatureCB(gpointer data, gpointer user_data_unused) ;
 
 static void newAddSplicesCB(gpointer data, gpointer user_data) ;
-static void newAddNonSplicesCB(gpointer data, gpointer user_data) ;
-static void addNonSplicesCB(gpointer data, gpointer user_data) ;
 
 
 
@@ -801,7 +799,6 @@ static void removeCB(gpointer data, gpointer user_data)
 {
   GList **feature_list_p = (GList **)user_data ;
   GList *feature_list = *feature_list_p ;
-  GList *found_feature_item ;
   GList *curr ;
   ZMapFeature selected_feature = (ZMapFeature)data ;
 
@@ -844,6 +841,7 @@ static void removeCB(gpointer data, gpointer user_data)
 
 
 /* debug.... */
+#ifdef DEBUG_FUNC_ONLY
 static void printFeatureCB(gpointer data, gpointer user_data_unused)
 {
   ZMapWindowCanvasFeature feature_item = (ZMapWindowCanvasFeature)data ;
@@ -854,7 +852,7 @@ static void printFeatureCB(gpointer data, gpointer user_data_unused)
 
   return ;
 }
-
+#endif
 
 
 
@@ -863,7 +861,6 @@ static void filterFeatureCB(gpointer data, gpointer user_data)
 {
   MatchData match_data = (MatchData)data ;
   FeatureFilter filter_data = (FeatureFilter)user_data ;
-  ZMapWindowContainerFeatureSet target_column = filter_data->curr_target_column ;
   ZMapFeature feature ;
   GList *curr ;
   ZMapFeaturePartsList splice_matches = NULL, non_matches = NULL ;

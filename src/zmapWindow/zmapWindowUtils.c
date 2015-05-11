@@ -80,8 +80,6 @@ int zmapWindowCoordToDisplay(ZMapWindow window, int coord)
    */
   if (normal_coords)
     coord = coord - window->min_coord + 1 ;
-  else
-    coord = coord ;
 
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     {

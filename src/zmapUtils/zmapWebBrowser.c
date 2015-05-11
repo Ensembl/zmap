@@ -93,7 +93,7 @@ static BrowserConfigStruct browsers_G[] =
 
 
 /* Error handling stuff. */
-static char *domain_G = "ZMAP_WEB" ;
+static const char *domain_G = "ZMAP_WEB" ;
 enum {BROWSER_NOT_FOUND, BROWSER_COMMAND_FAILED, BROWSER_UNAME_FAILED, BROWSER_NOT_REGISTERED} ;
 static GQuark err_domain_G = 0 ;
 

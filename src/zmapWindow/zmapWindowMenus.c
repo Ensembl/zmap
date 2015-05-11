@@ -497,8 +497,6 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
     *the_name = NULL,
     *temp_name1 = NULL,
     *temp_name2 = NULL ;
-  gboolean trunc1 = FALSE,
-    trunc2 = FALSE ;
   GList *menu_sets = NULL ;
   ItemMenuCBData menu_data = NULL ;
   ZMapFeature feature = NULL ;

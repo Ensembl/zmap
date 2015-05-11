@@ -160,9 +160,9 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server, Predict
 
 #ifdef NOT_USED
 static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 #endif
 
-static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector *exons) ;
 
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
