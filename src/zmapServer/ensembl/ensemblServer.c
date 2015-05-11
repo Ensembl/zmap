@@ -45,6 +45,12 @@
 #include <ZMap/zmapUrl.h>
 #include <zmapServerPrototype.h>
 #include <ensemblServer_P.h>
+
+/* ensc-core is compiled as C */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <EnsC.h>
 #include <SliceAdaptor.h>
 #include <SequenceAdaptor.h>
@@ -54,6 +60,12 @@
 #include <RepeatFeature.h>
 #include <Transcript.h>
 #include <PredictionTranscript.h>
+
+#ifdef __cplusplus
+}
+#endif
+
+
 
 #define ENSEMBL_PROTOCOL_STR "Ensembl"                            /* For error messages. */
 
@@ -428,6 +440,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 
   return result ;
 }
+
 
 static gboolean getAllSimpleFeatures(EnsemblServer server, 
                                      GetFeaturesData get_features_data, 
