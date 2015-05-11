@@ -114,13 +114,13 @@ printf("\n");
 
 PixRect alloc_pix_rect(void)
 {
-	void *mem;
+	PixRect mem;
 	int i;
 	PixRect ret;
 
 	if(!pix_rect_free_G)
 	{
-		mem = g_malloc(sizeof(pixRect) * N_PIXRECT_ALLOC);
+          mem = (PixRect)g_malloc(sizeof(pixRect) * N_PIXRECT_ALLOC);
 		for(i = 0; i < N_PIXRECT_ALLOC; i++)
 		{
 			ret = (PixRect) mem;
