@@ -23,6 +23,7 @@ fi
 RC=0
 force_remake_all=''
 gb_tools='maybe'
+ensc_core='maybe'
 run_autoupdate=''					    # don't run autoupdate by default.
 install_missing='-i'
 verbose=''
@@ -61,17 +62,35 @@ set -o history
 #
 # Do args.
 #
-usage="$SCRIPT_NAME [ -u ]"
+usage="
 
-while getopts ":fginuv" opt ; do
+Usage:
+ $SCRIPT_NAME [ -d -e -f -g -h -i -n -u -v ]
+
+   -d  Disable checkout of ensc-core (use existing subdir or local install)
+   -e  Force checkout of ensc-core (overwrite existing subdir)
+   -f  Force remake all
+   -g  Force checkout of gbtools (overwrite existing subdir)
+   -h  Show this usage info
+   -i  Install missing
+   -n  Disable checkout of gbtools repository (use existing subdir or local install)
+   -u  Run autoupdate
+   -v  Verbose
+
+"
+
+while getopts ":defghinuv" opt ; do
     case $opt in
+	d  ) ensc_core='no' ;;
+	e  ) ensc_core='yes' ;;
 	f  ) force_remake_all='-f' ;;
 	g  ) gb_tools='yes' ;;
+	h  ) zmap_message_exit "$usage" ;;
 	i  ) install_missing='-i' ;;
 	n  ) gb_tools='no' ;;
 	u  ) run_autoupdate='yes' ;;
 	v  ) verbose='-v' ;;
-	\? ) message_exit "Bad arg flag: $usage" ;;
+	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
 done
 
@@ -136,24 +155,36 @@ fi
 
 # Set up ensc-core subdirectory. This is the ensembl C API code.
 #
-zmap_message_out "Removing an old copy of $ensc_core_repos"
 
-rm -rf ./$ensc_core_dir/*
+if [[ "$ensc_core" == "yes" ]] ; then
+    zmap_message_out "Removing an old copy of $ensc_core_repos"
 
-zmap_message_out "Cloning $ensc_core_repos into $ensc_core_checkout_dir"
+    rm -rf ./$ensc_core_dir/*
 
-git clone $ensc_core_branch $git_host:$git_root/$ensc_core_repos $ensc_core_checkout_dir || zmap_message_exit "could not clone $ensc_core_repos into $PWD."
+    git checkout ./$ensc_core_dir
+fi
 
-cp -rf ./$ensc_core_checkout_dir/* ./$ensc_core_dir
+if [[ "$ensc_core" == "yes" || "$ensc_core" == "maybe" ]] ; then
+    
+    if [[ ! -f "./$ensc_core/src/Makefile" ]] ; then
 
-rm -rf ./$ensc_core_checkout_dir
+        zmap_message_out "Cloning $ensc_core_repos into $ensc_core_checkout_dir"
 
-# Make sure the placeholder files (.gitignore, README) are at their 
-# original versions
-git checkout ./$ensc_core_dir/
+        git clone $ensc_core_branch $git_host:$git_root/$ensc_core_repos $ensc_core_checkout_dir || zmap_message_exit "could not clone $ensc_core_repos into $PWD."
 
-zmap_message_out "Copied $ensc_core_checkout_dir files to $ensc_core_dir"
+        cp -rf ./$ensc_core_checkout_dir/* ./$ensc_core_dir
 
+        rm -rf ./$ensc_core_checkout_dir
+
+        # Make sure the placeholder files (.gitignore, README) are at their 
+        # original versions
+        git checkout ./$ensc_core_dir/
+
+        zmap_message_out "Copied $ensc_core_checkout_dir files to $ensc_core_dir"
+
+    fi
+
+fi
 
 # Remove any files/dirs from previous builds, necessary because different
 # systems have different versions of autoconf causing clashes over macros
