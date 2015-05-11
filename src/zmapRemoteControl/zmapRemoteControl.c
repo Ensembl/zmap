@@ -167,7 +167,9 @@ static RemoteZeroMQMessage queueRemove(GQueue *queue) ;
 static RemoteZeroMQMessage queuePeek(GQueue *queue) ;
 static gboolean queueIsEmpty(GQueue *queue) ;
 static void queueEmpty(GQueue *queue) ;
+#ifdef NOT_USED
 static void queueDestroy(GQueue *queue) ;
+#endif
 static void freeQueueElementCB(gpointer data, gpointer user_data_unused) ;
 
 static gboolean sendRequest(ZMapRemoteControl remote_control, RemoteZeroMQMessage request) ;

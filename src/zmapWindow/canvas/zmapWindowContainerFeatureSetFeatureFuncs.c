@@ -166,7 +166,9 @@ static ZMapFeatureSubPartType featureModeFilterType2SubpartType(ZMapWindowContai
 static GList *removeSelectedFeatures(GList *filter_features, GList *feature_list) ;
 static void removeCB(gpointer data, gpointer user_data) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printFeatureCB(gpointer data, gpointer user_data_unused) ;
+#endif
 
 static void newAddSplicesCB(gpointer data, gpointer user_data) ;
 
@@ -841,7 +843,7 @@ static void removeCB(gpointer data, gpointer user_data)
 
 
 /* debug.... */
-#ifdef DEBUG_FUNC_ONLY
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printFeatureCB(gpointer data, gpointer user_data_unused)
 {
   ZMapWindowCanvasFeature feature_item = (ZMapWindowCanvasFeature)data ;
