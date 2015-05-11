@@ -884,12 +884,12 @@ static int makeConcensusSequence(ZMapFeature composite)
 #endif
 
 
-      if(!index['a'])
+      if(!index[(unsigned char)'a'])
 	{
-	  index['a'] = index['A'] = 1;
-	  index['c'] = index['C'] = 2;
-	  index['g'] = index['G'] = 3;
-	  index['t'] = index['T'] = 4;
+	  index[(unsigned char)'a'] = index[(unsigned char)'A'] = 1;
+	  index[(unsigned char)'c'] = index[(unsigned char)'C'] = 2;
+	  index[(unsigned char)'g'] = index[(unsigned char)'G'] = 3;
+	  index[(unsigned char)'t'] = index[(unsigned char)'T'] = 4;
 	}
 
       if(n_bases < n_seq)
