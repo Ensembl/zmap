@@ -106,7 +106,7 @@ const char *zMapGetAppVersionString(void)
  *  */
 const char *zMapGetAppTitle(void)
 {
-  const char *title = ZMAP_TITLE " - "ZMAP_VERSION_NUMBER ;
+  const char *title = ZMAP_TITLE " - " ZMAP_VERSION_NUMBER ;
 
   return title ;
 }

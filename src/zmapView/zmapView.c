@@ -90,7 +90,7 @@
                                                                         \
         msg_str = g_string_new("") ;                                    \
                                                                         \
-        g_string_append_printf(msg_str, "status = \"%s\", request = \"%s\", reply = \"%s\", msg = \""FORMAT_STR"\"", \
+        g_string_append_printf(msg_str, "status = \"%s\", request = \"%s\", reply = \"%s\", msg = \"" FORMAT_STR "\"", \
                                zMapViewThreadStatus2ExactStr((VIEW_CON)->thread_status), \
                                zMapServerReqType2ExactStr((REQUEST_TYPE)), \
                                zMapThreadReply2ExactStr((REPLY)),       \

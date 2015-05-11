@@ -989,13 +989,13 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
       menu_data->feature_set->unique_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
     {
       if (menu_data->feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_THIS_EXON, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
+        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_THIS_EXON, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
       else if (menu_data->feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
-        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_THIS_MATCH, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
+        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_THIS_MATCH, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
       else if (menu_data->feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
-        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_THIS_COORD, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
+        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_THIS_COORD, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
       else
-        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_THIS_FEATURE, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
+        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_THIS_FEATURE, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
     }
 
   /* add in menu options for selected features */
@@ -1007,26 +1007,26 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
       if (menu_data->feature_set && menu_data->feature_set->unique_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
         {
           if (selected_feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_TRANSCRIPT, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, (void *)"<Ctrl>K");
+            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_TRANSCRIPT, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, (void *)"<Ctrl>K");
           else if (selected_feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
-            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_ALIGN, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, (void *)"<Ctrl>K");
+            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_ALIGN, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, (void *)"<Ctrl>K");
           else if (selected_feature->mode != ZMAPSTYLE_MODE_SEQUENCE)
-            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_FEATURE, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, (void *)"Ctrl>K");
+            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_FEATURE, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, (void *)"Ctrl>K");
         }
     }
 
   /* add in column options */
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_UNDO, ITEM_MENU_UNDO_SCRATCH, itemMenuCB, (void *)"<Ctrl>Z");
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_REDO, ITEM_MENU_REDO_SCRATCH, itemMenuCB, (void *)"<Ctrl>Y");
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_CLEAR, ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_UNDO, ITEM_MENU_UNDO_SCRATCH, itemMenuCB, (void *)"<Ctrl>Z");
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_REDO, ITEM_MENU_REDO_SCRATCH, itemMenuCB, (void *)"<Ctrl>Y");
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_CLEAR, ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
 
   /* add in annotation menu options */
   if (menu_data->feature && menu_data->feature_set &&
       menu_data->feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
     {
-      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_DELETE_SUBFEATURE, ITEM_MENU_DELETE_FROM_SCRATCH, itemMenuCB, NULL);
-      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_ATTRIBUTES, ITEM_MENU_SCRATCH_ATTRIBUTES, itemMenuCB, NULL);
-      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_CREATE, ITEM_MENU_SCRATCH_CREATE, itemMenuCB, NULL);
+      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_DELETE_SUBFEATURE, ITEM_MENU_DELETE_FROM_SCRATCH, itemMenuCB, NULL);
+      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_ATTRIBUTES, ITEM_MENU_SCRATCH_ATTRIBUTES, itemMenuCB, NULL);
+      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_CREATE, ITEM_MENU_SCRATCH_CREATE, itemMenuCB, NULL);
     }
 
   menu[i].type = ZMAPGUI_MENU_NONE;
@@ -1363,9 +1363,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL, NULL},
 
       {ZMAPGUI_MENU_BRANCH, COLUMN_CONFIG_STR, 0, NULL, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, COLUMN_CONFIG_STR"/"COLUMN_THIS_ONE, ZMAPWINDOWCOLUMN_CONFIGURE, configureMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, COLUMN_CONFIG_STR"/"COLUMN_ALL, ZMAPWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
-      {ZMAPGUI_MENU_BRANCH, COLUMN_CONFIG_STR"/"COLUMN_BUMP_OPTS, 0, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, COLUMN_CONFIG_STR "/" COLUMN_THIS_ONE, ZMAPWINDOWCOLUMN_CONFIGURE, configureMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, COLUMN_CONFIG_STR "/" COLUMN_ALL, ZMAPWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, COLUMN_CONFIG_STR "/" COLUMN_BUMP_OPTS, 0, NULL, NULL},
       {ZMAPGUI_MENU_RADIO, NULL, ZMAPBUMP_OVERLAP, bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO, NULL, ZMAPBUMP_ALTERNATING, bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO, NULL, ZMAPBUMP_ALL, bumpMenuCB, NULL},
@@ -1617,14 +1617,14 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
   m = menu;
 
   m->type = ZMAPGUI_MENU_NORMAL;
-  m->name = g_strdup(COLUMN_CONFIG_STR"/"COLUMN_COLOUR);
+  m->name = g_strdup(COLUMN_CONFIG_STR "/" COLUMN_COLOUR);
   m->id = 0;
   m->callback_func = colourMenuCB;
   m++;
 
   /* add sub menu */
   m->type = ZMAPGUI_MENU_BRANCH;
-  m->name = g_strdup(COLUMN_CONFIG_STR"/"COLUMN_STYLE_OPTS);
+  m->name = g_strdup(COLUMN_CONFIG_STR "/" COLUMN_STYLE_OPTS);
   m->id = 0;
   m->callback_func = NULL;
   m++;
@@ -1645,7 +1645,7 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
       if(s->mode != cur_style->mode)
         mode = (char *) zmapStyleMode2ShortText(s->mode);
 
-      m->name = g_strdup_printf(COLUMN_CONFIG_STR"/"COLUMN_STYLE_OPTS"/%s%s%s", mode, *mode ? "/" : "", name);
+      m->name = g_strdup_printf(COLUMN_CONFIG_STR "/" COLUMN_STYLE_OPTS"/%s%s%s", mode, *mode ? "/" : "", name);
       g_free(name);
 
       m->id = s->unique_id;

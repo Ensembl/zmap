@@ -2302,7 +2302,7 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
     }
   else
     {
-      zMapXMLParserRaiseParsingError(parser, "app_id is a required attribute for the \""ZACP_PEER"\" element.") ;
+      zMapXMLParserRaiseParsingError(parser, "app_id is a required attribute for the \"" ZACP_PEER "\" element.") ;
       app_data->reply_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       result = FALSE ;
     }
@@ -2324,7 +2324,7 @@ static gboolean xml_peer_start_cb(gpointer user_data, ZMapXMLElement peer_elemen
     }
   else
     {
-      zMapXMLParserRaiseParsingError(parser, "\""ZACP_SOCKET_ID"\" is a required attribute for the \""
+      zMapXMLParserRaiseParsingError(parser, "\"" ZACP_SOCKET_ID "\" is a required attribute for the \""
 				     ZACP_PEER"\" element.") ;
       app_data->reply_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       result = FALSE ;
