@@ -508,7 +508,6 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   FileServer server = (FileServer)server_in ;
   GetFeaturesDataStruct get_features_data = {NULL} ;
-  int num_features ;
 
   /* Check that there is any more to parse.... */
   if (server->buffer_line->len == 0)                           /* GString len is always >= 0 */

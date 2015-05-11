@@ -950,8 +950,7 @@ static gboolean requestAndParseOverHTTP(DasServer server,
   if (result)
     {
       server->chunks = 0;
-      if(((server->curl_error =
-           curl_easy_perform(server->curl_handle)) == CURLE_OK))
+      if((server->curl_error = curl_easy_perform(server->curl_handle)) == CURLE_OK)
         {
           printf("Downloaded %d chunks from url %s\n", server->chunks, url);
           response = TRUE ;

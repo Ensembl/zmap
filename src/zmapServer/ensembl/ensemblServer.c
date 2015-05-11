@@ -134,7 +134,10 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData 
 static gboolean getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllPredictionTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-//static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+
+#ifdef NOT_USED
+static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+#endif
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 
@@ -154,7 +157,10 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server, BaseAlignFeature *
 static ZMapFeature makeFeatureRepeat(EnsemblServer server, RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureTranscript(EnsemblServer server, Transcript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server, PredictionTranscript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-//static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+
+#ifdef NOT_USED
+static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+#endif
 
 static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector *exons) ;
@@ -220,7 +226,6 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout)
 {
   gboolean result = FALSE ;
-  //GError *error = NULL ;
   EnsemblServer server ;
 
   /* Always return a server struct as it contains error message stuff. */
@@ -357,7 +362,6 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  //EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
 }
@@ -365,7 +369,6 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
 static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  //EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
 }
@@ -391,7 +394,6 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
 static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
-  //EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
 }
@@ -582,30 +584,32 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 }
 
 
-//static gboolean getAllGenes(EnsemblServer server, 
-//                            GetFeaturesData get_features_data,
-//                            ZMapFeatureBlock feature_block)
-//{
-//  gboolean result = TRUE ;
-//
-//  pthread_mutex_lock(&server->mutex) ;
-//  Vector *features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
-//  pthread_mutex_unlock(&server->mutex) ;
-//
-//  int i = 0 ;
-//  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
-//    {
-//      Gene *sf = Vector_getElementAt(features,i);
-//      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
-//
-//      if (rsf)
-//        makeFeatureGene(server, rsf, get_features_data, feature_block) ;
-//      else
-//        printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
-//    }  
-//
-//  return result;
-//}
+#ifdef NOT_USED
+static gboolean getAllGenes(EnsemblServer server, 
+                            GetFeaturesData get_features_data,
+                            ZMapFeatureBlock feature_block)
+{
+  gboolean result = TRUE ;
+
+  pthread_mutex_lock(&server->mutex) ;
+  Vector *features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
+  pthread_mutex_unlock(&server->mutex) ;
+
+  int i = 0 ;
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
+    {
+      Gene *sf = Vector_getElementAt(features,i);
+      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+
+      if (rsf)
+        makeFeatureGene(server, rsf, get_features_data, feature_block) ;
+      else
+        printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
+    }  
+
+  return result;
+}
+#endif
 
 
 /* A bit of a lash up for now, we need the parent->child mapping for a sequence and since
@@ -944,17 +948,19 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
 }
 
 
-//static ZMapFeature makeFeatureGene(EnsemblServer server, 
-//                                   Gene *rsf, 
-//                                   GetFeaturesData get_features_data,
-//                                   ZMapFeatureBlock feature_block)
-//{
-//  ZMapFeature feature = NULL ;
-//
-//  geneAddTranscripts(server, rsf, get_features_data, feature_block) ;
-//
-//  return feature ;
-//}
+#ifdef NOT_USED
+/* gb10: probably don't need these but leaving them here for now */
+static ZMapFeature makeFeatureGene(EnsemblServer server, 
+                                   Gene *rsf, 
+                                   GetFeaturesData get_features_data,
+                                   ZMapFeatureBlock feature_block)
+{
+  ZMapFeature feature = NULL ;
+
+  geneAddTranscripts(server, rsf, get_features_data, feature_block) ;
+
+  return feature ;
+}
 
 
 static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block)
@@ -971,6 +977,7 @@ static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData 
         }
     }
 }
+#endif
 
 
 static ZMapFeature makeFeatureTranscript(EnsemblServer server,

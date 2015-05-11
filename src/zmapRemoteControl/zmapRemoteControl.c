@@ -1864,6 +1864,9 @@ static void freeQueueElementCB(gpointer data, gpointer user_data_unused)
   return ;
 }
 
+
+#ifdef NOT_USED
+/* gb10: ifdef'd out function to fix compiler warning. Not sure if it's still needed. */
 static void queueDestroy(GQueue *queue)
 {
   queueEmpty(queue) ;
@@ -1872,7 +1875,7 @@ static void queueDestroy(GQueue *queue)
 
   return ;
 }
-
+#endif
 
 
 /* 

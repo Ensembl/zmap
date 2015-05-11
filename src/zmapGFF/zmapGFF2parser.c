@@ -1543,7 +1543,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, const char *line, Name
 
               const char *local_sequence_str ;
               const char *seq_str = NULL;
-              char *result_str ;
+              char *result_str = NULL ;
               gboolean local_sequence = FALSE ;
 
               /* I am not sure if we ever have target_phase from GFF output....check this out... "*/
