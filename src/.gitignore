@@ -2,7 +2,15 @@ config.h.in
 config.h.in~
 config
 
+
+
 # Ignore everything in the gbtools subdir except its gitignore and README files
 gbtools/*
 !gbtools/.gitignore
 !gbtools/README
+
+# We don't keep this in our git repository.
+ensc-core
+
+
+
