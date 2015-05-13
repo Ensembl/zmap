@@ -371,11 +371,7 @@ You can manually change the borders of the marked area by putting your cursor ov
 Press "m" or "M" again, i.e. the mark key toggles marking on and off.
 
 \subsection{General ZMap display features}
-Different features are displayed in distinct columns as shown in figure \ref{img_features}.
-
-Note - you may see more or fewer features and columns depending on how your preferences are set up. For descriptions of all column types such as DAS sources, visit this URL:
-
-http://scratchy.internal.sanger.ac.uk/wiki/index.php/Otterlace\_filter\_descriptions
+ZMap has rich feature display capabilities, which are highly configurable. Different features are displayed in distinct columns, and can be configured with many different styles as shown in figure \ref{img_features}. 
 
 \begin{figure}
 \centering
@@ -386,7 +382,7 @@ http://scratchy.internal.sanger.ac.uk/wiki/index.php/Otterlace\_filter\_descript
 \end{figure}
 
 \begin{enumerate}
-\item  The thick yellow line represents the genomic sequence; everything to the left represents the negative strand and everything to the right the positive strand. DNA matches (i.e. ESTs, mRNAs and RefSeq) and repeats are all displayed to the right of the center although they may align to either strand. The thin bar to the right is the clone that the genomic sequence is made up from. Double click on this to access the DE editing window.
+\item  The thick yellow line represents the genomic sequence; everything to the left represents the negative strand and everything to the right the positive strand. DNA matches (i.e. ESTs, mRNAs and RefSeq) and repeats have been configured so that they are all displayed to the right of the center, although they may align to either strand. Other features are configured to display in their relevant strand. The thin bar to the right is the clone that the genomic sequence is made up from. When connected to the Otter peer, double-clicking on this gives access to the DE editing window.
 \item  Annotated transcripts; green is coding (CDS), red is non-coding (UTR and transcript variants) and purple shows the "coding'' region of NMD variants. Grey transcripts (see dotted line) contain exons outside the sequence slice being viewed and should not be confused with Halfwise hits.
 \item  Curated features, such as PolyA features are seen as horizontal black lines.
 \item  Phastcons44 - conserved regions detected using multiple sequence alignments of 44 organisms.
@@ -434,7 +430,7 @@ Many functions are available from the toolbar section in ZMap. See figures \ref{
 
 
 \subsection{Show feature details}
-Right click on a gene object or 'o' key when highlighted to see information on otter IDs and Ensembl IDs. For BLAST hits, double click on the HSP to get the feature interface where you will find details on alignment and on what HAVANA object the HSP has been assigned to, if any (see figure \ref{img_feature_details_dialog}).
+Right click on a gene object or 'o' key when highlighted to see information on otter IDs and Ensembl IDs. For BLAST hits, double click on the HSP to get the feature interface where you will find details on alignment and on what gene object the HSP has been assigned to as evidence, if any (see figure \ref{img_feature_details_dialog}).
 
 \begin{figure}
 \centering
@@ -445,7 +441,13 @@ Right click on a gene object or 'o' key when highlighted to see information on o
 \end{figure}
 
 \subsection{Exporting features for gene objects}
-As described on the previous page, if you right click over any feature (or type "o" when a feature is highlighted) you get further information. These screen shots show how you can view and export an annotated sequence to your home directory in various different ways, such as dumping features directly. In the main ZMap window, right click on an annotated gene object. From the drop down menu select \textbf{Export Feature DNA} and choose sequence required from CDS, transcript, unspliced and with flanking sequence. Alternatively select \textbf{Export Feature peptide} and choose either CDS or transcript. Here you can see how to \textbf{Show Feature DNA} for annotated gene object AC008073.1-001 in FASTA format; firstly, the section of the transcript that corresponds to the CDS and secondly the whole transcript, including the untranslated region (UTR). See figure \ref{img_exporting_features}.
+Figure \ref{img_exporting_features} shows how you can view and export an annotated sequence to your home directory in various different ways, such as dumping features directly.
+\begin{enumerate}
+\item In the main ZMap window, right click on an annotated gene object.
+\item From the drop down menu select \textbf{Export Feature DNA} and choose sequence required from CDS, transcript, unspliced and with flanking sequence.
+\item Alternatively, select \textbf{Export Feature peptide} and choose either CDS or transcript.
+\item Figure \ref{img_exporting_features} also shows the results of \textbf{Show Feature DNA} for annotated gene object AC008073.1-001 in FASTA format; firstly, the section of the transcript that corresponds to the CDS and secondly the whole transcript, including the untranslated region (UTR).
+\end{enumerate}
 
 \begin{figure}
 \centering
@@ -519,8 +521,8 @@ This option allows you to list all the features contained in a column in one win
 
 \subsection{Selecting single or multiple features and hiding/showing them}
 \begin{enumerate}
-\item If you left click once on a feature in ZMap, you will highlight all of its exons, the coordinates of which are now stored in the paste buffer and can be copied elsewhere, such as into the transcript editing window in Otterlace.
-\item You can select multiple features by holding the Shift key down and left clicking with mouse (same as for multi select on the Mac, Windows etc). This option will highlight a single exon at a time for each feature, but the accession numbers of each feature and the individual exon coordinates are held in the paste buffer. This is a particularly useful way of selecting ZMap hits to use in the OTF alignment tool, as all selected homologies will be held in the paste buffer and automatically pasted into the OTF accession window. Each of the exon coordinates can also be pasted into the transcript editing window in Otterlace. See figure \ref{img_show_hide}.
+\item If you left click once on a feature in ZMap, you will highlight all of its exons, the coordinates of which are now stored in the paste buffer and can be copied elsewhere, such as into the transcript editing window in Otter.
+\item You can select multiple features by holding the Shift key down and left clicking with mouse (same as for multi select on the Mac, Windows etc). This option will highlight a single exon at a time for each feature, but the accession numbers of each feature and the individual exon coordinates are held in the paste buffer. This is a particularly useful way of selecting ZMap hits to use in the OTF alignment tool in Otter, as all selected homologies will be held in the paste buffer and automatically pasted into the OTF accession window. Each of the exon coordinates can also be pasted into the transcript editing window in Otter (see figure \ref{img_show_hide}).
 \item You can remove selected features in ZMap by pressing \textbf{Delete} on the keyboard and restore them by pressing \textbf{Shift-Delete} (note on the Mac you need to press \textbf{Fn-Delete} and \textbf{Shift-Fn-Delete}). This is a particularly useful way of removing evidence that you have already assigned to a transcript object.
 \end{enumerate}
 
@@ -529,19 +531,41 @@ This option allows you to list all the features contained in a column in one win
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
 \includegraphics[width=15.231cm]{img_show_hide.png}
-\caption{Show/hide features}
+\caption{Pasting selected features to Otter's OTF dialog}
 \label{img_show_hide}
 \end{figure}
 
 
-\subsection{Rapid variant construction}
-Otterlace and ZMap can be used together to generate variant objects quickly. Existing transcript objects can be used as a template for a new object while a ZMap HSP can be used to provide the coordinates for the new variant. The new object will take its transcript type from the parent. See figures \ref{img_variant_construction} and \ref{img_variant_construction2}.
+\subsection{Creating/editing features}
+ZMap can be used to create new features or edit existing features. ZMap can generate variant objects quickly - existing transcript objects can be used as a template for a new object while a ZMap HSP (or any other feature, nucleotide or peptide) can be used to provide the coordinates for the new variant.
+
+\subsubsection{Standalone ZMap}
+Features are edited by copying them to a temporary feature in the \textbf{Annotation} column (see figure \ref{img_editing_zmap}). The temporary feature can be based on any existing feature(s). Multiple features or nucleotide coords can be used to adjust feature/exon coordinates. The coordinates and other attributes can also be edited manually. When finished, the temporary feature can be saved to the relevant column - either as a new feature, or to overwrite an existing one. 
+
+The Annotation menu in the right-click menu also offers other options such as: clear the Annotation column; delete an exon/intron; undo/redo the last operation.
+
+Right-click the temporary feature and select \textbf{Highlight evidence} to highlight the feature(s) that were used to construct it.
+
+To create a new temporary feature, select the transcript (or other feature) you wish to create a variant from and press \textbf{Ctrl-K} (or right-click and select Annotation -> Copy selected transcript(s)\footnote{Note that you need to enable the Annotation column from the Preferences dialog for the Annotation menu to appear. Ctrl-K will automatically enable the Annotation column if it is not already enabled.}. Select other features and use Ctrl-K to copy those in to adjust the coordinates of the original feature. ZMap will do its best to make a sensible merge of the new coordinates, e.g. extending the feature extents if a coordinate lies outside the current range. If ZMap cannot automatically merge a coordinate it will ask for more information, e.g. if a coordinate lies within an intron, ZMap will ask whether it should form a 5' or 3' intron boundary.
+
+\textbf{Double-click} the temporary feature to open the \textbf{Edit Feature} dialog to edit coordinates and other attributes manually. You can specify the new feature's final name and feature set. If you wish to save these attributes to the temporary feature (without saving the feature to the feature set) then click \textbf{Save Attributes}. To go ahead and save the feature to the named feature set, click \textbf{Create Feature}.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_editing_zmap.png}
+\caption{Feature editing in ZMap}
+\label{img_editing_zmap}
+\end{figure}
+
+\subsubsection{Variant construction with Otter}
+When running ZMap under Otter, variants are constructed in a different manner. See figures \ref{img_variant_construction} and \ref{img_variant_construction2}.
 
 \begin{figure}
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
 \includegraphics[width=15.231cm]{img_variant_construction.png}
-\caption{Variant construction}
+\caption{Variant construction in Otter (1)}
 \label{img_variant_construction}
 \end{figure}
 
@@ -549,7 +573,7 @@ Otterlace and ZMap can be used together to generate variant objects quickly. Exi
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
 \includegraphics[width=15.231cm]{img_variant_construction2.png}
-\caption{Variant construction}
+\caption{Variant construction in Otter (2)}
 \label{img_variant_construction2}
 \end{figure}
 
@@ -564,8 +588,8 @@ Use the \textbf{split} window function to effectively reduce the size of the win
 \label{img_split_window}
 \end{figure}
 
-\subsection{Launching in a ZMap}
-This function allows you to open two or more sequences alongside each other (such as a human region and the syntenic region in mouse, or two haplotypes), so that simultaneous investigation can be carried out. To do this you will need to open both sets of clones in the same Otterlace session. To open both ZMap windows in one window as shown below, you need to select "Launch In A ZMap" option in one clone set. These clones will open to the left of the already open Otterlace session. This screen shot shows human gene SF3B14 and the syntenic region in mouse. The gene copy and paste function (referred to in the Otterlace section) is of much use here, saving time when building gene objects. See figure \ref{img_launch_in_zmap}.
+\subsection{Launching in a ZMap from Otter}
+This function allows you to open two or more sequences alongside each other (such as a human region and the syntenic region in mouse, or two haplotypes), so that simultaneous investigation can be carried out. To do this you will need to open both sets of clones in the same Otter session. To open both ZMap windows in one window as shown below, you need to select "Launch In A ZMap" option in one clone set. These clones will open to the left of the already open Otter session. This screen shot shows human gene SF3B14 and the syntenic region in mouse. The gene copy and paste function (referred to in the Otter section) is of much use here, saving time when building gene objects. See figure \ref{img_launch_in_zmap}.
 
 \begin{figure}
 \centering
