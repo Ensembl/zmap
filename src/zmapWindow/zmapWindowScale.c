@@ -92,6 +92,19 @@ typedef enum
     ZMAP_SCALE_BAR_GROUP_RIGHT,
   } ZMapScaleBarGroupType;
 
+/*
+ * This represents the information required to
+ * create an optionally-labeled tick.
+ */
+typedef struct _TickStruct
+  {
+    int coord, width ;
+    char *label ;
+  } TickStruct, *Tick ;
+
+static Tick createTick(int coord, int width, char * string) ;
+static void destroyTick(gpointer tick) ;
+
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
 
 
@@ -339,31 +352,42 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
 /*
  * This function is to convert the integer base coordinate (which we imagine
  * is either a 1-based slice coordinate or a chromosome coordinate) into
- * a string to be written into the ruler. The functions returns the strlen()
- * of the string that is written. For revcomped data we stick a '-' sign
- * at the start; simply a convention.
+ * a string to be written into the ruler. The function returns a newly allocated
+ * string. For revcomped data we stick a '-' sign at the start; simply a convention.
+ *
+ * The maximum number of significant digits to be printed after the decimal
+ * point is 6 (this is the default, but it's in the format strings anyway).
  */
-static int number_to_text(int num, char *label, gboolean revcomped)
+static char * number_to_text(int num, int revcomped)
 {
-  static const int n = 4,
+  static const char *format_for = "%.6g%c",
+    *format_rev = "-%.6g%c" ;
+  static const int npowers = 4,
     powers[] = {1000000000,
                    1000000,
                       1000,
                          1 } ;
   static const char unit_chars[] = {'G', 'M', 'k', '\0'} ;
+  char *result = NULL ;
   int i = 0, j = 0 ;
 
-  for (i=0; i<n ; ++i)
-    if ((j = num/powers[i]))
-      break ;
-  if (revcomped)
-      sprintf(label, "-%g%c", (double)num/(double)powers[i], unit_chars[i]) ;
+  if (num)
+    {
+      for (i=0; i<npowers ; ++i)
+        if ((j = num/powers[i]))
+          break ;
+      if (revcomped)
+        result = g_strdup_printf(format_rev, (double)num/(double)powers[i], unit_chars[i]) ;
+      else
+        result = g_strdup_printf(format_for, (double)num/(double)powers[i], unit_chars[i]) ;
+    }
   else
-      sprintf(label, "%g%c", (double)num/(double)powers[i], unit_chars[i]) ;
+    {
+      result = g_strdup_printf("0") ;
+    }
 
-  return strlen(label) ;
+  return result ;
 }
-
 
 
 /* draw the scale bar: called from navigator and window */
@@ -410,6 +434,8 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
                               int true_start, int true_end,
                               double zoom_factor, gboolean revcomped, gboolean zoomed)
 {
+  static const size_t label_size = 32 ;
+  char label [label_size];        /* only need ~8 but there you go */
   double scale_width = 70.0;
   int seq_len;        /* # bases in the scroll region */
   int tick;
@@ -419,7 +445,6 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
   int gap;                /* pixels between ticks */
   int digit;                /* which tick out of 10 */
   int nudge;                /* tick is 5th? make bigger */
-  char label [32];        /* only need ~8 but there you go */
   char *unit;
   int base;
   PangoFontDescription *font_desc;
@@ -757,46 +782,64 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
 #else
 
   /*
-   * We need to know something about the resolution of the display; this
-   * in fact comes from
+   * The information required about the resolution of the display
+   * comes from the quantity
    *   zoom_factor = ruler->canvas->pixels_per_unit_y
-   * in the caller.
+   * in the caller. Other things we need to know are whether or
+   * not the display is revcomped, the true start and end in chromosome
+   * coordinates of the region displayed, and whether to display slice
+   * or chromosome coordinates to the user.
    */
+  static const int interval_max = 1000000000,  /* 10^9 */
+    pixels_limit = 3 ,
+    tick_width_default = 3,
+    tick_width_number = 7,
+    tick_width_special = 5 ;
+  gboolean first_tick = TRUE ;
   int interval_length = 0,
     interval_start = 0,
     interval_end = 0,
-    pixels_limit = 3,
     pixels_per_interval = 0,
-    interval = 0 ;
+    coord_draw = 0,
+    coord_slice = 0,
+    coord_chrom = 0,
+    coord_used = 0,
+    coord_draw_step_size = 0,
+    tick_interval = 0,
+    numbering_interval = 0,
+    special_interval = 0,
+    str_length = 0,
+    str_length_max = 0,
+    tick_width_use = 0 ;
+  char *tick_label = NULL ;
+  double coord_draw_at = 0.0,
+    coord_draw_at_last = 0.0 ;
+  Tick tick_object = NULL ;
+  GSList *tick_list = NULL,
+    *list = NULL ;
   interval_start = (scroll_start > seq_start ? scroll_start : seq_start) ;  /* max at start of interval */
   interval_end = (scroll_end < seq_end ? scroll_end : seq_end) ;            /* min at end of interval   */
-  interval_length = interval_end - interval_start  + 1 ;
-  const int interval_max = pow(10, 8) ;
-  printf("interval_max = %d\n", interval_max) ;
-  for (interval = 1; interval<interval_max ; interval*=10 )
+  interval_length = interval_end - interval_start + 1 ;
+
+  /*
+   * Find the spacing in base pairs of the tick_interval, and
+   * numbering_interval.
+   */
+  for (tick_interval = 1; tick_interval<interval_max ; tick_interval*=10 )
     {
-      pixels_per_interval = (int) (zoom_factor * (double) interval );
+      pixels_per_interval = (int) (zoom_factor * tick_interval );
       if (pixels_per_interval > pixels_limit)
         break ;
     }
+  numbering_interval = 10 * tick_interval ;
+  special_interval = numbering_interval/2 ;
 
   /*
-   * Some experimental stuff to try out different ideas about how
-   * this might be reworked.
-   */
-  int coord_draw = 0,
-      coord_slice = 0,
-      coord_chrom = 0,
-      coord_used = 0,
-      coord_draw_step_size = 0,
-      tick_interval = interval,
-      numbering_interval = 10 * tick_interval,
-      str_length = 0 ;
-  printf("tick_interval = %d, numbering_interval = %d\n", tick_interval, numbering_interval) ;
-  tick_width = 4.0 ;
-
-  /*
-   * This loop is not checking every value of the coordinate; note the usage
+   * This loop checks coordinate values to determine where to draw
+   * ticks and what the label associated with them (if any) should
+   * be.
+   *
+   * We are not checking every value of the coordinate; note the usage
    * of the variable "coord_draw_step_size" below.
    */
   coord_draw_step_size = 1 ;
@@ -810,7 +853,7 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
         }
       else
         {
-          coord_slice = coord_draw - seq_start + 1;
+          coord_slice = coord_draw - seq_start + 1 ;
           coord_chrom = coord_draw ;
         }
 
@@ -819,34 +862,139 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
        * that is also used to decide where the ticks and labels are drawn
        * in the parent canvas.
        */
-      coord_used = coord_chrom ;
+      coord_used = coord_slice ;
 
       if (!(coord_used%tick_interval))
         {
-          zMapWindowFeaturesetAddGraphics(featureset, FEATURE_LINE,
-                                      scale_width-tick_width, (double)coord_draw,
-                                      scale_width, (double)coord_draw,
-                                      NULL, &black, NULL);
+          tick_label = NULL ;
+          tick_width_use = tick_width_default ;
           coord_draw_step_size = tick_interval ;
-        }
 
-      if (!(coord_used%numbering_interval))
-        {
-          str_length = number_to_text(coord_used, label, revcomped) ;
-          zMapWindowFeaturesetAddGraphics(featureset, FEATURE_TEXT,
-                                      0, (double)coord_draw,
-                                      text_max, (double)coord_draw,
-                                      NULL, &black, g_strdup(label));
+          if (!(coord_used%special_interval))
+            {
+              tick_width_use = tick_width_special ;
+            }
 
+          if (!(coord_used%numbering_interval))
+            {
+              tick_label = number_to_text(coord_used, revcomped) ;
+              tick_width_use = tick_width_number ;
+              str_length_max = (str_length = strlen(tick_label)) > str_length_max ? str_length : str_length_max ;
+            }
+
+          tick_object = createTick(coord_draw, tick_width_use, tick_label) ;
+          tick_list = g_slist_prepend(tick_list, (gpointer) tick_object) ;
         }
     }
 
+  /*
+   * This can only be done once the string labels have been inspected in order
+   * that we know what the longest one will be.
+   */
+  text_max = (str_length_max+1.0+(revcomped ? 1.0 : 0.0))*font_width ;
+  scale_width = text_max + tick_width_number;
+  zMapWindowCanvasFeaturesetSetWidth(featureset, scale_width);
+  {
+    FooCanvasItem *foo = (FooCanvasItem *) group;
+
+    foo_canvas_item_request_update(foo);
+  }
+
+
+  /*
+   * Now we can actually draw the things, destroy the ticks as we go along
+   * and then free the list itself. This loop also draws the vertical lines
+   * on the RHS between ticks.
+   */
+  for (list=tick_list; list!=NULL; list=list->next)
+    {
+      tick_object = (Tick) list->data ;
+
+      if (tick_object)
+        {
+          tick_width = (double)tick_object->width ;
+          coord_draw_at = (double)tick_object->coord ;
+
+          /* draw tick */
+          zMapWindowFeaturesetAddGraphics(featureset, FEATURE_LINE,
+                                      scale_width-tick_width-1.0, coord_draw_at,
+                                      scale_width-1.0, coord_draw_at,
+                                      NULL, &black, NULL);
+
+          /* draw label */
+          if (tick_object->label)
+            {
+               zMapWindowFeaturesetAddGraphics(featureset, FEATURE_TEXT,
+                                      0, coord_draw_at,
+                                      text_max, coord_draw_at,
+                                      NULL, &black, tick_object->label);
+            }
+
+          /* draw vertical line from start of interval to first tick position */
+          if (first_tick)
+            {
+              zMapWindowFeaturesetAddGraphics(featureset, FEATURE_LINE,
+                                          scale_width-1.0, (double)interval_start,
+                                          scale_width-1.0, coord_draw_at,
+                                          NULL, &black, NULL ) ;
+              first_tick = FALSE ;
+            }
+          else /* draw vertical line between the previous tick and this one */
+            {
+              zMapWindowFeaturesetAddGraphics(featureset, FEATURE_LINE,
+                                          scale_width-1.0, coord_draw_at_last,
+                                          scale_width-1.0, coord_draw_at,
+                                          NULL, &black, NULL ) ;
+            }
+
+          coord_draw_at_last = coord_draw_at ;
+          destroyTick(tick_object) ;
+        }
+    }
+  /* draw vertical line between the last tick position and the end of the interval */
+  zMapWindowFeaturesetAddGraphics(featureset, FEATURE_LINE,
+                              scale_width-1.0, coord_draw_at,
+                              scale_width-1.0, (double)interval_end,
+                              NULL, &black, NULL ) ;
+
+  if (tick_list)
+    g_slist_free(tick_list) ;
+
 #endif
-
-
 
   return scale_width;
 }
 
 
+/*
+ * This creates a tick object.
+ *
+ * Note that when the object is created, the argument string pointer
+ * is copied, we do not create a new string and when it is destroyed,
+ * the string is not deleted.
+ *
+ * This is because of the usage of the label when the function
+ * zMapWindowFeaturesetAddGraphics() is called; the original usage
+ * appears to require a new instance of the string for every one.
+ */
+static Tick createTick(int coord, int width, char * string)
+{
+  Tick tick = NULL ;
+
+  tick = (Tick) g_new0(TickStruct, 1) ;
+  if (tick)
+    {
+      tick->coord = coord ;
+      tick->width = width ;
+      tick->label = string ;
+    }
+
+  return tick ;
+}
+
+static void destroyTick(gpointer tick)
+{
+  if (tick)
+    g_free((void*) tick) ;
+}
 

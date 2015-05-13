@@ -103,6 +103,17 @@ typedef enum
 #define IS_3FRAME(FRAME_MODE) \
   ((FRAME_MODE) & DISPLAY_3FRAME_ON)
 
+/*
+ * Coordinate type to display to the user in the window.
+ * This includes the ruler, and scale bar.
+ */
+typedef enum
+  {
+    DISPLAY_COORD_INVALID,
+    DISPLAY_COORD_CHROM,      /* chromosome coordinates           */
+    DISPLAY_COORD_SLICE,      /* slice coordinate                 */
+    DISPLAY_COORD_USER        /* wrt user-selected origin         */
+  } DisplayCoordMode ;
 
 
 
