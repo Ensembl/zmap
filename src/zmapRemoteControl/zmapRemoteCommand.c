@@ -82,7 +82,7 @@ typedef struct ParseDataStructName
 
 
   /* User for finding reply attributes. */
-  char *reply ;
+  const char *reply ;
   RemoteCommandRCType return_code ;
   char *reason ;
   char *reply_body ;
@@ -150,7 +150,7 @@ static RemoteValidateRCType reqReplyValidate(ZMapRemoteControl remote_control,
 					     GQuark msg_type, gboolean validate_command,
 					     GQuark version,
 					     GQuark app_id, GQuark socket_id, char *xml_request, char **error_out) ;
-static char *getReplyContents(char *reply) ;
+static char *getReplyContents(const char *reply) ;
 
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
@@ -897,9 +897,10 @@ char *zMapRemoteCommandRequestGetEnvelopeAttr(char *request, RemoteEnvelopeAttrT
  * to REMOTE_COMMAND_RC_BAD_XML and gives the error in error_out.
  *
  */
-gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
+gboolean zMapRemoteCommandReplyGetAttributes(const char *reply,
                                              char **command_out,
-                                             RemoteCommandRCType *return_code_out, char **reason_out,
+                                             RemoteCommandRCType *return_code_out,
+                                             char **reason_out,
                                              char **reply_body_out,
                                              char **error_out)
 {
@@ -916,7 +917,7 @@ gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
 
   zMapXMLParserSetMarkupObjectTagHandlers(parser, &parse_reply_starts_G[0], &parse_reply_ends_G[0]) ;
 
-  if (!(result = zMapXMLParserParseBuffer(parser, reply, strlen(reply))))
+  if (!(result = zMapXMLParserParseBuffer(parser, (void *)reply, strlen(reply))))
     {
       *error_out = zMapXMLParserLastErrorMsg(parser) ;
 
@@ -950,9 +951,8 @@ gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
  * error should be g_free'd when finished with.
  *
  *  */
-gboolean zMapRemoteCommandGetAttribute(const char *message,
-                                       const char *element, const char *attribute, const char **attribute_value_out,
-                                       char **error_out)
+gboolean zMapRemoteCommandGetAttribute(const char *message, const char *element, const char *attribute,
+                                       char **attribute_value_out, char **error_out)
 {
   gboolean result = FALSE ;
   ParseSingleDataStruct attribute_data = {TRUE, NULL, NULL} ;
@@ -979,7 +979,8 @@ gboolean zMapRemoteCommandGetAttribute(const char *message,
     }
   else
     {
-      *attribute_value_out = attribute_data.attribute_value ;
+      /* hack to cast like this.... */
+      *attribute_value_out = (char *)attribute_data.attribute_value ;
 
       result = TRUE ;
     }
@@ -2024,10 +2025,10 @@ static gboolean getAttribute(ZMapXMLParser parser, ZMapXMLElement element,
  *
  * Returns NULL on error.
  *  */
-static char *getReplyContents(char *reply)
+static char *getReplyContents(const char *reply)
 {
   char *reply_contents = NULL ;
-  char *start, *end ;
+  const char *start, *end ;
   size_t bytes ;
 
   /* Look for "<reply", then look for closing ">", then look for"</reply" and

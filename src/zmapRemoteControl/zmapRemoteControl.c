@@ -563,7 +563,7 @@ gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, ZMapRemoteC
 
 /* Takes a comma-separated list of millisecond timeout values, e.g. "5,500,10000" and stores
  * them to be used in controlling timeout behaviour in waiting for peer to respond. */
-gboolean zMapRemoteControlSetTimeoutList(ZMapRemoteControl remote_control, char *peer_timeout_list)
+gboolean zMapRemoteControlSetTimeoutList(ZMapRemoteControl remote_control, const char *peer_timeout_list)
 {
   gboolean result = FALSE ;
   gchar **timeouts ;

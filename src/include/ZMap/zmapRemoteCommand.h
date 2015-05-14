@@ -127,12 +127,12 @@ char *zMapRemoteCommandRequestGetRequestID(char *request) ;
 
 gboolean zMapRemoteCommandReplyGetAttributes(const char *reply,
 					     char **command_out,
-					     RemoteCommandRCType *return_code_out, char **reason_out,
+					     RemoteCommandRCType *return_code_out,
+                                             char **reason_out,
 					     char **reply_body_out,
 					     char **error_out) ;
-gboolean zMapRemoteCommandGetAttribute(const char *message,
-				       const char *element, const char *attribute, char **attribute_value_out,
-				       char **error_out) ;
+gboolean zMapRemoteCommandGetAttribute(const char *message, const char *element, const char *attribute,
+                                       char **attribute_value_out, char **error_out) ;
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapRemoteCommandRC2Str, RemoteCommandRCType) ;
 ZMAP_ENUM_FROM_SHORT_TEXT_DEC(zMapRemoteCommandStr2RC, RemoteCommandRCType) ;
