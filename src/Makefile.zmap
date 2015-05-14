@@ -5,7 +5,7 @@
 
 CC = g++ -std=c++0x
 
-
+LD = g++
 
 include $(top_srcdir)/Makefile.common
 
