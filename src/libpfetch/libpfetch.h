@@ -32,6 +32,11 @@
 #ifndef __LIBPFETCH_H__
 #define __LIBPFETCH_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include <glib.h>
 #include <glib-object.h>
 #include <libcurlobject/libcurlobject.h>
@@ -147,6 +152,13 @@ GType PFetchHandleHttpGetType(void);
 #define PFETCH_TYPE_HANDLE_STATUS          (PFetchHandleStatusGetType())
 
 GType PFetchHandleStatusGetType (void);
+
+
+
+#ifdef __cplusplus
+}
+#endif
+
 
 
 #endif /* __LIBPFETCH_H__ */
