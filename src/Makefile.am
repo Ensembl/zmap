@@ -140,7 +140,9 @@ libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
 # Programs we're going to compile.
 
 #bin_PROGRAMS = zmap gffparser xml_writer xremote_gui remotecontrol
-bin_PROGRAMS = zmap xml_writer remotecontrol
+# bin_PROGRAMS = zmap xml_writer remotecontrol
+
+bin_PROGRAMS = zmap 
 
 
 # I am perturbed by the fact that the x libs are before the gtk libs....
@@ -217,12 +219,13 @@ zmap_LDADD +=                                                \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 
-zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
+#zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
+zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.cc
 
 
 # zeromq is C++ so we need to link with g++, not gcc.
 #zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-zmap_LINK         = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+zmap_LINK         = $(CXX) -I$(top_srcdir)/zmapApp $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
 zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp $(MYSQL_CFLAGS)
 zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
