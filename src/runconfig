@@ -43,6 +43,8 @@ case $opsys in
 
   Linux )
 
+#    CC_args=g++
+
     case `uname -m` in
 
 	x86_64 )
@@ -60,7 +62,7 @@ case $opsys in
 	    fi
 
             # the intel compiler.
-            CC_args=gcc
+            #CC_args=gcc
 
 	    # Compile with PIC so that X11::XRemote compiles...
 	    CFLAGS_args="$CFLAGS_args -fPIC"
