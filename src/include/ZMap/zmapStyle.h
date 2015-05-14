@@ -1175,8 +1175,8 @@ gboolean zMapStyleSetColoursStr(ZMapFeatureTypeStyle style, ZMapStyleParamId tar
                                 const char *fill, const char *draw, const char *border) ;
 gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
                                     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
-char *zMapStyleMakeColourString(char *normal_fill, const char *normal_draw, char *normal_border,
-				char *selected_fill, const char *selected_draw, char *selected_border) ;
+char *zMapStyleMakeColourString(const char *normal_fill, const char *normal_draw, const char *normal_border,
+				const char *selected_fill, const char *selected_draw, const char *selected_border) ;
 
 //char *zMapStyleGetDescription(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetDescription(style) ((style)->description)
