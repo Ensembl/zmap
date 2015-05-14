@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -63,25 +63,25 @@ static long n_feature_free = 0;
 
 
 /* Some important notes:
- * 
+ *
  * ZMapWindowCanvasFeature's are not implemented as a GObject, this
  * is a deliberate decision because we found that GObjects are not
  * well suited to situations where you have very large numbers of
  * small objects. For instance the casting and type checking
  * mechanisms for GObjects are far too slow to be of use as are
  * functions like copy constructors and the like.
- * 
- * Therefore while initialisation and so on are similar, 
+ *
+ * Therefore while initialisation and so on are similar,
  * ZMapWindowCanvasFeature's are handled by straightforward function
  * calls and do not go through the GObject type system and are not
  * part of the Foocanvas hierachy. They have a parent, the
  * ZMapWindowFeaturesetItem, that is part of Foocanvas but that's it.
- * 
+ *
  */
 
 
 
-/* 
+/*
  *                          External interface routines
  */
 
@@ -136,9 +136,9 @@ ZMapWindowCanvasFeature zMapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 	  int i ;
           ZMapWindowCanvasFeature mem ;
 
-	  mem = (ZMapWindowCanvasFeature)g_malloc0(size * N_FEAT_ALLOC) ;
+	  mem = (ZMapWindowCanvasFeature)g_new0(zmapWindowCanvasFeatureStruct, N_FEAT_ALLOC) ;
 
-	  for (i = 0 ; i < N_FEAT_ALLOC ; i++, mem += size)
+	  for (i = 0 ; i < N_FEAT_ALLOC ; ++i, ++mem )
 	    {
 	      feat = (ZMapWindowCanvasFeature)mem ;
 	      feat->type = type ;
@@ -211,7 +211,7 @@ gboolean zMapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature
 
 /* Add/remove splice positions to a feature, these can be displayed/highlighted
  * to the user.
- * 
+ *
  * These positions probably indicate where the feature splices match some other
  * feature selected by the user. */
 void zMapWindowCanvasFeatureAddSplicePos(ZMapWindowCanvasFeature feature_item, int feature_pos,
@@ -522,7 +522,7 @@ gint zMapFeatureSetNameCmp(gconstpointer a, gconstpointer b)
 
 
 
-/* 
+/*
  *                          Package routines
  */
 
@@ -549,7 +549,7 @@ void zmapWindowCanvasFeatureFree(gpointer thing)
 
 
 
-/* 
+/*
  *                    Internal routines
  */
 

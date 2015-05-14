@@ -34,7 +34,15 @@
 
 #include <string.h>
 #include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <AceConn.h>
+#ifdef __cplusplus
+}
+#endif
+
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
@@ -321,7 +329,7 @@ static gboolean createConnection(void **server_out,
                          "Server version error: %s.", (error ? error->message : "(null)")) ;
 	  server->version_str = g_strdup(ACEDB_SERVER_MIN_VERSION) ;
 	}
-      
+
       if (error)
         g_error_free(error) ;
     }
@@ -1260,7 +1268,7 @@ static void addTypeName(gpointer data, gpointer user_data)
  * ##date 2004-09-21
  * ##sequence-region F22D3 1 35712
  * F22D3	Genomic_canonical	region	1	200	.	+	.	Sequence "B0252"
- * 
+ *
  * These error lines can also occur interleaved with valid gff...not ideal. Currently we shove
  * the errors out to our log file so they get seen.
  *
@@ -1385,13 +1393,13 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 				 "%s: %s",
 				 (g_str_has_prefix((char *)next_line, "// ERROR")
 				  ? "Error fetching features"
-				  : (g_str_has_prefix((char *)next_line, "//") 
+				  : (g_str_has_prefix((char *)next_line, "//")
 				     ? "Information from server" : "Bad GFF line")),
 				 next_line) ;
 
 		  /* Remember line in case this is the last/only line of file. */
 		  if (!first_error)
-		    first_error = next_line ;		    
+		    first_error = next_line ;
 		}
 	    }
 	}
@@ -1437,7 +1445,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 	      if (g_str_has_prefix((char *)next_line, "//"))
 		{
 		  ZMAPSERVER_LOG(Message, ACEDB_PROTOCOL_STR, server->host,
-				 "%s: %s", 
+				 "%s: %s",
 				 (g_str_has_prefix((char *)next_line, "// ERROR")
 				  ? "Error fetching features" : "Information from server"),
 				 next_line) ;
@@ -1623,7 +1631,7 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
       if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
 	{
           ZMapFeatureSet translation_fs = NULL;
-          
+
 	  if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
 	    {
               translation_fs = feature_set;
@@ -1636,7 +1644,7 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
           if ((zMapFeatureORFCreateSet(feature_block, &feature_set)))
             {
               ZMapFeatureTypeStyle orf_style = NULL;
-              
+
               if ((orf_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
                 zMapFeatureORFSetCreateFeatures(feature_set, orf_style, translation_fs);
             }
@@ -2078,10 +2086,10 @@ static gboolean checkServerVersion(AcedbServer server)
 
                   if (!(result = zMapCompareVersionStings(server->version_str, next, &error)))
                     {
-                      setErrMsg(server,  g_strdup_printf("Server version error: %s ", 
+                      setErrMsg(server,  g_strdup_printf("Server version error: %s ",
                                                          (error ? error->message : "(null)"))) ;
                     }
-                  
+
                   if (error)
                     g_error_free(error) ;
 
@@ -2090,18 +2098,18 @@ static gboolean checkServerVersion(AcedbServer server)
 	    }
 
 	  g_free(reply) ;
-          
+
           if (!found)
             {
-              setErrMsg(server, g_strdup_printf("Could not get acedb version: 'Version:' text not found in output from command '%s'.", 
+              setErrMsg(server, g_strdup_printf("Could not get acedb version: 'Version:' text not found in output from command '%s'.",
                                                 command)) ;
             }
 	}
       else
         {
           setErrMsg(server, g_strdup_printf("AceConn request '%s' failed with status '%d': %s",
-                                            acedb_request, 
-                                            server->last_err_status, 
+                                            acedb_request,
+                                            server->last_err_status,
                                             AceConnGetLastErrMsg(server->connection))) ;
         }
 
@@ -2210,8 +2218,8 @@ static gboolean setQuietMode(AcedbServer server)
   else
     {
       setErrMsg(server, g_strdup_printf("AceConn request '%s' failed with status '%d': %s",
-                                        acedb_request, 
-                                        server->last_err_status, 
+                                        acedb_request,
+                                        server->last_err_status,
                                         AceConnGetLastErrMsg(server->connection)));
     }
 

@@ -113,7 +113,7 @@ static void clear_inherited(gpointer key, gpointer item, gpointer user) ;
 
 
 
-/* 
+/*
  *                   External interface
  */
 
@@ -125,7 +125,7 @@ gboolean zMapStyleSetAdd(GHashTable *style_set, ZMapFeatureTypeStyle style)
   gboolean result = FALSE ;
   GQuark style_id ;
 
-  if (!style_set || !style) 
+  if (!style_set || !style)
     return result ;
 
   style_id = zMapStyleGetUniqueID(style) ;
@@ -160,7 +160,7 @@ void zMapStyleSetOverridden(ZMapFeatureTypeStyle style, gboolean truth)
  * If there are errors in trying to inherit styles (e.g. non-existent parents)
  * then this function returns FALSE and there will be log messages identifying
  * the errors.
- * 
+ *
  * re-written by mh17 May 2010 to use a more efficient way of finding parent styles and inheriting then
  * ..anyway this version runs as fast as a single datalist or hash table function
  * & does strictly less inherit operations than the number of styles
@@ -182,11 +182,11 @@ gboolean zMapStyleInheritAllStyles(GHashTable *style_set)
   for( ; iter ; iter = iter->next)
     {
       /* lookup the style: must do this for each as
-       * these may be changed by inheritance of previous styles 
-       */ 
+       * these may be changed by inheritance of previous styles
+       */
       old = (ZMapFeatureTypeStyle)g_hash_table_lookup(style_set, iter->data) ;
 
-      /* recursively inherit parent while not already done */ 
+      /* recursively inherit parent while not already done */
       new_style = inherit_parent(old, style_set, 0) ;
       if(!new_style)
         result = FALSE ;
@@ -283,10 +283,10 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
   ZMapStyleParam param = zmapStyleParams_G;
   int i;
 
-  if (!curr_style || !new_style) 
+  if (!curr_style || !new_style)
     return result ;
 
-  result = TRUE ; 
+  result = TRUE ;
 
   for(i = 1 ; i < _STYLE_PROP_N_ITEMS ; i++, param++)
     {
@@ -300,10 +300,10 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 
             case STYLE_PARAM_TYPE_QUARK_LIST_ID:
               {
-                  GList **l = (GList **) ((void *) (curr_style + param->offset));
-                  GList **ln = (GList **) ((void *) (new_style + param->offset));
+                  GList **l = (GList **) (((void *) curr_style) + param->offset);
+                  GList **ln = (GList **) (((void *) new_style) + param->offset);
 
-                  /* free old list before overwriting */ 
+                  /* free old list before overwriting */
                   if(*l)
                         g_list_free( *l);
                   *l = g_list_copy(*ln);
@@ -317,12 +317,12 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
                  if(zMapStyleIsPropertySetId(curr_style,param->id))
                   {
 
-                    str = (gchar **) ((void *) (curr_style + param->offset));
+                    str = (gchar **) (((void *) curr_style) + param->offset);
                     g_free(*str) ;
                   }
 
-                str = (gchar **) ((void *) (new_style + param->offset));
-                * (gchar **) ((void *) (curr_style + param->offset)) = g_strdup(*str);
+                str = (gchar **) (((void *) new_style) + param->offset);
+                * (gchar **) (((void *) curr_style) + param->offset) = g_strdup(*str);
                 break;
               }
 
@@ -330,8 +330,8 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
               {
                 ZMapStyleFullColour src_colour,dst_colour;
 
-                src_colour = (ZMapStyleFullColour) ((void *) (new_style + param->offset));
-                dst_colour = (ZMapStyleFullColour) ((void *) (curr_style + param->offset));
+                src_colour = (ZMapStyleFullColour) (((void *) new_style) + param->offset);
+                dst_colour = (ZMapStyleFullColour) (((void *) curr_style) + param->offset);
 
                 mergeColours(dst_colour,src_colour);
                 break;
@@ -342,8 +342,8 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
                 void *src,*dst;
 
 
-                src = (void *) (new_style + param->offset);
-                dst = (void *) (curr_style + param->offset);
+                src = ((void *) new_style) + param->offset;
+                dst = ((void *) curr_style) + param->offset;
 
                 memcpy(dst,src,param->size);
 
@@ -646,7 +646,7 @@ gboolean zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode,
       /* normalise the baseline */
       style->mode_data.graph.baseline
         = (style->mode_data.graph.baseline - style->min_score) / (style->max_score - style->min_score) ;
-      
+
       result = TRUE ;
     }
 
@@ -1035,7 +1035,7 @@ static void mergeStyle(gpointer style_id, gpointer data, gpointer user_data)
           {
             /* Merge the existing and new styles. */
             zMapStyleMerge(curr_style, new_style) ;
-        
+
             break ;
           }
         default:
@@ -1081,7 +1081,7 @@ static void copySetCB(gpointer key_id, gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle copy_style ;
   GHashTable *style_set = cb_data->copy_set ;
 
-  if (GPOINTER_TO_UINT(key_id) != curr_style->unique_id) 
+  if (GPOINTER_TO_UINT(key_id) != curr_style->unique_id)
     return ;
 
   if ((copy_style = zMapFeatureStyleCopy(curr_style)))
@@ -1164,7 +1164,7 @@ static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTabl
               zMapLogWarning("Merge of style \"%s\" into style \"%s\" failed.",
              g_quark_to_string(parent->original_id),
              g_quark_to_string(style->original_id)) ;
-        
+
               zMapStyleDestroy(tmp_style);
               tmp_style = style;
             }
