@@ -243,8 +243,8 @@ typedef enum
  * @param user_cleanup_data  Data you want passed to your cleanup callback function.
  * @return                   ZMapGuiNotebook
  */
-ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean editable,
-      ZMapGUINotebookCallbackFunc cleanup_cb, void *user_cleanup_data)
+ZMapGuiNotebook zMapGUINotebookCreateNotebook(const char *notebook_name, gboolean editable,
+                                              ZMapGUINotebookCallbackFunc cleanup_cb, void *user_cleanup_data)
 {
   ZMapGuiNotebook notebook = NULL ;
 

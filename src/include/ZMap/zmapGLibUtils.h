@@ -62,7 +62,7 @@ typedef struct ZMapGHashIterStructType
 
 gchar *zMap_g_remove_char(char *string, char ch) ;
 gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle) ;
-gboolean zMap_g_string_replace(GString *string, const char *target, char *source) ;
+gboolean zMap_g_string_replace(GString *string, const char *target, const char *source) ;
 
 void zMap_g_list_foreach_reverse(GList *list, GFunc func, gpointer user_data);
 void zMap_g_list_foreach_directional(GList *list, GFunc func, gpointer user_data,

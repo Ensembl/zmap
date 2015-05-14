@@ -56,8 +56,10 @@ enum {FASTA_CHARS = 50} ;
  *
  * Given a sequence name and its dna sequence, will dump the data in FastA
  * format. */
-gboolean zMapFASTAFile(GIOChannel *file, ZMapFASTASeqType seq_type, char *seq_name, int seq_len, char *dna,
-		       char *molecule_type, char *gene_name, GError **error_out)
+gboolean zMapFASTAFile(GIOChannel *file,
+                       ZMapFASTASeqType seq_type, const char *seq_name, int seq_len,
+                       const char *dna, const char *molecule_type, const char *gene_name,
+                       GError **error_out)
 {
   gboolean result = TRUE ;
   GIOStatus status ;
@@ -66,7 +68,7 @@ gboolean zMapFASTAFile(GIOChannel *file, ZMapFASTASeqType seq_type, char *seq_na
   char buffer[FASTA_CHARS + 2] ;			    /* FastA chars + \n + \0 */
   int dna_length  = 0 ;
   int lines = 0, chars_left = 0 ;
-  char *cp = NULL ;
+  const char *cp = NULL ;
   int i ;
 
   /* zMapAssert(file && seq_name && seq_len > 0 && dna && error_out) ;*/
@@ -125,7 +127,8 @@ gboolean zMapFASTAFile(GIOChannel *file, ZMapFASTASeqType seq_type, char *seq_na
 /* Returns the "title" of a FASTA file, i.e. the text that forms the first line
  * of a FASTA file (note that the string _does_ end with a newline).
  * Result should be freed using g_free() by caller. */
-char *zMapFASTATitle(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_type, char *gene_name,
+char *zMapFASTATitle(ZMapFASTASeqType seq_type,
+                     const char *seq_name, const char *molecule_type, const char *gene_name,
 		     int sequence_length)
 {
   char *title = NULL ;
@@ -154,9 +157,9 @@ char *zMapFASTATitle(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_t
  * supplied sequence and adds to it....so not good for dumping a huge dna
  * sequence to file, use zMapFASTAFile() instead.
  */
-char *zMapFASTAString(ZMapFASTASeqType seq_type, const char *seq_name,
-                      const char *molecule_type, char *gene_name,
-		      int sequence_length, char *sequence)
+char *zMapFASTAString(ZMapFASTASeqType seq_type,
+                      const char *seq_name, const char *molecule_type, const char *gene_name,
+		      int sequence_length, const char *sequence)
 {
   char *fasta_string = NULL ;
   char *title ;
@@ -164,7 +167,7 @@ char *zMapFASTAString(ZMapFASTASeqType seq_type, const char *seq_name,
   char buffer[FASTA_CHARS + 2] ;			    /* FastA chars + \n + \0 */
   int header_length ;
   int lines = 0, chars_left = 0 ;
-  char *cp = NULL ;
+  const char *cp = NULL ;
   int i ;
   int true_sequence_length ;
 

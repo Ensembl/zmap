@@ -28,9 +28,13 @@
  *-------------------------------------------------------------------
  */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifndef ZMAP_UTILS_GUI_H
 #define ZMAP_UTILS_GUI_H
@@ -506,7 +510,7 @@ void zMapGUIShowHelp(ZMapHelpType help_contents) ;
 void zMapGUISetHelpURL(char *URL_base) ;
 
 void zMapGUIShowText(const char *title, const char *text, gboolean edittable) ;
-GtkWidget *zMapGUIShowTextFull(char *title, const char *text,
+GtkWidget *zMapGUIShowTextFull(const char *title, const char *text,
                                gboolean edittable, GList *text_attributes,
 			       GtkTextBuffer **buffer_out);
 
@@ -567,6 +571,10 @@ gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char 
 
 #endif /* ZMAP_UTILS_GUI_H */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 }
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+

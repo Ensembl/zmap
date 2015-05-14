@@ -501,7 +501,7 @@ GList *zMap_g_list_merge(GList *a, GList *b)
  *                               on a new line.
  * @return                       <nothing>
  */
-void zMap_g_list_quark_print(GList *quark_list, char *list_name, gboolean new_line)
+void zMap_g_list_quark_print(GList *quark_list, const char *list_name, gboolean new_line)
 {
   /* zMapAssert(quark_list) ;*/
   if (!quark_list)

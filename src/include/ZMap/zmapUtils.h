@@ -26,9 +26,13 @@
  *-------------------------------------------------------------------
  */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifndef ZMAP_UTILS_H
 #define ZMAP_UTILS_H
@@ -280,6 +284,10 @@ gboolean zMapUtilsBioParseChromNumber(char *chromosome_str, char **chromosome_ou
 
 #endif /* ZMAP_UTILS_H */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 }
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+

@@ -2056,7 +2056,7 @@ protocol_from_scheme(ZMapURLScheme scheme)
 }
 
 
-char *zMapURLGetQueryValue(char *full_query, char *key)
+char *zMapURLGetQueryValue(const char *full_query, const char *key)
 {
   char *value = NULL, **split   = NULL, **ptr     = NULL ;
 

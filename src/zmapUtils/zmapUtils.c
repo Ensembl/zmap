@@ -861,7 +861,7 @@ gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str)
 
 /* Call directly or via zMapDebugPrint() macros. Does a fflush every time to 
  * ensure messages are seen in a timely way. */
-void zMapUtilsDebugPrintf(FILE *stream, char *format, ...)
+void zMapUtilsDebugPrintf(FILE *stream, const char *format, ...)
 {
   va_list args1, args2 ;
 

@@ -28,9 +28,13 @@
  *-------------------------------------------------------------------
  */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifndef ZMAP_UTILS_DEBUG_H
 #define ZMAP_UTILS_DEBUG_H
@@ -362,6 +366,10 @@ void zMapUtilsDebugPrintf(FILE *stream, const char *format, ...) ;
 
 #endif /* ZMAP_UTILS_DEBUG_H */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 }
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+

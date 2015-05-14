@@ -33,9 +33,11 @@
 
 typedef enum {ZMAPFASTA_SEQTYPE_INVALID, ZMAPFASTA_SEQTYPE_DNA, ZMAPFASTA_SEQTYPE_AA} ZMapFASTASeqType ;
 
+
 gboolean zMapFASTAFile(GIOChannel *file,
-                       ZMapFASTASeqType seq_type, const char *seqname, int seq_len, const char *dna,
-		       const char *molecule_type, const char *gene_name, GError **error_out) ;
+                       ZMapFASTASeqType seq_type, const char *seqname, int seq_len,
+                       const char *dna, const char *molecule_type, const char *gene_name,
+                       GError **error_out) ;
 char *zMapFASTAString(ZMapFASTASeqType seq_type,
                       const char *seq_name, const char *molecule_type, const char *gene_name,
 		      int sequence_length, const char *sequence) ;

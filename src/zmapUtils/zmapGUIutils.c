@@ -774,7 +774,7 @@ gboolean zMapGUIGetAbbrevTitlePrefix(void)
  * message      Very short text, e.g. "Please Reply" or a feature name or....
  * returns      the title string.
  *  */
-char *zMapGUIMakeTitleString(char *window_type, char *message)
+char *zMapGUIMakeTitleString(const char *window_type, const char *message)
 {
   char *title = NULL ;
 
@@ -1186,16 +1186,15 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, const char *msg)
  *
  * @return  void
  */
-void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
-ZMapMsgType msg_type,
-GtkJustification justify, int display_timeout, gboolean close)
+void zMapGUIShowMsgFull(GtkWindow *parent, const char *msg,
+                        ZMapMsgType msg_type, GtkJustification justify, int display_timeout, gboolean close_button)
 {
   gboolean modal ;
   const char *first_button = NULL ;
 
   modal = modalFromMsgType(msg_type) ;
 
-  if (close)
+  if (close_button)
     first_button = GTK_STOCK_CLOSE ;
 
   messageFull(parent, NULL, msg, modal, display_timeout,
@@ -1354,7 +1353,7 @@ GtkResponseType zMapGUIMsgGetSaveFull(GtkWindow *parent, ZMapMsgType msg_type, c
  * @param edittable    Can the text be editted ?
  * @return             nothing
  *  */
-void zMapGUIShowText(char *title, char *text, gboolean edittable)
+void zMapGUIShowText(const char *title, const char *text, gboolean edittable)
 {
   GtkWidget *dialog ;
 
@@ -1373,7 +1372,7 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
  * @param buffer_out   location to return the text buffer to.
  * @return             the GtkWidget *dialog
  */
-GtkWidget *zMapGUIShowTextFull(char *title, const char *text,
+GtkWidget *zMapGUIShowTextFull(const char *title, const char *text,
                                gboolean edittable, GList *text_attributes,
                                GtkTextBuffer **buffer_out)
 {
