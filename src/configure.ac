@@ -43,9 +43,10 @@ echo \
  Welcome to ./configure for $PACKAGE_STRING
  Cmd: $0 $@
  Environment:
-   LDFLAGS          : $LDFLAGS
-   CFLAGS           : $CFLAGS
    CC               : $CC
+   CFLAGS           : $CFLAGS
+   LD               : $LD
+   LDFLAGS          : $LDFLAGS
    PATH             : $PATH
    PACKAGE_CFG      : $PKG_CONFIG
    PACKAGE_CFG_PATH : $PKG_CONFIG_PATH
@@ -147,10 +148,26 @@ AC_DISABLE_SHARED
 AC_ENABLE_STATIC
 
 
+
+AC_PROG_CXXCPP
+AC_PROG_CXX
+
+
+AM_PROG_CC_C_O
+
+#AC_PROG_CC
+
 AC_PROG_LIBTOOL
+
+
+
+
+
 AM_INIT_AUTOMAKE
 
-AC_LANG(C)
+#AC_LANG(C)
+#AC_LANG([C++])
+
 
 
 
@@ -199,8 +216,7 @@ AC_SUBST(LDFLAGS)
 ################################################################################
 ################################################################################
 
-AC_PROG_CXX
-AC_PROG_CC
+
 
 AC_PATH_PROGS(PERL, perl perl5)
 AC_PROG_LN_S
