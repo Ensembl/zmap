@@ -31,10 +31,12 @@
  *-------------------------------------------------------------------
  */
 
-#include <zmapApp_PP.h>
+#include <ZMap/zmap.h>
+
+#include <zmapApp_P.h>
 
 
-// dummychange....   
+
 
 int main(int argc, char *argv[])
 {
