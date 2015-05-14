@@ -440,7 +440,7 @@ char *zMapXMLWriterEvent2Txt(ZMapXMLWriterEvent event)
  * should be g_free'd when no longer returned.
  * 
  */
-char *zMapXMLUtilsEscapeStr(char *str)
+char *zMapXMLUtilsEscapeStr(const char *str)
 {
   char *escaped_str = NULL ;
 
@@ -450,7 +450,7 @@ char *zMapXMLUtilsEscapeStr(char *str)
 }
 
 
-char *zMapXMLUtilsEscapeStrPrintf(char *format, ...)
+char *zMapXMLUtilsEscapeStrPrintf(const char *format, ...)
 {
   char *escaped_str = NULL ;
   va_list args1, args2 ;
@@ -474,7 +474,7 @@ char *zMapXMLUtilsEscapeStrPrintf(char *format, ...)
 /* copy a string and replace &thing; */
 /* sadly needed to unescape &apos;, no other characters are handled */
 /* quickly hacked for a bug fix, will review when the new XRemote is introduced */
-char *zMapXMLUtilsUnescapeStrdup(char *str)
+char *zMapXMLUtilsUnescapeStrdup(const char *str)
 {
   char *result = g_strdup(str);
   char *p = result;

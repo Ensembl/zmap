@@ -28,9 +28,13 @@
  *-------------------------------------------------------------------
  */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifndef ZMAP_XML_H
 #define ZMAP_XML_H
@@ -280,20 +284,13 @@ void zMapXMLDocumentDestroy(ZMapXMLDocument doc) ;
 ZMapXMLElement zMapXMLElementNextSibling(ZMapXMLElement ele);
 ZMapXMLElement zMapXMLElementPreviousSibling(ZMapXMLElement ele);
 
-ZMapXMLElement zMapXMLElementGetChildByPath(ZMapXMLElement parent,
-                                             const char *path);
+ZMapXMLElement zMapXMLElementGetChildByPath(ZMapXMLElement parent, const char *path);
 
-ZMapXMLElement zMapXMLElementGetChildByName(ZMapXMLElement parent,
-                                             const char *name);
-ZMapXMLElement zMapXMLElementGetChildByName1(ZMapXMLElement parent,
-                                              GQuark name);
-GList *zMapXMLElementGetChildrenByName(ZMapXMLElement parent,
-                                        GQuark name,
-                                        int expect);
-ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele,
-                                                   const char *name);
-ZMapXMLAttribute zMapXMLElementGetAttributeByName1(ZMapXMLElement ele,
-                                                    GQuark name);
+ZMapXMLElement zMapXMLElementGetChildByName(ZMapXMLElement parent, const char *name);
+ZMapXMLElement zMapXMLElementGetChildByName1(ZMapXMLElement parent, GQuark name);
+GList *zMapXMLElementGetChildrenByName(ZMapXMLElement parent, GQuark name, int expect);
+ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele, const char *name);
+ZMapXMLAttribute zMapXMLElementGetAttributeByName1(ZMapXMLElement ele, GQuark name);
 char *zMapXMLElementStealContent(ZMapXMLElement element);
 
 
@@ -396,6 +393,10 @@ char *zMapXMLUtilsUnescapeStrdup(const char *str);	/* NOTE: incomplete */
 
 #endif /* ZMAP_XML_H */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 }
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+

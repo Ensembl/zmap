@@ -89,7 +89,7 @@ ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback, gp
   return writer;
 }
 
-ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, char *element_name)
+ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, const char *element_name)
 {
   ZMapXMLWriterErrorCode code;
   ElementStackMemberStruct curr_element = {0};
@@ -128,7 +128,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, char *ele
   return code;
 }
 
-ZMapXMLWriterErrorCode zMapXMLWriterAttribute(ZMapXMLWriter writer, char *name, char *value)
+ZMapXMLWriterErrorCode zMapXMLWriterAttribute(ZMapXMLWriter writer, const char *name, const char *value)
 {
   ZMapXMLWriterErrorCode code = ZMAPXMLWRITER_OK;
   ElementStackMember stack_element = NULL;
@@ -155,7 +155,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterAttribute(ZMapXMLWriter writer, char *name, 
   return code;
 }
 
-ZMapXMLWriterErrorCode zMapXMLWriterElementContent(ZMapXMLWriter writer, char *content)
+ZMapXMLWriterErrorCode zMapXMLWriterElementContent(ZMapXMLWriter writer, const char *content)
 {
   ZMapXMLWriterErrorCode code;
 
@@ -172,7 +172,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterElementContent(ZMapXMLWriter writer, char *c
   return code;
 }
 
-ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *element, gboolean full_format)
+ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, const char *element, gboolean full_format)
 {
   ZMapXMLWriterErrorCode code = ZMAPXMLWRITER_OK;
   GQuark name_quark = 0;
@@ -222,7 +222,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *eleme
   return code;
 }
 
-ZMapXMLWriterErrorCode zMapXMLWriterStartDocument(ZMapXMLWriter writer, char *document_root_tag)
+ZMapXMLWriterErrorCode zMapXMLWriterStartDocument(ZMapXMLWriter writer, const char *document_root_tag)
 {
   ZMapXMLWriterErrorCode code;
   const char *version = "1.1", *encoding = "UTF-8";

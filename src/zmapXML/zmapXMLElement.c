@@ -135,8 +135,7 @@ ZMapXMLElement zMapXMLElementPreviousSibling(ZMapXMLElement ele)
 /* This can only get first Child path. Probably not commonly used, but
  * here in case.
  */
-ZMapXMLElement zMapXMLElementGetChildByPath(ZMapXMLElement parent,
-                                             char *path)
+ZMapXMLElement zMapXMLElementGetChildByPath(ZMapXMLElement parent, const char *path)
 {
   ZMapXMLElement ele = NULL, pele = NULL;
   gchar **names = NULL;
@@ -162,8 +161,7 @@ ZMapXMLElement zMapXMLElementGetChildByPath(ZMapXMLElement parent,
   return ele;
 }
 
-ZMapXMLElement zMapXMLElementGetChildByName(ZMapXMLElement parent,
-                                             char *name)
+ZMapXMLElement zMapXMLElementGetChildByName(ZMapXMLElement parent, const char *name)
 {
   if(name && *name)
     return zMapXMLElementGetChildByName1(parent, g_quark_from_string(g_ascii_strdown(name, -1)));
@@ -175,8 +173,7 @@ ZMapXMLElement zMapXMLElementGetChildByName(ZMapXMLElement parent,
  * objects and basically allow slow hash style access to the GList 
  * which is implemented as a list for the reason mentioned below.
  */
-ZMapXMLElement zMapXMLElementGetChildByName1(ZMapXMLElement parent,
-                                              GQuark name)
+ZMapXMLElement zMapXMLElementGetChildByName1(ZMapXMLElement parent, GQuark name)
 {
   GList *list;
 
@@ -194,9 +191,7 @@ ZMapXMLElement zMapXMLElementGetChildByName1(ZMapXMLElement parent,
  * glib's GList will only return the first one it finds.  Passing -1 as 
  * the expect is guarenteed to return all child elements with name.
  */
-GList *zMapXMLElementGetChildrenByName(ZMapXMLElement parent,
-                                       GQuark name,
-                                       int expect)
+GList *zMapXMLElementGetChildrenByName(ZMapXMLElement parent, GQuark name, int expect)
 {
   GList *item     = g_list_first(parent->children);
   GList *children = NULL;
@@ -219,7 +214,7 @@ GList *zMapXMLElementGetChildrenByName(ZMapXMLElement parent,
   return children;
 }
 
-ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele, char *name)
+ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele, const char *name)
 {
   ZMapXMLAttribute attr = NULL;
   GList *item = g_list_first(ele->attributes);

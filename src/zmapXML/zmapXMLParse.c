@@ -358,9 +358,7 @@ static void xml_parse(ZMapXMLParser parser, char *buffer, int size, enum XML_Sta
   return ;
 }
 
-gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser, 
-                                  void *data, 
-                                  int size)
+gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser, void *data, int size)
 {
   gboolean result = TRUE ;
   int isFinal;
@@ -480,8 +478,7 @@ char *zMapXMLParserLastErrorMsg(ZMapXMLParser parser)
   return (char *)(parser->last_errmsg) ;
 }
 
-void zMapXMLParserRaiseParsingError(ZMapXMLParser parser,
-                                    char *error_string)
+void zMapXMLParserRaiseParsingError(ZMapXMLParser parser, const char *error_string)
 {
   parser->error_free_abort = FALSE;
 
