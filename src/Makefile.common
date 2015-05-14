@@ -5,7 +5,8 @@ NULL =
 
 ARFLAGS = cru
 
-AM_CPPFLAGS = -g -I$(top_srcdir)/include \
+# I'm hacking in zmapApp here for now....
+AM_CPPFLAGS = -I$(top_srcdir)/zmapApp      -g -I$(top_srcdir)/include \
 	-I$(top_builddir)  -I$(top_srcdir)/AceConn/include \
 	-I$(top_srcdir)/htslib-develop \
 	-I$(top_srcdir)/zeromq/include \
