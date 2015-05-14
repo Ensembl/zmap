@@ -28,10 +28,6 @@
  *
  *-------------------------------------------------------------------
  */
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef ZMAP_WINDOW_H
 #define ZMAP_WINDOW_H
 
@@ -718,7 +714,3 @@ double zMapWindowGetDisplayOrigin(ZMapWindow window) ;
 void zMapWindowSetDisplayOrigin(ZMapWindow window, double origin) ;
 
 #endif /* !ZMAP_WINDOW_H */
-
-#ifdef __cplusplus
-}
-#endif
