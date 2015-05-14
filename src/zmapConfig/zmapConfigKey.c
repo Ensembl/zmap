@@ -125,9 +125,9 @@ gboolean zMapConfigIniGetValue(ZMapConfigIni config,
 
 
 void zMapConfigIniSetValue(ZMapConfigIni config,
-   char *stanza_name,
-   char *key_name,
-   GValue *value)
+                           const char *stanza_name,
+                           const char *key_name,
+                           GValue *value)
 {
   GKeyFile *user_key_file = NULL;
   zMapReturnIfFail(config) ; 

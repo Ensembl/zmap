@@ -102,7 +102,7 @@ static gint match_type(gconstpointer list_data, gconstpointer user_data);
 static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data) ;
 static void fetchStanzas(FetchReferencedStanzas full_data, GKeyFile *key_file, char *stanza_name) ;
 static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, const char *stanza_type) ;
-static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context, char *parent_name, char *parent_key) ;
+static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context, const char *parent_name, const char *parent_key) ;
 static void set_is_default(gpointer key, gpointer value, gpointer data) ;
 static GList *get_names_as_list(char *styles) ;
 static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
@@ -121,7 +121,7 @@ static void stylesFreeList(GList *config_styles_list) ;
  */
 
 
-ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
+ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file)
 {
   ZMapConfigIniContext context = zMapConfigIniContextCreate(config_file) ;
 
@@ -175,7 +175,7 @@ ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
 
 
 
-ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, char *stanza_name_in)
+ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name_in)
 {
   ZMapConfigIniContext context = NULL;
 
@@ -259,11 +259,11 @@ void zMapConfigSourcesFreeList(GList *config_sources_list)
 
 
 GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
-ZMapConfigIniUserDataCreateFunc object_create_func,
-char *parent_name,
-char *parent_type,
-char *parent_key,
-char *child_type)
+                                                ZMapConfigIniUserDataCreateFunc object_create_func,
+                                                const char *parent_name,
+                                                const char *parent_type,
+                                                const char *parent_key,
+                                                const char *child_type)
 {
   FetchReferencedStanzasStruct data = {NULL};
   GList *sources      = NULL;
@@ -1359,7 +1359,8 @@ static void fetchStanzas(FetchReferencedStanzas full_data, GKeyFile *key_file, c
 
 
 
-static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context, char *parent_name, char *parent_key)
+static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context,
+                                             const char *parent_name, const char *parent_key)
 {
   GList *list = NULL;
   GValue *value = NULL;
