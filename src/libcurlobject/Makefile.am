@@ -1,6 +1,8 @@
 
 include $(top_srcdir)/Makefile.common
 
+CC = gcc
+
 SUBDIRS = .
 
 noinst_LTLIBRARIES = libcurlobject.la
