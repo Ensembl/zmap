@@ -27,11 +27,6 @@
  *              instances of ZMaps.
  *-------------------------------------------------------------------
  */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef ZMAP_CONTROL_P_H
 #define ZMAP_CONTROL_P_H
 
@@ -259,6 +254,3 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap map) ;
 
 #endif /* !ZMAP_CONTROL_P_H */
 
-#ifdef __cplusplus
-}
-#endif

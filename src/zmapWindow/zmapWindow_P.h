@@ -27,11 +27,6 @@
  *
  *-------------------------------------------------------------------
  */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef ZMAP_WINDOW_P_H
 #define ZMAP_WINDOW_P_H
 
@@ -1902,6 +1897,3 @@ void foo_bug_set(void *key, const char *id) ;
 
 #endif /* !ZMAP_WINDOW_P_H */
 
-#ifdef __cplusplus
-}
-#endif
