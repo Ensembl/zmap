@@ -28,9 +28,13 @@
  *-------------------------------------------------------------------
  */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifndef ZMAP_FEATURE_H
 #define ZMAP_FEATURE_H
@@ -1083,12 +1087,12 @@ gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable
  */
 
 char *zMapFeatureCreateName(ZMapStyleMode feature_type,
-                            char *feature_name,
+                            const char *feature_name,
 			    ZMapStrand strand,
                             int start, int end,
                             int query_start, int query_end) ;
 GQuark zMapFeatureCreateID(ZMapStyleMode feature_type,
-                           char *feature_name,
+                           const char *feature_name,
 			   ZMapStrand strand,
                            int start, int end,
 			   int query_start, int query_end) ;
@@ -1100,7 +1104,7 @@ ZMapFeature zMapFeatureCreateFromStandardData(const char *name, const char *sequ
                                               gboolean has_score, double score,
 					      ZMapStrand strand) ;
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, const char *feature_name_id, const char *name,
-				    char *sequence, const char *ontology,
+				    const char *sequence, const char *ontology,
 				    ZMapStyleMode feature_type,
 				    ZMapFeatureTypeStyle *style,
 				    int start, int end,
@@ -1534,10 +1538,13 @@ int zMapFeatureVariationGetSections(const char *variation_str,
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 gint zMapFeatureSortFeatures(gconstpointer a, gconstpointer b) ;
 
-
-
 #endif /* ZMAP_FEATURE_H */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 }
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+

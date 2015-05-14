@@ -433,7 +433,7 @@ ZMapFeature zMapFeatureCreateEmpty(void)
  * doing things is better
  * ==================================================================
  */
-ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, const char *ontology,
+ZMapFeature zMapFeatureCreateFromStandardData(const char *name, const char *sequence, const char *ontology,
                                               ZMapStyleMode feature_type,
                                               ZMapFeatureTypeStyle *style,
                                               int start, int end,
@@ -476,7 +476,7 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, const 
  *
  */
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, const char *feature_name_id, const char *name,
-                                    char *sequence, const char *SO_accession,
+                                    const char *sequence, const char *SO_accession,
                                     ZMapStyleMode feature_mode,
                                     ZMapFeatureTypeStyle *style,
                                     int start, int end,

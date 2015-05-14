@@ -45,7 +45,7 @@
 typedef struct ColourSpecStructName
 {
   const char *colour_type ;
-  char *colour ;
+  const char *colour ;
 } ColourSpecStruct, *ColourSpec ;
 
 
@@ -260,8 +260,8 @@ ZMapStyleBumpMode zMapStylePatchBumpMode(ZMapStyleBumpMode curr_bump)
  * The returned string should be g_free()'d when finished with.
  *
  *  */
-char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *normal_border,
-                                char *selected_fill, char *selected_draw, char *selected_border)
+char *zMapStyleMakeColourString(const char *normal_fill, const char *normal_draw, const char *normal_border,
+                                const char *selected_fill, const char *selected_draw, const char *selected_border)
 {
   char *colour = NULL ;
   GString *colour_str ;

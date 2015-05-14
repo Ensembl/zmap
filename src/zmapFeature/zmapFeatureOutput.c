@@ -162,7 +162,8 @@ gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GHash
 }
 
 
-gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *filename, char *header, GHashTable *styles, GError **error_out)
+gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context, const char *filename, const char *header,
+                                   GHashTable *styles, GError **error_out)
 {
   gboolean result = FALSE ;
   GIOChannel *file ;

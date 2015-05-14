@@ -522,29 +522,29 @@ char *zMapFeatureCanonName(char *feature_name)
  *
  */
 char *zMapFeatureCreateName(ZMapStyleMode feature_type,
-    char *feature,
-    ZMapStrand strand, int start, int end, int query_start, int query_end)
+                            const char *feature_name,
+                            ZMapStrand strand, int start, int end, int query_start, int query_end)
 {
   char *feature_unique_name = NULL ;
   const char *strand_str ;
   char *ptr ;
   int len ;
 
-  if (!feature_type || !feature || !*feature)
+  if (!feature_type || !feature_name || !*feature_name)
     return feature_unique_name ;
 
   strand_str = zMapFeatureStrand2Str(strand) ;
 
   if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
-    feature_unique_name = g_strdup_printf("%s_'%s'_%d.%d_%d.%d", feature,
+    feature_unique_name = g_strdup_printf("%s_'%s'_%d.%d_%d.%d", feature_name,
                                           strand_str, start, end, query_start, query_end) ;
   else
-    feature_unique_name = g_strdup_printf("%s_'%s'_%d.%d", feature, strand_str, start, end) ;
+    feature_unique_name = g_strdup_printf("%s_'%s'_%d.%d", feature_name, strand_str, start, end) ;
 
   /* lower case the feature name, only the feature part though,
    * numbers don't matter. Here we do as g_strdown does, but in place
    * rather than a g_strdup first. */
-  len = strlen(feature) ;
+  len = strlen(feature_name) ;
   for (ptr = feature_unique_name ; ptr <= feature_unique_name + len ; ptr++)
     {
       *ptr = g_ascii_tolower(*ptr) ;
@@ -556,9 +556,9 @@ char *zMapFeatureCreateName(ZMapStyleMode feature_type,
 
 /* Like zMapFeatureCreateName() but returns a quark representing the feature name. */
 GQuark zMapFeatureCreateID(ZMapStyleMode feature_type,
-   char *feature,
-   ZMapStrand strand, int start, int end,
-   int query_start, int query_end)
+                           const char *feature,
+                           ZMapStrand strand, int start, int end,
+                           int query_start, int query_end)
 {
   GQuark feature_id = 0 ;
   char *feature_name ;
