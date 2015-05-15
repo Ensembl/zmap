@@ -48,7 +48,7 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                               GdkDrawable *drawable, GdkEventExpose *expose) ;
 
 
-/* 
+/*
  *             Globals
  */
 
@@ -58,9 +58,9 @@ static ZMapWindowCanvasGlyph truncation_glyph_basic_start_G = NULL, truncation_g
 
 
 
-/* 
+/*
  *             External routines
- * 
+ *
  * (some of these have static linkage but form part of the external interface.)
  */
 
@@ -72,9 +72,9 @@ void zMapWindowCanvasBasicInit(void)
 
   funcs[FUNC_PAINT] = (void *)basicPaintFeature ;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, 0) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, (size_t)0) ;
 
-  zMapWindowCanvasFeatureSetSize(FEATURE_BASIC, feature_funcs, 0) ;
+  zMapWindowCanvasFeatureSetSize(FEATURE_BASIC, feature_funcs, (size_t) 0) ;
 
 
   return ;
@@ -175,7 +175,7 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
           truncation_glyph_basic_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_TRUNCATED_START,
                                                                       FALSE, TRUE) ;
-                                                                    
+
           truncation_glyph_basic_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_TRUNCATED_END,
                                                                     FALSE, TRUE) ;
         }
@@ -207,6 +207,6 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
 
 
-/* 
+/*
  *               Internal routines
  */

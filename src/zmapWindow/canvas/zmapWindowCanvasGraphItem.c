@@ -134,7 +134,7 @@ void zMapWindowCanvasGraphInit(void)
 
   feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = (void *)graphGetFeatureExtent ;
 
-  zMapWindowCanvasFeatureSetSize(FEATURE_GRAPH, feature_funcs, 0) ;
+  zMapWindowCanvasFeatureSetSize(FEATURE_GRAPH, feature_funcs, (size_t)0) ;
 
   return ;
 }
@@ -1075,7 +1075,7 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem featureset_item)
 
           zMapDebugPrint(debug_G, "bin_start, bin_end: %d, %d\tsrc_gs->y1, src_gs->y2: %f, %f",
                          bin_start, bin_end, src_gs->y1, src_gs->y2) ;
-                          
+
 
           if(src_gs->y2 < bin_start)
             continue;

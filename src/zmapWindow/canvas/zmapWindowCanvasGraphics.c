@@ -181,18 +181,18 @@ void zMapWindowCanvasGraphicsInit(void)
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
   funcs[FUNC_ZOOM] = (void *)graphicsZoomSet;
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPHICS, funcs,sizeof(zmapWindowCanvasPangoStruct));
-  zMapWindowCanvasFeatureSetSize(FEATURE_GRAPHICS, feature_funcs, 0) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPHICS, funcs, sizeof(zmapWindowCanvasPangoStruct));
+  zMapWindowCanvasFeatureSetSize(FEATURE_GRAPHICS, feature_funcs, (size_t) 0) ;
 
   funcs[FUNC_ZOOM] = NULL;        /* not needed by the others but no harm done  if it's left in?? */
 
   funcs[FUNC_PAINT] = (void *)linePaint;
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LINE, funcs, 0) ;
-  zMapWindowCanvasFeatureSetSize(FEATURE_LINE, feature_funcs, 0) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LINE, funcs, (size_t) 0) ;
+  zMapWindowCanvasFeatureSetSize(FEATURE_LINE, feature_funcs, (size_t) 0) ;
 
   funcs[FUNC_PAINT] = (void *)textPaint;
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TEXT, funcs, 0);
-  zMapWindowCanvasFeatureSetSize(FEATURE_TEXT, feature_funcs, 0) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TEXT, funcs, (size_t) 0);
+  zMapWindowCanvasFeatureSetSize(FEATURE_TEXT, feature_funcs, (size_t) 0) ;
 
   return ;
 }

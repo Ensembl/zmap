@@ -82,9 +82,9 @@ void zMapWindowCanvasAssemblyInit(void)
 
   funcs[FUNC_PAINT] = (void *)zMapWindowCanvasAssemblyPaintFeature;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ASSEMBLY, funcs, 0) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ASSEMBLY, funcs, (size_t)0) ;
 
-  zMapWindowCanvasFeatureSetSize(FEATURE_ASSEMBLY, feature_funcs, 0) ;
+  zMapWindowCanvasFeatureSetSize(FEATURE_ASSEMBLY, feature_funcs, (size_t)0) ;
 
   return ;
 }

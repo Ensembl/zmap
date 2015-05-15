@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -100,7 +100,7 @@ void zMapWindowCanvasFeatureInit(void)
   return ;
 }
 
-void zMapWindowCanvasFeatureSetSize(int featuretype, gpointer *feature_funcs, int feature_struct_size)
+void zMapWindowCanvasFeatureSetSize(int featuretype, gpointer *feature_funcs, size_t feature_struct_size)
 {
   feature_class_G->struct_size[featuretype] = feature_struct_size ;
 
@@ -122,46 +122,45 @@ ZMapWindowCanvasFeature zMapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
   if (type > FEATURE_INVALID && type < FEATURE_N_TYPE)
     {
       GList *l ;
-      int size ;
-      zmapWindowCanvasFeatureType ftype = type ;
+      size_t size ;
 
       if (!(size = feature_class_G->struct_size[type]))
-	{
-	  type = FEATURE_INVALID ;			    /* catch all for simple features (one common free list) */
-	  size = sizeof(zmapWindowCanvasFeatureStruct) ;
-	}
+        {
+          type = FEATURE_INVALID ;                            /* catch all for simple features (one common free list) */
+          size = sizeof(zmapWindowCanvasFeatureStruct) ;
+        }
 
       if (!feature_class_G->feature_free_list[type])
-	{
-	  int i ;
+        {
+          int i ;
           ZMapWindowCanvasFeature mem ;
 
-	  mem = (ZMapWindowCanvasFeature)g_new0(zmapWindowCanvasFeatureStruct, N_FEAT_ALLOC) ;
+          mem = (ZMapWindowCanvasFeature) g_malloc0(size * N_FEAT_ALLOC) ;
+          for (i = 0 ; i < N_FEAT_ALLOC ; ++i, ++mem )
+            {
+              feat = (ZMapWindowCanvasFeature)mem ;
+              feat->type = type ;
+              feat->feature = NULL ;
+              zmapWindowCanvasFeatureFree((gpointer)mem) ;
+            }
 
-	  for (i = 0 ; i < N_FEAT_ALLOC ; ++i, ++mem )
-	    {
-	      feat = (ZMapWindowCanvasFeature)mem ;
-	      feat->type = type ;
-	      feat->feature = NULL ;
-	      zmapWindowCanvasFeatureFree((gpointer)mem) ;
-	    }
-
-	  n_block_alloc++ ;
-	}
+          n_block_alloc++ ;
+        }
 
       l = feature_class_G->feature_free_list[type] ;
 
       feat = (ZMapWindowCanvasFeature)l->data ;
 
       feature_class_G->feature_free_list[type]
-	= g_list_delete_link(feature_class_G->feature_free_list[type], l) ;
+        = g_list_delete_link(feature_class_G->feature_free_list[type], l) ;
 
       /* GOODNESS ME....THIS SEEMS TO REZERO SOMETHING WE INIT'D ABOVE.... */
       /* these can get re-allocated so must zero */
       memset((gpointer)feat, 0, size) ;
 
       /* AND NOW WE RESET THE TYPE....STREUTH..... */
-      feat->type = ftype ;
+      feat->type = type ;
+      feat->feature = NULL ;
 
       n_feature_alloc++ ;
     }
@@ -191,13 +190,13 @@ gboolean zMapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature
      func so should be ok.... */
   func = (ZMapWindowCanvasGetExtentFunc)feature_extent_G[feature->type];
 
-  if(!complex)		/* reset any compund feature extents */
+  if(!complex)                /* reset any compund feature extents */
     feature->y2 = feature->feature->x2;
 
   if(!func || !complex)
     {
       /* all features have an extent, if it's simple get it here */
-      span->x1 = feature->feature->x1;	/* use real coord from the feature context */
+      span->x1 = feature->feature->x1;        /* use real coord from the feature context */
       span->x2 = feature->feature->x2;
       *width = feature->width;
     }
@@ -539,7 +538,7 @@ void zmapWindowCanvasFeatureFree(gpointer thing)
   type = feat->type ;
 
   if(!feature_class_G->struct_size[type])
-    type = FEATURE_INVALID ;		/* catch all for simple features */
+    type = FEATURE_INVALID ;                /* catch all for simple features */
 
   feature_class_G->feature_free_list[type] =
     g_list_prepend(feature_class_G->feature_free_list[type], thing) ;

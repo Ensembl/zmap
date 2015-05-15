@@ -619,7 +619,7 @@ void zMapWindowContainerGroupSortByLayer(FooCanvasGroup * group)
 /* if they inherit from another type then they must include that type's headers and call code directly */
 
 void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,
-                                        gpointer *set_funcs, int set_struct_size)
+                                        gpointer *set_funcs, size_t set_struct_size)
 {
 
   _featureset_set_init_G[featuretype] = set_funcs[FUNC_SET_INIT];
@@ -2099,7 +2099,7 @@ static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWi
 
 /* This function currently finds the gs for a feature and then if it's a transcript feature
  * looks for the gs that represents an exon.
- * 
+ *
  * Note the subfeature passed in may be just the coding or non-coding part of an exon and not the
  * whole exon. */
 static ZMapWindowCanvasFeature findFeatureSubPart(ZMapWindowFeaturesetItem fi,
@@ -2346,7 +2346,7 @@ void zmapWindowFeaturesetItemCanvasFeatureShowHide(ZMapWindowFeaturesetItem fi, 
 	      feature_item->flags |= FEATURE_HIDDEN | FEATURE_HIDE_EXPAND ;
 	      break ;
 
-	    default: 
+	    default:
 	      break;
 	    }
 	}
@@ -2603,7 +2603,7 @@ GList *zMapWindowFeaturesetFindFeatures(ZMapWindowFeaturesetItem featureset_item
           if(gs->y2 > y2)
             continue;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-          
+
 
           if (!feature_list)
             {
@@ -2661,13 +2661,13 @@ GList *zMapWindowFeaturesetFindFeatures(ZMapWindowFeaturesetItem featureset_item
 /* Returns a list of 'lists of ZMapWindowFeaturesetItem' that overlap y1, y2. Each sublist
  * contains a list of ZMapWindowFeaturesetItem's that all originate from the same
  * genomic feature, e.g. an EST.
- * 
+ *
  * If canonical_only is TRUE then any non-canonical features in the span will be excluded.
- * 
- * 
+ *
+ *
  * Notes
  *  - only supported for FEATURE_BASIC, FEATURE_ALIGN, FEATURE_TRANSCRIPT currently.
- * 
+ *
  *  */
 GList *zMapWindowFeaturesetFindGroupedFeatures(ZMapWindowFeaturesetItem featureset_item,
                                                double y1, double y2, gboolean canonical_only)
@@ -2729,10 +2729,10 @@ GList *zMapWindowFeaturesetFindGroupedFeatures(ZMapWindowFeaturesetItem features
                 /* oh dear repeating tests from above for first time round loop....rationalise... */
                 if (gs->flags & FEATURE_HIDDEN)	/* we are setting focus on visible features ! */
                   continue;
-                    
+
                 if (gs->y1 > y2)
                   break;
-                    
+
                 if (gs->y2 < y1)
                   continue ;
 

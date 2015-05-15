@@ -147,7 +147,7 @@ typedef struct BumpFeaturesetStructName
 
 GType zMapWindowFeaturesetItemGetType(void) ;
 
-void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int set_size) ;
+void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, size_t set_size) ;
 
 gboolean zMapWindowCanvasIsFeatureSet(ZMapWindowFeaturesetItem fi) ;
 

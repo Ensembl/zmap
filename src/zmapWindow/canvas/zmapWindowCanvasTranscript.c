@@ -54,7 +54,7 @@ static void transcriptGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan
 
 
 
-/* 
+/*
  *            Globals
  */
 
@@ -78,7 +78,7 @@ void zMapWindowCanvasTranscriptInit(void)
   funcs[FUNC_PAINT] = (void *)transcriptPaintFeature;
   funcs[FUNC_ADD]   = (void *)transcriptAddFeature;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, 0) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, (size_t)0) ;
 
   feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = (void *)transcriptGetFeatureExtent ;
   feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = (void *)transcriptGetSubPart;
@@ -195,7 +195,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
 
           truncation_glyph_transcript_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_TRUNCATED_START,
                                                                            FALSE, TRUE) ;
- 
+
           truncation_glyph_transcript_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_TRUNCATED_END,
                                                                          FALSE, TRUE) ;
         }
@@ -233,7 +233,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
       if(transcript->flags.cds && transcript->cds_start > y1 && transcript->cds_start < y2)
         {
 
-          
+
           zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, transcript->cds_start-1,
                                            drawable, fill_set, outline_set, fill, outline) ;
 

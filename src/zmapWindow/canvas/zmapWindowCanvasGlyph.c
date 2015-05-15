@@ -244,7 +244,7 @@ void zMapWindowCanvasGlyphInit(void)
   funcs[FUNC_FREE] = (void *)glyphColumnFree ;
   funcs[FUNC_ADD] = (void *)glyphAddFeature ;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GLYPH, funcs, 0) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GLYPH, funcs, (size_t) 0) ;
 
   zMapWindowCanvasFeatureSetSize(FEATURE_GLYPH, feature_funcs, sizeof(ZMapWindowCanvasGlyphStruct)) ;
 
@@ -904,7 +904,7 @@ static GQuark getGlyphSignature(ZMapFeatureTypeStyle style, ZMapStrand feature_s
 }
 
 /* Complicated call to get the right glyph shape for the strand/glyph type...
- * 
+ *
  * Returns NULL if a shape cannot be found.
  *
  * It would be good to make this more obvious....
@@ -1270,9 +1270,9 @@ static void setGlyphCanvasCoords(ZMapWindowFeaturesetItem featureset, ZMapWindow
 /* set the points to draw centred on the glyph's sequence/column coordinates
  * if we scale the glyph it's done here and NB we have to scale +ve and -ve coords for all shapes
  * NOTE we convert from a list of single coords to GdkPoint coord pairs
- * 
+ *
  * score is unused at the moment !!!!!!
- * 
+ *
  */
 static void setGlyphCoords(ZMapWindowCanvasGlyph glyph, GlyphAnyColumnData any_col,
                            ZMapFeatureTypeStyle style, double score, double width)
