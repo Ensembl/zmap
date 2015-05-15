@@ -21,23 +21,87 @@ else
 fi
 
 RC=0
+
+# Load common functions/settings.
+#
+. $BASE_DIR/../scripts/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+set -o history
+. $BASE_DIR/../scripts/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
+
+
+# Cleans the sub-directory out and refetches the empty placeholder
+# from the zmap repository.
+#
+# Args are:    lib_repository_name  lib_local_dir
+#
+function clean_lib
+{
+    zmap_message_out "Starting removing $1 from $2"
+
+    rm -rf ./$2/*
+
+    git checkout ./$2
+
+    zmap_message_out "Finished removing $1 from $2"
+
+}
+
+
+# Sets up a sub-directory to contain the supplied git repository code.
+#
+# Args are:    full_git_repository_uri lib_local_dir git_branch
+#
+#
+function fetch_lib
+{
+    tmp_dir='autogen_tmp_git_checkout_dir'
+
+    zmap_message_out "Starting cloning $1 into $2"
+
+    mkdir $tmp_dir
+
+    git clone $3 $1 $tmp_dir || zmap_message_exit "could not clone $1 into $PWD/$tmp_dir"
+
+    cp -rf ./$tmp_dir/* ./$2
+
+    rm -rf ./$tmp_dir
+
+    # SHOULD WE BE DOING THIS ????? NOT TOO SURE....
+    # Make sure the placeholder files (.gitignore, README) are their original zmap versions
+    git checkout ./$2/
+
+    zmap_message_out "Finished cloning $1 into $2"
+
+}
+
+
+
+
+
 force_remake_all=''
 gb_tools='maybe'
+aceconn='maybe'
 ensc_core='maybe'
 run_autoupdate=''					    # don't run autoupdate by default.
 install_missing='-i'
 verbose=''
 version_arg=''
 
-# Location of git repositories
+# Base location of our git repositories
 git_host='git.internal.sanger.ac.uk'
 git_root='/repos/git/annotools'
 
 # gbtools repository info
 gb_tools_repos='gbtools'
 gb_tools_dir='gbtools'
-gb_tools_checkout_dir='gbtools_develop'
+#gb_tools_checkout_dir='gbtools_develop'
 gb_tools_branch='' # set this to '-b <branch>' to use another branch than the default (develop)
+
+# aceconn repository info
+aceconn_repos='AceConn'
+aceconn_dir='AceConn'
+#aceconn_checkout_dir='aceconn_develop'
+aceconn_branch='' # set this to '-b <branch>' to use another branch than the default (develop)
 
 # ensembl repository info
 ensc_core_repos='ensc-core'
@@ -50,12 +114,6 @@ ensc_core_checkout_dir='ensc-core_feature_zmap'
 ensc_core_branch='-b feature/zmap' 
 
 
-# Load common functions/settings.
-#
-. $BASE_DIR/../scripts/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
-set -o history
-. $BASE_DIR/../scripts/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
-
 
 
 # Cmd line options....
@@ -65,8 +123,9 @@ set -o history
 usage="
 
 Usage:
- $SCRIPT_NAME [ -d -e -f -g -h -i -n -u -v ]
+ $SCRIPT_NAME [ -a -d -e -f -g -h -i -n -u -v ]
 
+   -a  Force checkout of aceconn (overwrite existing subdir)
    -d  Disable checkout of ensc-core (use existing subdir or local install)
    -e  Force checkout of ensc-core (overwrite existing subdir)
    -f  Force remake all
@@ -79,8 +138,9 @@ Usage:
 
 "
 
-while getopts ":defghinuv" opt ; do
+while getopts ":adefghinuv" opt ; do
     case $opt in
+	a  ) aceconn='yes' ;;
 	d  ) ensc_core='no' ;;
 	e  ) ensc_core='yes' ;;
 	f  ) force_remake_all='-f' ;;
@@ -113,29 +173,46 @@ zmap_message_out "--------------------------------------------------------------
 # set up gbtools, this is our general tools package.
 #
 
+#if [[ "$gb_tools" == "yes" ]] ; then
+#
+#   zmap_message_out "Removing an old copy of $gb_tools_repos"
+#
+#   rm -rf ./$gb_tools_dir/*
+#
+#   git checkout ./$gb_tools_dir
+#
+#fi
+#
+#if [[ "$gb_tools" == "yes" || "$gb_tools" == "maybe" ]] ; then
+#
+#  if [[ ! -f "./$gb_tools/configure.ac" ]] ; then
+#  
+#     zmap_message_out "Cloning $gb_tools_repos into $gb_tools_checkout_dir"
+#  
+#     git clone $gb_tools_branch $git_host:$git_root/$gb_tools_repos $gb_tools_checkout_dir || zmap_message_exit "could not clone $gb_tools_repos into $PWD."
+#  
+#     cp -rf ./$gb_tools_checkout_dir/* ./$gb_tools_dir
+#  
+#     rm -rf ./$gb_tools_checkout_dir
+#  
+#     zmap_message_out "Copied $gb_tools_checkout_dir files to $gb_tools_dir"
+#
+#  fi
+#
+#fi
+
+
 if [[ "$gb_tools" == "yes" ]] ; then
 
-   zmap_message_out "Removing an old copy of $gb_tools_repos"
-
-   rm -rf ./$gb_tools_dir/*
-
-   git checkout ./$gb_tools_dir
+    clean_lib $gb_tools_repos $gb_tools_dir
 
 fi
 
 if [[ "$gb_tools" == "yes" || "$gb_tools" == "maybe" ]] ; then
 
-  if [[ ! -f "./$gb_tools/configure.ac" ]] ; then
+  if [[ ! -f "./$gb_tools_dir/configure.ac" ]] ; then
   
-     zmap_message_out "Cloning $gb_tools_repos into $gb_tools_checkout_dir"
-  
-     git clone $gb_tools_branch $git_host:$git_root/$gb_tools_repos $gb_tools_checkout_dir || zmap_message_exit "could not clone $gb_tools_repos into $PWD."
-  
-     cp -rf ./$gb_tools_checkout_dir/* ./$gb_tools_dir
-  
-     rm -rf ./$gb_tools_checkout_dir
-  
-     zmap_message_out "Copied $gb_tools_checkout_dir files to $gb_tools_dir"
+      fetch_lib $git_host:$git_root/$gb_tools_repos $gb_tools_dir $gb_tools_branch
 
   fi
 
@@ -151,6 +228,32 @@ if [ -e "$BASE_DIR/gbtools/autogen.sh" ] ; then
   ./autogen.sh
   cd $cur_dir
 fi
+
+
+
+# set up aceconn package, this is for connecting to the Ace server.
+#
+
+if [[ "$aceconn" == "yes" ]] ; then
+
+    clean_lib $aceconn_repos $aceconn_dir
+
+fi
+
+if [[ "$aceconn" == "yes" || "$aceconn" == "maybe" ]] ; then
+
+  if [[ ! -f "./$aceconn_dir/configure.ac" ]] ; then
+  
+      fetch_lib $git_host:$git_root/$aceconn_repos $aceconn_dir $aceconn_branch
+
+  fi
+
+fi
+
+echo text_exit
+
+exit 0
+
 
 
 # Set up ensc-core subdirectory. This is the ensembl C API code.

@@ -23,8 +23,12 @@ AC_CONFIG_MACRO_DIR([m4])
 # Check if we have mysql
 AX_LIB_MYSQL()
 
-# Only enable ensembl if we have mysql available
+
+# Only enable ensembl if we have mysql available (note that code defines
+# USE_ENSEMBL both as an automake variable and then also as a compilation macro).
 AM_CONDITIONAL([USE_ENSEMBL], [ test -n "$MYSQL_VERSION" ])
+AM_COND_IF([USE_ENSEMBL],
+           [AC_DEFINE([USE_ENSEMBL], [1], [Is Ensembl interface available.])])
 
 # Check if this is a Git repository and, if so, use output
 # of git describe abbreviated to just tag which for us is the version string.
