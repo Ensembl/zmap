@@ -10,7 +10,8 @@ gbtools/*
 !gbtools/README
 
 # We don't keep this in our git repository.
-ensc-core
+aceconn/*
+ensc-core/*
 
 
 
