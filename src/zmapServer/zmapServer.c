@@ -47,19 +47,25 @@ static gboolean server_functions_valid(ZMapServerFuncs serverfuncs ) ;
 
 
 /* This routine must be called before any other server routine and must only be called once,
- * it is the callers responsibility to make sure this is true....
- * NOTE the result is always TRUE at the moment because if we fail on any of these we crash... */
+ * it is the callers responsibility to make sure this is true....otherwise results are
+ * undefined and may result in a crash.
+ * 
+ * If the function returns NULL then no servers can be called.
+ */
 gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 {
   gboolean result = FALSE ;
   ZMapServerFuncs serverfuncs ;
 
-  zMapReturnValIfFail((server_global_data_out), result) ;
+  zMapReturnValIfFail((server_global_data_out), FALSE) ;
 
   zMapReturnValIfFail((url->scheme == SCHEME_ACEDB || url->scheme == SCHEME_HTTP
                        || url->scheme == SCHEME_FILE || url->scheme == SCHEME_PIPE
-                       || url->scheme == SCHEME_ENSEMBL),
-                      result) ;
+#ifdef USE_ENSEMBL
+                       || url->scheme == SCHEME_ENSEMBL
+#endif
+                       ),
+                      FALSE) ;
 
   serverfuncs = g_new0(ZMapServerFuncsStruct, 1) ;
 
@@ -94,16 +100,28 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
       pipeGetServerFuncs(serverfuncs);
       break;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case SCHEME_ENSEMBL:
-#ifdef HAVE_MYSQL
+#ifdef USE_ENSEMBL
       ensemblGetServerFuncs(serverfuncs);
 #else
       zMapCritical("%s", "Cannot load source type 'ensembl': mysql is not available.");
 #endif
       break;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#ifdef USE_ENSEMBL
+    case SCHEME_ENSEMBL:
+      ensemblGetServerFuncs(serverfuncs);
+      break;
+#endif
+
+
 
     default:
-      /* Nothing to do here, note this case is excluded by the zMapReturnValIfFail() check. */
+      /* We should not get here if zMapReturnValIfFail() check worked. */
+      zMapWarnIfReached() ;
       break;
     }
 
@@ -123,27 +141,6 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 
   return result ;
 }
-
-static gboolean server_functions_valid(ZMapServerFuncs serverfuncs )
-{
-  return (gboolean)
-    (serverfuncs->global_init
-     && serverfuncs->create
-     && serverfuncs->open
-     && serverfuncs->get_info
-     && serverfuncs->feature_set_names
-     && serverfuncs->get_styles
-     && serverfuncs->have_modes
-     && serverfuncs->get_sequence
-     && serverfuncs->set_context
-     && serverfuncs->get_features
-     && serverfuncs->get_context_sequences
-     && serverfuncs->errmsg
-     && serverfuncs->get_status
-     && serverfuncs->close
-     && serverfuncs->destroy ) ;
-}
-
 
 
 ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
@@ -457,3 +454,34 @@ static void zMapServerSetErrorMsg(ZMapServer server, char *message)
 
   return ;
 }
+
+
+/* 
+ *                  Internal routines.
+ */
+
+static gboolean server_functions_valid(ZMapServerFuncs serverfuncs )
+{
+  gboolean result ;
+
+  result = (serverfuncs->global_init
+            && serverfuncs->create
+            && serverfuncs->open
+            && serverfuncs->get_info
+            && serverfuncs->feature_set_names
+            && serverfuncs->get_styles
+            && serverfuncs->have_modes
+            && serverfuncs->get_sequence
+            && serverfuncs->set_context
+            && serverfuncs->get_features
+            && serverfuncs->get_context_sequences
+            && serverfuncs->errmsg
+            && serverfuncs->get_status
+            && serverfuncs->close
+            && serverfuncs->destroy) ;
+
+  return result ;
+}
+
+
+
