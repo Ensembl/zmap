@@ -106,7 +106,7 @@ aceconn_branch='' # set this to '-b <branch>' to use another branch than the def
 # ensembl repository info
 ensc_core_repos='ensc-core'
 ensc_core_dir='ensc-core'
-ensc_core_checkout_dir='ensc-core_feature_zmap'
+#ensc_core_checkout_dir='ensc-core_feature_zmap'
 
 # For now we hard-code ensembl to use the feature/zmap branch because we have
 # some customisations (e.g. disabling certain stuff that we don't require)
@@ -170,38 +170,9 @@ zmap_message_out "--------------------------------------------------------------
 zmap_message_out "bootstrap starting...."
 zmap_message_out "-------------------------------------------------------------------"
 
+
 # set up gbtools, this is our general tools package.
 #
-
-#if [[ "$gb_tools" == "yes" ]] ; then
-#
-#   zmap_message_out "Removing an old copy of $gb_tools_repos"
-#
-#   rm -rf ./$gb_tools_dir/*
-#
-#   git checkout ./$gb_tools_dir
-#
-#fi
-#
-#if [[ "$gb_tools" == "yes" || "$gb_tools" == "maybe" ]] ; then
-#
-#  if [[ ! -f "./$gb_tools/configure.ac" ]] ; then
-#  
-#     zmap_message_out "Cloning $gb_tools_repos into $gb_tools_checkout_dir"
-#  
-#     git clone $gb_tools_branch $git_host:$git_root/$gb_tools_repos $gb_tools_checkout_dir || zmap_message_exit "could not clone $gb_tools_repos into $PWD."
-#  
-#     cp -rf ./$gb_tools_checkout_dir/* ./$gb_tools_dir
-#  
-#     rm -rf ./$gb_tools_checkout_dir
-#  
-#     zmap_message_out "Copied $gb_tools_checkout_dir files to $gb_tools_dir"
-#
-#  fi
-#
-#fi
-
-
 if [[ "$gb_tools" == "yes" ]] ; then
 
     clean_lib $gb_tools_repos $gb_tools_dir
@@ -212,7 +183,7 @@ if [[ "$gb_tools" == "yes" || "$gb_tools" == "maybe" ]] ; then
 
   if [[ ! -f "./$gb_tools_dir/configure.ac" ]] ; then
   
-      fetch_lib $git_host:$git_root/$gb_tools_repos $gb_tools_dir $gb_tools_branch
+      fetch_lib $git_host:$git_root/$gb_tools_repos $gb_tools_dir "$gb_tools_branch"
 
   fi
 
@@ -233,7 +204,6 @@ fi
 
 # set up aceconn package, this is for connecting to the Ace server.
 #
-
 if [[ "$aceconn" == "yes" ]] ; then
 
     clean_lib $aceconn_repos $aceconn_dir
@@ -244,15 +214,11 @@ if [[ "$aceconn" == "yes" || "$aceconn" == "maybe" ]] ; then
 
   if [[ ! -f "./$aceconn_dir/configure.ac" ]] ; then
   
-      fetch_lib $git_host:$git_root/$aceconn_repos $aceconn_dir $aceconn_branch
+      fetch_lib $git_host:$git_root/$aceconn_repos $aceconn_dir "$aceconn_branch"
 
   fi
 
 fi
-
-echo text_exit
-
-exit 0
 
 
 
@@ -260,34 +226,21 @@ exit 0
 #
 
 if [[ "$ensc_core" == "yes" ]] ; then
-    zmap_message_out "Removing an old copy of $ensc_core_repos"
 
-    rm -rf ./$ensc_core_dir/*
+    clean_lib $ensc_core_repos $ensc_core_dir
 
-    git checkout ./$ensc_core_dir
 fi
 
 if [[ "$ensc_core" == "yes" || "$ensc_core" == "maybe" ]] ; then
     
     if [[ ! -f "./$ensc_core/src/Makefile" ]] ; then
 
-        zmap_message_out "Cloning $ensc_core_repos into $ensc_core_checkout_dir"
-
-        git clone $ensc_core_branch $git_host:$git_root/$ensc_core_repos $ensc_core_checkout_dir || zmap_message_exit "could not clone $ensc_core_repos into $PWD."
-
-        cp -rf ./$ensc_core_checkout_dir/* ./$ensc_core_dir
-
-        rm -rf ./$ensc_core_checkout_dir
-
-        # Make sure the placeholder files (.gitignore, README) are at their 
-        # original versions
-        git checkout ./$ensc_core_dir/
-
-        zmap_message_out "Copied $ensc_core_checkout_dir files to $ensc_core_dir"
+        fetch_lib $git_host:$git_root/$ensc_core_repos $ensc_core_dir "$ensc_core_branch"
 
     fi
 
 fi
+
 
 # Remove any files/dirs from previous builds, necessary because different
 # systems have different versions of autoconf causing clashes over macros
