@@ -59,8 +59,10 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 
   zMapReturnValIfFail((server_global_data_out), FALSE) ;
 
-  zMapReturnValIfFail((url->scheme == SCHEME_ACEDB || url->scheme == SCHEME_HTTP
-                       || url->scheme == SCHEME_FILE || url->scheme == SCHEME_PIPE
+  zMapReturnValIfFail((url->scheme == SCHEME_FILE || url->scheme == SCHEME_PIPE || url->scheme == SCHEME_HTTP
+#ifdef USE_ACECONN
+                       || url->scheme == SCHEME_ACEDB
+#endif
 #ifdef USE_ENSEMBL
                        || url->scheme == SCHEME_ENSEMBL
 #endif
@@ -75,18 +77,6 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
    * even using dynamically constructed function names....  */
   switch(url->scheme)
     {
-    case SCHEME_ACEDB:
-      acedbGetServerFuncs(serverfuncs) ;
-      break;
-
-    case SCHEME_HTTP:
-      /*  case SCHEME_HTTPS: */
-      /* Force http[s] to BE das at the moment, but later I think we should have FORMAT too */
-      /* Not that Format gets passed in here though!!! we'd need to pass the url struct */
-      /* if(strcasecmp(format, 'das') == 0) */
-      dasGetServerFuncs(serverfuncs);
-      break;
-
     case SCHEME_FILE:     // file only now...
       /* if(url->params)
          {
@@ -100,24 +90,25 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
       pipeGetServerFuncs(serverfuncs);
       break;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    case SCHEME_ENSEMBL:
-#ifdef USE_ENSEMBL
-      ensemblGetServerFuncs(serverfuncs);
-#else
-      zMapCritical("%s", "Cannot load source type 'ensembl': mysql is not available.");
-#endif
+    case SCHEME_HTTP:
+      /*  case SCHEME_HTTPS: */
+      /* Force http[s] to BE das at the moment, but later I think we should have FORMAT too */
+      /* Not that Format gets passed in here though!!! we'd need to pass the url struct */
+      /* if(strcasecmp(format, 'das') == 0) */
+      dasGetServerFuncs(serverfuncs);
       break;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#ifdef USE_ENSEMBL
-    case SCHEME_ENSEMBL:
-      ensemblGetServerFuncs(serverfuncs);
+#ifdef USE_ACECONN
+    case SCHEME_ACEDB:
+      acedbGetServerFuncs(serverfuncs) ;
       break;
 #endif
 
-
+#ifdef USE_ENSEMBL
+    case SCHEME_ENSEMBL:
+      ensemblGetServerFuncs(serverfuncs);
+      break;
+#endif
 
     default:
       /* We should not get here if zMapReturnValIfFail() check worked. */
