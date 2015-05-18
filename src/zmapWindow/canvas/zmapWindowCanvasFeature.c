@@ -136,12 +136,13 @@ ZMapWindowCanvasFeature zMapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
           ZMapWindowCanvasFeature mem ;
 
           mem = (ZMapWindowCanvasFeature) g_malloc0(size * N_FEAT_ALLOC) ;
-          for (i = 0 ; i < N_FEAT_ALLOC ; ++i, ++mem )
+          for (i = 0 ; i < N_FEAT_ALLOC ; ++i)
             {
               feat = (ZMapWindowCanvasFeature)mem ;
               feat->type = type ;
               feat->feature = NULL ;
               zmapWindowCanvasFeatureFree((gpointer)mem) ;
+              mem = (ZMapWindowCanvasFeature) ((void*)mem + size ) ;
             }
 
           n_block_alloc++ ;

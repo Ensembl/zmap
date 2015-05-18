@@ -2024,7 +2024,7 @@ static ZMapFeatureTypeStyle styleCreate(guint n_parameters, GParameter *paramete
 
 // NOTE: this should contain _ALL_ ParamTypes
 
-guint zmapStyleParamSize(ZMapStyleParamType type)
+size_t zmapStyleParamSize(ZMapStyleParamType type)
 {
   switch(type)
     {
@@ -2060,7 +2060,7 @@ guint zmapStyleParamSize(ZMapStyleParamType type)
       zMapWarnIfReached();
       break;
     }
-  return(0);
+  return (size_t) 0 ;
 }
 
 

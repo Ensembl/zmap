@@ -120,7 +120,7 @@ PixRect alloc_pix_rect(void)
 
 	if(!pix_rect_free_G)
 	{
-          mem = (PixRect)g_new0(pixRect, N_PIXRECT_ALLOC) ; //g_malloc(sizeof(pixRect) * N_PIXRECT_ALLOC);
+          mem = (PixRect)g_malloc(sizeof(pixRect) * N_PIXRECT_ALLOC);//g_new0(pixRect, N_PIXRECT_ALLOC) ;
 		for(i = 0; i < N_PIXRECT_ALLOC; ++i, ++mem)
 		{
 			ret = (PixRect) mem;

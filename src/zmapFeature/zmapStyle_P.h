@@ -86,7 +86,7 @@ typedef enum
   } ZMapStyleParamType;
 
 
-/* The style struct for setting/getting property values. The main style struct 
+/* The style struct for setting/getting property values. The main style struct
  * is referenced from here by direct offsets of properties in the struct. */
 typedef struct ZMapStyleParamStructName
 {
@@ -97,13 +97,13 @@ typedef struct ZMapStyleParamStructName
   const gchar *nick ;            // if NULL or "" defaults to name
   const gchar *blurb ;
 
-  guint offset ;           // of the data in the style struct
+  size_t offset ;           // of the data in the style struct
   ZMapStyleMode mode ;     // non zero if mode dependant
 
   guint8 flag_ind ;        // index of the is_set bit in the array
   guint8 flag_bit ;        // which bit to set or test
 
-  guint size ;
+  size_t size ;
 
   /* Used for setting/getting values using the GObject code. */
   GParamSpec *spec ;
