@@ -650,7 +650,7 @@ static gboolean protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL u
     {
       void *global_init_data = NULL ;
 
-      if (!zMapServerGlobalInit(url, &(init->global_init_data)))
+      if (!zMapServerGlobalInit(url, &global_init_data))
         {
           zMapLogCritical("Initialisation call for %d protocol failed.", protocol) ;
         }
