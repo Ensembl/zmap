@@ -37,7 +37,6 @@
 #include <pthread.h>
 
 #include <glib.h>
-#include <AceConn.h>
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
