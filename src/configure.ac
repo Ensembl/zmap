@@ -3,7 +3,7 @@
 
 
 # the bootstrap script makes the file zmap_version.m4 and puts zmap's current
-# version in it as the macro VERSION_NUMBER which is used in ac_init below.
+# version in it as the macro VERSION_NUMBER which is used in AC_INIT() below.
 m4_include([zmap_version.m4])
 
 
@@ -20,16 +20,36 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 
-# Check if we have mysql
-AX_LIB_MYSQL()
+# External libraries
+#
+# Note that macros for external libraries define the same symbol as:
+#    - an automake variable via AM_CONDITIONAL
+#    - a macro available to the compiler via AC_DEFINE
+#    - a shell variable via AC_SUBST
+#
 
 
-# Only enable ensembl if we have mysql available (note that code defines
-# USE_ENSEMBL both as an automake variable and then also as a compilation macro).
+# Check for aceconn
+#
+AM_CONDITIONAL([USE_ACECONN], [ test -f "$srcdir/AceConn/configure.ac" ])
+AM_COND_IF([USE_ACECONN],
+           [AC_DEFINE([USE_ACECONN], [1], [AceConn interface is available.])])
+AM_COND_IF([USE_ACECONN],
+           [AC_SUBST([USE_ACECONN], [use_aceconn])])
+
+# Only enable ensembl if we have mysql available 
+#
+AX_LIB_MYSQL()           # Standard macro to test for mysql
+
 AM_CONDITIONAL([USE_ENSEMBL], [ test -n "$MYSQL_VERSION" ])
 AM_COND_IF([USE_ENSEMBL],
-           [AC_DEFINE([USE_ENSEMBL], [1], [Is Ensembl interface available.])])
+           [AC_DEFINE([USE_ENSEMBL], [1], [Ensembl interface is available.])])
+AM_COND_IF([USE_ENSEMBL],
+           [AC_SUBST([USE_ENSEMBL], [use_ensembl])])
 
+
+# Set ZMap version number
+#
 # Check if this is a Git repository and, if so, use output
 # of git describe abbreviated to just tag which for us is the version string.
 # otherwise use PACKAGE_VERSION which will include info about the current
@@ -476,9 +496,12 @@ dotZMap:dotZmap.in
 #
 
 
-# Build the aceconn package.
+# Run autoconf in the aceconn directory.
 #
-AC_CONFIG_SUBDIRS([AceConn])
+AM_COND_IF([USE_ACECONN],
+           [AC_CONFIG_SUBDIRS([AceConn])])
+
+
 
 # Build the gbtools library, if it exists. (This can be optionally
 # copied into the zmap tree and we build it. Otherwise, the user
@@ -537,9 +560,15 @@ echo \
      <program> - build specific program
 "
 
-if test -z "$MYSQL_VERSION"
+if test -z "$USE_ACECONN"
 then
-  echo " Warning: MySql is not installed; Ensembl server will be disabled"
+  echo " Warning: AceConn is not installed so Acedb server access is disabled."
+  echo
+fi
+
+if test -z "$USE_ENSEMBL"
+then
+  echo " Warning: MySql is not installed so Ensembl server access is disabled."
   echo
 fi
 

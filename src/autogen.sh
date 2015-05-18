@@ -126,6 +126,8 @@ Usage:
  $SCRIPT_NAME [ -a -d -e -f -g -h -i -n -u -v ]
 
    -a  Force checkout of aceconn (overwrite existing subdir)
+   -z  testing, no checkout of aceconn
+
    -d  Disable checkout of ensc-core (use existing subdir or local install)
    -e  Force checkout of ensc-core (overwrite existing subdir)
    -f  Force remake all
@@ -138,9 +140,10 @@ Usage:
 
 "
 
-while getopts ":adefghinuv" opt ; do
+while getopts ":azdefghinuv" opt ; do
     case $opt in
 	a  ) aceconn='yes' ;;
+	z  ) aceconn='no' ;;
 	d  ) ensc_core='no' ;;
 	e  ) ensc_core='yes' ;;
 	f  ) force_remake_all='-f' ;;

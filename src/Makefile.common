@@ -5,23 +5,28 @@ NULL =
 
 ARFLAGS = cru
 
+# in the below why don't we use the "+=" syntax  for ensembl stuff too ?
+
 # I'm hacking in zmapApp here for now....
-AM_CPPFLAGS = -I$(top_srcdir)/zmapApp      -g -I$(top_srcdir)/include \
-	-I$(top_builddir)  -I$(top_srcdir)/AceConn/include \
-	-I$(top_srcdir)/htslib-develop \
-	-I$(top_srcdir)/zeromq/include \
-	-I$(top_srcdir) \
-	-I$(top_srcdir)/ensc-core/src/DataModel \
-	-I$(top_srcdir)/ensc-core/src/DataAdaptors \
-	-I$(top_srcdir)/ensc-core/src/Util \
-	-I$(top_srcdir)/ensc-core/src/DataModel/Mapper \
-	-I$(top_srcdir)/ensc-core/src/DataModel/Basic \
-	-I$(top_srcdir)/ensc-core/src/Compara/DataAdaptors \
-	-I$(top_srcdir)/ensc-core/src/Compara/DataModel \
-	-I$(top_srcdir)/ensc-core/src/OBDA \
-	@GTK_CFLAGS@ \
-        @LIBCURL_CPPFLAGS@ \
-        $(NULL)
+AM_CPPFLAGS = \
+-I$(top_srcdir)/zmapApp \
+-g \
+-I$(top_srcdir)/include \
+-I$(top_builddir) \
+-I$(top_srcdir)/htslib-develop \
+-I$(top_srcdir)/zeromq/include \
+-I$(top_srcdir) \
+-I$(top_srcdir)/ensc-core/src/DataModel \
+-I$(top_srcdir)/ensc-core/src/DataAdaptors \
+-I$(top_srcdir)/ensc-core/src/Util \
+-I$(top_srcdir)/ensc-core/src/DataModel/Mapper \
+-I$(top_srcdir)/ensc-core/src/DataModel/Basic \
+-I$(top_srcdir)/ensc-core/src/Compara/DataAdaptors \
+-I$(top_srcdir)/ensc-core/src/Compara/DataModel \
+-I$(top_srcdir)/ensc-core/src/OBDA \
+@GTK_CFLAGS@ \
+@LIBCURL_CPPFLAGS@ \
+$(NULL)
 
 INCLUDE_COMMON = -I$(top_srcdir) -I$(top_srcdir)/include -I.
 
@@ -29,6 +34,13 @@ if USE_GBTOOLS
 AM_CPPFLAGS += -I$(top_srcdir)/gbtools/src/include
 endif
 
+if USE_ACECONN
+AM_CPPFLAGS += -I$(top_srcdir)/AceConn/include
+endif
+
+
+# DO WE NEED THIS ANY MORE ????
+#
 # Required by the install-zmap-static-libs target.
 LIBS_ZMAP = $(top_builddir)/.libs/libZMapApp.a \
 	$(top_builddir)/.libs/libZMapApp.la \

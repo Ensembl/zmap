@@ -28,7 +28,12 @@ if USE_GBTOOLS
 OPTIONAL_SUBDIRS = gbtools
 endif
 
-SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop 
+#SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop 
+SUBDIRS = $(OPTIONAL_SUBDIRS) zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop 
+
+if USE_ACECONN
+SUBDIRS += AceConn
+endif
 
 if USE_ENSEMBL
 SUBDIRS += ensc-core/src 
@@ -185,8 +190,11 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
-	$(top_builddir)/htslib-develop/libhts.a              \
-	$(top_builddir)/AceConn/src/.libs/libAceConn.a       
+	$(top_builddir)/htslib-develop/libhts.a
+
+if USE_ACECONN
+zmap_LDADD += $(top_builddir)/AceConn/src/.libs/libAceConn.a 
+endif
 
 if USE_ENSEMBL
 zmap_LDADD += $(top_builddir)/ensc-core/src/libensc.a
