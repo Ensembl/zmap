@@ -887,24 +887,24 @@ gint zMap_g_datalist_length(GData **datalist)
 gpointer zMap_g_array_element(GArray **array_inout, guint index)
 {
   gpointer element_ptr = NULL ;
-  GArray *array = *array_inout ;
+  GArray *an_array = *array_inout ;
   gint new_length, element_size ;
 
   new_length = index + 1 ;				    /* Note it's a zero-based index. */
 
-  /* If we need to expand the array then bump it up quite a bit to avoid repeated reallocation. */
-  if (new_length > array->len)
+  /* If we need to expand the an_array then bump it up quite a bit to avoid repeated reallocation. */
+  if (new_length > an_array->len)
     {
       new_length *= 0.5 ;
 
-      array = g_array_set_size(array, new_length) ;
+      an_array = g_array_set_size(an_array, new_length) ;
 
-      *array_inout = array ;				    /* Return new pointer if array resized. */
+      *array_inout = an_array ;				    /* Return new pointer if an_array resized. */
     }
 
-  element_size = g_array_get_element_size(array) ;
+  element_size = g_array_get_element_size(an_array) ;
 
-  element_ptr = array->data + (element_size * index) ;
+  element_ptr = an_array->data + (element_size * index) ;
 
   return element_ptr ;
 }
