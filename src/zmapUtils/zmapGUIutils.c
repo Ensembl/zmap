@@ -1479,7 +1479,7 @@ GtkWidget *zMapGUIShowTextFull(const char *title, const char *text,
 
 #ifdef __CYGWIN__
 /* Implementation of zmapGUIFileChooserFull for Cygwin(Windows) */
-static char *zmapGUIFileChooserFullCygwin(GtkWidget *toplevel, char *title, char *directory_in, char *file_suffix,
+static char *zmapGUIFileChooserFullCygwin(GtkWidget *toplevel, const char *title, const char *directory_in, const char *file_suffix,
                                           ZMapFileChooserContentAreaCB content_func, gpointer content_data)
 {
   char *full_title ;
@@ -1494,7 +1494,7 @@ static char *zmapGUIFileChooserFullCygwin(GtkWidget *toplevel, char *title, char
   
   dialog = gtk_dialog_new_with_buttons(full_title,
                                        toplevel ? GTK_WINDOW(toplevel) : NULL,
-                                       GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                       (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
                                        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
                                        GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
                                        NULL) ;
