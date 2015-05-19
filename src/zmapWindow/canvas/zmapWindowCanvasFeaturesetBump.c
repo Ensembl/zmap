@@ -165,7 +165,7 @@ static gboolean featureTestMark(ZMapWindowCanvasFeature feature, double start, d
 static void freeSubcolListCB(gpointer data, gpointer user_data) ;
 
 
-/* 
+/*
  *                  Globals
  */
 
@@ -183,7 +183,7 @@ GHashTable *sub_col_name_G = NULL ;
 
 
 
-/* 
+/*
  *                  External routines
  */
 
@@ -266,9 +266,9 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 
   /* use complex features if possible */
   if(zMapStyleIsUnique(featureset->style))
-    bump_data->complex = FALSE ;
+    bump_data->is_complex = FALSE ;
   else
-    bump_data->complex = TRUE ; 
+    bump_data->is_complex = TRUE ;
 
   /* OK, THIS IS CHANGING, OTHER COLUMNS NOW NEED TO BE BUMPED IN A "COMPLEX" WAY... */
   /*
@@ -286,7 +286,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
     {
     case ZMAPBUMP_UNBUMP:
       /* this is a bit hacky */
-      bump_data->complex = FALSE;	/* reset compound feature handling */
+      bump_data->is_complex = FALSE;	/* reset compound feature handling */
       break;
 
     case ZMAPBUMP_NAME_INTERLEAVE:
@@ -363,7 +363,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	}
 
       if (!zMapWindowCanvasFeatureGetFeatureExtent(feature,
-                                                   bump_data->complex, &bump_data->span, &bump_data->width))
+                                                   bump_data->is_complex, &bump_data->span, &bump_data->width))
 	continue;
 
       if (bump_data->mark_set)
@@ -393,7 +393,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
       if(feature->flags & FEATURE_HIDDEN)
 	continue;
 
-      if (bump_data->complex && feature->left)
+      if (bump_data->is_complex && feature->left)
 	{
 	  /* already processed the series of features  */
 	  continue;
@@ -434,7 +434,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	}
 
 
-      if(bump_data->complex)
+      if(bump_data->is_complex)
 	{
 	  double offset = feature->bump_offset;
 	  int col = feature->bump_col;
@@ -498,11 +498,11 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
             if (bump_mode == ZMAPBUMP_FEATURESET_NAME)
               {
                 sub_col_data = g_new0(ZMapWindowCanvasSubColStruct, 1) ;
-      
+
                 sub_col_data->subcol_id = GPOINTER_TO_UINT(g_hash_table_lookup(sub_col_name_G, GUINT_TO_POINTER(n))) ;
                 sub_col_data->offset = featureset->bump_width ;
                 sub_col_data->width = width + bump_data->spacing ;
-      
+
                 featureset->sub_col_list = g_list_append(featureset->sub_col_list, sub_col_data) ;
 
 
@@ -541,7 +541,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
                                                                      GUINT_TO_POINTER(feature->bump_col)));
 
                 feature->bump_offset
-                  = (double)GPOINTER_TO_UINT(g_hash_table_lookup(sub_col_offset_G, 
+                  = (double)GPOINTER_TO_UINT(g_hash_table_lookup(sub_col_offset_G,
                                                                  GUINT_TO_POINTER(feature->bump_col))) ;
 
                 /* printf("offset feature %s @ %p %f,%f %d = %f\n",
@@ -555,7 +555,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
                  * so we have to offset the feature as if that is still the case
                  */
                 //printf("bump: feature off %d = %f\n", feature->bump_col,feature->bump_offset);
-              
+
                 if (zMapStyleGetMode(featureset->style) != ZMAPSTYLE_MODE_GRAPH)
                   {
                     feature->bump_offset -= (featureset->width - width) / 2 ;
@@ -601,7 +601,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 
 
 
-/* 
+/*
  *                    Internal routines.
  */
 
@@ -628,15 +628,15 @@ static gboolean featureTestMark(ZMapWindowCanvasFeature feature, double start, d
 
 
 /* ONLY EVER USED FOR OVERLAP MODE....
- * 
+ *
  * scatter features so that they don't overlap.
- * 
+ *
  * We know that they are fed in in start coordinate order so we keep
  * a pos_list of features per sub-column which get trimmed as the start
  * coordinate increases that way we know that we are unlikely to reach O(n**2).
  *
  * :-( tests reveal O(n**2) / 3
- * 
+ *
  * obvious worst case is one feature per column it ought to be possible to do this more efficiently
  */
 static BCR calcBumpNoOverlap(ZMapWindowCanvasFeature feature, BumpFeatureset bump_data, BCR pos_list)
@@ -824,7 +824,7 @@ static BCR calcBumpNoOverlapFeatureSet(ZMapWindowFeaturesetItem featureset, ZMap
 #if SLOW_BUT_EASY
 
 /* GList rubbish: cannot insert after the last one, only before a NUll which means starting at the
- * head of the list 
+ * head of the list
  * last is the last link in the list */
 static GList *bump_col_range_append(GList *list, GList *last, BumpColRange bcr)
 {
