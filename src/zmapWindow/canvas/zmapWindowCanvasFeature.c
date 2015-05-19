@@ -167,7 +167,7 @@ ZMapWindowCanvasFeature zMapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 /* get the total sequence extent of a simple or complex feature */
 /* used by bumping; we allow force to simple for optional but silly bump modes */
 gboolean zMapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature,
-                                                 gboolean complex, ZMapSpan span, double *width)
+                                                 gboolean is_complex, ZMapSpan span, double *width)
 {
   gboolean result = TRUE ;
 
@@ -185,10 +185,10 @@ gboolean zMapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature
      func so should be ok.... */
   func = (ZMapWindowCanvasGetExtentFunc)feature_extent_G[feature->type];
 
-  if(!complex)                /* reset any compund feature extents */
+  if(!is_complex)                /* reset any compund feature extents */
     feature->y2 = feature->feature->x2;
 
-  if(!func || !complex)
+  if(!func || !is_complex)
     {
       /* all features have an extent, if it's simple get it here */
       span->x1 = feature->feature->x1;        /* use real coord from the feature context */

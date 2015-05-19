@@ -82,7 +82,7 @@ void zMapWindowCanvasFeatureInit(void) ;
 void zMapWindowCanvasFeatureSetSize(int featuretype, gpointer *feature_funcs, size_t feature_struct_size) ;
 ZMapWindowCanvasFeature zMapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type) ;
 ZMapFeature zMapWindowCanvasFeatureGetFeature(ZMapWindowCanvasFeature feature) ;
-gboolean zMapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean complex,
+gboolean zMapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean is_complex,
                                                  ZMapSpan span, double *width) ;
 ZMapFeatureSubPart zMapWindowCanvasFeaturesetGetSubPart(FooCanvasItem *foo,
                                                         ZMapFeature feature, double x, double y) ;

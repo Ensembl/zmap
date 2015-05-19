@@ -132,7 +132,7 @@ typedef struct BumpFeaturesetStructName
   double width;	/* max column width */
   GList *pos_list;	/* list of features in bumped sub-columns */
   ZMapSpanStruct span;	/* of current feature(s) */
-  gboolean complex;
+  gboolean is_complex;
   gboolean mark_set;
 
   /* effciency stats */
