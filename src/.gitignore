@@ -4,14 +4,15 @@ config
 
 
 
-# Ignore everything in the gbtools subdir except its gitignore and README files
+# Ignore everything in these external library subdirs except for the 
+# descriptive placeholder README_ZMAP files.
 gbtools/*
-!gbtools/.gitignore
-!gbtools/README
+!gbtools/README_ZMAP
 
-# We don't keep this in our git repository.
 AceConn/*
-ensc-core/*
+!AceConn/README_ZMAP
 
+ensc-core/*
+!ensc-core/README_ZMAP
 
 
