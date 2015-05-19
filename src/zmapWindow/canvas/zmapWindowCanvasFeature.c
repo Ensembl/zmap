@@ -122,13 +122,7 @@ ZMapWindowCanvasFeature zMapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
   if (type > FEATURE_INVALID && type < FEATURE_N_TYPE)
     {
       GList *l ;
-      size_t size ;
-
-      if (!(size = feature_class_G->struct_size[type]))
-        {
-          type = FEATURE_INVALID ;                            /* catch all for simple features (one common free list) */
-          size = sizeof(zmapWindowCanvasFeatureStruct) ;
-        }
+      size_t size = feature_class_G->struct_size[type] ;
 
       if (!feature_class_G->feature_free_list[type])
         {

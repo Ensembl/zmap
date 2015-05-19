@@ -74,7 +74,7 @@ void zMapWindowCanvasBasicInit(void)
 
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, (size_t)0) ;
 
-  zMapWindowCanvasFeatureSetSize(FEATURE_BASIC, feature_funcs, (size_t) 0) ;
+  zMapWindowCanvasFeatureSetSize(FEATURE_BASIC, feature_funcs, sizeof(zmapWindowCanvasFeatureStruct)) ;
 
 
   return ;

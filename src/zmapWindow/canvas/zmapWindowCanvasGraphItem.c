@@ -134,7 +134,7 @@ void zMapWindowCanvasGraphInit(void)
 
   feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = (void *)graphGetFeatureExtent ;
 
-  zMapWindowCanvasFeatureSetSize(FEATURE_GRAPH, feature_funcs, (size_t)0) ;
+  zMapWindowCanvasFeatureSetSize(FEATURE_GRAPH, feature_funcs, sizeof(zmapWindowCanvasFeatureStruct)) ;
 
   return ;
 }
