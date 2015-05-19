@@ -147,38 +147,15 @@ libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
 #bin_PROGRAMS = zmap gffparser xml_writer xremote_gui remotecontrol
 # bin_PROGRAMS = zmap xml_writer remotecontrol
 
-bin_PROGRAMS = zmap 
+bin_PROGRAMS = zmap  remotecontrol
 
 
 # I am perturbed by the fact that the x libs are before the gtk libs....
 #
 
-# Search path version.....
-#zmap_LDADD = $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)         \
-#	-L$(top_builddir)/.libs                              \
-#	-lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML -lPFetch \
-#	$(ACECONN_LIBS) $(GTK_LIBS) $(FOOCANVAS_LIBS)        \
-#	$(LIBCURL) -lexpat -lg2 -lgd                         \
-#	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
+#zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
+zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.cc
 
-
-# Try Jeremy's new build stuff....
-# Give .a files explicitly to ensure we link the right ones.
-#
-#zmap_LDADD =                                                 \
-#	$(top_builddir)/.libs/libZMapApp.a                   \
-#	$(top_builddir)/.libs/libZMap.a                      \
-#	$(top_builddir)/.libs/libZMapThr.a                   \
-#	$(top_builddir)/.libs/libZMap.a                      \
-#	$(top_builddir)/.libs/libZMapXML.a                   \
-#	$(top_builddir)/.libs/libZMapAppServices.a           \
-#	$(top_builddir)/.libs/libZMapUtils.a                 \
-#	$(top_builddir)/.libs/libzmapfoocanvas.a             \
-#	$(top_builddir)/.libs/libPFetch.a                    \
-#        $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
-#	$(ACECONN_LIBS) $(GTK_LIBS)                          \
-#	$(LIBCURL) -lexpat -lg2 -lgd                         \
-#	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapApp.a                   \
@@ -226,18 +203,14 @@ zmap_LDADD +=                                                \
 	$(MYSQL_LDFLAGS)                                     \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
-
-#zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
-zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.cc
-
+zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
+zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp $(MYSQL_CFLAGS)
 
 # zeromq is C++ so we need to link with g++, not gcc.
 #zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 zmap_LINK         = $(CXX) -I$(top_srcdir)/zmapApp $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
-zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp $(MYSQL_CFLAGS)
-zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
-# MACOSX_UNIVERSAL_FILE was also in LDFLAGS...
+
 
 
 # gffparser - program to parse gff...
@@ -263,7 +236,8 @@ xml_writer_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 
 # The new program that knows about the xremote protocol.
-remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.c
+#remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.c
+remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.cc
 remotecontrol_LDFLAGS      = 
 remotecontrol_LDADD        = $(zmap_LDADD)
 remotecontrol_DEPENDENCIES = $(noinst_LTLIBRARIES)
