@@ -1,554 +1,2325 @@
-2015-04-17  Gemma Barson  <gb10@sanger.ac.uk>
- Minor update to release notes - DOC
- docs/user/release_notes.shtml |    8 ++++----
+2015-05-13  Steve Miller  <sm23@sanger.ac.uk>
+ some more preparatory work on the scale bar coordinate display - WIP
+ src/zmapWindow/zmapWindowScale.c |  256 ++++++++++++++++++++++++++++++--------
+ src/zmapWindow/zmapWindow_P.h    |   11 ++
+ 2 files changed, 213 insertions(+), 54 deletions(-)
+
+2015-05-13  Gemma Barson  <gb10@sanger.ac.uk>
+ Disable zerompq test_fork because it hangs on mac - BUILD
+ src/zeromq/configure.ac      |    3 +++
+ src/zeromq/tests/Makefile.am |   10 ++++++++--
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+2015-05-11  Steve Miller  <sm23@sanger.ac.uk>
+ more prep work on the scale - WIP
+ src/zmapWindow/zmapWindowScale.c |   60 +++++++++++++++++++++++++++----------
+ 1 files changed, 44 insertions(+), 16 deletions(-)
+
+2015-05-08  Steve Miller  <sm23@sanger.ac.uk>
+ some work on the scale bar - WIP
+ src/zmapWindow/zmapWindowScale.c |  103 ++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 100 insertions(+), 3 deletions(-)
+
+2015-05-07  Steve Miller  <sm23@sanger.ac.uk>
+ some more changes for the previous
+ src/zmapWindow/zmapWindowScale.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+2015-05-07  Steve Miller  <sm23@sanger.ac.uk>
+ commit to prepare for some work on the scale bar; should not change functionality
+ src/zmapWindow/zmapWindow.c          |    5 ++++-
+ src/zmapWindow/zmapWindowNavigator.c |    3 ++-
+ src/zmapWindow/zmapWindowScale.c     |    1 +
+ src/zmapWindow/zmapWindow_P.h        |    4 +++-
+ 4 files changed, 10 insertions(+), 3 deletions(-)
+
+2015-05-01  Gemma Barson  <gb10@sanger.ac.uk>
+ Update release notes for 1.6.0 - DOC
+ docs/user/release_notes.shtml |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-05-01  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'production' into develop
+2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix minor error in function description - FORMATTING ONLY
+ scripts/build_config.sh |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug with getting seqtools build architecture - BUILD
+ scripts/build_config.sh |   19 +++----------------
+ 1 files changed, 3 insertions(+), 16 deletions(-)
+
+2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'feature/ensembl' into develop - BUILD
+2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix wrong architecture name - BUILD
+ scripts/build_config.sh |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2015-04-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Add description of filter shortcut. - DOC
+ docs/user/keyboard_mouse.shtml |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+2015-04-29  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug fetching seqtools binaries - BUILD
+ scripts/zmap_fetch_acedbbinaries.sh |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-04-29  Gemma Barson  <gb10@sanger.ac.uk>
+ Don't ssh if reqd host is the current host - BUILD
+ scripts/build_config.sh |   36 ++++++++++++++++++++++++++++++------
+ 1 files changed, 30 insertions(+), 6 deletions(-)
+
+2015-04-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Remove left over debug info. - TRIVIAL
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.c       |   13 -------------
+ src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |    8 --------
+ .../zmapWindowContainerFeatureSetFeatureFuncs.c    |    2 --
+ 3 files changed, 0 insertions(+), 23 deletions(-)
+
+2015-04-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Remove incorrect * operators, parameters already pointers to int. - BUG FIX
+ src/zmapFeature/zmapFeatureUtils.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-04-29  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix error with previous change for seqtools build - BUILD
+ scripts/build_config.sh |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+2015-04-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix selection string to support multiple single exon selection. - BUG FIX
+ src/zmapWindow/zmapWindowDisplayOps.c |  126 +++++++++++++++++++-------------
+ 1 files changed, 75 insertions(+), 51 deletions(-)
+
+2015-04-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ no changes. - FORMATTING ONLY
+ src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |  101 ++++++++++----------
+ 1 files changed, 52 insertions(+), 49 deletions(-)
+
+2015-04-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Make feature subpart cope with CDS subpart. - BUG FIX
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |   51 +++++++++++++-------
+ 1 files changed, 34 insertions(+), 17 deletions(-)
+
+2015-04-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ small rearrangement and formatting - FORMATTING ONLY
+ src/zmapWindow/canvas/zmapWindowCanvasFeature_I.h |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+2015-04-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ no code changes - FORMATTING ONLY
+ src/zmapWindow/canvas/zmapWindowCanvasFeature.c |   16 ++++++----------
+ 1 files changed, 6 insertions(+), 10 deletions(-)
+
+2015-04-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ No code changes - FORMATTING ONLY
+ src/zmapWindow/zmapWindowFocus.c |   24 +++++++++++++-----------
+ 1 files changed, 13 insertions(+), 11 deletions(-)
+
+2015-04-29  Ed Griffiths  <edgrif@sanger.ac.uk>
+ No changes - FORMATTING ONLY
+ src/include/ZMap/zmapFeature.h |    8 ++++----
  1 files changed, 4 insertions(+), 4 deletions(-)
 
-2015-04-17  Gemma Barson  <gb10@sanger.ac.uk>
- Update release notes for 1.6.0 - DOC
- docs/user/release_notes.shtml |   20 ++++++++++++++++++++
- 1 files changed, 20 insertions(+), 0 deletions(-)
+2015-04-29  Gemma Barson  <gb10@sanger.ac.uk>
+ Add functions for finding architecture-specific directory names - BUILD
+ scripts/build_bootstrap.sh          |    3 +-
+ scripts/build_config.sh             |  103 +++++++++++++++++++++++++++++++++++
+ scripts/zmap_compile_and_tar.sh     |   44 ++--------------
+ scripts/zmap_fetch_acedbbinaries.sh |   14 ++---
+ scripts/zmap_handle_release_tar.sh  |    3 +-
+ scripts/zmap_test_suite.sh          |    3 +-
+ 6 files changed, 119 insertions(+), 51 deletions(-)
 
-2015-04-17  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.5.1-83-g5259eb8 - Update RT and git commit reports
- src/ChangeLog                                  |  856 ++++++++++++++----------
- src/build/release_docs/GIT_COMMITS.txt         |   35 +-
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |  112 ++--
- 3 files changed, 593 insertions(+), 410 deletions(-)
+2015-04-29  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix error with previous - BUILD
+ scripts/zmap_compile_and_tar.sh |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2015-04-29  Gemma Barson  <gb10@sanger.ac.uk>
+ Add precise-dev64 to list of build machines - BUILD
+ scripts/build_config.sh         |   11 +++++++++--
+ scripts/zmap_compile_and_tar.sh |   22 +++++++++++++++-------
+ 2 files changed, 24 insertions(+), 9 deletions(-)
+
+2015-04-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'feature/ensembl' into develop - NEW FEATURE 'ensembl prototype'
+2015-04-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor change to checkout of ensc-core - BUILD
+ src/autogen.sh |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+2015-04-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Revert dbname change as it breaks selections - WIP
+ src/zmapServer/ensembl/ensemblServer.c |    6 ------
+ 1 files changed, 0 insertions(+), 6 deletions(-)
+
+2015-04-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix potential error when selection text is null - WIP
+ src/zmapWindow/zmapWindow.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+2015-04-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Add dbname to unique id to make sure unique - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   47 +++++++++++++++++++------------
+ 1 files changed, 29 insertions(+), 18 deletions(-)
+
+2015-04-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Add README placeholder file to ensc-core directory - BUILD
+ src/ensc-core/.gitignore |    1 -
+ src/ensc-core/README     |   10 ++++++++++
+ 2 files changed, 10 insertions(+), 1 deletions(-)
+
+2015-04-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/ensembl
+2015-04-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor change to restore gbtools placeholder files - BUILD
+ scripts/build_bootstrap.sh |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+2015-04-24  Steve Miller  <sm23@sanger.ac.uk>
+ revision to my previous fix - wrong array function called - BUG FIX
+ src/zmapWindow/zmapWindow.c      |   29 ++--
+ src/zmapWindow/zmapWindowScale.c |  330 ++------------------------------------
+ 2 files changed, 25 insertions(+), 334 deletions(-)
+
+2015-04-24  Steve Miller  <sm23@sanger.ac.uk>
+ fix to crash on revcomp with feature search results window open - RT 465286
+ src/zmapWindow/zmapWindow.c            |   23 ++++++++++++++++++-----
+ src/zmapWindow/zmapWindowFeatureList.c |   10 +++-------
+ 2 files changed, 21 insertions(+), 12 deletions(-)
+
+2015-04-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compile error with previous - BUILD
+ src/zmapServer/zmapServer.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-04-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Disable calling ensembl code if mysql not available - BUILD
+ src/zmapServer/zmapServer.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+2015-04-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove dependency on ensembl libs when disabled - BUILD
+ src/Makefile.am            |   14 +++++++-------
+ src/configure.ac           |    6 ++++--
+ src/zmapServer/Makefile.am |    8 +++++---
+ 3 files changed, 16 insertions(+), 12 deletions(-)
+
+2015-04-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix config of mysql stuff - BUILD
+ src/configure.ac |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
+
+2015-04-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Attempt to fix mysql config stuff - BUILD
+ src/Makefile.am                    |    9 ++++++++-
+ src/configure.ac                   |    2 +-
+ src/zmapServer/Makefile.am         |    7 ++++++-
+ src/zmapServer/ensembl/Makefile.am |    5 -----
+ 4 files changed, 15 insertions(+), 8 deletions(-)
+
+2015-04-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Use git-clone instead of gitclone script (not avail on mac) - BUILD
+ src/autogen.sh |   17 ++++++++++++++---
+ 1 files changed, 14 insertions(+), 3 deletions(-)
+
+2015-04-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug with revcomp coords introduced in cf575da - REGRESSION FIX
+ src/zmapFeature/zmapFeatureUtils.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+2015-04-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix buggy-looking invert-coord macros - WIP
+ src/include/ZMap/zmapFeature.h       |    2 +-
+ src/zmapFeature/zmapFeatureContext.c |   32 ++++++++++++++++----------------
+ src/zmapFeature/zmapFeatureUtils.c   |   18 +++++++++++++++++-
+ src/zmapFeature/zmapFeature_P.h      |   19 ++++---------------
+ src/zmapView/zmapView.c              |    6 ++----
+ 5 files changed, 40 insertions(+), 37 deletions(-)
+
+2015-04-23  Steve Miller  <sm23@sanger.ac.uk>
+ some more preparation for the coordinate display modifications - WIP
+ src/zmapWindow/zmapWindow.c      |    2 +-
+ src/zmapWindow/zmapWindowUtils.c |   20 ++++++++++++++++++--
+ 2 files changed, 19 insertions(+), 3 deletions(-)
+
+2015-04-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove samtools_parallel from makefiles - WIP
+ src/Makefile.common |    1 -
+ src/runconfig       |    1 -
+ 2 files changed, 0 insertions(+), 2 deletions(-)
+
+2015-04-22  Gemma Barson  <gb10@sanger.ac.uk>
+ update ensc gitignore file - BUILD
+ src/ensc-core/.gitignore |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+2015-04-22  Gemma Barson  <gb10@sanger.ac.uk>
+ autogen copies in ensc-core - BUILD
+ src/autogen.sh           |   25 ++++++++++++++++++++++++-
+ src/ensc-core/.gitignore |    1 +
+ 2 files changed, 25 insertions(+), 1 deletions(-)
+
+2015-04-22  Gemma Barson  <gb10@sanger.ac.uk>
+ Add ensc-core directory - BUILD
+ 0 files changed, 0 insertions(+), 0 deletions(-)
+
+2015-04-22  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/ensembl
+2015-04-22  Gemma Barson  <gb10@sanger.ac.uk>
+ Move ensc-core back out to separate repo - BUILD
+ src/ensc-core/LICENSE                              |  243 -
+ src/ensc-core/README                               |   16 -
+ src/ensc-core/data/README                          |    3 -
+ src/ensc-core/data/gc.prt                          |  175 -
+ src/ensc-core/scripts/addmake.pl                   |  230 -
+ src/ensc-core/src/.gitignore                       |    3 -
+ .../src/Compara/DataAdaptors/BaseComparaAdaptor.c  |   23 -
+ .../src/Compara/DataAdaptors/BaseComparaAdaptor.h  |   31 -
+ .../src/Compara/DataAdaptors/ComparaAdaptorTypes.h |   30 -
+ .../src/Compara/DataAdaptors/ComparaDBAdaptor.c    |  314 -
+ .../src/Compara/DataAdaptors/ComparaDBAdaptor.h    |   48 -
+ .../DataAdaptors/ComparaDNAAlignFeatureAdaptor.c   |  211 -
+ .../DataAdaptors/ComparaDNAAlignFeatureAdaptor.h   |   40 -
+ .../src/Compara/DataAdaptors/DNAFragAdaptor.c      |  274 -
+ .../src/Compara/DataAdaptors/DNAFragAdaptor.h      |   39 -
+ .../src/Compara/DataAdaptors/GenomeDBAdaptor.c     |  360 -
+ .../src/Compara/DataAdaptors/GenomeDBAdaptor.h     |   52 -
+ .../src/Compara/DataAdaptors/GenomicAlignAdaptor.c |  946 ---
+ .../src/Compara/DataAdaptors/GenomicAlignAdaptor.h |   45 -
+ .../src/Compara/DataAdaptors/HomologyAdaptor.c     |  312 -
+ .../src/Compara/DataAdaptors/HomologyAdaptor.h     |   43 -
+ .../src/Compara/DataAdaptors/SyntenyAdaptor.c      |  116 -
+ .../src/Compara/DataAdaptors/SyntenyAdaptor.h      |   41 -
+ .../Compara/DataAdaptors/SyntenyRegionAdaptor.c    |  152 -
+ .../Compara/DataAdaptors/SyntenyRegionAdaptor.h    |   40 -
+ .../src/Compara/DataModel/ComparaDataModelTypes.h  |   27 -
+ src/ensc-core/src/Compara/DataModel/DNAFrag.c      |   97 -
+ src/ensc-core/src/Compara/DataModel/DNAFrag.h      |   83 -
+ src/ensc-core/src/Compara/DataModel/GenomeDB.c     |  108 -
+ src/ensc-core/src/Compara/DataModel/GenomeDB.h     |   80 -
+ src/ensc-core/src/Compara/DataModel/GenomicAlign.c |  193 -
+ src/ensc-core/src/Compara/DataModel/GenomicAlign.h |  107 -
+ src/ensc-core/src/Compara/DataModel/Homology.c     |   72 -
+ src/ensc-core/src/Compara/DataModel/Homology.h     |   70 -
+ .../src/Compara/DataModel/SyntenyRegion.c          |   78 -
+ .../src/Compara/DataModel/SyntenyRegion.h          |  106 -
+ src/ensc-core/src/DataAdaptors/AdaptorTypes.h      |   55 -
+ src/ensc-core/src/DataAdaptors/AnalysisAdaptor.c   |  350 -
+ src/ensc-core/src/DataAdaptors/AnalysisAdaptor.h   |   45 -
+ .../src/DataAdaptors/AssemblyMapperAdaptor.c       | 2023 ------
+ .../src/DataAdaptors/AssemblyMapperAdaptor.h       |   72 -
+ src/ensc-core/src/DataAdaptors/AttributeAdaptor.c  |  490 --
+ src/ensc-core/src/DataAdaptors/AttributeAdaptor.h  |   47 -
+ src/ensc-core/src/DataAdaptors/BaseAdaptor.c       | 1013 ---
+ src/ensc-core/src/DataAdaptors/BaseAdaptor.h       |  175 -
+ .../src/DataAdaptors/BaseAlignFeatureAdaptor.c     |   56 -
+ .../src/DataAdaptors/BaseAlignFeatureAdaptor.h     |   27 -
+ src/ensc-core/src/DataAdaptors/BaseDBAdaptor.h     |   37 -
+ .../src/DataAdaptors/BaseFeatureAdaptor.c          | 1818 -----
+ .../src/DataAdaptors/BaseFeatureAdaptor.h          |  109 -
+ .../src/DataAdaptors/CachingSequenceAdaptor.c      |  218 -
+ .../src/DataAdaptors/CachingSequenceAdaptor.h      |   39 -
+ src/ensc-core/src/DataAdaptors/ChromosomeAdaptor.c |  116 -
+ src/ensc-core/src/DataAdaptors/ChromosomeAdaptor.h |   39 -
+ src/ensc-core/src/DataAdaptors/CloneAdaptor.c      |   73 -
+ src/ensc-core/src/DataAdaptors/CloneAdaptor.h      |   32 -
+ .../src/DataAdaptors/CoordSystemAdaptor.c          | 1035 ---
+ .../src/DataAdaptors/CoordSystemAdaptor.h          |   59 -
+ src/ensc-core/src/DataAdaptors/DBAdaptor.c         |  324 -
+ src/ensc-core/src/DataAdaptors/DBAdaptor.h         |   89 -
+ src/ensc-core/src/DataAdaptors/DBConnection.c      |  144 -
+ src/ensc-core/src/DataAdaptors/DBConnection.h      |   57 -
+ src/ensc-core/src/DataAdaptors/DBEntryAdaptor.c    |  638 --
+ src/ensc-core/src/DataAdaptors/DBEntryAdaptor.h    |   38 -
+ .../src/DataAdaptors/DNAAlignFeatureAdaptor.c      |  634 --
+ .../src/DataAdaptors/DNAAlignFeatureAdaptor.h      |   46 -
+ src/ensc-core/src/DataAdaptors/ExonAdaptor.c       |  975 ---
+ src/ensc-core/src/DataAdaptors/ExonAdaptor.h       |   57 -
+ src/ensc-core/src/DataAdaptors/GeneAdaptor.c       | 2647 -------
+ src/ensc-core/src/DataAdaptors/GeneAdaptor.h       |   87 -
+ .../DataAdaptors/IntronSupportingEvidenceAdaptor.c |  707 --
+ .../DataAdaptors/IntronSupportingEvidenceAdaptor.h |   45 -
+ src/ensc-core/src/DataAdaptors/MetaContainer.c     |  137 -
+ src/ensc-core/src/DataAdaptors/MetaContainer.h     |   36 -
+ .../src/DataAdaptors/MetaCoordContainer.c          |  352 -
+ .../src/DataAdaptors/MetaCoordContainer.h          |   37 -
+ src/ensc-core/src/DataAdaptors/MysqlResultRow.c    |  128 -
+ src/ensc-core/src/DataAdaptors/MysqlResultRow.h    |   65 -
+ .../src/DataAdaptors/MysqlStatementHandle.c        |  238 -
+ .../src/DataAdaptors/MysqlStatementHandle.h        |   74 -
+ .../src/DataAdaptors/PredictionExonAdaptor.c       |  466 --
+ .../src/DataAdaptors/PredictionExonAdaptor.h       |   50 -
+ .../src/DataAdaptors/PredictionTranscriptAdaptor.c |  639 --
+ .../src/DataAdaptors/PredictionTranscriptAdaptor.h |   45 -
+ .../src/DataAdaptors/ProteinAlignFeatureAdaptor.c  |  414 --
+ .../src/DataAdaptors/ProteinAlignFeatureAdaptor.h  |   48 -
+ src/ensc-core/src/DataAdaptors/RawContigAdaptor.c  |  121 -
+ src/ensc-core/src/DataAdaptors/RawContigAdaptor.h  |   37 -
+ .../src/DataAdaptors/RepeatConsensusAdaptor.c      |  188 -
+ .../src/DataAdaptors/RepeatConsensusAdaptor.h      |   39 -
+ .../src/DataAdaptors/RepeatFeatureAdaptor.c        |  570 --
+ .../src/DataAdaptors/RepeatFeatureAdaptor.h        |   46 -
+ src/ensc-core/src/DataAdaptors/ResultRow.h         |   59 -
+ .../src/DataAdaptors/SeqRegionCacheEntry.c         |   40 -
+ .../src/DataAdaptors/SeqRegionCacheEntry.h         |   32 -
+ src/ensc-core/src/DataAdaptors/SequenceAdaptor.c   |  826 ---
+ src/ensc-core/src/DataAdaptors/SequenceAdaptor.h   |   58 -
+ .../src/DataAdaptors/SimpleFeatureAdaptor.c        |  352 -
+ .../src/DataAdaptors/SimpleFeatureAdaptor.h        |   46 -
+ src/ensc-core/src/DataAdaptors/SliceAdaptor.c      | 2889 --------
+ src/ensc-core/src/DataAdaptors/SliceAdaptor.h      |   67 -
+ src/ensc-core/src/DataAdaptors/StatementHandle.h   |   58 -
+ .../src/DataAdaptors/SupportingFeatureAdaptor.c    |  477 --
+ .../src/DataAdaptors/SupportingFeatureAdaptor.h    |   35 -
+ src/ensc-core/src/DataAdaptors/TranscriptAdaptor.c | 2308 ------
+ src/ensc-core/src/DataAdaptors/TranscriptAdaptor.h |   63 -
+ .../TranscriptSupportingFeatureAdaptor.c           |  305 -
+ .../TranscriptSupportingFeatureAdaptor.h           |   33 -
+ .../src/DataAdaptors/TranslationAdaptor.c          |  976 ---
+ .../src/DataAdaptors/TranslationAdaptor.h          |   47 -
+ src/ensc-core/src/DataModel/Analysis.c             |  107 -
+ src/ensc-core/src/DataModel/Analysis.h             |  117 -
+ src/ensc-core/src/DataModel/AnnotatedSeqFeature.c  |   19 -
+ src/ensc-core/src/DataModel/AnnotatedSeqFeature.h  |  126 -
+ src/ensc-core/src/DataModel/AssemblyMapper.c       |  678 --
+ src/ensc-core/src/DataModel/AssemblyMapper.h       |  150 -
+ src/ensc-core/src/DataModel/Attribute.c            |   86 -
+ src/ensc-core/src/DataModel/Attribute.h            |   70 -
+ src/ensc-core/src/DataModel/BaseAlignFeature.c     |  998 ---
+ src/ensc-core/src/DataModel/BaseAlignFeature.h     |  202 -
+ src/ensc-core/src/DataModel/BaseAssemblyMapper.c   |  136 -
+ src/ensc-core/src/DataModel/BaseAssemblyMapper.h   |  146 -
+ src/ensc-core/src/DataModel/BaseContig.c           |   23 -
+ src/ensc-core/src/DataModel/BaseContig.h           |   73 -
+ src/ensc-core/src/DataModel/Basic/Vector.c         |  280 -
+ src/ensc-core/src/DataModel/Basic/Vector.h         |   99 -
+ .../src/DataModel/ChainedAssemblyMapper.c          |  672 --
+ .../src/DataModel/ChainedAssemblyMapper.h          |  166 -
+ src/ensc-core/src/DataModel/Chromosome.c           |   56 -
+ src/ensc-core/src/DataModel/Chromosome.h           |   68 -
+ src/ensc-core/src/DataModel/CigarStrUtil.c         |   82 -
+ src/ensc-core/src/DataModel/CigarStrUtil.h         |   25 -
+ src/ensc-core/src/DataModel/Class.c                |  298 -
+ src/ensc-core/src/DataModel/Class.h                |   91 -
+ src/ensc-core/src/DataModel/Clone.c                |   77 -
+ src/ensc-core/src/DataModel/Clone.h                |   92 -
+ src/ensc-core/src/DataModel/CoordSystem.c          |  222 -
+ src/ensc-core/src/DataModel/CoordSystem.h          |   89 -
+ src/ensc-core/src/DataModel/DBEntry.c              |  186 -
+ src/ensc-core/src/DataModel/DBEntry.h              |  117 -
+ src/ensc-core/src/DataModel/DNAAlignFeature.c      |  103 -
+ src/ensc-core/src/DataModel/DNAAlignFeature.h      |  177 -
+ src/ensc-core/src/DataModel/DNAPepAlignFeature.c   |   75 -
+ src/ensc-core/src/DataModel/DNAPepAlignFeature.h   |  148 -
+ src/ensc-core/src/DataModel/DataModelTypes.h       |   63 -
+ src/ensc-core/src/DataModel/EnsC.c                 |   71 -
+ src/ensc-core/src/DataModel/EnsC.h                 |   79 -
+ src/ensc-core/src/DataModel/EnsRoot.h              |   29 -
+ src/ensc-core/src/DataModel/Exon.c                 |  978 ---
+ src/ensc-core/src/DataModel/Exon.h                 |  238 -
+ src/ensc-core/src/DataModel/FeaturePair.c          |   83 -
+ src/ensc-core/src/DataModel/FeaturePair.h          |  141 -
+ src/ensc-core/src/DataModel/FeatureSet.c           |   49 -
+ src/ensc-core/src/DataModel/FeatureSet.h           |   35 -
+ src/ensc-core/src/DataModel/Gene.c                 |  665 --
+ src/ensc-core/src/DataModel/Gene.h                 |  190 -
+ src/ensc-core/src/DataModel/GenomicRange.c         |   56 -
+ src/ensc-core/src/DataModel/GenomicRange.h         |   50 -
+ src/ensc-core/src/DataModel/IdentityXref.c         |   34 -
+ src/ensc-core/src/DataModel/IdentityXref.h         |   37 -
+ src/ensc-core/src/DataModel/Intron.c               |  173 -
+ src/ensc-core/src/DataModel/Intron.h               |  100 -
+ .../src/DataModel/IntronSupportingEvidence.c       |  402 --
+ .../src/DataModel/IntronSupportingEvidence.h       |  114 -
+ src/ensc-core/src/DataModel/Mapper.c               | 1180 ---
+ src/ensc-core/src/DataModel/Mapper.h               |   94 -
+ src/ensc-core/src/DataModel/Mapper/CoordPair.c     |   33 -
+ src/ensc-core/src/DataModel/Mapper/CoordPair.h     |   31 -
+ .../src/DataModel/Mapper/IndelCoordinate.c         |   39 -
+ .../src/DataModel/Mapper/IndelCoordinate.h         |   39 -
+ .../src/DataModel/Mapper/MapperCoordinate.c        |   37 -
+ .../src/DataModel/Mapper/MapperCoordinate.h        |   35 -
+ src/ensc-core/src/DataModel/Mapper/MapperGap.c     |   35 -
+ src/ensc-core/src/DataModel/Mapper/MapperGap.h     |   30 -
+ src/ensc-core/src/DataModel/Mapper/MapperPair.c    |   37 -
+ src/ensc-core/src/DataModel/Mapper/MapperPair.h    |   41 -
+ src/ensc-core/src/DataModel/Mapper/MapperPairSet.c |  126 -
+ src/ensc-core/src/DataModel/Mapper/MapperPairSet.h |   47 -
+ src/ensc-core/src/DataModel/Mapper/MapperRange.h   |   41 -
+ .../src/DataModel/Mapper/MapperRangeSet.c          |   78 -
+ .../src/DataModel/Mapper/MapperRangeSet.h          |   38 -
+ src/ensc-core/src/DataModel/Mapper/MapperUnit.c    |   30 -
+ src/ensc-core/src/DataModel/Mapper/MapperUnit.h    |   33 -
+ src/ensc-core/src/DataModel/Mapper/RangeRegistry.c |  361 -
+ src/ensc-core/src/DataModel/Mapper/RangeRegistry.h |   38 -
+ src/ensc-core/src/DataModel/MapperDefs.h           |   30 -
+ src/ensc-core/src/DataModel/Object.c               |   50 -
+ src/ensc-core/src/DataModel/Object.h               |   77 -
+ src/ensc-core/src/DataModel/PredictionExon.c       |  104 -
+ src/ensc-core/src/DataModel/PredictionExon.h       |  119 -
+ src/ensc-core/src/DataModel/PredictionTranscript.c |  548 --
+ src/ensc-core/src/DataModel/PredictionTranscript.h |  164 -
+ src/ensc-core/src/DataModel/ProjectionSegment.c    |   39 -
+ src/ensc-core/src/DataModel/ProjectionSegment.h    |   45 -
+ src/ensc-core/src/DataModel/RawContig.c            |  239 -
+ src/ensc-core/src/DataModel/RawContig.h            |   84 -
+ src/ensc-core/src/DataModel/RepeatConsensus.c      |   72 -
+ src/ensc-core/src/DataModel/RepeatConsensus.h      |   80 -
+ src/ensc-core/src/DataModel/RepeatFeature.c        |   58 -
+ src/ensc-core/src/DataModel/RepeatFeature.h        |  124 -
+ src/ensc-core/src/DataModel/SeqEdit.c              |  459 --
+ src/ensc-core/src/DataModel/SeqEdit.h              |   85 -
+ src/ensc-core/src/DataModel/SeqFeature.c           | 2052 ------
+ src/ensc-core/src/DataModel/SeqFeature.h           |  242 -
+ src/ensc-core/src/DataModel/SeqFeatureFactory.c    |  130 -
+ src/ensc-core/src/DataModel/SeqFeatureFactory.h    |   25 -
+ src/ensc-core/src/DataModel/SeqRegionRange.c       |   56 -
+ src/ensc-core/src/DataModel/SeqRegionRange.h       |   51 -
+ src/ensc-core/src/DataModel/Sequence.c             |   69 -
+ src/ensc-core/src/DataModel/Sequence.h             |   68 -
+ src/ensc-core/src/DataModel/SimpleFeature.c        |   68 -
+ src/ensc-core/src/DataModel/SimpleFeature.h        |  123 -
+ src/ensc-core/src/DataModel/Slice.c                | 4043 -----------
+ src/ensc-core/src/DataModel/Slice.h                |  164 -
+ src/ensc-core/src/DataModel/Species.c              |   68 -
+ src/ensc-core/src/DataModel/Species.h              |   64 -
+ src/ensc-core/src/DataModel/StableIdInfo.c         |   36 -
+ src/ensc-core/src/DataModel/StableIdInfo.h         |   50 -
+ src/ensc-core/src/DataModel/StickyExon.c           |  519 --
+ src/ensc-core/src/DataModel/StickyExon.h           |  168 -
+ src/ensc-core/src/DataModel/Storable.c             |  100 -
+ src/ensc-core/src/DataModel/Storable.h             |   37 -
+ .../src/DataModel/TopLevelAssemblyMapper.c         |  481 --
+ .../src/DataModel/TopLevelAssemblyMapper.h         |  136 -
+ src/ensc-core/src/DataModel/Transcript.c           | 1462 ----
+ src/ensc-core/src/DataModel/Transcript.h           |  253 -
+ src/ensc-core/src/DataModel/Translation.c          |  339 -
+ src/ensc-core/src/DataModel/Translation.h          |  102 -
+ src/ensc-core/src/Makefile                         |  509 --
+ src/ensc-core/src/OBDA/BioIndex.c                  |  978 ---
+ src/ensc-core/src/OBDA/BioIndex.h                  |  114 -
+ src/ensc-core/src/OBDA/parsers.c                   |  274 -
+ src/ensc-core/src/OBDA/parsers.h                   |  116 -
+ src/ensc-core/src/Programs/.gitignore              |   34 -
+ src/ensc-core/src/Programs/RefineSolexaGenes.c     | 7554 --------------------
+ src/ensc-core/src/Programs/RefineSolexaGenes.h     |  332 -
+ src/ensc-core/src/Programs/bamcount.c              |  654 --
+ src/ensc-core/src/Programs/bamcount_exon           |  Bin 748584 -> 0 bytes
+ src/ensc-core/src/Programs/bamcount_exon.c         |  840 ---
+ src/ensc-core/src/Programs/bamcov                  |  Bin 738888 -> 0 bytes
+ src/ensc-core/src/Programs/bamcov.c                |  476 --
+ src/ensc-core/src/Programs/bammap.c                | 1585 ----
+ src/ensc-core/src/Programs/compile.csh             |    1 -
+ src/ensc-core/src/Programs/countsnps.c             |  248 -
+ src/ensc-core/src/Programs/countsnps.pl            |  288 -
+ src/ensc-core/src/Programs/dumptranslations.pl     |  187 -
+ src/ensc-core/src/Programs/fastasplit              |  Bin 18452 -> 0 bytes
+ src/ensc-core/src/Programs/fastasplit.c            |  258 -
+ src/ensc-core/src/Programs/indicate.c              |  182 -
+ src/ensc-core/src/Programs/moveperl                |  Bin 22804 -> 0 bytes
+ src/ensc-core/src/Programs/moveperl.c              |  457 --
+ src/ensc-core/src/Programs/testdbc.c               |  333 -
+ src/ensc-core/src/Tests/.gitignore                 |   27 -
+ src/ensc-core/src/Tests/AssemblyMapperTest.c       |  260 -
+ src/ensc-core/src/Tests/BaseComparaDBTest.h        |   44 -
+ src/ensc-core/src/Tests/BaseRODBTest.h             |   59 -
+ src/ensc-core/src/Tests/BaseRWDBTest.h             |   49 -
+ src/ensc-core/src/Tests/BaseTest.h                 |   40 -
+ src/ensc-core/src/Tests/CacheTest.c                |   51 -
+ .../src/Tests/ChainedAssemblyMapperTest.c          |  195 -
+ src/ensc-core/src/Tests/CigarStrUtilTest.c         |   59 -
+ src/ensc-core/src/Tests/ClassTest.c                |   31 -
+ src/ensc-core/src/Tests/Compara.conf               |   26 -
+ src/ensc-core/src/Tests/ComparaDBAdaptorTest.c     |   33 -
+ .../src/Tests/ComparaDNAAlignFeatureAdaptorTest.c  |   66 -
+ src/ensc-core/src/Tests/CoordSystemTest.c          |   66 -
+ src/ensc-core/src/Tests/DBAdaptorTest.c            |   34 -
+ src/ensc-core/src/Tests/DNAAlignFeatureTest.c      |  132 -
+ src/ensc-core/src/Tests/DNAAlignFeatureWriteTest.c |   65 -
+ src/ensc-core/src/Tests/DNAPepAlignFeatureTest.c   |  112 -
+ .../src/Tests/DNAPepAlignFeatureWriteTest.c        |   64 -
+ src/ensc-core/src/Tests/EcoStringTest.c            |   61 -
+ src/ensc-core/src/Tests/EnsCTestDB.c               |  487 --
+ src/ensc-core/src/Tests/FreeTest.c                 |  101 -
+ src/ensc-core/src/Tests/GeneTest.c                 |  161 -
+ src/ensc-core/src/Tests/GeneWriteTest.c            |   70 -
+ src/ensc-core/src/Tests/GenomicAlignTest.c         |   72 -
+ src/ensc-core/src/Tests/HomologyTest.c             |   73 -
+ src/ensc-core/src/Tests/LRUCacheTest.c             |   75 -
+ src/ensc-core/src/Tests/MapperTest.c               |  403 --
+ src/ensc-core/src/Tests/PredictionTranscriptTest.c |   64 -
+ src/ensc-core/src/Tests/RepeatFeatureTest.c        |   79 -
+ src/ensc-core/src/Tests/RepeatFeatureWriteTest.c   |   64 -
+ src/ensc-core/src/Tests/SeqUtilTest.c              |   29 -
+ src/ensc-core/src/Tests/SequenceAdaptorTest.c      |   89 -
+ src/ensc-core/src/Tests/SimpleFeatureTest.c        |   84 -
+ src/ensc-core/src/Tests/SimpleFeatureWriteTest.c   |   65 -
+ src/ensc-core/src/Tests/SliceAdaptorTest.c         |  681 --
+ src/ensc-core/src/Tests/StrUtilTest.c              |   35 -
+ src/ensc-core/src/Tests/StreamTest.c               |   54 -
+ src/ensc-core/src/Tests/SyntenyTest.c              |   64 -
+ .../src/Tests/TopLevelAssemblyMapperTest.c         |  160 -
+ src/ensc-core/src/Tests/TranslateTest.c            |   36 -
+ src/ensc-core/src/Tests/VectorTest.c               |   57 -
+ src/ensc-core/src/Util/CHash.c                     |  673 --
+ src/ensc-core/src/Util/CHash.h                     |   58 -
+ src/ensc-core/src/Util/Cache.c                     |  123 -
+ src/ensc-core/src/Util/Cache.h                     |   51 -
+ src/ensc-core/src/Util/EcoString.c                 |  523 --
+ src/ensc-core/src/Util/EcoString.h                 |   51 -
+ src/ensc-core/src/Util/Error.c                     |  176 -
+ src/ensc-core/src/Util/Error.h                     |  408 --
+ src/ensc-core/src/Util/FileUtil.c                  |  401 --
+ src/ensc-core/src/Util/FileUtil.h                  |   32 -
+ src/ensc-core/src/Util/IDHash.c                    |  249 -
+ src/ensc-core/src/Util/IDHash.h                    |   53 -
+ src/ensc-core/src/Util/LRUCache.c                  |  238 -
+ src/ensc-core/src/Util/LRUCache.h                  |   57 -
+ src/ensc-core/src/Util/Message.h                   |  515 --
+ src/ensc-core/src/Util/MysqlUtil.c                 |  104 -
+ src/ensc-core/src/Util/MysqlUtil.h                 |   31 -
+ src/ensc-core/src/Util/ProcUtil.c                  |  268 -
+ src/ensc-core/src/Util/ProcUtil.h                  |   35 -
+ src/ensc-core/src/Util/SeqUtil.c                   |  251 -
+ src/ensc-core/src/Util/SeqUtil.h                   |   47 -
+ src/ensc-core/src/Util/StrUtil.c                   |  826 ---
+ src/ensc-core/src/Util/StrUtil.h                   |   90 -
+ src/ensc-core/src/Util/Stream.c                    |  393 -
+ src/ensc-core/src/Util/Stream.h                    |   65 -
+ src/ensc-core/src/Util/StringHash.c                |  377 -
+ src/ensc-core/src/Util/StringHash.h                |   62 -
+ src/ensc-core/src/Util/tplib.h                     |   46 -
+ src/ensc-core/src/Util/translate.c                 |  339 -
+ src/ensc-core/src/Util/translate.h                 |   30 -
+ 324 files changed, 0 insertions(+), 83441 deletions(-)
+
+2015-04-22  Steve Miller  <sm23@sanger.ac.uk>
+ some preparations for changing coordinate display to user - WIP
+ src/include/ZMap/zmapWindow.h           |    2 +
+ src/zmapWindow/zmapWindow.c             |   21 ++++
+ src/zmapWindow/zmapWindowDrawFeatures.c |    3 +-
+ src/zmapWindow/zmapWindowFeatureList.c  |  180 ++++++++++++++++++++++---------
+ src/zmapWindow/zmapWindowUtils.c        |   18 ++--
+ src/zmapWindow/zmapWindow_P.h           |    3 +-
+ 6 files changed, 165 insertions(+), 62 deletions(-)
+
+2015-04-22  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove spurious file - TRIVIAL
+ src/zmapConfig/zmapConfigLoader.c.~develop~ | 2139 ---------------------------
+ 1 files changed, 0 insertions(+), 2139 deletions(-)
+
+2015-04-22  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix build scripts to work with autogen change in 3d324ff - BUILD
+ scripts/build_config.sh |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-04-22  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Change gbtools options to make installing the default. - BUILD
+ src/autogen.sh |   42 +++++++++++++++++++++++++++---------------
+ 1 files changed, 27 insertions(+), 15 deletions(-)
+
+2015-04-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Use stable id as feature id - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   22 +++++++++++++---------
+ 1 files changed, 13 insertions(+), 9 deletions(-)
+
+2015-04-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix issue with empty feature names - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   25 ++++++++++++-------------
+ 1 files changed, 12 insertions(+), 13 deletions(-)
+
+2015-04-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Allow cigar strings with even number of operators - WIP
+ src/zmapFeature/zmapFeatureAlignment.c |   26 ++++++++++++++++++++++----
+ 1 files changed, 22 insertions(+), 4 deletions(-)
+
+2015-04-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix crash called by dialog message before gtk_init - REGRESSION FIX
+ src/zmapConfig/zmapConfigLoader.c           |    4 +-
+ src/zmapConfig/zmapConfigLoader.c.~develop~ | 2139 +++++++++++++++++++++++++++
+ 2 files changed, 2141 insertions(+), 2 deletions(-)
+
+2015-04-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Use dbname as source not displayname - WIP
+ src/zmapServer/ensembl/ensemblServer.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-04-21  Steve Miller  <sm23@sanger.ac.uk>
+ fix to remove unneccessary test in canvasWindowEventCB - BUG FIX
+ src/zmapWindow/zmapWindow.c |   34 ++++++----------------------------
+ 1 files changed, 6 insertions(+), 28 deletions(-)
+
+2015-04-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix incorrect free of constraint string - REGRESSION FIX
+ .../src/DataAdaptors/BaseFeatureAdaptor.c          |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+2015-04-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix reading of sql results following change in 63ba4a5 - REGRESSION FIX
+ .../src/DataAdaptors/DNAAlignFeatureAdaptor.c      |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-04-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix reading of sql results following change in 63ba4a5 - REGRESSION FIX
+ .../src/DataAdaptors/DNAAlignFeatureAdaptor.c      |   41 ++++++++++----------
+ 1 files changed, 21 insertions(+), 20 deletions(-)
+
+2015-04-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Exclude Programs subdir as it requires samtools_parallel - WIP
+ src/ensc-core/src/Makefile |   21 ++++++++++++---------
+ 1 files changed, 12 insertions(+), 9 deletions(-)
+
+2015-04-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove samtools_parallel reference - WIP
+ src/ensc-core/src/Makefile |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+2015-04-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove samtools_parallel - WIP
+ src/Makefile.am                               |    3 +-
+ src/samtools_parallel/.gitignore              |    4 -
+ src/samtools_parallel/AUTHORS                 |   20 -
+ src/samtools_parallel/COPYING                 |   21 -
+ src/samtools_parallel/ChangeLog               | 5948 -------------------------
+ src/samtools_parallel/ChangeLog.old           | 3875 ----------------
+ src/samtools_parallel/INSTALL                 |   30 -
+ src/samtools_parallel/Makefile                |  111 -
+ src/samtools_parallel/Makefile.am             |   22 -
+ src/samtools_parallel/Makefile.mingw          |   63 -
+ src/samtools_parallel/Makefile.orig           |  102 -
+ src/samtools_parallel/NEWS                    |  806 ----
+ src/samtools_parallel/README.md               |   36 -
+ src/samtools_parallel/bam.c                   |  478 --
+ src/samtools_parallel/bam.h                   |  826 ----
+ src/samtools_parallel/bam2bcf.c               |  353 --
+ src/samtools_parallel/bam2bcf.h               |   62 -
+ src/samtools_parallel/bam2bcf_indel.c         |  480 --
+ src/samtools_parallel/bam2depth.c             |  158 -
+ src/samtools_parallel/bam_aux.c               |  284 --
+ src/samtools_parallel/bam_cat.c               |  209 -
+ src/samtools_parallel/bam_color.c             |  145 -
+ src/samtools_parallel/bam_endian.h            |   42 -
+ src/samtools_parallel/bam_import.c            |  489 --
+ src/samtools_parallel/bam_index.c             |  728 ---
+ src/samtools_parallel/bam_lpileup.c           |  198 -
+ src/samtools_parallel/bam_mate.c              |  128 -
+ src/samtools_parallel/bam_md.c                |  389 --
+ src/samtools_parallel/bam_pileup.c            |  437 --
+ src/samtools_parallel/bam_plcmd.c             |  552 ---
+ src/samtools_parallel/bam_qa.c                |  254 --
+ src/samtools_parallel/bam_reheader.c          |   89 -
+ src/samtools_parallel/bam_rmdup.c             |  206 -
+ src/samtools_parallel/bam_rmdupse.c           |  159 -
+ src/samtools_parallel/bam_sort.c              |  661 ---
+ src/samtools_parallel/bam_stat.c              |   77 -
+ src/samtools_parallel/bam_tview.c             |  484 --
+ src/samtools_parallel/bamshuf.c               |  141 -
+ src/samtools_parallel/bamtk.c                 |  133 -
+ src/samtools_parallel/bcftools/.gitignore     |    1 -
+ src/samtools_parallel/bcftools/Makefile       |   51 -
+ src/samtools_parallel/bcftools/README         |   36 -
+ src/samtools_parallel/bcftools/bcf.c          |  365 --
+ src/samtools_parallel/bcftools/bcf.h          |  190 -
+ src/samtools_parallel/bcftools/bcf.tex        |   77 -
+ src/samtools_parallel/bcftools/bcf2qcall.c    |   91 -
+ src/samtools_parallel/bcftools/bcfutils.c     |  390 --
+ src/samtools_parallel/bcftools/call1.c        |  591 ---
+ src/samtools_parallel/bcftools/em.c           |  310 --
+ src/samtools_parallel/bcftools/fet.c          |  112 -
+ src/samtools_parallel/bcftools/index.c        |  335 --
+ src/samtools_parallel/bcftools/kfunc.c        |  162 -
+ src/samtools_parallel/bcftools/kmin.c         |  209 -
+ src/samtools_parallel/bcftools/kmin.h         |   46 -
+ src/samtools_parallel/bcftools/main.c         |  195 -
+ src/samtools_parallel/bcftools/mut.c          |  127 -
+ src/samtools_parallel/bcftools/prob1.c        |  580 ---
+ src/samtools_parallel/bcftools/prob1.h        |   42 -
+ src/samtools_parallel/bcftools/r2plot.lua     |   83 -
+ src/samtools_parallel/bcftools/vcf.c          |  244 -
+ src/samtools_parallel/bcftools/vcfutils.lua   |  694 ---
+ src/samtools_parallel/bcftools/vcfutils.pl    |  567 ---
+ src/samtools_parallel/bedcov.c                |  127 -
+ src/samtools_parallel/bedidx.c                |  162 -
+ src/samtools_parallel/bgzf.c                  |  666 ---
+ src/samtools_parallel/bgzf.h                  |  251 --
+ src/samtools_parallel/bgzip.c                 |  210 -
+ src/samtools_parallel/cut_target.c            |  193 -
+ src/samtools_parallel/errmod.c                |  130 -
+ src/samtools_parallel/errmod.h                |   24 -
+ src/samtools_parallel/examples/00README.txt   |   23 -
+ src/samtools_parallel/examples/Makefile       |   50 -
+ src/samtools_parallel/examples/Makefile.am    |   15 -
+ src/samtools_parallel/examples/bam2bed.c      |   51 -
+ src/samtools_parallel/examples/calDepth.c     |   62 -
+ src/samtools_parallel/examples/chk_indel.c    |   83 -
+ src/samtools_parallel/examples/ex1.fa         |   56 -
+ src/samtools_parallel/examples/ex1.sam.gz     |  Bin 114565 -> 0 bytes
+ src/samtools_parallel/examples/removeB.pl     |  148 -
+ src/samtools_parallel/examples/toy-B.sam      |    7 -
+ src/samtools_parallel/examples/toy.fa         |    4 -
+ src/samtools_parallel/examples/toy.sam        |   14 -
+ src/samtools_parallel/faidx.c                 |  432 --
+ src/samtools_parallel/faidx.h                 |  103 -
+ src/samtools_parallel/kaln.c                  |  486 --
+ src/samtools_parallel/kaln.h                  |   67 -
+ src/samtools_parallel/khash.h                 |  528 ---
+ src/samtools_parallel/klist.h                 |   96 -
+ src/samtools_parallel/knetfile.c              |  632 ---
+ src/samtools_parallel/knetfile.h              |   75 -
+ src/samtools_parallel/kprobaln.c              |  280 --
+ src/samtools_parallel/kprobaln.h              |   49 -
+ src/samtools_parallel/kseq.h                  |  235 -
+ src/samtools_parallel/ksort.h                 |  281 --
+ src/samtools_parallel/kstring.c               |  212 -
+ src/samtools_parallel/kstring.h               |  170 -
+ src/samtools_parallel/lsstack/COPYING         |  340 --
+ src/samtools_parallel/lsstack/Makefile        |   10 -
+ src/samtools_parallel/lsstack/Makefile.am     |   15 -
+ src/samtools_parallel/lsstack/README          |   23 -
+ src/samtools_parallel/lsstack/lsstack.c       |  948 ----
+ src/samtools_parallel/math/Makefile           |   15 -
+ src/samtools_parallel/math/ahmm.pdf           |  Bin 8296 -> 0 bytes
+ src/samtools_parallel/math/samtools.tex       |  786 ----
+ src/samtools_parallel/misc/.gitignore         |    7 -
+ src/samtools_parallel/misc/HmmGlocal.java     |  178 -
+ src/samtools_parallel/misc/Makefile           |   71 -
+ src/samtools_parallel/misc/Makefile.am        |   15 -
+ src/samtools_parallel/misc/ace2sam.c          |  249 --
+ src/samtools_parallel/misc/bamcheck.c         | 1399 ------
+ src/samtools_parallel/misc/blast2sam.pl       |   92 -
+ src/samtools_parallel/misc/bowtie2sam.pl      |   92 -
+ src/samtools_parallel/misc/export2sam.pl      |  545 ---
+ src/samtools_parallel/misc/interpolate_sam.pl |  125 -
+ src/samtools_parallel/misc/maq2sam.c          |  173 -
+ src/samtools_parallel/misc/md5.c              |  296 --
+ src/samtools_parallel/misc/md5.h              |   57 -
+ src/samtools_parallel/misc/md5fa.c            |   58 -
+ src/samtools_parallel/misc/novo2sam.pl        |  281 --
+ src/samtools_parallel/misc/plot-bamcheck      |  880 ----
+ src/samtools_parallel/misc/psl2sam.pl         |   65 -
+ src/samtools_parallel/misc/r2plot.lua         |   83 -
+ src/samtools_parallel/misc/sam2vcf.pl         |  270 --
+ src/samtools_parallel/misc/samtools.pl        |  528 ---
+ src/samtools_parallel/misc/soap2sam.pl        |  109 -
+ src/samtools_parallel/misc/varfilter.py       |  205 -
+ src/samtools_parallel/misc/vcfutils.lua       |  694 ---
+ src/samtools_parallel/misc/wgsim.c            |  419 --
+ src/samtools_parallel/misc/wgsim_eval.pl      |   91 -
+ src/samtools_parallel/misc/zoom2sam.pl        |   97 -
+ src/samtools_parallel/padding.c               |  159 -
+ src/samtools_parallel/pbgzip/.gitignore       |    1 -
+ src/samtools_parallel/pbgzip/Makefile         |   41 -
+ src/samtools_parallel/pbgzip/block.c          |  152 -
+ src/samtools_parallel/pbgzip/block.h          |   52 -
+ src/samtools_parallel/pbgzip/consumer.c       |  412 --
+ src/samtools_parallel/pbgzip/consumer.h       |   35 -
+ src/samtools_parallel/pbgzip/pbgzf.c          |  752 ----
+ src/samtools_parallel/pbgzip/pbgzf.h          |  147 -
+ src/samtools_parallel/pbgzip/pbgzip.c         |  151 -
+ src/samtools_parallel/pbgzip/queue.c          |  368 --
+ src/samtools_parallel/pbgzip/queue.h          |   88 -
+ src/samtools_parallel/pbgzip/reader.c         |  250 --
+ src/samtools_parallel/pbgzip/reader.h         |   26 -
+ src/samtools_parallel/pbgzip/util.c           |  106 -
+ src/samtools_parallel/pbgzip/util.h           |   13 -
+ src/samtools_parallel/pbgzip/writer.c         |  217 -
+ src/samtools_parallel/pbgzip/writer.h         |   28 -
+ src/samtools_parallel/phase.c                 |  687 ---
+ src/samtools_parallel/pstack-1.2/ChangeLog    |   35 -
+ src/samtools_parallel/pstack-1.2/Makefile     |   24 -
+ src/samtools_parallel/pstack-1.2/elf.c        |  723 ---
+ src/samtools_parallel/pstack-1.2/elfinfo.h    |  159 -
+ src/samtools_parallel/pstack-1.2/pstack.1     |   97 -
+ src/samtools_parallel/pstack-1.2/pstack.c     |  987 ----
+ src/samtools_parallel/radix.h                 |  112 -
+ src/samtools_parallel/razf.c                  |  853 ----
+ src/samtools_parallel/razf.h                  |  134 -
+ src/samtools_parallel/razip.c                 |  141 -
+ src/samtools_parallel/sam.c                   |  192 -
+ src/samtools_parallel/sam.h                   |   99 -
+ src/samtools_parallel/sam_header.c            |  976 ----
+ src/samtools_parallel/sam_header.h            |  302 --
+ src/samtools_parallel/sam_view.c              |  451 --
+ src/samtools_parallel/sample.c                |  107 -
+ src/samtools_parallel/sample.h                |   17 -
+ src/samtools_parallel/samtools.1              |  998 -----
+ src/samtools_parallel/win32/libcurses.a       |  Bin 114764 -> 0 bytes
+ src/samtools_parallel/win32/libz.a            |  Bin 74266 -> 0 bytes
+ src/samtools_parallel/win32/xcurses.h         | 1377 ------
+ src/samtools_parallel/win32/zconf.h           |  332 --
+ src/samtools_parallel/win32/zlib.h            | 1357 ------
+ 172 files changed, 1 insertions(+), 52996 deletions(-)
+
+2015-04-17  Steve Miller  <sm23@sanger.ac.uk>
+ fix to long feature and featureset names in the search results window - BUG FIX
+ src/zmapWindow/zmapWindowFeatureList.c |   30 ++++++++++++++++++++++++++++--
+ 1 files changed, 28 insertions(+), 2 deletions(-)
 
 2015-04-16  Gemma Barson  <gb10@sanger.ac.uk>
- Update gbtools README file - DOC
- src/gbtools/README |   11 +++++++++--
- 1 files changed, 9 insertions(+), 2 deletions(-)
+ Fix error with previous - REGRESSION FIX
+ .../src/DataAdaptors/MysqlStatementHandle.c        |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-2015-04-16  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add n/N shortcut key to get nucleotide sequence for a feature. - NEW FEATURE 'nucleotide shortcut key'
- src/zmapWindow/zmapWindow.c        |   24 +++++++++++-----
- src/zmapWindow/zmapWindowFeature.c |   52 +++++++++++++++++++++++------------
- src/zmapWindow/zmapWindow_P.h      |    8 ++---
- 3 files changed, 54 insertions(+), 30 deletions(-)
+2015-04-16  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix sql error fetching dna features - BUG FIX
+ .../src/DataAdaptors/DNAAlignFeatureAdaptor.c      |    6 +++---
+ .../src/DataAdaptors/MysqlStatementHandle.c        |    2 ++
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
-2015-04-16  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'feature/New_splices_for_Adam' into develop
-2015-04-16  Ed Griffiths  <edgrif@sanger.ac.uk>
- problem from merge of develop. - REGRESSION FIX
- .../canvas/zmapWindowContainerFeatureSet.c         |   17 +++++------------
+2015-04-16  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler warnings - TRIVIAL
+ src/zmapServer/ensembl/ensemblServer.c |  118 +++++++++++++++++--------------
+ 1 files changed, 65 insertions(+), 53 deletions(-)
+
+2015-04-14  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix error getting start before set - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   32 ++++++++++++++++++++++++++------
+ 1 files changed, 26 insertions(+), 6 deletions(-)
+
+2015-04-14  Gemma Barson  <gb10@sanger.ac.uk>
+ use so term as feature name if no other - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
+
+2015-04-14  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix to previous - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   13 +++----------
+ 1 files changed, 3 insertions(+), 10 deletions(-)
+
+2015-04-14  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix to previous - WIP
+ src/ensc-core/src/DataModel/SeqFeature.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-04-14  Gemma Barson  <gb10@sanger.ac.uk>
+ Get stable id - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   21 ++++++++++++++++++---
+ 1 files changed, 18 insertions(+), 3 deletions(-)
+
+2015-04-14  Gemma Barson  <gb10@sanger.ac.uk>
+ fix errors with previous - WIP
+ src/zmapServer/ensembl/ensemblServer.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+2015-04-14  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix error with exon coords - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   38 +++++++++++++++++--------------
+ 1 files changed, 21 insertions(+), 17 deletions(-)
+
+2015-04-14  Gemma Barson  <gb10@sanger.ac.uk>
+ Logging - FORMATTING ONLY
+ src/zmapServer/ensembl/ensemblServer.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+2015-04-14  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix error with previous - REGRESSION FIX
+ src/zmapView/zmapView.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-04-14  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix error with previous - REGRESSION FIX
+ .../src/DataAdaptors/BaseFeatureAdaptor.c          |    2 ++
+ src/zmapView/zmapView.c                            |    2 +-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
+
+2015-04-14  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/ensembl
+2015-04-14  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix potential null access - TRIVIAL
+ src/zmapView/zmapView.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+2015-04-07  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/ensembl
+2015-04-07  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove bad feature name - WIP
+ src/zmapServer/ensembl/ensemblServer.c |    3 ---
+ 1 files changed, 0 insertions(+), 3 deletions(-)
+
+2015-04-07  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compile error with previous - REGRESSION FIX
+ src/zmapServer/ensembl/ensemblServer.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2015-04-07  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug with feature name - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   16 ++++++++++++----
+ 1 files changed, 12 insertions(+), 4 deletions(-)
+
+2015-04-07  Gemma Barson  <gb10@sanger.ac.uk>
+ Cache db adaptors - WIP
+ src/zmapServer/ensembl/ensemblServer.c   |   94 +++++++++++++++++++-----------
+ src/zmapServer/ensembl/ensemblServer_P.h |    3 +
+ 2 files changed, 63 insertions(+), 34 deletions(-)
+
+2015-04-07  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix crash with unknown coord system - BUG FIX
+ src/ensc-core/src/DataAdaptors/SliceAdaptor.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
+
+2015-04-07  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor improvement to init code - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   17 +++++------------
  1 files changed, 5 insertions(+), 12 deletions(-)
 
-2015-04-16  Ed Griffiths  <edgrif@sanger.ac.uk>
- results of merge with develop. - TRIVIAL
- docs/user/user_interface.shtml             |   74 +++++-
- src/include/ZMap/zmapConfigStyleDefaults.h |   41 +++
- src/include/ZMap/zmapUtilsGUI.h            |    5 +-
- src/include/ZMap/zmapWindow.h              |   59 ++---
- src/zmapApp/zmapAppwindow.c                |    1 +
- src/zmapConfig/default_styles.txt          |    5 +
- src/zmapConfig/zmapConfigLoader.c          |   10 +-
- src/zmapUtils/zmapGUImenus.c               |   23 +-
- src/zmapView/zmapView.c                    |    7 +-
- src/zmapView/zmapViewCommand.c             |   12 +-
- src/zmapView/zmapViewScratch.c             |    6 +-
- src/zmapView/zmapView_P.h                  |   13 +-
- src/zmapWindow/Makefile.am                 |    1 +
- src/zmapWindow/canvas/README               |   20 +-
- src/zmapWindow/canvas/align_shape.txt      |    4 +
- src/zmapWindow/canvas/zmapWindowOldItems.c |    2 +-
- src/zmapWindow/zmapWindow.c                |  246 +++++++++++++----
- src/zmapWindow/zmapWindowCommand.c         |  110 +++-----
- src/zmapWindow/zmapWindowDisplayOps.c      |   12 +-
- src/zmapWindow/zmapWindowDrawFeatures.c    |   15 +-
- src/zmapWindow/zmapWindowFeature.c         |    2 +-
- src/zmapWindow/zmapWindowFeatureList.c     |  168 ++++--------
- src/zmapWindow/zmapWindowFocus.c           |   26 ++-
- src/zmapWindow/zmapWindowItem.c            |    4 +-
- src/zmapWindow/zmapWindowMenus.c           |  403 +++++++++++++++++++++++++++-
- src/zmapWindow/zmapWindowSeqDisp.c         |    4 +-
- src/zmapWindow/zmapWindow_P.h              |  152 ++++++++---
- 27 files changed, 1056 insertions(+), 369 deletions(-)
+2015-04-07  Gemma Barson  <gb10@sanger.ac.uk>
+ Avoid crash fetching sequence if sql result is empty - BUG FIX
+ src/ensc-core/src/DataAdaptors/SequenceAdaptor.c |   54 ++++++++++++++--------
+ 1 files changed, 34 insertions(+), 20 deletions(-)
 
-2015-04-16  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add support for splice match/no match markers. - NEW FEATURE 'New_splices_for_Adam'
- src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |  109 +-
- .../canvas/zmapWindowContainerFeatureSet.c         |  495 ++------
- .../canvas/zmapWindowContainerFeatureSet.h         |  115 ++-
- .../zmapWindowContainerFeatureSetFeatureFuncs.c    | 1406 ++++++++++++++++++++
- .../canvas/zmapWindowContainerFeatureSet_I.h       |   41 +-
- src/zmapWindow/canvas/zmapWindowContainerGroup.c   |   10 +-
- 6 files changed, 1652 insertions(+), 524 deletions(-)
+2015-04-02  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug with source not found - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
 
-2015-04-16  Ed Griffiths  <edgrif@sanger.ac.uk>
- result of merge with develop. - TRIVIAL
- src/zmapWindow/canvas/zmapWindowCanvasItem.h       |    8 ++++----
- src/zmapWindow/canvas/zmapWindowCanvasItem_I.h     |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasSequence.c   |   12 ++++++------
- src/zmapWindow/canvas/zmapWindowCanvasSequence_I.h |    2 +-
- 4 files changed, 12 insertions(+), 12 deletions(-)
+2015-04-02  Gemma Barson  <gb10@sanger.ac.uk>
+ Check for null pointers - WIP
+ src/zmapServer/ensembl/ensemblServer.c |  147 ++++++++++++++++++++-----------
+ 1 files changed, 95 insertions(+), 52 deletions(-)
 
-2015-04-16  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add code to support splice match glyphs. - NEW FEATURE 'New_splices_for_Adam'
- src/zmapWindow/canvas/zmapWindowCanvasGlyph.c   |  776 ++++++++++++++++-------
- src/zmapWindow/canvas/zmapWindowCanvasGlyph.h   |   56 ++-
- src/zmapWindow/canvas/zmapWindowCanvasGlyph_I.h |   32 +-
- 3 files changed, 590 insertions(+), 274 deletions(-)
+2015-04-02  Gemma Barson  <gb10@sanger.ac.uk>
+ Add prediction transcripts - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   84 ++++++++++++++++++++++++++++----
+ 1 files changed, 74 insertions(+), 10 deletions(-)
 
-2015-04-16  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add code to support showing good/bad matches for splices. - NEW FEATURE 'New_splices_for_Adam'
- src/zmapWindow/canvas/zmapWindowCanvasAlignment.c  |  133 +++----
- src/zmapWindow/canvas/zmapWindowCanvasBasic.c      |  136 +++----
- src/zmapWindow/canvas/zmapWindowCanvasDraw.c       |   98 +++++
- src/zmapWindow/canvas/zmapWindowCanvasFeature.c    |   19 +-
- src/zmapWindow/canvas/zmapWindowCanvasFeature.h    |    8 +-
- src/zmapWindow/canvas/zmapWindowCanvasFeature_I.h  |    4 +
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |  395 +++++++++++++++++---
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.h |   14 +-
- 8 files changed, 577 insertions(+), 230 deletions(-)
+2015-04-01  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor update to configure - BUILD
+ src/configure.ac |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-2015-04-16  Ed Griffiths  <edgrif@sanger.ac.uk>
- from a merge update. - TRIVIAL
- src/include/ZMap/zmapStyle.h     |   82 ++++++++----
- src/zmapFeature/zmapStyle.c      |  259 +++++++++++++++++++-------------------
- src/zmapFeature/zmapStyleUtils.c |    6 +-
- src/zmapFeature/zmapStyle_P.h    |    2 +-
- 4 files changed, 189 insertions(+), 160 deletions(-)
-
-2015-04-16  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add functions to support boundary matches. - NEW FEATURE 'New_splices_for_Adam'
- src/include/ZMap/zmapFeature.h           |  184 ++++++++--
- src/zmapFeature/zmapFeature.c            |    4 +-
- src/zmapFeature/zmapFeatureAlignment.c   |  164 +++++++--
- src/zmapFeature/zmapFeatureBasic.c       |   43 ++-
- src/zmapFeature/zmapFeatureData.c        |  609 ++++++++++++++++++++++++------
- src/zmapFeature/zmapFeatureFormatInput.c |   14 +-
- src/zmapFeature/zmapFeatureParams.c      |   10 +-
- src/zmapFeature/zmapFeatureTranscript.c  |  455 +++++++++++++++++++----
- src/zmapFeature/zmapFeatureUtils.c       |  106 +-----
- src/zmapFeature/zmapFeature_P.h          |   37 ++-
- 10 files changed, 1231 insertions(+), 395 deletions(-)
-
-2015-01-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- "add zmap-clean target."
- src/Makefile.am |   10 +++++++++-
- 1 files changed, 9 insertions(+), 1 deletions(-)
-
-2015-04-16  Steve Miller  <sm23@sanger.ac.uk>
- bug fix for long feature and featureset names in right-click menus - RT 463363
- src/zmapWindow/zmapWindowMenus.c |   59 +++++++++++++++++++++++++++++++------
- 1 files changed, 49 insertions(+), 10 deletions(-)
-
-2015-04-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix up formatting which has somehow gone awry. - FORMATTING ONLY
- src/zmapServer/pipe/pipeServer.c |   23 ++++---
- src/zmapServer/zmapServer.c      |  130 +++++++++++++++++++-------------------
- src/zmapThreads/zmapSlave.c      |   22 +++---
- 3 files changed, 88 insertions(+), 87 deletions(-)
-
-2015-04-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add more debug messages to try to understand long start up timeout on mac. - BUG FIX
- src/zmapApp/zmapAppwindow.c |   90 +++++++++++++++++++++++--------------------
- 1 files changed, 48 insertions(+), 42 deletions(-)
-
-2015-04-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- add removal of autom4te.cache directory to maintainer-clean target. - BUILD
- src/Makefile.am |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-2015-04-13  Steve Miller  <sm23@sanger.ac.uk>
- fix for the second part of the ticket - RT 462835
- src/zmapView/zmapViewRemoteControl.c |    5 +-
- src/zmapWindow/zmapWindowList.c      |  115 ++++++++++++++--------------------
- 2 files changed, 49 insertions(+), 71 deletions(-)
-
-2015-04-13  Steve Miller  <sm23@sanger.ac.uk>
- fix to first part of the problem - RT 462835
- src/zmapWindow/zmapWindow.c |  159 ++++++++++++++++++------------------------
- 1 files changed, 68 insertions(+), 91 deletions(-)
-
-2015-04-10  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'feature/column_hide' into develop
-2015-04-10  Steve Miller  <sm23@sanger.ac.uk>
- some final tidying - NEW FEATURE 'column_hide'
- src/zmapView/zmapViewRemoteControl.c               |    7 +++++++
- .../canvas/zmapWindowContainerFeatureSet.c         |    6 ++----
- src/zmapWindow/zmapWindowDrawFeatures.c            |    3 ---
- 3 files changed, 9 insertions(+), 7 deletions(-)
-
-2015-04-10  Steve Miller  <sm23@sanger.ac.uk>
- code in place; needs some more thorough testing - NEW FEATURE 'column_hide'
- src/include/ZMap/zmapWindow.h                      |    3 +
- src/zmapView/zmapViewRemoteControl.c               |   21 ++++-
- .../canvas/zmapWindowContainerFeatureSet.c         |   87 ++++++++++++++++++++
- .../canvas/zmapWindowContainerFeatureSet.h         |    3 +
- src/zmapWindow/zmapWindowColConfig.c               |   30 ++++----
- src/zmapWindow/zmapWindowDraw.c                    |   56 +++++++++----
- src/zmapWindow/zmapWindowDrawFeatures.c            |    6 ++
- 7 files changed, 169 insertions(+), 37 deletions(-)
-
-2015-04-09  Steve Miller  <sm23@sanger.ac.uk>
- framework for new commands has been added - NEW FEATURE 'column_hide'
- src/zmapView/zmapViewRemoteControl.c |   30 +++++++++++++++---------------
- 1 files changed, 15 insertions(+), 15 deletions(-)
-
-2015-04-08  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'develop' into feature/column_hide
-2015-04-08  Steve Miller  <sm23@sanger.ac.uk>
- bug fix to server return codes - BUG FIX
- src/zmapServer/file/fileServer.c |    2 +-
- src/zmapServer/pipe/pipeServer.c |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-04-08  Steve Miller  <sm23@sanger.ac.uk>
- partial fix with bits of new command added to view code - NEW FEATURE 'column_hide'
- src/include/ZMap/zmapRemoteProtocol.h     |   22 ++--
- src/zmapRemoteControl/zmapRemoteCommand.c |  162 +++++++++++++++--------------
- src/zmapView/zmapViewRemoteControl.c      |   80 ++++++++++++++-
- 3 files changed, 173 insertions(+), 91 deletions(-)
-
-2015-04-08  Steve Miller  <sm23@sanger.ac.uk>
- zoom_to_item flag was not set, thus calls to buggy code were made - RT 461328
- src/zmapWindow/zmapWindowNavigatorMenus.c |   16 ++++++++--------
- src/zmapWindow/zmapWindowSearch.c         |   11 -----------
- 2 files changed, 8 insertions(+), 19 deletions(-)
-
-2015-04-07  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'feature/loading_errors' into develop
-2015-04-07  Steve Miller  <sm23@sanger.ac.uk>
- final changes to make this work - NEW FEATURE 'feature_loading_complete message'
- src/include/ZMap/zmapServerProtocol.h      |    1 -
- src/zmapServer/file/fileServer.c           |   41 +++++++++++++++++++++-------
- src/zmapServer/pipe/pipeServer.c           |   13 ++++-----
- src/zmapServer/zmapServerProtocolHandler.c |    1 -
- src/zmapView/zmapView.c                    |    7 +----
- 5 files changed, 38 insertions(+), 25 deletions(-)
-
-2015-04-07  Steve Miller  <sm23@sanger.ac.uk>
- partial fix within pipeServer code - NEW FEATURE 'feature_loading_complete message'
- src/include/ZMap/zmapGFF.h                 |    1 +
- src/include/ZMap/zmapServerProtocol.h      |   11 +-
- src/zmapGFF/zmapGFFGeneral.c               |   34 ++-
- src/zmapServer/pipe/pipeServer.c           |  636 ++++++++++++++--------------
- src/zmapServer/zmapServerProtocolHandler.c |   17 +-
- src/zmapView/zmapView.c                    |  173 ++++----
- 6 files changed, 431 insertions(+), 441 deletions(-)
-
-2015-04-01  Steve Miller  <sm23@sanger.ac.uk>
- added new return codes for server and thread; did some formatting on zmapView.c - NEW FEATURE 'feature_loading_complete message'
- src/include/ZMap/zmapServerProtocol.h      |   27 +-
- src/include/ZMap/zmapThreads.h             |   42 +-
- src/zmapServer/zmapServerProtocolHandler.c |  521 ++--
- src/zmapThreads/zmapSlave.c                |    1 +
- src/zmapView/zmapView.c                    | 3958 ++++++++++++++--------------
- 5 files changed, 2292 insertions(+), 2257 deletions(-)
-
-2015-04-01  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'develop' into feature/loading_errors
-2015-04-01  Steve Miller  <sm23@sanger.ac.uk>
- change to v2 and v3 parsers to count lines of different types - NEW FEATURE 'feature_loading_complete message'
- src/include/ZMap/zmapGFF.h   |   10 +++
- src/zmapGFF/zmapGFF2parser.c |  146 ++++++++++++++++++++++--------------------
- src/zmapGFF/zmapGFF3parser.c |  126 ++++++++++++++++++++++++------------
- src/zmapGFF/zmapGFFGeneral.c |  106 +++++++++++++++++++++++++++---
- src/zmapGFF/zmapGFF_P.h      |    6 ++-
- 5 files changed, 273 insertions(+), 121 deletions(-)
-
-2015-04-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- Remove unnecessary macros + tidy up. - BUILD
- src/Makefile.am  |    1 -
- src/configure.ac |    2 --
- 2 files changed, 0 insertions(+), 3 deletions(-)
+2015-04-01  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove free which causes crash - WIP
+ src/zmapServer/ensembl/ensemblServer.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
 2015-03-31  Gemma Barson  <gb10@sanger.ac.uk>
- Add trusty build - BUILD
- scripts/zmap_compile_and_tar.sh |   28 +++++++++++++++-------------
- 1 files changed, 15 insertions(+), 13 deletions(-)
+ Remove more large stack buffers - WIP
+ src/ensc-core/src/Programs/RefineSolexaGenes.c |   20 +++++++++++++++-----
+ 1 files changed, 15 insertions(+), 5 deletions(-)
 
-2015-03-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'production' into develop
-2015-03-26  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'production' into develop
-2015-03-26  Steve Miller  <sm23@sanger.ac.uk>
- fix to gap string parsing - BUG FIX
+2015-03-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Add exon data to transcript - NEW FEATURE 'exons'
+ src/zmapServer/ensembl/ensemblServer.c |   15 +++++----------
+ 1 files changed, 5 insertions(+), 10 deletions(-)
+
+2015-03-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove large stack variables to fix stack overflow - BUG FIX
+ .../src/Compara/DataAdaptors/GenomicAlignAdaptor.c |    7 +++-
+ src/ensc-core/src/DataAdaptors/BaseAdaptor.c       |   32 ++++++++++++++---
+ .../src/DataAdaptors/BaseFeatureAdaptor.c          |   35 +++++++++++++++++--
+ src/ensc-core/src/DataAdaptors/GeneAdaptor.c       |    8 ++++-
+ .../src/DataAdaptors/MysqlStatementHandle.c        |    9 ++---
+ .../src/DataAdaptors/PredictionTranscriptAdaptor.c |    8 ++++-
+ .../src/DataAdaptors/RepeatConsensusAdaptor.c      |   22 +++++++++++--
+ .../src/DataAdaptors/SupportingFeatureAdaptor.c    |    8 ++++-
+ src/ensc-core/src/DataAdaptors/TranscriptAdaptor.c |   20 ++++++++---
+ .../src/DataAdaptors/TranslationAdaptor.c          |   18 +++++++++-
+ src/ensc-core/src/DataModel/Exon.c                 |   10 +++++-
+ 11 files changed, 147 insertions(+), 30 deletions(-)
+
+2015-03-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compile errors - REGRESSION FIX
+ src/ensc-core/src/DataAdaptors/AnalysisAdaptor.c |    2 +-
+ src/ensc-core/src/DataAdaptors/DBEntryAdaptor.c  |    4 ++--
+ src/zmapFeature/zmapFeatureUtils.c               |    4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+2015-03-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compile errors with previous - REGRESSION FIX
+ src/ensc-core/src/DataAdaptors/AnalysisAdaptor.c   |    2 +-
+ src/ensc-core/src/DataAdaptors/AttributeAdaptor.c  |    4 ++--
+ src/ensc-core/src/DataAdaptors/SliceAdaptor.c      |    2 +-
+ .../src/DataAdaptors/SupportingFeatureAdaptor.c    |    8 ++++----
+ src/ensc-core/src/DataAdaptors/TranscriptAdaptor.c |    4 ++--
+ .../TranscriptSupportingFeatureAdaptor.c           |    8 ++++----
+ 6 files changed, 14 insertions(+), 14 deletions(-)
+
+2015-03-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Experimental: rename dodgy function - WIP
+ .../src/Compara/DataAdaptors/DNAFragAdaptor.c      |   10 ++--
+ .../src/Compara/DataAdaptors/GenomeDBAdaptor.c     |   10 ++--
+ .../src/Compara/DataAdaptors/GenomicAlignAdaptor.c |   10 ++--
+ .../src/Compara/DataAdaptors/HomologyAdaptor.c     |    8 +-
+ .../src/Compara/DataAdaptors/SyntenyAdaptor.c      |    2 +-
+ .../Compara/DataAdaptors/SyntenyRegionAdaptor.c    |    6 +-
+ src/ensc-core/src/DataAdaptors/AnalysisAdaptor.c   |   10 ++--
+ .../src/DataAdaptors/AssemblyMapperAdaptor.c       |   22 ++++----
+ src/ensc-core/src/DataAdaptors/AttributeAdaptor.c  |    6 +-
+ src/ensc-core/src/DataAdaptors/BaseAdaptor.c       |    6 +-
+ .../src/DataAdaptors/BaseFeatureAdaptor.c          |   10 ++--
+ src/ensc-core/src/DataAdaptors/ChromosomeAdaptor.c |    4 +-
+ src/ensc-core/src/DataAdaptors/CloneAdaptor.c      |    2 +-
+ .../src/DataAdaptors/CoordSystemAdaptor.c          |    6 +-
+ src/ensc-core/src/DataAdaptors/DBEntryAdaptor.c    |   24 ++++----
+ .../src/DataAdaptors/DNAAlignFeatureAdaptor.c      |    6 +-
+ src/ensc-core/src/DataAdaptors/ExonAdaptor.c       |   12 ++--
+ src/ensc-core/src/DataAdaptors/GeneAdaptor.c       |   62 ++++++++++----------
+ .../DataAdaptors/IntronSupportingEvidenceAdaptor.c |   12 ++--
+ src/ensc-core/src/DataAdaptors/MetaContainer.c     |    8 +-
+ .../src/DataAdaptors/MetaCoordContainer.c          |   10 ++--
+ .../src/DataAdaptors/MysqlStatementHandle.c        |    2 +-
+ .../src/DataAdaptors/PredictionExonAdaptor.c       |    4 +-
+ .../src/DataAdaptors/PredictionTranscriptAdaptor.c |    8 +-
+ .../src/DataAdaptors/ProteinAlignFeatureAdaptor.c  |    2 +-
+ src/ensc-core/src/DataAdaptors/RawContigAdaptor.c  |    4 +-
+ .../src/DataAdaptors/RepeatConsensusAdaptor.c      |    4 +-
+ .../src/DataAdaptors/RepeatFeatureAdaptor.c        |    2 +-
+ src/ensc-core/src/DataAdaptors/SequenceAdaptor.c   |    6 +-
+ .../src/DataAdaptors/SimpleFeatureAdaptor.c        |    2 +-
+ src/ensc-core/src/DataAdaptors/SliceAdaptor.c      |   44 +++++++-------
+ src/ensc-core/src/DataAdaptors/StatementHandle.h   |    2 +-
+ .../src/DataAdaptors/SupportingFeatureAdaptor.c    |    4 +-
+ src/ensc-core/src/DataAdaptors/TranscriptAdaptor.c |   36 ++++++------
+ .../TranscriptSupportingFeatureAdaptor.c           |    2 +-
+ .../src/DataAdaptors/TranslationAdaptor.c          |   16 +++---
+ src/ensc-core/src/Programs/bammap.c                |    4 +-
+ src/ensc-core/src/Tests/EnsCTestDB.c               |    2 +-
+ src/ensc-core/src/Tests/SliceAdaptorTest.c         |    2 +-
+ 39 files changed, 196 insertions(+), 196 deletions(-)
+
+2015-03-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix a bug where default styles are not found - WIP
+ src/zmapFeature/zmapFeatureUtils.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+2015-03-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Refactoring experiment - WIP
+ src/zmapServer/ensembl/ensemblServer.c   |  171 ++++++++++++++++++++----------
+ src/zmapServer/ensembl/ensemblServer_P.h |    3 -
+ 2 files changed, 116 insertions(+), 58 deletions(-)
+
+2015-03-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Tidying - FORMATTING ONLY
+ src/zmapServer/ensembl/ensemblServer.c |   14 --------------
+ 1 files changed, 0 insertions(+), 14 deletions(-)
+
+2015-03-30  Gemma Barson  <gb10@sanger.ac.uk>
+ Add function to get transcripts by gene - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   72 +++++++++++++++++++++++++++++++-
+ 1 files changed, 71 insertions(+), 1 deletions(-)
+
+2015-03-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler warnings - BUILD
+ src/zmapApp/zmapAppManager.c                   |    4 ---
+ src/zmapApp/zmapAppmanagepanel.c               |    3 +-
+ src/zmapApp/zmapAppwindow.c                    |   10 +++----
+ src/zmapConfig/zmapConfigLoader.c              |    8 +----
+ src/zmapControl/zmapControl.c                  |    2 -
+ src/zmapControl/zmapControlImportFile.c        |    3 ++
+ src/zmapControl/zmapControlPreferences.c       |   22 +++++++--------
+ src/zmapControl/zmapControlRemoteControl.c     |    6 ++--
+ src/zmapControl/zmapControlViews.c             |   22 ++-------------
+ src/zmapControl/zmapControlWindowButtons.c     |    4 +-
+ src/zmapDAS/zmapDAS1Parser.c                   |    4 +--
+ src/zmapFeature/zmapFeature.c                  |   33 +++++++++--------------
+ src/zmapFeature/zmapFeature3FrameTranslation.c |    5 +++-
+ src/zmapFeature/zmapFeatureAlignment.c         |    3 +-
+ src/zmapFeature/zmapFeatureContext.c           |    4 +++
+ src/zmapFeature/zmapFeatureParams.c            |    2 -
+ src/zmapFeature/zmapFeatureTranscript.c        |    5 ---
+ src/zmapFeature/zmapFeatureUtils.c             |    8 +----
+ src/zmapFeature/zmapFeature_P.h                |    2 +-
+ src/zmapFeature/zmapStyle.c                    |    3 --
+ src/zmapFeature/zmapStyleObj.c                 |    2 -
+ src/zmapGFF/zmapGFF2Dumper.c                   |    1 -
+ 22 files changed, 54 insertions(+), 102 deletions(-)
+
+2015-03-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler warning in ensc-core - BUILD
+ src/ensc-core/src/Util/SeqUtil.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-03-27  Gemma Barson  <gb10@sanger.ac.uk>
+ use pthread mutex instead of glib - TRIVIAL
+ src/zmapServer/ensembl/ensemblServer.c   |   21 +++++++++------------
+ src/zmapServer/ensembl/ensemblServer_P.h |    3 ++-
+ 2 files changed, 11 insertions(+), 13 deletions(-)
+
+2015-03-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Re-enable error logging for unreadable config values - TRIVIAL
+ src/zmapConfig/zmapConfigKey.c |   11 ++++-------
+ 1 files changed, 4 insertions(+), 7 deletions(-)
+
+2015-03-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Don't destroy zmap config if fail to read - WIP
+ src/zmapConfig/zmapConfigLoader.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+2015-03-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Improve error message - WIP
+ src/zmapConfig/zmapConfigLoader.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+2015-03-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Add exons - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   31 +++++++++++++++++++++++++++++++
+ 1 files changed, 31 insertions(+), 0 deletions(-)
+
+2015-03-27  Gemma Barson  <gb10@sanger.ac.uk>
+ Report warning when config file contains error - NEW FEATURE 'warnings'
+ src/zmapConfig/zmapConfigLoader.c |   15 +++++++++++++--
+ 1 files changed, 13 insertions(+), 2 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor change to make sure vars are init'd - TRIVIAL
+ src/zmapUtils/zmapGUIutils.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Add transcript ext name access function - TRIVIAL
+ src/ensc-core/src/DataModel/Transcript.h |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor fixes to transcript details - WIP
+ src/zmapServer/ensembl/ensemblServer.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Add transcript features - NEW FEATURE 'transcripts'
+ src/zmapServer/ensembl/ensemblServer.c |   58 +++++++++++++++++++++++++++++---
+ 1 files changed, 53 insertions(+), 5 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix type conversion warning - TRIVIAL
+ src/ensc-core/src/DataModel/Transcript.h |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bugs with repeat feature copy - REGRESSION FIX
+ src/ensc-core/src/DataModel/RepeatFeature.h     |    3 ++-
+ src/ensc-core/src/DataModel/SeqFeatureFactory.c |    1 +
+ 2 files changed, 3 insertions(+), 1 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Refactoring - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   80 +++++++++++++++-----------------
+ 1 files changed, 38 insertions(+), 42 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Add shallow copy for repeat features - WIP
+ src/ensc-core/src/DataModel/RepeatFeature.c     |    8 ++++++++
+ src/ensc-core/src/DataModel/RepeatFeature.h     |    1 +
+ src/ensc-core/src/DataModel/SeqFeatureFactory.c |    3 +++
+ 3 files changed, 12 insertions(+), 0 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Add repeat feature to seqfeaturefactory - WIP
+ src/ensc-core/src/DataModel/SeqFeatureFactory.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix error with previous - REGRESSION FIX
+ src/zmapServer/ensembl/ensemblServer.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Refactoring - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   72 +++++++++++++++----------------
+ 1 files changed, 35 insertions(+), 37 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug with previous - REGRESSION FIX
+ src/zmapServer/ensembl/ensemblServer.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ set SO term for simple features - WIP
+ src/zmapServer/ensembl/ensemblServer.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Refactoring - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   69 +++++++++++++++-----------------
+ 1 files changed, 32 insertions(+), 37 deletions(-)
+
+2015-03-26  Gemma Barson  <gb10@sanger.ac.uk>
+ Start to add other feature types - WIP
+ src/zmapServer/ensembl/ensemblServer.c |  324 ++++++++++++++------------------
+ 1 files changed, 140 insertions(+), 184 deletions(-)
+
+2015-03-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug with parsing cigar strings with only 1 operator - BUG FIX
  src/zmapFeature/zmapFeatureAlignment.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-2015-03-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add -g flag to copy in gbtools to src dir. - BUILD
- src/autogen.sh |   39 ++++++++++++++++++++++++++++++++-------
- 1 files changed, 32 insertions(+), 7 deletions(-)
+2015-03-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug with previous - REGRESSION FIX
+ src/zmapServer/ensembl/ensemblServer.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-2015-03-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- "Add entry for gbtools/README." - BUILD
- src/.gitignore |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+2015-03-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Create proper unique ids - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   19 +++++++++++++------
+ 1 files changed, 13 insertions(+), 6 deletions(-)
 
-2015-03-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add README to document gbtools and zmap build. - BUILD
- src/gbtools/README |   12 ++++++++++++
- 1 files changed, 12 insertions(+), 0 deletions(-)
+2015-03-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug with lookup of styles - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   42 ++++++++-----------------------
+ 1 files changed, 11 insertions(+), 31 deletions(-)
 
-2015-03-24  Steve Miller  <sm23@sanger.ac.uk>
- small change to clipping logic for alignment features (related to rt:417362) - BUG FIX
- src/zmapGFF/zmapGFF3parser.c |    5 ++---
- 1 files changed, 2 insertions(+), 3 deletions(-)
-
-2015-03-24  Gemma Barson  <gb10@sanger.ac.uk>
- Fix c++ compiler warnings - BUILD
- src/include/ZMap/zmapCmdLineArgs.h    |    2 +-
- src/include/ZMap/zmapStyle.h          |    4 ++--
- src/include/ZMap/zmapUtils.h          |    2 +-
- src/include/ZMap/zmapUtilsLog.h       |    6 +++---
- src/include/ZMap/zmapUtilsMesg.h      |    2 +-
- src/zmapControl/zmapControlWindow.cpp |    4 ++--
- src/zmapFeature/zmapStyleObj.c        |    4 ++--
- src/zmapUtils/zmapCmdLineArgs.c       |    2 +-
- src/zmapUtils/zmapFileUtils.c         |    2 +-
- src/zmapUtils/zmapGUIutils.c          |    2 +-
- src/zmapUtils/zmapLogging.c           |    6 +++---
- 11 files changed, 18 insertions(+), 18 deletions(-)
-
-2015-03-24  Ed Griffiths  <edgrif@sanger.ac.uk>
- Minor tweak to Steve's fix for broken lasso feature selection. - BUG FIX
- src/zmapWindow/zmapWindow.c           |   11 +++-
- src/zmapWindow/zmapWindowDisplayOps.c |   94 +--------------------------------
- 2 files changed, 9 insertions(+), 96 deletions(-)
-
-2015-03-24  Gemma Barson  <gb10@sanger.ac.uk>
- Add gbtools gitignore file because subdir must exist for SUBDIRS config - BUILD
- src/.gitignore         |    4 ++++
+2015-03-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix spurious warnings about featureset not found - BUG FIX
+ src/zmapWindow/zmapWindowDrawFeatures.c |    4 ++++
  1 files changed, 4 insertions(+), 0 deletions(-)
 
-2015-03-24  Gemma Barson  <gb10@sanger.ac.uk>
- Improve the way we configure the gbtools subdir - BUILD
- src/autogen.sh         |   11 +++++++++++
- src/configure.ac       |    5 ++++-
- src/gbtools/.gitignore |    7 -------
- 3 files changed, 15 insertions(+), 8 deletions(-)
-
-2015-03-24  Steve Miller  <sm23@sanger.ac.uk>
- missing alignment features now correctly included in zmap - RT 417362
- src/zmapGFF/zmapGFF3parser.c |   13 +++++--------
- 1 files changed, 5 insertions(+), 8 deletions(-)
-
-2015-03-19  Steve Miller  <sm23@sanger.ac.uk>
- fix for lasso select evidence on test release - RT 458109
- src/zmapWindow/zmapWindowDisplayOps.c |   56 ++++++++++++++++----------------
- 1 files changed, 28 insertions(+), 28 deletions(-)
-
-2015-03-18  Gemma Barson  <gb10@sanger.ac.uk>
- Fix incorrect arg order - BUILD
- scripts/zmap_build_development.sh |    2 +-
- scripts/zmap_build_feature.sh     |    2 +-
- scripts/zmap_build_one_off.sh     |    2 +-
- scripts/zmap_build_overnight.sh   |    2 +-
- scripts/zmap_build_production.sh  |    2 +-
- scripts/zmap_build_release.sh     |    2 +-
- 6 files changed, 6 insertions(+), 6 deletions(-)
-
-2015-03-18  Gemma Barson  <gb10@sanger.ac.uk>
- Fix missing args for gbtools - BUILD
- scripts/zmap_build_development.sh |    7 ++++++-
- scripts/zmap_build_feature.sh     |    7 ++++++-
- scripts/zmap_build_one_off.sh     |    7 ++++++-
- scripts/zmap_build_overnight.sh   |    7 ++++++-
- scripts/zmap_build_production.sh  |    7 ++++++-
- scripts/zmap_build_release.sh     |    4 ++--
- scripts/zmap_master_build         |    4 ++--
- 7 files changed, 34 insertions(+), 9 deletions(-)
-
-2015-03-18  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'feature/gbtools' into develop
-2015-03-18  Gemma Barson  <gb10@sanger.ac.uk>
- Make gbtools optional in build scripts - BUILD
- scripts/build_bootstrap.sh    |   20 +++++++++++---------
- scripts/build_run.sh          |   12 ++++++++++--
- scripts/zmap_build_release.sh |    5 +++++
- scripts/zmap_master_build     |   23 +++++++++++++----------
- 4 files changed, 39 insertions(+), 21 deletions(-)
-
-2015-03-18  Steve Miller  <sm23@sanger.ac.uk>
- added the feature source to the Feature Details window - RT 457778
- src/zmapWindow/zmapWindowFeatureShow.c |   30 ++++++++++++++++++------------
- 1 files changed, 18 insertions(+), 12 deletions(-)
-
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'develop' into feature/gbtools
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Remove gbtools directory before creating copy - BUILD
- scripts/build_bootstrap.sh |    8 +++++++-
- scripts/zmap_master_build  |    7 ++++++-
- 2 files changed, 13 insertions(+), 2 deletions(-)
-
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Use main gbtools header - BUILD
- src/zmapControl/zmapControlWindow.cpp    |    2 +-
- src/zmapWindow/zmapWindowFeatureShow.cpp |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Minor update to main gitignore - TRIVIAL
- src/.gitignore |    1 +
+2015-03-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Attempt to fix problem with features not showing - WIP
+ src/zmapView/zmapView.c |    1 +
  1 files changed, 1 insertions(+), 0 deletions(-)
 
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Add gbtools gitignore - TRIVIAL
- src/gbtools/.gitignore |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
+2015-03-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix configure warning - BUILD
+ src/configure.ac |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
 
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Another fix for gbtools include location - BUILD
- src/Makefile.common |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+2015-03-25  Gemma Barson  <gb10@sanger.ac.uk>
+ Refactoring - WIP
+ src/zmapServer/ensembl/ensemblServer.c |  217 ++++++++++++++++----------------
+ 1 files changed, 108 insertions(+), 109 deletions(-)
 
-2015-03-17  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'feature/bump_bug' into develop
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Add gbtools include directory - BUILD
- src/Makefile.common |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
-
-2015-03-17  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'develop' into feature/bump_bug
-2015-03-17  Steve Miller  <sm23@sanger.ac.uk>
- added error logging to previous fix - BUG FIX
- src/zmapWindow/zmapWindowDrawFeatures.c |   14 ++++++--------
- 1 files changed, 6 insertions(+), 8 deletions(-)
-
-2015-03-17  Steve Miller  <sm23@sanger.ac.uk>
- fix to bumping bug when column has featuresets with different properties - RT 371426
- src/zmapWindow/zmapWindowDrawFeatures.c |  121 +++++++++++++++++--------------
- 1 files changed, 66 insertions(+), 55 deletions(-)
-
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Fix second checkout of zmap repo to contain gbtools - WIP
- scripts/build_bootstrap.sh |   13 ++++++++++---
- 1 files changed, 10 insertions(+), 3 deletions(-)
-
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Fix another bug with recent changes - REGRESSION FIX
- scripts/zmap_master_build |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
-
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Fix bug with reading script arg value - REGRESSION FIX
- scripts/zmap_master_build |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Fix bug with previous change due to typo in variable name - REGRESSION FIX
- scripts/zmap_master_build |    4 ++--
+2015-03-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/ensembl
+2015-03-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/ensembl
+2015-03-23  Gemma Barson  <gb10@sanger.ac.uk>
+ logging - TRIVIAL
+ src/zmapServer/ensembl/ensemblServer.c |    4 ++--
  1 files changed, 2 insertions(+), 2 deletions(-)
 
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Fix missing script arg for previous change - REGRESSION FIX
- scripts/zmap_master_build |    2 +-
+2015-03-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Add gaps array to alignments - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   73 ++++++++++++++++++++------------
+ 1 files changed, 46 insertions(+), 27 deletions(-)
+
+2015-03-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix minor error in logging - TRIVIAL
+ src/zmapServer/ensembl/ensemblServer.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-2015-03-17  Gemma Barson  <gb10@sanger.ac.uk>
- Add gbtools to automated build script - BUILD
- scripts/zmap_master_build |   15 ++++++++++++++-
- 1 files changed, 14 insertions(+), 1 deletions(-)
+2015-03-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compile error with previous - REGRESSION FIX
+ src/zmapServer/ensembl/ensemblServer.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-2015-03-16  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'feature/manual' into develop
-2015-03-16  Gemma Barson  <gb10@sanger.ac.uk>
- Specify docs to install explicityly - DOC
- src/Makefile.am |   15 ++++++++++++++-
- 1 files changed, 14 insertions(+), 1 deletions(-)
+2015-03-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Make DNA sequence lowercase - NEW FEATURE 'lowercase'
+ src/zmapServer/ensembl/ensemblServer.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-2015-03-16  Gemma Barson  <gb10@sanger.ac.uk>
- Add latex version of user manual - DOC
- docs/user/ZMap_User_Manual.pdf                   |  Bin 4492317 -> 0 bytes
- docs/user/manual/.gitignore                      |    4 +
- docs/user/manual/ZMap_User_Manual.pdf            |  Bin 0 -> 3797267 bytes
- docs/user/manual/ZMap_User_Manual.tex            |  634 ++++++++++++++++++++++
- docs/user/manual/img_bumping.png                 |  Bin 0 -> 246540 bytes
- docs/user/manual/img_columns.png                 |  Bin 0 -> 204564 bytes
- docs/user/manual/img_exporting_features.png      |  Bin 0 -> 267489 bytes
- docs/user/manual/img_feature_details_dialog.png  |  Bin 0 -> 191833 bytes
- docs/user/manual/img_feature_display_details.png |  Bin 0 -> 198818 bytes
- docs/user/manual/img_feature_search.png          |  Bin 0 -> 230622 bytes
- docs/user/manual/img_feature_search_results.png  |  Bin 0 -> 135567 bytes
- docs/user/manual/img_features.png                |  Bin 0 -> 177360 bytes
- docs/user/manual/img_focus_and_mark.png          |  Bin 0 -> 281667 bytes
- docs/user/manual/img_launch_in_zmap.png          |  Bin 0 -> 255309 bytes
- docs/user/manual/img_main_interface.png          |  Bin 0 -> 268048 bytes
- docs/user/manual/img_navigating.png              |  Bin 0 -> 356542 bytes
- docs/user/manual/img_open_from_otterlace.png     |  Bin 0 -> 240300 bytes
- docs/user/manual/img_sequence_search.png         |  Bin 0 -> 178492 bytes
- docs/user/manual/img_show_hide.png               |  Bin 0 -> 128483 bytes
- docs/user/manual/img_split_window.png            |  Bin 0 -> 183066 bytes
- docs/user/manual/img_toolbar_feature_details.png |  Bin 0 -> 198509 bytes
- docs/user/manual/img_variant_construction.png    |  Bin 0 -> 328720 bytes
- docs/user/manual/img_variant_construction2.png   |  Bin 0 -> 244126 bytes
- docs/user/manual/img_zooming.png                 |  Bin 0 -> 336292 bytes
- docs/user/zmap_quick_start.shtml                 |    2 +-
- 25 files changed, 639 insertions(+), 1 deletions(-)
+2015-03-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix incorrect free of sequence dna - REGRESSION FIX
+ src/zmapServer/ensembl/ensemblServer.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
 
-2015-03-16  Steve Miller  <sm23@sanger.ac.uk>
- another approach with a partial fix on the bumping_bug
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |    5 +
- .../canvas/zmapWindowContainerFeatureSet.c         |   12 +--
- src/zmapWindow/zmapWindowDrawFeatures.c            |  100 ++++++++++++--------
- 3 files changed, 69 insertions(+), 48 deletions(-)
+2015-03-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix error with previous - REGRESSION FIX
+ src/zmapServer/ensembl/ensemblServer.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-2015-03-16  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'release/1.5.0' into develop
-2015-03-13  Gemma Barson  <gb10@sanger.ac.uk>
- Fix complilation of gbtools in subdir - BUILD
- src/configure.ac |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
+2015-03-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Tidy calling of eachAlign callback funcs - WIP
+ src/zmapServer/ensembl/ensemblServer.c |  158 +++++++++++++++++--------------
+ 1 files changed, 87 insertions(+), 71 deletions(-)
 
-2015-03-12  Gemma Barson  <gb10@sanger.ac.uk>
- Rename variable to fix compile error due to misuse of C++ keyword - BUILD
- src/zmapWindow/zmapWindowZoomControl.c |    8 ++++----
- src/zmapWindow/zmapWindow_P.h          |    2 +-
- 2 files changed, 5 insertions(+), 5 deletions(-)
+2015-03-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Implement getContextSequence function content - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   34 ++++++++++++++++++++++++-------
+ 1 files changed, 26 insertions(+), 8 deletions(-)
 
-2015-03-12  Gemma Barson  <gb10@sanger.ac.uk>
- Add gbtools library - BUILD
- src/Makefile.am |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
+2015-03-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Add getContextSequence function - WIP
+ src/zmapServer/ensembl/ensemblServer.c |   98 +++++++++++++++++++++++++++++++-
+ 1 files changed, 97 insertions(+), 1 deletions(-)
 
-2015-03-12  Gemma Barson  <gb10@sanger.ac.uk>
- Fix more C++ compiler errors - BUILD
- src/zmapWindow/zmapWindowFeatureShow.cpp |   18 +++++++++---------
- 1 files changed, 9 insertions(+), 9 deletions(-)
+2015-03-23  Gemma Barson  <gb10@sanger.ac.uk>
+ WIP to add features to context - WIP
+ src/zmapServer/ensembl/ensemblServer.c   |  308 +++++++++++++++++++++---------
+ src/zmapServer/ensembl/ensemblServer_P.h |    3 +
+ 2 files changed, 224 insertions(+), 87 deletions(-)
 
-2015-03-12  Gemma Barson  <gb10@sanger.ac.uk>
- Fix compiler errors in change to C++ - BUILD
- src/include/ZMap/zmapCmdLineArgs.h |    9 +++++++++
- src/include/ZMap/zmapFeature.h     |    9 +++++++++
- src/include/ZMap/zmapUtils.h       |    9 +++++++++
- src/include/ZMap/zmapXML.h         |    9 +++++++++
- 4 files changed, 36 insertions(+), 0 deletions(-)
+2015-03-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Avoid potential null pointer access - BUG FIX
+ src/ensc-core/src/Util/CHash.c |   61 +++++++++++++++++++++++++++++++++++++--
+ 1 files changed, 57 insertions(+), 4 deletions(-)
 
-2015-03-12  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'develop' into feature/bump_bug
-2015-03-12  Gemma Barson  <gb10@sanger.ac.uk>
- Use gbtools monitor code and change files to cpp - WIP
- src/include/ZMap/zmapUtilsDebug.h        |    9 ++
- src/include/ZMap/zmapUtilsGUI.h          |   12 ++-
- src/include/ZMap/zmapView.h              |    8 ++
- src/include/ZMap/zmapWindow.h            |    8 ++
- src/libzmapfoocanvas/libfoocanvas.h      |    8 ++
- src/zmapControl/Makefile.am              |    2 +-
- src/zmapControl/zmapControl_P.h          |    9 ++
- src/zmapUtils/zmapGUIutils.c             |  189 +-----------------------------
- src/zmapWindow/Makefile.am               |    4 +-
- src/zmapWindow/zmapWindowZoomControl_P.h |    9 ++
- src/zmapWindow/zmapWindow_P.h            |    9 ++
- 11 files changed, 77 insertions(+), 190 deletions(-)
+2015-03-18  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/ensembl
+2015-03-18  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/ensembl
+2015-02-24  Gemma Barson  <gb10@sanger.ac.uk>
+ "WIP: create featureset - TRIVIAL"
+ src/zmapServer/ensembl/ensemblServer.c |  106 ++++++++++++++++++++++++-------
+ 1 files changed, 82 insertions(+), 24 deletions(-)
 
-2015-03-12  Gemma Barson  <gb10@sanger.ac.uk>
- Add gbtools dependency - BUILD
- src/Makefile.am                          |    7 +-
- src/Makefile.common                      |    1 +
- src/configure.ac                         |    7 +
- src/zmapControl/zmapControlWindow.c      |  492 ------
- src/zmapControl/zmapControlWindow.cpp    |  491 ++++++
- src/zmapWindow/zmapWindowFeatureShow.c   | 2801 ------------------------------
- src/zmapWindow/zmapWindowFeatureShow.cpp | 2801 ++++++++++++++++++++++++++++++
- 7 files changed, 3306 insertions(+), 3294 deletions(-)
+2015-02-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor fix to logging
+ src/zmapServer/ensembl/ensemblServer.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-2015-03-12  Steve Miller  <sm23@sanger.ac.uk>
- partial fix to bumping bug with reinitialisation of featureset_item - NEW FEATURE 'feature/bump_bug'
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c | 1412 ++++++++++----------
- 1 files changed, 715 insertions(+), 697 deletions(-)
+2015-02-23  Gemma Barson  <gb10@sanger.ac.uk>
+ Add logging
+ src/zmapServer/ensembl/ensemblServer.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+2015-02-20  Gemma Barson  <gb10@sanger.ac.uk>
+ generalise so term code
+ src/zmapServer/ensembl/ensemblServer.c |  154 ++++++++++++++++++++++++++------
+ 1 files changed, 126 insertions(+), 28 deletions(-)
+
+2015-02-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Generalise make-feature function
+ src/zmapServer/ensembl/ensemblServer.c |  129 ++++++++++++++++++++++----------
+ 1 files changed, 90 insertions(+), 39 deletions(-)
+
+2015-02-20  Gemma Barson  <gb10@sanger.ac.uk>
+ WIP: make pep align feature
+ src/zmapServer/ensembl/ensemblServer.c |   48 +++++++++++++++++--------------
+ 1 files changed, 26 insertions(+), 22 deletions(-)
+
+2015-02-20  Gemma Barson  <gb10@sanger.ac.uk>
+ WIP: rearrange get-features code
+ src/zmapServer/ensembl/ensemblServer.c |  295 +++++++++++++++++++++-----------
+ 1 files changed, 195 insertions(+), 100 deletions(-)
+
+2015-02-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove assertions when mysql query fails
+ .../src/DataAdaptors/MysqlStatementHandle.c        |   21 ++++++++++---------
+ 1 files changed, 11 insertions(+), 10 deletions(-)
+
+2015-02-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compile error
+ src/zmapServer/ensembl/ensemblServer.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2015-02-19  Gemma Barson  <gb10@sanger.ac.uk>
+ WIP: add more feature adaptors
+ src/zmapServer/ensembl/ensemblServer.c |  200 ++++++++++++++++++++++++++++----
+ 1 files changed, 177 insertions(+), 23 deletions(-)
+
+2015-02-19  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/ensembl
+2015-02-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Add thread-safe version of mysql lib to autoconf stuff
+ src/ax_lib_mysql.m4 |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-02-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix typo causing compile error
+ .../src/DataAdaptors/BaseFeatureAdaptor.c          |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-02-12  Gemma Barson  <gb10@sanger.ac.uk>
+ WIP: Print more debug info about features
+ src/zmapServer/ensembl/ensemblServer.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
+
+2015-02-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix a few warnings and errors in test progs
+ .../src/DataAdaptors/BaseFeatureAdaptor.c          |    2 +-
+ src/ensc-core/src/Programs/bamcount_exon.c         |    2 +-
+ src/ensc-core/src/Tests/BaseRODBTest.h             |    3 ++-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+
+2015-02-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix erroneous addition of libs from previous change
+ src/ensc-core/src/Makefile |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-02-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Use thread-safe mysql lib
+ src/ensc-core/src/Makefile |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+2015-02-10  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler warnings
+ .../src/Compara/DataAdaptors/GenomicAlignAdaptor.c |    3 ++-
+ src/ensc-core/src/DataAdaptors/SequenceAdaptor.c   |    2 +-
+ .../src/Tests/ComparaDNAAlignFeatureAdaptorTest.c  |    3 +--
+ src/ensc-core/src/Tests/CoordSystemTest.c          |    1 -
+ 4 files changed, 4 insertions(+), 5 deletions(-)
+
+2015-02-10  Gemma Barson  <gb10@sanger.ac.uk>
+ Add dsym files to make clean
+ src/ensc-core/src/Makefile |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2015-02-10  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler errors
+ src/ensc-core/src/DataModel/BaseAlignFeature.c     |    4 ++--
+ src/ensc-core/src/DataModel/BaseAlignFeature.h     |    2 +-
+ src/ensc-core/src/DataModel/FeaturePair.c          |    2 +-
+ src/ensc-core/src/DataModel/FeaturePair.h          |    2 +-
+ src/ensc-core/src/DataModel/Gene.c                 |    2 +-
+ src/ensc-core/src/DataModel/PredictionTranscript.c |    4 +++-
+ src/ensc-core/src/DataModel/RawContig.c            |    2 +-
+ src/ensc-core/src/DataModel/Slice.c                |    2 +-
+ .../src/DataModel/TopLevelAssemblyMapper.c         |   12 ++++++------
+ src/ensc-core/src/OBDA/BioIndex.c                  |    7 ++-----
+ src/samtools_parallel/pbgzip/queue.c               |    2 +-
+ 11 files changed, 20 insertions(+), 21 deletions(-)
+
+2015-02-09  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler warnings
+ .../src/DataAdaptors/DNAAlignFeatureAdaptor.c      |    2 +
+ src/ensc-core/src/DataAdaptors/ExonAdaptor.c       |    2 +-
+ .../src/DataAdaptors/PredictionTranscriptAdaptor.c |    4 ++-
+ .../src/DataAdaptors/PredictionTranscriptAdaptor.h |    2 +-
+ .../src/DataAdaptors/ProteinAlignFeatureAdaptor.c  |    2 +
+ src/ensc-core/src/DataAdaptors/SequenceAdaptor.c   |    2 +-
+ .../src/DataAdaptors/SimpleFeatureAdaptor.c        |    2 +
+ .../src/DataAdaptors/TranslationAdaptor.c          |    2 +-
+ src/ensc-core/src/DataModel/AssemblyMapper.c       |    2 +-
+ src/ensc-core/src/DataModel/BaseAssemblyMapper.c   |   22 ++++++++++----------
+ .../src/DataModel/ChainedAssemblyMapper.c          |    2 +-
+ src/ensc-core/src/DataModel/CigarStrUtil.c         |    6 ++--
+ 12 files changed, 29 insertions(+), 21 deletions(-)
+
+2015-02-09  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler errors
+ .../src/Compara/DataAdaptors/GenomeDBAdaptor.c     |    2 +-
+ .../src/DataAdaptors/AssemblyMapperAdaptor.c       |    3 ---
+ 2 files changed, 1 insertions(+), 4 deletions(-)
+
+2015-02-09  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler error where struct passed instead of IDType
+ .../src/Compara/DataAdaptors/GenomicAlignAdaptor.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+2015-02-09  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler warnings
+ src/ensc-core/src/DataModel/Translation.c |    2 +-
+ src/libpfetch/libpfetch.c                 |   18 +++++++-----------
+ src/samtools_parallel/pbgzip/queue.c      |    2 +-
+ 3 files changed, 9 insertions(+), 13 deletions(-)
+
+2015-02-09  Gemma Barson  <gb10@sanger.ac.uk>
+ Add gitignore files
+ src/ensc-core/src/.gitignore              |    3 ++
+ src/ensc-core/src/Programs/.gitignore     |   34 +++++++++++++++++++++++++++++
+ src/ensc-core/src/Tests/.gitignore        |   27 +++++++++++++++++++++++
+ src/samtools_parallel/.gitignore          |    4 +++
+ src/samtools_parallel/bcftools/.gitignore |    1 +
+ src/samtools_parallel/misc/.gitignore     |    7 ++++++
+ src/samtools_parallel/pbgzip/.gitignore   |    1 +
+ 7 files changed, 77 insertions(+), 0 deletions(-)
+
+2015-02-09  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove files that were added accidentally
+ .../src/Programs/bamcount.dSYM/Contents/Info.plist |   20 --------------------
+ .../Contents/Resources/DWARF/bamcount              |  Bin 2144774 -> 0 bytes
+ .../bamcount_exon.dSYM/Contents/Info.plist         |   20 --------------------
+ .../Contents/Resources/DWARF/bamcount_exon         |  Bin 2152937 -> 0 bytes
+ .../src/Programs/bamcov.dSYM/Contents/Info.plist   |   20 --------------------
+ .../bamcov.dSYM/Contents/Resources/DWARF/bamcov    |  Bin 2131062 -> 0 bytes
+ .../src/Programs/bammap.dSYM/Contents/Info.plist   |   20 --------------------
+ .../bammap.dSYM/Contents/Resources/DWARF/bammap    |  Bin 2159739 -> 0 bytes
+ .../Programs/countsnps.dSYM/Contents/Info.plist    |   20 --------------------
+ .../Contents/Resources/DWARF/countsnps             |  Bin 2115179 -> 0 bytes
+ .../Programs/fastasplit.dSYM/Contents/Info.plist   |   20 --------------------
+ .../Contents/Resources/DWARF/fastasplit            |  Bin 16585 -> 0 bytes
+ .../src/Programs/indicate.dSYM/Contents/Info.plist |   20 --------------------
+ .../Contents/Resources/DWARF/indicate              |  Bin 145432 -> 0 bytes
+ .../src/Programs/testdbc.dSYM/Contents/Info.plist  |   20 --------------------
+ .../testdbc.dSYM/Contents/Resources/DWARF/testdbc  |  Bin 2099551 -> 0 bytes
+ .../AssemblyMapperTest.dSYM/Contents/Info.plist    |   20 --------------------
+ .../Contents/Resources/DWARF/AssemblyMapperTest    |  Bin 2107628 -> 0 bytes
+ .../src/Tests/CacheTest.dSYM/Contents/Info.plist   |   20 --------------------
+ .../Contents/Resources/DWARF/CacheTest             |  Bin 56223 -> 0 bytes
+ .../Contents/Info.plist                            |   20 --------------------
+ .../Resources/DWARF/ChainedAssemblyMapperTest      |  Bin 2108610 -> 0 bytes
+ .../CigarStrUtilTest.dSYM/Contents/Info.plist      |   20 --------------------
+ .../Contents/Resources/DWARF/CigarStrUtilTest      |  Bin 96520 -> 0 bytes
+ .../src/Tests/ClassTest.dSYM/Contents/Info.plist   |   20 --------------------
+ .../Contents/Resources/DWARF/ClassTest             |  Bin 19877 -> 0 bytes
+ .../ComparaDBAdaptorTest.dSYM/Contents/Info.plist  |   20 --------------------
+ .../Contents/Resources/DWARF/ComparaDBAdaptorTest  |  Bin 2377413 -> 0 bytes
+ .../Contents/Info.plist                            |   20 --------------------
+ .../DWARF/ComparaDNAAlignFeatureAdaptorTest        |  Bin 2390288 -> 0 bytes
+ .../Tests/CoordSystemTest.dSYM/Contents/Info.plist |   20 --------------------
+ .../Contents/Resources/DWARF/CoordSystemTest       |  Bin 2102304 -> 0 bytes
+ .../Tests/DBAdaptorTest.dSYM/Contents/Info.plist   |   20 --------------------
+ .../Contents/Resources/DWARF/DBAdaptorTest         |  Bin 2095113 -> 0 bytes
+ .../Contents/Info.plist                            |   20 --------------------
+ .../Resources/DWARF/DNAPepAlignFeatureTest         |  Bin 2109212 -> 0 bytes
+ .../Contents/Info.plist                            |   20 --------------------
+ .../Resources/DWARF/DNAPepAlignFeatureWriteTest    |  Bin 2102882 -> 0 bytes
+ .../Tests/EcoStringTest.dSYM/Contents/Info.plist   |   20 --------------------
+ .../Contents/Resources/DWARF/EcoStringTest         |  Bin 72865 -> 0 bytes
+ .../Tests/HomologyTest.dSYM/Contents/Info.plist    |   20 --------------------
+ .../Contents/Resources/DWARF/HomologyTest          |  Bin 2386077 -> 0 bytes
+ .../src/Tests/MapperTest.dSYM/Contents/Info.plist  |   20 --------------------
+ .../Contents/Resources/DWARF/MapperTest            |  Bin 150955 -> 0 bytes
+ .../Contents/Info.plist                            |   20 --------------------
+ .../Resources/DWARF/PredictionTranscriptTest       |  Bin 2107884 -> 0 bytes
+ .../RepeatFeatureTest.dSYM/Contents/Info.plist     |   20 --------------------
+ .../Contents/Resources/DWARF/RepeatFeatureTest     |  Bin 2107128 -> 0 bytes
+ .../Contents/Info.plist                            |   20 --------------------
+ .../Resources/DWARF/RepeatFeatureWriteTest         |  Bin 2102854 -> 0 bytes
+ .../src/Tests/SeqUtilTest.dSYM/Contents/Info.plist |   20 --------------------
+ .../Contents/Resources/DWARF/SeqUtilTest           |  Bin 82145 -> 0 bytes
+ .../SequenceAdaptorTest.dSYM/Contents/Info.plist   |   20 --------------------
+ .../Contents/Resources/DWARF/SequenceAdaptorTest   |  Bin 2103184 -> 0 bytes
+ .../SimpleFeatureTest.dSYM/Contents/Info.plist     |   20 --------------------
+ .../Contents/Resources/DWARF/SimpleFeatureTest     |  Bin 2106950 -> 0 bytes
+ .../SliceAdaptorTest.dSYM/Contents/Info.plist      |   20 --------------------
+ .../Contents/Resources/DWARF/SliceAdaptorTest      |  Bin 2104736 -> 0 bytes
+ .../src/Tests/StrUtilTest.dSYM/Contents/Info.plist |   20 --------------------
+ .../Contents/Resources/DWARF/StrUtilTest           |  Bin 50240 -> 0 bytes
+ .../src/Tests/StreamTest.dSYM/Contents/Info.plist  |   20 --------------------
+ .../Contents/Resources/DWARF/StreamTest            |  Bin 51141 -> 0 bytes
+ .../src/Tests/SyntenyTest.dSYM/Contents/Info.plist |   20 --------------------
+ .../Contents/Resources/DWARF/SyntenyTest           |  Bin 2385644 -> 0 bytes
+ .../Contents/Info.plist                            |   20 --------------------
+ .../Resources/DWARF/TopLevelAssemblyMapperTest     |  Bin 2107287 -> 0 bytes
+ .../Tests/TranslateTest.dSYM/Contents/Info.plist   |   20 --------------------
+ .../Contents/Resources/DWARF/TranslateTest         |  Bin 18432 -> 0 bytes
+ .../src/Tests/VectorTest.dSYM/Contents/Info.plist  |   20 --------------------
+ .../Contents/Resources/DWARF/VectorTest            |  Bin 93106 -> 0 bytes
+ 70 files changed, 0 insertions(+), 700 deletions(-)
+
+2015-02-06  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix compiler warnings
+ .../src/Compara/DataAdaptors/ComparaDBAdaptor.c    |    8 ++-
+ .../DataAdaptors/ComparaDNAAlignFeatureAdaptor.c   |    6 +-
+ .../src/Compara/DataAdaptors/DNAFragAdaptor.c      |    1 -
+ .../src/Compara/DataAdaptors/DNAFragAdaptor.h      |    1 +
+ .../src/Compara/DataAdaptors/GenomicAlignAdaptor.c |    5 +-
+ .../src/Compara/DataAdaptors/HomologyAdaptor.c     |    1 -
+ src/ensc-core/src/Compara/DataModel/DNAFrag.c      |    3 -
+ src/ensc-core/src/Compara/DataModel/GenomeDB.c     |    1 +
+ src/ensc-core/src/Compara/DataModel/GenomeDB.h     |    3 +
+ .../src/DataAdaptors/AssemblyMapperAdaptor.c       |   96 ++++++++++----------
+ src/ensc-core/src/DataAdaptors/AttributeAdaptor.c  |    2 -
+ src/ensc-core/src/DataAdaptors/BaseAdaptor.c       |    5 -
+ .../src/DataAdaptors/BaseFeatureAdaptor.c          |    4 +-
+ .../src/DataAdaptors/CachingSequenceAdaptor.c      |    2 +-
+ .../src/DataAdaptors/CoordSystemAdaptor.c          |    2 +-
+ src/ensc-core/src/DataAdaptors/DBAdaptor.c         |    1 +
+ src/ensc-core/src/DataAdaptors/DBEntryAdaptor.h    |    1 -
+ .../src/DataAdaptors/DNAAlignFeatureAdaptor.c      |   14 ++--
+ .../src/DataAdaptors/DNAAlignFeatureAdaptor.h      |    1 -
+ src/ensc-core/src/DataAdaptors/ExonAdaptor.c       |   13 ++--
+ src/ensc-core/src/DataAdaptors/GeneAdaptor.c       |   18 ++--
+ .../DataAdaptors/IntronSupportingEvidenceAdaptor.c |   18 ++--
+ src/ensc-core/src/DataAdaptors/MetaContainer.h     |    1 +
+ .../src/DataAdaptors/MysqlStatementHandle.c        |    5 +-
+ .../src/DataAdaptors/PredictionExonAdaptor.c       |    4 +-
+ .../src/DataAdaptors/PredictionTranscriptAdaptor.c |   14 ++--
+ .../src/DataAdaptors/ProteinAlignFeatureAdaptor.c  |   12 ++--
+ .../src/DataAdaptors/RepeatFeatureAdaptor.c        |   12 ++--
+ src/ensc-core/src/DataAdaptors/SequenceAdaptor.c   |    2 +-
+ .../src/DataAdaptors/SimpleFeatureAdaptor.c        |   12 ++--
+ src/ensc-core/src/DataAdaptors/SliceAdaptor.c      |    9 --
+ src/ensc-core/src/DataAdaptors/SliceAdaptor.h      |    1 +
+ .../src/DataAdaptors/SupportingFeatureAdaptor.c    |   25 +++---
+ src/ensc-core/src/DataAdaptors/TranscriptAdaptor.c |   19 ++--
+ .../TranscriptSupportingFeatureAdaptor.c           |   18 ++--
+ .../src/DataAdaptors/TranslationAdaptor.c          |    1 -
+ .../src/DataAdaptors/TranslationAdaptor.h          |    1 +
+ src/ensc-core/src/DataModel/AssemblyMapper.c       |    2 +-
+ src/ensc-core/src/DataModel/AssemblyMapper.h       |    2 +
+ src/ensc-core/src/DataModel/BaseAlignFeature.c     |   19 ++--
+ src/ensc-core/src/DataModel/BaseAlignFeature.h     |    1 +
+ src/ensc-core/src/DataModel/BaseContig.h           |    1 +
+ src/ensc-core/src/DataModel/Basic/Vector.c         |    5 -
+ src/ensc-core/src/DataModel/Class.c                |    3 -
+ src/ensc-core/src/DataModel/DNAAlignFeature.c      |    4 +-
+ src/ensc-core/src/DataModel/DNAAlignFeature.h      |    4 +-
+ src/ensc-core/src/DataModel/Exon.c                 |    7 +-
+ src/ensc-core/src/DataModel/FeaturePair.c          |    3 +-
+ src/ensc-core/src/DataModel/FeaturePair.h          |    1 +
+ src/ensc-core/src/DataModel/Gene.c                 |    2 +-
+ src/ensc-core/src/DataModel/IdentityXref.h         |    2 +
+ src/ensc-core/src/DataModel/Mapper.c               |    1 -
+ src/ensc-core/src/DataModel/Object.h               |    1 +
+ src/ensc-core/src/DataModel/PredictionExon.h       |    2 +
+ src/ensc-core/src/DataModel/PredictionTranscript.c |   11 +--
+ src/ensc-core/src/DataModel/SeqFeature.h           |    9 ++-
+ src/ensc-core/src/DataModel/SeqFeatureFactory.c    |    4 +-
+ src/ensc-core/src/DataModel/Slice.c                |    2 -
+ src/ensc-core/src/DataModel/Slice.h                |    5 +-
+ src/ensc-core/src/DataModel/StableIdInfo.h         |    2 +
+ src/ensc-core/src/DataModel/Transcript.c           |    4 +-
+ src/ensc-core/src/DataModel/Translation.c          |    1 +
+ src/ensc-core/src/Makefile                         |    2 +-
+ src/ensc-core/src/OBDA/BioIndex.c                  |   13 ---
+ src/ensc-core/src/OBDA/parsers.c                   |    2 -
+ src/ensc-core/src/Programs/bamcount.c              |    2 -
+ src/ensc-core/src/Tests/DBAdaptorTest.c            |    4 +-
+ src/ensc-core/src/Tests/SequenceAdaptorTest.c      |    4 +-
+ src/ensc-core/src/Util/SeqUtil.c                   |    1 -
+ src/ensc-core/src/Util/StrUtil.h                   |    1 +
+ src/ensc-core/src/Util/translate.h                 |    2 +
+ 71 files changed, 227 insertions(+), 244 deletions(-)
+
+2015-02-05  Gemma Barson  <gb10@sanger.ac.uk>
+ Error checking
+ src/zmapServer/ensembl/ensemblServer.c |   14 +++++++-------
+ 1 files changed, 7 insertions(+), 7 deletions(-)
+
+2015-02-05  Gemma Barson  <gb10@sanger.ac.uk>
+ Add debug and no-optimize flags
+ src/ensc-core/src/Makefile |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-02-03  Gemma Barson  <gb10@sanger.ac.uk>
+ Add mutex to protect ensembl lib calls
+ src/zmapServer/ensembl/ensemblServer.c   |   18 ++++++++++++++++++
+ src/zmapServer/ensembl/ensemblServer_P.h |    3 +++
+ 2 files changed, 21 insertions(+), 0 deletions(-)
+
+2015-02-03  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix link error
+ src/zmapServer/ensembl/Makefile.am |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-02-03  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix typo in include file
+ src/zmapServer/ensembl/ensemblServer.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-02-03  Gemma Barson  <gb10@sanger.ac.uk>
+ Add missing library makefiles
+ src/ensc-core/src/Makefile                |  503 +++++++++++++++++++++++++++++
+ src/samtools_parallel/Makefile            |  111 +++++++
+ src/samtools_parallel/bcftools/Makefile   |   51 +++
+ src/samtools_parallel/examples/Makefile   |   50 +++
+ src/samtools_parallel/lsstack/Makefile    |   10 +
+ src/samtools_parallel/math/Makefile       |   15 +
+ src/samtools_parallel/misc/Makefile       |   71 ++++
+ src/samtools_parallel/pbgzip/Makefile     |   41 +++
+ src/samtools_parallel/pstack-1.2/Makefile |   24 ++
+ 9 files changed, 876 insertions(+), 0 deletions(-)
+
+2015-02-03  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/ensembl
+2015-02-02  Gemma Barson  <gb10@sanger.ac.uk>
+ Add feature name
+ src/zmapServer/ensembl/ensemblServer.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+2015-01-29  Gemma Barson  <gb10@sanger.ac.uk>
+ WIP: get features
+ src/zmapServer/ensembl/ensemblServer.c |   40 +++++++++++++++++++++++++++++++-
+ 1 files changed, 39 insertions(+), 1 deletions(-)
+
+2015-01-28  Gemma Barson  <gb10@sanger.ac.uk>
+ Create slice for ref sequence and other fixes
+ src/zmapServer/ensembl/ensemblServer.c   |  130 +++++++++++++++++++++++++-----
+ src/zmapServer/ensembl/ensemblServer_P.h |    8 ++-
+ 2 files changed, 115 insertions(+), 23 deletions(-)
+
+2015-01-16  Gemma Barson  <gb10@sanger.ac.uk>
+ WIP: ensembl zmap window now opens
+ src/include/ZMap/zmapUrl.h             |    1 +
+ src/zmapServer/ensembl/ensemblServer.c |    7 ++++---
+ src/zmapServer/zmapServer.c            |    4 +++-
+ src/zmapUtils/zmapUrl.c                |    2 ++
+ src/zmapView/zmapViewUtils.c           |   22 ++++++++++++++++++++++
+ src/zmapView/zmapView_P.h              |    6 ++++++
+ 6 files changed, 38 insertions(+), 4 deletions(-)
+
+2015-01-15  Gemma Barson  <gb10@sanger.ac.uk>
+ Add experimental slice code
+ src/zmapServer/ensembl/ensemblServer.c |   65 ++++++++++++++++++++++++++++++++
+ 1 files changed, 65 insertions(+), 0 deletions(-)
+
+2015-01-15  Gemma Barson  <gb10@sanger.ac.uk>
+ Disable conditional use of mysql; doesn't seem to work
+ src/zmapServer/ensembl/Makefile.am |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2015-01-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Add ensembl test code
+ src/include/ZMap/zmapUrl.h               |    5 ++
+ src/zmapServer/acedb/acedbServer.c       |   76 +-----------------------------
+ src/zmapServer/ensembl/ensemblServer.c   |   25 +++++++++-
+ src/zmapServer/ensembl/ensemblServer_P.h |   12 ++++-
+ src/zmapUtils/zmapUrl.c                  |   66 ++++++++++++++++++++++++++
+ 5 files changed, 108 insertions(+), 76 deletions(-)
+
+2015-01-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Add mysql m4 file
+ src/ax_lib_mysql.m4 |  147 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 147 insertions(+), 0 deletions(-)
+
+2015-01-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Disable compilation of ensembl server if mysql not available
+ src/zmapServer/ensembl/Makefile.am |   13 ++++++++++---
+ 1 files changed, 10 insertions(+), 3 deletions(-)
+
+2015-01-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Add ensc-core and samtools_parallel code
+ src/Makefile.am                                    |   10 +-
+ src/Makefile.common                                |    9 +
+ src/configure.ac                                   |    9 +
+ src/ensc-core/LICENSE                              |  243 +
+ src/ensc-core/README                               |   16 +
+ src/ensc-core/data/README                          |    3 +
+ src/ensc-core/data/gc.prt                          |  175 +
+ src/ensc-core/scripts/addmake.pl                   |  230 +
+ .../src/Compara/DataAdaptors/BaseComparaAdaptor.c  |   23 +
+ .../src/Compara/DataAdaptors/BaseComparaAdaptor.h  |   31 +
+ .../src/Compara/DataAdaptors/ComparaAdaptorTypes.h |   30 +
+ .../src/Compara/DataAdaptors/ComparaDBAdaptor.c    |  310 +
+ .../src/Compara/DataAdaptors/ComparaDBAdaptor.h    |   48 +
+ .../DataAdaptors/ComparaDNAAlignFeatureAdaptor.c   |  211 +
+ .../DataAdaptors/ComparaDNAAlignFeatureAdaptor.h   |   40 +
+ .../src/Compara/DataAdaptors/DNAFragAdaptor.c      |  275 +
+ .../src/Compara/DataAdaptors/DNAFragAdaptor.h      |   38 +
+ .../src/Compara/DataAdaptors/GenomeDBAdaptor.c     |  360 +
+ .../src/Compara/DataAdaptors/GenomeDBAdaptor.h     |   52 +
+ .../src/Compara/DataAdaptors/GenomicAlignAdaptor.c |  938 +++
+ .../src/Compara/DataAdaptors/GenomicAlignAdaptor.h |   45 +
+ .../src/Compara/DataAdaptors/HomologyAdaptor.c     |  313 +
+ .../src/Compara/DataAdaptors/HomologyAdaptor.h     |   43 +
+ .../src/Compara/DataAdaptors/SyntenyAdaptor.c      |  116 +
+ .../src/Compara/DataAdaptors/SyntenyAdaptor.h      |   41 +
+ .../Compara/DataAdaptors/SyntenyRegionAdaptor.c    |  152 +
+ .../Compara/DataAdaptors/SyntenyRegionAdaptor.h    |   40 +
+ .../src/Compara/DataModel/ComparaDataModelTypes.h  |   27 +
+ src/ensc-core/src/Compara/DataModel/DNAFrag.c      |  100 +
+ src/ensc-core/src/Compara/DataModel/DNAFrag.h      |   83 +
+ src/ensc-core/src/Compara/DataModel/GenomeDB.c     |  107 +
+ src/ensc-core/src/Compara/DataModel/GenomeDB.h     |   77 +
+ src/ensc-core/src/Compara/DataModel/GenomicAlign.c |  193 +
+ src/ensc-core/src/Compara/DataModel/GenomicAlign.h |  107 +
+ src/ensc-core/src/Compara/DataModel/Homology.c     |   72 +
+ src/ensc-core/src/Compara/DataModel/Homology.h     |   70 +
+ .../src/Compara/DataModel/SyntenyRegion.c          |   78 +
+ .../src/Compara/DataModel/SyntenyRegion.h          |  106 +
+ src/ensc-core/src/DataAdaptors/AdaptorTypes.h      |   55 +
+ src/ensc-core/src/DataAdaptors/AnalysisAdaptor.c   |  350 +
+ src/ensc-core/src/DataAdaptors/AnalysisAdaptor.h   |   45 +
+ .../src/DataAdaptors/AssemblyMapperAdaptor.c       | 2022 ++++++
+ .../src/DataAdaptors/AssemblyMapperAdaptor.h       |   72 +
+ src/ensc-core/src/DataAdaptors/AttributeAdaptor.c  |  492 ++
+ src/ensc-core/src/DataAdaptors/AttributeAdaptor.h  |   47 +
+ src/ensc-core/src/DataAdaptors/BaseAdaptor.c       |  998 +++
+ src/ensc-core/src/DataAdaptors/BaseAdaptor.h       |  175 +
+ .../src/DataAdaptors/BaseAlignFeatureAdaptor.c     |   56 +
+ .../src/DataAdaptors/BaseAlignFeatureAdaptor.h     |   27 +
+ src/ensc-core/src/DataAdaptors/BaseDBAdaptor.h     |   37 +
+ .../src/DataAdaptors/BaseFeatureAdaptor.c          | 1790 +++++
+ .../src/DataAdaptors/BaseFeatureAdaptor.h          |  109 +
+ .../src/DataAdaptors/CachingSequenceAdaptor.c      |  218 +
+ .../src/DataAdaptors/CachingSequenceAdaptor.h      |   39 +
+ src/ensc-core/src/DataAdaptors/ChromosomeAdaptor.c |  116 +
+ src/ensc-core/src/DataAdaptors/ChromosomeAdaptor.h |   39 +
+ src/ensc-core/src/DataAdaptors/CloneAdaptor.c      |   73 +
+ src/ensc-core/src/DataAdaptors/CloneAdaptor.h      |   32 +
+ .../src/DataAdaptors/CoordSystemAdaptor.c          | 1035 +++
+ .../src/DataAdaptors/CoordSystemAdaptor.h          |   59 +
+ src/ensc-core/src/DataAdaptors/DBAdaptor.c         |  323 +
+ src/ensc-core/src/DataAdaptors/DBAdaptor.h         |   89 +
+ src/ensc-core/src/DataAdaptors/DBConnection.c      |  144 +
+ src/ensc-core/src/DataAdaptors/DBConnection.h      |   57 +
+ src/ensc-core/src/DataAdaptors/DBEntryAdaptor.c    |  638 ++
+ src/ensc-core/src/DataAdaptors/DBEntryAdaptor.h    |   39 +
+ .../src/DataAdaptors/DNAAlignFeatureAdaptor.c      |  633 ++
+ .../src/DataAdaptors/DNAAlignFeatureAdaptor.h      |   47 +
+ src/ensc-core/src/DataAdaptors/ExonAdaptor.c       |  974 +++
+ src/ensc-core/src/DataAdaptors/ExonAdaptor.h       |   57 +
+ src/ensc-core/src/DataAdaptors/GeneAdaptor.c       | 2641 +++++++
+ src/ensc-core/src/DataAdaptors/GeneAdaptor.h       |   87 +
+ .../DataAdaptors/IntronSupportingEvidenceAdaptor.c |  707 ++
+ .../DataAdaptors/IntronSupportingEvidenceAdaptor.h |   45 +
+ src/ensc-core/src/DataAdaptors/MetaContainer.c     |  137 +
+ src/ensc-core/src/DataAdaptors/MetaContainer.h     |   35 +
+ .../src/DataAdaptors/MetaCoordContainer.c          |  352 +
+ .../src/DataAdaptors/MetaCoordContainer.h          |   37 +
+ src/ensc-core/src/DataAdaptors/MysqlResultRow.c    |  128 +
+ src/ensc-core/src/DataAdaptors/MysqlResultRow.h    |   65 +
+ .../src/DataAdaptors/MysqlStatementHandle.c        |  233 +
+ .../src/DataAdaptors/MysqlStatementHandle.h        |   74 +
+ .../src/DataAdaptors/PredictionExonAdaptor.c       |  466 ++
+ .../src/DataAdaptors/PredictionExonAdaptor.h       |   50 +
+ .../src/DataAdaptors/PredictionTranscriptAdaptor.c |  631 ++
+ .../src/DataAdaptors/PredictionTranscriptAdaptor.h |   45 +
+ .../src/DataAdaptors/ProteinAlignFeatureAdaptor.c  |  412 ++
+ .../src/DataAdaptors/ProteinAlignFeatureAdaptor.h  |   48 +
+ src/ensc-core/src/DataAdaptors/RawContigAdaptor.c  |  121 +
+ src/ensc-core/src/DataAdaptors/RawContigAdaptor.h  |   37 +
+ .../src/DataAdaptors/RepeatConsensusAdaptor.c      |  172 +
+ .../src/DataAdaptors/RepeatConsensusAdaptor.h      |   39 +
+ .../src/DataAdaptors/RepeatFeatureAdaptor.c        |  570 ++
+ .../src/DataAdaptors/RepeatFeatureAdaptor.h        |   46 +
+ src/ensc-core/src/DataAdaptors/ResultRow.h         |   59 +
+ .../src/DataAdaptors/SeqRegionCacheEntry.c         |   40 +
+ .../src/DataAdaptors/SeqRegionCacheEntry.h         |   32 +
+ src/ensc-core/src/DataAdaptors/SequenceAdaptor.c   |  812 +++
+ src/ensc-core/src/DataAdaptors/SequenceAdaptor.h   |   58 +
+ .../src/DataAdaptors/SimpleFeatureAdaptor.c        |  350 +
+ .../src/DataAdaptors/SimpleFeatureAdaptor.h        |   46 +
+ src/ensc-core/src/DataAdaptors/SliceAdaptor.c      | 2898 ++++++++
+ src/ensc-core/src/DataAdaptors/SliceAdaptor.h      |   66 +
+ src/ensc-core/src/DataAdaptors/StatementHandle.h   |   58 +
+ .../src/DataAdaptors/SupportingFeatureAdaptor.c    |  472 ++
+ .../src/DataAdaptors/SupportingFeatureAdaptor.h    |   35 +
+ src/ensc-core/src/DataAdaptors/TranscriptAdaptor.c | 2299 ++++++
+ src/ensc-core/src/DataAdaptors/TranscriptAdaptor.h |   63 +
+ .../TranscriptSupportingFeatureAdaptor.c           |  305 +
+ .../TranscriptSupportingFeatureAdaptor.h           |   33 +
+ .../src/DataAdaptors/TranslationAdaptor.c          |  963 +++
+ .../src/DataAdaptors/TranslationAdaptor.h          |   46 +
+ src/ensc-core/src/DataModel/Analysis.c             |  107 +
+ src/ensc-core/src/DataModel/Analysis.h             |  117 +
+ src/ensc-core/src/DataModel/AnnotatedSeqFeature.c  |   19 +
+ src/ensc-core/src/DataModel/AnnotatedSeqFeature.h  |  126 +
+ src/ensc-core/src/DataModel/AssemblyMapper.c       |  678 ++
+ src/ensc-core/src/DataModel/AssemblyMapper.h       |  148 +
+ src/ensc-core/src/DataModel/Attribute.c            |   86 +
+ src/ensc-core/src/DataModel/Attribute.h            |   70 +
+ src/ensc-core/src/DataModel/BaseAlignFeature.c     |  999 +++
+ src/ensc-core/src/DataModel/BaseAlignFeature.h     |  201 +
+ src/ensc-core/src/DataModel/BaseAssemblyMapper.c   |  136 +
+ src/ensc-core/src/DataModel/BaseAssemblyMapper.h   |  146 +
+ src/ensc-core/src/DataModel/BaseContig.c           |   23 +
+ src/ensc-core/src/DataModel/BaseContig.h           |   72 +
+ src/ensc-core/src/DataModel/Basic/Vector.c         |  285 +
+ src/ensc-core/src/DataModel/Basic/Vector.h         |   99 +
+ .../src/DataModel/ChainedAssemblyMapper.c          |  672 ++
+ .../src/DataModel/ChainedAssemblyMapper.h          |  166 +
+ src/ensc-core/src/DataModel/Chromosome.c           |   56 +
+ src/ensc-core/src/DataModel/Chromosome.h           |   68 +
+ src/ensc-core/src/DataModel/CigarStrUtil.c         |   82 +
+ src/ensc-core/src/DataModel/CigarStrUtil.h         |   25 +
+ src/ensc-core/src/DataModel/Class.c                |  301 +
+ src/ensc-core/src/DataModel/Class.h                |   91 +
+ src/ensc-core/src/DataModel/Clone.c                |   77 +
+ src/ensc-core/src/DataModel/Clone.h                |   92 +
+ src/ensc-core/src/DataModel/CoordSystem.c          |  222 +
+ src/ensc-core/src/DataModel/CoordSystem.h          |   89 +
+ src/ensc-core/src/DataModel/DBEntry.c              |  186 +
+ src/ensc-core/src/DataModel/DBEntry.h              |  117 +
+ src/ensc-core/src/DataModel/DNAAlignFeature.c      |  103 +
+ src/ensc-core/src/DataModel/DNAAlignFeature.h      |  175 +
+ src/ensc-core/src/DataModel/DNAPepAlignFeature.c   |   75 +
+ src/ensc-core/src/DataModel/DNAPepAlignFeature.h   |  148 +
+ src/ensc-core/src/DataModel/DataModelTypes.h       |   63 +
+ src/ensc-core/src/DataModel/EnsC.c                 |   71 +
+ src/ensc-core/src/DataModel/EnsC.h                 |   79 +
+ src/ensc-core/src/DataModel/EnsRoot.h              |   29 +
+ src/ensc-core/src/DataModel/Exon.c                 |  971 +++
+ src/ensc-core/src/DataModel/Exon.h                 |  238 +
+ src/ensc-core/src/DataModel/FeaturePair.c          |   82 +
+ src/ensc-core/src/DataModel/FeaturePair.h          |  140 +
+ src/ensc-core/src/DataModel/FeatureSet.c           |   49 +
+ src/ensc-core/src/DataModel/FeatureSet.h           |   35 +
+ src/ensc-core/src/DataModel/Gene.c                 |  665 ++
+ src/ensc-core/src/DataModel/Gene.h                 |  190 +
+ src/ensc-core/src/DataModel/GenomicRange.c         |   56 +
+ src/ensc-core/src/DataModel/GenomicRange.h         |   50 +
+ src/ensc-core/src/DataModel/IdentityXref.c         |   34 +
+ src/ensc-core/src/DataModel/IdentityXref.h         |   35 +
+ src/ensc-core/src/DataModel/Intron.c               |  173 +
+ src/ensc-core/src/DataModel/Intron.h               |  100 +
+ .../src/DataModel/IntronSupportingEvidence.c       |  402 ++
+ .../src/DataModel/IntronSupportingEvidence.h       |  114 +
+ src/ensc-core/src/DataModel/Mapper.c               | 1181 +++
+ src/ensc-core/src/DataModel/Mapper.h               |   94 +
+ src/ensc-core/src/DataModel/Mapper/CoordPair.c     |   33 +
+ src/ensc-core/src/DataModel/Mapper/CoordPair.h     |   31 +
+ .../src/DataModel/Mapper/IndelCoordinate.c         |   39 +
+ .../src/DataModel/Mapper/IndelCoordinate.h         |   39 +
+ .../src/DataModel/Mapper/MapperCoordinate.c        |   37 +
+ .../src/DataModel/Mapper/MapperCoordinate.h        |   35 +
+ src/ensc-core/src/DataModel/Mapper/MapperGap.c     |   35 +
+ src/ensc-core/src/DataModel/Mapper/MapperGap.h     |   30 +
+ src/ensc-core/src/DataModel/Mapper/MapperPair.c    |   37 +
+ src/ensc-core/src/DataModel/Mapper/MapperPair.h    |   41 +
+ src/ensc-core/src/DataModel/Mapper/MapperPairSet.c |  126 +
+ src/ensc-core/src/DataModel/Mapper/MapperPairSet.h |   47 +
+ src/ensc-core/src/DataModel/Mapper/MapperRange.h   |   41 +
+ .../src/DataModel/Mapper/MapperRangeSet.c          |   78 +
+ .../src/DataModel/Mapper/MapperRangeSet.h          |   38 +
+ src/ensc-core/src/DataModel/Mapper/MapperUnit.c    |   30 +
+ src/ensc-core/src/DataModel/Mapper/MapperUnit.h    |   33 +
+ src/ensc-core/src/DataModel/Mapper/RangeRegistry.c |  361 +
+ src/ensc-core/src/DataModel/Mapper/RangeRegistry.h |   38 +
+ src/ensc-core/src/DataModel/MapperDefs.h           |   30 +
+ src/ensc-core/src/DataModel/Object.c               |   50 +
+ src/ensc-core/src/DataModel/Object.h               |   76 +
+ src/ensc-core/src/DataModel/PredictionExon.c       |  104 +
+ src/ensc-core/src/DataModel/PredictionExon.h       |  117 +
+ src/ensc-core/src/DataModel/PredictionTranscript.c |  549 ++
+ src/ensc-core/src/DataModel/PredictionTranscript.h |  164 +
+ src/ensc-core/src/DataModel/ProjectionSegment.c    |   39 +
+ src/ensc-core/src/DataModel/ProjectionSegment.h    |   45 +
+ src/ensc-core/src/DataModel/RawContig.c            |  239 +
+ src/ensc-core/src/DataModel/RawContig.h            |   84 +
+ src/ensc-core/src/DataModel/RepeatConsensus.c      |   72 +
+ src/ensc-core/src/DataModel/RepeatConsensus.h      |   80 +
+ src/ensc-core/src/DataModel/RepeatFeature.c        |   50 +
+ src/ensc-core/src/DataModel/RepeatFeature.h        |  122 +
+ src/ensc-core/src/DataModel/SeqEdit.c              |  459 ++
+ src/ensc-core/src/DataModel/SeqEdit.h              |   85 +
+ src/ensc-core/src/DataModel/SeqFeature.c           | 2052 ++++++
+ src/ensc-core/src/DataModel/SeqFeature.h           |  237 +
+ src/ensc-core/src/DataModel/SeqFeatureFactory.c    |  123 +
+ src/ensc-core/src/DataModel/SeqFeatureFactory.h    |   25 +
+ src/ensc-core/src/DataModel/SeqRegionRange.c       |   56 +
+ src/ensc-core/src/DataModel/SeqRegionRange.h       |   51 +
+ src/ensc-core/src/DataModel/Sequence.c             |   69 +
+ src/ensc-core/src/DataModel/Sequence.h             |   68 +
+ src/ensc-core/src/DataModel/SimpleFeature.c        |   68 +
+ src/ensc-core/src/DataModel/SimpleFeature.h        |  123 +
+ src/ensc-core/src/DataModel/Slice.c                | 4045 +++++++++++
+ src/ensc-core/src/DataModel/Slice.h                |  163 +
+ src/ensc-core/src/DataModel/Species.c              |   68 +
+ src/ensc-core/src/DataModel/Species.h              |   64 +
+ src/ensc-core/src/DataModel/StableIdInfo.c         |   36 +
+ src/ensc-core/src/DataModel/StableIdInfo.h         |   48 +
+ src/ensc-core/src/DataModel/StickyExon.c           |  519 ++
+ src/ensc-core/src/DataModel/StickyExon.h           |  168 +
+ src/ensc-core/src/DataModel/Storable.c             |  100 +
+ src/ensc-core/src/DataModel/Storable.h             |   37 +
+ .../src/DataModel/TopLevelAssemblyMapper.c         |  481 ++
+ .../src/DataModel/TopLevelAssemblyMapper.h         |  136 +
+ src/ensc-core/src/DataModel/Transcript.c           | 1464 ++++
+ src/ensc-core/src/DataModel/Transcript.h           |  252 +
+ src/ensc-core/src/DataModel/Translation.c          |  338 +
+ src/ensc-core/src/DataModel/Translation.h          |  102 +
+ src/ensc-core/src/OBDA/BioIndex.c                  |  994 +++
+ src/ensc-core/src/OBDA/BioIndex.h                  |  114 +
+ src/ensc-core/src/OBDA/parsers.c                   |  276 +
+ src/ensc-core/src/OBDA/parsers.h                   |  116 +
+ src/ensc-core/src/Programs/RefineSolexaGenes.c     | 7544 ++++++++++++++++++++
+ src/ensc-core/src/Programs/RefineSolexaGenes.h     |  332 +
+ src/ensc-core/src/Programs/bamcount.c              |  656 ++
+ .../src/Programs/bamcount.dSYM/Contents/Info.plist |   20 +
+ .../Contents/Resources/DWARF/bamcount              |  Bin 0 -> 2144774 bytes
+ src/ensc-core/src/Programs/bamcount_exon           |  Bin 0 -> 748584 bytes
+ src/ensc-core/src/Programs/bamcount_exon.c         |  840 +++
+ .../bamcount_exon.dSYM/Contents/Info.plist         |   20 +
+ .../Contents/Resources/DWARF/bamcount_exon         |  Bin 0 -> 2152937 bytes
+ src/ensc-core/src/Programs/bamcov                  |  Bin 0 -> 738888 bytes
+ src/ensc-core/src/Programs/bamcov.c                |  476 ++
+ .../src/Programs/bamcov.dSYM/Contents/Info.plist   |   20 +
+ .../bamcov.dSYM/Contents/Resources/DWARF/bamcov    |  Bin 0 -> 2131062 bytes
+ src/ensc-core/src/Programs/bammap.c                | 1585 ++++
+ .../src/Programs/bammap.dSYM/Contents/Info.plist   |   20 +
+ .../bammap.dSYM/Contents/Resources/DWARF/bammap    |  Bin 0 -> 2159739 bytes
+ src/ensc-core/src/Programs/compile.csh             |    1 +
+ src/ensc-core/src/Programs/countsnps.c             |  248 +
+ .../Programs/countsnps.dSYM/Contents/Info.plist    |   20 +
+ .../Contents/Resources/DWARF/countsnps             |  Bin 0 -> 2115179 bytes
+ src/ensc-core/src/Programs/countsnps.pl            |  288 +
+ src/ensc-core/src/Programs/dumptranslations.pl     |  187 +
+ src/ensc-core/src/Programs/fastasplit              |  Bin 0 -> 18452 bytes
+ src/ensc-core/src/Programs/fastasplit.c            |  258 +
+ .../Programs/fastasplit.dSYM/Contents/Info.plist   |   20 +
+ .../Contents/Resources/DWARF/fastasplit            |  Bin 0 -> 16585 bytes
+ src/ensc-core/src/Programs/indicate.c              |  182 +
+ .../src/Programs/indicate.dSYM/Contents/Info.plist |   20 +
+ .../Contents/Resources/DWARF/indicate              |  Bin 0 -> 145432 bytes
+ src/ensc-core/src/Programs/moveperl                |  Bin 0 -> 22804 bytes
+ src/ensc-core/src/Programs/moveperl.c              |  457 ++
+ src/ensc-core/src/Programs/testdbc.c               |  333 +
+ .../src/Programs/testdbc.dSYM/Contents/Info.plist  |   20 +
+ .../testdbc.dSYM/Contents/Resources/DWARF/testdbc  |  Bin 0 -> 2099551 bytes
+ src/ensc-core/src/Tests/AssemblyMapperTest.c       |  260 +
+ .../AssemblyMapperTest.dSYM/Contents/Info.plist    |   20 +
+ .../Contents/Resources/DWARF/AssemblyMapperTest    |  Bin 0 -> 2107628 bytes
+ src/ensc-core/src/Tests/BaseComparaDBTest.h        |   44 +
+ src/ensc-core/src/Tests/BaseRODBTest.h             |   58 +
+ src/ensc-core/src/Tests/BaseRWDBTest.h             |   49 +
+ src/ensc-core/src/Tests/BaseTest.h                 |   40 +
+ src/ensc-core/src/Tests/CacheTest.c                |   51 +
+ .../src/Tests/CacheTest.dSYM/Contents/Info.plist   |   20 +
+ .../Contents/Resources/DWARF/CacheTest             |  Bin 0 -> 56223 bytes
+ .../src/Tests/ChainedAssemblyMapperTest.c          |  195 +
+ .../Contents/Info.plist                            |   20 +
+ .../Resources/DWARF/ChainedAssemblyMapperTest      |  Bin 0 -> 2108610 bytes
+ src/ensc-core/src/Tests/CigarStrUtilTest.c         |   59 +
+ .../CigarStrUtilTest.dSYM/Contents/Info.plist      |   20 +
+ .../Contents/Resources/DWARF/CigarStrUtilTest      |  Bin 0 -> 96520 bytes
+ src/ensc-core/src/Tests/ClassTest.c                |   31 +
+ .../src/Tests/ClassTest.dSYM/Contents/Info.plist   |   20 +
+ .../Contents/Resources/DWARF/ClassTest             |  Bin 0 -> 19877 bytes
+ src/ensc-core/src/Tests/Compara.conf               |   26 +
+ src/ensc-core/src/Tests/ComparaDBAdaptorTest.c     |   33 +
+ .../ComparaDBAdaptorTest.dSYM/Contents/Info.plist  |   20 +
+ .../Contents/Resources/DWARF/ComparaDBAdaptorTest  |  Bin 0 -> 2377413 bytes
+ .../src/Tests/ComparaDNAAlignFeatureAdaptorTest.c  |   67 +
+ .../Contents/Info.plist                            |   20 +
+ .../DWARF/ComparaDNAAlignFeatureAdaptorTest        |  Bin 0 -> 2390288 bytes
+ src/ensc-core/src/Tests/CoordSystemTest.c          |   67 +
+ .../Tests/CoordSystemTest.dSYM/Contents/Info.plist |   20 +
+ .../Contents/Resources/DWARF/CoordSystemTest       |  Bin 0 -> 2102304 bytes
+ src/ensc-core/src/Tests/DBAdaptorTest.c            |   34 +
+ .../Tests/DBAdaptorTest.dSYM/Contents/Info.plist   |   20 +
+ .../Contents/Resources/DWARF/DBAdaptorTest         |  Bin 0 -> 2095113 bytes
+ src/ensc-core/src/Tests/DNAAlignFeatureTest.c      |  132 +
+ src/ensc-core/src/Tests/DNAAlignFeatureWriteTest.c |   65 +
+ src/ensc-core/src/Tests/DNAPepAlignFeatureTest.c   |  112 +
+ .../Contents/Info.plist                            |   20 +
+ .../Resources/DWARF/DNAPepAlignFeatureTest         |  Bin 0 -> 2109212 bytes
+ .../src/Tests/DNAPepAlignFeatureWriteTest.c        |   64 +
+ .../Contents/Info.plist                            |   20 +
+ .../Resources/DWARF/DNAPepAlignFeatureWriteTest    |  Bin 0 -> 2102882 bytes
+ src/ensc-core/src/Tests/EcoStringTest.c            |   61 +
+ .../Tests/EcoStringTest.dSYM/Contents/Info.plist   |   20 +
+ .../Contents/Resources/DWARF/EcoStringTest         |  Bin 0 -> 72865 bytes
+ src/ensc-core/src/Tests/EnsCTestDB.c               |  487 ++
+ src/ensc-core/src/Tests/FreeTest.c                 |  101 +
+ src/ensc-core/src/Tests/GeneTest.c                 |  161 +
+ src/ensc-core/src/Tests/GeneWriteTest.c            |   70 +
+ src/ensc-core/src/Tests/GenomicAlignTest.c         |   72 +
+ src/ensc-core/src/Tests/HomologyTest.c             |   73 +
+ .../Tests/HomologyTest.dSYM/Contents/Info.plist    |   20 +
+ .../Contents/Resources/DWARF/HomologyTest          |  Bin 0 -> 2386077 bytes
+ src/ensc-core/src/Tests/LRUCacheTest.c             |   75 +
+ src/ensc-core/src/Tests/MapperTest.c               |  403 ++
+ .../src/Tests/MapperTest.dSYM/Contents/Info.plist  |   20 +
+ .../Contents/Resources/DWARF/MapperTest            |  Bin 0 -> 150955 bytes
+ src/ensc-core/src/Tests/PredictionTranscriptTest.c |   64 +
+ .../Contents/Info.plist                            |   20 +
+ .../Resources/DWARF/PredictionTranscriptTest       |  Bin 0 -> 2107884 bytes
+ src/ensc-core/src/Tests/RepeatFeatureTest.c        |   79 +
+ .../RepeatFeatureTest.dSYM/Contents/Info.plist     |   20 +
+ .../Contents/Resources/DWARF/RepeatFeatureTest     |  Bin 0 -> 2107128 bytes
+ src/ensc-core/src/Tests/RepeatFeatureWriteTest.c   |   64 +
+ .../Contents/Info.plist                            |   20 +
+ .../Resources/DWARF/RepeatFeatureWriteTest         |  Bin 0 -> 2102854 bytes
+ src/ensc-core/src/Tests/SeqUtilTest.c              |   29 +
+ .../src/Tests/SeqUtilTest.dSYM/Contents/Info.plist |   20 +
+ .../Contents/Resources/DWARF/SeqUtilTest           |  Bin 0 -> 82145 bytes
+ src/ensc-core/src/Tests/SequenceAdaptorTest.c      |   89 +
+ .../SequenceAdaptorTest.dSYM/Contents/Info.plist   |   20 +
+ .../Contents/Resources/DWARF/SequenceAdaptorTest   |  Bin 0 -> 2103184 bytes
+ src/ensc-core/src/Tests/SimpleFeatureTest.c        |   84 +
+ .../SimpleFeatureTest.dSYM/Contents/Info.plist     |   20 +
+ .../Contents/Resources/DWARF/SimpleFeatureTest     |  Bin 0 -> 2106950 bytes
+ src/ensc-core/src/Tests/SimpleFeatureWriteTest.c   |   65 +
+ src/ensc-core/src/Tests/SliceAdaptorTest.c         |  681 ++
+ .../SliceAdaptorTest.dSYM/Contents/Info.plist      |   20 +
+ .../Contents/Resources/DWARF/SliceAdaptorTest      |  Bin 0 -> 2104736 bytes
+ src/ensc-core/src/Tests/StrUtilTest.c              |   35 +
+ .../src/Tests/StrUtilTest.dSYM/Contents/Info.plist |   20 +
+ .../Contents/Resources/DWARF/StrUtilTest           |  Bin 0 -> 50240 bytes
+ src/ensc-core/src/Tests/StreamTest.c               |   54 +
+ .../src/Tests/StreamTest.dSYM/Contents/Info.plist  |   20 +
+ .../Contents/Resources/DWARF/StreamTest            |  Bin 0 -> 51141 bytes
+ src/ensc-core/src/Tests/SyntenyTest.c              |   64 +
+ .../src/Tests/SyntenyTest.dSYM/Contents/Info.plist |   20 +
+ .../Contents/Resources/DWARF/SyntenyTest           |  Bin 0 -> 2385644 bytes
+ .../src/Tests/TopLevelAssemblyMapperTest.c         |  160 +
+ .../Contents/Info.plist                            |   20 +
+ .../Resources/DWARF/TopLevelAssemblyMapperTest     |  Bin 0 -> 2107287 bytes
+ src/ensc-core/src/Tests/TranslateTest.c            |   36 +
+ .../Tests/TranslateTest.dSYM/Contents/Info.plist   |   20 +
+ .../Contents/Resources/DWARF/TranslateTest         |  Bin 0 -> 18432 bytes
+ src/ensc-core/src/Tests/VectorTest.c               |   57 +
+ .../src/Tests/VectorTest.dSYM/Contents/Info.plist  |   20 +
+ .../Contents/Resources/DWARF/VectorTest            |  Bin 0 -> 93106 bytes
+ src/ensc-core/src/Util/CHash.c                     |  620 ++
+ src/ensc-core/src/Util/CHash.h                     |   58 +
+ src/ensc-core/src/Util/Cache.c                     |  123 +
+ src/ensc-core/src/Util/Cache.h                     |   51 +
+ src/ensc-core/src/Util/EcoString.c                 |  523 ++
+ src/ensc-core/src/Util/EcoString.h                 |   51 +
+ src/ensc-core/src/Util/Error.c                     |  176 +
+ src/ensc-core/src/Util/Error.h                     |  408 ++
+ src/ensc-core/src/Util/FileUtil.c                  |  401 ++
+ src/ensc-core/src/Util/FileUtil.h                  |   32 +
+ src/ensc-core/src/Util/IDHash.c                    |  249 +
+ src/ensc-core/src/Util/IDHash.h                    |   53 +
+ src/ensc-core/src/Util/LRUCache.c                  |  238 +
+ src/ensc-core/src/Util/LRUCache.h                  |   57 +
+ src/ensc-core/src/Util/Message.h                   |  515 ++
+ src/ensc-core/src/Util/MysqlUtil.c                 |  104 +
+ src/ensc-core/src/Util/MysqlUtil.h                 |   31 +
+ src/ensc-core/src/Util/ProcUtil.c                  |  268 +
+ src/ensc-core/src/Util/ProcUtil.h                  |   35 +
+ src/ensc-core/src/Util/SeqUtil.c                   |  252 +
+ src/ensc-core/src/Util/SeqUtil.h                   |   47 +
+ src/ensc-core/src/Util/StrUtil.c                   |  826 +++
+ src/ensc-core/src/Util/StrUtil.h                   |   89 +
+ src/ensc-core/src/Util/Stream.c                    |  393 +
+ src/ensc-core/src/Util/Stream.h                    |   65 +
+ src/ensc-core/src/Util/StringHash.c                |  377 +
+ src/ensc-core/src/Util/StringHash.h                |   62 +
+ src/ensc-core/src/Util/tplib.h                     |   46 +
+ src/ensc-core/src/Util/translate.c                 |  339 +
+ src/ensc-core/src/Util/translate.h                 |   28 +
+ src/runconfig                                      |    3 +-
+ src/samtools_parallel/AUTHORS                      |   20 +
+ src/samtools_parallel/COPYING                      |   21 +
+ src/samtools_parallel/ChangeLog                    | 5948 +++++++++++++++
+ src/samtools_parallel/ChangeLog.old                | 3875 ++++++++++
+ src/samtools_parallel/INSTALL                      |   30 +
+ src/samtools_parallel/Makefile.am                  |   22 +
+ src/samtools_parallel/Makefile.mingw               |   63 +
+ src/samtools_parallel/Makefile.orig                |  102 +
+ src/samtools_parallel/NEWS                         |  806 +++
+ src/samtools_parallel/README.md                    |   36 +
+ src/samtools_parallel/bam.c                        |  478 ++
+ src/samtools_parallel/bam.h                        |  826 +++
+ src/samtools_parallel/bam2bcf.c                    |  353 +
+ src/samtools_parallel/bam2bcf.h                    |   62 +
+ src/samtools_parallel/bam2bcf_indel.c              |  480 ++
+ src/samtools_parallel/bam2depth.c                  |  158 +
+ src/samtools_parallel/bam_aux.c                    |  284 +
+ src/samtools_parallel/bam_cat.c                    |  209 +
+ src/samtools_parallel/bam_color.c                  |  145 +
+ src/samtools_parallel/bam_endian.h                 |   42 +
+ src/samtools_parallel/bam_import.c                 |  489 ++
+ src/samtools_parallel/bam_index.c                  |  728 ++
+ src/samtools_parallel/bam_lpileup.c                |  198 +
+ src/samtools_parallel/bam_mate.c                   |  128 +
+ src/samtools_parallel/bam_md.c                     |  389 +
+ src/samtools_parallel/bam_pileup.c                 |  437 ++
+ src/samtools_parallel/bam_plcmd.c                  |  552 ++
+ src/samtools_parallel/bam_qa.c                     |  254 +
+ src/samtools_parallel/bam_reheader.c               |   89 +
+ src/samtools_parallel/bam_rmdup.c                  |  206 +
+ src/samtools_parallel/bam_rmdupse.c                |  159 +
+ src/samtools_parallel/bam_sort.c                   |  661 ++
+ src/samtools_parallel/bam_stat.c                   |   77 +
+ src/samtools_parallel/bam_tview.c                  |  484 ++
+ src/samtools_parallel/bamshuf.c                    |  141 +
+ src/samtools_parallel/bamtk.c                      |  133 +
+ src/samtools_parallel/bcftools/README              |   36 +
+ src/samtools_parallel/bcftools/bcf.c               |  365 +
+ src/samtools_parallel/bcftools/bcf.h               |  190 +
+ src/samtools_parallel/bcftools/bcf.tex             |   77 +
+ src/samtools_parallel/bcftools/bcf2qcall.c         |   91 +
+ src/samtools_parallel/bcftools/bcfutils.c          |  390 +
+ src/samtools_parallel/bcftools/call1.c             |  591 ++
+ src/samtools_parallel/bcftools/em.c                |  310 +
+ src/samtools_parallel/bcftools/fet.c               |  112 +
+ src/samtools_parallel/bcftools/index.c             |  335 +
+ src/samtools_parallel/bcftools/kfunc.c             |  162 +
+ src/samtools_parallel/bcftools/kmin.c              |  209 +
+ src/samtools_parallel/bcftools/kmin.h              |   46 +
+ src/samtools_parallel/bcftools/main.c              |  195 +
+ src/samtools_parallel/bcftools/mut.c               |  127 +
+ src/samtools_parallel/bcftools/prob1.c             |  580 ++
+ src/samtools_parallel/bcftools/prob1.h             |   42 +
+ src/samtools_parallel/bcftools/r2plot.lua          |   83 +
+ src/samtools_parallel/bcftools/vcf.c               |  244 +
+ src/samtools_parallel/bcftools/vcfutils.lua        |  694 ++
+ src/samtools_parallel/bcftools/vcfutils.pl         |  567 ++
+ src/samtools_parallel/bedcov.c                     |  127 +
+ src/samtools_parallel/bedidx.c                     |  162 +
+ src/samtools_parallel/bgzf.c                       |  666 ++
+ src/samtools_parallel/bgzf.h                       |  251 +
+ src/samtools_parallel/bgzip.c                      |  210 +
+ src/samtools_parallel/cut_target.c                 |  193 +
+ src/samtools_parallel/errmod.c                     |  130 +
+ src/samtools_parallel/errmod.h                     |   24 +
+ src/samtools_parallel/examples/00README.txt        |   23 +
+ src/samtools_parallel/examples/Makefile.am         |   15 +
+ src/samtools_parallel/examples/bam2bed.c           |   51 +
+ src/samtools_parallel/examples/calDepth.c          |   62 +
+ src/samtools_parallel/examples/chk_indel.c         |   83 +
+ src/samtools_parallel/examples/ex1.fa              |   56 +
+ src/samtools_parallel/examples/ex1.sam.gz          |  Bin 0 -> 114565 bytes
+ src/samtools_parallel/examples/removeB.pl          |  148 +
+ src/samtools_parallel/examples/toy-B.sam           |    7 +
+ src/samtools_parallel/examples/toy.fa              |    4 +
+ src/samtools_parallel/examples/toy.sam             |   14 +
+ src/samtools_parallel/faidx.c                      |  432 ++
+ src/samtools_parallel/faidx.h                      |  103 +
+ src/samtools_parallel/kaln.c                       |  486 ++
+ src/samtools_parallel/kaln.h                       |   67 +
+ src/samtools_parallel/khash.h                      |  528 ++
+ src/samtools_parallel/klist.h                      |   96 +
+ src/samtools_parallel/knetfile.c                   |  632 ++
+ src/samtools_parallel/knetfile.h                   |   75 +
+ src/samtools_parallel/kprobaln.c                   |  280 +
+ src/samtools_parallel/kprobaln.h                   |   49 +
+ src/samtools_parallel/kseq.h                       |  235 +
+ src/samtools_parallel/ksort.h                      |  281 +
+ src/samtools_parallel/kstring.c                    |  212 +
+ src/samtools_parallel/kstring.h                    |  170 +
+ src/samtools_parallel/lsstack/COPYING              |  340 +
+ src/samtools_parallel/lsstack/Makefile.am          |   15 +
+ src/samtools_parallel/lsstack/README               |   23 +
+ src/samtools_parallel/lsstack/lsstack.c            |  948 +++
+ src/samtools_parallel/math/ahmm.pdf                |  Bin 0 -> 8296 bytes
+ src/samtools_parallel/math/samtools.tex            |  786 ++
+ src/samtools_parallel/misc/HmmGlocal.java          |  178 +
+ src/samtools_parallel/misc/Makefile.am             |   15 +
+ src/samtools_parallel/misc/ace2sam.c               |  249 +
+ src/samtools_parallel/misc/bamcheck.c              | 1399 ++++
+ src/samtools_parallel/misc/blast2sam.pl            |   92 +
+ src/samtools_parallel/misc/bowtie2sam.pl           |   92 +
+ src/samtools_parallel/misc/export2sam.pl           |  545 ++
+ src/samtools_parallel/misc/interpolate_sam.pl      |  125 +
+ src/samtools_parallel/misc/maq2sam.c               |  173 +
+ src/samtools_parallel/misc/md5.c                   |  296 +
+ src/samtools_parallel/misc/md5.h                   |   57 +
+ src/samtools_parallel/misc/md5fa.c                 |   58 +
+ src/samtools_parallel/misc/novo2sam.pl             |  281 +
+ src/samtools_parallel/misc/plot-bamcheck           |  880 +++
+ src/samtools_parallel/misc/psl2sam.pl              |   65 +
+ src/samtools_parallel/misc/r2plot.lua              |   83 +
+ src/samtools_parallel/misc/sam2vcf.pl              |  270 +
+ src/samtools_parallel/misc/samtools.pl             |  528 ++
+ src/samtools_parallel/misc/soap2sam.pl             |  109 +
+ src/samtools_parallel/misc/varfilter.py            |  205 +
+ src/samtools_parallel/misc/vcfutils.lua            |  694 ++
+ src/samtools_parallel/misc/wgsim.c                 |  419 ++
+ src/samtools_parallel/misc/wgsim_eval.pl           |   91 +
+ src/samtools_parallel/misc/zoom2sam.pl             |   97 +
+ src/samtools_parallel/padding.c                    |  159 +
+ src/samtools_parallel/pbgzip/block.c               |  152 +
+ src/samtools_parallel/pbgzip/block.h               |   52 +
+ src/samtools_parallel/pbgzip/consumer.c            |  412 ++
+ src/samtools_parallel/pbgzip/consumer.h            |   35 +
+ src/samtools_parallel/pbgzip/pbgzf.c               |  752 ++
+ src/samtools_parallel/pbgzip/pbgzf.h               |  147 +
+ src/samtools_parallel/pbgzip/pbgzip.c              |  151 +
+ src/samtools_parallel/pbgzip/queue.c               |  368 +
+ src/samtools_parallel/pbgzip/queue.h               |   88 +
+ src/samtools_parallel/pbgzip/reader.c              |  250 +
+ src/samtools_parallel/pbgzip/reader.h              |   26 +
+ src/samtools_parallel/pbgzip/util.c                |  106 +
+ src/samtools_parallel/pbgzip/util.h                |   13 +
+ src/samtools_parallel/pbgzip/writer.c              |  217 +
+ src/samtools_parallel/pbgzip/writer.h              |   28 +
+ src/samtools_parallel/phase.c                      |  687 ++
+ src/samtools_parallel/pstack-1.2/ChangeLog         |   35 +
+ src/samtools_parallel/pstack-1.2/elf.c             |  723 ++
+ src/samtools_parallel/pstack-1.2/elfinfo.h         |  159 +
+ src/samtools_parallel/pstack-1.2/pstack.1          |   97 +
+ src/samtools_parallel/pstack-1.2/pstack.c          |  987 +++
+ src/samtools_parallel/radix.h                      |  112 +
+ src/samtools_parallel/razf.c                       |  853 +++
+ src/samtools_parallel/razf.h                       |  134 +
+ src/samtools_parallel/razip.c                      |  141 +
+ src/samtools_parallel/sam.c                        |  192 +
+ src/samtools_parallel/sam.h                        |   99 +
+ src/samtools_parallel/sam_header.c                 |  976 +++
+ src/samtools_parallel/sam_header.h                 |  302 +
+ src/samtools_parallel/sam_view.c                   |  451 ++
+ src/samtools_parallel/sample.c                     |  107 +
+ src/samtools_parallel/sample.h                     |   17 +
+ src/samtools_parallel/samtools.1                   |  998 +++
+ src/samtools_parallel/win32/libcurses.a            |  Bin 0 -> 114764 bytes
+ src/samtools_parallel/win32/libz.a                 |  Bin 0 -> 74266 bytes
+ src/samtools_parallel/win32/xcurses.h              | 1377 ++++
+ src/samtools_parallel/win32/zconf.h                |  332 +
+ src/samtools_parallel/win32/zlib.h                 | 1357 ++++
+ 553 files changed, 135996 insertions(+), 6 deletions(-)
+
+2014-12-19  Gemma Barson  <gb10@sanger.ac.uk>
+ Add interface files for ensembl
+ src/configure.ac                         |    1 +
+ src/include/ZMap/zmapUrl.h               |    1 +
+ src/zmapServer/Makefile.am               |    3 +-
+ src/zmapServer/ensembl/Makefile.am       |   18 ++
+ src/zmapServer/ensembl/ensemblServer.c   |  311 ++++++++++++++++++++++++++++++
+ src/zmapServer/ensembl/ensemblServer_P.h |   48 +++++
+ src/zmapServer/zmapServer.c              |    4 +
+ src/zmapServer/zmapServerPrototype.h     |    1 +
+ src/zmapServer/zmapServer_P.h            |    1 +
+ 9 files changed, 387 insertions(+), 1 deletions(-)
