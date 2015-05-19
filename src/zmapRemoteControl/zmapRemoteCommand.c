@@ -1030,17 +1030,17 @@ static GArray *createRequestReply(EnvelopeType type,
                                   ZMapXMLUtilsEventStack result,
                                   ...)
 {
-  GArray *array = NULL ;
+  GArray *an_array = NULL ;
 
   va_list argp ;
   va_start(argp, result) ;
 
-  array = vCreateRequestReply(type, version, app_id, socket_id, request_id, request_time,
+  an_array = vCreateRequestReply(type, version, app_id, socket_id, request_id, request_time,
                               command, timeout_secs, return_code, reason, result, argp) ;
 
   va_end(argp) ;
 
-  return array ;
+  return an_array ;
 }
 
 

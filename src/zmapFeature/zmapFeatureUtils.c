@@ -241,15 +241,15 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
         {
         case ZMAPSTYLE_MODE_TRANSCRIPT:
           {
-            GArray *array;
+            GArray *an_array;
             ZMapSpan span;
             int i = 0;
 
-            if(sane && (array = feature->feature.transcript.exons))
+            if(sane && (an_array = feature->feature.transcript.exons))
               {
-                for(i = 0; sane && i < array->len; i++)
+                for(i = 0; sane && i < an_array->len; i++)
                   {
-                    span = &(g_array_index(array, ZMapSpanStruct, i));
+                    span = &(g_array_index(an_array, ZMapSpanStruct, i));
                     if(span->x1 > span->x2)
                       {
                         insanity = g_strdup_printf("Exon %d in feature '%s' has start > end.",
@@ -260,11 +260,11 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
                   }
               }
 
-            if(sane && (array = feature->feature.transcript.introns))
+            if(sane && (an_array = feature->feature.transcript.introns))
               {
-                for(i = 0; sane && i < array->len; i++)
+                for(i = 0; sane && i < an_array->len; i++)
                   {
-                    span = &(g_array_index(array, ZMapSpanStruct, i));
+                    span = &(g_array_index(an_array, ZMapSpanStruct, i));
                     if(span->x1 > span->x2)
                       {
                         insanity = g_strdup_printf("Intron %d in feature '%s' has start > end.",
@@ -2045,8 +2045,8 @@ void zmapFeatureInvert(int *coord, const int seq_start, const int seq_end)
 
 
 /* Revcomp the feature coords (swops, inverts, and makes them 1-based) */
-void zmapFeatureRevComp(const int seq_start, const int seq_end, int *coord1, int *coord2)  
-{ 
+void zmapFeatureRevComp(const int seq_start, const int seq_end, int *coord1, int *coord2)
+{
   int tmp = *coord1;
   *coord1 = *coord2;
   *coord2 = tmp;
