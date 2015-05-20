@@ -443,7 +443,7 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       SimpleFeature *sf = Vector_getElementAt(features,i);
-      SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf, server->coord_system,NULL,NULL);
 
       if (rsf)
         makeFeatureSimple(server, rsf, get_features_data, feature_block) ;
@@ -468,7 +468,7 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       DNAAlignFeature *sf = Vector_getElementAt(features,i);
-      DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, server->coord_system,NULL,NULL);
 
       if (rsf)
         makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block) ;
@@ -493,7 +493,7 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       DNAPepAlignFeature *sf = Vector_getElementAt(features,i);
-      DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, server->coord_system,NULL,NULL);
 
       if (rsf)
         makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block) ;
@@ -519,7 +519,7 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       RepeatFeature *sf = Vector_getElementAt(features,i);
-      RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, server->coord_system,NULL,NULL);
 
       if (rsf)
         makeFeatureRepeat(server, rsf, get_features_data, feature_block) ;
@@ -545,7 +545,7 @@ static gboolean getAllTranscripts(EnsemblServer server,
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       Transcript *sf = Vector_getElementAt(features,i);
-      Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, server->coord_system ,NULL,NULL);
 
       if (rsf)
         makeFeatureTranscript(server, rsf, get_features_data, feature_block) ;
@@ -571,7 +571,7 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
       PredictionTranscript *sf = Vector_getElementAt(features,i);
-      PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, server->coord_system,NULL,NULL);
 
       if (rsf)
         makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block) ;
@@ -597,7 +597,7 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 //  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
 //    {
 //      Gene *sf = Vector_getElementAt(features,i);
-//      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+//      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf, server->coord_system,NULL,NULL);
 //
 //      if (rsf)
 //        makeFeatureGene(server, rsf, get_features_data, feature_block) ;
@@ -1514,6 +1514,34 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
 }
 
 
+static Slice* getSliceForCoordSystem(const char *coord_system,
+                                     EnsemblServer server,
+                                     const char *seq_name,
+                                     long start,
+                                     long end,
+                                     int strand)
+{
+  Slice *slice = NULL ;
+
+  /* copy seq_name and coord_system because function takes non-const arg... ugh */
+  char *seq_name_copy = g_strdup(seq_name);
+  char *coord_system_copy = g_strdup(coord_system) ;
+
+  pthread_mutex_lock(&server->mutex) ; 
+  slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, coord_system_copy, seq_name_copy, start, end, strand, NULL, 0);
+  pthread_mutex_unlock(&server->mutex) ;
+      
+  g_free(seq_name_copy);
+  g_free(coord_system_copy) ;
+
+  /* Remember the coord system we used */
+  if (slice)
+    server->coord_system = coord_system ;
+
+  return slice ;
+}
+
+
 static Slice* getSlice(EnsemblServer server,
                        const char *seq_name,
                        long start,
@@ -1537,16 +1565,12 @@ static Slice* getSlice(EnsemblServer server,
           server->slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
           pthread_mutex_unlock(&server->mutex) ;
         }
-      
-      /* copy seq_name because function takes non-const arg... ugh */
-      char *seq_name_copy = g_strdup(seq_name);
 
-      pthread_mutex_lock(&server->mutex) ; 
-      slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", seq_name_copy, start, end, strand, NULL, 0);
-      pthread_mutex_unlock(&server->mutex) ;
-      
-      g_free(seq_name_copy);
-      seq_name_copy = NULL;
+      /*! \todo Need to find the coord system a better way. For now just try in rough priority order. */
+      if (!slice) slice = getSliceForCoordSystem("chromosome", server, seq_name, start, end, strand) ;
+      if (!slice) slice = getSliceForCoordSystem("ultracontig", server, seq_name, start, end, strand) ;
+      if (!slice) slice = getSliceForCoordSystem("scaffold", server, seq_name, start, end, strand) ;
+      if (!slice) slice = getSliceForCoordSystem("contig", server, seq_name, start, end, strand) ;
 
       if (server->slice_adaptor && slice)
         {
@@ -1600,13 +1624,13 @@ static char* getSequence(EnsemblServer server,
           pthread_mutex_unlock(&server->mutex) ;
         }
 
-      if (server->slice_adaptor && server->seq_adaptor)
+      if (server->slice_adaptor && server->seq_adaptor && server->coord_system)
         {
           /* copy seq_name because function takes non-const arg... ugh */
           char *seq_name_copy = g_strdup(seq_name);
 
           pthread_mutex_lock(&server->mutex) ; 
-          Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, "chromosome", 
+          Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, server->coord_system, 
                                                     seq_name_copy, start, end, 
                                                     strand, NULL, 0);
           pthread_mutex_unlock(&server->mutex) ;

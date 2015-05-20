@@ -40,6 +40,7 @@ typedef struct _EnsemblServerStruct
   DBAdaptor *dba ;
   SliceAdaptor *slice_adaptor ;
   SequenceAdaptor *seq_adaptor ;
+  const char* coord_system ;
   Slice *slice ;
   //GMutex* mutex ;                                           /* lock to protect ensc-core library
   pthread_mutex_t mutex ;                                   /* lock to protect ensc-core library
