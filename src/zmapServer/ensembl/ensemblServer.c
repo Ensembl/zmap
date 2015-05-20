@@ -283,6 +283,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
     }
   else
     {
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
       setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)", 
                                         server->db_name, server->sequence, server->zmap_start, server->zmap_end)) ;
       ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
@@ -1405,13 +1406,16 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
   EnsemblServer server = get_features_data->server ;
 
-  getAllSimpleFeatures(server, get_features_data, feature_block) ;
-  getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
-  getAllDNAPepAlignFeatures(server, get_features_data, feature_block) ;
-  getAllRepeatFeatures(server, get_features_data, feature_block) ;
-  getAllTranscripts(server, get_features_data, feature_block) ;
-  getAllPredictionTranscripts(server, get_features_data, feature_block) ;
-  //getAllGenes(server, get_features_data, feature_block) ;
+  if (server->slice)
+    {
+      getAllSimpleFeatures(server, get_features_data, feature_block) ;
+      getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
+      getAllDNAPepAlignFeatures(server, get_features_data, feature_block) ;
+      getAllRepeatFeatures(server, get_features_data, feature_block) ;
+      getAllTranscripts(server, get_features_data, feature_block) ;
+      getAllPredictionTranscripts(server, get_features_data, feature_block) ;
+      //getAllGenes(server, get_features_data, feature_block) ;
+    }
   
   return ;
 }
