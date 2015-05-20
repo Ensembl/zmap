@@ -358,7 +358,7 @@ typedef struct _zmapWindowFeatureStack
   ZMapFeatureContext context;
   ZMapFeatureAlignment align;
   ZMapFeatureBlock block;
-  ZMapFeatureSet set;
+  ZMapFeatureSet feature_set;
   ZMapFeature feature;
   GQuark id;        /* used for density plots, set to zero */
   GQuark maps_to;	/* used by density plots for virtual featuresets */

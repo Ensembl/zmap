@@ -466,19 +466,19 @@ gboolean zMapGFFParseLineLength_V2(ZMapGFFParser parser_base, char *line, gsize 
 
 gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser_base)
 {
-  gboolean set = TRUE ;
+  gboolean is_set = TRUE ;
 
   ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
 
   if (!parser)
-    return set ;
+    return is_set ;
   if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return set ;
+    return is_set ;
 
   parser->sequence_flags.done_start = FALSE ;
   parser->sequence_flags.done_finished = FALSE ;
 
-  return set ;
+  return is_set ;
 }
 
 

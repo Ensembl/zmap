@@ -1084,7 +1084,7 @@ static ZMapFeatureContextExecuteStatus undisplaySearchFeatureSetsCB(GQuark key,
 {
   contextStack stuff = (contextStack) user_data ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  ZMapFeatureSet set;
+  ZMapFeatureSet feature_set = NULL ;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
   switch(feature_any->struct_type)
@@ -1100,16 +1100,16 @@ static ZMapFeatureContextExecuteStatus undisplaySearchFeatureSetsCB(GQuark key,
       {
         FooCanvasItem *foo ;
 
-        set = (ZMapFeatureSet)feature_any;
+        feature_set = (ZMapFeatureSet)feature_any;
 
         foo = zmapWindowFToIFindSetItem(stuff->window,stuff->window->context_to_item,
-                                        set,ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
+                                        feature_set,ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
 
         zmapWindowFToIRemoveSet(stuff->window->context_to_item,
-                                stuff->align_id, stuff->block_id, set->unique_id,
+                                stuff->align_id, stuff->block_id, feature_set->unique_id,
                                 ZMAPSTRAND_NONE, ZMAPFRAME_NONE, TRUE);
 
-        zMapWindowFeaturesetItemRemoveSet(foo, set, FALSE);
+        zMapWindowFeaturesetItemRemoveSet(foo, feature_set, FALSE);
 
         break;
       }

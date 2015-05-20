@@ -258,7 +258,7 @@ ZMapFeatureAny zMapFeatureParentGetFeatureByID(ZMapFeatureAny feature_parent, GQ
 }
 
 
-/*! 
+/*!
  * \brief Callback used to determine whether the current feature has the id in the user data and
  * if so to set the result in the user data.
  */
@@ -271,13 +271,13 @@ static ZMapFeatureContextExecuteStatus find_feature_by_id(GQuark key,
 
   ZMapFeatureAny any = (ZMapFeatureAny)data ;
   FeatureSearch search_data = (FeatureSearch)user_data ;
-  
+
   if (any->unique_id == search_data->search_id)
     {
       search_data->found_feature = any ;
       status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ; /* stop searching */
     }
-  
+
   return status ;
 }
 
@@ -285,8 +285,8 @@ static ZMapFeatureContextExecuteStatus find_feature_by_id(GQuark key,
 /* Looks up a feature_id in ANY level of the child features of feature_any. Returns the feature if
  * found, NULL otherwise. If you know that feature_any is a direct parent of the feature you're
  * looking for use zMapFeatureParentGetFeatureByID instead as that is more effcient. */
-ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_any, 
-                                            GQuark feature_id, 
+ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_any,
+                                            GQuark feature_id,
                                             ZMapFeatureLevelType struct_type)
 {
   ZMapFeatureAny feature = NULL ;
@@ -298,7 +298,7 @@ ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_any,
                             struct_type,
                             find_feature_by_id,
                             &search_data);
-  
+
   feature = search_data.found_feature ;
 
   return feature ;
@@ -931,12 +931,12 @@ gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature featur
 
 static void copy_to_new_featureset(gpointer key, gpointer hash_data, gpointer user_data)
 {
-  ZMapFeatureSet set = (ZMapFeatureSet)user_data;
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data;
   ZMapFeature    new_feature;
 
   new_feature = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)hash_data);
 
-  zMapFeatureSetAddFeature(set, new_feature);
+  zMapFeatureSetAddFeature(feature_set, new_feature);
 
   return ;
 }
@@ -1227,7 +1227,7 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
 {
   if (!alignment)
     return ;
-  
+
   destroyFeatureAnyWithChildren((ZMapFeatureAny)alignment, free_data) ;
 
   return ;
@@ -1338,7 +1338,7 @@ ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block, GQuark
 GList *zMapFeatureBlockGetMatchingSets(ZMapFeatureBlock feature_block, char *prefix)
 {
   GList *sets = NULL,*s, *del;
-  ZMapFeatureSet set;
+  ZMapFeatureSet feature_set;
 
   zMap_g_hash_table_get_data(&sets, feature_block->feature_sets);
 
@@ -1346,8 +1346,8 @@ GList *zMapFeatureBlockGetMatchingSets(ZMapFeatureBlock feature_block, char *pre
     {
       const char *name;
 
-      set = (ZMapFeatureSet) s->data;
-      name = g_quark_to_string(set->unique_id);
+      feature_set = (ZMapFeatureSet) s->data;
+      name = g_quark_to_string(feature_set->unique_id);
 
       del = s;
       s = s->next;
@@ -2291,15 +2291,15 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
               }
             else
               {
-                ZMapFeatureSet set ;
+                ZMapFeatureSet feature_set ;
                 GHashTableIter iter;
                 gpointer key, value;
 
-                set = (ZMapFeatureSet)(merge_data->current_view_set) ;
+                feature_set = (ZMapFeatureSet)(merge_data->current_view_set) ;
 
                 /* hash_table_iter is the safe way to iterate through a hash table while
                  * removing members. */
-                g_hash_table_iter_init(&iter, set->features) ;
+                g_hash_table_iter_init(&iter, feature_set->features) ;
 
                 while (g_hash_table_iter_next(&iter, &key, &value))
                   {
@@ -3092,8 +3092,8 @@ static gboolean featureAnyAddFeature(ZMapFeatureAny feature_any, ZMapFeatureAny 
          */
         /* NOTE also called from locus code in viewremote receive, but is benign */
         ZMapFeature feat = (ZMapFeature) feature;
-        ZMapFeatureSet set = (ZMapFeatureSet) feature_any;
-        feat->style = & set->style;
+        ZMapFeatureSet feature_set = (ZMapFeatureSet) feature_any;
+        feat->style = & feature_set->style;
         }
 
       result = TRUE ;

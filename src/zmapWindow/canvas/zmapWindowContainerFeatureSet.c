@@ -397,7 +397,7 @@ gboolean zMapWindowContainerFeatureSetHasHiddenBumpFeatures(FooCanvasItem *featu
   if ((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
     {
       container = (ZMapWindowContainerFeatureSet)feature_set_container ;
-      
+
       result = container->hidden_bump_features ;
     }
 
@@ -1174,9 +1174,9 @@ static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,
 
       if(g->level == ZMAPCONTAINER_LEVEL_FEATURESET)
         {
-          ZMapWindowContainerFeatureSet set = ZMAP_CONTAINER_FEATURESET(g);;
+          ZMapWindowContainerFeatureSet cfeature_set = ZMAP_CONTAINER_FEATURESET(g);
 
-          if(set->unique_id == id && set->frame == frame && set->strand == strand)
+          if(cfeature_set->unique_id == id && cfeature_set->frame == frame && cfeature_set->strand == strand)
             return g;
         }
       else

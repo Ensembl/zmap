@@ -1009,9 +1009,9 @@ gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapFeatureAlignment align ;
-  ZMapFeatureBlock block ;
-  ZMapFeatureSet set ;
+  ZMapFeatureAlignment align = NULL ;
+  ZMapFeatureBlock block = NULL ;
+  ZMapFeatureSet feature_set = NULL ;
   GQuark set_id ;
 
   /* We don't want caller to have to do all this so we laboriously find a featureset,
@@ -1019,7 +1019,7 @@ gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
    * as the canvas knows how to do that. */
   align = zMap_g_hash_table_nth(window->feature_context->alignments, 0) ;
   block = zMap_g_hash_table_nth(align->blocks, 0) ;
-  set = zMap_g_hash_table_nth(block->feature_sets, 0) ;
+  feature_set = zMap_g_hash_table_nth(block->feature_sets, 0) ;
 
 
 
@@ -1034,7 +1034,7 @@ gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
                                              align->unique_id, block->unique_id,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                             set->unique_id,
+                                             feature_set->unique_id,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
                                              set_id,
                                              ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0)))
