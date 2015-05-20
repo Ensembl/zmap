@@ -124,8 +124,8 @@ typedef struct BumpColRangeStructName
 #define bump_col_range_freet(x) g_free(x)
 
 /* NOTE we expect an assignment left of these #defines; take care woth these macros */
-#define bump_col_range_delete(list, link, bcr)	g_list_delete_link(list, link);  g_free(bcr);
-#define bump_col_range_insert(list, link, bcr)	g_list_insert_before(list, link, bcr);
+#define bump_col_range_delete(glist, link, bcr)	g_list_delete_link(glist, link);  g_free(bcr);
+#define bump_col_range_insert(glist, link, bcr)	g_list_insert_before(glist, link, bcr);
 
 #define BCR_NEXT(x) 	(x->next)
 #define BCR_DATA(x)	((BumpColRange) x->data)
@@ -140,16 +140,16 @@ typedef struct BumpColRangeStructName
 #define BCR_DATA(x)	(x)
 
 /* item and bcr are both the same BumpColRangeStruct, link may be as well but not always */
-#define bump_col_range_delete(list,item,bcr) \
-  (BumpColRange) g_list_remove_link(&list->link,&item->link);  bump_col_range_free(bcr)
+#define bump_col_range_delete(glist,item,bcr) \
+  (BumpColRange) g_list_remove_link(&glist->link,&item->link);  bump_col_range_free(bcr)
 
 
 typedef BumpColRange BCR;
 
 
 static BumpColRange bump_col_range_alloc(void) ;
-static BumpColRange bump_col_range_insert(BumpColRange list, BumpColRange link, BumpColRange bcr) ;
-static BumpColRange bump_col_range_append(BumpColRange list, BumpColRange last, BumpColRange bcr) ;
+static BumpColRange bump_col_range_insert(BumpColRange alist, BumpColRange link, BumpColRange bcr) ;
+static BumpColRange bump_col_range_append(BumpColRange alist, BumpColRange last, BumpColRange bcr) ;
 static void bump_col_range_free(BumpColRange bcr) ;
 
 #endif
@@ -826,12 +826,12 @@ static BCR calcBumpNoOverlapFeatureSet(ZMapWindowFeaturesetItem featureset, ZMap
 /* GList rubbish: cannot insert after the last one, only before a NUll which means starting at the
  * head of the list
  * last is the last link in the list */
-static GList *bump_col_range_append(GList *list, GList *last, BumpColRange bcr)
+static GList *bump_col_range_append(GList *glist, GList *last, BumpColRange bcr)
 {
   last = g_list_append(last,bcr);
-  if(!list)
-    list = last;
-  return list;
+  if(!glist)
+    glist = last;
+  return glist;
 }
 
 
@@ -879,7 +879,7 @@ static void bump_col_range_free(BumpColRange bcr)
 
 /* disappointingly GLib does not provide a function to stitch a GList struct into a list although
  * it provides the converse */
-static BumpColRange bump_col_range_insert(BumpColRange list, BumpColRange link, BumpColRange bcr)
+static BumpColRange bump_col_range_insert(BumpColRange alist, BumpColRange link, BumpColRange bcr)
 {
   bcr->link.next = &link->link;
   bcr->link.prev = link->link.prev;
@@ -889,12 +889,12 @@ static BumpColRange bump_col_range_insert(BumpColRange list, BumpColRange link, 
   link->link.prev = (GList *) bcr;
 
   if(!bcr->link.prev)
-    list = bcr;
+    alist = bcr;
 
-  return list;
+  return alist;
 }
 
-static BumpColRange bump_col_range_append(BumpColRange list, BumpColRange last, BumpColRange bcr)
+static BumpColRange bump_col_range_append(BumpColRange alist, BumpColRange last, BumpColRange bcr)
 {
   if(!last)
     {
@@ -906,10 +906,10 @@ static BumpColRange bump_col_range_append(BumpColRange list, BumpColRange last, 
       bcr->link.prev = &last->link;
     }
 
-  if(!list)
-    list = last;
+  if(!alist)
+    alist = last;
 
-  return list;
+  return alist;
 }
 
 #endif

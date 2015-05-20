@@ -906,18 +906,18 @@ static ZMapXMLMarkupObjectHandler getObjHandler(ZMapXMLElement element,
                                                 GList *tagHandlerItemList)
 {
   ZMapXMLMarkupObjectHandler handler = NULL;
-  GList *list = NULL;
+  GList *glist = NULL;
   GQuark id = 0;
   id   = element->name;
-  list = tagHandlerItemList;
+  glist = tagHandlerItemList;
 
-  while(list){
-    tagHandlerItem item = (tagHandlerItem)(list->data);
+  while(glist){
+    tagHandlerItem item = (tagHandlerItem)(glist->data);
     if(id == item->id){
       handler = item->handler;
       break;
     }
-    list = list->next;
+    glist = glist->next;
   }
 
   return handler;

@@ -568,14 +568,14 @@ static void zmap_window_container_block_destroy(GtkObject *gtkobject)
  */
 GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock block_data)
 {
-  GList *list = NULL;
+  GList *glist = NULL;
 
-  zMapReturnValIfFail(block_data, list) ;
+  zMapReturnValIfFail(block_data, glist) ;
 
-  list = block_data->compressed_cols;
+  glist = block_data->compressed_cols;
   block_data->compressed_cols = NULL;
 
-  return list;
+  return glist;
 }
 
 /*!
@@ -590,14 +590,14 @@ GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock 
  */
 GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock block_data)
 {
-  GList *list = NULL;
+  GList *glist = NULL;
 
-  zMapReturnValIfFail(block_data, list) ;
+  zMapReturnValIfFail(block_data, glist) ;
 
-  list = block_data->bumped_cols;
+  glist = block_data->bumped_cols;
   block_data->bumped_cols = NULL;
 
-  return list;
+  return glist;
 }
 
 /*!

@@ -3602,22 +3602,22 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	       || g_ascii_strcasecmp(tag, "Frame_2") == 0)
 	{
 	  StyleFeatureColours colours = NULL ;
-	  gboolean *set = NULL ;
+	  gboolean *is_set = NULL ;
 
 	  if (g_ascii_strcasecmp(tag, "Frame_0") == 0)
 	    {
 	      colours = &frame0_style_colours ;
-	      set = &some_frame0_colours ;
+	      is_set = &some_frame0_colours ;
 	    }
 	  else if (g_ascii_strcasecmp(tag, "Frame_1") == 0)
 	    {
 	      colours = &frame1_style_colours ;
-	      set = &some_frame1_colours ;
+	      is_set = &some_frame1_colours ;
 	    }
 	  else if (g_ascii_strcasecmp(tag, "Frame_2") == 0)
 	    {
 	      colours = &frame2_style_colours ;
-	      set = &some_frame2_colours ;
+	      is_set = &some_frame2_colours ;
 	    }
 
 	  if (!colours)
@@ -3629,7 +3629,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	      gboolean colour_parse ;
 
 	      if ((colour_parse = getStyleColour(colours, &line_pos)))
-		*set = TRUE ;
+		*is_set = TRUE ;
 	      else
 		zMapLogWarning("Style \"%s\": Bad colour spec: %s", name, next_line) ;
 	    }

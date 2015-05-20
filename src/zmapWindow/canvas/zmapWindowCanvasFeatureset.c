@@ -4006,8 +4006,8 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
     return 0;
 #if 1
   GList *l;
-  ZMapWindowCanvasFeature feat;
-  ZMapFeatureSet set;
+  ZMapWindowCanvasFeature feat = NULL ;
+  ZMapFeatureSet f_set = NULL ;
 
   for (l = fi->features;l;)
     {
@@ -4017,9 +4017,9 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
 
       if (zmapWindowCanvasFeatureValid(feat))
         {
-          set = (ZMapFeatureSet) feat->feature->parent;
+          f_set = (ZMapFeatureSet) feat->feature->parent;
 
-          if (set == featureset)
+          if (f_set == featureset)
             {
               /* NOTE the features list and display index both point to the same structs */
 

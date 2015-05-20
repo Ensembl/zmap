@@ -454,7 +454,7 @@ void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet fea
     feature_set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
                                                             ZMAPFEATURE_STRUCT_FEATURESET) ;
 
-  feature_stack->set       = feature_set;
+  feature_stack->feature_set       = feature_set;
   feature_stack->block     = (ZMapFeatureBlock)zMapFeatureGetParentGroup(
                                                                          (ZMapFeatureAny) feature_set,
                                                                          ZMAPFEATURE_STRUCT_BLOCK) ;
@@ -476,17 +476,17 @@ int get_featureset_column_index(ZMapFeatureContextMap map,GQuark featureset_id)
 {
   int index = 0;
   ZMapFeatureColumn column;
-  ZMapFeatureSetDesc set;
-  ZMapFeatureSource src;
+  ZMapFeatureSetDesc desc_set = NULL ;
+  ZMapFeatureSource src = NULL ;
   GList *l;
 
-  set = (ZMapFeatureSetDesc) g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(featureset_id));
-  if(!set)
+  desc_set = (ZMapFeatureSetDesc) g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(featureset_id));
+  if(!desc_set)
     return 0;
   src = (ZMapFeatureSource) g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(featureset_id));
   if(!src)
     return 0;
-  column = (ZMapFeatureColumn) g_hash_table_lookup(map->columns,GUINT_TO_POINTER(set->column_id));
+  column = (ZMapFeatureColumn) g_hash_table_lookup(map->columns,GUINT_TO_POINTER(desc_set->column_id));
   if(!column)
     return 0;
 
@@ -2214,16 +2214,16 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
     }
   else
     {
-      GList *list;
+      GList *glist;
       proceed = TRUE;
 
-      if((list = g_list_first(style_list)))
+      if((glist = g_list_first(style_list)))
         {
           do
             {
               ZMapFeatureTypeStyle featureset_style;
 
-              featureset_style = ZMAP_FEATURE_STYLE(list->data);
+              featureset_style = ZMAP_FEATURE_STYLE(glist->data);
 
               if(!zMapStyleIsDisplayable(featureset_style))
                 {
@@ -2233,7 +2233,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
                   proceed = FALSE; /* not displayable, so bomb out the rest of the code. */
                 }
             }
-          while(proceed && (list = g_list_next(list)));
+          while(proceed && (glist = g_list_next(glist)));
         }
     }
 
@@ -2375,14 +2375,14 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
       /* NOTE: 3FT and DNA get supplied by acedbServer and pipeServer and are given temporary styles that are freed
        * which means thet that data is not usable.
        */
-      ZMapFeatureSet set = (ZMapFeatureSet)feature->parent ;
+      ZMapFeatureSet feature_set = (ZMapFeatureSet)feature->parent ;
 
-      if (!set->style)
+      if (!feature_set->style)
         {
           char *err_msg ;
 
           err_msg = g_strdup_printf("no style for feature set \"%s\", feature \"%s\", (%s)",
-                                    g_quark_to_string(set->original_id),
+                                    g_quark_to_string(feature_set->original_id),
                                     g_quark_to_string(feature->original_id),
                                     g_quark_to_string(feature->unique_id));
 
@@ -2399,7 +2399,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
           g_free(err_msg) ;
         }
 
-      feature->style = &set->style;
+      feature->style = &feature_set->style;
     }
 
 #if MH17_REVCOMP_DEBUG > 1

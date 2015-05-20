@@ -7,10 +7,23 @@ repository.
 
 ZMap now has a dependency on the Ensembl C API code in the 'ensc-core' library.
 
-The ZMap build expects to find the ensc-core code/makefiles etc. in this
-subdirectory (src/ensc-core). The build will fail unless this is so.
+The ZMap build expects to find the gbtools code/makefiles etc, either installed
+locally or in the subdirectory src/gbtools. The build will fail unless this is so.
 
-The contents of ensc-core are copied in automatically each time you run autogen.sh.
-The code is copied from our local clone on git.internal.sanger.ac.uk. If updates
-are required this repository should be updated from the main source code at
+You can either copy the files/subdirectories of ensc-core into src/ensc-core
+yourself or you can run ZMap's autogen.sh bootstrap script with the "-e"
+flag. The latter will copy our working branch of ensc-core into
+src/ensc-core.
+
+Alternatively, if you have a checkout of ensc-core that you have installed
+locally then you can point the zmap build to use that by setting these flags
+when you call runconfig (this will only work if you have NOT copied ensc-core
+into the src subdirectory):
+   
+   ../../runconfig LDFLAGS="-L<INSTALL_DIR>/lib" CPPFLAGS="-I<INSTALL_DIR>/include
+
+
+Note that the ensc-core code is copied from our local clone on git.internal.sanger.ac.uk. 
+If updates are required this repository should be updated from the main source code at
 https://github.com/Ensembl/ensc-core
+

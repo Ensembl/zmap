@@ -1,0 +1,4 @@
+See the main readme file at ensc-core/README_ZMAP
+
+This placeholder file is here because this src subdirectory must exist in
+ensc-core, even if not building from this subdirectory, otherwise autogen.sh fails.

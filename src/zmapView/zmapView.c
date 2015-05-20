@@ -1130,13 +1130,13 @@ static ZMapFeatureContextExecuteStatus delete_from_list(GQuark key,
                                                         char **error_out)
 {
   ZMapFeatureAny any = (ZMapFeatureAny)data;
-  GList **list = (GList **)user_data, *match;
+  GList **glist = (GList **)user_data, *match;
 
   if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
     {
-      if ((match = g_list_find_custom(*list, any, matching_unique_id)))
+      if ((match = g_list_find_custom(*glist, any, matching_unique_id)))
         {
-          *list = g_list_remove(*list, match->data);
+          *glist = g_list_remove(*glist, match->data);
         }
     }
 
@@ -1150,11 +1150,11 @@ static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
                                                              char **error_out)
 {
   ZMapFeatureAny any = (ZMapFeatureAny)data;
-  GList **list = (GList **)user_data, *match;
+  GList **glist = (GList **)user_data, *match;
 
   if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
     {
-      if ((match = g_list_find_custom(*list, any, matching_unique_id)))
+      if ((match = g_list_find_custom(*glist, any, matching_unique_id)))
         {
           any = (ZMapFeatureAny)(match->data);
           any->struct_type = ZMAPFEATURE_STRUCT_INVALID;
@@ -1358,7 +1358,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       zMapLogTime(TIMER_DRAW,TIMER_CLEAR,0,"Revcomp");
       zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_CLEAR,0,"Revcomp");
       zMapLogTime(TIMER_SETVIS,TIMER_CLEAR,0,"Revcomp");
-      
+
       zmapViewResetWindows(zmap_view, TRUE);
 
       zMapWindowNavigatorReset(zmap_view->navigator_window);
@@ -1700,11 +1700,11 @@ GList *zMapViewGetWindowList(ZMapViewWindow view_window)
 }
 
 
-void zMapViewSetWindowList(ZMapViewWindow view_window, GList *list)
+void zMapViewSetWindowList(ZMapViewWindow view_window, GList *glist)
 {
-  zMapReturnIfFail((view_window && list)) ;
+  zMapReturnIfFail((view_window && glist)) ;
 
-  view_window->parent_view->window_list = list;
+  view_window->parent_view->window_list = glist;
 
   return;
 }
@@ -1796,7 +1796,7 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
                                        GTK_STOCK_QUIT,
                                        GTK_STOCK_CANCEL,
                                        GTK_STOCK_SAVE) ;
-      
+
       g_free(msg) ;
 
       if (response == GTK_RESPONSE_CLOSE)

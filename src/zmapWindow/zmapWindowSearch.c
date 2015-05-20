@@ -911,19 +911,19 @@ static void setFieldDefaults(SearchData search_data)
           }
         case ZMAPFEATURE_STRUCT_FEATURESET:
           {
-            ZMapFeatureSet set = (ZMapFeatureSet)feature_any ;
+            ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any ;
 
 #if MH17_COLUMN
-            search_data->column_txt = (char *)g_quark_to_string(set->original_id) ;
-            search_data->set_id = set->unique_id ;
-            search_data->column_original_id = set->original_id ;
+            search_data->column_txt = (char *)g_quark_to_string(feature_set->original_id) ;
+            search_data->set_id = feature_set->unique_id ;
+            search_data->column_original_id = feature_set->original_id ;
 #else
             /* need to get the column that the featureset is in
              * for when we search the hash
              */
           ZMapFeatureSetDesc f2c;
 
-          f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(search_data->window->context_map->featureset_2_column, GUINT_TO_POINTER(set->unique_id));
+          f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(search_data->window->context_map->featureset_2_column, GUINT_TO_POINTER(feature_set->unique_id));
           if(f2c)
           {
             search_data->column_txt = (char *) g_quark_to_string(f2c->column_ID) ;
@@ -934,9 +934,9 @@ static void setFieldDefaults(SearchData search_data)
           if(search_data->feature_id != wild_card_id)
           {
             /* they clicked on a feature so default to that featureset */
-            search_data->set_txt = (char *)g_quark_to_string(set->original_id) ;
-            search_data->set_id = set->unique_id ;
-            search_data->set_original_id = set->original_id ;
+            search_data->set_txt = (char *)g_quark_to_string(feature_set->original_id) ;
+            search_data->set_id = feature_set->unique_id ;
+            search_data->set_original_id = feature_set->original_id ;
           }
 #endif
             break ;
@@ -1049,7 +1049,7 @@ static void setFilterDefaults(SearchData search_data)
         case ZMAPFEATURE_STRUCT_FEATURESET:
           {
 #ifdef RDS_DONT_INCLUDE
-            ZMapFeatureSet set = (ZMapFeatureSet)feature_any ;
+            ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any ;
 #endif /* RDS_DONT_INCLUDE */
             /* We should be able to tell strand from this but we can't at the moment.... */
 
@@ -1123,7 +1123,7 @@ static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer dat
   ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   ZMapFeatureAlignment align = NULL;
   ZMapFeatureBlock     block = NULL;
-  ZMapFeatureSet         set = NULL;
+  ZMapFeatureSet feature_set = NULL;
 
   feature_type = feature_any->struct_type;
 
@@ -1138,10 +1138,10 @@ static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer dat
       all_data->block_list = g_list_prepend(all_data->block_list, GUINT_TO_POINTER(key));
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
-      set   = (ZMapFeatureSet)feature_any;
+      feature_set   = (ZMapFeatureSet)feature_any;
       all_data->column_list   = g_list_prepend(all_data->column_list,   GUINT_TO_POINTER(key));
       break;
-      /* set list initialised to all in current column */
+      /* feature_set list initialised to all in current column */
 
     case ZMAPFEATURE_STRUCT_FEATURE:
     case ZMAPFEATURE_STRUCT_INVALID:

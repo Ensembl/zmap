@@ -47,6 +47,16 @@ AM_COND_IF([USE_ENSEMBL],
 AM_COND_IF([USE_ENSEMBL],
            [AC_SUBST([USE_ENSEMBL], [use_ensembl])])
 
+# Only build ensembl if we have the ensembl subdirectory (otherwise we
+# expect to find it in the LDFLAGS path)
+#
+AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -f "$srcdir/ensc-core/src/Makefile" ])
+AM_COND_IF([USE_ENSEMBL_SUBDIR],
+           [AC_DEFINE([USE_ENSEMBL_SUBDIR], [1], [Ensembl interface is built as a subdirectory of ZMap.])])
+AM_COND_IF([USE_ENSEMBL_SUBDIR],
+           [AC_SUBST([USE_ENSEMBL_SUBDIR], [use_ensembl_subdir])])
+
+
 # Check for htslib
 #
 AM_CONDITIONAL([USE_HTSLIB], [ test -f "$srcdir/htslib/configure.ac" ])
@@ -54,10 +64,6 @@ AM_COND_IF([USE_HTSLIB],
            [AC_DEFINE([USE_HTSLIB], [1], [Htslib interface is available.])])
 AM_COND_IF([USE_HTSLIB],
            [AC_SUBST([USE_HTSLIB], [use_htslib])])
-
-
-
-
 
 
 # Set ZMap version number

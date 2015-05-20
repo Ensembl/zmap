@@ -1321,13 +1321,13 @@ static ZMapWindowList findReusableList(GPtrArray *window_list)
       for (i = 0 ; i < window_list->len ; i++)
         {
           GtkWidget *list_widg ;
-          ZMapWindowList list ;
+          ZMapWindowList wlist ;
 
           list_widg = (GtkWidget *)g_ptr_array_index(window_list, i) ;
-          list = (ZMapWindowList)g_object_get_data(G_OBJECT(list_widg), ZMAP_WINDOW_LIST_OBJ_KEY) ;
-          if (list->reusable)
+          wlist = (ZMapWindowList)g_object_get_data(G_OBJECT(list_widg), ZMAP_WINDOW_LIST_OBJ_KEY) ;
+          if (wlist->reusable)
             {
-              reusable_window = list ;
+              reusable_window = wlist ;
               break ;
             }
         }

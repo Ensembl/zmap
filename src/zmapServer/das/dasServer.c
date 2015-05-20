@@ -1206,15 +1206,15 @@ static char *dsnFullURL(DasServer server, const char *query)
 #ifdef RDS_DONT_INCLUDE
 static gboolean serverHasCapabilityLevel(DasServer server, char *capability, double minimum)
 {
-  GList *list = NULL;
+  GList *glist = NULL;
   GQuark want = 0;
   gboolean hasLevel = FALSE;
 
-  list = server->hostAbilities;
+  glist = server->hostAbilities;
   want = g_quark_from_string(g_ascii_strdown(capability, -1));
-  while(list)
+  while(glist)
     {
-      hostAbility ability = (hostAbility)list->data;
+      hostAbility ability = (hostAbility)glist->data;
       if(ability->capability == want)
         {
           if(ability->level >= minimum)

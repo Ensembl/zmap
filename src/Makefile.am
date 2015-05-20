@@ -36,7 +36,9 @@ SUBDIRS += AceConn
 endif
 
 if USE_ENSEMBL
+if USE_ENSEMBL_SUBDIR
 SUBDIRS += ensc-core/src 
+endif
 endif
 
 if USE_HTSLIB
@@ -178,7 +180,9 @@ zmap_LDADD += $(top_builddir)/AceConn/src/.libs/libAceConn.a
 endif
 
 if USE_ENSEMBL
+if USE_ENSEMBL_SUBDIR
 zmap_LDADD += $(top_builddir)/ensc-core/src/libensc.a
+endif
 endif
 
 if USE_HTSLIB

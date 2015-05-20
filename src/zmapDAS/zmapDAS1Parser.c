@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,7 +23,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
@@ -62,7 +62,7 @@ typedef struct _ZMapDAS1ParserStruct
 
   gpointer handler_data;        /* To hold our various data types */
   ZMapDAS1CallbackDestroyNotify destroy_notify;
-  
+
 }ZMapDAS1ParserStruct;
 
 typedef struct
@@ -84,9 +84,9 @@ static void prePrepareDASParser(ZMapDAS1Parser das, ZMapDAS1QueryType query);
  * useful objects for the user. */
 /* All errors will be propogated to the xml parser so we don't have an
  * error function */
-/* The user shouldn't care about small changes in the xml. Only this 
- * parser need be concerned with those details. The user will still be 
- * passed objects of the same type.  Extending these objects to 
+/* The user shouldn't care about small changes in the xml. Only this
+ * parser need be concerned with those details. The user will still be
+ * passed objects of the same type.  Extending these objects to
  * accomodate changes, will obviously mean the user needs to consider
  * changing code, but only the removal/renaming of object properties
  * will hit the user hard. */
@@ -115,7 +115,7 @@ static gboolean stylesheetCategoryStart(void *userData,
 static gboolean stylesheetTypeStart(void *userData,
                                     ZMapXMLElement element,
                                     ZMapXMLParser parser);
-static gboolean glyphEnd(void *userData, 
+static gboolean glyphEnd(void *userData,
                          ZMapXMLElement element,
                          ZMapXMLParser parser);
 static gboolean featureEnd(void *userData,
@@ -126,7 +126,7 @@ static gboolean rootElementEnd(void *userData,
                                ZMapXMLElement element,
                                ZMapXMLParser parser);
 
-/*! 
+/*!
  * +--------------------------------------------+
  * |  Anything you want to use DAS Parser layer |
  * +--------------------------------------------+
@@ -138,23 +138,23 @@ static gboolean rootElementEnd(void *userData,
  * +--------------------------------------------+
  */
 
-/*! 
+/*!
  * \brief create a das 1 parser which will use the xml parser provided
  * \param xml parser to use
  * \return the das 1 parser
  *
- * Useful to handle all the xml handling.  Pass in a xml parser created 
+ * Useful to handle all the xml handling.  Pass in a xml parser created
  * as you see fit, debugging turned on, etc.  Before you call parse buffer
- * just call the correct prepare method.  When you call parse buffer you 
+ * just call the correct prepare method.  When you call parse buffer you
  * will get called back every time this parser has created a object you're
  * interested in... What you can specify filters???  I'm thinking about it.
 
- * N.B. Please be aware that the data contained in the pointers passed 
+ * N.B. Please be aware that the data contained in the pointers passed
  * to users' callbacks will CEASE to exist at the end of their callback.
- * This is mainly to make filtering faster, but also the das objects 
+ * This is mainly to make filtering faster, but also the das objects
  * passed are likely to be temporary objects used for creating objects of
  * the user's own type.  If the objects are required to be used verbatim
- * then PLEASE memcpy or otherwise copy the objects to your own data 
+ * then PLEASE memcpy or otherwise copy the objects to your own data
  * structures!
  *
  */
@@ -169,8 +169,8 @@ ZMapDAS1Parser zMapDAS1ParserCreate(ZMapXMLParser parser)
   return das;
 }
 
-gboolean zMapDAS1ParserDSNPrepareXMLParser(ZMapDAS1Parser das, 
-                                           ZMapDAS1DSNCB dsn_callback, 
+gboolean zMapDAS1ParserDSNPrepareXMLParser(ZMapDAS1Parser das,
+                                           ZMapDAS1DSNCB dsn_callback,
                                            gpointer user_data)
 {
   gboolean good = FALSE;
@@ -186,7 +186,7 @@ gboolean zMapDAS1ParserDSNPrepareXMLParser(ZMapDAS1Parser das,
 
   /* set our state flag */
   prePrepareDASParser(das, ZMAP_DAS1_DSN);
-  
+
   if((good = zMapXMLParserReset(das->xml)))
     {
       zMapXMLParserSetUserData(das->xml, (void *)das);
@@ -203,8 +203,8 @@ gboolean zMapDAS1ParserDSNPrepareXMLParser(ZMapDAS1Parser das,
   return good;
 }
 
-gboolean zMapDAS1ParserTypesPrepareXMLParser(ZMapDAS1Parser das, 
-                                             ZMapDAS1TypesCB type_callback, 
+gboolean zMapDAS1ParserTypesPrepareXMLParser(ZMapDAS1Parser das,
+                                             ZMapDAS1TypesCB type_callback,
                                              gpointer user_data)
 {
   gboolean good = FALSE;
@@ -237,8 +237,8 @@ gboolean zMapDAS1ParserTypesPrepareXMLParser(ZMapDAS1Parser das,
   return good;
 }
 
-gboolean zMapDAS1ParserDNAPrepareXMLParser(ZMapDAS1Parser das, 
-                                           ZMapDAS1DNACB dna_callback, 
+gboolean zMapDAS1ParserDNAPrepareXMLParser(ZMapDAS1Parser das,
+                                           ZMapDAS1DNACB dna_callback,
                                            gpointer user_data)
 {
   gboolean good = FALSE;
@@ -248,8 +248,8 @@ gboolean zMapDAS1ParserDNAPrepareXMLParser(ZMapDAS1Parser das,
 
   return good;
 }
-gboolean zMapDAS1ParserEntryPointsPrepareXMLParser(ZMapDAS1Parser das, 
-                                                   ZMapDAS1EntryPointsCB entry_point_callback, 
+gboolean zMapDAS1ParserEntryPointsPrepareXMLParser(ZMapDAS1Parser das,
+                                                   ZMapDAS1EntryPointsCB entry_point_callback,
                                                    gpointer user_data)
 {
   gboolean good = FALSE;
@@ -264,7 +264,7 @@ gboolean zMapDAS1ParserEntryPointsPrepareXMLParser(ZMapDAS1Parser das,
   };
 
   prePrepareDASParser(das, ZMAP_DAS1_ENTRY_POINTS);
-  
+
   if((good = zMapXMLParserReset(das->xml)))
     {
       zMapXMLParserSetUserData(das->xml, (void *)das);
@@ -280,8 +280,8 @@ gboolean zMapDAS1ParserEntryPointsPrepareXMLParser(ZMapDAS1Parser das,
 
   return good;
 }
-gboolean zMapDAS1ParserFeaturesPrepareXMLParser(ZMapDAS1Parser das, 
-                                                ZMapDAS1FeaturesCB feature_callback, 
+gboolean zMapDAS1ParserFeaturesPrepareXMLParser(ZMapDAS1Parser das,
+                                                ZMapDAS1FeaturesCB feature_callback,
                                                 gpointer user_data)
 {
   gboolean good = FALSE;
@@ -311,8 +311,8 @@ gboolean zMapDAS1ParserFeaturesPrepareXMLParser(ZMapDAS1Parser das,
 
   return good;
 }
-gboolean zMapDAS1ParserStylesheetPrepareXMLParser(ZMapDAS1Parser das, 
-                                                  ZMapDAS1StylesheetCB style_callback, 
+gboolean zMapDAS1ParserStylesheetPrepareXMLParser(ZMapDAS1Parser das,
+                                                  ZMapDAS1StylesheetCB style_callback,
                                                   gpointer user_data)
 {
   gboolean good = FALSE;
@@ -358,7 +358,7 @@ void zMapDAS1ParserDestroy(ZMapDAS1Parser das)
   das->xml = NULL;              /* Not ours to destroy */
 
   das->callback_data = NULL;    /* Not ours to destroy */
-  
+
   g_free(das);                  /* free our data */
 
   return ;
@@ -382,8 +382,8 @@ static void prePrepareDASParser(ZMapDAS1Parser das, ZMapDAS1QueryType query)
   das->callbacks.dsn = NULL;
   das->callback_data = NULL;
 
-  if(das->destroy_notify) 
-    (das->destroy_notify)(das->handler_data); 
+  if(das->destroy_notify)
+    (das->destroy_notify)(das->handler_data);
 
   /* Make sure they don't get referred 2 again */
   das->destroy_notify = NULL;
@@ -459,13 +459,13 @@ static gboolean dsnEnd(void *userData,
         dsn_ptr->version = zMapXMLAttributeGetValue(attribute);
       dsn_ptr->name = g_quark_from_string(sub_element->contents->str);
     }
-  
+
   if((sub_element = zMapXMLElementGetChildByName(element, "mapmaster")) != NULL)
     dsn_ptr->map = g_quark_from_string(sub_element->contents->str);
-  
+
   if((sub_element = zMapXMLElementGetChildByName(sub_element, "description")) != NULL)
     dsn_ptr->desc = g_quark_from_string(sub_element->contents->str);
-  
+
   if(dsn_ptr->source_id != 0)
     {
       /* quick sanity check */
@@ -474,7 +474,7 @@ static gboolean dsnEnd(void *userData,
     }
   else
     zMapXMLParserRaiseParsingError(parser, "Failed to get an id for dsn.");
-  
+
   return handled;
 }
 
@@ -507,7 +507,7 @@ static gboolean entryPointSegEnd(void *userData,
   ZMapDAS1EntryPointStruct entry_point = {0};
   ZMapDAS1SegmentStruct segment = {0};
   ZMapXMLAttribute attr;
-  GList list = {NULL};
+  GList glist = {NULL};
   int start = 0 , stop = 0, size = 0;
 
   segment.orientation = g_quark_from_string("+"); /* optional and assumed positive */
@@ -530,7 +530,7 @@ static gboolean entryPointSegEnd(void *userData,
   else if((attr = zMapXMLElementGetAttributeByName(element, "type")))
     segment.type = zMapXMLAttributeGetValue(attr);
 
-#ifdef RDS_DONT_INCLUDE  
+#ifdef RDS_DONT_INCLUDE
   if((attr = zMapXMLElementGetAttributeByName(element, "reference")))
     segment.ref = (char *)g_quark_to_string( zMapXMLAttributeGetValue(attr) );
   if((attr = zMapXMLElementGetAttributeByName(element, "subparts")))
@@ -551,8 +551,8 @@ static gboolean entryPointSegEnd(void *userData,
   segment.start = start;
   segment.stop  = stop;
 
-  entry_point.segments = &list;
-  list.data = &segment;
+  entry_point.segments = &glist;
+  glist.data = &segment;
 
   /* quick sanity check */
   if(das->callback_set && das->primed_for == ZMAP_DAS1_ENTRY_POINTS)
@@ -580,7 +580,7 @@ static gboolean typeEnd(void *userData,
 
   if(das->callback_set && das->primed_for == ZMAP_DAS1_TYPES)
     (das->callbacks.types)(&type, das->callback_data);
-  
+
   return TRUE;
 }
 
@@ -636,7 +636,7 @@ static gboolean stylesheetTypeStart(void *userData,
   return handled;
 }
 
-static gboolean glyphEnd(void *userData, 
+static gboolean glyphEnd(void *userData,
                          ZMapXMLElement element,
                          ZMapXMLParser parser)
 {
@@ -649,7 +649,7 @@ static gboolean glyphEnd(void *userData,
   GList categories = {0}, types = {0}, glyphs = {0};
 
   zMapXMLParserCheckIfTrueErrorReturn(data->category_id == 0, parser, "glyph must be part of a category");
-  zMapXMLParserCheckIfTrueErrorReturn(data->type_id     == 0, parser, "glyph must be part of a type"); 
+  zMapXMLParserCheckIfTrueErrorReturn(data->type_id     == 0, parser, "glyph must be part of a type");
 
   style.categories = &categories; /* GList */
   categories.data  = &category; /* Contents of GList */
@@ -774,9 +774,9 @@ static gboolean glyphEnd(void *userData,
 
   return TRUE;
 }
-static gboolean makeGroupsFromFeature(ZMapXMLParser parser, 
-                                      ZMapXMLElement feature_element, 
-                                      GList *stack_list, 
+static gboolean makeGroupsFromFeature(ZMapXMLParser parser,
+                                      ZMapXMLElement feature_element,
+                                      GList *stack_list,
                                       ZMapDAS1Group groups,
                                       int stack_list_length)
 {
@@ -788,8 +788,8 @@ static gboolean makeGroupsFromFeature(ZMapXMLParser parser,
   int current_group  = 0;
 
   /* Check this works, and we don't get one too many! */
-  group_elements = zMapXMLElementGetChildrenByName(feature_element, 
-                                                   g_quark_from_string("group"), 
+  group_elements = zMapXMLElementGetChildrenByName(feature_element,
+                                                   g_quark_from_string("group"),
                                                    stack_list_length);
   group_ptr    = groups;
 
@@ -806,7 +806,7 @@ static gboolean makeGroupsFromFeature(ZMapXMLParser parser,
 
       if(prev)
         prev->next   = list_ptr;
-      
+
       prev = list_ptr;
 
       current_group++;
@@ -819,11 +819,11 @@ static gboolean makeGroupsFromFeature(ZMapXMLParser parser,
 static void printGroupInfo(gpointer data, gpointer user_data)
 {
   ZMapDAS1Group group = (ZMapDAS1Group)data;
-  
-  printf("[printGroupInfo] group id=%s, type=%s\n", 
+
+  printf("[printGroupInfo] group id=%s, type=%s\n",
          (char *)g_quark_to_string(group->group_id),
          (char *)g_quark_to_string(group->type));
-  
+
   return ;
 }
 
@@ -860,7 +860,7 @@ static gboolean featureEnd(void *userData,
       if((attr = zMapXMLElementGetAttributeByName(sub_element, "id")) != NULL)
         feature.method_id = zMapXMLAttributeGetValue(attr);
     }
-  
+
   if((sub_element = zMapXMLElementGetChildByName(element, "start")) != NULL)
     feature.start = zMapXMLElementContentsToInt(sub_element);
   if((sub_element = zMapXMLElementGetChildByName(element, "end")) != NULL)
@@ -871,12 +871,12 @@ static gboolean featureEnd(void *userData,
     feature.orientation = g_quark_from_string(sub_element->contents->str);
   if((sub_element = zMapXMLElementGetChildByName(element, "phase")) != NULL)
     feature.phase = zMapXMLElementContentsToInt(sub_element);
-    
+
   /* This needs to cope with multiple, make into a function.
    * ptototype will be:
    * possibly doing
    */
-  makeGroupsFromFeature(parser, element, 
+  makeGroupsFromFeature(parser, element,
                         groups_list, groups,
                         MAX_GROUP_NO);
 

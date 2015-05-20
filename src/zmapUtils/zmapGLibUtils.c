@@ -191,30 +191,30 @@ gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle)
  */
 void zMap_g_list_foreach_reverse(GList *list, GFunc func, gpointer user_data)
 {
-  list = g_list_last(list) ;
+  glist = g_list_last(glist) ;
 
-  while (list)
+  while (glist)
     {
-      GList *prev = list->prev ;
+      GList *prev = glist->prev ;
 
-      (*func)(list->data, user_data) ;
-      list = prev ;
+      (*func)(glist->data, user_data) ;
+      glist = prev ;
     }
 
   return ;
 }
 #endif
 
-void zMap_g_list_foreach_directional(GList   *list,
+void zMap_g_list_foreach_directional(GList   *glist,
                                      GFunc    func,
                                      gpointer user_data,
                                      ZMapGListDirection forward)
 {
-  while (list)
+  while (glist)
     {
-      GList *next = (forward == ZMAP_GLIST_FORWARD ? list->next : list->prev);
-      (*func) (list->data, user_data);
-      list = next;
+      GList *next = (forward == ZMAP_GLIST_FORWARD ? glist->next : glist->prev);
+      (*func) (glist->data, user_data);
+      glist = next;
     }
   return ;
 }
@@ -226,21 +226,21 @@ void zMap_g_list_foreach_directional(GList   *list,
  * Returns FALSE if ZMapGFuncCond returned FALSE, TRUE otherwise.
  *
  *  */
-gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user_data)
+gboolean zMap_g_list_cond_foreach(GList *glist, ZMapGFuncCond func, gpointer user_data)
 {
   gboolean status = TRUE ;
 
-  while (list)
+  while (glist)
     {
-      GList *next = list->next ;
+      GList *next = glist->next ;
 
-      if (!((*func)(list->data, user_data)))
+      if (!((*func)(glist->data, user_data)))
         {
           status = FALSE ;
           break ;
         }
 
-      list = next ;
+      glist = next ;
     }
 
   return status ;
@@ -254,15 +254,15 @@ gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user
  * Returns the list unaltered if the element could not be moved.
  *
  *  */
-GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index)
+GList *zMap_g_list_move(GList *glist, gpointer user_data, gint new_index)
 {
-  GList *new_list = list ;
+  GList *new_list = glist ;
 
-  if (new_index >= 0 && new_index < g_list_length(list))
+  if (new_index >= 0 && new_index < g_list_length(glist))
     {
       GList *list_element ;
 
-      if ((list_element = g_list_find(list, user_data)))
+      if ((list_element = g_list_find(glist, user_data)))
         {
           new_list = g_list_remove(new_list, user_data) ;
 
@@ -274,24 +274,24 @@ GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index)
 }
 
 
-GList *zMap_g_list_append_unique(GList *list, gpointer data)
+GList *zMap_g_list_append_unique(GList *glist, gpointer data)
 {
-  GList *l,*last = list;
+  GList *l,*last = glist;
 
-  for(l = list; l ; l = l->next)
+  for(l = glist; l ; l = l->next)
     {
       if(l->data == data)	/* already there, nothing to do */
-        return list;
+        return glist;
       last = l;
     }
 
-  /* we reached the end or there was no list: add to the end */
-  last = g_list_append(list,data);
+  /* we reached the end or there was no glist: add to the end */
+  last = g_list_append(glist,data);
 
-  if(!list)
-    list = last;
+  if(!glist)
+    glist = last;
 
-  return list;
+  return glist;
 }
 
 
@@ -456,11 +456,11 @@ GList *zMap_g_list_raise(GList *move, int positions)
  * Returns new_list_head or NULL if new_list_head is not in list OR
  * if new_list_head == list.
  *  */
-GList *zMap_g_list_split(GList *list, GList *new_list_head)
+GList *zMap_g_list_split(GList *glist, GList *new_list_head)
 {
   GList *new_list = NULL ;
 
-  if (new_list_head != list && g_list_first(new_list_head) == list)
+  if (new_list_head != glist && g_list_first(new_list_head) == glist)
     {
       (new_list_head->prev)->next = NULL ;
       new_list_head->prev = NULL ;
@@ -552,15 +552,15 @@ gchar *zMap_g_list_quark_to_string(GList *l, const char *delimiter)
 }
 
 
-GList *zMap_g_list_find_quark(GList *list, GQuark str_quark)
+GList *zMap_g_list_find_quark(GList *glist, GQuark str_quark)
 {
   GList *result = NULL ;
 
-  /* zMapAssert(list && str_quark) ; */
-  if (!list || !str_quark)
+  /* zMapAssert(glist && str_quark) ; */
+  if (!glist || !str_quark)
     return result ;
 
-  result = g_list_find_custom(list, GINT_TO_POINTER(str_quark), caseCompareFunc) ;
+  result = g_list_find_custom(glist, GINT_TO_POINTER(str_quark), caseCompareFunc) ;
 
   return result ;
 }
@@ -649,26 +649,26 @@ GHashTable *zMap_g_hashlist_create(void)
 }
 
 
-/* ! Insert a key value into the keyed list. */
+/* ! Insert a key value into the keyed glist. */
 void zMap_g_hashlist_insert(GHashTable *hashlist, GQuark key, gpointer value)
 {
-  GList *list ;
+  GList *glist ;
 
-  /* Slightly tricky coding, if we don't find a list the append creates a new list,
-   * otherwise we append to the existing list. Either way we then _always_ replace
-   * the list in the hash as list start in theory could change. BUT note that
-   * we must copy the list before we insert it because otherwise it is erased
+  /* Slightly tricky coding, if we don't find a glist the append creates a new glist,
+   * otherwise we append to the existing glist. Either way we then _always_ replace
+   * the glist in the hash as glist start in theory could change. BUT note that
+   * we must copy the glist before we insert it because otherwise it is erased
    * by g_hash_table calling the existing entries delete function. */
-  list = (GList *)g_hash_table_lookup(hashlist, GINT_TO_POINTER(key)) ;
+  glist = (GList *)g_hash_table_lookup(hashlist, GINT_TO_POINTER(key)) ;
 
   /* This makes this as bad as a g_datalist... Well nearly.   */
-  if (!g_list_find(list, value))
+  if (!g_list_find(glist, value))
     {
-      list = g_list_copy(list) ;
+      glist = g_list_copy(glist) ;
 
-      list = g_list_append(list, value) ;
+      glist = g_list_append(glist, value) ;
 
-      g_hash_table_insert(hashlist, GINT_TO_POINTER(key), list) ;
+      g_hash_table_insert(hashlist, GINT_TO_POINTER(key), glist) ;
     }
 
   return ;
@@ -738,12 +738,12 @@ void zMap_g_hashlist_destroy(GHashTable *hashlist)
 static void get_key_value(gpointer key, gpointer value, gpointer user)
 {
   ZMapGHashIter data;
-  GList **list = (GList **) user;
+  GList **glist = (GList **) user;
 
   data = g_new0(ZMapGHashIterStruct,1);
   data->key = key;
   data->value = value;
-  *list = g_list_prepend(*list,data); // faster than append
+  *glist = g_list_prepend(*glist,data); // faster than append
 }
 
 void  zMap_g_hash_table_iter_init(GList **iter, GHashTable *h)
@@ -759,10 +759,10 @@ void  zMap_g_hash_table_iter_init(GList **iter, GHashTable *h)
 
 static void get_hash_key(gpointer key, gpointer value, gpointer user)
 {
-  GList **list = (GList **) user;
+  GList **glist = (GList **) user;
 
 
-  *list = g_list_prepend(*list,key); // faster than append
+  *glist = g_list_prepend(*glist,key); // faster than append
 }
 
 void  zMap_g_hash_table_get_keys(GList **iter, GHashTable *h)
@@ -777,10 +777,10 @@ void  zMap_g_hash_table_get_keys(GList **iter, GHashTable *h)
 
 static void get_hash_val(gpointer key, gpointer value, gpointer user)
 {
-  GList **list = (GList **) user;
+  GList **glist = (GList **) user;
 
 
-  *list = g_list_prepend(*list,value); // faster than append
+  *glist = g_list_prepend(*glist,value); // faster than append
 }
 
 void  zMap_g_hash_table_get_data(GList **iter, GHashTable *h)
@@ -796,13 +796,13 @@ gboolean zMap_g_hash_table_iter_next(GList **iter, gpointer *key, gpointer *valu
 {
   gboolean result = FALSE ;
   ZMapGHashIter data ;
-  GList *list = *iter ;
+  GList *glist = *iter ;
 
-  if(list)
+  if(glist)
     {
-      data = (ZMapGHashIter)(list->data) ;
-      *iter = g_list_remove_link(*iter,list);
-      g_list_free_1(list);
+      data = (ZMapGHashIter)(glist->data) ;
+      *iter = g_list_remove_link(*iter,glist);
+      g_list_free_1(glist);
 
       *key = data->key;
       *value = data->value;
@@ -1295,9 +1295,9 @@ static void hashPrintTableCB(gpointer key, gpointer value, gpointer user_data)
 /* A GDestroyNotify() to free Glists held as the data in a hash. */
 static void destroyList(gpointer data)
 {
-  GList *list = (GList *)data ;
+  GList *glist = (GList *)data ;
 
-  g_list_free(list) ;
+  g_list_free(glist) ;
 
   return ;
 }

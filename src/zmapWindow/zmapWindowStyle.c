@@ -326,7 +326,7 @@ void zmapStyleWindowDestroy(ZMapWindow window)
 gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature)
 {
         StyleChange my_data = (StyleChange) window->style_window;
-        ZMapFeatureSet set = (ZMapFeatureSet) feature->parent;
+        ZMapFeatureSet feature_set = (ZMapFeatureSet) feature->parent;
         ZMapFeatureTypeStyle style;
         GdkColor colour = {0} ;
         GdkColor *fill = &colour, *border = &colour;
@@ -335,9 +335,9 @@ gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMa
                 return FALSE;
 
         my_data->menu_data->item = foo;
-        my_data->menu_data->feature_set = set;
+        my_data->menu_data->feature_set = feature_set;
         my_data->menu_data->feature = feature;
-        style = set->style;
+        style = feature_set->style;
 
         memcpy(& my_data->save, style,sizeof (ZMapFeatureTypeStyleStruct));
 
@@ -350,7 +350,7 @@ gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMa
         if(style->is_default || (!style->overridden && style->unique_id != my_data->menu_data->feature_set->unique_id))
                 my_data->override = TRUE;
 
-        gtk_label_set_text((GtkLabel *) my_data->featureset_name, g_quark_to_string(set->original_id));
+        gtk_label_set_text((GtkLabel *) my_data->featureset_name, g_quark_to_string(feature_set->original_id));
 
         /* Update the colour buttons. */
         zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
@@ -646,7 +646,7 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
            * every operation of the ftoi hash involves
            * repeating the same nested hash table lookups
            */
-          
+
 
 
           /* does the set appear in a column ? */
