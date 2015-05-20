@@ -273,7 +273,7 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
   ZMap zmap = (ZMap)cb_data ;
   ZMapViewWindow vw ;
-  ZMapFeatureSequenceMap map ;
+  ZMapFeatureSequenceMap sequence_map ;
   ZMapFeatureSequenceMap view_seq ;
   int start, end ;
 
@@ -284,12 +284,12 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   view_seq = zMapViewGetSequenceMap( zMapViewGetView(vw) );
 
   /* get view sequence and coords */
-  map = g_new0(ZMapFeatureSequenceMapStruct,1);
-  map->start = view_seq->start;
-  map->end = view_seq->end;
-  map->sequence = view_seq->sequence;
-  map->dataset = view_seq->dataset ;
-  map->config_file = view_seq->config_file;
+  sequence_map = g_new0(ZMapFeatureSequenceMapStruct,1);
+  sequence_map->start = view_seq->start;
+  sequence_map->end = view_seq->end;
+  sequence_map->sequence = view_seq->sequence;
+  sequence_map->dataset = view_seq->dataset ;
+  sequence_map->config_file = view_seq->config_file;
 
   /* limit to mark if set */
   start = view_seq->start;
@@ -305,12 +305,12 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
       if(end < 0)
         end = -end ;
 
-      start += map->start ;
-      end += map->start ;
+      start += sequence_map->start ;
+      end += sequence_map->start ;
     }
 
   /* need sequence_map to set default seq coords and map sequence name */
-  zMapControlImportFile(controlImportFileCB, cb_data, map, start, end);
+  zMapControlImportFile(controlImportFileCB, cb_data, sequence_map, start, end);
 
   return ;
 }
