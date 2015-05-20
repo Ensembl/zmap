@@ -47,6 +47,18 @@ AM_COND_IF([USE_ENSEMBL],
 AM_COND_IF([USE_ENSEMBL],
            [AC_SUBST([USE_ENSEMBL], [use_ensembl])])
 
+# Check for htslib
+#
+AM_CONDITIONAL([USE_HTSLIB], [ test -f "$srcdir/htslib/configure.ac" ])
+AM_COND_IF([USE_HTSLIB],
+           [AC_DEFINE([USE_HTSLIB], [1], [Htslib interface is available.])])
+AM_COND_IF([USE_HTSLIB],
+           [AC_SUBST([USE_HTSLIB], [use_htslib])])
+
+
+
+
+
 
 # Set ZMap version number
 #
@@ -569,6 +581,12 @@ fi
 if test -z "$USE_ENSEMBL"
 then
   echo " Warning: MySql is not installed so Ensembl server access is disabled."
+  echo
+fi
+
+if test -z "$USE_HTSLIB"
+then
+  echo " Warning: htslib is not installed so BAM/CRAM/VCF handling is disabled."
   echo
 fi
 

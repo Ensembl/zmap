@@ -82,6 +82,7 @@ force_remake_all=''
 gb_tools='maybe'
 aceconn='maybe'
 ensc_core='maybe'
+htslib='maybe'
 run_autoupdate=''					    # don't run autoupdate by default.
 install_missing='-i'
 verbose=''
@@ -94,25 +95,25 @@ git_root='/repos/git/annotools'
 # gbtools repository info
 gb_tools_repos='gbtools'
 gb_tools_dir='gbtools'
-#gb_tools_checkout_dir='gbtools_develop'
-gb_tools_branch='' # set this to '-b <branch>' to use another branch than the default (develop)
+gb_tools_branch='' # set this to '-b <branch>' to use a branch other than the default (develop)
 
 # aceconn repository info
 aceconn_repos='AceConn'
 aceconn_dir='AceConn'
-#aceconn_checkout_dir='aceconn_develop'
-aceconn_branch='' # set this to '-b <branch>' to use another branch than the default (develop)
+aceconn_branch='' # set this to '-b <branch>' to use a branch other than the default (develop)
 
 # ensembl repository info
 ensc_core_repos='ensc-core'
 ensc_core_dir='ensc-core'
-#ensc_core_checkout_dir='ensc-core_feature_zmap'
-
 # For now we hard-code ensembl to use the feature/zmap branch because we have
 # some customisations (e.g. disabling certain stuff that we don't require)
 # which we can't push to the default branch
 ensc_core_branch='-b feature/zmap' 
 
+# htslib repository info
+htslib_repos='htslib'
+htslib_dir='htslib'
+htslib_branch='' # set this to '-b <branch>' to use a branch other than the default (develop)
 
 
 
@@ -243,6 +244,28 @@ if [[ "$ensc_core" == "yes" || "$ensc_core" == "maybe" ]] ; then
     fi
 
 fi
+
+
+# Set up htslib subdirectory. This is the BAM/CRAM/VCF reading/writing C code.
+#
+
+if [[ "$htslib" == "yes" ]] ; then
+
+    clean_lib $htslib_repos $htslib_dir
+
+fi
+
+if [[ "$htslib" == "yes" || "$htslib" == "maybe" ]] ; then
+    
+    if [[ ! -f "./$htslib/Makefile" ]] ; then
+
+        fetch_lib $git_host:$git_root/$htslib_repos $htslib_dir "$htslib_branch"
+
+    fi
+
+fi
+
+
 
 
 # Remove any files/dirs from previous builds, necessary because different

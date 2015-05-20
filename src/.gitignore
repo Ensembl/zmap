@@ -15,4 +15,7 @@ AceConn/*
 ensc-core/*
 !ensc-core/README_ZMAP
 
+htslib/*
+!htslib/README_ZMAP
+
 

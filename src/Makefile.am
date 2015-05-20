@@ -29,7 +29,7 @@ OPTIONAL_SUBDIRS = gbtools
 endif
 
 #SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop 
-SUBDIRS = $(OPTIONAL_SUBDIRS) zeromq libpfetch libcurlobject libzmapfoocanvas htslib 
+SUBDIRS = $(OPTIONAL_SUBDIRS) zeromq libpfetch libcurlobject libzmapfoocanvas
 
 if USE_ACECONN
 SUBDIRS += AceConn
@@ -37,6 +37,10 @@ endif
 
 if USE_ENSEMBL
 SUBDIRS += ensc-core/src 
+endif
+
+if USE_HTSLIB
+SUBDIRS += htslib
 endif
 
 SUBDIRS += include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
@@ -175,6 +179,10 @@ endif
 
 if USE_ENSEMBL
 zmap_LDADD += $(top_builddir)/ensc-core/src/libensc.a
+endif
+
+if USE_HTSLIB
+zmap_LDADD += $(top_builddir)/htslib/libhts.a
 endif
 
 # If we have gbtools in a subdirectory, add the .a file, otherwise
