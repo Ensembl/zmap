@@ -821,25 +821,25 @@ gboolean zmapWindowContainerHasFeatures(ZMapWindowContainerGroup container)
 
 void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 {
-  GList *list = NULL,*l = NULL ;
+  GList *glist = NULL,*l = NULL ;
 
   zMapReturnIfFail(group) ;
 
-  if((list = g_list_first(group->item_list)))
+  if((glist = g_list_first(group->item_list)))
     {
       do
         {
           GtkObject *gtk_item_object;
 
-          gtk_item_object = GTK_OBJECT(list->data);
+          gtk_item_object = GTK_OBJECT(glist->data);
 
-          l = list;
-          list = list->next;
+          l = glist;
+          glist = glist->next;
           //        g_free(l);      /* mh17: oddly this was not done */
 
           gtk_object_destroy(gtk_item_object);
         }
-      while((list));
+      while((glist));
     }
   group->item_list = NULL; /* nor this */
   group->item_list_end = NULL;

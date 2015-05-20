@@ -758,7 +758,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
       if (zMapWindowContainerFeatureSetIsFilterable(container_set))
         {
           menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuColFilterOps(NULL, NULL, cbdata)) ;
-      
+
           menu_sets = g_list_append(menu_sets, separator) ;
         }
 
@@ -2883,12 +2883,12 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 
 
 /* Set up column filtering options.
- * 
+ *
  * Note that we have radio buttons for column-specific action as it makes sense that
  * each column shows just one type of filtering whereas for "all" actions there is no
  * sensible way we can record a single option that applies to all so they are normal
  * manu buttons. (Our radio button setting code below only sets radio buttons.)
- * 
+ *
  *  */
 ZMapGUIMenuItem zmapWindowMakeMenuColFilterOps(int *start_index_inout,
                                                ZMapGUIMenuItemCallbackFunc callback_func,
@@ -3114,7 +3114,7 @@ static void colFilterMenuCB(int menu_item_id, gpointer callback_data)
         filter_data.selected = ZMAP_CANVAS_FILTER_PARTS ;
       else
         filter_data.selected = ZMAP_CANVAS_FILTER_NONE ;
-     
+
       if (menu_item_id & FILTER_GAPS)
         filter_data.filter = ZMAP_CANVAS_FILTER_GAPS ;
       else if (menu_item_id & FILTER_PARTS)
@@ -3123,7 +3123,7 @@ static void colFilterMenuCB(int menu_item_id, gpointer callback_data)
         filter_data.filter = ZMAP_CANVAS_FILTER_PARTS ;
       else
         filter_data.filter = ZMAP_CANVAS_FILTER_NONE ;
-        
+
 
       if (menu_item_id & FILTER_CDS)
         filter_data.cds_match = TRUE ;
@@ -3685,12 +3685,12 @@ GQuark related_column(ZMapFeatureContextMap map,GQuark fset_id)
 
 
 
-GList * add_column_featuresets(ZMapFeatureContextMap map, GList *list, GQuark column_id, gboolean unique_id)
+GList * add_column_featuresets(ZMapFeatureContextMap map, GList *glist, GQuark column_id, gboolean unique_id)
 {
   ZMapFeatureColumn column = NULL ;
   GList *l = NULL;
   if (!map || !column_id)
-    return list ;
+    return glist ;
 
   column = (ZMapFeatureColumn)g_hash_table_lookup(map->columns,(GUINT_TO_POINTER(column_id)));
 
@@ -3701,14 +3701,14 @@ GList * add_column_featuresets(ZMapFeatureContextMap map, GList *list, GQuark co
     {
       for(;l ; l = l->next)
         {
-          list = g_list_prepend(list,l->data);
+          glist = g_list_prepend(glist,l->data);
         }
     }
   else                /* not configured: assume one featureset of the same name */
     {
-      list = g_list_prepend(list,GUINT_TO_POINTER(column_id));
+      glist = g_list_prepend(glist,GUINT_TO_POINTER(column_id));
     }
-  return list;
+  return glist;
 }
 
 /* make requests either for a single type of paired read of for all in the current column. */

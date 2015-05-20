@@ -929,10 +929,10 @@ static void hideColumn(ZMapView view, RequestData request_data)
 {
   if (!view || !view->window_list || !request_data || !request_data->column_id)
     return ;
-  GList *list = view->window_list ;
-  for ( ; list!=NULL ; list = list->next)
+  GList *glist = view->window_list ;
+  for ( ; glist!=NULL ; glist = glist->next)
     {
-      ZMapViewWindow view_window = (ZMapViewWindow) list->data ;
+      ZMapViewWindow view_window = (ZMapViewWindow) glist->data ;
       zMapWindowColumnHide(view_window->window, request_data->column_id) ;
     }
 }
@@ -944,10 +944,10 @@ static void showColumn(ZMapView view, RequestData request_data)
 {
   if (!view || !view->window_list || !request_data || !request_data->column_id)
     return ;
-  GList *list = view->window_list ;
-  for ( ; list!=NULL ; list = list->next)
+  GList *glist = view->window_list ;
+  for ( ; glist!=NULL ; glist = glist->next)
     {
-      ZMapViewWindow view_window = (ZMapViewWindow) list->data ;
+      ZMapViewWindow view_window = (ZMapViewWindow) glist->data ;
       zMapWindowColumnShow(view_window->window, request_data->column_id) ;
     }
 }

@@ -1163,7 +1163,7 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_fun
 GList *zmapWindowFToISetSearchPerform(ZMapWindow window,GHashTable *feature_context_to_item,
                                       ZMapWindowFToISetSearchData search_data)
 {
-  GList *list = NULL;
+  GList *glist = NULL;
 
   if (window_ftoi_debug_G)
     printf("Search:\t%s,\t%s,\t%s,\t%s,\t%s,\t%s,\t%s\n",
@@ -1179,7 +1179,7 @@ GList *zmapWindowFToISetSearchPerform(ZMapWindow window,GHashTable *feature_cont
   if(search_data->search_function == zmapWindowFToIFindItemSetFull
      || search_data->search_function == zmapWindowFToIFindSameNameItems)
     {
-      list = zmapWindowFToIFindItemSetFull(window,feature_context_to_item,
+      glist = zmapWindowFToIFindItemSetFull(window,feature_context_to_item,
                                            search_data->align_id,
                                            search_data->block_id,
                                            search_data->column_id,
@@ -1191,7 +1191,7 @@ GList *zmapWindowFToISetSearchPerform(ZMapWindow window,GHashTable *feature_cont
                                            search_data->predicate_data) ;
     }
 
-  return list;
+  return glist;
 }
 
 void zmapWindowFToISetSearchDestroy(ZMapWindowFToISetSearchData search_data)

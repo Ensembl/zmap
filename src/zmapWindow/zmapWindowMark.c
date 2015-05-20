@@ -319,23 +319,23 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
             {
               if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
                 {
-                  GList *list = NULL;
+                  GList *glist = NULL;
                   ZMapStrand set_strand ;
                   ZMapFrame set_frame ;
                   gboolean result ;
                   double rootx1, rooty1, rootx2, rooty2 ;
 
                   result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
-                  list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
+                  glist = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
                                                          zMapFeatureStrand2Str(set_strand),
                                                          zMapFeatureFrame2Str(set_frame),
                                                          feature) ;
 
-                  zmapWindowGetMaxBoundsItems(window, list, &rootx1, &rooty1, &rootx2, &rooty2) ;
+                  zmapWindowGetMaxBoundsItems(window, glist, &rootx1, &rooty1, &rootx2, &rooty2) ;
 
                   zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
 
-                  g_list_free(list) ;
+                  g_list_free(glist) ;
                 }
               else
                 {

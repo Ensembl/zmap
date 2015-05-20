@@ -2214,16 +2214,16 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
     }
   else
     {
-      GList *list;
+      GList *glist;
       proceed = TRUE;
 
-      if((list = g_list_first(style_list)))
+      if((glist = g_list_first(style_list)))
         {
           do
             {
               ZMapFeatureTypeStyle featureset_style;
 
-              featureset_style = ZMAP_FEATURE_STYLE(list->data);
+              featureset_style = ZMAP_FEATURE_STYLE(glist->data);
 
               if(!zMapStyleIsDisplayable(featureset_style))
                 {
@@ -2233,7 +2233,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
                   proceed = FALSE; /* not displayable, so bomb out the rest of the code. */
                 }
             }
-          while(proceed && (list = g_list_next(list)));
+          while(proceed && (glist = g_list_next(glist)));
         }
     }
 

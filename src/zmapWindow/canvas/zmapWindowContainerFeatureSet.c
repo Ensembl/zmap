@@ -594,17 +594,17 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
   if ((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container)))
     {
       FooCanvasGroup *group ;
-      GList *list;
+      GList *glist;
 
       group = FOO_CANVAS_GROUP(container_features) ;
 
-      for(list = group->item_list;list;)
+      for(glist = group->item_list;glist;)
         {
 
-          if(ZMAP_IS_WINDOW_FEATURESET_ITEM(list->data))
+          if(ZMAP_IS_WINDOW_FEATURESET_ITEM(glist->data))
             {
-              zMapWindowCanvasFeaturesetShowHideMasked((FooCanvasItem *) list->data, show, set_colour);
-              list = list->next;
+              zMapWindowCanvasFeaturesetShowHideMasked((FooCanvasItem *) glist->data, show, set_colour);
+              glist = glist->next;
             }
         }
     }
@@ -1214,9 +1214,9 @@ static gboolean in_user_hidden_stack(GQueue *queue, FooCanvasItem *item)
 
 static gint find_item_in_user_hidden_stack(gconstpointer list_data, gconstpointer item_data)
 {
-  GList *list = (GList *)list_data, *found;;
+  GList *glist = (GList *)list_data, *found;;
   gint result = -1;
-  if((found = g_list_find(list, item_data)))
+  if((found = g_list_find(glist, item_data)))
     result = 0;
   return result;
 }

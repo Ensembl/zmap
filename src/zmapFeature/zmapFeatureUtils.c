@@ -734,12 +734,12 @@ ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, Z
 gboolean zMapStyleNameExists(GList *style_name_list, char *style_name)
 {
   gboolean result = FALSE ;
-  GList *list ;
+  GList *glist ;
   GQuark style_id ;
 
   style_id = zMapStyleCreateID(style_name) ;
 
-  if ((list = g_list_find_custom(style_name_list, GUINT_TO_POINTER(style_id), findStyleName)))
+  if ((glist = g_list_find_custom(style_name_list, GUINT_TO_POINTER(style_id), findStyleName)))
     result = TRUE ;
 
   return result ;
@@ -899,7 +899,7 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_i
 
 GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id, gboolean unique_id)
 {
-  GList *list = NULL;
+  GList *glist = NULL;
   ZMapFeatureSetDesc fset;
   ZMapFeatureColumn column;
   gpointer key;
@@ -907,7 +907,7 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_i
 
   /*
    * This is hopelessly inefficient if we do this for every featureset, as ext_curated has about 1000
-   * so we cache the list when we first create it.
+   * so we cache the glist when we first create it.
    * can't always do it on startup as acedb provides the mapping later on
 
    * NOTE see zmapWindowColConfig.c/column_is_loaded_in_range() for a comment about static or dynamic lists
@@ -917,33 +917,33 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_i
   column = (ZMapFeatureColumn)g_hash_table_lookup(map->columns,GUINT_TO_POINTER(column_id));
 
   if(!column)
-    return list;
+    return glist;
 
   if(unique_id)
     {
       if(column->featuresets_unique_ids)
-        list = column->featuresets_unique_ids;
+        glist = column->featuresets_unique_ids;
     }
   else
     {
       if(column->featuresets_names)
-        list = column->featuresets_names;
+        glist = column->featuresets_names;
     }
 
-  if(!list)
+  if(!glist)
   {
     zMap_g_hash_table_iter_init(&iter,map->featureset_2_column);
     while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer*)(&fset)))
       {
         if(fset->column_id == column_id)
-          list = g_list_prepend(list,unique_id ? key : GUINT_TO_POINTER(fset->feature_src_ID));
+          glist = g_list_prepend(glist,unique_id ? key : GUINT_TO_POINTER(fset->feature_src_ID));
       }
     if(unique_id)
-      column->featuresets_unique_ids = list;
+      column->featuresets_unique_ids = glist;
     else
-      column->featuresets_names = list;
+      column->featuresets_names = glist;
   }
-  return list;
+  return glist;
 }
 
 

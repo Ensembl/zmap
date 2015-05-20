@@ -404,7 +404,7 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
   ZMapFeatureTypeStyle style ;
   ZMapFeatureSetDesc f2c;
   ZMapFeatureSource src;
-  GList *list;
+  GList *glist;
   ZMapFeatureColumn column;
   zmapWindowFeatureSetStyleStruct fstyle = {NULL} ;
   gchar *name = g_strdup_printf("%s_%d", ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME, DNA_group_G++);
@@ -447,11 +447,11 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
     }
 
 
-  list = (GList *)g_hash_table_lookup(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
-  if(!list)
+  glist = (GList *) g_hash_table_lookup(window->context_map->column_2_styles, GUINT_TO_POINTER(f2c->column_id));
+  if(!glist)
     {
-      list = g_list_prepend(list,GUINT_TO_POINTER(src->style_id));
-      g_hash_table_insert(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), list);
+      glist = g_list_prepend(glist, GUINT_TO_POINTER(src->style_id));
+      g_hash_table_insert(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), glist);
     }
 
   column = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(f2c->column_id));

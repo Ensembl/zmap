@@ -69,7 +69,7 @@ typedef struct ZMapRadixSorterStructType
 
 
 
-GList *zMapRadixSort(GList *list, ZMapRadixKeyFunc key_func,int n_digit)
+GList *zMapRadixSort(GList *glist, ZMapRadixKeyFunc key_func,int n_digit)
 {
   ZMapRadixSorter radix_sort ;
   int i ;
@@ -79,11 +79,11 @@ GList *zMapRadixSort(GList *list, ZMapRadixKeyFunc key_func,int n_digit)
   int cur_digit = 0 ;
 
   radix_sort = g_new0(ZMapRadixSorterStruct, 1) ;
-  radix_sort->data = list ;
+  radix_sort->data = glist ;
 
   while(cur_digit < n_digit)
     {
-      /* sort the list into 256 bins */
+      /* sort the glist into 256 bins */
       for(item = radix_sort->data; item; )
         {
           digit = key_func(item->data,cur_digit);
@@ -103,7 +103,7 @@ GList *zMapRadixSort(GList *list, ZMapRadixKeyFunc key_func,int n_digit)
             radix_sort->heads[digit] = cur;
         }
 
-      /* join the bins into a single list in order */
+      /* join the bins into a single glist in order */
 
       for(item = 0,i = N_DIGITS;i > 0;)
         {
@@ -131,10 +131,10 @@ GList *zMapRadixSort(GList *list, ZMapRadixKeyFunc key_func,int n_digit)
         }
     }
 
-  list = radix_sort->data;
+  glist = radix_sort->data;
   g_free(radix_sort);
 
-  return(list);
+  return(glist);
 }
 
 
