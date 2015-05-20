@@ -174,7 +174,7 @@ $SPECIFIC_CONFIGURE_ARGS \
 # This adds a link to the htslib folder in the build directory. 
 #
 #ln -s ../../htslib-develop
-cp -r ../../htslib-develop .
+cp -r ../../htslib .
 cp -r ../../ensc-core .
 
 exit 0

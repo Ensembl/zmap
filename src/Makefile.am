@@ -29,7 +29,7 @@ OPTIONAL_SUBDIRS = gbtools
 endif
 
 #SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop 
-SUBDIRS = $(OPTIONAL_SUBDIRS) zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop 
+SUBDIRS = $(OPTIONAL_SUBDIRS) zeromq libpfetch libcurlobject libzmapfoocanvas htslib 
 
 if USE_ACECONN
 SUBDIRS += AceConn
@@ -167,7 +167,7 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
-	$(top_builddir)/htslib-develop/libhts.a
+	$(top_builddir)/htslib/libhts.a
 
 if USE_ACECONN
 zmap_LDADD += $(top_builddir)/AceConn/src/.libs/libAceConn.a 
