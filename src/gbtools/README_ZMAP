@@ -1,4 +1,10 @@
 
+--------------------------------------------------------------------------------
+This file is part of the ZMap distribution and not part of the external
+library package installed here. It is a decriptive placeholder for our git
+repository.
+--------------------------------------------------------------------------------
+
 ZMap now has a dependency on the gbtools common library code used for all of
 our applications.
 
