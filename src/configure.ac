@@ -47,6 +47,15 @@ AM_COND_IF([USE_ENSEMBL],
 AM_COND_IF([USE_ENSEMBL],
            [AC_SUBST([USE_ENSEMBL], [use_ensembl])])
 
+# Only build ensembl if we have the ensembl subdirectory (otherwise we
+# expect to find it in the LDFLAGS path)
+#
+AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -f "$srcdir/ensc-core/src/Makefile" ])
+AM_COND_IF([USE_ENSEMBL_SUBDIR],
+           [AC_DEFINE([USE_ENSEMBL_SUBDIR], [1], [Ensembl interface is built as a subdirectory of ZMap.])])
+AM_COND_IF([USE_ENSEMBL_SUBDIR],
+           [AC_SUBST([USE_ENSEMBL_SUBDIR], [use_ensembl_subdir])])
+
 
 # Set ZMap version number
 #

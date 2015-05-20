@@ -8,7 +8,9 @@ SUBDIRS += acedb
 endif
 
 if USE_ENSEMBL
+if USE_ENSEMBL_SUBDIR
 SUBDIRS += ensembl
+endif
 endif
 
 
@@ -40,7 +42,9 @@ libZMapServers_la_LIBADD += acedb/libAcedbServer.la
 endif
 
 if USE_ENSEMBL
+if USE_ENSEMBL_SUBDIR
 libZMapServers_la_LIBADD += ensembl/libEnsemblServer.la
+endif
 endif
 
 libZMapServers_la_CFLAGS  = 

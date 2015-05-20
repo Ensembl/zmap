@@ -14,5 +14,6 @@ AceConn/*
 
 ensc-core/*
 !ensc-core/README_ZMAP
+!ensc-core/src/README_ZMAP
 
 
