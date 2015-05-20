@@ -59,7 +59,7 @@ typedef struct
 
 
 
-static inline GQuark g_quark_new(ZMapQuarkSet quark_set, gchar *string) ;
+static inline GQuark g_quark_new(ZMapQuarkSet quark_set, gchar *string_arg) ;
 static void printCB(gpointer data, gpointer user_data) ;
 static gint caseCompareFunc(gconstpointer a, gconstpointer b) ;
 
@@ -93,13 +93,13 @@ static void insert_after(GList *donor, GList *recipient) ;
  * the string skipping over the char to be removed and only moving the
  * other chars....one for a rainy day....
  *  */
-char *zMap_g_remove_char(char *string, char ch)
+char *zMap_g_remove_char(char *string_arg, char ch)
 {
   char *cp ;
 
-  zMapReturnValIfFailSafe((string && *string), string) ;
+  zMapReturnValIfFailSafe((string_arg && *string_arg), string_arg) ;
 
-  cp = string ;
+  cp = string_arg ;
   while (*cp)
     {
       if (*cp == ch)
@@ -119,7 +119,7 @@ char *zMap_g_remove_char(char *string, char ch)
       cp++ ;
     }
 
-  return string ;
+  return string_arg ;
 }
 
 
@@ -935,7 +935,7 @@ gpointer zMap_g_array_element(GArray **array_inout, guint index)
  * @param source                 The string to be inserted.
  * @return                       TRUE if a string was replaced, FALSE otherwise.
  *  */
-gboolean zMap_g_string_replace(GString *string, const char *target, const char *source)
+gboolean zMap_g_string_replace(GString *string_arg, const char *target, const char *source)
 {
   gboolean result = FALSE ;
   int source_len ;
@@ -947,18 +947,18 @@ gboolean zMap_g_string_replace(GString *string, const char *target, const char *
   target_len = strlen(target) ;
   source_len = strlen(source) ;
 
-  template_ptr = string->str ;
+  template_ptr = string_arg->str ;
   while ((template_ptr = strstr(template_ptr, target)))
     {
       result = TRUE ;
 
-      target_pos = template_ptr - string->str ;
+      target_pos = template_ptr - string_arg->str ;
 
-      string = g_string_erase(string, target_pos, target_len) ;
+      string_arg = g_string_erase(string_arg, target_pos, target_len) ;
 
-      string = g_string_insert(string, target_pos, source) ;
+      string_arg = g_string_insert(string_arg, target_pos, source) ;
 
-      template_ptr = string->str + target_pos + source_len ; /* Shouldn't go off the end. */
+      template_ptr = string_arg->str + target_pos + source_len ; /* Shouldn't go off the end. */
     }
 
   return result ;
@@ -1019,15 +1019,15 @@ ZMapQuarkSet zMap_g_quark_create_set(guint block_size)
  * @param string                 The string to look for in the set.
  * @return                       GQuark for the string or 0 if string not found.
  *  */
-GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string)
+GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string_arg)
 {
   GQuark quark = 0 ;
 
-  /* zMapAssert(quark_set && string) ;*/
-  if (!quark_set || !string)
+  /* zMapAssert(quark_set && string_arg) ;*/
+  if (!quark_set || !string_arg)
     return quark ;
 
-  quark = GPOINTER_TO_UINT(g_hash_table_lookup(quark_set->g_quark_ht, string)) ;
+  quark = GPOINTER_TO_UINT(g_hash_table_lookup(quark_set->g_quark_ht, string_arg)) ;
 
   return quark ;
 }
@@ -1041,17 +1041,17 @@ GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string)
  * @param string                 The string to look for in the set.
  * @return                       GQuark for the string or 0 if string not found.
  *  */
-GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string)
+GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string_arg)
 {
   GQuark quark = 0 ;
 
-  /* May be too draconian to insist on *string...just remove if so. */
-  /* zMapAssert(quark_set && string && *string) ;*/
-  if (!quark_set || !string || !*string)
+  /* May be too draconian to insist on *string_arg...just remove if so. */
+  /* zMapAssert(quark_set && string_arg && *string_arg) ;*/
+  if (!quark_set || !string_arg || !*string_arg)
     return quark ;
 
-  if (!(quark = (gulong) g_hash_table_lookup(quark_set->g_quark_ht, string)))
-    quark = g_quark_new(quark_set, g_strdup (string));
+  if (!(quark = (gulong) g_hash_table_lookup(quark_set->g_quark_ht, string_arg)))
+    quark = g_quark_new(quark_set, g_strdup (string_arg));
 
   return quark;
 }
@@ -1146,20 +1146,20 @@ static void insert_after(GList *donor, GList *recipient)
 
 
 /* HOLDS: g_quark_global_lock */
-static inline GQuark g_quark_new (ZMapQuarkSet quark_set, gchar *string)
+static inline GQuark g_quark_new (ZMapQuarkSet quark_set, gchar *string_arg)
 {
   GQuark quark;
 
-  /* Allocate another block of quark string pointers if needed. */
+  /* Allocate another block of quark string_arg pointers if needed. */
   if (quark_set->g_quark_seq_id % quark_set->block_size == 0)
     quark_set->g_quarks = g_renew(gchar*, quark_set->g_quarks,
 				  quark_set->g_quark_seq_id + quark_set->block_size) ;
 
-  quark_set->g_quarks[quark_set->g_quark_seq_id] = string ;
+  quark_set->g_quarks[quark_set->g_quark_seq_id] = string_arg ;
   quark_set->g_quark_seq_id++ ;
   quark = quark_set->g_quark_seq_id ;
 
-  g_hash_table_insert(quark_set->g_quark_ht, string, GUINT_TO_POINTER(quark)) ;
+  g_hash_table_insert(quark_set->g_quark_ht, string_arg, GUINT_TO_POINTER(quark)) ;
 
   return quark ;
 }

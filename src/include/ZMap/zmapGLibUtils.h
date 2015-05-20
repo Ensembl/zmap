@@ -60,9 +60,9 @@ typedef struct ZMapGHashIterStructType
 
 
 
-gchar *zMap_g_remove_char(char *string, char ch) ;
+gchar *zMap_g_remove_char(char *string_arg, char ch) ;
 gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle) ;
-gboolean zMap_g_string_replace(GString *string, const char *target, const char *source) ;
+gboolean zMap_g_string_replace(GString *string_arg, const char *target, const char *source) ;
 
 void zMap_g_list_foreach_reverse(GList *list, GFunc func, gpointer user_data);
 void zMap_g_list_foreach_directional(GList *list, GFunc func, gpointer user_data,
@@ -114,8 +114,8 @@ gpointer zMap_g_array_element(GArray **array_inout, guint index) ;
  * as may have thousands of quarks.
  */
 ZMapQuarkSet zMap_g_quark_create_set(guint block_size) ;
-GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string);
-GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string);
+GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string_arg);
+GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string_arg);
 gchar *zMap_g_quark_to_string(ZMapQuarkSet quark_set, GQuark quark) ;
 void zMap_g_quark_destroy_set(ZMapQuarkSet quark_set) ;
 

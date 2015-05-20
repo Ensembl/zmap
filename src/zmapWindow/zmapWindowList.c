@@ -83,7 +83,7 @@ typedef struct
 {
   ZMapWindowList window_list;
   ZMapFeature    feature;
-  GtkTreeIter   *iterator;
+  GtkTreeIter   *tree_iterator;
 } TreeViewContextMenuDataStruct, *TreeViewContextMenuData;
 
 
@@ -167,12 +167,12 @@ static gboolean windowIsReusable(void) ;
 static void feature_menu_cb(int menu_item_id, gpointer callback_data);
 static ZMapGUIMenuItem getFeatureOps(ZMapWindowList window_list,
                                      ZMapFeature    feature,
-                                     GtkTreeIter   *iterator,
+                                     GtkTreeIter   *tree_iterator,
                                      gpointer       cb_data);
 static void make_list_menu_item(ZMapWindowList  window_list,
                                 GdkEventButton *button,
                                 ZMapFeature     feature,
-                                GtkTreeIter    *iterator);
+                                GtkTreeIter    *tree_iterator);
 
 static GHashTable *default_get_ftoi_hash(gpointer user_data);
 static GList *default_search_hash_func(ZMapWindow window, GHashTable *hash_table, gpointer user_data);
@@ -1374,7 +1374,7 @@ static void feature_menu_cb(int menu_item_id, gpointer callback_data)
 
 static ZMapGUIMenuItem getFeatureOps(ZMapWindowList window_list,
                                      ZMapFeature    feature,
-                                     GtkTreeIter   *iterator,
+                                     GtkTreeIter   *tree_iterator,
                                      gpointer       cb_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
@@ -1396,7 +1396,7 @@ static ZMapGUIMenuItem getFeatureOps(ZMapWindowList window_list,
 static void make_list_menu_item(ZMapWindowList  window_list,
                                 GdkEventButton *button,
                                 ZMapFeature     feature,
-                                GtkTreeIter    *iterator)
+                                GtkTreeIter    *tree_iterator)
 {
   TreeViewContextMenuData full_data;
   ZMapGUIMenuItem menu = NULL;
@@ -1408,9 +1408,9 @@ static void make_list_menu_item(ZMapWindowList  window_list,
   full_data = g_new0(TreeViewContextMenuDataStruct, 1);
   full_data->window_list = window_list;
   full_data->feature     = feature;
-  full_data->iterator    = iterator;
+  full_data->tree_iterator    = tree_iterator;
 
-  if((menu = getFeatureOps(window_list, feature, iterator, full_data)))
+  if((menu = getFeatureOps(window_list, feature, tree_iterator, full_data)))
     menu_sets  = g_list_append(menu_sets, menu);
 
   if(menu_sets != NULL)

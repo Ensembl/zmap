@@ -95,7 +95,7 @@ extern "C" {
                    \
       file = g_strdup_printf("%s - %s", zMapGetAppVersionString(), __FILE__) ; \
       g_assertion_message (G_LOG_DOMAIN, file, __LINE__, G_STRFUNC, NULL ) ; \
-    } while (0) 
+    } while (0)
 
 #endif /* !ZMAP_ASSERT_DISABLE */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -259,10 +259,10 @@ G_STMT_START{                                             \
 /* Define debug messages more easily. */
 #ifdef __GNUC__
 #define zMapDebugPrintf(FORMAT, ...)                      \
-  zMapUtilsDebugPrintf(stderr, "%s: " FORMAT "\n", __PRETTY_FUNCTION__, __VA_ARGS__) 
+  zMapUtilsDebugPrintf(stderr, "%s: " FORMAT "\n", __PRETTY_FUNCTION__, __VA_ARGS__)
 #else /* __GNUC__ */
 #define zMapDebugPrintf(FORMAT, ...)		      \
-  zMapUtilsDebugPrintf(stderr, "%s: " FORMAT "\n", NULL, __VA_ARGS__) 
+  zMapUtilsDebugPrintf(stderr, "%s: " FORMAT "\n", NULL, __VA_ARGS__)
 #endif /* __GNUC__ */
 
 
@@ -355,7 +355,7 @@ extern gboolean zmap_timing_G;
 #define TIMER_STOP	2
 #define TIMER_ELAPSED	3
 
-void zMapLogTime(int what, int how, long data, const char *string);
+void zMapLogTime(int what, int how, long data, const char *string_arg);
 
 #endif /* ZMAP_DISABLE_TIMER */
 

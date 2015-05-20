@@ -935,7 +935,7 @@ ZMAP_DEFINE_ENUM(ZMapFeatureBoundaryMatchTypeEnum, ZMAP_BOUNDARY_MATCH_TYPE_LIST
 /* ZMapFeatureBoundaryMatchTypeEnum results are combined together with
  * bit operators so they are no longer values from the ZMapFeatureBoundaryMatchTypeEnum
  * itself. We therefore can't use this enum to store the results and must use an int
- * instead. However, partly for historic reasons and partly because it's useful to know 
+ * instead. However, partly for historic reasons and partly because it's useful to know
  * they're related to the enum, let's create a specific type name for these int results. */
 typedef int ZMapFeatureBoundaryMatchType ;
 
@@ -957,7 +957,7 @@ typedef struct ZMapFeatureBoundaryMatchStructType
 
 
 
-/* 
+/*
  * Struct that supplies text descriptions of the parts of a feature, which fields are filled
  * in depends on the feature type.
  */
@@ -1038,7 +1038,7 @@ typedef enum
 /* ZMapFeatureContextExecuteStatusType results are combined together with
  * bit operators so they are no longer values from the ZMapFeatureContextExecuteStatusType
  * enum itself. We therefore can't use this enum to store the results and must use an int
- * instead. However, partly for historic reasons and partly because it's useful to know 
+ * instead. However, partly for historic reasons and partly because it's useful to know
  * they're related to the enum, let's create a specific type name for these int results. */
 typedef int ZMapFeatureContextExecuteStatus ;
 
@@ -1446,10 +1446,10 @@ const char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type) ;
 char *zMapFeatureType2Str(ZMapStyleMode type) ;
 const char *zMapFeatureSubPart2Str(ZMapFeatureSubPartType subpart) ;
 gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out);
-gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand);
+gboolean zMapFeatureStr2Strand(char *string_arg, ZMapStrand *strand);
 const char *zMapFeatureStrand2Str(ZMapStrand strand) ;
 gboolean zMapFeatureFormatFrame(char *frame_str, ZMapFrame *frame_out);
-gboolean zMapFeatureStr2Frame(char *string, ZMapFrame *frame);
+gboolean zMapFeatureStr2Frame(char *string_arg, ZMapFrame *frame);
 char *zMapFeatureFrame2Str(ZMapFrame frame) ;
 gboolean zMapFeatureFormatPhase(char *phase_str, ZMapPhase *phase_out);
 gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase);
@@ -1530,8 +1530,8 @@ gboolean zMapFeatureHasMatchingBoundaries(ZMapFeature feature,
                                           ZMapFeaturePartsList *matching_boundaries_out,
                                           ZMapFeaturePartsList *non_matching_boundaries_out) ;
 
-int zMapFeatureVariationGetSections(const char *variation_str, 
-                                    char **old_str_out, char **new_str_out, 
+int zMapFeatureVariationGetSections(const char *variation_str,
+                                    char **old_str_out, char **new_str_out,
                                     int *old_len_out, int *new_len_out) ;
 
 /* rationalise these two..... */

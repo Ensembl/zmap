@@ -1124,17 +1124,17 @@ void zMapWindowFeatureItemListAddItems(ZMapWindowFeatureItemList zmap_tv,
 
 void zMapWindowFeatureItemListUpdateItem(ZMapWindowFeatureItemList zmap_tv,
                                ZMapWindow                window,
-                               GtkTreeIter              *iterator,
+                               GtkTreeIter              *tree_iterator,
                                FooCanvasItem            *feature_item)
 {
   SerialisedFeatureSearch feature_data;
 
   if(fetch_lookup_data(zmap_tv, ZMAP_GUITREEVIEW(zmap_tv)->tree_model,
-                   iterator, &feature_data, NULL, NULL))
+                   tree_iterator, &feature_data, NULL, NULL))
     free_serialised_data_cb(feature_data);
 
   zmap_tv->window = window;
-  zMapGUITreeViewUpdateTuple(ZMAP_GUITREEVIEW(zmap_tv), iterator, feature_item);
+  zMapGUITreeViewUpdateTuple(ZMAP_GUITREEVIEW(zmap_tv), tree_iterator, feature_item);
   zmap_tv->window = NULL;
 
   return ;
@@ -1182,7 +1182,7 @@ gboolean zMapWindowFeatureItemListUpdateAll(ZMapWindowFeatureItemList zmap_tv,
 FooCanvasItem *zMapWindowFeatureItemListGetItem(ZMapWindow window,
                                     ZMapWindowFeatureItemList zmap_tv,
                                     GHashTable  *context_to_item,
-                                    GtkTreeIter *iterator)
+                                    GtkTreeIter *tree_iterator)
 {
   FooCanvasItem *item = NULL;
   GtkTreeModel *model = NULL;
@@ -1199,7 +1199,7 @@ FooCanvasItem *zMapWindowFeatureItemListGetItem(ZMapWindow window,
              "tree-model",       &model,
              NULL);
 
-  gtk_tree_model_get(model, iterator,
+  gtk_tree_model_get(model, tree_iterator,
                  data_index,   &feature_data,
                  strand_index, &set_strand,
                  frame_index,  &set_frame,
@@ -1221,12 +1221,12 @@ FooCanvasItem *zMapWindowFeatureItemListGetItem(ZMapWindow window,
 ZMapFeature zMapWindowFeatureItemListGetFeature(ZMapWindow window,
                                     ZMapWindowFeatureItemList zmap_tv,
                                     GHashTable  *context_to_item,
-                                    GtkTreeIter *iterator)
+                                    GtkTreeIter *tree_iterator)
 {
   ZMapFeature feature = NULL;
   FooCanvasItem *feature_item = NULL;
 
-  if((feature_item = zMapWindowFeatureItemListGetItem(window,zmap_tv, context_to_item, iterator)))
+  if((feature_item = zMapWindowFeatureItemListGetItem(window,zmap_tv, context_to_item, tree_iterator)))
     feature = zmapWindowItemGetFeature(feature_item);
 
   return feature;
