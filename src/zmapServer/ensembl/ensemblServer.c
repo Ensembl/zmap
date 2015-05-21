@@ -1471,7 +1471,9 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
       context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, ZMAPFEATURE_STRUCT_CONTEXT) ;
 
       /* I'm going to create the three frame translation up front! */
-      if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
+      /* gb10: comment out check on req_feature_set_names as temp fix to get 3ft working in
+       * ensembl. I'm not sure why we need this check anyway - don't we always want 3ft??  */
+      //if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
         {
           ZMapFeatureSet translation_fs = NULL;
 
@@ -1494,8 +1496,8 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
         }
 
       /* I'm going to create the show translation up front! */
-      if (zMap_g_list_find_quark(context->req_feature_set_names,
-                  zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
+        //if (zMap_g_list_find_quark(context->req_feature_set_names,
+        //                           zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
         {
           if ((zMapFeatureShowTranslationCreateSet(feature_block, &feature_set)))
             {
