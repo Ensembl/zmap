@@ -317,9 +317,6 @@ $(NULL)
 # copy from git...so we add some stuff to maintainer-clean to try to achieve
 # this.
 
-#GENERATED_FILES = './.deps ./.libs ./bin ./include ./lib* ./zmap* ./Makefile ./config.* dotZMap gffparser* \
-#./stamp-h1 ./xml_* ./xremote* ./zmap*'
-
 
 # Standard way to add _files_ to the list deleted by the maintainer-clean target.
 #
@@ -333,11 +330,20 @@ $(top_srcdir)/config.h.in $(top_srcdir)/configure $(top_srcdir)/zmap_version.m4
 GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/* $(top_srcdir)/config \
 $(top_srcdir)/autom4te.cache
 
+EXTERNAL_LIBS = $(top_srcdir)/ensc-core $(top_srcdir)/gbtools $(top_srcdir)/htslib $(top_srcdir)/zeromq
+EXTERNAL_PLACEHOLDERS = $(top_srcdir)/ensc-core/README_ZMAP $(top_srcdir)/gbtools/README_ZMAP \
+$(top_srcdir)/htslib/README_ZMAP $(top_srcdir)/zeromq/README_ZMAP
+
 maintainer-clean-local:
 	@echo 'maintainer-clean-local: Removing all generated files....'
 	rm -rf $(GENERATED_FILES)
 	rm -f $(top_srcdir)/m4/*.m4
 	@echo 'maintainer-clean-local: Finished removing all generated files....'
+	@echo 'maintainer-clean-local: Removing all external library files....'
+	rm -rf $(EXTERNAL_LIBS)
+	git checkout $(EXTERNAL_PLACEHOLDERS)
+	@echo 'maintainer-clean-local: Finished removing all external library files....'
+
 
 
 ZMAP_BUILD_FILES = $(top_builddir)/zmapApp/*.o $(top_builddir)/zmapAppServices/*.o $(top_builddir)/zmapConfig/*.o \
