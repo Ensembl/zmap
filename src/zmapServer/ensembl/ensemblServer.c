@@ -1166,8 +1166,6 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
       /* Add the alignment data */
       GQuark clone_id = 0 ; /*! \todo Add clone id? */
       double percent_id = 0.0 ;
-      int match_start = 0 ;
-      int match_end = 0 ;
       int match_length = 0 ;
       ZMapStrand match_strand = ZMAPSTRAND_NONE ;
       ZMapPhase match_phase = 0;
