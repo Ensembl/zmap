@@ -1026,13 +1026,20 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
       if (cDNA_coding_end_is_set)
         cDNA_coding_end = Transcript_getcDNACodingEnd(rsf) ;
 
-      zMapLogMessage("coding startset=%c endset=%c start=%d end=%d\ncdna startset=%c endset=%c start=%d end=%d\n", 
-                     coding_region_start_is_set, coding_region_end_is_set, coding_region_start, coding_region_end,
-                     cDNA_coding_start_is_set, cDNA_coding_end_is_set, cDNA_coding_start, cDNA_coding_end);
+      //zMapLogMessage("coding startset='%c' endset='%c' start='%d' end='%d'\ncdna startset='%c' endset='%c' start='%d' end='%d'\n", 
+      //               coding_region_start_is_set == '\0' ? "" : coding_region_start_is_set,
+      //               coding_region_end_is_set == '\0' ? "" : coding_region_end_is_set,
+      //               coding_region_start, coding_region_end,
+      //               cDNA_coding_start_is_set == '\0' ? "" : cDNA_coding_start_is_set,
+      //               cDNA_coding_end_is_set == '\0' ? "" : cDNA_coding_end_is_set,
+      //               cDNA_coding_start, cDNA_coding_end);
 
       zMapFeatureTranscriptInit(feature);
       zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
-      //zMapFeatureAddTranscriptCDS(feature, cds, coding_region_start, coding_region_end);
+
+      zMapFeatureAddTranscriptCDS(feature, 
+                                  (coding_region_start_is_set && coding_region_end_is_set),
+                                  coding_region_start, coding_region_end);
 
       Vector *exons = Transcript_getAllExons(rsf) ;
       transcriptAddExons(server, feature, exons) ;
@@ -1123,8 +1130,8 @@ static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector
 
           zMapFeatureAddTranscriptExonIntron(feature, &span, NULL) ;
 
-          zMapLogMessage("Added exon %d, %d (%d, %d)", 
-                         span.x1, span.x2, exon->start, exon->end);
+          //zMapLogMessage("Added exon %d, %d (%d, %d)", 
+          //               span.x1, span.x2, exon->start, exon->end);
         }
 
       zMapFeatureTranscriptRecreateIntrons(feature) ;
@@ -1202,8 +1209,8 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
                                   homol_type, match_length, match_strand, match_phase,
                                   align, align_error, has_local_sequence, sequence) ;
       
-      zMapLogMessage("Added align data: id %f, qstart %d, qend %d, qlen %d, qstrand %d, ph %d, cigar %s",
-                     percent_id, match_start, match_end, match_length, match_strand, match_phase, cigar) ;
+      //zMapLogMessage("Added align data: id %f, qstart %d, qend %d, qlen %d, qstrand %d, ph %d, cigar %s",
+      //               percent_id, match_start, match_end, match_length, match_strand, match_phase, cigar) ;
     }
 
   return feature ;
@@ -1288,8 +1295,8 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                      score,
                                      strand) ;
 
-          zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d", 
-                         feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
+          //zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d", 
+          //               feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
 
           /* add the new feature to the featureset */
           ZMapFeature existing_feature = g_hash_table_lookup(((ZMapFeatureAny)feature_set)->children, GINT_TO_POINTER(feature_name_id)) ;
@@ -1347,7 +1354,7 @@ static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
 
       source_id = source_data->source_id ;
       source_data->style_id = feature_style_id;
-      zMapLogMessage("Style id = %s", g_quark_to_string(source_data->style_id)) ;
+      //zMapLogMessage("Style id = %s", g_quark_to_string(source_data->style_id)) ;
     }
   else
     {
