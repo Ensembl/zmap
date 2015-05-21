@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,7 +23,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
@@ -52,14 +52,14 @@ gboolean zMapDAS1DSNSegments(ZMapDAS1DSN dsn, GList **segments_out)
 {
   ZMapDAS1EntryPoint entry_point = NULL;
   gboolean has_segs = FALSE;
-  GList *list = NULL;
+  GList *glist = NULL;
 
-  if((entry_point = dsn->entry_point) && 
-     (list = entry_point->segments))
+  if((entry_point = dsn->entry_point) &&
+     (glist = entry_point->segments))
     has_segs = TRUE;
 
   if(segments_out)
-    *segments_out = list;
+    *segments_out = glist;
 
   return has_segs;
 }
@@ -73,7 +73,7 @@ char *zMapDAS1DSNRefSegmentsQueryString(ZMapDAS1DSN dsn, char *separator)
   GString *query = NULL;
 
   full_data.separator = *separator;
-  full_data.query = 
+  full_data.query =
     query = g_string_sized_new(400); /* segment=ID:1,1000000 (length = 20) * 20 = 400 */
 
   if((entry_point = dsn->entry_point))
@@ -98,14 +98,14 @@ static void segmentListToQueryString(gpointer data, gpointer user_data)
 {
   ZMapDAS1Segment seg = (ZMapDAS1Segment)data;
   refSegment data_ptr = (refSegment)user_data;
-  
+
   if(seg->is_reference && seg->has_subparts)
-    g_string_append_printf(data_ptr->query, "segment=%s:%d,%d%c", 
+    g_string_append_printf(data_ptr->query, "segment=%s:%d,%d%c",
                            g_quark_to_string(seg->id),
                            seg->start,
                            seg->stop,
                            data_ptr->separator);
-  
+
   return ;
 }
 

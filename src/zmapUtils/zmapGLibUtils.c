@@ -189,7 +189,7 @@ gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle)
  * to the end of the list... Maybe we need 2 functions as it is nice
  * to have the g_list_last encapsulated in reverse function...
  */
-void zMap_g_list_foreach_reverse(GList *list, GFunc func, gpointer user_data)
+void zMap_g_list_foreach_reverse(GList *glist, GFunc func, gpointer user_data)
 {
   glist = g_list_last(glist) ;
 

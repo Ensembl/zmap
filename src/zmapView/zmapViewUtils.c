@@ -187,11 +187,11 @@ void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value)
     case ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS:
       zMapViewUpdateColumnBackground(view);
       break ;
-      
+
     case ZMAPFLAG_ENABLE_ANNOTATION:
       zMapViewToggleScratchColumn(view, value, TRUE) ;
       break ;
-      
+
     default:
       break ;
     } ;
@@ -532,12 +532,12 @@ ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList
   if (step_list)
     {
       StepListFindStruct step_find = {ZMAP_SERVERREQ_INVALID} ;
-      
+
       step_find.request_type = request_type ;
       step_find.request = NULL ;
-      
+
       g_list_foreach(step_list->steps, stepFindReq, &step_find) ;
-      
+
       request = step_find.request ;
     }
   else
@@ -686,12 +686,12 @@ GHashTable *zmapViewCWHHashCreate(void)
  * @param               GList * of ZMapWindow
  * @return              void
  *************************************************/
-void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *list)
+void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *glist)
 {
   ContextDestroyList destroy_list ;
 
   destroy_list = g_new0(ContextDestroyListStruct, 1) ;
-  destroy_list->window_list = list ;
+  destroy_list->window_list = glist ;
 
   g_hash_table_insert(hash, context, destroy_list) ;
 
@@ -806,9 +806,9 @@ void zmapViewCWHDestroy(GHashTable **hash)
 
 
 
-/* 
+/*
  * Server Session stuff: holds information about data server connections.
- * 
+ *
  * NOTE: the list of connection session data is dynamic, as a server
  * connection is terminated the session data is free'd too so the final
  * list may be very short or not even have any connections at all.
@@ -1006,11 +1006,11 @@ static void cwh_destroy_value(gpointer cwh_data)
 
 
 /* Produce information for each session as formatted text.
- * 
+ *
  * NOTE: some information is only available once the server connection
  * is established and the server can be queried for it. This is not formalised
  * in a struct but could be if found necessary.
- * 
+ *
  *  */
 static void formatSession(gpointer data, gpointer user_data)
 {
@@ -1117,7 +1117,7 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
 	    }
 	}
     }
-  
+
   return ;
 }
 
@@ -1153,7 +1153,7 @@ static void forAllCB(void *data, void *user_data)
 static void setCursorCB(ZMapWindow window, void *user_data)
 {
   GdkCursor *cursor = (GdkCursor *)user_data ;
- 
+
   zMapWindowSetCursor(window, cursor) ;
 
   return ;

@@ -228,7 +228,7 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1_in, double y1
 static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
 {
   int i ;
-  GList *list ;
+  GList *glist ;
 
   buf = g_string_set_size(buf, 0) ;
 
@@ -279,14 +279,14 @@ static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
     {
       /* We appear to have groups that have no children...is this empty cols ? */
       /* Print all the child groups of this group. */
-      if ((list = g_list_first(group->item_list)))
+      if ((glist = g_list_first(group->item_list)))
         {
           do
             {
-              if (FOO_IS_CANVAS_GROUP(list->data))
-                printGroup(FOO_CANVAS_GROUP(list->data), indent + 1, buf) ;
+              if (FOO_IS_CANVAS_GROUP(glist->data))
+                printGroup(FOO_CANVAS_GROUP(glist->data), indent + 1, buf) ;
             }
-          while ((list = g_list_next(list))) ;
+          while ((glist = g_list_next(glist))) ;
         }
     }
 

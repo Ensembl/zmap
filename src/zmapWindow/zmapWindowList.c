@@ -1055,7 +1055,7 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
   GIOChannel *file = NULL;
   GError *file_error = NULL;
   gboolean result = FALSE;
-  GList *list = NULL,
+  GList *glist = NULL,
     *list_feature = NULL ;
   GError                *error = NULL;
 
@@ -1092,7 +1092,7 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
            * tree selection object. The stuff using a linked list of pointers to foo canvas items
            * simply does not work, and from what I can see, never has.
            */
-          if (window_list_selection_get_features(window_list, &list, &list_feature))
+          if (window_list_selection_get_features(window_list, &glist, &list_feature))
             {
               zMapGFFDumpList(list_feature, window->context_map->styles, NULL, file, NULL, &error) ;
             }
@@ -1101,7 +1101,7 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
            * This is the old stuff:
            */
           /*
-          if(list && list->data && feature_any)
+          if(glist && glist->data && feature_any)
             {
               if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
                 zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
@@ -1111,9 +1111,9 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
                 {
                   feature_out_data = export_data.data;
 
-                  g_list_foreach(list, invoke_dump_function_cb, &export_data);
+                  g_list_foreach(glist, invoke_dump_function_cb, &export_data);
                 }
-              g_list_free(list);
+              g_list_free(glist);
 
               if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
                 zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;

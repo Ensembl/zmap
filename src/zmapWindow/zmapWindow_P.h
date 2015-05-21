@@ -1470,7 +1470,7 @@ GtkWidget    *zmapWindowFeatureListCreateView(ZMapWindowListType list_type, GtkT
                                               zmapWindowFeatureListCallbacks callbacks,
                                               gpointer user_data);
 void zmapWindowFeatureListPopulateStoreList(GtkTreeModel *treeModel, ZMapWindowListType list_type,
-                                            GList *list, gpointer user_data);
+                                            GList *glist, gpointer user_data);
 void zmapWindowFeatureListRereadStoreList(GtkTreeView *tree_view, ZMapWindow window) ;
 gint zmapWindowFeatureListCountSelected(GtkTreeSelection *selection);
 gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
@@ -1704,7 +1704,7 @@ void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item,
 
 
 
-void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *list, FooCanvasItem *hot,ZMapWindowFocusType type);
+void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *glist, FooCanvasItem *hot,ZMapWindowFocusType type);
 #define zmapWindowFocusAddItems(focus, item_list, hot) \
       zmapWindowFocusAddItemsType(focus, item_list, hot, WINDOW_FOCUS_GROUP_FOCUS);
 void zmapWindowFocusForEachFocusItemType(ZMapWindowFocus focus, ZMapWindowFocusType type,
