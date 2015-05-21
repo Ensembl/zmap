@@ -1126,7 +1126,8 @@ static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector
       for (i = 0; i < Vector_getNumElement(exons); ++i) 
         {
           SeqFeature *exon = (SeqFeature*)Vector_getElementAt(exons,i);
-          ZMapSpanStruct span = {exon->start + server->zmap_start, exon->end + server->zmap_start};
+          const int offset = server->zmap_start - 1 ;
+          ZMapSpanStruct span = {exon->start + offset, exon->end + offset};
 
           zMapFeatureAddTranscriptExonIntron(feature, &span, NULL) ;
 
