@@ -83,6 +83,7 @@ gb_tools='maybe'
 aceconn='maybe'
 ensc_core='maybe'
 htslib='maybe'
+zeromq='maybe'
 run_autoupdate=''					    # don't run autoupdate by default.
 install_missing='-i'
 verbose=''
@@ -115,6 +116,10 @@ htslib_repos='htslib'
 htslib_dir='htslib'
 htslib_branch='' # set this to '-b <branch>' to use a branch other than the default (develop)
 
+# zeromq repository info
+zeromq_repos='zeromq'
+zeromq_dir='zeromq'
+zeromq_branch='' # set this to '-b <branch>' to use a branch other than the default (develop)
 
 
 # Cmd line options....
@@ -174,6 +179,9 @@ zmap_message_out "--------------------------------------------------------------
 zmap_message_out "bootstrap starting...."
 zmap_message_out "-------------------------------------------------------------------"
 
+
+
+# OK, OK.....THIS ALL NEEDS TO BE IN A LOOP OVER THE EXTERNAL LIBS WE HAVE.....
 
 # set up gbtools, this is our general tools package.
 #
@@ -264,6 +272,28 @@ if [[ "$htslib" == "yes" || "$htslib" == "maybe" ]] ; then
     fi
 
 fi
+
+
+
+# Set up zeromq subdirectory. This is the message passing package for RemoteControl.
+#
+
+if [[ "$zeromq" == "yes" ]] ; then
+
+    clean_lib $zeromq_repos $zeromq_dir
+
+fi
+
+if [[ "$zeromq" == "yes" || "$zeromq" == "maybe" ]] ; then
+    
+    if [[ ! -f "./$zeromq/configure.ac" ]] ; then
+
+        fetch_lib $git_host:$git_root/$zeromq_repos $zeromq_dir "$zeromq_branch"
+
+    fi
+
+fi
+
 
 
 

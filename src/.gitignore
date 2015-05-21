@@ -6,6 +6,7 @@ config
 
 # Ignore everything in these external library subdirs except for the 
 # descriptive placeholder README_ZMAP files.
+#
 gbtools/*
 !gbtools/README_ZMAP
 
@@ -18,5 +19,9 @@ ensc-core/*
 
 htslib/*
 !htslib/README_ZMAP
+
+zeromq/*
+!zeromq/README_ZMAP
+
 
 

@@ -28,8 +28,8 @@ if USE_GBTOOLS
 OPTIONAL_SUBDIRS = gbtools
 endif
 
-#SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop 
-SUBDIRS = $(OPTIONAL_SUBDIRS) zeromq libpfetch libcurlobject libzmapfoocanvas
+
+SUBDIRS = $(OPTIONAL_SUBDIRS) libpfetch libcurlobject libzmapfoocanvas
 
 if USE_ACECONN
 SUBDIRS += AceConn
@@ -43,6 +43,10 @@ endif
 
 if USE_HTSLIB
 SUBDIRS += htslib
+endif
+
+if USE_ZEROMQ
+SUBDIRS += zeromq
 endif
 
 SUBDIRS += include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
@@ -172,8 +176,7 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapXML.a                   \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
-	$(top_builddir)/.libs/libPFetch.a                    \
-	$(top_builddir)/htslib/libhts.a
+	$(top_builddir)/.libs/libPFetch.a
 
 if USE_ACECONN
 zmap_LDADD += $(top_builddir)/AceConn/src/.libs/libAceConn.a 
@@ -198,13 +201,14 @@ zmap_LDADD += -lgbtools
 endif
 
 # The zeromq library has a different suffix on cygwin
+if USE_ZEROMQ
 if ON_CYGWIN
-zmap_LDADD +=                                                \
-	$(top_builddir)/zeromq/src/.libs/libzmq.dll.a            
+zmap_LDADD += $(top_builddir)/zeromq/src/.libs/libzmq.dll.a            
 else
-zmap_LDADD +=                                                \
-	$(top_builddir)/zeromq/src/.libs/libzmq.a            
+zmap_LDADD += $(top_builddir)/zeromq/src/.libs/libzmq.a            
 endif
+endif
+
 
 # I've had to add in the X11 lib otherwise we can't compile on Ubuntu
 # 64-bit machines (-lz is included because htslib needs it).

@@ -66,6 +66,15 @@ AM_COND_IF([USE_HTSLIB],
            [AC_SUBST([USE_HTSLIB], [use_htslib])])
 
 
+# Check for zeromq
+#
+AM_CONDITIONAL([USE_ZEROMQ], [ test -f "$srcdir/zeromq/configure.ac" ])
+AM_COND_IF([USE_ZEROMQ],
+           [AC_DEFINE([USE_ZEROMQ], [1], [Zeromq interface is available.])])
+AM_COND_IF([USE_ZEROMQ],
+           [AC_SUBST([USE_ZEROMQ], [use_zeromq])])
+
+
 # Set ZMap version number
 #
 # Check if this is a Git repository and, if so, use output
@@ -593,6 +602,12 @@ fi
 if test -z "$USE_HTSLIB"
 then
   echo " Warning: htslib is not installed so BAM/CRAM/VCF handling is disabled."
+  echo
+fi
+
+if test -z "$USE_ZEROMQ"
+then
+  echo " Warning: zeromq is not installed so RemoteControl is disabled."
   echo
 fi
 
