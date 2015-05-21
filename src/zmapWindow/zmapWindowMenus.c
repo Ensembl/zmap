@@ -128,6 +128,14 @@ typedef enum
   } ColFilteringType ;
 
 
+typedef enum {
+  EXPORT_DNA, 
+  EXPORT_FEATURES_ALL, 
+  EXPORT_FEATURES_MARKED, 
+  EXPORT_FEATURES_CLICKED
+} ExportType ;
+
+
 /* Strings/enums for invoking blixem. */
 #define BLIXEM_MENU_STR            "Blixem"
 #define BLIXEM_OPS_STR             BLIXEM_MENU_STR " - more options"
@@ -362,7 +370,7 @@ static FooCanvasGroup *menuDataItemToColumn(FooCanvasItem *item) ;
 
 static gboolean exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *seq, char *seq_name, int seq_len,
                             char *molecule_name, char *gene_name, GError **error) ;
-static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature_in, char **filepath_inout, GError **error) ;
+static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpan region_span, ZMapFeatureAny feature_in, char **filepath_inout, GError **error) ;
 
 static void insertSubMenus(GString *branch_point_string,
                            ZMapGUIMenuItem sub_menus,
@@ -687,7 +695,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAFeatureAnyFile(NULL, NULL, menu_data)) ;
     }
 
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuExportOps(NULL, NULL, menu_data)) ;
+  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuItemExportOps(NULL, NULL, menu_data)) ;
 
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
@@ -812,7 +820,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuSearchListOps(NULL, NULL, cbdata)) ;
 
-      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuExportOps(NULL, NULL, cbdata)) ;
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuColumnExportOps(NULL, NULL, cbdata)) ;
 
       zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
@@ -1878,14 +1886,32 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
  * now all features in all featuresets in the column or all that overlap with
  * the marked region if it is set.
  */
-ZMapGUIMenuItem zmapWindowMakeMenuExportOps(int *start_index_inout,
-                                          ZMapGUIMenuItemCallbackFunc callback_func,
-                                          gpointer callback_data)
+ZMapGUIMenuItem zmapWindowMakeMenuColumnExportOps(int *start_index_inout,
+                                                  ZMapGUIMenuItemCallbackFunc callback_func,
+                                                  gpointer callback_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Features" , 2, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Features (marked)" , 12, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Column features" , EXPORT_FEATURES_ALL, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Column features (marked)" , EXPORT_FEATURES_MARKED, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+ZMapGUIMenuItem zmapWindowMakeMenuItemExportOps(int *start_index_inout,
+                                                ZMapGUIMenuItemCallbackFunc callback_func,
+                                                gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Feature" , EXPORT_FEATURES_CLICKED, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Column features" , EXPORT_FEATURES_ALL, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Column features (marked)" , EXPORT_FEATURES_MARKED, exportMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
@@ -2217,10 +2243,11 @@ gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GEr
  *
  * Options are:
  *
- * case 1:                 DNA (sm23) I've not altered this behaviour
- * case 2:                 All features from all featuresets in the column
- * case 12:                All features from all featuresets in the column that
- *                         overlap the marked region. Error if mark not set.
+ * case EXPORT_DNA:                 DNA (sm23) I've not altered this behaviour
+ * case EXPORT_FEATURES_ALL:        All features from all featuresets in the column
+ * case EXPORT_FEATURES_MARKED:     All features from all featuresets in the column that
+ *                                  overlap the marked region. Error if mark not set.
+ * case EXPORT_FEATURES_CLICKED:   The clicked feature.
  */
 static void exportMenuCB(int menu_item_id, gpointer callback_data)
 {
@@ -2248,19 +2275,25 @@ static void exportMenuCB(int menu_item_id, gpointer callback_data)
 
   switch (menu_item_id)
     {
-    case 1: /* export dna */
+    case EXPORT_DNA: /* export dna */
       {
         result = zMapWindowExportFASTA(menu_data->window, feature, &error) ;
         break ;
       }
-    case 2: /* export all features */
+    case EXPORT_FEATURES_ALL: /* export all features */
       {
         result = zMapWindowExportFeatureSets(menu_data->window, container->featuresets, FALSE, NULL, &error) ;
         break ;
       }
-    case 12: /* features in marked region */
+    case EXPORT_FEATURES_MARKED: /* features in marked region */
       {
         result = zMapWindowExportFeatureSets(menu_data->window, container->featuresets, TRUE, NULL, &error) ;
+        break;
+      }
+    case EXPORT_FEATURES_CLICKED: /* clicked feature */
+      {
+        if (feature)
+          result = zMapWindowExportFeatures(menu_data->window, FALSE, FALSE, feature, NULL, &error) ;
         break;
       }
     default:
@@ -3962,7 +3995,10 @@ static gboolean exportFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *
  *                             caller and not deleted locally)
  */
 gboolean zMapWindowExportFeatureSets(ZMapWindow window,
-   GList* featuresets, gboolean marked_region, char **filepath_inout, GError **error)
+                                     GList* featuresets, 
+                                     gboolean marked_region, 
+                                     char **filepath_inout, 
+                                     GError **error)
 {
   gboolean result = FALSE ;
   ZMapFeatureAny context = NULL ;
@@ -4080,9 +4116,11 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
 
 /*
  * If the feature that is passed is NULL then the whole context is used.
+ * If all_features is true then the parent block is used, otherwise just the feature itself.
+ * If marked_region is true then the results are limited to features that overlap the mark.
  */
-gboolean zMapWindowExportFeatures(ZMapWindow window, gboolean marked_region, ZMapFeatureAny feature_in,
-                                  char **filepath_inout, GError **error)
+gboolean zMapWindowExportFeatures(ZMapWindow window, gboolean all_features, gboolean marked_region, 
+                                  ZMapFeatureAny feature_in, char **filepath_inout, GError **error)
 {
   gboolean result = FALSE ;
   ZMapFeatureAny feature = feature_in ;
@@ -4101,7 +4139,7 @@ gboolean zMapWindowExportFeatures(ZMapWindow window, gboolean marked_region, ZMa
 
           zmapWindowMarkGetSequenceRange(window->mark, &(mark_region.x1), &(mark_region.x2));
 
-          result = exportFeatures(window, &mark_region, feature, filepath_inout, error) ;
+          result = exportFeatures(window, all_features, &mark_region, feature, filepath_inout, error) ;
         }
       else
         {
@@ -4110,14 +4148,14 @@ gboolean zMapWindowExportFeatures(ZMapWindow window, gboolean marked_region, ZMa
     }
   else
     {
-      result = exportFeatures(window, NULL, feature, filepath_inout, error) ;
+      result = exportFeatures(window, all_features, NULL, feature, filepath_inout, error) ;
     }
 
   return result ;
 }
 
 
-static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature_in,
+static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpan region_span, ZMapFeatureAny feature_in,
                                char **filepath_inout, GError **error)
 {
   static const char *error_prefix = "Features export failed:" ;
@@ -4133,8 +4171,9 @@ static gboolean exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeat
   if (filepath_inout && *filepath_inout)
     filepath = g_strdup(*filepath_inout) ;
 
-  if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
-      || feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE
+  if (all_features && 
+      (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
+       || feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
      )
     {
       /* For features and featuresets, get the parent block */

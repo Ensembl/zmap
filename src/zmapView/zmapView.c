@@ -1815,7 +1815,7 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
                * for a Save option rather than Save As...) */
               const char *file = zMapViewGetSaveFile(zmap_view, FALSE) ;
               char *filename = g_strdup(file) ;
-              gboolean saved = zMapWindowExportFeatures(window, FALSE, NULL, &filename, &error) ;
+              gboolean saved = zMapWindowExportFeatures(window, TRUE, FALSE, NULL, &filename, &error) ;
 
               if (!saved)
                 {

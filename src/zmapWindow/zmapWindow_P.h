@@ -1517,9 +1517,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptide(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
 					      ZMapGUIMenuItemCallbackFunc callback_func,
 					      gpointer callback_data) ;
-ZMapGUIMenuItem zmapWindowMakeMenuExportOps(int *start_index_inout,
-					    ZMapGUIMenuItemCallbackFunc callback_func,
-					    gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuColumnExportOps(int *start_index_inout,
+                                                  ZMapGUIMenuItemCallbackFunc callback_func,
+                                                  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuItemExportOps(int *start_index_inout,
+                                                ZMapGUIMenuItemCallbackFunc callback_func,
+                                                gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
 					       ZMapGUIMenuItemCallbackFunc callback_func,
 					       gpointer callback_data) ;

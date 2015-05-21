@@ -47,10 +47,17 @@
 
 typedef enum {EDIT_COPY, EDIT_COPY_CHR, EDIT_PASTE} EditActionType ;
 
-
 typedef enum {RT_INVALID, RT_ACEDB, RT_ANACODE, RT_SEQTOOLS, RT_ZMAP, RT_ZMAP_USER_TICKETS} RTQueueName ;
 
-
+typedef enum {
+  EXPORT_DNA, 
+  /*EXPORT_CONTEXT,*/
+  EXPORT_FEATURES_ALL, 
+  EXPORT_FEATURES_MARKED, 
+  /*EXPORT_FEATURES_SELECTED,*/
+  SAVE_FEATURES,
+  SAVE_FEATURES_AS
+} ExportType ;
 
 
 static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
@@ -82,19 +89,20 @@ static GtkItemFactoryEntry menu_items[] = {
          { "/_File",                                NULL,                NULL,                  0,  "<Branch>" },
          { "/File/_New Sequence",                   NULL,                newSequenceByConfigCB, 2,  NULL },
          { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
-         { "/File/_Save",                           "<control>S",        exportCB,              22,  NULL },
-         { "/File/Save _As",                        "<shift><control>S", exportCB,              23,  NULL },
+         { "/File/_Save",                           "<control>S",        exportCB,              SAVE_FEATURES,  NULL },
+         { "/File/Save _As",                        "<shift><control>S", exportCB,              SAVE_FEATURES_AS,  NULL },
          { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
          { "/File/_Import",                         "<control>I",        importCB,              0,  NULL },/* or Read ? */
          { "/File/_Export",                         NULL,                NULL,                  0,  "<Branch>" },
          /*{ "/File/Export/_Data",                      NULL,                NULL,                  0,  "<Branch>" }, */
-         { "/File/Export/_DNA",                  NULL,                exportCB,              1,  NULL },
-         { "/File/Export/_Features",             "<control>E",        exportCB,              2,  NULL },
-         { "/File/Export/_Features (marked)",    "<shift><control>E", exportCB,              12, NULL },
+         { "/File/Export/_DNA",                     NULL,                exportCB,              EXPORT_DNA,  NULL },
+         { "/File/Export/_Features",                "<control>E",        exportCB,              EXPORT_FEATURES_ALL,  NULL },
+         { "/File/Export/_Features (marked)",       "<shift><control>E", exportCB,              EXPORT_FEATURES_MARKED, NULL },
+         /*{ "/File/Export/_Features (selected)",     NULL,                exportCB,              EXPORT_FEATURES_SELECTED, NULL },*/
          /* { "/File/Export/_Context",              NULL,                exportCB,              3,  NULL },
          { "/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
-         { "/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
-         { "/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL }, */
+         { "/File/Export/Marked Features/_DNA",     NULL,                exportCB,              EXPORT_DNA,  NULL },
+         { "/File/Export/Marked Features/_Context", NULL,                exportCB,              EXPORT_CONTEXT,  NULL }, */
          { "/File/sep1",                            NULL,                NULL,                  0,  "<Separator>" },
          { "/File/Save screen sho_t",               NULL,                dumpCB,                0,  NULL },
          { "/File/_Print screen shot",              "<control>P",        printCB,               0,  NULL },
@@ -179,25 +187,32 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   switch (callback_action)
     {
     /* Export DNA */
-    case 1:
+    case EXPORT_DNA:
       {
         result = zMapWindowExportFASTA(curr_window, NULL, &error) ;
         break ;
       }
 
     /* Export all features */
-    case 2:
+    case EXPORT_FEATURES_ALL:
       {
-        result = zMapWindowExportFeatures(curr_window, FALSE, NULL, NULL, &error) ;
+        result = zMapWindowExportFeatures(curr_window, TRUE, FALSE, NULL, NULL, &error) ;
         break ;
       }
 
     /* Export features for marked region */
-    case 12:
+    case EXPORT_FEATURES_MARKED:
       {
-        result = zMapWindowExportFeatures(curr_window, TRUE, NULL, NULL, &error) ;
+        result = zMapWindowExportFeatures(curr_window, TRUE, TRUE, NULL, NULL, &error) ;
         break ;
       }
+
+    /* todo: Export selected features */
+    //case EXPORT_FEATURES_SELECTED:
+    //  {
+    //    result = zMapWindowExportFeatures(curr_window, FALSE, TRUE, NULL, NULL, &error) ;
+    //    break ;
+    //  }
 
     /* Export context; (sm23) I've removed this since it's pointless for the
      * user.
@@ -211,10 +226,10 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
     /* Save - same as export all features but we pass the existing filename, if there is one;
      * if there isn't then the file chooser will be shown and we'll save the file the user
      * selects for future Save operations. */
-    case 22:
+    case SAVE_FEATURES:
       {
         char *filename = g_strdup(zMapViewGetSaveFile(curr_view, TRUE)) ;
-        result = zMapWindowExportFeatures(curr_window, FALSE, NULL, &filename, &error) ;
+        result = zMapWindowExportFeatures(curr_window, TRUE, FALSE, NULL, &filename, &error) ;
 
         if (result)
           zMapViewSetSaveFile(curr_view, filename) ;
@@ -226,10 +241,10 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
       }
 
     /* Save As - same as export all features but we save the filename for the next Save operation */
-    case 23:
+    case SAVE_FEATURES_AS:
       {
         char *filename = NULL ;
-        result = zMapWindowExportFeatures(curr_window, FALSE, NULL, &filename, &error) ;
+        result = zMapWindowExportFeatures(curr_window, TRUE, FALSE, NULL, &filename, &error) ;
 
         if (result)
           zMapViewSetSaveFile(curr_view, filename) ;
