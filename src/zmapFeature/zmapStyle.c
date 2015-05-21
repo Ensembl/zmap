@@ -2739,11 +2739,11 @@ static gboolean parseSubFeatures(ZMapFeatureTypeStyle style,gchar *str)
 static gboolean parseColours(ZMapFeatureTypeStyle style, guint param_id, GValue *value)
 {
   gboolean result = TRUE ;
-  char *string = NULL ;
+  char *str = NULL ;
   char **colour_strings = NULL ;
 
-  if ((string = (char *)g_value_get_string(value))
-      && (colour_strings = g_strsplit(string, ";", -1)))
+  if ((str = (char *)g_value_get_string(value))
+      && (colour_strings = g_strsplit(str, ";", -1)))
     {
       char **curr_str ;
       int num_specs = 0 ;

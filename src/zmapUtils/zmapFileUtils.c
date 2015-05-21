@@ -34,7 +34,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <strings.h>
 #include <string.h>
 #include <wordexp.h>
 

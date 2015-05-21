@@ -93,25 +93,25 @@ void zmapWindowPrintGroups(FooCanvas *canvas)
 }
 
 
-void zmapWindowItemDebugItemToString(GString *string, FooCanvasItem *item)
+void zmapWindowItemDebugItemToString(GString *string_arg, FooCanvasItem *item)
 {
   gboolean has_feature = FALSE, is_container = FALSE ;
   const char *str = NULL ;
 
   if ((is_container = get_container_type_as_string(item, &str)))
-    g_string_append_printf(string, "%s", str) ;
+    g_string_append_printf(string_arg, "%s", str) ;
   else if (get_item_type_as_string(item, &str))
-    g_string_append_printf(string, "%s", str) ;
+    g_string_append_printf(string_arg, "%s", str) ;
 
   if ((has_feature = get_feature_type_as_string(item, &str)))
-    g_string_append_printf(string, " %s", str) ;
+    g_string_append_printf(string_arg, " %s", str) ;
 
   if (has_feature)
     {
       ZMapFeatureAny feature_any;
 
       feature_any = zmapWindowItemGetFeatureAny(item);
-      g_string_append_printf(string, " \"%s\"", (char *)g_quark_to_string(feature_any->unique_id));
+      g_string_append_printf(string_arg, " \"%s\"", (char *)g_quark_to_string(feature_any->unique_id));
     }
 
   if (is_container)
@@ -121,8 +121,8 @@ void zmapWindowItemDebugItemToString(GString *string, FooCanvasItem *item)
       container = FOO_CANVAS_ITEM( zmapWindowContainerCanvasItemGetContainer(item) );
       if (container != item)
         {
-          g_string_append_printf(string, "Parent Details... ");
-          zmapWindowItemDebugItemToString(string, container);
+          g_string_append_printf(string_arg, "Parent Details... ");
+          zmapWindowItemDebugItemToString(string_arg, container);
         }
     }
 

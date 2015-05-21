@@ -33,7 +33,6 @@
 #include <ZMap/zmap.h>
 
 #include <stdio.h>
-#include <strings.h>
 #include <string.h>
 #include <glib.h>
 
@@ -743,10 +742,10 @@ static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list
        * which means that i have to write extra code to cope with the re-organisation
        * NOTE this kind of edge effect is quite easy to miss and 'nice' code can be a source of
        * bugs
-       * 
+       *
        * YES AND YOUR CODE IS BUGGED BECAUSE THIS IS SO LONG YOU'VE LOST TRACK OF THE EDGE
        * EFFECTS....
-       * 
+       *
        */
       fl = fl->next;
       next_f = fl ? (ZMapFeature) fl->data : NULL;
@@ -815,7 +814,7 @@ static void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFea
   composite->url = NULL;	/* in case it gets freed */
 
 #if SQUASH_DEBUG
-  zMapLogMessage("composite: %s %d,%d (%d %d %d)\n", 
+  zMapLogMessage("composite: %s %d,%d (%d %d %d)\n",
 	 g_quark_to_string(composite->original_id),
 	 composite->x1,composite->x2,
 	 composite->flags.joined,composite->flags.squashed,composite->flags.collapsed);
@@ -1075,7 +1074,7 @@ static int makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_l
 	  edge->t_strand = first->t_strand;
 	  edge->q_strand = first->q_strand;
 
-	  /* I think this struct spans from the start to somewhere in 
+	  /* I think this struct spans from the start to somewhere in
 	   * the first align block of the composite feature,
 	   * which would make the boundaries as folows. */
 	  edge->start_boundary = ALIGN_BLOCK_BOUNDARY_EDGE;
@@ -1290,7 +1289,7 @@ static void storeSpliceCoords(ZMapFeature feature, GList **splice_list)
 static gint featureGapCompare(gconstpointer a, gconstpointer b)
 {
   gint result = 0 ;
-  
+
   ZMapFeature feata = (ZMapFeature) a;
   ZMapFeature featb = (ZMapFeature) b;	/* these must be alignments */
   GArray *g1,*g2;
@@ -1330,13 +1329,13 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
     {
       /* THERE'S A MASSIVE PROBLEM HERE.....THE NUMBER OF GAPS IS IRRELEVALENT IF THE ALIGNS
        * DON'T EVEN OVERLAP....IT'S HARD TO EVEN UNDERSTAND WHAT THE SORT IS TRYING TO ACHIEVE... */
-      
+
       /* gb10: I think the aim of this routine is to place alignments with identical splice
        * sites adjacent to each other. It first sorts by the number of gaps (in reverse order),
        * so alignments with the most gaps come first and ungapped alignments come last. This
        * effectively groups alignments with the same number of gaps. Then it sorts by splice
        * site coords to group alignments with identical splice sites next to each other. */
-      
+
       /* Note that the align block struct holds the matches, so the gap is between them */
       g1 = feata->feature.homol.align ;
       g2 = featb->feature.homol.align ;
@@ -1345,7 +1344,7 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
         ng1 = g1->len ;
       if(g2)
         ng2 = g2->len ;
-      
+
       /* Sort by the number of gaps (reverse order) */
       result = ng2 - ng1 ;
 
@@ -1355,7 +1354,7 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
           if (ng1 > 1) /* must have at least 2 match blocks for there to be a gap between them! */
             {
               /* Gapped alignments */
-              
+
               /* Loop through each alignment block and check the splice sites match.
                * Note that the start/end of the first/last block don't need checking because
                * they're not splice sites. Continue searching through while matches are
@@ -1365,11 +1364,11 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
                 {
                   ab1 = &g_array_index(g1, ZMapAlignBlockStruct, i);
                   ab2 = &g_array_index(g2, ZMapAlignBlockStruct, i);
-                  
+
                   /* sort on the start coord of the alignment block (unless it's the first block) */
                   if (i > 0)
                     result = ab1->t1 - ab2->t1 ;
-              
+
                   /* If identical, also sort on the end coord of the alignment block
                    * (unless it's the last block) */
                   if (!result && i < ng1 - 1)
@@ -1389,7 +1388,7 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
             }
         }
     }
-  
+
   return result ;
 }
 
@@ -1403,12 +1402,12 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* ok...let's rewrite this to do proper compares...??
- * 
+ *
  * SEE ABOVE ROUTINE FOR ORIGINAL....
- * 
+ *
  * I'M LEAVING THIS IN UNTIL I GET FEEDBACK FROM ADAM/LAURENS...
- * 
- * 
+ *
+ *
  *  */
 static gint featureGapCompare(gconstpointer a, gconstpointer b)
 {
@@ -1421,7 +1420,7 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
   /* MALCOLM TESTED FOR NULL PTRS WHICH IS SURELY CRAZY.....
    * THIS SURELY HAS TO SAY THAT THERE IS SOMETHING DEEPLY WRONG WITH THE LIST, NOT WITH
    * GLIB.......THIS IS DEEPLY DISTURBING AS IT IMPLIES THE LISTS ARE RUBBISH....
-   * 
+   *
    * HIS COMMENT WAS..... */
   /* we can get NULLs due to GLib being silly */
   /* this code is pedantic, but I prefer stable sorting */
@@ -1479,7 +1478,7 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
       ZMapAlignBlock a1, a2 ;
       int ng1 = 0, ng2 = 0 ;
       GArray *g1, *g2 ;
-  
+
       ng1 = g1->len ;
 
       ng2 = g2->len ;

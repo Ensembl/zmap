@@ -1878,7 +1878,7 @@ void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, co
 
 
 
-void zmapWindowItemDebugItemToString(GString *string, FooCanvasItem *item);
+void zmapWindowItemDebugItemToString(GString *string_arg, FooCanvasItem *item);
 
 void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name) ;
 
