@@ -462,7 +462,6 @@ zmapDraw \
 zmapFeature \
 zmapGFF \
 zmapRemoteControl \
-zmapRemoteControl/remotetest \
 zmapServer \
 zmapThreads \
 zmapUtils \
