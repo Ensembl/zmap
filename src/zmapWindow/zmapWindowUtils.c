@@ -648,7 +648,7 @@ const char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type)
 void zmapWindowShowStyle(ZMapFeatureTypeStyle style)
 {
   ZMapIOOut dest ;
-  char *string ;
+  char *string_local ;
   char *title ;
 
   title = g_strdup_printf("Style \"%s\"", zMapStyleGetName(style)) ;
@@ -657,9 +657,9 @@ void zmapWindowShowStyle(ZMapFeatureTypeStyle style)
 
   zMapStylePrint(dest, style, NULL, TRUE) ;
 
-  string = zMapOutGetStr(dest) ;
+  string_local = zMapOutGetStr(dest) ;
 
-  zMapGUIShowText(title, string, FALSE) ;
+  zMapGUIShowText(title, string_local, FALSE) ;
 
   zMapOutDestroy(dest) ;
 

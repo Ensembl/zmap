@@ -46,7 +46,7 @@
 
 typedef struct SimpleParent2ChildDataStructType
 {
-  ZMapMapBlock map;
+  ZMapMapBlock map_block;
   int limit_start;
   int limit_end;
   int counter;
@@ -775,16 +775,16 @@ static void addTypeQuark(gpointer key, gpointer data, gpointer user_data)
 
 
 /* from column_id return whether if is configured from seq-data= featuresets (coverage side) */
-gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map,GQuark column_id)
+gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap context_map,GQuark column_id)
 {
   ZMapFeatureSource src;
   GList *fsets;
 
-  fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
+  fsets = zMapFeatureGetColumnFeatureSets(context_map, column_id, TRUE);
 
   for (; fsets ; fsets = fsets->next)
     {
-      src = (ZMapFeatureSource)g_hash_table_lookup(map->source_2_sourcedata,fsets->data);
+      src = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata,fsets->data);
       if(src && src->related_column)
       return TRUE;
     }
@@ -793,16 +793,16 @@ gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map,GQuark column_id)
 }
 
 /* from column_id return whether it is configured from seq-data= featuresets (data side) */
-gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id)
+gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap context_map,GQuark column_id)
 {
   ZMapFeatureSource src;
   GList *fsets;
 
-  fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
+  fsets = zMapFeatureGetColumnFeatureSets(context_map, column_id, TRUE);
 
   for (; fsets ; fsets = fsets->next)
     {
-      src = (ZMapFeatureSource)g_hash_table_lookup(map->source_2_sourcedata,fsets->data);
+      src = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata,fsets->data);
       if(src && src->is_seq)
       return TRUE;
     }
@@ -810,9 +810,9 @@ gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id)
   return FALSE;
 }
 
-gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map,GQuark fset_id)
+gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap context_map,GQuark fset_id)
 {
-  ZMapFeatureSource src = (ZMapFeatureSource)g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
+  ZMapFeatureSource src = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
   //zMapLogWarning("feature is_seq: %s -> %p", g_quark_to_string(fset_id),src);
 
   if(src && src->is_seq)
@@ -835,21 +835,21 @@ int zMapFeatureColumnOrderNext(void)
 
 
 /* get the column struct for a featureset */
-ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_id)
+ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap context_map,GQuark set_id)
 {
   ZMapFeatureColumn column = NULL;
   ZMapFeatureSetDesc gff;
 
   char *name = (char *) g_quark_to_string(set_id);
 
-  if(!map->featureset_2_column)
+  if(!context_map->featureset_2_column)
     {
       /* so that we can use autoconfigured servers */
-      map->featureset_2_column = g_hash_table_new(NULL,NULL);
+      context_map->featureset_2_column = g_hash_table_new(NULL,NULL);
     }
 
   /* get the column the featureset goes in */
-  gff = (ZMapFeatureSetDesc)g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(set_id));
+  gff = (ZMapFeatureSetDesc)g_hash_table_lookup(context_map->featureset_2_column,GUINT_TO_POINTER(set_id));
   if(!gff)
     {
       //            zMapLogWarning("creating featureset_2_column for %s",name);
@@ -866,11 +866,11 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_i
         gff->column_ID =
         gff->feature_src_ID = set_id;
       gff->feature_set_text = name;
-      g_hash_table_insert(map->featureset_2_column,GUINT_TO_POINTER(set_id),gff);
+      g_hash_table_insert(context_map->featureset_2_column,GUINT_TO_POINTER(set_id),gff);
     }
   /*      else*/
   {
-    column = (ZMapFeatureColumn)g_hash_table_lookup(map->columns,GUINT_TO_POINTER(gff->column_id));
+    column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(gff->column_id));
     if(!column)
       {
         ZMapFeatureSource gff_source;
@@ -883,11 +883,11 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_i
 
         column->order = zMapFeatureColumnOrderNext();
 
-        gff_source = (ZMapFeatureSource)g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(set_id));
+        gff_source = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata,GUINT_TO_POINTER(set_id));
         column->column_desc = name;
 
         column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,GUINT_TO_POINTER(set_id));
-        g_hash_table_insert(map->columns,GUINT_TO_POINTER(set_id),column);
+        g_hash_table_insert(context_map->columns,GUINT_TO_POINTER(set_id),column);
       }
   }
 
@@ -897,7 +897,7 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_i
 
 
 
-GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id, gboolean unique_id)
+GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap context_map,GQuark column_id, gboolean unique_id)
 {
   GList *glist = NULL;
   ZMapFeatureSetDesc fset;
@@ -914,7 +914,7 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_i
    * also need to scan for all calls to this func since caching the data
    */
 
-  column = (ZMapFeatureColumn)g_hash_table_lookup(map->columns,GUINT_TO_POINTER(column_id));
+  column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(column_id));
 
   if(!column)
     return glist;
@@ -932,7 +932,7 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_i
 
   if(!glist)
   {
-    zMap_g_hash_table_iter_init(&iter,map->featureset_2_column);
+    zMap_g_hash_table_iter_init(&iter,context_map->featureset_2_column);
     while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer*)(&fset)))
       {
         if(fset->column_id == column_id)
@@ -1080,7 +1080,7 @@ gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
           map_data.parent.x1 = w1;
           map_data.parent.x2 = w2;
 
-          parent_data.map         = &map_data;
+          parent_data.map_block   = &map_data;
           parent_data.limit_start = feature->x1;
           parent_data.limit_end   = feature->x2;
           parent_data.counter     = 0;
@@ -1331,7 +1331,7 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
           map_data.parent.x1 = exon1;
           map_data.parent.x2 = exon2;
 
-          exon_cds_data.map         = &map_data;
+          exon_cds_data.map_block   = &map_data;
           exon_cds_data.limit_start = cds_start;
           exon_cds_data.limit_end   = cds_end;
           exon_cds_data.counter     = 0;
@@ -1810,20 +1810,20 @@ static void map_parent2child(gpointer exon_data, gpointer user_data)
   if(!(p2c_data->limit_start > exon_span->x2 ||
        p2c_data->limit_end   < exon_span->x1))
     {
-      if(exon_span->x1 <= p2c_data->map->parent.x1 &&
-         exon_span->x2 >= p2c_data->map->parent.x1)
+      if(exon_span->x1 <= p2c_data->map_block->parent.x1 &&
+         exon_span->x2 >= p2c_data->map_block->parent.x1)
         {
           /* update the c1 coord*/
-          p2c_data->map->block.x1  = (p2c_data->map->parent.x1 - p2c_data->limit_start + 1);
-          p2c_data->map->block.x1 += p2c_data->counter;
+          p2c_data->map_block->block.x1  = (p2c_data->map_block->parent.x1 - p2c_data->limit_start + 1);
+          p2c_data->map_block->block.x1 += p2c_data->counter;
         }
 
-      if(exon_span->x1 <= p2c_data->map->parent.x2 &&
-         exon_span->x2 >= p2c_data->map->parent.x2)
+      if(exon_span->x1 <= p2c_data->map_block->parent.x2 &&
+         exon_span->x2 >= p2c_data->map_block->parent.x2)
         {
           /* update the c2 coord */
-          p2c_data->map->block.x2  = (p2c_data->map->parent.x2 - p2c_data->limit_start + 1);
-          p2c_data->map->block.x2 += p2c_data->counter;
+          p2c_data->map_block->block.x2  = (p2c_data->map_block->parent.x2 - p2c_data->limit_start + 1);
+          p2c_data->map_block->block.x2 += p2c_data->counter;
         }
 
       p2c_data->counter += (exon_span->x2 - exon_span->x1 + 1);

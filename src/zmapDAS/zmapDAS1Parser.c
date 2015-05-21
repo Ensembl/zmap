@@ -739,7 +739,7 @@ static gboolean glyphEnd(void *userData,
       if((specific_ele = zMapXMLElementGetChildByName(sub_element, "fontsize")) != NULL)
         glyph.shape.text.font_size = zMapXMLElementContentsToInt(specific_ele);
       if((specific_ele = zMapXMLElementGetChildByName(sub_element, "string")) != NULL)
-        glyph.shape.text.string    = specific_ele->contents->str;
+        glyph.shape.text.string_val    = specific_ele->contents->str;
       /* multiple style elements possible! */
       if((specific_ele = zMapXMLElementGetChildByName(sub_element, "style")) != NULL)
         glyph.shape.text.style     = zMapXMLElementContentsToInt(specific_ele);

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -70,10 +70,10 @@ int zMapStringFindMatchCase(char *target, char *query, gboolean caseSensitive)
 
 
 /* Is the string empty or white space ?....surely this should be a standard function ?? */
-gboolean zMapStringBlank(char *string)
+gboolean zMapStringBlank(char *string_arg)
 {
   gboolean result = TRUE ;
-  char *curr = string ;
+  char *curr = string_arg ;
 
   while (*curr)
     {
@@ -95,7 +95,7 @@ gboolean zMapStringBlank(char *string)
 /* Takes a string and translates all multiple whitespace into single
  * whitespaces. This is done in place so the resulting string will
  * be shorter but still uses the same amount of memory.
- * 
+ *
  * Note: although the operation is done in place the function returns
  * the string so it can be used in expressions.
  */
@@ -127,9 +127,9 @@ char *zMapStringCompress(char *txt)
           else
             {
               char *curr_space, *next_char ;
-        
+
               next_char = curr_space = curr ;
-        
+
               /* chug through the space. */
               while (g_ascii_isspace(*next_char))
                 {
@@ -142,7 +142,7 @@ char *zMapStringCompress(char *txt)
                 {
                   memcpy((curr_space + 1), next_char, len) ;
                 }
-        
+
               /* bump us on to char after this space. */
               curr = (curr_space + 1) ;
             }
@@ -159,7 +159,7 @@ char *zMapStringCompress(char *txt)
 /* Takes a string and removes all spaces and control chars. This is
  * done in place so the resulting string will be shorter but still
  * uses the same amount of memory.
- * 
+ *
  */
 char *zMapStringFlatten(char *query_txt)
 {
@@ -184,20 +184,20 @@ char *zMapStringFlatten(char *query_txt)
       if (n < len && !(g_ascii_isspace(query_txt[n]) || g_ascii_iscntrl(query_txt[n])))
         {
           *query_ptr = query_txt[n];
-        
+
           /* should we set the intervening chars to space? */
           if (query_ptr != &query_txt[n])
             {
               char *tmp = query_ptr;
-        
+
               query_ptr++;
-        
+
               while(query_ptr < &query_txt[n])
                 {
                   *query_ptr = ' ';
                   query_ptr++;
                 }
-        
+
               query_ptr = tmp;
               query_txt[n] = ' ';
               n--;
@@ -206,12 +206,12 @@ char *zMapStringFlatten(char *query_txt)
       else if (n >= len)/* reached the end? */
         {
           int j ;
-        
+
           for (j = i; j < len; j++)
             {
               query_txt[j] = ' ';
             }
-        
+
           break;
         }
       else if (i != 0)
@@ -229,7 +229,7 @@ char *zMapStringFlatten(char *query_txt)
 }
 
 
-/* 
+/*
  *                Internal functions.
  */
 
@@ -289,7 +289,7 @@ static int findMatch(char *target, char *query, gboolean caseSensitive)
               while (g_ascii_toupper(*c) != g_ascii_toupper(*t))
                 {
                   c++;
-                
+
                   if (!(*c))
                     return 0 ;
                 }
@@ -309,17 +309,17 @@ static int findMatch(char *target, char *query, gboolean caseSensitive)
           cs=c;
           if(!s) s = c ;
           break;
-        
+
         default:
           if (!caseSensitive)
-            {      
+            {
               if (g_ascii_toupper(*t++) != g_ascii_toupper(*c++))
                 {
                   if(!star)
                     return 0 ;
-                
+
                   t=ts; c=cs+1;
-                
+
                   if(ts == query)
                     s = 0 ;
                 }

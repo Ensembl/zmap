@@ -920,7 +920,7 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
   PipeArg pipe_arg;
   char arg_done = 0;
   const char *mm = "--";
-  const char *minus = mm + 2 ;                              /* this gets set as per the first arg */
+  const char *minus_char = mm + 2 ;                              /* this gets set as per the first arg */
   char *p;
   int n_q_args = 0;
 
@@ -929,15 +929,15 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
   if (q_args && *q_args)
     {
       p = q_args[0];
-      minus = mm+2;
+      minus_char = mm+2;
       if (*p == '-')     /* optional -- allow single as well */
         {
           p++;
-          minus--;
+          minus_char--;
         }
       if (*p == '-')
         {
-          minus--;
+          minus_char--;
         }
       n_q_args = g_strv_length(q_args);
     }
@@ -955,7 +955,7 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
        */
       char *q ;
 
-      p = q_args[i-1] + strlen(minus) ;
+      p = q_args[i-1] + strlen(minus_char) ;
 
       pipe_arg = server->is_otter ? otter_args : zmap_args ;
       for ( ; pipe_arg->type ; pipe_arg++)
@@ -964,7 +964,7 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
             {
               arg_done |= pipe_arg->flag ;
 
-              if ((q = make_arg(pipe_arg, minus, server)))
+              if ((q = make_arg(pipe_arg, minus_char, server)))
                 {
                   g_free(q_args[i-1]) ;
                   q_args[i-1] = q ;
@@ -985,7 +985,7 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
       if (!(arg_done & pipe_arg->flag))
         {
           char *q;
-          q = make_arg(pipe_arg,minus,server);
+          q = make_arg(pipe_arg,minus_char,server);
           if (q)
             argv[i++] = q;
 

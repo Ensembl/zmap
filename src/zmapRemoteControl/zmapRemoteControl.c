@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -73,7 +73,7 @@ enum
 
 
 
-/* 
+/*
  * Use these macros for _ALL_ logging calls/error handling in this code
  * to ensure that messages go to the right place.
  */
@@ -159,16 +159,16 @@ static void zeroMQMessageDestroy(RemoteZeroMQMessage zeromq_msg) ;
 
 static gboolean queueMonitorCB(gpointer user_data) ;
 static GQueue *queueCreate(void) ;
-static void queueAdd(GQueue *queue, RemoteZeroMQMessage req_rep) ;
-static void queueAddFront(GQueue *queue, RemoteZeroMQMessage req_rep) ;
-static void queueAddInRequestPriority(GQueue *queue, RemoteZeroMQMessage req_rep, void *user_data) ;
+static void queueAdd(GQueue *gqueue, RemoteZeroMQMessage req_rep) ;
+static void queueAddFront(GQueue *gqueue, RemoteZeroMQMessage req_rep) ;
+static void queueAddInRequestPriority(GQueue *gqueue, RemoteZeroMQMessage req_rep, void *user_data) ;
 static gint higherPriorityCB(gconstpointer a, gconstpointer b, gpointer user_data_unused) ;
-static RemoteZeroMQMessage queueRemove(GQueue *queue) ;
-static RemoteZeroMQMessage queuePeek(GQueue *queue) ;
-static gboolean queueIsEmpty(GQueue *queue) ;
-static void queueEmpty(GQueue *queue) ;
+static RemoteZeroMQMessage queueRemove(GQueue *gqueue) ;
+static RemoteZeroMQMessage queuePeek(GQueue *gqueue) ;
+static gboolean queueIsEmpty(GQueue *gqueue) ;
+static void queueEmpty(GQueue *gqueue) ;
 #ifdef NOT_USED
-static void queueDestroy(GQueue *queue) ;
+static void queueDestroy(GQueue *gqueue) ;
 #endif
 static void freeQueueElementCB(gpointer data, gpointer user_data_unused) ;
 
@@ -221,7 +221,7 @@ static void logMsg(ZMapRemoteControl remote_control,
 
 
 
-/* 
+/*
  *        Globals.
  */
 
@@ -234,16 +234,16 @@ static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG
 
 
 
-/* 
+/*
  *                     External routines
  */
 
 
 
 /* Creates a remote control object.
- * 
+ *
  * If args are wrong returns NULL otherwise the interface is ready to be used.
- * 
+ *
  */
 ZMapRemoteControl zMapRemoteControlCreate(const char *app_id,
 					  ZMapRemoteControlErrorHandlerFunc error_func, gpointer error_func_data,
@@ -309,7 +309,7 @@ ZMapRemoteControl zMapRemoteControlCreate(const char *app_id,
 
 /* Initialise the interface to receive commands. We can't receive anything
  * until this is done.
- * 
+ *
  * Returns TRUE if the interface is successfully initialised and returns the
  * zeromq socket descriptor app_socket_out, caller should g_free() this string when
  * no longer required.
@@ -376,9 +376,9 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
                    remote_control->receive->zmq_end_point) ;
 
       result = TRUE ;
-    }    
+    }
 
-  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;   
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return result ;
 }
@@ -444,7 +444,7 @@ gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
     }
 
 
-  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;				   
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return result ;
 }
@@ -616,7 +616,7 @@ gboolean zMapRemoteControlSetTimeoutList(ZMapRemoteControl remote_control, const
  * to switch routines (e.g. from graphic to terminal or whatever).
  */
 gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
-                                     ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data) 
+                                     ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data)
 {
   gboolean result = FALSE ;
 
@@ -651,7 +651,7 @@ gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control)
 
 
 /* Free all resources and destroy the remote control block.
- * 
+ *
  *  */
 void zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
 {
@@ -713,7 +713,7 @@ void zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
 
 
 
-/* 
+/*
  *                    Package routines.
  */
 
@@ -725,7 +725,7 @@ unsigned int zmapRemoteControlGetNewReqID(ZMapRemoteControl remote_control)
   unsigned int req_id = 0 ;
 
   zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), 0) ;
-  
+
   req_id = ++(remote_control->request_id) ;
 
   return req_id ;
@@ -740,7 +740,7 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapRemoteControlRCType2ExactStr, ZMapRemoteContr
 
 
 
-/* 
+/*
  *                    Internal routines.
  */
 
@@ -757,7 +757,7 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(remoteState2ExactStr, RemoteControlState, REMOTE_
 
 
 
-/* 
+/*
  * Callbacks to handle receiving requests/replies from our peer. These are g_timer
  * callbacks and can be removed by returning FALSE.
  */
@@ -909,7 +909,7 @@ static void receiveReplyFromAppCB(void *remote_data, gboolean abort, char *reply
 /* If communication with the peer fails in an unrecoverable way this function is called
  * to set state and clear up, sets state to FAILED so remote control object cannot be
  * used.
- * 
+ *
  * Returns TRUE if clear up done cleanly, FALSE otherwise. */
 static gboolean setToFailed(ZMapRemoteControl remote_control)
 {
@@ -925,7 +925,7 @@ static gboolean setToFailed(ZMapRemoteControl remote_control)
 
 /* Set remote control object to inactive by destroying the send/receive
  * interfaces (if they exist).
- * 
+ *
  * Returns TRUE if object could be set inactively cleanly, FALSE otherwise. */
 static gboolean setToInactive(ZMapRemoteControl remote_control)
 {
@@ -964,19 +964,19 @@ static gboolean setToInactive(ZMapRemoteControl remote_control)
 
   if (remote_control->curr_req)
     {
-      reqReplyDestroy(remote_control->curr_req) ; 
+      reqReplyDestroy(remote_control->curr_req) ;
       remote_control->curr_req = NULL ;
     }
 
   if (remote_control->prev_incoming_req)
     {
-      reqReplyDestroy(remote_control->prev_incoming_req) ; 
+      reqReplyDestroy(remote_control->prev_incoming_req) ;
       remote_control->prev_incoming_req = NULL ;
     }
 
   if (remote_control->stalled_req)
     {
-      reqReplyDestroy(remote_control->stalled_req) ; 
+      reqReplyDestroy(remote_control->stalled_req) ;
       remote_control->stalled_req = NULL ;
     }
 
@@ -1001,22 +1001,22 @@ static gboolean setToInactive(ZMapRemoteControl remote_control)
  * NEED TO BE TURNED INTO FUNCTIONS SO THE OVERALL STRUCTURE OF THE SWITCH CAN BE SEEN.... */
 /* A GSourceFunc() called back by glib every QUEUE_WATCH_INTERVAL ms to monitor and process
  * incoming and outgoing requests.
- * 
+ *
  * This function won't be called until either/both of the receive or send interfaces have
  * been initialised.
- * 
+ *
  * This is the gatekeeper for ordering and processing of requests, we can only be handling
  * one request at a time and collisions and timeouts are handled here.
- * 
+ *
  * You should not the following about the general processing of state/messages:
- * 
+ *
  * If the result of an action is that we can process the next state/step immediately
  * then we leave "done" as FALSE so that we loop and process the new state.
- * 
+ *
  * If the result of the action is that we will need to wait (e.g. for a reply from the peer)
  * then we set "done" to TRUE and exit this routine to be called back again in
  * QUEUE_WATCH_INTERVAL ms by which time the reply or whatever will have happened.
- * 
+ *
  *  */
 static gboolean queueMonitorCB(gpointer user_data)
 {
@@ -1255,9 +1255,9 @@ static gboolean queueMonitorCB(gpointer user_data)
                                 /* Timed out so chuck our request away. */
                                 LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_TIMED_OUT,
                                                          "Request final timeout after %gs, request discarded: \"%s\"",
-                                                         timeout_s, 
+                                                         timeout_s,
                                                          curr_req_raw->body) ;
- 
+
                                 zeroMQMessageDestroy( curr_req_raw) ;
 
                                 timeoutResetTimeouts(remote_control) ;
@@ -1274,7 +1274,7 @@ static gboolean queueMonitorCB(gpointer user_data)
                                              "Request %d%s timeout after %gs,"
                                              " resending request: \n%s\n\"%s\".",
                                              timeout_num,
-                                             (timeout_num == 1 ? "st" : 
+                                             (timeout_num == 1 ? "st" :
                                               (timeout_num == 2 ? "nd" :
                                                (timeout_num == 3 ? "rd" : "th"))),
                                              timeout_s,
@@ -1318,7 +1318,7 @@ static gboolean queueMonitorCB(gpointer user_data)
                 raw_reply = reqReplyStealReply(remote_control->prev_incoming_req) ;
 
                 REPORTMSG(remote_control, raw_reply, "Repeat request, resending original reply") ;
-                
+
                 queueAddFront(remote_control->outgoing_replies, raw_reply) ;
 
                 remote_control->curr_req = remote_control->prev_incoming_req ;
@@ -1428,24 +1428,24 @@ static gboolean queueMonitorCB(gpointer user_data)
 
 
 
-/* 
+/*
  * Functions to send/receive requests/replies via the zeromq sockets.
  */
 
 
 /* Send a request to our peer.
- * 
+ *
  * Somewhat mucky, because of the way my xml code works I need to extract
  * the request id and time from the request...not too bad....
- * 
+ *
  *  */
-static gboolean sendRequest(ZMapRemoteControl remote_control, RemoteZeroMQMessage request) 
+static gboolean sendRequest(ZMapRemoteControl remote_control, RemoteZeroMQMessage request)
 {
   gboolean result = FALSE ;
   RemoteSend send = remote_control->send ;
   char *err_msg = NULL ;
 
-  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, 
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
               "About to send request: %s", request->body) ;
 
   if ((result = zeroMQSocketSendMessage(send->zmq_socket, request->header, request->body, &err_msg)))
@@ -1534,7 +1534,7 @@ static gboolean passReceiveToApp(ZMapRemoteControl remote_control, RemoteZeroMQM
 
 
 /* Send a reply to our peer. */
-static gboolean sendReply(ZMapRemoteControl remote_control, RemoteZeroMQMessage reply) 
+static gboolean sendReply(ZMapRemoteControl remote_control, RemoteZeroMQMessage reply)
 {
   gboolean result = FALSE ;
   RemoteReceive receive = remote_control->receive ;
@@ -1561,9 +1561,9 @@ static gboolean sendReply(ZMapRemoteControl remote_control, RemoteZeroMQMessage 
         {
           DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
                       "%s", "About to call Apps replySentCB.") ;
-		  
+
           (receive->reply_sent_func)(receive->reply_sent_func_data) ;
-		  
+
           DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
                       "%s", "Back from Apps replySentCB.") ;
         }
@@ -1756,41 +1756,41 @@ int reqIsEarlier(char *request_1, char *request_2)
 
 
 
-/* 
+/*
  * Functions to manipulate our queues...mostly straight forward "cover" functions
  * for the g_queue_xxx() interface.
  */
 
 static GQueue *queueCreate(void)
 {
-  GQueue *queue ;
+  GQueue *gqueue ;
 
-  queue = g_queue_new() ;
+  gqueue = g_queue_new() ;
 
-  return queue ;
+  return gqueue ;
 }
 
 /* Usual "add to end of queue" operation.  */
-static void queueAdd(GQueue *queue, RemoteZeroMQMessage req_rep)
+static void queueAdd(GQueue *gqueue, RemoteZeroMQMessage req_rep)
 {
-  g_queue_push_tail(queue, req_rep) ;
+  g_queue_push_tail(gqueue, req_rep) ;
 
   return ;
 }
 
-/* Put at front of queue. */
-static void queueAddFront(GQueue *queue, RemoteZeroMQMessage req_rep)
+/* Put at front of gqueue. */
+static void queueAddFront(GQueue *gqueue, RemoteZeroMQMessage req_rep)
 {
-  g_queue_push_head(queue, req_rep) ;
+  g_queue_push_head(gqueue, req_rep) ;
 
   return ;
 }
 
 /* Here high priority commands are shifted to the front of the queue, where two commands
  * have the same priority they are sorted by the time of the request (earliest first). */
-static void queueAddInRequestPriority(GQueue *queue, RemoteZeroMQMessage req_rep, void *user_data)
+static void queueAddInRequestPriority(GQueue *gqueue, RemoteZeroMQMessage req_rep, void *user_data)
 {
-  g_queue_insert_sorted(queue,
+  g_queue_insert_sorted(gqueue,
                         req_rep,
                         higherPriorityCB,
                         user_data) ;
@@ -1819,37 +1819,37 @@ static gint higherPriorityCB(gconstpointer a, gconstpointer b, gpointer user_dat
   return priority ;
 }
 
-static RemoteZeroMQMessage queueRemove(GQueue *queue)
+static RemoteZeroMQMessage queueRemove(GQueue *gqueue)
 {
   RemoteZeroMQMessage req_resp = NULL ;
 
-  req_resp = (RemoteZeroMQMessage)g_queue_pop_head(queue) ;
+  req_resp = (RemoteZeroMQMessage)g_queue_pop_head(gqueue) ;
 
   return req_resp ;
 }
 
-static RemoteZeroMQMessage queuePeek(GQueue *queue)
+static RemoteZeroMQMessage queuePeek(GQueue *gqueue)
 {
   RemoteZeroMQMessage req_resp = NULL ;
 
-  req_resp = (RemoteZeroMQMessage)g_queue_peek_head(queue) ;
+  req_resp = (RemoteZeroMQMessage)g_queue_peek_head(gqueue) ;
 
   return req_resp ;
 }
 
-static gboolean queueIsEmpty(GQueue *queue)
+static gboolean queueIsEmpty(GQueue *gqueue)
 {
   gboolean is_empty ;
 
-  is_empty = g_queue_is_empty(queue) ;
+  is_empty = g_queue_is_empty(gqueue) ;
 
   return is_empty ;
 }
 
-static void queueEmpty(GQueue *queue)
+static void queueEmpty(GQueue *gqueue)
 {
-  if (!queueIsEmpty(queue))
-    g_queue_foreach(queue, freeQueueElementCB, NULL) ;
+  if (!queueIsEmpty(gqueue))
+    g_queue_foreach(gqueue, freeQueueElementCB, NULL) ;
 
   return ;
 }
@@ -1869,18 +1869,18 @@ static void freeQueueElementCB(gpointer data, gpointer user_data_unused)
 
 #ifdef NOT_USED
 /* gb10: ifdef'd out function to fix compiler warning. Not sure if it's still needed. */
-static void queueDestroy(GQueue *queue)
+static void queueDestroy(GQueue *gqueue)
 {
-  queueEmpty(queue) ;
+  queueEmpty(gqueue) ;
 
-  g_queue_free(queue) ;
+  g_queue_free(gqueue) ;
 
   return ;
 }
 #endif
 
 
-/* 
+/*
  * Functions to handle zeromq sockets.
  */
 
@@ -1955,7 +1955,7 @@ static gboolean zeroMQSocketRequestorCreate(void *zmq_context, const char *end_p
 
 
 /* Creates a listening socket which will accept requests.
- * 
+ *
  * The bind is done using a wildcard for a localhost port (i.e. tcp://127.0.0.1:*) which
  * results in the bind choosing a free port for us which we then return to the caller
  * as they will need to return it to our peer.
@@ -2062,7 +2062,7 @@ static char *zeroMQSocketGetAddress(void *zmq_socket, char **err_msg_out)
 static TimerData zeroMQSocketSetWatch(GSourceFunc timer_func_cb, ZMapRemoteControl remote_control)
 {
   TimerData timer_data = NULL ;
-  
+
   timer_data = g_new0(TimerDataStruct, 1) ;
   timer_data->remote_control = remote_control ;
   timer_data->timer_func_cb = timer_func_cb ;
@@ -2239,7 +2239,7 @@ static SocketFetchRC zeroMQSocketFetchMessage(void *socket, char **header_out, c
         {
           *header_out= header ;
           *body_out = body ;
-        }       
+        }
     }
 
   return result ;
@@ -2251,7 +2251,7 @@ static SocketFetchRC zeroMQSocketFetchMessage(void *socket, char **header_out, c
 
 /* Complicated....may have to rework...we shouldn't have EAGAIN if I can get the socket
  * test to work properly....
- * 
+ *
  * Returns SOCKET_FETCH_OK and a message in msg_out if there was a message,
  * returns SOCKET_FETCH_NOTHING and no message if there was nothing to fetch from the socket,
  * returns SOCKET_FETCH_FAILED and an error message in err_msg_out if there was a serious
@@ -2308,7 +2308,7 @@ static SocketFetchRC zeroMQSocketFetchFrame(void *zmq_socket, char **msg_out, ch
                 {
                   /* Not sure if this can happen outside of our control....however we should trap it. */
                   *err_msg_out = g_strdup_printf("%s", "Socket could be read by there was no message !") ;
-                  
+
                   result = SOCKET_FETCH_FAILED ;
                 }
               else
@@ -2317,7 +2317,7 @@ static SocketFetchRC zeroMQSocketFetchFrame(void *zmq_socket, char **msg_out, ch
                   void *msg_data ;
 
                   msg_data = zmq_msg_data(&zmq_msg) ;
-                  
+
                   *msg_out = g_strndup((const gchar *)msg_data, rc) ;      /* Turns message into a C string. */
 
                   result = SOCKET_FETCH_OK ;
@@ -2446,14 +2446,14 @@ static void errorMsg(ZMapRemoteControl remote_control,
 
 
 /* Called by errorHandler() and errorMsg(), do not call directly.
- * 
+ *
  * Produces messages in the format:
- * 
+ *
  *   "remotecontrol: receiveClipboardClearWaitAfterReplyCB() Acting as: REMOTE_TYPE_SERVER  \
  *                                 State: REMOTE_STATE_IDLE  Message: <msg text>"
  *
  * By default this calls stderrOutputCB() unless caller sets a different output function.
- * 
+ *
  */
 static void logMsg(ZMapRemoteControl remote_control,
                    const char *file_name, const char *func_name, const char *format_str, va_list args)
@@ -2484,9 +2484,9 @@ static void logMsg(ZMapRemoteControl remote_control,
   if (time_str)
     g_free(time_str) ;
 
-  (remote_control->err_report_func)(remote_control->err_report_data, msg->str) ;			
-									
-  g_string_free(msg, TRUE) ;					
+  (remote_control->err_report_func)(remote_control->err_report_data, msg->str) ;
+
+  g_string_free(msg, TRUE) ;
 
   g_free(name) ;
 
@@ -2496,7 +2496,7 @@ static void logMsg(ZMapRemoteControl remote_control,
 
 
 
-/* 
+/*
  * Functions to create/destroy the receive/send interfaces.
  */
 
@@ -2669,7 +2669,7 @@ static void destroySend(ZMapRemoteControl remote_control)
 }
 
 
-/* 
+/*
  * Timeout functions.
  */
 
@@ -2684,16 +2684,16 @@ static void timeoutStartTimer(ZMapRemoteControl remote_control)
 }
 
 /* Returns whether we've timed out or not.
- * 
+ *
  * If a timeout has occurred then the type of that timeout is returned.
- * 
+ *
  * If the timeout is not the last one in the list then TIMEOUT_NOT_FINAL
  * is returned and the timer is moved on to the next timeout period in the list.
- * 
+ *
  * If the timeout is the final timeout then TIMEOUT_FINAL is returned,
  * further calls continue to return this value until the timer
  * is explicitly reset and restarted.
- * 
+ *
  * Otherwise TIMEOUT_NONE is returned.
  *  */
 static TimeoutType timeoutHasTimedOut(ZMapRemoteControl remote_control)
@@ -2745,13 +2745,13 @@ static void timeoutGetCurrTimeout(ZMapRemoteControl remote_control, int *timeout
 
 
 /* Creates the header for zeromq messages as a string in the form:
- * 
+ *
  * "<REQUEST | REPLY> <ID>/<RETRY_NUM> <TIME>"
- * 
+ *
  * e.g.
- * 
+ *
  * "REQUEST 1/5  1404129247,412653"
- * 
+ *
  * Time is seconds,microseconds.
  *  */
 static char *headerCreate(const char *request_type, char *request_id, int retry_num, char *request_time)
@@ -2774,9 +2774,9 @@ static char *headerCreate(const char *request_type, char *request_id, int retry_
 
 /* Takes an existing header and in effect overwrites the retry number
  * in that header with the new retry number.
- * 
+ *
  * Note that curr_header is free'd by this function so you should probably use it like this:
- * 
+ *
  * my_header = headerSetRetry(my_header, 2) ;
  *  */
 static char *headerSetRetry(char *curr_header, int new_retry_num)
