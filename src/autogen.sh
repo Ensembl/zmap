@@ -149,7 +149,6 @@ Usage:
 while getopts ":azdefghinuv" opt ; do
     case $opt in
 	a  ) aceconn='yes' ;;
-	z  ) aceconn='no' ;;
 	d  ) ensc_core='no' ;;
 	e  ) ensc_core='yes' ;;
 	f  ) force_remake_all='-f' ;;
@@ -159,6 +158,9 @@ while getopts ":azdefghinuv" opt ; do
 	n  ) gb_tools='no' ;;
 	u  ) run_autoupdate='yes' ;;
 	v  ) verbose='-v' ;;
+
+	z  ) htslib='no' ;;
+
 	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
 done
@@ -273,6 +275,13 @@ if [[ "$htslib" == "yes" || "$htslib" == "maybe" ]] ; then
 
 fi
 
+# We must have htslib (currently) or we fail.
+if [[ ! -f "./$htslib/Makefile" ]] ; then
+
+    zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
+
+fi
+
 
 
 # Set up zeromq subdirectory. This is the message passing package for RemoteControl.
@@ -294,6 +303,12 @@ if [[ "$zeromq" == "yes" || "$zeromq" == "maybe" ]] ; then
 
 fi
 
+# We must have zeromq (currently) or we fail.
+if [[ ! -f "./$zeromq/configure.ac" ]] ; then
+
+    zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
+
+fi
 
 
 
