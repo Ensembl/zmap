@@ -8,3 +8,7 @@ repository.
 zeromq is a library supporting reliable message sending over networks. It is
 used in ZMap as the means of communication in the RemoteControl code.
 
+Note that the Makefile.am for zeromq has been changed: 
+
+autom4te.cache has been moved from MAINTAINERCLEANFILES to
+maintainer-clean-local because it is a directory not a file.
