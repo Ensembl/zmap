@@ -1005,34 +1005,12 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
                             feature_mode, source, 0, 0, 
                             get_features_data, feature_block) ;
 
+      /* If coding region start/end are not already set, these calls set them */
+      int coding_region_start = Transcript_getCodingRegionStart(rsf) ;
+      int coding_region_end = coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
+
       char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
       char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
-      char cDNA_coding_start_is_set = Transcript_getcDNACodingStartIsSet(rsf) ;
-      char cDNA_coding_end_is_set = Transcript_getcDNACodingEndIsSet(rsf) ;
-      int coding_region_start = 0;
-      int coding_region_end = 0;
-      int cDNA_coding_start = 0;
-      int cDNA_coding_end = 0;
-
-      if (coding_region_start_is_set)
-        coding_region_start = Transcript_getCodingRegionStart(rsf) ;
-
-      if (coding_region_end_is_set)
-        coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
-
-      if (cDNA_coding_start_is_set)
-        cDNA_coding_start = Transcript_getcDNACodingStart(rsf) ;
-
-      if (cDNA_coding_end_is_set)
-        cDNA_coding_end = Transcript_getcDNACodingEnd(rsf) ;
-
-      //zMapLogMessage("coding startset='%c' endset='%c' start='%d' end='%d'\ncdna startset='%c' endset='%c' start='%d' end='%d'\n", 
-      //               coding_region_start_is_set == '\0' ? "" : coding_region_start_is_set,
-      //               coding_region_end_is_set == '\0' ? "" : coding_region_end_is_set,
-      //               coding_region_start, coding_region_end,
-      //               cDNA_coding_start_is_set == '\0' ? "" : cDNA_coding_start_is_set,
-      //               cDNA_coding_end_is_set == '\0' ? "" : cDNA_coding_end_is_set,
-      //               cDNA_coding_start, cDNA_coding_end);
 
       zMapFeatureTranscriptInit(feature);
       zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
@@ -1088,22 +1066,27 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
                             feature_mode, source, 0, 0, 
                             get_features_data, feature_block) ;
 
-      //char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
-      //char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
-      //int coding_region_start = 0;
-      //int coding_region_end = 0;
-      //
-      //if (coding_region_start_is_set)
-      //  coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
-      //
-      //if (coding_region_end_is_set)
-      //  coding_region_end = PredictionTranscript_getCodingRegionEnd(rsf) ;
-      //
-      //char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
-      //char end_is_set = PredictionTranscript_getEndIsSet(rsf) ;
+      char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
+      char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
+      char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
+      char end_is_set = PredictionTranscript_getEndIsSet(rsf) ;
+      int coding_region_start = 0;
+      int coding_region_end = 0;
+      
+      /* getCodingRegionStart gives an error if coding_region_start and start 
+       * are both unset so we must check first */
+      if (coding_region_start_is_set || start_is_set)
+        coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
+      
+      if (coding_region_end_is_set || end_is_set)
+        coding_region_end = PredictionTranscript_getCodingRegionEnd(rsf) ;
 
       zMapFeatureTranscriptInit(feature);
       zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+
+      zMapFeatureAddTranscriptCDS(feature, 
+                                  (coding_region_start_is_set && coding_region_end_is_set),
+                                  coding_region_start, coding_region_end);
 
       Vector *exons = PredictionTranscript_getAllExons(rsf, 0) ;
       transcriptAddExons(server, feature, exons) ;
