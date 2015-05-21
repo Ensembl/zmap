@@ -116,13 +116,13 @@ typedef struct  _ZMapLogStruct *ZMapLog ;
  *
  * The address of the string is then used as the unique identifier and the string
  * can be used during debugging.
- * 
+ *
  * If you use the magic in heap allocated structs then you _must_ reset the magic
  * on deallocating the struct to invalidate the memory and hence catch when callers
  * try to erroneously continue to reference it:
- * 
+ *
  * ZMAP_MAGIC_RESET(struct->magic) ;
- * 
+ *
  */
 typedef const char * ZMapMagic ;
 
@@ -277,7 +277,7 @@ void zMapCoordsToOffset(int base, int start_value, int *start_inout, int *end_in
 /* zmapRadixSort.c */
 #define RADIX_BITS      8           /* this will never change so don't*/
 typedef guint ZMapRadixKeyFunc (gconstpointer thing,int digit);
-GList * zMapRadixSort(GList *list, ZMapRadixKeyFunc *key_func,int key_size);
+GList * zMapRadixSort(GList *list_arg, ZMapRadixKeyFunc *key_func,int key_size);
 
 gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromsome_out, int *start_out, int *end_out) ;
 gboolean zMapUtilsBioParseChromNumber(char *chromosome_str, char **chromosome_out) ;

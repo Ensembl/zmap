@@ -94,7 +94,7 @@ static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,
                                              GQuark id, ZMapStrand strand, ZMapFrame frame) ;
 static void removeList(gpointer data, gpointer user_data_unused) ;
 
-static gboolean in_user_hidden_stack(GQueue *queue, FooCanvasItem *item) ;
+static gboolean in_user_hidden_stack(GQueue *gqueue, FooCanvasItem *item) ;
 static gint find_item_in_user_hidden_stack(gconstpointer list_data, gconstpointer item_data) ;
 
 static void column_hide_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
@@ -1201,11 +1201,11 @@ static void removeList(gpointer data, gpointer user_data_unused)
 
 
 
-static gboolean in_user_hidden_stack(GQueue *queue, FooCanvasItem *item)
+static gboolean in_user_hidden_stack(GQueue *gqueue, FooCanvasItem *item)
 {
   gboolean result = FALSE;
   GList *found;
-  if((found = g_queue_find_custom(queue, item, find_item_in_user_hidden_stack)))
+  if((found = g_queue_find_custom(gqueue, item, find_item_in_user_hidden_stack)))
     result = TRUE;
   return result;
 }

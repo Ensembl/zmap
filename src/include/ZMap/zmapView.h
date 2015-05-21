@@ -186,7 +186,7 @@ GHashTable *zMapViewGetStyles(ZMapViewWindow view_window) ;
 ZMapWindowNavigator zMapViewGetNavigator(ZMapView view);
 int zMapViewNumWindows(ZMapViewWindow view_window) ;
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
-void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
+void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list_arg);
 char *zMapViewGetDataset(ZMapView zmap_view) ;
 
 void zMapViewForAllZMapWindows(ZMapView view, ZMapViewForAllCallbackFunc user_func_cb, void *user_func_data) ;

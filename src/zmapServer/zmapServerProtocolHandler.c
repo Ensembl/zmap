@@ -33,7 +33,7 @@
 /* this file is a collection of code from zmapslave that needs to handle server connections...
  * note that the thread stuff does percolate into this file as we need mutex locks.... */
 
-#include <strings.h>
+#include <string.h>
 
 /* YOU SHOULD BE AWARE THAT ON SOME PLATFORMS (E.G. ALPHAS) THERE SEEMS TO BE SOME INTERACTION
  * BETWEEN pthread.h AND gtk.h SUCH THAT IF pthread.h COMES FIRST THEN gtk.h INCLUDES GET MESSED

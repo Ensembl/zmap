@@ -142,8 +142,8 @@ static void setFilterDefaults(SearchData search_data) ;
 
 static void addToComboBoxText(gpointer list_data, gpointer combo_data);
 static void addToComboBoxQuark(gpointer list_data, gpointer combo_data);
-static GtkWidget *createPopulateComboBox(GList *list, gboolean quarks);
-static void clearPopulateComboBox(GtkWidget *combo, GList *list,int len);
+static GtkWidget *createPopulateComboBox(GList *glist, gboolean quarks);
+static void clearPopulateComboBox(GtkWidget *combo, GList *glist,int len);
 static void fetchAllComboLists(ZMapFeatureAny feature_any,
                                GList **align_list_out,
                                GList **block_list_out,
@@ -1085,22 +1085,22 @@ static void setFilterDefaults(SearchData search_data)
   return ;
 }
 
-static GtkWidget *createPopulateComboBox(GList *list, gboolean quarks)
+static GtkWidget *createPopulateComboBox(GList *glist, gboolean quarks)
 {
   GtkWidget *combo = NULL;
 
   combo = gtk_combo_box_entry_new_text();
 
   if(quarks)
-    g_list_foreach(list, addToComboBoxQuark, (gpointer)combo);
+    g_list_foreach(glist, addToComboBoxQuark, (gpointer)combo);
   else
-    g_list_foreach(list, addToComboBoxText, (gpointer)combo);
+    g_list_foreach(glist, addToComboBoxText, (gpointer)combo);
 
   return combo;
 }
 
 /* didn't implement non quarks as they're never used */
-static void clearPopulateComboBox(GtkWidget *combo, GList *list,int len)
+static void clearPopulateComboBox(GtkWidget *combo, GList *glist,int len)
 {
       int i;
 
@@ -1112,7 +1112,7 @@ static void clearPopulateComboBox(GtkWidget *combo, GList *list,int len)
             i--;
             gtk_combo_box_remove_text(GTK_COMBO_BOX(combo), i);
       }
-      g_list_foreach(list,addToComboBoxQuark,combo);
+      g_list_foreach(glist,addToComboBoxQuark,combo);
 }
 
 static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer data,

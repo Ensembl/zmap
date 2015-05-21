@@ -34,7 +34,6 @@
 #include <ZMap/zmap.h>
 
 #include <stdio.h>
-#include <strings.h>
 #include <string.h>
 #include <glib.h>
 
@@ -103,7 +102,7 @@ static GList *sortFeatureset(ZMapFeatureSet fset);
 
 
 
-/* 
+/*
  *                          Globals...
  */
 

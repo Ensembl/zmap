@@ -582,16 +582,16 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
 
   if ((styles_quark_list = (GList *)g_hash_table_lookup(map->column_2_styles,GUINT_TO_POINTER(column_id))))
     {
-      GList *list;
+      GList *glist;
 
-      if((list = g_list_first(styles_quark_list)))
+      if((glist = g_list_first(styles_quark_list)))
         {
           do
             {
               GQuark style_id;
               ZMapFeatureTypeStyle style;
 
-              style_id = GPOINTER_TO_UINT(list->data);
+              style_id = GPOINTER_TO_UINT(glist->data);
 
               if((style = zMapFindStyle(map->styles, style_id)))    // add styles needed by featuresets
                 {
@@ -614,7 +614,7 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
                                  g_hash_table_size(map->styles));
                 }
             }
-          while((list = g_list_next(list)));
+          while((glist = g_list_next(glist)));
         }
     }
 

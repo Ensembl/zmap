@@ -80,7 +80,7 @@ void zmapWindowContainerBlockFlagRegionForColumn(ZMapWindowContainerBlock       
 						 ZMapFeatureBlock               block,
 						 ZMapWindowContainerFeatureSet  container_set);
 GList *zmapWindowContainerBlockFilterFlaggedColumns(ZMapWindowContainerBlock block_data,
-						    GList *list, int world1, int world2);
+						    GList *glist, int world1, int world2);
 gboolean zmapWindowContainerBlockIsColumnLoaded(ZMapWindowContainerBlock      container_block,
 						ZMapWindowContainerFeatureSet container_set,
 						int world1, int world2);

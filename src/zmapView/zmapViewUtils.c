@@ -187,11 +187,11 @@ void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value)
     case ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS:
       zMapViewUpdateColumnBackground(view);
       break ;
-      
+
     case ZMAPFLAG_ENABLE_ANNOTATION:
       zMapViewToggleScratchColumn(view, value, TRUE) ;
       break ;
-      
+
     default:
       break ;
     } ;
@@ -532,12 +532,12 @@ ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList
   if (step_list)
     {
       StepListFindStruct step_find = {ZMAP_SERVERREQ_INVALID} ;
-      
+
       step_find.request_type = request_type ;
       step_find.request = NULL ;
-      
+
       g_list_foreach(step_list->steps, stepFindReq, &step_find) ;
-      
+
       request = step_find.request ;
     }
   else
@@ -670,11 +670,11 @@ gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list)
  *************************************************/
 GHashTable *zmapViewCWHHashCreate(void)
 {
-  GHashTable *hash = NULL;
+  GHashTable *ghash = NULL;
 
-  hash = g_hash_table_new_full(NULL, NULL, cwh_destroy_key, cwh_destroy_value);
+  ghash = g_hash_table_new_full(NULL, NULL, cwh_destroy_key, cwh_destroy_value);
 
-  return hash;
+  return ghash;
 }
 
 /*!
@@ -686,14 +686,14 @@ GHashTable *zmapViewCWHHashCreate(void)
  * @param               GList * of ZMapWindow
  * @return              void
  *************************************************/
-void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *list)
+void zmapViewCWHSetList(GHashTable *ghash, ZMapFeatureContext context, GList *glist)
 {
   ContextDestroyList destroy_list ;
 
   destroy_list = g_new0(ContextDestroyListStruct, 1) ;
-  destroy_list->window_list = list ;
+  destroy_list->window_list = glist ;
 
-  g_hash_table_insert(hash, context, destroy_list) ;
+  g_hash_table_insert(ghash, context, destroy_list) ;
 
   return ;
 }
@@ -707,13 +707,13 @@ void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *lis
  * @param                ZMapWindow to look up
  * @return               Boolean as to whether Window is last.
  *************************************************/
-gboolean zmapViewCWHIsLastWindow(GHashTable *hash, ZMapFeatureContext context, ZMapWindow window)
+gboolean zmapViewCWHIsLastWindow(GHashTable *ghash, ZMapFeatureContext context, ZMapWindow window)
 {
   ContextDestroyList destroy_list = NULL;
   gboolean last = FALSE;
   int before = 0, after = 0;
 
-  if ((destroy_list = (ContextDestroyList)(g_hash_table_lookup(hash, context))))
+  if ((destroy_list = (ContextDestroyList)(g_hash_table_lookup(ghash, context))))
     {
       if (!(destroy_list->window_list))
         {
@@ -755,19 +755,19 @@ gboolean zmapViewCWHIsLastWindow(GHashTable *hash, ZMapFeatureContext context, Z
  *                        the only one in the view i.e. == view->features
  * @return                Boolean to notify whether context was destroyed.
  */
-gboolean zmapViewCWHRemoveContextWindow(GHashTable *hash, ZMapFeatureContext *context,
+gboolean zmapViewCWHRemoveContextWindow(GHashTable *ghash, ZMapFeatureContext *context,
                                         ZMapWindow window, gboolean *is_only_context)
 {
   ContextDestroyList destroy_list = NULL;
   gboolean removed = FALSE, is_last = FALSE, absent_context = FALSE;
   int length;
 
-  if((destroy_list = (ContextDestroyList)g_hash_table_lookup(hash, *context)) &&
-     (is_last = zmapViewCWHIsLastWindow(hash, *context, window)))
+  if((destroy_list = (ContextDestroyList)g_hash_table_lookup(ghash, *context)) &&
+     (is_last = zmapViewCWHIsLastWindow(ghash, *context, window)))
     {
       if((length = g_list_length(destroy_list->window_list)) == 0)
         {
-          if((removed  = g_hash_table_remove(hash, *context)))
+          if((removed  = g_hash_table_remove(ghash, *context)))
             {
               *context = NULL;
             }
@@ -792,13 +792,13 @@ gboolean zmapViewCWHRemoveContextWindow(GHashTable *hash, ZMapFeatureContext *co
  * @param              GHashTable **
  * @return             void
  *************************************************/
-void zmapViewCWHDestroy(GHashTable **hash)
+void zmapViewCWHDestroy(GHashTable **ghash)
 {
-  GHashTable *cwh_hash = *hash;
+  GHashTable *cwh_hash = *ghash;
 
   g_hash_table_destroy(cwh_hash);
 
-  *hash = NULL;
+  *ghash = NULL;
 
   return ;
 }
@@ -806,9 +806,9 @@ void zmapViewCWHDestroy(GHashTable **hash)
 
 
 
-/* 
+/*
  * Server Session stuff: holds information about data server connections.
- * 
+ *
  * NOTE: the list of connection session data is dynamic, as a server
  * connection is terminated the session data is free'd too so the final
  * list may be very short or not even have any connections at all.
@@ -1006,11 +1006,11 @@ static void cwh_destroy_value(gpointer cwh_data)
 
 
 /* Produce information for each session as formatted text.
- * 
+ *
  * NOTE: some information is only available once the server connection
  * is established and the server can be queried for it. This is not formalised
  * in a struct but could be if found necessary.
- * 
+ *
  *  */
 static void formatSession(gpointer data, gpointer user_data)
 {
@@ -1117,7 +1117,7 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
 	    }
 	}
     }
-  
+
   return ;
 }
 
@@ -1153,7 +1153,7 @@ static void forAllCB(void *data, void *user_data)
 static void setCursorCB(ZMapWindow window, void *user_data)
 {
   GdkCursor *cursor = (GdkCursor *)user_data ;
- 
+
   zMapWindowSetCursor(window, cursor) ;
 
   return ;

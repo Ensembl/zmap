@@ -41,11 +41,7 @@ so, delete this exception statement from your version.  */
 
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef HAVE_STRING_H
-# include <string.h>
-#else
-# include <strings.h>
-#endif
+#include <string.h>
 #include <sys/types.h>
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -85,7 +81,7 @@ static struct scheme_data supported_schemes[] =
   { "mysql://", DEFAULT_MYSQL_PORT, 1 },
 
   { "ensembl://", DEFAULT_ENSEMBL_PORT, 1 },
-  
+
   /* SCHEME_INVALID */
   { NULL,       -1,                 0 }
 };
@@ -695,7 +691,7 @@ is_valid_ipv4_address (const char *str, const char *end)
   }
   if (octets < 4)
     return 0;
-  
+
   return 1;
 }
 
@@ -718,7 +714,7 @@ is_valid_ipv6_address (const char *str, const char *end)
 
   if (str == end)
     return 0;
-  
+
   /* Leading :: requires some special handling. */
   if (*str == ':')
     {
@@ -772,18 +768,18 @@ is_valid_ipv4_address(curtok, end) == 1) {
       saw_xdigit = 0;
       break;
     }
-    
+
     return 0;
   }
 
   if (saw_xdigit == 1) {
-    if (tp > NS_IN6ADDRSZ - NS_INT16SZ) 
+    if (tp > NS_IN6ADDRSZ - NS_INT16SZ)
       return 0;
     tp += NS_INT16SZ;
   }
 
   if (colonp != NULL) {
-    if (tp == NS_IN6ADDRSZ) 
+    if (tp == NS_IN6ADDRSZ)
       return 0;
     tp = NS_IN6ADDRSZ;
   }
@@ -799,23 +795,23 @@ is_valid_ipv4_address(curtok, end) == 1) {
  *******************************************************************************
  * Return a new ZMapURL if successful, NULL on error.  In case of
  * error, and if ERROR is not NULL, also set *ERROR to the appropriate
- * error code. 
+ * error code.
  *
  * This follows the following RFC ...
  * http://rfc.net/rfc1738.html
- * 
+ *
  * Generally
  * <scheme>://[user][:password]@<host>[:port]/[url-path][;typecode][?query][#fragment]
  *
  * Some Notes:
- * 1) [] square brackets are optional, <> angle brackets compulsory, with the 
- *    exception of host when scheme == file. 
+ * 1) [] square brackets are optional, <> angle brackets compulsory, with the
+ *    exception of host when scheme == file.
  * 2) The original source of this code is wget, which did nothing to support
  *    the file scheme.  According to the rfc above and in order to support both
  *    relative and absolute url-paths for the file scheme the leading / is NOT
  *    part of the url-path and IS a separator.
  *    e.g. file:///tmp/file.tmp            is relative
- *         file:////tmp/file.tmp           is absolute 
+ *         file:////tmp/file.tmp           is absolute
  *         file://localhost/tmp/file.tmp   is relative
  *         file://localhost//tmp/file.tmp  is absolute
  * 3) this documentation should be elsewhere.
@@ -961,7 +957,7 @@ ZMapURL url_parse (const char *url, int *error)
                       error_code = PE_BAD_PORT_NUMBER;
                       goto error;
             }
-          
+
           port = 10 * port + (*pp - '0');
         }
     }
@@ -1878,12 +1874,12 @@ uri_merge (const char *base, const char *link)
         {
           /* No slash found at all.  Append LINK to what we have,
              but we'll need a slash as a separator.
-        
+
              Example: if base == "foo" and link == "qux/xyzzy", then
              we cannot just append link to base, because we'd get
              "fooqux/xyzzy", whereas what we want is
              "foo/qux/xyzzy".
-        
+
              To make sure the / gets inserted, we set
              need_explicit_slash to 1.  We also set start_insert
              to end + 1, so that the length calculations work out
@@ -2028,7 +2024,7 @@ url_string (const ZMapURL url, int hide_password)
 }
 
 /* Return non-zero if scheme a is similar to scheme b.
- 
+
    Schemes are similar if they are equal.  If SSL is supported, schemes
    are also similar if one is http (SCHEME_HTTP) and the other is https
    (SCHEME_HTTPS).  */
@@ -2076,7 +2072,7 @@ char *zMapURLGetQueryValue(const char *full_query, const char *key)
               real_key = *key_value ;
               if (*real_key == '?')
                 real_key++ ;
-            
+
               if (g_ascii_strcasecmp(real_key, key) == 0)
                 value = g_strdup(key_value[1]) ;
             }

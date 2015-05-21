@@ -33,7 +33,6 @@
 #include <ZMap/zmap.h>
 
 #include <stdio.h>
-#include <strings.h>
 #include <string.h>
 #include <glib.h>
 
@@ -84,15 +83,15 @@
 static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key, gpointer data, gpointer user_data,
 							     char **error_out);
 static int makeConcensusSequence(ZMapFeature composite) ;
-static void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFeature feature,
+static void addCompositeFeature(GHashTable *ghash, ZMapFeature composite, ZMapFeature feature,
 				int y1, int y2, int len) ;
-static GList *compressStrand(GList *features, GHashTable *hash, gboolean squash, gboolean collapse, int join);
+static GList *compressStrand(GList *features, GHashTable *ghash, gboolean squash, gboolean collapse, int join);
 static gboolean canSquash(ZMapFeature first, ZMapFeature current);
 static gint featureGapCompare(gconstpointer a, gconstpointer b) ;
 static int makeGaps(ZMapFeature composite, ZMapFeature feature,
 		    GList **splice_list, double y1, double y2, double edge1, double edge2);
-static GList *squashStrand(GList *fl, GHashTable *hash,  GList **splice_list);
-static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list, gboolean collapse, int join);
+static GList *squashStrand(GList *fl, GHashTable *ghash,  GList **splice_list);
+static GList *collapseJoinStrand(GList *fl, GHashTable *ghash, GList *splice_list, gboolean collapse, int join);
 static void storeSpliceCoords(ZMapFeature feature, GList **splice_list);
 static int splice_sort(gconstpointer ga,gconstpointer gb) ;
 static void dumpFeaturesCB(gpointer data, gpointer user_data_unused) ;
@@ -243,7 +242,7 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
  */
 
 
-static GList *compressStrand(GList *features, GHashTable *hash, gboolean squash, gboolean collapse, int join)
+static GList *compressStrand(GList *features, GHashTable *ghash, gboolean squash, gboolean collapse, int join)
 {
   GList  *splice_list = NULL;	/* sorted list of splice coordinates */
 
@@ -254,7 +253,7 @@ static GList *compressStrand(GList *features, GHashTable *hash, gboolean squash,
    */
 
   if (features && squash)
-    features = squashStrand(features, hash, &splice_list) ;
+    features = squashStrand(features, ghash, &splice_list) ;
 
 
   /* debug...check the sorting..... */
@@ -263,7 +262,7 @@ static GList *compressStrand(GList *features, GHashTable *hash, gboolean squash,
 
 
   if(features && (collapse || join))
-    features = collapseJoinStrand(features, hash, splice_list, collapse, join);
+    features = collapseJoinStrand(features, ghash, splice_list, collapse, join);
 
   if(splice_list)
     g_list_free(splice_list);
@@ -279,7 +278,7 @@ static GList *compressStrand(GList *features, GHashTable *hash, gboolean squash,
  * this works on gapped features which appear first
  * we break if the strand changes or we get an ungapped feature or the list ends
  */
-static GList *squashStrand(GList *fl, GHashTable *hash,  GList **splice_list)
+static GList *squashStrand(GList *fl, GHashTable *ghash,  GList **splice_list)
 {
   double y1,y2,edge1,edge2;	/* boundaries of visible squashed feature */
   ZMapFeature composite = NULL;
@@ -402,7 +401,7 @@ static GList *squashStrand(GList *fl, GHashTable *hash,  GList **splice_list)
 			     g_quark_to_string(feature->original_id),
 			     feature->x1, feature->x2, y1, y2) ;
 
-	      addCompositeFeature(hash, composite, feature, y1, y2, len);
+	      addCompositeFeature(ghash, composite, feature, y1, y2, len);
 	    }
 	  else
 	    {
@@ -498,7 +497,7 @@ gboolean canSquash(ZMapFeature first, ZMapFeature current)
  */
 
 
-static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list, gboolean collapse, int join)
+static GList *collapseJoinStrand(GList *fl, GHashTable *ghash, GList *splice_list, gboolean collapse, int join)
 {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -743,10 +742,10 @@ static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list
        * which means that i have to write extra code to cope with the re-organisation
        * NOTE this kind of edge effect is quite easy to miss and 'nice' code can be a source of
        * bugs
-       * 
+       *
        * YES AND YOUR CODE IS BUGGED BECAUSE THIS IS SO LONG YOU'VE LOST TRACK OF THE EDGE
        * EFFECTS....
-       * 
+       *
        */
       fl = fl->next;
       next_f = fl ? (ZMapFeature) fl->data : NULL;
@@ -770,7 +769,7 @@ static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list
 			     g_quark_to_string(feature->original_id),
 			     feature->x1, feature->x2, y1, y2) ;
 
-	      addCompositeFeature(hash, composite, feature, y1, y2, y2 - y1);
+	      addCompositeFeature(ghash, composite, feature, y1, y2, y2 - y1);
 	    }
 
 	  /* HOW EXACTLY DOES THIS FIT WITH THE STATEMENT ABOVE ???? */
@@ -793,7 +792,7 @@ static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list
 
 
 /* add any kind of compressed feature to the set's hash table */
-static void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFeature feature, int y1, int y2, int len)
+static void addCompositeFeature(GHashTable *ghash, ZMapFeature composite, ZMapFeature feature, int y1, int y2, int len)
 
 {
   char buf[256];
@@ -803,7 +802,7 @@ static void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFea
   sprintf(buf,"Composite_%d_reads",composite->population);
   composite->original_id = g_quark_from_string(buf);
 
-  g_hash_table_insert(hash, GUINT_TO_POINTER(composite->unique_id), composite);
+  g_hash_table_insert(ghash, GUINT_TO_POINTER(composite->unique_id), composite);
 
 
   composite->x1 = y1;
@@ -815,7 +814,7 @@ static void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFea
   composite->url = NULL;	/* in case it gets freed */
 
 #if SQUASH_DEBUG
-  zMapLogMessage("composite: %s %d,%d (%d %d %d)\n", 
+  zMapLogMessage("composite: %s %d,%d (%d %d %d)\n",
 	 g_quark_to_string(composite->original_id),
 	 composite->x1,composite->x2,
 	 composite->flags.joined,composite->flags.squashed,composite->flags.collapsed);
@@ -1075,7 +1074,7 @@ static int makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_l
 	  edge->t_strand = first->t_strand;
 	  edge->q_strand = first->q_strand;
 
-	  /* I think this struct spans from the start to somewhere in 
+	  /* I think this struct spans from the start to somewhere in
 	   * the first align block of the composite feature,
 	   * which would make the boundaries as folows. */
 	  edge->start_boundary = ALIGN_BLOCK_BOUNDARY_EDGE;
@@ -1290,7 +1289,7 @@ static void storeSpliceCoords(ZMapFeature feature, GList **splice_list)
 static gint featureGapCompare(gconstpointer a, gconstpointer b)
 {
   gint result = 0 ;
-  
+
   ZMapFeature feata = (ZMapFeature) a;
   ZMapFeature featb = (ZMapFeature) b;	/* these must be alignments */
   GArray *g1,*g2;
@@ -1330,13 +1329,13 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
     {
       /* THERE'S A MASSIVE PROBLEM HERE.....THE NUMBER OF GAPS IS IRRELEVALENT IF THE ALIGNS
        * DON'T EVEN OVERLAP....IT'S HARD TO EVEN UNDERSTAND WHAT THE SORT IS TRYING TO ACHIEVE... */
-      
+
       /* gb10: I think the aim of this routine is to place alignments with identical splice
        * sites adjacent to each other. It first sorts by the number of gaps (in reverse order),
        * so alignments with the most gaps come first and ungapped alignments come last. This
        * effectively groups alignments with the same number of gaps. Then it sorts by splice
        * site coords to group alignments with identical splice sites next to each other. */
-      
+
       /* Note that the align block struct holds the matches, so the gap is between them */
       g1 = feata->feature.homol.align ;
       g2 = featb->feature.homol.align ;
@@ -1345,7 +1344,7 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
         ng1 = g1->len ;
       if(g2)
         ng2 = g2->len ;
-      
+
       /* Sort by the number of gaps (reverse order) */
       result = ng2 - ng1 ;
 
@@ -1355,7 +1354,7 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
           if (ng1 > 1) /* must have at least 2 match blocks for there to be a gap between them! */
             {
               /* Gapped alignments */
-              
+
               /* Loop through each alignment block and check the splice sites match.
                * Note that the start/end of the first/last block don't need checking because
                * they're not splice sites. Continue searching through while matches are
@@ -1365,11 +1364,11 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
                 {
                   ab1 = &g_array_index(g1, ZMapAlignBlockStruct, i);
                   ab2 = &g_array_index(g2, ZMapAlignBlockStruct, i);
-                  
+
                   /* sort on the start coord of the alignment block (unless it's the first block) */
                   if (i > 0)
                     result = ab1->t1 - ab2->t1 ;
-              
+
                   /* If identical, also sort on the end coord of the alignment block
                    * (unless it's the last block) */
                   if (!result && i < ng1 - 1)
@@ -1389,7 +1388,7 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
             }
         }
     }
-  
+
   return result ;
 }
 
@@ -1403,12 +1402,12 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* ok...let's rewrite this to do proper compares...??
- * 
+ *
  * SEE ABOVE ROUTINE FOR ORIGINAL....
- * 
+ *
  * I'M LEAVING THIS IN UNTIL I GET FEEDBACK FROM ADAM/LAURENS...
- * 
- * 
+ *
+ *
  *  */
 static gint featureGapCompare(gconstpointer a, gconstpointer b)
 {
@@ -1421,7 +1420,7 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
   /* MALCOLM TESTED FOR NULL PTRS WHICH IS SURELY CRAZY.....
    * THIS SURELY HAS TO SAY THAT THERE IS SOMETHING DEEPLY WRONG WITH THE LIST, NOT WITH
    * GLIB.......THIS IS DEEPLY DISTURBING AS IT IMPLIES THE LISTS ARE RUBBISH....
-   * 
+   *
    * HIS COMMENT WAS..... */
   /* we can get NULLs due to GLib being silly */
   /* this code is pedantic, but I prefer stable sorting */
@@ -1479,7 +1478,7 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
       ZMapAlignBlock a1, a2 ;
       int ng1 = 0, ng2 = 0 ;
       GArray *g1, *g2 ;
-  
+
       ng1 = g1->len ;
 
       ng2 = g2->len ;

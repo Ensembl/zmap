@@ -30,7 +30,7 @@
 
 #include <ZMap/zmap.h>
 
-#include <strings.h>
+#include <string.h>
 
 #include <ZMap/zmapUrl.h>
 #include <ZMap/zmapUtils.h>
@@ -49,7 +49,7 @@ static gboolean server_functions_valid(ZMapServerFuncs serverfuncs ) ;
 /* This routine must be called before any other server routine and must only be called once,
  * it is the callers responsibility to make sure this is true....otherwise results are
  * undefined and may result in a crash.
- * 
+ *
  * If the function returns NULL then no servers can be called.
  */
 gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
@@ -447,7 +447,7 @@ static void zMapServerSetErrorMsg(ZMapServer server, char *message)
 }
 
 
-/* 
+/*
  *                  Internal routines.
  */
 

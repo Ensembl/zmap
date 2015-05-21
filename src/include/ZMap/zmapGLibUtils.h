@@ -64,21 +64,21 @@ gchar *zMap_g_remove_char(char *string_arg, char ch) ;
 gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle) ;
 gboolean zMap_g_string_replace(GString *string_arg, const char *target, const char *source) ;
 
-void zMap_g_list_foreach_reverse(GList *list, GFunc func, gpointer user_data);
-void zMap_g_list_foreach_directional(GList *list, GFunc func, gpointer user_data,
+void zMap_g_list_foreach_reverse(GList *list_arg, GFunc func, gpointer user_data);
+void zMap_g_list_foreach_directional(GList *list_arg, GFunc func, gpointer user_data,
                                      ZMapGListDirection forward);
-gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user_data) ;
-GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index) ;
+gboolean zMap_g_list_cond_foreach(GList *list_arg, ZMapGFuncCond func, gpointer user_data) ;
+GList *zMap_g_list_move(GList *list_arg, gpointer user_data, gint new_index) ;
 GList *zMap_g_list_grep(GList **list_inout, gpointer data, GCompareFunc func);
 GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point, gboolean copy_donor) ;
 GList *zMap_g_list_lower(GList *move, int positions);
 GList *zMap_g_list_raise(GList *move, int positions);
-GList *zMap_g_list_split(GList *list, GList *new_list_head) ;
-GList *zMap_g_list_append_unique(GList *list, gpointer data);
+GList *zMap_g_list_split(GList *list_arg, GList *new_list_head) ;
+GList *zMap_g_list_append_unique(GList *list_arg, gpointer data);
 GList *zMap_g_list_merge(GList *a, GList *b);
 
 void zMap_g_list_quark_print(GList *quark_list, const char *list_name, gboolean new_line) ;
-GList *zMap_g_list_find_quark(GList *list, GQuark str_quark) ;
+GList *zMap_g_list_find_quark(GList *list_arg, GQuark str_quark) ;
 gchar *zMap_g_list_quark_to_string(GList *l, const char *delimiter);
 GList *zMap_g_list_remove_quarks(GList *quark_target_list, GList *quarks) ;
 
@@ -86,7 +86,7 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth) ;
 void zMap_g_hash_table_print(GHashTable *hash_table, const char *data_format_str) ;
 void zMap_g_hash_table_iter_init(GList **iter, GHashTable *h);
 gboolean zMap_g_hash_table_iter_next(GList **iter,gpointer *key, gpointer *value);
-void zMap_g_hash_table_iter_free(GList **list);       // not implemented
+void zMap_g_hash_table_iter_free(GList **list_arg);       // not implemented
 void  zMap_g_hash_table_get_keys(GList **iter, GHashTable *h);
 void  zMap_g_hash_table_get_data(GList **iter, GHashTable *h);
 

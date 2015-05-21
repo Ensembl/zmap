@@ -89,8 +89,8 @@ typedef struct
 } CallbackDataStruct, *CallbackData ;
 
 
-static char *makeMenuItemName(const char *string) ;
-static char *makeMenuTitleName(const char *string, const char *escape_chars) ;
+static char *makeMenuItemName(const char *string_arg) ;
+static char *makeMenuTitleName(const char *string_arg, const char *escape_chars) ;
 
 static ZMapGUIMenuItem makeSingleMenu(GList *menu_item_sets, int *menu_items_out) ;
 static ZMapGUIMenuItem copyMenu2NewMenu(ZMapGUIMenuItem new_menu, ZMapGUIMenuItem old_menu) ;
@@ -435,15 +435,14 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
 
 
 /* Normal Menu Item Name strings must have the format "/item_name". */
-static char *makeMenuItemName(const char *string)
+static char *makeMenuItemName(const char *string_arg)
 {
   char *item_string = NULL;
 
-  /* zMapAssert(string && *string) ; */
-  if (!string || !*string)
+  if (!string_arg || !*string_arg)
     return item_string ;
 
-  item_string = g_strdup_printf("/%s", string) ;
+  item_string = g_strdup_printf("/%s", string_arg) ;
 
   return item_string ;
 }
@@ -456,16 +455,16 @@ static char *makeMenuItemName(const char *string)
  * For DAS there are also embedded '/' which must be escaped as well as "\/"
  *
  */
-static char *makeMenuTitleName(const char *string, const char *escape_chars)
+static char *makeMenuTitleName(const char *string_arg, const char *escape_chars)
 {
   char *item_string = NULL ;
   GString *tmp ;
   char *cp ;
   gssize pos ;
 
-  zMapReturnValIfFail((string && *string), item_string) ;
+  zMapReturnValIfFail((string_arg && *string_arg), item_string) ;
 
-  tmp = g_string_new(string) ;
+  tmp = g_string_new(string_arg) ;
 
   pos = 0 ;
   cp = (tmp->str + pos) ;

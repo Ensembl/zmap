@@ -93,25 +93,25 @@ void zmapWindowPrintGroups(FooCanvas *canvas)
 }
 
 
-void zmapWindowItemDebugItemToString(GString *string, FooCanvasItem *item)
+void zmapWindowItemDebugItemToString(GString *string_arg, FooCanvasItem *item)
 {
   gboolean has_feature = FALSE, is_container = FALSE ;
   const char *str = NULL ;
 
   if ((is_container = get_container_type_as_string(item, &str)))
-    g_string_append_printf(string, "%s", str) ;
+    g_string_append_printf(string_arg, "%s", str) ;
   else if (get_item_type_as_string(item, &str))
-    g_string_append_printf(string, "%s", str) ;
+    g_string_append_printf(string_arg, "%s", str) ;
 
   if ((has_feature = get_feature_type_as_string(item, &str)))
-    g_string_append_printf(string, " %s", str) ;
+    g_string_append_printf(string_arg, " %s", str) ;
 
   if (has_feature)
     {
       ZMapFeatureAny feature_any;
 
       feature_any = zmapWindowItemGetFeatureAny(item);
-      g_string_append_printf(string, " \"%s\"", (char *)g_quark_to_string(feature_any->unique_id));
+      g_string_append_printf(string_arg, " \"%s\"", (char *)g_quark_to_string(feature_any->unique_id));
     }
 
   if (is_container)
@@ -121,8 +121,8 @@ void zmapWindowItemDebugItemToString(GString *string, FooCanvasItem *item)
       container = FOO_CANVAS_ITEM( zmapWindowContainerCanvasItemGetContainer(item) );
       if (container != item)
         {
-          g_string_append_printf(string, "Parent Details... ");
-          zmapWindowItemDebugItemToString(string, container);
+          g_string_append_printf(string_arg, "Parent Details... ");
+          zmapWindowItemDebugItemToString(string_arg, container);
         }
     }
 
@@ -228,7 +228,7 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1_in, double y1
 static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
 {
   int i ;
-  GList *list ;
+  GList *glist ;
 
   buf = g_string_set_size(buf, 0) ;
 
@@ -279,14 +279,14 @@ static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
     {
       /* We appear to have groups that have no children...is this empty cols ? */
       /* Print all the child groups of this group. */
-      if ((list = g_list_first(group->item_list)))
+      if ((glist = g_list_first(group->item_list)))
         {
           do
             {
-              if (FOO_IS_CANVAS_GROUP(list->data))
-                printGroup(FOO_CANVAS_GROUP(list->data), indent + 1, buf) ;
+              if (FOO_IS_CANVAS_GROUP(glist->data))
+                printGroup(FOO_CANVAS_GROUP(glist->data), indent + 1, buf) ;
             }
-          while ((list = g_list_next(list))) ;
+          while ((glist = g_list_next(glist))) ;
         }
     }
 

@@ -24,8 +24,8 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Implements the Annotation column in zmap. This is a 
- *              column where the user can create and edit temporary 
+ * Description: Implements the Annotation column in zmap. This is a
+ *              column where the user can create and edit temporary
  *              gene model objects.
  *
  * Exported functions: See zmapWindow_P.h
@@ -54,15 +54,15 @@ ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window)
     {
       GQuark column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
       GList *fs_list = zMapFeatureGetColumnFeatureSets(window->context_map, column_id, TRUE);
-  
+
       /* There should be one (and only one) featureset in the column */
       if (g_list_length(fs_list) > 0)
-        {         
+        {
           GQuark set_id = (GQuark)(GPOINTER_TO_INT(fs_list->data));
           feature_set = zmapFeatureContextGetFeaturesetFromId(window->feature_context, set_id);
         }
     }
-  
+
   return feature_set;
 }
 
@@ -92,7 +92,7 @@ static ZMapFeature zmapWindowScratchGetFeature(ZMapWindow window)
           feature = (ZMapFeature)(value);
         }
     }
-  
+
   return feature;
 }
 
@@ -113,15 +113,15 @@ static void scratchRecalcTranslation(ZMapWindow window)
 /* Do the callback to the View level for a command on the scratch column */
 static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
                                      ZMapWindow window,
-                                     ZMapFeature feature, 
-                                     FooCanvasItem *item, 
+                                     ZMapFeature feature,
+                                     FooCanvasItem *item,
                                      const double world_x,
                                      const double world_y,
                                      const gboolean use_subfeature)
 {
   gboolean ok = TRUE ;
   ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
- 
+
   /* Set up general command field for callback. */
   scratch_cmd->cmd = command_type ;
   scratch_cmd->seq_start = 0;
@@ -138,8 +138,8 @@ static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
     {
       /* Add all selected features. Note that these may be different to the feature the user
        * actually right-clicked on! */
-      GList *list = zmapWindowFocusGetFeatureList(window->focus) ;
-      scratch_cmd->features = g_list_concat(scratch_cmd->features, list) ;
+      GList *glist = zmapWindowFocusGetFeatureList(window->focus) ;
+      scratch_cmd->features = g_list_concat(scratch_cmd->features, glist) ;
     }
 
   if (feature && feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
@@ -155,11 +155,11 @@ static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
   if (feature && use_subfeature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       zMapWindowCanvasItemGetInterval((ZMapWindowCanvasItem)item, world_x, world_y, &scratch_cmd->subpart) ;
-      
+
       if (!scratch_cmd->subpart)
         {
           ok = FALSE ;
-          zMapWarning("Cannot find subfeature for feature '%s' at position %f,%f", 
+          zMapWarning("Cannot find subfeature for feature '%s' at position %f,%f",
                       g_quark_to_string(feature->original_id), world_x, world_y) ;
         }
     }
@@ -212,7 +212,7 @@ static void scratchHighlightEvidence(ZMapWindow window)
   if (window->highlight_evidence_featureset_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
     {
       ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
-      
+
       ZMapWindowHighlightData highlight_data = g_new0(ZMapWindowHighlightDataStruct, 1) ;
       highlight_data->window = window ;
       highlight_data->feature = (ZMapFeatureAny)scratch_feature ;
@@ -235,9 +235,9 @@ static void scratchHighlightEvidence(ZMapWindow window)
  * \param world_y The clicked y coord
  * \param merge_subfeature If true, just merge the clicked subfeature, otherwise merge the whole feature
  */
-void zmapWindowScratchCopyFeature(ZMapWindow window, 
-                                  ZMapFeature feature, 
-                                  FooCanvasItem *item, 
+void zmapWindowScratchCopyFeature(ZMapWindow window,
+                                  ZMapFeature feature,
+                                  FooCanvasItem *item,
                                   const double world_x,
                                   const double world_y,
                                   const gboolean use_subfeature)
@@ -246,10 +246,10 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
     {
       scratchHideEvidence(window) ;
 
-      doScratchCallbackCommand(ZMAPWINDOW_CMD_COPYTOSCRATCH, 
+      doScratchCallbackCommand(ZMAPWINDOW_CMD_COPYTOSCRATCH,
                                window,
-                               feature, 
-                               item, 
+                               feature,
+                               item,
                                world_x,
                                world_y,
                                use_subfeature) ;
@@ -269,19 +269,19 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
  * \param world_y The clicked y coord
  * \param merge_subfeature If true, just merge the clicked subfeature, otherwise merge the whole feature
  */
-void zmapWindowScratchDeleteFeature(ZMapWindow window, 
-                                    ZMapFeature feature, 
-                                    FooCanvasItem *item, 
+void zmapWindowScratchDeleteFeature(ZMapWindow window,
+                                    ZMapFeature feature,
+                                    FooCanvasItem *item,
                                     const double world_x,
                                     const double world_y,
                                     const gboolean use_subfeature)
 {
   if (window)
     {
-      doScratchCallbackCommand(ZMAPWINDOW_CMD_DELETEFROMSCRATCH, 
+      doScratchCallbackCommand(ZMAPWINDOW_CMD_DELETEFROMSCRATCH,
                                window,
-                               feature, 
-                               item, 
+                               feature,
+                               item,
                                world_x,
                                world_y,
                                use_subfeature) ;
@@ -304,10 +304,10 @@ void zmapWindowScratchClear(ZMapWindow window)
   /* Call the callback to the view to redraw everything */
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
-  
+
   /* Set up general command field for callback. */
   scratch_cmd->cmd = ZMAPWINDOW_CMD_CLEARSCRATCH ;
-  
+
   (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
 }
 
@@ -325,10 +325,10 @@ void zmapWindowScratchUndo(ZMapWindow window)
   /* Call the callback to the view to redraw everything */
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
-  
+
   /* Set up general command field for callback. */
   scratch_cmd->cmd = ZMAPWINDOW_CMD_UNDOSCRATCH ;
-  
+
   (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
 
   scratchHighlightEvidence(window) ;
@@ -351,10 +351,10 @@ void zmapWindowScratchRedo(ZMapWindow window)
   /* Call the callback to the view to redraw everything */
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
-  
+
   /* Set up general command field for callback. */
   scratch_cmd->cmd = ZMAPWINDOW_CMD_REDOSCRATCH ;
-  
+
   (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
 
   scratchHighlightEvidence(window) ;
@@ -367,7 +367,7 @@ void zmapWindowScratchRedo(ZMapWindow window)
 /*!
  * \brief Get evidence feature names from the scratch column and call the given callback with them.
  */
-void zmapWindowScratchFeatureGetEvidence(ZMapWindow window, ZMapFeature feature, 
+void zmapWindowScratchFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
                                          ZMapWindowGetEvidenceCB evidence_cb, gpointer evidence_cb_data)
 {
   zMapReturnIfFail(window && feature && evidence_cb) ;
@@ -375,17 +375,17 @@ void zmapWindowScratchFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
   /* Call the callback to the view */
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
-  
+
   /* Set up general command field for callback. */
   scratch_cmd->cmd = ZMAPWINDOW_CMD_GETEVIDENCE ;
   scratch_cmd->evidence_cb = evidence_cb ;
   scratch_cmd->evidence_cb_data = evidence_cb_data ;
-  
+
   (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
 }
 
 
-/* 
+/*
  * \brief Save the feature name to be used when we create the real feature from the scratch feature.
  */
 void zmapWindowScratchSaveFeature(ZMapWindow window, GQuark feature_id)
@@ -394,7 +394,7 @@ void zmapWindowScratchSaveFeature(ZMapWindow window, GQuark feature_id)
 }
 
 
-/* 
+/*
  * \brief Save the featureset to be used when we create the real feature from the scratch feature.
  */
 void zmapWindowScratchSaveFeatureSet(ZMapWindow window, GQuark feature_set_id)
@@ -403,7 +403,7 @@ void zmapWindowScratchSaveFeatureSet(ZMapWindow window, GQuark feature_set_id)
 }
 
 
-/* 
+/*
  * \brief Reset the saved attributes
  */
 void zmapWindowScratchResetAttributes(ZMapWindow window)

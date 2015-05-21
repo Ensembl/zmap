@@ -96,7 +96,7 @@ typedef struct
 
 typedef gboolean (*OverLapListFunc)(GList *curr_features, GList *new_features) ;
 
-typedef GList* (*GListTraverseFunc)(GList *list) ;
+typedef GList* (*GListTraverseFunc)(GList *glist) ;
 
 typedef struct
 {

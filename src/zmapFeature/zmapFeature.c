@@ -34,7 +34,6 @@
 #include <ZMap/zmapUtilsDebug.h>
 
 #include <stdio.h>
-#include <strings.h>
 #include <string.h>
 #include <glib.h>
 #include <ZMap/zmapGLibUtils.h>

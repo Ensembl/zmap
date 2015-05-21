@@ -189,7 +189,7 @@ gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle)
  * to the end of the list... Maybe we need 2 functions as it is nice
  * to have the g_list_last encapsulated in reverse function...
  */
-void zMap_g_list_foreach_reverse(GList *list, GFunc func, gpointer user_data)
+void zMap_g_list_foreach_reverse(GList *glist, GFunc func, gpointer user_data)
 {
   glist = g_list_last(glist) ;
 
@@ -1307,17 +1307,17 @@ static void destroyList(gpointer data)
 
 static void mergehashCB(gpointer key, gpointer value, gpointer user_data)
 {
-  GHashTable *hash = (GHashTable *)user_data ;
+  GHashTable *ghash = (GHashTable *)user_data ;
 
   /* If the feature set id is not in the hash then copy its list of styles and add it to the
    * target hash. */
-  if (!(g_hash_table_lookup(hash, key)))
+  if (!(g_hash_table_lookup(ghash, key)))
     {
       GList *copy ;
 
       copy = g_list_copy((GList *)value) ;
 
-      zMap_g_hashlist_insert_list(hash, GPOINTER_TO_INT(key), copy, TRUE) ;
+      zMap_g_hashlist_insert_list(ghash, GPOINTER_TO_INT(key), copy, TRUE) ;
     }
 
 
