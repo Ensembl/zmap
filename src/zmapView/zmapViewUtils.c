@@ -670,11 +670,11 @@ gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list)
  *************************************************/
 GHashTable *zmapViewCWHHashCreate(void)
 {
-  GHashTable *hash = NULL;
+  GHashTable *ghash = NULL;
 
-  hash = g_hash_table_new_full(NULL, NULL, cwh_destroy_key, cwh_destroy_value);
+  ghash = g_hash_table_new_full(NULL, NULL, cwh_destroy_key, cwh_destroy_value);
 
-  return hash;
+  return ghash;
 }
 
 /*!
@@ -686,14 +686,14 @@ GHashTable *zmapViewCWHHashCreate(void)
  * @param               GList * of ZMapWindow
  * @return              void
  *************************************************/
-void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *glist)
+void zmapViewCWHSetList(GHashTable *ghash, ZMapFeatureContext context, GList *glist)
 {
   ContextDestroyList destroy_list ;
 
   destroy_list = g_new0(ContextDestroyListStruct, 1) ;
   destroy_list->window_list = glist ;
 
-  g_hash_table_insert(hash, context, destroy_list) ;
+  g_hash_table_insert(ghash, context, destroy_list) ;
 
   return ;
 }
@@ -707,13 +707,13 @@ void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *gli
  * @param                ZMapWindow to look up
  * @return               Boolean as to whether Window is last.
  *************************************************/
-gboolean zmapViewCWHIsLastWindow(GHashTable *hash, ZMapFeatureContext context, ZMapWindow window)
+gboolean zmapViewCWHIsLastWindow(GHashTable *ghash, ZMapFeatureContext context, ZMapWindow window)
 {
   ContextDestroyList destroy_list = NULL;
   gboolean last = FALSE;
   int before = 0, after = 0;
 
-  if ((destroy_list = (ContextDestroyList)(g_hash_table_lookup(hash, context))))
+  if ((destroy_list = (ContextDestroyList)(g_hash_table_lookup(ghash, context))))
     {
       if (!(destroy_list->window_list))
         {
@@ -755,19 +755,19 @@ gboolean zmapViewCWHIsLastWindow(GHashTable *hash, ZMapFeatureContext context, Z
  *                        the only one in the view i.e. == view->features
  * @return                Boolean to notify whether context was destroyed.
  */
-gboolean zmapViewCWHRemoveContextWindow(GHashTable *hash, ZMapFeatureContext *context,
+gboolean zmapViewCWHRemoveContextWindow(GHashTable *ghash, ZMapFeatureContext *context,
                                         ZMapWindow window, gboolean *is_only_context)
 {
   ContextDestroyList destroy_list = NULL;
   gboolean removed = FALSE, is_last = FALSE, absent_context = FALSE;
   int length;
 
-  if((destroy_list = (ContextDestroyList)g_hash_table_lookup(hash, *context)) &&
-     (is_last = zmapViewCWHIsLastWindow(hash, *context, window)))
+  if((destroy_list = (ContextDestroyList)g_hash_table_lookup(ghash, *context)) &&
+     (is_last = zmapViewCWHIsLastWindow(ghash, *context, window)))
     {
       if((length = g_list_length(destroy_list->window_list)) == 0)
         {
-          if((removed  = g_hash_table_remove(hash, *context)))
+          if((removed  = g_hash_table_remove(ghash, *context)))
             {
               *context = NULL;
             }
@@ -792,13 +792,13 @@ gboolean zmapViewCWHRemoveContextWindow(GHashTable *hash, ZMapFeatureContext *co
  * @param              GHashTable **
  * @return             void
  *************************************************/
-void zmapViewCWHDestroy(GHashTable **hash)
+void zmapViewCWHDestroy(GHashTable **ghash)
 {
-  GHashTable *cwh_hash = *hash;
+  GHashTable *cwh_hash = *ghash;
 
   g_hash_table_destroy(cwh_hash);
 
-  *hash = NULL;
+  *ghash = NULL;
 
   return ;
 }

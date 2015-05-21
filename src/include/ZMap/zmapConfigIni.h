@@ -149,7 +149,7 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
 GHashTable * zmapConfigIniGetDefaultStyles(void);
 gboolean zMapConfigIniGetStylesFromFile(char *config_file,
 					char *styles_list, char *styles_file, GHashTable **styles_out, const char *buffer);
-GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash,GHashTable *columns);
+GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *ghash,GHashTable *columns);
 
 gboolean zMapConfigLegacyStyles(char *config_file) ;
 

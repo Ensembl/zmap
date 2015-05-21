@@ -200,7 +200,7 @@ typedef struct FindStylesStructType
 
 static void getIniData(ZMapView view, char *config_str, GList *sources) ;
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets) ;
-static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark featurequark);
+static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *ghash,GQuark featurequark);
 static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout) ;
 static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data) ;
 static void destroyZMapView(ZMapView *zmap) ;
@@ -1963,11 +1963,11 @@ static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList
 // create a hash table of feature set names and thier sources
 static GHashTable *zmapViewGetFeatureSourceHash(GList *sources)
 {
-  GHashTable *hash = NULL;
+  GHashTable *ghash = NULL;
   ZMapConfigSource src;
   gchar **features,**feats;
 
-  hash = g_hash_table_new(NULL,NULL);
+  ghash = g_hash_table_new(NULL,NULL);
 
   // for each source extract featuresets and add a hash to the source
   for(;sources; sources = g_list_next(sources))
@@ -1992,28 +1992,28 @@ static GHashTable *zmapViewGetFeatureSourceHash(GList *sources)
                   continue;
 
             /* add the user visible version */
-            g_hash_table_insert(hash,GUINT_TO_POINTER(g_quark_from_string(feature)),(gpointer) src);
+            g_hash_table_insert(ghash,GUINT_TO_POINTER(g_quark_from_string(feature)),(gpointer) src);
 
             /* add a cononical version */
             q =  zMapFeatureSetCreateID(feature);
 
             if (q != g_quark_from_string(feature))
-              g_hash_table_insert(hash,GUINT_TO_POINTER(q), (gpointer) src);
+              g_hash_table_insert(ghash,GUINT_TO_POINTER(q), (gpointer) src);
           }
         }
 
       g_strfreev(features);
     }
 
-  return(hash);
+  return(ghash);
 }
 
 
-ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash, GQuark featurequark)
+ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *ghash, GQuark featurequark)
 {
   ZMapConfigSource config_source ;
 
-  config_source = (ZMapConfigSource)g_hash_table_lookup(hash, GUINT_TO_POINTER(featurequark)) ;
+  config_source = (ZMapConfigSource)g_hash_table_lookup(ghash, GUINT_TO_POINTER(featurequark)) ;
 
   return config_source ;
 }
@@ -2038,7 +2038,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
                           gboolean group_flag, gboolean make_new_connection, gboolean terminate)
 {
   GList * sources = NULL;
-  GHashTable *hash = NULL;
+  GHashTable *ghash = NULL;
   int req_start,req_end;
   gboolean requested = FALSE;
   static gboolean debug_sources = FALSE ;
@@ -2077,7 +2077,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
      /* mh17: this is tedious to do for each request esp on startup */
       sources = zmapViewGetIniSources(view->view_sequence->config_file, NULL, NULL) ;
-      hash = zmapViewGetFeatureSourceHash(sources);
+      ghash = zmapViewGetFeatureSourceHash(sources);
 
       for ( ; req_sources ; req_sources = g_list_next(req_sources))
         {
@@ -2094,7 +2094,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
           zMapDebugPrint(debug_sources, "feature set unique quark (%d) is: %s", unique_id, g_quark_to_string(unique_id)) ;
 
-          server = zmapViewGetSourceFromFeatureset(hash, unique_id) ;
+          server = zmapViewGetSourceFromFeatureset(ghash, unique_id) ;
 
           if (!server && view->context_map.featureset_2_column)
             {
@@ -2109,7 +2109,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
                 {
                   featureset = GFFset->column_id;
-                  server = zmapViewGetSourceFromFeatureset(hash,featureset);
+                  server = zmapViewGetSourceFromFeatureset(ghash,featureset);
                 }
             }
 
@@ -2138,7 +2138,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
                     {
                       fset = GPOINTER_TO_UINT(req_src->data);
                       //            zMapLogWarning("add %s",g_quark_to_string(fset));
-                      fset_server = zmapViewGetSourceFromFeatureset(hash,fset);
+                      fset_server = zmapViewGetSourceFromFeatureset(ghash,fset);
 
                       if (!fset_server && view->context_map.featureset_2_column)
                         {
@@ -2148,7 +2148,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
                           if (GFFset)
                             {
                               fset = GFFset->column_id;
-                              fset_server = zmapViewGetSourceFromFeatureset(hash,fset);
+                              fset_server = zmapViewGetSourceFromFeatureset(ghash,fset);
                               //                      zMapLogWarning("translate to  %s",g_quark_to_string(fset));
                             }
                         }
@@ -2265,8 +2265,8 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   if (sources)
     zMapConfigSourcesFreeList(sources);
 
-  if (hash)
-    g_hash_table_destroy(hash);
+  if (ghash)
+    g_hash_table_destroy(ghash);
 
   return ;
 }
@@ -2892,10 +2892,10 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 {
   ZMapFeatureColumn pa,pb;
-  GHashTable *hash = (GHashTable *) user_data;
+  GHashTable *ghash = (GHashTable *) user_data;
 
-  pa = (ZMapFeatureColumn)g_hash_table_lookup(hash,a);
-  pb = (ZMapFeatureColumn)g_hash_table_lookup(hash,b);
+  pa = (ZMapFeatureColumn)g_hash_table_lookup(ghash,a);
+  pb = (ZMapFeatureColumn)g_hash_table_lookup(ghash,b);
   if(pa && pb)
     {
       if(pa->order < pb->order)
@@ -6548,7 +6548,7 @@ static void addPredefined(GHashTable **styles_out, GHashTable **column_2_styles_
 static void styleCB(gpointer key, gpointer data, gpointer user_data)
 {
   GQuark key_id = GPOINTER_TO_UINT(key);
-  GHashTable *hash = (GHashTable *)user_data ;
+  GHashTable *ghash = (GHashTable *)user_data ;
   GQuark feature_set_id, feature_set_name_id;
 
   /* We _must_ canonicalise here. */
@@ -6556,7 +6556,7 @@ static void styleCB(gpointer key, gpointer data, gpointer user_data)
 
   feature_set_id = zMapStyleCreateID((char *)g_quark_to_string(feature_set_name_id)) ;
 
-  zMap_g_hashlist_insert(hash,
+  zMap_g_hashlist_insert(ghash,
                          feature_set_id,
                          GUINT_TO_POINTER(feature_set_id)) ;
 

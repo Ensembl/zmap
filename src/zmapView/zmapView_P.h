@@ -450,11 +450,11 @@ gboolean zmapViewPassCommandToAllWindows(ZMapView view, gpointer user_data) ;
 
 /* Context Window Hash (CWH) for the correct timing of the call to zMapFeatureContextDestroy */
 GHashTable *zmapViewCWHHashCreate(void);
-void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *glist);
-gboolean zmapViewCWHIsLastWindow(GHashTable *hash, ZMapFeatureContext context, ZMapWindow window);
+void zmapViewCWHSetList(GHashTable *ghash, ZMapFeatureContext context, GList *glist);
+gboolean zmapViewCWHIsLastWindow(GHashTable *ghash, ZMapFeatureContext context, ZMapWindow window);
 gboolean zmapViewCWHRemoveContextWindow(GHashTable *table, ZMapFeatureContext *context,
                                         ZMapWindow window, gboolean *is_only_context);
-void zmapViewCWHDestroy(GHashTable **hash);
+void zmapViewCWHDestroy(GHashTable **ghash);
 
 void zmapViewSessionAddServer(ZMapViewSessionServer session_data, ZMapURL url, char *format) ;
 void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServerReqGetServerInfo session) ;

@@ -693,7 +693,7 @@ GList *zMapConfigString2QuarkIDList(char *string_list)
  * and if this is aditional to that already configured it's added
  */
 
-GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHashTable *hash, GHashTable *columns)
+GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHashTable *ghash, GHashTable *columns)
 {
   GKeyFile *gkf;
   gchar ** keys,**freethis;
@@ -706,7 +706,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
   ZMapFeatureColumn f_col;
   int n = g_hash_table_size(columns);
 
-  zMapReturnValIfFail(context, hash) ;
+  zMapReturnValIfFail(context, ghash) ;
 
   if (zMapConfigIniHasStanza(context->config,ZMAPSTANZA_COLUMN_CONFIG,&gkf))
     {
@@ -744,7 +744,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
 #if MH17_USE_COLUMNS_HASH
           char *desc;
           /* add self ref to allow column lookup */
-          GFFset = g_hash_table_lookup(hash,GUINT_TO_POINTER(column_id));
+          GFFset = g_hash_table_lookup(ghash,GUINT_TO_POINTER(column_id));
           if(!GFFset)
             GFFset = g_new0(ZMapFeatureSetDescStruct,1);
 
@@ -755,7 +755,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
           /* add description if present */
           desc = normalkey;
           GFFset->feature_set_text = g_strdup(desc);
-          g_hash_table_replace(hash,GUINT_TO_POINTER(column_id),GFFset);
+          g_hash_table_replace(ghash,GUINT_TO_POINTER(column_id),GFFset);
 #endif
           sources = zMapConfigString2QuarkList(names,FALSE);
 
@@ -767,7 +767,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
               /* get featureset if present */
               GQuark key = zMapFeatureSetCreateID((char *)
                   g_quark_to_string(GPOINTER_TO_UINT(sources->data)));
-              GFFset = (ZMapFeatureSetDesc)g_hash_table_lookup(hash,GUINT_TO_POINTER(key));
+              GFFset = (ZMapFeatureSetDesc)g_hash_table_lookup(ghash,GUINT_TO_POINTER(key));
 
               if (!GFFset)
                 GFFset = g_new0(ZMapFeatureSetDescStruct,1);
@@ -777,7 +777,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
               /*zMapLogWarning("get f2c: set col ID %s",g_quark_to_string(GFFset->column_ID)); */
               GFFset->feature_src_ID = GPOINTER_TO_UINT(sources->data);    /* display name */
 
-              g_hash_table_replace(hash,GUINT_TO_POINTER(key),GFFset);
+              g_hash_table_replace(ghash,GUINT_TO_POINTER(key),GFFset);
 
               /* construct reverse mapping from column to featureset */
               if (!g_list_find(f_col->featuresets_unique_ids,GUINT_TO_POINTER(key)))
@@ -794,7 +794,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
     }
 
 
-  return hash ;
+  return ghash ;
 }
 
 
@@ -899,13 +899,13 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
   GList *columns = NULL,*col;
   gchar *colstr;
   ZMapFeatureColumn f_col;
-  GHashTable *hash = NULL;
+  GHashTable *ghash = NULL;
   GHashTable *col_desc;
   char *desc;
 
-  zMapReturnValIfFail(context, hash) ;
+  zMapReturnValIfFail(context, ghash) ;
 
-  hash = g_hash_table_new(NULL,NULL);
+  ghash = g_hash_table_new(NULL,NULL);
 
   // nb there is a small memory leak if we config description for non-existant columns
   col_desc   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG,QQ_STRING);
@@ -928,7 +928,7 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
   /* Add the hard-coded strand-separator column at the start of the list */
   col = g_list_prepend(columns, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
 
-  /* Loop through the list and create the column struct, and add it to the hash table */
+  /* Loop through the list and create the column struct, and add it to the ghash table */
   for(; col;col = col->next)
     {
       f_col = g_new0(ZMapFeatureColumnStruct,1);
@@ -943,13 +943,13 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
 
       f_col->order = zMapFeatureColumnOrderNext() ;
 
-      g_hash_table_insert(hash,GUINT_TO_POINTER(f_col->unique_id),f_col);
+      g_hash_table_insert(ghash,GUINT_TO_POINTER(f_col->unique_id),f_col);
     }
 
   if(col_desc)
     g_hash_table_destroy(col_desc);
 
-  return(hash);
+  return(ghash);
 }
 
 
@@ -967,15 +967,15 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
 // how: string for throwaway values, or styleId or quark
 GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context, const char *stanza, int how)
 {
-  GHashTable *hash = NULL;
+  GHashTable *ghash = NULL;
   GKeyFile *gkf;
   gchar ** keys = NULL;
   gsize len;
   gchar *value,*strval;
 
-  zMapReturnValIfFail(context, hash) ;
+  zMapReturnValIfFail(context, ghash) ;
 
-  hash = g_hash_table_new(NULL,NULL);
+  ghash = g_hash_table_new(NULL,NULL);
 
   if(zMapConfigIniHasStanza(context->config,stanza,&gkf))
     {
@@ -1001,13 +1001,13 @@ GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context, const char *sta
                 gval = GUINT_TO_POINTER(zMapStyleCreateID(strval));
 
               kval = GUINT_TO_POINTER(zMapFeatureSetCreateID(*keys));     // keys are fully normalised
-              g_hash_table_insert(hash,kval,gval);
+              g_hash_table_insert(ghash,kval,gval);
               g_free(value);
             }
         }
     }
 
-  return(hash);
+  return(ghash);
 }
 
 
@@ -1029,7 +1029,7 @@ GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context, const char *sta
 /* (there are limits to honw many colours we can use and GArrays are tedious) */
 GHashTable *zMapConfigIniGetHeatmaps(ZMapConfigIniContext context)
 {
-  GHashTable *hash = NULL;
+  GHashTable *ghash = NULL;
   GKeyFile *gkf;
   gchar ** keys = NULL;
   gsize len;
@@ -1038,11 +1038,11 @@ GHashTable *zMapConfigIniGetHeatmaps(ZMapConfigIniContext context)
   GArray *col_array;
   GdkColor col;
 
-  zMapReturnValIfFail(context, hash ) ;
+  zMapReturnValIfFail(context, ghash ) ;
 
   if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_HEATMAP_CONFIG,&gkf))
     {
-      hash = g_hash_table_new(NULL,NULL);
+      ghash = g_hash_table_new(NULL,NULL);
 
       keys = g_key_file_get_keys(gkf,ZMAPSTANZA_HEATMAP_CONFIG,&len,NULL);
 
@@ -1068,13 +1068,13 @@ GHashTable *zMapConfigIniGetHeatmaps(ZMapConfigIniContext context)
               g_array_append_val(col_array,col);
             }
 
-          g_hash_table_insert(hash,GUINT_TO_POINTER(name),col_array);
+          g_hash_table_insert(ghash,GUINT_TO_POINTER(name),col_array);
 
           g_free(colours);
         }
     }
 
-  return(hash);
+  return(ghash);
 }
 
 
@@ -1179,7 +1179,7 @@ static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
 
 static GHashTable *configIniGetGlyph(ZMapConfigIniContext context, GKeyFile *extra_styles_keyfile)
 {
-  GHashTable *hash = NULL;
+  GHashTable *ghash = NULL;
   GKeyFile *gkf;
   gchar ** keys = NULL;
   gsize len;
@@ -1190,7 +1190,7 @@ static GHashTable *configIniGetGlyph(ZMapConfigIniContext context, GKeyFile *ext
   if (((gkf = extra_styles_keyfile) && g_key_file_has_group(gkf, ZMAPSTANZA_GLYPH_CONFIG))
       || (zMapConfigIniHasStanza(context->config, ZMAPSTANZA_GLYPH_CONFIG, &gkf)))
     {
-      hash = g_hash_table_new(NULL,NULL);
+      ghash = g_hash_table_new(NULL,NULL);
 
       keys = g_key_file_get_keys(gkf,ZMAPSTANZA_GLYPH_CONFIG,&len,NULL);
 
@@ -1209,13 +1209,13 @@ static GHashTable *configIniGetGlyph(ZMapConfigIniContext context, GKeyFile *ext
             }
           else
             {
-              g_hash_table_insert(hash,GUINT_TO_POINTER(q),glyph_shape);
+              g_hash_table_insert(ghash,GUINT_TO_POINTER(q),glyph_shape);
             }
           g_free(shape);
         }
     }
 
-  return(hash);
+  return(ghash);
 }
 
 

@@ -120,8 +120,8 @@ static gboolean factoryItemHandler(FooCanvasItem       *new_item,
 
 
 static GHashTable *zmapWindowNavigatorLDHCreate(void);
-static LocusEntry zmapWindowNavigatorLDHFind(GHashTable *hash, GQuark key);
-static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
+static LocusEntry zmapWindowNavigatorLDHFind(GHashTable *ghash, GQuark key);
+static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *ghash,
                                                ZMapFeature feature);
 static void zmapWindowNavigatorLDHDestroy(GHashTable **destroy);
 static void destroyLocusEntry(gpointer data);
@@ -1410,28 +1410,28 @@ static gboolean variantFeature(ZMapFeature feature, ZMapWindowNavigator navigate
  */
 static GHashTable *zmapWindowNavigatorLDHCreate(void)
 {
-  GHashTable *hash = NULL;
+  GHashTable *ghash = NULL;
 
-  hash = g_hash_table_new_full(NULL, NULL, NULL, destroyLocusEntry);
+  ghash = g_hash_table_new_full(NULL, NULL, NULL, destroyLocusEntry);
 
-  return hash;
+  return ghash;
 }
 
 /*
  * \brief finds the entry.
  */
-static LocusEntry zmapWindowNavigatorLDHFind(GHashTable *hash, GQuark key)
+static LocusEntry zmapWindowNavigatorLDHFind(GHashTable *ghash, GQuark key)
 {
   LocusEntry hash_entry = NULL;
 
-  hash_entry = (LocusEntry)g_hash_table_lookup(hash, GUINT_TO_POINTER(key));
+  hash_entry = (LocusEntry)g_hash_table_lookup(ghash, GUINT_TO_POINTER(key));
 
   return hash_entry;
 }
 /*
  * \brief creates a new entry from feature, start and end (scaled) and returns it.
  */
-static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
+static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *ghash,
                                                ZMapFeature feature)
 {
   LocusEntry hash_entry = NULL;
@@ -1442,7 +1442,7 @@ static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
       hash_entry->end     = feature->x2;
       hash_entry->strand  = feature->strand;
       hash_entry->feature = feature; /* So we can find the item */
-      g_hash_table_insert(hash,
+      g_hash_table_insert(ghash,
                           GUINT_TO_POINTER(feature->original_id),
                           (gpointer)hash_entry);
     }

@@ -83,15 +83,15 @@
 static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key, gpointer data, gpointer user_data,
 							     char **error_out);
 static int makeConcensusSequence(ZMapFeature composite) ;
-static void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFeature feature,
+static void addCompositeFeature(GHashTable *ghash, ZMapFeature composite, ZMapFeature feature,
 				int y1, int y2, int len) ;
-static GList *compressStrand(GList *features, GHashTable *hash, gboolean squash, gboolean collapse, int join);
+static GList *compressStrand(GList *features, GHashTable *ghash, gboolean squash, gboolean collapse, int join);
 static gboolean canSquash(ZMapFeature first, ZMapFeature current);
 static gint featureGapCompare(gconstpointer a, gconstpointer b) ;
 static int makeGaps(ZMapFeature composite, ZMapFeature feature,
 		    GList **splice_list, double y1, double y2, double edge1, double edge2);
-static GList *squashStrand(GList *fl, GHashTable *hash,  GList **splice_list);
-static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list, gboolean collapse, int join);
+static GList *squashStrand(GList *fl, GHashTable *ghash,  GList **splice_list);
+static GList *collapseJoinStrand(GList *fl, GHashTable *ghash, GList *splice_list, gboolean collapse, int join);
 static void storeSpliceCoords(ZMapFeature feature, GList **splice_list);
 static int splice_sort(gconstpointer ga,gconstpointer gb) ;
 static void dumpFeaturesCB(gpointer data, gpointer user_data_unused) ;
@@ -242,7 +242,7 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
  */
 
 
-static GList *compressStrand(GList *features, GHashTable *hash, gboolean squash, gboolean collapse, int join)
+static GList *compressStrand(GList *features, GHashTable *ghash, gboolean squash, gboolean collapse, int join)
 {
   GList  *splice_list = NULL;	/* sorted list of splice coordinates */
 
@@ -253,7 +253,7 @@ static GList *compressStrand(GList *features, GHashTable *hash, gboolean squash,
    */
 
   if (features && squash)
-    features = squashStrand(features, hash, &splice_list) ;
+    features = squashStrand(features, ghash, &splice_list) ;
 
 
   /* debug...check the sorting..... */
@@ -262,7 +262,7 @@ static GList *compressStrand(GList *features, GHashTable *hash, gboolean squash,
 
 
   if(features && (collapse || join))
-    features = collapseJoinStrand(features, hash, splice_list, collapse, join);
+    features = collapseJoinStrand(features, ghash, splice_list, collapse, join);
 
   if(splice_list)
     g_list_free(splice_list);
@@ -278,7 +278,7 @@ static GList *compressStrand(GList *features, GHashTable *hash, gboolean squash,
  * this works on gapped features which appear first
  * we break if the strand changes or we get an ungapped feature or the list ends
  */
-static GList *squashStrand(GList *fl, GHashTable *hash,  GList **splice_list)
+static GList *squashStrand(GList *fl, GHashTable *ghash,  GList **splice_list)
 {
   double y1,y2,edge1,edge2;	/* boundaries of visible squashed feature */
   ZMapFeature composite = NULL;
@@ -401,7 +401,7 @@ static GList *squashStrand(GList *fl, GHashTable *hash,  GList **splice_list)
 			     g_quark_to_string(feature->original_id),
 			     feature->x1, feature->x2, y1, y2) ;
 
-	      addCompositeFeature(hash, composite, feature, y1, y2, len);
+	      addCompositeFeature(ghash, composite, feature, y1, y2, len);
 	    }
 	  else
 	    {
@@ -497,7 +497,7 @@ gboolean canSquash(ZMapFeature first, ZMapFeature current)
  */
 
 
-static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list, gboolean collapse, int join)
+static GList *collapseJoinStrand(GList *fl, GHashTable *ghash, GList *splice_list, gboolean collapse, int join)
 {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -769,7 +769,7 @@ static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list
 			     g_quark_to_string(feature->original_id),
 			     feature->x1, feature->x2, y1, y2) ;
 
-	      addCompositeFeature(hash, composite, feature, y1, y2, y2 - y1);
+	      addCompositeFeature(ghash, composite, feature, y1, y2, y2 - y1);
 	    }
 
 	  /* HOW EXACTLY DOES THIS FIT WITH THE STATEMENT ABOVE ???? */
@@ -792,7 +792,7 @@ static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list
 
 
 /* add any kind of compressed feature to the set's hash table */
-static void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFeature feature, int y1, int y2, int len)
+static void addCompositeFeature(GHashTable *ghash, ZMapFeature composite, ZMapFeature feature, int y1, int y2, int len)
 
 {
   char buf[256];
@@ -802,7 +802,7 @@ static void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFea
   sprintf(buf,"Composite_%d_reads",composite->population);
   composite->original_id = g_quark_from_string(buf);
 
-  g_hash_table_insert(hash, GUINT_TO_POINTER(composite->unique_id), composite);
+  g_hash_table_insert(ghash, GUINT_TO_POINTER(composite->unique_id), composite);
 
 
   composite->x1 = y1;

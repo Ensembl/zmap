@@ -143,7 +143,7 @@ static void setFilterDefaults(SearchData search_data) ;
 static void addToComboBoxText(gpointer list_data, gpointer combo_data);
 static void addToComboBoxQuark(gpointer list_data, gpointer combo_data);
 static GtkWidget *createPopulateComboBox(GList *glist, gboolean quarks);
-static void clearPopulateComboBox(GtkWidget *combo, GList *list,int len);
+static void clearPopulateComboBox(GtkWidget *combo, GList *glist,int len);
 static void fetchAllComboLists(ZMapFeatureAny feature_any,
                                GList **align_list_out,
                                GList **block_list_out,
