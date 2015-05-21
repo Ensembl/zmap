@@ -13,7 +13,7 @@ AC_INIT([ZMap], [VERSION_NUMBER], [zmap@sanger.ac.uk], [zmap], [http://www.sange
 AC_CONFIG_AUX_DIR([config])
 
 # check we can find the source
-AC_CONFIG_SRCDIR([zmapApp/zmapAppmain_c.c])
+AC_CONFIG_SRCDIR([zmapApp/zmapAppmain_c.cc])
 AC_CONFIG_HEADERS([config.h])
 
 # try it....
@@ -213,8 +213,10 @@ AC_PROG_LIBTOOL
 
 
 
+# Tell make to use the ustar tar format as this allows file paths longer than 99 chars.
+#
+AM_INIT_AUTOMAKE([tar-ustar])
 
-AM_INIT_AUTOMAKE
 
 #AC_LANG(C)
 #AC_LANG([C++])
