@@ -103,7 +103,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   const char *text;
   GtkWidget *toplevel, *top_vbox, *vbox, *hbox, *frame, *button, *label;
   GdkColor colour = {0} ;
-  GdkColor *fill = &colour, *border = &colour;
+  GdkColor *fill_col = &colour, *border_col = &colour;
 
   if(zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature))
     return;
@@ -164,7 +164,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 
 
   /* Make colour buttons. */
-  zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
+  zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
 
 
   frame = gtk_frame_new("Set Colours:") ;
@@ -175,7 +175,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   vbox = gtk_vbox_new(FALSE, 0) ;                /* vbox for rows of colours */
   gtk_container_add(GTK_CONTAINER(frame), vbox) ;
 
-  hbox = gtk_hbox_new(FALSE, 0) ;                /* hbox for fill / border */
+  hbox = gtk_hbox_new(FALSE, 0) ;                /* hbox for fill_col / border_col */
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
   gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING) ;
   gtk_container_set_border_width(GTK_CONTAINER(hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
@@ -185,7 +185,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
   my_data->fill_widget = button = gtk_color_button_new() ;
-  gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill) ;
+  gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill_col) ;
   g_signal_connect(G_OBJECT(button), "color-set",
                    G_CALLBACK(colourSetCB), my_data) ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
@@ -195,19 +195,19 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
   my_data->border_widget = button = gtk_color_button_new() ;
-  gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border) ;
+  gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border_col) ;
   g_signal_connect(G_OBJECT(button), "color-set",
                    G_CALLBACK(colourSetCB), my_data) ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
 
   if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)        /* add CDS colours */
     {
-      zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
+      zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
     }
 
   /* must create these anyway */
   {
-    my_data->cds = hbox = gtk_hbox_new(FALSE, 0) ;                /* hbox for fill / border */
+    my_data->cds = hbox = gtk_hbox_new(FALSE, 0) ;                /* hbox for fill_col / border_col */
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
     gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING) ;
     gtk_container_set_border_width(GTK_CONTAINER(hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
@@ -217,7 +217,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
     gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
     my_data->cds_fill_widget = button = gtk_color_button_new() ;
-    gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill) ;
+    gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill_col) ;
     g_signal_connect(G_OBJECT(button), "color-set",
                      G_CALLBACK(colourSetCB), my_data) ;
     gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
@@ -227,7 +227,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
     gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
     my_data->cds_border_widget = button = gtk_color_button_new() ;
-    gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border) ;
+    gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border_col) ;
     g_signal_connect(G_OBJECT(button), "color-set",
                      G_CALLBACK(colourSetCB), my_data) ;
     gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
@@ -329,7 +329,7 @@ gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMa
         ZMapFeatureSet feature_set = (ZMapFeatureSet) feature->parent;
         ZMapFeatureTypeStyle style;
         GdkColor colour = {0} ;
-        GdkColor *fill = &colour, *border = &colour;
+        GdkColor *fill_col = &colour, *border_col = &colour;
 
         if(!my_data)
                 return FALSE;
@@ -353,17 +353,17 @@ gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMa
         gtk_label_set_text((GtkLabel *) my_data->featureset_name, g_quark_to_string(feature_set->original_id));
 
         /* Update the colour buttons. */
-        zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
+        zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
 
-      gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->fill_widget), fill) ;
-      gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->border_widget), border) ;
+      gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->fill_widget), fill_col) ;
+      gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->border_widget), border_col) ;
 
         if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
-                zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
+                zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
 
-                gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->cds_fill_widget), fill) ;
-                gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->cds_border_widget), border) ;
+                gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->cds_fill_widget), fill_col) ;
+                gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->cds_border_widget), border_col) ;
                 gtk_widget_show_all(my_data->cds);
         }
         else

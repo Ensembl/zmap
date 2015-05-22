@@ -87,7 +87,7 @@ void zMapWindowCanvasBasicInit(void)
 static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                               GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  gulong fill,outline ;
+  gulong ufill,outline ;
   int colours_set = 0, fill_set = 0, outline_set = 0 ;
   double x1 = 0.0, x2 = 0.0 ;
   gboolean draw_truncation_glyphs = TRUE, truncated_start = FALSE, truncated_end = FALSE ;
@@ -100,7 +100,7 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
    * but they are cached by the calling function
    * and also the window focus code
    */
-  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline) ;
+  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &ufill, &outline) ;
   fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL ;
   outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE ;
 
@@ -108,9 +108,9 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
     {
       if((zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
         {
-          fill = (fill << 8) | 0xff;	/* convert back to RGBA */
-          fill = foo_canvas_get_color_pixel(foo->canvas,
-                                            zMapWindowCanvasFeatureGetHeatColour(0xffffffff,fill,feature->score));
+          ufill = (ufill << 8) | 0xff;	/* convert back to RGBA */
+          ufill = foo_canvas_get_color_pixel(foo->canvas,
+                                            zMapWindowCanvasFeatureGetHeatColour(0xffffffff,ufill,feature->score));
         }
     }
 
@@ -136,7 +136,7 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
   if (zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2))
     {
       zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, feature->y1, feature->y2, drawable,
-                                       fill_set, outline_set, fill, outline) ;
+                                       fill_set, outline_set, ufill, outline) ;
     }
 
 

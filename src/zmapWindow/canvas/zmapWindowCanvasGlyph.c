@@ -88,7 +88,7 @@ static void setGlyphCoords(ZMapWindowCanvasGlyph glyph, GlyphAnyColumnData any_c
                            ZMapFeatureTypeStyle style, double score, double width) ;
 static void glyph_to_canvas(GdkPoint *points, GdkPoint *coords, int count,int cx, int cy);
 static void glyphDraw(ZMapWindowFeaturesetItem featureset,
-                      ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable, gboolean fill);
+                      ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable, gboolean fill_flag);
 static void paintGlyph(ZMapWindowFeaturesetItem featureset,
                        ZMapWindowCanvasFeature feature,
                        ZMapWindowCanvasGlyph glyph, double y1, GdkDrawable *drawable);
@@ -992,7 +992,7 @@ static gboolean setGlyph(FooCanvasItem *foo, ZMapWindowCanvasGlyph glyph,
   ZMapStyleGlyphStrand strand = ZMAPSTYLE_GLYPH_STRAND_INVALID;
   ZMapStyleGlyphAlign align;
   double offset = 0.0, origin = 0.0;
-  GdkColor *draw = NULL, *fill = NULL, *border = NULL;
+  GdkColor *draw_col = NULL, *fill_col = NULL, *border_col = NULL;
 
 
   score_mode = zMapStyleGetScoreMode(style);
@@ -1006,29 +1006,29 @@ static gboolean setGlyph(FooCanvasItem *foo, ZMapWindowCanvasGlyph glyph,
   if (glyph->sub_feature)		/* is sub-feature: use glyph colours not feature */
     {
       if(score_mode == ZMAPSTYLE_SCORE_ALT && score < zMapStyleGlyphThreshold(style))
-	zMapStyleGetColours(style, STYLE_PROP_GLYPH_ALT_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &border);
+	zMapStyleGetColours(style, STYLE_PROP_GLYPH_ALT_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, &draw_col, &border_col);
       else
-	zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &border);
+	zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, &draw_col, &border_col);
 
       glyph->border_set = FALSE;
 
-      if(border)
+      if(border_col)
 	{
 	  gulong pixel;
 
 	  glyph->border_set = TRUE;
-	  pixel = zMap_gdk_color_to_rgba(border);
+	  pixel = zMap_gdk_color_to_rgba(border_col);
 	  glyph->border_pixel = foo_canvas_get_color_pixel(foo->canvas, pixel);
 	}
 
       glyph->fill_set = FALSE;
 
-      if (fill)
+      if (fill_col)
 	{
 	  gulong pixel;
 
 	  glyph->fill_set = TRUE;
-	  pixel = zMap_gdk_color_to_rgba(fill);
+	  pixel = zMap_gdk_color_to_rgba(fill_col);
 	  glyph->fill_pixel = foo_canvas_get_color_pixel(foo->canvas, pixel);
 	}
 
@@ -1381,21 +1381,21 @@ static void paintGlyph(ZMapWindowFeaturesetItem featureset,
                        double y1, GdkDrawable *drawable)
 {
   GlyphAnyColumnData any_glyph_col = (GlyphAnyColumnData)(featureset->per_column_data) ;
-  gulong fill,outline ;
+  gulong ufill,outline ;
   GdkColor c ;
   int colours_set, fill_set = 0, outline_set = 0 ;
 
   setGlyphCanvasCoords(featureset, canvas_feature, glyph, y1) ;
 
   /* we have pre-calculated pixel colours */
-  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, canvas_feature, &fill, &outline) ;
+  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, canvas_feature, &ufill, &outline) ;
   fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL ;
   outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE ;
 
   if (glyph->use_glyph_colours)
     {
       fill_set = glyph->fill_set;
-      fill = glyph->fill_pixel;
+      ufill = glyph->fill_pixel;
 
       outline_set = glyph->border_set;
       outline = glyph->border_pixel;
@@ -1408,7 +1408,7 @@ static void paintGlyph(ZMapWindowFeaturesetItem featureset,
 
   if (fill_set)
     {
-      c.pixel = fill;
+      c.pixel = ufill;
       gdk_gc_set_foreground (featureset->gc, &c);
       glyphDraw(featureset, glyph, drawable, TRUE);
     }
@@ -1442,7 +1442,7 @@ static void glyph_to_canvas(GdkPoint *points, GdkPoint *coords, int count, int c
 
 
 static void glyphDraw(ZMapWindowFeaturesetItem featureset,
-                      ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable, gboolean fill)
+                      ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable, gboolean fill_flag)
 {
   GlyphAnyColumnData any_glyph_col = (GlyphAnyColumnData)(featureset->per_column_data) ;
 
@@ -1460,7 +1460,7 @@ static void glyphDraw(ZMapWindowFeaturesetItem featureset,
       status = zMapWindowCanvasFeaturesetGetColours(featureset,
 						    (ZMapWindowCanvasFeature)glyph,
 						    &fill_pixel, &outline_pixel) ;
-      if (fill)
+      if (fill_flag)
 	{
 	  /* For GF splices only do this when focussed */
 	  if (glyph->feature.flags & WINDOW_FOCUS_GROUP_FOCUSSED)
@@ -1559,7 +1559,7 @@ static void glyphDraw(ZMapWindowFeaturesetItem featureset,
           }
 	case GLYPH_DRAW_POLYGON:
 	  {
-	    gdk_draw_polygon(drawable, featureset->gc, fill,  glyph->points, glyph->shape->n_coords);
+	    gdk_draw_polygon(drawable, featureset->gc, fill_flag,  glyph->points, glyph->shape->n_coords);
 
 	    break;
 	  }
@@ -1575,7 +1575,7 @@ static void glyphDraw(ZMapWindowFeaturesetItem featureset,
 	    a1 = (int) glyph->shape->coords[4] * 64;
 	    a2 = (int) glyph->shape->coords[5] * 64;
 
-	    gdk_draw_arc(drawable, featureset->gc, fill, (int) x1, (int) y1, (int) (x2 - x1), (int) (y2 - y1), a1,a2);
+	    gdk_draw_arc(drawable, featureset->gc, fill_flag, (int) x1, (int) y1, (int) (x2 - x1), (int) (y2 - y1), a1,a2);
 
             break;
 	  }

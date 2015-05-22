@@ -119,7 +119,7 @@ typedef enum
     STYLE_PROP_OFFSET,
 
 
-    /* 
+    /*
      * mode dependant data follows
      */
 
@@ -590,14 +590,14 @@ typedef struct ZMapStyleColourStructType
 {
   struct
   {
-    unsigned int draw : 1 ;
-    unsigned int fill : 1 ;
-    unsigned int border : 1 ;
+    unsigned int draw_col : 1 ;
+    unsigned int fill_col : 1 ;
+    unsigned int border_col : 1 ;
   } fields_set ;
 
-  GdkColor  draw ;                                  /* Overlaid on fill colour. */
-  GdkColor  fill ;                                  /* Fill/background colour. */
-  GdkColor  border ;                                /* Surround/line colour. */
+  GdkColor  draw_col ;                                  /* Overlaid on fill colour. */
+  GdkColor  fill_col ;                                  /* Fill/background colour. */
+  GdkColor  border_col ;                                /* Surround/line colour. */
 } ZMapStyleColourStruct, *ZMapStyleColour ;
 
 
@@ -672,7 +672,7 @@ typedef struct ZMapStyleGraphStructType
   double baseline ;					    /* zero level for graph.  */
   ZMapStyleScale scale ;				    /* log or linear scaling. */
 
-  gboolean fill ;					    /* Solid fill below line graph ? */
+  gboolean fill_flag ;					    /* Solid fill below line graph ? */
 
   int min_bin ;						    /* min size in pixels */
   int stagger ;
@@ -1168,13 +1168,13 @@ void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 
 
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
-			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
+			     GdkColor **fill_col, GdkColor **draw, GdkColor **border) ;
 gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
-			     GdkColor *fill, GdkColor *draw, GdkColor *border) ;
+			     GdkColor *fill_col, GdkColor *draw, GdkColor *border) ;
 gboolean zMapStyleSetColoursStr(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
-                                const char *fill, const char *draw, const char *border) ;
+                                const char *fill_col, const char *draw, const char *border) ;
 gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
-                                    GdkColor **fill, GdkColor **draw, GdkColor **border) ;
+                                    GdkColor **fill_col, GdkColor **draw, GdkColor **border) ;
 char *zMapStyleMakeColourString(const char *normal_fill, const char *normal_draw, const char *normal_border,
 				const char *selected_fill, const char *selected_draw, const char *selected_border) ;
 
@@ -1237,7 +1237,7 @@ gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 
 
 
-/* 
+/*
  * the trouble with all these macros is that they do not test the "is_set" flag.... which
  * is not very smart....
  */
@@ -1276,7 +1276,7 @@ gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 #define zMapStyleFilterTolerance(style) ((style)->col_filter_tolerance)
 
 //double zMapStyleBaseline(ZMapFeatureTypeStyle style) ;
-#define zMapStyleGraphFill(style)   ((style)->mode_data.graph.fill)
+#define zMapStyleGraphFill(style)   ((style)->mode_data.graph.fill_flag)
 
 #define zMapStyleBaseline(style)   ((style)->mode_data.graph.baseline)
 #define zMapStyleGraphMode(style)   ((style)->mode_data.graph.mode)

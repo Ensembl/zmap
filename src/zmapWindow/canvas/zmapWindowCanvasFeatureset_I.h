@@ -177,9 +177,9 @@ typedef struct ZMapWindowFeaturesetItemClassStructType
                                                                so multi-screen operation would need multiple values. */
 
   gboolean colour_alloc ;                                   /* TRUE => colour allocation worked. */
-  GdkColor fill ;                                           /* Fill/background colour. */
-  GdkColor draw ;                                           /* Overlaid on fill colour. */
-  GdkColor border ;                                         /* Surround/line colour. */
+  GdkColor fill_col ;                                           /* Fill/background colour. */
+  GdkColor draw_col ;                                           /* Overlaid on fill colour. */
+  GdkColor border_col ;                                         /* Surround/line colour. */
 
   /* Should we also have default select colours too ?? */
 

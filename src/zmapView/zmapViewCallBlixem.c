@@ -1104,9 +1104,9 @@ static void deleteBlixArgArray(char ***p_arg_array)
     }
 }
 
-static gboolean checkBlixArgNum(int count)
+static gboolean checkBlixArgNum(int icount)
 {
-  if (count >= BLX_ARGV_ARGC_MAX)
+  if (icount >= BLX_ARGV_ARGC_MAX)
     return FALSE ;
   else
     return TRUE ;
@@ -1121,82 +1121,82 @@ static gboolean checkBlixArgNum(int count)
 static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString)
 {
   gboolean status = FALSE ;
-  int count = 0 ;
+  int icount = 0 ;
 
   if (blixem_data && paramString)
     status = TRUE ;
 
   if (status)
     {
-      paramString[count] = g_strdup(blixem_data->script) ;
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup(blixem_data->script) ;
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
     }
 
   if (status && blixem_data->config_file )
     {
-      paramString[count] = g_strdup("-c");
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("-c");
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
 
       if (status)
         {
-          paramString[count] = g_strdup_printf("%s", blixem_data->config_file) ;
-          ++count ;
-          status = checkBlixArgNum(count) ;
+          paramString[icount] = g_strdup_printf("%s", blixem_data->config_file) ;
+          ++icount ;
+          status = checkBlixArgNum(icount) ;
         }
 
     }
   else if (status && blixem_data->netid && blixem_data->port )
     {
-      paramString[count] = g_strdup("--fetch-server");
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("--fetch-server");
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
 
       if (status)
         {
-          paramString[count] = g_strdup_printf("%s:%d", blixem_data->netid, blixem_data->port);
-          ++count ;
-          status = checkBlixArgNum(count) ;
+          paramString[icount] = g_strdup_printf("%s:%d", blixem_data->netid, blixem_data->port);
+          ++icount ;
+          status = checkBlixArgNum(icount) ;
         }
     }
 
   if (status && blixem_data->view->multi_screen)
     {
-      paramString[count] = g_strdup("--screen") ;
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("--screen") ;
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
 
       if (status)
         {
-          paramString[count] = g_strdup_printf("%d", blixem_data->view->blixem_screen) ;
-          ++count ;
-          status = checkBlixArgNum(count) ;
+          paramString[icount] = g_strdup_printf("%d", blixem_data->view->blixem_screen) ;
+          ++icount ;
+          status = checkBlixArgNum(icount) ;
         }
     }
 
   if ( status && !blixem_data->keep_tmpfiles  )
     {
-      paramString[count] = g_strdup("--remove-input-files") ;
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("--remove-input-files") ;
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
     }
 
 
   /* For testing purposes tell blixem to sleep on startup. */
   if (status && blixem_data->sleep_on_startup)
     {
-      paramString[count] = g_strdup("-w") ;
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("-w") ;
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
     }
 
   /* Should abbreviated window titles be turned on. */
   if (status && zMapGUIGetAbbrevTitlePrefix())
     {
-      paramString[count] = g_strdup("--abbrev-title-on") ;
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("--abbrev-title-on") ;
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
     }
 
   /* */
@@ -1208,15 +1208,15 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
       if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
         zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
-      paramString[count] = g_strdup("-s") ;
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("-s") ;
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
 
       if (status)
         {
-          paramString[count] = g_strdup_printf("%d", start) ;
-          ++count ;
-          status = checkBlixArgNum(count) ;
+          paramString[icount] = g_strdup_printf("%d", start) ;
+          ++icount ;
+          status = checkBlixArgNum(icount) ;
         }
 
     }
@@ -1227,15 +1227,15 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
 
       offset = tmp1 = blixem_data->offset ;
 
-      paramString[count] = g_strdup("-m") ;
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("-m") ;
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
 
       if (status)
         {
-          paramString[count] = g_strdup_printf("%d", offset) ;
-          ++count ;
-          status = checkBlixArgNum(count) ;
+          paramString[icount] = g_strdup_printf("%d", offset) ;
+          ++icount ;
+          status = checkBlixArgNum(icount) ;
         }
     }
 
@@ -1248,15 +1248,15 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
       if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
         zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
-      paramString[count] = g_strdup("-z") ;
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("-z") ;
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
 
       if (status)
         {
-          paramString[count] = g_strdup_printf("%d:%d", start, end) ;
-          ++count ;
-          status = checkBlixArgNum(count) ;
+          paramString[icount] = g_strdup_printf("%d:%d", start, end) ;
+          ++icount ;
+          status = checkBlixArgNum(icount) ;
         }
 
     }
@@ -1264,26 +1264,26 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
   /* Show whole blixem range ? */
   if (status && blixem_data->show_whole_range )
     {
-      paramString[count] = g_strdup("--zoom-whole") ;
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("--zoom-whole") ;
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
     }
 
   /* acedb users always like reverse strand to have same coords as forward strand but
    * with a '-' in front of the coord. */
   if (status && blixem_data->negate_coords)
     {
-      paramString[count] = g_strdup("-n") ;
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("-n") ;
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
     }
 
   /* Start with reverse strand showing. */
   if (status && blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     {
-      paramString[count] = g_strdup("-r") ;
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("-r") ;
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
     }
 
   /* type of alignment data, i.e. nucleotide or peptide. Compulsory. Note that type
@@ -1291,65 +1291,65 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
    * annotators for just looking at transcripts/dna. */
   if (status)
     {
-      paramString[count] = g_strdup("-t");
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("-t");
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
 
       if (status)
         {
           if (blixem_data->align_type == ZMAPHOMOL_NONE || blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
             {
-              paramString[count] = g_strdup_printf("%c", 'N') ;
+              paramString[icount] = g_strdup_printf("%c", 'N') ;
             }
           else
             {
-              paramString[count] = g_strdup_printf("%c", 'P') ;
+              paramString[icount] = g_strdup_printf("%c", 'P') ;
             }
-          ++count ;
-          status = checkBlixArgNum(count) ;
+          ++icount ;
+          status = checkBlixArgNum(icount) ;
         }
 
     }
 
   if (status)
     {
-      paramString[count] = g_strdup_printf("%s", blixem_data->fastAFile);
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup_printf("%s", blixem_data->fastAFile);
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
 
       if (status)
         {
-          paramString[count] = g_strdup_printf("%s", blixem_data->gff_file) ;
-          ++count ;
-          status = checkBlixArgNum(count) ;
+          paramString[icount] = g_strdup_printf("%s", blixem_data->gff_file) ;
+          ++icount ;
+          status = checkBlixArgNum(icount) ;
         }
     }
 
   if (status && blixem_data->sequence_map->dataset )
     {
-      paramString[count] = g_strdup_printf("--dataset=%s", blixem_data->sequence_map->dataset);
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup_printf("--dataset=%s", blixem_data->sequence_map->dataset);
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
     }
 
   if (status && ((blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ) || blixem_data->isSeq) )
     {
-      paramString[count] = g_strdup("--show-coverage");
-      ++count ;
-      status = checkBlixArgNum(count) ;
+      paramString[icount] = g_strdup("--show-coverage");
+      ++icount ;
+      status = checkBlixArgNum(icount) ;
 
       if (status)
         {
-          paramString[count] = g_strdup("--squash-matches");
-          ++count ;
-          status = checkBlixArgNum(count) ;
+          paramString[icount] = g_strdup("--squash-matches");
+          ++icount ;
+          status = checkBlixArgNum(icount) ;
         }
 
       if (status)
         {
-          paramString[count] = g_strdup("--sort-mode=p");
-          ++count ;
-          status = checkBlixArgNum(count) ;
+          paramString[icount] = g_strdup("--sort-mode=p");
+          ++icount ;
+          status = checkBlixArgNum(icount) ;
         }
     }
 

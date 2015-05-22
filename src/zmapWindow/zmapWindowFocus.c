@@ -267,7 +267,7 @@ ZMapWindowFocus zmapWindowFocusCreate(ZMapWindow window)
  * NOTE that this is used to get focus colours and also global colours such as EST masked
  * if the cache/window id is 0 just use the first one - allow lookup of global colours w/ no window
  */
-int zMapWindowFocusCacheGetSelectedColours(int id_flags, gulong *fill, gulong *outline)
+int zMapWindowFocusCacheGetSelectedColours(int id_flags, gulong *fill_pix, gulong *outline)
 {
   GList *l;
   ZMapWindowFocusCache cache;
@@ -346,8 +346,8 @@ int zMapWindowFocusCacheGetSelectedColours(int id_flags, gulong *fill, gulong *o
                 {
                   if(cache->fill_set[i])
                     {
-                      if(fill)
-                        *fill = cache->fill_pixel[i];
+                      if(fill_pix)
+                        *fill_pix = cache->fill_pixel[i];
                       ret |= WINDOW_FOCUS_CACHE_FILL;
                     }
                   if(cache->outline_set[i])
@@ -975,12 +975,12 @@ void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus)
 
   if (column)
     {
-      GdkColor *fill = column->background_fill;
+      GdkColor *fill_col = column->background_fill;
 
       if(column->flags.filtered)
-        zMapWindowGetFilteredColour(focus->window,&fill);
+        zMapWindowGetFilteredColour(focus->window,&fill_col);
 
-      zmapWindowDrawSetGroupBackground(focus->window, column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
+      zmapWindowDrawSetGroupBackground(focus->window, column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill_col, NULL);
       foo_canvas_item_request_redraw((FooCanvasItem *) column);
     }
 
@@ -1059,7 +1059,7 @@ static void hideFocusItemsCB(gpointer data, gpointer user_data)
  */
 static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item, ZMapFeatureSubPart sub_part)
 {
-  GdkColor *fill = NULL, *border = NULL;
+  GdkColor *fill_col = NULL, *border_col = NULL;
   int n_focus;
   GList *l;
 
@@ -1072,20 +1072,20 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item, ZMapFeatu
       if((item->flags & focus_group_mask[WINDOW_FOCUS_GROUP_FOCUS]))
         {
           if(window->highlights_set.item)
-            fill = &(window->colour_item_highlight);
+            fill_col = &(window->colour_item_highlight);
 
         }
       else if((item->flags & focus_group_mask[WINDOW_FOCUS_GROUP_EVIDENCE]))
         {
           if(window->highlights_set.evidence)
             {
-              fill = &(window->colour_evidence_fill);
-              border = &(window->colour_evidence_border);
+              fill_col = &(window->colour_evidence_fill);
+              border_col = &(window->colour_evidence_border);
             }
         }
 
       zMapWindowCanvasItemSetIntervalColours(item->item, item->feature,
-                                             sub_part, ZMAPSTYLE_COLOURTYPE_SELECTED, item->flags, fill, border) ;
+                                             sub_part, ZMAPSTYLE_COLOURTYPE_SELECTED, item->flags, fill_col, border_col) ;
     }
   else
     {

@@ -47,7 +47,7 @@
 void zMapWindowCanvasAssemblyPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                                           GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  gulong fill,outline;
+  gulong ufill,outline;
   int colours_set, fill_set, outline_set;
   double x1,x2;
 
@@ -61,14 +61,14 @@ void zMapWindowCanvasAssemblyPaintFeature(ZMapWindowFeaturesetItem featureset, Z
    * and also the window focus code
    */
 
-  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
+  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &ufill, &outline);
   fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
   outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
   if (zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2))
     zMapCanvasFeaturesetDrawBoxMacro(featureset,
                                      x1, x2, feature->y1, feature->y2,
-                                     drawable, fill_set, outline_set, fill,outline) ;
+                                     drawable, fill_set, outline_set, ufill,outline) ;
 
   return ;
 }

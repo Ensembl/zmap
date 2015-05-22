@@ -67,7 +67,7 @@ static void highlightSplice(gpointer data, gpointer user_data) ;
 
 
 
-/* 
+/*
  *                Globals
  */
 
@@ -78,7 +78,7 @@ static ZMapWindowCanvasGlyph non_match_junction_glyph_start_G = NULL, non_match_
 
 
 
-/* 
+/*
  *                External routines
  */
 
@@ -212,7 +212,7 @@ int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featur
  * in which case a false outline will be draw outside the region
  */
 int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
-                   gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill)
+                   gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill_flag)
 {
   int result = 0 ;
   zMapReturnValIfFail(featureset && drawable, result) ;
@@ -260,13 +260,13 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
   else
     {
       /* Fill rectangles get drawn by X one smaller in each dimension so correct for this. */
-      if (fill)
+      if (fill_flag)
 	{
 	  cx2++ ;
 	  cy2++ ;
 	}
 
-      gdk_draw_rectangle(drawable, featureset->gc, fill, cx1, cy1, cx2 - cx1, cy2 - cy1) ;
+      gdk_draw_rectangle(drawable, featureset->gc, fill_flag, cx1, cy1, cx2 - cx1, cy2 - cy1) ;
 
       result = 1 ;
     }
@@ -286,14 +286,14 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
 gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
                                           double x1, double x2, double y1, double y2,
                                           GdkDrawable *drawable,
-                                          gboolean fill_set, gboolean outline_set, gulong fill, gulong outline)
+                                          gboolean fill_set, gboolean outline_set, gulong ufill, gulong outline)
 {
   gboolean result = FALSE ;
   FooCanvasItem *item = (FooCanvasItem *)featureset ;
   GdkColor c ;
   int cx1, cy1, cx2, cy2 ;
 
-  /* Cannot test fill or outline except maybe for max value. */
+  /* Cannot test ufill or outline except maybe for max value. */
   zMapReturnValIfFailSafe(featureset, FALSE) ;
   zMapReturnValIfFailSafe((x1 >= 0 && x1 <= x2 && y1 >= 0 && y1 <= y2), FALSE) ;
   zMapReturnValIfFailSafe(drawable, FALSE) ;
@@ -327,18 +327,18 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
 
       if (cx1 == cx2 || cy1 == cy2)
         {
-          /* Just draw a line.....only need to draw fill if there's no outline. */
+          /* Just draw a line.....only need to draw ufill if there's no outline. */
           if (outline_set)
             c.pixel = outline ;
           else
-            c.pixel = fill ;
+            c.pixel = ufill ;
 
           gdk_gc_set_foreground(featureset->gc, &c) ;
           gdk_draw_line(drawable, featureset->gc, cx1, cy1, cx2, cy2) ;
         }
       else
         {
-          /* Need to draw a rectangle, possibly with fill and outline.
+          /* Need to draw a rectangle, possibly with ufill and outline.
            *
            * NOTE: outline rectangles are drawn _one_ bigger than filled rectangles
            * in both x & y by gdk_draw_rectangle() so we need to allow for that.
@@ -350,11 +350,11 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
 
           if (!outline_set)
             {
-              /* No outline so need to enlarge fill as gdk fill draws one pixel short. */
+              /* No outline so need to enlarge ufill as gdk ufill draws one pixel short. */
               cx2++ ;
               cy2++ ;
 
-              c.pixel = fill ;
+              c.pixel = ufill ;
 
               gdk_gc_set_foreground(featureset->gc, &c) ;
               gdk_draw_rectangle(drawable, featureset->gc, TRUE, cx1, cy1, x_width, y_width) ;
@@ -367,7 +367,7 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
               gdk_gc_set_foreground(featureset->gc, &c) ;
               gdk_draw_rectangle(drawable, featureset->gc, FALSE, cx1, cy1, x_width, y_width) ;
 
-              /* Draw the fill if there is one _and_ it will be visible on the screen. */
+              /* Draw the ufill if there is one _and_ it will be visible on the screen. */
               if (fill_set && ((cx2 - cx1 > 1) && (cy2 - cy1 > 1)))
                 {
                   /* start one pixel in so as not to draw on outline (sets width one less as well). */
@@ -376,7 +376,7 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
                   x_width-- ;
                   y_width-- ;
 
-                  c.pixel = fill ;
+                  c.pixel = ufill ;
 
                   gdk_gc_set_foreground(featureset->gc, &c) ;
                   gdk_draw_rectangle(drawable, featureset->gc, TRUE, cx1, cy1, x_width, y_width) ;
@@ -426,11 +426,11 @@ void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featurese
       zMapWindowCanvasGlyphGetJunctionShapes(&start_shape, &end_shape) ;
 
       match_junction_glyph_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_JUNCTION_START, TRUE, TRUE) ;
-                                                                    
+
       match_junction_glyph_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_JUNCTION_END, TRUE, TRUE) ;
 
       non_match_junction_glyph_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_JUNCTION_START, TRUE, TRUE) ;
-                                                                    
+
       non_match_junction_glyph_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_JUNCTION_END, TRUE, TRUE) ;
 
       if (zMapWindowCanvasFeaturesetGetSpliceColour(featureset, TRUE, &border_pixel, &fill_pixel))
@@ -457,7 +457,7 @@ void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featurese
 
 
 
-/* 
+/*
  *             Internal routines
  */
 
@@ -466,7 +466,7 @@ static void highlightSplice(gpointer data, gpointer user_data)
 {
   ZMapSplicePosition splice_pos = (ZMapSplicePosition)data ;
   HighlightData highlight_data = (HighlightData)user_data ;
-  double col_width ;  
+  double col_width ;
 
 
   /*

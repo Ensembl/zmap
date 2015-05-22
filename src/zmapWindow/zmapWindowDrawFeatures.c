@@ -1901,7 +1901,7 @@ GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window, GQuark featureset_i
  */
 FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowContainerGroup container,
                                                 int start, int end, double width,
-                                                gint layer, GdkColor *fill, GdkColor *border)
+                                                gint layer, GdkColor *fill_col, GdkColor *border_col)
 {
   static ZMapFeatureTypeStyle style = NULL;
   GList *l;
@@ -1989,26 +1989,26 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
     }
 
 #if 0
-  NO.... remove background if it's null, don't auto fill w/group colour
+  NO.... remove background if it's null, don't auto fill_col w/group colour
     set group colour explicitly in call to this
     need for locator dragger
                                   and no doubt lasoo later on
 
                                   /* clear highlight done by removing colours in which case we restore the default ones if they exist */
-                                  if(!fill)
-                                    fill = container->background_fill;
-  if(!border)
-    border = container->background_border;
+                                  if(!fill_col)
+                                    fill_col = container->background_fill;
+  if(!border_col)
+    border_col = container->background_border;
 #endif
 
 #if 0
   if(container->feature_any)
     {
       printf("add back %s %d", g_quark_to_string(container->feature_any->unique_id), container->level);
-      if(fill) printf(" fill = %x %x %x", fill->red, fill->green, fill->blue);
-      if(parent_fill) printf(" parent fill = %x %x %x", parent_fill->red, parent_fill->green, parent_fill->blue);
-      if(border) printf(" border = %x %x %x", border->red, border->green, border->blue);
-      if(parent_border) printf(" parent border = %x %x %x", parent_border->red, parent_border->green, parent_border->blue);
+      if(fill_col) printf(" fill_col = %x %x %x", fill_col->red, fill_col->green, fill_col->blue);
+      if(parent_fill) printf(" parent fill_col = %x %x %x", parent_fill->red, parent_fill->green, parent_fill->blue);
+      if(border_col) printf(" border_col = %x %x %x", border_col->red, border_col->green, border_col->blue);
+      if(parent_border) printf(" parent border_col = %x %x %x", parent_border->red, parent_border->green, parent_border->blue);
       printf("\n");
     }
 #endif
@@ -2022,13 +2022,13 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
   /* don't paint white on white */
   /* boringly we have to compare RGB and these have not been set in GdkColor.pixel */
   /* if you happen to know a good function to do that then fix this.... */
-  if(fill && parent_fill && fill->red == parent_fill->red && fill->green == parent_fill->green && fill->blue == parent_fill->blue)
-    fill = NULL;
-  //        if(border && parent_border && border->red == parent_border->red && border->green == parent_border->green && border->blue == parent_border->blue)
-  //                border = NULL;
+  if(fill_col && parent_fill && fill_col->red == parent_fill->red && fill_col->green == parent_fill->green && fill_col->blue == parent_fill->blue)
+    fill_col = NULL;
+  //        if(border_col && parent_border && border_col->red == parent_border->red && border_col->green == parent_border->green && border_col->blue == parent_border->blue)
+  //                border_col = NULL;
 #endif
 
-  if(fill || border)
+  if(fill_col || border_col)
     {
       double x1, x2;
 
@@ -2060,12 +2060,12 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
               foo_canvas_c2w(foo->canvas, foo->x2, 0, &x2, NULL);
               width = x2 - x1;
             }
-          //printf("set background %s %x %x %x = %f %f %f\n", container->feature_any ? g_quark_to_string(container->feature_any->unique_id) : "none", fill->red,fill->green,fill->blue, foo->x1,foo->x2, width);
+          //printf("set background %s %x %x %x = %f %f %f\n", container->feature_any ? g_quark_to_string(container->feature_any->unique_id) : "none", fill_col->red,fill_col->green,fill_col->blue, foo->x1,foo->x2, width);
 
           zMapWindowCanvasFeaturesetSetWidth(cfs, width);
 
           /* set background does a request redraw */
-          zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *)cfs, fill, border) ;
+          zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *)cfs, fill_col, border_col) ;
 
           show = TRUE;
         }
@@ -2084,7 +2084,7 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
 
   if(cfs)
     {
-      if(fill && parent_fill && fill->red == parent_fill->red && fill->green == parent_fill->green && fill->blue == parent_fill->blue)
+      if(fill_col && parent_fill && fill_col->red == parent_fill->red && fill_col->green == parent_fill->green && fill_col->blue == parent_fill->blue)
         show = FALSE;
 
       if(show)
@@ -2192,10 +2192,10 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       s = (ZMapFeatureTypeStyle)g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
       if(s)
         {
-          GdkColor *fill = NULL;
+          GdkColor *fill_col = NULL;
 
-          zMapStyleGetColours(s, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, NULL);
-          colour = fill;
+          zMapStyleGetColours(s, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, NULL);
+          colour = fill_col;
         }
       else
         {

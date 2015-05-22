@@ -1871,16 +1871,16 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
          * and while it's tedious to copy the list it save a lot of staring at code
          */
 
-        GList *l,*copy = NULL;
+        GList *l,*copy_list = NULL;
         ZMapSpan span;
 
         for(l = new_set->loaded;l;l = l->next)
           {
             span = (ZMapSpan)g_memdup(l->data,sizeof(ZMapSpanStruct));
-            copy = g_list_append(copy,span);    /* must preserve the order */
+            copy_list = g_list_append(copy_list,span);    /* must preserve the order */
           }
 
-        new_set->loaded = copy;
+        new_set->loaded = copy_list;
 
         break;
       }

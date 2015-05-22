@@ -60,7 +60,7 @@ void linePaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
   foo = (FooCanvasItem *) featureset ;
   feat = (ZMapWindowCanvasGraphics) feature ;
 
-  c.pixel = feat->outline;
+  c.pixel = feat->outline_val;
   gdk_gc_set_foreground (featureset->gc, &c);
 
   foo_canvas_w2c(foo->canvas, feat->x1 + featureset->dx, feat->y1 - featureset->start + featureset->dy,

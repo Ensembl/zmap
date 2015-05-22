@@ -4513,15 +4513,15 @@ static gboolean getSeqColours(ZMapFeatureTypeStyle style,
     return result ;
 
   /* I'm sure this is not the way to access these...find out from Malcolm where we stand on this... */
-  if (style->mode_data.sequence.non_coding.normal.fields_set.fill
-      && style->mode_data.sequence.coding.normal.fields_set.fill
-      && style->mode_data.sequence.split_codon_5.normal.fields_set.fill
-      && style->mode_data.sequence.split_codon_3.normal.fields_set.fill)
+  if (style->mode_data.sequence.non_coding.normal.fields_set.fill_col
+      && style->mode_data.sequence.coding.normal.fields_set.fill_col
+      && style->mode_data.sequence.split_codon_5.normal.fields_set.fill_col
+      && style->mode_data.sequence.split_codon_3.normal.fields_set.fill_col)
     {
-      *non_coding_out = (GdkColor *)(&(style->mode_data.sequence.non_coding.normal.fill)) ;
-      *coding_out = (GdkColor *)(&(style->mode_data.sequence.coding.normal.fill)) ;
-      *split_5_out = (GdkColor *)(&(style->mode_data.sequence.split_codon_5.normal.fill)) ;
-      *split_3_out = (GdkColor *)(&(style->mode_data.sequence.split_codon_3.normal.fill)) ;
+      *non_coding_out = (GdkColor *)(&(style->mode_data.sequence.non_coding.normal.fill_col)) ;
+      *coding_out = (GdkColor *)(&(style->mode_data.sequence.coding.normal.fill_col)) ;
+      *split_5_out = (GdkColor *)(&(style->mode_data.sequence.split_codon_5.normal.fill_col)) ;
+      *split_3_out = (GdkColor *)(&(style->mode_data.sequence.split_codon_3.normal.fill_col)) ;
 
       result = TRUE ;
     }

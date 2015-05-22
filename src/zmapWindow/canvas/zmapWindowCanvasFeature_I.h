@@ -97,7 +97,7 @@ typedef struct _zmapWindowCanvasGraphicsStruct
   /* include enough to handle lines boxes text, maybe arcs too */
   /* anything more complex need to be derived from this */
   double x1, x2;
-  long fill ,outline;
+  long fill_val, outline_val;
   char *text;
 
   int flags;                                                /* See FEATURE_XXXX above. */

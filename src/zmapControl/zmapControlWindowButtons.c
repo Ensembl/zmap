@@ -109,7 +109,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *frame3_button, *dna_button,
     *back_button, *separator ;
 
-  zMapReturnValIfFail(zmap, hbox) ; 
+  zMapReturnValIfFail(zmap, hbox) ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -244,7 +244,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 void zmapControlButtonTooltips(ZMap zmap)
 {
 
-  zMapReturnIfFail(zmap) ; 
+  zMapReturnIfFail(zmap) ;
 
   gtk_tooltips_set_tip(zmap->tooltips, zmap->stop_button,
 		       "Stop loading of data, reset zmap",
@@ -318,15 +318,15 @@ void zmapControlButtonTooltips(ZMap zmap)
 void filterSetHighlight(ZMap zmap)
 {
   GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;
-  GdkColor *fill = &white;
+  GdkColor *fill_col = &white;
 
-  zMapReturnIfFail(zmap) ; 
+  zMapReturnIfFail(zmap) ;
 
   /* highlight if filtering occrured */
   if(zmap->filter.n_filtered && zmap->filter.window)
-    zMapWindowGetFilteredColour(zmap->filter.window,&fill);
+    zMapWindowGetFilteredColour(zmap->filter.window,&fill_col);
 
-  gtk_widget_modify_base ((GtkWidget *) zmap->filter_but, GTK_STATE_NORMAL, fill);
+  gtk_widget_modify_base ((GtkWidget *) zmap->filter_but, GTK_STATE_NORMAL, fill_col);
 }
 
 
@@ -340,7 +340,7 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
   ZMapWindow window = NULL ;
   ZMapViewState view_state ;
 
-  zMapReturnIfFail(zmap || zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap || zmap->focus_viewwindow) ;
 
   general = revcomp =  unsplit = unlock = stop = reload = frame3 = dna = back = FALSE ;
 
@@ -479,12 +479,12 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
  * that zoom can only go from min to max _via_ the mid state. */
 gboolean zmapControlWindowDoTheZoom(ZMap zmap, double zoom)
 {
-  gboolean result = FALSE ; 
+  gboolean result = FALSE ;
   ZMapWindow window = NULL;
-  zMapReturnValIfFail(zmap, result) ; 
+  zMapReturnValIfFail(zmap, result) ;
 
   window = zMapViewGetWindow(zmap->focus_viewwindow);
-  result = TRUE ; 
+  result = TRUE ;
 
   zMapWindowZoom(window, zoom) ;
 
@@ -497,7 +497,7 @@ gboolean zmapControlWindowDoTheZoom(ZMap zmap, double zoom)
 void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status)
 {
 
-  zMapReturnIfFail(zmap) ; 
+  zMapReturnIfFail(zmap) ;
 
   if (zoom_status == ZMAP_ZOOM_FIXED)
     {
@@ -580,7 +580,7 @@ static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
 {
   gboolean handled = FALSE ;
 
-  zMapReturnValIfFail(event, handled) ; 
+  zMapReturnValIfFail(event, handled) ;
 
   switch(event->type)
     {
@@ -617,17 +617,17 @@ static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
 /* handle text input and spin buttons */
 static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(user_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(user_data) ;
   zmap = (ZMap) user_data ;
   double value ;
-  
+
   /* if we don't do this then with a busy column we get the column updateds but the spin button is delayed
    * so we don't get inertaction with the filter score.  It's better this way.
    */
   if(zmap->filter_spin_pressed)
     return;
-  
+
   value = gtk_spin_button_get_value(spinbutton);
   //printf("filter value %f %f\n", zmap->filter.value, value);
   zmap->filter.value = value;
@@ -639,7 +639,7 @@ static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data)
       zmap->filter.n_filtered = zmap->filter.func(&zmap->filter, value, highlight_filtered_columns);
       zMapViewUpdateColumnBackground(zmap_view);
     }
-  
+
   filterSetHighlight(zmap);
 }
 
@@ -649,8 +649,8 @@ static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data)
 static gboolean filterSpinButtonCB(GtkWidget *spin, GdkEvent *event, gpointer user_data)
 {
   gboolean handled = FALSE ;
-  ZMap zmap = NULL ; 
-  zMapReturnValIfFail(user_data && event, handled) ; 
+  ZMap zmap = NULL ;
+  zMapReturnValIfFail(user_data && event, handled) ;
   zmap = (ZMap) user_data;
 
   //printf("filter spin %d\n", event->type == GDK_BUTTON_PRESS ? 1 : event->type == GDK_BUTTON_RELEASE ? 2 : 0);
@@ -683,9 +683,9 @@ static void frame3CB(GtkWidget *wigdet, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
   ZMapWindow window ;
-  /* if (!zmap || !zmap->focus_viewwindow) 
-    return ; */ 
-  zMapReturnIfFail(zmap && zmap->focus_viewwindow) ; 
+  /* if (!zmap || !zmap->focus_viewwindow)
+    return ; */
+  zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
@@ -697,10 +697,10 @@ static void frame3CB(GtkWidget *wigdet, gpointer cb_data)
 
 static void dnaCB(GtkWidget *wigdet, gpointer cb_data)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(cb_data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
   zmap = (ZMap)cb_data ;
-  zMapReturnIfFail(zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
   ZMapWindow window ;
   GQuark align_id = 0, block_id = 0;
   gboolean force = FALSE,
@@ -783,10 +783,10 @@ static void horizSplitPaneCB(GtkWidget *widget, gpointer data)
 
 static void unlockCB(GtkWidget *widget, gpointer data)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(data) ;
   zmap = (ZMap)data ;
-  zMapReturnIfFail(zmap->focus_viewwindow) ; 
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
 
   zMapWindowUnlock(zMapViewGetWindow(zmap->focus_viewwindow)) ;
 
@@ -798,8 +798,8 @@ static void unlockCB(GtkWidget *widget, gpointer data)
 
 static void revcompCB(GtkWidget *widget, gpointer data)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(data) ;
   zmap = (ZMap)data ;
 
   zMapViewReverseComplement(zMapViewGetView(zmap->focus_viewwindow)) ;
@@ -828,7 +828,7 @@ static void unsplitWindowCB(GtkWidget *widget, gpointer data)
 static void columnConfigCB(GtkWidget *widget, gpointer data)
 {
   ZMap zmap = NULL ;
-  zMapReturnIfFail(data) ;  
+  zMapReturnIfFail(data) ;
   zmap = (ZMap)data ;
   ZMapWindow window ;
 
@@ -842,8 +842,8 @@ static void columnConfigCB(GtkWidget *widget, gpointer data)
 
 static void backButtonCB(GtkWidget *wigdet, gpointer data)
 {
-  ZMap zmap = NULL ; 
-  zMapReturnIfFail(data) ; 
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(data) ;
   zmap = (ZMap)data;
   ZMapWindow window = NULL;
 
@@ -909,7 +909,7 @@ static ZMapGUIMenuItem makeMenuZoomOps(int *start_index_inout,
 static void zoomMenuCB(int menu_item_id, gpointer callback_data)
 {
   ZoomMenuCBData menu_data = NULL ;
-  zMapReturnIfFail(callback_data) ;  
+  zMapReturnIfFail(callback_data) ;
   menu_data = (ZoomMenuCBData)callback_data ;
   ZMapWindow window = menu_data->window ;
   double zoom_factor = 0.0, curr_factor = 0.0 ;
@@ -978,7 +978,7 @@ static void zoomMenuCB(int menu_item_id, gpointer callback_data)
 static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
   gboolean handled = FALSE;
-  zMapReturnValIfFail(event, handled) ; 
+  zMapReturnValIfFail(event, handled) ;
 
   switch(event->type)
     {
@@ -1068,8 +1068,8 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
 
 static void seqMenuCB(int menu_item_id, gpointer callback_data)
 {
-  ZMapGUIMenuSubMenuData data = NULL ; 
-  zMapReturnIfFail(callback_data) ; 
+  ZMapGUIMenuSubMenuData data = NULL ;
+  zMapReturnIfFail(callback_data) ;
   data = (ZMapGUIMenuSubMenuData)callback_data ;
   ZMapWindow window = NULL ;
   GQuark align_id = 0, block_id = 0 ;

@@ -5264,21 +5264,21 @@ void zmapWindowFetchData(ZMapWindow window,
 
                 if (real)
                   {
-                    GList *copy = g_list_copy(real);/* so it can be freed with the rest later */
+                    GList *copy_list = g_list_copy(real);/* so it can be freed with the rest later */
                     GList *l = virtual_featureset;
 
-                    copy->prev = virtual_featureset->prev;
-                    if(copy->prev)
-                      copy->prev->next = copy;
+                    copy_list->prev = virtual_featureset->prev;
+                    if(copy_list->prev)
+                      copy_list->prev->next = copy_list;
                     else
-                      fset_list = copy;
+                      fset_list = copy_list;
 
-                    copy = g_list_last(copy);
-                    copy->next = virtual_featureset->next;
-                    if(copy->next)
-                      copy->next->prev = copy;
+                    copy_list = g_list_last(copy_list);
+                    copy_list->next = virtual_featureset->next;
+                    if(copy_list->next)
+                      copy_list->next->prev = copy_list;
 
-                    virtual_featureset = copy;
+                    virtual_featureset = copy_list;
 
                     g_list_free_1(l);
                   }
@@ -7358,7 +7358,7 @@ static void updateColumnBackground(ZMapWindow window,
     {
       ZMapWindowContainerGroup column = (ZMapWindowContainerGroup)foo->parent;
       GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;/* is there a column background config colour? */
-      GdkColor *fill = &white;
+      GdkColor *fill_col = &white;
 
       int n_filtered = zMapWindowFeaturesetItemGetNFiltered(foo);
 
@@ -7371,11 +7371,11 @@ static void updateColumnBackground(ZMapWindow window,
 
       /* Get the filter colour, if applicable */
       if (column->flags.filtered)
-        zMapWindowGetFilteredColour(window, &fill);
+        zMapWindowGetFilteredColour(window, &fill_col);
 
       zmapWindowDrawSetGroupBackground(window, column,
        0, 1, 1.0,
-       ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
+       ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill_col, NULL);
 
       foo_canvas_item_request_redraw(foo->parent);
     }

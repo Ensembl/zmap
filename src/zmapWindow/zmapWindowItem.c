@@ -143,7 +143,7 @@ GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand)
 
 /* Highlight the given feature. */
 void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature,
-                                gboolean highlight_same_names, gboolean replace)
+                                gboolean highlight_same_names, gboolean replace_flag)
 {
   FooCanvasItem *feature_item ;
   ZMapStrand set_strand = ZMAPSTRAND_NONE;
@@ -156,7 +156,7 @@ void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature,
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
                                                     set_strand, set_frame, feature)))
-    zmapWindowHighlightObject(window, feature_item, replace, highlight_same_names, FALSE) ;
+    zmapWindowHighlightObject(window, feature_item, replace_flag, highlight_same_names, FALSE) ;
 
   return ;
 }

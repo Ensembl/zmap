@@ -1156,7 +1156,7 @@ gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubPa
       GArray *children ;
       unsigned index ;
       int multiplier = 1, start = 0, end, i ;
-      gboolean forward = TRUE ;
+      gboolean forwd = TRUE ;
 
       if (child_type == ZMAPFEATURE_SUBPART_EXON)
         children = feature->feature.transcript.exons ;
@@ -1173,10 +1173,10 @@ gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubPa
           last  = &(g_array_index(children, ZMapSpanStruct, children->len - 1));
 
           if (first->x1 > last->x1)
-            forward = FALSE ;
+            forwd = FALSE ;
         }
 
-      if (forward)
+      if (forwd)
         {
           end = children->len ;
         }
@@ -1210,7 +1210,7 @@ void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpo
   GArray *introns;
   unsigned index;
   int multiplier = 1, start = 0, end, i;
-  gboolean forward = TRUE;
+  gboolean forwd = TRUE;
 
   if (feature->mode != ZMAPSTYLE_MODE_TRANSCRIPT)
     return ;
@@ -1224,10 +1224,10 @@ void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpo
       last  = &(g_array_index(introns, ZMapSpanStruct, introns->len - 1));
 
       if(first->x1 > last->x1)
-        forward = FALSE;
+        forwd = FALSE;
     }
 
-  if (forward)
+  if (forwd)
     {
       end = introns->len;
     }

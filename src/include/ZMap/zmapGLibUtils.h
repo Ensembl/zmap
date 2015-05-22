@@ -66,13 +66,13 @@ gboolean zMap_g_string_replace(GString *string_arg, const char *target, const ch
 
 void zMap_g_list_foreach_reverse(GList *list_arg, GFunc func, gpointer user_data);
 void zMap_g_list_foreach_directional(GList *list_arg, GFunc func, gpointer user_data,
-                                     ZMapGListDirection forward);
+                                     ZMapGListDirection forwd);
 gboolean zMap_g_list_cond_foreach(GList *list_arg, ZMapGFuncCond func, gpointer user_data) ;
 GList *zMap_g_list_move(GList *list_arg, gpointer user_data, gint new_index) ;
 GList *zMap_g_list_grep(GList **list_inout, gpointer data, GCompareFunc func);
 GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point, gboolean copy_donor) ;
-GList *zMap_g_list_lower(GList *move, int positions);
-GList *zMap_g_list_raise(GList *move, int positions);
+GList *zMap_g_list_lower(GList *move_list, int positions);
+GList *zMap_g_list_raise(GList *move_list, int positions);
 GList *zMap_g_list_split(GList *list_arg, GList *new_list_head) ;
 GList *zMap_g_list_append_unique(GList *list_arg, gpointer data);
 GList *zMap_g_list_merge(GList *a, GList *b);
@@ -92,7 +92,7 @@ void  zMap_g_hash_table_get_data(GList **iter, GHashTable *h);
 
 GHashTable *zMap_g_hashlist_create(void) ;
 void zMap_g_hashlist_insert(GHashTable *hashlist, GQuark key, gpointer value) ;
-void zMap_g_hashlist_insert_list(GHashTable *hashlist, GQuark key, GList *key_values, gboolean replace) ;
+void zMap_g_hashlist_insert_list(GHashTable *hashlist, GQuark key, GList *key_values, gboolean replace_flag) ;
 GHashTable *zMap_g_hashlist_copy(GHashTable *orig_hashlist) ;
 void zMap_g_hashlist_merge(GHashTable *in_out, GHashTable *in) ;
 void zMap_g_hashlist_print(GHashTable *hashlist) ;

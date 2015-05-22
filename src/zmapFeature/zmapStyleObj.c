@@ -1194,37 +1194,37 @@ static void clear_inherited(gpointer key, gpointer item, gpointer user)
 static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new_style)
 {
 
-  if (new_style->normal.fields_set.fill)
+  if (new_style->normal.fields_set.fill_col)
     {
-      curr->normal.fill = new_style->normal.fill ;
-      curr->normal.fields_set.fill = TRUE ;
+      curr->normal.fill_col = new_style->normal.fill_col ;
+      curr->normal.fields_set.fill_col = TRUE ;
     }
-  if (new_style->normal.fields_set.draw)
+  if (new_style->normal.fields_set.draw_col)
     {
-      curr->normal.draw = new_style->normal.draw ;
-      curr->normal.fields_set.draw = TRUE ;
+      curr->normal.draw_col = new_style->normal.draw_col ;
+      curr->normal.fields_set.draw_col = TRUE ;
     }
-  if (new_style->normal.fields_set.border)
+  if (new_style->normal.fields_set.border_col)
     {
-      curr->normal.border = new_style->normal.border ;
-      curr->normal.fields_set.border = TRUE ;
+      curr->normal.border_col = new_style->normal.border_col ;
+      curr->normal.fields_set.border_col = TRUE ;
     }
 
 
-  if (new_style->selected.fields_set.fill)
+  if (new_style->selected.fields_set.fill_col)
     {
-      curr->selected.fill = new_style->selected.fill ;
-      curr->selected.fields_set.fill = TRUE ;
+      curr->selected.fill_col = new_style->selected.fill_col ;
+      curr->selected.fields_set.fill_col = TRUE ;
     }
-  if (new_style->selected.fields_set.draw)
+  if (new_style->selected.fields_set.draw_col)
     {
-      curr->selected.draw = new_style->selected.draw ;
-      curr->selected.fields_set.draw = TRUE ;
+      curr->selected.draw_col = new_style->selected.draw_col ;
+      curr->selected.fields_set.draw_col = TRUE ;
     }
-  if (new_style->selected.fields_set.border)
+  if (new_style->selected.fields_set.border_col)
     {
-      curr->selected.border = new_style->selected.border ;
-      curr->selected.fields_set.border = TRUE ;
+      curr->selected.border_col = new_style->selected.border_col ;
+      curr->selected.fields_set.border_col = TRUE ;
     }
 
 

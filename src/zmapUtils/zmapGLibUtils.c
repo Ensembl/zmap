@@ -208,11 +208,11 @@ void zMap_g_list_foreach_reverse(GList *glist, GFunc func, gpointer user_data)
 void zMap_g_list_foreach_directional(GList   *glist,
                                      GFunc    func,
                                      gpointer user_data,
-                                     ZMapGListDirection forward)
+                                     ZMapGListDirection forwd)
 {
   while (glist)
     {
-      GList *next = (forward == ZMAP_GLIST_FORWARD ? glist->next : glist->prev);
+      GList *next = (forwd == ZMAP_GLIST_FORWARD ? glist->next : glist->prev);
       (*func) (glist->data, user_data);
       glist = next;
     }
@@ -392,16 +392,16 @@ GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point, 
 }
 
 
-GList *zMap_g_list_lower(GList *move, int positions)
+GList *zMap_g_list_lower(GList *move_list, int positions)
 {
   GList *before;
 
   if(positions < 1)
-    return move;
+    return move_list;
 
-  if(move->prev)
+  if(move_list->prev)
     {
-      for(before = move->prev; positions && before; positions--)
+      for(before = move_list->prev; positions && before; positions--)
         before = before->prev;
     }
   else
@@ -409,41 +409,41 @@ GList *zMap_g_list_lower(GList *move, int positions)
 
   if(before)
     {
-      before = g_list_remove_link(before, move);
+      before = g_list_remove_link(before, move_list);
       if(before->next)
-        insert_after(move, before);
+        insert_after(move_list, before);
       else
-        before = g_list_concat(before, move);
-      /* zMapAssert(g_list_find(before, move->data));*/
+        before = g_list_concat(before, move_list);
+      /* zMapAssert(g_list_find(before, move_list->data));*/
     }
 
-  return g_list_first(move);
+  return g_list_first(move_list);
 }
 
-GList *zMap_g_list_raise(GList *move, int positions)
+GList *zMap_g_list_raise(GList *move_list, int positions)
 {
   GList *before;
 
   if(positions < 1)
-    return move;
+    return move_list;
 
-  for(before = move; positions && before; positions--)
+  for(before = move_list; positions && before; positions--)
     before = before->next;
 
   if(!before)
-    before = g_list_last(move);
+    before = g_list_last(move_list);
 
   if(before)
     {
-      before = g_list_remove_link(before, move);
+      before = g_list_remove_link(before, move_list);
       if(before->next)
-        insert_after(move, before);
+        insert_after(move_list, before);
       else
-        before = g_list_concat(before, move);
-      /* zMapAssert(g_list_find(before, move->data));*/
+        before = g_list_concat(before, move_list);
+      /* zMapAssert(g_list_find(before, move_list->data));*/
     }
 
-  return g_list_first(move);
+  return g_list_first(move_list);
 }
 
 
@@ -678,11 +678,11 @@ void zMap_g_hashlist_insert(GHashTable *hashlist, GQuark key, gpointer value)
 /* ! Insert a list of key values into the keyed list, if replace is TRUE then the list
  * replaces any existing list, if FALSE and a list already exists then the function simply
  * returns. */
-void zMap_g_hashlist_insert_list(GHashTable *hashlist, GQuark key, GList *key_values, gboolean replace)
+void zMap_g_hashlist_insert_list(GHashTable *hashlist, GQuark key, GList *key_values, gboolean replace_flag)
 {
   /* Slightly tricky coding, the existing copy of the list will automatically
    * be free'd by g_hash_table calling our registered hash delete function. */
-  if (replace || !(g_hash_table_lookup(hashlist, GINT_TO_POINTER(key))))
+  if (replace_flag || !(g_hash_table_lookup(hashlist, GINT_TO_POINTER(key))))
     g_hash_table_insert(hashlist, GINT_TO_POINTER(key), key_values) ;
 
   return ;
@@ -1313,11 +1313,11 @@ static void mergehashCB(gpointer key, gpointer value, gpointer user_data)
    * target hash. */
   if (!(g_hash_table_lookup(ghash, key)))
     {
-      GList *copy ;
+      GList *copy_list ;
 
-      copy = g_list_copy((GList *)value) ;
+      copy_list = g_list_copy((GList *)value) ;
 
-      zMap_g_hashlist_insert_list(ghash, GPOINTER_TO_INT(key), copy, TRUE) ;
+      zMap_g_hashlist_insert_list(ghash, GPOINTER_TO_INT(key), copy_list, TRUE) ;
     }
 
 

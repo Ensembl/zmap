@@ -1351,9 +1351,9 @@ gboolean zMapWindowCanvasItemIsConnected(ZMapWindowCanvasItem item)
 
 void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame,
                                     ZMapStyleColourType    colour_type,
-                                    GdkColor **fill, GdkColor **draw, GdkColor **outline,
+                                    GdkColor **fill_col, GdkColor **draw_col, GdkColor **outline_col,
                                     GdkColor              *default_fill,
-                                    GdkColor              *border)
+                                    GdkColor              *border_col)
 {
   ZMapStyleParamId colour_target = STYLE_PROP_COLOURS;
 
@@ -1375,7 +1375,7 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
         }
 
       zMapStyleGetColours(style, colour_target, colour_type,
-                          fill, draw, outline) ;
+                          fill_col, draw_col, outline_col) ;
     }
 
   colour_target = STYLE_PROP_COLOURS;
@@ -1384,16 +1384,16 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
       colour_target = STYLE_PROP_REV_COLOURS;
     }
 
-  if (*fill == NULL && *draw == NULL && *outline == NULL)
-    zMapStyleGetColours(style, colour_target, colour_type, fill, draw, outline);
+  if (*fill_col == NULL && *draw_col == NULL && *outline_col == NULL)
+    zMapStyleGetColours(style, colour_target, colour_type, fill_col, draw_col, outline_col);
 
 
   if (colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
     {
       if(default_fill)
-        *fill = default_fill;
-      if(border)
-        *outline = border;
+        *fill_col = default_fill;
+      if(border_col)
+        *outline_col = border_col;
     }
 
   return ;

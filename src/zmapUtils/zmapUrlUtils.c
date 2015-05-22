@@ -161,21 +161,21 @@ xrealloc_real (void *ptr, size_t newsize)
 STATIC_IF_DEBUG char *
 xstrdup_real (const char *s)
 {
-  char *copy;
+  char *copy_string;
 
 #ifndef HAVE_STRDUP
   int l = strlen (s);
-  copy = (char *)malloc (l + 1);
-  if (!copy)
+  copy_string = (char *)malloc (l + 1);
+  if (!copy_string)
     memfatal ("strdup");
-  memcpy (copy, s, l + 1);
+  memcpy (copy_string, s, l + 1);
 #else  /* HAVE_STRDUP */
-  copy = strdup (s);
-  if (!copy)
+  copy_string = strdup (s);
+  if (!copy_string)
     memfatal ("strdup");
 #endif /* HAVE_STRDUP */
 
-  return copy;
+  return copy_string;
 }
 
 /* Utility function: like xstrdup(), but also lowercases S.  */
@@ -183,11 +183,11 @@ xstrdup_real (const char *s)
 char *
 xstrdup_lower (const char *s)
 {
-  char *copy = xstrdup (s);
-  char *p = copy;
+  char *copy_string = xstrdup (s);
+  char *p = copy_string;
   for (; *p; p++)
     *p = TOLOWER (*p);
-  return copy;
+  return copy_string ;
 }
 
 /* Copy the string formed by two pointers (one on the beginning, other

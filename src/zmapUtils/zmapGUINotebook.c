@@ -631,7 +631,7 @@ GtkWidget *zMapGUINotebookGetCurrChapterWidg(GtkWidget *compound_note_widget)
 }
 
 /*!
- * \brief Handles the response to the notebook dialog 
+ * \brief Handles the response to the notebook dialog
  */
 void notebookDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
 {
@@ -642,13 +642,13 @@ void notebookDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data
     case GTK_RESPONSE_OK:
       okCB(data) ;
       break;
-      
+
     case GTK_RESPONSE_CANCEL:
     case GTK_RESPONSE_CLOSE:
     case GTK_RESPONSE_REJECT:
       cancelCB(data) ;
       break;
-      
+
     default:
       break;
   };
@@ -666,7 +666,7 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, const char
   GtkWidget *vbox, *note_widg ;
   MakeNotebook make_notebook  ;
   char *title = NULL ;
-  
+
   /* zMapAssert(notebook_spec && help_title && *help_title && help_text && *help_text) ;*/
   if (!notebook_spec || !help_title || !*help_title || !help_text || !*help_text )
     return dialog ;
@@ -2004,7 +2004,7 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text, 
           {
             zMapWarning("Invalid float number: %s", text) ;
           }
-    
+
         break ;
       }
     case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING:
@@ -2014,14 +2014,14 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text, 
         if (text)
           {
             tag_value->data.string_value = (text && *text ? text : NULL);
-      
+
             if(update_original && *text)
               {
                 if(tag_value->original_data.string_value)
                   g_free(tag_value->original_data.string_value);
                 tag_value->original_data.string_value = g_strdup(text);
               }
-    
+
             if(*text)
               status = TRUE ;
           }
@@ -2161,7 +2161,7 @@ static void flagNotebookIgnoreDuplicates(gpointer list_data, gpointer unused)
 
 static void propogateExpand(GtkWidget *box, GtkWidget *child, GtkWidget *topmost)
 {
-  gboolean expand, fill;
+  gboolean expand, fill_flag;
   guint padding;
   GtkPackType pack_type;
 
@@ -2169,10 +2169,10 @@ static void propogateExpand(GtkWidget *box, GtkWidget *child, GtkWidget *topmost
     {
       if(GTK_IS_BOX(box))
         {
-          gtk_box_query_child_packing(GTK_BOX(box), child, &expand, &fill, &padding, &pack_type);
+          gtk_box_query_child_packing(GTK_BOX(box), child, &expand, &fill_flag, &padding, &pack_type);
 
           expand = TRUE;
-          gtk_box_set_child_packing(GTK_BOX(box), child, expand, fill, padding, pack_type);
+          gtk_box_set_child_packing(GTK_BOX(box), child, expand, fill_flag, padding, pack_type);
 
         }
       if(box == topmost)

@@ -224,7 +224,7 @@ long zMapXMLParserGetCurrentByteIndex(ZMapXMLParser parser)
 /* If return is non null it needs freeing sometime in the future! */
 char *zMapXMLParserGetFullXMLTwig(ZMapXMLParser parser, int offset)
 {
-  char *copy = NULL, *tmp1 = NULL;
+  char *copy_string = NULL, *tmp1 = NULL;
   const char *tmp = NULL;
   int current = 0, size = 0, byteCount = 0, twigSize = 0;
   if((tmp = XML_GetInputContext(parser->expat, &current, &size)) != NULL)
@@ -234,11 +234,11 @@ char *zMapXMLParserGetFullXMLTwig(ZMapXMLParser parser, int offset)
          (twigSize = (int)((byteCount + current) - offset + 1)) <= size)
         {
           tmp1 = (char *)(tmp + offset);
-          copy = g_strndup(tmp1, twigSize);
+          copy_string = g_strndup(tmp1, twigSize);
         }
     }
 
-  return copy;                  /* PLEASE free me later */
+  return copy_string ;                  /* PLEASE free me later */
 }
 
 

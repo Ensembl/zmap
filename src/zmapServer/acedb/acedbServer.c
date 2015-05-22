@@ -118,9 +118,9 @@ typedef struct
 
 typedef struct
 {
-  char *draw ;
-  char *fill ;
-  char *border ;
+  char *draw_str ;
+  char *fill_str ;
+  char *border_str ;
 } StyleColourStruct, *StyleColour ;
 
 typedef struct
@@ -3857,10 +3857,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	{
 	  /* May need to put some checking code here to test which colours set. */
 	  zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                                 style_colours.normal.fill, style_colours.normal.draw, style_colours.normal.border) ;
+                                 style_colours.normal.fill_str, style_colours.normal.draw_str, style_colours.normal.border_str) ;
 	  zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
-                                 style_colours.selected.fill, style_colours.selected.draw,
-                                 style_colours.selected.border) ;
+                                 style_colours.selected.fill_str, style_colours.selected.draw_str,
+                                 style_colours.selected.border_str) ;
 	}
 
       if (some_frame0_colours || some_frame1_colours || some_frame2_colours)
@@ -3869,25 +3869,25 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	    {
 	      /* May need to put some checking code here to test which colours set. */
 	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                                     frame0_style_colours.normal.fill, frame0_style_colours.normal.draw,
-                                     frame0_style_colours.normal.border) ;
+                                     frame0_style_colours.normal.fill_str, frame0_style_colours.normal.draw_str,
+                                     frame0_style_colours.normal.border_str) ;
 	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
-                                     frame0_style_colours.selected.fill, frame0_style_colours.selected.draw,
-                                     frame0_style_colours.selected.border) ;
+                                     frame0_style_colours.selected.fill_str, frame0_style_colours.selected.draw_str,
+                                     frame0_style_colours.selected.border_str) ;
 
 	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                                     frame1_style_colours.normal.fill, frame1_style_colours.normal.draw,
-                                     frame1_style_colours.normal.border) ;
+                                     frame1_style_colours.normal.fill_str, frame1_style_colours.normal.draw_str,
+                                     frame1_style_colours.normal.border_str) ;
 	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
-                                     frame1_style_colours.selected.fill, frame1_style_colours.selected.draw,
-                                     frame1_style_colours.selected.border) ;
+                                     frame1_style_colours.selected.fill_str, frame1_style_colours.selected.draw_str,
+                                     frame1_style_colours.selected.border_str) ;
 
 	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                                     frame2_style_colours.normal.fill, frame2_style_colours.normal.draw,
-                                     frame2_style_colours.normal.border) ;
+                                     frame2_style_colours.normal.fill_str, frame2_style_colours.normal.draw_str,
+                                     frame2_style_colours.normal.border_str) ;
 	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
-                                     frame2_style_colours.selected.fill, frame2_style_colours.selected.draw,
-                                     frame2_style_colours.selected.border) ;
+                                     frame2_style_colours.selected.fill_str, frame2_style_colours.selected.draw_str,
+                                     frame2_style_colours.selected.border_str) ;
 	    }
 	  else
 	    zMapLogWarning("Style \"%s\": Bad frame colour spec, following were not set:%s%s%s", name,
@@ -3901,11 +3901,11 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 	  /* May need to put some checking code here to test which colours set. */
 	  zMapStyleSetColoursStr(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                                 CDS_style_colours.normal.fill, CDS_style_colours.normal.draw,
-                                 CDS_style_colours.normal.border) ;
+                                 CDS_style_colours.normal.fill_str, CDS_style_colours.normal.draw_str,
+                                 CDS_style_colours.normal.border_str) ;
 	  zMapStyleSetColoursStr(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
-                                 CDS_style_colours.selected.fill, CDS_style_colours.selected.draw,
-                                 CDS_style_colours.selected.border) ;
+                                 CDS_style_colours.selected.fill_str, CDS_style_colours.selected.draw_str,
+                                 CDS_style_colours.selected.border_str) ;
 	}
 
       if (width_set)
@@ -4295,11 +4295,11 @@ static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_po
 	{
 	  result = TRUE ;
 	  if (g_ascii_strcasecmp(colour_target, "Draw") == 0)
-	    style_colour->draw = g_strdup(colour) ;
+	    style_colour->draw_str = g_strdup(colour) ;
 	  else if (g_ascii_strcasecmp(colour_target, "Fill") == 0)
-	    style_colour->fill = g_strdup(colour) ;
+	    style_colour->fill_str = g_strdup(colour) ;
 	  else if (g_ascii_strcasecmp(colour_target, "Border") == 0)
-	    style_colour->border = g_strdup(colour) ;
+	    style_colour->border_str = g_strdup(colour) ;
 	  else
 	    result = FALSE ;
 	}

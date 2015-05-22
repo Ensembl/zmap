@@ -1906,7 +1906,7 @@ void zMapWindowCanvasFeaturesetSetSequence(ZMapWindowFeaturesetItem featureset, 
 
 
 
-void zMapWindowCanvasFeaturesetSetBackground(FooCanvasItem *foo, GdkColor *fill, GdkColor * outline)
+void zMapWindowCanvasFeaturesetSetBackground(FooCanvasItem *foo, GdkColor *fill_col, GdkColor * outline)
 {
   ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
   gulong pixel;
@@ -1915,9 +1915,9 @@ void zMapWindowCanvasFeaturesetSetBackground(FooCanvasItem *foo, GdkColor *fill,
 
   featureset->background_set = featureset->border_set = FALSE;
 
-  if(fill)
+  if(fill_col)
     {
-      pixel = zMap_gdk_color_to_rgba(fill);
+      pixel = zMap_gdk_color_to_rgba(fill_col);
       featureset->background = foo_canvas_get_color_pixel(foo->canvas, pixel);
       featureset->background_set = TRUE;
     }
@@ -2865,7 +2865,7 @@ gboolean zMapWindowCanvasItemSetFeature(ZMapWindowCanvasItem item, double x, dou
 /* cut and paste from former graph density code */
 gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem featureset_item, ZMapFeatureTypeStyle style)
 {
-  GdkColor *draw = NULL, *fill = NULL, *outline = NULL;
+  GdkColor *draw = NULL, *fill_col = NULL, *outline = NULL;
   FooCanvasItem *foo = (FooCanvasItem *) featureset_item;
   gboolean re_index = FALSE;
 
@@ -2908,12 +2908,12 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem featureset_it
 
   /* need to set colours */
   zmapWindowCanvasItemGetColours(style, featureset_item->strand, featureset_item->frame,
-                                 ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &outline, NULL, NULL);
+                                 ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, &draw, &outline, NULL, NULL);
 
-  if(fill)
+  if(fill_col)
     {
       featureset_item->fill_set = TRUE;
-      featureset_item->fill_colour = gdk_color_to_rgba(fill);
+      featureset_item->fill_colour = gdk_color_to_rgba(fill_col);
       featureset_item->fill_pixel = foo_canvas_get_color_pixel(foo->canvas, featureset_item->fill_colour);
     }
   if(outline)
@@ -2950,7 +2950,7 @@ gboolean zmapWindowFeaturesetAllocColour(ZMapWindowFeaturesetItemClass featurese
 /* Return pointers to the GdkColor structs for the default colours, you should not write
  * to or attempt to free these structs. */
 gboolean zmapWindowFeaturesetGetDefaultColours(ZMapWindowFeaturesetItem feature_set_item,
-                                               GdkColor **fill, GdkColor **draw, GdkColor **border)
+                                               GdkColor **fill_col, GdkColor **draw_col, GdkColor **border_col)
 {
   gboolean result = FALSE ;
   ZMapWindowFeaturesetItemClass featureset_class ;
@@ -2962,12 +2962,12 @@ gboolean zmapWindowFeaturesetGetDefaultColours(ZMapWindowFeaturesetItem feature_
   /* It's possible our colour allocation failed in which case we return FALSE. */
   if (featureset_class->colour_alloc)
     {
-      if (fill)
-        *fill = &(featureset_class->fill) ;
-      if (draw)
-        *draw = &(featureset_class->draw) ;
-      if (border)
-        *fill = &(featureset_class->border) ;
+      if (fill_col)
+        *fill_col = &(featureset_class->fill_col) ;
+      if (draw_col)
+        *draw_col = &(featureset_class->draw_col) ;
+      if (border_col)
+        *border_col = &(featureset_class->border_col) ;
 
       result = FALSE ;
     }
@@ -2979,7 +2979,7 @@ gboolean zmapWindowFeaturesetGetDefaultColours(ZMapWindowFeaturesetItem feature_
 /* Return the pixel values for the default colours, these can be used directly to in
  * setting the foreground/background colours in a graphics context. */
 gboolean zmapWindowFeaturesetGetDefaultPixels(ZMapWindowFeaturesetItem feature_set_item,
-                                              guint32 *fill, guint32 *draw, guint32 *border)
+                                              guint32 *fill_col, guint32 *draw_col, guint32 *border_col)
 {
   gboolean result = FALSE ;
   ZMapWindowFeaturesetItemClass featureset_class ;
@@ -2991,12 +2991,12 @@ gboolean zmapWindowFeaturesetGetDefaultPixels(ZMapWindowFeaturesetItem feature_s
   /* It's possible our colour allocation failed in which case we return FALSE. */
   if (featureset_class->colour_alloc)
     {
-      if (fill)
-        *fill = featureset_class->fill.pixel ;
-      if (draw)
-        *draw = featureset_class->draw.pixel ;
-      if (fill)
-        *fill = featureset_class->border.pixel ;
+      if (fill_col)
+        *fill_col = featureset_class->fill_col.pixel ;
+      if (draw_col)
+        *draw_col = featureset_class->draw_col.pixel ;
+      if (border_col)
+        *border_col = featureset_class->border_col.pixel ;
 
       result = FALSE ;
     }
@@ -3043,22 +3043,22 @@ static void zmap_window_featureset_item_item_class_init(ZMapWindowFeaturesetItem
   featureset_class->colour_map = gdk_colormap_get_system() ;    /* Not screen sensitive.... */
 
   featureset_class->colour_alloc = TRUE ;
-  if (!gdk_color_parse(CANVAS_DEFAULT_COLOUR_FILL, &(featureset_class->fill))
-      || !zmapWindowFeaturesetAllocColour(featureset_class, &(featureset_class->fill)))
+  if (!gdk_color_parse(CANVAS_DEFAULT_COLOUR_FILL, &(featureset_class->fill_col))
+      || !zmapWindowFeaturesetAllocColour(featureset_class, &(featureset_class->fill_col)))
     {
       zMapLogCritical("Allocation of colour %d as default %d failed.",
                       CANVAS_DEFAULT_COLOUR_FILL, "fill") ;
       featureset_class->colour_alloc = FALSE ;
     }
-  if (!gdk_color_parse(CANVAS_DEFAULT_COLOUR_DRAW, &(featureset_class->draw))
-      || !zmapWindowFeaturesetAllocColour(featureset_class, &(featureset_class->draw)))
+  if (!gdk_color_parse(CANVAS_DEFAULT_COLOUR_DRAW, &(featureset_class->draw_col))
+      || !zmapWindowFeaturesetAllocColour(featureset_class, &(featureset_class->draw_col)))
     {
       zMapLogCritical("Allocation of colour %d as default %d failed.",
                       CANVAS_DEFAULT_COLOUR_DRAW, "draw") ;
       featureset_class->colour_alloc = FALSE ;
     }
-  if (!gdk_color_parse(CANVAS_DEFAULT_COLOUR_BORDER, &(featureset_class->border))
-      || !zmapWindowFeaturesetAllocColour(featureset_class, &(featureset_class->border)))
+  if (!gdk_color_parse(CANVAS_DEFAULT_COLOUR_BORDER, &(featureset_class->border_col))
+      || !zmapWindowFeaturesetAllocColour(featureset_class, &(featureset_class->border_col)))
     {
       zMapLogCritical("Allocation of colour %d as default %d failed.",
                       CANVAS_DEFAULT_COLOUR_BORDER, "border") ;
@@ -3133,12 +3133,12 @@ static void zmap_window_featureset_item_set_colour(ZMapWindowCanvasItem   item,
 						   ZMapFeatureSubPart sub_feature,
 						   ZMapStyleColourType    colour_type,
 						   int colour_flags,
-						   GdkColor              *fill,
-						   GdkColor              *border)
+						   GdkColor              *fill_col,
+						   GdkColor              *border_col)
 {
   if (g_type_is_a(G_OBJECT_TYPE(interval), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
     {
-      zmapWindowFeaturesetItemSetColour(interval,feature,sub_feature,colour_type,colour_flags,fill,border);
+      zmapWindowFeaturesetItemSetColour(interval, feature, sub_feature, colour_type, colour_flags, fill_col, border_col);
     }
 
   return ;
@@ -3660,17 +3660,17 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value, gboolean hi
        * so that the user can turn it off. */
       ZMapWindowContainerGroup column = (ZMapWindowContainerGroup)((FooCanvasItem *)fi)->parent;
       GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;                /* is there a column background config colour? */
-      GdkColor *fill = &white;
+      GdkColor *fill_col = &white;
 
       if(fi->n_filtered && filter->window)
         {
-          zMapWindowGetFilteredColour(filter->window,&fill);
+          zMapWindowGetFilteredColour(filter->window,&fill_col);
 
           column->flags.filtered = 1;
 
-          // NO:        zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) fi, fill, NULL);
+          // NO:        zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) fi, fill_col, NULL);
           // must do the column not the featureset
-          zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
+          zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill_col, NULL);
 
           foo_canvas_item_request_redraw(((FooCanvasItem *)fi)->parent);
         }
@@ -3912,7 +3912,7 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
 ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetItem featureset_item,
                                                          zmapWindowCanvasFeatureType type,
                                                          double x1, double y1, double x2, double y2,
-                                                         GdkColor *fill, GdkColor *outline, char *text)
+                                                         GdkColor *fill_col, GdkColor *outline_col, char *text)
 {
   ZMapWindowCanvasGraphics feat;
   gulong fill_pixel= 0, outline_pixel = 0;
@@ -3936,16 +3936,16 @@ ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetIte
 
   feat->text = text;
 
-  if(fill)
+  if(fill_col)
     {
-      fill_pixel = zMap_gdk_color_to_rgba(fill);
-      feat->fill = foo_canvas_get_color_pixel(foo->canvas, fill_pixel);
+      fill_pixel = zMap_gdk_color_to_rgba(fill_col);
+      feat->fill_val = foo_canvas_get_color_pixel(foo->canvas, fill_pixel);
       feat->flags |= WCG_FILL_SET;
     }
-  if(outline)
+  if(outline_col)
     {
-      outline_pixel = zMap_gdk_color_to_rgba(outline);
-      feat->outline = foo_canvas_get_color_pixel(foo->canvas, outline_pixel);
+      outline_pixel = zMap_gdk_color_to_rgba(outline_col);
+      feat->outline_val = foo_canvas_get_color_pixel(foo->canvas, outline_pixel);
       feat->flags |= WCG_OUTLINE_SET;
     }
 
@@ -4253,7 +4253,7 @@ static void setFeaturesetColours(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFe
       if ((fi->featurestyle != *(feat->feature->style))
           || !(fi->frame && zMapStyleIsFrameSpecific(*feat->feature->style)))
         {
-          GdkColor *fill = NULL,*draw = NULL, *outline = NULL;
+          GdkColor *fill_col = NULL,*draw_col = NULL, *outline_col = NULL;
           ZMapFrame frame;
           ZMapStrand strand;
 
@@ -4266,25 +4266,25 @@ static void setFeaturesetColours(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFe
 
           ct = feat->flags & WINDOW_FOCUS_GROUP_FOCUSSED ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL;
 
-          zmapWindowCanvasItemGetColours(fi->featurestyle, strand, frame, ct , &fill, &draw, &outline, NULL, NULL);
+          zmapWindowCanvasItemGetColours(fi->featurestyle, strand, frame, ct , &fill_col, &draw_col, &outline_col, NULL, NULL);
 
           /* can cache these in the feature? or style?*/
 
           fi->fill_set = FALSE;
 
-          if(fill)
+          if(fill_col)
             {
               fi->fill_set = TRUE;
-              fi->fill_colour = zMap_gdk_color_to_rgba(fill);
+              fi->fill_colour = zMap_gdk_color_to_rgba(fill_col);
               fi->fill_pixel = foo_canvas_get_color_pixel(item->canvas, fi->fill_colour);
             }
 
           fi->outline_set = FALSE;
 
-          if(outline)
+          if(outline_col)
             {
               fi->outline_set = TRUE;
-              fi->outline_colour = zMap_gdk_color_to_rgba(outline);
+              fi->outline_colour = zMap_gdk_color_to_rgba(outline_col);
               fi->outline_pixel = foo_canvas_get_color_pixel(item->canvas, fi->outline_colour);
             }
 

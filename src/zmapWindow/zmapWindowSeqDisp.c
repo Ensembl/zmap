@@ -370,7 +370,7 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
       if(!trans_set)
         return;
 
-      
+
       /* Remember the featureset we called show-translation for */
       if (feature && feature->parent)
         window->show_translation_featureset_id = feature->parent->unique_id ;
@@ -402,7 +402,7 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
           g_list_free(trans_feature->feature.sequence.variations) ;
           trans_feature->feature.sequence.variations = NULL ;
         }
-      
+
       /* If the feature contains any variations, store them because we'll need them to display
        * the translation correctly aligned. */
       if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
@@ -657,13 +657,13 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
     {
       ZMapFeature feature = zMapWindowCanvasItemGetFeature(sequence_feature);
       ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) sequence_feature;
-      GdkColor *fill;
+      GdkColor *fill_col;
       ZMapFeatureSubPartStruct span ;
       GQuark feature_style_id = 0 ;
       GQuark show_translation_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
 
       if (feature && feature->style && *feature->style)
-        feature_style_id = (*feature->style)->unique_id ; 
+        feature_style_id = (*feature->style)->unique_id ;
 
       /*
        * previous code did deselect as part of the select operation
@@ -718,10 +718,10 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                 span.subpart = ZMAPFEATURE_SUBPART_MATCH;
                 span.index = 0;
 
-                zMapStyleGetColours(*feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
+                zMapStyleGetColours(*feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill_col, NULL,NULL);
 
                 zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
-                                                       ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
+                                                       ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill_col ,NULL);
               }
             else
 #endif
@@ -776,17 +776,17 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                     slice_coord = span.start - featureset->start;
                     /* 0 based. use featureset->start instead of feature->x1 in case we ever have two disjoint sequences, slice coords are visible seuqnece space at min zoom */
 
-                    fill = non_coding_background;
+                    fill_col = non_coding_background;
 
                     switch (current_exon->region_type)
                       {
                       case EXON_NON_CODING:
-                        fill = non_coding_background;
+                        fill_col = non_coding_background;
                         break ;
 
                       case EXON_CODING:
                         {
-                          fill = coding_background ;
+                          fill_col = coding_background ;
                           span.subpart = ZMAPFEATURE_SUBPART_EXON_CDS;
 
                           /* For peptides make in-frame column a different colour. */
@@ -797,7 +797,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                               //zMapLogWarning("coding  in_frame = %d  (%d %d)", in_frame, slice_coord, slice_coord % 3);
 
                               if(in_frame)
-                                fill = in_frame_background ;
+                                fill_col = in_frame_background ;
                             }
                           break ;
                         }
@@ -805,7 +805,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                         /* NOTE a 3' split codon is at the 3' end of an exon and 5'split codon at the 5' end of an exon  */
 
                       case EXON_SPLIT_CODON_3:
-                        fill = split_codon_3_background ;
+                        fill_col = split_codon_3_background ;
                         span.subpart = ZMAPFEATURE_SUBPART_SPLIT_3_CODON;
                         /* fall through */
 
@@ -819,13 +819,13 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                              * three-frame translation (confusing otherwise). However, for the
                              * show-translation column, always show it. */
                             if (!in_frame && feature_style_id != show_translation_id)
-                              fill = coding_background ;
+                              fill_col = coding_background ;
                           }
                         //zMapLogWarning("split3  in_frame = %d  (%d %d)", in_frame, slice_coord, slice_coord % 3);
                         break;
 
                       case EXON_SPLIT_CODON_5:
-                        fill = split_codon_5_background ;
+                        fill_col = split_codon_5_background ;
                         span.subpart = ZMAPFEATURE_SUBPART_SPLIT_5_CODON;
 
                         if (is_pep)
@@ -841,7 +841,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                              * three-frame translation (confusing otherwise). However, for the
                              * show-translation column, always show it. */
                             if (!in_frame && feature_style_id != show_translation_id)
-                              fill = coding_background ;
+                              fill_col = coding_background ;
                           }
                         break ;
 
@@ -853,7 +853,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                         || (current_exon->region_type == EXON_NON_CODING && !cds_only))
                       {
                         zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
-                                                               ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
+                                                               ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill_col ,NULL);
                       }
                   }
               }
@@ -872,10 +872,10 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
             span.subpart = ZMAPFEATURE_SUBPART_MATCH;
             span.index = 0;
 
-            zMapStyleGetColours(*feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
+            zMapStyleGetColours(*feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill_col, NULL,NULL);
 
             zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
-                                                   ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
+                                                   ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill_col ,NULL);
 
           }
         }        /* end of switch */
@@ -895,7 +895,7 @@ gboolean zMapWindowSeqDispSelectByRegion(FooCanvasItem *sequence_feature,
   if(ZMAP_IS_WINDOW_FEATURESET_ITEM(sequence_feature))
     {
       ZMapFeature feature = zMapWindowCanvasItemGetFeature(sequence_feature);
-      GdkColor *fill;
+      GdkColor *fill_col;
       ZMapFeatureSubPartStruct span ;
 
       /* previous code did this as part of the select operation
@@ -909,10 +909,10 @@ gboolean zMapWindowSeqDispSelectByRegion(FooCanvasItem *sequence_feature,
           span.end   = region_start - 1;
           span.index = 0;
           zMapStyleGetColours(*feature->style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                              &fill, NULL, NULL) ;
+                              &fill_col, NULL, NULL) ;
 
           zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
-                                                 ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
+                                                 ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill_col ,NULL);
         }
 
       span.start = region_start ;
@@ -920,15 +920,15 @@ gboolean zMapWindowSeqDispSelectByRegion(FooCanvasItem *sequence_feature,
       span.subpart = ZMAPFEATURE_SUBPART_MATCH;
       span.index = flanking ? 1 : 0;
 
-      zMapStyleGetColours(*feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
+      zMapStyleGetColours(*feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill_col, NULL,NULL);
 
       /* calling stack for this gets tangled up so it never triggers, needs restructuring */
       if(out_frame)
         zMapStyleGetColours(*feature->style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                            &fill, NULL, NULL) ;
+                            &fill_col, NULL, NULL) ;
 
       zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
-                                             ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
+                                             ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill_col ,NULL);
 
       if(flanking)
         {
@@ -936,10 +936,10 @@ gboolean zMapWindowSeqDispSelectByRegion(FooCanvasItem *sequence_feature,
           span.end   = region_end + flanking;
           span.index = 2;
           zMapStyleGetColours(*feature->style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                              &fill, NULL, NULL) ;
+                              &fill_col, NULL, NULL) ;
 
           zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
-                                                 ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
+                                                 ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill_col ,NULL);
         }
     }
   return TRUE;

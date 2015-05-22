@@ -1109,7 +1109,7 @@ gboolean zmapWindowDumpFile(ZMapWindow window, char *filename) ;
 
 FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowContainerGroup group,
 						int start, int end, double width,
-						gint layer, GdkColor *fill, GdkColor *border);
+						gint layer, GdkColor *fill_col, GdkColor *border_col);
 ZMapWindowContainerGroup zmapWindowContainerGroupCreateWithBackground(FooCanvasGroup *parent,
 								      ZMapContainerLevelType level,
 								      double child_spacing,

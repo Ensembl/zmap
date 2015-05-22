@@ -449,7 +449,7 @@ void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature)
 
   GArray *exons;
   int multiplier = 1, start = 0, end, i;
-  gboolean forward = TRUE;
+  gboolean forwd = TRUE;
 
   if (feature->mode != ZMAPSTYLE_MODE_TRANSCRIPT)
     return ;
@@ -463,10 +463,10 @@ void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature)
       last  = &(g_array_index(exons, ZMapSpanStruct, exons->len - 1));
 
       if(first->x1 > last->x1)
-        forward = FALSE;
+        forwd = FALSE;
     }
 
-  if (forward)
+  if (forwd)
     {
       end = exons->len;
     }
@@ -768,7 +768,7 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
   /* Loop through existing exons to determine how to do the merge.
    * Simple logic at the moment: if the new exon overlaps existing
    * exon(s) then replace them, otherwise insert a new exon. */
-  gboolean replace = FALSE;
+  gboolean replace_flag = FALSE;
   gboolean overlaps = FALSE;
   GArray *an_array = transcript->feature.transcript.exons;
   int i = 0;
@@ -788,7 +788,7 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
           /* Check if it's different to the existing exon (otherwise we just ignore it) */
           if (x1 != compare_exon->x1 || x2 != compare_exon->x2)
             {
-              replace = TRUE;
+              replace_flag = TRUE;
 
               /* Adjust new start/end to include the existing exon */
               if (compare_exon->x1 < start)
@@ -808,7 +808,7 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
 
   /* Create the new exon. Only do this if replacing exons or
    * if we didn't overlap any exons at all (i.e. inside an intron) */
-  if (replace || !overlaps)
+  if (replace_flag || !overlaps)
     {
       ZMapSpan new_exon = (ZMapSpan)g_malloc0(sizeof *new_exon);
       new_exon->x1 = start;

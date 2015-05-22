@@ -419,19 +419,19 @@ gboolean zMapWindowGetVisibleSeq(ZMapWindow window, FooCanvasItem *focus, int *t
 
 
 
-gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor **fill)
+gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border_col, GdkColor **fill_col)
 {
-  *fill = &(window->colour_masked_feature_fill);
-  *border = &(window->colour_masked_feature_border);
+  *fill_col = &(window->colour_masked_feature_fill);
+  *border_col = &(window->colour_masked_feature_border);
   return window->highlights_set.masked;
 }
 
 
-gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill)
+gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill_col)
 {
   if(window && window->highlights_set.filtered)
     {
-      *fill = &(window->colour_filtered_column);
+      *fill_col = &(window->colour_filtered_column);
       return TRUE;
     }
   return FALSE;

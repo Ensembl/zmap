@@ -2126,9 +2126,9 @@ int zMapURLGetQueryInt(const char *full_query, const char *key)
 static char *
 ps (char *path)
 {
-  char *copy = xstrdup (path);
-  path_simplify (copy);
-  return copy;
+  char *copy_string = xstrdup (path);
+  path_simplify (copy_string);
+  return copy_string;
 }
 
 static void

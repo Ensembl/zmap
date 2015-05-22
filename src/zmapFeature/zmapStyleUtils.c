@@ -81,9 +81,9 @@ typedef struct ColourSpecStructName
    STYLE_PTR->FIELD.TYPE.TARGET.pixel, STYLE_PTR->FIELD.TYPE.TARGET.red, STYLE_PTR->FIELD.TYPE.TARGET.green, STYLE_PTR->FIELD.TYPE.TARGET.blue)
 
 #define PRINTCOLOUR(DEST, FIELD, FIELD_STR, TYPE)\
-  PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, fill) ;     \
-  PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, draw) ;     \
-  PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, border) ;
+  PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, fill_col) ;     \
+  PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, draw_col) ;     \
+  PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, border_col) ;
 
 #define PRINTFULLCOLOUR(DEST, FIELD, FIELD_STR)       \
       PRINTCOLOUR(DEST, FIELD, FIELD_STR, normal) ;\
@@ -377,7 +377,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
   #define STYLE_PTR style
 
 
-  if (!ZMAP_IS_FEATURE_STYLE(style)) 
+  if (!ZMAP_IS_FEATURE_STYLE(style))
     return ;
 
   full = TRUE ;
@@ -462,7 +462,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
         PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_MODE), mode_data.graph.mode, "Mode", "%s", zmapStyleGraphMode2ExactStr) ;
         PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_BASELINE), mode_data.graph.baseline, "Baseline", "%g", (double)) ;
         PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_SCALE), mode_data.graph.scale, "Scaling", "%s", zmapStyleScale2ExactStr) ;
-        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_FILL), mode_data.graph.fill,  "Fill", "%s", PRINTBOOL) ;
+        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_FILL), mode_data.graph.fill_flag,  "Fill", "%s", PRINTBOOL) ;
         PRINTFULLCOLOUR(dest, mode_data.graph.colours, "Colours") ;
 
         break ;
@@ -492,7 +492,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
         PRINTFULLCOLOUR(dest, mode_data.alignment.perfect, "Perfect") ;
         PRINTFULLCOLOUR(dest, mode_data.alignment.colinear, "Colinear") ;
         PRINTFULLCOLOUR(dest, mode_data.alignment.noncolinear, "Non-colinear") ;
-        
+
         break ;
       }
     case ZMAPSTYLE_MODE_TRANSCRIPT:
