@@ -109,7 +109,7 @@ ensc_core_dir='ensc-core'
 # For now we hard-code ensembl to use the feature/zmap branch because we have
 # some customisations (e.g. disabling certain stuff that we don't require)
 # which we can't push to the default branch
-ensc_core_branch='-b feature/zmap' 
+ensc_core_branch='-b feature/zmap'
 
 # htslib repository info
 htslib_repos='htslib'
@@ -196,7 +196,7 @@ fi
 if [[ "$gb_tools" == "yes" || "$gb_tools" == "maybe" ]] ; then
 
   if [[ ! -f "./$gb_tools_dir/configure.ac" ]] ; then
-  
+
       fetch_lib $git_host:$git_root/$gb_tools_repos $gb_tools_dir "$gb_tools_branch"
 
   fi
@@ -227,7 +227,7 @@ fi
 if [[ "$aceconn" == "yes" || "$aceconn" == "maybe" ]] ; then
 
   if [[ ! -f "./$aceconn_dir/configure.ac" ]] ; then
-  
+
       fetch_lib $git_host:$git_root/$aceconn_repos $aceconn_dir "$aceconn_branch"
 
   fi
@@ -246,7 +246,7 @@ if [[ "$ensc_core" == "yes" ]] ; then
 fi
 
 if [[ "$ensc_core" == "yes" || "$ensc_core" == "maybe" ]] ; then
-    
+
     if [[ ! -f "./$ensc_core/src/Makefile" ]] ; then
 
         fetch_lib $git_host:$git_root/$ensc_core_repos $ensc_core_dir "$ensc_core_branch"
@@ -266,7 +266,7 @@ if [[ "$htslib" == "yes" ]] ; then
 fi
 
 if [[ "$htslib" == "yes" || "$htslib" == "maybe" ]] ; then
-    
+
     if [[ ! -f "./$htslib/Makefile" ]] ; then
 
         fetch_lib $git_host:$git_root/$htslib_repos $htslib_dir "$htslib_branch"
@@ -276,11 +276,11 @@ if [[ "$htslib" == "yes" || "$htslib" == "maybe" ]] ; then
 fi
 
 # We must have htslib (currently) or we fail.
-if [[ ! -f "./$htslib/Makefile" ]] ; then
-
-    zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
-
-fi
+#if [[ ! -f "./$htslib/Makefile" ]] ; then
+#
+#    zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
+#
+#fi
 
 
 
@@ -294,7 +294,7 @@ if [[ "$zeromq" == "yes" ]] ; then
 fi
 
 if [[ "$zeromq" == "yes" || "$zeromq" == "maybe" ]] ; then
-    
+
     if [[ ! -f "./$zeromq/configure.ac" ]] ; then
 
         fetch_lib $git_host:$git_root/$zeromq_repos $zeromq_dir "$zeromq_branch"
@@ -304,11 +304,11 @@ if [[ "$zeromq" == "yes" || "$zeromq" == "maybe" ]] ; then
 fi
 
 # We must have zeromq (currently) or we fail.
-if [[ ! -f "./$zeromq/configure.ac" ]] ; then
-
-    zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
-
-fi
+#if [[ ! -f "./$zeromq/configure.ac" ]] ; then
+#
+#    zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
+#
+#fi
 
 
 
@@ -345,7 +345,7 @@ echo "m4_define([VERSION_NUMBER], [$ZMAP_VERSION])" >> $version_macro_file
 zmap_message_out "ZMap version is: $ZMAP_VERSION"
 
 #
-# Load SO files and generate a header file from them. 
+# Load SO files and generate a header file from them.
 #
 $BASE_DIR/../scripts/zmap_SO_header.pl || zmap_message_exit "zmap failed to generate SO header"
 

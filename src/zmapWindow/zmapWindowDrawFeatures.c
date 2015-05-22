@@ -2671,8 +2671,8 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
                           {
                             if ( zMapStyleIsFilter(style) )
                               {
-                                select.filter.min = zMapStyleGetMinScore(style);
-                                select.filter.max = zMapStyleGetMaxScore(style);
+                                select.filter.min_val = zMapStyleGetMinScore(style);
+                                select.filter.max_val = zMapStyleGetMaxScore(style);
                                 select.filter.value = zMapWindowCanvasFeaturesetGetFilterValue((FooCanvasItem *)fi) ;
                                 select.filter.n_filtered =
                                   zMapWindowCanvasFeaturesetGetFilterCount((FooCanvasItem *)fi) ;

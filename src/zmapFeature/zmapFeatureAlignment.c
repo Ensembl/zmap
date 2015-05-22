@@ -444,9 +444,9 @@ ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFe
           subparts->parts = g_list_append(subparts->parts, span) ;
 
           if (i == 0)
-            subparts->min = block->t1 ;
+            subparts->min_val = block->t1 ;
           else if (i == (gaps_array->len - 1))
-            subparts->max = block->t2 ;
+            subparts->max_val = block->t2 ;
         }
     }
   else if (requested_bounds == ZMAPFEATURE_SUBPART_GAP)
@@ -464,9 +464,9 @@ ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFe
           subparts->parts = g_list_append(subparts->parts, span) ;
 
           if (i == 0)
-            subparts->min = (block1->t2 + 1) ;
+            subparts->min_val = (block1->t2 + 1) ;
           else if (i == (gaps_array->len - 2))
-            subparts->max = (block2->t1 - 1) ;
+            subparts->max_val = (block2->t1 - 1) ;
         }
     }
   else if (requested_bounds == ZMAPFEATURE_SUBPART_FEATURE)
@@ -485,7 +485,7 @@ ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFe
 /* Do any of boundaries match the start/end of the alignment or any of the
  * gapped blocks (if there are any) within the alignment.
  * Return a list of ZMapFeatureSubPart's of those that do.
- * 
+ *
  * Note in the code below that we can avoid unnecessary comparisons because
  * both boundaries and the exons in the transcript are sorted into ascending
  * sequence position.
@@ -549,7 +549,7 @@ gboolean zmapFeatureAlignmentMatchingBoundaries(ZMapFeature feature,
                   ZMapAlignBlock block ;
 
                   block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i)) ;
-              
+
                   if ((curr_boundary->start) && block->t2 < curr_boundary->start)
                     {
                       /* Block is before current splice. */
@@ -582,7 +582,7 @@ gboolean zmapFeatureAlignmentMatchingBoundaries(ZMapFeature feature,
                           else
                             {
                               error = TRUE ;
-                              
+
                               break ;
                             }
                         }

@@ -857,7 +857,7 @@ static void drawScale(NavigateDraw draw_data)
   FooCanvasItem *item = NULL;
 
   GQuark scale_id = 0;
-  int min, max;
+  int min_val, max_val;
   double zoom_factor = 0.0;
 
 
@@ -878,12 +878,12 @@ static void drawScale(NavigateDraw draw_data)
 
       features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)scale_group);
 
-      min = draw_data->context->master_align->sequence_span.x1;
-      max = draw_data->context->master_align->sequence_span.x2;
+      min_val = draw_data->context->master_align->sequence_span.x1;
+      max_val = draw_data->context->master_align->sequence_span.x2;
       zoom_factor = item->canvas->pixels_per_unit_y;
 
       zMapWindowDrawScaleBar(zmapWindowScaleCanvasGetScrolledWindow(draw_data->navigate->current_window->ruler),
-                             features, min, max, min, max, zoom_factor, draw_data->navigate->is_reversed, FALSE);
+                             features, min_val, max_val, min_val, max_val, zoom_factor, draw_data->navigate->is_reversed, FALSE);
     }
 
   return ;
@@ -982,15 +982,15 @@ static void clampCoords(ZMapWindowNavigator navigate,
                         double *c1_inout, double *c2_inout)
 {
   double top, bot;
-  double min, max;
+  double min_val, max_val;
 
-  min = (double)(navigate->full_span.x1);
-  max = (double)(navigate->full_span.x2);
+  min_val = (double)(navigate->full_span.x1);
+  max_val = (double)(navigate->full_span.x2);
 
   top = *c1_inout;
   bot = *c2_inout;
 
-  zMapGUICoordsClampSpanWithLimits(min, max, &top, &bot);
+  zMapGUICoordsClampSpanWithLimits(min_val, max_val, &top, &bot);
 
   *c1_inout = top;
   *c2_inout = bot;

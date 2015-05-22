@@ -422,12 +422,12 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
     //	  GtkEntry *entry = (GtkEntry *) zmap->filter_but;
     GtkAdjustment *adj = gtk_spin_button_get_adjustment ((GtkSpinButton *) zmap->filter_but);
     double range, step;
-    double min;
+    double min_val;
     //	  guint digits = 0;
 
     /* this is the only place we set the step value */
     /* CanvasFeaturesets remember the current value */
-    range = zmap->filter.max - zmap->filter.min;
+    range = zmap->filter.max_val - zmap->filter.min_val;
     step = 1.0;
 
     while(range / step > 1000.0)
@@ -442,19 +442,19 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
     if(step < 5.0)
       step = 5.0;
 
-    /* style min and max relate to display not feature scores, we can filter on score less than style min
-     * we flag filtering if features are hidden, not if we are on the min score
+    /* style min_val and max relate to display not feature scores, we can filter on score less than style min_val
+     * we flag filtering if features are hidden, not if we are on the min_val score
      */
-    min = 0.0;
-    if(zmap->filter.min < min)
-      zmap->filter.min = min;
+    min_val = 0.0;
+    if(zmap->filter.min_val < min_val)
+      zmap->filter.min_val = min_val;
 
-    if(zmap->filter.value < min)
-      zmap->filter.value = min;
-    if(zmap->filter.value > zmap->filter.max)
-      zmap->filter.value = zmap->filter.max;
+    if(zmap->filter.value < min_val)
+      zmap->filter.value = min_val;
+    if(zmap->filter.value > zmap->filter.max_val)
+      zmap->filter.value = zmap->filter.max_val;
 
-    gtk_adjustment_configure(adj,zmap->filter.value, min, zmap->filter.max, step, 0, 0);
+    gtk_adjustment_configure(adj,zmap->filter.value, min_val, zmap->filter.max_val, step, 0, 0);
 
     /*	  if(digits)*/ 	/*  seems to be interpreted as a vast number */
     /*		gtk_spin_button_set_digits ((GtkSpinButton *) zmap->filter_but, digits); */

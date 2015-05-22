@@ -94,7 +94,7 @@ static void updateSpinners(DNASearchData dna_data) ;
 static GtkWidget *makeMenuBar(DNASearchData dna_data) ;
 static GtkWidget *makeSpinPanel(DNASearchData dna_data,
                                 const char *title,
-                                const char *spin_label, int min, int max, int init, GtkSignalFunc func,
+                                const char *spin_label, int min_val, int max_val, int init, GtkSignalFunc func,
                                 const char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2,
                                 const char *spin_label3, int min3, int max3, int init3, GtkSignalFunc func3) ;
 static void getDNA(DNASearchData dna_data) ;
@@ -133,7 +133,7 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   /* Need to check that there is any dna...n.b. we need the item that was clicked for us to check
    * the dna..... */
   feature = zmapWindowItemGetFeature(feature_item);
-  if (!feature) 
+  if (!feature)
     return dna ;
   block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
 
@@ -305,7 +305,7 @@ static GtkWidget *makeMenuBar(DNASearchData dna_data)
 
 static GtkWidget *makeSpinPanel(DNASearchData dna_data,
                                 const  char *title,
-                                const char *spin_label, int min, int max, int init, GtkSignalFunc func,
+                                const char *spin_label, int min_val, int max_val, int init, GtkSignalFunc func,
                                 const char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2,
                                 const char *spin_label3, int min3, int max3, int init3, GtkSignalFunc func3)
 {
@@ -328,7 +328,7 @@ static GtkWidget *makeSpinPanel(DNASearchData dna_data,
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
-  start_spinbox =  gtk_spin_button_new_with_range(min, max, 1.0) ;
+  start_spinbox =  gtk_spin_button_new_with_range(min_val, max_val, 1.0) ;
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(start_spinbox), init) ;
   gtk_signal_connect(GTK_OBJECT(start_spinbox), "value-changed",
                      GTK_SIGNAL_FUNC(func), (gpointer)dna_data) ;
@@ -452,7 +452,7 @@ static void getDNA(DNASearchData dna_data)
               dna_data->sequence_end = end ;
             }
         }
-        
+
       g_free(feature_txt) ;
     }
 

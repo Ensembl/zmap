@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -44,7 +44,7 @@
 #define VARIATION_SEPARATOR_CHAR '/'
 
 
-/* 
+/*
  *                 External routines.
  */
 
@@ -54,7 +54,7 @@
 
 
 
-/* 
+/*
  *                 Package routines.
  */
 
@@ -71,8 +71,8 @@ ZMapFeaturePartsList zmapFeatureBasicSubPartsGet(ZMapFeature feature, ZMapFeatur
 
       feature_span = zMapFeatureSubPartCreate(ZMAPFEATURE_SUBPART_FEATURE, 0, feature->x1, feature->x2) ;
 
-      subparts->min = feature->x1 ;
-      subparts->max = feature->x2 ;
+      subparts->min_val = feature->x1 ;
+      subparts->max_val = feature->x2 ;
       subparts->parts = g_list_append(subparts->parts, feature_span) ;
     }
 
@@ -108,8 +108,8 @@ gboolean zmapFeatureBasicMatchingBoundaries(ZMapFeature feature,
  * modified to return a list of new strings if we want to return all of the alternatives.)
  * Returns the diff between new_len and old len (which is negative if a deletion, positive for an
  * insertion or 0 for a replacement of the same number of chars). */
-int zMapFeatureVariationGetSections(const char *variation_str, 
-                                    char **old_str_out, char **new_str_out, 
+int zMapFeatureVariationGetSections(const char *variation_str,
+                                    char **old_str_out, char **new_str_out,
                                     int *old_len_out, int *new_len_out)
 {
   int diff = 0 ;
@@ -135,7 +135,7 @@ int zMapFeatureVariationGetSections(const char *variation_str,
       if (old_len > 0)
         {
           old_str = g_strndup(variation_str, old_len) ;
-          
+
           if (strcmp(old_str, "-") == 0) /* insertion */
             old_len = 0 ;
         }
@@ -143,7 +143,7 @@ int zMapFeatureVariationGetSections(const char *variation_str,
       if (new_len > 0)
         {
           new_str = g_strndup(separator_pos + 1, new_len) ;
-          
+
           if (strcmp(new_str, "-") == 0) /* deletion */
             new_len = 0 ;
         }

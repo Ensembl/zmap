@@ -2057,8 +2057,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
         {
           FooCanvasItem *foo = (FooCanvasItem *) item;
 
-          select.filter.min = zMapStyleGetMinScore(style);
-          select.filter.max = zMapStyleGetMaxScore(style);
+          select.filter.min_val = zMapStyleGetMinScore(style);
+          select.filter.max_val = zMapStyleGetMaxScore(style);
           select.filter.value = zMapWindowCanvasFeaturesetGetFilterValue(foo);
           select.filter.n_filtered = zMapWindowCanvasFeaturesetGetFilterCount(foo);
           select.filter.featureset = (ZMapWindowFeaturesetItem) foo;

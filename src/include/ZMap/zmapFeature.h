@@ -869,7 +869,7 @@ typedef struct ZMapFeaturePartStructType
  * with quick overlap comparisons. */
 typedef struct ZMapFeaturePartsListStructType
 {
-  int min, max ;
+  int min_val, max_val ;
 
   GList *parts ;
 

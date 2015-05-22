@@ -128,7 +128,7 @@ typedef int (*ZMapWindowFilterCallbackFunc)(gpointer filter, double value, gbool
 
 typedef struct
 {
-  double min,max;                                           /* for the spin button */
+  double min_val, max_val;                                           /* for the spin button */
   double value;
   ZMapWindow window;
   gpointer featureset;                                      /* where to filter, is a ZMapWindowCanvasFeatureset... scope :-( */

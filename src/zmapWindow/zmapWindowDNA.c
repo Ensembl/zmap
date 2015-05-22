@@ -92,7 +92,7 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
                                 const char *title,
                                 const char *strand_title,
                                 const char *frame_title,
-                                const char *spin_label, int min, int max, int init, GtkSignalFunc func,
+                                const char *spin_label, int min_val, int max_val, int init, GtkSignalFunc func,
                                 const char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2) ;
 
 static void remapCoords(gpointer data, gpointer user_data) ;
@@ -505,7 +505,7 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
                                 const char *title,
                                 const char *combo_label,
                                 const char *combo_label2,
-                                const char *spin_label, int min, int max, int init, GtkSignalFunc func,
+                                const char *spin_label, int min_val, int max_val, int init, GtkSignalFunc func,
                                 const char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2)
 {
   GtkWidget *frame ;
@@ -574,10 +574,10 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
-  if (min > max)
-    zMapUtilsSwop(int, min, max) ;
+  if (min_val > max_val)
+    zMapUtilsSwop(int, min_val, max_val) ;
 
-  error_spinbox = gtk_spin_button_new_with_range(min, max, 1.0) ;
+  error_spinbox = gtk_spin_button_new_with_range(min_val, max_val, 1.0) ;
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(error_spinbox), init) ;
   gtk_signal_connect(GTK_OBJECT(error_spinbox), "value-changed",
                      GTK_SIGNAL_FUNC(func), (gpointer)search_data) ;

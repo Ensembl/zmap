@@ -2115,11 +2115,11 @@ static gboolean check_edited_values(ZMapGuiNotebookAny note_any, const char *ent
       int tmp = 0;
       if (zMapStr2Int(text, &tmp))
         {
-          int min = 1024, max = 65535;
-          if (tmp < min || tmp > max)
+          int min_val = 1024, max_val = 65535;
+          if (tmp < min_val || tmp > max_val)
             {
               allowed = FALSE;
-              zMapWarning("Port should be in range of %d to %d", min, max);
+              zMapWarning("Port should be in range of %d to %d", min_val, max_val);
             }
         }
     }
