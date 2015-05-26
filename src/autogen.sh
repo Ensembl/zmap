@@ -267,7 +267,7 @@ fi
 
 if [[ "$htslib" == "yes" || "$htslib" == "maybe" ]] ; then
 
-    if [[ ! -f "./$htslib/Makefile" ]] ; then
+    if [[ ! -f "./$htslib_dir/Makefile" ]] ; then
 
         fetch_lib $git_host:$git_root/$htslib_repos $htslib_dir "$htslib_branch"
 
@@ -276,11 +276,11 @@ if [[ "$htslib" == "yes" || "$htslib" == "maybe" ]] ; then
 fi
 
 # We must have htslib (currently) or we fail.
-#if [[ ! -f "./$htslib/Makefile" ]] ; then
-#
-#    zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
-#
-#fi
+if [[ ! -f "./$htslib_dir/Makefile" ]] ; then
+
+    zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
+
+fi
 
 
 
@@ -295,7 +295,7 @@ fi
 
 if [[ "$zeromq" == "yes" || "$zeromq" == "maybe" ]] ; then
 
-    if [[ ! -f "./$zeromq/configure.ac" ]] ; then
+    if [[ ! -f "./$zeromq_dir/configure.ac" ]] ; then
 
         fetch_lib $git_host:$git_root/$zeromq_repos $zeromq_dir "$zeromq_branch"
 
@@ -304,11 +304,11 @@ if [[ "$zeromq" == "yes" || "$zeromq" == "maybe" ]] ; then
 fi
 
 # We must have zeromq (currently) or we fail.
-#if [[ ! -f "./$zeromq/configure.ac" ]] ; then
-#
-#    zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
-#
-#fi
+if [[ ! -f "./$zeromq_dir/configure.ac" ]] ; then
+
+    zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
+
+fi
 
 
 
