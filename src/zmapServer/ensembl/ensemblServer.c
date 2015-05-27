@@ -207,10 +207,23 @@ static gboolean globalInit(void)
 {
   gboolean result = TRUE ;
 
+  /* Initialise mysql. */
+  if (mysql_library_init(0, NULL, NULL))
+    {
+      zMapLogCritical("%s", "Global initialisation of ensembl server failed.") ;
+
+      result = FALSE ;
+    }
+
   /* Initialise the ensembl C API */
-  char *prog_name = g_strdup("zmap") ;
-  initEnsC(1, &prog_name) ;
-  g_free(prog_name) ;
+  if (result)
+    {
+      char *prog_name = g_strdup("zmap") ;
+
+      initEnsC(1, &prog_name) ;
+
+      g_free(prog_name) ;
+    }
 
   return result ;
 }
