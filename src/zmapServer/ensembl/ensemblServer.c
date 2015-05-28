@@ -227,10 +227,23 @@ static gboolean globalInit(void)
 {
   gboolean result = TRUE ;
 
+  /* Initialise mysql. */
+  if (mysql_library_init(0, NULL, NULL))
+    {
+      zMapLogCritical("%s", "Global initialisation of ensembl server failed.") ;
+
+      result = FALSE ;
+    }
+
   /* Initialise the ensembl C API */
-  char *prog_name = g_strdup("zmap") ;
-  initEnsC(1, &prog_name) ;
-  g_free(prog_name) ;
+  if (result)
+    {
+      char *prog_name = g_strdup("zmap") ;
+
+      initEnsC(1, &prog_name) ;
+
+      g_free(prog_name) ;
+    }
 
   return result ;
 }
@@ -286,7 +299,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
-  zMapReturnValIfFail(server && req_open && req_open->sequence_map, result) ;
+  zMapReturnValIfFail(server && req_open && req_open->sequence_map, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   server->sequence = g_strdup(req_open->sequence_map->sequence) ;
   server->zmap_start = req_open->zmap_start ;
@@ -302,6 +315,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
     }
   else
     {
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
       setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)", 
                                         server->db_name, server->sequence, server->zmap_start, server->zmap_end)) ;
       ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
@@ -1062,34 +1076,19 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
                             feature_mode, source, 0, 0, 
                             get_features_data, feature_block) ;
 
+      /* If coding region start/end are not already set, these calls set them */
+      int coding_region_start = Transcript_getCodingRegionStart(rsf) ;
+      int coding_region_end = coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
+
       char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
       char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
-      char cDNA_coding_start_is_set = Transcript_getcDNACodingStartIsSet(rsf) ;
-      char cDNA_coding_end_is_set = Transcript_getcDNACodingEndIsSet(rsf) ;
-      int coding_region_start = 0;
-      int coding_region_end = 0;
-      int cDNA_coding_start = 0;
-      int cDNA_coding_end = 0;
-
-      if (coding_region_start_is_set)
-        coding_region_start = Transcript_getCodingRegionStart(rsf) ;
-
-      if (coding_region_end_is_set)
-        coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
-
-      if (cDNA_coding_start_is_set)
-        cDNA_coding_start = Transcript_getcDNACodingStart(rsf) ;
-
-      if (cDNA_coding_end_is_set)
-        cDNA_coding_end = Transcript_getcDNACodingEnd(rsf) ;
-
-      zMapLogMessage("coding startset=%c endset=%c start=%d end=%d\ncdna startset=%c endset=%c start=%d end=%d\n", 
-                     coding_region_start_is_set, coding_region_end_is_set, coding_region_start, coding_region_end,
-                     cDNA_coding_start_is_set, cDNA_coding_end_is_set, cDNA_coding_start, cDNA_coding_end);
 
       zMapFeatureTranscriptInit(feature);
       zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
-      //zMapFeatureAddTranscriptCDS(feature, cds, coding_region_start, coding_region_end);
+
+      zMapFeatureAddTranscriptCDS(feature, 
+                                  (coding_region_start_is_set && coding_region_end_is_set),
+                                  coding_region_start, coding_region_end);
 
       Vector *exons = Transcript_getAllExons(rsf) ;
       transcriptAddExons(server, feature, exons) ;
@@ -1138,22 +1137,27 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
                             feature_mode, source, 0, 0, 
                             get_features_data, feature_block) ;
 
-      //char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
-      //char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
-      //int coding_region_start = 0;
-      //int coding_region_end = 0;
-      //
-      //if (coding_region_start_is_set)
-      //  coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
-      //
-      //if (coding_region_end_is_set)
-      //  coding_region_end = PredictionTranscript_getCodingRegionEnd(rsf) ;
-      //
-      //char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
-      //char end_is_set = PredictionTranscript_getEndIsSet(rsf) ;
+      char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
+      char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
+      char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
+      char end_is_set = PredictionTranscript_getEndIsSet(rsf) ;
+      int coding_region_start = 0;
+      int coding_region_end = 0;
+      
+      /* getCodingRegionStart gives an error if coding_region_start and start 
+       * are both unset so we must check first */
+      if (coding_region_start_is_set || start_is_set)
+        coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
+      
+      if (coding_region_end_is_set || end_is_set)
+        coding_region_end = PredictionTranscript_getCodingRegionEnd(rsf) ;
 
       zMapFeatureTranscriptInit(feature);
       zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+
+      zMapFeatureAddTranscriptCDS(feature, 
+                                  (coding_region_start_is_set && coding_region_end_is_set),
+                                  coding_region_start, coding_region_end);
 
       Vector *exons = PredictionTranscript_getAllExons(rsf, 0) ;
       transcriptAddExons(server, feature, exons) ;
@@ -1176,16 +1180,17 @@ static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector
       for (i = 0; i < Vector_getNumElement(exons); ++i) 
         {
           SeqFeature *exon = (SeqFeature*)Vector_getElementAt(exons,i);
+          const int offset = server->zmap_start - 1 ;
 
           ZMapSpanStruct span = {
-            (int)exon->start + server->zmap_start, 
-            (int)exon->end + server->zmap_start
+            (int)exon->start + offset, 
+            (int)exon->end + offset
           };
 
           zMapFeatureAddTranscriptExonIntron(feature, &span, NULL) ;
 
-          zMapLogMessage("Added exon %d, %d (%d, %d)", 
-                         span.x1, span.x2, exon->start, exon->end);
+          //zMapLogMessage("Added exon %d, %d (%d, %d)", 
+          //               span.x1, span.x2, exon->start, exon->end);
         }
 
       zMapFeatureTranscriptRecreateIntrons(feature) ;
@@ -1220,8 +1225,6 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
       /* Add the alignment data */
       GQuark clone_id = 0 ; /*! \todo Add clone id? */
       double percent_id = 0.0 ;
-      int match_start = 0 ;
-      int match_end = 0 ;
       int match_length = 0 ;
       ZMapStrand match_strand = ZMAPSTRAND_NONE ;
       ZMapPhase match_phase = ZMAPPHASE_NONE;
@@ -1264,8 +1267,8 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
                                   homol_type, match_length, match_strand, match_phase,
                                   align, align_error, has_local_sequence, sequence) ;
       
-      zMapLogMessage("Added align data: id %f, qstart %d, qend %d, qlen %d, qstrand %d, ph %d, cigar %s",
-                     percent_id, match_start, match_end, match_length, match_strand, match_phase, cigar) ;
+      //zMapLogMessage("Added align data: id %f, qstart %d, qend %d, qlen %d, qstrand %d, ph %d, cigar %s",
+      //               percent_id, match_start, match_end, match_length, match_strand, match_phase, cigar) ;
     }
 
   return feature ;
@@ -1349,8 +1352,8 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                      score,
                                      strand) ;
 
-          zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d", 
-                         feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
+          //zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d", 
+          //               feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
 
           /* add the new feature to the featureset */
           ZMapFeature existing_feature = (ZMapFeature)g_hash_table_lookup(((ZMapFeatureAny)feature_set)->children, GINT_TO_POINTER(feature_name_id)) ;
@@ -1408,7 +1411,7 @@ static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
 
       source_id = source_data->source_id ;
       source_data->style_id = feature_style_id;
-      zMapLogMessage("Style id = %s", g_quark_to_string(source_data->style_id)) ;
+      //zMapLogMessage("Style id = %s", g_quark_to_string(source_data->style_id)) ;
     }
   else
     {
@@ -1467,13 +1470,16 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   GetFeaturesData get_features_data = (GetFeaturesData)user_data ;
   EnsemblServer server = get_features_data->server ;
 
-  getAllSimpleFeatures(server, get_features_data, feature_block) ;
-  getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
-  getAllDNAPepAlignFeatures(server, get_features_data, feature_block) ;
-  getAllRepeatFeatures(server, get_features_data, feature_block) ;
-  getAllTranscripts(server, get_features_data, feature_block) ;
-  getAllPredictionTranscripts(server, get_features_data, feature_block) ;
-  //getAllGenes(server, get_features_data, feature_block) ;
+  if (server->slice)
+    {
+      getAllSimpleFeatures(server, get_features_data, feature_block) ;
+      getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
+      getAllDNAPepAlignFeatures(server, get_features_data, feature_block) ;
+      getAllRepeatFeatures(server, get_features_data, feature_block) ;
+      getAllTranscripts(server, get_features_data, feature_block) ;
+      getAllPredictionTranscripts(server, get_features_data, feature_block) ;
+      //getAllGenes(server, get_features_data, feature_block) ;
+    }
   
   return ;
 }
@@ -1529,7 +1535,9 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
       context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, ZMAPFEATURE_STRUCT_CONTEXT) ;
 
       /* I'm going to create the three frame translation up front! */
-      if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
+      /* gb10: comment out check on req_feature_set_names as temp fix to get 3ft working in
+       * ensembl. I'm not sure why we need this check anyway - don't we always want 3ft??  */
+      //if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
         {
           ZMapFeatureSet translation_fs = NULL;
 
@@ -1552,8 +1560,8 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
         }
 
       /* I'm going to create the show translation up front! */
-      if (zMap_g_list_find_quark(context->req_feature_set_names,
-                  zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
+        //if (zMap_g_list_find_quark(context->req_feature_set_names,
+        //                           zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
         {
           if ((zMapFeatureShowTranslationCreateSet(feature_block, &feature_set)))
             {
@@ -1569,6 +1577,34 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
     Slice_free(slice);
 
   return ;
+}
+
+
+static Slice* getSliceForCoordSystem(const char *coord_system,
+                                     EnsemblServer server,
+                                     const char *seq_name,
+                                     long start,
+                                     long end,
+                                     int strand)
+{
+  Slice *slice = NULL ;
+
+  /* copy seq_name and coord_system because function takes non-const arg... ugh */
+  char *seq_name_copy = g_strdup(seq_name);
+  char *coord_system_copy = g_strdup(coord_system) ;
+
+  pthread_mutex_lock(&server->mutex) ; 
+  slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, coord_system_copy, seq_name_copy, start, end, strand, NULL, 0);
+  pthread_mutex_unlock(&server->mutex) ;
+      
+  g_free(seq_name_copy);
+  g_free(coord_system_copy) ;
+
+  /* Remember the coord system we used */
+  if (slice)
+    server->coord_system = coord_system ;
+
+  return slice ;
 }
 
 
@@ -1600,14 +1636,11 @@ static Slice* getSlice(EnsemblServer server,
       char *seq_name_copy = g_strdup(seq_name);
       char *coord_system = g_strdup("chromosome") ;
 
-      pthread_mutex_lock(&server->mutex) ; 
-      slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, coord_system, seq_name_copy, start, end, strand, NULL, 0);
-      pthread_mutex_unlock(&server->mutex) ;
-      
-      g_free(seq_name_copy) ;
-      g_free(coord_system) ;
-      seq_name_copy = NULL ;
-      coord_system = NULL ;
+      /*! \todo Need to find the coord system a better way. For now just try in rough priority order. */
+      if (!slice) slice = getSliceForCoordSystem("chromosome", server, seq_name, start, end, strand) ;
+      if (!slice) slice = getSliceForCoordSystem("ultracontig", server, seq_name, start, end, strand) ;
+      if (!slice) slice = getSliceForCoordSystem("scaffold", server, seq_name, start, end, strand) ;
+      if (!slice) slice = getSliceForCoordSystem("contig", server, seq_name, start, end, strand) ;
 
       if (server->slice_adaptor && slice)
         {
@@ -1661,7 +1694,7 @@ static char* getSequence(EnsemblServer server,
           pthread_mutex_unlock(&server->mutex) ;
         }
 
-      if (server->slice_adaptor && server->seq_adaptor)
+      if (server->slice_adaptor && server->seq_adaptor && server->coord_system)
         {
           /* copy seq_name and coord system because function takes non-const arg... ugh */
           char *seq_name_copy = g_strdup(seq_name) ;

@@ -98,6 +98,17 @@ typedef enum
 #define IS_3FRAME(FRAME_MODE) \
   ((FRAME_MODE) & DISPLAY_3FRAME_ON)
 
+/*
+ * Coordinate type to display to the user in the window.
+ * This includes the ruler, and scale bar.
+ */
+typedef enum
+  {
+    DISPLAY_COORD_INVALID,
+    DISPLAY_COORD_CHROM,      /* chromosome coordinates           */
+    DISPLAY_COORD_SLICE,      /* slice coordinate                 */
+    DISPLAY_COORD_USER        /* wrt user-selected origin         */
+  } DisplayCoordMode ;
 
 
 
@@ -1516,9 +1527,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptide(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
 					      ZMapGUIMenuItemCallbackFunc callback_func,
 					      gpointer callback_data) ;
-ZMapGUIMenuItem zmapWindowMakeMenuExportOps(int *start_index_inout,
-					    ZMapGUIMenuItemCallbackFunc callback_func,
-					    gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuColumnExportOps(int *start_index_inout,
+                                                  ZMapGUIMenuItemCallbackFunc callback_func,
+                                                  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuItemExportOps(int *start_index_inout,
+                                                ZMapGUIMenuItemCallbackFunc callback_func,
+                                                gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
 					       ZMapGUIMenuItemCallbackFunc callback_func,
 					       gpointer callback_data) ;
@@ -1660,6 +1674,7 @@ void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window, FooCanvasGroup *group,
 			      int scroll_start, int scroll_end,
 			      int seq_start, int seq_end,
+         int true_start, int true_end,
 			      double zoom_factor, gboolean revcomped, gboolean zoomed);
 
 double zMapWindowScaleCanvasGetWidth(ZMapWindowScaleCanvas ruler);
@@ -1849,7 +1864,8 @@ void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas obj, double y1, double 
 void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas obj);
 void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas obj, gboolean revcomped) ;
 void zmapWindowScaleCanvasSetSpan(ZMapWindowScaleCanvas ruler, int start,int end);
-gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, int x, int y,int seq_start, int seq_end);
+gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, int x, int y,int seq_start, int seq_end,
+                                   int true_start, int true_end);
 void zmapWindowScaleCanvasSetVAdjustment(ZMapWindowScaleCanvas obj, GtkAdjustment *vadjustment);
 void zmapWindowScaleCanvasSetPixelsPerUnit(ZMapWindowScaleCanvas obj, double x, double y);
 void zmapWindowScaleCanvasSetLineHeight(ZMapWindowScaleCanvas obj, double border);

@@ -702,9 +702,9 @@ GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item) ;
 
 
 gboolean zMapWindowExportFeatureSets(ZMapWindow window,
-  GList* featuresets, gboolean marked_region, char **filepath_inout, GError **error) ;
+                                     GList* featuresets, gboolean marked_region, char **filepath_inout, GError **error) ;
 gboolean zMapWindowExportFeatures(ZMapWindow window,
-  gboolean marked_region, ZMapFeatureAny feature_in, char **filepath_inout, GError **error) ;
+                                  gboolean all_features, gboolean marked_region, ZMapFeatureAny feature_in, char **filepath_inout, GError **error) ;
 gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GError **error) ;
 gboolean zMapWindowExportContext(ZMapWindow window, GError **error) ;
 

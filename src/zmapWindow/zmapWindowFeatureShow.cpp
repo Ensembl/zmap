@@ -2659,14 +2659,14 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
     {
       /* We always create a new feature. If we're updating the existing feature it will get replaced. */
       feature = zMapFeatureCreateFromStandardData((char*)g_quark_to_string(feature_id),
-                                                  NULL,
-                                                  NULL,
+                                                  NULL,  /* sequence */
+                                                  "transcript",
                                                   ZMAPSTYLE_MODE_TRANSCRIPT,
                                                   &style,
-                                                  0, /* start */
-                                                  0, /* end */
-                                                  FALSE,
-                                                  0.0,
+                                                  0,     /* start */
+                                                  0,     /* end */
+                                                  FALSE, /* has score */
+                                                  0.0,   /* score */
                                                   ZMAPSTRAND_FORWARD);
 
       feature->parent = (ZMapFeatureAny)feature_set ;

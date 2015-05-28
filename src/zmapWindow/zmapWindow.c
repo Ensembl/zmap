@@ -1592,7 +1592,10 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
 
       window->ruler_previous_revcomp = window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
 
-      if (zmapWindowScaleCanvasDraw(window->ruler, y1, y2, window->min_coord, window->max_coord))
+      if (zmapWindowScaleCanvasDraw(window->ruler,
+                                    y1, y2,
+                                    window->min_coord, window->max_coord,
+                                    window->sequence->start, window->sequence->end))
         {
           double max_x2 = zMapWindowScaleCanvasGetWidth(window->ruler) + 1 ;
 

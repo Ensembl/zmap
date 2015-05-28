@@ -10,6 +10,7 @@ m4_include([zmap_version.m4])
 AC_PREREQ(2.61)
 AC_INIT([ZMap], [VERSION_NUMBER], [zmap@sanger.ac.uk], [zmap], [http://www.sanger.ac.uk/resources/software/zmap/])
 
+# do we need this ??
 AC_CONFIG_AUX_DIR([config])
 
 # check we can find the source
@@ -18,6 +19,27 @@ AC_CONFIG_HEADERS([config.h])
 
 # try it....
 AC_CONFIG_MACRO_DIR([m4])
+
+
+
+# Check for programs.
+#
+#
+AC_PROG_CXX
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+
+AC_PATH_PROGS(PERL, perl perl5)
+
+AC_ARG_VAR(GLIB_GENMARSHAL, [The glib-genmarshal executable.])
+AC_CHECK_PROG(GLIB_GENMARSHAL, glib-genmarshal, glib-genmarshal)
+
+
 
 
 # External libraries
@@ -265,21 +287,6 @@ AC_SUBST(LDFLAGS)
 
 ################################################################################
 ################################################################################
-# Checks for programs.
-################################################################################
-################################################################################
-
-
-
-AC_PATH_PROGS(PERL, perl perl5)
-AC_PROG_LN_S
-
-AC_ARG_VAR(GLIB_GENMARSHAL, [The glib-genmarshal executable.])
-AC_CHECK_PROG(GLIB_GENMARSHAL, glib-genmarshal, glib-genmarshal)
-
-
-################################################################################
-################################################################################
 # Checks for libraries.
 ################################################################################
 ################################################################################
@@ -390,9 +397,9 @@ AC_SUBST(DEMO_CANVAS_LIBS)
 ################################################################################
 ################################################################################
 AC_HEADER_STDC
-AC_CHECK_HEADERS([fcntl.h locale.h stdlib.h string.h strings.h sys/param.h unistd.h])
 
-#AC_CHECK_HEADER([AceConn.h])
+AC_CHECK_HEADERS([fcntl.h inttypes.h libintl.h locale.h memory.h stdint.h stdlib.h string.h strings.h sys/param.h sys/socket.h termios.h unistd.h utime.h])
+
 
 ################################################################################
 ################################################################################
@@ -400,6 +407,8 @@ AC_CHECK_HEADERS([fcntl.h locale.h stdlib.h string.h strings.h sys/param.h unist
 ################################################################################
 ################################################################################
 AC_C_CONST
+AC_TYPE_MODE_T
+AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 
 ################################################################################
@@ -407,8 +416,10 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 ################################################################################
 ################################################################################
+AC_FUNC_FORK
 AC_FUNC_STAT
-AC_CHECK_FUNCS([gethostname memmove memset mkdir strcasecmp strstr strtol])
+
+AC_CHECK_FUNCS([floor gethostname memchr memmove memset mkdir setlocale sqrt strcasecmp strncasecmp strstr strtol uname])
 
 #LDFLAGS="$LDFLAGS $FOOCANVAS_LIBS $ACECONN_LIBS"
 #LDFLAGS="$LDFLAGS $ACECONN_LIBS"
