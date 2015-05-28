@@ -77,6 +77,9 @@ AM_COND_IF([USE_ENSEMBL_SUBDIR],
            [AC_DEFINE([USE_ENSEMBL_SUBDIR], [1], [Ensembl interface is built as a subdirectory of ZMap.])])
 AM_COND_IF([USE_ENSEMBL_SUBDIR],
            [AC_SUBST([USE_ENSEMBL_SUBDIR], [use_ensembl_subdir])])
+AM_COND_IF([USE_ENSEMBL_SUBDIR],
+           [ cp -r $srcdir/ensc-core . ])
+
 
 
 # Check for htslib
@@ -86,7 +89,8 @@ AM_COND_IF([USE_HTSLIB],
            [AC_DEFINE([USE_HTSLIB], [1], [Htslib interface is available.])])
 AM_COND_IF([USE_HTSLIB],
            [AC_SUBST([USE_HTSLIB], [use_htslib])])
-
+AM_COND_IF([USE_HTSLIB],
+           [ cp -r $srcdir/htslib . ])
 
 # Check for zeromq
 #
@@ -583,6 +587,14 @@ AC_CONFIG_SUBDIRS([zeromq])
 # Finish up.
 #
 AC_OUTPUT
+
+
+echo
+echo "             srcdir = $srcdir"
+echo "      ac_top_srcdir = $ac_top_srcdir"
+echo "ac_top_build_prefix = $ac_top_build_prefix"
+echo "          ac_srcdir = $ac_srcdir"
+echo
 
 echo \
 "---------------------------------------------------------------------

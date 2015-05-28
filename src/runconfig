@@ -170,12 +170,7 @@ $COMMON_CONFIGURE_ARGS \
 $SPECIFIC_CONFIGURE_ARGS \
 "$CC_param" "$CFLAGS_param" "$LDFLAGS_param" "$@" || zmap_message_exit "configure script failed."
 
-#
-# This adds a link to the htslib folder in the build directory. 
-#
-#ln -s ../../htslib-develop
-cp -r ../../htslib .
-cp -r ../../ensc-core .
+
 
 exit 0
 
