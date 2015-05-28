@@ -848,8 +848,8 @@ static void getConfiguration(PipeServer server)
       char *tmp_string  = NULL;
 
       /* default directory to use */
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                        ZMAPSTANZA_APP_DATA, &tmp_string))
+      if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                          ZMAPSTANZA_APP_DATA, &tmp_string))
 	{
 	  server->data_dir = tmp_string;
 	}
