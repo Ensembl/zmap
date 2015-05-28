@@ -1928,9 +1928,9 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** styles
 
       if(stylesfile)
         {
-          zMapConfigIniContextGetString(context,
-                                        ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
-                                        ZMAPSTANZA_APP_STYLESFILE,stylesfile);
+          zMapConfigIniContextGetFilePath(context,
+                                          ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
+                                          ZMAPSTANZA_APP_STYLESFILE,stylesfile);
         }
       zMapConfigIniContextDestroy(context);
 

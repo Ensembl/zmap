@@ -1411,9 +1411,9 @@ static gboolean configureLog(char *config_file, char *config_dir, GError **error
         echo_glib = tmp_bool;
 
       /* See if there is a user-specified directory to use for logfile path */
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
-                                        ZMAPSTANZA_LOG_CONFIG,
-                                        ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
+      if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_LOG_CONFIG,
+                                          ZMAPSTANZA_LOG_CONFIG,
+                                          ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
         {
           char *full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
           logfile_path = zMapGetFile(full_dir, log_name, TRUE, "rw", &g_error) ;
