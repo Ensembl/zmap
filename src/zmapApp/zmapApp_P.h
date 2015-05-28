@@ -40,9 +40,41 @@
 #include <ZMap/zmapAppServices.h>
 
 
-/* 
- *           App names/resources.
- */
+#define INIT_FORMAT "Init - %s"
+#define EXIT_FORMAT "Exit - %s"
+
+#define ZMAPLOG_FILENAME "zmap.log"
+
+
+/* define this to get some memory debugging. */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#define ZMAP_MEMORY_DEBUG
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* Minimum GTK version supported. */
+enum {ZMAP_GTK_MAJOR = 2, ZMAP_GTK_MINOR = 20, ZMAP_GTK_MICRO = 0} ;
+
+
+#define CLEAN_EXIT_MSG "terminated cleanly, goodbye cruel world !"
+
+
+
+
+
+#define zmapAppConsoleLogMsg(BOOL, FORMAT, ...)                 \
+  G_STMT_START                                                  \
+  {                                                             \
+    if ((BOOL))                                                 \
+      {                                                         \
+        zMapLogMessage((FORMAT), __VA_ARGS__) ;                 \
+        zmapAppConsoleMsg(TRUE, (FORMAT), __VA_ARGS__) ;        \
+      }                                                         \
+  } G_STMT_END
+
+
+
+
 
 /* States for the application, needed especially because we can be waiting for threads to die. */
 typedef enum
@@ -52,6 +84,49 @@ typedef enum
     ZMAPAPP_DYING					    /* Waiting for child ZMaps to dies so
 							       app can exit. */
   } ZMapAppState ;
+
+
+
+/* Some app settings for timeouts etc. */
+enum
+  {
+    ZMAP_DEFAULT_EXIT_TIMEOUT = 10,			    /* Default time out (in seconds) for
+							       zmap to wait to quit, if exceeded we crash out */
+    ZMAP_DEFAULT_PING_TIMEOUT = 10,
+
+    ZMAP_APP_REMOTE_TIMEOUT_S = 3600,                       /* How long to wait before warning user that
+                                                               zmap has no sequence displayed and has
+                                                               had no interaction with its
+                                                               peer (seconds). */
+
+    ZMAP_DEFAULT_MAX_LOG_SIZE = 100                         /* Max size of log file before we
+                                                             * start warning user that log file is very
+                                                             * big (in megabytes). */
+  } ;
+
+
+
+
+/*
+ * We follow glib convention in error domain naming:
+ *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
+ */
+#define ZMAP_APP_ERROR g_quark_from_string("ZMAP_APP_ERROR")
+
+typedef enum
+{
+  ZMAPAPP_ERROR_BAD_SEQUENCE_DETAILS,
+  ZMAPAPP_ERROR_BAD_COORDS,
+  ZMAPAPP_ERROR_NO_SEQUENCE,
+  ZMAPAPP_ERROR_GFF_HEADER,
+  ZMAPAPP_ERROR_GFF_PARSER,
+  ZMAPAPP_ERROR_GFF_VERSION,
+  ZMAPAPP_ERROR_OPENING_FILE,
+  ZMAPAPP_ERROR_CHECK_FILE,
+  ZMAPAPP_ERROR_NO_SOURCES
+} ZMapUtilsError;
+
+
 
 
 
@@ -149,6 +224,9 @@ typedef struct _ZMapAppContextStruct
 
   const char *app_id ;					    /* zmap app name. */
 
+  gboolean verbose_startup_logging ;                        /* switches on lots of start/exit messages. */
+
+
   int exit_timeout ;					    /* time (s) to wait before forced exit. */
 
   /* If requested zmap will ping it's peer every ping_timeout seconds (approx), stop_pinging is
@@ -216,7 +294,7 @@ void zmapAppRemoteLevelDestroy(ZMapAppContext app_context) ;
 void zmapAppDestroy(ZMapAppContext app_context) ;
 void zmapAppExit(ZMapAppContext app_context) ;
 
-int zmapMainMakeAppWindow(int argc, char *argv[]) ;
+gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_context, GList *seq_maps) ;
 GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context) ;
 GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
@@ -246,6 +324,11 @@ void zmapAppManagerUpdate(ZMapAppContext app_context, ZMap zmap, ZMapView view) 
 void zmapAppManagerRemove(ZMapAppContext app_context, ZMap zmap, ZMapView view) ;
 
 
+
+void zmapAppConsoleMsg(gboolean err_msg, const char *format, ...) ;
+void zmapAppDoTheExit(int exit_code) ;
+
+void zmapAppSignalAppDestroy(ZMapAppContext app_context) ;
 
 void zmapAppPingStart(ZMapAppContext app_context) ;
 void zmapAppPingStop(ZMapAppContext app_context) ;
