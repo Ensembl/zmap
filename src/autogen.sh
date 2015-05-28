@@ -306,7 +306,7 @@ fi
 # We must have zeromq (currently) or we fail.
 if [[ ! -f "./$zeromq_dir/configure.ac" ]] ; then
 
-    zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
+    zmap_message_exit "Aborting.....zeromq is not available so ZMap cannot be built."
 
 fi
 
