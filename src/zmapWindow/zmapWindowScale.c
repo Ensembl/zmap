@@ -445,7 +445,6 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
   int gap;                /* pixels between ticks */
   int digit;                /* which tick out of 10 */
   int nudge;                /* tick is 5th? make bigger */
-  char label [32];        /* only need ~8 but there you go */
   int base;
   PangoFontDescription *font_desc;
   double font_width,font_height;

@@ -472,14 +472,8 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
 
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
-      /* copy coord system name because function takes non-const arg... ugh */
-      char *coord_system = g_strdup("chromosome") ;
-
       SimpleFeature *sf = (SimpleFeature*)Vector_getElementAt(features,i) ;
-      SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf, coord_system, NULL ,NULL) ;
-
-      g_free(coord_system) ;
-      coord_system = NULL ;
+      SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,  (char *)(server->coord_system), NULL ,NULL) ;
 
       if (rsf)
         makeFeatureSimple(server, rsf, get_features_data, feature_block) ;
@@ -503,14 +497,8 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
-      /* copy coord system name because function takes non-const arg... ugh */
-      char *coord_system = g_strdup("chromosome") ;
-
       DNAAlignFeature *sf = (DNAAlignFeature*)Vector_getElementAt(features,i);
-      DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, coord_system, NULL, NULL);
-
-      g_free(coord_system) ;
-      coord_system = NULL ;
+      DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block) ;
@@ -534,14 +522,8 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
-      /* copy coord system name because function takes non-const arg... ugh */
-      char *coord_system = g_strdup("chromosome") ;
-
       DNAPepAlignFeature *sf = (DNAPepAlignFeature*)Vector_getElementAt(features,i);
-      DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, coord_system, NULL, NULL);
-
-      g_free(coord_system) ;
-      coord_system = NULL ;
+      DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block) ;
@@ -566,14 +548,8 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
-      /* copy coord system name because function takes non-const arg... ugh */
-      char *coord_system = g_strdup("chromosome") ;
-
       RepeatFeature *sf = (RepeatFeature*)Vector_getElementAt(features,i);
-      RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, coord_system, NULL, NULL);
-
-      g_free(coord_system) ;
-      coord_system = NULL ;
+      RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         makeFeatureRepeat(server, rsf, get_features_data, feature_block) ;
@@ -598,14 +574,8 @@ static gboolean getAllTranscripts(EnsemblServer server,
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
-      /* copy coord system name because function takes non-const arg... ugh */
-      char *coord_system = g_strdup("chromosome") ;
-
       Transcript *sf = (Transcript*)Vector_getElementAt(features,i);
-      Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, coord_system, NULL, NULL);
-
-      g_free(coord_system) ;
-      coord_system = NULL ;
+      Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         makeFeatureTranscript(server, rsf, get_features_data, feature_block) ;
@@ -630,14 +600,8 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
     {
-      /* copy coord system name because function takes non-const arg... ugh */
-      char *coord_system = g_strdup("chromosome") ;
-
       PredictionTranscript *sf = (PredictionTranscript*)Vector_getElementAt(features,i);
-      PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, coord_system, NULL, NULL);
-
-      g_free(coord_system) ;
-      coord_system = NULL ;
+      PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block) ;
