@@ -178,8 +178,9 @@ char *zMapExpandFilePath(const char *path_in)
 
 
 /* Construct file path from directory and filename and check if it can be accessed, if it
- * doesn't exist then create the file as read/writeable but empty.  */
-char *zMapGetFile(char *directory, const char *filename, gboolean make_file, GError **error)
+ * doesn't exist then create the file as read/writeable but empty.'permissions' should be
+ * the required permissions, e.g. 'rw' if read and write access are required   */
+char *zMapGetFile(char *directory, const char *filename, gboolean make_file, const char *permissions, GError **error)
 {
   gboolean status = FALSE ;
   GError *g_error = NULL ;
@@ -189,7 +190,7 @@ char *zMapGetFile(char *directory, const char *filename, gboolean make_file, GEr
   filepath = g_build_path(ZMAP_SEPARATOR, directory, filename, NULL) ;
 
   /* Is there a configuration file in the config dir that is readable/writeable ? */
-  if (!(status = zMapFileAccess(filepath, "rw")))
+  if (!(status = zMapFileAccess(filepath, permissions)))
     {
       if (make_file)
         {

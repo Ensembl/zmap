@@ -51,7 +51,7 @@
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
-static void checkConfigDir(char **config_file_out, char **styles_file_out) ;
+static void checkConfigDir(char **config_file_out, char **config_dir_out, char **styles_file_out) ;
 static gboolean checkSequenceArgs(int argc, char *argv[],
                                   char *config_file, char *styles_file,
                                   GList **seq_maps_inout, GError **error) ;
@@ -67,7 +67,7 @@ static ZMapFeatureSequenceMap createSequenceMap(char *sequence, int start, int e
                                                 GList **seq_maps_inout) ;
 
 static gboolean getConfiguration(ZMapAppContext app_context, char *config_file) ;
-static gboolean configureLog(char *config_file, GError **error) ;
+static gboolean configureLog(char *config_file, char *config_dir, GError **error) ;
 
 static ZMapAppContext createAppContext(void) ;
 
@@ -111,6 +111,7 @@ int main(int argc, char *argv[])
   gboolean remote_control = FALSE ;
   GError *g_error = NULL ;
   char *config_file = NULL ;
+  char *config_dir = NULL ;
   char *styles_file = NULL ;
   PangoFont *tmp_font = NULL ;
   PangoFontDescription *tmp_font_desc = NULL ;
@@ -172,7 +173,7 @@ int main(int argc, char *argv[])
   
 
   /* Set up configuration directory/files */
-  checkConfigDir(&config_file, &styles_file) ;
+  checkConfigDir(&config_file, &config_dir, &styles_file) ;
 
 
   /* Set any global debug flags from config file. */
@@ -423,7 +424,7 @@ static int checkForCmdLineSleep(int argc, char *argv[])
 
 /* Did user specify a config directory and/or config file within that directory on the command
  * line. Also check for the stylesfile on the command line or in the config dir. */
-static void checkConfigDir(char **config_file_out, char **styles_file_out)
+static void checkConfigDir(char **config_file_out, char **config_dir_out, char **styles_file_out)
 {
   ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE}, stylesfile = {FALSE} ;
 
@@ -434,19 +435,44 @@ static void checkConfigDir(char **config_file_out, char **styles_file_out)
   if (zMapConfigDirCreate(dir.s, file.s))
     {
       *config_file_out = zMapConfigDirGetFile() ;
+      *config_dir_out = zMapConfigDirGetDir() ;
 
       /* If the stylesfile is a relative path, look for it in the config dir. If it
        * was not given on the command line, check if there's one with the default name */
       if (stylesfile.s)
-        *styles_file_out = zMapConfigDirFindFile(stylesfile.s) ;
+        {
+          char *path = zMapExpandFilePath(stylesfile.s) ;
+
+          if (!g_path_is_absolute(path))
+            *styles_file_out = zMapConfigDirFindFile(path) ;
+        }
       else
-        *styles_file_out = zMapConfigDirFindFile("styles.ini") ;
+        {
+          *styles_file_out = zMapConfigDirFindFile("styles.ini") ;
+        }
     }
-  else if (stylesfile.s)
+
+  /* If the styles file wasn't found in the config dir look for it now as an absolute path or
+   * path relative to the current directory */
+  if (styles_file_out && *styles_file_out == NULL && stylesfile.s)
     {
-      *styles_file_out = stylesfile.s;
+      char *path = zMapExpandFilePath(stylesfile.s) ;
+
+      if (!g_path_is_absolute(path))
+        {
+          char *base_dir = g_get_current_dir() ;
+          char *tmp = g_build_path("/", base_dir, path, NULL) ;
+          g_free(base_dir) ;
+
+          g_free(path) ;
+          path = tmp ;
+        }
+
+      *styles_file_out = path;
     }
 }
+
+
 
 
 /* Did caller specify a peer socket id on the command line or in a config file ?
@@ -566,14 +592,17 @@ static gboolean getConfiguration(ZMapAppContext app_context, char *config_file)
 }
 
 
-/* Read logging configuration from ZMap stanza and apply to log. */
-static gboolean configureLog(char *config_file, GError **error)
+/* Read logging configuration from ZMap stanza and apply to log. Tries to get
+ * the (writable) location for the log file first from the config file, then 
+ * from the config directory. If neither are writable, it uses the default location
+ * in the user's home directory. */
+static gboolean configureLog(char *config_file, char *config_dir, GError **error)
 {
   gboolean result = TRUE ;/* if no config, we can't fail to configure */
   GError *g_error = NULL ;
   ZMapConfigIniContext context ;
   gboolean logging, log_to_file, show_process, show_code, show_time, catch_glib, echo_glib ;
-  char *full_dir = NULL, *log_name = NULL, *logfile_path = NULL ;
+  char *log_name, *logfile_path = NULL ;
 
   /* ZMap's default values (as opposed to the logging packages...). */
   logging = TRUE ;
@@ -583,6 +612,9 @@ static gboolean configureLog(char *config_file, GError **error)
   show_time = FALSE ;
   catch_glib = TRUE ;
   echo_glib = TRUE ;
+  /* if we run config free we use .ZMap, creating it if necessary */
+  log_name = g_strdup(ZMAPLOG_FILENAME) ;
+
 
   if (config_file && (context = zMapConfigIniContextProvide(config_file)))
     {
@@ -631,16 +663,24 @@ static gboolean configureLog(char *config_file, GError **error)
                                          ZMAPSTANZA_LOG_ECHO_GLIB, &tmp_bool))
         echo_glib = tmp_bool;
 
-      /* user specified dir, default to config dir */
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
-                                        ZMAPSTANZA_LOG_CONFIG,
-                                        ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
+      /* See if there is a user-specified directory to use for logfile path */
+      if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_LOG_CONFIG,
+                                          ZMAPSTANZA_LOG_CONFIG,
+                                          ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
         {
-          full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
-        }
-      else
-        {
-          full_dir = g_strdup(zMapConfigDirGetDir()) ;
+          char *full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
+          logfile_path = zMapGetFile(full_dir, log_name, TRUE, "rw", &g_error) ;
+          g_free(full_dir) ;
+
+          if (g_error)
+            {
+              char *msg = g_strdup_printf("Cannot use configured directory '%s' for log file: %s", config_dir, g_error->message) ;
+              consoleMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
+              g_free(msg) ;
+
+              g_error_free(g_error) ;
+              g_error = NULL ;
+            }
         }
 
 
@@ -649,34 +689,49 @@ static gboolean configureLog(char *config_file, GError **error)
                                         ZMAPSTANZA_LOG_CONFIG,
                                         ZMAPSTANZA_LOG_FILENAME, &tmp_string))
         {
+          g_free(log_name) ;
           log_name = tmp_string;
         }
 
       /* config context needs freeing */
       zMapConfigIniContextDestroy(context);
-
     }
-  else
+
+  if (!logfile_path && config_dir)
     {
-      /* Use the default directory. Create the full path and mkdir if necessary. */
-      full_dir = zMapGetDir(full_dir, TRUE, TRUE) ;
+      /* See if we can get logfile path from the given config_dir */
+      char *full_dir = zMapGetDir(config_dir, FALSE, FALSE) ;
+      logfile_path = zMapGetFile(full_dir, log_name, TRUE, "rw", &g_error) ;
+      g_free(full_dir) ;
+
+      if (g_error)
+        {
+          char *msg = g_strdup_printf("Cannot use conf_dir '%s' for log file: %s", config_dir, g_error->message) ;
+          consoleMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
+          g_free(msg) ;
+
+          g_error_free(g_error) ;
+          g_error = NULL ;
+        }
     }
 
-  /* if we run config free we use .ZMap, creating it if necessary */
-  if (!full_dir)
-    full_dir = g_strdup(ZMAP_USER_CONFIG_DIR) ;
-
-  if (!log_name)
-    log_name = g_strdup(ZMAPLOG_FILENAME) ;
-
-  logfile_path = zMapGetFile(full_dir, log_name, TRUE, &g_error) ;
+  if (!logfile_path)
+    {
+      /* Use the default directory for logfile path. Create the full path and mkdir if necessary. */
+      char *full_dir = zMapGetDir(ZMAP_USER_CONFIG_DIR, TRUE, TRUE) ;
+      logfile_path = zMapGetFile(full_dir, log_name, TRUE, "rw", &g_error) ;
+      g_free(full_dir) ;
+    }
 
   /* all our strings need freeing */
   g_free(log_name) ;
-  g_free(full_dir) ;
 
-  if (!g_error)
+  if (logfile_path)
     {
+      char *msg = g_strdup_printf("Setting up logging to '%s'", logfile_path) ;
+      consoleMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
+      g_free(msg) ;
+
       result = zMapLogConfigure(logging, log_to_file,
                                 show_process, show_code, show_time,
                                 catch_glib, echo_glib,
@@ -691,6 +746,8 @@ static gboolean configureLog(char *config_file, GError **error)
 
   return result ;
 }
+
+
 
 
 static ZMapAppContext createAppContext(void)
