@@ -556,6 +556,14 @@ fi
 
 AM_CONDITIONAL([USE_GBTOOLS], [test -e "$srcdir/gbtools/configure.ac"])
 
+
+# Run autoconf in the htslib directory.
+#
+AM_COND_IF([USE_HTSLIB],
+           [AC_CONFIG_SUBDIRS([htslib])])
+
+
+
 # Build the zeromq package, complicated because we need to tell it to build the
 # static library as well as the dynamic. I got this recipe from:
 #         https://github.com/tracebox/tracebox/blob/master/configure.ac
