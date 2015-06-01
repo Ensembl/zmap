@@ -300,8 +300,8 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 
             case STYLE_PARAM_TYPE_QUARK_LIST_ID:
               {
-                  GList **l = (GList **) (((void *) curr_style) + param->offset);
-                  GList **ln = (GList **) (((void *) new_style) + param->offset);
+                  GList **l = (GList **) (((size_t) curr_style) + param->offset);
+                  GList **ln = (GList **) (((size_t) new_style) + param->offset);
 
                   /* free old list before overwriting */
                   if(*l)
@@ -317,12 +317,12 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
                  if(zMapStyleIsPropertySetId(curr_style,param->id))
                   {
 
-                    str = (gchar **) (((void *) curr_style) + param->offset);
+                    str = (gchar **) (((size_t) curr_style) + param->offset);
                     g_free(*str) ;
                   }
 
-                str = (gchar **) (((void *) new_style) + param->offset);
-                * (gchar **) (((void *) curr_style) + param->offset) = g_strdup(*str);
+                str = (gchar **) (((size_t) new_style) + param->offset);
+                * (gchar **) (((size_t) curr_style) + param->offset) = g_strdup(*str);
                 break;
               }
 
@@ -330,8 +330,8 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
               {
                 ZMapStyleFullColour src_colour,dst_colour;
 
-                src_colour = (ZMapStyleFullColour) (((void *) new_style) + param->offset);
-                dst_colour = (ZMapStyleFullColour) (((void *) curr_style) + param->offset);
+                src_colour = (ZMapStyleFullColour) (((size_t) new_style) + param->offset);
+                dst_colour = (ZMapStyleFullColour) (((size_t) curr_style) + param->offset);
 
                 mergeColours(dst_colour,src_colour);
                 break;
@@ -342,10 +342,10 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
                 void *src,*dst;
 
 
-                src = ((void *) new_style) + param->offset;
-                dst = ((void *) curr_style) + param->offset;
+                src = (void*) ((size_t) new_style + param->offset );
+                dst = (void*) ((size_t) curr_style + param->offset );
 
-                memcpy(dst,src,param->size);
+                memcpy(dst, src, param->size) ;
 
 
 

@@ -121,43 +121,48 @@ ZMapWindowCanvasFeature zMapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 
   if (type > FEATURE_INVALID && type < FEATURE_N_TYPE)
     {
-      GList *l ;
+      GList *l = NULL ;
       size_t size = feature_class_G->struct_size[type] ;
 
       if (!feature_class_G->feature_free_list[type])
         {
           int i ;
-          ZMapWindowCanvasFeature mem ;
-
+          ZMapWindowCanvasFeature mem = NULL ;
           mem = (ZMapWindowCanvasFeature) g_malloc0(size * N_FEAT_ALLOC) ;
-          for (i = 0 ; i < N_FEAT_ALLOC ; ++i)
-            {
-              feat = (ZMapWindowCanvasFeature)mem ;
-              feat->type = type ;
-              feat->feature = NULL ;
-              zmapWindowCanvasFeatureFree((gpointer)mem) ;
-              mem = (ZMapWindowCanvasFeature) ((void*)mem + size ) ;
-            }
 
-          n_block_alloc++ ;
+          if (mem)
+            {
+              for (i = 0 ; i < N_FEAT_ALLOC ; ++i)
+                {
+                  feat = (ZMapWindowCanvasFeature)mem ;
+                  feat->type = type ;
+                  feat->feature = NULL ;
+                  zmapWindowCanvasFeatureFree((gpointer)mem) ;
+                  mem = (ZMapWindowCanvasFeature) ((size_t)mem + size ) ;
+                }
+              ++n_block_alloc ;
+            }
         }
 
       l = feature_class_G->feature_free_list[type] ;
 
-      feat = (ZMapWindowCanvasFeature)l->data ;
+      if (l)
+        {
+          feat = (ZMapWindowCanvasFeature)l->data ;
 
-      feature_class_G->feature_free_list[type]
-        = g_list_delete_link(feature_class_G->feature_free_list[type], l) ;
+          feature_class_G->feature_free_list[type]
+            = g_list_delete_link(feature_class_G->feature_free_list[type], l) ;
 
-      /* GOODNESS ME....THIS SEEMS TO REZERO SOMETHING WE INIT'D ABOVE.... */
-      /* these can get re-allocated so must zero */
-      memset((gpointer)feat, 0, size) ;
+          /* GOODNESS ME....THIS SEEMS TO REZERO SOMETHING WE INIT'D ABOVE.... */
+          /* these can get re-allocated so must zero */
+          memset((void*)feat, 0, size) ;
 
-      /* AND NOW WE RESET THE TYPE....STREUTH..... */
-      feat->type = type ;
-      feat->feature = NULL ;
+          /* AND NOW WE RESET THE TYPE....STREUTH..... */
+          feat->type = type ;
+          feat->feature = NULL ;
 
-      n_feature_alloc++ ;
+          ++n_feature_alloc ;
+        }
     }
 
   return feat ;
