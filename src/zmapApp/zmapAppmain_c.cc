@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 
 
   /* Set up logging for application....NO LOGGING BEFORE THIS. */
-  if (!zMapLogCreate(NULL) || !configureLog(config_file, &g_error))
+  if (!zMapLogCreate(NULL) || !configureLog(config_file, config_dir, &g_error))
     {
       zmapAppConsoleLogMsg(TRUE, "Error creating log file: %s", (g_error ? g_error->message : "<no error message>")) ;
       zmapAppDoTheExit(EXIT_FAILURE) ;
@@ -675,7 +675,7 @@ static gboolean configureLog(char *config_file, char *config_dir, GError **error
           if (g_error)
             {
               char *msg = g_strdup_printf("Cannot use configured directory '%s' for log file: %s", config_dir, g_error->message) ;
-              consoleMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
+              zmapAppConsoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
               g_free(msg) ;
 
               g_error_free(g_error) ;
@@ -707,7 +707,7 @@ static gboolean configureLog(char *config_file, char *config_dir, GError **error
       if (g_error)
         {
           char *msg = g_strdup_printf("Cannot use conf_dir '%s' for log file: %s", config_dir, g_error->message) ;
-          consoleMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
+          zmapAppConsoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
           g_free(msg) ;
 
           g_error_free(g_error) ;
@@ -729,7 +729,7 @@ static gboolean configureLog(char *config_file, char *config_dir, GError **error
   if (logfile_path)
     {
       char *msg = g_strdup_printf("Setting up logging to '%s'", logfile_path) ;
-      consoleMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
+      zmapAppConsoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
       g_free(msg) ;
 
       result = zMapLogConfigure(logging, log_to_file,
