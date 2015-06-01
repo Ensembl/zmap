@@ -129,9 +129,9 @@ typedef enum
 
 
 typedef enum {
-  EXPORT_DNA, 
-  EXPORT_FEATURES_ALL, 
-  EXPORT_FEATURES_MARKED, 
+  EXPORT_DNA,
+  EXPORT_FEATURES_ALL,
+  EXPORT_FEATURES_MARKED,
   EXPORT_FEATURES_CLICKED
 } ExportType ;
 
@@ -1777,7 +1777,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptide(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
 #ifdef RDS_REMOVED_TICKET_50781
-      {ZMAPGUI_MENU_BRANCH, "_"FEATURE_PEPTIDE_SHOW_STR, 0, NULL, NULL},
+      {ZMAPGUI_MENU_BRANCH, "_" FEATURE_PEPTIDE_SHOW_STR, 0, NULL, NULL},
       {ZMAPGUI_MENU_NORMAL, FEATURE_PEPTIDE_SHOW_STR"/CDS",                    ZMAPCDS,           peptideMenuCB, NULL},
 #endif /* RDS_REMOVED_TICKET_50781 */
 
@@ -1899,8 +1899,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuColumnExportOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Column features" , EXPORT_FEATURES_ALL, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Column features (marked)" , EXPORT_FEATURES_MARKED, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Column features" , EXPORT_FEATURES_ALL, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Column features (marked)" , EXPORT_FEATURES_MARKED, exportMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
@@ -1916,9 +1916,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuItemExportOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Feature" , EXPORT_FEATURES_CLICKED, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Column features" , EXPORT_FEATURES_ALL, exportMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_EXPORT_STR"/Column features (marked)" , EXPORT_FEATURES_MARKED, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Feature" , EXPORT_FEATURES_CLICKED, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Column features" , EXPORT_FEATURES_ALL, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Column features (marked)" , EXPORT_FEATURES_MARKED, exportMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
@@ -4005,9 +4005,9 @@ static gboolean exportFASTA(ZMapWindow window,
  *                             caller and not deleted locally)
  */
 gboolean zMapWindowExportFeatureSets(ZMapWindow window,
-                                     GList* featuresets, 
-                                     gboolean marked_region, 
-                                     char **filepath_inout, 
+                                     GList* featuresets,
+                                     gboolean marked_region,
+                                     char **filepath_inout,
                                      GError **error)
 {
   gboolean result = FALSE ;
@@ -4129,7 +4129,7 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
  * If all_features is true then the parent block is used, otherwise just the feature itself.
  * If marked_region is true then the results are limited to features that overlap the mark.
  */
-gboolean zMapWindowExportFeatures(ZMapWindow window, gboolean all_features, gboolean marked_region, 
+gboolean zMapWindowExportFeatures(ZMapWindow window, gboolean all_features, gboolean marked_region,
                                   ZMapFeatureAny feature_in, char **filepath_inout, GError **error)
 {
   gboolean result = FALSE ;
@@ -4181,7 +4181,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
   if (filepath_inout && *filepath_inout)
     filepath = g_strdup(*filepath_inout) ;
 
-  if (all_features && 
+  if (all_features &&
       (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
        || feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
      )
