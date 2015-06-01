@@ -37,6 +37,8 @@ GIT_VERSION_INFO=''
 FILES_TO_REMOVE=
 
 
+# required by build_config.sh
+set -o history
 
 # Load common functions, can't use zmap_message etc. until this is done.
 . $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
@@ -328,12 +330,6 @@ fi
 
 # We're not going to actually do  a build here, but we will build docs
 # if requested, and/or anything else that isn't architecture dependent
-
-# Now we have a checkout we can source these
-#. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
-#set -o history
-#. $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
-
 
 zmap_message_out "MASTER VARIABLE SETTINGS:"
 zmap_message_out "ZMAP_MASTER_HOST=$ZMAP_MASTER_HOST"
