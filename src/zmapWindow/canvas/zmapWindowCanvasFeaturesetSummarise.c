@@ -121,7 +121,7 @@ PixRect alloc_pix_rect(void)
 
 	if(!pix_rect_free_G)
 	{
-          mem = (PixRect)g_malloc(size * N_PIXRECT_ALLOC);//g_new0(pixRect, N_PIXRECT_ALLOC) ;
+          mem = (PixRect)g_malloc(size * N_PIXRECT_ALLOC);
 		for(i = 0; i < N_PIXRECT_ALLOC; ++i)
 		{
 			ret = (PixRect) mem;
@@ -130,7 +130,7 @@ PixRect alloc_pix_rect(void)
 			ret->which = pix_id++;
 #endif
 			pix_rect_free(ret);
-			mem = (PixRect) ( (void*)mem + size );
+			mem = (PixRect) ( (size_t)mem + size );
 		}
 #if PIX_LIST_DEBUG
 		n_block_alloc++;
@@ -162,7 +162,7 @@ printf("\n");
 	n_pix_alloc++;
 	n_list--;
 #else
-	memset((void *) ret,0,sizeof(pixRect));
+	memset((void *) ret, 0, sizeof(pixRect));
 #endif
 
 
