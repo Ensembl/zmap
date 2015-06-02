@@ -376,7 +376,7 @@ gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, ZMapFeature vari
   zMapReturnValIfFail(variation && variation->mode == ZMAPSTYLE_MODE_BASIC, result) ;
 
   /* Find which exon the variation lies in */
-  for ( ; i < exons->len; ++i)
+  for ( ; i < (int)exons->len; ++i)
     {
       ZMapSpan exon = &(g_array_index(exons, ZMapSpanStruct, i)) ;
 
@@ -775,7 +775,7 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
   int start = x1;
   int end = x2;
 
-  for ( ; i < an_array->len; ++i)
+  for ( ; i < (int)an_array->len; ++i)
     {
       /* Check if the new exon overlaps the existing one. Include one base
        * beyond the end of the existing exon so that abutting exons get merged */
@@ -847,7 +847,7 @@ gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature transcript, Co
   ZMapSpan prev_exon = NULL ;
   int i = 0;
 
-  for ( ; i < an_array->len; ++i)
+  for ( ; i < (int)an_array->len; ++i)
     {
       ZMapSpan exon = &(g_array_index(an_array, ZMapSpanStruct, i));
 
@@ -857,7 +857,7 @@ gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature transcript, Co
           result = FALSE ;
           break ;
         }
-      else if (i == an_array->len - 1 && coord > exon->x2)
+      else if (i == (int)an_array->len - 1 && coord > exon->x2)
         {
           /* The coord is after the last exon - there's no feature here so nothing to delete */
           result = FALSE ;
@@ -989,7 +989,7 @@ gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
       else
         {
           /* Note that we move down the exons or introns as we do the comparision to avoid comparing all with all. */
-          while (i < an_array->len)
+          while (i < (int)an_array->len)
             {
               ZMapSpan trans_part ;
               int start, end ;
@@ -1171,7 +1171,7 @@ ZMapFeaturePartsList zmapFeatureTranscriptSubPartsGet(ZMapFeature feature, ZMapF
     {
       an_array = feature->feature.transcript.exons ;
 
-      for (i = 0 ; i < an_array->len; ++i)
+      for (i = 0 ; i < (int)an_array->len; ++i)
         {
           ZMapSpan exon ;
           ZMapFeatureSubPart new_exon ;
@@ -1219,7 +1219,7 @@ ZMapFeaturePartsList zmapFeatureTranscriptSubPartsGet(ZMapFeature feature, ZMapF
     {
       an_array = feature->feature.transcript.introns ;
 
-      for (i = 0 ; i < an_array->len ; ++i)
+      for (i = 0 ; i < (int)an_array->len ; ++i)
         {
           ZMapSpan intron ;
           ZMapFeatureSubPart new_intron ;
@@ -1501,11 +1501,11 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
       ZMapSpan prev_exon = NULL;
       int i = 0;
 
-      for ( ; i < an_array->len; ++i, prev_exon = exon)
+      for ( ; i < (int)an_array->len; ++i, prev_exon = exon)
         {
           exon = &(g_array_index(an_array, ZMapSpanStruct, i));
 
-          if (!prev_exon && i == an_array->len && x >= exon->x1 && x <= exon->x2)
+          if (!prev_exon && i == (int)an_array->len && x >= exon->x1 && x <= exon->x2)
             {
               merged = mergeCoordInsideSoleExon(transcript, boundary_inout, x, exon, &tmp_error) ;
               break;
@@ -1515,7 +1515,7 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
               merged = mergeCoordInsideFirstExon(transcript, boundary_inout, x, exon, &tmp_error) ;
               break;
             }
-          else if (i == an_array->len - 1 && x >= exon->x2)
+          else if (i == (int)an_array->len - 1 && x >= exon->x2)
             {
               merged = mergeCoordOutsideLastExon(transcript, boundary_inout, x, exon, &tmp_error) ;
               break;
@@ -1533,7 +1533,7 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
                       prev_exon->x2 = exon->x2 ;
                       g_array_remove_index(an_array, i) ;
                     }
-                  else if (i < an_array->len - 1)
+                  else if (i < (int)an_array->len - 1)
                     {
                       ZMapSpan next = &(g_array_index(an_array, ZMapSpanStruct, i+1)) ;
                       if (exon->x2 == next->x1 - 1)
@@ -1594,7 +1594,7 @@ gboolean zMapFeatureTranscriptsEqual(ZMapFeature feature1, ZMapFeature feature2,
           result = TRUE ;
           int i = 0 ;
 
-          for ( ; result && i < exons1->len; ++i)
+          for ( ; result && i < (int)exons1->len; ++i)
             {
               ZMapSpan span1 = &(g_array_index(exons1, ZMapSpanStruct, i));
               ZMapSpan span2 = &(g_array_index(exons2, ZMapSpanStruct, i));

@@ -879,7 +879,7 @@ gboolean zMapGFFFormatGap2GFF(GString *attribute, GArray *gaps, ZMapStrand q_str
           incr = 1 ;
         }
 
-      for (k = 0 ; k < gaps->len ; k++, index += incr)
+      for (k = 0 ; k < (int)gaps->len ; k++, index += incr)
         {
 
           gap = &(g_array_index(gaps, ZMapAlignBlockStruct, index)) ;
@@ -887,7 +887,7 @@ gboolean zMapGFFFormatGap2GFF(GString *attribute, GArray *gaps, ZMapStrand q_str
           coord = calcBlockLength(match_seq_type, gap->t1, gap->t2) ;
           g_string_append_printf(attribute, "M%d ", coord) ;
 
-          if (k < gaps->len - 1)
+          if (k < (int)gaps->len - 1)
             {
               ZMapAlignBlock next_gap ;
 
@@ -1321,7 +1321,7 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
       if (flags->parent && zMapWriteAttributeParent(feature, attribute))
         {
 
-          for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
+          for (i = 0 ; i < (int)feature->feature.transcript.exons->len ; i++)
             {
               int exon_start=0, exon_end=0 ;
 

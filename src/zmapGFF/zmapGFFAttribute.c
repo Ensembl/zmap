@@ -60,89 +60,6 @@ static const char *sSpace = " " ;
 
 static char* removeAllEscapedCharacters(const char * const sInput ) ;
 
-/*
- * Array of attribute info objects. Data are as given in the header file.
- */
-static const ZMapGFFAttributeInfoStruct
-ZMAPGFF_ATTRIBUTE_INFO[ZMAPGFF_NUMBER_ATTRIBUTE_TYPES] =
-{
-  /*
-   * V2 attributes.
-   */
-  {ZMAPGFF_ATT_ALN2,             "Align",               FALSE},
-  {ZMAPGFF_ATT_NAM2,             "Name",                FALSE},
-  {ZMAPGFF_ATT_CLA2,             "Class",               FALSE},
-
-  /*
-   * V3 attributes
-   */
-  {ZMAPGFF_ATT_IDD3,             "ID",                  FALSE},
-  {ZMAPGFF_ATT_NAM3,             "Name",                FALSE},
-  {ZMAPGFF_ATT_ALI3,             "Alias",               TRUE},
-  {ZMAPGFF_ATT_PAR3,             "Parent",              TRUE},
-  {ZMAPGFF_ATT_TAR3,             "Target",              FALSE},
-  {ZMAPGFF_ATT_GAP3,             "Gap",                 FALSE},
-  {ZMAPGFF_ATT_DER3,             "Derives_from",        FALSE},
-  {ZMAPGFF_ATT_NOT3,             "Note",                TRUE},
-  {ZMAPGFF_ATT_DBX3,             "Dbxref",              TRUE },
-  {ZMAPGFF_ATT_ONT3,             "Ontology_term",       TRUE},
-  {ZMAPGFF_ATT_ISC3,             "Is_circular",         FALSE},
-
-  /*
-   * unknown type
-   */
-  {ZMAPGFF_ATT_UNK,              "",                    FALSE}
-
-} ;
-
-
-
-
-/*
- * Lookup a name based on string ID; note that this requires the version, since
- * the same string identifier may appear in both v2 and v3 (e.g. "Name").
- *
- * Default is ZMAPGFF_ATT_UNK for both v2 and v3.
- *
- */
-ZMapGFFAttributeName zMapGFFGetAttributeName(ZMapGFFVersion eVersion, const char* const sString)
-{
-  unsigned int iAtt = 0 ;
-  ZMapGFFAttributeName eTheName = ZMAPGFF_ATT_UNK ;
-
-  if ((eVersion != ZMAPGFF_VERSION_2) && (eVersion != ZMAPGFF_VERSION_3))
-    return eTheName ;
-  if (!sString || !*sString )
-    return eTheName ;
-
-  if (eVersion == ZMAPGFF_VERSION_2)
-    {
-      for (iAtt=0; iAtt<ZMAPGFF_NUM_ATT_V2; ++iAtt)
-        if (!strcmp(sString, ZMAPGFF_ATTRIBUTE_INFO[iAtt].sName))
-          return ZMAPGFF_ATTRIBUTE_INFO[iAtt].eName ;
-    }
-  else if (eVersion == ZMAPGFF_VERSION_3)
-    {
-      for (iAtt=ZMAPGFF_NUM_ATT_V2; iAtt<ZMAPGFF_NUM_ATT_V2+ZMAPGFF_NUM_ATT_V3; ++iAtt)
-        if (!strcmp(sString, ZMAPGFF_ATTRIBUTE_INFO[iAtt].sName))
-          return ZMAPGFF_ATTRIBUTE_INFO[iAtt].eName ;
-    }
-
-  return eTheName ;
-}
-
-
-/*
- * Do a lookup of the string identifier of an attribute from the name (enum).
- */
-const char * zMapGFFAttributeGetString(ZMapGFFAttributeName eName)
-{
-  unsigned int iAtt;
-  for (iAtt=0; iAtt<ZMAPGFF_NUMBER_ATTRIBUTE_TYPES; ++iAtt)
-    if (ZMAPGFF_ATTRIBUTE_INFO[iAtt].eName == eName)
-      return ZMAPGFF_ATTRIBUTE_INFO[iAtt].sName ;
-  return NULL ;
-}
 
 /*
  * Return the name stored as a string (not necessarily the same as the
@@ -169,48 +86,9 @@ char * zMapGFFAttributeGetTempstring(ZMapGFFAttribute pAttribute)
 
 
 /*
- * Is the attribute a v2 one?
- */
-static gboolean zMapGFFAttributeIsV2Attribute(ZMapGFFAttributeName eTheName)
-{
-  gboolean bResult = FALSE ;
-
-  if ((eTheName >= ZMAPGFF_ATT_V2START) && (eTheName < ZMAPGFF_ATT_V2START+ZMAPGFF_NUM_ATT_V2))
-    bResult = TRUE ;
-
-  return bResult ;
-}
-
-
-
-/*
- * Is the attribute a v3 one?
- */
-static gboolean zMapGFFAttributeIsV3Attribute(ZMapGFFAttributeName eTheName)
-{
-  gboolean bResult = FALSE ;
-
-  if ((eTheName >= ZMAPGFF_ATT_V3START) && (eTheName < ZMAPGFF_ATT_V3START+ZMAPGFF_NUM_ATT_V3))
-    bResult = TRUE ;
-
-  return bResult ;
-}
-
-
-/*
- * Return the name (as an enum element) of the attribute.
- */
-ZMapGFFAttributeName zMapGFFAttributeGetName(ZMapGFFAttribute pAttribute)
-{
-  if (!pAttribute)
-    return ZMAPGFF_ATT_UNK ;
-  return pAttribute->eName;
-}
-
-/*
  * Create a new attribute object of a given type
  */
-ZMapGFFAttribute zMapGFFCreateAttribute(ZMapGFFAttributeName eTheName)
+ZMapGFFAttribute zMapGFFCreateAttribute()
 {
   ZMapGFFAttribute pAttribute = NULL ;
 
@@ -218,7 +96,6 @@ ZMapGFFAttribute zMapGFFCreateAttribute(ZMapGFFAttributeName eTheName)
    * Create attribute object and set name.
    */
   pAttribute = (ZMapGFFAttribute) g_malloc(sizeof(ZMapGFFAttributeStruct));
-  pAttribute->eName = eTheName ;
 
   /*
    * Set name and temp strings.
@@ -254,35 +131,6 @@ gboolean zMapGFFDestroyAttribute(ZMapGFFAttribute pAttribute)
   return bResult ;
 }
 
-/*
- * Data lookup based on attribute name.
- */
-gboolean zMapGFFAttributeGetIsMultivalued(ZMapGFFAttributeName eTheName)
-{
-  if (eTheName >= ZMAPGFF_NUMBER_ATTRIBUTE_TYPES)
-    return FALSE ;
-  return ZMAPGFF_ATTRIBUTE_INFO[eTheName].bIsMultivalued ;
-}
-
-
-/*
- * Test whether or not an attribute is valid.
- */
-gboolean zMapGFFAttributeIsValid(ZMapGFFAttribute pAttribute)
-{
-  gboolean bResult = FALSE ;
-  ZMapGFFAttributeName eTheName ;
-  if (!pAttribute)
-    return bResult ;
-
-  eTheName = pAttribute->eName ;
-
-  if (!zMapGFFAttributeIsV2Attribute(eTheName) && !zMapGFFAttributeIsV3Attribute(eTheName))
-    return bResult ;
-
-  bResult = TRUE ;
-  return bResult ;
-}
 
 
 /*
@@ -295,6 +143,7 @@ gboolean zMapGFFAttributeIsValid(ZMapGFFAttribute pAttribute)
  * the parser struct. The delimiter can be missing and the data string
  * can be empty, in which case the name only is stored.
  *
+ *
  * Note that the data part of the string is often quoted and there is a
  * flag say whether or not to attempt to remove leading or trailing
  * quotes from the string that is parsed out.
@@ -304,7 +153,6 @@ ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser pParserBase, const char*  c
   static const unsigned int iExpectedTokens = 2 ,
     iTokenLimit = 2 ;
   static const gboolean bIncludeEmpty = TRUE ;
-  ZMapGFFAttributeName eTheName = ZMAPGFF_ATT_UNK ;
   unsigned int iNumTokens = 0, i;
   char **sTokens = NULL, *sBuff = NULL ;
   ZMapGFFVersion eVersion = ZMAPGFF_VERSION_UNKNOWN ;
@@ -343,14 +191,9 @@ ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser pParserBase, const char*  c
     }
 
   /*
-   * Find the attribute name.
-   */
-  eTheName = zMapGFFGetAttributeName(eVersion, sTokens[0]) ;
-
-  /*
    * Now create the attribute object.
    */
-  pAttribute = zMapGFFCreateAttribute(eTheName) ;
+  pAttribute = zMapGFFCreateAttribute() ;
 
   /*
    * Now copy the name string.
@@ -545,147 +388,6 @@ ZMapGFFAttribute zMapGFFAttributeListContains( ZMapGFFAttribute* pAtt, unsigned 
   return pAttribute ;
 }
 
-
-
-
-
-
-/*
- * Test of some of the attribute properties and functions.
- */
-void attribute_test_example()
-{
-  unsigned int iAtt ;
-  ZMapGFFVersion eTheVersion ;
-
-  /* some data to test */
-  static const ZMapGFFAttributeName names[ZMAPGFF_NUMBER_ATTRIBUTE_TYPES] =
-  {
-    ZMAPGFF_ATT_ALN2,
-    ZMAPGFF_ATT_NAM2,
-    ZMAPGFF_ATT_CLA2,
-    ZMAPGFF_ATT_IDD3,
-    ZMAPGFF_ATT_NAM3,
-    ZMAPGFF_ATT_ALI3,
-    ZMAPGFF_ATT_PAR3,
-    ZMAPGFF_ATT_TAR3,
-    ZMAPGFF_ATT_GAP3,
-    ZMAPGFF_ATT_DER3,
-    ZMAPGFF_ATT_NOT3,
-    ZMAPGFF_ATT_DBX3,
-    ZMAPGFF_ATT_ONT3,
-    ZMAPGFF_ATT_ISC3,
-    ZMAPGFF_ATT_UNK
-  } ;
-
-  static const char * v2_strings[ZMAPGFF_NUM_ATT_V2] =
-  {
-    "Align",
-    "Name",
-    "Class"
-  } ;
-
-  static const char * v3_strings[ZMAPGFF_NUM_ATT_V3] =
-  {
-    "ID",
-    "Name",
-    "Alias",
-    "Parent",
-    "Target",
-    "Gap",
-    "Derives_from",
-    "Note",
-    "Dbxref",
-    "Ontology_term",
-    "Is_circular"
-  } ;
-
-  printf("Test of attributes functions. \n") ;
-  fflush(stdout) ;
-
-  /*
-   * Lookup from name to string identifier.
-   */
-  for (iAtt=0; iAtt<ZMAPGFF_NUMBER_ATTRIBUTE_TYPES; ++iAtt)
-  {
-    printf("i = %d, s = '%s'\n", iAtt, ZMAPGFF_ATTRIBUTE_INFO[iAtt].sName ) ;
-    fflush(stdout) ;
-  }
-
-
-  /*
-   * Lookup of version based on name.
-   */
-  for (iAtt=0; iAtt<ZMAPGFF_NUMBER_ATTRIBUTE_TYPES; ++iAtt)
-  {
-    printf("i = %d, v2 = %i, v3 = %i\n", iAtt, zMapGFFAttributeIsV2Attribute(names[iAtt]), zMapGFFAttributeIsV3Attribute(names[iAtt])) ;
-    fflush(stdout) ;
-  }
-
-  /*
-   * Lookup from string identifier and version to name (enum value).
-   */
-  eTheVersion = ZMAPGFF_VERSION_2 ;
-  for (iAtt=0; iAtt<ZMAPGFF_NUM_ATT_V2; ++iAtt)
-  {
-    printf("i = %d, e = %d\n", iAtt, zMapGFFGetAttributeName(eTheVersion, v2_strings[iAtt])) ;
-    fflush(stdout) ;
-  }
-
-  eTheVersion = ZMAPGFF_VERSION_3 ;
-  for (iAtt=0; iAtt<ZMAPGFF_NUM_ATT_V3; ++iAtt)
-  {
-    printf("i = %d, e = %d\n", iAtt, zMapGFFGetAttributeName(eTheVersion, v3_strings[iAtt])) ;
-    fflush(stdout) ;
-  }
-
-  printf("i = %d, e = %d\n", 0, zMapGFFGetAttributeName(eTheVersion, "something_else")) ;
-  printf("i = %d, e = %d\n", 0, zMapGFFGetAttributeName(eTheVersion, "something_else_else")) ;
-  printf("i = %d, e = %d\n", 0, zMapGFFGetAttributeName(eTheVersion, "unknown")) ;
-  fflush(stdout) ;
-
-
-
-
-
-  return ;
-
-}
-
-
-
-
-/*
- * Test of aspects of parsing functionality.
- *
- * We pass in the verison, and a pointer to attributes (and the number of them). Then these are
- * tokenized with the character that seperates attribute name identifier from the value data and
- * and we the lookup the associated attribute ZMapGFFAttributeName enum value.
- */
-void attribute_test_parse(ZMapGFFParser pParser, char ** pAttributes, unsigned int nAttributes)
-{
-  unsigned int iAtt = 0 ;
-  gboolean bRemoveQuotes = TRUE ;
-  ZMapGFFAttribute pAttribute = NULL ;
-  static unsigned int iCount = 0 ;
-
-  /*
-   * Loop over attributes and parse each one of them (in a basic way).
-   */
-  for (iAtt=0; iAtt<nAttributes; ++iAtt)
-    {
-      pAttribute = NULL ;
-      pAttribute = zMapGFFAttributeParse(pParser, pAttributes[iAtt], bRemoveQuotes) ;
-      if (pAttribute != NULL)
-        {
-          ++iCount ;
-          printf("%i '%s' '%s' '%s' %i\n", pAttribute->eName, zMapGFFAttributeGetString(pAttribute->eName),
-                                            zMapGFFAttributeGetNamestring(pAttribute), pAttribute->sTemp, iCount ) ;
-          zMapGFFDestroyAttribute(pAttribute) ;
-        }
-    }
-
-}
 
 
 

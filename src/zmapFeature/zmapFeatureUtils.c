@@ -247,7 +247,7 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
 
             if(sane && (an_array = feature->feature.transcript.exons))
               {
-                for(i = 0; sane && i < an_array->len; i++)
+                for(i = 0; sane && i < (int)an_array->len; i++)
                   {
                     span = &(g_array_index(an_array, ZMapSpanStruct, i));
                     if(span->x1 > span->x2)
@@ -262,7 +262,7 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
 
             if(sane && (an_array = feature->feature.transcript.introns))
               {
-                for(i = 0; sane && i < an_array->len; i++)
+                for(i = 0; sane && i < (int)an_array->len; i++)
                   {
                     span = &(g_array_index(an_array, ZMapSpanStruct, i));
                     if(span->x1 > span->x2)
@@ -1051,7 +1051,7 @@ GArray *zMapFeatureWorld2TranscriptArray(ZMapFeature feature)
       t_array    = g_array_sized_new(FALSE, FALSE, sizeof(ZMapSpanStruct), 128);
       exon_array = feature->feature.transcript.exons;
 
-      for(i = 0; i < exon_array->len; i++)
+      for(i = 0; i < (int)exon_array->len; i++)
       {
         span = g_array_index(exon_array, ZMapSpanStruct, i);
         zMapFeatureWorld2Transcript(feature, span.x1, span.x2, &(span.x1), &(span.x2));
@@ -1271,7 +1271,7 @@ gboolean zMapFeatureAlignmentMatchForeach(ZMapFeature feature, GFunc function, g
   GArray *matches = feature->feature.homol.align;
 
   int i = 0;
-  for ( ; i < matches->len; ++i)
+  for ( ; i < (int)matches->len; ++i)
     {
       ZMapAlignBlock match_block = &g_array_index(matches, ZMapAlignBlockStruct, 0) ;
       (function)(match_block, user_data);
@@ -1294,7 +1294,7 @@ GArray *zMapFeatureWorld2CDSArray(ZMapFeature feature)
       cds_array  = g_array_sized_new(FALSE, FALSE, sizeof(ZMapSpanStruct), 128);
       exon_array = feature->feature.transcript.exons;
 
-      for(i = 0; i < exon_array->len; i++)
+      for(i = 0; i < (int)exon_array->len; i++)
         {
           span = g_array_index(exon_array, ZMapSpanStruct, i);
           zMapFeatureWorld2CDS(feature, span.x1, span.x2, &(span.x1), &(span.x2));
@@ -1859,7 +1859,7 @@ static int findExon(ZMapFeature feature, int exon_start, int exon_end)
 
   exons = feature->feature.transcript.exons ;
 
-  for (i = 0 ; i < exons->len ; i++)
+  for (i = 0 ; i < (int)exons->len ; i++)
     {
       ZMapSpan next_exon ;
 

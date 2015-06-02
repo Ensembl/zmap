@@ -495,8 +495,8 @@ char   **err_out)
       if (dump_data->channel)
         {
           GError *io_error = NULL;
-          gsize bytes_written = 0;
-          gssize bytes_to_write = dump_data->dump_string->len;
+          gsize bytes_written = 0,
+            bytes_to_write = (gsize)dump_data->dump_string->len;
           GIOStatus write_status;
 
           /* we can now print dump_data->dump_string to file */
@@ -854,7 +854,7 @@ static GString *alignFeature2Txt(GString *result_in, const char *indent, ZMapFea
 
       g_string_append_printf(result, "%sGapped align blocks:\n", indent) ;
 
-      for (i = 0 ; i < gaps_array->len ; i++)
+      for (i = 0 ; i < (int)gaps_array->len ; i++)
         {
           ZMapAlignBlock block = NULL ;
 
@@ -903,7 +903,7 @@ static GString *transcriptFeature2Txt(GString *result_in, const char *indent, ZM
 
       g_string_append_printf(result, "%sExons:\n", indent) ;
 
-      for (i = 0 ; i < span_array->len ; i++)
+      for (i = 0 ; i < (int)span_array->len ; i++)
         {
           ZMapSpan span = NULL ;
 
@@ -939,7 +939,7 @@ static GString *assemblyFeature2Txt(GString *result_in, const char *indent, ZMap
 
       g_string_append_printf(result, "%sSpans:\n", indent) ;
 
-      for (i = 0 ; i < span_array->len ; i++)
+      for (i = 0 ; i < (int)span_array->len ; i++)
         {
           ZMapSpan span = NULL ;
 

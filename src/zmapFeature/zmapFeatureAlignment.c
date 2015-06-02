@@ -434,7 +434,7 @@ ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFe
     {
       int i ;
 
-      for (i = 0 ; i < gaps_array->len ; i++)
+      for (i = 0 ; i < (int)gaps_array->len ; i++)
         {
           ZMapAlignBlock block = NULL ;
           ZMapFeatureSubPart span ;
@@ -445,7 +445,7 @@ ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFe
 
           if (i == 0)
             subparts->min_val = block->t1 ;
-          else if (i == (gaps_array->len - 1))
+          else if (i == ((int)gaps_array->len - 1))
             subparts->max_val = block->t2 ;
         }
     }
@@ -453,7 +453,7 @@ ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFe
     {
       int i ;
 
-      for (i = 0 ; i < (gaps_array->len - 1) ; i++)
+      for (i = 0 ; i < ((int)gaps_array->len - 1) ; i++)
         {
           ZMapAlignBlock block1 = NULL, block2 = NULL ;
           ZMapFeatureSubPart span ;
@@ -465,7 +465,7 @@ ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFe
 
           if (i == 0)
             subparts->min_val = (block1->t2 + 1) ;
-          else if (i == (gaps_array->len - 2))
+          else if (i == ((int)gaps_array->len - 2))
             subparts->max_val = (block2->t1 - 1) ;
         }
     }
@@ -544,7 +544,7 @@ gboolean zmapFeatureAlignmentMatchingBoundaries(ZMapFeature feature,
               int index = 0 ;
 
               /* Compare blocks. */
-              while (i < gaps_array->len)
+              while (i < (int)gaps_array->len)
                 {
                   ZMapAlignBlock block ;
 
@@ -696,7 +696,7 @@ static gboolean parse_get_op_data(int i,
   gboolean result = FALSE ;
   const char *pStart = NULL,
     *pEnd = NULL ;
-  int j = 0 ;
+  size_t j = 0 ;
 
   if ((i>=0) && (i<nOp))
     {
@@ -748,7 +748,7 @@ static char * parse_is_valid_number(char *sBuff, size_t iLen, int opt)
   static const char cSpace = ' ' ;
   char * num_pos = NULL, *result = NULL ;
   gboolean bDigits = TRUE ;
-  int nDigits = 0 ;
+  size_t nDigits = 0 ;
 
   if (iLen)
     {
@@ -1006,9 +1006,10 @@ static gboolean parse_cigar_general(const char * const str,
     bFirst = FALSE ;
   size_t iLength = 0,
     num_buffer_size = NUM_DIGITS_LIMIT,
-    operator_buffer_size = NUM_OPERATOR_START ;
+    operator_buffer_size = NUM_OPERATOR_START,
+    iOperators = 0 ;
   const char *sTarget = NULL ;
-  int i = 0, iOperators = 0 ;
+  int i = 0 ;
   char * sBuff = NULL ;
   char const ** pArray = NULL ;
   char cStart = '\0',
@@ -2000,12 +2001,12 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
   int i ;
   ZMapAlignBlock align, last_align ;
 
-  if (gaps->len > 1)
+  if ((int)gaps->len > 1)
     {
       perfect_align = TRUE ;
       last_align = &g_array_index(gaps, ZMapAlignBlockStruct, 0) ;
 
-      for (i = 1 ; i < gaps->len ; i++)
+      for (i = 1 ; i < (int)gaps->len ; i++)
         {
           int prev_end, curr_start ;
 
@@ -2028,7 +2029,7 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
 
           /* The "- 1" is because the default align_error is zero, i.e. zero _missing_ bases,
              which is true when sub alignment follows on directly from the next. */
-          if ((curr_start - prev_end - 1) <= align_error)
+          if ((curr_start - prev_end - 1) <= (int)align_error)
             {
               last_align = align ;
             }
@@ -2260,7 +2261,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
     curr_match = c_end ;
 
 
-  for (i = 0, j = 0 ; i < align->len ; ++i)
+  for (i = 0, j = 0 ; i < (int)align->len ; ++i)
     {
       /* If you alter this code be sure to notice the += and -= which alter curr_ref and curr_match. */
       int curr_length = 0 ;

@@ -1491,7 +1491,7 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParserBase, const 
   static const char *sFmt = "%*s%1000s%d%d" ;
   gboolean bResult = TRUE ;
   char sBuf[1001] = "" ;
-  unsigned int  iFields, iStart = 0, iEnd = 0 ;
+  int  iFields, iStart = 0, iEnd = 0 ;
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 

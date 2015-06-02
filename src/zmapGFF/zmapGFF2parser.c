@@ -779,7 +779,7 @@ static gboolean parseSequenceLine(ZMapGFFParser parser_base, char *line)
             }
           else if (g_str_has_prefix(line, "##end-DNA") && parser->sequence_flags.in_sequence_block)
             {
-              if ((parser->features_end - parser->features_start + 1) != parser->raw_line_data->len)
+              if ((parser->features_end - parser->features_start + 1) != (int)parser->raw_line_data->len)
                 {
                   parser->error = g_error_new(parser->error_domain, ZMAPGFF_ERROR_HEADER,
                                               "##sequence-region length [%d] does not match DNA base count"

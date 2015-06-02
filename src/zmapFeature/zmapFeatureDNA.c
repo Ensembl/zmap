@@ -366,7 +366,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
 
                       block_dna = dna ;
 
-                      for (i = 0 ; i < exons->len ; i++)
+                      for (i = 0 ; i < (int)exons->len ; i++)
                         {
                           ZMapSpan exon_span ;
 

@@ -389,7 +389,7 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
                 ZMapAlignBlock align_block;
                 int i;
                 /* easy case, just look through the gaps array */
-                for(i = 0; i < gaps_array->len; i++)
+                for(i = 0; i < (int)gaps_array->len; i++)
                   {
                     align_block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i));
                     if(align_block->t1 == sub_feature->start &&
@@ -492,7 +492,7 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
         ZMapFeature feature;
 
         feature = (ZMapFeature)feature_data->feature_any;
-        
+
         if (feature_data->sub_feature == NULL)
           {
             if(param_spec_id == PROP_DATA_START)
@@ -524,11 +524,11 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
         ZMapFeature feature;
 
         feature = (ZMapFeature)feature_data->feature_any ;
-        
+
         if (feature_data->sub_feature == NULL)
           {
             GQuark term_id;
-        
+
             if (feature->SO_accession)
               {
                 term_id = zMapSOAcc2TermID(feature->SO_accession) ;
@@ -572,7 +572,7 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
         else
           {
             GQuark term_id;
-        
+
             switch(feature_data->sub_feature->subpart)
               {
               case ZMAPFEATURE_SUBPART_GAP:
@@ -598,7 +598,7 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
                 term_id = g_quark_from_string("<UNKNOWN>");
                 break;
               }
-        
+
             g_value_set_static_string(value, g_quark_to_string(term_id));
           }
 
@@ -743,7 +743,7 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
             result = (get_func)(user_data, pspec->param_id, &value, pspec);
 
           G_VALUE_LCOPY (&value, var_args, 0, &error);
-        
+
           if (error)
             {
               g_warning ("%s: %s", G_STRFUNC, error);
