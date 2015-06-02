@@ -734,7 +734,7 @@ gboolean zMapAttParseTarget(ZMapGFFAttribute pAttribute, GQuark * const pgqOut, 
   static const char *sMyName = "zMapAttParseTarget()" ;
   static const char *sFormat = "%s%u%u%*[ ]%c";
   static const char cPlus = '+', cMinus = '-' ;
-  static unsigned int iRequiredFields = 3 ;
+  static int iRequiredFields = 3 ;
   char sStringBuff[ZMAPGFF_MAX_FIELD_CHARS + 1] = "" ;
   int iFields = 0, iStart = 0, iEnd = 0;
   char cStrand = '\0' ;

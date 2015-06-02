@@ -143,12 +143,6 @@ static int parse_is_valid_op_data(char * sBuff,
                                   gboolean bFirst) ;
 static gboolean parse_canon_valid(AlignStrCanonical canon, GError **error) ;
 
-/*
- * (sm23) I've put in the new code for this within defines in order that
- * it can be reverted easily if anyone notices a problem.
- */
-#define USE_NEW_CIGAR_PARSING_CODE 1
-
 #if NOT_USED
 static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static gboolean exonerateVerifyVulgar(char *match_str) ;
@@ -1009,7 +1003,7 @@ static gboolean parse_cigar_general(const char * const str,
     operator_buffer_size = NUM_OPERATOR_START,
     iOperators = 0 ;
   const char *sTarget = NULL ;
-  int i = 0 ;
+  size_t i = 0 ;
   char * sBuff = NULL ;
   char const ** pArray = NULL ;
   char cStart = '\0',
@@ -2810,10 +2804,6 @@ static gboolean gffv3Gap2Canon(char *match_str, AlignStrCanonical canon)
 
   result = TRUE ;
 
-#ifndef USE_NEW_CIGAR_PARSING_CODE
-
-#else
-
   alignFormat2Properties(canon->format, &properties) ;
   if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
     {
@@ -2824,8 +2814,6 @@ static gboolean gffv3Gap2Canon(char *match_str, AlignStrCanonical canon)
     {
       g_error_free(error) ;
     }
-
-#endif
 
   return result ;
 }
@@ -2847,32 +2835,6 @@ static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
 
   result = TRUE ;
 
-#ifndef USE_NEW_CIGAR_PARSING_CODE
-
-  /*
-   * (sm23) This old stuff is a load of toss and quite clearly has never worked.
-   */
-  cp = match_str ;
-  do
-    {
-      AlignStrOpStruct op = {'\0'} ;
-
-      op.op = *cp ;
-      cp++ ;
-      gotoLastSpace(&cp) ;
-      cp++ ;
-
-      op.length = cigarGetLength(&cp) ;    /* N.B. moves cp on as needed. */
-
-      gotoLastSpace(&cp) ;
-      if (*cp == ' ')
-        cp ++ ;
-
-      canon->align = g_array_append_val(canon->align, op) ;
-    } while (*cp) ;
-
-#else
-
   alignFormat2Properties(canon->format, &properties) ;
   if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
     {
@@ -2883,8 +2845,6 @@ static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
     {
       g_error_free(error) ;
     }
-
-#endif
 
   return result ;
 }
@@ -2921,31 +2881,6 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 
   result = TRUE ;
 
-#ifndef USE_NEW_CIGAR_PARSING_CODE
-
-  cp = match_str ;
-  do
-    {
-      AlignStrOpStruct op = {'\0'} ;
-
-      if (g_ascii_isdigit(*cp))
-        op.length = cigarGetLength(&cp) ;    /* N.B. moves cp on as needed. */
-      else
-        op.length = 1 ;
-
-      /* EnsEMBL CIGAR interchanges 'D' and 'I' */
-      op.op =
-        (*cp == 'D') ? 'I' :
-        (*cp == 'I') ? 'D' :
-        *cp;
-
-      canon->align = g_array_append_val(canon->align, op) ;
-
-      cp++ ;
-    } while (*cp) ;
-
-#else
-
   alignFormat2Properties(canon->format, &properties) ;
   if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
     {
@@ -2956,8 +2891,6 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
     {
       g_error_free(error) ;
     }
-
-#endif
 
   return result ;
 }
@@ -2987,49 +2920,8 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 
   result = TRUE ;
 
-  parseTestFunction01() ;
+  /* parseTestFunction01() ; */
 
-#ifndef USE_NEW_CIGAR_PARSING_CODE
-
-  cp = match_str ;
-  do
-    {
-      AlignStrOpStruct op = {'\0'} ;
-
-      if (g_ascii_isdigit(*cp))
-        op.length = cigarGetLength(&cp) ;    /* N.B. moves cp on as needed. */
-      else
-        op.length = 1 ;
-
-      if (*cp == 'H')
-        {
-          /* We don't handle hard-clipping */
-          result = FALSE ;
-          break ;
-        }
-      else if (*cp == 'P' || *cp == 'S')
-        {
-          /* Padding and soft-clipping: should be fine to ignore these */
-        }
-      else
-        {
-          if (*cp == 'X') /* Mismatch. Treat it like a match. */
-            op.op = 'M' ;
-          else            /* Everything else we handle */
-            op.op = *cp ;
-
-          canon->align = g_array_append_val(canon->align, op) ;
-          ++canon->num_operators ;
-        }
-
-      cp++ ;
-    } while (*cp) ;
-
-#else
-
-  /*
-   * Same thing using new approach
-   */
   alignFormat2Properties(canon->format, &properties) ;
   if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
     {
@@ -3044,8 +2936,6 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
        */
       g_error_free(error) ;
     }
-
-#endif
 
   return result ;
 }
