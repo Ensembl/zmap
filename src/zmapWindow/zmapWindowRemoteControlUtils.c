@@ -290,7 +290,7 @@ GArray *addTranscriptSubFeatures(GArray *xml_array, ZMapFeature feature)
   /* subfeature elements. */
   if ((span_array = feature->feature.transcript.exons))
     {
-      for (i = 0; i < span_array->len ; i++)
+      for (i = 0; i < (int)span_array->len ; i++)
         {
           ZMapSpan exon ;
 
@@ -318,7 +318,7 @@ GArray *addTranscriptSubFeatures(GArray *xml_array, ZMapFeature feature)
 
   if ((span_array = feature->feature.transcript.introns))
     {
-      for (i = 0; i < span_array->len; i++)
+      for (i = 0; i < (int)span_array->len; i++)
         {
           ZMapSpan intron ;
 
@@ -799,7 +799,7 @@ static void generateFeatureSpanEventsXremote(ZMapFeature feature, XMLContextDump
       /* end */
       event = &elements[2];
       event->value.i = feature.feature.transcript.cds_end;
-      
+
       /* ontology */
       event = &elements[3];
       event->value.q = g_quark_from_string("cds") ;

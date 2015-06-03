@@ -1140,7 +1140,7 @@ static gboolean parse_cigar_general(const char * const str,
           if (!isalpha(pAlignStrOp->op) || !pAlignStrOp->length)
             {
               *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
-                        "target string = '%s', op_index = %i", str, i) ;
+                        "target string = '%s', op_index = %i", str, (int)i) ;
               result = FALSE ;
               break ;
             }
@@ -1275,6 +1275,7 @@ static gboolean parse_canon_valid(AlignStrCanonical canon, GError **error)
 /*
  * Test of parsing various kinds of cigar strings...
  */
+#ifdef USE_PARSE_TEST_FUNCTION
 #define TEST_STRING_MAX 1024
 static void parseTestFunction01()
 {
@@ -1958,7 +1959,7 @@ static void parseTestFunction01()
     g_free(sTest01) ;
 }
 #undef TEST_STRING_MAX
-
+#endif
 
 /* Returns TRUE if the target blocks match coords are within align_error bases of each other, if
  * there are less than two blocks then FALSE is returned.

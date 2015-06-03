@@ -2707,7 +2707,7 @@ static TimeoutType timeoutHasTimedOut(ZMapRemoteControl remote_control)
 
   if (elapsed_time > timeout_time)
     {
-      if ((remote_control->timeout_list_pos + 1) == remote_control->timeout_list->len)
+      if ((remote_control->timeout_list_pos + 1) == (int)remote_control->timeout_list->len)
         {
           /* final timeout. */
           timeout_type = TIMEOUT_FINAL ;

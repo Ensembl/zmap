@@ -458,7 +458,7 @@ gboolean canSquash(ZMapFeature first, ZMapFeature current)
 
       /* NOTE must test target not query as query may be diff */
 
-      for(i = 0;i < g1->len; i++)
+      for(i = 0;i < (int)g1->len; i++)
 	{
 	  a1 = &g_array_index(g1, ZMapAlignBlockStruct, i);
 	  a2 = &g_array_index(g2, ZMapAlignBlockStruct, i);
@@ -468,7 +468,7 @@ gboolean canSquash(ZMapFeature first, ZMapFeature current)
 	      if(a1->t1 != a2->t1)
 		return FALSE;
 	    }
-	  if(i < g1->len -1)
+	  if(i < (int)g1->len -1)
 	    {
 	      if(a1->t2 != a2->t2)
 		return FALSE;
@@ -828,7 +828,7 @@ static void addCompositeFeature(GHashTable *ghash, ZMapFeature composite, ZMapFe
 #endif
 
   if(composite->feature.homol.sequence)
-    zMapWarnIfFail((composite->feature.homol.length == strlen(composite->feature.homol.sequence))) ;
+    zMapWarnIfFail(((size_t)composite->feature.homol.length == strlen(composite->feature.homol.sequence))) ;
 
   return ;
 }
@@ -1089,7 +1089,7 @@ static int makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_l
       first->t1 = edge1;
 
       /* add remaining match blocks copied from feature, normally only 1 but zebrafish has a few triple reads */
-      for(i = 1;i < f_gaps->len; i++)
+      for(i = 1;i < (int)f_gaps->len; i++)
 	{
 	  g_array_append_val(new_gaps, g_array_index(f_gaps,ZMapAlignBlockStruct,i));
 	}
@@ -1123,7 +1123,7 @@ static int makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_l
 
       if(first->q_strand == first->t_strand)
 	{
-	  for(i = 0,q = 1; i < new_gaps->len; i++)
+	  for(i = 0,q = 1; i < (int)new_gaps->len; i++)
 	    {
 	      ab = & g_array_index(new_gaps,ZMapAlignBlockStruct,i);
 	      ab->q1 = q;
@@ -1221,7 +1221,7 @@ static int makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_l
       gf = feature->feature.homol.align;
       ga = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), gf->len);
 
-      for(i = 0; i < gf->len; i++)
+      for(i = 0; i < (int)gf->len; i++)
 	{
 	  ab = & g_array_index(gf,ZMapAlignBlockStruct,i);
 	  g_array_append_val(ga,*ab);
@@ -1257,7 +1257,7 @@ static void storeSpliceCoords(ZMapFeature feature, GList **splice_list)
       int last = -MIN_INTRON_LEN;
 
       ga = feature->feature.homol.align;
-      for(i = 0; i < ga->len; i++)
+      for(i = 0; i < (int)ga->len; i++)
 	{
 	  ab = & g_array_index(ga,ZMapAlignBlockStruct,i);
 	  if(i > 0 && (ab->t1 - last) >= MIN_INTRON_LEN)
@@ -1533,7 +1533,6 @@ static void dumpFeaturesCB(gpointer data, gpointer user_data)
   ZMapFeature composite = (ZMapFeature)user_data ;
   int start, end, num_gaps = 0 ;
   const char *strand ;
-  gboolean gaps ;
   const char *gap_str ;
   const char *strand_diff = "", *overlap = "" ;
 
@@ -1543,17 +1542,14 @@ static void dumpFeaturesCB(gpointer data, gpointer user_data)
   if (!(feature->feature.homol.align))
     {
       gap_str = "no gaps" ;
-      gaps = FALSE ;
     }
   else if (feature->feature.homol.align->len == 0)
     {
       gap_str = "GAP ARRAY BUT NO GAPS !" ;
-      gaps = FALSE ;
     }
   else
     {
       gap_str = "gaps" ;
-      gaps = TRUE ;
       num_gaps = feature->feature.homol.align->len ;
     }
 

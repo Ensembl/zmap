@@ -256,7 +256,7 @@ gboolean zMapGUITreeViewPrepare(ZMapGUITreeView zmap_tv)
 
         if(index != GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID &&
            index != GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID  &&
-           index != zmap_tv->sort_index)
+           index != (int)zmap_tv->sort_index)
           zmap_tv->sort_index = index;
 
         if(sort_order != zmap_tv->sort_order)
@@ -301,8 +301,8 @@ gboolean zMapGUITreeViewAttach(ZMapGUITreeView zmap_tv)
 
       set_model  = gtk_tree_view_get_model(tree_view);
 
-      if((zmap_tv->sort_index != GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID) &&
-       (zmap_tv->sort_index != index))
+      if(((int)zmap_tv->sort_index != GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID) &&
+       ((int)zmap_tv->sort_index != index))
       {
         if(zmap_tv->sort_func)
           gtk_tree_sortable_set_sort_func(sort_model,
@@ -382,7 +382,7 @@ int zMapGUITreeViewGetColumnIndexByName(ZMapGUITreeView zmap_tv, const char *col
       GQuark query   = g_quark_from_string(column_name);
       int i;
 
-      for(i = 0; quarks && i < zmap_tv->column_count; i++, quarks++)
+      for(i = 0; quarks && i < (int)zmap_tv->column_count; ++i, ++quarks)
       {
         GQuark curr_name = *quarks;
 
@@ -691,7 +691,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 
           {
             int i;
-            for(i = 0; i < zmap_tv->column_count; i++)
+            for(i = 0; i < (int)zmap_tv->column_count; i++)
             {
               zmap_tv->column_numbers[i] = i;
               /* Default columns to visible */
@@ -978,7 +978,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
       break;
     case ZMAP_GUITV_SORT_COLUMN_INDEX:
       {
-      int index;
+      unsigned int index;
       index = g_value_get_uint(value);
       if(index < zmap_tv->column_count)
         zmap_tv->sort_index = index;
@@ -1255,7 +1255,7 @@ static void set_editable_flag(ZMapGUITreeView zmap_tv, const gboolean editable)
 {
   int column = 0 ;
 
-  for ( ; column < zmap_tv->column_count; ++column)
+  for ( ; column < (int)zmap_tv->column_count; ++column)
     {
       ColumnFlagsStruct *flags = &(zmap_tv->column_flags[column]);
 
@@ -1565,7 +1565,7 @@ static GtkTreeView *createView(ZMapGUITreeView zmap_tv)
       /* This should be a property */
       gtk_tree_view_set_headers_clickable(tree_view, TRUE);
 
-      for(index = 0; index < zmap_tv->column_count; index++, column_name_ptr++, column_type_ptr++, column_flags_ptr++)
+      for(index = 0; index < (int)zmap_tv->column_count; index++, column_name_ptr++, column_type_ptr++, column_flags_ptr++)
       {
         CellEditedCBData edited_cb_data = g_new0(CellEditedCBDataStruct, 1) ;
         edited_cb_data->zmap_tv = zmap_tv ;
@@ -1646,7 +1646,7 @@ static int column_index_from_name(ZMapGUITreeView zmap_tv, char *name)
   names_ptr = zmap_tv->column_names;
   name_id   = g_quark_from_string(name);
 
-  for(i = 0; i < zmap_tv->column_count; i++, names_ptr++)
+  for(i = 0; i < (int)zmap_tv->column_count; i++, names_ptr++)
     {
       if(*names_ptr == name_id)
       index = i;
@@ -1721,7 +1721,7 @@ static void update_tuple_data(ZMapGUITreeView zmap_tv,
 
 
   /* step through the functions and set the values */
-  for(; index < zmap_tv->column_count; index++)
+  for(; index < (int)zmap_tv->column_count; index++)
     {
       GValue *value;
       ZMapGUITreeViewCellFunc func;
@@ -1833,7 +1833,7 @@ static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
         /* Keep the index in step. */
         index++;
       }
-      while((tmp = g_list_next(tmp)) && index < zmap_tv->column_count);
+      while((tmp = g_list_next(tmp)) && index < (int)zmap_tv->column_count);
     }
 
   return ;

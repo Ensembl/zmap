@@ -211,7 +211,7 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
           /* however, due to the nature of the data we will get a lot of hits */
           /* see reults at the bottom of this file */
           /*! \todo #warning review this for efficiency when complex alignments (VULGAR) are implemented */
-          for(gaps = feature->feature->feature.homol.align, i = 0; i < gaps->len; i++)
+          for(gaps = feature->feature->feature.homol.align, i = 0; i < (int)gaps->len; i++)
             {
               ab = & g_array_index(gaps,ZMapAlignBlockStruct, i);
 

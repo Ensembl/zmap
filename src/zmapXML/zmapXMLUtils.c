@@ -44,7 +44,7 @@ static gboolean hasAttribute(GArray *events_array, int element_index, const char
 
 
 
-/* 
+/*
  *                       Globals.
  */
 
@@ -54,7 +54,7 @@ static gboolean debug_G = FALSE ;
 
 
 
-/* 
+/*
  *                       External Interface.
  */
 
@@ -132,20 +132,20 @@ GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsE
 
 /* Add the event stack as a child of the element given by element_name. Use this to allow
  * insertion of new xml levels into a pre-existing nest of xml, e.g.
- * 
+ *
  * <Some_element>
  *     <<<<<<<--------------------- insert xml in here
  * </Some_element>
- * 
- * 
+ *
+ *
  * Optionally specify an attribute name and optional value that qualifies the element to
  * add the event_stack to and also an index if there is more than one element with this
  * attribute name/value. If there are multiple elements with the same name/attribute
  * and you want to add to the 2nd one then specify an attribute_index of 2 and so on.
  * If no attribute name/value/index given then the stack is inserted in the first element
  * with element_name.
- * 
- * 
+ *
+ *
  *  */
 GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
                                                    const char *element_name, int element_index,
@@ -165,7 +165,7 @@ GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
     element_index = 1 ;
 
   /* Find first position in the array after the named element _and_ that elements attributes.  */
-  for (i = 0, insert_pos = 0, found_element = FALSE ; i < events_array->len ; i++)
+  for (i = 0, insert_pos = 0, found_element = FALSE ; i < (int)events_array->len ; i++)
     {
       ZMapXMLWriterEvent event ;
 
@@ -203,11 +203,11 @@ GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
       while (input && input->event_type)
         {
           transfer(input, &single) ;
-        
+
           result = g_array_insert_val(result, insert_pos, single) ;
-        
+
           insert_pos++ ;
-        
+
           input++ ;
         }
     }
@@ -231,19 +231,19 @@ GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
 
 /* Add the event stack after the xml element given by element_name. Typically used
  * to add multiple copies of the same element, e.g.
- * 
+ *
  * <Some_element>
  * </Some_element>
- * <<<<<<<--------------------- insert xml in here 
- * 
- * 
+ * <<<<<<<--------------------- insert xml in here
+ *
+ *
  * Optionally specify an attribute name and optionally value that qualifies the element to
  * add the event_stack to and also an index if there is more than one element with this
  * attribute name/value. If there are multiple elements with the same name/attribute
  * and you want to add to the 2nd one then specify an attribute_index of 2 and so on.
  * If no index or attribute name/value given then the stack is inserted after the
  * first element with element_name.
- * 
+ *
  *  */
 GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
                                                       const char *element_name, int element_index,
@@ -263,7 +263,7 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
     element_index = 1 ;
 
   /* Find position of end of named element in the array.  */
-  for (i = 0, insert_pos = 0, found_element = FALSE ; i < events_array->len ; i++)
+  for (i = 0, insert_pos = 0, found_element = FALSE ; i < (int)events_array->len ; i++)
     {
       ZMapXMLWriterEvent event ;
 
@@ -275,7 +275,7 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
           && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0)
         {
           int index = i ;    /* Pass in start of element. */
-        
+
           if (!attribute_name
               || hasAttribute(events_array, index, attribute_name, attribute_value))
             {
@@ -303,11 +303,11 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
       while (input && input->event_type)
         {
           transfer(input, &single) ;
-        
+
           result = g_array_insert_val(result, insert_pos, single) ;
-        
+
           insert_pos++ ;
-        
+
           input++ ;
         }
     }
@@ -435,10 +435,10 @@ char *zMapXMLWriterEvent2Txt(ZMapXMLWriterEvent event)
 
 
 /* Functions to escape a string for xml, just cover functions for the glib routines.
- * 
+ *
  * Returns NULL if conversion failed, otherwise returned string
  * should be g_free'd when no longer returned.
- * 
+ *
  */
 char *zMapXMLUtilsEscapeStr(const char *str)
 {
@@ -500,7 +500,7 @@ char *zMapXMLUtilsUnescapeStrdup(const char *str)
 
 
 
-/* 
+/*
  *                        Internal routines.
  */
 
@@ -557,7 +557,7 @@ static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest)
 
 /* Can attribute with attribute_name and attribute_value be found in the element pointed to
  * by element index ? returns TRUE if it is, FALSE otherwise.
- * 
+ *
  * Note, routine expects index to point to start of the element, _not_ the first attribute.
  *  */
 static gboolean hasAttribute(GArray *events_array, int element_index, const char *attribute_name, const char *attribute_value)
@@ -571,7 +571,7 @@ static gboolean hasAttribute(GArray *events_array, int element_index, const char
     {
       int i ;
 
-      for (i = element_index + 1 ; i < events_array->len ; i++)
+      for (i = element_index + 1 ; i < (int)events_array->len ; i++)
         {
           event = &(g_array_index(events_array, ZMapXMLWriterEventStruct, i)) ;
 

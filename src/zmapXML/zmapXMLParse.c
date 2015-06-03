@@ -939,7 +939,7 @@ static ZMapXMLAttribute parserFetchNewAttribute(ZMapXMLParser parser,
   if (!parser->attributes)
     return attr ;
 
-  for (i = 0; i < parser->attributes->len; i++)
+  for (i = 0; i < (int)parser->attributes->len; i++)
     {
       /* This is hideous. Ed has a written a zMap_g_array_index, but it auto expands  */
       if (((&(g_array_index(parser->attributes, zmapXMLAttributeStruct, i))))->dirty == TRUE)
@@ -1000,7 +1000,7 @@ static void initElements(GArray *an_array)
   ZMapXMLElement element = NULL;
   int i;
 
-  for(i = 0; i < an_array->len; i++)
+  for(i = 0; i < (int)an_array->len; i++)
     {
       element = &(g_array_index(an_array, zmapXMLElementStruct, i));
       element->dirty = TRUE;
@@ -1013,7 +1013,7 @@ static void initAttributes(GArray *an_array)
   ZMapXMLAttribute attribute = NULL;
   int i;
 
-  for(i = 0; i < an_array->len; i++)
+  for(i = 0; i < (int)an_array->len; i++)
     {
       attribute = &(g_array_index(an_array, zmapXMLAttributeStruct, i));
       attribute->dirty = TRUE;
