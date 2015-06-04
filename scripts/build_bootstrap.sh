@@ -279,6 +279,9 @@ if [ "x$gen_checkout_script" != "x" ]; then
     _checkout_message_out "just doing a copy of $ZMAP_MASTER_BUILD_COPY_DIR"
   fi
 
+  # a lot of error prone cd'ing around...
+  cd ..
+
   _checkout_message_out "About to  cp -r $MASTER_SRC_DIR $CVS_MODULE"
   cp -r $MASTER_SRC_DIR $CVS_MODULE  || _checkout_message_exit "Failed to copy src directory $MASTER_SRC_DIR"
 fi
