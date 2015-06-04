@@ -35,7 +35,7 @@
 
 
 
-
+#include <stdlib.h>
 #include <sys/utsname.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
@@ -82,8 +82,8 @@ static char *translateURLChars(char *orig_link) ;
 /* List of browsers for different systems, you can have more than one browser for a system. */
 static BrowserConfigStruct browsers_G[] =
   {
-    {"Linux",  "firefox", "firefox \""BROWSER_PATTERN"\""},
     {"Linux",  "xdg-open", "xdg-open \""BROWSER_PATTERN"\""},
+    {"Linux",  "firefox", "firefox \""BROWSER_PATTERN"\""},
     {"Linux",  "iceweasel", "iceweasel -new-window \""BROWSER_PATTERN"\""},
     {"Linux",  "mozilla", "mozilla -remote 'openurl(\""BROWSER_PATTERN"\",new-window)' || mozilla \""BROWSER_PATTERN"\""},
     {"OSF",    "netscape", NULL},
@@ -136,6 +136,12 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
 
   if (!err_domain_G)
     err_domain_G = g_quark_from_string(domain_G) ;
+
+  /*
+   *
+   */
+  char * display_name = getenv("DISPLAY") ;
+  zMapDebugPrintf("%s", display_name );
 
 
   /* Check we have a registered browser for this system. */
