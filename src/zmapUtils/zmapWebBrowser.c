@@ -137,17 +137,8 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
   if (!err_domain_G)
     err_domain_G = g_quark_from_string(domain_G) ;
 
-  /*
-   *
-   */
-  char * display_name = getenv("DISPLAY") ;
-  zMapDebugPrintf("%s", display_name );
-
-
   /* Check we have a registered browser for this system. */
   browser = findBrowser(browsers_G, &best_browser, error) ;
-
-
 
   /* Run the browser in a separate process. */
   if (browser)
@@ -213,12 +204,39 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
 /* Gets the system name and then finds browsers for that system from our ||
  * our internal list, if it finds the browser is in the users path then
  * returns the path otherwise returns NULL and sets error to give details
- * of what went wrong. */
+ * of what went wrong.
+ *
+ * Note that the order of systems and browsers is as follows:
+ *
+ * "Linux",  "xdg-open"
+ * "Linux",  "firefox"
+ * "Linux",  "iceweasel"
+ * "Linux",  "mozilla"
+ * "OSF",    "netscape"
+ * "Darwin", "/Applications/Safari.app/Contents/MacOS/Safari"
+ *
+ * First query the DISPLAY envirnonment variable to see if we are running locally;
+ * it may have the following forms:
+ *
+ * (a) :0.0, meaning local
+ * (b) <string>:n.0, where the string is some machine name.
+ *
+ * The test below looks for the the colon delimiter and if that is at the start
+ * of the string then we are assumed to be local. In that case we start at the
+ * beginning of the list (and therefore will probably use xdg). If not local,
+ * then we start at the second element of the list. Note that this assumes that
+ * XDG will be the first entry in the array.
+ *
+ */
 static char *findBrowser(BrowserConfig browsers_in, BrowserConfig *browser_out, GError **error)
 {
+  static const char *display_variable = "DISPLAY" ;
   char *browser = NULL ;
   struct utsname unamebuf ;
   gboolean browser_in_list = FALSE ;
+
+  if (!browsers_in)
+    return browser ;
 
   if (uname(&unamebuf) == -1)
     {
@@ -229,7 +247,21 @@ static char *findBrowser(BrowserConfig browsers_in, BrowserConfig *browser_out, 
     {
       BrowserConfig curr_browser = browsers_in ;
 
-      while (curr_browser->system != NULL)
+      /*
+       * Test to see if we are running locally, and skip the first (xdg)
+       * entry if we are not.
+       */
+      const char *display_string = getenv(display_variable) ;
+      if (display_string && *display_string)
+        {
+          const char *pos = strchr(display_string, ':') ;
+          if (pos && (pos != display_string))
+            {
+              ++curr_browser ;
+            }
+        }
+
+      while (curr_browser && (curr_browser->system != NULL) )
         {
           if (g_ascii_strcasecmp(curr_browser->system, unamebuf.sysname) == 0)
             {
@@ -244,7 +276,7 @@ static char *findBrowser(BrowserConfig browsers_in, BrowserConfig *browser_out, 
                 }
             }
 
-          curr_browser++ ;
+          ++curr_browser ;
         }
     }
 
