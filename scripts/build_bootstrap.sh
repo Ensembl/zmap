@@ -232,26 +232,26 @@ if [ "x$gen_checkout_script" != "x" ]; then
     git clone -b $BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
 
-# do we need this now ????? and isn't the code wrong anyway......
+# do we need this now ????? 
 #
 #
-#    if [ -n "$GBTOOLS_BRANCH" ] ; then
-#        # clone the gbtools repo as a subdirectory of src
-#        cd $MASTER_SRC_DIR/src || _checkout_message_exit "Failed to cd to $MASTER_SRC_DIR/src"
-#
-#        gbtools_repo="gbtools"
-#        if [[ -d $gbtools_repo ]] ; then
-#          rm -r $gbtools_repo
-#        fi
-#
-#        git clone -b $GBTOOLS_BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo
-#
+    if [ -n "$GBTOOLS_BRANCH" ] ; then
+        # clone the gbtools repo as a subdirectory of src
+        cd $MASTER_SRC_DIR/src || _checkout_message_exit "Failed to cd to $MASTER_SRC_DIR/src"
+
+        gbtools_repo="gbtools"
+        if [[ -d $gbtools_repo ]] ; then
+          rm -r $gbtools_repo
+        fi
+
+        git clone -b $GBTOOLS_BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo
+
 #        # Do a git-checkout on the gbtools directory to restore the original placeholder files
 #        # i.e. README and .gitignore        
 #        git checkout $gbtools_repo
-#
-#        cd ../..
-#    fi
+
+        cd ../..
+    fi
 
     # get the production branch (but don't check it out)
     git branch production origin/production
