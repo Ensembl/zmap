@@ -185,7 +185,9 @@ zmap_message_out "--------------------------------------------------------------
 # keys, i.e. one for each library.
 #
 
-zmap_message_out "loading ${!dir[*]} external libraries...."
+zmap_message_out "-------------------------------------------------------------------"
+zmap_message_out "starting installing external libraries:  ${!dir[*]}"
+zmap_message_out "-------------------------------------------------------------------"
 
 for i in "${!install[@]}"
   do
@@ -245,7 +247,9 @@ for i in "${!install[@]}"
 
   done
 
-zmap_message_out "finished loading ${!dir[*]} external libraries...."
+zmap_message_out "-------------------------------------------------------------------"
+zmap_message_out "finished installing external libraries:  ${!dir[*]}"
+zmap_message_out "-------------------------------------------------------------------"
 
 
 
@@ -324,11 +328,15 @@ mkdir $zeromq_dir  || zmap_message_exit "Cannot make $zeromq_dir for zeromq buil
 # Use autoreconf to run the autotools chain in the right order with
 # the right args.
 #
+zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "About to run autoreconf to bootstrap autotools and our build system"
+zmap_message_out "-------------------------------------------------------------------"
 
 autoreconf $force_remake_all $verbose $install_missing -I ./ || zmap_message_exit "Failed running autoreconf"
 
+zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "Finished running autoreconf for bootstrap"
+zmap_message_out "-------------------------------------------------------------------"
 
 
 # finished !
