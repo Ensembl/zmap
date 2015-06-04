@@ -237,12 +237,14 @@ if [ "x$gen_checkout_script" != "x" ]; then
 #
     if [ -n "$GBTOOLS_BRANCH" ] ; then
         # clone the gbtools repo as a subdirectory of src
-        cd $MASTER_SRC_DIR/src || _checkout_message_exit "Failed to cd to $MASTER_SRC_DIR/src"
+	cd $MASTER_SRC_DIR/src || _checkout_message_exit "Failed to cd to $MASTER_SRC_DIR/src"
 
         gbtools_repo="gbtools"
         if [[ -d $gbtools_repo ]] ; then
           rm -r $gbtools_repo
         fi
+
+	_checkout_message_out "Running git clone of $gbtools_repo.git, branch $$GBTOOLS_BRANCH, into $gbtools_repo"
 
         git clone -b $GBTOOLS_BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo
 
@@ -250,7 +252,12 @@ if [ "x$gen_checkout_script" != "x" ]; then
 #        # i.e. README and .gitignore        
 #        git checkout $gbtools_repo
 
+	echo "PWD IS $PWD
+
         cd ../..
+
+	echo "PWD IS $PWD
+
     fi
 
     # get the production branch (but don't check it out)
