@@ -232,7 +232,8 @@ if [ "x$gen_checkout_script" != "x" ]; then
     git clone -b $BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
 
-# do we need this now ????? 
+# do we need this now ????? yes...otherwise we need to be able to tell autogen.sh what branch
+# to checkout for a particular library....
 #
 #
     if [ -n "$GBTOOLS_BRANCH" ] ; then
@@ -254,7 +255,7 @@ if [ "x$gen_checkout_script" != "x" ]; then
 
 	echo "PWD IS $PWD"
 
-        cd ../..
+        cd ..
 
 	echo "PWD IS $PWD"
 
