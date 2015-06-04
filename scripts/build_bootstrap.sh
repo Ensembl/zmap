@@ -252,11 +252,11 @@ if [ "x$gen_checkout_script" != "x" ]; then
 #        # i.e. README and .gitignore        
 #        git checkout $gbtools_repo
 
-	echo "PWD IS $PWD
+	echo "PWD IS $PWD"
 
         cd ../..
 
-	echo "PWD IS $PWD
+	echo "PWD IS $PWD"
 
     fi
 
