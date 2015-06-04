@@ -245,13 +245,13 @@ if [ "x$gen_checkout_script" != "x" ]; then
           rm -r $gbtools_repo
         fi
 
-	_checkout_message_out "Running git clone of $gbtools_repo.git, branch $$GBTOOLS_BRANCH, into $gbtools_repo"
+	_checkout_message_out "Running git clone of $gbtools_repo.git, branch $GBTOOLS_BRANCH, into $gbtools_repo"
 
         git clone -b $GBTOOLS_BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo
 
-#        # Do a git-checkout on the gbtools directory to restore the original placeholder files
-#        # i.e. README and .gitignore        
-#        git checkout $gbtools_repo
+        # Do a git-checkout on the gbtools directory to restore the original placeholder files
+        # i.e. README and .gitignore        
+        git checkout $gbtools_repo
 
 	echo "PWD IS $PWD"
 
