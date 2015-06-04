@@ -76,14 +76,7 @@ function fetch_lib
 
 
 
-
-
 force_remake_all=''
-gb_tools='maybe'
-aceconn='maybe'
-ensc_core='maybe'
-htslib='maybe'
-zeromq='maybe'
 run_autoupdate=''					    # don't run autoupdate by default.
 install_missing='-i'
 verbose=''
@@ -93,33 +86,35 @@ version_arg=''
 git_host='git.internal.sanger.ac.uk'
 git_root='/repos/git/annotools'
 
-# gbtools repository info
-gb_tools_repos='gbtools'
-gb_tools_dir='gbtools'
-gb_tools_branch='' # set this to '-b <branch>' to use a branch other than the default (develop)
 
-# aceconn repository info
-aceconn_repos='AceConn'
-aceconn_dir='AceConn'
-aceconn_branch='' # set this to '-b <branch>' to use a branch other than the default (develop)
+# Set up info. about each external library using bash associative arrays.
+# To add more libraries you must invent a new key name (e.g. the name of your
+# library) and use that name to add your values to each of the below arrays.
+# (note order of keys below is of course irrelevant as it's an associative array)
+#
+aceconn_key='aceconn'
+ensc_core_key='ensc_core'
+gb_tools_key='gb_tools'
+htslib_key='htslib'
+zeromq_key='zeromq'
 
-# ensembl repository info
-ensc_core_repos='ensc-core'
-ensc_core_dir='ensc-core'
-# For now we hard-code ensembl to use the feature/zmap branch because we have
-# some customisations (e.g. disabling certain stuff that we don't require)
-# which we can't push to the default branch
-ensc_core_branch='-b feature/zmap'
+declare -A install=( [$aceconn_key]='maybe' [$ensc_core_key]='maybe' [$gb_tools_key]='maybe'
+    [$htslib_key]='maybe' [$zeromq_key]='maybe' )
 
-# htslib repository info
-htslib_repos='htslib'
-htslib_dir='htslib'
-htslib_branch='' # set this to '-b <branch>' to use a branch other than the default (develop)
+declare -A repos=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
+    [$htslib_key]='htslib' [$zeromq_key]='zeromq' )
 
-# zeromq repository info
-zeromq_repos='zeromq'
-zeromq_dir='zeromq'
-zeromq_branch='' # set this to '-b <branch>' to use a branch other than the default (develop)
+declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
+    [$htslib_key]='htslib' [$zeromq_key]='zeromq' )
+
+declare -A test_file=( [$aceconn_key]='configure.ac' [$ensc_core_key]='src/Makefile' [$gb_tools_key]='configure.ac'
+    [$htslib_key]='Makefile' [$zeromq_key]='configure.ac' )
+
+declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='-b feature/zmap' [$gb_tools_key]=''
+    [$htslib_key]='' [$zeromq_key]='' )
+
+
+
 
 
 # Cmd line options....
@@ -132,7 +127,7 @@ Usage:
  $SCRIPT_NAME [ -a -d -e -f -g -h -i -n -u -v ]
 
    -a  Force checkout of aceconn (overwrite existing subdir)
-   -z  testing, no checkout of aceconn
+
 
    -d  Disable checkout of ensc-core (use existing subdir or local install)
    -e  Force checkout of ensc-core (overwrite existing subdir)
@@ -144,22 +139,23 @@ Usage:
    -u  Run autoupdate
    -v  Verbose
 
+   -z  testing, no checkout of htslib
 "
 
 while getopts ":azdefghinuv" opt ; do
     case $opt in
-	a  ) aceconn='yes' ;;
-	d  ) ensc_core='no' ;;
-	e  ) ensc_core='yes' ;;
+	a  ) install[$aceconn_key]='yes' ;;
+	d  ) install[$ensc_core_key]='no' ;;
+	e  ) install[$ensc_core_key]='yes' ;;
 	f  ) force_remake_all='-f' ;;
-	g  ) gb_tools='yes' ;;
+	g  ) install[$gb_tools_key]='yes' ;;
 	h  ) zmap_message_exit "$usage" ;;
 	i  ) install_missing='-i' ;;
-	n  ) gb_tools='no' ;;
-	u  ) run_autoupdate='yes' ;;
+	n  ) install[$gb_tools_key]='no' ;;
+	u  ) run_autoupdate_key]='yes' ;;
 	v  ) verbose='-v' ;;
 
-	z  ) htslib='no' ;;
+	z  ) install[$htslib]='no' ;;
 
 	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
@@ -178,138 +174,78 @@ fi
 # Off we go......
 #
 zmap_message_out "-------------------------------------------------------------------"
-zmap_message_out "bootstrap starting...."
+zmap_message_out "build bootstrap starting...."
 zmap_message_out "-------------------------------------------------------------------"
 
 
 
-# OK, OK.....THIS ALL NEEDS TO BE IN A LOOP OVER THE EXTERNAL LIBS WE HAVE.....
 
-# set up gbtools, this is our general tools package.
+# Loop through external libraries trying to copy them into our src tree.
+# Note loop only works because all associative arrays have the same set of
+# keys, i.e. one for each library.
 #
-if [[ "$gb_tools" == "yes" ]] ; then
 
-    clean_lib $gb_tools_repos $gb_tools_dir
+zmap_message_out "loading ${!dir[*]} external libraries...."
 
-fi
+for i in "${!install[@]}"
+  do
 
-if [[ "$gb_tools" == "yes" || "$gb_tools" == "maybe" ]] ; then
+  zmap_message_out "starting install of $i....."
 
-  if [[ ! -f "./$gb_tools_dir/configure.ac" ]] ; then
+  if [[ "${install[$i]}" == "yes" ]] ; then
 
-      fetch_lib $git_host:$git_root/$gb_tools_repos $gb_tools_dir "$gb_tools_branch"
+      clean_lib "${repos[$i]}" "${dir[$i]}"
 
   fi
 
-fi
+  if [[ "${install[$i]}" == "yes" || "${install[$i]}" == "maybe" ]] ; then
 
+      if [[ ! -f "./${dir[$i]}/${test_file[$i]}" ]] ; then
 
-# If the gbtools autogen.sh script exists then run that. This is necessary
-# for gbtools to create its gbtools_version.m4 file.
-#
-if [ -e "$BASE_DIR/gbtools/autogen.sh" ] ; then
-  cur_dir=`pwd`
-  cd $BASE_DIR/gbtools
-  ./autogen.sh
-  cd $cur_dir
-fi
+          fetch_lib "$git_host:$git_root/${repos[$i]}" "${dir[$i]}" "${branch[$i]}"
 
-
-
-# set up aceconn package, this is for connecting to the Ace server.
-#
-if [[ "$aceconn" == "yes" ]] ; then
-
-    clean_lib $aceconn_repos $aceconn_dir
-
-fi
-
-if [[ "$aceconn" == "yes" || "$aceconn" == "maybe" ]] ; then
-
-  if [[ ! -f "./$aceconn_dir/configure.ac" ]] ; then
-
-      fetch_lib $git_host:$git_root/$aceconn_repos $aceconn_dir "$aceconn_branch"
+      fi
 
   fi
 
-fi
+  # Special case post-processing for some libraries....
+  case $i in
 
+    # If the gbtools autogen.sh script exists then run that. This is necessary
+    # for gbtools to create its gbtools_version.m4 file.
+    $gb_tools_key )
+    if [ -e "./${dir[$i]}/autogen.sh" ] ; then
 
+        cur_dir=`pwd`
+	cd $BASE_DIR/gbtools
+	./autogen.sh
+	cd $cur_dir
+	
+    fi ;;
 
-# Set up ensc-core subdirectory. This is the ensembl C API code.
-#
+    # We must have htslib (currently) or we fail.
+    $htslib_key )
+    if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
 
-if [[ "$ensc_core" == "yes" ]] ; then
+        zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
 
-    clean_lib $ensc_core_repos $ensc_core_dir
+    fi ;;
 
-fi
+    # We must have zeromq (currently) or we fail.
+    $zeromq_key )
+    if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
 
-if [[ "$ensc_core" == "yes" || "$ensc_core" == "maybe" ]] ; then
+        zmap_message_exit "Aborting.....zeromq is not available so ZMap cannot be built."
 
-    if [[ ! -f "./$ensc_core/src/Makefile" ]] ; then
+    fi ;;
 
-        fetch_lib $git_host:$git_root/$ensc_core_repos $ensc_core_dir "$ensc_core_branch"
+  esac
 
-    fi
+  zmap_message_out "finished install of $i....."
 
-fi
+  done
 
-
-# Set up htslib subdirectory. This is the BAM/CRAM/VCF reading/writing C code.
-#
-
-if [[ "$htslib" == "yes" ]] ; then
-
-    clean_lib $htslib_repos $htslib_dir
-
-fi
-
-if [[ "$htslib" == "yes" || "$htslib" == "maybe" ]] ; then
-
-    if [[ ! -f "./$htslib_dir/Makefile" ]] ; then
-
-        fetch_lib $git_host:$git_root/$htslib_repos $htslib_dir "$htslib_branch"
-
-    fi
-
-fi
-
-# We must have htslib (currently) or we fail.
-if [[ ! -f "./$htslib_dir/Makefile" ]] ; then
-
-    zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
-
-fi
-
-
-
-# Set up zeromq subdirectory. This is the message passing package for RemoteControl.
-#
-
-if [[ "$zeromq" == "yes" ]] ; then
-
-    clean_lib $zeromq_repos $zeromq_dir
-
-fi
-
-if [[ "$zeromq" == "yes" || "$zeromq" == "maybe" ]] ; then
-
-    if [[ ! -f "./$zeromq_dir/configure.ac" ]] ; then
-
-        fetch_lib $git_host:$git_root/$zeromq_repos $zeromq_dir "$zeromq_branch"
-
-    fi
-
-fi
-
-# We must have zeromq (currently) or we fail.
-if [[ ! -f "./$zeromq_dir/configure.ac" ]] ; then
-
-    zmap_message_exit "Aborting.....zeromq is not available so ZMap cannot be built."
-
-fi
-
+zmap_message_out "finished loading ${!dir[*]} external libraries...."
 
 
 
@@ -388,16 +324,16 @@ mkdir $zeromq_dir  || zmap_message_exit "Cannot make $zeromq_dir for zeromq buil
 # Use autoreconf to run the autotools chain in the right order with
 # the right args.
 #
-zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "About to run autoreconf to bootstrap autotools and our build system"
-zmap_message_out "-------------------------------------------------------------------"
 
 autoreconf $force_remake_all $verbose $install_missing -I ./ || zmap_message_exit "Failed running autoreconf"
+
 zmap_message_out "Finished running autoreconf for bootstrap"
+
 
 # finished !
 zmap_message_out "-------------------------------------------------------------------"
-zmap_message_out "bootstrap finished...."
+zmap_message_out "build bootstrap finished...."
 zmap_message_out "-------------------------------------------------------------------"
 
 
