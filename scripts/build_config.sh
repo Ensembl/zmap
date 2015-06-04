@@ -241,9 +241,9 @@ ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 #   macosx-10-i386   - mac106229i
 #   trusty-x86_64    - precise-dev64
 
-# temporary until bash 4 is installed on the mac....
+# temporary until bash 4 is installed on the mac and we've sorted out the build fail on windows.....
 #ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64 precise-dev64 mac106229i t119-win-build"
-ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64 precise-dev64 t119-win-build"
+ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64 precise-dev64"
 
 
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \
