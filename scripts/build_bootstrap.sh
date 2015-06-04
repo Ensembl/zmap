@@ -231,23 +231,27 @@ if [ "x$gen_checkout_script" != "x" ]; then
     _checkout_message_out "Running git clone of zmap.git, branch $BRANCH, into $MASTER_SRC_DIR"
     git clone -b $BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
-    if [ -n "$GBTOOLS_BRANCH" ] ; then
-        # clone the gbtools repo as a subdirectory of src
-        cd $MASTER_SRC_DIR/src || _checkout_message_exit "Failed to cd to $MASTER_SRC_DIR/src"
 
-        gbtools_repo="gbtools"
-        if [[ -d $gbtools_repo ]] ; then
-          rm -r $gbtools_repo
-        fi
-
-        git clone -b $GBTOOLS_BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo
-
-        # Do a git-checkout on the gbtools directory to restore the original placeholder files
-        # i.e. README and .gitignore        
-        git checkout $gbtools_repo
-
-        cd ../..
-    fi
+# do we need this now ????? and isn't the code wrong anyway......
+#
+#
+#    if [ -n "$GBTOOLS_BRANCH" ] ; then
+#        # clone the gbtools repo as a subdirectory of src
+#        cd $MASTER_SRC_DIR/src || _checkout_message_exit "Failed to cd to $MASTER_SRC_DIR/src"
+#
+#        gbtools_repo="gbtools"
+#        if [[ -d $gbtools_repo ]] ; then
+#          rm -r $gbtools_repo
+#        fi
+#
+#        git clone -b $GBTOOLS_BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo
+#
+#        # Do a git-checkout on the gbtools directory to restore the original placeholder files
+#        # i.e. README and .gitignore        
+#        git checkout $gbtools_repo
+#
+#        cd ../..
+#    fi
 
     # get the production branch (but don't check it out)
     git branch production origin/production
