@@ -47,7 +47,7 @@
  * This is for my scale bar drawing experiments that are
  * being kept on the develop branch for the moment.
  */
-/* #define SM23_EXPERIMENT 1 */
+#define SM23_EXPERIMENT 1
 
 /* Privatise
  *

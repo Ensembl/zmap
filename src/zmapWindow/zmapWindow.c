@@ -299,6 +299,7 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
 static void setupRuler(ZMapWindow       window,
                        FooCanvasItem  **horizon,
                        FooCanvasGroup **tooltip,
+                       double           x_coord,
                        double           y_coord);
 static void moveRuler(FooCanvasItem  *horizon,
                       FooCanvasGroup *tooltip,
@@ -306,6 +307,7 @@ static void moveRuler(FooCanvasItem  *horizon,
                       double     world_x,
                       double     world_y);
 static void removeRuler(FooCanvasItem *horizon, FooCanvasGroup *tooltip);
+static char * tooltipTextCreate(ZMapWindow window, double wx, double wy) ;
 
 static gboolean within_x_percent(ZMapWindow window, double percent, double y, gboolean in_top);
 static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_to_hundred, double world_y, gboolean in_top);
@@ -3669,8 +3671,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                       if (mark_updater.in_mark_move_region)
                         {
                           mark_updater.activated = TRUE;
-
-                          setupRuler(window, &(window->mark_guide_line), NULL, wy);
+                          setupRuler(window, &(window->mark_guide_line), NULL, wx, wy);
                         }
                       else
                         {
@@ -3734,7 +3735,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                     }
                   else
                     {
-                      setupRuler(window, &(window->horizon_guide_line), &(window->tooltip), wy) ;
+                      setupRuler(window, &(window->horizon_guide_line), &(window->tooltip), wx, wy) ;
                     }
 
                   event_handled = TRUE ;    /* We _ARE_ handling */
@@ -3835,8 +3836,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
               }
             else if (guide)
               {
-                double y1, y2;
-                char *tip = NULL;
+                double y1, y2 ;
+                char *tip = NULL ;
 
                 foo_canvas_get_scroll_region(window->canvas, /* ok, but like to change */
                                              NULL, &y1, NULL, &y2);
@@ -3847,24 +3848,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                 /* This test is FLAWED ATM it needs to test for displayed seq start & end */
                 if (y1 <= wy && y2 >= wy)
                   {
-                    int bp = 0;
-                    int chr_bp;
-
-                    chr_bp = bp = (int)floor(wy);
-
-                    bp = zmapWindowCoordToDisplay(window, bp) ;
-                    chr_bp = zmapWindowWorldToSequenceForward(window,chr_bp);
-                    /* NOTE: this code does not handle multiple blocks */
-                    /* need to get current block and extract start coord */
-
-                    if(window->sequence)
-                      {
-                        if(abs(bp) != chr_bp)
-                          tip = g_strdup_printf("%d bp (%d)", bp, chr_bp);
-                        else
-                          tip = g_strdup_printf("%d bp", bp);
-                      }
+                    tip = tooltipTextCreate(window, wx, wy) ;
                   }
+
 
                 /* If we are a locked, _vertical_ split window then also show the ruler in the
                  * other windows. */
@@ -7154,7 +7140,7 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
     {
     case ZMAP_LOCKED_RULER_SETUP:
       setupRuler(window, &(window->horizon_guide_line),
-                 &(window->tooltip), locked_data->origin_y) ;
+                 &(window->tooltip), locked_data->world_x, locked_data->origin_y) ;
       break;
     case ZMAP_LOCKED_RULER_MOVING:
       moveRuler(window->horizon_guide_line,
@@ -7168,7 +7154,7 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
       break;
 
     case ZMAP_LOCKED_MARK_GUIDE_SETUP:
-      setupRuler(window, &(window->mark_guide_line), NULL, locked_data->origin_y);
+      setupRuler(window, &(window->mark_guide_line), NULL, locked_data->world_x, locked_data->origin_y);
       break;
     case ZMAP_LOCKED_MARK_GUIDE_MOVING:
       break;
@@ -7183,10 +7169,39 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
   return ;
 }
 
+/*
+ * This allocates a new string that must be freed in the caller.
+ * Arguments are the world coordinates.
+ */
+static char * tooltipTextCreate(ZMapWindow window, double wx, double wy)
+{
+  char * text = NULL ;
+  int bp = 0, chr_bp = 0 ;
+
+  if (!window)
+    return text ;
+
+  chr_bp = bp = (int)floor(wy);
+
+  bp = zmapWindowCoordToDisplay(window, bp) ;
+  chr_bp = zmapWindowWorldToSequenceForward(window,chr_bp) ;
+
+  if (window->sequence)
+    {
+      if (abs(bp) != chr_bp)
+        text = g_strdup_printf("%d bp (%d)", bp, chr_bp);
+      else
+        text = g_strdup_printf("%d bp", bp);
+    }
+
+  return text ;
+}
+
 
 static void setupRuler(ZMapWindow       window,
        FooCanvasItem  **horizon,
        FooCanvasGroup **tooltip,
+       double           x_coord,
        double           y_coord)
 {
 
@@ -7200,6 +7215,16 @@ static void setupRuler(ZMapWindow       window,
 
   if(horizon)
     zMapDrawHorizonReposition(*horizon, y_coord) ;
+
+
+  if(tooltip)
+    {
+      char * tip_text = tooltipTextCreate(window, x_coord, y_coord) ;
+      if (tip_text)
+        zMapDrawToolTipSetPosition(*tooltip, x_coord, y_coord, tip_text) ;
+      else
+        foo_canvas_item_hide(FOO_CANVAS_ITEM(tooltip)) ;
+    }
 
   return ;
 }
