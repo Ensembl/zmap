@@ -23,6 +23,7 @@ fi
 RC=0
 force_remake_all=''
 gb_tools='maybe'
+ensc_core='maybe'
 run_autoupdate=''					    # don't run autoupdate by default.
 install_missing='-i'
 verbose=''
@@ -63,8 +64,10 @@ set -o history
 #
 usage="$SCRIPT_NAME [ -u ]"
 
-while getopts ":fginuv" opt ; do
+while getopts ":defginuv" opt ; do
     case $opt in
+	d  ) ensc_core='no' ;;
+	e  ) ensc_core='yes' ;;
 	f  ) force_remake_all='-f' ;;
 	g  ) gb_tools='yes' ;;
 	i  ) install_missing='-i' ;;
@@ -136,24 +139,41 @@ fi
 
 # Set up ensc-core subdirectory. This is the ensembl C API code.
 #
-zmap_message_out "Removing an old copy of $ensc_core_repos"
+if [[ "$ensc_core" == "yes" ]] ; then
 
-rm -rf ./$ensc_core_dir/*
+    zmap_message_out "Removing an old copy of $ensc_core_repos"
 
-zmap_message_out "Cloning $ensc_core_repos into $ensc_core_checkout_dir"
+    rm -rf ./$ensc_core_dir/*
 
-git clone $ensc_core_branch $git_host:$git_root/$ensc_core_repos $ensc_core_checkout_dir || zmap_message_exit "could not clone $ensc_core_repos into $PWD."
+    git checkout ./$ensc_core_dir
+fi
 
-cp -rf ./$ensc_core_checkout_dir/* ./$ensc_core_dir
+if [[ "$ensc_core" == "yes" || "$ensc_core" == "maybe" ]] ; then
 
-rm -rf ./$ensc_core_checkout_dir
+  if [[ ! -f "./$ensc_core/src/configure.ac" ]] ; then
 
-# Make sure the placeholder files (.gitignore, README) are at their 
-# original versions
-git checkout ./$ensc_core_dir/
+      zmap_message_out "Cloning $ensc_core_repos into $ensc_core_checkout_dir"
 
-zmap_message_out "Copied $ensc_core_checkout_dir files to $ensc_core_dir"
+      git clone $ensc_core_branch $git_host:$git_root/$ensc_core_repos $ensc_core_checkout_dir || zmap_message_exit "could not clone $ensc_core_repos into $PWD."
 
+      cp -rf ./$ensc_core_checkout_dir/* ./$ensc_core_dir
+
+      rm -rf ./$ensc_core_checkout_dir
+
+      zmap_message_out "Copied $ensc_core_checkout_dir files to $ensc_core_dir"
+
+  fi
+
+fi
+
+if [[ ! -d "./$ensc_core/src" ]] ; then
+
+    # The src subdir must exist even if we are not building ensc-core
+    # gb10: not sure why but it seems it gets configured even though we
+    # don't include it in SUBDIRS
+    mkdir ./$ensc_core/src
+
+fi
 
 # Remove any files/dirs from previous builds, necessary because different
 # systems have different versions of autoconf causing clashes over macros

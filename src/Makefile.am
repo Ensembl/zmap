@@ -31,7 +31,9 @@ endif
 SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop 
 
 if USE_ENSEMBL
+if USE_ENSEMBL_SUBDIR
 SUBDIRS += ensc-core/src 
+endif
 endif
 
 SUBDIRS += include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
@@ -187,7 +189,9 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/AceConn/src/.libs/libAceConn.a       
 
 if USE_ENSEMBL
+if USE_ENSEMBL_SUBDIR
 zmap_LDADD += $(top_builddir)/ensc-core/src/libensc.a
+endif
 endif
 
 # If we have gbtools in a subdirectory, add the .a file, otherwise

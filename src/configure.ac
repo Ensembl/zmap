@@ -49,6 +49,7 @@ AX_LIB_MYSQL()
 
 # Only enable ensembl if we have mysql available
 AM_CONDITIONAL([USE_ENSEMBL], [ test -n "$MYSQL_VERSION" ])
+AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -f "ensc-core/src/configure.ac" ])
 
 # Check if this is a Git repository and, if so, use output
 # of git describe abbreviated to just tag which for us is the version string.
