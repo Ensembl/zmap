@@ -170,12 +170,25 @@ gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file)
     return read ; */ 
   zMapReturnValIfFail(config, read ) ; 
 
+  char *file_expanded = zMapExpandFilePath(file) ;
+  char *filepath = NULL ;
 
-  if ((g_path_is_absolute(file) || (file = zMapConfigDirFindFile(file)))
-      && (config->extra_key_file = read_file(file, &(config->extra_key_error))))
+  if (!g_path_is_absolute(file_expanded))
+    filepath = zMapConfigDirFindFile(file_expanded) ;
+  else
+    filepath = g_strdup(file_expanded) ;
+
+  if (filepath
+      && (config->extra_key_file = read_file(filepath, &(config->extra_key_error))))
     {
       read = TRUE;
     }
+
+  if (file_expanded)
+    g_free(file_expanded) ;
+
+  if (filepath)
+    g_free(filepath) ;
 
   return read ;
 }
