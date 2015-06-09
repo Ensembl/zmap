@@ -139,7 +139,7 @@ Usage:
    -u  Run autoupdate
    -v  Verbose
 
-   -z  testing, no checkout of htslib
+   -z  testing, no checkout of zeromq
 "
 
 while getopts ":azdefghinuv" opt ; do
@@ -154,8 +154,7 @@ while getopts ":azdefghinuv" opt ; do
 	n  ) install[$gb_tools_key]='no' ;;
 	u  ) run_autoupdate_key]='yes' ;;
 	v  ) verbose='-v' ;;
-
-	z  ) install[$htslib]='no' ;;
+	z  ) install[$zeromq_key]='no' ;;
 
 	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
@@ -233,13 +232,13 @@ for i in "${!install[@]}"
 
     fi ;;
 
-    # We must have zeromq (currently) or we fail.
-    $zeromq_key )
-    if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
-
-        zmap_message_exit "Aborting.....zeromq is not available so ZMap cannot be built."
-
-    fi ;;
+#    # We must have zeromq (currently) or we fail.
+#    $zeromq_key )
+#    if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
+#
+#        zmap_message_exit "Aborting.....zeromq is not available so ZMap cannot be built."
+#
+#    fi ;;
 
   esac
 

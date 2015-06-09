@@ -35,9 +35,6 @@
 #ifndef ZMAP_REMOTE_CONTROL__P_H
 #define ZMAP_REMOTE_CONTROL__P_H
 
-
-#include <zmq.h>
-
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapEnum.h>
 #include <ZMap/zmapRemoteControl.h>
@@ -341,7 +338,7 @@ typedef struct ZMapRemoteControlStructType
 ZMAP_ENUM_AS_EXACT_STRING_DEC(remoteType2ExactStr, RemoteType) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(remoteState2ExactStr, RemoteControlState) ;
 
-unsigned int zmapRemoteControlGetNewReqID(ZMapRemoteControl remote_control) ;
+unsigned int zmapRemoteControlGetNewReqID(void) ;
 char *zmapRemoteControlGetCurrCommand(ZMapRemoteControl remote_control) ;
 
 

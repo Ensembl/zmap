@@ -328,7 +328,7 @@ GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
   char *request_time ;
   va_list argp ;
 
-  request_id = g_strdup_printf("%u",  zmapRemoteControlGetNewReqID(remote_control)) ;
+  request_id = g_strdup_printf("%u",  zmapRemoteControlGetNewReqID()) ;
 
   request_time = zMapGetTimeString(ZMAPTIME_SEC_MICROSEC, NULL) ;
 

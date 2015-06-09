@@ -43,6 +43,7 @@
 #include <errno.h>
 #include <gtk/gtk.h>
 #include <glib/gprintf.h>
+#include <zmq.h>
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
@@ -718,6 +719,8 @@ void zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
  */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Not great....need access to a unique id, this should be a "friend" function
  * in C++ terms....not for general consumption. */
 unsigned int zmapRemoteControlGetNewReqID(ZMapRemoteControl remote_control)
@@ -730,6 +733,8 @@ unsigned int zmapRemoteControlGetNewReqID(ZMapRemoteControl remote_control)
 
   return req_id ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 

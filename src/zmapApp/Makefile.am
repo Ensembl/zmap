@@ -16,6 +16,12 @@ zmapAppRemoteCommand.c \
 zmapAppManager.c \
 $(NULL)
 
+
+if USE_ZEROMQ
+libZMapApp_la_SOURCES += zmapAppRemoteInternal.c zmapAppRemoteInternal.h
+endif
+
+
 libZMapApp_la_CFLAGS = $(INCLUDE_COMMON)
 
 

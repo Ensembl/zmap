@@ -334,6 +334,7 @@ void zmapAppPingStart(ZMapAppContext app_context) ;
 void zmapAppPingStop(ZMapAppContext app_context) ;
 
 /* New remote control interface */
+gboolean zmapAppRemoteControlIsAvailable(void) ;
 ZMapRemoteAppMakeRequestFunc zmapAppRemoteControlGetRequestCB(void) ;
 gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context,
 				    char *peer_socket, const char *peer_timeout_list) ;

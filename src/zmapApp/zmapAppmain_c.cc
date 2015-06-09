@@ -188,27 +188,37 @@ int main(int argc, char *argv[])
     }
   else
     {
-      remote_control_cb_func = zmapAppRemoteControlGetRequestCB() ;
-      remote_control_cb_data = (void *)app_context ;
-
-
-      if (zmapAppRemoteControlCreate(app_context, peer_socket, peer_timeout_list))
+      if (!zmapAppRemoteControlIsAvailable())
         {
-          zmapAppConsoleLogMsg(app_context->verbose_startup_logging, INIT_FORMAT, "Contacting remote peer.") ;
-
-          remoteInstaller(app_context) ;
-
-          zmapAppRemoteControlSetExitRoutine(app_context, remoteExitCB) ;
-
-          zmapAppConsoleLogMsg(app_context->verbose_startup_logging, INIT_FORMAT, "Connected to remote peer.") ;
+          zmapAppConsoleLogMsg(app_context->verbose_startup_logging, INIT_FORMAT,
+                               "Remote peer command line args given but zmap was not built with the zeromq library"
+                               " so remote control is disabled.") ;
         }
       else
         {
-          zMapCritical("%s", "Could not initialise remote control interface.") ;
-        }
+          remote_control_cb_func = zmapAppRemoteControlGetRequestCB() ;
+          remote_control_cb_data = (void *)app_context ;
 
-      remote_control = TRUE ;
+
+          if (zmapAppRemoteControlCreate(app_context, peer_socket, peer_timeout_list))
+            {
+              zmapAppConsoleLogMsg(app_context->verbose_startup_logging, INIT_FORMAT, "Contacting remote peer.") ;
+
+              remoteInstaller(app_context) ;
+
+              zmapAppRemoteControlSetExitRoutine(app_context, remoteExitCB) ;
+
+              zmapAppConsoleLogMsg(app_context->verbose_startup_logging, INIT_FORMAT, "Connected to remote peer.") ;
+            }
+          else
+            {
+              zMapCritical("%s", "Could not initialise remote control interface.") ;
+            }
+
+          remote_control = TRUE ;
+        }
     }
+  
 
   if (peer_socket)
     g_free(peer_socket) ;

@@ -477,6 +477,7 @@ zmapDraw \
 zmapFeature \
 zmapGFF \
 zmapRemoteControl \
+zmapRemoteControl/remotetest \
 zmapServer \
 zmapThreads \
 zmapUtils \
@@ -484,6 +485,9 @@ zmapView \
 zmapWindow \
 zmapXML"
 
+
+# this needs to go....we just don't it any more....
+#
 AC_SUBST(ZMAP_SRC_DIRS)
 ZMAP_SRC_DIRS_DOXYGEN=""
 for zm_srcdir in $ZMAP_SRC_DIRS
@@ -532,6 +536,8 @@ libcurlobject/Makefile
 zmap.pc
 dotZMap:dotZmap.in
 ])
+
+
 
 # We've decided not to the doxygen stuff, no one uses it.
 #

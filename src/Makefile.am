@@ -6,6 +6,9 @@
 # make install DESTDIR=/tmp/dist
 # tar -C /tmp/dist -cvf package-version.tar
 # gzip -9 package-version.tar
+
+
+
 ################################################################################
 ################################################################################
 # General Housekeeping
@@ -23,11 +26,13 @@ include $(srcdir)/Makefile.common
 #
 ACLOCAL_AMFLAGS = -I m4
 
-# ZMAP_SRC_DIRS See configure.ac
+
+
+# ZMap dirs, see configure.ac for how these vars are set.
+
 if USE_GBTOOLS
 OPTIONAL_SUBDIRS = gbtools
 endif
-
 
 SUBDIRS = $(OPTIONAL_SUBDIRS) libpfetch libcurlobject libzmapfoocanvas
 
@@ -157,8 +162,11 @@ libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
 #bin_PROGRAMS = zmap gffparser xml_writer xremote_gui remotecontrol
 # bin_PROGRAMS = zmap xml_writer remotecontrol
 
-bin_PROGRAMS = zmap  remotecontrol
+bin_PROGRAMS = zmap
 
+if USE_ZEROMQ
+bin_PROGRAMS += remotecontrol
+endif
 
 # I am perturbed by the fact that the x libs are before the gtk libs....
 #
@@ -177,6 +185,7 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a
+
 
 if USE_ACECONN
 zmap_LDADD += $(top_builddir)/AceConn/src/.libs/libAceConn.a 
