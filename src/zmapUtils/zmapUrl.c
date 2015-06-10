@@ -55,6 +55,7 @@ so, delete this exception statement from your version.  */
 
 #include <ZMap/zmapUrlUtils.h>
 #include <ZMap/zmapUrl.h>
+#include <ZMap/zmapUtils.h>
 
 #ifndef errno
 extern int errno;
@@ -283,8 +284,9 @@ decide_copy_method (const char *p)
 
 /* Translate a %-escaped (but possibly non-conformant) input string S
    into a %-escaped (and conformant) output string.  If no characters
-   are encoded or decoded, return the same string S; otherwise, return
-   a freshly allocated string with the new contents.
+   are encoded or decoded, return a duplicate of the same string S; i.e 
+   always returns a freshly allocated string which must be free'd by the
+   caller with xfree.
 
    After a URL has been run through this function, the protocols that
    use `%' as the quote character can use the resulting string as-is,
@@ -363,8 +365,8 @@ decide_copy_method (const char *p)
 static char *
 reencode_escapes (const char *s)
 {
-  const char *p1;
-  char *newstr, *p2;
+  const char *p1 = NULL;
+  char *newstr = NULL, *p2 = NULL;
   int oldlen, newlen;
 
   int encode_count = 0;
@@ -388,40 +390,45 @@ reencode_escapes (const char *s)
     }
 
   if (!encode_count && !decode_count)
-    /* The string is good as it is. */
-    return (char *)s;/* C const model sucks. */
-
-  oldlen = p1 - s;
-  /* Each encoding adds two characters (hex digits), while each
-     decoding removes two characters.  */
-  newlen = oldlen + 2 * (encode_count - decode_count);
-  newstr = xmalloc (newlen + 1);
-
-  p1 = s;
-  p2 = newstr;
-
-  while (*p1)
     {
-      switch (decide_copy_method (p1))
-        {
-        case CM_ENCODE:
-          {
-            unsigned char c = *p1++;
-            *p2++ = '%';
-            *p2++ = XNUM_TO_DIGIT (c >> 4);
-            *p2++ = XNUM_TO_DIGIT (c & 0xf);
-          }
-          break;
-        case CM_DECODE:
-          *p2++ = X2DIGITS_TO_NUM (p1[1], p1[2]);
-          p1 += 3;/* skip %xx */
-          break;
-        case CM_PASSTHROUGH:
-          *p2++ = *p1++;
-        }
+      /* The string is good as it is. */
+      newstr = xstrdup(s);
     }
-  *p2 = '\0';
-  assert (p2 - newstr == newlen);
+  else
+    {
+      oldlen = p1 - s;
+      /* Each encoding adds two characters (hex digits), while each
+         decoding removes two characters.  */
+      newlen = oldlen + 2 * (encode_count - decode_count);
+      newstr = xmalloc (newlen + 1);
+
+      p1 = s;
+      p2 = newstr;
+
+      while (*p1)
+        {
+          switch (decide_copy_method (p1))
+            {
+            case CM_ENCODE:
+              {
+                unsigned char c = *p1++;
+                *p2++ = '%';
+                *p2++ = XNUM_TO_DIGIT (c >> 4);
+                *p2++ = XNUM_TO_DIGIT (c & 0xf);
+              }
+              break;
+            case CM_DECODE:
+              *p2++ = X2DIGITS_TO_NUM (p1[1], p1[2]);
+              p1 += 3;/* skip %xx */
+              break;
+            case CM_PASSTHROUGH:
+              *p2++ = *p1++;
+            }
+        }
+      *p2 = '\0';
+      assert (p2 - newstr == newlen);
+    }
+
   return newstr;
 }
 
@@ -444,6 +451,35 @@ url_scheme (const char *url)
       }
 
   return SCHEME_INVALID;
+}
+
+/* Perform tilde expansion of filenames (only applicable for filename url schemes - 
+ * for other schemes just returns a copy of url).
+ * The result is a newly-allocated string which must be free'd with g_free. */
+char *
+url_tilde_expansion (const char *url, ZMapURLScheme scheme)
+{
+  char *result = NULL ;
+
+  if (url && (scheme == SCHEME_FILE || scheme == SCHEME_PIPE))
+    {
+      /* Remove the scheme prefix */
+      const char *leading_string = supported_schemes[scheme].leading_string;
+      char *p = url + strlen (leading_string);
+
+      /* Perform tilde expansion */
+      char *tmp = zMapExpandFilePath(p) ;
+
+      /* Re-add scheme prefix */
+      result = g_strdup_printf("%s%s", leading_string, tmp) ;
+      g_free(tmp);
+    }
+  else if (url)
+    {
+      result = g_strdup(url);
+    }
+
+  return result ;
 }
 
 #define SCHEME_CHAR(ch) (ISALNUM (ch) || (ch) == '-' || (ch) == '+')
@@ -841,6 +877,7 @@ url_parse (const char *url, int *error)
   int port;
   char *user = NULL, *passwd = NULL;
 
+  char *url_expanded = NULL;
   char *url_encoded = NULL;
 
   int error_code;
@@ -852,7 +889,11 @@ url_parse (const char *url, int *error)
       goto error;
     }
 
-  url_encoded = reencode_escapes (url);
+  /* for file paths, perform tilde expansion */
+  url_expanded = url_tilde_expansion (url, scheme);
+
+  /* escape special characters */
+  url_encoded = reencode_escapes (url_expanded);
   p = url_encoded;
 
   p += strlen (supported_schemes[scheme].leading_string);
@@ -1050,28 +1091,30 @@ url_parse (const char *url, int *error)
   if (path_modified || u->fragment || host_modified || path_b == path_e)
     {
       /* If we suspect that a transformation has rendered what
- url_string might return different from URL_ENCODED, rebuild
- u->url using url_string.  */
+         url_string might return different from URL_ENCODED, rebuild
+         u->url using url_string.  */
       u->url = url_string (u, 0);
-
-      if (url_encoded != url)
-        xfree ((char *) url_encoded);
+      
+      xfree ((char *) url_encoded);
     }
   else
     {
-      if (url_encoded == url)
-        u->url = xstrdup (url);
-      else
-        u->url = url_encoded;
+      u->url = url_encoded;
     }
   url_encoded = NULL;
+
+  if (url_expanded)
+    g_free(url_expanded);
 
   return u;
 
  error:
-  /* Cleanup in case of error: */
-  if (url_encoded && url_encoded != url)
+  /* Cleanup in case of error (note that we must use the correct free function): */
+  if (url_encoded)
     xfree (url_encoded);
+
+  if (url_expanded)
+    g_free (url_expanded);
 
   /* Transmit the error code to the caller, if the caller wants to
      know.  */
