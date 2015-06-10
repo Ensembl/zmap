@@ -451,7 +451,6 @@ double zmapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
                                                                                          scale_style,
                                                                                          ZMAPSTRAND_NONE, ZMAPFRAME_0,
                                                                                          0, 0);
-  zMapWindowFeaturesetRemoveAllGraphics(featureset) ;
 
   seq_len = seq_end - seq_start + 1;
   if(seq_len < 10)        /* we get called on start up w/ no sequence */

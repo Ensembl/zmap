@@ -3917,7 +3917,8 @@ int zMapWindowFeaturesetGetNumFeatures(ZMapWindowFeaturesetItem featureset_item)
 }
 
 /*
- *
+ * (sm23) I tried this as an experiment when dealing with the scale bar canvas, but I'm
+ * not sure if this is the right approach. Probably best that this isn't used...
  */
 void zMapWindowFeaturesetRemoveAllGraphics(ZMapWindowFeaturesetItem featureset_item )
 {
@@ -3959,7 +3960,7 @@ void zMapWindowFeaturesetRemoveAllGraphics(ZMapWindowFeaturesetItem featureset_i
 
    if(featureset_item->display_index)
     {
-      zMapSkipListDestroy(featureset_item->display_index, NULL);
+      /* zMapSkipListDestroy(featureset_item->display_index, NULL); */
       featureset_item->display_index = NULL;
     }
 
