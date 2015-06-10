@@ -1576,11 +1576,10 @@ static Slice* getSlice(EnsemblServer server,
           pthread_mutex_unlock(&server->mutex) ;
         }
 
-      /*! \todo Need to find the coord system a better way. For now just try in rough priority order. */
-      if (!slice) slice = getSliceForCoordSystem("chromosome", server, seq_name, start, end, strand) ;
-      if (!slice) slice = getSliceForCoordSystem("ultracontig", server, seq_name, start, end, strand) ;
-      if (!slice) slice = getSliceForCoordSystem("scaffold", server, seq_name, start, end, strand) ;
-      if (!slice) slice = getSliceForCoordSystem("contig", server, seq_name, start, end, strand) ;
+      if (!slice) 
+        {
+          slice = getSliceForCoordSystem("toplevel", server, seq_name, start, end, strand) ;
+        }
 
       if (server->slice_adaptor && slice)
         {
