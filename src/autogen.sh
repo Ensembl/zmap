@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ###############################################################################
 # Simple script to bootstrap and create the configure script, should be run
 # when any control files have been changed (e.g. new source files added which
