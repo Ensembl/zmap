@@ -185,6 +185,8 @@ ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem 
 
 int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature);
 int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet featureset, gboolean destroy);
+void zMapWindowFeaturesetRemoveAllGraphics(ZMapWindowFeaturesetItem featureset_item ) ;
+int zMapWindowFeaturesetGetNumFeatures(ZMapWindowFeaturesetItem featureset_item) ;
 
 
 

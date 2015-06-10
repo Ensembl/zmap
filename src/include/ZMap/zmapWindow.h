@@ -73,6 +73,16 @@ typedef enum {ZMAP_ZOOM_INIT, ZMAP_ZOOM_MIN, ZMAP_ZOOM_MID, ZMAP_ZOOM_MAX,
  * or horizontal means locking of zoom as well. */
 typedef enum {ZMAP_WINLOCK_NONE, ZMAP_WINLOCK_VERTICAL, ZMAP_WINLOCK_HORIZONTAL} ZMapWindowLockType ;
 
+/*
+ * Coordinates to display to the user in the window.
+ */
+typedef enum
+  {
+    ZMAP_WINDOW_DISPLAY_INVALID,
+    ZMAP_WINDOW_DISPLAY_SLICE,
+    ZMAP_WINDOW_DISPLAY_CHROM,
+    ZMAP_WINDOW_DISPLAY_OTHER
+  } ZMapWindowDisplayCoordinates ;
 
 /* Controls display of 3 frame translations and/or 3 frame columns when 3 frame mode is selected. */
 typedef enum
@@ -716,6 +726,15 @@ void zMapWindowColumnHide(ZMapWindow window, GQuark column_id) ;
 void zMapWindowColumnShow(ZMapWindow window, GQuark column_id) ;
 double zMapWindowGetDisplayOrigin(ZMapWindow window) ;
 void zMapWindowSetDisplayOrigin(ZMapWindow window, double origin) ;
+
+/*
+ * Set whether we are to display slice or chromosome coordinates.
+ */
+void zMapWindowToggleDisplayCoordinates(ZMapWindow window) ;
+void zMapWindowSetDisplayCoordinatesSlice(ZMapWindow window) ;
+void zMapWindowSetDisplayCoordinatesChrom(ZMapWindow window) ;
+void zMapWindowSetDisplayCoordinates(ZMapWindow window, ZMapWindowDisplayCoordinates display_coordinates) ;
+ZMapWindowDisplayCoordinates zMapWindowGetDisplayCoordinates(ZMapWindow window) ;
 
 #endif /* !ZMAP_WINDOW_H */
 
