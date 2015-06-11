@@ -1324,7 +1324,10 @@ static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
 
   full_data->current_stanza_name = stanza_name;
 
-  if (zMapConfigIniHasStanza(full_data->context->config, stanza_name,NULL) && (full_data->object_create_func))
+  if (full_data && 
+      zMapConfigIniHasStanza(full_data->context->config, stanza_name,NULL) &&
+      full_data->object_create_func &&
+      full_data->stanza)
     {
       if ((full_data->current_object = (full_data->object_create_func)()))
         {
@@ -1334,8 +1337,10 @@ static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
           full_data->object_list_out = g_list_append(full_data->object_list_out, full_data->current_object);
         }
       else
-        zMapLogWarning("Object Create Function for stanza '%s'"
-               " failed to return anything", stanza_name);
+        {
+          zMapLogWarning("Object Create Function for stanza '%s'"
+                         " failed to return anything", stanza_name);
+        }
     }
 
   return ;
