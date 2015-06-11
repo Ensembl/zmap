@@ -7181,7 +7181,6 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
                 locked_data->tip_text,
                 locked_data->world_x,
                 locked_data->world_y) ;
-      zMapWindowRedraw(window) ;
       break;
     case ZMAP_LOCKED_RULER_REMOVE:
       removeRuler(window->horizon_guide_line, window->tooltip) ;
