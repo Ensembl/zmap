@@ -1025,12 +1025,15 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
       char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
       char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
 
+      const int offset = server->zmap_start - 1 ;
+
       zMapFeatureTranscriptInit(feature);
       zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
 
-      zMapFeatureAddTranscriptCDS(feature, 
-                                  (coding_region_start_is_set && coding_region_end_is_set),
-                                  coding_region_start, coding_region_end);
+      if (coding_region_start_is_set && coding_region_end_is_set)
+        {
+          zMapFeatureAddTranscriptCDS(feature, TRUE, coding_region_start + offset, coding_region_end + offset);
+        }
 
       Vector *exons = Transcript_getAllExons(rsf) ;
       transcriptAddExons(server, feature, exons) ;
@@ -1085,7 +1088,9 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
       char end_is_set = PredictionTranscript_getEndIsSet(rsf) ;
       int coding_region_start = 0;
       int coding_region_end = 0;
-      
+
+      const int offset = server->zmap_start - 1 ;
+
       /* getCodingRegionStart gives an error if coding_region_start and start 
        * are both unset so we must check first */
       if (coding_region_start_is_set || start_is_set)
@@ -1097,9 +1102,10 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
       zMapFeatureTranscriptInit(feature);
       zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
 
-      zMapFeatureAddTranscriptCDS(feature, 
-                                  (coding_region_start_is_set && coding_region_end_is_set),
-                                  coding_region_start, coding_region_end);
+      if (coding_region_start_is_set && coding_region_end_is_set)
+        {
+          zMapFeatureAddTranscriptCDS(feature, TRUE, coding_region_start + offset, coding_region_end + offset);
+        }
 
       Vector *exons = PredictionTranscript_getAllExons(rsf, 0) ;
       transcriptAddExons(server, feature, exons) ;
@@ -1570,11 +1576,10 @@ static Slice* getSlice(EnsemblServer server,
           pthread_mutex_unlock(&server->mutex) ;
         }
 
-      /*! \todo Need to find the coord system a better way. For now just try in rough priority order. */
-      if (!slice) slice = getSliceForCoordSystem("chromosome", server, seq_name, start, end, strand) ;
-      if (!slice) slice = getSliceForCoordSystem("ultracontig", server, seq_name, start, end, strand) ;
-      if (!slice) slice = getSliceForCoordSystem("scaffold", server, seq_name, start, end, strand) ;
-      if (!slice) slice = getSliceForCoordSystem("contig", server, seq_name, start, end, strand) ;
+      if (!slice) 
+        {
+          slice = getSliceForCoordSystem("toplevel", server, seq_name, start, end, strand) ;
+        }
 
       if (server->slice_adaptor && slice)
         {
