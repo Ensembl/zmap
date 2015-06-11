@@ -1,4 +1,4 @@
-<!--#set var="banner" value="Pipe Server Configuration"-->
+<!--#set var="banner" value="Pipe Server"-->
 <!--#include virtual="/perl/header"-->
 
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
@@ -9,8 +9,108 @@ pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1
 </style>
 
 
-<H2>"Pipe Server Configuration</H2>
 
+<H2>Pipe Server Implementation and Configuration</H2>
+
+
+<a name="implementation"></a>
+<h3>Pipe Server Implementation</h3>
+
+<p>The pipe server currently accesses data from two types of source:</p>
+
+<ul>
+  <li><p> Normal files</p>
+  <li><p> Unix style pipes</p>
+</ul>
+
+<p>In the latter case the pipe server spawns a child process that it connects
+to via pipes to retrieve the data from the source.</p>
+
+<p><b>Note:</b> in the future it is likely we will return to file handling
+being handled in a separate server type as the pipe server code is complicated
+by handling both.</p>
+
+<h4>Child process handling</h4>
+
+<p>The child process is spawned, pipes set up and a callback registered for
+when the child process exits:</p>
+
+<pre>gboolean g_spawn_async_with_pipes() ;
+
+guint g_child_watch_add() ;
+</pre>
+
+<p>The pipe server is now connected to the child process by pipes and will
+be notified when the child process dies in its callback function.</p>
+
+<p>The GLib GIOChannel package is used to read data from the pipes, in essence:</p>
+
+<pre>GIOChannel *g_io_channel_unix_new() ;
+
+GIOStatus g_io_channel_read_line_string() ;
+
+GIOStatus g_io_channel_shutdown() ;
+</pre>
+
+<p>Note that none of the <code>GIOChannel</code> calls give any indication that the child process
+has died. <code>g_io_channel_read_line_string()</code> will return an <b>EOF</b> when either the
+child process exits or it closes the pipe.</p>
+
+<p>Any of the following scenarios are possible and must be handled by the pipe server
+code:</p>
+
+<ul>
+  <li><p>The child process starts up, writes all of its data to the pipe and then exits normally
+      <b>before</b> any other pipe server calls are executed.</p> 
+  <li><p>The child process starts up, writes enough data to the pipe to fill it and then blocks
+      waiting for the pipe server to read more data.</p>
+  <li><p>The child process starts up and then fails and returns a non-zero exit code
+      <b>before</b> any other pipe server calls are executed.</p> 
+  <li><p>The child process starts up and then fails at some time during its writes to the pipe
+      and returns a non-zero exit code.</p>
+  <li><p>The child process just crashes.</p>
+</ul>
+
+<p>In normal pipe operation if the child process exits or crashes before,
+during or after writing to the pipe, pipe server just receives an <b>EOF</b>
+when it tries to read from the pipe. In other words the pipe server will not be
+able to detect whether the child process exited normally or abnormally.</p>
+
+<p>To address this problem the pipe server uses a GLib callback mechanism that
+allows it to be notified when the child process exits and also what the exit
+status of the process was. The arguments to the callback function include the
+exit status of the child process which the pipe server stores in it's main
+struct.</p>
+
+<p>Currently each server interface function after the child process has been
+created checks to see if the child has terminated and if so what its exit
+status was. if the child terminated normally then the interface function
+continues otherwise it sets a "failed" exit status and returns.</p>
+
+<p>It is important to understand that because the buffers used by pipes can be
+quite large it's possible for the child process to write all of its output to
+the pipe and then exit cleanly <b>before</b> pipe server has even started to
+read from the pipe.</p>
+
+<p>If the child process has exited normally this presents no problems since all
+the data is there to be read from the pipe's buffers. If however the child exited
+abnormally there is no guarantee about any of the data in the pipe and the callback
+mechanism is crucial to recording this information. This is why currently each
+interface function first checks to see if the child process exited abnormally.</p>
+
+
+
+
+
+
+
+
+<a name="configuration"></a>
+<H3>Pipe Server Configuration</H3>
+
+<p>This is Malcolm's unformatted text.</p>
+
+<pre>
 
 Scripting interface and configuration for the ZMap pipeServer module
 mgh 27 Nov 2009
