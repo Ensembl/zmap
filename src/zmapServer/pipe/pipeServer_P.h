@@ -56,14 +56,18 @@ typedef struct _PipeServerStruct
   /* Pipe process. */
   GPid child_pid ;                                          /* pid of child process at other end
                                                                of pipe. */
-
   guint child_watch_id ;                                    /* callback routine id for child process exit. */
   gboolean child_exited ;                                   /* TRUE if child has exited. */
-  gint child_exit_status ;                                  /* Exit status of child as per WEXITSTATUS(). */
+  gint exit_code ;                                          /* Can only be EXIT_SUCCESS or
+                                                               EXIT_FAILURE. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  gint child_exit_status ;                                  /* Exit status of child as per
+                                                               WEXITSTATUS(). */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   GIOChannel *gff_pipe ;				    /* the pipe we read the script's stdout from */
-
-  gint exit_code ;                                          /* Can only be EXIT_SUCCESS or EXIT_FAILURE. */
 
 
   /* Results of server requests. */
