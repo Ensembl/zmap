@@ -2104,7 +2104,7 @@ static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWi
 
 /* This function currently finds the gs for a feature and then if it's a transcript feature
  * looks for the gs that represents an exon.
- * 
+ *
  * Note the subfeature passed in may be just the coding or non-coding part of an exon and not the
  * whole exon. */
 static ZMapWindowCanvasFeature findFeatureSubPart(ZMapWindowFeaturesetItem fi,
@@ -2351,7 +2351,7 @@ void zmapWindowFeaturesetItemCanvasFeatureShowHide(ZMapWindowFeaturesetItem fi, 
 	      feature_item->flags |= FEATURE_HIDDEN | FEATURE_HIDE_EXPAND ;
 	      break ;
 
-	    default: 
+	    default:
 	      break;
 	    }
 	}
@@ -2607,7 +2607,7 @@ GList *zMapWindowFeaturesetFindFeatures(ZMapWindowFeaturesetItem featureset_item
           if(gs->y2 > y2)
             continue;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-          
+
 
           if (!feature_list)
             {
@@ -2665,13 +2665,13 @@ GList *zMapWindowFeaturesetFindFeatures(ZMapWindowFeaturesetItem featureset_item
 /* Returns a list of 'lists of ZMapWindowFeaturesetItem' that overlap y1, y2. Each sublist
  * contains a list of ZMapWindowFeaturesetItem's that all originate from the same
  * genomic feature, e.g. an EST.
- * 
+ *
  * If canonical_only is TRUE then any non-canonical features in the span will be excluded.
- * 
- * 
+ *
+ *
  * Notes
  *  - only supported for FEATURE_BASIC, FEATURE_ALIGN, FEATURE_TRANSCRIPT currently.
- * 
+ *
  *  */
 GList *zMapWindowFeaturesetFindGroupedFeatures(ZMapWindowFeaturesetItem featureset_item,
                                                double y1, double y2, gboolean canonical_only)
@@ -2733,10 +2733,10 @@ GList *zMapWindowFeaturesetFindGroupedFeatures(ZMapWindowFeaturesetItem features
                 /* oh dear repeating tests from above for first time round loop....rationalise... */
                 if (gs->flags & FEATURE_HIDDEN)	/* we are setting focus on visible features ! */
                   continue;
-                    
+
                 if (gs->y1 > y2)
                   break;
-                    
+
                 if (gs->y2 < y1)
                   continue ;
 
@@ -3911,8 +3911,65 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
   return fi->n_features;
 }
 
+int zMapWindowFeaturesetGetNumFeatures(ZMapWindowFeaturesetItem featureset_item)
+{
+  return featureset_item->n_features ;
+}
 
+/*
+ * (sm23) I tried this as an experiment when dealing with the scale bar canvas, but I'm
+ * not sure if this is the right approach. Probably best that this isn't used...
+ */
+void zMapWindowFeaturesetRemoveAllGraphics(ZMapWindowFeaturesetItem featureset_item )
+{
 
+  GList *l;
+  ZMapWindowCanvasFeature feat;
+
+  if (featureset_item->features)
+    {
+
+  for(l = featureset_item->features; l ; )
+    {
+      //GList *del;
+
+      feat = (ZMapWindowCanvasFeature) l->data;
+
+      if(zmapWindowCanvasFeatureValid(feat))
+        {
+          /* NOTE the features list and display index both point to the same structs */
+
+          //zmap_window_canvas_featureset_expose_feature(fi, feat);
+
+          zmapWindowCanvasFeatureFree(feat);
+          //del = l;
+          l = l->next;
+          //fi->features = g_list_delete_link(fi->features,del);
+          //fi->n_features--;
+        }
+      else
+        {
+          l = l->next;
+        }
+    }
+
+  g_list_free(featureset_item->features) ;
+  featureset_item->features = NULL ;
+
+    }
+
+   if(featureset_item->display_index)
+    {
+      /* zMapSkipListDestroy(featureset_item->display_index, NULL); */
+      featureset_item->display_index = NULL;
+    }
+
+  featureset_item->n_features = 0 ;
+}
+
+/*
+ * Adds a graphics item to the featureset_item.
+ */
 ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetItem featureset_item,
                                                          zmapWindowCanvasFeatureType type,
                                                          double x1, double y1, double x2, double y2,
