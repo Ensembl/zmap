@@ -24,12 +24,15 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: These functions provide code to read the output of a script
- *                as though it were a server according to the interface defined
+ *              as though it were a server according to the interface defined
  *              for accessing servers. The aim is to allow ZMap to request
- *                arbritary data from external sources as defined in the config files.
+ *              arbritary data from external sources as defined in the config files.
  *
  *              NB: As for the fileServer module the data is read
  *              in a single pass and then discarded.
+ *
+ *              Please see pipe_server.shtml for further description
+ *              of the implementation and configuration details.
  *
  * Exported functions: See ZMap/zmapServerPrototype.h
  *-------------------------------------------------------------------
@@ -112,7 +115,7 @@ static ZMapServerResponseType destroyConnection(void *server) ;
 static gboolean pipeSpawn(PipeServer server,GError **error);
 static void childFullReapCB(GPid child_pid, gint child_status, gpointer user_data) ;
 static void childReapOnlyCB(GPid child_pid, gint child_status, gpointer user_data) ;
-
+static ZMapServerResponseType childHasFailed(PipeServer server, const char *msg) ;
 
 
 
@@ -475,16 +478,19 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
 
-  if (getServerInfo(server, info))
+  if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
-      result = ZMAP_SERVERRESPONSE_OK ;
-    }
-  else
-    {
-      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+      if (getServerInfo(server, info))
+        {
+          result = ZMAP_SERVERRESPONSE_OK ;
+        }
+      else
+        {
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
-      ZMAPSERVER_LOG(Warning, server->protocol, server->script_path,
-                     "Could not get server info because: %s", server->last_err_msg) ;
+          ZMAPSERVER_LOG(Warning, server->protocol, server->script_path,
+                         "Could not get server info because: %s", server->last_err_msg) ;
+        }
     }
 
   return result ;
@@ -507,21 +513,23 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
 
-  /* THERE'S SOMETHING WRONG HERE IF WE NEED TO GET THESE HERE..... */
-  // these are needed by the GFF parser
-  server->source_2_sourcedata = *source_2_sourcedata_inout;
-  server->featureset_2_column = *featureset_2_column_inout;
+  if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
+    {
+      /* THERE'S SOMETHING WRONG HERE IF WE NEED TO GET THESE HERE..... */
+      // these are needed by the GFF parser
+      server->source_2_sourcedata = *source_2_sourcedata_inout;
+      server->featureset_2_column = *featureset_2_column_inout;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  setErrMsg(server, g_strdup("Feature Sets cannot be read from GFF stream.")) ;
-  ZMAPSERVER_LOG(Warning, server->protocol, server->script_path,
-                 "%s", server->last_err_msg) ;
-  result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+      setErrMsg(server, g_strdup("Feature Sets cannot be read from GFF stream.")) ;
+      ZMAPSERVER_LOG(Warning, server->protocol, server->script_path,
+                     "%s", server->last_err_msg) ;
+      result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  result = ZMAP_SERVERRESPONSE_OK ;
-
+      result = ZMAP_SERVERRESPONSE_OK ;
+    }
 
   return result ;
 }
@@ -538,11 +546,14 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
 
-  // can take this warning out as zmapView should now read the styles file globally
-  setErrMsg(server, "Reading styles from a GFF stream is not supported.") ;
-  ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg) ;
+  if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
+    {
+      // can take this warning out as zmapView should now read the styles file globally
+      setErrMsg(server, "Reading styles from a GFF stream is not supported.") ;
+      ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg) ;
 
-  result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+      result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+    }
 
   return result ;
 }
@@ -553,11 +564,12 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
 static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   PipeServer server = (PipeServer)server_in ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  *have_mode = TRUE ;
+  if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
+    {
+      *have_mode = TRUE ;
+    }
 
   return result ;
 }
@@ -568,11 +580,14 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
   PipeServer server = (PipeServer)server_in ;
 
-  setErrMsg(server, "Reading sequences from a GFF stream is not supported.") ;
-  ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg) ;
+  if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
+    {
+      setErrMsg(server, "Reading sequences from a GFF stream is not supported.") ;
+      ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg) ;
 
-  /* errr........why is there code in this file to read sequences then ??? */
-  result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+      /* errr........why is there code in this file to read sequences then ??? */
+      result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+    }
 
   return result ;
 }
@@ -589,13 +604,14 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
 
-  server->req_context = feature_context ;
+  if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
+    {
+      server->req_context = feature_context ;
 
 
-  /* Like the acedb server we should be getting the mapping from the gff data here....
-   * then we could set up the block/etc stuff...this is where add mapping should be called from... */
-
-
+      /* Like the acedb server we should be getting the mapping from the gff data here....
+       * then we could set up the block/etc stuff...this is where add mapping should be called from... */
+    }
 
   return result ;
 }
@@ -613,64 +629,67 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   PipeServer server = (PipeServer)server_in ;
   GetFeaturesDataStruct get_features_data = {NULL} ;
 
-  /* Check that there is any more to parse.... */
-  if (server->gff_line->len == 0)                           /* GString len is always >= 0 */
+  if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
-      setErrMsg(server, "No features found.") ;
-
-      ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg) ;
-
-      result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
-    }
-  else
-    {
-      get_features_data.server = server ;
-
-      zMapGFFParseSetSourceHash(server->parser, server->featureset_2_column, server->source_2_sourcedata) ;
-
-      zMapGFFParserInitForFeatures(server->parser, styles, FALSE) ;  // FALSE = create features
-
-      zMapGFFSetDefaultToBasic(server->parser, TRUE);
-
-
-      // default to OK, previous pipeGetSequence() could have set unsupported
-      // if no DNA was provided
-
-      server->result = ZMAP_SERVERRESPONSE_OK ;
-
-      /* Get block to parent mapping.  */
-      addMapping(feature_context, server->zmap_start, server->zmap_end) ;
-
-
-      /* Fetch all the features for all the blocks in all the aligns. */
-      g_hash_table_foreach(feature_context->alignments, eachAlignmentGetFeatures, &get_features_data) ;
-
-      int num_features = zMapGFFParserGetNumFeatures(server->parser) ,
-        n_lines_bod = zMapGFFGetLineBod(server->parser),
-        n_lines_fas = zMapGFFGetLineFas(server->parser),
-        n_lines_seq = zMapGFFGetLineSeq(server->parser) ;
-
-      if (!num_features)
+      /* Check that there is any more to parse.... */
+      if (server->gff_line->len == 0)                           /* GString len is always >= 0 */
         {
           setErrMsg(server, "No features found.") ;
 
           ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg) ;
+
+          result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
         }
-
-      if (!num_features && !n_lines_bod && !n_lines_fas && !n_lines_seq)
-        result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
-      else if (   (!num_features && n_lines_bod)
-               || (n_lines_fas && !zMapGFFGetSequenceNum(server->parser))
-               || (n_lines_seq && !zMapGFFGetSequenceNum(server->parser) && zMapGFFGetVersion(server->parser) == ZMAPGFF_VERSION_2)  )
-        result = server->result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
-
-      /*
-       * get the list of source featuresets
-       */
-      if (num_features)
+      else
         {
-          feature_context->src_feature_set_names = zMapGFFGetFeaturesets(server->parser);
-          result = server->result ;
+          get_features_data.server = server ;
+
+          zMapGFFParseSetSourceHash(server->parser, server->featureset_2_column, server->source_2_sourcedata) ;
+
+          zMapGFFParserInitForFeatures(server->parser, styles, FALSE) ;  // FALSE = create features
+
+          zMapGFFSetDefaultToBasic(server->parser, TRUE);
+
+
+          // default to OK, previous pipeGetSequence() could have set unsupported
+          // if no DNA was provided
+
+          server->result = ZMAP_SERVERRESPONSE_OK ;
+
+          /* Get block to parent mapping.  */
+          addMapping(feature_context, server->zmap_start, server->zmap_end) ;
+
+
+          /* Fetch all the features for all the blocks in all the aligns. */
+          g_hash_table_foreach(feature_context->alignments, eachAlignmentGetFeatures, &get_features_data) ;
+
+          int num_features = zMapGFFParserGetNumFeatures(server->parser) ,
+            n_lines_bod = zMapGFFGetLineBod(server->parser),
+            n_lines_fas = zMapGFFGetLineFas(server->parser),
+            n_lines_seq = zMapGFFGetLineSeq(server->parser) ;
+
+          if (!num_features)
+            {
+              setErrMsg(server, "No features found.") ;
+
+              ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg) ;
+            }
+
+          if (!num_features && !n_lines_bod && !n_lines_fas && !n_lines_seq)
+            result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
+          else if (   (!num_features && n_lines_bod)
+                      || (n_lines_fas && !zMapGFFGetSequenceNum(server->parser))
+                      || (n_lines_seq && !zMapGFFGetSequenceNum(server->parser) && zMapGFFGetVersion(server->parser) == ZMAPGFF_VERSION_2)  )
+            result = server->result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
+
+          /*
+           * get the list of source featuresets
+           */
+          if (num_features)
+            {
+              feature_context->src_feature_set_names = zMapGFFGetFeaturesets(server->parser);
+              result = server->result ;
+            }
         }
     }
 
@@ -688,12 +707,15 @@ static ZMapServerResponseType getContextSequence(void *server_in,
 {
   PipeServer server = (PipeServer)server_in ;
 
-  if (server->result == ZMAP_SERVERRESPONSE_OK)
+  if ((server->result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
-      /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
-       * we would have to parse and reparse the stream....can be done but not needed this second. */
-      g_hash_table_foreach(feature_context_out->alignments, eachAlignmentSequence, (gpointer)server) ;
+      if (server->result == ZMAP_SERVERRESPONSE_OK)
+        {
+          /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
+           * we would have to parse and reparse the stream....can be done but not needed this second. */
+          g_hash_table_foreach(feature_context_out->alignments, eachAlignmentSequence, (gpointer)server) ;
 
+        }
     }
 
   return server->result ;
@@ -718,18 +740,21 @@ static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_conn ;
 
-  /* We can only set this if the server child process has exited. */
-  if (server->child_exited)
+  if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
-      *exit_code = server->exit_code ;
-      result = ZMAP_SERVERRESPONSE_OK ;
+      /* We can only set this if the server child process has exited. */
+      if (server->child_exited)
+        {
+          *exit_code = server->exit_code ;
+          result = ZMAP_SERVERRESPONSE_OK ;
+        }
+
+
+      /* OK...THERE'S SOME PROBLEM WITH HANDLING FAILED GETSTATUS CALLS...NEEDS INVESTIGATING. */
+      //can't do this or else it won't be read
+      //            if (server->exit_code)
+      //                  return ZMAP_SERVERRESPONSE_SERVERDIED;
     }
-
-
-  /* OK...THERE'S SOME PROBLEM WITH HANDLING FAILED GETSTATUS CALLS...NEEDS INVESTIGATING. */
-  //can't do this or else it won't be read
-  //            if (server->exit_code)
-  //                  return ZMAP_SERVERRESPONSE_SERVERDIED;
 
   return ZMAP_SERVERRESPONSE_OK ;
 }
@@ -741,10 +766,13 @@ static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConne
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_conn ;
 
-  if (server->child_pid)
-    *connect_state = ZMAP_SERVERCONNECT_STATE_CONNECTED ;
-  else
-    *connect_state = ZMAP_SERVERCONNECT_STATE_UNCONNECTED ;
+  if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
+    {
+      if (server->child_pid)
+        *connect_state = ZMAP_SERVERCONNECT_STATE_CONNECTED ;
+      else
+        *connect_state = ZMAP_SERVERCONNECT_STATE_UNCONNECTED ;
+    }
 
   return result ;
 }
@@ -756,14 +784,26 @@ static ZMapServerResponseType closeConnection(void *server_in)
   PipeServer server = (PipeServer)server_in ;
   GError *gff_pipe_err = NULL ;
 
+
+  /* check clear up here is child pid has already gone..... */
+
   if (server->child_pid)
-    g_spawn_close_pid(server->child_pid) ;
+    {
+      g_spawn_close_pid(server->child_pid) ;
+      server->child_pid = 0 ;
+    }
 
   if (server->parser)
-    zMapGFFDestroyParser(server->parser) ;
+    {
+      zMapGFFDestroyParser(server->parser) ;
+      server->parser = 0 ;
+    }
 
   if (server->gff_line)
-    g_string_free(server->gff_line, TRUE) ;
+    {
+      g_string_free(server->gff_line, TRUE) ;
+      server->gff_line = NULL ;
+    }
 
   if (server->gff_pipe)
     {
@@ -779,8 +819,10 @@ static ZMapServerResponseType closeConnection(void *server_in)
         {
           /* this seems to be required to destroy the GIOChannel.... */
           g_io_channel_unref(server->gff_pipe) ;
-          server->gff_pipe = NULL ;
         }
+
+      /* Set to NULL even if we failed to shut pipe down, no point in trying again. */
+      server->gff_pipe = NULL ;
     }
 
   return result ;
@@ -804,8 +846,7 @@ static ZMapServerResponseType destroyConnection(void *server_in)
     g_source_remove(server->child_watch_id) ;
 
   server->child_watch_id = 0 ;
-  g_child_watch_add(server->child_pid, childReapOnlyCB, server) ;
-
+  g_child_watch_add(server->child_pid, childReapOnlyCB, NULL) ;
 
   if (server->url)
     g_free(server->url) ;
@@ -815,14 +856,6 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
-
-  /* Clear up. -> in destroyConnection() */
-  /* crashes...
-     if (server->parser)
-     zMapGFFDestroyParser(server->parser) ;
-     if (server->gff_line)
-     g_string_free(server->gff_line, TRUE) ;
-  */
 
   g_free(server) ;
 
@@ -1178,9 +1211,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
  */
 static ZMapServerResponseType pipeGetSequence(PipeServer server)
 {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   GIOStatus status ;
   gsize terminator_pos = 0 ;
   GError *gff_pipe_err = NULL ;
@@ -1189,7 +1220,7 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
   gboolean first = TRUE;
 
   // read the sequence if it's there
-  server->result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
+  result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
 
   /* we have already read the first non header line in pipeGetheader */
   do
@@ -1214,7 +1245,7 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
        * otherwise we just log the error. */
       if (zMapGFFTerminated(server->parser))
         {
-          server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
           setErrMsg(server, error->message) ;
         }
       else
@@ -1229,14 +1260,17 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
 
           ZMAPSERVER_LOG(Critical, server->protocol, server->script_path, "%s", server->last_err_msg) ;
         }
-      server->result = ZMAP_SERVERRESPONSE_REQFAIL;
+
+      result = ZMAP_SERVERRESPONSE_REQFAIL;
     }
   else if (!sequence_finished)
     {
-      server->result = ZMAP_SERVERRESPONSE_UNSUPPORTED;
+      result = ZMAP_SERVERRESPONSE_UNSUPPORTED;
     }
 
-  return(server->result);
+  server->result = result ;
+
+  return result ;
 }
 
 
@@ -1302,11 +1336,10 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
                 feature = zMapFeatureDNACreateFeature(feature_block, dna_style, sequence->sequence, sequence->length);
             }
 
-
-          // this is insane: asking a pipe server for 3FT, however some old code might expect it
-          /* gb10: ZMap can now be run standalone on a GFF file, so everything, including the DNA
+          /* Note: ZMap can now be run standalone on a GFF file, so everything, including the DNA
            * for the 3FT, has to come from that file... */
-          context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, ZMAPFEATURE_STRUCT_CONTEXT) ;
+          context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block,
+                                                                  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
           /* I'm going to create the three frame translation up front! */
           if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
@@ -1453,40 +1486,17 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
               error = zMapGFFGetError(parser) ;
 
+              ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", error->message) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-              /* Surely we don't need to do this....the gff code should always set the error... */
-
-              if (!error)
+              /* If the error was serious we stop processing and return the error. */
+              if (zMapGFFTerminated(parser))
                 {
-                  server->last_err_msg =
-                    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
-                                    zMapGFFGetLineNumber(parser), gff_line->str) ;
-                  ZMAPSERVER_LOG(Critical, server->protocol, server->script_path,server->script_args,
-                                 "%s", server->last_err_msg) ;
+                  get_features_data->result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
-                  result = FALSE ;
+                  setErrMsg(server, error->message) ;
+
+                  break ;
                 }
-              else
-                {
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-                  ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", error->message) ;
-
-                  /* If the error was serious we stop processing and return the error. */
-                  if (zMapGFFTerminated(parser))
-                    {
-                      get_features_data->result = ZMAP_SERVERRESPONSE_REQFAIL ;
-
-                      setErrMsg(server, error->message) ;
-
-                      break ;
-                    }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
             }
 
           gff_line = g_string_truncate(gff_line, 0) ;   /* Reset line to empty. */
@@ -1599,25 +1609,30 @@ static void childFullReapCB(GPid child_pid, gint child_status, gpointer user_dat
   PipeServer server = (PipeServer)user_data ;
   char *exit_msg = NULL ;
   ZMapProcessTerminationType termination_type ;
+  gint child_exit_status ;
+
+
+  /* We don't close the gio channel here which we should ?? Not sure...... */
+
 
   if (child_pid != server->child_pid)
-    zMapLogWarning("Child pid %d and server->child_pid %d do not match !!", child_pid, server->child_pid) ;
+    zMapLogCritical("Child pid %d and server->child_pid %d do not match !!", child_pid, server->child_pid) ;
 
   server->child_exited = TRUE ;
 
   /* Get the error if there was one. */
-  if (!(server->child_exit_status = zMapUtilsProcessTerminationStatus(child_status, &termination_type)))
+  if (!(child_exit_status = zMapUtilsProcessTerminationStatus(child_status, &termination_type)))
     {
       server->exit_code = EXIT_SUCCESS ;
 
-      exit_msg = g_strdup_printf("Child pid %d exited normally with status %d", child_pid, server->child_exit_status) ;
+      exit_msg = g_strdup_printf("Child pid %d exited normally with status %d", child_pid, child_exit_status) ;
     }
   else
     {
       server->exit_code = EXIT_FAILURE ;
 
       exit_msg = g_strdup_printf("Child pid %d exited with status %d because: \"%s\"",
-                                 child_pid, server->child_exit_status,
+                                 child_pid, child_exit_status,
                                  zmapProcTerm2LongText(termination_type)) ;
 
       setErrMsg(server, exit_msg) ;
@@ -1640,7 +1655,7 @@ static void childFullReapCB(GPid child_pid, gint child_status, gpointer user_dat
 /* GChildWatchFunc() called when child process exits BUT only reaps the child, no other
  * action is taken because this function is called _after_ this connection has been destroyed.
  * so no result can be returned. */
-static void childReapOnlyCB(GPid child_pid, gint child_status, gpointer user_data)
+static void childReapOnlyCB(GPid child_pid, gint child_status, gpointer user_data_is_NULL)
 {
   if (child_pid_debug_G)
     zMapLogWarning("Child pid %d in reap-only callback will now be reaped.", child_pid) ;
@@ -1649,4 +1664,21 @@ static void childReapOnlyCB(GPid child_pid, gint child_status, gpointer user_dat
   g_spawn_close_pid(child_pid) ;
 
   return ;
+}
+
+
+/* Tests to see if the child process has exited and sets last_err_msg and returns
+ * ZMAP_SERVERRESPONSE_REQFAIL if it has. */
+static ZMapServerResponseType childHasFailed(PipeServer server, const char *msg)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+
+  if (server->child_exited && server->exit_code == EXIT_FAILURE)
+    {
+      server->last_err_msg = g_strdup_printf("Child pipe process has exited.%s%s",
+                                             (msg ? " " : ""), (msg ? msg : "")) ;
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+    }
+
+  return result ;
 }
