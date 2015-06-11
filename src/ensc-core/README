@@ -1,10 +1,16 @@
+EnsC core
+=========
+Aim: To replicate the ensembl core API in C.
 
-ZMap now has a dependency on the Ensembl C API code in the 'ensc-core' library.
+Warning: This code is in the early stages of development. Do not 
+         expect it to contain all the API methods, or in fact to
+         work in any way at all.
 
-The ZMap build expects to find the ensc-core code/makefiles etc. in this
-subdirectory (src/ensc-core). The build will fail unless this is so.
+To see it in action:
+cd src
+make
+Programs/testdbc
 
-The contents of ensc-core are copied in automatically each time you run autogen.sh.
-The code is copied from our local clone on git.internal.sanger.ac.uk. If updates
-are required this repository should be updated from the main source code at
-https://github.com/Ensembl/ensc-core
+Your make will probably need to be GNU make
+
+Comments to Steve Searle

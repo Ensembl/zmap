@@ -54,7 +54,7 @@ static void transcriptGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan
 
 
 
-/* 
+/*
  *            Globals
  */
 
@@ -195,7 +195,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
 
           truncation_glyph_transcript_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_TRUNCATED_START,
                                                                            FALSE, TRUE) ;
- 
+
           truncation_glyph_transcript_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_TRUNCATED_END,
                                                                          FALSE, TRUE) ;
         }
@@ -233,7 +233,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
       if(transcript->flags.cds && transcript->cds_start > y1 && transcript->cds_start < y2)
         {
 
-          
+
           zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, transcript->cds_start-1,
                                            drawable, fill_set, outline_set, fill, outline) ;
 
@@ -303,11 +303,11 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
           foo_canvas_w2c(foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
           foo_canvas_w2c(foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
 
-          cy1_5 = (cy1 + cy2) / 2;
-          cx1_5 = (cx1 + cx2) / 2;
+          cy1_5 = (cy1 + cy2) / 2 ;
+          cx1_5 = (cx1 + cx2) / 2 ;
 
           c.pixel = outline;
-          gdk_gc_set_foreground (featureset->gc, &c);
+          gdk_gc_set_foreground (featureset->gc, &c) ;
 
           /*
            * sm23 21st Feb. 2014.
@@ -319,6 +319,23 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
           zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, (featureset->draw_truncation_glyphs
                                                                  ? cy1_5+1 : cy1_5));
           zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
+
+          /* zMap_draw_line(drawable, featureset, cx1_5, cy1, cx1_5, cy2) ; */
+
+          /*
+           * One last go with something else... seems to be subject to the same
+           * problems as the original function, unsurprisingly.
+           */
+          /*gint npoints = 3 ;
+          GdkPoint * points = (GdkPoint*) g_new0(GdkPoint, npoints) ;
+          points[0].x = cx1_5 ;
+          points[0].y = cy1 ;
+          points[1].x = cx2 ;
+          points[1].y = cy1_5;
+          points[2].x = cx1_5 ;
+          points[2].y = cy2 ;
+          gdk_draw_lines(drawable, featureset->gc, points, npoints) ;
+          g_free((void*)points) ;*/
         }
       else if(tr->sub_type == TRANSCRIPT_INTRON_START_NOT_FOUND)
         {

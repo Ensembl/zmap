@@ -3755,6 +3755,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                       LockedRulerStruct locked_data = {0} ;
 
                       locked_data.action   = ZMAP_LOCKED_RULER_SETUP ;
+                      locked_data.world_x  = wx ;
+                      locked_data.world_y  = wy ;
                       locked_data.origin_y = origin_y ;
 
                       g_hash_table_foreach(window->sibling_locked_windows, lockedRulerCB, (gpointer)&locked_data) ;
@@ -3853,6 +3855,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                 /* I wanted to change the cursor for this,
                  * but foo_canvas_item_grab/ungrab specifically the ungrab didn't work */
                 zMapDrawRubberbandResize(window->rubberband, origin_x, origin_y, wx, wy);
+                /* zMapWindowRedraw(window) ;*/  /* sm23 */
 
                 /* gb10: this is a bit messy but I'm not sure how to get around it. We need to
                  * pass this event on to canvasItemEventCB to see if we should initiate drag and
@@ -3896,6 +3899,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                 else
                   {
                     moveRuler(window->horizon_guide_line, window->tooltip, tip, wx, wy) ;
+                    /*zMapWindowRedraw(window) ; */ /* sm23 */
                   }
 
                 if (tip)
@@ -3954,6 +3958,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                                        &wx, mark_updater.closest_to);
             wy = *(mark_updater.closest_to);
             moveRuler(window->mark_guide_line, NULL, NULL, wx, wy);
+            /* zMapWindowRedraw(window) ; */ /* sm23 */
 
             event_handled = TRUE;
           }
@@ -7168,7 +7173,7 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
     {
     case ZMAP_LOCKED_RULER_SETUP:
       setupRuler(window, &(window->horizon_guide_line),
-                 &(window->tooltip), locked_data->world_x, locked_data->origin_y) ;
+                 &(window->tooltip), locked_data->world_x, locked_data->world_y) ;
       break;
     case ZMAP_LOCKED_RULER_MOVING:
       moveRuler(window->horizon_guide_line,
@@ -7176,6 +7181,7 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
                 locked_data->tip_text,
                 locked_data->world_x,
                 locked_data->world_y) ;
+      zMapWindowRedraw(window) ;
       break;
     case ZMAP_LOCKED_RULER_REMOVE:
       removeRuler(window->horizon_guide_line, window->tooltip) ;
@@ -7273,6 +7279,8 @@ static void setupRuler(ZMapWindow       window,
 
   return ;
 }
+
+
 
 
 static void moveRuler(FooCanvasItem  *horizon,

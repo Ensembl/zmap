@@ -67,7 +67,7 @@ static void highlightSplice(gpointer data, gpointer user_data) ;
 
 
 
-/* 
+/*
  *                Globals
  */
 
@@ -78,7 +78,7 @@ static ZMapWindowCanvasGlyph non_match_junction_glyph_start_G = NULL, non_match_
 
 
 
-/* 
+/*
  *                External routines
  */
 
@@ -185,7 +185,13 @@ int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
 
     }
 
-  gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
+  /*
+   * Note that the settings here can be changed in order to investigate the drawing bug.
+   */
+  //gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_ON_OFF_DASH, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
+  //gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_SOLID, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
+  gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2) ;
+  //gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_SOLID, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
 
   return 1;
 }
@@ -426,11 +432,11 @@ void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featurese
       zMapWindowCanvasGlyphGetJunctionShapes(&start_shape, &end_shape) ;
 
       match_junction_glyph_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_JUNCTION_START, TRUE, TRUE) ;
-                                                                    
+
       match_junction_glyph_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_JUNCTION_END, TRUE, TRUE) ;
 
       non_match_junction_glyph_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_JUNCTION_START, TRUE, TRUE) ;
-                                                                    
+
       non_match_junction_glyph_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_JUNCTION_END, TRUE, TRUE) ;
 
       if (zMapWindowCanvasFeaturesetGetSpliceColour(featureset, TRUE, &border_pixel, &fill_pixel))
@@ -457,7 +463,7 @@ void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featurese
 
 
 
-/* 
+/*
  *             Internal routines
  */
 
@@ -466,7 +472,7 @@ static void highlightSplice(gpointer data, gpointer user_data)
 {
   ZMapSplicePosition splice_pos = (ZMapSplicePosition)data ;
   HighlightData highlight_data = (HighlightData)user_data ;
-  double col_width ;  
+  double col_width ;
 
 
   /*
