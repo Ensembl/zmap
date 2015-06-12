@@ -785,13 +785,22 @@ static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
 {
   char *dna = NULL ;
   int length ;
+  int dna_len ;
 
   length = end - start + 1 ;
+  dna_len = strlen(dna_sequence) ;
 
-  dna = g_strndup((dna_sequence + start - 1), length) ;
+  if (start + length - 1 <= dna_len)
+    {    
+      dna = g_strndup((dna_sequence + start - 1), length) ;
 
-  if (revcomp)
-    zMapDNAReverseComplement(dna, length) ;
+      if (revcomp)
+        zMapDNAReverseComplement(dna, length) ;
+    }
+  else
+    {
+      zMapLogWarning("Failed to get DNA sequence for [%d  %d]: sequence is too short [%d]", start, end, dna_len) ;
+    }
 
   return dna ;
 }
