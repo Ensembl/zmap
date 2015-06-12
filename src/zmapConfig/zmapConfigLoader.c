@@ -630,11 +630,12 @@ char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical)
 GList *zmapConfigString2QuarkListExtra(char *string_list, gboolean cannonical,gboolean unique_id)
 {
   GList *list = NULL;
-  gchar **str_array,**strv;
+  gchar **str_array = NULL,**strv;
   char *name;
   GQuark val;
 
-  str_array = g_strsplit(string_list,";",0);
+  if (string_list)
+    str_array = g_strsplit(string_list,";",0);
 
   if (str_array)
     {
