@@ -12,6 +12,9 @@
   <li>Option to export a single feature has now been added to the right-click menu
   <li>Some generalisation of the configuration for standalone ZMap
   <li>Bug fixes to feature filtering, horizon and tooltip display
+  <li>Bug fixes to feature search window 
+  <li>Prototype of ensemble connection now in place
+  <li>Window size on startup (on mac) has been corrected 
   
 </ul>
 
