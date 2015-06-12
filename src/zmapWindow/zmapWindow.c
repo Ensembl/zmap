@@ -1120,7 +1120,7 @@ void zMapWindowSetDisplayCoordinates(ZMapWindow window, ZMapWindowDisplayCoordin
 
 ZMapWindowDisplayCoordinates zMapWindowGetDisplayCoordinates(ZMapWindow window)
 {
-  zMapReturnIfFail(window) ;
+  zMapReturnValIfFail(window, ZMAP_WINDOW_DISPLAY_INVALID) ;
   return window->display_coordinates ;
 }
 
