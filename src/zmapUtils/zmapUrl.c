@@ -461,7 +461,7 @@ url_tilde_expansion (const char *url, ZMapURLScheme scheme)
 {
   char *result = NULL ;
 
-  if (url && (scheme == SCHEME_FILE || scheme == SCHEME_PIPE))
+  if (url && scheme == SCHEME_FILE)
     {
       /* Remove the scheme prefix */
       const char *leading_string = supported_schemes[scheme].leading_string;
@@ -470,9 +470,16 @@ url_tilde_expansion (const char *url, ZMapURLScheme scheme)
       /* Perform tilde expansion */
       char *tmp = zMapExpandFilePath(p) ;
 
-      /* Re-add scheme prefix */
-      result = g_strdup_printf("%s%s", leading_string, tmp) ;
-      g_free(tmp);
+      if (tmp)
+        {
+          /* Re-add scheme prefix */
+          result = g_strdup_printf("%s%s", leading_string, tmp) ;
+          g_free(tmp);
+        }
+      else
+        {
+          result = g_strdup(url);
+        }
     }
   else if (url)
     {
@@ -877,7 +884,7 @@ url_parse (const char *url, int *error)
   int port;
   char *user = NULL, *passwd = NULL;
 
-  char *url_expanded = NULL;
+  //char *url_expanded = NULL;
   char *url_encoded = NULL;
 
   int error_code;
@@ -890,10 +897,12 @@ url_parse (const char *url, int *error)
     }
 
   /* for file paths, perform tilde expansion */
-  url_expanded = url_tilde_expansion (url, scheme);
+  /* gb10: comment out for now as this doesn't work properly because we
+   * get called with a url which has already had the ~ escaped. */
+  //url_expanded = url_tilde_expansion (url, scheme);
 
   /* escape special characters */
-  url_encoded = reencode_escapes (url_expanded);
+  url_encoded = reencode_escapes (url);
   p = url_encoded;
 
   p += strlen (supported_schemes[scheme].leading_string);
@@ -1103,8 +1112,8 @@ url_parse (const char *url, int *error)
     }
   url_encoded = NULL;
 
-  if (url_expanded)
-    g_free(url_expanded);
+  //if (url_expanded)
+  //  g_free(url_expanded);
 
   return u;
 
@@ -1113,8 +1122,8 @@ url_parse (const char *url, int *error)
   if (url_encoded)
     xfree (url_encoded);
 
-  if (url_expanded)
-    g_free (url_expanded);
+  //if (url_expanded)
+  //  g_free (url_expanded);
 
   /* Transmit the error code to the caller, if the caller wants to
      know.  */
