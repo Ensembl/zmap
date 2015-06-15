@@ -269,13 +269,19 @@ AC_ARG_ENABLE(profile,
         AS_HELP_STRING(--enable-profile,enable profiling debug info compilation (no)),
         prof=$enableval, prof=no)
 
-if test "x$prof" = "xyes"; then
-   CFLAGS="$CFLAGS -pg -g";
-elif test "x$deb" = "xyes"; then
-   CFLAGS="$CFLAGS -g";
-else
-   CFLAGS="$CFLAGS -O2";
-fi
+# um....what's this all about.....-O2 should _not_ be the default....
+#if test "x$prof" = "xyes"; then
+#   CFLAGS="$CFLAGS -pg -g";
+#elif test "x$deb" = "xyes"; then
+#   CFLAGS="$CFLAGS -g";
+#else
+#   CFLAGS="$CFLAGS -O2";
+#fi
+
+CFLAGS="$CFLAGS -g";
+
+
+CXXFLAGS='-g'
 
 AC_SUBST(PKG_CONFIG)
 AC_SUBST(CFLAGS)
@@ -651,3 +657,17 @@ fi
 
 echo "---------------------------------------------------------------------
 "
+
+
+
+# debug.....
+echo "====== debugging......"
+echo "CC = $CC"
+echo "CFLAGS = $CFLAGS"
+
+echo "CXX = $CXX"
+echo "CXXFLAGS = $CXXFLAGS"
+
+echo "LDFLAGS = $LDFLAGS"
+
+

@@ -65,7 +65,7 @@ case $opsys in
             #CC_args=gcc
 
 	    # Compile with PIC so that X11::XRemote compiles...
-	    CFLAGS_args="$CFLAGS_args -fPIC"
+	    CFLAGS_args="$CFLAGS_args"
 
 	    # Now add LDFLAGS to args so they get through to configure.
 	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
@@ -100,6 +100,10 @@ case $opsys in
             # Stuff rdynamic in.....
             CFLAGS_args="-rdynamic $CFLAGS"
             LDFLAGS_args="-rdynamic $LDFLAGS"
+
+
+	    CXXFLAGS='-g'
+	    LDFLAGS="-g $LDFLAGS"
 
 
 	    # Now add LDFLAGS to args so they get through to configure.
