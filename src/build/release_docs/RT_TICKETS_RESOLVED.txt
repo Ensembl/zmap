@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 16/04/2015 to 11/06/2015
+Request Tracker Tickets Resolved from 16/04/2015 to 16/06/2015
 
 ticket/463363
 id: ticket/463363

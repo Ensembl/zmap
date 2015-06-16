@@ -240,7 +240,8 @@ ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 #   precise-x86_64   - precise-dev64
 #   macosx-10-i386   - mac106229i
 #   trusty-x86_64    - precise-dev64
-ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64 precise-dev64 mac106229i t119-win-build"
+#ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64 precise-dev64 mac106229i t119-win-build"
+ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64 precise-dev64 mac106229i"
 
 
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \

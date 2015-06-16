@@ -262,6 +262,9 @@ void zMapViewToggleDisplayCoordinates(ZMapView view)
 {
   void *user_data = view->features ;
   zMapViewForAllZMapWindows(view, toggleDisplayCoordinatesCB, user_data ) ;
+  zMapWindowNavigatorReset(view->navigator_window) ;
+  zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features, view->context_map.styles);
+
 }
 
 
