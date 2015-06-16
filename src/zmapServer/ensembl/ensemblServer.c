@@ -360,9 +360,40 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
-  
-  server->source_2_sourcedata = *source_2_sourcedata_inout;
-  server->featureset_2_column = *featureset_2_column_inout;
+
+  if (feature_sets_inout)
+    {
+      server->req_featuresets = *feature_sets_inout ;
+
+      /* Set the flag to only load requested featuresets. We do this if the list is not empty (or
+       * only contains the default featuresets like DNA and 3 Frame) */
+      GQuark dna_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
+      GQuark three_frame_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_3FRAME);
+      GQuark three_frame_trans_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+      GQuark annotation_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
+
+      server->req_featuresets_only = FALSE ;
+      GList *item = server->req_featuresets ;
+
+      for ( ; item ; item = item->next)
+        {
+          GQuark curr_quark = zMapFeatureSetCreateID(g_quark_to_string((GQuark)GPOINTER_TO_INT(item->data)));
+          
+          /* If the list contains any non-default featureset, then we should load req featuresets only */
+          if (curr_quark != dna_quark && curr_quark != three_frame_quark && 
+              curr_quark != three_frame_trans_quark && curr_quark != annotation_quark)
+            {
+              server->req_featuresets_only = TRUE ;
+              break ;
+            }
+        }
+    }
+
+  if (source_2_sourcedata_inout)
+    server->source_2_sourcedata = *source_2_sourcedata_inout;
+
+  if (featureset_2_column_inout)
+    server->featureset_2_column = *featureset_2_column_inout;
 
   result = ZMAP_SERVERRESPONSE_OK ;
   return result ;
@@ -1017,7 +1048,10 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
       feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
                             feature_mode, source, 0, 0, 
                             get_features_data, feature_block) ;
+    }
 
+  if (feature)
+    {
       /* If coding region start/end are not already set, these calls set them */
       int coding_region_start = Transcript_getCodingRegionStart(rsf) ;
       int coding_region_end = coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
@@ -1081,7 +1115,10 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
       feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
                             feature_mode, source, 0, 0, 
                             get_features_data, feature_block) ;
+    }
 
+  if (feature)
+    {
       char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
       char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
       char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
@@ -1218,6 +1255,35 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
 }
 
 
+/* Check whether we should load the given featureset */
+static gboolean loadFeatureset(EnsemblServer server, const char *featureset_name)
+{
+  gboolean result = TRUE ;
+
+  /* If the req_featuresets list is given then only load features in those
+   * featuresets. Otherwise, load all features. */
+  if (server->req_featuresets_only)
+    {
+      result = FALSE ;
+      GQuark check_featureset_id = zMapFeatureSetCreateID(featureset_name) ;
+      GList *item = server->req_featuresets;
+
+      for ( ; item ; item = item->next)
+        {
+          GQuark featureset_id = zMapFeatureSetCreateID(g_quark_to_string(((GQuark)GPOINTER_TO_INT(item->data)))) ;
+          
+          if (featureset_id == check_featureset_id)
+            {
+              result = TRUE ;
+              break ;
+            }
+        }
+    }
+
+  return result ;
+}
+
+
 static ZMapFeature makeFeature(EnsemblServer server, 
                                SeqFeature *rsf, 
                                const char *feature_name_id_in,
@@ -1244,7 +1310,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
 
   SO_accession = featureGetSOTerm(rsf) ;
 
-  if (SO_accession && source)
+  if (SO_accession && source && loadFeatureset(server, source))
     {
       if (!feature_name_id || *feature_name_id == '\0')
         feature_name_id = source ;
