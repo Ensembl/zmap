@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/1.7.0"
 
+c8f68f8 2015-06-15 Disable tilde expansion for url config fields - doesn't work on mac - REGRESSION FIX
 10abeac 2015-06-11 Merge remote branch 'origin/develop' into develop
 7e83e4b 2015-06-11 Merge branch 'feature/coords' into develop
 3ed2d7e 2015-06-10 Fix a bug with CDS coords in ensembl - BUG FIX

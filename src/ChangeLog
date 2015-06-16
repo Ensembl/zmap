@@ -1,3 +1,19 @@
+2015-06-16  Steve Miller  <sm23@sanger.ac.uk>
+ remove windows machine from builds - BUILD
+ scripts/build_config.sh |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+2015-06-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Disable tilde expansion for url config fields - doesn't work on mac - REGRESSION FIX
+ src/zmapUtils/zmapUrl.c |   31 ++++++++++++++++++++-----------
+ 1 files changed, 20 insertions(+), 11 deletions(-)
+
+2015-06-15  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.6.0-258-g964d9ce - Update RT and git commit reports
+ src/ChangeLog                                  |   18 ++++++++++++++++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 2 files changed, 19 insertions(+), 1 deletions(-)
+
 2015-06-15  Steve Miller  <sm23@sanger.ac.uk>
  add code to toggle the navigator coordinate display along with windows - BUILD
  src/zmapView/zmapViewUtils.c         |    3 +++
