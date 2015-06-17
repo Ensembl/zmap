@@ -31,10 +31,7 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
+#include <string.h>
 #include <stdlib.h>
 #include <sys/utsname.h>
 #include <glib.h>

@@ -637,22 +637,22 @@ GList *zmapConfigString2QuarkListExtra(const char *string_list, gboolean cannoni
               else
                 val = g_quark_from_string(name);
 
-              glist = g_list_prepend(glist,GUINT_TO_POINTER(val)) ;
+              list = g_list_prepend(list,GUINT_TO_POINTER(val)) ;
             }
         }
     }
 
-  glist = g_list_reverse(glist) ;      /* see glib doc for g_list_append() */
+  list = g_list_reverse(list) ;      /* see glib doc for g_list_append() */
 
   if (str_array)
     g_strfreev(str_array);
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMap_g_quark_list_print(glist) ;     /* debug.... */
+  zMap_g_quark_list_print(list) ;     /* debug.... */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  return glist ;
+  return list ;
 }
 
 GList *zMapConfigString2QuarkList(const char *string_list, gboolean cannonical)

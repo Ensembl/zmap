@@ -397,7 +397,7 @@ reencode_escapes (const char *s)
       /* Each encoding adds two characters (hex digits), while each
          decoding removes two characters.  */
       newlen = oldlen + 2 * (encode_count - decode_count);
-      newstr = xmalloc (newlen + 1);
+      newstr = (char *)xmalloc(newlen + 1) ;
 
       p1 = s;
       p2 = newstr;
@@ -462,7 +462,7 @@ url_tilde_expansion (const char *url, ZMapURLScheme scheme)
     {
       /* Remove the scheme prefix */
       const char *leading_string = supported_schemes[scheme].leading_string;
-      char *p = url + strlen (leading_string);
+      char *p = (char *)url + strlen (leading_string);
 
       /* Perform tilde expansion */
       char *tmp = zMapExpandFilePath(p) ;

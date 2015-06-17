@@ -251,7 +251,6 @@ zmap_message_out "finished installing external libraries:  ${!dir[*]}"
 zmap_message_out "-------------------------------------------------------------------"
 
 
-fi
 
 if [[ ! -d "./$ensc_core/src" ]] ; then
 
