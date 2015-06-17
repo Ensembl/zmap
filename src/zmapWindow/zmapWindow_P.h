@@ -999,6 +999,13 @@ typedef struct ZMapWindowStructType
    * feature.)*/
   GQuark highlight_evidence_featureset_id ;
 
+  /*
+   * Type of coordinates to display to the user in the ruler
+   * and scale bar.
+   */
+  gboolean force_scale_redraw ;
+  ZMapWindowDisplayCoordinates display_coordinates ;
+
 
 } ZMapWindowStruct ;
 
@@ -1671,14 +1678,15 @@ void zmapWindowDebugWindowCopy(ZMapWindow window);
 void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 
 
-double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window, FooCanvasGroup *group,
+double zmapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window, FooCanvasGroup *group,
 			      int scroll_start, int scroll_end,
 			      int seq_start, int seq_end,
                               int true_start, int true_end,
-			      double zoom_factor, gboolean revcomped, gboolean zoomed);
+			      double zoom_factor, gboolean revcomped, gboolean zoomed,
+                              ZMapWindowDisplayCoordinates display_coordinates);
 
-double zMapWindowScaleCanvasGetWidth(ZMapWindowScaleCanvas ruler);
-void zMapWindowScaleCanvasSetScroll(ZMapWindowScaleCanvas ruler, double x1, double y1, double x2, double y2);
+double zmapWindowScaleCanvasGetWidth(ZMapWindowScaleCanvas ruler);
+void zmapWindowScaleCanvasSetScroll(ZMapWindowScaleCanvas ruler, double x1, double y1, double x2, double y2);
 
 gboolean zmapWindowItemIsVisible(FooCanvasItem *item) ;
 gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
@@ -1865,7 +1873,9 @@ void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas obj);
 void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas obj, gboolean revcomped) ;
 void zmapWindowScaleCanvasSetSpan(ZMapWindowScaleCanvas ruler, int start,int end);
 gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, int x, int y,int seq_start, int seq_end,
-                                   int true_start, int true_end);
+                                   int true_start, int true_end,
+                                   ZMapWindowDisplayCoordinates display_coordinates,
+                                   gboolean force_redraw );
 void zmapWindowScaleCanvasSetVAdjustment(ZMapWindowScaleCanvas obj, GtkAdjustment *vadjustment);
 void zmapWindowScaleCanvasSetPixelsPerUnit(ZMapWindowScaleCanvas obj, double x, double y);
 void zmapWindowScaleCanvasSetLineHeight(ZMapWindowScaleCanvas obj, double border);

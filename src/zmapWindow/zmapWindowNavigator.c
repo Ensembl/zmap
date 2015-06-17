@@ -857,7 +857,7 @@ static void drawScale(NavigateDraw draw_data)
   FooCanvasItem *item = NULL;
 
   GQuark scale_id = 0;
-  int min_val, max_val;
+  int min, max, true_min, true_max ;
   double zoom_factor = 0.0;
 
 
@@ -878,19 +878,21 @@ static void drawScale(NavigateDraw draw_data)
 
       features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)scale_group);
 
-      min_val = draw_data->context->master_align->sequence_span.x1;
-      max_val = draw_data->context->master_align->sequence_span.x2;
+      min = draw_data->context->master_align->sequence_span.x1;
+      max = draw_data->context->master_align->sequence_span.x2;
+      true_min = draw_data->navigate->current_window->sequence->start ;
+      true_max = draw_data->navigate->current_window->sequence->end ;
       zoom_factor = item->canvas->pixels_per_unit_y;
 
-      zMapWindowDrawScaleBar(zmapWindowScaleCanvasGetScrolledWindow(draw_data->navigate->current_window->ruler),
-                             features, min_val, max_val, min_val, max_val, min_val, max_val,
-                             zoom_factor, draw_data->navigate->is_reversed, FALSE);
+      zmapWindowDrawScaleBar(zmapWindowScaleCanvasGetScrolledWindow(draw_data->navigate->current_window->ruler),
+                             features, min, max, min, max, true_min, true_max,
+                             zoom_factor, draw_data->navigate->is_reversed, FALSE,
+                             draw_data->navigate->current_window->display_coordinates);
+
     }
 
   return ;
 }
-
-
 
 
 /* data is a GQuark, user_data is a NavigateDraw */

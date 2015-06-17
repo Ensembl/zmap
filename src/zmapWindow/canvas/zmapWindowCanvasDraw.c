@@ -185,7 +185,13 @@ int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
 
     }
 
-  gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
+  /*
+   * Note that the settings here can be changed in order to investigate the drawing bug.
+   */
+  //gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_ON_OFF_DASH, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
+  //gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_SOLID, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
+  gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2) ;
+  //gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_SOLID, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
 
   return 1;
 }

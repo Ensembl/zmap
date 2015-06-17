@@ -166,6 +166,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;
 
 void zMapViewSetCursor(ZMapView view, GdkCursor *cursor) ;
+void zMapViewToggleDisplayCoordinates(ZMapView view) ;
 
 gboolean zMapViewSessionGetAsText(ZMapViewWindow view_window, GString *session_data_inout) ;
 
