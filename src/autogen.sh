@@ -174,8 +174,6 @@ fi
 #
 zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "build bootstrap starting...."
-zmap_message_out "-------------------------------------------------------------------"
-
 
 
 
@@ -186,7 +184,6 @@ zmap_message_out "--------------------------------------------------------------
 
 zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "starting installing external libraries:  ${!dir[*]}"
-zmap_message_out "-------------------------------------------------------------------"
 
 for i in "${!install[@]}"
   do
@@ -246,7 +243,6 @@ for i in "${!install[@]}"
 
   done
 
-zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "finished installing external libraries:  ${!dir[*]}"
 zmap_message_out "-------------------------------------------------------------------"
 
@@ -329,17 +325,14 @@ mkdir $zeromq_dir  || zmap_message_exit "Cannot make $zeromq_dir for zeromq buil
 #
 zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "About to run autoreconf to bootstrap autotools and our build system"
-zmap_message_out "-------------------------------------------------------------------"
 
 autoreconf $force_remake_all $verbose $install_missing -I ./ || zmap_message_exit "Failed running autoreconf"
 
-zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "Finished running autoreconf for bootstrap"
 zmap_message_out "-------------------------------------------------------------------"
 
 
 # finished !
-zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "build bootstrap finished...."
 zmap_message_out "-------------------------------------------------------------------"
 
