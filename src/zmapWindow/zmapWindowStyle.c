@@ -507,7 +507,7 @@ static void colourSetCB(GtkColorButton *widget, gpointer user_data)
   else if (GTK_WIDGET(widget) == my_data->border_widget)
         target_string = &(my_data->border_colour_str) ;
   else if (GTK_WIDGET(widget) == my_data->cds_fill_widget)
-        target_string = &(my_data->fill_colour_str) ;
+        target_string = &(my_data->cds_fill_colour_str) ;
   else if (GTK_WIDGET(widget) == my_data->cds_border_widget)
         target_string = &(my_data->cds_border_colour_str) ;
   else
