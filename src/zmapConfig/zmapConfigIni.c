@@ -88,7 +88,7 @@ static void setErrorMessage(ZMapConfigIniContext context,char *error_message);
 
 
 /* WHAT ON EARTH IS THIS ABOUT...??????? */
-void zMapConfigIniGetStanza(ZMapConfigIni config, char *stanza_name)
+void zMapConfigIniGetStanza(ZMapConfigIni config, const char *stanza_name)
 {
   return ;
 }

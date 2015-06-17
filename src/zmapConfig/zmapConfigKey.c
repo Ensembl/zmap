@@ -69,8 +69,8 @@ static gboolean get_value(GKeyFile *key_file,
 
 
 gboolean zMapConfigIniGetUserValue(ZMapConfigIni config,
-                                   char * stanza_name,
-                                   char * key_name,
+                                   const char * stanza_name,
+                                   const char * key_name,
                                    GValue **value_out,
                                    GType type)
 {

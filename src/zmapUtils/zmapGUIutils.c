@@ -2047,7 +2047,7 @@ void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gp
                                                     "notify::position",
                                                     G_CALLBACK(pane_max_position_callback),
                                                     (gpointer)pane_data,
-                                                    pane_max_position_destroy_notify, GConnectFlags(0));
+                                                    pane_max_position_destroy_notify, (GConnectFlags)(0));
     }
 
   return ;

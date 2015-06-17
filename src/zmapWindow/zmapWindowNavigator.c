@@ -433,7 +433,7 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
         {
           expose_id = g_signal_connect_data(G_OBJECT(canvas), "expose_event",
                                             G_CALLBACK(nav_draw_expose_handler), (gpointer)draw_data_cpy,
-                                            (GClosureNotify)(expose_handler_disconn_cb), GConnectFlags(0)) ;
+                                            (GClosureNotify)(expose_handler_disconn_cb), (GConnectFlags)(0)) ;
 
           navigate->draw_expose_handler_id = expose_id;
         }

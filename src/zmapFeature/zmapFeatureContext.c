@@ -485,7 +485,7 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
   feature_ptr = query_feature;
   while(feature_ptr && feature_ptr->struct_type > ZMAPFEATURE_STRUCT_CONTEXT)
     {
-      feature_ptr = zMapFeatureGetParentGroup(feature_ptr, ZMapFeatureLevelType(feature_ptr->struct_type - 1));
+      feature_ptr = zMapFeatureGetParentGroup(feature_ptr, (ZMapFeatureLevelType)(feature_ptr->struct_type - 1));
       switch(feature_ptr->struct_type)
         {
         case ZMAPFEATURE_STRUCT_CONTEXT:

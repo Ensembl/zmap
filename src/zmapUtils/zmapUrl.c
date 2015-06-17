@@ -50,6 +50,7 @@ so, delete this exception statement from your version.  */
 #include <assert.h>
 
 #include <ZMap/zmapUrlUtils.h>
+#include <ZMap/zmapUrlOptions.h>
 #include <ZMap/zmapUrl.h>
 
 #ifndef errno
@@ -1417,12 +1418,12 @@ UWC,  C,  C,  C,   C,  C,  C,  C,   /* NUL SOH STX ETX  EOT ENQ ACK BEL */
    for non-standard port numbers.  On Unix this is normally ':', as in
    "www.xemacs.org:4001/index.html".  Under Windows, we set it to +
    because Windows can't handle ':' in file names.  */
-#define FN_PORT_SEP  (opt_G.restrict_files_os != opt_G.restrict_windows ? ':' : '+')
+#define FN_PORT_SEP  (opt_G.restrict_files_os != options::restrict_windows ? ':' : '+')
 
 /* FN_QUERY_SEP is the separator between the file name and the URL
    query, normally '?'.  Since Windows cannot handle '?' as part of
    file name, we use '@' instead there.  */
-#define FN_QUERY_SEP (opt_G.restrict_files_os != opt_G.restrict_windows ? '?' : '@')
+#define FN_QUERY_SEP (opt_G.restrict_files_os != options::restrict_windows ? '?' : '@')
 
 /* Quote path element, characters in [b, e), as file name, and append
    the quoted string to DEST.  Each character is quoted as per
@@ -1439,7 +1440,7 @@ append_uri_pathel (const char *b, const char *e, int escaped_p,
   int quoted, outlen;
 
   int mask;
-  if (opt_G.restrict_files_os == opt_G.restrict_unix)
+  if (opt_G.restrict_files_os == options::restrict_unix)
     mask = filechr_not_unix;
   else
     mask = filechr_not_windows;
