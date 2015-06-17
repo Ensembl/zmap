@@ -50,10 +50,10 @@ typedef enum {EDIT_COPY, EDIT_COPY_CHR, EDIT_PASTE} EditActionType ;
 typedef enum {RT_INVALID, RT_ACEDB, RT_ANACODE, RT_SEQTOOLS, RT_ZMAP, RT_ZMAP_USER_TICKETS} RTQueueName ;
 
 typedef enum {
-  EXPORT_DNA, 
+  EXPORT_DNA,
   /*EXPORT_CONTEXT,*/
-  EXPORT_FEATURES_ALL, 
-  EXPORT_FEATURES_MARKED, 
+  EXPORT_FEATURES_ALL,
+  EXPORT_FEATURES_MARKED,
   /*EXPORT_FEATURES_SELECTED,*/
   SAVE_FEATURES,
   SAVE_FEATURES_AS
@@ -78,6 +78,7 @@ static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void copyPasteCB( gpointer data, guint callback_action, GtkWidget *w ) ;
+static void toggleDisplayCoordinatesCB (gpointer data, guint callback_action, GtkWidget *w) ;
 #ifdef ALLOW_POPOUT_PANEL
 static void popout_panel( gpointer data, guint callback_action, GtkWidget *w ) ;
 #endif /* ALLOW_POPOUT_PANEL */
@@ -122,6 +123,7 @@ static GtkItemFactoryEntry menu_items[] = {
 
          { (char*)"/_View",                       NULL, NULL,                       0, (char*)"<Branch>" },
          { (char*)"/View/Session Details",        NULL, G_CALLBACK(showSessionCB),  0, NULL },
+         { "/View/Toggle coords", NULL, G_CALLBACK(toggleDisplayCoordinatesCB), 0, NULL }, /* change between chromosome and slice coordinates */
 
 #ifdef ALLOW_POPOUT_PANEL
          { (char*)"/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL },
@@ -164,6 +166,28 @@ GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
   menubar = gtk_item_factory_get_widget (item_factory, "<main>") ;
 
   return menubar ;
+}
+
+
+/*
+ * Function to toggle displpay coordinates... a bit experimental.
+ */
+static void toggleDisplayCoordinatesCB (gpointer data, guint callback_action, GtkWidget *w)
+{
+  ZMap zmap = NULL ;
+  ZMapView current_view = NULL ;
+  zMapReturnIfFail(data) ;
+
+  zmap = (ZMap) data ;
+  current_view = zMapViewGetView(zmap->focus_viewwindow) ;
+
+  /*
+   * Now call appropriate function for View to run over all windows...
+   */
+  if (current_view)
+    {
+      zMapViewToggleDisplayCoordinates(current_view) ;
+    }
 }
 
 

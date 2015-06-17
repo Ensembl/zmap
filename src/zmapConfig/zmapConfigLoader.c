@@ -618,12 +618,13 @@ char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical)
 
 GList *zmapConfigString2QuarkListExtra(const char *string_list, gboolean cannonical,gboolean unique_id)
 {
-  GList *glist = NULL;
-  gchar **str_array,**strv;
+  GList *list = NULL;
+  gchar **str_array = NULL,**strv;
   char *name;
   GQuark val;
 
-  str_array = g_strsplit(string_list,";",0);
+  if (string_list)
+    str_array = g_strsplit(string_list,";",0);
 
   if (str_array)
     {
@@ -636,22 +637,22 @@ GList *zmapConfigString2QuarkListExtra(const char *string_list, gboolean cannoni
               else
                 val = g_quark_from_string(name);
 
-              glist = g_list_prepend(glist,GUINT_TO_POINTER(val)) ;
+              list = g_list_prepend(list,GUINT_TO_POINTER(val)) ;
             }
         }
     }
 
-  glist = g_list_reverse(glist) ;      /* see glib doc for g_list_append() */
+  list = g_list_reverse(list) ;      /* see glib doc for g_list_append() */
 
   if (str_array)
     g_strfreev(str_array);
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMap_g_quark_list_print(glist) ;     /* debug.... */
+  zMap_g_quark_list_print(list) ;     /* debug.... */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  return glist ;
+  return list ;
 }
 
 GList *zMapConfigString2QuarkList(const char *string_list, gboolean cannonical)
@@ -1313,7 +1314,10 @@ static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
 
   full_data->current_stanza_name = stanza_name;
 
-  if (zMapConfigIniHasStanza(full_data->context->config, stanza_name,NULL) && (full_data->object_create_func))
+  if (full_data && 
+      zMapConfigIniHasStanza(full_data->context->config, stanza_name,NULL) &&
+      full_data->object_create_func &&
+      full_data->stanza)
     {
       if ((full_data->current_object = (full_data->object_create_func)()))
         {
@@ -1323,8 +1327,10 @@ static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
           full_data->object_list_out = g_list_append(full_data->object_list_out, full_data->current_object);
         }
       else
-        zMapLogWarning("Object Create Function for stanza '%s'"
-               " failed to return anything", stanza_name);
+        {
+          zMapLogWarning("Object Create Function for stanza '%s'"
+                         " failed to return anything", stanza_name);
+        }
     }
 
   return ;

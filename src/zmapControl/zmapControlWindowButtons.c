@@ -51,6 +51,7 @@ enum{ SHOW_DNA, HIDE_DNA, HIDE_3ALL, SHOW_3FEATURES, SHOW_3FT, SHOW_3ALL };
 
 static void reloadCB(GtkWidget *widget, gpointer cb_data) ;
 static void stopCB(GtkWidget *widget, gpointer cb_data) ;
+static void setDisplayCoordinatesCB(GtkWindow* widget, gpointer cb_data ) ;
 static void zoomInCB(GtkWindow *widget, gpointer cb_data) ;
 static void zoomOutCB(GtkWindow *widget, gpointer cb_data) ;
 static void vertSplitPaneCB(GtkWidget *widget, gpointer data) ;
@@ -474,6 +475,36 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
 }
 
 
+/*
+ * Experimental ; not really serious...
+ */
+gboolean zmapControlWindowToggleDisplayCoordinates(ZMap zmap)
+{
+  gboolean result = FALSE ;
+  ZMapWindow window = NULL;
+  zMapReturnValIfFail(zmap, result) ;
+
+  window = zMapViewGetWindow(zmap->focus_viewwindow);
+  result = TRUE ;
+
+  ZMapWindowDisplayCoordinates display_coordinates = zMapWindowGetDisplayCoordinates(window);
+
+  if (display_coordinates == ZMAP_WINDOW_DISPLAY_CHROM)
+    display_coordinates = ZMAP_WINDOW_DISPLAY_SLICE ;
+  else if (display_coordinates == ZMAP_WINDOW_DISPLAY_SLICE )
+    display_coordinates = ZMAP_WINDOW_DISPLAY_CHROM ;
+
+  zMapWindowSetDisplayCoordinates(window, display_coordinates) ;
+
+  /*
+   * Now need to force a redraw signal in here...
+   * but this function does not send anything to the ruler...
+   */
+  zMapWindowRedraw(window) ;
+
+  return result ;
+}
+
 
 /* We make an assumption in this routine that zoom will only be one of fixed, min, mid or max and
  * that zoom can only go from min to max _via_ the mid state. */
@@ -735,6 +766,15 @@ static void stopCB(GtkWidget *widget, gpointer cb_data)
   ZMap zmap = (ZMap)cb_data ;
 
   zmapControlResetCB(zmap) ;
+
+  return ;
+}
+
+static void setDisplayCoordinatesCB(GtkWindow* widget, gpointer cb_data )
+{
+  ZMap zmap = (ZMap) cb_data ;
+
+  zmapControlWindowToggleDisplayCoordinates(zmap) ;
 
   return ;
 }

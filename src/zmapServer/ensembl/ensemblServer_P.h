@@ -73,6 +73,8 @@ typedef struct _EnsemblServerStruct
   char *sequence ;                                          /* request sequence name for our one block */
   gint zmap_start, zmap_end ;				    /* request coordinates for our one block */
 
+  gboolean req_featuresets_only ;                           /* if true, only load req fsets */
+  GList *req_featuresets ;                                  /* requested featuresets */
   GHashTable *source_2_sourcedata ;
   GHashTable *featureset_2_column ;
 

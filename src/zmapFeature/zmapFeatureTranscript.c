@@ -152,7 +152,7 @@ gboolean zMapFeatureTranscriptInit(ZMapFeature feature)
 {
   gboolean result = FALSE ;
 
-  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT
+  if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT
       && (!(feature->feature.transcript.exons) && !(feature->feature.transcript.introns)))
     {
 

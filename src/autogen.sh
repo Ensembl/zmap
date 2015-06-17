@@ -77,6 +77,8 @@ function fetch_lib
 
 
 force_remake_all=''
+gb_tools='maybe'
+ensc_core='maybe'
 run_autoupdate=''					    # don't run autoupdate by default.
 install_missing='-i'
 verbose=''
@@ -127,8 +129,6 @@ Usage:
  $SCRIPT_NAME [ -a -d -e -f -g -h -i -n -u -v ]
 
    -a  Force checkout of aceconn (overwrite existing subdir)
-
-
    -d  Disable checkout of ensc-core (use existing subdir or local install)
    -e  Force checkout of ensc-core (overwrite existing subdir)
    -f  Force remake all
@@ -247,6 +247,15 @@ zmap_message_out "finished installing external libraries:  ${!dir[*]}"
 zmap_message_out "-------------------------------------------------------------------"
 
 
+
+if [[ ! -d "./$ensc_core/src" ]] ; then
+
+    # The src subdir must exist even if we are not building ensc-core
+    # gb10: not sure why but it seems it gets configured even though we
+    # don't include it in SUBDIRS
+    mkdir ./$ensc_core/src
+
+fi
 
 # Remove any files/dirs from previous builds, necessary because different
 # systems have different versions of autoconf causing clashes over macros

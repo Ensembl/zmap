@@ -216,6 +216,8 @@ int zmapControlNumViews(ZMap zmap) ;
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config);
 void zmapControlShowPreferences(ZMap zmap) ;
 
+gboolean zmapControlWindowToggleDisplayCoordinates(ZMap zmap) ;
+
 gboolean zmapControlWindowDoTheZoom(ZMap zmap, double zoom) ;
 void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status) ;
 

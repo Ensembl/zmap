@@ -124,7 +124,7 @@ list = one ; two ; three ; four            # multiple strings
 Any text following (and including) a "#" is interpreted as a comment and ignored.</p><p>
 Some keywords are mandatory within a stanza and hence have no default value. If are not specified the stanza is ignored.</p>
 <p>
-A longer annotated example can see seen <a href="user_doc/config_file_examples.shtml">here</a>.
+A longer annotated example can see seen <a href="config_file.shtml">here</a>.
 </p>
 
 

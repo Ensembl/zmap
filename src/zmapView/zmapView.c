@@ -1361,7 +1361,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
       zmapViewResetWindows(zmap_view, TRUE);
 
-      zMapWindowNavigatorReset(zmap_view->navigator_window);
+        zMapWindowNavigatorReset(zmap_view->navigator_window);
 
       zMapLogTime(TIMER_REVCOMP,TIMER_START,0,"Context");
 

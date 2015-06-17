@@ -105,6 +105,7 @@ static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused) ;
 static void forAllCB(void *data, void *user_data) ;
 
 static void setCursorCB(ZMapWindow window, void *user_data) ;
+static void toggleDisplayCoordinatesCB(ZMapWindow, void* user_data) ;
 
 
 /*
@@ -255,6 +256,16 @@ void zMapViewForAllZMapWindows(ZMapView view, ZMapViewForAllCallbackFunc user_fu
   g_list_foreach(view->window_list, forAllCB, &all_data) ;
 
   return ;
+}
+
+
+void zMapViewToggleDisplayCoordinates(ZMapView view)
+{
+  void *user_data = view->features ;
+  zMapViewForAllZMapWindows(view, toggleDisplayCoordinatesCB, user_data ) ;
+  zMapWindowNavigatorReset(view->navigator_window) ;
+  zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features, view->context_map.styles);
+
 }
 
 
@@ -1149,7 +1160,6 @@ static void forAllCB(void *data, void *user_data)
   return ;
 }
 
-
 static void setCursorCB(ZMapWindow window, void *user_data)
 {
   GdkCursor *cursor = (GdkCursor *)user_data ;
@@ -1161,3 +1171,10 @@ static void setCursorCB(ZMapWindow window, void *user_data)
 
 
 
+static void toggleDisplayCoordinatesCB(ZMapWindow window, void* user_data)
+{
+  if (window)
+    {
+      zMapWindowToggleDisplayCoordinates(window) ;
+    }
+}

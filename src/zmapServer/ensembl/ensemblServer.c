@@ -380,8 +380,39 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
-  server->source_2_sourcedata = *source_2_sourcedata_inout;
-  server->featureset_2_column = *featureset_2_column_inout;
+  if (feature_sets_inout)
+    {
+      server->req_featuresets = *feature_sets_inout ;
+
+      /* Set the flag to only load requested featuresets. We do this if the list is not empty (or
+       * only contains the default featuresets like DNA and 3 Frame) */
+      GQuark dna_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
+      GQuark three_frame_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_3FRAME);
+      GQuark three_frame_trans_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+      GQuark annotation_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
+
+      server->req_featuresets_only = FALSE ;
+      GList *item = server->req_featuresets ;
+
+      for ( ; item ; item = item->next)
+        {
+          GQuark curr_quark = zMapFeatureSetCreateID(g_quark_to_string((GQuark)GPOINTER_TO_INT(item->data)));
+          
+          /* If the list contains any non-default featureset, then we should load req featuresets only */
+          if (curr_quark != dna_quark && curr_quark != three_frame_quark && 
+              curr_quark != three_frame_trans_quark && curr_quark != annotation_quark)
+            {
+              server->req_featuresets_only = TRUE ;
+              break ;
+            }
+        }
+    }
+
+  if (source_2_sourcedata_inout)
+    server->source_2_sourcedata = *source_2_sourcedata_inout;
+
+  if (featureset_2_column_inout)
+    server->featureset_2_column = *featureset_2_column_inout;
 
   result = ZMAP_SERVERRESPONSE_OK ;
   return result ;
@@ -1039,7 +1070,10 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
       feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
                             feature_mode, source, 0, 0,
                             get_features_data, feature_block) ;
+    }
 
+  if (feature)
+    {
       /* If coding region start/end are not already set, these calls set them */
       int coding_region_start = Transcript_getCodingRegionStart(rsf) ;
       int coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
@@ -1047,12 +1081,15 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
       char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
       char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
 
+      const int offset = server->zmap_start - 1 ;
+
       zMapFeatureTranscriptInit(feature);
       zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
 
-      zMapFeatureAddTranscriptCDS(feature,
-                                  (coding_region_start_is_set && coding_region_end_is_set),
-                                  coding_region_start, coding_region_end);
+      if (coding_region_start_is_set && coding_region_end_is_set)
+        {
+          zMapFeatureAddTranscriptCDS(feature, TRUE, coding_region_start + offset, coding_region_end + offset);
+        }
 
       Vector *exons = Transcript_getAllExons(rsf) ;
       transcriptAddExons(server, feature, exons) ;
@@ -1100,7 +1137,10 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
       feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
                             feature_mode, source, 0, 0,
                             get_features_data, feature_block) ;
+    }
 
+  if (feature)
+    {
       char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
       char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
       char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
@@ -1108,7 +1148,9 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
       int coding_region_start = 0;
       int coding_region_end = 0;
 
-      /* getCodingRegionStart gives an error if coding_region_start and start
+      const int offset = server->zmap_start - 1 ;
+
+      /* getCodingRegionStart gives an error if coding_region_start and start 
        * are both unset so we must check first */
       if (coding_region_start_is_set || start_is_set)
         coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
@@ -1119,9 +1161,10 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
       zMapFeatureTranscriptInit(feature);
       zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
 
-      zMapFeatureAddTranscriptCDS(feature,
-                                  (coding_region_start_is_set && coding_region_end_is_set),
-                                  coding_region_start, coding_region_end);
+      if (coding_region_start_is_set && coding_region_end_is_set)
+        {
+          zMapFeatureAddTranscriptCDS(feature, TRUE, coding_region_start + offset, coding_region_end + offset);
+        }
 
       Vector *exons = PredictionTranscript_getAllExons(rsf, 0) ;
       transcriptAddExons(server, feature, exons) ;
@@ -1239,8 +1282,37 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
 }
 
 
-static ZMapFeature makeFeature(EnsemblServer server,
-                               SeqFeature *rsf,
+/* Check whether we should load the given featureset */
+static gboolean loadFeatureset(EnsemblServer server, const char *featureset_name)
+{
+  gboolean result = TRUE ;
+
+  /* If the req_featuresets list is given then only load features in those
+   * featuresets. Otherwise, load all features. */
+  if (server->req_featuresets_only)
+    {
+      result = FALSE ;
+      GQuark check_featureset_id = zMapFeatureSetCreateID(featureset_name) ;
+      GList *item = server->req_featuresets;
+
+      for ( ; item ; item = item->next)
+        {
+          GQuark featureset_id = zMapFeatureSetCreateID(g_quark_to_string(((GQuark)GPOINTER_TO_INT(item->data)))) ;
+          
+          if (featureset_id == check_featureset_id)
+            {
+              result = TRUE ;
+              break ;
+            }
+        }
+    }
+
+  return result ;
+}
+
+
+static ZMapFeature makeFeature(EnsemblServer server, 
+                               SeqFeature *rsf, 
                                const char *feature_name_id_in,
                                const char *feature_name_in,
                                ZMapStyleMode feature_mode,
@@ -1264,7 +1336,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
 
   SO_accession = featureGetSOTerm(rsf) ;
 
-  if (SO_accession && source)
+  if (SO_accession && source && loadFeatureset(server, source))
     {
       if (!feature_name_id || *feature_name_id == '\0')
         feature_name_id = source ;
@@ -1596,15 +1668,10 @@ static Slice* getSlice(EnsemblServer server,
           pthread_mutex_unlock(&server->mutex) ;
         }
 
-      /* copy seq_name and coord system name because function takes non-const arg... ugh */
-      char *seq_name_copy = g_strdup(seq_name);
-      char *coord_system = g_strdup("chromosome") ;
-
-      /*! \todo Need to find the coord system a better way. For now just try in rough priority order. */
-      if (!slice) slice = getSliceForCoordSystem("chromosome", server, seq_name, start, end, strand) ;
-      if (!slice) slice = getSliceForCoordSystem("ultracontig", server, seq_name, start, end, strand) ;
-      if (!slice) slice = getSliceForCoordSystem("scaffold", server, seq_name, start, end, strand) ;
-      if (!slice) slice = getSliceForCoordSystem("contig", server, seq_name, start, end, strand) ;
+      if (!slice) 
+        {
+          slice = getSliceForCoordSystem("toplevel", server, seq_name, start, end, strand) ;
+        }
 
       if (server->slice_adaptor && slice)
         {
