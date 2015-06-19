@@ -1,3 +1,31 @@
+2015-06-19  Steve Miller  <sm23@sanger.ac.uk>
+ update to deal with transcript drawing bug - BUG FIX
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.c       |  276 +++++++++++++++++--
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.h       |    6 +-
+ src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |   63 ++----
+ 3 files changed, 267 insertions(+), 78 deletions(-)
+
+2015-06-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge remote branch 'origin/release/1.7.0' into release/1.7.0
+2015-06-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Improve debug messages. - TRIVIAL
+ src/include/ZMap/zmapRemoteControl.h      |    2 +-
+ src/zmapRemoteControl/zmapRemoteControl.c |   87 +++++++++++++---------------
+ 2 files changed, 41 insertions(+), 48 deletions(-)
+
+2015-06-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Remove redundant reply check causing erroneous error messages. - BUG FIX
+ src/zmapApp/zmapAppRemoteControl.c |   33 +++++++++------------------------
+ src/zmapApp/zmapApp_P.h            |    5 -----
+ 2 files changed, 9 insertions(+), 29 deletions(-)
+
+2015-06-16  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.6.0-261-g45daca8 - Update RT and git commit reports
+ src/ChangeLog                                  |   16 ++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 3 files changed, 18 insertions(+), 1 deletions(-)
+
 2015-06-16  Steve Miller  <sm23@sanger.ac.uk>
  remove windows machine from builds - BUILD
  scripts/build_config.sh |    3 ++-
