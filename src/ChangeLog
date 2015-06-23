@@ -1,3 +1,10 @@
+2015-06-19  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.6.0-266-g2352b1c - Update RT and git commit reports
+ src/ChangeLog                                  |   28 ++++++++++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    4 ++-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 3 files changed, 32 insertions(+), 2 deletions(-)
+
 2015-06-19  Steve Miller  <sm23@sanger.ac.uk>
  update to deal with transcript drawing bug - BUG FIX
  src/zmapWindow/canvas/zmapWindowCanvasDraw.c       |  276 +++++++++++++++++--
