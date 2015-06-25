@@ -1335,16 +1335,19 @@ static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
     {
       if ((full_data->current_object = (full_data->object_create_func)()))
         {
+          found = TRUE ;
+
           /* get stanza keys */
           g_list_foreach(full_data->stanza->keys, fill_stanza_key_value, user_data);
         
           full_data->object_list_out = g_list_append(full_data->object_list_out, full_data->current_object);
         }
-      else
-        {
-          zMapLogWarning("Object Create Function for stanza '%s'"
-                         " failed to return anything", stanza_name);
-        }
+    }
+
+  if (!found)
+    {
+      zMapLogWarning("Object Create Function for stanza '%s'"
+                     " failed to return anything", stanza_name);
     }
 
   return ;

@@ -1289,14 +1289,21 @@ static void importFileCB(gpointer cb_data)
         {
           servers = zmapViewGetIniSources(NULL, config_str, NULL) ;
 
-          server = (ZMapConfigSource) servers->data ;
+          if (servers)
+            {
+              server = (ZMapConfigSource) servers->data ;
 
-          if (zMapViewRequestServer(view, NULL, req_featuresets, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
-            zMapViewShowLoadStatus(view);
+              if (zMapViewRequestServer(view, NULL, req_featuresets, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
+                zMapViewShowLoadStatus(view);
+              else
+                zMapWarning("could not request %s",file_txt);
+
+              zMapConfigSourcesFreeList(servers);
+            }
           else
-            zMapWarning("could not request %s",file_txt);
-
-          zMapConfigSourcesFreeList(servers);
+            {
+              zMapWarning("Could not get servers for file '%s'", file_txt) ;
+            }
 
           g_free(config_str);
         }
