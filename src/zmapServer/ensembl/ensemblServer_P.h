@@ -52,6 +52,7 @@ typedef struct _EnsemblServerStruct
   char *user ;
   char *passwd ;
   char *db_name ;
+  char *db_prefix ;
 
   /* Results of server requests. */
   ZMapServerResponseType result ;

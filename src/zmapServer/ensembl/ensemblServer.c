@@ -255,6 +255,7 @@ static gboolean createConnection(void **server_out,
     server->passwd = g_strdup(url->passwd) ;
 
   server->db_name = zMapURLGetQueryValue(url->query, "db_name") ;
+  server->db_prefix = zMapURLGetQueryValue(url->query, "db_prefix") ;
 
   if (server->host && server->db_name)
     {
@@ -1275,6 +1276,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
   gboolean has_score = TRUE ;
   double score = 0.0 ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
+  char *unique_source = NULL ;
 
   SO_accession = featureGetSOTerm(rsf) ;
 
@@ -1296,11 +1298,17 @@ static ZMapFeature makeFeature(EnsemblServer server,
       else if (SeqFeature_getStrand(rsf) < 0)
         strand = ZMAPSTRAND_REVERSE ;
 
-      /* Create the unique id from the name and coords (cast away const... ugh) */
+      /* Create the unique id from the db name, feature name and coords (cast away const... ugh) */
       unique_id = zMapFeatureCreateID(feature_mode, (char*)feature_name_id, strand, start, end, match_start, match_end);
 
+      /* If a prefix is given, add it to the source name */
+      if (server->db_prefix)
+        unique_source = g_strdup_printf("%s_%s", server->db_prefix, source);
+      else
+        unique_source = g_strdup(source) ;
+
       /* Find the featureset, or create it if it doesn't exist */
-      GQuark feature_set_id = zMapFeatureSetCreateID((char*)source) ;
+      GQuark feature_set_id = zMapFeatureSetCreateID((char*)unique_source) ;
 
       ZMapFeatureSet feature_set = (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block,
                                                                                 feature_set_id, 
@@ -1308,7 +1316,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
 
       if (!feature_set)
         {
-          feature_set = makeFeatureSet(feature_name_id, feature_set_id, feature_mode, source, get_features_data, feature_block) ;
+          feature_set = makeFeatureSet(feature_name_id, feature_set_id, feature_mode, unique_source, get_features_data, feature_block) ;
         }
 
       if (feature_set)
