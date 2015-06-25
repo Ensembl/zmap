@@ -123,11 +123,13 @@ static void stylesFreeList(GList *config_styles_list) ;
  */
 
 
+/* Note that config_file can be null here - this returns a new context which has  
+ * the config_read flag as false. */
 ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
 {
   ZMapConfigIniContext context = zMapConfigIniContextCreate(config_file) ;
 
-  if(context && context->config_read)
+  if(context)
     {
       ZMapConfigIniContextKeyEntry stanza_group = NULL;
       char *stanza_name, *stanza_type;
@@ -1322,6 +1324,7 @@ static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
 {
   FetchReferencedStanzas full_data = (FetchReferencedStanzas)user_data;
   char *stanza_name = (char *)list_data;
+  gboolean found = FALSE ;
 
   full_data->current_stanza_name = stanza_name;
 
