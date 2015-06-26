@@ -42,7 +42,7 @@
 #include <zmapWindowCanvasTranscript_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
-
+#define USE_DRAWING_BUG_HACK 1
 
 static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
                                    ZMapWindowCanvasFeature feature,
@@ -54,7 +54,7 @@ static void transcriptGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan
 
 
 
-/* 
+/*
  *            Globals
  */
 
@@ -95,6 +95,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
 {
   gulong fill = 0L, outline = 0L ;
   int colours_set = 0, fill_set = 0, outline_set = 0 ;
+  int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
   double x1 = 0.0, x2 = 0.0, y1 = 0.0, y2 = 0.0, y1_cache = 0.0, y2_cache = 0.0, col_width = 0.0 ;
   ZMapWindowCanvasTranscript tr = NULL ;
   FooCanvasItem *foo = NULL ;
@@ -110,25 +111,6 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
   tr = (ZMapWindowCanvasTranscript) feature;
   transcript = &feature->feature->feature.transcript;
   style = *feature->feature->style;
-
-
-  /* draw a box */
-
-  /* colours are not defined for the CanvasFeatureSet
-   * as we can have several styles in a column
-   * but they are cached by the calling function
-   * and also the window focus code
-   * however, as we have CDS colours diff from non-CDS and possibly diff style in one column
-   * this is likely ineffective, but as the number of features is small we don't care so much
-   */
-
-  /*
-   * Set up non-cds colours
-   */
-  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
-  fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
-  outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
-
 
   /*
    * set up position.
@@ -168,7 +150,6 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
       feature->y2 = y2 = featureset->end ;
     }
 
-
   /* Quick hack for features that are completely outside of the sequence
    * region. These should not really be passed in, but occasionally are
    * due to bugs on the otterlace side (Feb. 20th 2014). We ignore truncation
@@ -178,6 +159,13 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
     {
       ignore_truncation_glyphs = TRUE ;
     }
+
+  /*
+   * Set up non-cds colours
+   */
+  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
+  fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
+  outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
   /*
    * Drawing of truncation glyphs themselves.
@@ -196,7 +184,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
 
           truncation_glyph_transcript_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_TRUNCATED_START,
                                                                            FALSE, TRUE) ;
- 
+
           truncation_glyph_transcript_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_TRUNCATED_END,
                                                                          FALSE, TRUE) ;
         }
@@ -224,7 +212,6 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
 
     }
 
-
   /*
    * Draw any UTR sections of an exon.
    */
@@ -234,7 +221,9 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
       if(transcript->flags.cds && transcript->cds_start > y1 && transcript->cds_start < y2)
         {
           zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, transcript->cds_start-1,
-                                           drawable, fill_set,outline_set,fill,outline) ;
+                                           drawable, fill_set, outline_set, fill, outline) ;
+
+
           y1 = transcript->cds_start ;
         }
 
@@ -242,7 +231,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
       if(transcript->flags.cds && transcript->cds_end > y1 && transcript->cds_end < y2)
         {
           zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, transcript->cds_end + 1, y2,
-                                           drawable, fill_set,outline_set,fill,outline) ;
+                                           drawable, fill_set, outline_set, fill, outline) ;
           y2 = transcript->cds_end ;
         }
     }
@@ -256,8 +245,10 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
       ZMapStyleColourType ct;
       GdkColor *gdk_fill = NULL, *gdk_outline = NULL;
 
-      ct = (feature->flags & WINDOW_FOCUS_GROUP_FOCUSSED ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL) ;
-      zMapStyleGetColours(*feature->feature->style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ct, &gdk_fill, NULL, &gdk_outline);
+      ct = ((feature->flags & WINDOW_FOCUS_GROUP_FOCUSSED)
+            ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL) ;
+      zMapStyleGetColours(*feature->feature->style,
+                          STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ct, &gdk_fill, NULL, &gdk_outline);
 
       if(gdk_fill)
         {
@@ -282,10 +273,9 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
   /*
    * Now draw either box for CDS of exon, or intron lines.
    */
-  int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
   if(tr->sub_type == TRANSCRIPT_EXON)
     {
-      zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set,outline_set,fill,outline) ;
+      zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set, outline_set, fill, outline) ;
     }
   else if (outline_set)
     {
@@ -298,22 +288,23 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
           foo_canvas_w2c(foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
           foo_canvas_w2c(foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
 
-          cy1_5 = (cy1 + cy2) / 2;
-          cx1_5 = (cx1 + cx2) / 2;
+          cy1_5 = (cy1 + cy2) / 2 ;
+          cx1_5 = (cx1 + cx2) / 2 ;
 
           c.pixel = outline;
-          gdk_gc_set_foreground (featureset->gc, &c);
+          gdk_gc_set_foreground (featureset->gc, &c) ;
 
           /*
-           * sm23 21st Feb. 2014.
-           *
-           * This modification to the y coordinate is required when truncation glyphs are drawn.
-           * It is a hack to get around what looks like a bug in some part of the drawing code
-           * or perhas the canvas itself.
+           * a hack to the intron lines
            */
+#ifdef USE_DRAWING_BUG_HACK
+          zMap_draw_line_hack(drawable, featureset, cx1_5, cy1, cx2, cy1_5) ;
+          zMap_draw_line_hack(drawable, featureset, cx2, cy1_5+1, cx1_5, cy2) ;
+#else
           zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, (featureset->draw_truncation_glyphs
                                                                  ? cy1_5+1 : cy1_5));
           zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
+#endif
         }
       else if(tr->sub_type == TRANSCRIPT_INTRON_START_NOT_FOUND)
         {
@@ -369,7 +360,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
 
 
 static ZMapWindowCanvasFeature transcriptAddFeature(ZMapWindowFeaturesetItem featureset,
-                                                                    ZMapFeature feature, double y1, double y2)
+                                                    ZMapFeature feature, double y1, double y2)
 {
   ZMapWindowCanvasFeature feat = NULL ;
   int ni = 0, ne = 0, i;
@@ -486,44 +477,21 @@ static ZMapWindowCanvasFeature transcriptAddFeature(ZMapWindowFeaturesetItem fea
 static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo,
                                                ZMapFeature feature, double x, double y)
 {
-  ZMapFeatureSubPart sub_part = NULL;
+  ZMapFeatureSubPart sub_part = NULL ;
 
   /* the interface to this is via zMapWindowCanvasItemGetInterval(), so here we have to look up the feature again */
   /*! \todo #warning revisit this when canvas items are simplified */
   /* and then we find the transcript data in the feature context which has a list of exons and introms */
   /* or we could find the exons/introns in the canvas and process those */
 
-  ZMapSpan exon,intron;
-  int ni = 0, ne = 0, i;
-  GArray *introns,*exons;
+  ZMapSpan exon,intron ;
+  int ni = 0, ne = 0, i ;
+  GArray *introns,*exons ;
   ZMapTranscript tr = NULL ;
 
   zMapReturnValIfFail(feature, sub_part ) ;
 
   tr = &feature->feature.transcript;
-
-#if 0
-  if(!y)        /* interface to legacy code they uses G_OBJECT_DATA */
-    {
-      ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
-
-      if(!featureset->point_canvas_feature)
-        return NULL;
-
-      sub_part = g_malloc0(sizeof *sub_part) ;
-      sub_part->start = featureset->point_canvas_feature->y1;
-      sub_part->end   = featureset->point_canvas_feature->y2;
-      sub_part->subpart = ZMAPFEATURE_SUBPART_EXON;
-      /* work out which one it really is... */
-      for(sub_part->index = 1, wcf = featureset->point_canvas_feature; wcf->left; wcf = wcf->left)
-        {
-          if()
-            sub_part->index++;
-        }
-
-      return sub_part;
-    }
-#endif
 
   introns = tr->introns;
   exons = tr->exons;
@@ -534,13 +502,13 @@ static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo,
 
   /* NOTE: is we have truncated introns then we will not return a sub part as they are not in the feature */
 
-  for(i = 0; i < ne; i++)
+  for(i = 0 ; i < ne ; i++)
     {
       exon = &g_array_index(exons, ZMapSpanStruct, i) ;
 
-      if(exon->x1 <= y && exon->x2 >= y)
+      if (exon->x1 <= y && exon->x2 >= y)
         {
-          sub_part = g_malloc0(sizeof *sub_part) ;
+          sub_part = g_new0(ZMapFeatureSubPartStruct, 1) ;
 
           if (feature->strand == ZMAPSTRAND_FORWARD)
             sub_part->index = i + 1 ;
@@ -550,7 +518,9 @@ static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo,
           sub_part->start = exon->x1;
           sub_part->end = exon->x2;
           sub_part->subpart = ZMAPFEATURE_SUBPART_EXON;
-          if(tr->flags.cds)
+
+          /* we have to handle both ends :-(   |----UTR-----|--------CDS--------|-----UTR------| */
+          if (tr->flags.cds)
             {
               if(tr->cds_start <= y && tr->cds_end >= y)
                 {
@@ -558,33 +528,42 @@ static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo,
                   sub_part->subpart = ZMAPFEATURE_SUBPART_EXON_CDS;
 
                   if(sub_part->start < tr->cds_start)
-                    sub_part->start = tr->cds_start;
-                  if(sub_part->end > tr->cds_end)                /* these coordinates are inclusive according to EG */
-                    sub_part->end = tr->cds_end;
+                    {
+                      sub_part->start = tr->cds_start;
+                    }
+
+                  if(sub_part->end > tr->cds_end)
+                    {
+                      sub_part->end = tr->cds_end ;
+                    }
                 }
-              /* we have to handle both ends :-(   |----UTR-----|--------CDS--------|-----UTR------| */
-              else if(y >= tr->cds_end)
+              else if (y >= tr->cds_end)
                 {
                   /* cursor not in CDS but could have some in this exon */
-                  if(sub_part->start <= tr->cds_end)
-                    sub_part->start = tr->cds_end + 1;
+                  if (sub_part->start <= tr->cds_end)
+                    {
+                      sub_part->start = tr->cds_end + 1;
+                    }
                 }
-              else if(y <= tr->cds_start)
+              else if (y <= tr->cds_start)
                 {
-                  if(sub_part->end >= tr->cds_start)
-                    sub_part->end = tr->cds_start - 1;
+                  if (sub_part->end >= tr->cds_start)
+                    {
+                      sub_part->end = tr->cds_start - 1;
+                    }
                 }
             }
-          return sub_part;
+
+          return sub_part ;
         }
 
       if (i < ni)
         {
           intron = &g_array_index(introns,ZMapSpanStruct,i) ;
 
-          if(intron->x1 <= y && intron->x2 >= y)
+          if (intron->x1 <= y && intron->x2 >= y)
             {
-              sub_part = g_malloc0(sizeof *sub_part) ;
+              sub_part = g_new0(ZMapFeatureSubPartStruct, 1) ;
 
               if (feature->strand == ZMAPSTRAND_FORWARD)
                 sub_part->index = i + 1 ;
@@ -594,8 +573,10 @@ static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo,
               sub_part->start = intron->x1;
               sub_part->end = intron->x2;
               sub_part->subpart = ZMAPFEATURE_SUBPART_INTRON;
+
               if(tr->flags.cds && tr->cds_start <= y && tr->cds_end >= y)
                 sub_part->subpart = ZMAPFEATURE_SUBPART_INTRON_CDS;
+
               return sub_part;
             }
         }

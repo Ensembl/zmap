@@ -45,7 +45,6 @@
 #define FILE_COUNT 5
 #define IMPORTANT_COUNT 2
 
-#undef WITH_LOGGING
 
 
 static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
@@ -347,7 +346,7 @@ static gboolean get_value(GKeyFile *key_file,
             /* Is this really an error for us? */
             if(clear_if_not_exist)
               {
-        g_value_reset(value);
+                g_value_reset(value);
               }
           }
           break;
@@ -362,11 +361,9 @@ static gboolean get_value(GKeyFile *key_file,
         
             /* It would be nice to have line numbers here,
              * but group and key should be enough I guess. */
-#ifdef WITH_LOGGING
-            zMapLogWarning("Failed reading/converting value '%s' for key '%s' in stanza '%s'. Expected type <>",
-           (try_again == NULL ? tmp_string : try_again),
-           key_name, stanza_name);
-#endif /* WITH_LOGGING */
+            zMapLogWarning("Failed reading/converting value '%s' for key '%s' in stanza '%s'",
+                           (try_again ? try_again : ""),
+                           key_name, stanza_name);
             if(try_again)
               g_free(try_again);
           }

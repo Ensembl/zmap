@@ -230,7 +230,7 @@ gboolean zMapControlProcessRemoteRequest(ZMap zmap,
       ZMapView view = NULL ;
       ZMapView request_view = NULL ;
       gboolean parse_view_id = TRUE ;
-      gboolean view_found = TRUE ;
+      /* gboolean view_found = TRUE ;*/
 
 
       /* Get the view from the request, if no view specified then use focus_viewwindow. */
@@ -247,7 +247,7 @@ gboolean zMapControlProcessRemoteRequest(ZMap zmap,
 	      GList *list_ptr ;
 
 	      /* Find the view in our list of views. */
-	      view_found = FALSE ;
+	      /*view_found = FALSE ;*/
 	      list_ptr = g_list_first(zmap->view_list) ;
 	      do
 		{
@@ -256,7 +256,7 @@ gboolean zMapControlProcessRemoteRequest(ZMap zmap,
 		  if (next_view == request_view)
 		    {
 		      view = request_view ;
-		      view_found = TRUE ;
+		      /*view_found = TRUE ;*/
 
 		      break ;
 		    }

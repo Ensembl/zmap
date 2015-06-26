@@ -3,6 +3,10 @@ include $(top_srcdir)/Makefile.common
 
 SUBDIRS = acedb das pipe file
 
+if USE_ENSEMBL
+SUBDIRS += ensembl
+endif
+
 noinst_LTLIBRARIES = libZMapServer.la libZMapServers.la
 
 libZMapServer_la_SOURCES = zmapServer.h \
@@ -26,6 +30,10 @@ pipe/libPipeServer.la   \
 file/libFileServer.la   \
 das/libDasServer.la     \
 $(NULL)
+
+if USE_ENSEMBL
+libZMapServers_la_LIBADD += ensembl/libEnsemblServer.la
+endif
 
 libZMapServers_la_CFLAGS  = 
 libZMapServers_la_LDFLAGS = 

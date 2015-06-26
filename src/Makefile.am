@@ -23,15 +23,20 @@ include $(srcdir)/Makefile.common
 #
 ACLOCAL_AMFLAGS = -I m4
 
-
-
-
 # ZMAP_SRC_DIRS See configure.ac
 if USE_GBTOOLS
 OPTIONAL_SUBDIRS = gbtools
 endif
 
-SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop 
+
+if USE_ENSEMBL
+if USE_ENSEMBL_SUBDIR
+SUBDIRS += ensc-core/src 
+endif
+endif
+
+SUBDIRS += include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
 
 
 CLEANFILES = $(pkgconfig_DATA)
@@ -183,14 +188,18 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/htslib-develop/libhts.a              \
 	$(top_builddir)/AceConn/src/.libs/libAceConn.a       
 
+if USE_ENSEMBL
+if USE_ENSEMBL_SUBDIR
+zmap_LDADD += $(top_builddir)/ensc-core/src/libensc.a
+endif
+endif
+
 # If we have gbtools in a subdirectory, add the .a file, otherwise
 # look for a locally installed version
 if USE_GBTOOLS
-zmap_LDADD +=                                                \
-	$(top_builddir)/gbtools/libgbtools.a            
+zmap_LDADD += $(top_builddir)/gbtools/libgbtools.a            
 else
-zmap_LDADD +=                                                \
-	-lgbtools
+zmap_LDADD += -lgbtools
 endif
 
 # The zeromq library has a different suffix on cygwin
@@ -208,6 +217,7 @@ zmap_LDADD +=                                                \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
 	$(GTK_LIBS)			                     \
 	$(LIBCURL) -lexpat -lX11 -lz                         \
+	$(MYSQL_LDFLAGS)                                     \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 
@@ -218,7 +228,7 @@ zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
 #zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 zmap_LINK         = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
-zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
+zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp $(MYSQL_CFLAGS)
 zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
 # MACOSX_UNIVERSAL_FILE was also in LDFLAGS...
 

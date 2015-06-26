@@ -864,7 +864,7 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
   /* Create the feature with default values */
   ZMapFeature feature = zMapFeatureCreateFromStandardData(SCRATCH_FEATURE_NAME,
                                                           NULL,
-                                                          NULL,
+                                                          "transcript",
                                                           ZMAPSTYLE_MODE_TRANSCRIPT,
                                                           &feature_set->style,
                                                           0,
@@ -1172,22 +1172,22 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
             }
         }
 
-      /* Create two empty features, one for each strand */
-      ZMapFeature feature_fwd = zMapFeatureCreateEmpty() ;
+      /* Create the empty feature */
+      ZMapFeature new_feature = zMapFeatureCreateEmpty() ;
 
-      zMapFeatureAddStandardData(feature_fwd, "temp_feature_fwd", SCRATCH_FEATURE_NAME,
-                                 NULL, NULL,
+      zMapFeatureAddStandardData(new_feature, "temp_feature", SCRATCH_FEATURE_NAME,
+                                 NULL, "transcript",
                                  ZMAPSTYLE_MODE_TRANSCRIPT, &scratch_featureset->style,
                                  0, 0, FALSE, 0.0,
                                  ZMAPSTRAND_FORWARD);
 
-      zMapFeatureTranscriptInit(feature_fwd);
-      zMapFeatureAddTranscriptStartEnd(feature_fwd, FALSE, 0, FALSE);
+      zMapFeatureTranscriptInit(new_feature);
+      zMapFeatureAddTranscriptStartEnd(new_feature, FALSE, 0, FALSE);
 
       //zMapFeatureSequenceSetType(feature, ZMAPSEQUENCE_PEPTIDE);
       //zMapFeatureAddFrame(feature, ZMAPFRAME_NONE);
 
-      zMapFeatureSetAddFeature(scratch_featureset, feature_fwd);
+      zMapFeatureSetAddFeature(scratch_featureset, new_feature);
     }
 
   /* Also initialise the "hand_built" column. xace puts newly created

@@ -101,6 +101,12 @@ typedef struct ZMapViewSessionServerStructName
       char *path ;
       char *query ;
     } pipe ;
+
+    struct
+    {
+      char *host ;
+      int port ;
+    } ensembl ;
   } scheme_data ;
 
 } ZMapViewSessionServerStruct, *ZMapViewSessionServer ;

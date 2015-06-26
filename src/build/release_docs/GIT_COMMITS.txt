@@ -1,25 +1,42 @@
 
-Git commits for  from commit "production" until commit "release/1.6.0"
+Git commits for  from commit "production" until commit "release/1.7.0"
 
-5259eb8 2015-04-16 Update gbtools README file - DOC
-e6bf84a 2015-04-16 Add n/N shortcut key to get nucleotide sequence for a feature. - NEW FEATURE 'nucleotide shortcut key'
-e843a71 2015-04-16 Merge branch 'feature/New_splices_for_Adam' into develop
-a08a2ea 2015-04-16 bug fix for long feature and featureset names in right-click menus - RT 463363
-50a3d58 2015-04-01 Add more debug messages to try to understand long start up timeout on mac. - BUG FIX
-c0b6f87 2015-04-13 fix for the second part of the ticket - RT 462835
-836ffda 2015-04-13 fix to first part of the problem - RT 462835
-cbfac30 2015-04-10 Merge branch 'feature/column_hide' into develop
-138053f 2015-04-08 bug fix to server return codes - BUG FIX
-eccf506 2015-04-08 zoom_to_item flag was not set, thus calls to buggy code were made - RT 461328
-106a25b 2015-04-07 Merge branch 'feature/loading_errors' into develop
-d523d39 2015-03-26 fix to gap string parsing - BUG FIX
-109935c 2015-03-24 small change to clipping logic for alignment features (related to rt:417362) - BUG FIX
-a4d91d7 2015-03-24 missing alignment features now correctly included in zmap - RT 417362
-3b29817 2015-03-19 fix for lasso select evidence on test release - RT 458109
-7602d44 2015-03-18 Merge branch 'feature/gbtools' into develop
-997dcd7 2015-03-18 added the feature source to the Feature Details window - RT 457778
-a159455 2015-03-17 Merge branch 'feature/bump_bug' into develop
-6106a4f 2015-03-16 Merge branch 'feature/manual' into develop
+2352b1c 2015-06-19 update to deal with transcript drawing bug - BUG FIX
+b77dd7f 2015-06-16 Merge remote branch 'origin/release/1.7.0' into release/1.7.0
+7074b84 2015-06-16 Remove redundant reply check causing erroneous error messages. - BUG FIX
+10abeac 2015-06-11 Merge remote branch 'origin/develop' into develop
+7e83e4b 2015-06-11 Merge branch 'feature/coords' into develop
+3ed2d7e 2015-06-10 Fix a bug with CDS coords in ensembl - BUG FIX
+1eeb39f 2015-06-09 Fix link error in zmap help page - DOC
+9c10ffa 2015-06-08 Fix issue with relative stylesfile path with ~ expansion - NEW FEATURE 'Improve config file handling'
+ea4c9db 2015-06-08 Better method of checking current user's file permissions - NEW FEATURE 'Improve config file handling'
+aed13a9 2015-06-08 Merge remote branch 'origin/develop' into develop
+0b5630e 2015-06-08 Fix xml errors in examples. - DOC
+5cafee8 2015-06-03 fix for web-browser not opening when running on tviewsrv - BUG FIX
+9529862 2015-05-28 Do tilde expansion for filepath config values (data-dir) - NEW FEATURE 'config tilde expansion'
+9502e15 2015-05-28 Do tilde expansion for filepath config values (stylesfile, pfetch location, log file) - NEW FEATURE 'config tilde expansion'
+6031fea 2015-05-28 Improve handling of relative paths and non-writeable locations for config files - NEW FEATURE 'Improve config file handling'
+50bbe34 2015-05-27 Add Gemma to list of zmap authors. - DOC
+a641df0 2015-05-27 Add separate mysql library init call in globalinit function to try fix "random" crashing. - BUG FIX
+f9a3090 2015-05-21 Fix problem with CDS for ensembl transcripts - BUG FIX
+322add3 2015-05-21 Fix off-by-one error in ensembl - BUG FIX
+7bb37ac 2015-05-21 Fix a bug with match coords in ensembl - BUG FIX
+d79d14d 2015-05-21 Temp fix for 3ft in ensembl - BUG FIX
+6ba65e3 2015-05-21 Fix bug saving new features to GFF - BUG FIX
+aa4af9f 2015-05-20 Merge branch 'feature/ensembl' into develop
+e4db813 2015-05-20 Fix potential crash in ensembl when slice not found - BUG FIX
+678aa02 2015-05-19 Merge branch 'feature/manual' into develop
+5104ad7 2015-05-07 some more changes for the previous
+3af05af 2015-05-07 commit to prepare for some work on the scale bar; should not change functionality
+086f269 2015-04-29 Add description of filter shortcut. - DOC
+780a730 2015-04-29 Remove incorrect * operators, parameters already pointers to int. - BUG FIX
+0c5c1da 2015-04-29 Fix selection string to support multiple single exon selection. - BUG FIX
+9dc3cb5 2015-04-29 Make feature subpart cope with CDS subpart. - BUG FIX
+c632682 2015-04-27 Merge branch 'feature/ensembl' into develop - NEW FEATURE 'ensembl prototype'
+324dc6d 2015-04-24 revision to my previous fix - wrong array function called - BUG FIX
+e8772c9 2015-04-24 fix to crash on revcomp with feature search results window open - RT 465286
+e865c60 2015-04-21 fix to remove unneccessary test in canvasWindowEventCB - BUG FIX
+51fcc4a 2015-04-17 fix to long feature and featureset names in the search results window - BUG FIX
 
 
 End of git commits

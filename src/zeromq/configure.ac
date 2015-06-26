@@ -115,6 +115,7 @@ libzmq_dso_visibility="yes"
 libzmq_on_mingw32="no"
 libzmq_on_android="no"
 libzmq_on_linux="no"
+libzmq_on_mac="no"
 
 # Set some default features required by 0MQ code.
 CPPFLAGS="-D_REENTRANT -D_THREAD_SAFE $CPPFLAGS"
@@ -172,6 +173,7 @@ case "${host_os}" in
         CPPFLAGS="-D_DARWIN_C_SOURCE $CPPFLAGS"
         libzmq_pedantic="no"
         libzmq_werror="no"
+        libzmq_on_mac="yes"
         AC_DEFINE(ZMQ_HAVE_OSX, 1, [Have DarwinOSX OS])
         AC_LANG_PUSH([C++])
         LIBZMQ_CHECK_LANG_FLAG_PREPEND([-Wno-uninitialized])
@@ -432,6 +434,7 @@ AM_CONDITIONAL(BUILD_PGM, test "x$libzmq_pgm_ext" = "xyes")
 AM_CONDITIONAL(ON_MINGW, test "x$libzmq_on_mingw32" = "xyes")
 AM_CONDITIONAL(ON_ANDROID, test "x$libzmq_on_android" = "xyes")
 AM_CONDITIONAL(ON_LINUX, test "x$libzmq_on_linux" = "xyes")
+AM_CONDITIONAL(ON_MAC, test "x$libzmq_on_mac" = "xyes")
 
 # Checks for library functions.
 AC_TYPE_SIGNAL

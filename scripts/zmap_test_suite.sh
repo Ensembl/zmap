@@ -9,8 +9,11 @@ else
    BASE_DIR=$SCRIPT_DIR
 fi
 
-. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+# required by build_config.sh
 set -o history
+
+. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
@@ -123,7 +126,8 @@ CONFIG_FILE=$OUTPUT_DIR/${USER}-xremote.ini
 
 # Set variables for the files
 
-PROGRAM_PATH=$RELEASE_LOCATION/$(uname -ms | sed -e "s/ /_/g")/bin
+config_set_ZMAP_ARCH `hostname -s`
+PROGRAM_PATH=$RELEASE_LOCATION/$ZMAP_ARCH/bin
 
 SEQUENCE=20.2748056-2977904
 DATABASE_LOCATION=~/acedb_sessions/$SEQUENCE

@@ -137,7 +137,7 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
 
   if (config_file)
     {
-      dir_context->config_file = zMapGetFile(dir_context->config_dir, config_file, FALSE, NULL);
+      dir_context->config_file = zMapGetFile(dir_context->config_dir, config_file, FALSE, "r", NULL);
     }
 
   if ((zmap_home = getenv("ZMAP_HOME")))
@@ -145,7 +145,7 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
       zmap_home = g_strdup_printf("%s/etc", zmap_home) ;
 
       if((dir_context->zmap_conf_dir  = zMapGetDir(zmap_home, FALSE, FALSE)))
-        dir_context->zmap_conf_file = zMapGetFile(dir_context->zmap_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE, NULL) ;
+        dir_context->zmap_conf_file = zMapGetFile(dir_context->zmap_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE, "r", NULL) ;
 
       g_free(zmap_home) ;
     }
@@ -155,7 +155,7 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
     }
 
   if (!((dir_context->sys_conf_dir  = zMapGetDir("/etc", FALSE, FALSE))
-        && (dir_context->sys_conf_file = zMapGetFile(dir_context->sys_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE, NULL))))
+        && (dir_context->sys_conf_file = zMapGetFile(dir_context->sys_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE, "r", NULL))))
     {
       dir_context->sys_conf_dir = dir_context->sys_conf_file = NULL;
     }
@@ -213,7 +213,7 @@ char *zMapConfigDirFindFile(char *filename)
   ZMapConfigDir dir_context = dir_context_G ;
 
   if (dir_context) 
-    file_path = zMapGetFile(dir_context->config_dir, filename, FALSE, NULL) ;
+    file_path = zMapGetFile(dir_context->config_dir, filename, FALSE, "r", NULL) ;
 
   return file_path ;
 }

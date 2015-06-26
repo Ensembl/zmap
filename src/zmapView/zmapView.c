@@ -1361,7 +1361,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
         zmapViewResetWindows(zmap_view, TRUE);
 
-      zMapWindowNavigatorReset(zmap_view->navigator_window);
+        zMapWindowNavigatorReset(zmap_view->navigator_window);
 
         zMapLogTime(TIMER_REVCOMP,TIMER_START,0,"Context");
 
@@ -1815,7 +1815,7 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
                * for a Save option rather than Save As...) */
               const char *file = zMapViewGetSaveFile(zmap_view, FALSE) ;
               char *filename = g_strdup(file) ;
-              gboolean saved = zMapWindowExportFeatures(window, FALSE, NULL, &filename, &error) ;
+              gboolean saved = zMapWindowExportFeatures(window, TRUE, FALSE, NULL, &filename, &error) ;
 
               if (!saved)
                 {
@@ -1928,9 +1928,9 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** styles
 
       if(stylesfile)
         {
-          zMapConfigIniContextGetString(context,
-                                        ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
-                                        ZMAPSTANZA_APP_STYLESFILE,stylesfile);
+          zMapConfigIniContextGetFilePath(context,
+                                          ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
+                                          ZMAPSTANZA_APP_STYLESFILE,stylesfile);
         }
       zMapConfigIniContextDestroy(context);
 
@@ -2546,6 +2546,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
             if (g_ascii_strncasecmp(src->url,"pipe", 4) != 0
+                && g_ascii_strncasecmp(src->url,"ensembl", 7) != 0
                 && g_ascii_strncasecmp(src->url,"file", 4) != 0)
               continue;
 
@@ -3525,12 +3526,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                     /* Recover the stepRequest from the view connection and process the data from
                      * the request. */
-                    if (!(request = zmapViewStepListFindRequest(view_con->step_list, req_any->type, view_con)))
+                    if (!req_any || !view_con || !(request = zmapViewStepListFindRequest(view_con->step_list, req_any->type, view_con)))
                       {
                         zMapLogCritical("Request of type %s for connection %s not found in view %s step list !",
-                                        zMapServerReqType2ExactStr(req_any->type),
-                                        view_con->url,
-                                        zmap_view->view_name) ;
+                                        (req_any ? zMapServerReqType2ExactStr(req_any->type) : ""),
+                                        (view_con ? view_con->url : ""),
+                                        (zmap_view ? zmap_view->view_name : "")) ;
 
                         kill_connection = TRUE ;
                       }
@@ -5859,10 +5860,8 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 
             /* rev comp the request to get the right features, we request as fwd strand */
 
-            req_start = zmapFeatureRevCompCoord(req_start,
-                                                view->features->parent_span.x1,view->features->parent_span.x2);
-            req_end   = zmapFeatureRevCompCoord(req_end,
-                                                view->features->parent_span.x1,view->features->parent_span.x2);
+            zmapFeatureRevCompCoord(&req_start, view->features->parent_span.x1,view->features->parent_span.x2);
+            zmapFeatureRevCompCoord(&req_end, view->features->parent_span.x1,view->features->parent_span.x2);
 
             tmp = req_start;
             req_start = req_end;

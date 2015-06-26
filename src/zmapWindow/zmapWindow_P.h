@@ -103,6 +103,17 @@ typedef enum
 #define IS_3FRAME(FRAME_MODE) \
   ((FRAME_MODE) & DISPLAY_3FRAME_ON)
 
+/*
+ * Coordinate type to display to the user in the window.
+ * This includes the ruler, and scale bar.
+ */
+typedef enum
+  {
+    DISPLAY_COORD_INVALID,
+    DISPLAY_COORD_CHROM,      /* chromosome coordinates           */
+    DISPLAY_COORD_SLICE,      /* slice coordinate                 */
+    DISPLAY_COORD_USER        /* wrt user-selected origin         */
+  } DisplayCoordMode ;
 
 
 
@@ -142,7 +153,7 @@ typedef struct ZMapWindowFocusItemStructType
 
 
 
-/* 
+/*
  * ok...this is messed up...all the window command stuff needs sorting out.....some commands
  * need to be exposed...others not.....sigh....
  */
@@ -850,6 +861,7 @@ typedef struct ZMapWindowStructType
   /* I'm trying these out as using the sequence start/end is not correct for window stuff. */
   double min_coord ;					    /* min/max canvas coords */
   double max_coord ;
+  double display_origin ;   /* set in chromosome coordinates */
 
   double align_gap ;					    /* horizontal gap between alignments. */
   double column_gap ;					    /* horizontal gap between columns. */
@@ -991,6 +1003,13 @@ typedef struct ZMapWindowStructType
    * featureset then we need to do some special processing before/after editing the scratch
    * feature.)*/
   GQuark highlight_evidence_featureset_id ;
+
+  /*
+   * Type of coordinates to display to the user in the ruler
+   * and scale bar.
+   */
+  gboolean force_scale_redraw ;
+  ZMapWindowDisplayCoordinates display_coordinates ;
 
 
 } ZMapWindowStruct ;
@@ -1505,9 +1524,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptide(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
 					      ZMapGUIMenuItemCallbackFunc callback_func,
 					      gpointer callback_data) ;
-ZMapGUIMenuItem zmapWindowMakeMenuExportOps(int *start_index_inout,
-					    ZMapGUIMenuItemCallbackFunc callback_func,
-					    gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuColumnExportOps(int *start_index_inout,
+                                                  ZMapGUIMenuItemCallbackFunc callback_func,
+                                                  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuItemExportOps(int *start_index_inout,
+                                                ZMapGUIMenuItemCallbackFunc callback_func,
+                                                gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
 					       ZMapGUIMenuItemCallbackFunc callback_func,
 					       gpointer callback_data) ;
@@ -1646,13 +1668,15 @@ void zmapWindowDebugWindowCopy(ZMapWindow window);
 void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 
 
-double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window, FooCanvasGroup *group,
+double zmapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window, FooCanvasGroup *group,
 			      int scroll_start, int scroll_end,
 			      int seq_start, int seq_end,
-			      double zoom_factor, gboolean revcomped, gboolean zoomed);
+         int true_start, int true_end,
+			      double zoom_factor, gboolean revcomped, gboolean zoomed,
+         ZMapWindowDisplayCoordinates display_coordinates);
 
-double zMapWindowScaleCanvasGetWidth(ZMapWindowScaleCanvas ruler);
-void zMapWindowScaleCanvasSetScroll(ZMapWindowScaleCanvas ruler, double x1, double y1, double x2, double y2);
+double zmapWindowScaleCanvasGetWidth(ZMapWindowScaleCanvas ruler);
+void zmapWindowScaleCanvasSetScroll(ZMapWindowScaleCanvas ruler, double x1, double y1, double x2, double y2);
 
 gboolean zmapWindowItemIsVisible(FooCanvasItem *item) ;
 gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
@@ -1838,7 +1862,10 @@ void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas obj, double y1, double 
 void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas obj);
 void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas obj, gboolean revcomped) ;
 void zmapWindowScaleCanvasSetSpan(ZMapWindowScaleCanvas ruler, int start,int end);
-gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, int x, int y,int seq_start, int seq_end);
+gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, int x, int y,int seq_start, int seq_end,
+                                   int true_start, int true_end,
+                                   ZMapWindowDisplayCoordinates display_coordinates,
+                                   gboolean force_redraw );
 void zmapWindowScaleCanvasSetVAdjustment(ZMapWindowScaleCanvas obj, GtkAdjustment *vadjustment);
 void zmapWindowScaleCanvasSetPixelsPerUnit(ZMapWindowScaleCanvas obj, double x, double y);
 void zmapWindowScaleCanvasSetLineHeight(ZMapWindowScaleCanvas obj, double border);

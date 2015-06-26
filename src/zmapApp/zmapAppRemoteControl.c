@@ -352,7 +352,7 @@ static void zmapReplySentCB(void *user_data)
 
 /* Called by any component of ZMap (e.g. control, view etc) which needs a request
  * to be sent to the peer program. This is the entry point for zmap sub-systems
- * that wish to send a request.
+ * that wish to send a request to the peer.
  * 
  *  */
 static void sendZMapRequestCB(gpointer caller_data,
@@ -402,9 +402,9 @@ static void sendZMapRequestCB(gpointer caller_data,
           char *err_msg = NULL ;
 
           if (result && !(request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller,
-                                                                           command, -1,
-                                                                           ZACP_VIEWID, view,
-                                                                           (char*)NULL)))
+                                                                         command, -1,
+                                                                         ZACP_VIEWID, view,
+                                                                         (char*)NULL)))
             {
               err_msg = g_strdup_printf("Could not create request for command \"%s\"", command) ;
 
@@ -439,8 +439,6 @@ static void sendZMapRequestCB(gpointer caller_data,
 
               remote->error_handler_func = error_handler_func ;
               remote->error_handler_func_data = error_handler_func_data ;
-
-              remote->curr_zmap_request = request ;
 
               if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, request)))
                 {
@@ -479,7 +477,8 @@ static void zmapRequestSentCB(void *user_data)
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
 
   /* try modal..... */
-  zMapLogWarning("Setting modal on for request %s", app_context->remote_control->curr_zmap_request) ;
+  zMapLogWarning("%s", "Setting modal on to send zmap request") ;
+
   setModal(app_context, TRUE) ;
 
   return ;
@@ -498,23 +497,9 @@ static void receivedPeerReplyCB(ZMapRemoteControl remote_control, char *reply, v
   zMapLogWarning("%s", "Setting modal off") ;
   setModal(app_context, FALSE) ;
 
-
-  /* Again.....is this a good idea....the app callback needs to be called whatever happens
-   * to reset state...fine to log a bad message but we still need to call the app func. */
-  if (!(result = zMapRemoteCommandValidateReply(remote->remote_controller,
-                                                remote->curr_zmap_request, reply, &error_out)))
-    {
-      /* error message etc...... */
-      zMapLogWarning("Bad remote message from peer: %s", error_out) ;
-
-      g_free(error_out) ;
-    }
-  else
-    {
-      /* Call the command processing code, there's no return code here because only the function
-       * ultimately handling the problem knows how to handle the error. */
-      zmapAppProcessAnyReply(app_context, reply) ;
-    }
+  /* Call the command processing code, there's no return code here because only the function
+   * ultimately handling the problem knows how to handle the error. */
+  zmapAppProcessAnyReply(app_context, reply) ;
 
   return ;
 }

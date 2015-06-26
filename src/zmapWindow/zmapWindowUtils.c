@@ -69,14 +69,30 @@ typedef struct
  */
 int zmapWindowCoordToDisplay(ZMapWindow window, int coord)
 {
+  /*
+   * TRUE     means our "normal" way of looking at the interval
+   * FALSE    means chromosome coordinates
+   */
+  gboolean normal_coords = TRUE ;
   /* min_coord is the start of the sequence even if revcomp'ed
    * window->sequence->start is fwd strand
    * but note that max_coord has been incremented to cover beyond the last base
    */
-  coord = coord - window->min_coord + 1 ;
+  if (normal_coords)
+    coord = coord - window->min_coord + 1 ;
+  else
+    coord = coord ;
 
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    coord -= window->sequence->end - window->sequence->start + 2;
+    {
+      if (normal_coords)
+        coord -= window->sequence->end - window->sequence->start + 2 ;
+      else
+        {
+          coord = -window->sequence->start -
+                   (window->max_coord - window->min_coord - coord) ;
+        }
+    }
 
   return(coord);
 }
@@ -106,7 +122,7 @@ void zmapWindowCoordPairToDisplay(ZMapWindow window,
 
 /* This routine and the one above should be merged...I'm pretty unhappy about this and
  * will change it.....
- * 
+ *
  * If _not_ reverse complemented simply returns original coords.
  *  */
 void zmapWindowParentCoordPairToDisplay(ZMapWindow window,
@@ -212,7 +228,7 @@ double zmapWindowExt(double start, double end)
 {
   double extent = 0.0;
 
-  if (start > end) 
+  if (start > end)
     return extent ;
 
   extent = end - start + 1 ;
@@ -238,7 +254,7 @@ double zmapWindowExt(double start, double end)
  */
 void zmapWindowSeq2CanExt(double *start_inout, double *end_inout)
 {
-  if (!start_inout || !end_inout || (*start_inout > *end_inout)) 
+  if (!start_inout || !end_inout || (*start_inout > *end_inout))
     return ;
 
   *end_inout += 1 ;
@@ -273,7 +289,7 @@ void zmapWindowExt2Zero(double *start_inout, double *end_inout)
  * and hence zero-based. */
 void zmapWindowSeq2CanExtZero(double *start_inout, double *end_inout)
 {
-  if (!start_inout || !end_inout || (*start_inout > *end_inout)) 
+  if (!start_inout || !end_inout || (*start_inout > *end_inout))
     return ;
 
   *end_inout = *end_inout - *start_inout ;                    /* do this first before zeroing start ! */
@@ -289,7 +305,7 @@ void zmapWindowSeq2CanExtZero(double *start_inout, double *end_inout)
 /* NOTE: offset may not be quite what you think, the routine recalculates */
 void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offset)
 {
-  if (!start_inout || !end_inout || (*start_inout > *end_inout)) 
+  if (!start_inout || !end_inout || (*start_inout > *end_inout))
     return ;
 
   *start_inout -= offset ;
@@ -335,7 +351,7 @@ void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_arr
 {
   GPtrArray *window_array ;
 
-  if (!window_array_inout) 
+  if (!window_array_inout)
     return ;
 
   if ((window_array = *window_array_inout))
@@ -659,7 +675,7 @@ void zmapWindowShowStyle(ZMapFeatureTypeStyle style)
 
 
 
-/* 
+/*
  *                   Internal routines
  */
 

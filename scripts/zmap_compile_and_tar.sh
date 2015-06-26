@@ -12,8 +12,11 @@ else
    BASE_DIR=$SCRIPT_DIR
 fi
 
-. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+# required by build_config.sh
 set -o history
+
+. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 zmap_message_out "Start of script."
@@ -139,7 +142,8 @@ if [ "x$TAR_TARGET" != "x" ]; then
 
     zmap_message_out $TAR_TARGET_HOST $TAR_TARGET_PATH
     TAR_TARGET_CVS=$CVS_MODULE.$(hostname -s)
-    UNAME_DIR=$(uname -ms | sed -e 's/ /_/g')
+    config_set_ZMAP_ARCH `hostname -s`
+    UNAME_DIR=$ZMAP_ARCH
 
     [ "x$TAR_TARGET_CVS"  != "x" ] || zmap_message_exit "No CVS set."
 
@@ -178,35 +182,8 @@ then
   arch_subdir=""                        # the subdirectory for the current machine architecture
   annotools_subdir="annotools"          # the subdirectory for annotools
 
-  opsys=`uname -s`
-  
-  case $opsys in
-    "Linux")
-      case `uname -m` in
-        "ia64")
-          arch_subdir="linux-ia64"
-          ;;
-  
-        "x86_64")
-          arch_subdir="linux-x86_64"
-          ;;
-  
-        "i686")
-          arch_subdir="linux-i386"
-          ;;
-  
-        *)
-          ;;
-      esac
-      ;;
-  
-    "Darwin")
-      arch_subdir="macosx-10-i386"
-      ;;
-  
-    *)
-      ;;
-  esac
+  config_set_PROJECT_ARCH `hostname -s`
+  arch_subdir=$PROJECT_ARCH
   
   if [[ $arch_subdir != "" ]]
   then
@@ -240,14 +217,13 @@ then
     ssh $dev_machine "$copy_script $server_dir $project_area/bin"
     wait
   
-    # We don't currently build on other 64 bit ubuntu because the lucid build works there.
-    # This means we need to copy the linux build to these (note that we only have 64-bit 
-    # precise and trusty machines).
-    if [ $arch_subdir == "linux-x86_64" ]
+    # We don't currently build on trusty 64-bit ubuntu because the precise build works there.
+    # This means we need to copy the precise build to the trusty destination on /software.
+    if [ $arch_subdir == "precise-x86_64" ]
     then
-      other_64_subdirs="precise-x86_64 trusty-x86_64"
+      copy_subdirs="trusty-x86_64"
 
-      for dest_subdir in $other_64_subdirs; do
+      for dest_subdir in $copy_subdirs; do
         dest_project_area=$software_root_dir/$dest_subdir/$annotools_subdir$build_subdir
 
         zmap_message_out "Running: ssh $dev_machine $copy_script $source_dir $dest_project_area"

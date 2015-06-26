@@ -179,8 +179,9 @@ char *zMapExpandFilePath(char *path_in)
 
 
 /* Construct file path from directory and filename and check if it can be accessed, if it
- * doesn't exist then create the file as read/writeable but empty.  */
-char *zMapGetFile(char *directory, char *filename, gboolean make_file, GError **error)
+ * doesn't exist then create the file as read/writeable but empty. 'permissions' should be
+ * the required permissions, e.g. 'rw' if read and write access are required */
+char *zMapGetFile(char *directory, char *filename, gboolean make_file, const char *permissions, GError **error)
 {
   gboolean status = FALSE ;
   GError *g_error = NULL ;
@@ -190,7 +191,7 @@ char *zMapGetFile(char *directory, char *filename, gboolean make_file, GError **
   filepath = g_build_path(ZMAP_SEPARATOR, directory, filename, NULL) ;
 
   /* Is there a configuration file in the config dir that is readable/writeable ? */
-  if (!(status = zMapFileAccess(filepath, "rw")))
+  if (!(status = zMapFileAccess(filepath, permissions)))
     {
       if (make_file)
         {
@@ -231,31 +232,33 @@ char *zMapGetFile(char *directory, char *filename, gboolean make_file, GError **
  * If no mode then test is for "rwx". */
 gboolean zMapFileAccess(char *filepath, char *mode)
 {
-  gboolean access = FALSE ;
+  gboolean can_access = FALSE ;
   struct stat stat_buf ;
 
   /* zMapAssert(filepath && *filepath) ; */
   if (!filepath || !*filepath)
-    return access ;
+    return can_access ;
 
   if (stat(filepath, &stat_buf) == 0 && S_ISREG(stat_buf.st_mode))
     {
       if (!mode)
         mode = "rwx" ;
 
-      access = TRUE ;
+      int permissions = F_OK ;
 
-      if (access && strstr(mode, "r") && !(stat_buf.st_mode & S_IRUSR))
-        access = FALSE ;
+      if (strstr(mode, "r"))
+        permissions = R_OK ;
 
-      if (access && strstr(mode, "w") && !(stat_buf.st_mode & S_IWUSR))
-        access = FALSE ;
+      if (strstr(mode, "w"))
+        permissions |= W_OK;
 
-      if (access && strstr(mode, "x") && !(stat_buf.st_mode & S_IXUSR))
-        access = FALSE ;
+      if (strstr(mode, "x"))
+        permissions |= X_OK;
+
+      can_access = (access(filepath, permissions) == 0) ;
     }
 
-  return access ;
+  return can_access ;
 }
 
 

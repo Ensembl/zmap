@@ -512,7 +512,9 @@ static void translationPopulate(ZMapFeatureBlock feature_block,
                                 char *dna,
                                 int block_start, int block_end)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   int block_position ;
+#endif
   ZMapPeptide pep ;
   ZMapFeature translation ;
   char *feature_name = NULL ;    /* Remember to free this */
@@ -521,8 +523,9 @@ static void translationPopulate(ZMapFeatureBlock feature_block,
   int peptide_length ;
   int x1, x2 ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   block_position = feature_block->block_to_sequence.block.x1 ;     // actual loaded DNA not logical sequence start
-
+#endif
 
   if (block_start == 0)
     {

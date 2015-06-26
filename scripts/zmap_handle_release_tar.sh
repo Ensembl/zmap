@@ -9,8 +9,11 @@ else
    BASE_DIR=$SCRIPT_DIR
 fi
 
-. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+# required by build_config.sh
 set -o history
+
+. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 zmap_read_cluster_config
@@ -172,7 +175,8 @@ EOF
 
 for host in $ZMAP_BUILD_MACHINES;
   do
-  HOST_UNAME=$(ssh $host 'uname -ms | sed -e "s/ /_/g"')
+  config_set_ZMAP_ARCH $host
+  HOST_UNAME=$ZMAP_ARCH
   cat >> README <<EOF
   ZMap.$host/  - build dir from $host
   $HOST_UNAME/ - prefix install for OS $HOST_UNAME

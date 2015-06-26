@@ -272,6 +272,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   /* we use diff coords from the sequence if RevComped */
   window->min_coord = seq_start;
   window->max_coord = seq_end ;
+  window->display_origin = seq_start ;
 
   zmapWindowSeq2CanExt(&(window->min_coord), &(window->max_coord)) ;
 
@@ -827,7 +828,7 @@ void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features, int seq
                                                                 seq_start, seq_end, FALSE)))
         {
           zmapWindowFullReposition(window->feature_root_group, TRUE, "col filter") ;
-          
+
           window->splice_highlight_on = TRUE ;
         }
      }
@@ -1175,6 +1176,10 @@ static gboolean add_featureset_style_to_column(ZMapFeatureColumn column, ZMapFea
 
       result = TRUE ;
 
+    }
+  else
+    {
+      result = TRUE ;
     }
 
   return result ;

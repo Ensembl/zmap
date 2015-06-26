@@ -37,6 +37,8 @@ GIT_VERSION_INFO=''
 FILES_TO_REMOVE=
 
 
+# required by build_config.sh
+set -o history
 
 # Load common functions, can't use zmap_message etc. until this is done.
 . $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
@@ -239,6 +241,11 @@ if [ "x$gen_checkout_script" != "x" ]; then
         fi
 
         git clone -b $GBTOOLS_BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo
+
+        # Do a git-checkout on the gbtools directory to restore the original placeholder files
+        # i.e. README and .gitignore        
+        git checkout $gbtools_repo
+
         cd ../..
     fi
 
@@ -323,12 +330,6 @@ fi
 
 # We're not going to actually do  a build here, but we will build docs
 # if requested, and/or anything else that isn't architecture dependent
-
-# Now we have a checkout we can source these
-#. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
-#set -o history
-#. $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
-
 
 zmap_message_out "MASTER VARIABLE SETTINGS:"
 zmap_message_out "ZMAP_MASTER_HOST=$ZMAP_MASTER_HOST"
@@ -696,7 +697,8 @@ fi
 # Looks like success... Checking versions match (non-fatal errors)
 if [ -d $RELEASE_LOCATION ]; then
 
-    zmap_uname_location=$RELEASE_LOCATION/$(uname -ms | sed -e "s/ /_/g")/bin/zmap
+    config_set_ZMAP_ARCH `hostname -s`
+    zmap_uname_location=$RELEASE_LOCATION/$ZMAP_ARCH/bin/zmap
 
     if [ -x $zmap_uname_location ]; then
 	zmap_message_out "Checking zmap binary version..."

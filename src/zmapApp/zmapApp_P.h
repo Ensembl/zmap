@@ -118,11 +118,6 @@ typedef struct ZMapAppRemoteStructType
   ZMapView curr_view_id ;
 
 
-  /* Outgoing request TO a peer */
-  char *curr_zmap_request ;
-
-
-
   /* There are some requests that can only be serviced _after_ we are sure the peer
    * has received our reply to their request e.g. "shutdown" where we can't exit
    * otherwise peer will never receive our reply. */

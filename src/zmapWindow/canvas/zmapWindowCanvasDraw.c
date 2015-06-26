@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -32,6 +32,7 @@
 
 #include <ZMap/zmap.h>
 
+#include <limits.h>
 #include <math.h>
 
 #include <zmapWindowCanvasFeatureset_I.h>
@@ -67,7 +68,7 @@ static void highlightSplice(gpointer data, gpointer user_data) ;
 
 
 
-/* 
+/*
  *                Globals
  */
 
@@ -78,7 +79,7 @@ static ZMapWindowCanvasGlyph non_match_junction_glyph_start_G = NULL, non_match_
 
 
 
-/* 
+/*
  *                External routines
  */
 
@@ -116,10 +117,233 @@ gboolean zMapWindowCanvasCalcHorizCoords(ZMapWindowFeaturesetItem featureset, ZM
 }
 
 
+/*
+ * This does the lower half of the plane only, i.e. y2>=y1. Mimics the behaviour of
+ * original function zMap_draw_line().
+ *
+ * There is an extra-special zmap only optimisation in here; when we are drawing lines
+ * for transcripts that are close to vertical, they are more efficiently drawn as
+ * as a series of calls to the line drawing function, each of which draws a vertical
+ * line only.
+ */
+void zMap_draw_line_hack(GdkDrawable* drawable, ZMapWindowFeaturesetItem featureset,
+                         gint x1, gint y1, gint x2, gint y2 )
+{
+  static const float fOne = (float)1.0,
+                     fZero = (float)0.0,
+                     fHalf = (float)0.5 ;
+  int x = 0, y = 0, xdelta = 0, ydelta = 0, x1p = 0, y1p = 0;
+  float m = fZero, e = fZero ;
+  GdkGC *context = NULL ;
+  void (*draw_points)(GdkDrawable*, GdkGC*, GdkPoint*, gint) = NULL ;
+  void (*draw_segments)(GdkDrawable*, GdkGC*, GdkSegment*, gint) = NULL ;
+  GdkDrawableClass *dclass = NULL ;
+  GdkPoint point = {0} ;
+  GdkSegment segment = {0} ;
+
+  /* error tests */
+  zMapReturnIfFail(GDK_IS_DRAWABLE (drawable));
+  zMapReturnIfFail(featureset) ;
+  context = featureset->gc ;
+  zMapReturnIfFail(GDK_IS_GC (context));
+
+  /* now on with the rest of the drawing */
+  xdelta = x2 - x1 ;
+  ydelta = y2 - y1 ;
+
+  if (ydelta < 0)
+    return ;
+
+  /* clipping - lifted from the original implementation */
+  if(y1 > featureset->clip_y2)
+    return ;
+  if(y2 < featureset->clip_y1)
+    return ;
+  if(x1 == x2)
+    {
+      if(y1 < featureset->clip_y1)
+        y1 = featureset->clip_y1;
+      if(y2 > featureset->clip_y2)
+        y2 = featureset->clip_y2 ;
+    }
+  else
+    {
+      float dx = xdelta ;
+      float dy = ydelta ;
+      if(y1 < featureset->clip_y1)
+        {
+          x1 += roundf(dx * (featureset->clip_y1 - y1) / dy);
+          y1 = featureset->clip_y1;
+        }
+      if(y2 > featureset->clip_y2)
+        {
+          x2 -= roundf(dx * (y2 - featureset->clip_y2) / dy);
+          y2 = featureset->clip_y2;
+        }
+    }
+
+  /* vertical or horizontal cases */
+  if (!xdelta)
+    {
+      if (!ydelta)
+        return ;
+      gdk_draw_line (drawable, context, x1, y1, x2, y2) ;
+      return ;
+    }
+  else if (!ydelta)
+    {
+      if (!xdelta)
+        return ;
+      gdk_draw_line (drawable, context, x1, y1, x2, y2) ;
+      return ;
+    }
+
+  draw_points = GDK_DRAWABLE_GET_CLASS(drawable)->draw_points ;
+  if (!draw_points)
+    return ;
+  draw_segments = GDK_DRAWABLE_GET_CLASS(drawable)->draw_segments ;
+  if (!draw_segments)
+    return ;
+
+  /* lines at 45 degrees */
+  if (abs(xdelta) == abs(ydelta))
+    {
+      if (xdelta > 0)
+        {
+          for (x=x1,y=y1; x<=x2; ++x, ++y)
+            {
+              point.x = x;
+              point.y = y;
+              draw_points(drawable, context, &point, 1);
+            }
+        }
+      else
+        {
+          for (x=x1,y=y1; x>=x2; --x, ++y)
+            {
+              point.x = x;
+              point.y = y;
+              draw_points(drawable, context, &point, 1);
+            }
+        }
+
+      return ;
+    }
+
+  /* all other cases */
+  m = (float)ydelta / (float)xdelta ;
+  if ((fZero<m) && (m<fOne))
+    {
+      for (x=x1,y=y1; x<=x2; ++x)
+        {
+          point.x = x;
+          point.y = y;
+          draw_points(drawable, context, &point, 1);
+          if ((e+m) < fHalf)
+            {
+              e += m ;
+            }
+          else
+            {
+              e += m - fOne ;
+              ++y ;
+            }
+        }
+    }
+  else if (m > fOne)
+    {
+      m = fOne/m ;
+      x1p=x1;
+      y1p=y1;
+      for (x=x1,y=y1; y<=y2; ++y)
+        {
+          /*point.x = x;
+          point.y = y;
+          draw_points(drawable, context, &point, 1);*/
+          if ((e+m) < fHalf)
+            {
+              e += m ;
+            }
+          else
+            {
+              e += m - fOne ;
+              ++x ;
+
+              segment.x1 = x1p;
+              segment.y1 = y1p;
+              segment.x2 = x1p;
+              segment.y2 = y;
+              draw_segments(drawable, context, &segment, 1) ;
+              x1p=x;
+              y1p=y+1;
+            }
+        }
+      segment.x1 = x1p;
+      segment.y1 = y1p;
+      segment.x2 = x1p;
+      segment.y2 = y-1;
+      draw_segments(drawable, context, &segment, 1) ;
+    }
+  else if (m < -fOne)
+    {
+      m = -fOne/m ;
+      x1p=x1;
+      y1p=y1;
+      for (x=x1,y=y1; y<=y2; ++y)
+        {
+          /*point.x = x;
+          point.y = y;
+          draw_points(drawable, context, &point, 1);*/
+          if ((e+m) < fHalf)
+            {
+              e += m ;
+            }
+          else
+            {
+              e += m - fOne;
+              --x ;
+
+              segment.x1 = x1p;
+              segment.y1 = y1p;
+              segment.x2 = x1p;
+              segment.y2 = y;
+              draw_segments(drawable, context, &segment, 1) ;
+              x1p=x;
+              y1p=y+1;
+            }
+        }
+      segment.x1 = x1p;
+      segment.y1 = y1p;
+      segment.x2 = x1p;
+      segment.y2 = y-1;
+      draw_segments(drawable, context, &segment, 1) ;
+    }
+  else if ((-fOne<m) && (m<0.0))
+    {
+      m = -m ;
+      for (x=x1,y=y1; x>=x2; --x)
+        {
+          point.x = x;
+          point.y = y;
+          draw_points(drawable, context, &point, 1);
+          if ((e+m) < fHalf)
+            {
+              e += m ;
+            }
+          else
+            {
+              e += m - fOne ;
+              ++y ;
+            }
+        }
+    }
+}
+
 
 /* clip to expose region */
 /* erm,,, clip to visible scroll region: else rectangles would get extra edges */
-int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
+int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
+                   gint cx1, gint cy1, gint cx2, gint cy2)
 {
   zMapReturnValIfFail(featureset, 0);
 
@@ -148,23 +372,23 @@ int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
 #endif
 
 
-  if(cx1 == cx2)	/* is vertical */
+  if(cx1 == cx2)        /* is vertical */
     {
 #if 0
       /*
-	the problem is long vertical lines that wrap round
-	we don't draw big horizontal ones
+        the problem is long vertical lines that wrap round
+        we don't draw big horizontal ones
       */
       if(cx1 < featureset->clip_x1)
-	cx1 = featureset->clip_x1;
+        cx1 = featureset->clip_x1;
       if(cx2 > featureset->clip_x2)
-	cx2 = featureset->clip_x2;
+        cx2 = featureset->clip_x2;
 #endif
 
       if(cy1 < featureset->clip_y1)
-	cy1 = featureset->clip_y1;
+        cy1 = featureset->clip_y1;
       if(cy2 > featureset->clip_y2)
-	cy2 = featureset->clip_y2 ;
+        cy2 = featureset->clip_y2 ;
     }
   else
     {
@@ -172,20 +396,20 @@ int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
       double dy = cy2 - cy1;
 
       if(cy1 < featureset->clip_y1)
-	{
-	  /* need to round to get partial lines joining up neatly */
-	  cx1 += round(dx * (featureset->clip_y1 - cy1) / dy);
-	  cy1 = featureset->clip_y1;
-	}
+        {
+          /* need to round to get partial lines joining up neatly */
+          cx1 += round(dx * (featureset->clip_y1 - cy1) / dy);
+          cy1 = featureset->clip_y1;
+        }
       if(cy2 > featureset->clip_y2)
-	{
-	  cx2 -= round(dx * (cy2 - featureset->clip_y2) / dy);
-	  cy2 = featureset->clip_y2;
-	}
+        {
+          cx2 -= round(dx * (cy2 - featureset->clip_y2) / dy);
+          cy2 = featureset->clip_y2;
+        }
 
     }
 
-  gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
+  gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2) ;
 
   return 1;
 }
@@ -254,17 +478,17 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
       /* We expect the second coord to be greater than the first so
        * if we get here it's an error. */
       zMapWarning("Program error: Tried to draw a rectangle with negative width/height (width=%d, height=%d)",
-		  cx2 - cx1, cy2 - cy1) ;
+                  cx2 - cx1, cy2 - cy1) ;
     }
 
   else
     {
       /* Fill rectangles get drawn by X one smaller in each dimension so correct for this. */
       if (fill)
-	{
-	  cx2++ ;
-	  cy2++ ;
-	}
+        {
+          cx2++ ;
+          cy2++ ;
+        }
 
       gdk_draw_rectangle(drawable, featureset->gc, fill, cx1, cy1, cx2 - cx1, cy2 - cy1) ;
 
@@ -426,11 +650,11 @@ void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featurese
       zMapWindowCanvasGlyphGetJunctionShapes(&start_shape, &end_shape) ;
 
       match_junction_glyph_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_JUNCTION_START, TRUE, TRUE) ;
-                                                                    
+
       match_junction_glyph_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_JUNCTION_END, TRUE, TRUE) ;
 
       non_match_junction_glyph_start_G = zMapWindowCanvasGlyphAlloc(start_shape, ZMAP_GLYPH_JUNCTION_START, TRUE, TRUE) ;
-                                                                    
+
       non_match_junction_glyph_end_G = zMapWindowCanvasGlyphAlloc(end_shape, ZMAP_GLYPH_JUNCTION_END, TRUE, TRUE) ;
 
       if (zMapWindowCanvasFeaturesetGetSpliceColour(featureset, TRUE, &border_pixel, &fill_pixel))
@@ -457,7 +681,7 @@ void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featurese
 
 
 
-/* 
+/*
  *             Internal routines
  */
 
@@ -466,18 +690,8 @@ static void highlightSplice(gpointer data, gpointer user_data)
 {
   ZMapSplicePosition splice_pos = (ZMapSplicePosition)data ;
   HighlightData highlight_data = (HighlightData)user_data ;
-  double col_width ;  
+  double col_width ;
 
-  char *name ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  zMapCanvasFeaturesetDrawBoxMacro(highlight_data->featureset, highlight_data->x1, highlight_data->x2,
-                                   splice_pos->start, splice_pos->end,
-                                   highlight_data->drawable,
-                                   TRUE, TRUE, highlight_data->splice_pixel, highlight_data->splice_pixel) ;
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   /*
    * Draw the truncation glyph subfeatures.
@@ -485,9 +699,6 @@ static void highlightSplice(gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style = *(highlight_data->feature->feature->style) ;
 
   ZMapWindowCanvasGlyph start, end ;
-
-  name = g_quark_to_string(highlight_data->feature->feature->original_id) ;
-
 
   col_width = zMapStyleGetWidth(highlight_data->featureset->style) ;
 

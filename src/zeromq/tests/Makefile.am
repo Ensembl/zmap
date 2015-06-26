@@ -41,13 +41,19 @@ noinst_PROGRAMS = test_system \
                   test_abstract_ipc \
                   test_many_sockets
 
+# disable various tests which don't seem to work on cygwin
 if !ON_MINGW
 noinst_PROGRAMS += test_shutdown_stress \
                    test_pair_ipc \
                    test_reqrep_ipc \
                    test_timeo \
-                   test_inproc_connect \
-                   test_fork
+                   test_inproc_connect
+
+# gb10: also disable test_fork on the mac because it sometimes hangs on 
+# our mac build machine
+if !ON_MAC
+noinst_PROGRAMS += test_fork
+endif
 endif
 
 test_system_SOURCES = test_system.cpp

@@ -299,6 +299,7 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
 static void setupRuler(ZMapWindow       window,
                        FooCanvasItem  **horizon,
                        FooCanvasGroup **tooltip,
+                       double           x_coord,
                        double           y_coord);
 static void moveRuler(FooCanvasItem  *horizon,
                       FooCanvasGroup *tooltip,
@@ -306,6 +307,7 @@ static void moveRuler(FooCanvasItem  *horizon,
                       double     world_x,
                       double     world_y);
 static void removeRuler(FooCanvasItem *horizon, FooCanvasGroup *tooltip);
+static char * tooltipTextCreate(ZMapWindow window, double wx, double wy) ;
 
 static gboolean within_x_percent(ZMapWindow window, double percent, double y, gboolean in_top);
 static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_to_hundred, double world_y, gboolean in_top);
@@ -477,6 +479,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
   new_window->canvas_maxwin_size = original_window->canvas_maxwin_size ;
   new_window->min_coord = original_window->min_coord ;
   new_window->max_coord = original_window->max_coord ;
+  new_window->display_origin = original_window->display_origin ;
+  new_window->display_coordinates = original_window->display_coordinates ;
 
   new_window->seqLength = original_window->seqLength ;
 
@@ -830,34 +834,8 @@ void zMapWindowRedraw(ZMapWindow window)
   expose_area.width = allocation->width ;
   expose_area.height = allocation->height ;
 
-
-  foo_bug_print(window->canvas,"redraw");
-  //printf("expose 0,0 -> %d, %d\n",expose_area.width, expose_area.height );
-
-
-  {
-    /* kick GDK to make this work */
-    //printf("canvas: %d %d %d\n", window->canvas->busy, window->canvas->x_changed, window->canvas->y_changed);
-    //foo_canvas_busy(window->canvas,TRUE);
-    //foo_canvas_busy(window->canvas,FALSE);
-  }
-
   /* Invalidate the displayed canvas window causing to be redrawn. */
   gdk_window_invalidate_rect(GTK_WIDGET(&(window->canvas->layout))->window, &expose_area, TRUE) ;
-
-  /* NOTE we don't get expose events to split windows reliably from this */
-
-  //gdk_window_process_updates(GTK_WIDGET(&(window->canvas->layout))->window, TRUE);
-
-  /* but this doesn-t work either */
-  //gdk_window_invalidate_rect(gtk_layout_get_bin_window(&window->canvas->layout), &expose_area, TRUE) ;
-  //gtk_widget_show_all(GTK_WIDGET(&(window->canvas->layout)));
-
-  /* or these */
-  //gtk_widget_queue_draw(window->parent_widget);
-  //gtk_widget_queue_resize(window->parent_widget);
-
-  //zmapWindowBusy(window, FALSE) ;
 
   return ;
 }
@@ -1074,6 +1052,76 @@ void zMapWindowZoomToMin(ZMapWindow window)
   zmapWindowZoomControlHandleResize(window) ;
 
   return ;
+}
+
+/*
+ * These two functions return and set the value for the origin
+ * of the user display coordinates, and is defined in terms
+ * of the internal ZMap chromosome coordinates.
+ */
+double zMapWindowGetDisplayOrigin(ZMapWindow window)
+{
+  double result = 0.0 ;
+  zMapReturnValIfFail(window, result ) ;
+  result = window->display_origin ;
+  return result ;
+}
+
+void zMapWindowSetDisplayOrigin(ZMapWindow window, double origin)
+{
+  zMapReturnIfFail(window) ;
+  window->display_origin = origin ;
+}
+
+/*
+ * This fuction has to force a redraws of the scale bar using the
+ * flag set below since we are not changing the coordinate ranges.
+ */
+void zMapWindowToggleDisplayCoordinates(ZMapWindow window)
+{
+  double sx1 = 0.0,
+    sy1 = 0.0,
+    sx2 = 0.0,
+    sy2 = 0.0 ;
+  zMapReturnIfFail(window) ;
+
+  if (window->display_coordinates == ZMAP_WINDOW_DISPLAY_CHROM)
+    window->display_coordinates = ZMAP_WINDOW_DISPLAY_SLICE ;
+  else if (window->display_coordinates == ZMAP_WINDOW_DISPLAY_SLICE)
+    window->display_coordinates = ZMAP_WINDOW_DISPLAY_CHROM ;
+
+  sy1 = window->min_coord ;
+  sy2 = window->max_coord ;
+  window->force_scale_redraw = TRUE ;
+  zmapWindowGetScrollableArea(window, &sx1, &sy1, &sx2, &sy2) ;
+  zmapWindowSetScrollableArea(window, NULL, &sy1, NULL, &sy2, NULL) ;
+  window->force_scale_redraw = FALSE ;
+}
+
+void zMapWindowSetDisplayCoordinatesSlice(ZMapWindow window)
+{
+  zMapReturnIfFail(window) ;
+
+  window->display_coordinates = ZMAP_WINDOW_DISPLAY_SLICE ;
+}
+
+void zMapWindowSetDisplayCoordinatesChrom(ZMapWindow window)
+{
+  zMapReturnIfFail(window) ;
+
+  window->display_coordinates = ZMAP_WINDOW_DISPLAY_CHROM ;
+}
+
+void zMapWindowSetDisplayCoordinates(ZMapWindow window, ZMapWindowDisplayCoordinates display_coordinates)
+{
+  zMapReturnIfFail(window && (display_coordinates != ZMAP_WINDOW_DISPLAY_INVALID) ) ;
+  window->display_coordinates = display_coordinates ;
+}
+
+ZMapWindowDisplayCoordinates zMapWindowGetDisplayCoordinates(ZMapWindow window)
+{
+  zMapReturnIfFail(window) ;
+  return window->display_coordinates ;
 }
 
 
@@ -1559,36 +1607,39 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
   /* THIS OPTIMISATION IS ALL ABOUT WHAT HAS HAPPENED TO THE CODE...WE CHANGES SIZES ALL OVER
    * THE PLACE WHICH PROVOKES REDRAWS WHICH RESULTS IN THIS FUNCTION GETTING CALLED MANY
    * TIMES...STUPID, STUPID, STUPID......SO I RECORD SEPARATELY WHETHER WE HAVE BEEN REVCOMP'D
-   * IN WHICH CASE WE _MUST_ REDRAW THE SCALE. */
+   * IN WHICH CASE WE _MUST_ REDRAW THE SCALE.
+   * (sm23) Note that when the coordinate system is changed, we also have to redraw, even though
+   * the other criteria below are not then satisfied; hence we have a flag to force the operation
+   * to take place.
+   */
   /* if the vertical scroll region has changed then draw the scale bar */
   /* formerly done by fc_end_update_cb(), which is silly: why redraw the scale bar on any update?? */
   /* NOTE also required stupid coding to handle spurious calls and bouncing event loops */
-  if ((window->ruler_previous_revcomp != window->flags[ZMAPFLAG_REVCOMPED_FEATURES]) || (y1 != window->scroll_y1 || y2 != window->scroll_y2))
+  if (   window->force_scale_redraw
+      || (window->ruler_previous_revcomp != window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      || (y1 != window->scroll_y1 || y2 != window->scroll_y2))
     {
-#if 0
-      zMapLogWarning("draw scale %f,%f - %f,%f",y1,y2, window->min_coord, window->max_coord) ;
-      zMapLogStack() ;
-#endif
 
       window->ruler_previous_revcomp = window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
 
-      if (zmapWindowScaleCanvasDraw(window->ruler, y1, y2, window->min_coord, window->max_coord))
+      if (zmapWindowScaleCanvasDraw(window->ruler,
+                                    y1, y2,
+                                    window->min_coord, window->max_coord,
+                                    window->sequence->start, window->sequence->end,
+                                    window->display_coordinates,
+                                    window->force_scale_redraw))
         {
-          double max_x2 = zMapWindowScaleCanvasGetWidth(window->ruler) + 1 ;
+          double max_x2 = zmapWindowScaleCanvasGetWidth(window->ruler) + 1 ;
 
           /* NOTE this canvas has nothing except the scale bar */
-          zMapWindowScaleCanvasSetScroll(window->ruler, x1, y1, max_x2, y2) ;
+          zmapWindowScaleCanvasSetScroll(window->ruler, x1, y1, max_x2, y2) ;
         }
 
 
-    }
+   }
 
   if (x1 != window->scroll_x1 || y1 != window->scroll_y1 || x2 != window->scroll_x2 || y2 != window->scroll_y2)
     {
-#if 0
-      printf("set scroll %p %f,%f - %f,%f from %s\n",window->canvas,y1,x1,y2,x2,where);
-      //zMapLogStack();
-#endif
 
       zmapWindowSetScrolledRegion(window, x1, x2, y1, y2) ;
 
@@ -2118,9 +2169,12 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     }
 
   /* this puts the DNA in the clipbaord */
-  zMapGUISetClipboard(window->toplevel, GDK_SELECTION_PRIMARY, select.secondary_text) ;
+  if (select.secondary_text)
+    {
+      zMapGUISetClipboard(window->toplevel, GDK_SELECTION_PRIMARY, select.secondary_text) ;
 
-  g_free(select.secondary_text) ;
+      g_free(select.secondary_text) ;
+    }
 
   if(feature_list)
     g_list_free(feature_list);
@@ -2204,10 +2258,6 @@ static void panedResizeCB(gpointer data, gpointer userdata)
   zMapReturnIfFail(window) ;
 
   current_position = gtk_paned_get_position(GTK_PANED( window->pane ));
-
-#if RDS_DONT_INCLUDE
-  printf(" |-- panedResizeCB: got current of %d want to set to %d\n", current_position, *new_position);
-#endif /* RDS_DONT_INCLUDE */
 
   gtk_paned_set_position(GTK_PANED( window->pane ),
                          *new_position);
@@ -2321,6 +2371,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->canvas_maxwin_size = ZMAP_WINDOW_MAX_WINDOW ;
 
   window->min_coord = window->max_coord = 0.0 ;
+  window->display_origin = 0.0 ;
 
   /* Some things for window can be specified in the configuration file. */
   getConfiguration(window) ;
@@ -2404,23 +2455,26 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
     }
 
 
+  /*
+   * This is setting up the scale bar; it appears to need the
+   * parent window.
+   */
+  ZMapWindowScaleCanvasCallbackListStruct callbacks = {NULL};
+  GtkAdjustment *vadjust = NULL;
 
-  {
-    ZMapWindowScaleCanvasCallbackListStruct callbacks = {NULL};
-    GtkAdjustment *vadjust = NULL;
+  vadjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
+  callbacks.paneResize = panedResizeCB;
+  callbacks.user_data  = (gpointer)window;
 
-    vadjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
-    callbacks.paneResize = panedResizeCB;
-    callbacks.user_data  = (gpointer)window;
+  window->ruler = zmapWindowScaleCanvasCreate(&callbacks);
+  zmapWindowScaleCanvasInit(window->ruler, window->pane, vadjust);
 
-    window->ruler = zmapWindowScaleCanvasCreate(&callbacks);
-    zmapWindowScaleCanvasInit(window->ruler, window->pane, vadjust);
-  }
+  window->display_coordinates = ZMAP_WINDOW_DISPLAY_SLICE ;
 
   /* Attach callback to monitor size changes in canvas, this works but bizarrely
    * "configure-event" callbacks which are the pucker size change event are never called. */
   g_signal_connect(GTK_OBJECT(window->canvas), "size-allocate",
-   GTK_SIGNAL_FUNC(canvasSizeAllocateCB), (gpointer)window) ;
+                   GTK_SIGNAL_FUNC(canvasSizeAllocateCB), (gpointer)window) ;
 
 
   /* NONE OF THIS SHOULD BE HARD CODED constants it should be based on window size etc... */
@@ -3264,14 +3318,27 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
         }
 
 
-      /* Reread the data in any feature list windows we might have. */
-      for (i = 0 ; i < window->featureListWindows->len ; i++)
+      /*
+       * Reread the data in any feature list windows we might have.
+       * (sm23) The function zmapWindowListWindowReread() does not
+       * work; indeed it gives a segmentation fault when executed
+       * with a search result window open. I've disabled this for now.
+       * Instead, the featureListWindows are destroyed, since they
+       * no longer refer to valid foo canvas items.
+       */
+      if (window->featureListWindows)
         {
-          GtkWidget *widget ;
+          for (i = 0 ; i < window->featureListWindows->len ; i++)
+            {
+              GtkWidget *widget = NULL ;
 
-          widget = g_ptr_array_index(window->featureListWindows, i) ;
+              widget = g_ptr_array_index(window->featureListWindows, i) ;
 
-          zmapWindowListWindowReread(widget) ;
+              /* zmapWindowListWindowReread(widget) ;*/
+              gtk_widget_destroy(GTK_WIDGET(widget));
+            }
+          /* destroy the featureListWindow objects (but not the array object itself) */
+          g_ptr_array_set_size(window->featureListWindows, 0) ;
         }
 
 
@@ -3632,8 +3699,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                       if (mark_updater.in_mark_move_region)
                         {
                           mark_updater.activated = TRUE;
-
-                          setupRuler(window, &(window->mark_guide_line), NULL, wy);
+                          setupRuler(window, &(window->mark_guide_line), NULL, wx, wy);
                         }
                       else
                         {
@@ -3689,6 +3755,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                       LockedRulerStruct locked_data = {0} ;
 
                       locked_data.action   = ZMAP_LOCKED_RULER_SETUP ;
+                      locked_data.world_x  = wx ;
+                      locked_data.world_y  = wy ;
                       locked_data.origin_y = origin_y ;
 
                       g_hash_table_foreach(window->sibling_locked_windows, lockedRulerCB, (gpointer)&locked_data) ;
@@ -3697,7 +3765,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                     }
                   else
                     {
-                      setupRuler(window, &(window->horizon_guide_line), &(window->tooltip), wy) ;
+                      setupRuler(window, &(window->horizon_guide_line), &(window->tooltip), wx, wy) ;
                     }
 
                   event_handled = TRUE ;    /* We _ARE_ handling */
@@ -3787,6 +3855,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                 /* I wanted to change the cursor for this,
                  * but foo_canvas_item_grab/ungrab specifically the ungrab didn't work */
                 zMapDrawRubberbandResize(window->rubberband, origin_x, origin_y, wx, wy);
+                /* zMapWindowRedraw(window) ;*/  /* sm23 */
 
                 /* gb10: this is a bit messy but I'm not sure how to get around it. We need to
                  * pass this event on to canvasItemEventCB to see if we should initiate drag and
@@ -3798,8 +3867,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
               }
             else if (guide)
               {
-                double y1, y2;
-                char *tip = NULL;
+                double y1, y2 ;
+                char *tip = NULL ;
 
                 foo_canvas_get_scroll_region(window->canvas, /* ok, but like to change */
                                              NULL, &y1, NULL, &y2);
@@ -3810,46 +3879,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                 /* This test is FLAWED ATM it needs to test for displayed seq start & end */
                 if (y1 <= wy && y2 >= wy)
                   {
-                    int bp = 0;
-                    int chr_bp;
-
-                    chr_bp = bp = (int)floor(wy);
-
-                    bp = zmapWindowCoordToDisplay(window, bp) ;
-                    chr_bp = zmapWindowWorldToSequenceForward(window,chr_bp);
-                    /* NOTE: this code does not handle multiple blocks */
-                    /* need to get current block and extract start coord */
-
-                    if(window->sequence)
-                      {
-                        /*! \todo #warning need a flag here to say chromosome coords have been set */
-                        if(window->sequence->start == 1)
-                          /* not using chromo coords internally?? */
-                          {
-                            int start;
-                            char *p;
-
-                            /*! \todo #warning move this to seq req/load and set sequence coords, then remove from here */
-                            /* using zmap coords internally */
-                            for(p = window->sequence->sequence; *p && *p != '_'; p++)
-                              continue;
-                            if(p) p++;
-                            start = atoi(p);
-
-                            if(start)
-                              {
-                                if(bp < 0)
-                                  chr_bp = start - bp + 1;
-                                else
-                                  chr_bp = start + bp - 1;
-                              }
-                          }
-                        if(bp != chr_bp)
-                          tip = g_strdup_printf("%d bp (%d)", bp, chr_bp);
-                        else
-                          tip = g_strdup_printf("%d bp", bp);
-                      }
+                    tip = tooltipTextCreate(window, wx, wy) ;
                   }
+
 
                 /* If we are a locked, _vertical_ split window then also show the ruler in the
                  * other windows. */
@@ -3867,6 +3899,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                 else
                   {
                     moveRuler(window->horizon_guide_line, window->tooltip, tip, wx, wy) ;
+                    /*zMapWindowRedraw(window) ; */ /* sm23 */
                   }
 
                 if (tip)
@@ -3925,6 +3958,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                                        &wx, mark_updater.closest_to);
             wy = *(mark_updater.closest_to);
             moveRuler(window->mark_guide_line, NULL, NULL, wx, wy);
+            /* zMapWindowRedraw(window) ; */ /* sm23 */
 
             event_handled = TRUE;
           }
@@ -5631,7 +5665,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         if (!(focus_column = zmapWindowFocusGetHotColumn(window->focus)))
           {
             /* We can't do anything if there is no highlight feature. */
-            
+
             zMapMessage("%s", "No features selected.") ;
           }
         else
@@ -5655,7 +5689,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                     filter_data.target_column = window->filter_feature_set ;
 
                     (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
-                
+
                     window->filter_on = FALSE ;
                   }
                 else
@@ -5713,9 +5747,9 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                             filter_data.filter = window->filter_filter ;
                             filter_data.action = window->filter_action ;
                             filter_data.target_type = window->filter_target ;
-                            
 
-                            
+
+
 
                             filter_data.do_filter = TRUE ;
                             filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
@@ -5980,7 +6014,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 
                 (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
-                
+
                 window->splice_highlight_on = FALSE ;
               }
           }
@@ -6029,7 +6063,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                     filter_data.do_filter = TRUE ;
                     filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
                     filter_data.filter_features = highlight_features ;
-                
+
                     (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
 
                     if (filter_data.result)
@@ -7139,7 +7173,7 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
     {
     case ZMAP_LOCKED_RULER_SETUP:
       setupRuler(window, &(window->horizon_guide_line),
-                 &(window->tooltip), locked_data->origin_y) ;
+                 &(window->tooltip), locked_data->world_x, locked_data->world_y) ;
       break;
     case ZMAP_LOCKED_RULER_MOVING:
       moveRuler(window->horizon_guide_line,
@@ -7153,7 +7187,7 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
       break;
 
     case ZMAP_LOCKED_MARK_GUIDE_SETUP:
-      setupRuler(window, &(window->mark_guide_line), NULL, locked_data->origin_y);
+      setupRuler(window, &(window->mark_guide_line), NULL, locked_data->world_x, locked_data->origin_y);
       break;
     case ZMAP_LOCKED_MARK_GUIDE_MOVING:
       break;
@@ -7168,10 +7202,56 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
   return ;
 }
 
+/*
+ * This allocates a new string that must be freed in the caller.
+ * Arguments are the world coordinates.
+ */
+static char * tooltipTextCreate(ZMapWindow window, double wx, double wy)
+{
+  char * text = NULL ;
+  int display_coord = 0 ;
+  ZMapWindowDisplayCoordinates display_coordinates = ZMAP_WINDOW_DISPLAY_INVALID ;
+
+  if (!window)
+    return text ;
+  display_coordinates = window->display_coordinates ;
+  /*display_coordinates = ZMAP_WINDOW_DISPLAY_CHROM ; */
+
+  if (window->sequence)
+    {
+      display_coord = (int)floor(wy);
+      switch (display_coordinates)
+        {
+          case ZMAP_WINDOW_DISPLAY_SLICE:
+            display_coord = zmapWindowCoordToDisplay(window, display_coord) ;
+            text = g_strdup_printf("%d", display_coord) ;
+            break ;
+          case ZMAP_WINDOW_DISPLAY_CHROM:
+            display_coord = zmapWindowWorldToSequenceForward(window, display_coord) ;
+            if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+              display_coord = -display_coord ;
+            text = g_strdup_printf("%d", display_coord) ;
+            break ;
+          case ZMAP_WINDOW_DISPLAY_OTHER:
+          case ZMAP_WINDOW_DISPLAY_INVALID:
+            text = NULL ;
+            break ;
+          default:
+            break ;
+        }
+
+    }
+
+
+
+  return text ;
+}
+
 
 static void setupRuler(ZMapWindow       window,
        FooCanvasItem  **horizon,
        FooCanvasGroup **tooltip,
+       double           x_coord,
        double           y_coord)
 {
 
@@ -7186,8 +7266,20 @@ static void setupRuler(ZMapWindow       window,
   if(horizon)
     zMapDrawHorizonReposition(*horizon, y_coord) ;
 
+
+  if(tooltip)
+    {
+      char * tip_text = tooltipTextCreate(window, x_coord, y_coord) ;
+      if (tip_text)
+        zMapDrawToolTipSetPosition(*tooltip, x_coord, y_coord, tip_text) ;
+      else
+        foo_canvas_item_hide(FOO_CANVAS_ITEM(tooltip)) ;
+    }
+
   return ;
 }
+
+
 
 
 static void moveRuler(FooCanvasItem  *horizon,

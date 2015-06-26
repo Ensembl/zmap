@@ -294,21 +294,17 @@ GString *zMapWindowCanvasFeature2Txt(ZMapWindowCanvasFeature canvas_feature)
 ZMapFeatureSubPart zMapWindowCanvasFeaturesetGetSubPart(FooCanvasItem *foo, ZMapFeature feature,
                                                         double x, double y)
 {
-  ZMapFeatureSubPart (*func) (FooCanvasItem *foo,ZMapFeature feature,double x,double y) = NULL;
-  //	ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
-  zMapReturnValIfFail(feature, NULL) ;
+  ZMapFeatureSubPart sub_part = NULL ;
+  ZMapFeatureSubPart (*func) (FooCanvasItem *foo, ZMapFeature feature, double x, double y) = NULL ;
 
-
+  zMapReturnValIfFail((foo && feature && x && y), NULL) ;
 
   /* oh dear...another func to move into here from featureset.c I think..... */
 
-  if(feature->mode > 0 && feature->mode < FEATURE_N_TYPE)
-    func = feature_subpart_G[feature->mode];
+  if (feature->mode > 0 && feature->mode < FEATURE_N_TYPE && (func = feature_subpart_G[feature->mode]))
+    sub_part = func(foo, feature, x, y) ;
 
-  if(!func)
-    return NULL;
-
-  return func(foo, feature, x, y);
+  return sub_part ;
 }
 
 

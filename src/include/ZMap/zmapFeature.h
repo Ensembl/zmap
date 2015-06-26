@@ -902,13 +902,13 @@ typedef enum
 typedef struct ZMapFeatureSubPartStructType
 {
   /* Parts common fields */
-  int start, end ;                                         /* start/end of subpart in sequence coords. */
+  int start, end ;                                          /* start/end of subpart in sequence coords. */
 
   /* subpart specific fields */
-  ZMapFeatureSubPartType subpart ;                         /* Exon, Intron etc. */
+  ZMapFeatureSubPartType subpart ;                          /* Exon, Intron etc. */
 
-  int index ;                                              /* Index number of intron/exon
-                                                              etc. starts at 1. */
+  int index ;                                               /* Index number of intron/exon
+                                                               etc. starts at 1. */
 
 } ZMapFeatureSubPartStruct, *ZMapFeatureSubPart ;
 
@@ -1323,7 +1323,7 @@ void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
  * Utils funcs
  */
 
-int zmapFeatureRevCompCoord(int coord, int start, int end);
+int zmapFeatureRevCompCoord(int *coord, const int start, const int end);
 void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2) ;
 void zMapGetFeatureExtent(ZMapFeature feature, gboolean complex, ZMapSpan span);
 void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;

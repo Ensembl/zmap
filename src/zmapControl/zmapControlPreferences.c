@@ -87,7 +87,6 @@ void zmapControlShowPreferences(ZMap zmap)
 {
   ZMapGuiNotebook note_book ;
   char *notebook_title ;
-  GtkWidget *notebook_dialog ;
   /* ZMapGuiNotebookChapter chapter ; */
 
   zMapReturnIfFailSafe(!(zmap->preferences_note_book)) ;
@@ -111,7 +110,7 @@ void zmapControlShowPreferences(ZMap zmap)
       zMapViewBlixemGetConfigChapter(zmap_view, note_book) ;
 
       /* Display the preferences. */
-      notebook_dialog = zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
+      zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
 
       zmap->preferences_note_book = note_book ;
     }
@@ -151,7 +150,6 @@ static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_p
   ZMapGuiNotebookPage page ;
   ZMapGuiNotebookSubsection subsection ;
   ZMapGuiNotebookParagraph paragraph ;
-  ZMapGuiNotebookTagValue tagvalue ;
 
   chapter = zMapGUINotebookCreateChapter(note_book_parent, CONTROL_CHAPTER, &user_CBs) ;
 
@@ -164,17 +162,17 @@ static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_p
 					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
 					     NULL, NULL) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_SHRINKABLE, "Make the ZMap window shrinkable beyond the default minimum size",
-					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-					   "bool", zmap->shrinkable) ;
+  zMapGUINotebookCreateTagValue(paragraph, CONTROL_SHRINKABLE, "Make the ZMap window shrinkable beyond the default minimum size",
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                "bool", zmap->shrinkable) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_FILTERED, "Highlight the background of columns that have features that are not visible due to filtering",
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-                                           "bool", zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS)) ;
+  zMapGUINotebookCreateTagValue(paragraph, CONTROL_FILTERED, "Highlight the background of columns that have features that are not visible due to filtering",
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                "bool", zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS)) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, CONTROL_ANNOTATION, "Enable feature editing within ZMap via the Annotation column. This enables the Annotation sub-menu when you right-click a feature.",
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-                                           "bool", zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION)) ;
+  zMapGUINotebookCreateTagValue(paragraph, CONTROL_ANNOTATION, "Enable feature editing within ZMap via the Annotation column. This enables the Annotation sub-menu when you right-click a feature.",
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                "bool", zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION)) ;
 
   return chapter ;
 }
