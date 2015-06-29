@@ -2339,6 +2339,9 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
 static void ProcessListFeature(gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature) data ;
+
+  zMapReturnIfFail(feature && feature->mode != ZMAPSTYLE_MODE_INVALID && feature->style) ;
+
   CreateFeatureSetData featureset_data = (CreateFeatureSetData) user_data ;
   ZMapWindow window = featureset_data->window ;
 #if CALCULATE_COLUMNS
@@ -2349,14 +2352,16 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   ZMapWindowContainerFeatures features;
   ZMapStrand display_strand ;
   FooCanvasItem *feature_item = NULL;
-  ZMapFeatureTypeStyle style ;
+  ZMapFeatureTypeStyle style = NULL ;
 
 #if MH17_REVCOMP_DEBUG > 1
   if(featureset_data->frame != ZMAPFRAME_NONE)
     printf("ProcessFeature %s %d-%d\n",g_quark_to_string(feature->original_id), feature->x1,feature->x2);
 #endif
 
-  style = *feature->style;
+
+  if (feature->style)
+    style = *feature->style;
 
   /* if fails: no display. fixed for pipe via GFF2parser, ACE seems to call it???
    * features paint so it musk be ok! *
