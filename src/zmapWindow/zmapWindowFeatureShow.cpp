@@ -821,11 +821,8 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
       if (show->editable)
         {
           /* When editing a feature, add an entry to allow the user to set the feature_set.
-           * By default it is the Annotation column but note that if the user saves back to
-           * the annotation column then a new feature is NOT created - rather the temp feature
-           * in the annotation column is overwritten. This allows the user to edit things such
-           * as the CDS or exon coords of the temp feature. */
-          const char *featureset_name = ZMAP_FIXED_STYLE_SCRATCH_NAME ;
+           * \todo By default make ite hand_built or something instead of Annotation */
+          const char *featureset_name = ZMAP_FIXED_STYLE_SCRATCH_NAME ; //ZMAP_FIXED_STYLE_HAND_BUILT_NAME ;
 
           /* If the user has previously changed the featureset but not saved the feature to a
            * peer then the new name will have been cached and we show that instead. */
@@ -2645,6 +2642,11 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
       feature_set = getFeaturesetFromName(window, (char*)g_quark_to_string(feature_set_id)) ;
     }
 
+  if (ok && !feature_set)
+    {
+      /*! \todo Ask the user if they want to create a new featureset */
+    }
+
   if (ok && feature_set)
     {
       style = feature_set->style ;
@@ -2652,7 +2654,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
   else
     {
       ok = FALSE ;
-      g_set_error(&error, g_quark_from_string("ZMap"), 99, "Please specify a Feature Set") ;
+      g_set_error(&error, g_quark_from_string("ZMap"), 99, "Invalid feature set") ;
     }
 
   if (ok)
