@@ -1105,6 +1105,7 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
                                             gboolean, gboolean, int) ;
 gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature, gboolean cds, Coord cds_start, Coord cds_end) ;
 gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest_feature);
+gboolean zMapFeatureMergeTranscriptCDSCoords(ZMapFeature dest_feature, const int cds_start, const int cds_end) ;
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 					  gboolean start_not_found_flag, int start_not_found,
 					  gboolean end_not_found_flag) ;
@@ -1518,6 +1519,9 @@ int zMapFeatureVariationGetSections(const char *variation_str,
 /* rationalise these two..... */
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 gint zMapFeatureSortFeatures(gconstpointer a, gconstpointer b) ;
+
+int zMapFeatureTranscriptGetCDSStart(ZMapFeature feature) ;
+int zMapFeatureTranscriptGetCDSEnd(ZMapFeature feature) ;
 
 
 

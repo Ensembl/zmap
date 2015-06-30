@@ -289,6 +289,35 @@ gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest
 }
 
 
+/* Merges CDS details from one given coords into given feature */
+gboolean zMapFeatureMergeTranscriptCDSCoords(ZMapFeature dest_feature, const int cds_start, const int cds_end)
+{
+  gboolean result = FALSE ;
+
+  if (!dest_feature || (dest_feature->mode != ZMAPSTYLE_MODE_TRANSCRIPT) || (cds_start == 0 && cds_end == 0))
+    return result ;
+
+  /* There ought to be sanity checking of coords of cds/exons/introns here.... */
+
+  /* 0 input coord means unset, so only use it if it's set. */
+  if (cds_start != 0)
+    {
+      dest_feature->feature.transcript.flags.cds = TRUE ;
+      dest_feature->feature.transcript.cds_start = cds_start ;
+      result = TRUE ;
+    }
+
+  if (cds_end != 0)
+    {
+      dest_feature->feature.transcript.flags.cds = TRUE ;
+      dest_feature->feature.transcript.cds_end = cds_end ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
 /* Add start/end "not found" data to a transcript feature. */
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
   gboolean start_not_found_flag, int start_not_found,
@@ -1609,6 +1638,26 @@ gboolean zMapFeatureTranscriptsEqual(ZMapFeature feature1, ZMapFeature feature2,
   return result ;
 }
 
+
+int zMapFeatureTranscriptGetCDSStart(ZMapFeature feature)
+{
+  int result = 0 ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds)
+    result = feature->feature.transcript.cds_start ;
+
+  return result ;
+}
+
+int zMapFeatureTranscriptGetCDSEnd(ZMapFeature feature)
+{
+  int result = 0 ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds)
+    result = feature->feature.transcript.cds_end ;
+
+  return result ;
+}
 
 
 /*
