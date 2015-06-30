@@ -27,6 +27,10 @@
  *
  *-------------------------------------------------------------------
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ZMAP_GLIBUTILS_H
 #define ZMAP_GLIBUTILS_H
 
@@ -120,3 +124,7 @@ gchar *zMap_g_quark_to_string(ZMapQuarkSet quark_set, GQuark quark) ;
 void zMap_g_quark_destroy_set(ZMapQuarkSet quark_set) ;
 
 #endif /* !ZMAP_GLIBUTILS_H */
+
+#ifdef __cplusplus
+}
+#endif
