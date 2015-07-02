@@ -211,11 +211,7 @@ endif
 
 # The zeromq library has a different suffix on cygwin
 if USE_ZEROMQ
-if ON_CYGWIN
-zmap_LDADD += $(top_builddir)/zeromq/src/.libs/libzmq.dll.a            
-else
 zmap_LDADD += $(top_builddir)/zeromq/src/.libs/libzmq.a            
-endif
 endif
 
 
