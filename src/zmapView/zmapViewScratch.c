@@ -1740,22 +1740,41 @@ void zmapViewScratchFeatureGetEvidence(ZMapView view, ZMapWindowGetEvidenceCB ev
 
   GList *evidence_list = NULL ;
 
-  /* Loop through each edit operation and append the feature name(s) to the evidence list */
+  /* Loop through each edit operation and append the feature name(s) to the evidence list. We
+   * must ignore SAVE operations because they use a fake feature. Also, if the history
+   * contains SAVE operations then they will curtail the previous history, so we must loop back
+   * beyond them to the first operation in the list (or the last CLEAR operation). */
   GList *operation_item = view->edit_list_start ;
 
-  while (operation_item)
+  for ( ; operation_item; operation_item = operation_item->prev)
+    {
+      /* If this is the first in the list then it's the first that we want */
+      if (operation_item->prev == NULL)
+        break ;
+
+      /* If this or the previous operation is a clear then it's the first that we want */
+      EditOperation operation = (EditOperation)(operation_item->data) ;
+      EditOperation operation_prev = (EditOperation)(operation_item->prev->data); 
+
+      if (operation->edit_type == ZMAPEDIT_CLEAR || operation_prev->edit_type == ZMAPEDIT_CLEAR)
+        break ;
+    }
+
+  for ( ; operation_item; operation_item = operation_item->next)
     {
       EditOperation operation = (EditOperation)(operation_item->data) ;
 
-      /* Append the feature ids from the operation to the result list. Note that concat takes
-       * ownership of the second list so make a copy of it first. */
-      GList *tmp = g_list_copy(operation->src_feature_ids) ;
-      evidence_list = g_list_concat(evidence_list, tmp) ;
+      if (operation->edit_type != ZMAPEDIT_SAVE)
+        {
+          /* Append the feature ids from the operation to the result list. Note that concat takes
+           * ownership of the second list so make a copy of it first. */
+          GList *tmp = g_list_copy(operation->src_feature_ids) ;
+          evidence_list = g_list_concat(evidence_list, tmp) ;
+        }
 
+      /* If this is the last operation in the redo stack then finish here */
       if (operation_item == view->edit_list_end)
         break ;
-
-      operation_item = operation_item->next ;
     }
 
   evidence_cb(evidence_list, evidence_cb_data) ;
