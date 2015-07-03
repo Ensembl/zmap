@@ -827,9 +827,8 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
       if (show->editable)
         {
-          /* When editing a feature, add an entry to allow the user to set the feature_set.
-           * \todo By default make ite hand_built or something instead of Annotation */
-          const char *featureset_name = ZMAP_FIXED_STYLE_SCRATCH_NAME ; //ZMAP_FIXED_STYLE_HAND_BUILT_NAME ;
+          /* When editing a feature, add an entry to allow the user to set the feature_set. */
+          const char *featureset_name = ZMAP_FIXED_STYLE_HAND_BUILT_NAME ;
 
           /* If the user has previously changed the featureset but not saved the feature to a
            * peer then the new name will have been cached and we show that instead. */
