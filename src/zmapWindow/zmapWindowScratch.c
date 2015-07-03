@@ -72,7 +72,7 @@ ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window)
  *
  * \returns The ZMapFeature, or NULL if the column doesn't exist
  */
-static ZMapFeature zmapWindowScratchGetFeature(ZMapWindow window)
+ZMapFeature zmapWindowScratchGetFeature(ZMapWindow window)
 {
   ZMapFeature feature = NULL ;
   ZMapFeatureSet feature_set = zmapWindowScratchGetFeatureset(window) ;

@@ -1659,6 +1659,24 @@ int zMapFeatureTranscriptGetCDSEnd(ZMapFeature feature)
   return result ;
 }
 
+GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature)
+{
+  GList *result = NULL ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    result = feature->feature.transcript.evidence ;
+
+  return result ;
+}
+
+void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data)
+{
+  ZMapFeature feature = (ZMapFeature)data ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    feature->feature.transcript.evidence = evidence ;
+}
+
 
 /*
  *               Internal functions.

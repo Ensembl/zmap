@@ -455,7 +455,7 @@ void zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
       /* The scratch column is a special case because it exists only in zmap */
       zmapWindowScratchFeatureGetEvidence(window, feature, evidence_cb, evidence_cb_data) ;
     }
-  else
+  else if (window->xremote_client)
     {
       /* Use xremote to get the data from the peer */
       /*! \todo We should check that a peer exists and if not warn the user we cannot get the
@@ -490,6 +490,11 @@ void zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
                   ZACP_DETAILS_FEATURE,
                   show->item,
                   getEvidenceReplyFunc, evidence_data) ;
+    }
+  else
+    {
+      GList *evidence = zMapFeatureTranscriptGetEvidence(feature) ;
+      evidence_cb(evidence, evidence_cb_data) ;
     }
 
   return ;
@@ -2729,7 +2734,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
     {
       /* Ask the user if they want to create a new featureset */
       char *msg = g_strdup_printf("Featureset '%s' does not exist - do you want to create it?", (char*)g_quark_to_string(feature_set_id)) ;
-      ok = zMapGUIMsgGetBool(GTK_WINDOW(window->toplevel), ZMAP_MSG_INFORMATION, msg) ;
+      ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_INFORMATION, msg) ;
       g_free(msg) ;
 
       if (ok)
@@ -2778,6 +2783,11 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
     {
       zMapFeatureTranscriptInit(feature);
       //zMapFeatureAddTranscriptStartEnd(feature, chapter_feature->start_not_found, 0, chapter_feature->end_not_found);
+
+      /* Get the list of features used to construct the scratch feature and set it as the
+       * evidence list in the new feature */
+      ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
+      zmapWindowScratchFeatureGetEvidence(window, scratch_feature, zMapFeatureTranscriptSetEvidence, feature) ;
 
       if (chapter_feature->CDS)
         {

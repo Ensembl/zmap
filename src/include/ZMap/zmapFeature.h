@@ -696,7 +696,8 @@ typedef struct ZMapTranscriptStructType
   GList *variations ;                                      /* List of variations to apply to this
                                                             * transcript's sequence */
 
-
+  GList *evidence ;                                        /* List of evidence for this
+                                                            * transcript */
 } ZMapTranscriptStruct, *ZMapTranscript ;
 
 
@@ -1522,7 +1523,8 @@ gint zMapFeatureSortFeatures(gconstpointer a, gconstpointer b) ;
 
 int zMapFeatureTranscriptGetCDSStart(ZMapFeature feature) ;
 int zMapFeatureTranscriptGetCDSEnd(ZMapFeature feature) ;
-
+GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature) ;
+void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data) ;
 
 
 #endif /* ZMAP_FEATURE_H */
