@@ -1,9 +1,352 @@
+2015-06-19  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.6.0-266-g2352b1c - Update RT and git commit reports
+ src/ChangeLog                                  |   28 ++++++++++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    4 ++-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 3 files changed, 32 insertions(+), 2 deletions(-)
+
+2015-06-19  Steve Miller  <sm23@sanger.ac.uk>
+ update to deal with transcript drawing bug - BUG FIX
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.c       |  276 +++++++++++++++++--
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.h       |    6 +-
+ src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |   63 ++----
+ 3 files changed, 267 insertions(+), 78 deletions(-)
+
+2015-06-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge remote branch 'origin/release/1.7.0' into release/1.7.0
+2015-06-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Improve debug messages. - TRIVIAL
+ src/include/ZMap/zmapRemoteControl.h      |    2 +-
+ src/zmapRemoteControl/zmapRemoteControl.c |   87 +++++++++++++---------------
+ 2 files changed, 41 insertions(+), 48 deletions(-)
+
+2015-06-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Remove redundant reply check causing erroneous error messages. - BUG FIX
+ src/zmapApp/zmapAppRemoteControl.c |   33 +++++++++------------------------
+ src/zmapApp/zmapApp_P.h            |    5 -----
+ 2 files changed, 9 insertions(+), 29 deletions(-)
+
+2015-06-16  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.6.0-261-g45daca8 - Update RT and git commit reports
+ src/ChangeLog                                  |   16 ++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 3 files changed, 18 insertions(+), 1 deletions(-)
+
+2015-06-16  Steve Miller  <sm23@sanger.ac.uk>
+ remove windows machine from builds - BUILD
+ scripts/build_config.sh |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+2015-06-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Disable tilde expansion for url config fields - doesn't work on mac - REGRESSION FIX
+ src/zmapUtils/zmapUrl.c |   31 ++++++++++++++++++++-----------
+ 1 files changed, 20 insertions(+), 11 deletions(-)
+
+2015-06-15  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.6.0-258-g964d9ce - Update RT and git commit reports
+ src/ChangeLog                                  |   18 ++++++++++++++++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 2 files changed, 19 insertions(+), 1 deletions(-)
+
+2015-06-15  Steve Miller  <sm23@sanger.ac.uk>
+ add code to toggle the navigator coordinate display along with windows - BUILD
+ src/zmapView/zmapViewUtils.c         |    3 +++
+ src/zmapWindow/zmapWindowNavigator.c |    9 +++++----
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+2015-06-12  Steve Miller  <sm23@sanger.ac.uk>
+ edit of release notes - DOC
+ docs/user/release_notes.shtml |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+2015-06-11  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.6.0-255-gaa127fc - Update RT and git commit reports
+ src/ChangeLog                                  |  298 ++++++++++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |   22 ++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   32 +++-
+ 3 files changed, 351 insertions(+), 1 deletions(-)
+
+2015-06-11  Steve Miller  <sm23@sanger.ac.uk>
+ update of release notes - DOC
+ docs/user/release_notes.shtml |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+2015-06-11  Steve Miller  <sm23@sanger.ac.uk>
+ Merge branch 'release/1.7.0' into develop
+2015-06-11  Steve Miller  <sm23@sanger.ac.uk>
+ Merge remote branch 'origin/develop' into develop
+2015-06-11  Steve Miller  <sm23@sanger.ac.uk>
+ Merge branch 'feature/coords' into develop
+2015-06-11  Ed Griffiths  <edgrif@sanger.ac.uk>
+ pipe server was ignoring non-zero exit code of child process. - BUG FIX
+ src/zmapServer/pipe/pipeServer.c   |  340 ++++++++++++++++++++----------------
+ src/zmapServer/pipe/pipeServer_P.h |   12 +-
+ 2 files changed, 194 insertions(+), 158 deletions(-)
+
+2015-06-11  Steve Miller  <sm23@sanger.ac.uk>
+ Merge branch 'develop' into feature/coords
+2015-06-11  Steve Miller  <sm23@sanger.ac.uk>
+ one more correction to the previous - WIP
+ src/zmapWindow/zmapWindow.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+2015-06-11  Steve Miller  <sm23@sanger.ac.uk>
+ final commit on the feature/coords branch - WIP
+ src/ensc-core/README                               |   20 +++++++++-----
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.c       |   20 +++++++++-----
+ src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |   29 +++++++++++++++----
+ src/zmapWindow/zmapWindow.c                        |   10 ++++++-
+ 4 files changed, 58 insertions(+), 21 deletions(-)
+
+2015-06-11  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Change name of pipe server doc and add implementation details. - DOC
+ docs/design/pipe_server.shtml        |  208 ++++++++++++++++++++++++++++++++++
+ docs/design/pipe_server_config.shtml |  108 ------------------
+ 2 files changed, 208 insertions(+), 108 deletions(-)
+
+2015-06-10  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix regression caused by c52d188 - BUILD
+ src/configure.ac |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-06-10  Gemma Barson  <gb10@sanger.ac.uk>
+ Use toplevel coords instead of named coord system in ensembl - TRIVIAL
+ src/zmapServer/ensembl/ensemblServer.c |    9 ++++-----
+ 1 files changed, 4 insertions(+), 5 deletions(-)
+
+2015-06-10  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix a bug with CDS coords in ensembl - BUG FIX
+ src/zmapServer/ensembl/ensemblServer.c |   20 +++++++++++++-------
+ 1 files changed, 13 insertions(+), 7 deletions(-)
+
+2015-06-10  Steve Miller  <sm23@sanger.ac.uk>
+ small update to memory handling experiments
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |    5 +++--
+ src/zmapWindow/zmapWindowScale.c                   |    1 -
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+2015-06-10  Steve Miller  <sm23@sanger.ac.uk>
+ Merge branch 'develop' into feature/coords
+2015-06-10  Steve Miller  <sm23@sanger.ac.uk>
+ basic work on toggling between chromosome and slice coordinates done
+ src/include/ZMap/zmapView.h                        |    1 +
+ src/include/ZMap/zmapWindow.h                      |   19 +
+ src/zmapControl/zmapControlWindowButtons.c         |  108 ++++--
+ src/zmapControl/zmapControlWindowMenubar.c         |   30 ++-
+ src/zmapControl/zmapControl_P.h                    |    2 +
+ src/zmapView/zmapView.c                            |    2 +-
+ src/zmapView/zmapViewUtils.c                       |   38 ++-
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |   74 +++-
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.h |    2 +
+ src/zmapWindow/zmapWindow.c                        |  147 ++++---
+ src/zmapWindow/zmapWindowNavigator.c               |    5 +-
+ src/zmapWindow/zmapWindowScale.c                   |  456 ++++----------------
+ src/zmapWindow/zmapWindow_P.h                      |   20 +-
+ 13 files changed, 414 insertions(+), 490 deletions(-)
+
+2015-06-09  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix link error in zmap help page - DOC
+ docs/user/zmap_quick_start.shtml |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-06-09  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix regression caused by c52d188 - BUILD
+ src/configure.ac |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-06-08  Gemma Barson  <gb10@sanger.ac.uk>
+ Allow cloning of ensc-core to be disabled - BUILD
+ src/Makefile.am  |    4 ++++
+ src/autogen.sh   |   42 +++++++++++++++++++++++++++++++-----------
+ src/configure.ac |    1 +
+ 3 files changed, 36 insertions(+), 11 deletions(-)
+
+2015-06-08  Gemma Barson  <gb10@sanger.ac.uk>
+ Remove temp hack to find ensc-core - FORMATTING ONLY
+ src/zmapServer/ensembl/Makefile.am |    8 ++------
+ 1 files changed, 2 insertions(+), 6 deletions(-)
+
+2015-06-08  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix issue with relative stylesfile path with ~ expansion - NEW FEATURE 'Improve config file handling'
+ src/zmapConfig/zmapConfigFile.c |   17 +++++++++++++++--
+ 1 files changed, 15 insertions(+), 2 deletions(-)
+
+2015-06-08  Gemma Barson  <gb10@sanger.ac.uk>
+ Better method of checking current user's file permissions - NEW FEATURE 'Improve config file handling'
+ src/zmapUtils/zmapFileUtils.c |   22 ++++++++++++----------
+ 1 files changed, 12 insertions(+), 10 deletions(-)
+
+2015-06-08  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge remote branch 'origin/develop' into develop
+2015-06-08  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix xml errors in examples. - DOC
+ docs/design/Remote_control/zmap_remote.shtml |   24 ++++++++++++------------
+ 1 files changed, 12 insertions(+), 12 deletions(-)
+
+2015-06-08  Gemma Barson  <gb10@sanger.ac.uk>
+ Support tilde expansion in filepath urls - NEW FEATURE 'config tilde expansion'
+ src/zmapUtils/zmapUrl.c |  133 +++++++++++++++++++++++++++++++----------------
+ 1 files changed, 88 insertions(+), 45 deletions(-)
+
+2015-06-05  Steve Miller  <sm23@sanger.ac.uk>
+ create appropriate tooltip text when ruler is created, as well as when it is moved - WIP
+ src/zmapWindow/zmapWindow.c      |   73 +++++++++++++++++++++++++------------
+ src/zmapWindow/zmapWindowScale.c |    2 +-
+ 2 files changed, 50 insertions(+), 25 deletions(-)
+
+2015-06-04  Steve Miller  <sm23@sanger.ac.uk>
+ fix to web browser opening problem on remote machine (second version) - BUG FIX
+ src/zmapUtils/zmapWebBrowser.c |   56 +++++++++++++++++++++++++++++++--------
+ 1 files changed, 44 insertions(+), 12 deletions(-)
+
+2015-06-04  Steve Miller  <sm23@sanger.ac.uk>
+ revision to web browser work - WIP
+ src/zmapUtils/zmapWebBrowser.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+2015-06-03  Steve Miller  <sm23@sanger.ac.uk>
+ fix for web-browser not opening when running on tviewsrv - BUG FIX
+ src/zmapUtils/zmapWebBrowser.c |   68 ++++++++++++++++++++--------------------
+ 1 files changed, 34 insertions(+), 34 deletions(-)
+
+2015-06-01  Ed Griffiths  <edgrif@sanger.ac.uk>
+ set -o history is needed by build_config had got commented out because it's need was not commented. - BUG FIX
+ scripts/build_bootstrap.sh           |    8 ++------
+ scripts/build_run.sh                 |    3 +++
+ scripts/zmap_check_cluster_config.sh |    5 ++++-
+ scripts/zmap_compile_and_tar.sh      |    5 ++++-
+ scripts/zmap_fetch_acedbbinaries.sh  |    5 ++++-
+ scripts/zmap_foocanvas_tasks.sh      |    5 ++++-
+ scripts/zmap_handle_release_tar.sh   |    5 ++++-
+ scripts/zmap_make_docs.sh            |    5 ++++-
+ scripts/zmap_release_docs.sh         |    5 ++++-
+ scripts/zmap_release_notes.sh        |    5 ++++-
+ scripts/zmap_symlink.sh              |    5 ++++-
+ scripts/zmap_test_suite.sh           |    5 ++++-
+ scripts/zmap_update_web.sh           |    5 ++++-
+ 13 files changed, 49 insertions(+), 17 deletions(-)
+
+2015-05-28  Gemma Barson  <gb10@sanger.ac.uk>
+ Do tilde expansion for filepath config values (data-dir) - NEW FEATURE 'config tilde expansion'
+ src/zmapServer/file/fileServer.c |    2 +-
+ src/zmapServer/pipe/pipeServer.c |    4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+2015-05-28  Gemma Barson  <gb10@sanger.ac.uk>
+ Do tilde expansion for filepath config values (stylesfile, pfetch location, log file) - NEW FEATURE 'config tilde expansion'
+ src/zmapApp/zmapAppwindow.c            |    6 +++---
+ src/zmapView/zmapView.c                |    6 +++---
+ src/zmapWindow/zmapWindowPreferences.c |    2 +-
+ 3 files changed, 7 insertions(+), 7 deletions(-)
+
+2015-05-28  Gemma Barson  <gb10@sanger.ac.uk>
+ Improve handling of relative paths and non-writeable locations for config files - NEW FEATURE 'Improve config file handling'
+ src/include/ZMap/zmapUtils.h   |    2 +-
+ src/zmapApp/zmapAppwindow.c    |  107 ++++++++++++++++++++++++++++++----------
+ src/zmapConfig/zmapConfigDir.c |    8 ++--
+ src/zmapUtils/zmapFileUtils.c  |    7 ++-
+ 4 files changed, 90 insertions(+), 34 deletions(-)
+
+2015-05-27  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Augment our configure.ac tests with info. provided by the autoscan program. - BUILD
+ src/configure.ac |   50 +++++++++++++++++++++++++++++++-------------------
+ 1 files changed, 31 insertions(+), 19 deletions(-)
+
+2015-05-27  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Add Gemma to list of zmap authors. - DOC
+ src/zmapUtils/zmapGUIutils.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2015-05-27  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Add separate mysql library init call in globalinit function to try fix "random" crashing. - BUG FIX
+ src/zmapServer/ensembl/ensemblServer.c |   19 ++++++++++++++++---
+ 1 files changed, 16 insertions(+), 3 deletions(-)
+
+2015-05-26  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix a couple of minor return code error bugs. - BUG FIX
+ src/zmapServer/ensembl/ensemblServer.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-05-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix problem with CDS for ensembl transcripts - BUG FIX
+ src/zmapServer/ensembl/ensemblServer.c |   61 +++++++++++--------------------
+ 1 files changed, 22 insertions(+), 39 deletions(-)
+
+2015-05-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix off-by-one error in ensembl - BUG FIX
+ src/zmapServer/ensembl/ensemblServer.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+2015-05-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix a bug with match coords in ensembl - BUG FIX
+ src/zmapServer/ensembl/ensemblServer.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+2015-05-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Tidy logging for ensembl - FORMATTING ONLY
+ src/zmapServer/ensembl/ensemblServer.c |   29 ++++++++++++++++++-----------
+ 1 files changed, 18 insertions(+), 11 deletions(-)
+
+2015-05-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Temp fix for 3ft in ensembl - BUG FIX
+ src/zmapServer/ensembl/ensemblServer.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+2015-05-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Add option to export clicked feature and tidy code - NEW FEATURE 'export_feature'
+ src/include/ZMap/zmapWindow.h              |    4 +-
+ src/zmapControl/zmapControlWindowMenubar.c |   51 +++++++++++------
+ src/zmapView/zmapView.c                    |    2 +-
+ src/zmapWindow/zmapWindowMenus.c           |   85 ++++++++++++++++++++--------
+ src/zmapWindow/zmapWindow_P.h              |    9 ++-
+ 5 files changed, 104 insertions(+), 47 deletions(-)
+
+2015-05-21  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix bug saving new features to GFF - BUG FIX
+ src/zmapView/zmapViewScratch.c           |   16 ++++++++--------
+ src/zmapWindow/zmapWindowFeatureShow.cpp |   12 ++++++------
+ 2 files changed, 14 insertions(+), 14 deletions(-)
+
+2015-05-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'feature/ensembl' into develop
+2015-05-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Try multiple coord systems - WIP
+ src/zmapServer/ensembl/ensemblServer.c   |   60 +++++++++++++++++++++---------
+ src/zmapServer/ensembl/ensemblServer_P.h |    1 +
+ 2 files changed, 43 insertions(+), 18 deletions(-)
+
+2015-05-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Fix potential crash in ensembl when slice not found - BUG FIX
+ src/zmapServer/ensembl/ensemblServer.c |   18 +++++++++++-------
+ 1 files changed, 11 insertions(+), 7 deletions(-)
+
+2015-05-19  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.6.0-201-g3ceea5a - Update RT and git commit reports
+ src/ChangeLog |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
 2015-05-19  zmap  <zmap@sanger.ac.uk>
  ZMap version 1.6.0-200-ga4fa5f0 - Update RT and git commit reports
  src/ChangeLog                                  | 2795 +++++++++++++++++++-----
  src/build/release_docs/GIT_COMMITS.txt         |   32 +-
  src/build/release_docs/RT_TICKETS_RESOLVED.txt |  142 +--
  3 files changed, 2306 insertions(+), 663 deletions(-)
+
+2015-05-19  Gemma Barson  <gb10@sanger.ac.uk>
+ Merge branch 'feature/manual' into develop
+2015-05-19  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor change to save/export text - WIP
+ docs/user/manual/ZMap_User_Manual.pdf |  Bin 4303658 -> 4303764 bytes
+ docs/user/manual/ZMap_User_Manual.tex |    2 +-
+ 2 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-05-13  Gemma Barson  <gb10@sanger.ac.uk>
+ Removed most references to Otter - WIP
+ docs/user/manual/ZMap_User_Manual.pdf |  Bin 3833277 -> 4303658 bytes
+ docs/user/manual/ZMap_User_Manual.tex |   58 +++++++++++++++++++++++---------
+ docs/user/manual/img_editing_zmap.png |  Bin 0 -> 443085 bytes
+ 3 files changed, 41 insertions(+), 17 deletions(-)
 
 2015-05-13  Steve Miller  <sm23@sanger.ac.uk>
  some more preparatory work on the scale bar coordinate display - WIP
@@ -17,15 +360,39 @@
  src/zeromq/tests/Makefile.am |   10 ++++++++--
  2 files changed, 11 insertions(+), 2 deletions(-)
 
+2015-05-12  Gemma Barson  <gb10@sanger.ac.uk>
+ Minor update to diagram with peer editing box - WIP
+ docs/user/manual/ZMap_User_Manual.pdf   |  Bin 3831996 -> 3833277 bytes
+ docs/user/manual/img_focus_and_mark.png |  Bin 281667 -> 278930 bytes
+ 2 files changed, 0 insertions(+), 0 deletions(-)
+
 2015-05-11  Steve Miller  <sm23@sanger.ac.uk>
  more prep work on the scale - WIP
  src/zmapWindow/zmapWindowScale.c |   60 +++++++++++++++++++++++++++----------
  1 files changed, 44 insertions(+), 16 deletions(-)
 
+2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
+ Update info about opening zmap standalone - WIP
+ docs/user/manual/ZMap_User_Manual.pdf |  Bin 3797232 -> 3831996 bytes
+ docs/user/manual/ZMap_User_Manual.tex |   46 ++++++++++++++++++++++++++++++---
+ 2 files changed, 42 insertions(+), 4 deletions(-)
+
 2015-05-08  Steve Miller  <sm23@sanger.ac.uk>
  some work on the scale bar - WIP
  src/zmapWindow/zmapWindowScale.c |  103 ++++++++++++++++++++++++++++++++++++-
  1 files changed, 100 insertions(+), 3 deletions(-)
+
+2015-04-20  Gemma Barson  <gb10@sanger.ac.uk>
+ Start to update intro text - WIP
+ docs/user/manual/ZMap_User_Manual.pdf |  Bin 3797279 -> 3797232 bytes
+ docs/user/manual/ZMap_User_Manual.tex |    4 +++-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
+
+2015-04-17  Gemma Barson  <gb10@sanger.ac.uk>
+ Update ZMap name capitalisation
+ docs/user/manual/ZMap_User_Manual.pdf |  Bin 3797267 -> 3797279 bytes
+ docs/user/manual/ZMap_User_Manual.tex |   54 ++++++++++++++++----------------
+ 2 files changed, 27 insertions(+), 27 deletions(-)
 
 2015-05-07  Steve Miller  <sm23@sanger.ac.uk>
  some more changes for the previous

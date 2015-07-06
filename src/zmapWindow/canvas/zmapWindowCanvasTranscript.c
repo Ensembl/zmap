@@ -42,7 +42,7 @@
 #include <zmapWindowCanvasTranscript_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
-
+#define USE_DRAWING_BUG_HACK 1
 
 static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
                                    ZMapWindowCanvasFeature feature,
@@ -93,8 +93,9 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
                                    ZMapWindowCanvasFeature feature,
                                    GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  gulong ufill = 0L, outline = 0L ;
+  gulong fill = 0L, outline = 0L ;
   int colours_set = 0, fill_set = 0, outline_set = 0 ;
+  int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
   double x1 = 0.0, x2 = 0.0, y1 = 0.0, y2 = 0.0, y1_cache = 0.0, y2_cache = 0.0, col_width = 0.0 ;
   ZMapWindowCanvasTranscript tr = NULL ;
   FooCanvasItem *foo = NULL ;
@@ -110,24 +111,6 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
   tr = (ZMapWindowCanvasTranscript) feature;
   transcript = &feature->feature->feature.transcript;
   style = *feature->feature->style;
-
-  /* draw a box */
-
-  /* colours are not defined for the CanvasFeatureSet
-   * as we can have several styles in a column
-   * but they are cached by the calling function
-   * and also the window focus code
-   * however, as we have CDS colours diff from non-CDS and possibly diff style in one column
-   * this is likely ineffective, but as the number of features is small we don't care so much
-   */
-
-  /*
-   * Set up non-cds colours
-   */
-  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &ufill, &outline);
-  fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
-  outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
-
 
   /*
    * set up position.
@@ -167,7 +150,6 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
       feature->y2 = y2 = featureset->end ;
     }
 
-
   /* Quick hack for features that are completely outside of the sequence
    * region. These should not really be passed in, but occasionally are
    * due to bugs on the otterlace side (Feb. 20th 2014). We ignore truncation
@@ -177,6 +159,13 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
     {
       ignore_truncation_glyphs = TRUE ;
     }
+
+  /*
+   * Set up non-cds colours
+   */
+  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
+  fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
+  outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
   /*
    * Drawing of truncation glyphs themselves.
@@ -223,7 +212,6 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
 
     }
 
-
   /*
    * Draw any UTR sections of an exon.
    */
@@ -232,8 +220,6 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
       /* utr at start ? */
       if(transcript->flags.cds && transcript->cds_start > y1 && transcript->cds_start < y2)
         {
-
-
           zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, transcript->cds_start-1,
                                            drawable, fill_set, outline_set, ufill, outline) ;
 
@@ -287,10 +273,9 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
   /*
    * Now draw either box for CDS of exon, or intron lines.
    */
-  int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
   if(tr->sub_type == TRANSCRIPT_EXON)
     {
-      zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set,outline_set,ufill,outline) ;
+      zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set, outline_set, fill, outline) ;
     }
   else if (outline_set)
     {
@@ -310,32 +295,16 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
           gdk_gc_set_foreground (featureset->gc, &c) ;
 
           /*
-           * sm23 21st Feb. 2014.
-           *
-           * This modification to the y coordinate is required when truncation glyphs are drawn.
-           * It is a hack to get around what looks like a bug in some part of the drawing code
-           * or perhas the canvas itself.
+           * a hack to the intron lines
            */
+#ifdef USE_DRAWING_BUG_HACK
+          zMap_draw_line_hack(drawable, featureset, cx1_5, cy1, cx2, cy1_5) ;
+          zMap_draw_line_hack(drawable, featureset, cx2, cy1_5+1, cx1_5, cy2) ;
+#else
           zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, (featureset->draw_truncation_glyphs
                                                                  ? cy1_5+1 : cy1_5));
           zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
-
-          /* zMap_draw_line(drawable, featureset, cx1_5, cy1, cx1_5, cy2) ; */
-
-          /*
-           * One last go with something else... seems to be subject to the same
-           * problems as the original function, unsurprisingly.
-           */
-          /*gint npoints = 3 ;
-          GdkPoint * points = (GdkPoint*) g_new0(GdkPoint, npoints) ;
-          points[0].x = cx1_5 ;
-          points[0].y = cy1 ;
-          points[1].x = cx2 ;
-          points[1].y = cy1_5;
-          points[2].x = cx1_5 ;
-          points[2].y = cy2 ;
-          gdk_draw_lines(drawable, featureset->gc, points, npoints) ;
-          g_free((void*)points) ;*/
+#endif
         }
       else if(tr->sub_type == TRANSCRIPT_INTRON_START_NOT_FOUND)
         {

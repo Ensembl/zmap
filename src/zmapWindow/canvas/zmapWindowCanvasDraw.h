@@ -75,6 +75,8 @@ gboolean zMapWindowCanvasCalcHorizCoords(ZMapWindowFeaturesetItem featureset, ZM
                                          double *x1_out, double *x2_out) ;
 int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
                    gint cx1, gint cy1, gint cx2, gint cy2) ;
+void zMap_draw_line_hack(GdkDrawable* drawable, ZMapWindowFeaturesetItem featureset,
+                                gint x1, gint y1, gint x2, gint y2) ;
 int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
                           gint cx1, gint cy1, gint cx2, gint cy2) ;
 int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,

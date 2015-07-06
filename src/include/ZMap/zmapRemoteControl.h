@@ -63,7 +63,7 @@ _(ZMAP_REMOTECONTROL_RC_BAD_STATE,     , "bad_state",      "Internal error, bad 
 ZMAP_DEFINE_ENUM(ZMapRemoteControlRCType, ZMAP_REMOTECONTROL_RC_LIST) ;
 
 
-/* Debugging levels. */
+/* Debugging levels, must be in ascending order of verboseness. */
 typedef enum {ZMAP_REMOTECONTROL_DEBUG_OFF,
 	      ZMAP_REMOTECONTROL_DEBUG_NORMAL, ZMAP_REMOTECONTROL_DEBUG_VERBOSE} ZMapRemoteControlDebugLevelType ;
 

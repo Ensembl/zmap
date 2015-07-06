@@ -6,6 +6,18 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 1.7.0</h4>
+<ul>
+  <li>Display can now toggle between slice and chromosome coordinates (see ZMap/View menu)
+  <li>Option to export a single feature has now been added to the right-click menu
+  <li>Some generalisation of the configuration for standalone ZMap
+  <li>Bug fixes to feature filtering, horizon and tooltip display
+  <li>Bug fixes to feature search window 
+  <li>Prototype of ensemble connection now in place
+  <li>Window size on startup (on mac) has been corrected 
+  
+</ul>
+
 <h4>Version 1.6.0</h4>
 <ul>
   <li>Add n/N shortcut key to get nucleotide sequence for a feature

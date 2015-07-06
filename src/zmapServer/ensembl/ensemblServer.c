@@ -274,6 +274,7 @@ static gboolean createConnection(void **server_out,
     server->passwd = g_strdup(url->passwd) ;
 
   server->db_name = zMapURLGetQueryValue(url->query, "db_name") ;
+  server->db_prefix = zMapURLGetQueryValue(url->query, "db_prefix") ;
 
   if (server->host && server->db_name)
     {
@@ -954,17 +955,9 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
   if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
 
-  if (source)
-    {
-      feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name,
-                            feature_mode, source, 0, 0,
-                            get_features_data, feature_block) ;
-    }
-
-  if (!feature)
-    {
-      zMapLogWarning("Failed to create feature '%s' with source '%s'", feature_name, source) ;
-    }
+  feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
+                        feature_mode, source, 0, 0, 
+                        get_features_data, feature_block) ;
 
   return feature ;
 }
@@ -992,17 +985,9 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
   if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
 
-  if (source)
-    {
-      feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name,
-                            feature_mode, source, 0, 0,
-                            get_features_data, feature_block) ;
-    }
-
-  if (!feature)
-    {
-      zMapLogWarning("Failed to create feature '%s' with source '%s'", feature_name, source) ;
-    }
+  feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
+                        feature_mode, source, 0, 0, 
+                        get_features_data, feature_block) ;
 
   return feature ;
 }
@@ -1065,12 +1050,9 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
   if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
 
-  if (source)
-    {
-      feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
-                            feature_mode, source, 0, 0,
-                            get_features_data, feature_block) ;
-    }
+  feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
+                        feature_mode, source, 0, 0, 
+                        get_features_data, feature_block) ;
 
   if (feature)
     {
@@ -1093,11 +1075,6 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
 
       Vector *exons = Transcript_getAllExons(rsf) ;
       transcriptAddExons(server, feature, exons) ;
-    }
-
-  if (!feature)
-    {
-      zMapLogWarning("Failed to create feature '%s' with source '%s'", feature_name, source) ;
     }
 
   return feature ;
@@ -1131,13 +1108,10 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
 
   if (!source || *source == '\0')
     source = featureGetSOTerm((SeqFeature*)rsf) ;
-
-  if (source)
-    {
-      feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
-                            feature_mode, source, 0, 0,
-                            get_features_data, feature_block) ;
-    }
+  
+  feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
+                        feature_mode, source, 0, 0, 
+                        get_features_data, feature_block) ;
 
   if (feature)
     {
@@ -1168,11 +1142,6 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
 
       Vector *exons = PredictionTranscript_getAllExons(rsf, 0) ;
       transcriptAddExons(server, feature, exons) ;
-    }
-
-  if (!feature)
-    {
-      zMapLogWarning("Failed to create feature '%s' with source '%s'", feature_name, source) ;
     }
 
   return feature ;
@@ -1333,6 +1302,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
   gboolean has_score = TRUE ;
   double score = 0.0 ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
+  char *unique_source = NULL ;
 
   SO_accession = featureGetSOTerm(rsf) ;
 
@@ -1354,11 +1324,17 @@ static ZMapFeature makeFeature(EnsemblServer server,
       else if (SeqFeature_getStrand(rsf) < 0)
         strand = ZMAPSTRAND_REVERSE ;
 
-      /* Create the unique id from the name and coords (cast away const... ugh) */
+      /* Create the unique id from the db name, feature name and coords (cast away const... ugh) */
       unique_id = zMapFeatureCreateID(feature_mode, (char*)feature_name_id, strand, start, end, match_start, match_end);
 
+      /* If a prefix is given, add it to the source name */
+      if (server->db_prefix)
+        unique_source = g_strdup_printf("%s_%s", server->db_prefix, source);
+      else
+        unique_source = g_strdup(source) ;
+
       /* Find the featureset, or create it if it doesn't exist */
-      GQuark feature_set_id = zMapFeatureSetCreateID((char*)source) ;
+      GQuark feature_set_id = zMapFeatureSetCreateID((char*)unique_source) ;
 
       ZMapFeatureSet feature_set = (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block,
                                                                                 feature_set_id,
@@ -1366,7 +1342,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
 
       if (!feature_set)
         {
-          feature_set = makeFeatureSet(feature_name_id, feature_set_id, feature_mode, source, get_features_data, feature_block) ;
+          feature_set = makeFeatureSet(feature_name_id, feature_set_id, feature_mode, unique_source, get_features_data, feature_block) ;
         }
 
       if (feature_set)
@@ -1400,11 +1376,17 @@ static ZMapFeature makeFeature(EnsemblServer server,
     }
   else if (!SO_accession)
     {
-      zMapLogWarning("%s", "Could not create feature: could not determine SO accession") ;
+      zMapLogWarning("%s", "Could not create feature [%s]: could not determine SO accession", 
+                     feature_name_id ? feature_name_id : "") ;
+    }
+  else if (!source)
+    {
+      zMapLogWarning("%s", "Could not create feature [%s]: could not determine source",
+                     feature_name_id ? feature_name_id : "") ;
     }
   else
     {
-      zMapLogWarning("%s", "Could not create feature: could not determine source") ;
+      /* Ignoring features in this featureset: nothing to do */
     }
 
   return feature ;

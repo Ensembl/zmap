@@ -804,7 +804,7 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
     }
 
   /* If a config file is specified, check that it can be found */
-  if (file_prefs.config_file && !zMapFileAccess(file_prefs.config_file, "rw"))
+  if (file_prefs.config_file && !zMapFileAccess(file_prefs.config_file, "r"))
     {
       zMapShowMsg(ZMAP_MSG_WARNING,
                   "The Blixem config file \"%s\" cannot be found in your path or it is not read/writeable.",
