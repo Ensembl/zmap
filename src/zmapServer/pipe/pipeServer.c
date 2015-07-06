@@ -1027,20 +1027,22 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
     }
   argv[i]= NULL ;
 
-  //#define MH17_DEBUG_ARGS
-#if defined  MH17_DEBUG_ARGS
+  /* log the actual command line used, very useful for us developers. */
   {
-    char *x = "";
-    int j;
+    GString *arg_str = NULL ;
+    int j ;
 
-    for(j = 0;argv[j] ;j++)
+    arg_str = g_string_new(NULL) ;
+
+    for(j = 0 ; argv[j] ; j++)
       {
-        x = g_strconcat(x," ",argv[j],NULL);
+        g_string_append_printf(arg_str, "%s ", argv[j]) ;
       }
-    zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_end);
-  }
-#endif
 
+    zMapLogMessage("About to launch child process as: \"%s\"", arg_str->str) ;
+
+    g_string_free(arg_str, TRUE) ;
+  }
 
   /* Seems that g_spawn_async_with_pipes() is not thread safe so lock round it. */
   zMapThreadForkLock();
