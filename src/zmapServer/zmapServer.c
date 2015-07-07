@@ -32,6 +32,7 @@
 
 #include <string.h>
 
+#include <config.h>
 #include <ZMap/zmapUrl.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapServer_P.h>
