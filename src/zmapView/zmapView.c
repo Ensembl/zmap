@@ -1399,6 +1399,12 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       result = TRUE ;
     }
 
+    if (zmap_view->feature_cache)
+      {
+        g_hash_table_destroy(zmap_view->feature_cache) ;
+        zmap_view->feature_cache = g_hash_table_new(NULL, NULL) ;
+      }
+
   return result ;
 }
 
@@ -5896,6 +5902,31 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
       {
         ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
         zmapViewScratchCopyFeatures(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end, scratch_cmd->subpart, scratch_cmd->use_subfeature);
+        break;
+      }
+
+    case ZMAPWINDOW_CMD_SETCDSSTART:
+      {
+        ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+        zmapViewScratchSetCDS(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end,
+                              scratch_cmd->subpart, scratch_cmd->use_subfeature,
+                              TRUE, FALSE);
+        break;
+      }
+    case ZMAPWINDOW_CMD_SETCDSEND:
+      {
+        ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+        zmapViewScratchSetCDS(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end, 
+                              scratch_cmd->subpart, scratch_cmd->use_subfeature,
+                              FALSE, TRUE);
+        break;
+      }
+    case ZMAPWINDOW_CMD_SETCDSRANGE:
+      {
+        ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+        zmapViewScratchSetCDS(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end,
+                              scratch_cmd->subpart, scratch_cmd->use_subfeature,
+                              TRUE, TRUE);
         break;
       }
 

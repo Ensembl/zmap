@@ -72,7 +72,7 @@ ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window)
  *
  * \returns The ZMapFeature, or NULL if the column doesn't exist
  */
-static ZMapFeature zmapWindowScratchGetFeature(ZMapWindow window)
+ZMapFeature zmapWindowScratchGetFeature(ZMapWindow window)
 {
   ZMapFeature feature = NULL ;
   ZMapFeatureSet feature_set = zmapWindowScratchGetFeatureset(window) ;
@@ -255,6 +255,58 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
                                use_subfeature) ;
 
       scratchHighlightEvidence(window) ;
+    }
+}
+
+
+/*!
+ * \brief Copy the given feature to the scratch column
+ *
+ * \param window
+ * \param feature The new feature to be copied in
+ * \param item The foo canvas item for the new feature
+ * \param world_x The clicked x coord
+ * \param world_y The clicked y coord
+ * \param merge_subfeature If true, just merge the clicked subfeature, otherwise merge the whole feature
+ */
+void zmapWindowScratchSetCDS(ZMapWindow window, 
+                             ZMapFeature feature, 
+                             FooCanvasItem *item, 
+                             const double world_x,
+                             const double world_y,
+                             const gboolean use_subfeature,
+                             const gboolean set_cds_start,
+                             const gboolean set_cds_end)
+{
+  if (window)
+    {
+      scratchHideEvidence(window) ;
+
+      ZMapWindowCommandType cmd = ZMAPWINDOW_CMD_INVALID ;
+
+      if (set_cds_start && set_cds_end)
+        cmd = ZMAPWINDOW_CMD_SETCDSRANGE ;
+      else if (set_cds_start)
+        cmd = ZMAPWINDOW_CMD_SETCDSSTART ;
+      else if (set_cds_end)
+        cmd = ZMAPWINDOW_CMD_SETCDSEND ;
+
+      if (cmd != ZMAPWINDOW_CMD_INVALID)
+        {
+          doScratchCallbackCommand(cmd, 
+                                   window,
+                                   feature, 
+                                   item, 
+                                   world_x,
+                                   world_y,
+                                   use_subfeature) ;
+
+          scratchHighlightEvidence(window) ;
+        }
+      else
+        {
+          zMapLogWarning("%s", "Called zmapWindowScratchSetCDS but did not specify start/end/range") ;
+        }
     }
 }
 

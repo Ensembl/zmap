@@ -45,7 +45,16 @@
 
 
 
-typedef enum {ZMAPEDIT_MERGE, ZMAPEDIT_DELETE, ZMAPEDIT_CLEAR, ZMAPEDIT_SAVE} ZMapEditType ;
+typedef enum 
+{
+  ZMAPEDIT_MERGE, 
+  ZMAPEDIT_SET_CDS_START,
+  ZMAPEDIT_SET_CDS_END,
+  ZMAPEDIT_SET_CDS_RANGE,
+  ZMAPEDIT_DELETE, 
+  ZMAPEDIT_CLEAR, 
+  ZMAPEDIT_SAVE
+} ZMapEditType ;
 
 
 /* Data about each edit operation in the Scratch column */
@@ -74,6 +83,7 @@ typedef struct _ScratchMergeDataStruct
   GError **error;                        /* gets set if any problems */
 
   EditOperation operation;               /* details about the operation being performed */
+
 } ScratchMergeDataStruct, *ScratchMergeData;
 
 
@@ -285,12 +295,23 @@ ZMapFeature getFeature(ZMapView view, GList *list_item)
 
   if (feature_id)
     {
-      ZMapFeatureAny feature_any = zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)view->features,
-                                                                feature_id,
-                                                                ZMAPFEATURE_STRUCT_FEATURE) ;
+      /* First look in our local cache for the feature pointer */
+      if (view->feature_cache)
+        result = (ZMapFeature)g_hash_table_lookup(view->feature_cache, GINT_TO_POINTER(feature_id)) ;
 
-      if (feature_any && feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
-        result = (ZMapFeature)feature_any ;
+      if (!result)
+        {
+          /* If not found, look up the feature and cache it */
+          ZMapFeatureAny feature_any = zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)view->features,
+                                                                    feature_id,
+                                                                    ZMAPFEATURE_STRUCT_FEATURE) ;
+
+          if (feature_any && feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+            {
+              result = (ZMapFeature)feature_any ;
+              g_hash_table_insert(view->feature_cache, GINT_TO_POINTER(feature_id), (ZMapFeature)feature_any) ;
+            }
+        }
     }
 
   return result ;
@@ -735,6 +756,139 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data,
 
 
 /*!
+ * \brief Set the CDS for the scratch feature
+ */
+static gboolean scratchDoSetCDSOperation(ScratchMergeData merge_data)
+{
+  gboolean merged = FALSE ;
+  zMapReturnValIfFail(merge_data, merged) ;
+
+  EditOperation operation = merge_data->operation;
+
+  GList *feature_list = merge_data->operation->src_feature_ids ;
+  ZMapFeature feature = getFeature(merge_data->view, feature_list) ;
+
+  if (feature)
+    {
+      /* 0 means don't set it */
+      int cds_start = 0 ;
+      int cds_end = 0 ;
+      gboolean ok = TRUE ;
+
+      if (feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
+        {
+          if (operation->edit_type == ZMAPEDIT_SET_CDS_START || operation->edit_type == ZMAPEDIT_SET_CDS_RANGE)
+            cds_start = operation->seq_start ;
+
+          if (operation->edit_type == ZMAPEDIT_SET_CDS_END || operation->edit_type == ZMAPEDIT_SET_CDS_RANGE)
+            cds_end = operation->seq_end ;
+        }
+      else if (operation->use_subfeature && operation->subpart)
+        {
+          if (operation->edit_type == ZMAPEDIT_SET_CDS_START || operation->edit_type == ZMAPEDIT_SET_CDS_RANGE)
+            cds_start = operation->subpart->start ;
+
+          if (operation->edit_type == ZMAPEDIT_SET_CDS_END || operation->edit_type == ZMAPEDIT_SET_CDS_RANGE)
+            cds_end = operation->subpart->end ;
+        }
+      else if (operation->use_subfeature)
+        {
+          if (operation->edit_type == ZMAPEDIT_SET_CDS_START || operation->edit_type == ZMAPEDIT_SET_CDS_RANGE)
+            cds_start = feature->x1 ;
+
+          if (operation->edit_type == ZMAPEDIT_SET_CDS_END || operation->edit_type == ZMAPEDIT_SET_CDS_RANGE)
+            cds_end = feature->x2 ;
+        }
+      else
+        {
+          /* Use overall start/end of all features. Uses cds coords for transcripts unless none
+           * set in which case use feature coords */
+          GList *item = operation->src_feature_ids ;
+          int min_start = 0 ;
+          int max_end = 0 ;
+          int min_cds_start = 0 ;
+          int max_cds_end = 0 ;
+          gboolean first = TRUE ;
+          gboolean has_cds = FALSE ;
+
+          for ( ; item ; item = item->next)
+            {
+              ZMapFeature feature = getFeature(merge_data->view, item) ;
+
+              if (first)
+                {
+                  min_start = feature->x1 ;
+                  max_end = feature->x2 ;
+
+                  if (ZMAPFEATURE_HAS_CDS(feature))
+                    {
+                      has_cds = TRUE ;
+                      min_cds_start = zMapFeatureTranscriptGetCDSStart(feature) ;
+                      max_cds_end = zMapFeatureTranscriptGetCDSEnd(feature) ;
+                    }
+                }
+
+              if (feature->x1 < min_start)
+                min_start = feature->x1 ;
+
+              if (feature->x2 > max_end)
+                max_end = feature->x2 ;
+
+              if (ZMAPFEATURE_HAS_CDS(feature))
+                {
+                  has_cds = TRUE ;
+
+                  if (zMapFeatureTranscriptGetCDSStart(feature) < min_cds_start)
+                    min_cds_start = zMapFeatureTranscriptGetCDSStart(feature) ;
+
+                  if (zMapFeatureTranscriptGetCDSEnd(feature) > max_cds_end)
+                    max_cds_end = zMapFeatureTranscriptGetCDSEnd(feature) ;
+                }
+
+              first = FALSE ;
+            }
+
+          if (operation->edit_type == ZMAPEDIT_SET_CDS_START || operation->edit_type == ZMAPEDIT_SET_CDS_RANGE)
+            {
+              if (has_cds)
+                cds_start = min_cds_start ;
+              else
+                cds_start = min_start ;
+            }
+          
+          if (operation->edit_type == ZMAPEDIT_SET_CDS_END || operation->edit_type == ZMAPEDIT_SET_CDS_RANGE)
+            {
+              if (has_cds)
+                cds_end = max_cds_end ;
+              else
+                cds_end = max_end ;
+            }
+        }
+
+      /* If both start and end are set, check start <= end */
+      if (cds_start > 0 && cds_end > 0 && cds_start > cds_end)
+        {
+          ok = FALSE ;
+          g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
+                      "CDS start must not be more than end (got %d %d)", cds_start, cds_end) ;
+        }
+
+      if (ok)
+        {
+          merged = zMapFeatureMergeTranscriptCDSCoords(merge_data->dest_feature, cds_start, cds_end);
+        }
+    }
+  else
+    {
+      g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
+                  "No source feature or coordinate given to set the CDS from.") ;
+    }
+
+  return merged ;
+}
+
+
+/*!
  * \brief Delete a feature from the scratch column
  */
 static gboolean scratchDoDeleteOperation(ScratchMergeData merge_data)
@@ -875,7 +1029,7 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
 
   zMapFeatureTranscriptInit(feature);
   zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
-  //zMapFeatureSetAddFeature(feature_set, feature);
+  //zMapFeatureAddTranscriptCDS(feature, TRUE, cds_start, cds_end);
 
   /* Create the exons */
   scratchFeatureRecreateExons(zmap_view, feature) ;
@@ -1002,6 +1156,11 @@ static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_featu
           case ZMAPEDIT_MERGE:
             merged = scratchDoMergeOperation(&merge_data, first_merge) ;
             first_merge = FALSE ;
+            break ;
+          case ZMAPEDIT_SET_CDS_START: /* fall through */
+          case ZMAPEDIT_SET_CDS_END:   /* fall through */
+          case ZMAPEDIT_SET_CDS_RANGE:
+            merged = scratchDoSetCDSOperation(&merge_data) ;
             break ;
           case ZMAPEDIT_DELETE:
             merged = scratchDoDeleteOperation(&merge_data) ;
@@ -1233,7 +1392,7 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
  * \brief Utility to convert a GList of ZMapFeatures to a GList of quarks to store in the
  * operation .
  */
-static void operationAddFeatureList(EditOperation operation, GList *features)
+static void operationAddFeatureList(ZMapView view, EditOperation operation, GList *features)
 {
   /* Add the feature IDs to our list. We don't store pointers to the actual features because
    * these can become invalidated e.g. on revcomp */
@@ -1243,6 +1402,13 @@ static void operationAddFeatureList(EditOperation operation, GList *features)
     {
       ZMapFeature feature = (ZMapFeature)(feature_item->data) ;
       operation->src_feature_ids = g_list_append(operation->src_feature_ids, GINT_TO_POINTER(feature->unique_id)) ;
+      
+      /* Cache used feature pointers so that we can find them quickly. Gets cleared if pointers
+       * are invalidated e.g. on revcomp. */
+      if (!view->feature_cache)
+        view->feature_cache = g_hash_table_new(NULL, NULL); 
+
+      g_hash_table_insert(view->feature_cache, GINT_TO_POINTER(feature->unique_id), feature) ;
     }
 }
 
@@ -1278,13 +1444,68 @@ gboolean zmapViewScratchCopyFeatures(ZMapView view,
       operation->use_subfeature = use_subfeature ;
       operation->boundary = ZMAPBOUNDARY_NONE;
 
-      operationAddFeatureList(operation, features) ;
+      operationAddFeatureList(view, operation, features) ;
 
       /* Add this operation to the list and recreate the scratch feature. */
       scratchAddOperation(view, operation);
     }
 
   return TRUE;
+}
+
+
+/*!
+ * \brief Set the CDS start and/or end from the given feature(s)
+ */
+gboolean zmapViewScratchSetCDS(ZMapView view,
+                               GList *features,
+                               const long seq_start,
+                               const long seq_end,
+                               ZMapFeatureSubPart subpart,
+                               const gboolean use_subfeature,
+                               const gboolean set_cds_start,
+                               const gboolean set_cds_end)
+{
+  gboolean result = TRUE ;
+
+  /* Disallow this operation if the Annotation column is not enabled. (Should only happen after a
+   * key press event so should be fine to ignore this without user feedback as the Annotation
+   * column keys have no effect if the column is disabled.) */
+  if (features && zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
+    {
+      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+
+      EditOperation operation = g_new0(EditOperationStruct, 1);
+
+      if (set_cds_start && set_cds_end)
+        operation->edit_type = ZMAPEDIT_SET_CDS_RANGE ;
+      else if (set_cds_start)
+        operation->edit_type = ZMAPEDIT_SET_CDS_START ;
+      else if (set_cds_end)
+        operation->edit_type = ZMAPEDIT_SET_CDS_END ;
+      else
+        result = FALSE ;
+
+      if (result)
+        {
+          operation->seq_start = seq_start;
+          operation->seq_end = seq_end;
+          operation->subpart = subpart ;
+          operation->use_subfeature = use_subfeature ;
+          operation->boundary = ZMAPBOUNDARY_NONE;
+
+          operationAddFeatureList(view, operation, features) ;
+
+          /* Add this operation to the list and recreate the scratch feature. */
+          scratchAddOperation(view, operation);
+        }
+      else
+        {
+          zMapLogWarning("%s", "Error setting CDS: boundary not specified") ;
+        }
+    }
+
+  return result;
 }
 
 
@@ -1314,7 +1535,7 @@ gboolean zmapViewScratchDeleteFeatures(ZMapView view,
       operation->use_subfeature = use_subfeature ;
       operation->boundary = ZMAPBOUNDARY_NONE;
 
-      operationAddFeatureList(operation, features) ;
+      operationAddFeatureList(view, operation, features) ;
 
       /* Add this operation to the list and recreate the scratch feature. */
       scratchAddOperation(view, operation);
@@ -1519,22 +1740,41 @@ void zmapViewScratchFeatureGetEvidence(ZMapView view, ZMapWindowGetEvidenceCB ev
 
   GList *evidence_list = NULL ;
 
-  /* Loop through each edit operation and append the feature name(s) to the evidence list */
+  /* Loop through each edit operation and append the feature name(s) to the evidence list. We
+   * must ignore SAVE operations because they use a fake feature. Also, if the history
+   * contains SAVE operations then they will curtail the previous history, so we must loop back
+   * beyond them to the first operation in the list (or the last CLEAR operation). */
   GList *operation_item = view->edit_list_start ;
 
-  while (operation_item)
+  for ( ; operation_item; operation_item = operation_item->prev)
+    {
+      /* If this is the first in the list then it's the first that we want */
+      if (operation_item->prev == NULL)
+        break ;
+
+      /* If this or the previous operation is a clear then it's the first that we want */
+      EditOperation operation = (EditOperation)(operation_item->data) ;
+      EditOperation operation_prev = (EditOperation)(operation_item->prev->data); 
+
+      if (operation->edit_type == ZMAPEDIT_CLEAR || operation_prev->edit_type == ZMAPEDIT_CLEAR)
+        break ;
+    }
+
+  for ( ; operation_item; operation_item = operation_item->next)
     {
       EditOperation operation = (EditOperation)(operation_item->data) ;
 
-      /* Append the feature ids from the operation to the result list. Note that concat takes
-       * ownership of the second list so make a copy of it first. */
-      GList *tmp = g_list_copy(operation->src_feature_ids) ;
-      evidence_list = g_list_concat(evidence_list, tmp) ;
+      if (operation->edit_type != ZMAPEDIT_SAVE)
+        {
+          /* Append the feature ids from the operation to the result list. Note that concat takes
+           * ownership of the second list so make a copy of it first. */
+          GList *tmp = g_list_copy(operation->src_feature_ids) ;
+          evidence_list = g_list_concat(evidence_list, tmp) ;
+        }
 
+      /* If this is the last operation in the redo stack then finish here */
       if (operation_item == view->edit_list_end)
         break ;
-
-      operation_item = operation_item->next ;
     }
 
   evidence_cb(evidence_list, evidence_cb_data) ;
