@@ -1156,10 +1156,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
   if (!selected_annotation && clicked_feature && clicked_feature_set)
     makeMenuScratchOpsClickedFeature(menu, clicked_feature, max_elements, &i) ;
 
-  /* add in column options */
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_UNDO, ITEM_MENU_UNDO_SCRATCH, itemMenuCB, "<Ctrl>Z");
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_REDO, ITEM_MENU_REDO_SCRATCH, itemMenuCB, "<Ctrl>Y");
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_CLEAR, ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
+  if (!selected_annotation && g_list_length(selected_features) > 0)
+    makeMenuScratchOpsSelectedFeature(menu, selected_features, max_elements, &i) ;
 
   makeMenuScratchOpsClickedColumn(menu, max_elements, &i) ;
 
