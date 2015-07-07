@@ -11,6 +11,8 @@ zmapAppmain_c.cc \
 zmapAppmanagepanel.c \
 zmapAppmenubar.c \
 zmapAppwindow.c \
+zmapAppRemoteInternal.h \
+zmapAppRemoteInternal.c \
 zmapAppRemoteControl.c \
 zmapAppRemoteCommand.c \
 zmapAppManager.c \
