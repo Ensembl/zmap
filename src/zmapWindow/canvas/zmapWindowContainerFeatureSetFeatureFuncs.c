@@ -869,6 +869,7 @@ static void filterFeatureCB(gpointer data, gpointer user_data)
   ZMapFeatureSubPartType req_sub_part ;
   gboolean result ;
   int slop ;
+  gboolean exact_match ;
 
 
   char *feature_name ;
@@ -910,10 +911,22 @@ static void filterFeatureCB(gpointer data, gpointer user_data)
 
   slop = zMapStyleFilterTolerance(*(feature->style)) ;
 
+
+
+  /* I'm not sure what to do about exact matches here.....if we have exact on then transcripts
+   * don't match properly if there are missing exons....maybe the way transcript works is not
+   * correct or....not sure.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  exact_match = FALSE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  exact_match = TRUE ;
   result = zMapFeatureHasMatchingBoundaries(feature, req_sub_part,
-                                            TRUE, filter_data->cds_match, slop,
+                                            exact_match, filter_data->cds_match, slop,
                                             curr, filter_data->curr_start, filter_data->curr_end,
                                             &splice_matches, &non_matches) ;
+
+
 
   if (result)
     {
