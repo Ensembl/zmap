@@ -154,20 +154,30 @@ typedef enum {
 #define COLUMN_THIS_ONE            "Configure This Column"
 #define COLUMN_ALL                 "Configure All Columns"
 #define COLUMN_BUMP_OPTS           "Column Bump More Opts"
-#define SCRATCH_CONFIG_STR         "Annotation Column"
-#define SCRATCH_COPY_FEATURE       "Copy selected feature(s)"
-#define SCRATCH_COPY_ALIGN         "Copy selected match(es)"
-#define SCRATCH_COPY_TRANSCRIPT    "Copy selected transcript(s)"
-#define SCRATCH_COPY_THIS_EXON     "Copy this exon"
-#define SCRATCH_COPY_THIS_MATCH    "Copy this match"
-#define SCRATCH_COPY_THIS_FEATURE  "Copy this feature"
-#define SCRATCH_COPY_THIS_COORD    "Copy this coord"
-#define SCRATCH_DELETE_SUBFEATURE  "Delete subfeature"
-#define SCRATCH_CREATE             "Create feature"
-#define SCRATCH_ATTRIBUTES         "Set attributes"
-#define SCRATCH_UNDO               "Undo"
-#define SCRATCH_REDO               "Redo"
-#define SCRATCH_CLEAR              "Clear"
+
+#define SCRATCH_CONFIG_STR         "Annotation"
+
+#define SCRATCH_DELETE_SUBFEATURE  SCRATCH_CONFIG_STR "/Delete subfeature"
+#define SCRATCH_CREATE             SCRATCH_CONFIG_STR "/Create feature"
+#define SCRATCH_ATTRIBUTES         SCRATCH_CONFIG_STR "/Set attributes"
+#define SCRATCH_UNDO               SCRATCH_CONFIG_STR "/Undo"
+#define SCRATCH_REDO               SCRATCH_CONFIG_STR "/Redo"
+#define SCRATCH_CLEAR              SCRATCH_CONFIG_STR "/Clear"
+#define SCRATCH_COPY               SCRATCH_CONFIG_STR "/Copy"
+#define SCRATCH_CDS                SCRATCH_CONFIG_STR "/Set CDS"
+
+#define SELECTED_FEATURES          "Selected feature(s)"
+#define SELECTED_ALIGNS            "Selected match(es)"
+#define SELECTED_TRANSCRIPTS       "Selected transcript(s)"
+#define THIS_EXON                  "This exon"
+#define THIS_INTRON                "This intron"
+#define THIS_MATCH                 "This match"
+#define THIS_FEATURE               "This feature"
+#define THIS_COORD                 "This coord"
+#define RANGE                      "Range"
+#define START                      "Start"
+#define END                        "End"
+
 
 #define PAIRED_READS_RELATED       "Request %s paired reads"
 #define PAIRED_READS_ALL           "Request all paired reads"
@@ -231,6 +241,12 @@ enum
     ITEM_MENU_MARK_ITEM,
     ITEM_MENU_COPY_TO_SCRATCH,
     ITEM_MENU_COPY_SUBPART_TO_SCRATCH,
+    ITEM_MENU_SCRATCH_CDS_START,
+    ITEM_MENU_SCRATCH_CDS_END,
+    ITEM_MENU_SCRATCH_CDS_RANGE,
+    ITEM_MENU_SCRATCH_CDS_START_SUBPART,
+    ITEM_MENU_SCRATCH_CDS_END_SUBPART,
+    ITEM_MENU_SCRATCH_CDS_RANGE_SUBPART,
     ITEM_MENU_DELETE_FROM_SCRATCH,
     ITEM_MENU_SCRATCH_ATTRIBUTES,
     ITEM_MENU_SCRATCH_CREATE,
@@ -864,7 +880,7 @@ static void addMenuItem(ZMapGUIMenuItem menu,
     }
   else
     {
-      zMapWarning("%s", "Program error: tried to add menu item to out-of-range menu position") ;
+      zMapWarning("Program error: tried to add menu item to out-of-range menu position %d (max=%d)", *i, max_elements) ;
     }
 }
 
@@ -957,6 +973,141 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 }
 
 
+/* Small utility to get the subpart description for a particular feature */
+static const char* getFeatureSubpartStr(ZMapFeature feature)
+{
+  const char *subpart = THIS_FEATURE ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    subpart = THIS_EXON ;
+  else if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+    subpart = THIS_MATCH ;
+  else if (feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
+    subpart = THIS_COORD ;
+
+  return subpart ;
+}
+
+/* Small utility to get the feature type description for a particular feature */
+static const char* getFeatureModeStr(ZMapFeature feature)
+{
+  const char *result = SELECTED_FEATURES ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    result = SELECTED_TRANSCRIPTS ;
+  else if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+    result = SELECTED_ALIGNS ;
+
+  return result ;
+}
+
+
+/* Small utility to return the config string for copying a particular subpart type.
+ * Result should be free'd with g_free. */
+static char* getScratchCopyStr(ZMapFeature feature, const gboolean subpart)
+{
+  const char *desc = subpart ? getFeatureSubpartStr(feature) : getFeatureModeStr(feature) ;
+  return g_strdup_printf("%s/%s", SCRATCH_COPY, desc) ;
+}
+
+/* Small utility to return the cds-start string for a particular subpart type */
+static char* getScratchCdsStrStart(ZMapFeature feature, const gboolean subpart)
+{
+  const char *desc = subpart ? getFeatureSubpartStr(feature) : getFeatureModeStr(feature) ;
+  return g_strdup_printf("%s/%s/%s", SCRATCH_CDS, START, desc) ;
+}
+
+/* Small utility to return the cds-end string for a particular subpart type */
+static char* getScratchCdsStrEnd(ZMapFeature feature, const gboolean subpart)
+{
+  const char *desc = subpart ? getFeatureSubpartStr(feature) : getFeatureModeStr(feature) ;
+  return g_strdup_printf("%s/%s/%s", SCRATCH_CDS, END, desc) ;
+}
+
+/* Small utility to return the cds-range string for a particular subpart type */
+static char* getScratchCdsStrRange(ZMapFeature feature, const gboolean subpart)
+{
+  const char *desc = subpart ? getFeatureSubpartStr(feature) : getFeatureModeStr(feature) ;
+  return g_strdup_printf("%s/%s/%s", SCRATCH_CDS, RANGE, desc) ;
+}
+
+
+/* Add Annotation menu options that are applicable to the clicked feature (unless it's the
+ * Annotation feature) */
+void  makeMenuScratchOpsClickedFeature(ZMapGUIMenuItem menu,
+                                       ZMapFeature feature,
+                                       const int max_elements, 
+                                       int *i)
+{
+  zMapReturnIfFail(feature) ;
+  
+  char *item_text = getScratchCopyStr(feature, TRUE) ;
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
+  g_free(item_text) ;
+  
+  item_text = getScratchCdsStrStart(feature, TRUE) ;
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_SCRATCH_CDS_START_SUBPART, itemMenuCB, NULL) ;
+  g_free(item_text) ;
+
+  item_text = getScratchCdsStrEnd(feature, TRUE) ;
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_SCRATCH_CDS_END_SUBPART, itemMenuCB, NULL) ;
+  g_free(item_text) ;
+
+  item_text = getScratchCdsStrRange(feature, TRUE) ;
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_SCRATCH_CDS_RANGE_SUBPART, itemMenuCB, NULL) ;
+  g_free(item_text) ;
+}
+
+
+/* Add Annotation menu options that are applicable to selected features (except the 
+ * Annotation feature) */
+void makeMenuScratchOpsSelectedFeature(ZMapGUIMenuItem menu,
+                                       GList *selected_features,
+                                       const int max_elements,
+                                       int *i)
+{
+  ZMapFeature feature = (ZMapFeature)(selected_features->data) ;
+
+  char *item_text = getScratchCopyStr(feature, FALSE) ;
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, "<Ctrl>K");
+  g_free(item_text) ;
+
+  item_text = getScratchCdsStrStart(feature, FALSE) ;
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_SCRATCH_CDS_START, itemMenuCB, "<Ctrl>K");
+  g_free(item_text) ;
+
+  item_text = getScratchCdsStrEnd(feature, FALSE) ;
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_SCRATCH_CDS_END, itemMenuCB, "<Ctrl>K");
+  g_free(item_text) ;
+
+  item_text = getScratchCdsStrRange(feature, FALSE) ;
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_SCRATCH_CDS_RANGE, itemMenuCB, "<Ctrl>K");
+  g_free(item_text) ;
+}
+
+
+/* Add Annotation menu options that are applicable to the clicked column (for all columns) */
+void makeMenuScratchOpsClickedColumn(ZMapGUIMenuItem menu,
+                                     const int max_elements, 
+                                     int *i)
+{
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_UNDO, ITEM_MENU_UNDO_SCRATCH, itemMenuCB, "<Ctrl>Z");
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_REDO, ITEM_MENU_REDO_SCRATCH, itemMenuCB, "<Ctrl>Y");
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CLEAR, ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
+}
+
+
+/* Add Annotation menu options that are applicable when the Annotation feature was clicked */
+void makeMenuScratchOpsAnnotationFeature(ZMapGUIMenuItem menu,
+                                         const int max_elements, 
+                                         int *i)
+{
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_DELETE_SUBFEATURE, ITEM_MENU_DELETE_FROM_SCRATCH, itemMenuCB, NULL);
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_ATTRIBUTES, ITEM_MENU_SCRATCH_ATTRIBUTES, itemMenuCB, NULL);
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CREATE, ITEM_MENU_SCRATCH_CREATE, itemMenuCB, NULL);
+}
+
+
 /*
  * Options for the scratch column
  *
@@ -975,11 +1126,17 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
 
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
     } ;
   int i ;
-  int max_elements = 7 ;
+  int max_elements = 13 ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
   zMapReturnValIfFail(menu_data && menu_data->window, menu) ;
@@ -987,53 +1144,28 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
   i = 1;
   menu[i].type = ZMAPGUI_MENU_NONE;
 
+  ZMapFeature clicked_feature = menu_data->feature ;
+  ZMapFeatureSet clicked_feature_set = menu_data->feature_set ;
   GList *selected_features = zmapWindowFocusGetFeatureList(menu_data->window->focus) ;
 
-  /* add in menu options for clicked feature */
-  /* Add options NOT applicable to annotation column first */
-  if (menu_data->feature && menu_data->feature_set &&
-      menu_data->feature_set->unique_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
-    {
-      if (menu_data->feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_THIS_EXON, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
-      else if (menu_data->feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
-        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_THIS_MATCH, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
-      else if (menu_data->feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
-        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_THIS_COORD, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
-      else
-        addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_THIS_FEATURE, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
-    }
+  /* Is the selected feature/column in the annotation column? */
+  const gboolean selected_annotation = (menu_data->feature_set && 
+                                        menu_data->feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME)) ;
 
-  /* add in menu options for selected features */
-  if (g_list_length(selected_features) > 0)
-    {
-      ZMapFeature selected_feature = (ZMapFeature)(selected_features->data) ;
 
-      /* Add options not applicable to annotation column */
-      if (menu_data->feature_set && menu_data->feature_set->unique_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
-        {
-          if (selected_feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_TRANSCRIPT, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, (void *)"<Ctrl>K");
-          else if (selected_feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
-            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_ALIGN, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, (void *)"<Ctrl>K");
-          else if (selected_feature->mode != ZMAPSTYLE_MODE_SEQUENCE)
-            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_COPY_FEATURE, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, (void *)"Ctrl>K");
-        }
-    }
+  if (!selected_annotation && clicked_feature && clicked_feature_set)
+    makeMenuScratchOpsClickedFeature(menu, clicked_feature, max_elements, &i) ;
 
   /* add in column options */
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_UNDO, ITEM_MENU_UNDO_SCRATCH, itemMenuCB, (void *)"<Ctrl>Z");
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_REDO, ITEM_MENU_REDO_SCRATCH, itemMenuCB, (void *)"<Ctrl>Y");
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_CLEAR, ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_UNDO, ITEM_MENU_UNDO_SCRATCH, itemMenuCB, "<Ctrl>Z");
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_REDO, ITEM_MENU_REDO_SCRATCH, itemMenuCB, "<Ctrl>Y");
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_CLEAR, ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
 
-  /* add in annotation menu options */
-  if (menu_data->feature && menu_data->feature_set &&
-      menu_data->feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
-    {
-      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_DELETE_SUBFEATURE, ITEM_MENU_DELETE_FROM_SCRATCH, itemMenuCB, NULL);
-      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_ATTRIBUTES, ITEM_MENU_SCRATCH_ATTRIBUTES, itemMenuCB, NULL);
-      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR "/" SCRATCH_CREATE, ITEM_MENU_SCRATCH_CREATE, itemMenuCB, NULL);
-    }
+  makeMenuScratchOpsClickedColumn(menu, max_elements, &i) ;
+
+  if (selected_annotation && clicked_feature && clicked_feature_set)
+    makeMenuScratchOpsAnnotationFeature(menu, max_elements, &i) ;
+
 
   menu[i].type = ZMAPGUI_MENU_NONE;
 
@@ -1065,6 +1197,25 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
     case ITEM_MENU_COPY_SUBPART_TO_SCRATCH:
       zmapWindowScratchCopyFeature(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, TRUE);
+      break ;
+
+    case ITEM_MENU_SCRATCH_CDS_START:
+      zmapWindowScratchSetCDS(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, FALSE, TRUE, FALSE);
+      break ;
+    case ITEM_MENU_SCRATCH_CDS_END:
+      zmapWindowScratchSetCDS(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, FALSE, FALSE, TRUE);
+      break ;
+    case ITEM_MENU_SCRATCH_CDS_RANGE:
+      zmapWindowScratchSetCDS(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, FALSE, TRUE, TRUE);
+      break ;
+    case ITEM_MENU_SCRATCH_CDS_START_SUBPART:
+      zmapWindowScratchSetCDS(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, TRUE, TRUE, FALSE);
+      break ;
+    case ITEM_MENU_SCRATCH_CDS_END_SUBPART:
+      zmapWindowScratchSetCDS(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, TRUE, FALSE, TRUE);
+      break ;
+    case ITEM_MENU_SCRATCH_CDS_RANGE_SUBPART:
+      zmapWindowScratchSetCDS(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, TRUE, TRUE, TRUE);
       break ;
 
     case ITEM_MENU_DELETE_FROM_SCRATCH:

@@ -406,6 +406,10 @@ typedef struct _ZMapViewStruct
   gboolean scratch_start_end_set ;     /* TRUE if the scratch-column forward-strand feature
                                         * start/end has been set */
 
+  GHashTable *feature_cache;           /* cache ZMapFeature pointers for scratch column, key
+                                        * on feature's unique_id. Gets cleared when pointers
+                                        * are invalidated, i.e. revcomp */
+
   GQuark save_file ;                   /* Filename to use for the Save option in standalone
                                         * ZMap. Gets set either from the input file or from the
                                         * first Save As operation.  */
@@ -523,6 +527,10 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
 gboolean zmapViewScratchCopyFeatures(ZMapView zmap_view, GList *features,
                                      const long seq_start, const long seq_end,
                                      ZMapFeatureSubPart subpart, const gboolean use_subfeature);
+gboolean zmapViewScratchSetCDS(ZMapView zmap_view, GList *features,
+                               const long seq_start, const long seq_end,
+                               ZMapFeatureSubPart subpart, const gboolean use_subfeature,
+                               const gboolean set_cds_start, const gboolean set_cds_end);
 gboolean zmapViewScratchDeleteFeatures(ZMapView zmap_view, GList *features,
                                        const long seq_start, const long seq_end,
                                        ZMapFeatureSubPart subpart, const gboolean use_subfeature);

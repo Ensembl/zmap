@@ -1457,6 +1457,7 @@ void zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature,
 void zmapWindowScratchSaveFeature(ZMapWindow window, GQuark feature_id) ;
 void zmapWindowScratchSaveFeatureSet(ZMapWindow window, GQuark feature_set_id) ;
 void zmapWindowScratchResetAttributes(ZMapWindow window) ;
+ZMapFeature zmapWindowScratchGetFeature(ZMapWindow window) ;
 
 /* summarise busy column by not displaying invisible features */
 gboolean zmapWindowContainerSummariseIsItemVisible(ZMapWindow window, double dx1,double dy1,double dx2, double dy2);

@@ -675,6 +675,7 @@ gboolean zMapGFFFormatAttributeUnsetAll(ZMapGFFAttributeFlags attribute_flags)
   attribute_flags->target     = FALSE ;
   attribute_flags->variation  = FALSE ;
   attribute_flags->sequence   = FALSE ;
+  attribute_flags->evidence   = FALSE ;
 
   return result ;
 }
@@ -732,6 +733,7 @@ gboolean zMapGFFFormatAttributeSetTranscript(ZMapGFFAttributeFlags attribute_fla
       attribute_flags->locus       = TRUE ;
       attribute_flags->url         = TRUE ;
       attribute_flags->parent      = TRUE ;
+      attribute_flags->evidence    = TRUE ;
     }
 
   return result ;
@@ -1304,6 +1306,17 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
       if (flags->locus)
         {
           if (zMapWriteAttributeLocus(feature, attribute))
+            {
+              zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
+            }
+        }
+
+      /*
+       * evidence attribute
+       */
+      if (flags->evidence)
+        {
+          if (zMapWriteAttributeEvidence(feature, attribute))
             {
               zMapGFFFormatAppendAttribute(line, attribute, FALSE, TRUE) ;
             }
@@ -2076,12 +2089,41 @@ gboolean zMapWriteAttributeGap(ZMapFeature feature, GString *attribute)
 }
 
 
+/*
+ * evidence attribute
+ */
+gboolean zMapWriteAttributeEvidence(ZMapFeature feature, GString *attribute)
+{
+  gboolean result = FALSE ;
 
+  GList *evidence_list = zMapFeatureTranscriptGetEvidence(feature) ;
 
+  if (evidence_list && g_list_length(evidence_list) > 0)
+    {
+      g_string_truncate(attribute, (gsize)0) ;
+      g_string_append(attribute, "evidence=") ;
 
+      /* Loop through all items in the evidence list and append to the attribute as a
+       * space-separated list */
+      GList *item = evidence_list ;
+      const char separator = ' ' ;
 
+      for ( ; item ; item = item->next)
+        {
+          GQuark evidence_quark = (GQuark)GPOINTER_TO_INT(item->data) ;
+          const char *evidence_name = g_quark_to_string(evidence_quark) ;
 
+          /* If there is another item to go, also append the separator */
+          if (item->next)
+            g_string_append_printf(attribute, "%s%c", evidence_name, separator) ;
+          else
+            g_string_append(attribute, evidence_name) ;
+        }
+        
+      result = TRUE ;
+    }
 
-
+  return result ;
+}
 
 
