@@ -1545,6 +1545,8 @@ int zMapFeatureTranscriptGetCDSEnd(ZMapFeature feature) ;
 GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature) ;
 void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data) ;
 
+#endif /* ZMAP_FEATURE_H */
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
