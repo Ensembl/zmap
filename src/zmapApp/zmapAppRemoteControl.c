@@ -237,9 +237,9 @@ static void receivedPeerRequestCB(ZMapRemoteControl remote_control,
  * function passes the abort to remotecontrol which terminates the transaction.
  * 
  *  */
-static void sendZmapReplyCB(char *command,
+static void sendZmapReplyCB(const char *command,
                             gboolean abort,
-                            RemoteCommandRCType command_rc, char *reason,
+                            RemoteCommandRCType command_rc, const char *reason,
                             ZMapXMLUtilsEventStack reply,
                             gpointer app_reply_data)
 {
