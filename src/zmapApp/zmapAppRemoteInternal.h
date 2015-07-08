@@ -31,8 +31,8 @@
  *-------------------------------------------------------------------
  */
 
-#ifndef ZMAP_APP_PRIV_H
-#define ZMAP_APP_PRIV_H
+#ifndef ZMAP_APP_INTERNAL_H
+#define ZMAP_APP_INTERNAL_H
 
 
 ZMapRemoteAppMakeRequestFunc zmapAppRemoteInternalGetRequestCB(void) ;
@@ -45,4 +45,4 @@ void zmapAppRemoteInternalDestroy(ZMapAppContext app_context) ;
 
 
 
-#endif /* !ZMAP_APP_PRIV_H */
+#endif /* !ZMAP_APP_INTERNAL_H */

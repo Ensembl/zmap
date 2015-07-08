@@ -45,11 +45,7 @@
 #include <gdk/gdk.h>
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapRemoteCommand.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+#include <config.h>
 #include <ZMap/zmapAppRemote.h>
 
 #include <ZMap/zmapCmdLineArgs.h>
