@@ -253,7 +253,7 @@ if [[ ! -d "./$ensc_core/src" ]] ; then
     # The src subdir must exist even if we are not building ensc-core
     # gb10: not sure why but it seems it gets configured even though we
     # don't include it in SUBDIRS
-    mkdir ./${dir[$ensc_core_key]}/src
+    mkdir ./$ensc_core/src
 
 fi
 
