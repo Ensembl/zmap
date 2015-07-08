@@ -232,7 +232,7 @@ enum {
 };
 
 
-enum
+typedef enum
   {
     ITEM_MENU_INVALID,
 
@@ -262,6 +262,7 @@ enum
     ITEM_MENU_SHOW_TRANSLATION,
 
     ITEM_MENU_SHOW_EVIDENCE,
+    ITEM_MENU_HIDE_EVIDENCE,
     ITEM_MENU_ADD_EVIDENCE,
     ITEM_MENU_SHOW_TRANSCRIPT,
     ITEM_MENU_ADD_TRANSCRIPT,
@@ -270,7 +271,7 @@ enum
     ITEM_MENU_CONTRACT,
 
     ITEM_MENU_ITEMS
-  };
+  } ZMapWindowMenuItemId;
 
 
 /* Developer menu ops. */
@@ -365,8 +366,8 @@ GQuark related_column(ZMapFeatureContextMap map,GQuark fset_id) ;
 
 
 static void addMenuItem(ZMapGUIMenuItem menu,
-                        int *i, int max_elements,
-                        ZMapGUIMenuType item_type, const char *item_text, int item_id,
+                        int *i, const int max_elements,
+                        ZMapGUIMenuType item_type, const char *item_text, ZMapWindowMenuItemId item_id,
                         ZMapGUIMenuItemCallbackFunc callback_func, const gpointer callback_data) ;
 
 
@@ -856,10 +857,10 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 /* Utility to add an option to the given menu */
 static void addMenuItem(ZMapGUIMenuItem menu,
                         int *i,
-                        int max_elements,
+                        const int max_elements,
                         ZMapGUIMenuType item_type,
                         const char *item_text,
-                        int item_id,
+                        ZMapWindowMenuItemId item_id,
                         ZMapGUIMenuItemCallbackFunc callback_func,
                         const gpointer callback_data)
 {
@@ -957,7 +958,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 
   if (zmapWindowFocusHasType(menu_data->window->focus, WINDOW_FOCUS_GROUP_EVIDENCE))
     {
-      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_TOGGLEACTIVE, "Hide Evidence/ Transcript", ZMAPWINDOW_HIDE_EVIDENCE, hideEvidenceMenuCB, NULL);
+      addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_TOGGLEACTIVE, "Hide Evidence/ Transcript", ITEM_MENU_HIDE_EVIDENCE, hideEvidenceMenuCB, NULL);
     }
   else
     {
@@ -1069,19 +1070,19 @@ void makeMenuScratchOpsSelectedFeature(ZMapGUIMenuItem menu,
   ZMapFeature feature = (ZMapFeature)(selected_features->data) ;
 
   char *item_text = getScratchCopyStr(feature, FALSE) ;
-  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, "<Ctrl>K");
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, (gpointer)"<Ctrl>K");
   g_free(item_text) ;
 
   item_text = getScratchCdsStrStart(feature, FALSE) ;
-  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_SCRATCH_CDS_START, itemMenuCB, "<Ctrl>K");
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_SCRATCH_CDS_START, itemMenuCB, (gpointer)"<Ctrl>K");
   g_free(item_text) ;
 
   item_text = getScratchCdsStrEnd(feature, FALSE) ;
-  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_SCRATCH_CDS_END, itemMenuCB, "<Ctrl>K");
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_SCRATCH_CDS_END, itemMenuCB, (gpointer)"<Ctrl>K");
   g_free(item_text) ;
 
   item_text = getScratchCdsStrRange(feature, FALSE) ;
-  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_SCRATCH_CDS_RANGE, itemMenuCB, "<Ctrl>K");
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, item_text, ITEM_MENU_SCRATCH_CDS_RANGE, itemMenuCB, (gpointer)"<Ctrl>K");
   g_free(item_text) ;
 }
 
@@ -1091,8 +1092,8 @@ void makeMenuScratchOpsClickedColumn(ZMapGUIMenuItem menu,
                                      const int max_elements, 
                                      int *i)
 {
-  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_UNDO, ITEM_MENU_UNDO_SCRATCH, itemMenuCB, "<Ctrl>Z");
-  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_REDO, ITEM_MENU_REDO_SCRATCH, itemMenuCB, "<Ctrl>Y");
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_UNDO, ITEM_MENU_UNDO_SCRATCH, itemMenuCB, (gpointer)"<Ctrl>Z");
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_REDO, ITEM_MENU_REDO_SCRATCH, itemMenuCB, (gpointer)"<Ctrl>Y");
   addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CLEAR, ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
 }
 

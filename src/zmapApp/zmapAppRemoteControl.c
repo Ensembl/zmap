@@ -52,9 +52,7 @@
 
 #include <ZMap/zmapAppRemote.h>
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapCmdLineArgs.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 /* NEEDED ??? */
 #include <zmapApp_P.h>
@@ -74,15 +72,13 @@
 static void receivedPeerRequestCB(ZMapRemoteControl remote_control,
                                   ZMapRemoteControlReturnReplyFunc remote_reply_func, void *remote_reply_data,
                                   char *request, void *user_data) ;
-static void sendZmapReplyCB(const char *command, gboolean abort, RemoteCommandRCType result, const char *reason,
-                            ZMapXMLUtilsEventStack reply, gpointer app_reply_data) ;
-static void zmapReplySentCB(void *user_data) ;
 
 static void sendZMapRequestCB(gpointer caller_data,
                               gpointer sub_system_ptr,
                               const char *command, ZMapXMLUtilsEventStack request_body,
                               ZMapRemoteAppProcessReplyFunc reply_func, gpointer reply_func_data,
                               ZMapRemoteAppErrorHandlerFunc error_handler_func, gpointer error_handler_func_data) ;
+static void zmapReplySentCB(void *user_data) ;
 static void zmapRequestSentCB(void *user_data) ;
 static void receivedPeerReplyCB(ZMapRemoteControl remote_control, char *reply, void *user_data) ;
 
@@ -91,10 +87,13 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
                            void *user_data) ;
 
 static void setDebugLevel(void) ;
-static void setModal(ZMapAppContext app_context, gboolean modal) ;
-static void setCursorCB(ZMap zmap, void *user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+static void sendZmapReplyCB(const char *command, gboolean abort, RemoteCommandRCType result, const char *reason,
+                            ZMapXMLUtilsEventStack reply, gpointer app_reply_data) ;
+
+static void setModal(ZMapAppContext app_context, gboolean modal) ;
+static void setCursorCB(ZMap zmap, void *user_data) ;
 
 
 /* 
@@ -103,10 +102,8 @@ static void setCursorCB(ZMap zmap, void *user_data) ;
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Set debug level in remote control. */
 static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_OFF ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -464,9 +461,6 @@ static void zmapRequestSentCB(void *user_data)
 static void receivedPeerReplyCB(ZMapRemoteControl remote_control, char *reply, void *user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
-  ZMapAppRemote remote = app_context->remote_control ;
-  gboolean result ;
-  char *error_out = NULL ;
 
   zMapLogWarning("%s", "Setting modal off") ;
   setModal(app_context, FALSE) ;

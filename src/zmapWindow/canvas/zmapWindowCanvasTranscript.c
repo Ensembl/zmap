@@ -93,7 +93,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
                                    ZMapWindowCanvasFeature feature,
                                    GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  gulong fill = 0L, outline = 0L ;
+  gulong ufill = 0L, outline = 0L ;
   int colours_set = 0, fill_set = 0, outline_set = 0 ;
   int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
   double x1 = 0.0, x2 = 0.0, y1 = 0.0, y2 = 0.0, y1_cache = 0.0, y2_cache = 0.0, col_width = 0.0 ;
@@ -163,7 +163,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
   /*
    * Set up non-cds colours
    */
-  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
+  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &ufill, &outline);
   fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
   outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
@@ -275,7 +275,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
    */
   if(tr->sub_type == TRANSCRIPT_EXON)
     {
-      zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set, outline_set, fill, outline) ;
+      zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set, outline_set, ufill, outline) ;
     }
   else if (outline_set)
     {

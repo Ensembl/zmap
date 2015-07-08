@@ -438,7 +438,7 @@ static void sendZMapRequestCB(gpointer caller_data,
               remote->error_handler_func = error_handler_func ;
               remote->error_handler_func_data = error_handler_func_data ;
 
-              remote->curr_zmap_request = request ;
+              remote->curr_peer_request = request ;
 
               if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, request)))
                 {
@@ -477,7 +477,7 @@ static void zmapRequestSentCB(void *user_data)
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
 
   /* try modal..... */
-  zMapLogWarning("Setting modal on for request %s", app_context->remote_control->curr_zmap_request) ;
+  zMapLogWarning("Setting modal on for request %s", app_context->remote_control->curr_peer_request) ;
   setModal(app_context, TRUE) ;
 
   return ;
@@ -500,7 +500,7 @@ static void receivedPeerReplyCB(ZMapRemoteControl remote_control, char *reply, v
   /* Again.....is this a good idea....the app callback needs to be called whatever happens
    * to reset state...fine to log a bad message but we still need to call the app func. */
   if (!(result = zMapRemoteCommandValidateReply(remote->remote_controller,
-                                                remote->curr_zmap_request, reply, &error_out)))
+                                                remote->curr_peer_request, reply, &error_out)))
     {
       /* error message etc...... */
       zMapLogWarning("Bad remote message from peer: %s", error_out) ;
