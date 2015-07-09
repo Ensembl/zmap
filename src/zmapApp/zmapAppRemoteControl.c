@@ -48,8 +48,6 @@
 #include <config.h>
 #include <ZMap/zmapAppRemote.h>
 
-#include <ZMap/zmapCmdLineArgs.h>
-
 /* NEEDED ??? */
 #include <zmapApp_P.h>
 
@@ -68,13 +66,15 @@
 static void receivedPeerRequestCB(ZMapRemoteControl remote_control,
                                   ZMapRemoteControlReturnReplyFunc remote_reply_func, void *remote_reply_data,
                                   char *request, void *user_data) ;
+static void sendZmapReplyCB(const char *command, gboolean abort, RemoteCommandRCType result, const char *reason,
+                            ZMapXMLUtilsEventStack reply, gpointer app_reply_data) ;
+static void zmapReplySentCB(void *user_data) ;
 
 static void sendZMapRequestCB(gpointer caller_data,
                               gpointer sub_system_ptr,
                               const char *command, ZMapXMLUtilsEventStack request_body,
                               ZMapRemoteAppProcessReplyFunc reply_func, gpointer reply_func_data,
                               ZMapRemoteAppErrorHandlerFunc error_handler_func, gpointer error_handler_func_data) ;
-static void zmapReplySentCB(void *user_data) ;
 static void zmapRequestSentCB(void *user_data) ;
 static void receivedPeerReplyCB(ZMapRemoteControl remote_control, char *reply, void *user_data) ;
 
@@ -83,13 +83,10 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
                            void *user_data) ;
 
 static void setDebugLevel(void) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-static void sendZmapReplyCB(const char *command, gboolean abort, RemoteCommandRCType result, const char *reason,
-                            ZMapXMLUtilsEventStack reply, gpointer app_reply_data) ;
-
 static void setModal(ZMapAppContext app_context, gboolean modal) ;
 static void setCursorCB(ZMap zmap, void *user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* 
@@ -98,8 +95,10 @@ static void setCursorCB(ZMap zmap, void *user_data) ;
 
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Set debug level in remote control. */
 static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_OFF ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -194,379 +193,3 @@ void zmapAppRemoteControlDestroy(ZMapAppContext app_context)
  *                Internal functions
  */
 
-
-
-/*
- * Functions called to service requests from a peer.
- */
-
-/* Called by ZMapRemoteControl: receives all requests sent to zmap by a peer. */
-static void receivedPeerRequestCB(ZMapRemoteControl remote_control,
-                                  ZMapRemoteControlReturnReplyFunc return_reply_func,
-                                  void *return_reply_func_data,
-                                  char *request, void *user_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-  ZMapAppRemote remote = app_context->remote_control ;
-
-  /* Update last interaction time, used to detect when zmap/peer connection is inactive for a
-   * long time and warn the user. */
-  app_context->remote_control->last_active_time_s = zMapUtilsGetRawTime() ;
-
-  /* Cache these, must be called from handleZMapRepliesCB() */
-  remote->return_reply_func = return_reply_func ;
-  remote->return_reply_func_data = return_reply_func_data ;
-
-  /* Call the command processing code.... */
-  zmapAppProcessAnyRequest(app_context, request, sendZmapReplyCB) ;
-
-  /* try modal..... */
-  zMapLogWarning("Setting modal on for request %s", request) ;
-  setModal(app_context, TRUE) ;
-
-  return ;
-}
-
-
-/* Called by any component of ZMap (e.g. control, view etc) which has processed a command
- * and needs to return the reply for sending to the peer program.
- * 
- * This function calls back to ZMapRemoteControl to return the result of a command.
- * 
- * If abort is TRUE then command_rc, reason and reply are _not_ set and this 
- * function passes the abort to remotecontrol which terminates the transaction.
- * 
- *  */
-static void sendZmapReplyCB(const char *command,
-                            gboolean abort,
-                            RemoteCommandRCType command_rc, const char *reason,
-                            ZMapXMLUtilsEventStack reply,
-                            gpointer app_reply_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)app_reply_data ;
-  ZMapAppRemote remote = app_context->remote_control ;
-  GArray *xml_stack ;
-  char *err_msg = NULL ;
-  char *full_reply = NULL ;
-
-  if (abort)
-    {
-      zMapLogWarning("Aborting request \"%s\", see log file.",
-                     (command ? command : "no command name available")) ;
-    }
-  else
-    {
-      /* Make a zmap protocol reply from the return code etc..... */
-      if (command)
-        xml_stack = zMapRemoteCommandCreateReplyFromRequest(remote->remote_controller,
-                                                            remote->curr_peer_request,
-                                                            command_rc, reason, reply, &err_msg) ;
-      else
-        xml_stack = zMapRemoteCommandCreateReplyEnvelopeFromRequest(remote->remote_controller,
-                                                                    remote->curr_peer_request,
-                                                                    command_rc, reason, reply, &err_msg) ;
-
-      /* If we can't make sense of what's passed to us something is wrong in our code so abort
-       * the request. */
-      if (!xml_stack || !(full_reply = zMapXMLUtilsStack2XML(xml_stack, &err_msg, FALSE)))
-        {
-          zMapLogWarning("%s", err_msg) ;
-        
-          abort = TRUE ;
-        }
-    }
-
-
-  /* Must ALWAYS call back to ZMapRemoteControl to return reply to peer. */
-  (remote->return_reply_func)(remote->return_reply_func_data, abort, full_reply) ;
-
-
-  return ;
-}
-
-
-
-/* Called by remote control when the reply has been sent to the peer,
- * i.e. the transaction has ended. Note that we don't actually know that
- * the peer receives the reply, this was a design decision with the
- * switch to zeromq.
- * 
- * This function allows us to take any actions necessary after
- * a reply has been sent.
- * 
- *  */
-static void zmapReplySentCB(void *user_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-
-  /* try modal..... */
-  zMapLogWarning("%s", "Setting modal off") ;
-  setModal(app_context, FALSE) ;
-
-  /* Call function to execute any actions that must occur after
-   * the reply is sent to peer. */
-  zmapAppRemoteControlReplySent(app_context) ;
-
-  return ;
-}
-
-
-
-
-/*
- * Functions called to send requests to a peer.
- */
-
-/* Called by any component of ZMap (e.g. control, view etc) which needs a request
- * to be sent to the peer program. This is the entry point for zmap sub-systems
- * that wish to send a request to the peer.
- * 
- *  */
-static void sendZMapRequestCB(gpointer caller_data,
-                              gpointer sub_system_ptr,
-                              char *command, ZMapXMLUtilsEventStack request_body,
-                              ZMapRemoteAppProcessReplyFunc process_reply_func, gpointer process_reply_func_data,
-                              ZMapRemoteAppErrorHandlerFunc error_handler_func,
-                              gpointer error_handler_func_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)caller_data ;
-  ZMapAppRemote remote = app_context->remote_control ;
-
-  /* Update last interaction time. */
-  app_context->remote_control->last_active_time_s = zMapUtilsGetRawTime() ;
-
-  /* Can this even happen, how can we be called if there is no remote ??? */
-  /* If we have a remote control peer then build the request.....surely this should be in assert.... */
-  if (remote)
-    {
-      gboolean result = TRUE ;
-      GArray *request_stack = NULL ;
-      char *request ;
-      char *view = NULL ;    /* to be filled in later..... */
-      gpointer view_id = NULL ;
-
-
-      /* If request came from a subsystem (zmap, view, window) find the corresponding view_id
-       * so we can return it to the caller. */
-      if (sub_system_ptr)
-        {
-          if (!(view_id = zMapManagerFindView(app_context->zmap_manager, sub_system_ptr)))
-            {
-              zMapLogCritical("Cannot find sub_system_ptr %p in zmaps/views/windows, remote call has failed.",
-                              sub_system_ptr) ;
-              result = FALSE ;
-            }
-          else if (!zMapAppRemoteViewCreateIDStr(view_id, &view))
-            {
-              zMapLogCritical("Cannot convert sub_system_ptr %p to view_id, remote call has failed.",
-                              sub_system_ptr) ;
-              result = FALSE ;
-            }
-        }
-
-      if (result)
-        {
-          char *err_msg = NULL ;
-
-          if (result && !(request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller,
-                                                                         command, -1,
-                                                                         ZACP_VIEWID, view,
-                                                                         (char*)NULL)))
-            {
-              err_msg = g_strdup_printf("Could not create request for command \"%s\"", command) ;
-
-              result = FALSE ;
-
-              /* for debugging... */
-              request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE) ;
-            }
-
-      
-          if (request_body)
-            {
-              if (result && !(request_stack = zMapRemoteCommandAddBody(request_stack, "request", request_body)))
-                {
-                  err_msg = g_strdup_printf("Could not add request body for command \"%s\"", command) ;
-
-                  result = FALSE ;
-                }
-            }
-        
-          if (result && !(request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE)))
-            {
-              err_msg = g_strdup_printf("Could not create raw xml from request for command \"%s\"", command) ;
-
-              result = FALSE ;
-            }
-
-          if (result)
-            {
-              remote->process_reply_func = process_reply_func ;
-              remote->process_reply_func_data = process_reply_func_data ;
-
-              remote->error_handler_func = error_handler_func ;
-              remote->error_handler_func_data = error_handler_func_data ;
-
-              if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, request)))
-                {
-                  err_msg = g_strdup_printf("Could not send request to peer: \"%s\"", request) ;
-
-                  result = FALSE ;
-                }
-              else
-                {
-                  zMapLogWarning("Just sent request to peer: \"%s\"", request) ;
-                }
-            }
-
-          /* Serious failure, record that remote is no longer working properly. */
-          if (!result)
-            {
-              app_context->remote_ok = FALSE ;
-        
-              zMapLogCritical("%s", err_msg) ;
-        
-              g_free(err_msg) ;
-            }
-        }
-
-    }
-
-  return ;
-}
-
-
-/* Called by remote control when request has been sent to peer, note that we do not know
- * the peer has actually received the request, this was a design decision when we switched
- * to using zeromq. */
-static void zmapRequestSentCB(void *user_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-
-  /* try modal..... */
-  zMapLogWarning("%s", "Setting modal on to send zmap request") ;
-
-  setModal(app_context, TRUE) ;
-
-  return ;
-}
-
-/* 
- * Called by ZMapRemoteControl: Receives all replies sent to zmap by a peer.
- */
-static void receivedPeerReplyCB(ZMapRemoteControl remote_control, char *reply, void *user_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-
-  zMapLogWarning("%s", "Setting modal off") ;
-  setModal(app_context, FALSE) ;
-
-  /* Call the command processing code, there's no return code here because only the function
-   * ultimately handling the problem knows how to handle the error. */
-  zmapAppProcessAnyReply(app_context, reply) ;
-
-  return ;
-}
-
-
-/* Called by ZMapRemoteControl, receives all errors including timeouts. */
-static void errorHandlerCB(ZMapRemoteControl remote_control,
-                           ZMapRemoteControlRCType error_type, char *err_msg,
-                           void *user_data)
-{
-  /* not used currently. */
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-  ZMapAppRemote remote = app_context->remote_control ;
-  GtkWindow *window ;
-  gboolean curr_modal ;
-
-  /* If we are dying the app_widg window will already have gone and calling back to error
-   * handler funcs will be too late. */
-  if (app_context->state != ZMAPAPP_DYING)
-    {
-      /* Get current modality, if it's on we must turn it off otherwise user cannot
-       * interact with zmap. */
-      window = GTK_WINDOW(app_context->app_widg) ;
-      if ((curr_modal = gtk_window_get_modal(window)))
-        setModal(app_context, FALSE) ;
-  
-      if (remote->error_handler_func)
-        (remote->error_handler_func)(error_type, err_msg, remote->error_handler_func_data) ;
-      else
-        zMapLogWarning("%s", err_msg) ;
-    }
-
-  return ;
-}
-
-
-/* Check command line for remote_debug level. */
-static void setDebugLevel(void)
-{
-  ZMapCmdLineArgsType cmdline_arg = {FALSE} ;
-  
-  if (zMapCmdLineArgsValue(ZMAPARG_REMOTE_DEBUG, &cmdline_arg))
-    {
-      char *debug_level_str ;
-      
-      debug_level_str = cmdline_arg.s ;
-
-      if (strcasecmp(debug_level_str, "off") == 0)
-        remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_OFF ;
-      else if (strcasecmp(debug_level_str, "normal") == 0)
-        remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_NORMAL ;
-      else if (strcasecmp(debug_level_str, "verbose") == 0)
-        remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_VERBOSE ;
-    }
-
-  return ;
-}
-
-
-
-static void setModal(ZMapAppContext app_context, gboolean modal)
-{
-  GdkCursor *curr_cursor ;
-  GtkWindow *window ;
-  gboolean curr_modal ;
-
-  /* Get current modality */
-  window = GTK_WINDOW(app_context->app_widg) ;
-  curr_modal = gtk_window_get_modal(window) ;
-
-
-  /* Set modality. */
-  if (curr_modal == modal)
-    {
-      char *msg ;
-
-      msg = g_strdup_printf("Trying to set Modal %s but already %s",
-                            (modal ? "ON" : "OFF"), (modal ? "ON" : "OFF")) ;
-
-      zMapLogCritical("%s", msg) ;
-    }
-
-  gtk_window_set_modal(window, modal) ;
-
-  /* Set/reset the cursor on the app window and all ZMap windows below. */
-  curr_cursor = (modal ? app_context->remote_busy_cursor : app_context->normal_cursor) ;
-
-  zMapGUISetCursor(app_context->app_widg, curr_cursor) ;
-
-  zMapManagerForAllZMaps(app_context->zmap_manager, setCursorCB, curr_cursor) ;
-
-
-  zMapLogWarning("Modal - %s", (modal ? "ON" : "OFF")) ;
-
-  return ;
-}
-
-
-static void setCursorCB(ZMap zmap, void *user_data)
-{
-  GdkCursor *cursor = (GdkCursor *)user_data ;
- 
-  zMapSetCursor(zmap, cursor) ;
-
-  return ;
-}

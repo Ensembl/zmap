@@ -197,7 +197,7 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
     zMapWarning("Log file was grown to %d bytes, you should think about archiving or removing it.", log_size) ;
 
   /* Only show default sequence if we are _not_ controlled via XRemote */
-  if (!remote_control)
+  if (!(app_context->remote_control))
     {
       gboolean ok = TRUE ;
       int num_views = seq_maps ? g_list_length(seq_maps) : 0 ;

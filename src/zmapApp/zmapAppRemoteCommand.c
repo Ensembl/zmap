@@ -137,7 +137,10 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
 
   /* Hold on to original request, need it later. */
   if (remote->curr_peer_request)
-    g_free(remote->curr_peer_request) ;
+    {
+      g_free(remote->curr_peer_request) ;
+      remote->curr_peer_request = NULL ;
+    }
   remote->curr_peer_request = g_strdup(request) ;
 
 
