@@ -39,6 +39,7 @@
 
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdint.h>                                         /* Needed for event status type for zeromq. */
 #include <string.h>
 #include <errno.h>
 #include <gtk/gtk.h>
@@ -661,7 +662,11 @@ void zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
     setToInactive(remote_control) ;
 
   /* Get rid of the zeromq context. */
+#if (ZMQ_VERSION_MAJOR > 3)
   if (zmq_ctx_term(remote_control->zmq_context) == 0)
+#else
+  if (zmq_ctx_destroy(remote_control->zmq_context) == 0)
+#endif
     err_msg = g_strdup("zeroMQ context destroyed cleanly") ;
   else
     err_msg = g_strdup_printf("zeroMQ context destroy failed: \"%s\".", g_strerror(errno)) ;
