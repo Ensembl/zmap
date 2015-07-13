@@ -104,7 +104,7 @@ declare -A install=( [$aceconn_key]='maybe' [$ensc_core_key]='maybe' [$gb_tools_
     [$htslib_key]='maybe' [$zeromq_key]='maybe' )
 
 declare -A repos=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
-    [$htslib_key]='htslib' [$zeromq_key]='zeromq' )
+    [$htslib_key]='htslib' [$zeromq_key]='zeromq_v3' )
 
 declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
     [$htslib_key]='htslib' [$zeromq_key]='zeromq' )

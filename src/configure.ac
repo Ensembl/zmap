@@ -94,7 +94,7 @@ AM_COND_IF([USE_HTSLIB],
 
 # Check for zeromq
 #
-AM_CONDITIONAL([USE_ZEROMQ], [ test -f "$srcdir/zeromq/configure.ac" ])
+AM_CONDITIONAL([USE_ZEROMQ], [ test -f "$srcdir/zeromq/configure" ])
 AM_COND_IF([USE_ZEROMQ],
            [AC_DEFINE([USE_ZEROMQ], [1], [Zeromq interface is available.])])
 AM_COND_IF([USE_ZEROMQ],
