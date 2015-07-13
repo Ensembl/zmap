@@ -103,6 +103,8 @@ zeromq_key='zeromq'
 declare -A install=( [$aceconn_key]='maybe' [$ensc_core_key]='maybe' [$gb_tools_key]='maybe'
     [$htslib_key]='maybe' [$zeromq_key]='maybe' )
 
+# to move to v4 of zeromq simply change the value for zeromq in this array to 'zeromq' and rebuild.
+#
 declare -A repos=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
     [$htslib_key]='htslib' [$zeromq_key]='zeromq_v3' )
 
