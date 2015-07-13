@@ -280,7 +280,9 @@ AC_ARG_ENABLE(profile,
 
 CFLAGS="$CFLAGS -g";
 
-
+# flags that we could potentially use for warnings are:
+#     -Wpedantic -Wall -Wextra
+#
 CXXFLAGS='-g'
 
 AC_SUBST(PKG_CONFIG)
