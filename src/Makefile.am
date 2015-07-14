@@ -323,8 +323,8 @@ $(NULL)
 # this.
 
 
-# Standard way to add _files_ to the list deleted by the maintainer-clean target.
-#
+# Standard way to add _files_ to the list deleted by the maintainer-clean target, 
+# cannot be used for directories.
 MAINTAINERCLEANFILES = $(top_srcdir)/Makefile.in $(top_srcdir)/aclocal.m4 \
 $(top_srcdir)/config.h.in $(top_srcdir)/configure $(top_srcdir)/zmap_version.m4
 
@@ -335,9 +335,10 @@ $(top_srcdir)/config.h.in $(top_srcdir)/configure $(top_srcdir)/zmap_version.m4
 GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/* $(top_srcdir)/config \
 $(top_srcdir)/autom4te.cache
 
-EXTERNAL_LIBS = $(top_srcdir)/ensc-core $(top_srcdir)/gbtools $(top_srcdir)/htslib $(top_srcdir)/zeromq
-EXTERNAL_PLACEHOLDERS = $(top_srcdir)/ensc-core/README_ZMAP $(top_srcdir)/gbtools/README_ZMAP \
-$(top_srcdir)/htslib/README_ZMAP $(top_srcdir)/zeromq/README_ZMAP
+EXTERNAL_LIBS = $(top_srcdir)/AceConn $(top_srcdir)/ensc-core $(top_srcdir)/gbtools \
+$(top_srcdir)/htslib $(top_srcdir)/zeromq
+EXTERNAL_PLACEHOLDERS = $(top_srcdir)/AceConn/README_ZMAP $(top_srcdir)/ensc-core/README_ZMAP \
+$(top_srcdir)/gbtools/README_ZMAP $(top_srcdir)/htslib/README_ZMAP $(top_srcdir)/zeromq/README_ZMAP
 
 maintainer-clean-local:
 	@echo 'maintainer-clean-local: Removing all generated files....'
