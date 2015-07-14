@@ -118,7 +118,10 @@ declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='-b feature/zmap' [$gb_to
     [$htslib_key]='' [$zeromq_key]='' )
 
 
-
+# for ensembl development we sometimes need zmap to reference it but we don't want to build
+# it locally....this is a slightly more complicated case then for other libs....for which we
+# use a 'dummy' file to signal to configure that we want to do this.
+ensembl_file='ensembl_ref_but_no_build'
 
 
 # Cmd line options....
@@ -131,7 +134,7 @@ Usage:
  $SCRIPT_NAME [ -a -d -e -f -g -h -i -n -u -v ]
 
    -a  Force checkout of aceconn (overwrite existing subdir)
-   -d  Disable checkout of ensc-core (use existing subdir or local install)
+   -d  Disable checkout/build of ensc-core, use local install.
    -e  Force checkout of ensc-core (overwrite existing subdir)
    -f  Force remake all
    -g  Force checkout of gbtools (overwrite existing subdir)
@@ -141,13 +144,20 @@ Usage:
    -u  Run autoupdate
    -v  Verbose
 
-   -z  testing, no checkout of zeromq
+   -z  testing, no checkout of any optional libs.
 "
 
-while getopts ":azdefghinuv" opt ; do
+
+if [[ -f $ensembl_file ]] ; then
+  rm -f $ensembl_file
+fi
+
+
+while getopts ":adefghinuvz" opt ; do
     case $opt in
 	a  ) install[$aceconn_key]='yes' ;;
-	d  ) install[$ensc_core_key]='no' ;;
+	d  ) touch $ensembl_file
+             install[$ensc_core_key]='no' ;;
 	e  ) install[$ensc_core_key]='yes' ;;
 	f  ) force_remake_all='-f' ;;
 	g  ) install[$gb_tools_key]='yes' ;;
@@ -156,8 +166,9 @@ while getopts ":azdefghinuv" opt ; do
 	n  ) install[$gb_tools_key]='no' ;;
 	u  ) run_autoupdate_key]='yes' ;;
 	v  ) verbose='-v' ;;
-	z  ) install[$zeromq_key]='no' ;;
-
+	z  ) install[$aceconn_key]='no'
+             install[$ensc_core_key]='no'
+             install[$zeromq_key]='no' ;;
 	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
 done

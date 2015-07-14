@@ -59,27 +59,66 @@ AM_COND_IF([USE_ACECONN],
 AM_COND_IF([USE_ACECONN],
            [AC_SUBST([USE_ACECONN], [use_aceconn])])
 
-# Only enable ensembl if we have mysql available 
+# Check for ensembl
 #
+# check is more complex:
+#  - we need to check whether mysql is available
+#  - then we check to see if the developer requested that zmap reference
+#    ensembl but we do not build it locally, it's found from LDFLAGS specified by the developer.
+#  - then we check to see if the developer wants to build it locally by checking for the makefile.
+#
+# Note that the below seems arcane and it is, but that's autoconf/automake for you....
+#
+
+# Check for mysql
 AX_LIB_MYSQL()           # Standard macro to test for mysql
+AM_CONDITIONAL([HAVE_MYSQL], [ test -n "$MYSQL_VERSION" ])
+AM_COND_IF([HAVE_MYSQL],
+           [AC_SUBST(HAVE_MYSQL, 'mysql is available')])
 
-AM_CONDITIONAL([USE_ENSEMBL], [ test -n "$MYSQL_VERSION" ])
-AM_COND_IF([USE_ENSEMBL],
-           [AC_DEFINE([USE_ENSEMBL], [1], [Ensembl interface is available.])])
-AM_COND_IF([USE_ENSEMBL],
-           [AC_SUBST([USE_ENSEMBL], [use_ensembl])])
+#AM_COND_IF([HAVE_MYSQL],
+#           [ echo 'MYSQL IS AVAILABLE !!!' ])
 
-# Only build ensembl if we have the ensembl subdirectory (otherwise we
-# expect to find it in the LDFLAGS path)
-#
-AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -f "$srcdir/ensc-core/src/Makefile" ])
+# If we have mysql then check for develop asking to reference but not build ensembl extension, also
+# check whether developer asked for local build of ensembl. Note that autogen.sh makes these
+# two options mutually exclusive.
+AM_COND_IF([HAVE_MYSQL],
+           [AM_CONDITIONAL([REFERENCE_ENSEMBL], [ test -f "$srcdir/ensembl_ref_but_no_build" ])])
+ 
+AM_COND_IF([HAVE_MYSQL],
+           [AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -f "$srcdir/ensc-core/src/Makefile" ])])
+
+#AM_COND_IF([REFERENCE_ENSEMBL],
+#           [ echo 'ENSEMBL IS AVAILABLE BUT WE ARE ONLY REFERENCING IT !!!' ])
+
+#AM_COND_IF([USE_ENSEMBL_SUBDIR],
+#           [ echo 'ENSEMBL IS AVAILABLE AND WE ARE BUILDING IT LOCALLY !!!' ])
+
+# ok....we need a bit of indirection here to create a shell variable we can use in a test
+# to set USE_ENSEMBL which must be set for the build.
+AM_COND_IF([REFERENCE_ENSEMBL],
+           [AC_SUBST(NEED_ENSEMBL, 'need ensembl')])
+
+AM_COND_IF([USE_ENSEMBL_SUBDIR],
+           [AC_SUBST(NEED_ENSEMBL, 'need ensembl')])
+
+AM_CONDITIONAL([USE_ENSEMBL], [ test -n "$NEED_ENSEMBL" ])
+
+#AM_COND_IF([USE_ENSEMBL],
+#           [ echo 'USE_ENSEMBL IS DEFINED !!!' ])
+
+AM_COND_IF([USE_ENSEMBL],
+           [AC_DEFINE([USE_ENSEMBL], [1], [ 'Ensembl interface is available' ])])
+AM_COND_IF([USE_ENSEMBL],
+           [AC_SUBST(USE_ENSEMBL, 'Ensembl interface is available')])
+
+# For local builds copy the ensc-core code to the build directory.
 AM_COND_IF([USE_ENSEMBL_SUBDIR],
            [AC_DEFINE([USE_ENSEMBL_SUBDIR], [1], [Ensembl interface is built as a subdirectory of ZMap.])])
 AM_COND_IF([USE_ENSEMBL_SUBDIR],
            [AC_SUBST([USE_ENSEMBL_SUBDIR], [use_ensembl_subdir])])
 AM_COND_IF([USE_ENSEMBL_SUBDIR],
            [ cp -r $srcdir/ensc-core . ])
-
 
 
 # Check for htslib
@@ -639,9 +678,15 @@ then
   echo
 fi
 
-if test -z "$USE_ENSEMBL"
+if test -z "$HAVE_MYSQL"
 then
   echo " Warning: MySql is not installed so Ensembl server access is disabled."
+  echo
+fi
+
+if test -z "$USE_ENSEMBL"
+then
+  echo " Warning: ensc-core is not installed so Ensembl server access is disabled."
   echo
 fi
 
@@ -663,13 +708,13 @@ echo "---------------------------------------------------------------------
 
 
 # debug.....
-echo "====== debugging......"
-echo "CC = $CC"
-echo "CFLAGS = $CFLAGS"
-
-echo "CXX = $CXX"
-echo "CXXFLAGS = $CXXFLAGS"
-
-echo "LDFLAGS = $LDFLAGS"
-
+#echo "====== debugging......"
+#echo "CC = $CC"
+#echo "CFLAGS = $CFLAGS"
+#
+#echo "CXX = $CXX"
+#echo "CXXFLAGS = $CXXFLAGS"
+#
+#echo "LDFLAGS = $LDFLAGS"
+#
 
