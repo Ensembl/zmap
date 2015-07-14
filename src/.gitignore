@@ -13,14 +13,17 @@ gbtools/*
 AceConn/*
 !AceConn/README_ZMAP
 
+# ensembl_ref_but_no_build is used by autogen.sh and configure.ac
 ensc-core/*
 !ensc-core/README_ZMAP
+ensembl_ref_but_no_build
 
 htslib/*
 !htslib/README_ZMAP
 
 zeromq/*
 !zeromq/README_ZMAP
+
 
 
 
