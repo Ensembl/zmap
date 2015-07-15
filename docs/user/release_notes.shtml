@@ -6,6 +6,19 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.0.0</h4>
+<ul>
+  <li>First fully functional release for running ZMap on Ensembl databases
+  <li>Fix a bug where newly-created features were not being saved when exporting to GFF
+  <li>Improve handling of relative paths and non-writeable locations for config files, and support tilde expansion
+  <li>Fix to handle very wide menu and window titles - RT 463363 and 464024
+  <li>Fix a crash on revcomp with feature search results window open - RT 465286
+  <li>Fix a problem with the initial window size on the Mac - RT 467295
+  <li>Fix selection string to support multiple single exon selection
+  <li>Fix a transcript drawing bug
+  <li>Fix erroneous error messages when communicating with peer
+</ul>
+
 <h4>Version 1.7.0</h4>
 <ul>
   <li>Display can now toggle between slice and chromosome coordinates (see ZMap/View menu)
