@@ -1,42 +1,18 @@
 
-Git commits for  from commit "production" until commit "release/1.7.0"
+Git commits for  from commit "production" until commit "release/2.0.0"
 
-2352b1c 2015-06-19 update to deal with transcript drawing bug - BUG FIX
-b77dd7f 2015-06-16 Merge remote branch 'origin/release/1.7.0' into release/1.7.0
-7074b84 2015-06-16 Remove redundant reply check causing erroneous error messages. - BUG FIX
-10abeac 2015-06-11 Merge remote branch 'origin/develop' into develop
-7e83e4b 2015-06-11 Merge branch 'feature/coords' into develop
-3ed2d7e 2015-06-10 Fix a bug with CDS coords in ensembl - BUG FIX
-1eeb39f 2015-06-09 Fix link error in zmap help page - DOC
-9c10ffa 2015-06-08 Fix issue with relative stylesfile path with ~ expansion - NEW FEATURE 'Improve config file handling'
-ea4c9db 2015-06-08 Better method of checking current user's file permissions - NEW FEATURE 'Improve config file handling'
-aed13a9 2015-06-08 Merge remote branch 'origin/develop' into develop
-0b5630e 2015-06-08 Fix xml errors in examples. - DOC
-5cafee8 2015-06-03 fix for web-browser not opening when running on tviewsrv - BUG FIX
-9529862 2015-05-28 Do tilde expansion for filepath config values (data-dir) - NEW FEATURE 'config tilde expansion'
-9502e15 2015-05-28 Do tilde expansion for filepath config values (stylesfile, pfetch location, log file) - NEW FEATURE 'config tilde expansion'
-6031fea 2015-05-28 Improve handling of relative paths and non-writeable locations for config files - NEW FEATURE 'Improve config file handling'
-50bbe34 2015-05-27 Add Gemma to list of zmap authors. - DOC
-a641df0 2015-05-27 Add separate mysql library init call in globalinit function to try fix "random" crashing. - BUG FIX
-f9a3090 2015-05-21 Fix problem with CDS for ensembl transcripts - BUG FIX
-322add3 2015-05-21 Fix off-by-one error in ensembl - BUG FIX
-7bb37ac 2015-05-21 Fix a bug with match coords in ensembl - BUG FIX
-d79d14d 2015-05-21 Temp fix for 3ft in ensembl - BUG FIX
-6ba65e3 2015-05-21 Fix bug saving new features to GFF - BUG FIX
-aa4af9f 2015-05-20 Merge branch 'feature/ensembl' into develop
-e4db813 2015-05-20 Fix potential crash in ensembl when slice not found - BUG FIX
-678aa02 2015-05-19 Merge branch 'feature/manual' into develop
-5104ad7 2015-05-07 some more changes for the previous
-3af05af 2015-05-07 commit to prepare for some work on the scale bar; should not change functionality
-086f269 2015-04-29 Add description of filter shortcut. - DOC
-780a730 2015-04-29 Remove incorrect * operators, parameters already pointers to int. - BUG FIX
-0c5c1da 2015-04-29 Fix selection string to support multiple single exon selection. - BUG FIX
-9dc3cb5 2015-04-29 Make feature subpart cope with CDS subpart. - BUG FIX
-c632682 2015-04-27 Merge branch 'feature/ensembl' into develop - NEW FEATURE 'ensembl prototype'
-324dc6d 2015-04-24 revision to my previous fix - wrong array function called - BUG FIX
-e8772c9 2015-04-24 fix to crash on revcomp with feature search results window open - RT 465286
-e865c60 2015-04-21 fix to remove unneccessary test in canvasWindowEventCB - BUG FIX
-51fcc4a 2015-04-17 fix to long feature and featureset names in the search results window - BUG FIX
+c3c3e0c 2015-07-15 Merge branch 'feature/C++' into develop
+7d377e2 2015-07-08 removed the drawing design document - DOC
+8b551b4 2015-07-07 Merge branch 'feature/editing' into develop
+fca3806 2015-06-29 Avoid crash when overwriting feature used as evidence - BUG FIX
+8bdce77 2015-07-06 Add logging of command line used by zmap to start a new child pipe process. - NEW FEATURE
+1c9cc27 2015-06-25 Add optional database prefix in ensembl - NEW FEATURE 'ensembl db prefix'
+56edb09 2015-06-25 Fix crash when importing files - REGRESSION FIX
+8fa8bb6 2015-06-19 bug fix for drawing transcripts - BUG FIX
+5275435 2015-06-17 Fix a bug in edit style dialog where wrong colour is set - BUG FIX
+34e8ff3 2015-06-16 Ensembl now only loads requested featuresets, if specified - BUG FIX
+4ca1ce8 2015-06-16 Fix broken link - DOC
+bb38a51 2015-06-15 Disable tilde expansion for url config fields - doesn't work on mac - REGRESSION FIX
 
 
 End of git commits

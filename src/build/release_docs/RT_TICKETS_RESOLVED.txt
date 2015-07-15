@@ -1,45 +1,5 @@
 
-Request Tracker Tickets Resolved from 16/04/2015 to 23/06/2015
-
-ticket/463363
-id: ticket/463363
-Queue: zmap
-Subject: super wide menu titles
-Requestors: edgrif@sanger.ac.uk
-Owner: sm23
-Resolved: Thu Apr 16 12:01:04 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/464024
-id: ticket/464024
-Queue: zmap
-Subject: long feature names in search results window
-Requestors: sm23@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Apr 17 16:16:00 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/465286
-id: ticket/465286
-Queue: zmap
-Subject: crash on revcomp
-Requestors: sm23@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Apr 24 13:00:41 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/467295
-id: ticket/467295
-Queue: zmap
-Subject: Initial window size on the Mac is wrong
-Requestors: edgrif@sanger.ac.uk
-Owner: edgrif
-Resolved: Tue May 19 17:51:10 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
+Request Tracker Tickets Resolved from 11/06/2015 to 15/07/2015
 
 ticket/468398
 id: ticket/468398
@@ -58,6 +18,36 @@ Subject: zmap ignores non-zero exit of filter_get
 Requestors: gdr@sanger.ac.uk, jgrg@sanger.ac.uk
 Owner: edgrif
 Resolved: Thu Jun 11 15:17:43 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/476861
+id: ticket/476861
+Queue: zmap
+Subject: chromosome coordinates missing in zmap
+Requestors: th2@sanger.ac.uk
+Owner: sm23
+Resolved: Mon Jun 29 14:35:33 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/478110
+id: ticket/478110
+Queue: zmap
+Subject: zmap should log the complete command line it uses when starting a pipeserver
+Requestors: edgrif@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon Jul 06 15:55:45 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/478352
+id: ticket/478352
+Queue: zmap
+Subject: Zmap - GFF import export problems
+Requestors: mt4@sanger.ac.uk
+Owner: sm23
+Resolved: Fri Jul 10 11:57:34 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
