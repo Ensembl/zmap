@@ -60,7 +60,7 @@ void linePaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
   foo = (FooCanvasItem *) featureset ;
   feat = (ZMapWindowCanvasGraphics) feature ;
 
-  c.pixel = feat->outline;
+  c.pixel = feat->outline_val;
   gdk_gc_set_foreground (featureset->gc, &c);
 
   foo_canvas_w2c(foo->canvas, feat->x1 + featureset->dx, feat->y1 - featureset->start + featureset->dy,
@@ -180,19 +180,19 @@ void zMapWindowCanvasGraphicsInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL };
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_ZOOM] = graphicsZoomSet;
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPHICS, funcs,sizeof(zmapWindowCanvasPangoStruct));
-  zMapWindowCanvasFeatureSetSize(FEATURE_GRAPHICS, feature_funcs, 0) ;
+  funcs[FUNC_ZOOM] = (void *)graphicsZoomSet;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPHICS, funcs, sizeof(zmapWindowCanvasPangoStruct));
+  zMapWindowCanvasFeatureSetSize(FEATURE_GRAPHICS, feature_funcs, sizeof(zmapWindowCanvasFeatureStruct)) ;
 
   funcs[FUNC_ZOOM] = NULL;        /* not needed by the others but no harm done  if it's left in?? */
 
-  funcs[FUNC_PAINT] = linePaint;
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LINE, funcs, 0) ;
-  zMapWindowCanvasFeatureSetSize(FEATURE_LINE, feature_funcs, 0) ;
+  funcs[FUNC_PAINT] = (void *)linePaint;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LINE, funcs, (size_t) 0) ;
+  zMapWindowCanvasFeatureSetSize(FEATURE_LINE, feature_funcs, sizeof(zmapWindowCanvasFeatureStruct)) ;
 
-  funcs[FUNC_PAINT] = textPaint;
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TEXT, funcs, 0);
-  zMapWindowCanvasFeatureSetSize(FEATURE_TEXT, feature_funcs, 0) ;
+  funcs[FUNC_PAINT] = (void *)textPaint;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TEXT, funcs, (size_t) 0);
+  zMapWindowCanvasFeatureSetSize(FEATURE_TEXT, feature_funcs, sizeof(zmapWindowCanvasFeatureStruct)) ;
 
   return ;
 }

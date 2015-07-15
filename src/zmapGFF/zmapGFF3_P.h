@@ -83,61 +83,6 @@ typedef enum
  *
  */
 
-/*
- * List of attributes that we may find. This is the union of
- * v3 definitions from sequenceontology.org together with ones
- * that I've found already in the v2 data.
- *
- * The strings associated with the attributes are shown in
- * comments on the right. The AttributeInfo class is where
- * the code finds these data.
- *
- * Note that there are two sets of attributes for v2 and v3,
- * and I have kept them seperate as shown below.
- *
- * This is because they may need to be treated in different
- * ways (or at least parsed differently) e.g. "Name" in v2
- * and v3, and also that I want to have one typename
- * (ZMapGFFAttributeName) rather than one for each version.
- * This enables one array to be used for lookups rather than
- * one for each version, etc.
- *
- * The "unknown" type does not necessarily mean invalid. It
- * is used to store anything that is not otherwise hard-coded
- * into the list.
- *
- * This could be simplified using hash tables, but will do
- * for the moment.
- *
- */
-#define ZMAPGFF_ATT_V2START 0
-#define ZMAPGFF_ATT_V3START 1000
-typedef enum
-  {
-    ZMAPGFF_ATT_ALN2 = ZMAPGFF_ATT_V2START,              /* v2 "Align"                    */
-    ZMAPGFF_ATT_NAM2,                                    /* v2 "Name"                     */
-    ZMAPGFF_ATT_CLA2,                                    /* v2 "Class"                    */
-
-    ZMAPGFF_ATT_IDD3 = ZMAPGFF_ATT_V3START,              /* v3 "ID"                       */
-    ZMAPGFF_ATT_NAM3,                                    /* v3 "Name"                     */
-    ZMAPGFF_ATT_ALI3,                                    /* v3 "Alias"                    */
-    ZMAPGFF_ATT_PAR3,                                    /* v3 "Parent"                   */
-    ZMAPGFF_ATT_TAR3,                                    /* v3 "Target"                   */
-    ZMAPGFF_ATT_GAP3,                                    /* v3 "Gap"                      */
-    ZMAPGFF_ATT_DER3,                                    /* v3 "Derives_from"             */
-    ZMAPGFF_ATT_NOT3,                                    /* v3 "Note"                     */
-    ZMAPGFF_ATT_DBX3,                                    /* v3 "Dbxref"                   */
-    ZMAPGFF_ATT_ONT3,                                    /* v3 "Ontology_term"            */
-    ZMAPGFF_ATT_ISC3,                                    /* v3 "Is_circular"              */
-
-    ZMAPGFF_ATT_UNK,                                     /* unknown                       */
-  } ZMapGFFAttributeName ;
-#define ZMAPGFF_NUM_ATT_V2 3
-#define ZMAPGFF_NUM_ATT_V3 11
-#define ZMAPGFF_NUMBER_ATTRIBUTE_TYPES (ZMAPGFF_NUM_ATT_V2 + ZMAPGFF_NUM_ATT_V3  + 1)
-#define ZMAPGFF_ATTRIBUTE_LIMIT 1000
-
-
 
 /*
  * Line types that are relevant to parser FSM. Do not change the values
@@ -193,8 +138,8 @@ typedef struct ZMapGFF3ParserStruct_
     /*ZMapMLF pMLF ; */
     ZMapSOSetInUse cSOSetInUse ;
 
-    unsigned int iNumWrongSequence,
-                 nSequenceRecords;
+    int iNumWrongSequence,
+      nSequenceRecords;
 
     gboolean bLogWarnings,
              bCheckSequenceLength;

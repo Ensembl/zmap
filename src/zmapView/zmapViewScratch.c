@@ -135,9 +135,9 @@ static void editOperationDestroy(EditOperation operation)
 /*
  * \brief Does the same as g_list_free_full, which requires gtk 2.28
  */
-static void freeListFull(GList *list, GDestroyNotify free_func)
+static void freeListFull(GList *glist, GDestroyNotify free_func)
 {
-  GList *item = list;
+  GList *item = glist;
 
   for ( ; item; item = item->next)
     {
@@ -147,7 +147,7 @@ static void freeListFull(GList *list, GDestroyNotify free_func)
       operation = NULL ;
     }
 
-  g_list_free(list);
+  g_list_free(glist);
 }
 
 
@@ -1054,7 +1054,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
   ZMapFeatureTypeStyle style = NULL ;
   ZMapFeatureSetDesc f2c = NULL;
   ZMapFeatureSource src = NULL;
-  GList *list = NULL;
+  GList *glist = NULL;
   ZMapFeatureColumn column = NULL;
 
   ZMapFeatureContextMap context_map = &zmap_view->context_map;
@@ -1075,7 +1075,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
 	/* set up featureset2_column and anything else needed */
       if (context_map->featureset_2_column)
         {
-          f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(featureset->unique_id));
+          f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(featureset->unique_id));
           if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
             {
               f2c = g_new0(ZMapFeatureSetDescStruct,1);
@@ -1090,7 +1090,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
 
       if (context_map->source_2_sourcedata)
         {
-          src = g_hash_table_lookup(context_map->source_2_sourcedata, GUINT_TO_POINTER(featureset->unique_id));
+          src = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata, GUINT_TO_POINTER(featureset->unique_id));
           if(!src)
             {
               src = g_new0(ZMapFeatureSourceStruct,1);
@@ -1104,17 +1104,17 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
 
       if (context_map->column_2_styles)
         {
-          list = g_hash_table_lookup(context_map->column_2_styles,GUINT_TO_POINTER(col_id));
-          if(!list)
+          glist = (GList *)g_hash_table_lookup(context_map->column_2_styles,GUINT_TO_POINTER(col_id));
+          if(!glist)
             {
-              list = g_list_prepend(list,GUINT_TO_POINTER(src->style_id));
-              g_hash_table_insert(context_map->column_2_styles,GUINT_TO_POINTER(col_id), list);
+              glist = g_list_prepend(glist,GUINT_TO_POINTER(src->style_id));
+              g_hash_table_insert(context_map->column_2_styles,GUINT_TO_POINTER(col_id), glist);
             }
         }
 
       if (context_map->columns)
         {
-          column = g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(col_id));
+          column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(col_id));
           if(!column)
             {
               column = g_new0(ZMapFeatureColumnStruct,1);
@@ -1255,7 +1255,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
   ZMapFeatureTypeStyle style = NULL ;
   ZMapFeatureSetDesc f2c = NULL;
   ZMapFeatureSource src = NULL;
-  GList *list = NULL;
+  GList *glist = NULL;
   ZMapFeatureColumn column = NULL;
 
   ZMapFeatureContextMap context_map = &zmap_view->context_map;
@@ -1280,7 +1280,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
       /* set up featureset2_column and anything else needed */
       if (context_map->featureset_2_column)
         {
-          f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(scratch_featureset->unique_id));
+          f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(scratch_featureset->unique_id));
           if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
             {
               f2c = g_new0(ZMapFeatureSetDescStruct,1);
@@ -1295,7 +1295,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
 
       if (context_map->source_2_sourcedata)
         {
-          src = g_hash_table_lookup(context_map->source_2_sourcedata, GUINT_TO_POINTER(scratch_featureset->unique_id));
+          src = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata, GUINT_TO_POINTER(scratch_featureset->unique_id));
           if(!src)
             {
               src = g_new0(ZMapFeatureSourceStruct,1);
@@ -1309,17 +1309,17 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
 
       if (context_map->column_2_styles)
         {
-          list = g_hash_table_lookup(context_map->column_2_styles,GUINT_TO_POINTER(col_id));
-          if(!list)
+          glist = (GList *)g_hash_table_lookup(context_map->column_2_styles,GUINT_TO_POINTER(col_id));
+          if(!glist)
             {
-              list = g_list_prepend(list,GUINT_TO_POINTER(src->style_id));
-              g_hash_table_insert(context_map->column_2_styles,GUINT_TO_POINTER(col_id), list);
+              glist = g_list_prepend(glist,GUINT_TO_POINTER(src->style_id));
+              g_hash_table_insert(context_map->column_2_styles,GUINT_TO_POINTER(col_id), glist);
             }
         }
 
       if (context_map->columns)
         {
-          column = g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(col_id));
+          column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(col_id));
           if(!column)
             {
               column = g_new0(ZMapFeatureColumnStruct,1);
@@ -1379,7 +1379,7 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
         {
           ZMapViewWindow view_window ;
 
-          view_window = list_item->data ;
+          view_window = (ZMapViewWindow)(list_item->data) ;
 
           zMapWindowToggleScratchColumn(view_window->window, 0, 0, force_to, force) ;
         }

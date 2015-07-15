@@ -101,7 +101,7 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
   else if (!zMapWindowGetVisibleSeq(window, (item ? item : focus_item), &window_start, &window_end))
     {
       /* If we can't find where we are in the window we can't do anything. */
-      char *msg = "Failed to find mouse and/or window position" ;
+      const char *msg = "Failed to find mouse and/or window position" ;
 
       zMapLogCritical("%s", msg) ;
 
@@ -118,7 +118,7 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
            || (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURESET
                && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
            || (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
-               && !(feature_any = zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0))))
+               && !(feature_any = (ZMapFeatureAny)zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0))))
     {
       /* Cannot find feature from item. */
 

@@ -81,9 +81,9 @@ static gint feature2StyleCompare(gconstpointer a, gconstpointer b) ;
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any)
 {
   ZMapWindowStats stats ;
-  int nbytes = sizeof(ZMapWindowStatsStruct) ;
+  size_t nbytes = sizeof(ZMapWindowStatsStruct) ;
 
-  stats = g_slice_alloc0(nbytes) ;
+  stats = (ZMapWindowStats) g_slice_alloc0(nbytes) ;
 
   stats->feature_id = feature_any->original_id ;
 
@@ -117,7 +117,7 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
         }
       else
         {
-          int num_bytes = 0 ;
+          size_t num_bytes = 0 ;
 
           switch (feature->mode)
             {
@@ -145,7 +145,7 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 
           if (num_bytes)
             {
-              stats_any = g_slice_alloc0(num_bytes) ;
+              stats_any = (ZMapWindowStatsAny) g_slice_alloc0(num_bytes) ;
               stats_any->feature_type = feature->mode ;
               stats_any->style_id = (*feature->style)->unique_id ;
 
@@ -185,7 +185,7 @@ void zmapWindowStatsPrint(GString *text, ZMapWindowStats stats)
 
 void zmapWindowStatsDestroy(ZMapWindowStats stats)
 {
-  int nbytes = sizeof(ZMapWindowStatsStruct) ;
+  size_t nbytes = sizeof(ZMapWindowStatsStruct) ;
 
   if (!stats)
     return ;
@@ -205,7 +205,7 @@ void zmapWindowStatsDestroy(ZMapWindowStats stats)
 static void resetStats(gpointer data, gpointer user_data_unused)
 {
   ZMapWindowStatsAny any_stats = (ZMapWindowStatsAny)data ;
-  int num_bytes = 0 ;
+  size_t num_bytes = 0 ;
 
   switch (any_stats->feature_type)
     {

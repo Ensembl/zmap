@@ -189,27 +189,27 @@ void zMapConfigDestroyStanza(ZMapConfigStanza stanza) ;
 
 
 ZMapConfigIni zMapConfigIniNew(void) ;
-gboolean zMapConfigIniReadAll(ZMapConfigIni config, char *config_file) ;
-gboolean zMapConfigIniReadUser(ZMapConfigIni config, char *config_file);
-gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer);
-gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file);
-void zMapConfigIniGetStanza(ZMapConfigIni config, char *stanza_name);
+gboolean zMapConfigIniReadAll(ZMapConfigIni config, const char *config_file) ;
+gboolean zMapConfigIniReadUser(ZMapConfigIni config, const char *config_file);
+gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, const char *buffer);
+gboolean zMapConfigIniReadFile(ZMapConfigIni config, const char *file);
+void zMapConfigIniGetStanza(ZMapConfigIni config, const char *stanza_name);
 void zMapConfigIniGetAllStanzas(ZMapConfigIni config);
-void zMapConfigIniGetStanzaValues(ZMapConfigIni, char *stanza_name);
+void zMapConfigIniGetStanzaValues(ZMapConfigIni, const char *stanza_name);
 gboolean zMapConfigIniGetUserValue(ZMapConfigIni config,
-                           char * stanza_name,
-                           char * key_name,
-                           GValue **value_out,
-                           GType type);
+                                   const char * stanza_name,
+                                   const  char * key_name,
+                                   GValue **value_out,
+                                   GType type);
 gboolean zMapConfigIniGetValue(ZMapConfigIni config,
-                         char * stanza_name,
-                         char * key_name,
-                         GValue **value_out,
-                         GType type);
+                               const char * stanza_name,
+                               const char * key_name,
+                               GValue **value_out,
+                               GType type);
 void zMapConfigIniSetValue(ZMapConfigIni config,
-                     char *stanza_name,
-                     char *key_name,
-                     GValue *value);
+                           const char *stanza_name,
+                           const char *key_name,
+                           GValue *value);
 gboolean zMapConfigIniSaveUser(ZMapConfigIni config);
 void zMapConfigIniDestroy(ZMapConfigIni config, gboolean save_user);
 

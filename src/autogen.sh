@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ###############################################################################
 # Simple script to bootstrap and create the configure script, should be run
 # when any control files have been changed (e.g. new source files added which
@@ -21,34 +21,6 @@ else
 fi
 
 RC=0
-force_remake_all=''
-gb_tools='maybe'
-ensc_core='maybe'
-run_autoupdate=''					    # don't run autoupdate by default.
-install_missing='-i'
-verbose=''
-version_arg=''
-
-# Location of git repositories
-git_host='git.internal.sanger.ac.uk'
-git_root='/repos/git/annotools'
-
-# gbtools repository info
-gb_tools_repos='gbtools'
-gb_tools_dir='gbtools'
-gb_tools_checkout_dir='gbtools_develop'
-gb_tools_branch='' # set this to '-b <branch>' to use another branch than the default (develop)
-
-# ensembl repository info
-ensc_core_repos='ensc-core'
-ensc_core_dir='ensc-core'
-ensc_core_checkout_dir='ensc-core_feature_zmap'
-
-# For now we hard-code ensembl to use the feature/zmap branch because we have
-# some customisations (e.g. disabling certain stuff that we don't require)
-# which we can't push to the default branch
-ensc_core_branch='-b feature/zmap' 
-
 
 # Load common functions/settings.
 #
@@ -57,24 +29,147 @@ set -o history
 . $BASE_DIR/../scripts/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
+# Cleans the sub-directory out and refetches the empty placeholder
+# from the zmap repository.
+#
+# Args are:    lib_repository_name  lib_local_dir
+#
+function clean_lib
+{
+    zmap_message_out "Starting removing $1 from $2"
+
+    rm -rf ./$2/*
+
+    git checkout ./$2
+
+    zmap_message_out "Finished removing $1 from $2"
+
+}
+
+
+# Sets up a sub-directory to contain the supplied git repository code.
+#
+# Args are:    full_git_repository_uri lib_local_dir git_branch
+#
+#
+function fetch_lib
+{
+    tmp_dir='autogen_tmp_git_checkout_dir'
+
+    zmap_message_out "Starting cloning $1 into $2"
+
+    mkdir $tmp_dir
+
+    git clone $3 $1 $tmp_dir || zmap_message_exit "could not clone $1 into $PWD/$tmp_dir"
+
+    cp -rf ./$tmp_dir/* ./$2
+
+    rm -rf ./$tmp_dir
+
+    # SHOULD WE BE DOING THIS ????? NOT TOO SURE....
+    # Make sure the placeholder files (.gitignore, README) are their original zmap versions
+    #git checkout ./$2/
+
+    zmap_message_out "Finished cloning $1 into $2"
+
+}
+
+
+
+force_remake_all=''
+gb_tools='maybe'
+ensc_core='maybe'
+run_autoupdate=''					    # don't run autoupdate by default.
+install_missing='-i'
+verbose=''
+version_arg=''
+
+# Base location of our git repositories
+git_host='git.internal.sanger.ac.uk'
+git_root='/repos/git/annotools'
+
+
+# Set up info. about each external library using bash associative arrays.
+# To add more libraries you must invent a new key name (e.g. the name of your
+# library) and use that name to add your values to each of the below arrays.
+# (note order of keys below is of course irrelevant as it's an associative array)
+#
+aceconn_key='aceconn'
+ensc_core_key='ensc_core'
+gb_tools_key='gb_tools'
+htslib_key='htslib'
+zeromq_key='zeromq'
+
+declare -A install=( [$aceconn_key]='maybe' [$ensc_core_key]='maybe' [$gb_tools_key]='maybe'
+    [$htslib_key]='maybe' [$zeromq_key]='maybe' )
+
+# to move to v4 of zeromq simply change the value for zeromq in this array to 'zeromq' and rebuild.
+#
+declare -A repos=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
+    [$htslib_key]='htslib' [$zeromq_key]='zeromq_v3' )
+
+declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
+    [$htslib_key]='htslib' [$zeromq_key]='zeromq' )
+
+declare -A test_file=( [$aceconn_key]='configure.ac' [$ensc_core_key]='src/Makefile' [$gb_tools_key]='configure.ac'
+    [$htslib_key]='Makefile' [$zeromq_key]='configure.ac' )
+
+declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='-b feature/zmap' [$gb_tools_key]=''
+    [$htslib_key]='' [$zeromq_key]='' )
+
+
+# for ensembl development we sometimes need zmap to reference it but we don't want to build
+# it locally....this is a slightly more complicated case then for other libs....for which we
+# use a 'dummy' file to signal to configure that we want to do this.
+ensembl_file='ensembl_ref_but_no_build'
+
 
 # Cmd line options....
 #
 # Do args.
 #
-usage="$SCRIPT_NAME [ -u ]"
+usage="
 
-while getopts ":defginuv" opt ; do
+Usage:
+ $SCRIPT_NAME [ -a -d -e -f -g -h -i -n -u -v ]
+
+   -a  Force checkout of aceconn (overwrite existing subdir)
+   -d  Disable checkout/build of ensc-core, use local install.
+   -e  Force checkout of ensc-core (overwrite existing subdir)
+   -f  Force remake all
+   -g  Force checkout of gbtools (overwrite existing subdir)
+   -h  Show this usage info
+   -i  Install missing
+   -n  Disable checkout of gbtools repository (use existing subdir or local install)
+   -u  Run autoupdate
+   -v  Verbose
+
+   -z  testing, no checkout of any optional libs.
+"
+
+
+if [[ -f $ensembl_file ]] ; then
+  rm -f $ensembl_file
+fi
+
+
+while getopts ":adefghinuvz" opt ; do
     case $opt in
-	d  ) ensc_core='no' ;;
-	e  ) ensc_core='yes' ;;
+	a  ) install[$aceconn_key]='yes' ;;
+	d  ) touch $ensembl_file
+             install[$ensc_core_key]='no' ;;
+	e  ) install[$ensc_core_key]='yes' ;;
 	f  ) force_remake_all='-f' ;;
-	g  ) gb_tools='yes' ;;
+	g  ) install[$gb_tools_key]='yes' ;;
+	h  ) zmap_message_exit "$usage" ;;
 	i  ) install_missing='-i' ;;
-	n  ) gb_tools='no' ;;
-	u  ) run_autoupdate='yes' ;;
+	n  ) install[$gb_tools_key]='no' ;;
+	u  ) run_autoupdate_key]='yes' ;;
 	v  ) verbose='-v' ;;
-	\? ) message_exit "Bad arg flag: $usage" ;;
+	z  ) install[$aceconn_key]='no'
+             install[$ensc_core_key]='no'
+             install[$zeromq_key]='no' ;;
+	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
 done
 
@@ -91,87 +186,87 @@ fi
 # Off we go......
 #
 zmap_message_out "-------------------------------------------------------------------"
-zmap_message_out "bootstrap starting...."
+zmap_message_out "build bootstrap starting...."
+
+
+
+# Loop through external libraries trying to copy them into our src tree.
+# Note loop only works because all associative arrays have the same set of
+# keys, i.e. one for each library.
+#
+
+zmap_message_out "-------------------------------------------------------------------"
+zmap_message_out "starting installing external libraries:  ${!dir[*]}"
+
+for i in "${!install[@]}"
+  do
+
+  zmap_message_out "starting install of $i....."
+
+  if [[ "${install[$i]}" == "yes" ]] ; then
+
+      clean_lib "${repos[$i]}" "${dir[$i]}"
+
+  fi
+
+  if [[ "${install[$i]}" == "yes" || "${install[$i]}" == "maybe" ]] ; then
+
+      if [[ ! -f "./${dir[$i]}/${test_file[$i]}" ]] ; then
+
+          fetch_lib "$git_host:$git_root/${repos[$i]}" "${dir[$i]}" "${branch[$i]}"
+
+      fi
+
+  fi
+
+  # Special case post-processing for some libraries....
+  case $i in
+
+    # If the gbtools autogen.sh script exists then run that. This is necessary
+    # for gbtools to create its gbtools_version.m4 file.
+    $gb_tools_key )
+    if [ -e "./${dir[$i]}/autogen.sh" ] ; then
+
+        cur_dir=`pwd`
+	cd $BASE_DIR/gbtools
+	./autogen.sh
+	cd $cur_dir
+	
+    fi ;;
+
+    # We must have htslib (currently) or we fail.
+    $htslib_key )
+    if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
+
+        zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
+
+    fi ;;
+
+#    # We must have zeromq (currently) or we fail.
+#    $zeromq_key )
+#    if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
+#
+#        zmap_message_exit "Aborting.....zeromq is not available so ZMap cannot be built."
+#
+#    fi ;;
+
+  esac
+
+  zmap_message_out "finished install of $i....."
+
+  done
+
+zmap_message_out "finished installing external libraries:  ${!dir[*]}"
 zmap_message_out "-------------------------------------------------------------------"
 
-# set up gbtools, this is our general tools package.
-#
 
-if [[ "$gb_tools" == "yes" ]] ; then
-
-   zmap_message_out "Removing an old copy of $gb_tools_repos"
-
-   rm -rf ./$gb_tools_dir/*
-
-   git checkout ./$gb_tools_dir
-
-fi
-
-if [[ "$gb_tools" == "yes" || "$gb_tools" == "maybe" ]] ; then
-
-  if [[ ! -f "./$gb_tools/configure.ac" ]] ; then
-  
-     zmap_message_out "Cloning $gb_tools_repos into $gb_tools_checkout_dir"
-  
-     git clone $gb_tools_branch $git_host:$git_root/$gb_tools_repos $gb_tools_checkout_dir || zmap_message_exit "could not clone $gb_tools_repos into $PWD."
-  
-     cp -rf ./$gb_tools_checkout_dir/* ./$gb_tools_dir
-  
-     rm -rf ./$gb_tools_checkout_dir
-  
-     zmap_message_out "Copied $gb_tools_checkout_dir files to $gb_tools_dir"
-
-  fi
-
-fi
-
-
-# If the gbtools autogen.sh script exists then run that. This is necessary
-# for gbtools to create its gbtools_version.m4 file.
-#
-if [ -e "$BASE_DIR/gbtools/autogen.sh" ] ; then
-  cur_dir=`pwd`
-  cd $BASE_DIR/gbtools
-  ./autogen.sh
-  cd $cur_dir
-fi
-
-
-# Set up ensc-core subdirectory. This is the ensembl C API code.
-#
-if [[ "$ensc_core" == "yes" ]] ; then
-
-    zmap_message_out "Removing an old copy of $ensc_core_repos"
-
-    rm -rf ./$ensc_core_dir/*
-
-    git checkout ./$ensc_core_dir
-fi
-
-if [[ "$ensc_core" == "yes" || "$ensc_core" == "maybe" ]] ; then
-
-  if [[ ! -f "./$ensc_core/src/configure.ac" ]] ; then
-
-      zmap_message_out "Cloning $ensc_core_repos into $ensc_core_checkout_dir"
-
-      git clone $ensc_core_branch $git_host:$git_root/$ensc_core_repos $ensc_core_checkout_dir || zmap_message_exit "could not clone $ensc_core_repos into $PWD."
-
-      cp -rf ./$ensc_core_checkout_dir/* ./$ensc_core_dir
-
-      rm -rf ./$ensc_core_checkout_dir
-
-      zmap_message_out "Copied $ensc_core_checkout_dir files to $ensc_core_dir"
-
-  fi
-
-fi
 
 if [[ ! -d "./$ensc_core/src" ]] ; then
 
     # The src subdir must exist even if we are not building ensc-core
     # gb10: not sure why but it seems it gets configured even though we
     # don't include it in SUBDIRS
-    mkdir ./$ensc_core/src
+    mkdir ./${dir[$ensc_core_key]}/src
 
 fi
 
@@ -207,7 +302,7 @@ echo "m4_define([VERSION_NUMBER], [$ZMAP_VERSION])" >> $version_macro_file
 zmap_message_out "ZMap version is: $ZMAP_VERSION"
 
 #
-# Load SO files and generate a header file from them. 
+# Load SO files and generate a header file from them.
 #
 $BASE_DIR/../scripts/zmap_SO_header.pl || zmap_message_exit "zmap failed to generate SO header"
 
@@ -252,14 +347,15 @@ mkdir $zeromq_dir  || zmap_message_exit "Cannot make $zeromq_dir for zeromq buil
 #
 zmap_message_out "-------------------------------------------------------------------"
 zmap_message_out "About to run autoreconf to bootstrap autotools and our build system"
-zmap_message_out "-------------------------------------------------------------------"
 
 autoreconf $force_remake_all $verbose $install_missing -I ./ || zmap_message_exit "Failed running autoreconf"
+
 zmap_message_out "Finished running autoreconf for bootstrap"
+zmap_message_out "-------------------------------------------------------------------"
+
 
 # finished !
-zmap_message_out "-------------------------------------------------------------------"
-zmap_message_out "bootstrap finished...."
+zmap_message_out "build bootstrap finished...."
 zmap_message_out "-------------------------------------------------------------------"
 
 

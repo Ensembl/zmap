@@ -47,13 +47,13 @@ static gboolean developer_status_G = FALSE ;
 
 
 /* Currently developers are limited to certain ids in certain domains. */
-static char *developers_G[] = {"edgrif", "zmap", "jh13", "gb10", "sm23", NULL} ;      /* MH17: i need to see what the users get */
-static char *domain_G[] = {"local", "localhost", "sanger.ac.uk", NULL} ;
+static const char *developers_G[] = {"edgrif", "zmap", "jh13", "gb10", "sm23", NULL} ;      /* MH17: i need to see what the users get */
+static const char *domain_G[] = {"local", "localhost", "sanger.ac.uk", NULL} ;
 
 
 /* GLib 2.16 has the GChecksum package which we could use to encrypt this, otherwise we need
  * to include another library... */
-static char *passwd_G = "rubbish" ;
+static const char *passwd_G = "rubbish" ;
 
 
 
@@ -76,7 +76,7 @@ static char *passwd_G = "rubbish" ;
 void zMapUtilsUserInit(void)
 {
   char *real_name, *user_name ;
-  char *host_name, *domain_name ;
+  const char *host_name, *domain_name ;
   struct hostent *domain_data ;
   int result ;
   struct utsname name ;
@@ -106,7 +106,7 @@ void zMapUtilsUserInit(void)
   /* Is the current user a developer ? */
   if (result == 0)
     {
-      char **curr_user ;
+      const char **curr_user ;
 
       curr_user = &developers_G[0] ;
       while (curr_user && *curr_user)
@@ -125,7 +125,7 @@ void zMapUtilsUserInit(void)
   /* Is this a supported domain ? */
   if (name_status)
     {
-      char **curr_domain ;
+      const char **curr_domain ;
 
       curr_domain = &domain_G[0] ;
       while (curr_domain && *curr_domain)

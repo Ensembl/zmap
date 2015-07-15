@@ -44,8 +44,8 @@
 /* For colour spec building. */
 typedef struct ColourSpecStructName
 {
-  char *colour_type ;
-  char *colour ;
+  const char *colour_type ;
+  const char *colour ;
 } ColourSpecStruct, *ColourSpec ;
 
 
@@ -81,9 +81,9 @@ typedef struct ColourSpecStructName
    STYLE_PTR->FIELD.TYPE.TARGET.pixel, STYLE_PTR->FIELD.TYPE.TARGET.red, STYLE_PTR->FIELD.TYPE.TARGET.green, STYLE_PTR->FIELD.TYPE.TARGET.blue)
 
 #define PRINTCOLOUR(DEST, FIELD, FIELD_STR, TYPE)\
-  PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, fill) ;     \
-  PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, draw) ;     \
-  PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, border) ;
+  PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, fill_col) ;     \
+  PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, draw_col) ;     \
+  PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, border_col) ;
 
 #define PRINTFULLCOLOUR(DEST, FIELD, FIELD_STR)       \
       PRINTCOLOUR(DEST, FIELD, FIELD_STR, normal) ;\
@@ -260,8 +260,8 @@ ZMapStyleBumpMode zMapStylePatchBumpMode(ZMapStyleBumpMode curr_bump)
  * The returned string should be g_free()'d when finished with.
  *
  *  */
-char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *normal_border,
-                                char *selected_fill, char *selected_draw, char *selected_border)
+char *zMapStyleMakeColourString(const char *normal_fill, const char *normal_draw, const char *normal_border,
+                                const char *selected_fill, const char *selected_draw, const char *selected_border)
 {
   char *colour = NULL ;
   GString *colour_str ;
@@ -370,14 +370,14 @@ void zMapStyleListPrintAll(ZMapIOOut dest, GList *styles, char *user_string, gbo
  *  */
 void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gboolean full)
 {
-  char *indent = "" ;
+  const char *indent = "" ;
 
   #define TEST 0
   #define INDENT_STR indent
   #define STYLE_PTR style
 
 
-  if (!ZMAP_IS_FEATURE_STYLE(style)) 
+  if (!ZMAP_IS_FEATURE_STYLE(style))
     return ;
 
   full = TRUE ;
@@ -462,7 +462,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
         PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_MODE), mode_data.graph.mode, "Mode", "%s", zmapStyleGraphMode2ExactStr) ;
         PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_BASELINE), mode_data.graph.baseline, "Baseline", "%g", (double)) ;
         PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_SCALE), mode_data.graph.scale, "Scaling", "%s", zmapStyleScale2ExactStr) ;
-        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_FILL), mode_data.graph.fill,  "Fill", "%s", PRINTBOOL) ;
+        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_FILL), mode_data.graph.fill_flag,  "Fill", "%s", PRINTBOOL) ;
         PRINTFULLCOLOUR(dest, mode_data.graph.colours, "Colours") ;
 
         break ;
@@ -492,7 +492,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
         PRINTFULLCOLOUR(dest, mode_data.alignment.perfect, "Perfect") ;
         PRINTFULLCOLOUR(dest, mode_data.alignment.colinear, "Colinear") ;
         PRINTFULLCOLOUR(dest, mode_data.alignment.noncolinear, "Non-colinear") ;
-        
+
         break ;
       }
     case ZMAPSTYLE_MODE_TRANSCRIPT:

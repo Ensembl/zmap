@@ -87,10 +87,10 @@ typedef void (*ZMapRemoteAppErrorHandlerFunc)(ZMapRemoteControlRCType error_type
  * Note that function returns nothing because the sub-system cannot sensibly respond
  * to any error from this callback, it just returns the result which is then
  * returned to the peer program. */
-typedef void (*ZMapRemoteAppReturnReplyFunc)(char *command,
+typedef void (*ZMapRemoteAppReturnReplyFunc)(const char *command,
 					     gboolean abort,
 					     RemoteCommandRCType command_rc,
-					     char *reason,
+					     const char *reason,
 					     ZMapXMLUtilsEventStack reply,
 					     gpointer app_reply_data) ;
 
@@ -133,7 +133,7 @@ typedef void (*ZMapRemoteAppProcessReplyFunc)(gboolean reply_ok, char *reply_err
  * ZMapRemoteAppProcessReplyFunc prototype. */
 typedef void (*ZMapRemoteAppMakeRequestFunc)(gpointer caller_data,
 					     gpointer sub_system_ptr,
-					     char *command, ZMapXMLUtilsEventStack request_body,
+					     const char *command, ZMapXMLUtilsEventStack request_body,
 					     ZMapRemoteAppProcessReplyFunc reply_handler_func,
 					     gpointer reply_handler_func_data,
                                              ZMapRemoteAppErrorHandlerFunc error_handler_func,

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -22,7 +22,7 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
@@ -49,7 +49,7 @@ typedef enum
     ZMAP_DAS2_UNKNOWN          /* DOESN'T look like DAS2 */
   }ZMapDAS1QueryType;
 
-typedef enum 
+typedef enum
   {
     ZMAP_DAS1_NONE_GLYPH,
     ZMAP_DAS1_ARROW_GLYPH,
@@ -152,7 +152,7 @@ typedef struct
     struct{
       char *font;
       int font_size;
-      char *string;
+      char *string_val;
       int style;
     }text;                      /* text */
 
@@ -162,7 +162,7 @@ typedef struct
 
     struct{
       int linewidth;
-      char *direction;
+      const char *direction;
     }triangle;                  /* a triangle pointing N,S,E or W */
 
   }shape;
@@ -173,7 +173,7 @@ typedef struct
 {
   GQuark id;
   GList *types;
-}ZMapDAS1StyleCategoryStruct, *ZMapDAS1StyleCategory; 
+}ZMapDAS1StyleCategoryStruct, *ZMapDAS1StyleCategory;
 
 typedef struct
 {
@@ -206,23 +206,23 @@ typedef void (*ZMapDAS1StylesheetCB) (ZMapDAS1Stylesheet style,       gpointer u
 
 ZMapDAS1Parser zMapDAS1ParserCreate(ZMapXMLParser parser);
 
-gboolean zMapDAS1ParserDSNPrepareXMLParser(ZMapDAS1Parser das, 
-                                           ZMapDAS1DSNCB dsn_callback, 
+gboolean zMapDAS1ParserDSNPrepareXMLParser(ZMapDAS1Parser das,
+                                           ZMapDAS1DSNCB dsn_callback,
                                            gpointer user_data);
-gboolean zMapDAS1ParserDNAPrepareXMLParser(ZMapDAS1Parser das, 
-                                           ZMapDAS1DNACB dna_callback, 
+gboolean zMapDAS1ParserDNAPrepareXMLParser(ZMapDAS1Parser das,
+                                           ZMapDAS1DNACB dna_callback,
                                            gpointer user_data);
-gboolean zMapDAS1ParserEntryPointsPrepareXMLParser(ZMapDAS1Parser das, 
-                                                   ZMapDAS1EntryPointsCB entry_point_callback, 
+gboolean zMapDAS1ParserEntryPointsPrepareXMLParser(ZMapDAS1Parser das,
+                                                   ZMapDAS1EntryPointsCB entry_point_callback,
                                                    gpointer user_data);
-gboolean zMapDAS1ParserTypesPrepareXMLParser(ZMapDAS1Parser das, 
-                                             ZMapDAS1TypesCB type_callback, 
+gboolean zMapDAS1ParserTypesPrepareXMLParser(ZMapDAS1Parser das,
+                                             ZMapDAS1TypesCB type_callback,
                                              gpointer user_data);
-gboolean zMapDAS1ParserFeaturesPrepareXMLParser(ZMapDAS1Parser das, 
-                                                ZMapDAS1FeaturesCB feature_callback, 
+gboolean zMapDAS1ParserFeaturesPrepareXMLParser(ZMapDAS1Parser das,
+                                                ZMapDAS1FeaturesCB feature_callback,
                                                 gpointer user_data);
-gboolean zMapDAS1ParserStylesheetPrepareXMLParser(ZMapDAS1Parser das, 
-                                                  ZMapDAS1StylesheetCB style_callback, 
+gboolean zMapDAS1ParserStylesheetPrepareXMLParser(ZMapDAS1Parser das,
+                                                  ZMapDAS1StylesheetCB style_callback,
                                                   gpointer user_data);
 void zMapDAS1ParserDestroy(ZMapDAS1Parser das);
 gboolean zMapDAS1DSNSegments(ZMapDAS1DSN dsn, GList **segments_out);

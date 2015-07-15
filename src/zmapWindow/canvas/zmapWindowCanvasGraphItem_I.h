@@ -47,7 +47,7 @@
 
 /* Private struct representing a graph column, this is held in featureset->opt */
 
-/* ACTUALLY WE COULD FIND THIS OUT DYNAMICALLY FROM THE SCREEN SIZE...NOT HARD....AND MALCOLM'S 
+/* ACTUALLY WE COULD FIND THIS OUT DYNAMICALLY FROM THE SCREEN SIZE...NOT HARD....AND MALCOLM'S
  * COMMENT WILL SOON BE UNTRUE WITH THE ADVENT OF SCREENS LIKE THE MAC "RETINA" ETC ETC. */
 /* this could be dynamic based on screen size because actually Malcolm some screens are this size.... */
 #define N_POINTS	2000	/* will never run out as we only display one screen's worth */
@@ -55,9 +55,9 @@
 typedef struct ZMapWindowCanvasGraphStructType
 {
   /* Cache our colours.... */
-  GdkColor fill ;
-  GdkColor draw ;
-  GdkColor border ;
+  GdkColor fill_col ;
+  GdkColor draw_col ;
+  GdkColor border_col ;
 
 
   /* Cache of points either to be drawn or being drawn.

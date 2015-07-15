@@ -29,8 +29,18 @@
 #ifndef ENSEMBL_SERVER_P_H
 #define ENSEMBL_SERVER_P_H
 
+/* ensc-core is compiled as C */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <DBAdaptor.h>
 #include <SliceAdaptor.h>
+
+#ifdef __cplusplus
+}
+#endif
+
 
 typedef struct _EnsemblServerStruct
 {

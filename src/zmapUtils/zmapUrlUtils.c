@@ -39,11 +39,7 @@ so, delete this exception statement from your version.  */
 
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef HAVE_STRING_H
-# include <string.h>
-#else  /* not HAVE_STRING_H */
-# include <strings.h>
-#endif /* not HAVE_STRING_H */
+#include <string.h>
 #include <sys/types.h>
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -165,21 +161,21 @@ xrealloc_real (void *ptr, size_t newsize)
 STATIC_IF_DEBUG char *
 xstrdup_real (const char *s)
 {
-  char *copy;
+  char *copy_string;
 
 #ifndef HAVE_STRDUP
   int l = strlen (s);
-  copy = malloc (l + 1);
-  if (!copy)
+  copy_string = (char *)malloc (l + 1);
+  if (!copy_string)
     memfatal ("strdup");
-  memcpy (copy, s, l + 1);
+  memcpy (copy_string, s, l + 1);
 #else  /* HAVE_STRDUP */
-  copy = strdup (s);
-  if (!copy)
+  copy_string = strdup (s);
+  if (!copy_string)
     memfatal ("strdup");
 #endif /* HAVE_STRDUP */
 
-  return copy;
+  return copy_string;
 }
 
 /* Utility function: like xstrdup(), but also lowercases S.  */
@@ -187,11 +183,11 @@ xstrdup_real (const char *s)
 char *
 xstrdup_lower (const char *s)
 {
-  char *copy = xstrdup (s);
-  char *p = copy;
+  char *copy_string = xstrdup (s);
+  char *p = copy_string;
   for (; *p; p++)
     *p = TOLOWER (*p);
-  return copy;
+  return copy_string ;
 }
 
 /* Copy the string formed by two pointers (one on the beginning, other
@@ -243,9 +239,9 @@ sepstring (const char *s)
 }
 
 /* Return the size of file named by FILENAME, or -1 if it cannot be
-   opened or seeked into. 
-   NB (sm23) This function name has been changed because of a clash with 
-   a function in htslib. 
+   opened or seeked into.
+   NB (sm23) This function name has been changed because of a clash with
+   a function in htslib.
 */
 long
 file_size_temp (const char *filename)
@@ -310,7 +306,7 @@ frontcmp (const char *s1, const char *s2)
    case-insensitive.  */
 
 int
-match_tail (const char *string, const char *tail, int fold_case_p)
+match_tail (const char *string_arg, const char *tail, int fold_case_p)
 {
   int i, j;
 
@@ -319,14 +315,14 @@ match_tail (const char *string, const char *tail, int fold_case_p)
 
   if (!fold_case_p)
     {
-      for (i = strlen (string), j = strlen (tail); i >= 0 && j >= 0; i--, j--)
-        if (string[i] != tail[j])
+      for (i = strlen (string_arg), j = strlen (tail); i >= 0 && j >= 0; i--, j--)
+        if (string_arg[i] != tail[j])
           break;
     }
   else
     {
-      for (i = strlen (string), j = strlen (tail); i >= 0 && j >= 0; i--, j--)
-        if (TOLOWER (string[i]) != TOLOWER (tail[j]))
+      for (i = strlen (string_arg), j = strlen (tail); i >= 0 && j >= 0; i--, j--)
+        if (TOLOWER (string_arg[i]) != TOLOWER (tail[j]))
           break;
     }
 

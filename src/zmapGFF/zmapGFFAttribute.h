@@ -100,52 +100,25 @@ DEFINE_ATTRIBUTE(sAttributeName, read_pair_id)
 
 #undef DEFINE_ATTRIBUTE
 
-
-
-/*
- * Structure to store info about attributes. Data are:
- *
- * eName                name from a predefined list (if identified as such)
- * sName                string of the name as found in the data file
- * n*Data               number of data items of given type associated for this attribute
- * nIsMultivalued       can the attribute be multivalued?
- *
- */
-typedef struct ZMapGFFAttributeInfoStruct_
-  {
-    ZMapGFFAttributeName eName ;
-    char *sName ;
-    gboolean bIsMultivalued ;
-  } ZMapGFFAttributeInfoStruct ;
-
-
 /*
  * Structure for attribute data. Data are:
  *
- * eName                name from a predefined list (if identified as such)
  * sName                string of the name as found in the data file
  * sTemp                data string found with attribute
- * p*Data               data of various types associated with attribute
  *
  */
 typedef struct ZMapGFFAttributeStruct_
   {
-    ZMapGFFAttributeName eName ;
     char *sName ;
     char *sTemp ;
   } ZMapGFFAttributeStruct ;
 
 
-ZMapGFFAttribute zMapGFFCreateAttribute(ZMapGFFAttributeName) ;
+ZMapGFFAttribute zMapGFFCreateAttribute() ;
 gboolean zMapGFFDestroyAttribute(ZMapGFFAttribute) ;
 
-ZMapGFFAttributeName zMapGFFAttributeGetName(ZMapGFFAttribute) ;
 char * zMapGFFAttributeGetNamestring(ZMapGFFAttribute ) ;
 char * zMapGFFAttributeGetTempstring(ZMapGFFAttribute) ;
-char * zMapGFFAttributeGetString(ZMapGFFAttributeName) ;
-
-gboolean zMapGFFAttributeGetIsMultivalued(ZMapGFFAttributeName) ;
-gboolean zMapGFFAttributeIsValid(ZMapGFFAttribute) ;
 
 ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser, const char * const, gboolean) ;
 gboolean zMapGFFAttributeRemoveQuotes(ZMapGFFAttribute) ;
@@ -153,9 +126,6 @@ ZMapGFFAttribute* zMapGFFAttributeParseList(ZMapGFFParser, const char * const, u
 gboolean zMapGFFAttributeDestroyList(ZMapGFFAttribute * , unsigned int) ;
 
 ZMapGFFAttribute zMapGFFAttributeListContains(ZMapGFFAttribute * , unsigned int, const char * const) ;
-
-void attribute_test_example() ;
-void attribute_test_parse(ZMapGFFParser, char **, unsigned int) ;
 
 /*
  * Attribute parsing functions. Similar to previous implementation, but broken up
@@ -196,11 +166,5 @@ gboolean zMapAttParseVulgarExonerate(ZMapGFFAttribute , GArray ** const, ZMapStr
 gboolean zMapAttParseEnsemblVariation(ZMapGFFAttribute, char ** const ) ;
 gboolean zMapAttParseAlleleString(ZMapGFFAttribute, char ** const) ;
 gboolean zMapAttParseReadPairID(ZMapGFFAttribute, GQuark * const) ;
-
-/*
- * Attribute data generation functions. Generate a c-string representation of the
- * data item of interest. All specific to GFFv3. The pointer string returned is
- * allocated in the function and must be deleted by the caller.
- */
 
 #endif

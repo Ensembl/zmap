@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -44,7 +44,7 @@
 /* Most features will be represented by a single feature_item but for aligns like EST's
  * we make a temporary feature that represents a set of feature_items representing all
  * the matches for a single align sequence.
- * 
+ *
  *  */
 typedef struct MatchDataStructType
 {
@@ -59,7 +59,7 @@ typedef struct MatchDataStructType
 
 
 
-/* 
+/*
  * Struct for splice or feature highlighting.
  */
 typedef struct FeatureFilterStructType
@@ -166,11 +166,11 @@ static ZMapFeatureSubPartType featureModeFilterType2SubpartType(ZMapWindowContai
 static GList *removeSelectedFeatures(GList *filter_features, GList *feature_list) ;
 static void removeCB(gpointer data, gpointer user_data) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printFeatureCB(gpointer data, gpointer user_data_unused) ;
+#endif
 
 static void newAddSplicesCB(gpointer data, gpointer user_data) ;
-static void newAddNonSplicesCB(gpointer data, gpointer user_data) ;
-static void addNonSplicesCB(gpointer data, gpointer user_data) ;
 
 
 
@@ -256,14 +256,14 @@ gboolean zMapWindowContainerFeatureSetIsCDSMatch(ZMapWindowContainerFeatureSet c
 /* Adds splice highlighting data for all the splice matching features in the container_set,
  * the splices get highlighted when the column is redrawn. Any existing highlight data is
  * replaced with the new data.
- * 
+ *
  * Returns TRUE if there were splice-aware cols (regardless of whether any features were splice
  * highlighted), returns FALSE if there if there were no splice-aware cols. This latter should be
  * reported to the user otherwise they won't know why no splices appeared.
- * 
+ *
  * If splice_highlight_features is NULL this has the effect of turning off splice highlighting but
  * you should use zmapWindowContainerFeatureSetSpliceUnhighlightFeatures().
- * 
+ *
  * (See Splice_highlighting.html)
  *  */
 
@@ -305,7 +305,7 @@ ZMapWindowContainerFilterRC zMapWindowContainerFeatureSetFilterFeatures(ZMapWind
       filter_data.seq_start = seq_start ;
       filter_data.seq_end = seq_end ;
       filter_data.cds_match = cds_match ;
-      filter_data.filter_features = filter_features ; 
+      filter_data.filter_features = filter_features ;
       filter_data.selected_type = selected_type ;
       filter_data.filter_type = filter_type ;
       filter_data.filter_action = filter_action ;
@@ -398,7 +398,7 @@ static void getFeatureCoords(gpointer data, gpointer user_data)
         filter_data->feat_y1 = feature->x1 ;
       if (feature->x2 > filter_data->feat_y2)
         filter_data->feat_y2 = feature->x2 ;
-      
+
       subpart_type = featureModeFilterType2SubpartType(filter_data->selected_type, feature,
                                                        filter_data->cds_match) ;
 
@@ -407,7 +407,7 @@ static void getFeatureCoords(gpointer data, gpointer user_data)
           subparts = getPartBoundaries(feature, subpart_type, seq_start, seq_end, &start, &end) ;
 
           filter_data->splices = g_list_concat(filter_data->splices, subparts) ;
-          
+
           /* filter_data y1 and y2 need to be the extent of all features/subparts so reduce as necessary. */
           if (start < filter_data->y1)
             filter_data->curr_start = filter_data->y1 = start ;
@@ -434,8 +434,8 @@ static GList *getPartBoundaries(ZMapFeature feature, ZMapFeatureSubPartType requ
       int start = 0, end = 0 ;
 
       /* Remove subparts list from the subpart struct as we only need to return the list. */
-      start = subparts->min ;
-      end = subparts->max ;
+      start = subparts->min_val ;
+      end = subparts->max_val ;
       boundaries = subparts->parts ;
       subparts->parts = NULL ;
       zMapFeaturePartsListDestroy(subparts) ;
@@ -499,7 +499,7 @@ static GList *clipSubParts(GList *subpart_list, int start, int end)
 
 
 /* Unfiltering routines:
- * 
+ *
  *  called for each column to see if it has any filtering applied,
  * if so the filtering is undone. */
 static ZMapWindowContainerFilterRC unfilterFeatures(ZMapWindowContainerActionType filter_action,
@@ -588,11 +588,11 @@ static void unfilterFeaturesCB(ZMapWindowContainerGroup container, FooCanvasPoin
                 container_set->curr_selected_type = filter_data->selected_type ;
                 container_set->curr_filter_type = filter_data->filter_type ;
                 container_set->curr_filter_action = filter_data->filter_action ;
-                container_set->cds_match = filter_data->cds_match ; 
+                container_set->cds_match = filter_data->cds_match ;
 
                 /* Record that there was at least one splice-aware column. */
                 filter_data->found_filtered_features = TRUE ;
-                
+
               }
           }
 
@@ -636,7 +636,7 @@ static void unhighlightFeatureCB(gpointer data, gpointer user_data)
 
 
 /* Filtering routines:
- * 
+ *
  * Called for each column to see if it is to be splice-highlighted and on the same strand as container.
  * If it is then any features that share splices are marked for highlighting.  */
 static void processFilterColumns(ZMapWindowContainerGroup container, FooCanvasPoints *points,
@@ -695,7 +695,7 @@ static void processFilterColumns(ZMapWindowContainerGroup container, FooCanvasPo
             filter_data->curr_target_column->curr_selected_type = filter_data->selected_type ;
             filter_data->curr_target_column->curr_filter_type = filter_data->filter_type ;
             filter_data->curr_target_column->curr_filter_action = filter_data->filter_action ;
-            filter_data->curr_target_column->cds_match = filter_data->cds_match ; 
+            filter_data->curr_target_column->cds_match = filter_data->cds_match ;
           }
 
         filter_data->curr_target_column = NULL ;
@@ -765,7 +765,7 @@ static void filterColumn(FeatureFilter filter_data, ZMapWindowFeaturesetItem fea
   else
     {
       grouped_features = zMapWindowFeaturesetFindGroupedFeatures(featureset_item,
-                                                                 filter_data->feat_y1, filter_data->feat_y2, 
+                                                                 filter_data->feat_y1, filter_data->feat_y2,
                                                                  TRUE) ;
 
       /* convert the list of lists of features into matches.... */
@@ -780,7 +780,7 @@ static void filterColumn(FeatureFilter filter_data, ZMapWindowFeaturesetItem fea
 
   /* Free the match list. */
   freeTmpFeatures(match_list) ;
-  
+
 
 
   return ;
@@ -790,7 +790,7 @@ static void filterColumn(FeatureFilter filter_data, ZMapWindowFeaturesetItem fea
 static GList *removeSelectedFeatures(GList *filter_features, GList *feature_list)
 {
   GList *feature_list_out = feature_list ;
-  
+
   g_list_foreach(filter_features, removeCB, &feature_list_out) ;
 
   return feature_list_out ;
@@ -799,17 +799,16 @@ static GList *removeSelectedFeatures(GList *filter_features, GList *feature_list
 
 static void removeCB(gpointer data, gpointer user_data)
 {
-  GList **feature_list_p = user_data ;
+  GList **feature_list_p = (GList **)user_data ;
   GList *feature_list = *feature_list_p ;
-  GList *found_feature_item ;
   GList *curr ;
   ZMapFeature selected_feature = (ZMapFeature)data ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  char *feature_name = zMapFeatureName((ZMapFeatureAny)selected_feature) ; 
+  char *feature_name = zMapFeatureName((ZMapFeatureAny)selected_feature) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  
+
   curr = feature_list ;
 
   do
@@ -844,17 +843,18 @@ static void removeCB(gpointer data, gpointer user_data)
 
 
 /* debug.... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printFeatureCB(gpointer data, gpointer user_data_unused)
 {
   ZMapWindowCanvasFeature feature_item = (ZMapWindowCanvasFeature)data ;
   ZMapFeature feature = zMapWindowCanvasFeatureGetFeature(feature_item) ;
-  char *feature_name = zMapFeatureName((ZMapFeatureAny)feature) ; 
-  
+  char *feature_name = zMapFeatureName((ZMapFeatureAny)feature) ;
+
   zMapDebugPrintf("Feature found: %s\n", feature_name) ;
 
   return ;
 }
-
+#endif
 
 
 
@@ -863,13 +863,13 @@ static void filterFeatureCB(gpointer data, gpointer user_data)
 {
   MatchData match_data = (MatchData)data ;
   FeatureFilter filter_data = (FeatureFilter)user_data ;
-  ZMapWindowContainerFeatureSet target_column = filter_data->curr_target_column ;
   ZMapFeature feature ;
   GList *curr ;
   ZMapFeaturePartsList splice_matches = NULL, non_matches = NULL ;
   ZMapFeatureSubPartType req_sub_part ;
   gboolean result ;
   int slop ;
+  gboolean exact_match ;
 
 
   char *feature_name ;
@@ -911,10 +911,22 @@ static void filterFeatureCB(gpointer data, gpointer user_data)
 
   slop = zMapStyleFilterTolerance(*(feature->style)) ;
 
+
+
+  /* I'm not sure what to do about exact matches here.....if we have exact on then transcripts
+   * don't match properly if there are missing exons....maybe the way transcript works is not
+   * correct or....not sure.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  exact_match = FALSE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  exact_match = TRUE ;
   result = zMapFeatureHasMatchingBoundaries(feature, req_sub_part,
-                                            TRUE, filter_data->cds_match, slop,
+                                            exact_match, filter_data->cds_match, slop,
                                             curr, filter_data->curr_start, filter_data->curr_end,
                                             &splice_matches, &non_matches) ;
+
+
 
   if (result)
     {
@@ -937,7 +949,7 @@ static void filterFeatureCB(gpointer data, gpointer user_data)
       filter_data->found_filtered_features = TRUE ;                   /* Record we found at least
                                                                          one. */
     }
-  else 
+  else
     {
       if (!splice_matches && !non_matches)
         {
@@ -968,7 +980,7 @@ static void filterFeatureCB(gpointer data, gpointer user_data)
   /* Add any splice markers for matching or non-matching splices. */
   if (filter_data->tmp_splice_matches || filter_data->tmp_non_matches)
     g_list_foreach(match_data->feature_items, newAddSplicesCB, filter_data) ;
-      
+
 
   if (splice_matches)
     zMapFeaturePartsListDestroy(splice_matches) ;
@@ -989,7 +1001,7 @@ static void hideFeatureCB(gpointer data, gpointer user_data)
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* debug..... */
   ZMapFeature feature = zMapWindowCanvasFeatureGetFeature(feature_item) ;
-  char *feature_name = zMapFeatureName((ZMapFeatureAny)feature) ; 
+  char *feature_name = zMapFeatureName((ZMapFeatureAny)feature) ;
 
   zMapDebugPrintf("Feature being hidden is: %s\n", feature_name) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -1164,7 +1176,7 @@ static void addSplicesCB(gpointer data, gpointer user_data)
 
 
 
-/* 
+/*
  *             Some utilities.
  */
 
@@ -1181,7 +1193,7 @@ static GList *features2Matches(GList *features, FeatureFilter filter_data)
 
   g_list_foreach(features, feature2Match, filter_data) ;
 
-  match_list = filter_data->tmp_match_list ; 
+  match_list = filter_data->tmp_match_list ;
   filter_data->tmp_match_list = NULL ;
 
   g_hash_table_destroy(filter_data->match_features) ;
@@ -1205,7 +1217,7 @@ static void feature2Match(gpointer data, gpointer user_data)
 
   feature_name = zMapFeatureUniqueName((ZMapFeatureAny)feature) ;
 
-  if (!(match_data = g_hash_table_lookup(filter_data->match_features, GUINT_TO_POINTER(feature->unique_id))))
+  if (!(match_data = (MatchData)g_hash_table_lookup(filter_data->match_features, GUINT_TO_POINTER(feature->unique_id))))
     {
       match_data = g_new0(MatchDataStruct, 1) ;
 
@@ -1233,13 +1245,13 @@ static GList *groups2TmpFeatures(GList *grouped_features, FeatureFilter filter_d
   return feature_list ;
 }
 
-/* 
- * 
+/*
+ *
  * Notes
  * - code assumes each list of features has the same mode and
  *   this must be true or there is an error in the canvas
  *   skiplist grouping code.
- * 
+ *
  *  */
 /* This routine returns potential matches that are made from the "introns" or "gaps" between
  * consecutive but separate align features, note these features are from the _same_ match sequence
@@ -1332,7 +1344,7 @@ static void freeMatchDataCB(gpointer data, gpointer user_data_unused)
 
 
 /* Map from a particular filter_type and feature to the subpart that we need to request.
- * 
+ *
  * Relationship is complicated by fact that we are using multiple alignment objects to
  * represent a kind of "transcript" object for the purposes of matching stuff.
  *  */

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: defines macros allowing a single string/enum definition
- *              to be used to produce enum types, print functions and 
+ *              to be used to produce enum types, print functions and
  *              and more.
  *
  *-------------------------------------------------------------------
@@ -34,9 +34,9 @@
 
 /*
  * We hereby acknowledge that this code is derived from:
- * 
+ *
  * http://alioth.debian.org/snippet/detail.php?type=snippet&id=13
- * 
+ *
  */
 
 /* This program is free software; you can redistribute it and/or    *
@@ -63,7 +63,7 @@
 
 
 /* The original MACROS have been renamed and altered:
- * 
+ *
  *    - addition of func_name arg
  *    - added struct enum_dummy to swallow the semi-colon (note that
  *      G_STMT_START/END uses do{...}while(0) idiom, but that doesn't
@@ -73,44 +73,44 @@
 
 /* The basic concept is that the user defines a macro with any name they like
  * in a standard format that defines a list with the following elements:
- * 
+ *
  *        enum_term, enum_value, "short string", "long string", unused
- * 
+ *
  * any of these fields can be omitted if not relevant (as enum_value is below).
- * 
+ *
  * e.g.
- * 
+ *
  *  #define ZMAP_PROCTERM_LIST(_)                                                   \
  *      _(ZMAP_PROCTERM_OK,      , "ok"      , "process exited normally.",     "")  \
  *      _(ZMAP_PROCTERM_ERROR,   , "error"   , "process returned error code.", "")  \
  *      _(ZMAP_PROCTERM_SIGNAL,  , "signal"  , "proces terminated by signal.", "")  \
  *      _(ZMAP_PROCTERM_STOPPED, , "stopped" , "process stopped by signal.",   "")
- * 
- * the user can then use standard macros from this header to define an enum 
+ *
+ * the user can then use standard macros from this header to define an enum
  * from the list:
- *  
+ *
  *  ZMAP_DEFINE_ENUM(ZMapProcessTerminationType, ZMAP_PROCTERM_LIST) ;
- * 
+ *
  * to define functions from the list:
- * 
+ *
  * in your header file put
- * 
+ *
  * ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapProcTerm2ShortText, ZMapProcessTerminationType) ;
  *
  * in your code put
- * 
+ *
  * ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapProcTerm2ShortText, ZMapProcessTerminationType, ZMAP_PROCTERM_LIST) ;
- * 
+ *
  * to be used like this
- * 
+ *
  * char *short_string = zmapProcTerm2ShortText(ZMAP_PROCTERM_SIGNAL) ;
- * 
- * 
+ *
+ *
  *  */
 
 
 
-/* 
+/*
  * Macros used by our enum package...users should have no reason to use these directly.
  */
 
@@ -139,7 +139,7 @@
 
 
 
-/* 
+/*
  * Macros for use by the user.
  */
 
@@ -154,11 +154,11 @@
 
 /* Defines  enum -> exact string  convertor function for given list,
  * function is of form:
- * 
+ *
  * const char *fname(enumtype enum_value) ;
- * 
+ *
  * e.g. given ZMAP_PROCTERM_OK returns "ZMAP_PROCTERM_OK"
- * 
+ *
  *  */
 #define ZMAP_ENUM_AS_EXACT_STRING_DEC(FNAME, NAME)      \
   const char* FNAME(NAME n);                            \
@@ -177,11 +177,11 @@
 /* Defines  exact string -> enum  convertor function, i.e. the
  * exact opposite of ZMAP_ENUM_AS_EXACT_STRING_NNN, function is
  * of form:
- * 
+ *
  * enumtype fname(const char *enum_as_str) ;
- * 
+ *
  * e.g. given "ZMAP_PROCTERM_OK" returns ZMAP_PROCTERM_OK
- * 
+ *
  */
 #define ZMAP_ENUM_FROM_EXACT_STRING_DEC(FNAME, NAME)    \
   NAME FNAME(const char* str);                          \
@@ -199,9 +199,9 @@
 /* Defines  enum -> short description  converter function.
  *
  * const char *fname(enumtype enum_value) ;
- * 
+ *
  * e.g. given ZMAP_PROCTERM_OK returns "ok"
- * 
+ *
  */
 #define ZMAP_ENUM_TO_SHORT_TEXT_DEC(FNAME, NAME)        \
   const char* FNAME(NAME n);                            \
@@ -221,12 +221,12 @@
  * opposite of ZMAP_ENUM_TO_SHORT_TEXT_NNN, with the added function
  * that the case of "short description" is ignored. Function is of
  * the form
- * 
+ *
  * enumtype fname(const char *short_description) ;
  *
- * 
+ *
  * e.g. given "ok" or "OK" or "Ok" returns ZMAP_PROCTERM_OK
- * 
+ *
  */
 #define ZMAP_ENUM_FROM_SHORT_TEXT_DEC(FUNCNAME, TYPE) \
   TYPE FUNCNAME(const char* str) ;                \
@@ -236,7 +236,7 @@
 #define ZMAP_ENUM_FROM_SHORT_TEXT_FUNC(FNAME, TYPE, INVALID_VALUE, LIST, dummy0, dummy1) \
   TYPE FNAME(const char* str)                                           \
   {                                                                     \
-    typedef struct {TYPE enum_value ; char *string ;} TYPE##Enum2StrStruct ; \
+    typedef struct {TYPE enum_value ; const char *string_val ;} TYPE##Enum2StrStruct ; \
                                                                         \
     TYPE result = INVALID_VALUE ;                                       \
     TYPE##Enum2StrStruct values[] =                                     \
@@ -246,9 +246,9 @@
       } ;                                                               \
     TYPE##Enum2StrStruct *curr = values ;                               \
                                                                         \
-    while(curr->string)                                                 \
+    while(curr->string_val)                                                 \
       {                                                                 \
-	if (g_ascii_strcasecmp(str, curr->string) == 0)                 \
+	if (g_ascii_strcasecmp(str, curr->string_val) == 0)                 \
 	  {                                                             \
 	    result = curr->enum_value ;                                 \
 	    break ;                                                     \
@@ -266,9 +266,9 @@
 /* Defines  enum -> long description  convertor function.
  *
  * const char *fname(enumtype enum_value) ;
- * 
+ *
  * e.g. given ZMAP_PROCTERM_OK returns "process exited normally."
- * 
+ *
  */
 #define ZMAP_ENUM_TO_LONG_TEXT_DEC(FNAME, NAME)   \
     const char* FNAME(NAME n);                 \
@@ -308,12 +308,12 @@ SWALLOW_SEMI_COLON
     enum {                               \
         list(ENUM_BODY)                  \
     } name;                              \
-SWALLOW_SEMI_COLON 
- 
+SWALLOW_SEMI_COLON
+
 #define ZMAP_ENUM_AS_STRING_NON_TYPEDEF_DEC(fname, name)  \
     const char* fname(enum name n);                       \
 SWALLOW_SEMI_COLON
- 
+
 #define ZMAP_ENUM_AS_STRING_NON_TYPEDEF_FUNC(fname, name, list) \
     const char* fname(enum name n) {                            \
          switch (n)                                             \
@@ -327,7 +327,7 @@ SWALLOW_SEMI_COLON
 #define ZMAP_ENUM_FROM_STRING_NON_TYPEDEF_DEC(fname, name) \
    void fname(const char* str, enum name *type);           \
 SWALLOW_SEMI_COLON
- 
+
 #define ZMAP_ENUM_FROM_STRING_NON_TYPEDEF_FUNC(fname, name, list) \
    void fname(const char* str, enum name *type) {                 \
    if(!type)       { return ; }                                   \
@@ -359,7 +359,7 @@ ZMAP_ENUM_FROM_STRING_DEC(ZMapStyleModal);
 
 
 /* in the individual .h, assign the values and use the DEC declaration macro. */
-/* Can be repeated for a different enum if you just change the name 
+/* Can be repeated for a different enum if you just change the name
 e.g. ENUM_LIST_B - maintain that name through the other macros.
 */
 #define ENUM_LIST_TYPE(_) \
@@ -373,8 +373,8 @@ e.g. ENUM_LIST_B - maintain that name through the other macros.
 
 DEFINE_ENUM(FreqType, ENUM_LIST_TYPE) /**< \enum Frequency specification.
 
-For BI_WEEKLY, use weekly[2] 
- SEMI_MONTHLY, use composite 
+For BI_WEEKLY, use weekly[2]
+ SEMI_MONTHLY, use composite
  YEARLY, monthly[12] */
 
      AS_STRING_DEC(FreqType, ENUM_LIST_TYPE)

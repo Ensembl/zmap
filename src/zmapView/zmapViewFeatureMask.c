@@ -34,7 +34,6 @@
 #include <ZMap/zmap.h>
 
 #include <stdio.h>
-#include <strings.h>
 #include <string.h>
 #include <glib.h>
 
@@ -103,7 +102,7 @@ static GList *sortFeatureset(ZMapFeatureSet fset);
 
 
 
-/* 
+/*
  *                          Globals...
  */
 
@@ -780,13 +779,13 @@ static ZMapFeatureContextExecuteStatus maskOldFeaturesetByNew(GQuark key,
 
             if(masker)                                      /* only mask if new masker */
               {
-                GList *new;
+                GList *new_mask ;
 #if FILE_DEBUG
                 PDEBUG("mask old %s with new %s\n",g_quark_to_string(feature_set->unique_id),g_quark_to_string(set_id));
 #endif
 
-                new = g_list_find(cb_data->masked,GUINT_TO_POINTER(feature_set->unique_id));
-                if(!new)                                  /* only mask if featureset is old */
+                new_mask = g_list_find(cb_data->masked,GUINT_TO_POINTER(feature_set->unique_id));
+                if(!new_mask)                                  /* only mask if featureset is old */
                   {
 #if FILE_DEBUG
                     //PDEBUG("%s","is old\n");

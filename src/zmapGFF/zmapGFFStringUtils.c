@@ -484,8 +484,8 @@ gboolean replace_substring(const char * const sInput,
                                       char ** psOut )
 {
   gboolean bResult = FALSE ;
-  char *sFirst = NULL,
-    *sSecond = NULL,
+  const char *sFirst = NULL,
+    *sSecond = NULL ,
     *sPos = NULL ;
   size_t iQueryLength ;
   if (!sInput || !*sInput || !sToFind || !*sToFind || !sReplacement || !*sReplacement || !psOut)
@@ -499,9 +499,9 @@ gboolean replace_substring(const char * const sInput,
       *psOut = g_strdup_printf("%s%s%s", sFirst, sReplacement, sSecond) ;
 
       if (sFirst)
-        g_free(sFirst) ;
+        g_free((void*)sFirst) ;
       if (sSecond)
-        g_free(sSecond) ;
+        g_free((void*)sSecond) ;
 
       bResult = TRUE ;
     }

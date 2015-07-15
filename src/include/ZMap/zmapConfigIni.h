@@ -38,12 +38,12 @@
 
 
 typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(void);
-typedef void (*ZMapConfigIniSetPropertyFunc)(char *current_stanza_name, char *key, GType type,
+typedef void (*ZMapConfigIniSetPropertyFunc)(char *current_stanza_name, const char *key, GType type,
 					     gpointer parent_data, GValue *property_value);
 
 typedef struct
 {
-  char *key;
+  const char *key;
   GType type;
   ZMapConfigIniSetPropertyFunc set_property;
   gboolean required ;
@@ -62,58 +62,58 @@ typedef struct _ZMapConfigStruct *ZMapConfig ;
 
 typedef  struct _ZMapConfigIniStruct *ZMapConfigIni;
 
-ZMapConfigIniContext zMapConfigIniContextCreate(char *config_file) ;
-gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, char *buffer);
-gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, char *file) ;
+ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file) ;
+gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, const char *buffer);
+gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, const char *file) ;
 gchar **zMapConfigIniContextGetAllStanzaNames(ZMapConfigIniContext context);
 
 gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context,
-				      char *stanza_name, char *stanza_type,
+				      const char *stanza_name, const char *stanza_type,
 				      ZMapConfigIniContextKeyEntryStruct *keys);
 
 gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context,
-				      char *stanza_name,
-				      char *stanza_type,
-				      char *key_name,
+				      const char *stanza_name,
+				      const char *stanza_type,
+				      const char *key_name,
 				      GValue **value_out);
 gboolean zMapConfigIniContextGetString(ZMapConfigIniContext context,
-				       char *stanza_name,
-				       char *stanza_type,
-				       char *key_name,
+				       const char *stanza_name,
+				       const char *stanza_type,
+				       const char *key_name,
 				       char **value);
 gboolean zMapConfigIniContextGetFilePath(ZMapConfigIniContext context,
-					 char *stanza_name,
-					 char *stanza_type,
-					 char *key_name,
+					 const char *stanza_name,
+					 const char *stanza_type,
+					 const char *key_name,
 					 char **value) ;
 gboolean zMapConfigIniContextGetBoolean(ZMapConfigIniContext context,
-					char *stanza_name,
-					char *stanza_type,
-					char *key_name,
+					const char *stanza_name,
+					const char *stanza_type,
+					const char *key_name,
 					gboolean  *value);
 gboolean zMapConfigIniContextGetInt(ZMapConfigIniContext context,
-				    char *stanza_name,
-				    char *stanza_type,
-				    char *key_name,
+				    const char *stanza_name,
+				    const char *stanza_type,
+				    const char *key_name,
 				    int  *value);
 gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
-				      char *stanza_name,
-				      char *key_name,
+				      const char *stanza_name,
+				      const char *key_name,
 				      GValue *value);
 gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
-				       char *stanza_name,
-				       char *stanza_type,
-				       char *key_name,
-				       char *value_str);
+				       const char *stanza_name,
+				       const char *stanza_type,
+				       const char *key_name,
+				       const char *value_str);
 gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
-				    char *stanza_name,
-				    char *stanza_type,
-				    char *key_name,
+				    const char *stanza_name,
+				    const char *stanza_type,
+				    const char *key_name,
 				    int   value_int);
 gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
-					char *stanza_name,
-					char *stanza_type,
-					char *key_name,
+					const char *stanza_name,
+					const char *stanza_type,
+					const char *key_name,
 					gboolean value_bool);
 
 gboolean zMapConfigIniContextSave(ZMapConfigIniContext context);
@@ -126,38 +126,38 @@ ZMapConfigIniContext zMapConfigIniContextDestroy(ZMapConfigIniContext context);
 
 GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
 						ZMapConfigIniUserDataCreateFunc object_create_func,
-						char *parent_name,
-						char *parent_type,
-						char *parent_key,
-						char *child_type);
+						const char *parent_name,
+						const char *parent_type,
+						const char *parent_key,
+						const char *child_type);
 
 GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
                                     ZMapConfigIniUserDataCreateFunc object_create_func,
-                                    char *styles_list,char * child_type);
+                                    char *styles_list, const char * child_type);
 
 
 // zmapConfigLoader.c
 
-ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file) ;
-ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *config_file, char *stanza_name) ;
+ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file) ;
+ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name) ;
 
-gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name,GKeyFile **which);
+gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name, GKeyFile **which);
 
 GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context) ;
 GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name) ;
 
 GHashTable * zmapConfigIniGetDefaultStyles(void);
 gboolean zMapConfigIniGetStylesFromFile(char *config_file,
-					char *styles_list, char *styles_file, GHashTable **styles_out, char *buffer);
-GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash,GHashTable *columns);
+					char *styles_list, char *styles_file, GHashTable **styles_out, const char *buffer);
+GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *ghash,GHashTable *columns);
 
 gboolean zMapConfigLegacyStyles(char *config_file) ;
 
 char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical);
-GList *zMapConfigString2QuarkList(char *string_list,gboolean cannonical);
+GList *zMapConfigString2QuarkList(const char *string_list,gboolean cannonical);
 GList *zMapConfigString2QuarkIDList(char *string_list);
 
-GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza,int how);
+GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context, const char *stanza, int how) ;
 #define QQ_STRING 0
 #define QQ_QUARK  1
 #define QQ_STYLE  2

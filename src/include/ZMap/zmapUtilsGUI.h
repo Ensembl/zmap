@@ -28,9 +28,13 @@
  *-------------------------------------------------------------------
  */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifndef ZMAP_UTILS_GUI_H
 #define ZMAP_UTILS_GUI_H
@@ -158,7 +162,7 @@ typedef struct
 typedef struct ZMapGUIMenuItemStructType
 {
   ZMapGUIMenuType type ;				    /* Title, separator etc. */
-  char *name ;						    /*!< Title string of menu item. */
+  const char *name ;                                        /*!< Title string of menu item. */
   int id ;						    /*!< Number uniquely identifying this
 							      menu item within a menu. */
   ZMapGUIMenuItemCallbackFunc callback_func ;		    /*!< Function to call when this item
@@ -166,15 +170,15 @@ typedef struct ZMapGUIMenuItemStructType
   gpointer callback_data ;				    /*!< Data to pass to callback function. */
 
   /* accelerator is at the end, because I'm lazy... */
-  char *accelerator;		                            /*!< an accelerator for the menu option... */
+  const char *accelerator;		                            /*!< an accelerator for the menu option... */
 } ZMapGUIMenuItemStruct, *ZMapGUIMenuItem ;
 
 
 
 typedef struct
 {
-  int        value;
-  char      *name;
+  int value;
+  const char *name;
   GtkWidget *widget;
 } ZMapGUIRadioButtonStruct, *ZMapGUIRadioButton ;
 
@@ -459,7 +463,7 @@ char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event) ;
 
 gboolean zMapGUIGetScreenInfo(GtkWidget *widget, int *curr_screen_out, int *num_screens_out) ;
 
-void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
+void zMapGUIMakeMenu(const char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
 void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
 			 int *start_index_inout,
 			 ZMapGUIMenuItemCallbackFunc callback_func,
@@ -470,16 +474,16 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 void zMapGUIGetFontWidth(PangoFont *font, int *width_out) ;
 void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, double *x, double *y) ;
 
-gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour_inout) ;
+gboolean zMapGUIGetColour(GtkWidget *widget, const char *colour_spec, GdkColor *colour_inout) ;
 
 void zMapGUISetAbbrevTitlePrefix(gboolean abbrev_prefix) ;
 gboolean zMapGUIGetAbbrevTitlePrefix(void) ;
-char *zMapGUIMakeTitleString(char *window_type, char *message) ;
-void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zmap_win_text) ;
-GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data) ;
-GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text) ;
+char *zMapGUIMakeTitleString(const char *window_type, const char *message) ;
+void zMapGUISetToplevelTitle(GtkWidget *toplevel, const char *zmap_win_type, const char *zmap_win_text) ;
+GtkWidget *zMapGUIDialogNew(const char *zmap_win_type, const char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data) ;
+GtkWidget *zMapGUIToplevelNew(const char *zmap_win_type, const char *zmap_win_text) ;
 
-GdkCursor *zMapGUICreateCursor(char *cursor_name) ;
+GdkCursor *zMapGUICreateCursor(const char *cursor_name) ;
 gboolean zMapGUISetCursor(GtkWidget *widget, GdkCursor *cursor) ;
 GdkCursor *zMapGUIGetCursor(GtkWidget *widget) ;
 
@@ -487,30 +491,31 @@ GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title);
 
 gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
 
-void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg) ;
-void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
+void zMapGUIShowMsg(ZMapMsgType msg_type, const char *msg) ;
+void zMapGUIShowMsgFull(GtkWindow *parent, const char *msg,
 			ZMapMsgType msg_type, GtkJustification justify, int display_timeout, gboolean close_button) ;
-gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
-gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
-                               char* first_button, char *second_button) ;
-GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text,
+gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, const char *msg) ;
+gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, const char *msg,
+                               const char* first_button, const char *second_button) ;
+GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, const char *msg, gboolean hide_text,
 				  char **text_out) ;
 GtkResponseType zMapGUIMsgGetYesNoCancel(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
 GtkResponseType zMapGUIMsgGetSave(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
 GtkResponseType zMapGUIMsgGetSaveFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
-                                      char *first_button, char *second_button, char* third_button) ;
+                                      const char *first_button, const char *second_button, const char* third_button) ;
 
 void zMapGUIShowAbout(void) ;
 
 void zMapGUIShowHelp(ZMapHelpType help_contents) ;
 void zMapGUISetHelpURL(char *URL_base) ;
 
-void zMapGUIShowText(char *title, char *text, gboolean edittable) ;
-GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GList *text_attributes,
+void zMapGUIShowText(const char *title, const char *text, gboolean edittable) ;
+GtkWidget *zMapGUIShowTextFull(const char *title, const char *text,
+                               gboolean edittable, GList *text_attributes,
 			       GtkTextBuffer **buffer_out);
 
-char *zmapGUIFileChooser(GtkWidget *toplevel, char *title, char *directory, char *file_suffix) ;
-char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory, char *file_suffix,
+char *zmapGUIFileChooser(GtkWidget *toplevel, const char *title, const char *directory, const char *file_suffix) ;
+char *zmapGUIFileChooserFull(GtkWidget *toplevel, const char *title, const char *directory, const char *file_suffix,
 			     ZMapFileChooserContentAreaCB content_func, gpointer content_data) ;
 
 void zMapGUICreateRadioGroup(GtkWidget *gtkbox,
@@ -531,19 +536,19 @@ void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gp
 
 
 /* Note book functions. */
-ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean editable,
+ZMapGuiNotebook zMapGUINotebookCreateNotebook(const char *notebook_name, gboolean editable,
 					      ZMapGUINotebookCallbackFunc cleanup_cb, void *user_cleanup_data) ;
-ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book, char *chapter_name,
+ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book, const char *chapter_name,
 						    ZMapGuiNotebookCB user_callbacks) ;
-ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, char *page_name) ;
-ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage page, char *subsection_name) ;
+ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, const char *page_name) ;
+ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage page, const char *subsection_name) ;
 ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsection subsection,
-							char *paragraph_name,
+							const char *paragraph_name,
 							ZMapGuiNotebookParagraphDisplayType display_type,
 							GList *headers, GList *types) ;
 ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph paragraph,
-						      char *tag_value_name,
-                                                      char *tooltip,
+						      const char *tag_value_name,
+                                                      const char *tooltip,
 						      ZMapGuiNotebookTagValueDisplayType display_type,
 						      const char *arg_type, ...) ;
 void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage page) ;
@@ -554,7 +559,7 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
 void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book) ;
 void zMapGUINotebookDestroyAny(ZMapGuiNotebookAny note_any) ;
 void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new) ;
-GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text) ;
+GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, const char *help_title, const char *help_text) ;
 GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec) ;
 
 GtkWidget *zMapGUINotebookGetNoteBookWidg(GtkWidget *compound_note_widget) ;
@@ -566,6 +571,10 @@ gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char 
 
 #endif /* ZMAP_UTILS_GUI_H */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 }
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+

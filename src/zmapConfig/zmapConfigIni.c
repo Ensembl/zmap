@@ -51,8 +51,8 @@
 
 typedef struct
 {
-  char *stanza_name;
-  char *stanza_type;
+  const char *stanza_name;
+  const char *stanza_type;
   GList *keys;
 }ZMapConfigIniContextStanzaEntryStruct, *ZMapConfigIniContextStanzaEntry;
 
@@ -71,9 +71,9 @@ static void check_required(gpointer list_data, gpointer user_data);
 static gboolean check_required_keys(ZMapConfigIniContext context,
     ZMapConfigIniContextStanzaEntry stanza);
 static GType get_stanza_key_type(ZMapConfigIniContext context,
-                         char *stanza_name,
-                         char *stanza_type,
-                         char *key_name);
+                                 const char *stanza_name,
+                                 const char *stanza_type,
+                                 const char *key_name);
 static gint match_name_type(gconstpointer list_data, gconstpointer user_data);
 static void setErrorMessage(ZMapConfigIniContext context,char *error_message);
 
@@ -81,20 +81,20 @@ static void setErrorMessage(ZMapConfigIniContext context,char *error_message);
 
 
 
-/* 
+/*
  *                  External Interface functions
  */
 
 
 
 /* WHAT ON EARTH IS THIS ABOUT...??????? */
-void zMapConfigIniGetStanza(ZMapConfigIni config, char *stanza_name)
+void zMapConfigIniGetStanza(ZMapConfigIni config, const char *stanza_name)
 {
   return ;
 }
 
 
-ZMapConfigIniContext zMapConfigIniContextCreate(char *config_file)
+ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file)
 {
   ZMapConfigIniContext context = NULL;
 
@@ -135,7 +135,7 @@ gchar **zMapConfigIniContextGetAllStanzaNames(ZMapConfigIniContext context)
 }
 
 
-gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, char *buffer)
+gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, const char *buffer)
 {
   gboolean result = FALSE;
 
@@ -146,7 +146,7 @@ gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, char *b
 }
 
 /* file can be a full path or a filename. */
-gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, char *file)
+gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, const char *file)
 {
   gboolean result = FALSE;
 
@@ -161,7 +161,7 @@ gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context)
 {
   gchar *e = NULL ;
 
-  zMapReturnValIfFail(context, e) ; 
+  zMapReturnValIfFail(context, e) ;
 
   e = context->error_message ;
 
@@ -170,7 +170,7 @@ gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context)
 
 static void setErrorMessage(ZMapConfigIniContext context,char *error_message)
 {
-  zMapReturnIfFail(context) ; 
+  zMapReturnIfFail(context) ;
 
   if (context->error_message)
     g_free(context->error_message);
@@ -193,13 +193,13 @@ gchar *zMapConfigIniContextKeyFileErrorMessage(ZMapConfigIniContext context)
 
 
 gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context,
-      char *stanza_name, char *stanza_type,
-      ZMapConfigIniContextKeyEntryStruct *keys)
+                                      const char *stanza_name, const char *stanza_type,
+                                      ZMapConfigIniContextKeyEntryStruct *keys)
 {
   ZMapConfigIniContextStanzaEntryStruct user_request = {NULL};
   gboolean not_exist = FALSE, result = FALSE;
   GList *entry_found = NULL;
-  zMapReturnValIfFail(context, result) ; 
+  zMapReturnValIfFail(context, result) ;
 
   user_request.stanza_name = stanza_name;
   user_request.stanza_type = stanza_type;
@@ -252,7 +252,7 @@ gboolean zMapConfigIniContextSave(ZMapConfigIniContext context)
 
 ZMapConfigIniContext zMapConfigIniContextDestroy(ZMapConfigIniContext context)
 {
-  zMapReturnValIfFail(context, NULL) ; 
+  zMapReturnValIfFail(context, NULL) ;
   if(context->error_message)
     g_free(context->error_message);
 
@@ -268,10 +268,10 @@ ZMapConfigIniContext zMapConfigIniContextDestroy(ZMapConfigIniContext context)
 
 
 gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context,
-      char *stanza_name,
-      char *stanza_type,
-      char *key_name,
-      GValue **value_out)
+                                      const char *stanza_name,
+                                      const char *stanza_type,
+                                      const char *key_name,
+                                      GValue **value_out)
 {
   gboolean obtained = FALSE;
   GValue *value = NULL;
@@ -311,10 +311,10 @@ gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context,
 
 
 gboolean zMapConfigIniContextGetBoolean(ZMapConfigIniContext context,
-                                                char *stanza_name,
-                                                char *stanza_type,
-                                                char *key_name,
-                                                gboolean *value)
+                                        const char *stanza_name,
+                                        const char *stanza_type,
+                                        const char *key_name,
+                                        gboolean *value)
 {
   GValue *value_out = NULL;
   gboolean success = FALSE;
@@ -330,11 +330,11 @@ gboolean zMapConfigIniContextGetBoolean(ZMapConfigIniContext context,
               *value  = g_value_get_boolean(value_out);
               success = TRUE;
             }
-        
+
           g_value_unset(value_out);
-        
+
           g_free(value_out);
-        
+
           value_out = NULL;
         }
     }
@@ -343,10 +343,10 @@ gboolean zMapConfigIniContextGetBoolean(ZMapConfigIniContext context,
 }
 
 gboolean zMapConfigIniContextGetString(ZMapConfigIniContext context,
-       char *stanza_name,
-       char *stanza_type,
-       char *key_name,
-       char **value)
+                                       const char *stanza_name,
+                                       const char *stanza_type,
+                                       const char *key_name,
+                                       char **value)
 {
   GValue *value_out = NULL;
   gboolean success = FALSE;
@@ -375,9 +375,9 @@ gboolean zMapConfigIniContextGetString(ZMapConfigIniContext context,
 /* Same as string only expands any tilde in the filepath, if the expansion fails
  * then this call fails. */
 gboolean zMapConfigIniContextGetFilePath(ZMapConfigIniContext context,
- char *stanza_name,
- char *stanza_type,
- char *key_name,
+ const char *stanza_name,
+ const char *stanza_type,
+ const char *key_name,
  char **value)
 {
   GValue *value_out = NULL ;
@@ -391,17 +391,17 @@ gboolean zMapConfigIniContextGetFilePath(ZMapConfigIniContext context,
             {
               char *value_str ;
               char *expanded_value ;
-        
+
               value_str = (char *)g_value_get_string(value_out) ;
-        
+
               if ((expanded_value = zMapExpandFilePath(value_str)))
                 {
                   *value  = expanded_value ;
-                
+
                   success = TRUE ;
                 }
             }
-        
+
           g_value_unset(value_out) ;
           g_free(value_out) ;
           value_out = NULL ;
@@ -413,10 +413,10 @@ gboolean zMapConfigIniContextGetFilePath(ZMapConfigIniContext context,
 
 
 gboolean zMapConfigIniContextGetInt(ZMapConfigIniContext context,
-    char *stanza_name,
-    char *stanza_type,
-    char *key_name,
-    int  *value)
+                                    const char *stanza_name,
+                                    const char *stanza_type,
+                                    const char *key_name,
+                                    int  *value)
 {
   GValue *value_out = NULL;
   gboolean success = FALSE;
@@ -430,7 +430,7 @@ gboolean zMapConfigIniContextGetInt(ZMapConfigIniContext context,
               *value  = g_value_get_int(value_out);
               success = TRUE;
             }
-        
+
           g_value_unset(value_out);
           g_free(value_out);
           value_out = NULL;
@@ -441,13 +441,13 @@ gboolean zMapConfigIniContextGetInt(ZMapConfigIniContext context,
 }
 
 gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
-       char *stanza_name,
-       char *stanza_type,
-       char *key_name,
-       char *value_str)
+       const char *stanza_name,
+       const char *stanza_type,
+       const char *key_name,
+       const char *value_str)
 {
   GType type = 0;
-  gboolean set = TRUE;
+  gboolean is_set = TRUE;
 
   type = get_stanza_key_type(context, stanza_name, stanza_type, key_name);
 
@@ -459,21 +459,21 @@ gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
 
       g_value_set_static_string(&value, value_str);
 
-      set = zMapConfigIniContextSetValue(context, stanza_name,
+      is_set = zMapConfigIniContextSetValue(context, stanza_name,
                                          key_name, &value);
     }
 
-  return set;
+  return is_set;
 }
 
 gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
-                                    char *stanza_name,
-                                    char *stanza_type,
-                                    char *key_name,
+                                    const char *stanza_name,
+                                    const char *stanza_type,
+                                    const char *key_name,
                                     int   value_int)
 {
   GType type = 0;
-  gboolean set = TRUE;
+  gboolean is_set = TRUE;
 
   type = get_stanza_key_type(context, stanza_name, stanza_type, key_name);
 
@@ -485,22 +485,22 @@ gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
 
       g_value_set_int(&value, value_int);
 
-      set = zMapConfigIniContextSetValue(context, stanza_name,
+      is_set = zMapConfigIniContextSetValue(context, stanza_name,
          key_name, &value);
     }
 
-  return set;
+  return is_set;
 }
 
 
 gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
-                                        char *stanza_name,
-                                        char *stanza_type,
-                                        char *key_name,
+                                        const char *stanza_name,
+                                        const char *stanza_type,
+                                        const char *key_name,
                                         gboolean value_bool)
 {
   GType type = 0;
-  gboolean set = TRUE;
+  gboolean is_set = TRUE;
 
   type = get_stanza_key_type(context, stanza_name, stanza_type, key_name);
 
@@ -512,25 +512,26 @@ gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
 
       g_value_set_boolean(&value, value_bool);
 
-      set = zMapConfigIniContextSetValue(context, stanza_name,
+      is_set = zMapConfigIniContextSetValue(context, stanza_name,
          key_name, &value);
     }
 
-  return set;
+  return is_set;
 }
 
 gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
-      char *stanza_name,
-      char *key_name,
-      GValue *value)
+                                      const char *stanza_name,
+                                      const char *key_name,
+                                      GValue *value)
 {
-  gboolean set = FALSE ;
-  zMapReturnValIfFail(context, set ) ; 
+  gboolean is_set = FALSE ;
+  zMapReturnValIfFail(context, is_set ) ;
 
   zMapConfigIniSetValue(context->config, stanza_name, key_name, value);
-  set = TRUE ; 
 
-  return set;
+  is_set = TRUE ;
+
+  return is_set;
 }
 
 
@@ -538,7 +539,7 @@ gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
 
 
 
-/* 
+/*
  *                   Internal functions
  */
 
@@ -653,9 +654,9 @@ static gint match_key(gconstpointer list_data, gconstpointer user_data)
 
 
 static GType get_stanza_key_type(ZMapConfigIniContext context,
- char *stanza_name,
- char *stanza_type,
- char *key_name)
+                                 const char *stanza_name,
+                                 const char *stanza_type,
+                                 const char *key_name)
 {
   ZMapConfigIniContextStanzaEntryStruct user_request = {NULL};
   GList *entry_found = NULL;

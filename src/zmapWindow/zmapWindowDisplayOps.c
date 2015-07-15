@@ -239,7 +239,7 @@ char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy,
 
       column_id = zmapWindowContainerFeaturesetGetColumnUniqueId(selected_column) ;
 
-      gff = g_hash_table_lookup(window->context_map->columns, GUINT_TO_POINTER(column_id)) ;
+      gff = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns, GUINT_TO_POINTER(column_id)) ;
 
       if (gff && gff->column_desc)
         selection_txt = g_strdup(gff->column_desc) ;
@@ -514,7 +514,7 @@ static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle di
         ZMapSpan span ;
         int i ;
 
-        for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
+        for (i = 0 ; i < (int)feature->feature.transcript.exons->len ; i++)
           {
             FeatureCoordStruct feature_coord ;
             int index ;
@@ -526,7 +526,7 @@ static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle di
 
             span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, index) ;
 
-            if (!use_mark 
+            if (!use_mark
                 || (span->x1 > mark_x && span->x2 < mark_y))
               {
                 feature_coord.name = name ;
@@ -582,7 +582,7 @@ static void makeSelectionString(ZMapWindow window, ZMapWindowDisplayStyle displa
   align = window->feature_context->master_align ;
   chromosome = zMapFeatureAlignmentGetChromosome(align) ;
 
-  for (i = 0 ; i < feature_coords->len ; i++)
+  for (i = 0 ; i < (int)feature_coords->len ; i++)
     {
       FeatureCoord feature_coord ;
 
@@ -611,7 +611,7 @@ static void makeSelectionString(ZMapWindow window, ZMapWindowDisplayStyle displa
    * browser style we just give the overall extent of all the feature_coords. */
   if (display_style->paste_style == ZMAPWINDOW_PASTE_FORMAT_OTTERLACE)
     {
-      for (i = 0 ; i < feature_coords->len ; i++)
+      for (i = 0 ; i < (int)feature_coords->len ; i++)
         {
           FeatureCoord feature_coord ;
 
@@ -620,7 +620,7 @@ static void makeSelectionString(ZMapWindow window, ZMapWindowDisplayStyle displa
           g_string_append_printf(selection_str, "\"%s\"    %d %d (%d)%s",
                                  feature_coord->name,
                                  feature_coord->start, feature_coord->end, feature_coord->length,
-                                 (i < feature_coords->len ? "\n" : "")) ;
+                                 (i < (int)feature_coords->len ? "\n" : "")) ;
         }
     }
   else

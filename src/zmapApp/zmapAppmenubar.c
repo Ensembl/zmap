@@ -49,12 +49,12 @@ static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
  */
 
 static GtkItemFactoryEntry menu_items[] = {
- { "/_File",           NULL,          NULL,          0, "<Branch>",  NULL},
- { "/File/Quit",       "<control>Q",  quitCB,        0, NULL,  NULL},
- { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
- { "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
- { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
- { "/Help/About ZMap",    NULL,    aboutCB, 0, NULL }
+  { (char *)"/_File",           NULL,          NULL,          0, (char *)"<Branch>",  NULL},
+ { (char *)"/File/Quit",       (char *)"<control>Q",  (GtkItemFactoryCallback)quitCB,        0, NULL,  NULL},
+ { (char *)"/_Help",         NULL,         NULL, 0, (char *)"<LastBranch>" },
+ { (char *)"/Help/General Help", NULL,     (GtkItemFactoryCallback)allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
+ { (char *)"/Help/Release Notes", NULL,    (GtkItemFactoryCallback)allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
+ { (char *)"/Help/About ZMap",    NULL,    (GtkItemFactoryCallback)aboutCB, 0, NULL }
 };
 
 

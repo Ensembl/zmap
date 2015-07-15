@@ -51,7 +51,7 @@ gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_
   gboolean result = FALSE ;
   ZMapFeatureStr2Enum type ;
 
-  if (!type_table || !type_str || !*type_str || !type_out) 
+  if (!type_table || !type_str || !*type_str || !type_out)
     return result ;
 
   type = type_table ;
@@ -243,14 +243,14 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 }
 
 
-char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type)
+const char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type)
 {
-  static char *struct_types[] = {".", "Context", "Alignment", "Block", "FeatureSet", "Feature"} ;
-  char *type_str = NULL ;
+  static const char *struct_types[] = {".", "Context", "Alignment", "Block", "FeatureSet", "Feature"} ;
+  const char *type_str = NULL ;
 
   if ((type != ZMAPFEATURE_STRUCT_INVALID) && (type != ZMAPFEATURE_STRUCT_CONTEXT)
       && (type != ZMAPFEATURE_STRUCT_ALIGN) && (type != ZMAPFEATURE_STRUCT_BLOCK)
-      && (type !=  ZMAPFEATURE_STRUCT_FEATURESET) && (type != ZMAPFEATURE_STRUCT_FEATURE)) 
+      && (type !=  ZMAPFEATURE_STRUCT_FEATURESET) && (type != ZMAPFEATURE_STRUCT_FEATURE))
     return type_str ;
 
   type_str = struct_types[type] ;
@@ -261,9 +261,9 @@ char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type)
 
 
 
-char *zMapFeatureSubPart2Str(ZMapFeatureSubPartType subpart)
+const char *zMapFeatureSubPart2Str(ZMapFeatureSubPartType subpart)
 {
-  char *subpart_str = NULL ;
+  const char *subpart_str = NULL ;
 
   if ((subpart != ZMAPFEATURE_SUBPART_INVALID)
       && (subpart != ZMAPFEATURE_SUBPART_INTRON)
@@ -325,15 +325,15 @@ gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out)
 
 
 
-gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand)
+gboolean zMapFeatureStr2Strand(char *string_arg, ZMapStrand *strand)
 {
   gboolean status = TRUE;
 
-  if (g_ascii_strcasecmp(string, "forward") == 0)
+  if (g_ascii_strcasecmp(string_arg, "forward") == 0)
     *strand = ZMAPSTRAND_FORWARD;
-  else if (g_ascii_strcasecmp(string, "reverse") == 0)
+  else if (g_ascii_strcasecmp(string_arg, "reverse") == 0)
     *strand = ZMAPSTRAND_REVERSE;
-  else if (g_ascii_strcasecmp(string, "none") == 0)
+  else if (g_ascii_strcasecmp(string_arg, "none") == 0)
     *strand = ZMAPSTRAND_NONE;
   else
     status = FALSE;
@@ -342,12 +342,12 @@ gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand)
 }
 
 
-char *zMapFeatureStrand2Str(ZMapStrand strand)
+const char *zMapFeatureStrand2Str(ZMapStrand strand)
 {
-  static char *strands[] = {".", "+", "-" } ;
-  char *strand_str = NULL ;
+  static const char *strands[] = {".", "+", "-" } ;
+  const char *strand_str = NULL ;
 
-  if ((strand != ZMAPSTRAND_NONE) && (strand != ZMAPSTRAND_FORWARD) && (strand != ZMAPSTRAND_REVERSE) ) 
+  if ((strand != ZMAPSTRAND_NONE) && (strand != ZMAPSTRAND_FORWARD) && (strand != ZMAPSTRAND_REVERSE) )
     return strand_str ;
 
   strand_str = strands[strand] ;
@@ -387,17 +387,17 @@ gboolean zMapFeatureFormatFrame(char *frame_str, ZMapFrame *frame_out)
   return result ;
 }
 
-gboolean zMapFeatureStr2Frame(char *string, ZMapFrame *frame)
+gboolean zMapFeatureStr2Frame(char *string_arg, ZMapFrame *frame)
 {
   gboolean status = TRUE;
 
-  if (g_ascii_strcasecmp(string, "0") == 0)
+  if (g_ascii_strcasecmp(string_arg, "0") == 0)
     *frame = ZMAPFRAME_0;
-  else if (g_ascii_strcasecmp(string, "1") == 0)
+  else if (g_ascii_strcasecmp(string_arg, "1") == 0)
     *frame = ZMAPFRAME_1;
-  else if (g_ascii_strcasecmp(string, "2") == 0)
+  else if (g_ascii_strcasecmp(string_arg, "2") == 0)
     *frame = ZMAPFRAME_2;
-  else if (g_ascii_strcasecmp(string, "none") == 0)
+  else if (g_ascii_strcasecmp(string_arg, "none") == 0)
     *frame = ZMAPFRAME_NONE;
   else
     status = FALSE;
@@ -410,7 +410,7 @@ char *zMapFeatureFrame2Str(ZMapFrame frame)
   static const char *frames[] = {".", "1", "2", "3" } ;
   char *frame_str = NULL ;
 
-  if ((frame != ZMAPFRAME_NONE) && (frame != ZMAPFRAME_0) && (frame != ZMAPFRAME_1) && (frame != ZMAPFRAME_2)) 
+  if ((frame != ZMAPFRAME_NONE) && (frame != ZMAPFRAME_0) && (frame != ZMAPFRAME_1) && (frame != ZMAPFRAME_2))
     return frame_str ;
 
   frame_str = (char *)frames[frame] ;
@@ -484,7 +484,7 @@ char *zMapFeaturePhase2Str(ZMapPhase phase)
   static const char *phases[] = {".", "1", "2", "3"} ;
   char *phase_str = NULL ;
 
-  if ((phase != ZMAPPHASE_NONE) && (phase != ZMAPPHASE_0) && (phase != ZMAPPHASE_1) && (phase != ZMAPPHASE_2) ) 
+  if ((phase != ZMAPPHASE_NONE) && (phase != ZMAPPHASE_0) && (phase != ZMAPPHASE_1) && (phase != ZMAPPHASE_2) )
     return phase_str ;
 
   phase_str = (char *)phases[phase] ;

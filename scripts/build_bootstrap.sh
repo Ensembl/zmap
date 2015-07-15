@@ -231,14 +231,21 @@ if [ "x$gen_checkout_script" != "x" ]; then
     _checkout_message_out "Running git clone of zmap.git, branch $BRANCH, into $MASTER_SRC_DIR"
     git clone -b $BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $MASTER_SRC_DIR
 
+
+# do we need this now ????? yes...otherwise we need to be able to tell autogen.sh what branch
+# to checkout for a particular library....
+#
+#
     if [ -n "$GBTOOLS_BRANCH" ] ; then
         # clone the gbtools repo as a subdirectory of src
-        cd $MASTER_SRC_DIR/src || _checkout_message_exit "Failed to cd to $MASTER_SRC_DIR/src"
+	cd $MASTER_SRC_DIR/src || _checkout_message_exit "Failed to cd to $MASTER_SRC_DIR/src"
 
         gbtools_repo="gbtools"
         if [[ -d $gbtools_repo ]] ; then
           rm -r $gbtools_repo
         fi
+
+	_checkout_message_out "Running git clone of $gbtools_repo.git, branch $GBTOOLS_BRANCH, into $gbtools_repo"
 
         git clone -b $GBTOOLS_BRANCH git.internal.sanger.ac.uk:/repos/git/annotools/$gbtools_repo.git $gbtools_repo
 
@@ -246,7 +253,12 @@ if [ "x$gen_checkout_script" != "x" ]; then
         # i.e. README and .gitignore        
         git checkout $gbtools_repo
 
-        cd ../..
+	echo "PWD IS $PWD"
+
+        cd ..
+
+	echo "PWD IS $PWD"
+
     fi
 
     # get the production branch (but don't check it out)
@@ -266,6 +278,9 @@ if [ "x$gen_checkout_script" != "x" ]; then
 
     _checkout_message_out "just doing a copy of $ZMAP_MASTER_BUILD_COPY_DIR"
   fi
+
+  # a lot of error prone cd'ing around...
+  cd ..
 
   _checkout_message_out "About to  cp -r $MASTER_SRC_DIR $CVS_MODULE"
   cp -r $MASTER_SRC_DIR $CVS_MODULE  || _checkout_message_exit "Failed to copy src directory $MASTER_SRC_DIR"

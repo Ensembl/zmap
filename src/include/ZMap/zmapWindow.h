@@ -28,10 +28,6 @@
  *
  *-------------------------------------------------------------------
  */
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef ZMAP_WINDOW_H
 #define ZMAP_WINDOW_H
 
@@ -142,7 +138,7 @@ typedef int (*ZMapWindowFilterCallbackFunc)(gpointer filter, double value, gbool
 
 typedef struct
 {
-  double min,max;                                           /* for the spin button */
+  double min_val, max_val;                                           /* for the spin button */
   double value;
   ZMapWindow window;
   gpointer featureset;                                      /* where to filter, is a ZMapWindowCanvasFeatureset... scope :-( */
@@ -155,7 +151,7 @@ typedef struct
 
   /* be good to implement this oe day, currently we look it up from config
    * every time someone click the filter button */
-  GdkColor fill;                                            /* background for widget and also filtered column */
+  GdkColor fill_col;                                            /* background for widget and also filtered column */
 
 } ZMapWindowFilterStruct, *ZMapWindowFilter;
 
@@ -652,8 +648,8 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window,
                                  FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature) ;
 
-gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor **fill);
-gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill);
+gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor **fill_col);
+gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill_col);
 
 
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
@@ -666,7 +662,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) 
 gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature) ;
 
 void zMapWindowHighlightFeature(ZMapWindow window,
-                                ZMapFeature feature, gboolean highlight_same_names, gboolean replace);
+                                ZMapFeature feature, gboolean highlight_same_names, gboolean replace_flag);
 gboolean zMapWindowUnhighlightFeature(ZMapWindow window, ZMapFeature feature) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -706,12 +702,12 @@ char *zMapWindowGetSelectionText(ZMapWindow window, ZMapWindowDisplayStyle displ
 
 ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNotebook parent);
 
-int zMapWindowFocusCacheGetSelectedColours(int id_flags,gulong *fill,gulong *outline);
+int zMapWindowFocusCacheGetSelectedColours(int id_flags,gulong *fill_col, gulong *outline);
 
 void zMapWindowFocusCacheSetSelectedColours(ZMapWindow window);
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
-gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
+gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill_col, GdkColor *border);
 
 void zMapWindowUpdateColumnBackground(ZMapWindow window, ZMapFeatureSet feature_set, gboolean highlight_column_background);
 
@@ -740,7 +736,3 @@ void zMapWindowSetDisplayCoordinates(ZMapWindow window, ZMapWindowDisplayCoordin
 ZMapWindowDisplayCoordinates zMapWindowGetDisplayCoordinates(ZMapWindow window) ;
 
 #endif /* !ZMAP_WINDOW_H */
-
-#ifdef __cplusplus
-}
-#endif

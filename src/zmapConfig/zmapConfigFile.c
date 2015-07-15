@@ -52,7 +52,7 @@ static gboolean has_system_file(ZMapConfigIni config);
 static gboolean system_file_loaded(ZMapConfigIni config);
 static gboolean has_system_zmap_file(ZMapConfigIni config);
 static gboolean system_zmap_file_loaded(ZMapConfigIni config);
-static GKeyFile *read_file(char *file_name, GError **error_in_out);
+static GKeyFile *read_file(const char *file_name, GError **error_in_out);
 
 
 ZMapConfigIni zMapConfigIniNew(void)
@@ -78,7 +78,7 @@ ZMapConfigIni zMapConfigIniNew(void)
 
 
 
-gboolean zMapConfigIniReadAll(ZMapConfigIni config, char *config_file)
+gboolean zMapConfigIniReadAll(ZMapConfigIni config, const char *config_file)
 {
   gboolean red = FALSE ;
 
@@ -109,10 +109,10 @@ gboolean zMapConfigIniReadAll(ZMapConfigIni config, char *config_file)
 }
 
 
-gboolean zMapConfigIniReadUser(ZMapConfigIni config, char *config_file)
+gboolean zMapConfigIniReadUser(ZMapConfigIni config, const char *config_file)
 {
   gboolean red = FALSE ;
-  char *file_name ;
+  const char *file_name ;
 
   /* if (!config) 
     return red ; */
@@ -130,7 +130,7 @@ gboolean zMapConfigIniReadUser(ZMapConfigIni config, char *config_file)
 }
 
 
-gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer)
+gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, const char *buffer)
 {
   gboolean red = FALSE;
   /* if (!config)
@@ -162,7 +162,7 @@ gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer)
 
 
 /* this is used for styles, NOTE not ever freed until the context is destroyed so can have only one file */
-gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file)
+gboolean zMapConfigIniReadFile(ZMapConfigIni config, const char *file)
 {
   gboolean read = FALSE;
 
@@ -273,7 +273,7 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
 }
 
 
-gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name,GKeyFile **which)
+gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name,GKeyFile **which)
 {
   GKeyFile *files[FILE_COUNT];
   gboolean result = FALSE;
@@ -374,7 +374,7 @@ static gboolean system_zmap_file_loaded(ZMapConfigIni config)
   return exists;
 }
 
-static GKeyFile *read_file(char *file_name, GError **error_in_out)
+static GKeyFile *read_file(const char *file_name, GError **error_in_out)
 {
   GKeyFile *key_file = NULL;
   GError *error = NULL;

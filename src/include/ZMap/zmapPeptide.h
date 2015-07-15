@@ -47,8 +47,8 @@ char *zMapPeptideCreateRawSegment(char *dna,  int from, int length, ZMapStrand s
 				  ZMapGeneticCode translation_table, gboolean include_stop) ;
 gboolean zMapPeptideCanonical(char *peptide) ;
 gboolean zMapPeptideValidate(char *peptide) ;
-ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
-			      char *dna, ZMapGeneticCode genetic_code, gboolean include_stop) ;
+ZMapPeptide zMapPeptideCreate(const char *sequence_name, const char *gene_name,
+			      const char *dna, ZMapGeneticCode genetic_code, gboolean include_stop) ;
 ZMapPeptide zMapPeptideCreateEmpty(char *sequence_name, char *gene_name, char *dna, gboolean include_stop) ;
 ZMapPeptide zMapPeptideCreateSafely(char *sequence_name, char *gene_name,
                                     char *dna, ZMapGeneticCode genetic_code, gboolean include_stop) ;
@@ -60,7 +60,7 @@ char *zMapPeptideSequence(ZMapPeptide peptide) ;
 char *zMapPeptideSequenceName(ZMapPeptide peptide) ;
 char *zMapPeptideGeneName(ZMapPeptide peptide) ;
 gboolean zMapPeptideMatch(char *cp, char *end,
-			  char *template, ZMapStrand strand, ZMapGeneticCode translation_table,
+			  char *match_template_in, ZMapStrand strand, ZMapGeneticCode translation_table,
 			  char **start_out, char **end_out, char **match_str) ;
 GList *zMapPeptideMatchFindAll(char *target, char *query, gboolean rev_comped,
 			       ZMapStrand strand, ZMapFrame orig_frame,

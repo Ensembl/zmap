@@ -89,8 +89,8 @@ typedef struct
 } CallbackDataStruct, *CallbackData ;
 
 
-static char *makeMenuItemName(char *string) ;
-static char *makeMenuTitleName(char *string, char *escape_chars) ;
+static char *makeMenuItemName(const char *string_arg) ;
+static char *makeMenuTitleName(const char *string_arg, const char *escape_chars) ;
 
 static ZMapGUIMenuItem makeSingleMenu(GList *menu_item_sets, int *menu_items_out) ;
 static ZMapGUIMenuItem copyMenu2NewMenu(ZMapGUIMenuItem new_menu, ZMapGUIMenuItem old_menu) ;
@@ -133,7 +133,7 @@ static void deToggleButCB(gpointer data, gpointer user_data) ;
  * @param button_event  The button event that triggered the menu to be popped up.
  * @return              <nothing>
  *  */
-void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *button_event)
+void zMapGUIMakeMenu(const char *menu_title, GList *menu_item_sets, GdkEventButton *button_event)
 {
   int num_menu_items, num_factory_items, i ;
   ZMapGUIMenuItem menu_items ;
@@ -165,12 +165,12 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
   /* Do title/separator, the title needs to have any '_' or '/' chars escaped to stop them being
    * interpretted as keyboard shortcuts or submenu indicators. */
   item->path = makeMenuTitleName(menu_title, "/_") ;
-  item->item_type = "<Title>" ;
-  item->accelerator = "O";
+  item->item_type = (char *)"<Title>" ;
+  item->accelerator = (char *)"O";
   item++ ;
 
-  item->path = makeMenuItemName("separator") ;
-  item->item_type = "<Separator>" ;
+  item->path = (char *)makeMenuItemName("separator") ;
+  item->item_type = (char *)"<Separator>" ;
   item++ ;
 
   /* Do actual items. N.B. we use the callback_action to index into our copy of the users
@@ -187,32 +187,32 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
       /* User does not have to set a name for a separator but to make our code more uniform
        * we add one. */
       if (menu_items[i].type == ZMAPGUI_MENU_SEPARATOR)
-        item->path = makeMenuItemName("separator") ;
+        item->path = (char *)makeMenuItemName("separator") ;
       else
         item->path = makeMenuItemName(menu_items[i].name) ;
 
-      item->callback = ourCB ;
+      item->callback = (GtkItemFactoryCallback)ourCB ;
       item->callback_action = i ;
 
       switch (menu_items[i].type)
         {
           case ZMAPGUI_MENU_BRANCH:
             {
-              item->item_type = "<Branch>" ;
+              item->item_type = (char *)"<Branch>" ;
               item->callback = NULL ;
               item->callback_action = -1 ;
               break ;
             }
           case ZMAPGUI_MENU_TITLE:
             {
-              item->item_type = "<Title>" ;
+              item->item_type = (char *)"<Title>" ;
               item->callback = NULL ;
               item->callback_action = -1 ;
               break ;
             }
           case ZMAPGUI_MENU_SEPARATOR:
             {
-              item->item_type = "<Separator>" ;
+              item->item_type = (char *)"<Separator>" ;
               item->callback = NULL ;
               item->callback_action = -1 ;
               break ;
@@ -225,7 +225,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
             if (!radio_title)
               {
                 radio_title = item->path ;
-                item->item_type = "<RadioItem>" ;
+                item->item_type = (char *)"<RadioItem>" ;
 
                 deactive_radio_buttons = g_list_append(deactive_radio_buttons, item->path) ;
               }
@@ -245,7 +245,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
             item->item_type = "<ToggleItem>" ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-            item->item_type = "<CheckItem>" ;
+            item->item_type = (char *)"<CheckItem>" ;
 
             if (menu_items[i].type == ZMAPGUI_MENU_TOGGLEACTIVE)
               active_toggle_buttons = g_list_append(active_toggle_buttons, item->path) ;
@@ -267,7 +267,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
         radio_title = NULL ;
 
       if(menu_items[i].accelerator)
-        item->accelerator = menu_items[i].accelerator;
+        item->accelerator = (char *)menu_items[i].accelerator;
 
       item++ ;
     }
@@ -285,7 +285,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
 
     /* NOTE this time we need the title string without escaping any '_' so we can find
      * it in the item factory path, but the '/' must still be escaped. */
-    title = gtk_item_factory_get_widget(item_factory, makeMenuTitleName(menu_title, "/")) ;
+    title = gtk_item_factory_get_widget(item_factory, (char *)makeMenuTitleName(menu_title, "/")) ;
 
     gtk_widget_set_name(title, "zmap-menu-title");
   }
@@ -435,15 +435,14 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
 
 
 /* Normal Menu Item Name strings must have the format "/item_name". */
-static char *makeMenuItemName(char *string)
+static char *makeMenuItemName(const char *string_arg)
 {
   char *item_string = NULL;
 
-  /* zMapAssert(string && *string) ; */
-  if (!string || !*string)
+  if (!string_arg || !*string_arg)
     return item_string ;
 
-  item_string = g_strdup_printf("/%s", string) ;
+  item_string = g_strdup_printf("/%s", string_arg) ;
 
   return item_string ;
 }
@@ -456,16 +455,16 @@ static char *makeMenuItemName(char *string)
  * For DAS there are also embedded '/' which must be escaped as well as "\/"
  *
  */
-static char *makeMenuTitleName(char *string, char *escape_chars)
+static char *makeMenuTitleName(const char *string_arg, const char *escape_chars)
 {
   char *item_string = NULL ;
   GString *tmp ;
   char *cp ;
   gssize pos ;
 
-  zMapReturnValIfFail((string && *string), item_string) ;
+  zMapReturnValIfFail((string_arg && *string_arg), item_string) ;
 
-  tmp = g_string_new(string) ;
+  tmp = g_string_new(string_arg) ;
 
   pos = 0 ;
   cp = (tmp->str + pos) ;
@@ -581,7 +580,7 @@ static void destroyMenu(ZMapGUIMenuItem menu)
 
   for (i = 0, menu_item = menu ; i < num_menu_items ; i++, menu_item++)
     {
-      g_free(menu_item->name) ;
+      g_free((void *)(menu_item->name)) ;
     }
   g_free(menu) ;
 

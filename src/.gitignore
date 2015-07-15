@@ -2,7 +2,28 @@ config.h.in
 config.h.in~
 config
 
-# Ignore everything in the gbtools subdir except its gitignore and README files
+
+
+# Ignore everything in these external library subdirs except for the 
+# descriptive placeholder README_ZMAP files.
+#
 gbtools/*
-!gbtools/.gitignore
-!gbtools/README
+!gbtools/README_ZMAP
+
+AceConn/*
+!AceConn/README_ZMAP
+
+# ensembl_ref_but_no_build is used by autogen.sh and configure.ac
+ensc-core/*
+!ensc-core/README_ZMAP
+ensembl_ref_but_no_build
+
+htslib/*
+!htslib/README_ZMAP
+
+zeromq/*
+!zeromq/README_ZMAP
+
+
+
+

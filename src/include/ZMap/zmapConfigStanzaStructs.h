@@ -61,7 +61,7 @@ typedef int (*ZMapConfStr2EnumFunc)(const char *str) ;
 
 typedef struct ZMapKeyValueStructID
 {
-  char *name ;
+  const char *name ;
   gboolean has_value ;
 
   ZMapKeyValueType type ;

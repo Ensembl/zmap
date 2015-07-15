@@ -233,7 +233,7 @@ void *zmapNewThread(void *thread_args)
               }
             case ZMAPTHREAD_RETURNCODE_QUIT:
               {
-                char * error_msg = "OK";
+                const char * error_msg = "OK";
 
                 /* this message goes to the otterlace features loaded message
                    and no error gets mangled into a string that says (Server Pipe: - null)

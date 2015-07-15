@@ -120,21 +120,21 @@ void zMapWindowCanvasGraphInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_SET_INIT] = graphInit ;
-  funcs[FUNC_PREPARE] = graphPaintPrepare ;
-  funcs[FUNC_PAINT] = graphPaintFeature ;
-  funcs[FUNC_FLUSH] = graphPaintFlush ;
-  funcs[FUNC_PRE_ZOOM] = graphPreZoom ;
-  funcs[FUNC_ZOOM] = graphZoom ;
-  funcs[FUNC_POINT] = graphPoint ;
+  funcs[FUNC_SET_INIT] = (void *)graphInit ;
+  funcs[FUNC_PREPARE] = (void *)graphPaintPrepare ;
+  funcs[FUNC_PAINT] = (void *)graphPaintFeature ;
+  funcs[FUNC_FLUSH] = (void *)graphPaintFlush ;
+  funcs[FUNC_PRE_ZOOM] = (void *)graphPreZoom ;
+  funcs[FUNC_ZOOM] = (void *)graphZoom ;
+  funcs[FUNC_POINT] = (void *)graphPoint ;
 
   /* And again encapsulation is broken..... */
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPH, funcs, sizeof(ZMapWindowCanvasGraphStruct)) ;
 
 
-  feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = graphGetFeatureExtent ;
+  feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = (void *)graphGetFeatureExtent ;
 
-  zMapWindowCanvasFeatureSetSize(FEATURE_GRAPH, feature_funcs, 0) ;
+  zMapWindowCanvasFeatureSetSize(FEATURE_GRAPH, feature_funcs, sizeof(zmapWindowCanvasFeatureStruct)) ;
 
   return ;
 }
@@ -145,18 +145,18 @@ void zMapWindowCanvasGraphInit(void)
 static void graphInit(ZMapWindowFeaturesetItem featureset)
 {
   ZMapWindowCanvasGraph graph_set = NULL ;
-  GdkColor *draw = NULL, *fill = NULL, *border = NULL ;
+  GdkColor *draw_col = NULL, *fill_col = NULL, *border_col = NULL ;
 
   zMapReturnIfFail(featureset) ;
   graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
 
   /* Set up default colours to draw with, these may be overwritten later by the features
    * colours. */
-  if (zmapWindowFeaturesetGetDefaultColours(featureset, &fill, &draw, &border))
+  if (zmapWindowFeaturesetGetDefaultColours(featureset, &fill_col, &draw_col, &border_col))
     {
-      graph_set->fill = *fill ;
-      graph_set->draw = *draw ;
-      graph_set->border = *border ;
+      graph_set->fill_col = *fill_col ;
+      graph_set->draw_col = *draw_col ;
+      graph_set->border_col = *border_col ;
     }
 
   graph_set->last_gy = -1.0 ;
@@ -385,7 +385,7 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
        * I copy across the fill mode into the column style to cache it and also the colour stuff. */
       if (featureset->featurestyle)
         {
-          featureset->style->mode_data.graph.fill = zMapStyleGraphFill(featureset->featurestyle) ;
+          featureset->style->mode_data.graph.fill_flag = zMapStyleGraphFill(featureset->featurestyle) ;
 
           if (zMapStyleIsPropertySetId(featureset->featurestyle, STYLE_PROP_GRAPH_COLOURS))
             {
@@ -396,26 +396,26 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
           if (zMapStyleIsPropertySetId(featureset->style, STYLE_PROP_GRAPH_COLOURS))
             {
-              GdkColor *draw = NULL, *fill = NULL, *border = NULL ;
+              GdkColor *draw_col = NULL, *fill_col = NULL, *border_col = NULL ;
               ZMapWindowFeaturesetItemClass featureset_class = ZMAP_WINDOW_FEATURESET_ITEM_GET_CLASS(featureset) ;
 
               zMapStyleGetColours(featureset->style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                                  &fill, &draw, &border) ;
+                                  &fill_col, &draw_col, &border_col) ;
 
-              if (fill)
+              if (fill_col)
                 {
-                  graph_set->fill = *fill ;
-                  zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->fill)) ;
+                  graph_set->fill_col = *fill_col ;
+                  zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->fill_col)) ;
                 }
-              if (draw)
+              if (draw_col)
                 {
-                  graph_set->draw = *draw ;
-                  zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->draw)) ;
+                  graph_set->draw_col = *draw_col ;
+                  zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->draw_col)) ;
                 }
-              if (border)
+              if (border_col)
                 {
-                  graph_set->border = *border ;
-                  zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->border)) ;
+                  graph_set->border_col = *border_col ;
+                  zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->border_col)) ;
                 }
             }
         }
@@ -516,7 +516,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
   int cx2 = 0, cy2 = 0 ;                                    /* initialised for LINE mode */
   double x1,x2,y2 ;
   gboolean draw_box = TRUE ;                                /* else line */
-  gulong fill,outline ;
+  gulong ufill,outline ;
   int colours_set, fill_set, outline_set ;
 
   zMapReturnIfFail(featureset) ;
@@ -554,7 +554,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
          */
 
 
-        /* If the very first feature is right at the start of the sequence we need to fill
+        /* If the very first feature is right at the start of the sequence we need to ufill
          * in s is the very first feature we fudge it big gap is left at start of sequence...try this.... */
         if (feature->y1 == featureset->start)
           {
@@ -641,13 +641,13 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
     case ZMAPSTYLE_GRAPH_HEATMAP:
       {
-        /* colour between fill and outline according to score */
+        /* colour between ufill and outline according to score */
         x1 = featureset->dx + featureset->x_off;
         x2 = x1 + featureset->width - 1;
 
         outline_set = FALSE;
         fill_set = TRUE;
-        fill = foo_canvas_get_color_pixel(item->canvas,
+        ufill = foo_canvas_get_color_pixel(item->canvas,
                                           zMapWindowCanvasFeatureGetHeatColour(featureset->fill_colour,
                                                                                featureset->outline_colour,
                                                                                feature->score)) ;
@@ -680,7 +680,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
         if(x1 > x2)
           zMapUtilsSwop(double, x1, x2) ;
 
-        colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
+        colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &ufill, &outline);
         fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
         outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
@@ -692,7 +692,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
     {
       zMapCanvasFeaturesetDrawBoxMacro(featureset,
                                        x1, x2, feature->y1, feature->y2,
-                                       drawable, fill_set, outline_set, fill, outline) ;
+                                       drawable, fill_set, outline_set, ufill, outline) ;
     }
 
   return ;
@@ -716,7 +716,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
 
       if (graph_set->n_points < 1)              /* no features, draw baseline */
         {
-          zmapWindowCanvasFeatureStruct dummy = { 0 };
+          zmapWindowCanvasFeatureStruct dummy = { (zmapWindowCanvasFeatureType)0 };
           FooCanvasItem *foo = (FooCanvasItem *) featureset;
 
           foo_canvas_c2w (foo->canvas, 0, featureset->clip_y1, NULL, &dummy.y2);
@@ -750,7 +750,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
           /* draw back to baseline from last point and add trailing line */
           if (!feature)
             {
-              zmapWindowCanvasFeatureStruct dummy = {0} ;
+              zmapWindowCanvasFeatureStruct dummy = {(zmapWindowCanvasFeatureType)0} ;
 
               if (end > featureset->end)
                 {
@@ -890,11 +890,11 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
           /* This should all be inserted at the start and cached.... */
           if (zMapStyleGraphFill(featureset->style))
             {
-              graph_colour = &(graph_set->fill) ;
+              graph_colour = &(graph_set->fill_col) ;
             }
           else
             {
-              graph_colour = &(graph_set->border) ;
+              graph_colour = &(graph_set->border_col) ;
             }
 
           gdk_gc_set_foreground(featureset->gc, graph_colour) ;
@@ -1075,7 +1075,7 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem featureset_item)
 
           zMapDebugPrint(debug_G, "bin_start, bin_end: %d, %d\tsrc_gs->y1, src_gs->y2: %f, %f",
                          bin_start, bin_end, src_gs->y1, src_gs->y2) ;
-                          
+
 
           if(src_gs->y2 < bin_start)
             continue;
@@ -1222,7 +1222,7 @@ static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeS
 
 
   /* Settings for line graphs. */
-  featureset->style->mode_data.graph.fill = zMapStyleGraphFill(feature_style) ;
+  featureset->style->mode_data.graph.fill_flag = zMapStyleGraphFill(feature_style) ;
 
   /* UM....WHAT ON EARTH WAS I DOING HERE...JUST TESTING...????
    * (sm23) I don't understand the details, but not initialising these
@@ -1231,36 +1231,36 @@ static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeS
    */
   if (zMapStyleIsPropertySetId(feature_style, STYLE_PROP_GRAPH_COLOURS))
     {
-      GdkColor *fill = NULL, *draw = NULL, *border = NULL ;
+      GdkColor *fill_col = NULL, *draw_col = NULL, *border_col = NULL ;
       if (zMapStyleGetColours(feature_style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                              &fill, &draw, &border))
+                              &fill_col, &draw_col, &border_col))
          zMapStyleSetColours(feature_style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                             fill, draw, border) ;
+                             fill_col, draw_col, border_col) ;
     }
 
   /* Allocate and cache the draw colours */
   if (zMapStyleIsPropertySetId(featureset->style, STYLE_PROP_GRAPH_COLOURS))
     {
-      GdkColor *draw = NULL, *fill = NULL, *border = NULL ;
+      GdkColor *draw_col = NULL, *fill_col = NULL, *border_col = NULL ;
       ZMapWindowFeaturesetItemClass featureset_class = ZMAP_WINDOW_FEATURESET_ITEM_GET_CLASS(featureset) ;
 
       zMapStyleGetColours(featureset->style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                          &fill, &draw, &border) ;
+                          &fill_col, &draw_col, &border_col) ;
 
-      if (fill)
+      if (fill_col)
         {
-          graph_set->fill = *fill ;
-          zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->fill)) ;
+          graph_set->fill_col = *fill_col ;
+          zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->fill_col)) ;
         }
-      if (draw)
+      if (draw_col)
         {
-          graph_set->draw = *draw ;
-          zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->draw)) ;
+          graph_set->draw_col = *draw_col ;
+          zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->draw_col)) ;
         }
-      if (border)
+      if (border_col)
         {
-          graph_set->border = *border ;
-          zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->border)) ;
+          graph_set->border_col = *border_col ;
+          zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->border_col)) ;
         }
     }
 

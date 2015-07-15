@@ -200,7 +200,7 @@ GType zmapWindowContainerGroupGetType(void)
     group_type = g_type_register_static (FOO_TYPE_CANVAS_GROUP,
                                          ZMAP_WINDOW_CONTAINER_GROUP_NAME,
                                          &group_info,
-                                         0);
+                                         (GTypeFlags)0);
   }
 
   return group_type;
@@ -583,8 +583,8 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
       parent = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)parent);
       parent_container = (ZMapWindowContainerGroup) parent;
 
-      this_spacing     = parent_container->child_spacing;
-      level            = parent_container->level + 1;
+      this_spacing = parent_container->child_spacing;
+      level = (ZMapContainerLevelType)(parent_container->level + 1) ;
     }
 
   container_type = ZMAP_TYPE_CONTAINER_GROUP;
@@ -821,25 +821,25 @@ gboolean zmapWindowContainerHasFeatures(ZMapWindowContainerGroup container)
 
 void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 {
-  GList *list = NULL,*l = NULL ;
+  GList *glist = NULL,*l = NULL ;
 
   zMapReturnIfFail(group) ;
 
-  if((list = g_list_first(group->item_list)))
+  if((glist = g_list_first(group->item_list)))
     {
       do
         {
           GtkObject *gtk_item_object;
 
-          gtk_item_object = GTK_OBJECT(list->data);
+          gtk_item_object = GTK_OBJECT(glist->data);
 
-          l = list;
-          list = list->next;
+          l = glist;
+          glist = glist->next;
           //        g_free(l);      /* mh17: oddly this was not done */
 
           gtk_object_destroy(gtk_item_object);
         }
-      while((list));
+      while((glist));
     }
   group->item_list = NULL; /* nor this */
   group->item_list_end = NULL;
@@ -1297,7 +1297,7 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
                                          ZMapContainerUtilsExecFunc container_leave_cb,
                                          gpointer                   container_leave_data)
 {
-  ContainerRecursionDataStruct data  = {0,NULL};
+  ContainerRecursionDataStruct data  = {(ZMapContainerLevelType)0, NULL} ;
   //  ZMapWindowCanvas zmap_canvas;
   FooCanvasItem *parent;
 
@@ -1351,9 +1351,9 @@ gboolean zMapWindowCanvasItemIsConnected(ZMapWindowCanvasItem item)
 
 void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame,
                                     ZMapStyleColourType    colour_type,
-                                    GdkColor **fill, GdkColor **draw, GdkColor **outline,
+                                    GdkColor **fill_col, GdkColor **draw_col, GdkColor **outline_col,
                                     GdkColor              *default_fill,
-                                    GdkColor              *border)
+                                    GdkColor              *border_col)
 {
   ZMapStyleParamId colour_target = STYLE_PROP_COLOURS;
 
@@ -1375,7 +1375,7 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
         }
 
       zMapStyleGetColours(style, colour_target, colour_type,
-                          fill, draw, outline) ;
+                          fill_col, draw_col, outline_col) ;
     }
 
   colour_target = STYLE_PROP_COLOURS;
@@ -1384,16 +1384,16 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
       colour_target = STYLE_PROP_REV_COLOURS;
     }
 
-  if (*fill == NULL && *draw == NULL && *outline == NULL)
-    zMapStyleGetColours(style, colour_target, colour_type, fill, draw, outline);
+  if (*fill_col == NULL && *draw_col == NULL && *outline_col == NULL)
+    zMapStyleGetColours(style, colour_target, colour_type, fill_col, draw_col, outline_col);
 
 
   if (colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
     {
       if(default_fill)
-        *fill = default_fill;
-      if(border)
-        *outline = border;
+        *fill_col = default_fill;
+      if(border_col)
+        *outline_col = border_col;
     }
 
   return ;

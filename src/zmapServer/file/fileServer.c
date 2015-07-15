@@ -82,7 +82,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in,
  GHashTable *styles, ZMapFeatureContext feature_context_out) ;
-static char *lastErrorMsg(void *server) ;
+static const char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
@@ -114,7 +114,7 @@ static void eachAlignmentSequence(gpointer key, gpointer data, gpointer user_dat
 static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data) ;
 
 static void setErrorMsgGError(FileServer server, GError **gff_file_err_inout) ;
-static void setErrMsg(FileServer server, char *new_msg) ;
+static void setErrMsg(FileServer server, const char *new_msg) ;
 
 
 
@@ -508,7 +508,6 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   FileServer server = (FileServer)server_in ;
   GetFeaturesDataStruct get_features_data = {NULL} ;
-  int num_features ;
 
   /* Check that there is any more to parse.... */
   if (server->buffer_line->len == 0)                           /* GString len is always >= 0 */
@@ -596,7 +595,7 @@ static ZMapServerResponseType getContextSequence(void *server_in,
 
 
 /* Return the last error message. */
-static char *lastErrorMsg(void *server_in)
+static const char *lastErrorMsg(void *server_in)
 {
   char *err_msg = NULL ;
   FileServer server = (FileServer)server_in ;
@@ -991,7 +990,7 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
   if (!(sequence = zMapGFFGetSequence(server->parser, sequence_name)))
     {
       GError *error;
-      char *estr;
+      const char *estr;
 
       error = zMapGFFGetError(server->parser);
 
@@ -1021,7 +1020,7 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
           ZMapFeatureTypeStyle dna_style = NULL;
           ZMapFeature feature;
 
-          if (styles && (dna_style = g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
+          if (styles && (dna_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
             feature = zMapFeatureDNACreateFeature(feature_block, dna_style, sequence->sequence, sequence->length);
         }
 
@@ -1246,7 +1245,7 @@ static gboolean getServerInfo(FileServer server, ZMapServerReqGetServerInfo info
 static void setErrorMsgGError(FileServer server, GError **gff_file_err_inout)
 {
   GError *gff_file_err ;
-  char *msg = "failed";
+  const char *msg = "failed";
 
   gff_file_err = *gff_file_err_inout ;
   if (gff_file_err)
@@ -1264,7 +1263,7 @@ static void setErrorMsgGError(FileServer server, GError **gff_file_err_inout)
 
 
 /* It's possible for us to have reported an error and then another error to come along. */
-static void setErrMsg(FileServer server, char *new_msg)
+static void setErrMsg(FileServer server, const char *new_msg)
 {
   char *error_msg ;
 

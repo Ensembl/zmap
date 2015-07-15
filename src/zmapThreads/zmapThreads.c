@@ -163,7 +163,7 @@ void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state)
 
 
 gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
-				  void **data, char **err_msg)
+				  void **data, const char **err_msg)
 {
   gboolean got_value ;
 
@@ -183,11 +183,11 @@ char *zMapThreadGetThreadID(ZMapThread thread)
 {
   char *thread_id = NULL ;
 #ifdef LINUX
-  char *format = "%ul" ;
+  const char *format = "%ul" ;
 #elif defined DARWIN
-  char *format = "%p" ;
+  const char *format = "%p" ;
 #else
-  char *format = "%d" ;
+  const  char *format = "%d" ;
 #endif
 
   thread_id = g_strdup_printf(format, thread->thread_id) ;

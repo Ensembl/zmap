@@ -32,11 +32,22 @@
 
 
 /* Turn bits on/off. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #define ZMAP_FLAG_ON(VAR, FLAG) \
   (VAR) |= (FLAG)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#define ZMAP_FLAG_ON(TYPE, VAR, FLAG) \
+(VAR) = (TYPE)((VAR) | (FLAG))
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #define ZMAP_FLAG_OFF(VAR, FLAG) \
   (VAR) &= ~(FLAG)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#define ZMAP_FLAG_OFF(TYPE, VAR, FLAG)          \
+  (VAR) = (TYPE)((VAR) & ~(FLAG))
+
 
 
 /* Test bits */

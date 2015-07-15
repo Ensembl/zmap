@@ -142,42 +142,15 @@ static int parse_is_valid_op_data(char * sBuff,
                                   gboolean bEnd,
                                   gboolean bFirst) ;
 static gboolean parse_canon_valid(AlignStrCanonical canon, GError **error) ;
-
-/*
- * (sm23) I've put in the new code for this within defines in order that
- * it can be reverted easily if anyone notices a problem.
- */
-#define USE_NEW_CIGAR_PARSING_CODE 1
-
-#if NOT_USED
-static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format) ;
-static gboolean exonerateVerifyVulgar(char *match_str) ;
-static gboolean exonerateVerifyCigar(char *match_str) ;
-static gboolean ensemblVerifyCigar(char *match_str) ;
-static gboolean bamVerifyCigar(char *match_str) ;
-#endif
-
 static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean gffv3Gap2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon) ;
-
-#if NOT_USED
-static int cigarGetLength(char **cigar_str) ;
-#endif
-
 static gboolean alignStrCanonicalSubstituteBamCigar(AlignStrCanonical canon) ;
 static gboolean alignStrCanonicalSubstituteEnsemblCigar(AlignStrCanonical canon) ;
 static gboolean alignStrCanonicalSubstituteExonerateCigar(AlignStrCanonical canon) ;
 static gboolean alignStrCanonicalSubstituteGFFv3Gap(AlignStrCanonical canon) ;
-
-#if NOT_USED
-static gboolean alignStrCanonicalSubstituteExonerateVulgar(AlignStrCanonical canon) ;
-static char *nextWord(char *str) ;
-static gboolean gotoLastDigit(char **cp_inout) ;
-static gboolean gotoLastSpace(char **cp_inout) ;
-#endif
 
 /*
  * These arrays are the allowed operators for various of the format types.
@@ -434,7 +407,7 @@ ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFe
     {
       int i ;
 
-      for (i = 0 ; i < gaps_array->len ; i++)
+      for (i = 0 ; i < (int)gaps_array->len ; i++)
         {
           ZMapAlignBlock block = NULL ;
           ZMapFeatureSubPart span ;
@@ -444,16 +417,16 @@ ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFe
           subparts->parts = g_list_append(subparts->parts, span) ;
 
           if (i == 0)
-            subparts->min = block->t1 ;
-          else if (i == (gaps_array->len - 1))
-            subparts->max = block->t2 ;
+            subparts->min_val = block->t1 ;
+          else if (i == ((int)gaps_array->len - 1))
+            subparts->max_val = block->t2 ;
         }
     }
   else if (requested_bounds == ZMAPFEATURE_SUBPART_GAP)
     {
       int i ;
 
-      for (i = 0 ; i < (gaps_array->len - 1) ; i++)
+      for (i = 0 ; i < ((int)gaps_array->len - 1) ; i++)
         {
           ZMapAlignBlock block1 = NULL, block2 = NULL ;
           ZMapFeatureSubPart span ;
@@ -464,9 +437,9 @@ ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFe
           subparts->parts = g_list_append(subparts->parts, span) ;
 
           if (i == 0)
-            subparts->min = (block1->t2 + 1) ;
-          else if (i == (gaps_array->len - 2))
-            subparts->max = (block2->t1 - 1) ;
+            subparts->min_val = (block1->t2 + 1) ;
+          else if (i == ((int)gaps_array->len - 2))
+            subparts->max_val = (block2->t1 - 1) ;
         }
     }
   else if (requested_bounds == ZMAPFEATURE_SUBPART_FEATURE)
@@ -485,7 +458,7 @@ ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFe
 /* Do any of boundaries match the start/end of the alignment or any of the
  * gapped blocks (if there are any) within the alignment.
  * Return a list of ZMapFeatureSubPart's of those that do.
- * 
+ *
  * Note in the code below that we can avoid unnecessary comparisons because
  * both boundaries and the exons in the transcript are sorted into ascending
  * sequence position.
@@ -544,12 +517,12 @@ gboolean zmapFeatureAlignmentMatchingBoundaries(ZMapFeature feature,
               int index = 0 ;
 
               /* Compare blocks. */
-              while (i < gaps_array->len)
+              while (i < (int)gaps_array->len)
                 {
                   ZMapAlignBlock block ;
 
                   block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i)) ;
-              
+
                   if ((curr_boundary->start) && block->t2 < curr_boundary->start)
                     {
                       /* Block is before current splice. */
@@ -582,7 +555,7 @@ gboolean zmapFeatureAlignmentMatchingBoundaries(ZMapFeature feature,
                           else
                             {
                               error = TRUE ;
-                              
+
                               break ;
                             }
                         }
@@ -696,7 +669,7 @@ static gboolean parse_get_op_data(int i,
   gboolean result = FALSE ;
   const char *pStart = NULL,
     *pEnd = NULL ;
-  int j = 0 ;
+  size_t j = 0 ;
 
   if ((i>=0) && (i<nOp))
     {
@@ -748,7 +721,7 @@ static char * parse_is_valid_number(char *sBuff, size_t iLen, int opt)
   static const char cSpace = ' ' ;
   char * num_pos = NULL, *result = NULL ;
   gboolean bDigits = TRUE ;
-  int nDigits = 0 ;
+  size_t nDigits = 0 ;
 
   if (iLen)
     {
@@ -1006,9 +979,10 @@ static gboolean parse_cigar_general(const char * const str,
     bFirst = FALSE ;
   size_t iLength = 0,
     num_buffer_size = NUM_DIGITS_LIMIT,
-    operator_buffer_size = NUM_OPERATOR_START ;
+    operator_buffer_size = NUM_OPERATOR_START,
+    iOperators = 0 ;
   const char *sTarget = NULL ;
-  int i = 0, iOperators = 0 ;
+  size_t i = 0 ;
   char * sBuff = NULL ;
   char const ** pArray = NULL ;
   char cStart = '\0',
@@ -1166,7 +1140,7 @@ static gboolean parse_cigar_general(const char * const str,
           if (!isalpha(pAlignStrOp->op) || !pAlignStrOp->length)
             {
               *error = g_error_new(g_quark_from_string(ZMAP_CIGAR_PARSE_ERROR), 0,
-                        "target string = '%s', op_index = %i", str, i) ;
+                        "target string = '%s', op_index = %i", str, (int)i) ;
               result = FALSE ;
               break ;
             }
@@ -1301,6 +1275,7 @@ static gboolean parse_canon_valid(AlignStrCanonical canon, GError **error)
 /*
  * Test of parsing various kinds of cigar strings...
  */
+#ifdef USE_PARSE_TEST_FUNCTION
 #define TEST_STRING_MAX 1024
 static void parseTestFunction01()
 {
@@ -1984,7 +1959,7 @@ static void parseTestFunction01()
     g_free(sTest01) ;
 }
 #undef TEST_STRING_MAX
-
+#endif
 
 /* Returns TRUE if the target blocks match coords are within align_error bases of each other, if
  * there are less than two blocks then FALSE is returned.
@@ -2000,12 +1975,12 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
   int i ;
   ZMapAlignBlock align, last_align ;
 
-  if (gaps->len > 1)
+  if ((int)gaps->len > 1)
     {
       perfect_align = TRUE ;
       last_align = &g_array_index(gaps, ZMapAlignBlockStruct, 0) ;
 
-      for (i = 1 ; i < gaps->len ; i++)
+      for (i = 1 ; i < (int)gaps->len ; i++)
         {
           int prev_end, curr_start ;
 
@@ -2028,7 +2003,7 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
 
           /* The "- 1" is because the default align_error is zero, i.e. zero _missing_ bases,
              which is true when sub alignment follows on directly from the next. */
-          if ((curr_start - prev_end - 1) <= align_error)
+          if ((curr_start - prev_end - 1) <= (int)align_error)
             {
               last_align = align ;
             }
@@ -2260,7 +2235,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
     curr_match = c_end ;
 
 
-  for (i = 0, j = 0 ; i < align->len ; ++i)
+  for (i = 0, j = 0 ; i < (int)align->len ; ++i)
     {
       /* If you alter this code be sure to notice the += and -= which alter curr_ref and curr_match. */
       int curr_length = 0 ;
@@ -2525,273 +2500,6 @@ static gboolean alignStrCanonical2string(char ** p_string,
 }
 
 
-
-
-
-
-#if NOT_USED
-/* Takes a match string and format and verifies that the string is valid
- * for that format. */
-static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format)
-{
-
-  /* We should be using some kind of state machine here, setting a model and
-   * then just chonking through it......
-   *  */
-
-  gboolean result = FALSE ;
-
-  switch (align_format)
-    {
-    case ZMAPALIGN_FORMAT_CIGAR_EXONERATE:
-      result = exonerateVerifyCigar(match_str) ;
-      break ;
-    case ZMAPALIGN_FORMAT_CIGAR_ENSEMBL:
-      result = ensemblVerifyCigar(match_str) ;
-      break ;
-    case ZMAPALIGN_FORMAT_CIGAR_BAM:
-      result = bamVerifyCigar(match_str) ;
-      break ;
-    case ZMAPALIGN_FORMAT_VULGAR_EXONERATE:
-      result = exonerateVerifyVulgar(match_str) ;
-      break ;
-    default:
-      zMapWarnIfReached() ;
-      break ;
-    }
-
-  return result ;
-}
-
-
-
-
-/* Format of an exonerate vulgar string is:
- *
- * "operator number number" repeated as necessary. Operators are D, I or M.
- *
- * A regexp (without dealing with greedy matches) would be something like:
- *
- *                           (([MCGN53ISF]) ([0-9]+) ([0-9]+))*
- *
- *  */
-static gboolean exonerateVerifyVulgar(char *match_str)
-{
-  gboolean result = TRUE ;
-  typedef enum {STATE_OP, STATE_SPACE_OP,
-                STATE_NUM1, STATE_SPACE_NUM1, STATE_NUM2, STATE_SPACE_NUM2} VulgarStates ;
-  char *cp = match_str ;
-  VulgarStates state ;
-
-  state = STATE_OP ;
-  do
-    {
-      switch (state)
-        {
-        case STATE_OP:
-          if (*cp == 'M' || *cp == 'C' || *cp == 'G'
-              || *cp == 'N' || *cp == '5' || *cp == '3'
-              || *cp == 'I' || *cp == 'S' || *cp == 'F')
-            state = STATE_SPACE_OP ;
-          else
-            result = FALSE ;
-          break ;
-        case STATE_SPACE_OP:
-          if (gotoLastSpace(&cp))
-            state = STATE_NUM1 ;
-          else
-            result = FALSE ;
-          break ;
-        case STATE_NUM1:
-          if (gotoLastDigit(&cp))
-            state = STATE_SPACE_NUM1 ;
-          else
-            result = FALSE ;
-          break ;
-        case STATE_SPACE_NUM1:
-          if (gotoLastSpace(&cp))
-            state = STATE_NUM2 ;
-          else
-            result = FALSE ;
-          break ;
-        case STATE_NUM2:
-          if (gotoLastDigit(&cp))
-            state = STATE_SPACE_NUM2 ;
-          else
-            result = FALSE ;
-          break ;
-        case STATE_SPACE_NUM2:
-          if (gotoLastSpace(&cp))
-            state = STATE_OP ;
-          else
-            result = FALSE ;
-          break ;
-        }
-
-      if (result)
-        cp++ ;
-      else
-        break ;
-
-    } while (*cp) ;
-
-  return result ;
-}
-
-
-/* Format of an exonerate cigar string is:
- *
- * "operator number" repeated as necessary. Operators are D, I or M.
- *
- * A regexp (without dealing with greedy matches) would be something like:
- *
- *                           (([DIM]) ([0-9]+))*
- *
- *  */
-static gboolean exonerateVerifyCigar(char *match_str)
-{
-  gboolean result = TRUE ;
-  typedef enum {STATE_OP, STATE_SPACE_OP, STATE_NUM, STATE_SPACE_NUM} CigarStates ;
-  char *cp = match_str ;
-  CigarStates state ;
-
-  state = STATE_OP ;
-  do
-    {
-      switch (state)
-        {
-        case STATE_OP:
-          if (*cp == 'M' || *cp == 'D' || *cp == 'I')
-            state = STATE_SPACE_OP ;
-          else
-            result = FALSE ;
-          break ;
-        case STATE_SPACE_OP:
-          if (gotoLastSpace(&cp))
-            state = STATE_NUM ;
-          else
-            result = FALSE ;
-          break ;
-        case STATE_NUM:
-          if (gotoLastDigit(&cp))
-            state = STATE_SPACE_NUM ;
-          else
-            result = FALSE ;
-          break ;
-        case STATE_SPACE_NUM:
-          if (gotoLastSpace(&cp))
-            state = STATE_OP ;
-          else
-            result = FALSE ;
-          break ;
-        }
-
-      if (result)
-        cp++ ;
-      else
-        break ;
-
-    } while (*cp) ;
-
-  return result ;
-}
-
-
-
-/* Format of an ensembl cigar string is:
- *
- * "[optional number]operator" repeated as necessary. Operators are D, I or M.
- *
- * A regexp (without dealing with greedy matches) would be something like:
- *
- *                           (([0-9]+)?([DIM]))*
- *
- *  */
-static gboolean ensemblVerifyCigar(char *match_str)
-{
-  gboolean result = TRUE ;
-  typedef enum {STATE_OP, STATE_NUM} CigarStates ;
-  char *cp = match_str ;
-  CigarStates state ;
-
-  state = STATE_NUM ;
-  do
-    {
-      switch (state)
-        {
-        case STATE_NUM:
-          if (!gotoLastDigit(&cp))
-            cp-- ;
-
-          state = STATE_OP ;
-          break ;
-        case STATE_OP:
-          if (*cp == 'M' || *cp == 'D' || *cp == 'I')
-            state = STATE_NUM ;
-          else
-            result = FALSE ;
-          break ;
-        }
-
-      if (result)
-        cp++ ;
-      else
-        break ;
-
-    } while (*cp) ;
-
-  return result ;
-}
-
-
-/* Format of an BAM cigar string (the ones we handle) is:
- *
- * "[optional number]operator" repeated as necessary. Operators are N, M, D, I, X, S, P.
- * We don't handle H (hard-clipping)
- *
- * A regexp (without dealing with greedy matches) would be something like:
- *
- *                           (([0-9]+)([NMDIXSP]))*
- *
- *  */
-static gboolean bamVerifyCigar(char *match_str)
-{
-  gboolean result = TRUE ;
-  typedef enum {STATE_OP, STATE_NUM} CigarStates ;
-  char *cp = match_str ;
-  CigarStates state ;
-
-  state = STATE_NUM ;
-  do
-    {
-      switch (state)
-        {
-        case STATE_NUM:
-          if (!gotoLastDigit(&cp))
-            cp-- ;
-
-          state = STATE_OP ;
-          break ;
-        case STATE_OP:
-          if (*cp == 'M' || *cp == 'N' || *cp == 'D' || *cp == 'I' || *cp == 'X' || *cp == 'S' || *cp == 'P')
-            state = STATE_NUM ;
-          else
-            result = FALSE ;
-          break ;
-        }
-
-      if (result)
-        cp++ ;
-      else
-        break ;
-
-    } while (*cp) ;
-
-  return result ;
-}
-
-#endif
-
 /*
  *
  */
@@ -2809,10 +2517,6 @@ static gboolean gffv3Gap2Canon(char *match_str, AlignStrCanonical canon)
 
   result = TRUE ;
 
-#ifndef USE_NEW_CIGAR_PARSING_CODE
-
-#else
-
   alignFormat2Properties(canon->format, &properties) ;
   if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
     {
@@ -2823,8 +2527,6 @@ static gboolean gffv3Gap2Canon(char *match_str, AlignStrCanonical canon)
     {
       g_error_free(error) ;
     }
-
-#endif
 
   return result ;
 }
@@ -2846,32 +2548,6 @@ static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
 
   result = TRUE ;
 
-#ifndef USE_NEW_CIGAR_PARSING_CODE
-
-  /*
-   * (sm23) This old stuff is a load of toss and quite clearly has never worked.
-   */
-  cp = match_str ;
-  do
-    {
-      AlignStrOpStruct op = {'\0'} ;
-
-      op.op = *cp ;
-      cp++ ;
-      gotoLastSpace(&cp) ;
-      cp++ ;
-
-      op.length = cigarGetLength(&cp) ;    /* N.B. moves cp on as needed. */
-
-      gotoLastSpace(&cp) ;
-      if (*cp == ' ')
-        cp ++ ;
-
-      canon->align = g_array_append_val(canon->align, op) ;
-    } while (*cp) ;
-
-#else
-
   alignFormat2Properties(canon->format, &properties) ;
   if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
     {
@@ -2882,8 +2558,6 @@ static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
     {
       g_error_free(error) ;
     }
-
-#endif
 
   return result ;
 }
@@ -2920,31 +2594,6 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 
   result = TRUE ;
 
-#ifndef USE_NEW_CIGAR_PARSING_CODE
-
-  cp = match_str ;
-  do
-    {
-      AlignStrOpStruct op = {'\0'} ;
-
-      if (g_ascii_isdigit(*cp))
-        op.length = cigarGetLength(&cp) ;    /* N.B. moves cp on as needed. */
-      else
-        op.length = 1 ;
-
-      /* EnsEMBL CIGAR interchanges 'D' and 'I' */
-      op.op =
-        (*cp == 'D') ? 'I' :
-        (*cp == 'I') ? 'D' :
-        *cp;
-
-      canon->align = g_array_append_val(canon->align, op) ;
-
-      cp++ ;
-    } while (*cp) ;
-
-#else
-
   alignFormat2Properties(canon->format, &properties) ;
   if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
     {
@@ -2956,11 +2605,8 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
       g_error_free(error) ;
     }
 
-#endif
-
   return result ;
 }
-
 
 
 /* Blindly converts, assumes match_str is a valid BAM cigar string.
@@ -2986,49 +2632,6 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 
   result = TRUE ;
 
-  parseTestFunction01() ;
-
-#ifndef USE_NEW_CIGAR_PARSING_CODE
-
-  cp = match_str ;
-  do
-    {
-      AlignStrOpStruct op = {'\0'} ;
-
-      if (g_ascii_isdigit(*cp))
-        op.length = cigarGetLength(&cp) ;    /* N.B. moves cp on as needed. */
-      else
-        op.length = 1 ;
-
-      if (*cp == 'H')
-        {
-          /* We don't handle hard-clipping */
-          result = FALSE ;
-          break ;
-        }
-      else if (*cp == 'P' || *cp == 'S')
-        {
-          /* Padding and soft-clipping: should be fine to ignore these */
-        }
-      else
-        {
-          if (*cp == 'X') /* Mismatch. Treat it like a match. */
-            op.op = 'M' ;
-          else            /* Everything else we handle */
-            op.op = *cp ;
-
-          canon->align = g_array_append_val(canon->align, op) ;
-          ++canon->num_operators ;
-        }
-
-      cp++ ;
-    } while (*cp) ;
-
-#else
-
-  /*
-   * Same thing using new approach
-   */
   alignFormat2Properties(canon->format, &properties) ;
   if ((result = parse_cigar_general(match_str, canon, &properties, &error)))
     {
@@ -3044,129 +2647,8 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
       g_error_free(error) ;
     }
 
-#endif
-
   return result ;
 }
-
-
-
-/* Returns -1 if string could not be converted to number. */
-#if NOT_USED
-static int cigarGetLength(char **cigar_str)
-{
-  int length = -1 ;
-  char *old_cp = *cigar_str, *new_cp = NULL ;
-
-  errno = 0 ;
-  length = strtol(old_cp, &new_cp, 10) ;
-
-  if (!errno)
-    {
-      if (new_cp == old_cp)
-        length = 1 ;
-
-      *cigar_str = new_cp ;
-    }
-
-  return length ;
-}
-#endif
-
-
-#if NOT_USED
-/* Put in utils somewhere ????
- *
- * Whether str is on a word or on space, moves to the _next_ word.
- * Returns NULL if there is no next word or at end of string.
- *
- *  */
-static char *nextWord(char *str)
-{
-  char *word = NULL ;
-
-  if (str && *str)
-    {
-      char *cp = str ;
-
-      while (*cp)
-        {
-          if (*cp == ' ')
-            {
-              break ;
-            }
-
-          cp++ ;
-        }
-
-      while (*cp)
-        {
-          if (*cp != ' ')
-            {
-              word = cp ;
-              break ;
-            }
-
-          cp++ ;
-        }
-    }
-
-  return word ;
-}
-
-
-
-/* If looking at a character in a string which is a number move to the last digit of that number. */
-static gboolean gotoLastDigit(char **cp_inout)
-{
-  gboolean result = FALSE ;
-  char *cp = *cp_inout ;
-
-  if (g_ascii_isdigit(*cp))
-    {
-      cp++ ;
-
-      while (*cp && g_ascii_isdigit(*cp))
-        cp++ ;
-
-      cp-- ;    /* position on last digit. */
-
-      *cp_inout = cp ;
-      result = TRUE ;
-    }
-
-
-  return result ;
-}
-
-
-
-/* If looking at a character in a string which is a space move to the last space of those spaces.  */
-static gboolean gotoLastSpace(char **cp_inout)
-{
-  gboolean result = FALSE ;
-  char *cp = *cp_inout ;
-
-  if (*cp == ' ')
-    {
-      cp++ ;
-
-      while (*cp && *cp == ' ')
-        cp++ ;
-
-      cp-- ;    /* position on last space. */
-
-      *cp_inout = cp ;
-      result = TRUE ;
-    }
-
-
-  return result ;
-}
-
-#endif
-
-
 
 /*
  * These functions substitute some operators from one type to another.
@@ -3235,15 +2717,4 @@ static gboolean alignStrCanonicalSubstituteGFFv3Gap(AlignStrCanonical canon)
   zMapReturnValIfFail(canon && canon->format == ZMAPALIGN_FORMAT_GAP_GFF3, result) ;
   return result ;
 }
-
-#ifdef NOT_USED
-static gboolean alignStrCanonicalSubstituteExonerateVulgar(AlignStrCanonical canon)
-{
-  gboolean result = FALSE ;
-  zMapReturnValIfFail(canon && canon->format == ZMAPALIGN_FORMAT_VULGAR_EXONERATE, result) ;
-  return result ;
-}
-#endif
-
-
 

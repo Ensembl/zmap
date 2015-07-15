@@ -113,7 +113,7 @@ ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_feature_item) ;
 
 void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame,
                                     ZMapStyleColourType    colour_type,
-                                    GdkColor **fill, GdkColor **draw, GdkColor **outline,
+                                    GdkColor **fill_col, GdkColor **draw_col, GdkColor **outline_col,
                                     GdkColor              *default_fill,
                                     GdkColor              *border);
 

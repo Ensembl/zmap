@@ -34,6 +34,7 @@
 
 #include <glib.h>
 
+#include <ZMap/zmapServerProtocol.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
 #include <zmapView_P.h>
@@ -163,7 +164,7 @@ ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id)
 {
   ZMapFeatureSource src;
 
-  src = g_hash_table_lookup(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id)) ;
+  src = (ZMapFeatureSource)g_hash_table_lookup(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id)) ;
 
   return src ;
 }
@@ -294,7 +295,7 @@ void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const
 	{
 	  ZMapViewWindow view_window ;
 
-	  view_window = list_item->data ;
+	  view_window = (ZMapViewWindow)(list_item->data) ;
 
 	  zMapWindowBusyFull(view_window->window, busy, file, function) ;
 	}
@@ -331,7 +332,7 @@ gboolean zmapAnyConnBusy(GList *connection_list)
 
       do
 	{
-	  view_con = list_item->data ;
+	  view_con = (ZMapViewConnection)(list_item->data) ;
 
 	  if (view_con->curr_request == ZMAPTHREAD_REQUEST_EXECUTE)
 	    {
@@ -473,7 +474,7 @@ void zmapViewStepListIter(ZMapViewConnection view_con)
 
             /* Call users dispatch func. */
 	    if ((step_list->dispatch_func))
-	      result = step_list->dispatch_func(view_con, curr_step->connection_req->request_data) ;
+	      result = step_list->dispatch_func(view_con, (ZMapServerReqAny)(curr_step->connection_req->request_data)) ;
 
 	    if (result || !(step_list->dispatch_func))
 	      {
@@ -541,7 +542,7 @@ ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList
 
   if (step_list)
     {
-      StepListFindStruct step_find = {0} ;
+      StepListFindStruct step_find = {ZMAP_SERVERREQ_INVALID} ;
 
       step_find.request_type = request_type ;
       step_find.request = NULL ;
@@ -570,7 +571,7 @@ void zmapViewStepListStepProcessRequest(ZMapViewConnection view_con, ZMapViewCon
   /* Call users request processing func, if this signals the connection has failed then
    * remove it from the step list. */
   if ((step_list->process_func))
-    result = step_list->process_func(view_con, request->request_data) ;
+    result = step_list->process_func(view_con, (ZMapServerReqAny)(request->request_data)) ;
 
   if (result)
     {
@@ -593,7 +594,7 @@ static void stepDestroy(gpointer data, gpointer user_data)
     {
       /* Call users free func. */
       if ((step_list->free_func))
-	step_list->free_func(step->connection_req->request_data) ;
+	step_list->free_func((ZMapServerReqAny)(step->connection_req->request_data)) ;
 
       g_free(step->connection_req) ;
     }
@@ -680,11 +681,11 @@ gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list)
  *************************************************/
 GHashTable *zmapViewCWHHashCreate(void)
 {
-  GHashTable *hash = NULL;
+  GHashTable *ghash = NULL;
 
-  hash = g_hash_table_new_full(NULL, NULL, cwh_destroy_key, cwh_destroy_value);
+  ghash = g_hash_table_new_full(NULL, NULL, cwh_destroy_key, cwh_destroy_value);
 
-  return hash;
+  return ghash;
 }
 
 /*!
@@ -696,14 +697,14 @@ GHashTable *zmapViewCWHHashCreate(void)
  * @param               GList * of ZMapWindow
  * @return              void
  *************************************************/
-void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *list)
+void zmapViewCWHSetList(GHashTable *ghash, ZMapFeatureContext context, GList *glist)
 {
   ContextDestroyList destroy_list ;
 
   destroy_list = g_new0(ContextDestroyListStruct, 1) ;
-  destroy_list->window_list = list ;
+  destroy_list->window_list = glist ;
 
-  g_hash_table_insert(hash, context, destroy_list) ;
+  g_hash_table_insert(ghash, context, destroy_list) ;
 
   return ;
 }
@@ -717,13 +718,13 @@ void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *lis
  * @param                ZMapWindow to look up
  * @return               Boolean as to whether Window is last.
  *************************************************/
-gboolean zmapViewCWHIsLastWindow(GHashTable *hash, ZMapFeatureContext context, ZMapWindow window)
+gboolean zmapViewCWHIsLastWindow(GHashTable *ghash, ZMapFeatureContext context, ZMapWindow window)
 {
   ContextDestroyList destroy_list = NULL;
   gboolean last = FALSE;
   int before = 0, after = 0;
 
-  if ((destroy_list = g_hash_table_lookup(hash, context)))
+  if ((destroy_list = (ContextDestroyList)(g_hash_table_lookup(ghash, context))))
     {
       if (!(destroy_list->window_list))
         {
@@ -765,19 +766,19 @@ gboolean zmapViewCWHIsLastWindow(GHashTable *hash, ZMapFeatureContext context, Z
  *                        the only one in the view i.e. == view->features
  * @return                Boolean to notify whether context was destroyed.
  */
-gboolean zmapViewCWHRemoveContextWindow(GHashTable *hash, ZMapFeatureContext *context,
+gboolean zmapViewCWHRemoveContextWindow(GHashTable *ghash, ZMapFeatureContext *context,
                                         ZMapWindow window, gboolean *is_only_context)
 {
   ContextDestroyList destroy_list = NULL;
   gboolean removed = FALSE, is_last = FALSE, absent_context = FALSE;
   int length;
 
-  if((destroy_list = g_hash_table_lookup(hash, *context)) &&
-     (is_last = zmapViewCWHIsLastWindow(hash, *context, window)))
+  if((destroy_list = (ContextDestroyList)g_hash_table_lookup(ghash, *context)) &&
+     (is_last = zmapViewCWHIsLastWindow(ghash, *context, window)))
     {
       if((length = g_list_length(destroy_list->window_list)) == 0)
         {
-          if((removed  = g_hash_table_remove(hash, *context)))
+          if((removed  = g_hash_table_remove(ghash, *context)))
             {
               *context = NULL;
             }
@@ -802,13 +803,13 @@ gboolean zmapViewCWHRemoveContextWindow(GHashTable *hash, ZMapFeatureContext *co
  * @param              GHashTable **
  * @return             void
  *************************************************/
-void zmapViewCWHDestroy(GHashTable **hash)
+void zmapViewCWHDestroy(GHashTable **ghash)
 {
-  GHashTable *cwh_hash = *hash;
+  GHashTable *cwh_hash = *ghash;
 
   g_hash_table_destroy(cwh_hash);
 
-  *hash = NULL;
+  *ghash = NULL;
 
   return ;
 }
@@ -970,7 +971,7 @@ void zmapViewSessionFreeServer(ZMapViewSessionServer server_data)
 static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type)
 {
   ZMapViewConnectionStep step = NULL ;
-  StepListFindStruct step_find = {0} ;
+  StepListFindStruct step_find = {ZMAP_SERVERREQ_INVALID} ;
 
   step_find.request_type = request_type ;
   step_find.step = NULL ;
@@ -1027,7 +1028,7 @@ static void formatSession(gpointer data, gpointer user_data)
   ZMapViewConnection view_con = (ZMapViewConnection)data ;
   ZMapViewSessionServer server_data = &(view_con->session) ;
   GString *session_text = (GString *)user_data ;
-  char *unavailable_txt = "<< not available yet >>" ;
+  const char *unavailable_txt = "<< not available yet >>" ;
 
 
   g_string_append(session_text, "Server\n") ;

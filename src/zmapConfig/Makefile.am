@@ -1,5 +1,5 @@
 
-include $(top_srcdir)/Makefile.common
+include $(top_srcdir)/Makefile.zmap
 
 SUBDIRS = .
 

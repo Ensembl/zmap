@@ -82,7 +82,7 @@ typedef struct
 typedef struct CursorNameStructName
 {
   GdkCursorType cursor_id ;
-  char *cursor_name ;
+  const char *cursor_name ;
 } CursorNameStruct, *CursorName ;
 
 
@@ -116,7 +116,7 @@ typedef struct EventCommonTimeStructName
 /* Descriptor struct for handling producing text description of events. */
 typedef struct eventTxtStructName
 {
-  char* text ;
+  const char* text ;
   GdkEventMask mask ;
   TimeStuctType time_struct_type ;
 } eventTxtStruct, *eventTxt ;
@@ -132,11 +132,11 @@ static char *zmapXRemoteErrorText = NULL;
 
 
 static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
-static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
-   gboolean modal, int display_timeout,
-                                   char *first_button, char *second_button, char *third_button,
-   ZMapMsgType msg_type, GtkJustification justify,
-   ZMapGUIMsgUserData user_data) ;
+static GtkResponseType messageFull(GtkWindow *parent, const char *title_in, const char *msg,
+                                   gboolean modal, int display_timeout,
+                                   const char *first_button, const char *second_button, const char *third_button,
+                                   ZMapMsgType msg_type, GtkJustification justify,
+                                   ZMapGUIMsgUserData user_data) ;
 static void printMessage(ZMapMsgType msg_type, char *message) ;
 static void butClick(GtkButton *button, gpointer user_data) ;
 static gboolean timeoutHandlerModal(gpointer data) ;
@@ -153,8 +153,8 @@ static void handle_original_parent_destroy_cb(GtkWidget *widget, gpointer cb_dat
 static void radioButtonCB(GtkWidget *button, gpointer radio_data) ;
 static void radioButtonCBDataDestroy(gpointer data) ;
 
-static GdkCursor *makeCustomCursor(char *cursor_name) ;
-static GdkCursor *makeStandardCursor(char *cursor_name) ;
+static GdkCursor *makeCustomCursor(const char *cursor_name) ;
+static GdkCursor *makeStandardCursor(const char *cursor_name) ;
 
 static void setTextAttrs(gpointer data, gpointer user_data) ;
 
@@ -257,56 +257,56 @@ char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event)
   int true_index ;
   eventTxtStruct event_txt[] =
     {
-      {"GDK_NOTHING", 0, EVENT_COMMON_TIME},    /* = -1 */
-      {"GDK_DELETE", 0, EVENT_COMMON_TIME},    /* = 0 */
-      {"GDK_DESTROY", 0, EVENT_COMMON_TIME},    /* = 1 */
+      {"GDK_NOTHING", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = -1 */
+      {"GDK_DELETE", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 0 */
+      {"GDK_DESTROY", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 1 */
       {"GDK_EXPOSE", GDK_EXPOSURE_MASK, EVENT_NO_TIME},    /* = 2 */
 
       {"GDK_MOTION_NOTIFY", GDK_POINTER_MOTION_MASK, EVENT_COMMON_TIME},    /* = 3 */
-      {"GDK_BUTTON_PRESS", 0, EVENT_COMMON_TIME},    /* = 4 */
-      {"GDK_2BUTTON_PRESS", 0, EVENT_COMMON_TIME},    /* = 5 */
-      {"GDK_3BUTTON_PRESS", 0, EVENT_COMMON_TIME},    /* = 6 */
-      {"GDK_BUTTON_RELEASE", 0, EVENT_COMMON_TIME},    /* = 7 */
+      {"GDK_BUTTON_PRESS", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 4 */
+      {"GDK_2BUTTON_PRESS", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 5 */
+      {"GDK_3BUTTON_PRESS", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 6 */
+      {"GDK_BUTTON_RELEASE", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 7 */
 
-      {"GDK_KEY_PRESS", 0, EVENT_COMMON_TIME},    /* = 8 */
-      {"GDK_KEY_RELEASE", 0, EVENT_COMMON_TIME},    /* = 9 */
+      {"GDK_KEY_PRESS", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 8 */
+      {"GDK_KEY_RELEASE", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 9 */
 
       {"GDK_ENTER_NOTIFY", GDK_ENTER_NOTIFY_MASK, EVENT_CROSSING_TIME},    /* = 10 */
       {"GDK_LEAVE_NOTIFY", GDK_LEAVE_NOTIFY_MASK, EVENT_CROSSING_TIME},    /* = 11 */
 
       {"GDK_FOCUS_CHANGE", GDK_FOCUS_CHANGE_MASK, EVENT_NO_TIME},    /* = 12 */
-      {"GDK_CONFIGURE", 0, EVENT_NO_TIME},    /* = 13 */
+      {"GDK_CONFIGURE", (GdkEventMask)0, EVENT_NO_TIME},    /* = 13 */
 
-      {"GDK_MAP", 0, EVENT_COMMON_TIME},    /* = 14 */
-      {"GDK_UNMAP", 0, EVENT_COMMON_TIME},    /* = 15 */
+      {"GDK_MAP", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 14 */
+      {"GDK_UNMAP", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 15 */
 
-      {"GDK_PROPERTY_NOTIFY", 0, EVENT_ATOM_TIME},    /* = 16 */
+      {"GDK_PROPERTY_NOTIFY", (GdkEventMask)0, EVENT_ATOM_TIME},    /* = 16 */
 
-      {"GDK_SELECTION_CLEAR", 0, EVENT_SELECTION_TIME},    /* = 17 */
-      {"GDK_SELECTION_REQUEST", 0, EVENT_SELECTION_TIME},    /* = 18 */
-      {"GDK_SELECTION_NOTIFY", 0, EVENT_SELECTION_TIME},    /* = 19 */
+      {"GDK_SELECTION_CLEAR", (GdkEventMask)0, EVENT_SELECTION_TIME},    /* = 17 */
+      {"GDK_SELECTION_REQUEST", (GdkEventMask)0, EVENT_SELECTION_TIME},    /* = 18 */
+      {"GDK_SELECTION_NOTIFY", (GdkEventMask)0, EVENT_SELECTION_TIME},    /* = 19 */
 
-      {"GDK_PROXIMITY_IN", 0, EVENT_COMMON_TIME},    /* = 20 */
-      {"GDK_PROXIMITY_OUT", 0, EVENT_COMMON_TIME},    /* = 21 */
+      {"GDK_PROXIMITY_IN", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 20 */
+      {"GDK_PROXIMITY_OUT", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 21 */
 
-      {"GDK_DRAG_ENTER", 0, EVENT_DND_TIME},    /* = 22 */
-      {"GDK_DRAG_LEAVE", 0, EVENT_DND_TIME},    /* = 23 */
-      {"GDK_DRAG_MOTION", 0, EVENT_DND_TIME},    /* = 24 */
-      {"GDK_DRAG_STATUS", 0, EVENT_DND_TIME},    /* = 25 */
-      {"GDK_DROP_START", 0, EVENT_DND_TIME},    /* = 26 */
-      {"GDK_DROP_FINISHED", 0, EVENT_DND_TIME},    /* = 27 */
+      {"GDK_DRAG_ENTER", (GdkEventMask)0, EVENT_DND_TIME},    /* = 22 */
+      {"GDK_DRAG_LEAVE", (GdkEventMask)0, EVENT_DND_TIME},    /* = 23 */
+      {"GDK_DRAG_MOTION", (GdkEventMask)0, EVENT_DND_TIME},    /* = 24 */
+      {"GDK_DRAG_STATUS", (GdkEventMask)0, EVENT_DND_TIME},    /* = 25 */
+      {"GDK_DROP_START", (GdkEventMask)0, EVENT_DND_TIME},    /* = 26 */
+      {"GDK_DROP_FINISHED", (GdkEventMask)0, EVENT_DND_TIME},    /* = 27 */
 
-      {"GDK_CLIENT_EVENT", 0, EVENT_NO_TIME},    /* = 28 */
+      {"GDK_CLIENT_EVENT", (GdkEventMask)0, EVENT_NO_TIME},    /* = 28 */
 
       {"GDK_VISIBILITY_NOTIFY", GDK_VISIBILITY_NOTIFY_MASK, EVENT_NO_TIME}, /* = 29 */
-      {"GDK_NO_EXPOSE", 0, EVENT_NO_TIME},    /* = 30 */
-      {"GDK_SCROLL", 0, EVENT_COMMON_TIME},    /* = 31 */
-      {"GDK_WINDOW_STATE", 0, EVENT_NO_TIME},    /* = 32 */
-      {"GDK_SETTING", 0, EVENT_NO_TIME},    /* = 33 */
-      {"GDK_OWNER_CHANGE", 0, EVENT_OWNER_TIME},    /* = 34 */
-      {"GDK_GRAB_BROKEN", 0, EVENT_NO_TIME},    /* = 35 */
-      {"GDK_DAMAGE", 0, EVENT_NO_TIME},    /* = 36 */
-      {"GDK_EVENT_LAST", 0, EVENT_NO_TIME}    /* helper variable for decls */
+      {"GDK_NO_EXPOSE", (GdkEventMask)0, EVENT_NO_TIME},    /* = 30 */
+      {"GDK_SCROLL", (GdkEventMask)0, EVENT_COMMON_TIME},    /* = 31 */
+      {"GDK_WINDOW_STATE", (GdkEventMask)0, EVENT_NO_TIME},    /* = 32 */
+      {"GDK_SETTING", (GdkEventMask)0, EVENT_NO_TIME},    /* = 33 */
+      {"GDK_OWNER_CHANGE", (GdkEventMask)0, EVENT_OWNER_TIME},    /* = 34 */
+      {"GDK_GRAB_BROKEN", (GdkEventMask)0, EVENT_NO_TIME},    /* = 35 */
+      {"GDK_DAMAGE", (GdkEventMask)0, EVENT_NO_TIME},    /* = 36 */
+      {"GDK_EVENT_LAST", (GdkEventMask)0, EVENT_NO_TIME}    /* helper variable for decls */
     } ;
 
 
@@ -419,7 +419,7 @@ gboolean zMapGUIGetScreenInfo(GtkWidget *widget, int *curr_screen_out, int *num_
  *
  * It should be noted that nested calls to this and untrap will _not_ function correctly!
  */
-static void zmapXTrapErrors(char *where, char *what, char *text)
+static void zmapXTrapErrors(char *where, const char *what, char *text)
 {
   XErrorHandler current = NULL ;
 
@@ -649,7 +649,7 @@ gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *clipboa
           enum {TEXT_BUF_SIZE = 1024} ;
           char *error_text ;
 
-          error_text = g_malloc(TEXT_BUF_SIZE) ;
+          error_text = (char *)g_malloc(TEXT_BUF_SIZE) ;
 
           XGetErrorText(x_display, x_error_code, error_text, TEXT_BUF_SIZE) ;
 
@@ -774,7 +774,7 @@ gboolean zMapGUIGetAbbrevTitlePrefix(void)
  * message      Very short text, e.g. "Please Reply" or a feature name or....
  * returns      the title string.
  *  */
-char *zMapGUIMakeTitleString(char *window_type, char *message)
+char *zMapGUIMakeTitleString(const char *window_type, const char *message)
 {
   char *title = NULL ;
 
@@ -798,7 +798,7 @@ char *zMapGUIMakeTitleString(char *window_type, char *message)
  * message      Very short text, e.g. "Please Reply" or a feature name or....
  * returns      nothing.
  */
-void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zmap_win_text)
+void zMapGUISetToplevelTitle(GtkWidget *toplevel, const char *zmap_win_type, const char *zmap_win_text)
 {
   char *title ;
 
@@ -817,7 +817,7 @@ void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zma
  * message      Very short text, e.g. "Please Reply" or a feature name or....
  * returns      the toplevel widget.
  */
-GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data)
+GtkWidget *zMapGUIDialogNew(const char *zmap_win_type, const char *zmap_win_text, GCallback response_cb_func, gpointer response_cb_data)
 {
   GtkWidget *dialog = NULL ;
   
@@ -838,7 +838,7 @@ GtkWidget *zMapGUIDialogNew(char *zmap_win_type, char *zmap_win_text, GCallback 
  * message      Very short text, e.g. "Please Reply" or a feature name or....
  * returns      the toplevel widget.
  */
-GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text)
+GtkWidget *zMapGUIToplevelNew(const char *zmap_win_type, const char *zmap_win_text)
 {
   GtkWidget *toplevel = NULL ;
 
@@ -1167,7 +1167,7 @@ void zMapShowMsg(ZMapMsgType msg_type, const char *format, ...)
  *
  * @return  void
  *  */
-void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
+void zMapGUIShowMsg(ZMapMsgType msg_type, const char *msg)
 {
   gboolean modal ;
 
@@ -1187,16 +1187,15 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
  *
  * @return  void
  */
-void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
-ZMapMsgType msg_type,
-GtkJustification justify, int display_timeout, gboolean close)
+void zMapGUIShowMsgFull(GtkWindow *parent, const char *msg,
+                        ZMapMsgType msg_type, GtkJustification justify, int display_timeout, gboolean close_button)
 {
   gboolean modal ;
-  char *first_button = NULL ;
+  const char *first_button = NULL ;
 
   modal = modalFromMsgType(msg_type) ;
 
-  if (close)
+  if (close_button)
     first_button = GTK_STOCK_CLOSE ;
 
   messageFull(parent, NULL, msg, modal, display_timeout,
@@ -1216,7 +1215,7 @@ GtkJustification justify, int display_timeout, gboolean close)
  *
  * @return  gboolean, TRUE if user selected "ok", FALSE otherwise.
  */
-gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
+gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, const char *msg)
 {
   gboolean result = FALSE ;
 
@@ -1230,8 +1229,8 @@ gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
 
 /* The first button is the text that represents TRUE and the second FALSE so be
  * sure to word the button text accordingly ! */
-gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
-                               char* first_button, char *second_button)
+gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, const char *msg,
+                               const char* first_button, const char *second_button)
 {
   gboolean result = FALSE ;
   ZMapGUIMsgUserDataStruct user_data = {ZMAPGUI_USERDATA_BOOL, FALSE, {FALSE}} ;
@@ -1257,7 +1256,7 @@ gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *ms
  *
  * @return  char *, users text or NULL if no text.
  */
-GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text,
+GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, const char *msg, gboolean hide_text,
   char **text_out)
 {
   GtkResponseType result = GTK_RESPONSE_CANCEL ;
@@ -1327,7 +1326,7 @@ GtkResponseType zMapGUIMsgGetSave(GtkWindow *parent, ZMapMsgType msg_type, char 
  * @return  char *, users text or NULL if no text.
  */
 GtkResponseType zMapGUIMsgGetSaveFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
-                                      char *first_button, char *second_button, char* third_button)
+                                      const char *first_button, const char *second_button, const char* third_button)
 {
   GtkResponseType result = GTK_RESPONSE_CANCEL ;
   gboolean modal = TRUE ;
@@ -1355,7 +1354,7 @@ GtkResponseType zMapGUIMsgGetSaveFull(GtkWindow *parent, ZMapMsgType msg_type, c
  * @param edittable    Can the text be editted ?
  * @return             nothing
  *  */
-void zMapGUIShowText(char *title, char *text, gboolean edittable)
+void zMapGUIShowText(const char *title, const char *text, gboolean edittable)
 {
   GtkWidget *dialog ;
 
@@ -1374,8 +1373,9 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
  * @param buffer_out   location to return the text buffer to.
  * @return             the GtkWidget *dialog
  */
-GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GList *text_attributes,
-       GtkTextBuffer **buffer_out)
+GtkWidget *zMapGUIShowTextFull(const char *title, const char *text,
+                               gboolean edittable, GList *text_attributes,
+                               GtkTextBuffer **buffer_out)
 {
   enum {TEXT_X_BORDERS = 32, TEXT_Y_BORDERS = 50} ;
   char *full_title ;
@@ -1423,8 +1423,8 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
   /* Construct a list of possible fonts to use, they must be fixed width but take care
    * altering this list as some fixed width fonts seem to come back as variable width ! */
 
-  fixed_font_list = g_list_append(fixed_font_list, ZMAP_ZOOM_FONT_FAMILY) ;
-  fixed_font_list = g_list_append(fixed_font_list, "fixed") ;
+  fixed_font_list = g_list_append(fixed_font_list, (void *)ZMAP_ZOOM_FONT_FAMILY) ;
+  fixed_font_list = g_list_append(fixed_font_list, (void *)"fixed") ;
 
 
   /* Here we try to set a fixed width font in the text widget and set the size of the dialog
@@ -1480,7 +1480,7 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
 
 #ifdef __CYGWIN__
 /* Implementation of zmapGUIFileChooserFull for Cygwin(Windows) */
-static char *zmapGUIFileChooserFullCygwin(GtkWidget *toplevel, char *title, char *directory_in, char *file_suffix,
+static char *zmapGUIFileChooserFullCygwin(GtkWidget *toplevel, const char *title, const char *directory_in, const char *file_suffix,
                                           ZMapFileChooserContentAreaCB content_func, gpointer content_data)
 {
   char *full_title ;
@@ -1495,7 +1495,7 @@ static char *zmapGUIFileChooserFullCygwin(GtkWidget *toplevel, char *title, char
   
   dialog = gtk_dialog_new_with_buttons(full_title,
                                        toplevel ? GTK_WINDOW(toplevel) : NULL,
-                                       GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                       (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
                                        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
                                        GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
                                        NULL) ;
@@ -1547,7 +1547,7 @@ static char *zmapGUIFileChooserFullCygwin(GtkWidget *toplevel, char *title, char
 }
 #else
 /* Implementation of zmapGUIFileChooserFull for non-Windows */
-static char *zmapGUIFileChooserFullStandard(GtkWidget *toplevel, char *title, char *directory_in, char *file_suffix,
+static char *zmapGUIFileChooserFullStandard(GtkWidget *toplevel, const char *title, const char *directory_in, const char *file_suffix,
                                             ZMapFileChooserContentAreaCB content_func, gpointer content_data)
 {
   char *full_title ;
@@ -1603,8 +1603,8 @@ static char *zmapGUIFileChooserFullStandard(GtkWidget *toplevel, char *title, ch
 /* Returns path of file chosen by user which can be used directly to open the file,
  * it is the callers responsibility to free the filepath using g_free().
  * Caller can optionally specify a default directory. */
-char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_in, char *file_suffix,
-     ZMapFileChooserContentAreaCB content_func, gpointer content_data)
+char *zmapGUIFileChooserFull(GtkWidget *toplevel, const char *title, const char *directory_in, const char *file_suffix,
+                             ZMapFileChooserContentAreaCB content_func, gpointer content_data)
 {
   char *result = NULL ;
 
@@ -1618,7 +1618,7 @@ char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_i
 }
 
 
-char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, char *file_suffix)
+char *zmapGUIFileChooser(GtkWidget *toplevel,  const char *title, const char *directory_in, const char *file_suffix)
 {
   char *file = NULL;
 
@@ -1634,7 +1634,7 @@ char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, 
  * (the contents of which are overwritten).
  *
  * Returns TRUE if all worked, FALSE otherwise. */
-gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour_inout)
+gboolean zMapGUIGetColour(GtkWidget *widget, const char *colour_spec, GdkColor *colour_inout)
 {
   gboolean result = FALSE ;
   GdkColormap *colourmap ;
@@ -1670,8 +1670,8 @@ gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour
  * @return               TRUE if font found, FALSE otherwise.
  */
 gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
-  GList *pref_families, gint points, PangoWeight weight,
-  PangoFont **font_out, PangoFontDescription **desc_out)
+                                  GList *pref_families, gint points, PangoWeight weight,
+                                  PangoFont **font_out, PangoFontDescription **desc_out)
 {
   gboolean found = FALSE, found_most_preferred = FALSE ;
   PangoContext *context = NULL ;
@@ -1868,7 +1868,7 @@ void zMapGUICreateRadioGroup(GtkWidget *gtkbox,
 
       g_signal_connect_data(G_OBJECT(radio), "clicked",
                             G_CALLBACK(radioButtonCB), (gpointer)data,
-                            (GClosureNotify)radioButtonCBDataDestroy, 0);
+                            (GClosureNotify)radioButtonCBDataDestroy, (GConnectFlags)0) ;
 
       /* If value == default set it so */
       if(buttons->value == default_button)
@@ -1905,18 +1905,23 @@ ZMapGUIClampType zMapGUICoordsClampToLimits(double  top_limit, double  bot_limit
   if (top < top_limit)
     {
       top = top_limit;
-      ct |= ZMAPGUI_CLAMP_START;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      ct |= ZMAPGUI_CLAMP_START ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      ct = (ZMapGUIClampType)(ct | ZMAPGUI_CLAMP_START) ;
     }
   else if (floor(top) == top_limit)
-    ct |= ZMAPGUI_CLAMP_START;
+    ct = (ZMapGUIClampType)(ct | ZMAPGUI_CLAMP_START) ;
 
   if (bot > bot_limit)
     {
       bot = bot_limit;
-      ct |= ZMAPGUI_CLAMP_END;
+      ct  = (ZMapGUIClampType)(ct | ZMAPGUI_CLAMP_END) ;
     }
   else if(ceil(bot) == bot_limit)
-    ct |= ZMAPGUI_CLAMP_END;
+    ct = (ZMapGUIClampType)(ct | ZMAPGUI_CLAMP_END) ;
 
   *top_inout = top;
   *bot_inout = bot;
@@ -1938,19 +1943,19 @@ ZMapGUIClampType zMapGUICoordsClampSpanWithLimits(double  top_limit, double  bot
       if ((bot = bot + (top_limit - top)) > bot_limit)
         {
           bot = bot_limit ;
-          ct |= ZMAPGUI_CLAMP_END;
+          ct = (ZMapGUIClampType)(ct | ZMAPGUI_CLAMP_END) ;
         }
-      ct |= ZMAPGUI_CLAMP_START;
+      ct = (ZMapGUIClampType)(ct | ZMAPGUI_CLAMP_START) ;
       top = top_limit;
     }
   else if (bot > bot_limit)
     {
       if ((top = top - (bot - bot_limit)) < top_limit)
         {
-          ct |= ZMAPGUI_CLAMP_START;
+          ct = (ZMapGUIClampType)(ct | ZMAPGUI_CLAMP_START) ;
           top = top_limit;
         }
-      ct |= ZMAPGUI_CLAMP_END;
+      ct = (ZMapGUIClampType)(ct | ZMAPGUI_CLAMP_END) ;
       bot = bot_limit;
     }
 
@@ -2042,7 +2047,7 @@ void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gp
                                                     "notify::position",
                                                     G_CALLBACK(pane_max_position_callback),
                                                     (gpointer)pane_data,
-                                                    pane_max_position_destroy_notify, 0);
+                                                    pane_max_position_destroy_notify, (GConnectFlags)(0));
     }
 
   return ;
@@ -2056,7 +2061,7 @@ void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gp
  * If cursor name begins with "zmap_" then look in list of custom cursors
  * otherwise look in list of standard X Windows cursors.
  */
-GdkCursor *zMapGUICreateCursor(char *cursor_name)
+GdkCursor *zMapGUICreateCursor(const char *cursor_name)
 {
   GdkCursor *cursor = NULL ;
 
@@ -2141,13 +2146,21 @@ static void pane_max_position_callback(GObject *pane, GParamSpec *scroll, gpoint
   if(pane_data->callback)
     {
       g_signal_handlers_block_by_func(G_OBJECT(pane),
-      G_CALLBACK(pane_max_position_callback),
-      pane_data);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                                      G_CALLBACK(pane_max_position_callback),
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+                                      (void *)pane_max_position_callback,
+                                      pane_data);
 
       (pane_data->callback)(pane, scroll, pane_data->user_data);
 
       g_signal_handlers_unblock_by_func(G_OBJECT(pane),
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                                         G_CALLBACK(pane_max_position_callback),
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+                                        (void *)pane_max_position_callback,
                                         pane_data);
     }
 
@@ -2237,20 +2250,21 @@ static void printMessage(ZMapMsgType msg_type, char *message)
  *
  * returns TRUE if user data not required or if user data returned, FALSE otherwise.
  *  */
-static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
+static GtkResponseType messageFull(GtkWindow *parent, const char *title_in, const char *msg,
                                    gboolean modal, int display_timeout,
-                                   char *first_button, char *second_button, char *third_button,
+                                   const char *first_button, const char *second_button, const char *third_button,
                                    ZMapMsgType msg_type, GtkJustification justify,
                                    ZMapGUIMsgUserData user_data)
 {
   GtkResponseType result = GTK_RESPONSE_CANCEL ;
   GtkWidget *dialog, *button, *label ;
   GtkWidget *entry = NULL ;
-  char *title = NULL, *full_title ;
+  const char *title = NULL, *full_title ;
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
   guint timeout_func_id ;
   int interval = display_timeout * 1000 ;    /* glib needs time in milliseconds. */
-  GtkResponseType first_response = 0, second_response = 0, third_response = 0, default_response = 0 ;
+  GtkResponseType first_response = (GtkResponseType)0, second_response = (GtkResponseType)0,
+    third_response = (GtkResponseType)0, default_response = (GtkResponseType)0 ;
 
 
   /* Set up title. */
@@ -2296,7 +2310,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
   /* Set up the dialog, if user data is required we need two buttons, otherwise
    * there will be a "close" or perhaps no buttons for messages that time out. */
   if (modal)
-    flags |= GTK_DIALOG_MODAL ;
+    flags = (GtkDialogFlags)(flags | GTK_DIALOG_MODAL) ;
 
     dialog = gtk_dialog_new_with_buttons(full_title, parent, flags,
                                          first_button,
@@ -2307,7 +2321,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
                                          third_response,
                                          NULL) ;
 
-  g_free(full_title) ;
+    g_free((void *)full_title) ;
 
   gtk_container_set_border_width(GTK_CONTAINER(dialog), 5) ;
 
@@ -2380,9 +2394,9 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
       /* block waiting for user to answer dialog, for modal we can use straight gtk call,
        * for non-modal must use our home-grown (and probably buggy) version. */
       if (modal)
-        result = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+        result = (GtkResponseType)gtk_dialog_run(GTK_DIALOG(dialog)) ;
       else
-        result = my_gtk_run_dialog_nonmodal(dialog) ;
+        result = (GtkResponseType)my_gtk_run_dialog_nonmodal(dialog) ;
 
       /* Return any data that was requested by caller according to which button they click. */
       if (user_data)
@@ -2604,7 +2618,7 @@ static void radioButtonCBDataDestroy(gpointer data)
  * insert it below as for the other cursors.
  *
  *  */
-static GdkCursor *makeCustomCursor(char *cursor_name)
+static GdkCursor *makeCustomCursor(const char *cursor_name)
 {
   GdkCursor *cursor = NULL ;
 
@@ -2777,7 +2791,7 @@ static unsigned char zmap_noentry_mask_bits[] = {
 }
 
 
-GdkCursor *makeStandardCursor(char *cursor_name)
+GdkCursor *makeStandardCursor(const char *cursor_name)
 {
   GdkCursor *cursor = NULL ;
   CursorNameStruct cursors[] =
@@ -2889,7 +2903,7 @@ static void setTextAttrs(gpointer data, gpointer user_data)
   GtkTextBuffer *buffer = text_attr_data->buffer ;
   GtkTextIter start, end ;
   GtkTextTag *tag ;
-  char *first_attr, *second_attr ;
+  const char *first_attr, *second_attr ;
   gpointer first_value, second_value ;
   int iter_start, iter_end ;
   int line_start, line_end, line_diff ;

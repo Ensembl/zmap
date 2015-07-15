@@ -77,8 +77,8 @@ typedef struct _DasServerStruct
 
   /* error stuff... */
   CURLcode curl_error ;					    /* curl specific error stuff */
-  char *curl_errmsg ;
-  char *last_errmsg ;					    /* The general das msg stuf, could be
+  const char *curl_errmsg ;
+  const char *last_errmsg ;                                 /* The general das msg stuf, could be
                                                                curl could be my code. */
 
   GList *hostAbilities;

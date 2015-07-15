@@ -77,7 +77,7 @@
 gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromosome_out, int *start_out, int *end_out)
 {
   gboolean result = FALSE ;
-  static char *regex_str = "^(?:chr)?([\\d]+|X|Y):\\s*([\\d,]+)-([\\d,]+)$" ;
+  static const char *regex_str = "^(?:chr)?([\\d]+|X|Y):\\s*([\\d,]+)-([\\d,]+)$" ;
   static GRegex *regex = NULL ;
   GError *error = NULL ;
   gchar **sub_strings ;
@@ -91,8 +91,8 @@ gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromosome_out, in
   if (!regex)
     {
       regex = g_regex_new(regex_str,
-                          0,
-                          0,
+                          (GRegexCompileFlags)0,
+                          (GRegexMatchFlags)0,
                           &error) ;
     }
 
@@ -100,7 +100,7 @@ gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromosome_out, in
    * back as the first match. Note also that this regex produces an initial
    * empty match then the three matches we want and then another empty match,
    * I don't know why..... */
-  sub_strings = g_regex_split_full(regex, location_str, -1, 0, 0, -1, &error) ;
+  sub_strings = g_regex_split_full(regex, location_str, -1, 0, (GRegexMatchFlags)0, -1, &error) ;
 
   if (strcmp(*sub_strings, location_str) != 0)
     {
@@ -165,7 +165,7 @@ gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromosome_out, in
 gboolean zMapUtilsBioParseChromNumber(char *chromosome_str, char **chromosome_out)
 {
   gboolean result = FALSE ;
-  static char *regex_str = "^(?:^chr)([\\d]+|X|Y)(?:-[\\d,]+)?$" ;
+  static const char *regex_str = "^(?:^chr)([\\d]+|X|Y)(?:-[\\d,]+)?$" ;
   static GRegex *regex = NULL ;
   GError *error = NULL ;
   gchar **sub_strings ;
@@ -179,8 +179,8 @@ gboolean zMapUtilsBioParseChromNumber(char *chromosome_str, char **chromosome_ou
   if (!regex)
     {
       regex = g_regex_new(regex_str,
-                          0,
-                          0,
+                          (GRegexCompileFlags)0,
+                          (GRegexMatchFlags)0,
                           &error) ;
     }
 
@@ -188,7 +188,7 @@ gboolean zMapUtilsBioParseChromNumber(char *chromosome_str, char **chromosome_ou
    * back as the first match. Note also that this regex produces an initial
    * empty match then the matche we want and then another empty match,
    * I don't know why..... */
-  sub_strings = g_regex_split_full(regex, chromosome_str, -1, 0, 0, -1, &error) ;
+  sub_strings = g_regex_split_full(regex, chromosome_str, -1, 0, (GRegexMatchFlags)0, -1, &error) ;
 
   if (strcmp(*sub_strings, chromosome_str) != 0)
     {

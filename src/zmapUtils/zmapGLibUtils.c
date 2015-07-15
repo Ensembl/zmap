@@ -59,7 +59,7 @@ typedef struct
 
 
 
-static inline GQuark g_quark_new(ZMapQuarkSet quark_set, gchar *string) ;
+static inline GQuark g_quark_new(ZMapQuarkSet quark_set, gchar *string_arg) ;
 static void printCB(gpointer data, gpointer user_data) ;
 static gint caseCompareFunc(gconstpointer a, gconstpointer b) ;
 
@@ -93,13 +93,13 @@ static void insert_after(GList *donor, GList *recipient) ;
  * the string skipping over the char to be removed and only moving the
  * other chars....one for a rainy day....
  *  */
-char *zMap_g_remove_char(char *string, char ch)
+char *zMap_g_remove_char(char *string_arg, char ch)
 {
   char *cp ;
 
-  zMapReturnValIfFailSafe((string && *string), string) ;
+  zMapReturnValIfFailSafe((string_arg && *string_arg), string_arg) ;
 
-  cp = string ;
+  cp = string_arg ;
   while (*cp)
     {
       if (*cp == ch)
@@ -119,7 +119,7 @@ char *zMap_g_remove_char(char *string, char ch)
       cp++ ;
     }
 
-  return string ;
+  return string_arg ;
 }
 
 
@@ -189,32 +189,32 @@ gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle)
  * to the end of the list... Maybe we need 2 functions as it is nice
  * to have the g_list_last encapsulated in reverse function...
  */
-void zMap_g_list_foreach_reverse(GList *list, GFunc func, gpointer user_data)
+void zMap_g_list_foreach_reverse(GList *glist, GFunc func, gpointer user_data)
 {
-  list = g_list_last(list) ;
+  glist = g_list_last(glist) ;
 
-  while (list)
+  while (glist)
     {
-      GList *prev = list->prev ;
+      GList *prev = glist->prev ;
 
-      (*func)(list->data, user_data) ;
-      list = prev ;
+      (*func)(glist->data, user_data) ;
+      glist = prev ;
     }
 
   return ;
 }
 #endif
 
-void zMap_g_list_foreach_directional(GList   *list,
+void zMap_g_list_foreach_directional(GList   *glist,
                                      GFunc    func,
                                      gpointer user_data,
-                                     ZMapGListDirection forward)
+                                     ZMapGListDirection forwd)
 {
-  while (list)
+  while (glist)
     {
-      GList *next = (forward == ZMAP_GLIST_FORWARD ? list->next : list->prev);
-      (*func) (list->data, user_data);
-      list = next;
+      GList *next = (forwd == ZMAP_GLIST_FORWARD ? glist->next : glist->prev);
+      (*func) (glist->data, user_data);
+      glist = next;
     }
   return ;
 }
@@ -226,21 +226,21 @@ void zMap_g_list_foreach_directional(GList   *list,
  * Returns FALSE if ZMapGFuncCond returned FALSE, TRUE otherwise.
  *
  *  */
-gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user_data)
+gboolean zMap_g_list_cond_foreach(GList *glist, ZMapGFuncCond func, gpointer user_data)
 {
   gboolean status = TRUE ;
 
-  while (list)
+  while (glist)
     {
-      GList *next = list->next ;
+      GList *next = glist->next ;
 
-      if (!((*func)(list->data, user_data)))
+      if (!((*func)(glist->data, user_data)))
         {
           status = FALSE ;
           break ;
         }
 
-      list = next ;
+      glist = next ;
     }
 
   return status ;
@@ -254,15 +254,15 @@ gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user
  * Returns the list unaltered if the element could not be moved.
  *
  *  */
-GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index)
+GList *zMap_g_list_move(GList *glist, gpointer user_data, gint new_index)
 {
-  GList *new_list = list ;
+  GList *new_list = glist ;
 
-  if (new_index >= 0 && new_index < g_list_length(list))
+  if (new_index >= 0 && new_index < g_list_length(glist))
     {
       GList *list_element ;
 
-      if ((list_element = g_list_find(list, user_data)))
+      if ((list_element = g_list_find(glist, user_data)))
         {
           new_list = g_list_remove(new_list, user_data) ;
 
@@ -274,24 +274,24 @@ GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index)
 }
 
 
-GList *zMap_g_list_append_unique(GList *list, gpointer data)
+GList *zMap_g_list_append_unique(GList *glist, gpointer data)
 {
-  GList *l,*last = list;
+  GList *l,*last = glist;
 
-  for(l = list; l ; l = l->next)
+  for(l = glist; l ; l = l->next)
     {
       if(l->data == data)	/* already there, nothing to do */
-        return list;
+        return glist;
       last = l;
     }
 
-  /* we reached the end or there was no list: add to the end */
-  last = g_list_append(list,data);
+  /* we reached the end or there was no glist: add to the end */
+  last = g_list_append(glist,data);
 
-  if(!list)
-    list = last;
+  if(!glist)
+    glist = last;
 
-  return list;
+  return glist;
 }
 
 
@@ -392,16 +392,16 @@ GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point, 
 }
 
 
-GList *zMap_g_list_lower(GList *move, int positions)
+GList *zMap_g_list_lower(GList *move_list, int positions)
 {
   GList *before;
 
   if(positions < 1)
-    return move;
+    return move_list;
 
-  if(move->prev)
+  if(move_list->prev)
     {
-      for(before = move->prev; positions && before; positions--)
+      for(before = move_list->prev; positions && before; positions--)
         before = before->prev;
     }
   else
@@ -409,41 +409,41 @@ GList *zMap_g_list_lower(GList *move, int positions)
 
   if(before)
     {
-      before = g_list_remove_link(before, move);
+      before = g_list_remove_link(before, move_list);
       if(before->next)
-        insert_after(move, before);
+        insert_after(move_list, before);
       else
-        before = g_list_concat(before, move);
-      /* zMapAssert(g_list_find(before, move->data));*/
+        before = g_list_concat(before, move_list);
+      /* zMapAssert(g_list_find(before, move_list->data));*/
     }
 
-  return g_list_first(move);
+  return g_list_first(move_list);
 }
 
-GList *zMap_g_list_raise(GList *move, int positions)
+GList *zMap_g_list_raise(GList *move_list, int positions)
 {
   GList *before;
 
   if(positions < 1)
-    return move;
+    return move_list;
 
-  for(before = move; positions && before; positions--)
+  for(before = move_list; positions && before; positions--)
     before = before->next;
 
   if(!before)
-    before = g_list_last(move);
+    before = g_list_last(move_list);
 
   if(before)
     {
-      before = g_list_remove_link(before, move);
+      before = g_list_remove_link(before, move_list);
       if(before->next)
-        insert_after(move, before);
+        insert_after(move_list, before);
       else
-        before = g_list_concat(before, move);
-      /* zMapAssert(g_list_find(before, move->data));*/
+        before = g_list_concat(before, move_list);
+      /* zMapAssert(g_list_find(before, move_list->data));*/
     }
 
-  return g_list_first(move);
+  return g_list_first(move_list);
 }
 
 
@@ -456,11 +456,11 @@ GList *zMap_g_list_raise(GList *move, int positions)
  * Returns new_list_head or NULL if new_list_head is not in list OR
  * if new_list_head == list.
  *  */
-GList *zMap_g_list_split(GList *list, GList *new_list_head)
+GList *zMap_g_list_split(GList *glist, GList *new_list_head)
 {
   GList *new_list = NULL ;
 
-  if (new_list_head != list && g_list_first(new_list_head) == list)
+  if (new_list_head != glist && g_list_first(new_list_head) == glist)
     {
       (new_list_head->prev)->next = NULL ;
       new_list_head->prev = NULL ;
@@ -501,7 +501,7 @@ GList *zMap_g_list_merge(GList *a, GList *b)
  *                               on a new line.
  * @return                       <nothing>
  */
-void zMap_g_list_quark_print(GList *quark_list, char *list_name, gboolean new_line)
+void zMap_g_list_quark_print(GList *quark_list, const char *list_name, gboolean new_line)
 {
   /* zMapAssert(quark_list) ;*/
   if (!quark_list)
@@ -521,7 +521,7 @@ void zMap_g_list_quark_print(GList *quark_list, char *list_name, gboolean new_li
 /* Return a list of quarks delimited by the string given in delimiter,
  * if delimiter is NULL the string " ; " is used.
  * g_free() this string when finished. */
-gchar *zMap_g_list_quark_to_string(GList *l, char *delimiter)
+gchar *zMap_g_list_quark_to_string(GList *l, const char *delimiter)
 {
   char *str = NULL ;
 
@@ -552,15 +552,15 @@ gchar *zMap_g_list_quark_to_string(GList *l, char *delimiter)
 }
 
 
-GList *zMap_g_list_find_quark(GList *list, GQuark str_quark)
+GList *zMap_g_list_find_quark(GList *glist, GQuark str_quark)
 {
   GList *result = NULL ;
 
-  /* zMapAssert(list && str_quark) ; */
-  if (!list || !str_quark)
+  /* zMapAssert(glist && str_quark) ; */
+  if (!glist || !str_quark)
     return result ;
 
-  result = g_list_find_custom(list, GINT_TO_POINTER(str_quark), caseCompareFunc) ;
+  result = g_list_find_custom(glist, GINT_TO_POINTER(str_quark), caseCompareFunc) ;
 
   return result ;
 }
@@ -617,9 +617,9 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
 
 
 /* Supported values for data_format_str are: "gquark", "pointer"  */
-void zMap_g_hash_table_print(GHashTable *hash_table, char *data_format_str)
+void zMap_g_hash_table_print(GHashTable *hash_table, const char *data_format_str)
 {
-  g_hash_table_foreach(hash_table, hashPrintTableCB, data_format_str) ;
+  g_hash_table_foreach(hash_table, hashPrintTableCB, (void *)data_format_str) ;
 
   return ;
 }
@@ -649,26 +649,26 @@ GHashTable *zMap_g_hashlist_create(void)
 }
 
 
-/* ! Insert a key value into the keyed list. */
+/* ! Insert a key value into the keyed glist. */
 void zMap_g_hashlist_insert(GHashTable *hashlist, GQuark key, gpointer value)
 {
-  GList *list ;
+  GList *glist ;
 
-  /* Slightly tricky coding, if we don't find a list the append creates a new list,
-   * otherwise we append to the existing list. Either way we then _always_ replace
-   * the list in the hash as list start in theory could change. BUT note that
-   * we must copy the list before we insert it because otherwise it is erased
+  /* Slightly tricky coding, if we don't find a glist the append creates a new glist,
+   * otherwise we append to the existing glist. Either way we then _always_ replace
+   * the glist in the hash as glist start in theory could change. BUT note that
+   * we must copy the glist before we insert it because otherwise it is erased
    * by g_hash_table calling the existing entries delete function. */
-  list = (GList *)g_hash_table_lookup(hashlist, GINT_TO_POINTER(key)) ;
+  glist = (GList *)g_hash_table_lookup(hashlist, GINT_TO_POINTER(key)) ;
 
   /* This makes this as bad as a g_datalist... Well nearly.   */
-  if (!g_list_find(list, value))
+  if (!g_list_find(glist, value))
     {
-      list = g_list_copy(list) ;
+      glist = g_list_copy(glist) ;
 
-      list = g_list_append(list, value) ;
+      glist = g_list_append(glist, value) ;
 
-      g_hash_table_insert(hashlist, GINT_TO_POINTER(key), list) ;
+      g_hash_table_insert(hashlist, GINT_TO_POINTER(key), glist) ;
     }
 
   return ;
@@ -678,11 +678,11 @@ void zMap_g_hashlist_insert(GHashTable *hashlist, GQuark key, gpointer value)
 /* ! Insert a list of key values into the keyed list, if replace is TRUE then the list
  * replaces any existing list, if FALSE and a list already exists then the function simply
  * returns. */
-void zMap_g_hashlist_insert_list(GHashTable *hashlist, GQuark key, GList *key_values, gboolean replace)
+void zMap_g_hashlist_insert_list(GHashTable *hashlist, GQuark key, GList *key_values, gboolean replace_flag)
 {
   /* Slightly tricky coding, the existing copy of the list will automatically
    * be free'd by g_hash_table calling our registered hash delete function. */
-  if (replace || !(g_hash_table_lookup(hashlist, GINT_TO_POINTER(key))))
+  if (replace_flag || !(g_hash_table_lookup(hashlist, GINT_TO_POINTER(key))))
     g_hash_table_insert(hashlist, GINT_TO_POINTER(key), key_values) ;
 
   return ;
@@ -738,12 +738,12 @@ void zMap_g_hashlist_destroy(GHashTable *hashlist)
 static void get_key_value(gpointer key, gpointer value, gpointer user)
 {
   ZMapGHashIter data;
-  GList **list = (GList **) user;
+  GList **glist = (GList **) user;
 
   data = g_new0(ZMapGHashIterStruct,1);
   data->key = key;
   data->value = value;
-  *list = g_list_prepend(*list,data); // faster than append
+  *glist = g_list_prepend(*glist,data); // faster than append
 }
 
 void  zMap_g_hash_table_iter_init(GList **iter, GHashTable *h)
@@ -759,10 +759,10 @@ void  zMap_g_hash_table_iter_init(GList **iter, GHashTable *h)
 
 static void get_hash_key(gpointer key, gpointer value, gpointer user)
 {
-  GList **list = (GList **) user;
+  GList **glist = (GList **) user;
 
 
-  *list = g_list_prepend(*list,key); // faster than append
+  *glist = g_list_prepend(*glist,key); // faster than append
 }
 
 void  zMap_g_hash_table_get_keys(GList **iter, GHashTable *h)
@@ -777,10 +777,10 @@ void  zMap_g_hash_table_get_keys(GList **iter, GHashTable *h)
 
 static void get_hash_val(gpointer key, gpointer value, gpointer user)
 {
-  GList **list = (GList **) user;
+  GList **glist = (GList **) user;
 
 
-  *list = g_list_prepend(*list,value); // faster than append
+  *glist = g_list_prepend(*glist,value); // faster than append
 }
 
 void  zMap_g_hash_table_get_data(GList **iter, GHashTable *h)
@@ -796,13 +796,13 @@ gboolean zMap_g_hash_table_iter_next(GList **iter, gpointer *key, gpointer *valu
 {
   gboolean result = FALSE ;
   ZMapGHashIter data ;
-  GList *list = *iter ;
+  GList *glist = *iter ;
 
-  if(list)
+  if(glist)
     {
-      data = list->data;
-      *iter = g_list_remove_link(*iter,list);
-      g_list_free_1(list);
+      data = (ZMapGHashIter)(glist->data) ;
+      *iter = g_list_remove_link(*iter,glist);
+      g_list_free_1(glist);
 
       *key = data->key;
       *value = data->value;
@@ -887,24 +887,24 @@ gint zMap_g_datalist_length(GData **datalist)
 gpointer zMap_g_array_element(GArray **array_inout, guint index)
 {
   gpointer element_ptr = NULL ;
-  GArray *array = *array_inout ;
+  GArray *an_array = *array_inout ;
   gint new_length, element_size ;
 
   new_length = index + 1 ;				    /* Note it's a zero-based index. */
 
-  /* If we need to expand the array then bump it up quite a bit to avoid repeated reallocation. */
-  if (new_length > array->len)
+  /* If we need to expand the an_array then bump it up quite a bit to avoid repeated reallocation. */
+  if (new_length > an_array->len)
     {
       new_length *= 0.5 ;
 
-      array = g_array_set_size(array, new_length) ;
+      an_array = g_array_set_size(an_array, new_length) ;
 
-      *array_inout = array ;				    /* Return new pointer if array resized. */
+      *array_inout = an_array ;				    /* Return new pointer if an_array resized. */
     }
 
-  element_size = g_array_get_element_size(array) ;
+  element_size = g_array_get_element_size(an_array) ;
 
-  element_ptr = array->data + (element_size * index) ;
+  element_ptr = an_array->data + (element_size * index) ;
 
   return element_ptr ;
 }
@@ -935,7 +935,7 @@ gpointer zMap_g_array_element(GArray **array_inout, guint index)
  * @param source                 The string to be inserted.
  * @return                       TRUE if a string was replaced, FALSE otherwise.
  *  */
-gboolean zMap_g_string_replace(GString *string, char *target, char *source)
+gboolean zMap_g_string_replace(GString *string_arg, const char *target, const char *source)
 {
   gboolean result = FALSE ;
   int source_len ;
@@ -947,18 +947,18 @@ gboolean zMap_g_string_replace(GString *string, char *target, char *source)
   target_len = strlen(target) ;
   source_len = strlen(source) ;
 
-  template_ptr = string->str ;
+  template_ptr = string_arg->str ;
   while ((template_ptr = strstr(template_ptr, target)))
     {
       result = TRUE ;
 
-      target_pos = template_ptr - string->str ;
+      target_pos = template_ptr - string_arg->str ;
 
-      string = g_string_erase(string, target_pos, target_len) ;
+      string_arg = g_string_erase(string_arg, target_pos, target_len) ;
 
-      string = g_string_insert(string, target_pos, source) ;
+      string_arg = g_string_insert(string_arg, target_pos, source) ;
 
-      template_ptr = string->str + target_pos + source_len ; /* Shouldn't go off the end. */
+      template_ptr = string_arg->str + target_pos + source_len ; /* Shouldn't go off the end. */
     }
 
   return result ;
@@ -1019,15 +1019,15 @@ ZMapQuarkSet zMap_g_quark_create_set(guint block_size)
  * @param string                 The string to look for in the set.
  * @return                       GQuark for the string or 0 if string not found.
  *  */
-GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string)
+GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string_arg)
 {
   GQuark quark = 0 ;
 
-  /* zMapAssert(quark_set && string) ;*/
-  if (!quark_set || !string)
+  /* zMapAssert(quark_set && string_arg) ;*/
+  if (!quark_set || !string_arg)
     return quark ;
 
-  quark = GPOINTER_TO_UINT(g_hash_table_lookup(quark_set->g_quark_ht, string)) ;
+  quark = GPOINTER_TO_UINT(g_hash_table_lookup(quark_set->g_quark_ht, string_arg)) ;
 
   return quark ;
 }
@@ -1041,17 +1041,17 @@ GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string)
  * @param string                 The string to look for in the set.
  * @return                       GQuark for the string or 0 if string not found.
  *  */
-GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string)
+GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string_arg)
 {
   GQuark quark = 0 ;
 
-  /* May be too draconian to insist on *string...just remove if so. */
-  /* zMapAssert(quark_set && string && *string) ;*/
-  if (!quark_set || !string || !*string)
+  /* May be too draconian to insist on *string_arg...just remove if so. */
+  /* zMapAssert(quark_set && string_arg && *string_arg) ;*/
+  if (!quark_set || !string_arg || !*string_arg)
     return quark ;
 
-  if (!(quark = (gulong) g_hash_table_lookup(quark_set->g_quark_ht, string)))
-    quark = g_quark_new(quark_set, g_strdup (string));
+  if (!(quark = (gulong) g_hash_table_lookup(quark_set->g_quark_ht, string_arg)))
+    quark = g_quark_new(quark_set, g_strdup (string_arg));
 
   return quark;
 }
@@ -1146,20 +1146,20 @@ static void insert_after(GList *donor, GList *recipient)
 
 
 /* HOLDS: g_quark_global_lock */
-static inline GQuark g_quark_new (ZMapQuarkSet quark_set, gchar *string)
+static inline GQuark g_quark_new (ZMapQuarkSet quark_set, gchar *string_arg)
 {
   GQuark quark;
 
-  /* Allocate another block of quark string pointers if needed. */
+  /* Allocate another block of quark string_arg pointers if needed. */
   if (quark_set->g_quark_seq_id % quark_set->block_size == 0)
     quark_set->g_quarks = g_renew(gchar*, quark_set->g_quarks,
 				  quark_set->g_quark_seq_id + quark_set->block_size) ;
 
-  quark_set->g_quarks[quark_set->g_quark_seq_id] = string ;
+  quark_set->g_quarks[quark_set->g_quark_seq_id] = string_arg ;
   quark_set->g_quark_seq_id++ ;
   quark = quark_set->g_quark_seq_id ;
 
-  g_hash_table_insert(quark_set->g_quark_ht, string, GUINT_TO_POINTER(quark)) ;
+  g_hash_table_insert(quark_set->g_quark_ht, string_arg, GUINT_TO_POINTER(quark)) ;
 
   return quark ;
 }
@@ -1295,9 +1295,9 @@ static void hashPrintTableCB(gpointer key, gpointer value, gpointer user_data)
 /* A GDestroyNotify() to free Glists held as the data in a hash. */
 static void destroyList(gpointer data)
 {
-  GList *list = (GList *)data ;
+  GList *glist = (GList *)data ;
 
-  g_list_free(list) ;
+  g_list_free(glist) ;
 
   return ;
 }
@@ -1307,17 +1307,17 @@ static void destroyList(gpointer data)
 
 static void mergehashCB(gpointer key, gpointer value, gpointer user_data)
 {
-  GHashTable *hash = (GHashTable *)user_data ;
+  GHashTable *ghash = (GHashTable *)user_data ;
 
   /* If the feature set id is not in the hash then copy its list of styles and add it to the
    * target hash. */
-  if (!(g_hash_table_lookup(hash, key)))
+  if (!(g_hash_table_lookup(ghash, key)))
     {
-      GList *copy ;
+      GList *copy_list ;
 
-      copy = g_list_copy((GList *)value) ;
+      copy_list = g_list_copy((GList *)value) ;
 
-      zMap_g_hashlist_insert_list(hash, GPOINTER_TO_INT(key), copy, TRUE) ;
+      zMap_g_hashlist_insert_list(ghash, GPOINTER_TO_INT(key), copy_list, TRUE) ;
     }
 
 

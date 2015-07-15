@@ -119,7 +119,7 @@ static void zmap_feature_data_init (ZMapFeatureData data);
 static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class);
 
 
-static char *gtype_to_message_string(GType feature_any_gtype);
+static const char *gtype_to_message_string(GType feature_any_gtype);
 static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_spec_id,
        GValue *value, GParamSpec *pspec);
 static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_spec_id,
@@ -179,7 +179,7 @@ GType zMapFeatureDataGetType(void)
 
       type = g_type_register_static (G_TYPE_OBJECT,
                                      ZMAP_FEATURE_DATA_NAME,
-                                     &info, 0);
+                                     &info, (GTypeFlags)0);
     }
 
   return type;
@@ -297,8 +297,8 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
 
       for(i = PROP_DATA_ZERO; i < PROP_DATA_FINAL; i++, table++)
         {
-          name  = zmapFeatureDataPropertyNick(i);
-          nick  = zmapFeatureDataPropertyNick(i);
+          name  = zmapFeatureDataPropertyNick((ZMapFeatureDataProperty)i);
+          nick  = zmapFeatureDataPropertyNick((ZMapFeatureDataProperty)i);
 #ifdef RDS_DONT_INCLUDE
           blurb = zmapFeatureDataPropertyBlurb(i);
 #endif
@@ -316,10 +316,10 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
 
 
 
-static char *gtype_to_message_string(GType feature_any_gtype)
+static const char *gtype_to_message_string(GType feature_any_gtype)
 {
-  static char *string_array[1 << 16] = {NULL};
-  char *message = NULL;
+  static const char *string_array[1 << 16] = {NULL};
+  const char *message = NULL;
 
   if(string_array[FEATURE_DATA_TYPE_FEATURE_CONTEXT] == NULL)
     {
@@ -334,7 +334,7 @@ static char *gtype_to_message_string(GType feature_any_gtype)
       for(i = ZMAPSTYLE_MODE_BASIC; i <= ZMAPSTYLE_MODE_GLYPH; i++)
         {
           string_array[FEATURE_DATA_TYPE_FEATURE + (i << FEATURE_DATA_FEATURE_SHAPE_SHIFT)] =
-            g_strdup_printf("ZMapFeature [%s]", zMapStyleMode2ExactStr(i));
+            g_strdup_printf("ZMapFeature [%s]", zMapStyleMode2ExactStr((ZMapStyleMode)i));
         }
     }
 
@@ -389,7 +389,7 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
                 ZMapAlignBlock align_block;
                 int i;
                 /* easy case, just look through the gaps array */
-                for(i = 0; i < gaps_array->len; i++)
+                for(i = 0; i < (int)gaps_array->len; i++)
                   {
                     align_block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i));
                     if(align_block->t1 == sub_feature->start &&
@@ -492,7 +492,7 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
         ZMapFeature feature;
 
         feature = (ZMapFeature)feature_data->feature_any;
-        
+
         if (feature_data->sub_feature == NULL)
           {
             if(param_spec_id == PROP_DATA_START)
@@ -524,11 +524,11 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
         ZMapFeature feature;
 
         feature = (ZMapFeature)feature_data->feature_any ;
-        
+
         if (feature_data->sub_feature == NULL)
           {
             GQuark term_id;
-        
+
             if (feature->SO_accession)
               {
                 term_id = zMapSOAcc2TermID(feature->SO_accession) ;
@@ -572,7 +572,7 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
         else
           {
             GQuark term_id;
-        
+
             switch(feature_data->sub_feature->subpart)
               {
               case ZMAPFEATURE_SUBPART_GAP:
@@ -598,7 +598,7 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
                 term_id = g_quark_from_string("<UNKNOWN>");
                 break;
               }
-        
+
             g_value_set_static_string(value, g_quark_to_string(term_id));
           }
 
@@ -743,7 +743,7 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
             result = (get_func)(user_data, pspec->param_id, &value, pspec);
 
           G_VALUE_LCOPY (&value, var_args, 0, &error);
-        
+
           if (error)
             {
               g_warning ("%s: %s", G_STRFUNC, error);

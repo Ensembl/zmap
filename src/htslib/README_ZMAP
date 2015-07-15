@@ -1,0 +1,18 @@
+
+--------------------------------------------------------------------------------
+This file is part of the ZMap distribution and not part of the external
+library package installed here. It is a decriptive placeholder for our git
+repository.
+--------------------------------------------------------------------------------
+
+htslib is a library supporting reading/writing of common sequence file formats
+and in particular BAM, CRAM and VCF. ZMap makes use of this library to read
+files suppilied by the user on the command line or via configuration files.
+
+Note that Makefile has been altered to include a distdir target which we need
+so that we can make our "dist" file:
+
+
+# Needed to support making a dist when htslib is included in other packages.
+distdir:
+	cp -r ./* $(distdir) ;

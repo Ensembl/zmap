@@ -77,8 +77,26 @@ typedef struct _zmapWindowCanvasGraphicsStruct *ZMapWindowCanvasGraphics;
 
 typedef void (*ZMapWindowFeatureItemSetInitFunc)(ZMapWindowFeaturesetItem featureset) ;
 
+typedef void (*ZMapWindowFeatureItemPaintPrepare)(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                                  GdkDrawable *drawable, GdkEventExpose *expose) ;
+typedef void (*ZMapWindowFeatureItemPaintFeature)(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                                  GdkDrawable *drawable, GdkEventExpose *expose) ;
+
+typedef void (*ZMapWindowFeatureItemPaintFlush)(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                                GdkDrawable *drawable, GdkEventExpose *expose) ;
+
+
 typedef void (*ZMapWindowFeatureItemSetPaintFunc)(ZMapWindowFeaturesetItem featureset,
 						  GdkDrawable *drawable, GdkEventExpose *expose) ;
+typedef void (*ZMapWindowFeatureItemSetColourFunc)(FooCanvasItem *interval,
+                                                   ZMapFeature feature, ZMapFeatureSubPart sub_feature,
+                                                   ZMapStyleColourType colour_type, int colour_flags,
+                                                   GdkColor *default_fill, GdkColor *default_border) ;
+
+typedef ZMapWindowCanvasFeature (*ZMapWindowFeatureItemAddFeatureFunc)(ZMapWindowFeaturesetItem featureset,
+                                                                       ZMapFeature feature, double y1, double y2) ;
+
+
 
 typedef void (*ZMapWindowFeatureItemPreZoomFunc)(ZMapWindowFeaturesetItem featureset) ;
 typedef void (*ZMapWindowFeatureItemZoomFunc)(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
@@ -89,6 +107,8 @@ typedef double (*ZMapWindowFeatureItemPointFunc)(ZMapWindowFeaturesetItem fi, ZM
 
 typedef void (*ZMapWindowFeatureFreeFunc)(ZMapWindowFeaturesetItem featureset) ;
 
+typedef void (*ZMapWindowCanvasGetExtentFunc)(ZMapWindowCanvasFeature feature, ZMapSpan span, double *width) ;
+typedef ZMapFeatureSubPart (*ZMapWindowCanvasGetSubPartFunc) (FooCanvasItem *foo, ZMapFeature feature, double x, double y) ;
 
 
 
@@ -112,7 +132,7 @@ typedef struct BumpFeaturesetStructName
   double width;	/* max column width */
   GList *pos_list;	/* list of features in bumped sub-columns */
   ZMapSpanStruct span;	/* of current feature(s) */
-  gboolean complex;
+  gboolean is_complex;
   gboolean mark_set;
 
   /* effciency stats */
@@ -127,7 +147,7 @@ typedef struct BumpFeaturesetStructName
 
 GType zMapWindowFeaturesetItemGetType(void) ;
 
-void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int set_size) ;
+void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, size_t set_size) ;
 
 gboolean zMapWindowCanvasIsFeatureSet(ZMapWindowFeaturesetItem fi) ;
 
@@ -135,7 +155,7 @@ GString *zMapWindowCanvasFeatureset2Txt(ZMapWindowFeaturesetItem featureset_item
 
 void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable,
                                          ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango,
-                                         char *family, int size, GdkColor *draw);
+                                         const char *family, int size, GdkColor *draw);
 void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango);
 
 void zMapWindowCanvasFeaturesetExpose(ZMapWindowFeaturesetItem fi);
@@ -170,7 +190,7 @@ double zMapWindowCanvasFeaturesetGetOffset(ZMapWindowFeaturesetItem featureset);
 
 void zMapWindowCanvasFeaturesetSetSequence(ZMapWindowFeaturesetItem featureset, double y1, double y2);
 
-void zMapWindowCanvasFeaturesetSetBackground(FooCanvasItem *foo, GdkColor *fill, GdkColor *outline);
+void zMapWindowCanvasFeaturesetSetBackground(FooCanvasItem *foo, GdkColor *fill_col, GdkColor *outline);
 
 guint zMapWindowCanvasFeaturesetGetLayer(ZMapWindowFeaturesetItem featureset);
 void zMapWindowCanvasFeaturesetSetLayer(ZMapWindowFeaturesetItem featureset, guint layer);
@@ -195,7 +215,7 @@ int zMapWindowFeaturesetGetNumFeatures(ZMapWindowFeaturesetItem featureset_item)
 ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetItem featureset_item,
                                                          zmapWindowCanvasFeatureType type,
                                                          double x1, double y1, double x2, double y2,
-                                                         GdkColor *fill, GdkColor *outline, char *text);
+                                                         GdkColor *fill_col, GdkColor *outline, char *text);
 int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item, ZMapWindowCanvasGraphics feat);
 
 
@@ -213,7 +233,7 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem *interval,
 				       ZMapFeatureSubPart sub_feature,
 				       ZMapStyleColourType    colour_type,
 				       int colour_flags,
-				       GdkColor              *fill,
+				       GdkColor              *fill_col,
 				       GdkColor              *border);
 guint32 zMap_gdk_color_to_rgba(GdkColor *color);
 int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset,
@@ -221,9 +241,9 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset,
 gboolean zmapWindowFeaturesetAllocColour(ZMapWindowFeaturesetItemClass featureset_class,
                                          GdkColor *colour) ;
 gboolean zmapWindowFeaturesetGetDefaultColours(ZMapWindowFeaturesetItem feature_set_item,
-                                               GdkColor **fill, GdkColor **draw, GdkColor **border) ;
+                                               GdkColor **fill_col, GdkColor **draw_col, GdkColor **border_col) ;
 gboolean zmapWindowFeaturesetGetDefaultPixels(ZMapWindowFeaturesetItem feature_set_item,
-                                              guint32 *fill, guint32 *draw, guint32 *border) ;
+                                              guint32 *fill_pix, guint32 *draw_pix, guint32 *border_pix) ;
 gulong zMapWindowCanvasFeatureGetHeatColour(gulong a, gulong b, double score);
 gulong zMapWindowCanvasFeatureGetHeatPixel(gulong a, gulong b, double score);
 gboolean zMapWindowCanvasFeaturesetGetSpliceColour(ZMapWindowFeaturesetItem featureset, gboolean match,
@@ -232,7 +252,7 @@ gboolean zMapWindowCanvasFeaturesetGetSpliceColour(ZMapWindowFeaturesetItem feat
 void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi);
 
 gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem featureset,
-                                               gboolean set, double x, double y, long *start, long *end);
+                                               gboolean is_set, double x, double y, long *start, long *end);
 gboolean zMapCanvasFeaturesetSeq2World(ZMapWindowFeaturesetItem featureset,
                                        int seq_start, int seq_end, double *world_start_out, double *world_end_out) ;
 void zMapWindowCanvasFeaturesetGetFeatureBounds(FooCanvasItem *foo,

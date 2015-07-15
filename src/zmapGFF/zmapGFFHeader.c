@@ -68,7 +68,7 @@ ZMapGFFHeader zMapGFFCreateHeader()
 
   for (iDir=0; iDir<ZMAPGFF_NUMBER_DIR_TYPES; ++iDir)
     {
-      pHeader->pDirective[iDir] = zMapGFFCreateDirective(iDir) ;
+      pHeader->pDirective[iDir] = zMapGFFCreateDirective((ZMapGFFDirectiveName)iDir) ;
     }
 
   return pHeader;

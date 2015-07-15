@@ -55,7 +55,7 @@ static void printControl(ZMapWindowZoomControl control);
 
 
 
-/* 
+/*
  *                Globals
  */
 
@@ -212,7 +212,7 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window)
 
 
   if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(window->toplevel),
-                               g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY),
+                               g_list_append(NULL, (void *)ZMAP_ZOOM_FONT_FAMILY),
                                ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
                                &(tmp_font), &(tmp_font_desc)))
     {
@@ -283,22 +283,22 @@ void zmapWindowZoomControlInitialise(ZMapWindow window)
 void zmapWindowZoomControlHandleResize(ZMapWindow window)
 {
   ZMapWindowZoomControl control;
-  double min;
+  double min_val;
 
   control = controlFromWindow(window);
 
-  min = getMinZoom(window, control) ;
+  min_val = getMinZoom(window, control) ;
 
   /* Always need to reset this. */
-  control->minZF = min;
+  control->minZF = min_val;
 
-  if (min != control->zF)
+  if (min_val != control->zF)
     {
       /* Try this here.....clunky hack....otherwise zMapWindowZoom() may not change
        * due to status erroneously being at min or max.... */
       control->status = ZMAP_ZOOM_MID ;
 
-      zMapWindowZoom(window, min / control->zF);
+      zMapWindowZoom(window, min_val / control->zF);
     }
 
   setZoomStatus(control) ;
@@ -312,14 +312,14 @@ void zmapWindowZoomControlRegisterResize(ZMapWindow window)
 
 {
   ZMapWindowZoomControl control;
-  double min;
+  double min_val;
 
   control = controlFromWindow(window);
 
-  min = getMinZoom(window, control) ;
+  min_val = getMinZoom(window, control) ;
 
   /* Always need to reset this. */
-  control->minZF = min;
+  control->minZF = min_val ;
 
   setZoomStatus(control) ;
 
@@ -490,7 +490,7 @@ void zmapWindowGetBorderSize(ZMapWindow window, double *border)
 
 
 /*
- *                             Internal routines 
+ *                             Internal routines
  */
 
 
@@ -613,7 +613,7 @@ static void textDimensionsOfFont(FooCanvasGroup *group,
 #ifdef BLAH_BLAH_BLAH
 static void printControl(ZMapWindowZoomControl control)
 {
-  if (!control || !ZMAP_MAGIC_IS_VALID(zoom_magic_G, control->magic)) 
+  if (!control || !ZMAP_MAGIC_IS_VALID(zoom_magic_G, control->magic))
     return ;
 
   printf("Control:\n"

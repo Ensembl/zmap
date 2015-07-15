@@ -42,7 +42,7 @@ ZMapMLF zMapMLFCreate()
 {
   ZMapMLF pMLF = NULL ;
 
-  pMLF = g_malloc(sizeof(ZMapMLFStruct)) ;
+  pMLF = (ZMapMLF) g_malloc(sizeof(ZMapMLFStruct)) ;
     if (pMLF)
     {
       pMLF->pIDTable = g_hash_table_new(NULL, NULL) ;
@@ -58,7 +58,7 @@ static void zMapMLFDestroyElement(gpointer pgqValue, gpointer pHashElement, gpoi
 {
   if (!pgqValue || !pHashElement || pUserData )
     return ;
-  g_hash_table_destroy(pHashElement) ;
+  g_hash_table_destroy((GHashTable*)pHashElement) ;
 }
 
 
@@ -74,7 +74,7 @@ gboolean zMapMLFDestroy(ZMapMLF pMLF)
   g_hash_table_foreach(pMLF->pIDTable, zMapMLFDestroyElement, NULL );
   g_hash_table_destroy(pMLF->pIDTable) ;
 
-  g_free(pMLF) ;
+  g_free((void*) pMLF) ;
   bResult = TRUE ;
 
   return bResult ;
@@ -161,9 +161,9 @@ gboolean zMapMLFRemoveID(ZMapMLF const pMLF, GQuark gqValue)
   /*
    * Find pointer to value in table.
    */
-  pValueTable = g_hash_table_lookup(pMLF->pIDTable, GINT_TO_POINTER(gqValue)) ;
+  pValueTable = (gpointer) g_hash_table_lookup(pMLF->pIDTable, GINT_TO_POINTER(gqValue)) ;
   if (pValueTable)
-    g_hash_table_destroy(pValueTable) ;
+    g_hash_table_destroy((GHashTable*)pValueTable) ;
 
   /*
    * And remove that key from the table.
@@ -193,7 +193,7 @@ gboolean zMapMLFIsFeaturePresent(ZMapMLF pMLF, GQuark gqID, ZMapFeature pFeature
   /*
    * First check whether or not the ID is present to start with.
    */
-  if ((pValueTable = zMapMLFIsIDPresent(pMLF, gqID)) == NULL )
+  if ((pValueTable = (GHashTable*) zMapMLFIsIDPresent(pMLF, gqID)) == NULL )
     return bResult ;
 
   /*
@@ -223,7 +223,7 @@ gboolean zMapMLFAddFeatureToID(ZMapMLF pMLF, GQuark gqID, ZMapFeature pFeature )
   /*
    * First check whether or not the ID is present to start with.
    */
-  if ((pValueTable = zMapMLFIsIDPresent(pMLF, gqID)) == NULL )
+  if ((pValueTable = (GHashTable*) zMapMLFIsIDPresent(pMLF, gqID)) == NULL )
     return bResult ;
 
   /*
@@ -259,7 +259,7 @@ gboolean zMapMLFRemoveFeatureFromID(ZMapMLF pMLF, GQuark gqID, ZMapFeature pFeat
   /*
    * First check whether or not the ID is present to start with.
    */
-  if ((pValueTable = zMapMLFIsIDPresent(pMLF, gqID)) == NULL )
+  if ((pValueTable = (GHashTable*) zMapMLFIsIDPresent(pMLF, gqID)) == NULL )
     return bResult ;
 
   /*
@@ -307,7 +307,7 @@ unsigned int zMapMLFNumFeatures(ZMapMLF pMLF , GQuark gqID)
   if (!(pValueTable = zMapMLFIsIDPresent(pMLF, gqID)))
     return nResult ;
 
-  nResult = g_hash_table_size(pValueTable) ;
+  nResult = g_hash_table_size((GHashTable*) pValueTable) ;
 
   return nResult ;
 }

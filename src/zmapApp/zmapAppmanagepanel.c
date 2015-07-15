@@ -194,7 +194,7 @@ void zmapAppManagerUpdate(ZMapAppContext app_context, ZMap zmap, ZMapView view)
     }
   else
     {
-      char *seq_name = "<none>" ;
+      char *seq_name = NULL ;
 
       if (view)
         seq_name = zMapViewGetSequence(view) ;
@@ -204,10 +204,14 @@ void zmapAppManagerUpdate(ZMapAppContext app_context, ZMap zmap, ZMapView view)
       gtk_tree_store_set(app_context->tree_store_widg, &iter,
                          ZMAPID_COLUMN, zMapGetZMapID(zmap),
                          ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
-                         ZMAPSEQUENCE_COLUMN, seq_name,
+                         ZMAPSEQUENCE_COLUMN, 
+                         (seq_name ? seq_name : "<none>"),
                          ZMAP_PTR_COLUMN, (gpointer)zmap,
                          VIEW_PTR_COLUMN, (gpointer)view,
                          -1) ;
+
+      if (seq_name)
+        g_free(seq_name) ;
 
       g_free(search_data.zmap_iter_str) ;
     }

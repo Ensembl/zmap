@@ -80,11 +80,11 @@ void zMap_draw_line_hack(GdkDrawable* drawable, ZMapWindowFeaturesetItem feature
 int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
                           gint cx1, gint cy1, gint cx2, gint cy2) ;
 int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
-                   gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill) ;
+                   gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill_flag) ;
 gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
                                           double x1, double x2, double y1, double y2,
                                           GdkDrawable *drawable,
-                                          gboolean fill_set, gboolean outline_set, gulong fill, gulong outline) ;
+                                          gboolean fill_set, gboolean outline_set, gulong fill_flag, gulong outline) ;
 void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                                               GdkDrawable *drawable, double x1, double x2) ;
 

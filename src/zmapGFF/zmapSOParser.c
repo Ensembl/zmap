@@ -39,7 +39,7 @@
 ZMapSOIDData zMapSOIDDataCreate()
 {
   ZMapSOIDData pID = NULL ;
-  pID = g_malloc(sizeof(ZMapSOIDDataStruct)) ;
+  pID = (ZMapSOIDData) g_malloc(sizeof(ZMapSOIDDataStruct)) ;
   zMapReturnValIfFail(pID, pID) ;
   pID->iID = ZMAPSO_ID_UNK ;
   pID->sName = NULL ;
@@ -54,7 +54,7 @@ ZMapSOIDData zMapSOIDDataCreate()
 ZMapSOIDData zMapSOIDDataCC(ZMapSOIDData pData)
 {
   ZMapSOIDData pID = NULL ;
-  pID = g_malloc(sizeof(ZMapSOIDDataStruct)) ;
+  pID = (ZMapSOIDData) g_malloc(sizeof(ZMapSOIDDataStruct)) ;
   zMapReturnValIfFail(pData && pData->sName && pID, pID) ;
 
   pID->iID            = pData->iID ;
@@ -95,7 +95,7 @@ unsigned int zMapSOIDDataGetID(ZMapSOIDData pData)
 /*
  * Return the name of the SOIDData object as a string
  */
-char * zMapSOIDDataGetName(ZMapSOIDData pData )
+const char * zMapSOIDDataGetName(ZMapSOIDData pData )
 {
   zMapReturnValIfFail(pData, NULL) ;
   return pData->sName ;
@@ -142,8 +142,8 @@ gboolean zMapSOIDDataDestroy(ZMapSOIDData pID)
   zMapReturnValIfFail(pID, bResult) ;
   bResult = TRUE ;
   if (pID->sName)
-    g_free(pID->sName) ;
-  g_free(pID) ;
+    g_free((void*)pID->sName) ;
+  g_free((void*)pID) ;
   return bResult ;
 }
 
@@ -470,9 +470,9 @@ unsigned int zMapSOSetIsNamePresent(ZMapSOSetInUse cSOSetInUse, const char * con
  * Check whether or not an ID (as number) passed in is present in the SO term arrays.
  * If it is present, then return the pointer to the name. Otherwise return NULL.
  */
-char * zMapSOSetIsIDPresent(ZMapSOSetInUse cSOSetInUse, unsigned int iID )
+const char * zMapSOSetIsIDPresent(ZMapSOSetInUse cSOSetInUse, unsigned int iID )
 {
-  char* sResult = NULL ;
+  const char* sResult = NULL ;
   gboolean bFound = FALSE ;
   unsigned int i ;
   zMapReturnValIfFail(iID, sResult ) ;
@@ -551,8 +551,9 @@ char * zMapSOSetIsIDPresent(ZMapSOSetInUse cSOSetInUse, unsigned int iID )
 
 
 /*
- * Some static data for this translation unit. Use of these is now
- * deprecated.
+ * Some static data for this translation unit. The following is
+ * all a horrible hack that I was using whilst developing, and
+ * should not be used.
  */
 static const char * const sFilenameSOFA = "~/.ZMap/SOFA.obo" ;
 static const char * const sFilenameSO   = "~/.ZMap/so-xp.obo" ;
@@ -568,7 +569,7 @@ static ZMapSOCollection pCollectionSOFA = NULL ;
 ZMapSOID zMapSOIDCreate()
 {
   ZMapSOID pID = NULL ;
-  pID = g_malloc(sizeof(ZMapSOIDStruct)) ;
+  pID = (ZMapSOID) g_malloc(sizeof(ZMapSOIDStruct)) ;
   if (!pID)
     return pID ;
   pID->iID = ZMAPSO_ID_UNK ;

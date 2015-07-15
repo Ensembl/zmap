@@ -48,19 +48,19 @@
 
 
 static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
-                                          char * stanza_name,
-                                          char * key_name,
+                                          const char * stanza_name,
+                                          const char * key_name,
                                           GValue *value,
                                           GType type,
                                           gboolean merge_files);
 static gboolean get_merged_key_value(ZMapConfigIni config,
-                                     char * stanza_name,
-                                     char * key_name,
+                                     const char * stanza_name,
+                                     const char * key_name,
                                      GValue *value,
                                      GType type);
 static gboolean get_value(GKeyFile *key_file,
-                          char *stanza_name,
-                          char *key_name,
+                          const char *stanza_name,
+                          const char *key_name,
                           GValue *value,
                           GType type,
                           gboolean allow_overwrite,
@@ -69,8 +69,8 @@ static gboolean get_value(GKeyFile *key_file,
 
 
 gboolean zMapConfigIniGetUserValue(ZMapConfigIni config,
-                                   char * stanza_name,
-                                   char * key_name,
+                                   const char * stanza_name,
+                                   const char * key_name,
                                    GValue **value_out,
                                    GType type)
 {
@@ -97,8 +97,8 @@ gboolean zMapConfigIniGetUserValue(ZMapConfigIni config,
 }
 
 gboolean zMapConfigIniGetValue(ZMapConfigIni config,
-       char * stanza_name,
-       char * key_name,
+       const char * stanza_name,
+       const char * key_name,
        GValue **value_out,
        GType type)
 {
@@ -125,9 +125,9 @@ gboolean zMapConfigIniGetValue(ZMapConfigIni config,
 
 
 void zMapConfigIniSetValue(ZMapConfigIni config,
-   char *stanza_name,
-   char *key_name,
-   GValue *value)
+                           const char *stanza_name,
+                           const char *key_name,
+                           GValue *value)
 {
   GKeyFile *user_key_file = NULL;
   zMapReturnIfFail(config) ; 
@@ -181,8 +181,8 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
 
 
 static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
-  char * stanza_name,
-  char * key_name,
+  const char * stanza_name,
+  const char * key_name,
   GValue *value,
   GType type,
   gboolean merge_files)
@@ -212,8 +212,8 @@ static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
    expense of having multiple GKeyFile instances around */
 
 static gboolean get_merged_key_value(ZMapConfigIni config,
-     char * stanza_name,
-     char * key_name,
+     const char * stanza_name,
+     const char * key_name,
      GValue *value,
      GType type)
 {
@@ -266,8 +266,8 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
 }
 
 static gboolean get_value(GKeyFile *key_file,
-                          char *stanza_name,
-                          char *key_name,
+                          const char *stanza_name,
+                          const char *key_name,
                           GValue *value,
                           GType type,
                           gboolean allow_overwrite,

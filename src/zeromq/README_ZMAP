@@ -1,0 +1,18 @@
+
+--------------------------------------------------------------------------------
+This file is part of the ZMap distribution and not part of the external
+library package installed here. It is a decriptive placeholder for our git
+repository.
+--------------------------------------------------------------------------------
+
+zeromq is a library supporting reliable message sending over networks. It is
+used in ZMap as the means of communication in the RemoteControl code.
+
+Note that the Makefile.am for zeromq has been changed: 
+
+autom4te.cache has been moved from MAINTAINERCLEANFILES to
+maintainer-clean-local because it is a directory not a file.
+
+In Makefile.am the tools subdir has been removed from the build because
+the build fails on windows machines using cygwin.
+

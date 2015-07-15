@@ -47,7 +47,7 @@ ZMapFrame zMapSequenceGetFrame(int position)
 
   curr_frame = 3 - ((3 - curr_frame) % 3) ;
 
-  frame = curr_frame ;
+  frame = (ZMapFrame)curr_frame ;
 
   return frame ;
 }

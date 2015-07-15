@@ -1,0 +1,12 @@
+
+--------------------------------------------------------------------------------
+This file is part of the ZMap distribution and not part of the external
+library package installed here. It is a decriptive placeholder for our git
+repository.
+--------------------------------------------------------------------------------
+
+AceConn is a package that allows C and C++ programs to talk to the Acedb socket
+server. It is used if ZMap needs to read data from an Acedb database and so
+is not mandatory. Whether it is built into ZMap is determined by arguments to
+the src/autogen.sh script.
+

@@ -47,7 +47,7 @@
 void zMapWindowCanvasAssemblyPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                                           GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  gulong fill,outline;
+  gulong ufill,outline;
   int colours_set, fill_set, outline_set;
   double x1,x2;
 
@@ -61,14 +61,14 @@ void zMapWindowCanvasAssemblyPaintFeature(ZMapWindowFeaturesetItem featureset, Z
    * and also the window focus code
    */
 
-  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
+  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &ufill, &outline);
   fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
   outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
   if (zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2))
     zMapCanvasFeaturesetDrawBoxMacro(featureset,
                                      x1, x2, feature->y1, feature->y2,
-                                     drawable, fill_set, outline_set, fill,outline) ;
+                                     drawable, fill_set, outline_set, ufill,outline) ;
 
   return ;
 }
@@ -80,11 +80,11 @@ void zMapWindowCanvasAssemblyInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL };
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_PAINT] = zMapWindowCanvasAssemblyPaintFeature;
+  funcs[FUNC_PAINT] = (void *)zMapWindowCanvasAssemblyPaintFeature;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ASSEMBLY, funcs, 0) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_ASSEMBLY, funcs, (size_t)0) ;
 
-  zMapWindowCanvasFeatureSetSize(FEATURE_ASSEMBLY, feature_funcs, 0) ;
+  zMapWindowCanvasFeatureSetSize(FEATURE_ASSEMBLY, feature_funcs, sizeof(zmapWindowCanvasFeatureStruct)) ;
 
   return ;
 }

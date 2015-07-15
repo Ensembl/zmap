@@ -67,8 +67,8 @@ typedef struct
   GtkWidget *notebook_stack ;
   GtkWidget *notebook ;
 
-  char *help_title ;
-  char *help_text ;
+  const char *help_title ;
+  const char *help_text ;
 
   GFunc destroy_func ;
   GFunc non_destroy_func ;
@@ -114,7 +114,7 @@ typedef struct
 } TreeViewSizeCBDataStruct, *TreeViewSizeCBData ;
 
 
-static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name) ;
+static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, const char *name) ;
 static GtkWidget *makeMenuBar(MakeNotebook make_notebook) ;
 static void makeChapterCB(gpointer data, gpointer user_data) ;
 static void makePageCB(gpointer data, gpointer user_data) ;
@@ -180,14 +180,14 @@ static GtkWidget *notebookNewFrameIn(const char *frame_name, GtkWidget *parent_c
 static GtkItemFactoryEntry menu_items_G[] =
   {
     /* File */
-    { "/_File",         NULL,                NULL,              0,    "<Branch>", NULL},
-    { "/File/Save",     "<control>S",        saveChapterCB,     0,    NULL,       NULL},
-    { "/File/Save All", "<control><shift>S", saveAllChaptersCB, 0,    NULL,       NULL},
-    { "/File/Close",    "<control>W",        requestDestroyCB,  0,    NULL,       NULL},
+    { (gchar *)"/_File",         NULL,                NULL,              0,    (gchar *)"<Branch>", NULL},
+    { (gchar *)"/File/Save",     (gchar *)"<control>S",        (GtkItemFactoryCallback)saveChapterCB,     0,    NULL,       NULL},
+    { (gchar *)"/File/Save All", (gchar *)"<control><shift>S", (GtkItemFactoryCallback)saveAllChaptersCB, 0,    NULL,       NULL},
+    { (gchar *)"/File/Close",    (gchar *)"<control>W",        (GtkItemFactoryCallback)requestDestroyCB,  0,    NULL,       NULL},
 
     /* Help */
-    { "/_Help",         NULL, NULL,       0,  "<LastBranch>", NULL},
-    { "/Help/Overview", NULL, helpMenuCB, 0,  NULL,           NULL},
+    { (gchar *)"/_Help",         NULL, NULL,       0,  (gchar *)"<LastBranch>", NULL},
+    { (gchar *)"/Help/Overview", NULL, (GtkItemFactoryCallback)helpMenuCB, 0,  NULL,           NULL},
   } ;
 
 
@@ -243,8 +243,8 @@ typedef enum
  * @param user_cleanup_data  Data you want passed to your cleanup callback function.
  * @return                   ZMapGuiNotebook
  */
-ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean editable,
-      ZMapGUINotebookCallbackFunc cleanup_cb, void *user_cleanup_data)
+ZMapGuiNotebook zMapGUINotebookCreateNotebook(const char *notebook_name, gboolean editable,
+                                              ZMapGUINotebookCallbackFunc cleanup_cb, void *user_cleanup_data)
 {
   ZMapGuiNotebook notebook = NULL ;
 
@@ -272,7 +272,7 @@ ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean edit
  * @return                ZMapGuiNotebookChapter
  */
 ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
-    char *chapter_name, ZMapGuiNotebookCB user_callbacks)
+                                                    const char *chapter_name, ZMapGuiNotebookCB user_callbacks)
 {
   ZMapGuiNotebookChapter chapter = NULL ;
 
@@ -314,7 +314,7 @@ ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
  * @param page_name  String displayed at top of notebook page.
  * @return           ZMapGuiNotebookPage
  */
-ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, char *page_name)
+ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, const char *page_name)
 {
   ZMapGuiNotebookPage page = NULL ;
 
@@ -336,7 +336,7 @@ ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, ch
  * @param subsection_name  String displayed at top of notebook subsection.
  * @return                 ZMapGuiNotebookSubsection
  */
-ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage page, char *subsection_name)
+ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage page, const char *subsection_name)
 {
   ZMapGuiNotebookSubsection subsection = NULL ;
 
@@ -365,9 +365,9 @@ ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage pa
  * @return                ZMapGuiNotebookParagraph
  */
 ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsection subsection,
-char *paragraph_name,
-ZMapGuiNotebookParagraphDisplayType display_type,
-GList *headers, GList *types)
+                                                        const char *paragraph_name,
+                                                        ZMapGuiNotebookParagraphDisplayType display_type,
+                                                        GList *headers, GList *types)
 {
   ZMapGuiNotebookParagraph paragraph = NULL ;
 
@@ -412,10 +412,10 @@ GList *headers, GList *types)
  *
  *  */
 ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph paragraph,
-      char *tag_value_name,
-      char *tooltip,
-      ZMapGuiNotebookTagValueDisplayType display_type,
-      const gchar *arg_type, ...)
+                                                      const char *tag_value_name,
+                                                      const char *tooltip,
+                                                      ZMapGuiNotebookTagValueDisplayType display_type,
+                                                      const gchar *arg_type, ...)
 {
   ZMapGuiNotebookTagValue tag_value = NULL ;
   va_list args ;
@@ -614,7 +614,7 @@ GtkWidget *zMapGUINotebookGetNoteBookWidg(GtkWidget *compound_note_widget)
 {
   GtkWidget *notebook_widg = NULL ;
 
-  notebook_widg = g_object_get_data(G_OBJECT(compound_note_widget), GUI_NOTEBOOK_STACK_SETDATA) ;
+  notebook_widg = (GtkWidget *)g_object_get_data(G_OBJECT(compound_note_widget), GUI_NOTEBOOK_STACK_SETDATA) ;
 
   return notebook_widg ;
 }
@@ -625,13 +625,13 @@ GtkWidget *zMapGUINotebookGetCurrChapterWidg(GtkWidget *compound_note_widget)
 {
   GtkWidget *notebook_widg = NULL ;
 
-  notebook_widg = g_object_get_data(G_OBJECT(compound_note_widget), GUI_NOTEBOOK_CURR_SETDATA) ;
+  notebook_widg = (GtkWidget *)g_object_get_data(G_OBJECT(compound_note_widget), GUI_NOTEBOOK_CURR_SETDATA) ;
 
   return notebook_widg ;
 }
 
 /*!
- * \brief Handles the response to the notebook dialog 
+ * \brief Handles the response to the notebook dialog
  */
 void notebookDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
 {
@@ -642,13 +642,13 @@ void notebookDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data
     case GTK_RESPONSE_OK:
       okCB(data) ;
       break;
-      
+
     case GTK_RESPONSE_CANCEL:
     case GTK_RESPONSE_CLOSE:
     case GTK_RESPONSE_REJECT:
       cancelCB(data) ;
       break;
-      
+
     default:
       break;
   };
@@ -660,13 +660,13 @@ void notebookDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data
  * @param notebook_spec  The notebook tree.
  * @return               dialog widget
  */
-GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text)
+GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, const char *help_title, const char *help_text)
 {
   GtkWidget *dialog = NULL ;
   GtkWidget *vbox, *note_widg ;
   MakeNotebook make_notebook  ;
   char *title = NULL ;
-  
+
   /* zMapAssert(notebook_spec && help_title && *help_title && help_text && *help_text) ;*/
   if (!notebook_spec || !help_title || !*help_title || !help_text || !*help_text )
     return dialog ;
@@ -927,7 +927,7 @@ void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book)
 
 
 /* Create the bare bones, canonical notebook structs. */
-static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name)
+static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, const char *name)
 {
   ZMapGuiNotebookAny book_any = NULL ;
   int size = 0 ;
@@ -959,7 +959,7 @@ static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name)
 
   if (size)
     {
-      book_any = g_malloc0(size) ;
+      book_any = (ZMapGuiNotebookAny)g_malloc0(size) ;
       book_any->type = type ;
 
       if (name)
@@ -1229,8 +1229,8 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
       make_notebook->zmap_tree_view = zMapGUITreeViewCreate();
 
       /* Create a list of the functions to update the start/end values. */
-      column_funcs = g_list_append(column_funcs, cellEditedCB) ;
-      column_funcs = g_list_append(column_funcs, cellEditedCB) ;
+      column_funcs = g_list_append(column_funcs, (void *)cellEditedCB) ;
+      column_funcs = g_list_append(column_funcs, (void *)cellEditedCB) ;
 
       g_object_set(G_OBJECT(make_notebook->zmap_tree_view),
                    "row-counter-column", TRUE,
@@ -1273,7 +1273,7 @@ static gboolean editing_finished_cb(GtkWidget *widget, GdkEventFocus *event, gpo
   ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)user_data ;
   const char *entry_text ;
 
-  g_signal_handlers_block_by_func (widget, editing_finished_cb, user_data) ;
+  g_signal_handlers_block_by_func(widget, (void *)editing_finished_cb, user_data) ;
 
   entry_text = gtk_entry_get_text(entry) ;
 
@@ -1331,7 +1331,7 @@ static gboolean editing_finished_cb(GtkWidget *widget, GdkEventFocus *event, gpo
         }
     }
 
-  g_signal_handlers_unblock_by_func (widget, editing_finished_cb, user_data) ;
+  g_signal_handlers_unblock_by_func(widget, (void *)editing_finished_cb, user_data) ;
 
   /* Gtk-WARNING **: GtkEntry - did not receive focus-out-event. If you
    * connect a handler to this signal, it must return
@@ -1428,8 +1428,8 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
                                1,
                                make_notebook->curr_paragraph_rows - 1,
                                make_notebook->curr_paragraph_rows,
-                               GUI_NOTEBOOK_TABLE_XOPTIONS,
-                               GUI_NOTEBOOK_TABLE_YOPTIONS,
+                               (GtkAttachOptions)GUI_NOTEBOOK_TABLE_XOPTIONS,
+                               (GtkAttachOptions)GUI_NOTEBOOK_TABLE_YOPTIONS,
                                GUI_NOTEBOOK_BOX_PADDING,
                                GUI_NOTEBOOK_BOX_PADDING) ;
 
@@ -1439,8 +1439,8 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
                              2,
                              make_notebook->curr_paragraph_rows - 1,
                              make_notebook->curr_paragraph_rows,
-                             GUI_NOTEBOOK_TABLE_XOPTIONS,
-                             GUI_NOTEBOOK_TABLE_YOPTIONS,
+                             (GtkAttachOptions)GUI_NOTEBOOK_TABLE_XOPTIONS,
+                             (GtkAttachOptions)GUI_NOTEBOOK_TABLE_YOPTIONS,
                              GUI_NOTEBOOK_BOX_PADDING,
                              GUI_NOTEBOOK_BOX_PADDING) ;
           }
@@ -1504,9 +1504,9 @@ static void changeNotebookCB(GtkWidget *widget, gpointer make_notebook_data)
 
   /* Get hold of the notebook, the notebook_stack and the position of the notebook within
    * the notebook_stack. */
-  notebook = g_object_get_data(G_OBJECT(widget), GUI_NOTEBOOK_BUTTON_SETDATA) ;
+  notebook = (GtkWidget *)g_object_get_data(G_OBJECT(widget), GUI_NOTEBOOK_BUTTON_SETDATA) ;
 
-  notebook_stack = g_object_get_data(G_OBJECT(notebook), GUI_NOTEBOOK_STACK_SETDATA) ;
+  notebook_stack = (GtkWidget *)g_object_get_data(G_OBJECT(notebook), GUI_NOTEBOOK_STACK_SETDATA) ;
 
   if ((notebook_pages = gtk_notebook_get_n_pages(GTK_NOTEBOOK(notebook_stack))) > 1)
     {
@@ -2004,7 +2004,7 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text, 
           {
             zMapWarning("Invalid float number: %s", text) ;
           }
-    
+
         break ;
       }
     case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING:
@@ -2014,14 +2014,14 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text, 
         if (text)
           {
             tag_value->data.string_value = (text && *text ? text : NULL);
-      
+
             if(update_original && *text)
               {
                 if(tag_value->original_data.string_value)
                   g_free(tag_value->original_data.string_value);
                 tag_value->original_data.string_value = g_strdup(text);
               }
-    
+
             if(*text)
               status = TRUE ;
           }
@@ -2089,7 +2089,7 @@ static void mergeChildren(void *data, void *user_data)
        * merging of anonymous items. */
       if (parent->children)
         {
-          child = parent->children->data ;
+          child = (ZMapGuiNotebookAny)(parent->children->data) ;
           mergeAny(child, new_child) ;
         }
     }
@@ -2161,7 +2161,7 @@ static void flagNotebookIgnoreDuplicates(gpointer list_data, gpointer unused)
 
 static void propogateExpand(GtkWidget *box, GtkWidget *child, GtkWidget *topmost)
 {
-  gboolean expand, fill;
+  gboolean expand, fill_flag;
   guint padding;
   GtkPackType pack_type;
 
@@ -2169,10 +2169,10 @@ static void propogateExpand(GtkWidget *box, GtkWidget *child, GtkWidget *topmost
     {
       if(GTK_IS_BOX(box))
         {
-          gtk_box_query_child_packing(GTK_BOX(box), child, &expand, &fill, &padding, &pack_type);
+          gtk_box_query_child_packing(GTK_BOX(box), child, &expand, &fill_flag, &padding, &pack_type);
 
           expand = TRUE;
-          gtk_box_set_child_packing(GTK_BOX(box), child, expand, fill, padding, pack_type);
+          gtk_box_set_child_packing(GTK_BOX(box), child, expand, fill_flag, padding, pack_type);
 
         }
       if(box == topmost)

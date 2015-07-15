@@ -31,10 +31,7 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
+#include <string.h>
 #include <stdlib.h>
 #include <sys/utsname.h>
 #include <glib.h>
@@ -46,9 +43,9 @@
 /* Describes various browsers, crude at the moment, we will probably need more options later. */
 typedef struct
 {
-  char *system ;    /* system name as in "uname -s" */
-  char *executable ;    /* executable name or full path. */
-  char *open_command ;    /* alternative command to start browser. */
+  const char *system ;    /* system name as in "uname -s" */
+  const char *executable ;    /* executable name or full path. */
+  const char *open_command ;    /* alternative command to start browser. */
 } BrowserConfigStruct, *BrowserConfig ;
 
 
@@ -82,18 +79,18 @@ static char *translateURLChars(char *orig_link) ;
 /* List of browsers for different systems, you can have more than one browser for a system. */
 static BrowserConfigStruct browsers_G[] =
   {
-    {"Linux",  "xdg-open", "xdg-open \""BROWSER_PATTERN"\""},
-    {"Linux",  "firefox", "firefox \""BROWSER_PATTERN"\""},
-    {"Linux",  "iceweasel", "iceweasel -new-window \""BROWSER_PATTERN"\""},
-    {"Linux",  "mozilla", "mozilla -remote 'openurl(\""BROWSER_PATTERN"\",new-window)' || mozilla \""BROWSER_PATTERN"\""},
+    {"Linux",  "xdg-open", "xdg-open \"" BROWSER_PATTERN "\""},
+    {"Linux",  "iceweasel", "iceweasel -new-window \"" BROWSER_PATTERN "\""},
+    {"Linux",  "firefox", "firefox -browser \"" BROWSER_PATTERN "\""},
+    {"Linux",  "mozilla", "mozilla -remote 'openurl(\"" BROWSER_PATTERN "\",new-window)' || mozilla \"" BROWSER_PATTERN "\""},
     {"OSF",    "netscape", NULL},
-    {"Darwin", "/Applications/Safari.app/Contents/MacOS/Safari", "open \""BROWSER_PATTERN"\""},
+    {"Darwin", "/Applications/Safari.app/Contents/MacOS/Safari", "open \"" BROWSER_PATTERN "\""},
     {NULL, NULL}    /* Terminator record. */
   } ;
 
 
 /* Error handling stuff. */
-static char *domain_G = "ZMAP_WEB" ;
+static const char *domain_G = "ZMAP_WEB" ;
 enum {BROWSER_NOT_FOUND, BROWSER_COMMAND_FAILED, BROWSER_UNAME_FAILED, BROWSER_NOT_REGISTERED} ;
 static GQuark err_domain_G = 0 ;
 

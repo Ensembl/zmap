@@ -359,7 +359,7 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
       offset = search_start - dna ;
 
       /* Make a revcomp'd copy of the forward strand section. */
-      revcomp_dna = g_memdup(search_start, length) ;
+      revcomp_dna = (char *)g_memdup(search_start, length) ;
       zMapDNAReverseComplement(revcomp_dna, length) ;
 
       /* Set the pointers and search. */
@@ -433,29 +433,29 @@ void zMapDNAReverseComplement(char *sequence_in, int length_in)
 
   /* could be done at compile time for max efficiency but not portable (EBCDIC ??). */
   /* IUPAC */
-  rev['a'] = 't' ;
-  rev['c'] = 'g' ;
-  rev['g'] = 'c' ;
-  rev['t'] = 'a' ;
+  rev[(unsigned char)'a'] = 't' ;
+  rev[(unsigned char)'c'] = 'g' ;
+  rev[(unsigned char)'g'] = 'c' ;
+  rev[(unsigned char)'t'] = 'a' ;
 
-  rev['m'] = 'k' ;
-  rev['r'] = 'y' ;
-  rev['w'] = 'w' ;
-  rev['s'] = 's' ;
-  rev['y'] = 'r' ;
-  rev['k'] = 'm' ;
-  rev['v'] = 'b' ;
-  rev['h'] = 'd' ;
-  rev['d'] = 'h' ;
-  rev['b'] = 'v' ;
+  rev[(unsigned char)'m'] = 'k' ;
+  rev[(unsigned char)'r'] = 'y' ;
+  rev[(unsigned char)'w'] = 'w' ;
+  rev[(unsigned char)'s'] = 's' ;
+  rev[(unsigned char)'y'] = 'r' ;
+  rev[(unsigned char)'k'] = 'm' ;
+  rev[(unsigned char)'v'] = 'b' ;
+  rev[(unsigned char)'h'] = 'd' ;
+  rev[(unsigned char)'d'] = 'h' ;
+  rev[(unsigned char)'b'] = 'v' ;
 
-  rev['n'] = 'n' ;
-  rev['x'] = 'x' ;      // NCBI
+  rev[(unsigned char)'n'] = 'n' ;
+  rev[(unsigned char)'x'] = 'x' ;      // NCBI
 
   /* Other common symbols. */
-  rev['-'] = '-' ;
-  rev['.'] = '.' ;
-  rev['*'] = '*' ;
+  rev[(unsigned char)'-'] = '-' ;
+  rev[(unsigned char)'.'] = '.' ;
+  rev[(unsigned char)'*'] = '*' ;
 
 
   length = (size_t)length_in ;

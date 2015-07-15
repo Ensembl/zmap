@@ -46,12 +46,13 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapRemoteCommand.h>
 #include <zmapControl_P.h>
 
 
 
-
+#ifdef NOT_USED
+/* gb10: this is not currently used so commented out to avoid a compiler
+ * warning. Not sure if it should be removed. */
 enum
   {
     ZMAPCONTROL_REMOTE_INVALID,
@@ -63,6 +64,8 @@ enum
     /* ...but above here */
     ZMAPCONTROL_REMOTE_UNKNOWN
   }ZMapControlValidXRemoteActions;
+#endif
+
 
 typedef struct
 {
@@ -324,7 +327,7 @@ gboolean zMapControlProcessRemoteRequest(ZMap zmap,
 	  /* Something went wrong. */
 	  if (!parse_view_id)
 	    {
-	      reason = "Badly formed view_id !" ;
+	      reason = g_strdup("Badly formed view_id !") ;
 	      result = FALSE ;
 	    }
 	  else						    /* !view_found */
@@ -334,6 +337,8 @@ gboolean zMapControlProcessRemoteRequest(ZMap zmap,
 	    }
 
 	  (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
+
+          g_free(reason) ;
 	}
 
     }

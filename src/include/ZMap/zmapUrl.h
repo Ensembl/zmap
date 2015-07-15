@@ -113,8 +113,8 @@ char *uri_merge(const char *, const char *) ;
 char *rewrite_shorthand_url(const char *) ;
 int schemes_are_similar_p(ZMapURLScheme a, ZMapURLScheme b) ;
 
-char *zMapURLGetQueryValue(char *full_query, char *key) ;
-gboolean zMapURLGetQueryBoolean(char *full_query, char *key) ;
-int zMapURLGetQueryInt(char *full_query, char *key) ;
+char *zMapURLGetQueryValue(const char *full_query, const char *key) ;
+gboolean zMapURLGetQueryBoolean(const char *full_query, const char *key) ;
+int zMapURLGetQueryInt(const char *full_query, const char *key) ;
 
 #endif /* ZMAPURL_H */

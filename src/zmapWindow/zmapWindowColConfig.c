@@ -219,7 +219,7 @@ typedef struct
 
 
 static GtkWidget *make_menu_bar(ColConfigure configure_data);
-static GtkWidget *loaded_cols_panel(NotebookPage notebook_page, char *frame_title, GList *column_groups,
+static GtkWidget *loaded_cols_panel(NotebookPage notebook_page, const char *frame_title, GList *column_groups,
                                     GList **show_list_out, GList **default_list_out, GList **hide_list_out) ;
 static char *label_text_from_column(FooCanvasGroup *column_group);
 static GtkWidget *create_label(GtkWidget *parent, char *text);
@@ -281,10 +281,10 @@ static void activate_matching_column(gpointer list_data, gpointer user_data) ;
 
 static GtkItemFactoryEntry menu_items_G[] =
   {
-    { "/_File",           NULL,          NULL,             0, "<Branch>",      NULL},
-    { "/File/Close",      "<control>W",  requestDestroyCB, 0, NULL,            NULL},
-    { "/_Help",           NULL,          NULL,             0, "<LastBranch>",  NULL},
-    { "/Help/General",    NULL,          helpCB,           0, NULL,            NULL}
+    { (gchar *)"/_File",           NULL,          NULL,             0, (gchar *)"<Branch>",      NULL},
+    { (gchar *)"/File/Close",      (gchar *)"<control>W", (GtkItemFactoryCallback)requestDestroyCB, 0, NULL,            NULL},
+    { (gchar *)"/_Help",           NULL,          NULL,             0, (gchar *)"<LastBranch>",  NULL},
+    { (gchar *)"/Help/General",    NULL,          (GtkItemFactoryCallback)helpCB,           0, NULL,            NULL}
   };
 
 
@@ -325,8 +325,8 @@ void zmapWindowColumnConfigure(ZMapWindow                 window,
 
   if(window->col_config_window)
     {
-      configure_data = g_object_get_data(G_OBJECT(window->col_config_window),
-                                         CONFIGURE_DATA);
+      configure_data = (ColConfigure)g_object_get_data(G_OBJECT(window->col_config_window),
+                                                       CONFIGURE_DATA);
     }
 
   switch (configure_mode)
@@ -609,10 +609,10 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
   if (reverse_cols)
     {
       cols = loaded_cols_panel(notebook_page,
-       "Reverse Strand", reverse_cols,
-       &(show_hide_data->rev_show_list),
-       &(show_hide_data->rev_default_list),
-       &(show_hide_data->rev_hide_list)) ;
+                               "Reverse Strand", reverse_cols,
+                               &(show_hide_data->rev_show_list),
+                               &(show_hide_data->rev_default_list),
+                               &(show_hide_data->rev_hide_list)) ;
 
       gtk_box_pack_start(GTK_BOX(hbox), cols, TRUE, TRUE, 0) ;
 
@@ -1213,8 +1213,8 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page, GList *columns
 
                   page_data   = (DeferredPageData)notebook_page->page_data;
 
-                  col = g_hash_table_lookup(window->context_map->columns,
-                                            GUINT_TO_POINTER(zMapFeatureSetCreateID(column_name)));
+                  col = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns,
+                                                               GUINT_TO_POINTER(zMapFeatureSetCreateID(column_name)));
 
                   if (col)
                     loaded_in_mark = column_is_loaded_in_range(window->context_map,
@@ -1683,8 +1683,8 @@ static GtkWidget *make_menu_bar(ColConfigure configure_data)
   return menubar ;
 }
 
-static void create_select_all_button(GtkWidget *button_box, char *label,
-     GList *show_hide_button_list)
+static void create_select_all_button(GtkWidget *button_box, const char *label,
+                                     GList *show_hide_button_list)
 {
   GtkWidget *button;
 
@@ -1729,7 +1729,7 @@ static GtkWidget *make_scrollable_vbox(GtkWidget *vbox)
 }
 
 static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
-                                    char        *frame_title,
+                                    const char        *frame_title,
                                     GList       *columns_list,
                                     GList      **show_list_out,
                                     GList      **default_list_out,
@@ -1904,7 +1904,7 @@ static void finished_press_cb(ShowHidePageData show_hide_data)
 /* Implemented like this as I couldn't find how to "wrap" the "toggle" signal */
 static gboolean show_press_button_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
-  GdkModifierType unwanted = (GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK);
+  GdkModifierType unwanted = (GdkModifierType)(GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK);
   ShowHideButton button_data = (ShowHideButton)user_data;
   ShowHidePageData show_hide_data;
 
@@ -1916,8 +1916,8 @@ static gboolean show_press_button_cb(GtkWidget *widget, GdkEvent *event, gpointe
         GdkEventButton *button = (GdkEventButton *)event;
         GdkModifierType locks, control = GDK_CONTROL_MASK;
 
-        locks    = button->state & unwanted;
-        control |= locks;
+        locks = (GdkModifierType)(button->state & unwanted) ;
+        control = (GdkModifierType)(control | locks) ;
 
         if(zMapGUITestModifiersOnly(button, control))
           {
@@ -2003,8 +2003,8 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
 /* This is not the way to do help, we should really used html and have a set of help files. */
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
 {
-  char *title = "Column Configuration Window" ;
-  char *help_text =
+  const char *title = "Column Configuration Window" ;
+  const char *help_text =
     "The ZMap Column Configuration Window allows you to change the way columns are displayed.\n"
     "\n"
     "The window displays columns separately for the forward and reverse strands. You can set\n"
@@ -2077,7 +2077,7 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
       if((toplevel = zMapGUIFindTopLevel(GTK_WIDGET(togglebutton))))
         {
           /* ...so we can et hold of it's data. */
-          configure_data = g_object_get_data(G_OBJECT(toplevel), CONFIGURE_DATA);
+          configure_data = (ColConfigure)g_object_get_data(G_OBJECT(toplevel), CONFIGURE_DATA);
 
           /* Set the correct state. */
           /* We only do this if there is no apply button.  */
@@ -2264,7 +2264,7 @@ static void notebook_foreach_page(GtkWidget       *notebook_widget,
       if(current_page_only && current_page != i)
         continue;
 
-      if((page_data = g_object_get_data(G_OBJECT(page), NOTEBOOK_PAGE_DATA)))
+      if((page_data = (NotebookPage)g_object_get_data(G_OBJECT(page), NOTEBOOK_PAGE_DATA)))
         {
           switch(func_type)
             {
@@ -2294,7 +2294,7 @@ static void notebook_foreach_page(GtkWidget       *notebook_widget,
 
                 if((pop_func = page_data->page_update))
                   {
-                    (pop_func)(page_data, foreach_data) ;
+                    (pop_func)(page_data, (ChangeButtonStateData)foreach_data) ;
                   }
               }
               break;

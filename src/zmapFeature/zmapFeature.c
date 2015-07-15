@@ -34,7 +34,6 @@
 #include <ZMap/zmapUtilsDebug.h>
 
 #include <stdio.h>
-#include <strings.h>
 #include <string.h>
 #include <glib.h>
 #include <ZMap/zmapGLibUtils.h>
@@ -155,7 +154,7 @@ static gboolean withdrawFeatureAny(gpointer key, gpointer value, gpointer user_d
 
 /* datalist debug stuff */
 
-static void printDestroyDebugInfo(ZMapFeatureAny any, char *who) ;
+static void printDestroyDebugInfo(ZMapFeatureAny any, const char *who) ;
 
 static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
                                                       gpointer data,
@@ -239,7 +238,7 @@ gboolean zMapFeatureAnyFindFeature(ZMapFeatureAny feature_set, ZMapFeatureAny fe
   if (!feature_set || !feature )
     return result ;
 
-  if ((hash_feature = g_hash_table_lookup(feature_set->children, zmapFeature2HashKey(feature))))
+  if ((hash_feature = (ZMapFeature)g_hash_table_lookup(feature_set->children, zmapFeature2HashKey(feature))))
     result = TRUE ;
 
   return result ;
@@ -252,13 +251,13 @@ ZMapFeatureAny zMapFeatureParentGetFeatureByID(ZMapFeatureAny feature_parent, GQ
   ZMapFeatureAny feature = NULL ;
   zMapReturnValIfFail(feature_parent, feature) ;
 
-  feature = g_hash_table_lookup(feature_parent->children, GINT_TO_POINTER(feature_id)) ;
+  feature = (ZMapFeatureAny)g_hash_table_lookup(feature_parent->children, GINT_TO_POINTER(feature_id)) ;
 
   return feature ;
 }
 
 
-/*! 
+/*!
  * \brief Callback used to determine whether the current feature has the id in the user data and
  * if so to set the result in the user data.
  */
@@ -271,13 +270,13 @@ static ZMapFeatureContextExecuteStatus find_feature_by_id(GQuark key,
 
   ZMapFeatureAny any = (ZMapFeatureAny)data ;
   FeatureSearch search_data = (FeatureSearch)user_data ;
-  
+
   if (any->unique_id == search_data->search_id)
     {
       search_data->found_feature = any ;
       status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ; /* stop searching */
     }
-  
+
   return status ;
 }
 
@@ -285,8 +284,8 @@ static ZMapFeatureContextExecuteStatus find_feature_by_id(GQuark key,
 /* Looks up a feature_id in ANY level of the child features of feature_any. Returns the feature if
  * found, NULL otherwise. If you know that feature_any is a direct parent of the feature you're
  * looking for use zMapFeatureParentGetFeatureByID instead as that is more effcient. */
-ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_any, 
-                                            GQuark feature_id, 
+ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_any,
+                                            GQuark feature_id,
                                             ZMapFeatureLevelType struct_type)
 {
   ZMapFeatureAny feature = NULL ;
@@ -298,7 +297,7 @@ ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_any,
                             struct_type,
                             find_feature_by_id,
                             &search_data);
-  
+
   feature = search_data.found_feature ;
 
   return feature ;
@@ -433,8 +432,8 @@ ZMapFeature zMapFeatureCreateEmpty(void)
  * doing things is better
  * ==================================================================
  */
-ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *ontology,
-      ZMapStyleMode feature_type,
+ZMapFeature zMapFeatureCreateFromStandardData(const char *name, const char *sequence, const char *ontology,
+                                              ZMapStyleMode feature_type,
                                               ZMapFeatureTypeStyle *style,
                                               int start, int end,
                                               gboolean has_score, double score,
@@ -475,13 +474,13 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
  *
  *
  */
-gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
-    char *sequence, char *SO_accession,
-    ZMapStyleMode feature_mode,
-    ZMapFeatureTypeStyle *style,
-    int start, int end,
-    gboolean has_score, double score,
-    ZMapStrand strand)
+gboolean zMapFeatureAddStandardData(ZMapFeature feature, const char *feature_name_id, const char *name,
+                                    const char *sequence, const char *SO_accession,
+                                    ZMapStyleMode feature_mode,
+                                    ZMapFeatureTypeStyle *style,
+                                    int start, int end,
+                                    gboolean has_score, double score,
+                                    ZMapStrand strand)
 {
   gboolean result = FALSE ;
 
@@ -712,7 +711,7 @@ gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id)
 /*!
  * Adds descriptive text the object.
  *  */
-gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_text, char *feature_text)
+gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, const char *source_text, char *feature_text)
 {
   gboolean result = FALSE ;
 
@@ -798,7 +797,7 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
 
         if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.exons)
           {
-            int i ;
+            unsigned int i ;
             ZMapSpan span ;
             GArray *exons = feature->feature.transcript.exons ;
 
@@ -806,15 +805,15 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
 
             for (i = 0 ; i < exons->len ; i++)
               {
-        span = &g_array_index(exons, ZMapSpanStruct, i) ;
+                span = &g_array_index(exons, ZMapSpanStruct, i) ;
 
-        length += (span->x2 - span->x1 + 1) ;
+                length += (span->x2 - span->x1 + 1) ;
               }
 
           }
         else if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.align)
           {
-            int i ;
+            unsigned int i ;
             ZMapAlignBlock align ;
             GArray *gaps = feature->feature.homol.align ;
 
@@ -870,7 +869,7 @@ void zMapFeatureDestroy(ZMapFeature feature)
  */
 
 /* Features can be NULL if there are no features yet..... */
-ZMapFeatureSet zMapFeatureSetCreate(char *source, GHashTable *features)
+ZMapFeatureSet zMapFeatureSetCreate(const char *source, GHashTable *features)
 {
   ZMapFeatureSet feature_set ;
   GQuark original_id, unique_id ;
@@ -931,12 +930,12 @@ gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature featur
 
 static void copy_to_new_featureset(gpointer key, gpointer hash_data, gpointer user_data)
 {
-  ZMapFeatureSet set = (ZMapFeatureSet)user_data;
-  ZMapFeature    new;
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data;
+  ZMapFeature    new_feature;
 
-  new = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)hash_data);
+  new_feature = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)hash_data);
 
-  zMapFeatureSetAddFeature(set, new);
+  zMapFeatureSetAddFeature(feature_set, new_feature);
 
   return ;
 }
@@ -1227,7 +1226,7 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
 {
   if (!alignment)
     return ;
-  
+
   destroyFeatureAnyWithChildren((ZMapFeatureAny)alignment, free_data) ;
 
   return ;
@@ -1338,7 +1337,7 @@ ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block, GQuark
 GList *zMapFeatureBlockGetMatchingSets(ZMapFeatureBlock feature_block, char *prefix)
 {
   GList *sets = NULL,*s, *del;
-  ZMapFeatureSet set;
+  ZMapFeatureSet feature_set;
 
   zMap_g_hash_table_get_data(&sets, feature_block->feature_sets);
 
@@ -1346,8 +1345,8 @@ GList *zMapFeatureBlockGetMatchingSets(ZMapFeatureBlock feature_block, char *pre
     {
       const char *name;
 
-      set = (ZMapFeatureSet) s->data;
-      name = g_quark_to_string(set->unique_id);
+      feature_set = (ZMapFeatureSet) s->data;
+      name = g_quark_to_string(feature_set->unique_id);
 
       del = s;
       s = s->next;
@@ -1814,12 +1813,12 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
    * deep copy of.... */
   if (USE_SLICE_ALLOC)
     {
-      new_feature_any = g_slice_alloc0(bytes) ;
+      new_feature_any = (ZMapFeatureAny)g_slice_alloc0(bytes) ;
       g_memmove(new_feature_any, orig_feature_any, bytes) ;
     }
   else
     {
-      new_feature_any = g_memdup(orig_feature_any, bytes) ;
+      new_feature_any = (ZMapFeatureAny)g_memdup(orig_feature_any, bytes) ;
     }
   logMemCalls(TRUE, new_feature_any) ;
 
@@ -1872,16 +1871,16 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
          * and while it's tedious to copy the list it save a lot of staring at code
          */
 
-        GList *l,*copy = NULL;
+        GList *l,*copy_list = NULL;
         ZMapSpan span;
 
         for(l = new_set->loaded;l;l = l->next)
           {
-            span = g_memdup(l->data,sizeof(ZMapSpanStruct));
-            copy = g_list_append(copy,span);    /* must preserve the order */
+            span = (ZMapSpan)g_memdup(l->data,sizeof(ZMapSpanStruct));
+            copy_list = g_list_append(copy_list,span);    /* must preserve the order */
           }
 
-        new_set->loaded = copy;
+        new_set->loaded = copy_list;
 
         break;
       }
@@ -1903,7 +1902,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
             if (orig_feature->feature.homol.align != NULL
                                 && orig_feature->feature.homol.align->len > (guint)0)
               {
-                int i ;
+                unsigned int i ;
 
                 new_feature->feature.homol.align =
                   g_array_sized_new(FALSE, TRUE,
@@ -1921,7 +1920,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
         else if (new_feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
           {
             ZMapSpanStruct span;
-            int i ;
+            unsigned int i ;
 
 
             if (orig_feature->feature.transcript.exons != NULL)
@@ -2109,7 +2108,7 @@ static void destroyFeatureAny(gpointer data)
 
 
 
-static void printDestroyDebugInfo(ZMapFeatureAny feature_any, char *who)
+static void printDestroyDebugInfo(ZMapFeatureAny feature_any, const char *who)
 {
   int length = 0 ;
 
@@ -2291,15 +2290,15 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
               }
             else
               {
-                ZMapFeatureSet set ;
+                ZMapFeatureSet feature_set ;
                 GHashTableIter iter;
                 gpointer key, value;
 
-                set = (ZMapFeatureSet)(merge_data->current_view_set) ;
+                feature_set = (ZMapFeatureSet)(merge_data->current_view_set) ;
 
                 /* hash_table_iter is the safe way to iterate through a hash table while
                  * removing members. */
-                g_hash_table_iter_init(&iter, set->features) ;
+                g_hash_table_iter_init(&iter, feature_set->features) ;
 
                 while (g_hash_table_iter_next(&iter, &key, &value))
                   {
@@ -2599,7 +2598,7 @@ gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block,  GQuark unique_id
       {
             for(l = fset->loaded;l;l = l->next)
             {
-                  span = l->data;
+              span = (ZMapSpan)(l->data);
                         continue;
 
                   if(span->x1 > start)
@@ -2727,7 +2726,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
   MergeContextData merge_data = (MergeContextData)user_data ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
-  gboolean new = FALSE, children = FALSE ;
+  gboolean have_new = FALSE, children = FALSE ;
   ZMapFeatureAny *view_path_parent_ptr;
   ZMapFeatureAny *view_path_ptr = NULL;
   ZMapFeatureAny *diff_path_parent_ptr;
@@ -2814,7 +2813,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
                  * and stop recursing.... */
 
 
-                merge_data->new_features = new = TRUE;/* This is a NEW feature. */
+                merge_data->new_features = have_new = TRUE;/* This is a NEW feature. */
 
                 /* We would use featureAnyAddFeature, but it does another
                  * g_hash_table_lookup... */
@@ -2840,7 +2839,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
               }
             else
               {
-                new = FALSE;/* Nothing new here */
+                have_new = FALSE;/* Nothing new here */
                 /* If the feature is there we need to copy it and then recurse down until
                  * we get to the individual feature level. */
                 diff_feature_any = featureAnyCopy(feature_any, NULL);
@@ -2858,7 +2857,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
             *diff_path_ptr = diff_feature_any;
 
             /* keep diff feature -> parent up to date with the view parent */
-            if(new)
+            if(have_new)
               (*diff_path_ptr)->parent = *view_path_parent_ptr;
 
 #if MH17_OLD_CODE
@@ -2876,7 +2875,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 // BUT: this code should only run if not a new block 'cos if it's new then we've just
 // assigned the pointer
 // this is a block which may hold a sequence, the dna featureset is another struct
-            if (!new && feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK &&
+            if (!have_new && feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK &&
                                 (*view_path_ptr)->unique_id == feature_any->unique_id)
               {
                ZMapFeatureBlock vptr = (ZMapFeatureBlock)(*view_path_ptr);
@@ -2923,7 +2922,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
             context->src_feature_set_names = g_list_prepend(context->src_feature_set_names, GUINT_TO_POINTER(feature_any->unique_id));
 
-            if(!new)
+            if(!have_new)
             {
                   mergeFeatureSetLoaded((ZMapFeatureSet)*view_path_ptr, (ZMapFeatureSet) feature_any);
             }
@@ -2949,7 +2948,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
         if (!(zMapFeatureParentGetFeatureByID(*view_path_parent_ptr, feature_any->unique_id)))
           {
-            merge_data->new_features = new = TRUE ;
+            merge_data->new_features = have_new = TRUE ;
             merge_data->feature_count++ ;
 
             featureAnyAddFeature(*diff_path_parent_ptr, feature_any) ;
@@ -2963,7 +2962,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
           }
         else
           {
-            new = FALSE ;
+            have_new = FALSE ;
           }
 
         break;
@@ -2982,14 +2981,14 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
                zMapFeatureLevelType2Str(feature_any->struct_type),
                feature_any,
                g_quark_to_string(feature_any->unique_id),
-               (new == TRUE ? "new" : "old"),
+               (have_new == TRUE ? "new" : "old"),
                (children ? "children and was added" : "no children and was not added"));
 #if 0
     printf("%s (%p) '%s' is %s and has %s\n",
                zMapFeatureLevelType2Str(feature_any->struct_type),
                feature_any,
                g_quark_to_string(feature_any->unique_id),
-               (new == TRUE ? "new" : "old"),
+               (have_new == TRUE ? "new" : "old"),
                (children ? "children and was added" : "no children and was not added"));
 #endif
 
@@ -3092,8 +3091,8 @@ static gboolean featureAnyAddFeature(ZMapFeatureAny feature_any, ZMapFeatureAny 
          */
         /* NOTE also called from locus code in viewremote receive, but is benign */
         ZMapFeature feat = (ZMapFeature) feature;
-        ZMapFeatureSet set = (ZMapFeatureSet) feature_any;
-        feat->style = & set->style;
+        ZMapFeatureSet feature_set = (ZMapFeatureSet) feature_any;
+        feat->style = & feature_set->style;
         }
 
       result = TRUE ;
@@ -3291,7 +3290,7 @@ gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any)
 
 static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any)
 {
-  char *func ;
+  const char *func ;
 
   if (LOG_MEM_CALLS)
     {

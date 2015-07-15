@@ -72,7 +72,7 @@ $converted_data =
  *
  *-------------------------------------------------------------------
  */
-char *default_styles = \"\\\n" ; 
+const char *default_styles = \"\\\n" ; 
 
 #
 # open file and read into a string 

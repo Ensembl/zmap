@@ -110,7 +110,7 @@ static MainFrame makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
                       ZMapControlImportFileCB user_func, gpointer user_data,
                       ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
 static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map) ;
-static GtkWidget *makeOptionsBox(MainFrame main_frame, char *seq, int start, int end);
+static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *seq, int start, int end);
 static void makeButtonBox(GtkWidget *toplevel, MainFrame main_frame) ;
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
@@ -307,7 +307,7 @@ static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
 {
   GtkWidget *vbox, *main_frame, *options_box;
   MainFrame main_data ;
-  char *sequence = "";
+  const char *sequence = "";
   GtkDialog *dialog = GTK_DIALOG(toplevel) ;
 
   vbox = dialog->vbox ;
@@ -348,7 +348,8 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 {
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
-  char *sequence = "", *start = "", *end = "", *dataset = "" ;
+  const char *sequence = "", *dataset = "" ;
+  char *start = NULL, *end = NULL ;
 
   if (sequence_map)
     {
@@ -415,14 +416,14 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 
   main_frame->start_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), start) ;
+  gtk_entry_set_text(GTK_ENTRY(entry), (start ? start : "")) ;
   //  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
   gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
 
   main_frame->end_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), end) ;
+  gtk_entry_set_text(GTK_ENTRY(entry), (end ? end : "")) ;
   //  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
   gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
@@ -464,12 +465,13 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 
 
 /* Make the option buttons frame. */
-static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int req_start, int req_end)
+static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence, int req_start, int req_end)
 {
   GtkWidget *frame = NULL ;
   GtkWidget *map_seq_button = NULL , *config_button = NULL ;
   GtkWidget *topbox = NULL, *hbox = NULL, *entrybox = NULL, *labelbox = NULL, *entry = NULL, *label = NULL ;
-  char *sequence = "", *start = "", *end = "", *file = "" ;
+  const char *sequence = "", *file = "" ;
+  char *start = NULL, *end = NULL ;
   char *home_dir ;
 
   if (req_sequence)
@@ -600,12 +602,12 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
 
   main_frame->req_start_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), start) ;
+  gtk_entry_set_text(GTK_ENTRY(entry), (start ? start : "")) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
   main_frame->req_end_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), end) ;
+  gtk_entry_set_text(GTK_ENTRY(entry), (end ? end : "")) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
   main_frame->assembly_widg = entry = gtk_entry_new() ;
@@ -922,7 +924,7 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
   if(main_frame->file_type == FILE_BIGWIG)
     {
       /*GQuark f_id;*/
-      char * strand_txt = NULL ;
+      const char * strand_txt = NULL ;
 
       /*f_id = zMapFeatureSetCreateID("bigWig");
       src = zMapViewGetFeatureSetSource(view, f_id);
@@ -974,8 +976,8 @@ static void importFileCB(gpointer cb_data)
     have_assembly = FALSE,
     remap_features = TRUE ;
   MainFrame main_frame = NULL ;
-  char *err_msg = NULL,
-    *sequence_txt = NULL,
+  const char *err_msg = NULL ;
+  char *sequence_txt = NULL,
     *dataset_txt = NULL,
     *start_txt = NULL,
     *end_txt = NULL,
