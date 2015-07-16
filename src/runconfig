@@ -119,7 +119,7 @@ case $opsys in
 
     zmap_register_prefix_in_env $GTK_PREFIX
 
-    CFLAGS_args="-Wall -I$GTK_PREFIX/include -Wno-deprecated-declarations"
+    CFLAGS_args="-Wall -I$GTK_PREFIX/include -I$GTK_PREFIX/include/mysql55 -Wno-deprecated-declarations"
 
 
     LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
