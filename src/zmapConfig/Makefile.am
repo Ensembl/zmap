@@ -5,15 +5,15 @@ SUBDIRS = .
 
 noinst_LTLIBRARIES = libZMapConfig.la
 
-libZMapConfig_la_SOURCES = zmapConfigDir.c \
+libZMapConfig_la_SOURCES = zmapConfigDir.cpp \
 zmapConfigDir_P.h \
-zmapConfigFile.c \
-zmapConfigIni.c \
+zmapConfigFile.cpp \
+zmapConfigIni.cpp \
 zmapConfigIni_P.h \
-zmapConfigKey.c \
-zmapConfigLoader.c \
+zmapConfigKey.cpp \
+zmapConfigLoader.cpp \
 default_styles.txt\
-default_styles.c\
+default_styles.cpp\
 zmap_DefaultStyles.pl\
 $(NULL)
 
@@ -28,10 +28,10 @@ MAINTAINERCLEANFILES = $(top_srcdir)/zmapConfig/Makefile.in
 
 # Create default styles string dynamically each time the text file is changed.
 #
-default_styles.c: $(top_srcdir)/zmapConfig/default_styles.txt
-	$(top_srcdir)/zmapConfig/zmap_DefaultStyles.pl $(top_srcdir)/zmapConfig/default_styles.txt > $(top_srcdir)/zmapConfig/default_styles.c
+default_styles.cpp: $(top_srcdir)/zmapConfig/default_styles.txt
+	$(top_srcdir)/zmapConfig/zmap_DefaultStyles.pl $(top_srcdir)/zmapConfig/default_styles.txt > $(top_srcdir)/zmapConfig/default_styles.cpp
 
-default-styles: $(top_srcdir)/zmapConfig/default_styles.c
+default-styles: $(top_srcdir)/zmapConfig/default_styles.cpp
 
 all-local: default-styles
 

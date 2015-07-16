@@ -29,13 +29,13 @@
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmap.h>
+#include <ZMap/zmap.hpp>
 
 #include <string.h>
 
-#include <ZMap/zmapUtils.h>
-#include <ZMap/zmapCmdLineArgs.h>
-#include <zmapControl_P.h>
+#include <ZMap/zmapUtils.hpp>
+#include <ZMap/zmapCmdLineArgs.hpp>
+#include <zmapControl_P.hpp>
 #include <gbtools/gbtools.hpp>
 
 

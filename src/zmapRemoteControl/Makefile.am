@@ -4,13 +4,13 @@ include $(top_srcdir)/Makefile.zmap
 noinst_LTLIBRARIES = libZMapRemoteControl.la
 
 libZMapRemoteControl_la_SOURCES = \
-zmapRemoteControl_P.h \
-zmapRemoteCommand.c \
-zmapRemoteControlUtils.c \
+zmapRemoteControl_P.hpp \
+zmapRemoteCommand.cpp \
+zmapRemoteControlUtils.cpp \
 $(NULL)
 
 if USE_ZEROMQ
-libZMapRemoteControl_la_SOURCES += zmapRemoteControl.c
+libZMapRemoteControl_la_SOURCES += zmapRemoteControl.cpp
 endif
 
 libZMapRemoteControl_la_CFLAGS = $(INCLUDE_COMMON)
