@@ -6,10 +6,10 @@ SUBDIRS = .
 noinst_LTLIBRARIES = libZMapConfig.la
 
 libZMapConfig_la_SOURCES = zmapConfigDir.cpp \
-zmapConfigDir_P.h \
+zmapConfigDir_P.hpp \
 zmapConfigFile.cpp \
 zmapConfigIni.cpp \
-zmapConfigIni_P.h \
+zmapConfigIni_P.hpp \
 zmapConfigKey.cpp \
 zmapConfigLoader.cpp \
 default_styles.txt\
