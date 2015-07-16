@@ -35,15 +35,15 @@
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmap.h>
+#include <ZMap/zmap.hpp>
 
 #include <string.h>
-#include <ZMap/zmapFeature.h>
-#include <ZMap/zmapUtils.h>
-#include <ZMap/zmapXMLHandler.h>
-#include <ZMap/zmapGLibUtils.h>
-#include <ZMap/zmapUtilsGUI.h>
-#include <zmapWindow_P.h>
+#include <ZMap/zmapFeature.hpp>
+#include <ZMap/zmapUtils.hpp>
+#include <ZMap/zmapXMLHandler.hpp>
+#include <ZMap/zmapGLibUtils.hpp>
+#include <ZMap/zmapUtilsGUI.hpp>
+#include <zmapWindow_P.hpp>
 #include <gbtools/gbtools.hpp>
 
 

@@ -14,14 +14,14 @@ endif
 
 noinst_LTLIBRARIES = libZMapServer.la libZMapServers.la
 
-libZMapServer_la_SOURCES = zmapServer.h \
-zmapServer.c \
-zmapServer_P.h \
-zmapServerProtocolHandler.c \
-zmapServerPrototype.h \
-zmapDataSource_P.h \
-zmapDataSource.h \
-zmapDataSource.c \
+libZMapServer_la_SOURCES = zmapServer.hpp \
+zmapServer.cpp \
+zmapServer_P.hpp \
+zmapServerProtocolHandler.cpp \
+zmapServerPrototype.hpp \
+zmapDataSource_P.hpp \
+zmapDataSource.hpp \
+zmapDataSource.cpp \
 $(NULL)
 
 libZMapServer_la_LIBADD  = 

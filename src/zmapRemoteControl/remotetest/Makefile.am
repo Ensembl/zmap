@@ -7,7 +7,7 @@ SUBDIRS = .
 noinst_LTLIBRARIES = libZMapRemoteControl.la
 
 libZMapRemoteControl_la_SOURCES = \
-remotecontroltest.cc \
+remotecontroltest.cpp \
 $(NULL)
 
 libZMapRemoteControl_la_CFLAGS = $(INCLUDE_COMMON)

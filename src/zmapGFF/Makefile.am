@@ -5,29 +5,29 @@ SUBDIRS = .
 
 noinst_LTLIBRARIES = libZMapGFF.la
 
-libZMapGFF_la_SOURCES = zmapGFF_P.h \
-zmapGFF2_P.h \
-zmapGFF3_P.h \
-zmapGFF2Dumper.c \
-zmapGFF2parser.c \
-zmapGFF3parser.c \
-zmapGFFGeneral.c \
-zmapGFFUtils.c \
-zmapGFFAttribute.h \
-zmapGFFAttribute.c \
-zmapGFFDirective.h \
-zmapGFFDirective.c \
-zmapGFFFeatureData.h \
-zmapGFFFeatureData.c \
-zmapGFFHeader.h \
-zmapGFFHeader.c \
-zmapGFFStringUtils.c \
-zmapGFFUtils.c \
-zmapMLF.c \
-zmapMLF_P.h \
-zmapSOData_P.h \
-zmapSOParser_P.h \
-zmapSOParser.c \
+libZMapGFF_la_SOURCES = zmapGFF_P.hpp \
+zmapGFF2_P.hpp \
+zmapGFF3_P.hpp \
+zmapGFF2Dumper.cpp \
+zmapGFF2parser.cpp \
+zmapGFF3parser.cpp \
+zmapGFFGeneral.cpp \
+zmapGFFUtils.cpp \
+zmapGFFAttribute.hpp \
+zmapGFFAttribute.cpp \
+zmapGFFDirective.hpp \
+zmapGFFDirective.cpp \
+zmapGFFFeatureData.hpp \
+zmapGFFFeatureData.cpp \
+zmapGFFHeader.hpp \
+zmapGFFHeader.cpp \
+zmapGFFStringUtils.cpp \
+zmapGFFUtils.cpp \
+zmapMLF.cpp \
+zmapMLF_P.hpp \
+zmapSOData_P.hpp \
+zmapSOParser_P.hpp \
+zmapSOParser.cpp \
 $(NULL)
 
 libZMapGFF_la_CFLAGS = $(INCLUDE_COMMON)
