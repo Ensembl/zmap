@@ -1,3 +1,20 @@
+2015-07-16  Gemma Guest  <gb10@sanger.ac.uk>
+ remove c++0x compile option - BUILD
+ src/Makefile.zmap |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+2015-07-15  Gemma Guest  <gb10@sanger.ac.uk>
+ update release notes - DOC
+ docs/user/release_notes.shtml |   13 +++++++++++++
+ 1 files changed, 13 insertions(+), 0 deletions(-)
+
+2015-07-15  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.7.0-305-gc914955 - Update RT and git commit reports
+ src/ChangeLog                                  | 5045 ++++++++++++------------
+ src/build/release_docs/GIT_COMMITS.txt         |   50 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   66 +-
+ 3 files changed, 2535 insertions(+), 2626 deletions(-)
+
 2015-07-15  Ed Griffiths  <edgrif@sanger.ac.uk>
  make ensc-core include files conditional so we don't need and ensc_core/src directory. - BUILD
  src/Makefile.common |   22 ++++++++++++++--------
