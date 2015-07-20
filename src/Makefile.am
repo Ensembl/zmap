@@ -295,7 +295,7 @@ check_PROGRAMS = check_zmap
 # so that a script can do
 # make check check_zmap_LOG_FILE=log_to_check.log
 check_zmap_LOG_FILE     = "default.log"
-check_zmap_SOURCES      = $(top_srcdir)/tests/check_zmapmain.pp
+check_zmap_SOURCES      = $(top_srcdir)/tests/check_zmapmain.cpp
 check_zmap_DEPENDENCIES = $(check_LTLIBRARIES)
 check_zmap_LINK         = $(zmap_LINK)
 check_zmap_LDADD        = @CHECK_LIBS@ -lcheckZMap $(zmap_LDADD)
