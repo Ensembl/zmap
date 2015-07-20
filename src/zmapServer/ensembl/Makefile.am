@@ -3,8 +3,7 @@ include $(top_srcdir)/Makefile.zmap
 
 SUBDIRS = .
 
-# hacked to make mac build work...this is not the way to do it...
-AM_CPPFLAGS += -I$(top_srcdir)/zmapServer -I/usr/include/mysql -I/opt/local/include/mysql55
+AM_CPPFLAGS += -I$(top_srcdir)/zmapServer -I@MYSQL_LOCATION@ $(libEnsemblServer_la_CFLAGS)
 
 noinst_LTLIBRARIES = libEnsemblServer.la
 
