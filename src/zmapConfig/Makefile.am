@@ -22,16 +22,24 @@ libZMapConfig_la_CFLAGS = $(INCLUDE_COMMON)
 
 # Extra files to remove for the maintainer-clean target.
 #
-MAINTAINERCLEANFILES = $(top_srcdir)/zmapConfig/Makefile.in
+MAINTAINERCLEANFILES = $(top_srcdir)/zmapConfig/Makefile.in $(top_srcdir)/zmapConfig/default_styles.cpp
 
-
-
-# Create default styles string dynamically each time the text file is changed.
+# PLEASE READ:
+# We would like to create the default_styles.cpp file here but the below mechanism which tries to
+# make use of the automake provided target "all-local" cannot be made to work reliably. This is
+# because there is NO guarantee about when all-local gets run, it can end up being run _after_
+# the "all" target so then the "all" target fails because there is no default_styles.cpp file.
 #
-default_styles.cpp: $(top_srcdir)/zmapConfig/default_styles.txt
-	$(top_srcdir)/zmapConfig/zmap_DefaultStyles.pl $(top_srcdir)/zmapConfig/default_styles.txt > $(top_srcdir)/zmapConfig/default_styles.cpp
+# As a not very satisfactory hack I've moved the code to create default_styles.cpp to the
+# zmapApp directory because targets there are always run before this directory.
+#
+#default_styles.cpp: $(top_srcdir)/zmapConfig/default_styles.txt
+#	@echo 'about to make default_styles.cpp'
+#	$(top_srcdir)/zmapConfig/zmap_DefaultStyles.pl $(top_srcdir)/zmapConfig/default_styles.txt > $(top_srcdir)/zmapConfig/default_styles.cpp
+#	@echo 'made default_styles.cpp'
+#
+#default-styles: $(top_srcdir)/zmapConfig/default_styles.cpp
+#
+#all-local: default-styles
 
-default-styles: $(top_srcdir)/zmapConfig/default_styles.cpp
-
-all-local: default-styles
 
