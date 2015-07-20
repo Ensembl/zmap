@@ -41,17 +41,6 @@ AC_CHECK_PROG(GLIB_GENMARSHAL, glib-genmarshal, glib-genmarshal)
 
 
 
-
-# try to set up for mysql dir......
-AM_CONDITIONAL([MYSQL_LOCATION], [ test -n "$MYSQL_LOCATION" ])
-AM_COND_IF([MYSQL_LOCATION],
-           [AC_SUBST(MYSQL_LOCATION, "$MYSQL_LOCATION")],
-           [AC_SUBST(MYSQL_LOCATION, "/EVEN/MORE/RUBBISH/LOCATION/usr/include/mysql")])
-
-
-
-
-
 # External libraries
 #
 # Note that macros for external libraries define the same symbol as:
