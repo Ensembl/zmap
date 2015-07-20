@@ -2066,7 +2066,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuItemExportOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Feature" , EXPORT_FEATURES_CLICKED, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Clicked feature" , EXPORT_FEATURES_CLICKED, exportMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Column features" , EXPORT_FEATURES_ALL, exportMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Column features (marked)" , EXPORT_FEATURES_MARKED, exportMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
