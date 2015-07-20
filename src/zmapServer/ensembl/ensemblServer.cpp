@@ -949,11 +949,11 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
   if (!feature_name || *feature_name == '\0')
     feature_name = SimpleFeature_getDisplayLabel(rsf) ;
 
-  if (analysis)
-    source = Analysis_getGFFSource(analysis) ;
-
   if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
+
+  if (analysis && (!source || *source == '\0'))
+    source = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
                         feature_mode, source, 0, 0, 
@@ -979,11 +979,11 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
   if ((!feature_name || *feature_name == '\0') && consensus)
     feature_name = RepeatConsensus_getName(consensus) ;
 
-  if (analysis)
-    source = Analysis_getGFFSource(analysis) ;
-
   if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
+
+  if (analysis && (!source || *source == '\0'))
+    source = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
                         feature_mode, source, 0, 0, 
@@ -1044,11 +1044,11 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
   if (!feature_name || *feature_name == '\0')
     feature_name = feature_name_id ;
 
-  if (analysis)
-    source = Analysis_getGFFSource(analysis) ;
-
   if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
+
+  if (analysis && (!source || *source == '\0'))
+    source = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
                         feature_mode, source, 0, 0, 
@@ -1100,11 +1100,11 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
   if (!feature_name || *feature_name == '\0')
     feature_name = feature_name_id ;
 
-  if (analysis)
-    source = Analysis_getGFFSource(analysis) ;
-
   if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
+
+  if (analysis && (!source || *source == '\0'))
+    source = Analysis_getGFFSource(analysis) ;
 
   if (!source || *source == '\0')
     source = featureGetSOTerm((SeqFeature*)rsf) ;
@@ -1181,6 +1181,8 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
                                         ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
+  Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
+  const char *source = NULL ;
 
   /* Create the basic feature. We need to pass some alignment-specific fields */
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_ALIGNMENT ;
@@ -1190,7 +1192,15 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
 
   int match_start = BaseAlignFeature_getHitStart(rsf) ;
   int match_end = BaseAlignFeature_getHitEnd(rsf) ;
-  const char *source = BaseAlignFeature_getDbName((BaseAlignFeature*)rsf) ;
+
+  if ((!source || *source == '\0') && analysis)
+    source = Analysis_getLogicName(analysis) ;
+
+  if ((!source || *source == '\0') && analysis)
+    source = Analysis_getGFFSource(analysis) ;
+
+  if (!source || *source == '\0')
+    BaseAlignFeature_getDbName((BaseAlignFeature*)rsf) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
                         feature_mode, source, match_start, match_end,
