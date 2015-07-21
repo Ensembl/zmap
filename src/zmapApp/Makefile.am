@@ -40,7 +40,7 @@ all-local:
 	$(top_srcdir)/zmapConfig/zmap_DefaultStyles.pl $(top_srcdir)/zmapConfig/default_styles.txt > $(top_srcdir)/zmapConfig/default_styles.cpp
 	@echo 'finished making zmapConfigs default_styles.cpp'
 
-dist-local:
+dist-hook:
 	@echo 'about to make zmapConfigs default_styles.cpp'
 	$(top_srcdir)/zmapConfig/zmap_DefaultStyles.pl $(top_srcdir)/zmapConfig/default_styles.txt > $(top_srcdir)/zmapConfig/default_styles.cpp
 	@echo 'finished making zmapConfigs default_styles.cpp'
