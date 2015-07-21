@@ -721,7 +721,11 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAFeatureAnyFile(NULL, NULL, menu_data)) ;
     }
 
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuItemExportOps(NULL, NULL, menu_data)) ;
+  const gboolean selected_annotation = 
+    (feature_set && feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME)) ;
+
+  if (!selected_annotation)
+    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuItemExportOps(NULL, NULL, menu_data)) ;
 
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
@@ -846,7 +850,14 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuSearchListOps(NULL, NULL, cbdata)) ;
 
-      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuColumnExportOps(NULL, NULL, cbdata)) ;
+      /* For now disable export for the annotation column. Maybe longer term we want to re-enable
+       * this but we need to make sure it can export the annotation feature (which is disabled by
+       * default because it's not a real feature), otherwise we get an empty file, which is
+       * confusing. */
+      const gboolean selected_annotation = (feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME)) ;
+
+      if (!selected_annotation)
+        menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuColumnExportOps(NULL, NULL, cbdata)) ;
 
       zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
