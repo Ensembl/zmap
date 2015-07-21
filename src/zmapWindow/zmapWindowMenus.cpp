@@ -159,6 +159,7 @@ typedef enum {
 
 #define SCRATCH_DELETE_SUBFEATURE  SCRATCH_CONFIG_STR "/Delete subfeature"
 #define SCRATCH_CREATE             SCRATCH_CONFIG_STR "/Create feature"
+#define SCRATCH_EXPORT             SCRATCH_CONFIG_STR "/Export feature"
 #define SCRATCH_ATTRIBUTES         SCRATCH_CONFIG_STR "/Set attributes"
 #define SCRATCH_UNDO               SCRATCH_CONFIG_STR "/Undo"
 #define SCRATCH_REDO               SCRATCH_CONFIG_STR "/Redo"
@@ -250,6 +251,7 @@ typedef enum
     ITEM_MENU_DELETE_FROM_SCRATCH,
     ITEM_MENU_SCRATCH_ATTRIBUTES,
     ITEM_MENU_SCRATCH_CREATE,
+    ITEM_MENU_SCRATCH_EXPORT,
     ITEM_MENU_CLEAR_SCRATCH,
     ITEM_MENU_UNDO_SCRATCH,
     ITEM_MENU_REDO_SCRATCH,
@@ -367,7 +369,7 @@ GQuark related_column(ZMapFeatureContextMap map,GQuark fset_id) ;
 
 static void addMenuItem(ZMapGUIMenuItem menu,
                         int *i, const int max_elements,
-                        ZMapGUIMenuType item_type, const char *item_text, ZMapWindowMenuItemId item_id,
+                        ZMapGUIMenuType item_type, const char *item_text, int item_id,
                         ZMapGUIMenuItemCallbackFunc callback_func, const gpointer callback_data) ;
 
 
@@ -860,7 +862,7 @@ static void addMenuItem(ZMapGUIMenuItem menu,
                         const int max_elements,
                         ZMapGUIMenuType item_type,
                         const char *item_text,
-                        ZMapWindowMenuItemId item_id,
+                        int item_id,
                         ZMapGUIMenuItemCallbackFunc callback_func,
                         const gpointer callback_data)
 {
@@ -1106,6 +1108,8 @@ void makeMenuScratchOpsAnnotationFeature(ZMapGUIMenuItem menu,
   addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_DELETE_SUBFEATURE, ITEM_MENU_DELETE_FROM_SCRATCH, itemMenuCB, NULL);
   addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_ATTRIBUTES, ITEM_MENU_SCRATCH_ATTRIBUTES, itemMenuCB, NULL);
   addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CREATE, ITEM_MENU_SCRATCH_CREATE, itemMenuCB, NULL);
+
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_EXPORT, EXPORT_FEATURES_CLICKED, exportMenuCB, NULL);
 }
 
 
@@ -1133,11 +1137,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
 
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
     } ;
   int i ;
-  int max_elements = 13 ;
+  int max_elements = 14 ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
   zMapReturnValIfFail(menu_data && menu_data->window, menu) ;
@@ -1233,6 +1238,9 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       else
         zmapWindowFeatureShow(menu_data->window, menu_data->item, TRUE) ;
       break ;
+
+    case ITEM_MENU_SCRATCH_EXPORT:
+      
 
     case ITEM_MENU_UNDO_SCRATCH:
       zmapWindowScratchUndo(menu_data->window);
