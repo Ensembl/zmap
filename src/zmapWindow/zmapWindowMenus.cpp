@@ -4355,6 +4355,46 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
   if (!filepath)
     filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel), "Feature Export filename ?", NULL, "gff") ;
 
+  /* If saving a single feature and it's in the Annotation column, we need to extract any unsaved
+   * attributes. */
+  ZMapFeatureAny temp_feature = NULL ;
+  ZMapFeatureSet temp_featureset = NULL ;
+  ZMapFeatureBlock block = NULL ;
+  const GQuark scratch_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME) ;
+
+  if (!all_features && feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE &&
+      feature->parent && feature->parent->unique_id == scratch_id)
+    {
+      /* save the original feature as temp_feature */
+      temp_feature = feature ;
+
+      /* create a copy and update the name to that in the attributes */
+      feature = (ZMapFeatureAny)zMapFeatureShallowCopy((ZMapFeature)temp_feature) ;
+
+      feature->original_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] ;
+      feature->unique_id = feature->original_id ;
+
+      /* We need to update the parent to be the featureset from the attributes. Create a temp
+       * featureset with this name, because it may not exist */
+      const GQuark featureset_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] ;
+      block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(window->feature_context->master_align->blocks, 0)) ;
+
+      temp_featureset = (ZMapFeatureSet)zMapFeatureParentGetFeatureByID((ZMapFeatureAny)block, featureset_id) ;
+
+      if (temp_featureset)
+        {
+          feature->parent = (ZMapFeatureAny)temp_featureset ;
+          temp_featureset = NULL ; /* reset pointer so we don't free it */
+        }
+      else
+        {
+          const GQuark featureset_unique_id = zMapFeatureSetCreateID(g_quark_to_string(featureset_id)) ;
+          temp_featureset = zMapFeatureSetIDCreate(featureset_id, featureset_unique_id, NULL, NULL) ;
+          zMapFeatureBlockAddFeatureSet(block, temp_featureset) ;
+          feature->parent = (ZMapFeatureAny)temp_featureset ;
+        }
+    }
+
   if (!filepath
       || !(file = g_io_channel_new_file(filepath, "w", &tmp_error))
       || !zMapGFFDumpRegion(feature, window->context_map->styles, region_span, file, &tmp_error))
@@ -4369,6 +4409,21 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
   else
     {
       result = TRUE ;
+    }
+
+  if (temp_feature)
+    {
+      /* Free temp feature and set pointer back to original feature */
+      zMapFeatureAnyDestroyShallow(feature) ;
+      feature = (ZMapFeatureAny)temp_feature ;
+      temp_feature = NULL ;
+    }
+
+  if (temp_featureset)
+    {
+      zMapFeatureBlockRemoveFeatureSet(block, temp_featureset) ;
+      zMapFeatureAnyDestroyShallow((ZMapFeatureAny)temp_featureset) ;
+      temp_featureset = NULL ;
     }
 
   if (file)

@@ -145,6 +145,7 @@ static gboolean featureAnyAddFeature(ZMapFeatureAny feature_set, ZMapFeatureAny 
 static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb) ;
 static gboolean destroyFeatureAnyWithChildren(ZMapFeatureAny feature_any, gboolean free_children) ;
 static void featureAnyAddToDestroyList(ZMapFeatureContext context, ZMapFeatureAny feature_any) ;
+static void destroyFeatureAnyShallow(gpointer data) ;
 
 static void destroyFeatureAny(gpointer data) ;
 static void destroyFeature(ZMapFeature feature) ;
@@ -400,6 +401,18 @@ void zMapFeatureAnyDestroy(ZMapFeatureAny feature_any)
     return ;
 
   destroyFeatureAnyWithChildren(feature_any, TRUE) ;
+
+  return ;
+}
+
+
+void zMapFeatureAnyDestroyShallow(ZMapFeatureAny feature_any)
+{
+
+  if (!zMapFeatureIsValid(feature_any))
+    return ;
+
+  destroyFeatureAnyShallow(feature_any) ;
 
   return ;
 }
@@ -2103,6 +2116,59 @@ static void destroyFeatureAny(gpointer data)
 }
 
 
+static void destroyFeatureAnyShallow(gpointer data)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
+  gulong nbytes = 0 ;
+
+  zMapReturnIfFail(feature_any);
+  zMapReturnIfFail(zMapFeatureAnyHasMagic(feature_any));
+
+  if (destroy_debug_G && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
+    printDestroyDebugInfo(feature_any, "destroyFeatureAnyShallow") ;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+      nbytes = sizeof(ZMapFeatureContextStruct) ;
+      break ;
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      nbytes = sizeof(ZMapFeatureAlignmentStruct) ;
+      break ;
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      nbytes = sizeof(ZMapFeatureBlockStruct) ;
+      break ;
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      nbytes = sizeof(ZMapFeatureSetStruct) ;
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      nbytes = sizeof(ZMapFeatureStruct) ;
+      break;
+    default:
+      zMapWarnIfReached();
+      break;
+    }
+
+  logMemCalls(FALSE, feature_any) ;
+
+  /* nbytes is zero if we were given an invalid struct type - shouldn't
+   * happen but check anyway */
+  if (nbytes)
+    {
+      memset(feature_any, 0, nbytes) ;    /* Make sure mem for struct is useless. */
+      if (USE_SLICE_ALLOC)
+        g_slice_free1(nbytes, feature_any) ;
+    }
+
+  if (!USE_SLICE_ALLOC)
+    {
+      g_free(feature_any) ;
+    }
+
+  return ;
+}
+
+
 
 
 
@@ -3395,3 +3461,71 @@ gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
   return(0);
 }
 
+
+/* Make a shallow copy of the given feature. The caller should free the returned ZMapFeature
+ * struct with zMapFeatureAnyDestroyShallow */
+ZMapFeature zMapFeatureShallowCopy(ZMapFeature src)
+{
+  ZMapFeature dest = NULL;
+  zMapReturnValIfFail(src && src->mode != ZMAPSTYLE_MODE_INVALID, dest) ;
+
+  dest = zMapFeatureCreateEmpty() ;
+
+#ifdef FEATURES_NEED_MAGIC
+  dest->magic = src->magic ;
+#endif
+
+  dest->struct_type = src->struct_type ;
+  dest->parent = src->parent ;
+  dest->unique_id = src->unique_id ;
+  dest->original_id = src->original_id ;
+  dest->no_children = src->no_children ;
+  dest->flags.has_score = src->flags.has_score ;
+  dest->flags.has_boundary = src->flags.has_boundary ;
+  dest->flags.collapsed = src->flags.collapsed ;
+  dest->flags.squashed = src->flags.squashed ;
+  dest->flags.squashed_start = src->flags.squashed_start ;
+  dest->flags.squashed_end = src->flags.squashed_end ;
+  dest->flags.joined = src->flags.joined ;
+  dest->children = src->children ;
+  dest->composite = src->composite ;
+  dest->db_id = src->db_id ;
+  dest->mode = src->mode ;
+  dest->SO_accession = src->SO_accession ;
+  dest->style = src->style;
+  dest->x1 = src->x1 ;
+  dest->x2 = src->x2 ;
+  dest->strand = src->strand ;
+  dest->boundary_type = src->boundary_type ;
+  dest->score = src->score ;
+  dest->population = src->population;
+  dest->source_id = src->source_id ; 
+  dest->source_text = src->source_text ;
+  dest->description = src->description ;
+  dest->url = src->url ;
+  dest->feature = src->feature ;
+
+  return dest ;
+}
+
+
+/* Make a shallow copy of the given featureset. The caller should free the returned ZMapFeatureSet
+ * struct with zMapFeatureAnyDestroyShallow */
+ZMapFeatureSet zMapFeatureSetShallowCopy(ZMapFeatureSet src)
+{
+  ZMapFeatureSet dest = NULL;
+  zMapReturnValIfFail(src, dest) ;
+
+  dest = zMapFeatureSetIDCreate(src->original_id, src->unique_id, src->style, src->features) ;
+
+#ifdef FEATURES_NEED_MAGIC
+  dest->magic = src->magic ;
+#endif
+
+  dest->parent = src->parent ;
+  dest->description = src->description ;
+  dest->masker_sorted_features = src->masker_sorted_features ;
+  dest->loaded = src->loaded;
+
+  return dest ;
+}
