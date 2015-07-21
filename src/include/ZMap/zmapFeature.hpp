@@ -1547,6 +1547,7 @@ int zMapFeatureTranscriptGetCDSStart(ZMapFeature feature) ;
 int zMapFeatureTranscriptGetCDSEnd(ZMapFeature feature) ;
 GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature) ;
 void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data) ;
+ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src) ;
 
 #endif /* ZMAP_FEATURE_H */
 

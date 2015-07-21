@@ -1677,6 +1677,39 @@ void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data)
 }
 
 
+/* Make a shallow copy of the given feature. The caller should free the returned ZMapFeature
+ * struct but none of the members, which remain owned by src. */
+ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src)
+{
+  ZMapFeature dest = NULL;
+  zMapReturnValIfFail(src && src->mode == ZMAPSTYLE_MODE_TRANSCRIPT, dest) ;
+
+  dest = zMapFeatureShallowCopy(src) ;
+
+  if (dest)
+    {
+      dest->featureflags.cds = src->flags.cds ;
+      dest->flags.start_not_found = src->flags.start_not_found ;
+      dest->flags.end_not_found = src->flags.end_not_found ;
+
+      dest->known_name = src->known_name ;
+      dest->locus_id = src->locus_id ;
+      dest->cds_start = src->cds_start ;
+      dest->cds_end = src->cds_end ;
+
+      dest->start_not_found = src->start_not_found ;
+
+      dest->phase = str->phase ;
+      dest->exons = src->exons ;
+      dest->introns = src->introns ;
+      dest->variations = src->variations;
+      dest->evidence = src->evidence ;
+    }
+
+  return dest ;
+}
+
+
 /*
  *               Internal functions.
  */
