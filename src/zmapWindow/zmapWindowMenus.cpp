@@ -4339,6 +4339,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
 {
   static const char *error_prefix = "Features export failed:" ;
   gboolean result = FALSE ;
+  gboolean ok = TRUE ;
   char *filepath = NULL ;
   GIOChannel *file = NULL ;
   GError *tmp_error = NULL ;
@@ -4380,35 +4381,45 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
       temp_feature = feature ;
 
       /* create a copy and update the name to that in the attributes */
-      feature = (ZMapFeatureAny)zMapFeatureShallowCopy((ZMapFeature)temp_feature) ;
+      feature = (ZMapFeatureAny)zMapFeatureTranscriptShallowCopy((ZMapFeature)temp_feature) ;
 
-      feature->original_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] ;
-      feature->unique_id = feature->original_id ;
-
-      /* We need to update the parent to be the featureset from the attributes. Create a temp
-       * featureset with this name, because it may not exist */
-      const GQuark featureset_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] ;
-      block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(window->feature_context->master_align->blocks, 0)) ;
-
-      temp_featureset = (ZMapFeatureSet)zMapFeatureParentGetFeatureByID((ZMapFeatureAny)block, featureset_id) ;
-
-      if (temp_featureset)
+      if (feature)
         {
-          feature->parent = (ZMapFeatureAny)temp_featureset ;
-          temp_featureset = NULL ; /* reset pointer so we don't free it */
+          feature->original_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] ;
+          feature->unique_id = feature->original_id ;
+
+          /* We need to update the parent to be the featureset from the attributes. Create a temp
+           * featureset with this name, because it may not exist */
+          const GQuark featureset_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] ;
+          block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(window->feature_context->master_align->blocks, 0)) ;
+
+          temp_featureset = (ZMapFeatureSet)zMapFeatureParentGetFeatureByID((ZMapFeatureAny)block, featureset_id) ;
+
+          if (temp_featureset)
+            {
+              feature->parent = (ZMapFeatureAny)temp_featureset ;
+              temp_featureset = NULL ; /* reset pointer so we don't free it */
+            }
+          else
+            {
+              const GQuark featureset_unique_id = zMapFeatureSetCreateID(g_quark_to_string(featureset_id)) ;
+              temp_featureset = zMapFeatureSetIDCreate(featureset_id, featureset_unique_id, NULL, NULL) ;
+              zMapFeatureBlockAddFeatureSet(block, temp_featureset) ;
+              feature->parent = (ZMapFeatureAny)temp_featureset ;
+            }
         }
       else
         {
-          const GQuark featureset_unique_id = zMapFeatureSetCreateID(g_quark_to_string(featureset_id)) ;
-          temp_featureset = zMapFeatureSetIDCreate(featureset_id, featureset_unique_id, NULL, NULL) ;
-          zMapFeatureBlockAddFeatureSet(block, temp_featureset) ;
-          feature->parent = (ZMapFeatureAny)temp_featureset ;
+          ok = FALSE ;
+          zMapCritical("Failed to export feature") ;
+          feature = temp_feature ;
         }
     }
 
-  if (!filepath
-      || !(file = g_io_channel_new_file(filepath, "w", &tmp_error))
-      || !zMapGFFDumpRegion(feature, window->context_map->styles, region_span, file, &tmp_error))
+  if (ok &&
+      (!filepath
+       || !(file = g_io_channel_new_file(filepath, "w", &tmp_error))
+       || !zMapGFFDumpRegion(feature, window->context_map->styles, region_span, file, &tmp_error)))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */
