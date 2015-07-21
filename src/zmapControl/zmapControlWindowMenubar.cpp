@@ -86,31 +86,30 @@ static void popout_panel( gpointer data, guint callback_action, GtkWidget *w ) ;
 GtkItemFactory *item_factory;
 
 
-static GtkItemFactoryEntry menu_items[] =
-  {
-    { (char*)"/_File",                                NULL,                NULL,                              0,  (char*)"<Branch>" },
-    { (char*)"/File/_New Sequence",                   NULL,                G_CALLBACK(newSequenceByConfigCB), 2,  NULL },
-    { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
-    { (char*)"/File/_Save",                           (char*)"<control>S", G_CALLBACK(exportCB),              22, NULL },
-    { (char*)"/File/Save _As",                        (char*)"<shift><control>S", G_CALLBACK(exportCB),       23, NULL },
-    { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
-    { (char*)"/File/_Import",                         (char*)"<control>I", G_CALLBACK(importCB),              0,  NULL },/* or Read ? */
-    { (char*)"/File/_Export",                         NULL,                NULL,                              0,  (char*)"<Branch>" },
-    /*{ (char*)"/File/Export/_Data",                      NULL,                NULL,                  0,  (char*)"<Branch>" }, */
-    { (char*)"/File/Export/_DNA",                     NULL,                G_CALLBACK(exportCB),              1,  NULL },
-    { (char*)"/File/Export/_Features",                (char*)"<control>E", G_CALLBACK(exportCB),              2,  NULL },
-    { (char*)"/File/Export/_Features (marked)",       (char*)"<shift><control>E", G_CALLBACK(exportCB),              12, NULL },
-    /*{ "/File/Export/_Features (selected)",     NULL,                exportCB,              EXPORT_FEATURES_SELECTED, NULL },*/
-    /* { (char*)"/File/Export/_Context",              NULL,                exportCB,              3,  NULL },
-       { (char*)"/File/Export/_Marked Features",         NULL,                NULL,                  0,  "<Branch>" },
-       { (char*)"/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
-       { (char*)"/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL }, */
-    { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
-    { (char*)"/File/Save screen sho_t",               NULL,                G_CALLBACK(dumpCB),                0,  NULL },
-    { (char*)"/File/_Print screen shot",              (char*)"<control>P", G_CALLBACK(printCB),               0,  NULL },
-    { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
-    { (char*)"/File/Close",                           (char*)"<control>W", G_CALLBACK(closeCB),               0,  NULL },
-    { (char*)"/File/Quit",                            (char*)"<control>Q", G_CALLBACK(quitCB),                0,  NULL },
+static GtkItemFactoryEntry menu_items[] = {
+  { (char*)"/_File",                                NULL,                NULL,                              0,  (char*)"<Branch>" },
+         { (char*)"/File/_New Sequence",                   NULL,                G_CALLBACK(newSequenceByConfigCB), 2,  NULL },
+         { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
+         { (char*)"/File/_Save",                           (char*)"<control>S", G_CALLBACK(exportCB),              SAVE_FEATURES, NULL },
+         { (char*)"/File/Save _As",                        (char*)"<shift><control>S", G_CALLBACK(exportCB),       SAVE_FEATURES_AS, NULL },
+         { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
+         { (char*)"/File/_Import",                         (char*)"<control>I", G_CALLBACK(importCB),              0,  NULL },/* or Read ? */
+         { (char*)"/File/_Export",                         NULL,                NULL,                              0,  (char*)"<Branch>" },
+         /*{ (char*)"/File/Export/_Data",                      NULL,                NULL,                  0,  "<Branch>" }, */
+         { (char*)"/File/Export/_DNA",                     NULL,                G_CALLBACK(exportCB),              EXPORT_DNA,  NULL },
+         { (char*)"/File/Export/_Features",                (char*)"<control>E", G_CALLBACK(exportCB),              EXPORT_FEATURES_ALL,  NULL },
+         { (char*)"/File/Export/_Features (marked)",       (char*)"<shift><control>E", G_CALLBACK(exportCB),              EXPORT_FEATURES_MARKED, NULL },
+         /*{ "/File/Export/_Features (selected)",     NULL,                exportCB,              EXPORT_FEATURES_SELECTED, NULL },*/
+         /* { (char*)"/File/Export/_Context",              NULL,                exportCB,              3,  NULL },
+         { (char*)"/File/Export/_Marked Features",         NULL,                NULL,                  0,  (char*)"<Branch>" },
+         { (char*)"/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
+         { (char*)"/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL }, */
+         { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
+         { (char*)"/File/Save screen sho_t",               NULL,                G_CALLBACK(dumpCB),                0,  NULL },
+         { (char*)"/File/_Print screen shot",              (char*)"<control>P", G_CALLBACK(printCB),               0,  NULL },
+         { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
+         { (char*)"/File/Close",                           (char*)"<control>W", G_CALLBACK(closeCB),               0,  NULL },
+         { (char*)"/File/Quit",                            (char*)"<control>Q", G_CALLBACK(quitCB),                0,  NULL },
 
     { (char*)"/_Edit",                                NULL,                NULL,                              0,  (char*)"<Branch>" },
     { (char*)"/Edit/_Copy Feature Coords",            (char*)"<control>C", G_CALLBACK(copyPasteCB),           EDIT_COPY, NULL },
