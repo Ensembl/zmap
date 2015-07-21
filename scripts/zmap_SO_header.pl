@@ -70,7 +70,7 @@ $use_hack = 1 ;
 #
 # Destination file for auto-generated header.
 #
-$destination_file = "zmapGFF/zmapSOData_P.h" ;
+$destination_file = "zmapGFF/zmapSOData_P.hpp" ;
 
 #
 # Define the filenames to parse.
@@ -301,7 +301,7 @@ else
 # Now put the three bits together.
 #
 $header_data =
-"/*  File: zmapSOData_P.h
+"/*  File: zmapSOData_P.hpp
  *  Author: Steve Miller (sm23\@sanger.ac.uk)
  *  Copyright (c) 2006-2013: Genome Research Ltd.
  *-------------------------------------------------------------------

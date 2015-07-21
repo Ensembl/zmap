@@ -10,7 +10,7 @@ libcheckZMapUtilsConfig_la_location = $(abs_top_srcdir)/share/ZMap
 libcheckZMapUtilsConfig_la_filename = ZMap
 
 libcheckZMapUtilsConfig_la_DEPENDENCIES = $(libcheckZMapUtilsConfig_la_location)/$(libcheckZMapUtilsConfig_la_filename)
-libcheckZMapUtilsConfig_la_SOURCES = check_zmapConfigLoader.c check_zmapConfigLoader.h
+libcheckZMapUtilsConfig_la_SOURCES = check_zmapConfigLoader.cpp check_zmapConfigLoader.hpp
 libcheckZMapUtilsConfig_la_LIBADD  = 
 libcheckZMapUtilsConfig_la_CFLAGS  = $(INCLUDE_COMMON) @CHECK_CFLAGS@ \
 -DCONFIG_DIR=\"$(libcheckZMapUtilsConfig_la_location)\"               \

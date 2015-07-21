@@ -6,9 +6,8 @@ SUBDIRS = .
 noinst_LTLIBRARIES = libZMapView.la
 
 libZMapView_la_SOURCES = zmapView.cpp \
-zmapView_P.h \
+zmapView_P.hpp \
 zmapViewUtils.cpp \
-zmapView_P.h \
 zmapViewCallBlixem.cpp \
 zmapViewCommand.cpp \
 zmapViewFeatureMask.cpp \

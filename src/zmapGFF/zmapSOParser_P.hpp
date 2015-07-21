@@ -79,7 +79,7 @@ typedef struct ZMapSOIDDataStruct_
 /*
  * Include data parsed out from SO files.
  */
-#include "zmapSOData_P.h"
+#include "zmapSOData_P.hpp"
 
 /*
  * Data structure for a single SO term. Contains:
