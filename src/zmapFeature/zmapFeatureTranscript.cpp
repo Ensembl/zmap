@@ -1688,22 +1688,22 @@ ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src)
 
   if (dest)
     {
-      dest->featureflags.cds = src->flags.cds ;
-      dest->flags.start_not_found = src->flags.start_not_found ;
-      dest->flags.end_not_found = src->flags.end_not_found ;
+      dest->feature.transcript.flags.cds = src->feature.transcript.flags.cds ;
+      dest->feature.transcript.flags.start_not_found = src->feature.transcript.flags.start_not_found ;
+      dest->feature.transcript.flags.end_not_found = src->feature.transcript.flags.end_not_found ;
 
-      dest->known_name = src->known_name ;
-      dest->locus_id = src->locus_id ;
-      dest->cds_start = src->cds_start ;
-      dest->cds_end = src->cds_end ;
+      dest->feature.transcript.known_name = src->feature.transcript.known_name ;
+      dest->feature.transcript.locus_id = src->feature.transcript.locus_id ;
+      dest->feature.transcript.cds_start = src->feature.transcript.cds_start ;
+      dest->feature.transcript.cds_end = src->feature.transcript.cds_end ;
 
-      dest->start_not_found = src->start_not_found ;
+      dest->feature.transcript.start_not_found = src->feature.transcript.start_not_found ;
 
-      dest->phase = str->phase ;
-      dest->exons = src->exons ;
-      dest->introns = src->introns ;
-      dest->variations = src->variations;
-      dest->evidence = src->evidence ;
+      dest->feature.transcript.phase = src->feature.transcript.phase ;
+      dest->feature.transcript.exons = src->feature.transcript.exons ;
+      dest->feature.transcript.introns = src->feature.transcript.introns ;
+      dest->feature.transcript.variations = src->feature.transcript.variations;
+      dest->feature.transcript.evidence = src->feature.transcript.evidence ;
     }
 
   return dest ;

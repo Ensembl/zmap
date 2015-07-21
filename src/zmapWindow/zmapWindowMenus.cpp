@@ -4411,7 +4411,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
       else
         {
           ok = FALSE ;
-          zMapCritical("Failed to export feature") ;
+          zMapCritical("%s", "Failed to export feature") ;
           feature = temp_feature ;
         }
     }
