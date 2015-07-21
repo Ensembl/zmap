@@ -158,8 +158,8 @@ typedef enum {
 #define SCRATCH_CONFIG_STR         "Annotation"
 
 #define SCRATCH_DELETE_SUBFEATURE  SCRATCH_CONFIG_STR "/Delete subfeature"
-#define SCRATCH_CREATE             SCRATCH_CONFIG_STR "/Create feature"
-#define SCRATCH_EXPORT             SCRATCH_CONFIG_STR "/Export feature"
+#define SCRATCH_CREATE             SCRATCH_CONFIG_STR "/Save to featureset"
+#define SCRATCH_EXPORT             SCRATCH_CONFIG_STR "/Export temp feature"
 #define SCRATCH_ATTRIBUTES         SCRATCH_CONFIG_STR "/Set attributes"
 #define SCRATCH_UNDO               SCRATCH_CONFIG_STR "/Undo"
 #define SCRATCH_REDO               SCRATCH_CONFIG_STR "/Redo"
