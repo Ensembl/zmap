@@ -989,12 +989,6 @@ static void scratchEraseFeature(ZMapView zmap_view)
   /* Reset the start-/end-set flag */
   scratchSetStartEndFlag(zmap_view, FALSE);
 
-  /* Reset cached attributes */
-  zmapViewScratchResetAttributes(zmap_view) ;
-
-  /* Reset cached attributes */
-  //zmapViewScratchResetAttributes(zmap_view) ;
-
   GList *feature_list = NULL ;
   ZMapFeatureContext context_copy = zmapViewCopyContextAll(context, feature, feature_set, &feature_list, NULL) ;
 

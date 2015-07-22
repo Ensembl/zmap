@@ -4388,9 +4388,20 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
           feature->original_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] ;
           feature->unique_id = feature->original_id ;
 
+          /* also set the evidence list in the temp feature */
+          ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
+          zmapWindowScratchFeatureGetEvidence(window, scratch_feature, zMapFeatureTranscriptSetEvidence, feature) ;
+
           /* We need to update the parent to be the featureset from the attributes. Create a temp
            * featureset with this name, because it may not exist */
-          const GQuark featureset_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] ;
+          GQuark featureset_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] ;
+          
+          if (featureset_id < 1)
+            {
+              /* No featureset specified: use the hand_built column */
+              featureset_id = g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_NAME) ;
+            }
+
           block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(window->feature_context->master_align->blocks, 0)) ;
 
           temp_featureset = (ZMapFeatureSet)zMapFeatureParentGetFeatureByID((ZMapFeatureAny)block, featureset_id) ;
