@@ -1263,7 +1263,7 @@ gboolean zMapGFFWriteFeatureTranscript(ZMapFeature feature, ZMapGFFAttributeFlag
 
   sequence_name = g_quark_to_string(feature->parent->parent->original_id) ;
   source_name = g_quark_to_string(feature->parent->original_id) ;
-  if (strstr(source_name, anon_source))
+  if (!source_name || strstr(source_name, anon_source))
     source_name = anon_source_ab ;
   type = g_quark_to_string(feature->SO_accession) ;
 

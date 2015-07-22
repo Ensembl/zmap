@@ -1071,6 +1071,7 @@ ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_any, GQuark f
 gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
 gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
+void zMapFeatureAnyDestroyShallow(ZMapFeatureAny feature_any) ;
 gboolean zMapFeatureAnyHasChildren(ZMapFeatureAny feature) ;
 gboolean zMapFeaturePrintChildNames(ZMapFeatureAny feature_any) ;
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
@@ -1539,11 +1540,14 @@ int zMapFeatureVariationGetSections(const char *variation_str,
 /* rationalise these two..... */
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 gint zMapFeatureSortFeatures(gconstpointer a, gconstpointer b) ;
+ZMapFeature zMapFeatureShallowCopy(ZMapFeature src) ;
+ZMapFeatureSet zMapFeatureSetShallowCopy(ZMapFeatureSet src) ;
 
 int zMapFeatureTranscriptGetCDSStart(ZMapFeature feature) ;
 int zMapFeatureTranscriptGetCDSEnd(ZMapFeature feature) ;
 GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature) ;
 void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data) ;
+ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src) ;
 
 #endif /* ZMAP_FEATURE_H */
 

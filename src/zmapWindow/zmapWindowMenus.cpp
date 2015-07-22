@@ -158,7 +158,8 @@ typedef enum {
 #define SCRATCH_CONFIG_STR         "Annotation"
 
 #define SCRATCH_DELETE_SUBFEATURE  SCRATCH_CONFIG_STR "/Delete subfeature"
-#define SCRATCH_CREATE             SCRATCH_CONFIG_STR "/Create feature"
+#define SCRATCH_CREATE             SCRATCH_CONFIG_STR "/Save to featureset"
+#define SCRATCH_EXPORT             SCRATCH_CONFIG_STR "/Export temp feature"
 #define SCRATCH_ATTRIBUTES         SCRATCH_CONFIG_STR "/Set attributes"
 #define SCRATCH_UNDO               SCRATCH_CONFIG_STR "/Undo"
 #define SCRATCH_REDO               SCRATCH_CONFIG_STR "/Redo"
@@ -250,6 +251,7 @@ typedef enum
     ITEM_MENU_DELETE_FROM_SCRATCH,
     ITEM_MENU_SCRATCH_ATTRIBUTES,
     ITEM_MENU_SCRATCH_CREATE,
+    ITEM_MENU_SCRATCH_EXPORT,
     ITEM_MENU_CLEAR_SCRATCH,
     ITEM_MENU_UNDO_SCRATCH,
     ITEM_MENU_REDO_SCRATCH,
@@ -367,7 +369,7 @@ GQuark related_column(ZMapFeatureContextMap map,GQuark fset_id) ;
 
 static void addMenuItem(ZMapGUIMenuItem menu,
                         int *i, const int max_elements,
-                        ZMapGUIMenuType item_type, const char *item_text, ZMapWindowMenuItemId item_id,
+                        ZMapGUIMenuType item_type, const char *item_text, int item_id,
                         ZMapGUIMenuItemCallbackFunc callback_func, const gpointer callback_data) ;
 
 
@@ -719,7 +721,11 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAFeatureAnyFile(NULL, NULL, menu_data)) ;
     }
 
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuItemExportOps(NULL, NULL, menu_data)) ;
+  const gboolean selected_annotation = 
+    (feature_set && feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME)) ;
+
+  if (!selected_annotation)
+    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuItemExportOps(NULL, NULL, menu_data)) ;
 
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
@@ -844,7 +850,14 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuSearchListOps(NULL, NULL, cbdata)) ;
 
-      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuColumnExportOps(NULL, NULL, cbdata)) ;
+      /* For now disable export for the annotation column. Maybe longer term we want to re-enable
+       * this but we need to make sure it can export the annotation feature (which is disabled by
+       * default because it's not a real feature), otherwise we get an empty file, which is
+       * confusing. */
+      const gboolean selected_annotation = (feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME)) ;
+
+      if (!selected_annotation)
+        menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuColumnExportOps(NULL, NULL, cbdata)) ;
 
       zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
@@ -860,7 +873,7 @@ static void addMenuItem(ZMapGUIMenuItem menu,
                         const int max_elements,
                         ZMapGUIMenuType item_type,
                         const char *item_text,
-                        ZMapWindowMenuItemId item_id,
+                        int item_id,
                         ZMapGUIMenuItemCallbackFunc callback_func,
                         const gpointer callback_data)
 {
@@ -1106,6 +1119,8 @@ void makeMenuScratchOpsAnnotationFeature(ZMapGUIMenuItem menu,
   addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_DELETE_SUBFEATURE, ITEM_MENU_DELETE_FROM_SCRATCH, itemMenuCB, NULL);
   addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_ATTRIBUTES, ITEM_MENU_SCRATCH_ATTRIBUTES, itemMenuCB, NULL);
   addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CREATE, ITEM_MENU_SCRATCH_CREATE, itemMenuCB, NULL);
+
+  addMenuItem(menu, i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_EXPORT, EXPORT_FEATURES_CLICKED, exportMenuCB, NULL);
 }
 
 
@@ -1133,11 +1148,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
 
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
     } ;
   int i ;
-  int max_elements = 13 ;
+  int max_elements = 14 ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
   zMapReturnValIfFail(menu_data && menu_data->window, menu) ;
@@ -1233,6 +1249,9 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       else
         zmapWindowFeatureShow(menu_data->window, menu_data->item, TRUE) ;
       break ;
+
+    case ITEM_MENU_SCRATCH_EXPORT:
+      
 
     case ITEM_MENU_UNDO_SCRATCH:
       zmapWindowScratchUndo(menu_data->window);
@@ -2066,7 +2085,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuItemExportOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Feature" , EXPORT_FEATURES_CLICKED, exportMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Clicked feature" , EXPORT_FEATURES_CLICKED, exportMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Column features" , EXPORT_FEATURES_ALL, exportMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR "/" FEATURE_EXPORT_STR "/Column features (marked)" , EXPORT_FEATURES_MARKED, exportMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
@@ -4320,6 +4339,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
 {
   static const char *error_prefix = "Features export failed:" ;
   gboolean result = FALSE ;
+  gboolean ok = TRUE ;
   char *filepath = NULL ;
   GIOChannel *file = NULL ;
   GError *tmp_error = NULL ;
@@ -4347,9 +4367,70 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
   if (!filepath)
     filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel), "Feature Export filename ?", NULL, "gff") ;
 
-  if (!filepath
-      || !(file = g_io_channel_new_file(filepath, "w", &tmp_error))
-      || !zMapGFFDumpRegion(feature, window->context_map->styles, region_span, file, &tmp_error))
+  /* If saving a single feature and it's in the Annotation column, we need to extract any unsaved
+   * attributes. */
+  ZMapFeatureAny temp_feature = NULL ;
+  ZMapFeatureSet temp_featureset = NULL ;
+  ZMapFeatureBlock block = NULL ;
+  const GQuark scratch_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME) ;
+
+  if (!all_features && feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE &&
+      feature->parent && feature->parent->unique_id == scratch_id)
+    {
+      /* save the original feature as temp_feature */
+      temp_feature = feature ;
+
+      /* create a copy and update the name to that in the attributes */
+      feature = (ZMapFeatureAny)zMapFeatureTranscriptShallowCopy((ZMapFeature)temp_feature) ;
+
+      if (feature)
+        {
+          feature->original_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] ;
+          feature->unique_id = feature->original_id ;
+
+          /* also set the evidence list in the temp feature */
+          ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
+          zmapWindowScratchFeatureGetEvidence(window, scratch_feature, zMapFeatureTranscriptSetEvidence, feature) ;
+
+          /* We need to update the parent to be the featureset from the attributes. Create a temp
+           * featureset with this name, because it may not exist */
+          GQuark featureset_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] ;
+          
+          if (featureset_id < 1)
+            {
+              /* No featureset specified: use the hand_built column */
+              featureset_id = g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_NAME) ;
+            }
+
+          block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(window->feature_context->master_align->blocks, 0)) ;
+
+          temp_featureset = (ZMapFeatureSet)zMapFeatureParentGetFeatureByID((ZMapFeatureAny)block, featureset_id) ;
+
+          if (temp_featureset)
+            {
+              feature->parent = (ZMapFeatureAny)temp_featureset ;
+              temp_featureset = NULL ; /* reset pointer so we don't free it */
+            }
+          else
+            {
+              const GQuark featureset_unique_id = zMapFeatureSetCreateID(g_quark_to_string(featureset_id)) ;
+              temp_featureset = zMapFeatureSetIDCreate(featureset_id, featureset_unique_id, NULL, NULL) ;
+              zMapFeatureBlockAddFeatureSet(block, temp_featureset) ;
+              feature->parent = (ZMapFeatureAny)temp_featureset ;
+            }
+        }
+      else
+        {
+          ok = FALSE ;
+          zMapCritical("%s", "Failed to export feature") ;
+          feature = temp_feature ;
+        }
+    }
+
+  if (ok &&
+      (!filepath
+       || !(file = g_io_channel_new_file(filepath, "w", &tmp_error))
+       || !zMapGFFDumpRegion(feature, window->context_map->styles, region_span, file, &tmp_error)))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */
@@ -4361,6 +4442,21 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
   else
     {
       result = TRUE ;
+    }
+
+  if (temp_feature)
+    {
+      /* Free temp feature and set pointer back to original feature */
+      zMapFeatureAnyDestroyShallow(feature) ;
+      feature = (ZMapFeatureAny)temp_feature ;
+      temp_feature = NULL ;
+    }
+
+  if (temp_featureset)
+    {
+      zMapFeatureBlockRemoveFeatureSet(block, temp_featureset) ;
+      zMapFeatureAnyDestroyShallow((ZMapFeatureAny)temp_featureset) ;
+      temp_featureset = NULL ;
     }
 
   if (file)
