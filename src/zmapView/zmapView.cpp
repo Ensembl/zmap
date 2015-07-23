@@ -260,6 +260,11 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 
 static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData styles) ;
 
+static gboolean checkForUnsavedChanges(ZMapView zmap_view) ;
+static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view) ;
+
+
+static GHashTable *getFeatureSourceHash(GList *sources) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static GList *string2StyleQuarks(char *feature_sets) ;
@@ -1021,248 +1026,6 @@ GtkWidget *zMapViewGetXremote(ZMapView view)
 
 
 
-/*!
- * Erases the supplied context from the view's context and instructs
- * the window to delete the old features.
- *
- * @param                The ZMap View
- * @param                The Context to erase.  Those features which
- *                       match will be removed from this context and
- *                       the view's own context. They will also be
- *                       removed from the display windows. Those that
- *                       don't match will be left in this context.
- * @return               void
- *************************************************** */
-void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout)
-{
-  if (replace_me->state != ZMAPVIEW_DYING)
-    {
-      /* should replace_me be a view or a view_window???? */
-      eraseAndUndrawContext(replace_me, context_inout);
-    }
-
-  return;
-}
-
-/*!
- * Merges the supplied context with the view's context.
- *
- * @param                The ZMap View
- * @param                The Context to merge in.  This will be emptied
- *                       but needs destroying...
- * @return               The diff context.  This needs destroying.
- *************************************************** */
-ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context,
-                                          ZMapFeatureContextMergeStats *merge_stats_out)
-{
-
-  /* called from zmapViewRemoteReceive.c, no styles are available. */
-  /* we do not expect masked features to be affected and do not process these */
-
-  if (view->state != ZMAPVIEW_DYING)
-    {
-      ZMapFeatureContextMergeCode result = ZMAPFEATURE_CONTEXT_ERROR ;
-
-      result = justMergeContext(view, &context, merge_stats_out, NULL, NULL, TRUE, FALSE) ;
-
-      if (result == ZMAPFEATURE_CONTEXT_OK)
-        zMapLogMessage("%s", "Context merge successful.") ;
-      else if (result == ZMAPFEATURE_CONTEXT_NONE)
-        zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
-      else
-        zMapLogCritical("%s", "Context merge failed, serious error.") ;
-    }
-
-  return context ;
-}
-
-/*!
- * Instructs the view to draw the diff context. The drawing will
- * happen sometime in the future, so we NULL the diff_context!
- *
- * @param               The ZMap View
- * @param               The Context to draw...
- *
- * @return              Boolean to notify whether the context was
- *                      free'd and now == NULL, FALSE only if
- *                      diff_context is the same context as view->features
- *************************************************** */
-gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature)
-{
-  gboolean context_freed = TRUE;
-
-  /* called from zmapViewRemoteReceive.c, no styles are available. */
-
-  if (view->state != ZMAPVIEW_DYING)
-    {
-      if (view->features == *diff_context)
-        context_freed = FALSE ;
-
-      justDrawContext(view, *diff_context, NULL, NULL, highlight_feature, NULL) ;
-    }
-  else
-    {
-      context_freed = TRUE;
-      zMapFeatureContextDestroy(*diff_context, context_freed) ;
-    }
-
-  if (context_freed)
-    *diff_context = NULL ;
-
-  return context_freed ;
-}
-
-
-static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data)
-{
-  gint match = -1;
-  ZMapFeatureAny a = (ZMapFeatureAny)list_data, b = (ZMapFeatureAny)user_data ;
-
-  match = !(a->unique_id == b->unique_id);
-
-  return match;
-}
-
-
-static ZMapFeatureContextExecuteStatus delete_from_list(GQuark key,
-                                                        gpointer data,
-                                                        gpointer user_data,
-                                                        char **error_out)
-{
-  ZMapFeatureAny any = (ZMapFeatureAny)data;
-  GList **glist = (GList **)user_data, *match;
-
-  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
-    {
-      if ((match = g_list_find_custom(*glist, any, matching_unique_id)))
-        {
-          *glist = g_list_remove(*glist, match->data);
-        }
-    }
-
-  return ZMAP_CONTEXT_EXEC_STATUS_OK;
-}
-
-
-static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **error_out)
-{
-  ZMapFeatureAny any = (ZMapFeatureAny)data;
-  GList **glist = (GList **)user_data, *match;
-
-  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
-    {
-      if ((match = g_list_find_custom(*glist, any, matching_unique_id)))
-        {
-          any = (ZMapFeatureAny)(match->data);
-          any->struct_type = ZMAPFEATURE_STRUCT_INVALID;
-        }
-    }
-
-  return ZMAP_CONTEXT_EXEC_STATUS_OK;
-}
-
-
-ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
-                                          ZMapFeature feature,
-                                          ZMapFeatureSet feature_set,
-                                          GList **feature_list,
-                                          ZMapFeature *feature_copy_out)
-{
-  ZMapFeatureContext context_copy = NULL ;
-
-  g_return_val_if_fail(context && context->master_align && feature && feature_set, NULL) ;
-
-  context_copy = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context) ;
-  context_copy->req_feature_set_names = g_list_append(context_copy->req_feature_set_names, GINT_TO_POINTER(feature_set->unique_id)) ;
-
-  ZMapFeatureAlignment align_copy = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)context->master_align) ;
-  zMapFeatureContextAddAlignment(context_copy, align_copy, FALSE) ;
-
-  ZMapFeatureBlock block = (ZMapFeatureBlock)zMap_g_hash_table_nth(context->master_align->blocks, 0) ;
-  g_return_val_if_fail(block, NULL) ;
-
-  ZMapFeatureBlock block_copy = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block) ;
-  zMapFeatureAlignmentAddBlock(align_copy, block_copy) ;
-
-  ZMapFeatureSet feature_set_copy = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)feature_set) ;
-  zMapFeatureBlockAddFeatureSet(block_copy, feature_set_copy) ;
-
-  ZMapFeature feature_copy = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)feature) ;
-  zMapFeatureSetAddFeature(feature_set_copy, feature_copy) ;
-
-  if (feature_list)
-    *feature_list = g_list_append(*feature_list, feature_copy) ;
-
-  if (feature_copy_out)
-    *feature_copy_out = feature_copy ;
-
-  return context_copy ;
-}
-
-void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set)
-{
-  zMapReturnIfFail(view && view->features && feature && feature_set);
-
-  ZMapFeatureContext context = view->features ;
-
-  GList *feature_list = NULL ;
-  ZMapFeature feature_copy = NULL ;
-  ZMapFeatureContext context_copy = zmapViewCopyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
-
-  if (context_copy && feature_list)
-    zmapViewMergeNewFeatures(view, &context_copy, NULL, &feature_list) ;
-
-  if (context_copy && feature_copy)
-    zmapViewDrawDiffContext(view, &context_copy, feature_copy) ;
-
-  if (context_copy)
-    zMapFeatureContextDestroy(context_copy, TRUE) ;
-}
-
-gboolean zmapViewMergeNewFeatures(ZMapView view,
-                                  ZMapFeatureContext *context, ZMapFeatureContextMergeStats *merge_stats_out,
-                                  GList **feature_list)
-{
-  gboolean result = FALSE ;
-
-  *context = zmapViewMergeInContext(view, *context, merge_stats_out) ;
-
-  if (*context)
-    {
-      result = TRUE ;
-
-      zMapFeatureContextExecute((ZMapFeatureAny)(*context),
-                                ZMAPFEATURE_STRUCT_FEATURE,
-                                delete_from_list,
-                                feature_list);
-
-      zMapFeatureContextExecute((ZMapFeatureAny)(view->features),
-                                ZMAPFEATURE_STRUCT_FEATURE,
-                                mark_matching_invalid,
-                                feature_list);
-    }
-
-  return result ;
-}
-
-void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list)
-{
-  /* If any of the features are used in the scratch column they must be removed because they'll
-   * become invalid */
-  zmapViewScratchRemoveFeatures(view, *feature_list) ;
-
-  zmapViewEraseFromContext(view, context);
-
-  zMapFeatureContextExecute((ZMapFeatureAny)(context),
-                            ZMAPFEATURE_STRUCT_FEATURE,
-                            mark_matching_invalid,
-                            feature_list);
-
-  return ;
-}
 
 /* Force a redraw of all the windows in a view, may be required if it looks like
  * drawing has got out of whack due to an overloaded network etc etc. */
@@ -1289,45 +1052,6 @@ void zMapViewRedraw(ZMapViewWindow view_window)
     }
 
   return ;
-}
-
-
-/* Reset the state for all windows in this view */
-void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
-{
-  GList* list_item ;
-
-  /* First, loop through and save the state for ALL windows.
-   * We must do this BEFORE WE RESET ANY WINDOWS because
-   * windows can share the same vadjustment (when scrolling
-   * is locked) and we don't want to reset the scroll position
-   * until we've saved it for all windows. */
-  if((list_item = g_list_first(zmap_view->window_list)))
-    {
-      do
-        {
-          ZMapViewWindow view_window ;
-
-          view_window = (ZMapViewWindow)(list_item->data) ;
-
-          zMapWindowFeatureSaveState(view_window->window, revcomp) ;
-        }
-      while ((list_item = g_list_next(list_item))) ;
-    }
-
-  /* Now reset the windows */
-  if((list_item = g_list_first(zmap_view->window_list)))
-    {
-      do
-        {
-          ZMapViewWindow view_window ;
-
-          view_window = (ZMapViewWindow)(list_item->data) ;
-
-          zMapWindowFeatureReset(view_window->window, revcomp) ;
-        }
-      while ((list_item = g_list_next(list_item))) ;
-    }
 }
 
 
@@ -1736,115 +1460,7 @@ void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer)
   return ;
 }
 
-void zmapViewFeatureDump(ZMapViewWindow view_window, char *file)
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMapFeatureDump(view_window->parent_view->features, file) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  printf("reimplement.......\n") ;
-
-  return;
-}
-
-
 /* Check if there have been changes to the scratch column that have not been
- * saved and if so ask the user if they really want to quit. Returns OK to
- * continue quitting or Cancel to stop. */
-static gboolean checkForUnsavedChanges(ZMapView zmap_view)
-{
-  gboolean result = TRUE ;
-
-  if (zmap_view && zmap_view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING])
-    {
-      GtkWindow *parent = NULL ;
-
-      /* The responses for the 2 button arguments are ok or cancel. We could also offer
-       * the option to Save here but that's complicated because we then also need to save
-       * the new feature that is created to file - it's probably more intuitive for
-       * the user to just cancel and then do the save manually */
-      char *msg =
-        g_strdup_printf("There are unsaved edits in the Annotation column for sequence '%s' - do you really want to quit?.",
-                        zmap_view->view_sequence ? zmap_view->view_sequence->sequence : "<null>") ;
-
-      result = zMapGUIMsgGetBoolFull(parent,
-        ZMAP_MSG_WARNING,
-        msg,
-        GTK_STOCK_QUIT,
-        GTK_STOCK_CANCEL) ;
-
-      g_free(msg) ;
-    }
-
-  return result ;
-}
-
-
-/* Check if there are new features that have not been saved and if so ask the
- * user if they really want to quit. Returns OK to quit, Cancel, or Close if we saved. */
-static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
-{
-  GtkResponseType response = GTK_RESPONSE_OK ;
-
-  if (zmap_view && zmap_view->flags[ZMAPFLAG_FEATURES_NEED_SAVING])
-    {
-      GtkWindow *parent = NULL ;
-
-      /* The responses for the 3 button arguments are ok, cancel, close. */
-      char *msg =
-        g_strdup_printf("There are unsaved features for sequence '%s' - do you really want to quit?",
-                        zmap_view->view_sequence ? zmap_view->view_sequence->sequence : "<null>") ;
-
-      response = zMapGUIMsgGetSaveFull(parent,
-                                       ZMAP_MSG_WARNING,
-                                       msg,
-                                       GTK_STOCK_QUIT,
-                                       GTK_STOCK_CANCEL,
-                                       GTK_STOCK_SAVE) ;
-
-      g_free(msg) ;
-
-      if (response == GTK_RESPONSE_CLOSE)
-        {
-          /* Loop through each window and save changes */
-          GList *window_item = zmap_view->window_list ;
-          GError *error = NULL ;
-
-          for ( ; window_item ; window_item = window_item->next)
-            {
-              ZMapViewWindow view_window = (ZMapViewWindow)(window_item->data) ;
-              ZMapWindow window = zMapViewGetWindow(view_window) ;
-
-              /* If we've already set a save file then use that. (Don't let it default
-               * to the input file though because the user hasn't explicitly asked
-               * for a Save option rather than Save As...) */
-              const char *file = zMapViewGetSaveFile(zmap_view, FALSE) ;
-              char *filename = g_strdup(file) ;
-              gboolean saved = zMapWindowExportFeatures(window, TRUE, FALSE, NULL, &filename, &error) ;
-
-              if (!saved)
-                {
-                  /* There was a problem saving so don't continue quitting zmap */
-                  response = GTK_RESPONSE_CANCEL ;
-
-                  /* If error is null then the user cancelled the save so don't report
-                   * an error */
-                  if (error)
-                    {
-                      zMapWarning("Save failed: %s", error->message) ;
-                      g_error_free(error) ;
-                      error = NULL ;
-                    }
-                }
-            }
-        }
-    }
-
-  return response ;
-}
-
-
 /* Check if there are any unsaved changes and if so ask the user what they want to do.
  * Returns true to continue or false to cancel. */
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view)
@@ -1913,117 +1529,47 @@ void zMapViewDestroy(ZMapView zmap_view)
 
 
 
+void zMapViewShowLoadStatus(ZMapView view)
+{
+  if (view->state < ZMAPVIEW_LOADING)
+    view->state = ZMAPVIEW_LOADING ;
+
+  if (view->state > ZMAPVIEW_LOADING)
+    view->state = ZMAPVIEW_UPDATING ;
+
+  zmapViewBusy(view, TRUE) ;     // gets unset when all step lists finish
+
+  (*(view_cbs_G->state_change))(view, view->app_data, NULL) ;
+
+  return ;
+}
+
+
+/* Hate this but Malcolm seems to have punctured the encapsulation in quite a few places.... */
+gboolean zMapViewRequestServer(ZMapView view,
+                               ZMapFeatureBlock block_orig, GList *req_featuresets,
+                               gpointer _server, /* ZMapConfigSource */
+                               int req_start, int req_end,
+                               gboolean dna_requested, gboolean terminate, gboolean show_warning)
+{
+  gboolean result = FALSE ;
+  ZMapViewConnection view_conn ;
+
+  if ((view_conn = zmapViewRequestServer(view, NULL,
+                                         block_orig, req_featuresets,
+                                         _server, /* ZMapConfigSource */
+                                         req_start, req_end,
+                                         dna_requested, terminate, show_warning)))
+    result = TRUE ;
+
+  return result ;
+}
+
+
+
 /*
- *                          Internal routines
+ *                      Package external routines
  */
-
-
-
-GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** stylesfile)
-{
-  GList *settings_list = NULL;
-  ZMapConfigIniContext context ;
-
-  if ((context = zMapConfigIniContextProvide(config_file)))
-    {
-
-      if (config_str)
-        zMapConfigIniContextIncludeBuffer(context, config_str);
-
-      settings_list = zMapConfigIniContextGetSources(context);
-
-      if(stylesfile)
-        {
-          zMapConfigIniContextGetFilePath(context,
-                                          ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
-                                          ZMAPSTANZA_APP_STYLESFILE,stylesfile);
-        }
-      zMapConfigIniContextDestroy(context);
-
-    }
-
-  return(settings_list);
-}
-
-
-static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout)
-{
-  zMapReturnIfFailSafe(sequence_map) ;
-
-  GSList *file_item = sequence_map->file_list ;
-
-  for ( ; file_item; file_item = file_item->next)
-    {
-      char *file = (char*)(file_item->data) ;
-
-      ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1) ;
-      src->group = SOURCE_GROUP_START ;        // default_value
-      src->url = g_strdup_printf("file:///%s", file) ;
-      src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
-
-      *settings_list_inout = g_list_append(*settings_list_inout, (gpointer)src) ;
-    }
-}
-
-
-// create a hash table of feature set names and thier sources
-static GHashTable *zmapViewGetFeatureSourceHash(GList *sources)
-{
-  GHashTable *ghash = NULL;
-  ZMapConfigSource src;
-  gchar **features,**feats;
-
-  ghash = g_hash_table_new(NULL,NULL);
-
-  // for each source extract featuresets and add a hash to the source
-  for(;sources; sources = g_list_next(sources))
-    {
-      src = (ZMapConfigSource)(sources->data) ;
-
-      if(!src->featuresets)
-            continue;
-      features = g_strsplit(src->featuresets,";",0); // this will give null entries eg 'aaa ; bbbb' -> 5 strings
-      if(!features)
-            continue;
-      for(feats = features;*feats;feats++)
-        {
-          GQuark q;
-          // the data we want to lookup happens to have been quarked
-          if(**feats)
-          {
-            gchar *feature;
-
-            feature = zMapConfigNormaliseWhitespace(*feats,FALSE);
-            if(!feature)
-                  continue;
-
-            /* add the user visible version */
-            g_hash_table_insert(ghash,GUINT_TO_POINTER(g_quark_from_string(feature)),(gpointer) src);
-
-            /* add a cononical version */
-            q =  zMapFeatureSetCreateID(feature);
-
-            if (q != g_quark_from_string(feature))
-              g_hash_table_insert(ghash,GUINT_TO_POINTER(q), (gpointer) src);
-          }
-        }
-
-      g_strfreev(features);
-    }
-
-  return(ghash);
-}
-
-
-ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *ghash, GQuark featurequark)
-{
-  ZMapConfigSource config_source ;
-
-  config_source = (ZMapConfigSource)g_hash_table_lookup(ghash, GUINT_TO_POINTER(featurequark)) ;
-
-  return config_source ;
-}
-
 
 
 /* Loads features within block from the sets req_featuresets that lie within features_start
@@ -2083,7 +1629,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
      /* mh17: this is tedious to do for each request esp on startup */
       sources = zmapViewGetIniSources(view->view_sequence->config_file, NULL, NULL) ;
-      ghash = zmapViewGetFeatureSourceHash(sources);
+      ghash = getFeatureSourceHash(sources);
 
       for ( ; req_sources ; req_sources = g_list_next(req_sources))
         {
@@ -2279,47 +1825,219 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
 
 
-void zMapViewShowLoadStatus(ZMapView view)
+
+
+
+void zmapViewFeatureDump(ZMapViewWindow view_window, char *file)
 {
-  if (view->state < ZMAPVIEW_LOADING)
-    view->state = ZMAPVIEW_LOADING ;
 
-  if (view->state > ZMAPVIEW_LOADING)
-    view->state = ZMAPVIEW_UPDATING ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMapFeatureDump(view_window->parent_view->features, file) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  zmapViewBusy(view, TRUE) ;     // gets unset when all step lists finish
+  printf("reimplement.......\n") ;
 
-  (*(view_cbs_G->state_change))(view, view->app_data, NULL) ;
+  return;
+}
+
+
+
+
+// I'LL BET A LOT OF MONEY THIS DOESN'T REALLY WORK....   
+/*!
+ * Erases the supplied context from the view's context and instructs
+ * the window to delete the old features.
+ *
+ * @param                The ZMap View
+ * @param                The Context to erase.  Those features which
+ *                       match will be removed from this context and
+ *                       the view's own context. They will also be
+ *                       removed from the display windows. Those that
+ *                       don't match will be left in this context.
+ * @return               void
+ *************************************************** */
+void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout)
+{
+  if (replace_me->state != ZMAPVIEW_DYING)
+    {
+      /* should replace_me be a view or a view_window???? */
+      eraseAndUndrawContext(replace_me, context_inout);
+    }
+
+  return;
+}
+
+/*!
+ * Merges the supplied context with the view's context.
+ *
+ * @param                The ZMap View
+ * @param                The Context to merge in.  This will be emptied
+ *                       but needs destroying...
+ * @return               The diff context.  This needs destroying.
+ *************************************************** */
+ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context,
+                                          ZMapFeatureContextMergeStats *merge_stats_out)
+{
+
+  /* called from zmapViewRemoteReceive.c, no styles are available. */
+  /* we do not expect masked features to be affected and do not process these */
+
+  if (view->state != ZMAPVIEW_DYING)
+    {
+      ZMapFeatureContextMergeCode result = ZMAPFEATURE_CONTEXT_ERROR ;
+
+      result = justMergeContext(view, &context, merge_stats_out, NULL, NULL, TRUE, FALSE) ;
+
+      if (result == ZMAPFEATURE_CONTEXT_OK)
+        zMapLogMessage("%s", "Context merge successful.") ;
+      else if (result == ZMAPFEATURE_CONTEXT_NONE)
+        zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
+      else
+        zMapLogCritical("%s", "Context merge failed, serious error.") ;
+    }
+
+  return context ;
+}
+
+/*!
+ * Instructs the view to draw the diff context. The drawing will
+ * happen sometime in the future, so we NULL the diff_context!
+ *
+ * @param               The ZMap View
+ * @param               The Context to draw...
+ *
+ * @return              Boolean to notify whether the context was
+ *                      free'd and now == NULL, FALSE only if
+ *                      diff_context is the same context as view->features
+ *************************************************** */
+gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature)
+{
+  gboolean context_freed = TRUE;
+
+  /* called from zmapViewRemoteReceive.c, no styles are available. */
+
+  if (view->state != ZMAPVIEW_DYING)
+    {
+      if (view->features == *diff_context)
+        context_freed = FALSE ;
+
+      justDrawContext(view, *diff_context, NULL, NULL, highlight_feature, NULL) ;
+    }
+  else
+    {
+      context_freed = TRUE;
+      zMapFeatureContextDestroy(*diff_context, context_freed) ;
+    }
+
+  if (context_freed)
+    *diff_context = NULL ;
+
+  return context_freed ;
+}
+
+
+ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
+                                          ZMapFeature feature,
+                                          ZMapFeatureSet feature_set,
+                                          GList **feature_list,
+                                          ZMapFeature *feature_copy_out)
+{
+  ZMapFeatureContext context_copy = NULL ;
+
+  g_return_val_if_fail(context && context->master_align && feature && feature_set, NULL) ;
+
+  context_copy = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context) ;
+  context_copy->req_feature_set_names = g_list_append(context_copy->req_feature_set_names, GINT_TO_POINTER(feature_set->unique_id)) ;
+
+  ZMapFeatureAlignment align_copy = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)context->master_align) ;
+  zMapFeatureContextAddAlignment(context_copy, align_copy, FALSE) ;
+
+  ZMapFeatureBlock block = (ZMapFeatureBlock)zMap_g_hash_table_nth(context->master_align->blocks, 0) ;
+  g_return_val_if_fail(block, NULL) ;
+
+  ZMapFeatureBlock block_copy = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block) ;
+  zMapFeatureAlignmentAddBlock(align_copy, block_copy) ;
+
+  ZMapFeatureSet feature_set_copy = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)feature_set) ;
+  zMapFeatureBlockAddFeatureSet(block_copy, feature_set_copy) ;
+
+  ZMapFeature feature_copy = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)feature) ;
+  zMapFeatureSetAddFeature(feature_set_copy, feature_copy) ;
+
+  if (feature_list)
+    *feature_list = g_list_append(*feature_list, feature_copy) ;
+
+  if (feature_copy_out)
+    *feature_copy_out = feature_copy ;
+
+  return context_copy ;
+}
+
+void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set)
+{
+  zMapReturnIfFail(view && view->features && feature && feature_set);
+
+  ZMapFeatureContext context = view->features ;
+
+  GList *feature_list = NULL ;
+  ZMapFeature feature_copy = NULL ;
+  ZMapFeatureContext context_copy = zmapViewCopyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
+
+  if (context_copy && feature_list)
+    zmapViewMergeNewFeatures(view, &context_copy, NULL, &feature_list) ;
+
+  if (context_copy && feature_copy)
+    zmapViewDrawDiffContext(view, &context_copy, feature_copy) ;
+
+  if (context_copy)
+    zMapFeatureContextDestroy(context_copy, TRUE) ;
+}
+
+gboolean zmapViewMergeNewFeatures(ZMapView view,
+                                  ZMapFeatureContext *context, ZMapFeatureContextMergeStats *merge_stats_out,
+                                  GList **feature_list)
+{
+  gboolean result = FALSE ;
+
+  *context = zmapViewMergeInContext(view, *context, merge_stats_out) ;
+
+  if (*context)
+    {
+      result = TRUE ;
+
+      zMapFeatureContextExecute((ZMapFeatureAny)(*context),
+                                ZMAPFEATURE_STRUCT_FEATURE,
+                                delete_from_list,
+                                feature_list);
+
+      zMapFeatureContextExecute((ZMapFeatureAny)(view->features),
+                                ZMAPFEATURE_STRUCT_FEATURE,
+                                mark_matching_invalid,
+                                feature_list);
+    }
+
+  return result ;
+}
+
+void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list)
+{
+  /* If any of the features are used in the scratch column they must be removed because they'll
+   * become invalid */
+  zmapViewScratchRemoveFeatures(view, *feature_list) ;
+
+  zmapViewEraseFromContext(view, context);
+
+  zMapFeatureContextExecute((ZMapFeatureAny)(context),
+                            ZMAPFEATURE_STRUCT_FEATURE,
+                            mark_matching_invalid,
+                            feature_list);
 
   return ;
 }
 
 
-/* Hate this but Malcolm seems to have punctured the encapsulation in quite a few places.... */
-gboolean zMapViewRequestServer(ZMapView view,
-                               ZMapFeatureBlock block_orig, GList *req_featuresets,
-                               gpointer _server, /* ZMapConfigSource */
-                               int req_start, int req_end,
-                               gboolean dna_requested, gboolean terminate, gboolean show_warning)
-{
-  gboolean result = FALSE ;
-  ZMapViewConnection view_conn ;
-
-  if ((view_conn = zmapViewRequestServer(view, NULL,
-                                         block_orig, req_featuresets,
-                                         _server, /* ZMapConfigSource */
-                                         req_start, req_end,
-                                         dna_requested, terminate, show_warning)))
-    result = TRUE ;
-
-  return result ;
-}
 
 
-
-/*
- *                      Package external routines
- */
 
 
 /* request featuresets from a server, req_featuresets may be null in which case all are requested implicitly */
@@ -2420,7 +2138,73 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
 
 
 
+/* Reset the state for all windows in this view */
+void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
+{
+  GList* list_item ;
 
+  /* First, loop through and save the state for ALL windows.
+   * We must do this BEFORE WE RESET ANY WINDOWS because
+   * windows can share the same vadjustment (when scrolling
+   * is locked) and we don't want to reset the scroll position
+   * until we've saved it for all windows. */
+  if((list_item = g_list_first(zmap_view->window_list)))
+    {
+      do
+        {
+          ZMapViewWindow view_window ;
+
+          view_window = (ZMapViewWindow)(list_item->data) ;
+
+          zMapWindowFeatureSaveState(view_window->window, revcomp) ;
+        }
+      while ((list_item = g_list_next(list_item))) ;
+    }
+
+  /* Now reset the windows */
+  if((list_item = g_list_first(zmap_view->window_list)))
+    {
+      do
+        {
+          ZMapViewWindow view_window ;
+
+          view_window = (ZMapViewWindow)(list_item->data) ;
+
+          zMapWindowFeatureReset(view_window->window, revcomp) ;
+        }
+      while ((list_item = g_list_next(list_item))) ;
+    }
+}
+
+
+
+
+
+GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** stylesfile)
+{
+  GList *settings_list = NULL;
+  ZMapConfigIniContext context ;
+
+  if ((context = zMapConfigIniContextProvide(config_file)))
+    {
+
+      if (config_str)
+        zMapConfigIniContextIncludeBuffer(context, config_str);
+
+      settings_list = zMapConfigIniContextGetSources(context);
+
+      if(stylesfile)
+        {
+          zMapConfigIniContextGetFilePath(context,
+                                          ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
+                                          ZMAPSTANZA_APP_STYLESFILE,stylesfile);
+        }
+      zMapConfigIniContextDestroy(context);
+
+    }
+
+  return(settings_list);
+}
 
 
 
@@ -2429,6 +2213,238 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
 /*
  *                      Internal routines
  */
+
+
+
+static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout)
+{
+  zMapReturnIfFailSafe(sequence_map) ;
+
+  GSList *file_item = sequence_map->file_list ;
+
+  for ( ; file_item; file_item = file_item->next)
+    {
+      char *file = (char*)(file_item->data) ;
+
+      ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1) ;
+      src->group = SOURCE_GROUP_START ;        // default_value
+      src->url = g_strdup_printf("file:///%s", file) ;
+      src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
+
+      *settings_list_inout = g_list_append(*settings_list_inout, (gpointer)src) ;
+    }
+}
+
+
+// create a hash table of feature set names and thier sources
+static GHashTable *getFeatureSourceHash(GList *sources)
+{
+  GHashTable *ghash = NULL;
+  ZMapConfigSource src;
+  gchar **features,**feats;
+
+  ghash = g_hash_table_new(NULL,NULL);
+
+  // for each source extract featuresets and add a hash to the source
+  for(;sources; sources = g_list_next(sources))
+    {
+      src = (ZMapConfigSource)(sources->data) ;
+
+      if(!src->featuresets)
+            continue;
+      features = g_strsplit(src->featuresets,";",0); // this will give null entries eg 'aaa ; bbbb' -> 5 strings
+      if(!features)
+            continue;
+      for(feats = features;*feats;feats++)
+        {
+          GQuark q;
+          // the data we want to lookup happens to have been quarked
+          if(**feats)
+          {
+            gchar *feature;
+
+            feature = zMapConfigNormaliseWhitespace(*feats,FALSE);
+            if(!feature)
+                  continue;
+
+            /* add the user visible version */
+            g_hash_table_insert(ghash,GUINT_TO_POINTER(g_quark_from_string(feature)),(gpointer) src);
+
+            /* add a cononical version */
+            q =  zMapFeatureSetCreateID(feature);
+
+            if (q != g_quark_from_string(feature))
+              g_hash_table_insert(ghash,GUINT_TO_POINTER(q), (gpointer) src);
+          }
+        }
+
+      g_strfreev(features);
+    }
+
+  return(ghash);
+}
+
+
+ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *ghash, GQuark featurequark)
+{
+  ZMapConfigSource config_source ;
+
+  config_source = (ZMapConfigSource)g_hash_table_lookup(ghash, GUINT_TO_POINTER(featurequark)) ;
+
+  return config_source ;
+}
+
+
+
+/* Check if there have been changes to the scratch column that have not been
+ * saved and if so ask the user if they really want to quit. Returns OK to
+ * continue quitting or Cancel to stop. */
+static gboolean checkForUnsavedChanges(ZMapView zmap_view)
+{
+  gboolean result = TRUE ;
+
+  if (zmap_view && zmap_view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING])
+    {
+      GtkWindow *parent = NULL ;
+
+      /* The responses for the 2 button arguments are ok or cancel. We could also offer
+       * the option to Save here but that's complicated because we then also need to save
+       * the new feature that is created to file - it's probably more intuitive for
+       * the user to just cancel and then do the save manually */
+      char *msg =
+        g_strdup_printf("There are unsaved edits in the Annotation column for sequence '%s' - do you really want to quit?.",
+                        zmap_view->view_sequence ? zmap_view->view_sequence->sequence : "<null>") ;
+
+      result = zMapGUIMsgGetBoolFull(parent,
+        ZMAP_MSG_WARNING,
+        msg,
+        GTK_STOCK_QUIT,
+        GTK_STOCK_CANCEL) ;
+
+      g_free(msg) ;
+    }
+
+  return result ;
+}
+
+
+/* Check if there are new features that have not been saved and if so ask the
+ * user if they really want to quit. Returns OK to quit, Cancel, or Close if we saved. */
+static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
+{
+  GtkResponseType response = GTK_RESPONSE_OK ;
+
+  if (zmap_view && zmap_view->flags[ZMAPFLAG_FEATURES_NEED_SAVING])
+    {
+      GtkWindow *parent = NULL ;
+
+      /* The responses for the 3 button arguments are ok, cancel, close. */
+      char *msg =
+        g_strdup_printf("There are unsaved features for sequence '%s' - do you really want to quit?",
+                        zmap_view->view_sequence ? zmap_view->view_sequence->sequence : "<null>") ;
+
+      response = zMapGUIMsgGetSaveFull(parent,
+                                       ZMAP_MSG_WARNING,
+                                       msg,
+                                       GTK_STOCK_QUIT,
+                                       GTK_STOCK_CANCEL,
+                                       GTK_STOCK_SAVE) ;
+
+      g_free(msg) ;
+
+      if (response == GTK_RESPONSE_CLOSE)
+        {
+          /* Loop through each window and save changes */
+          GList *window_item = zmap_view->window_list ;
+          GError *error = NULL ;
+
+          for ( ; window_item ; window_item = window_item->next)
+            {
+              ZMapViewWindow view_window = (ZMapViewWindow)(window_item->data) ;
+              ZMapWindow window = zMapViewGetWindow(view_window) ;
+
+              /* If we've already set a save file then use that. (Don't let it default
+               * to the input file though because the user hasn't explicitly asked
+               * for a Save option rather than Save As...) */
+              const char *file = zMapViewGetSaveFile(zmap_view, FALSE) ;
+              char *filename = g_strdup(file) ;
+              gboolean saved = zMapWindowExportFeatures(window, TRUE, FALSE, NULL, &filename, &error) ;
+
+              if (!saved)
+                {
+                  /* There was a problem saving so don't continue quitting zmap */
+                  response = GTK_RESPONSE_CANCEL ;
+
+                  /* If error is null then the user cancelled the save so don't report
+                   * an error */
+                  if (error)
+                    {
+                      zMapWarning("Save failed: %s", error->message) ;
+                      g_error_free(error) ;
+                      error = NULL ;
+                    }
+                }
+            }
+        }
+    }
+
+  return response ;
+}
+
+
+
+
+static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data)
+{
+  gint match = -1;
+  ZMapFeatureAny a = (ZMapFeatureAny)list_data, b = (ZMapFeatureAny)user_data ;
+
+  match = !(a->unique_id == b->unique_id);
+
+  return match;
+}
+
+
+static ZMapFeatureContextExecuteStatus delete_from_list(GQuark key,
+                                                        gpointer data,
+                                                        gpointer user_data,
+                                                        char **error_out)
+{
+  ZMapFeatureAny any = (ZMapFeatureAny)data;
+  GList **glist = (GList **)user_data, *match;
+
+  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      if ((match = g_list_find_custom(*glist, any, matching_unique_id)))
+        {
+          *glist = g_list_remove(*glist, match->data);
+        }
+    }
+
+  return ZMAP_CONTEXT_EXEC_STATUS_OK;
+}
+
+
+static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
+                                                             gpointer data,
+                                                             gpointer user_data,
+                                                             char **error_out)
+{
+  ZMapFeatureAny any = (ZMapFeatureAny)data;
+  GList **glist = (GList **)user_data, *match;
+
+  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      if ((match = g_list_find_custom(*glist, any, matching_unique_id)))
+        {
+          any = (ZMapFeatureAny)(match->data);
+          any->struct_type = ZMAPFEATURE_STRUCT_INVALID;
+        }
+    }
+
+  return ZMAP_CONTEXT_EXEC_STATUS_OK;
+}
+
 
 
 /* THE LOGIC IN THIS ROUTINE IS NOT CLEAR AND NOT WELL EXPLAINED...... */
