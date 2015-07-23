@@ -620,7 +620,7 @@ static ZMapServerResponseType getContextSequence(void *server_in,
 
           setErrMsg(server, estr) ;
 
-          ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg);
+          ZMAPSERVER_LOG(Warning, "File", server->path, "%s", server->last_err_msg);
         }
     }
 
