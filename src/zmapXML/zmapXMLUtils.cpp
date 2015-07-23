@@ -458,10 +458,10 @@ char *zMapXMLUtilsEscapeStrPrintf(const char *format, ...)
   va_start(args1, format) ;
   G_VA_COPY(args2, args1) ;
 
-  escaped_str = g_markup_printf_escaped(format, args2) ;
+  escaped_str = g_markup_vprintf_escaped(format, args2) ;
 
-  va_end(args1) ;
   va_end(args2) ;
+  va_end(args1) ;
 
   return escaped_str ;
 }

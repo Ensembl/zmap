@@ -126,8 +126,9 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
                                           ZMapFeatureContext feature_context_out) ;
-static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles,
-                                                 ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getContextSequence(void *server_in,
+                                                 char *sequence_name, int start, int end,
+                                                 int *dna_length_out, char **dna_sequence_out) ;
 static const char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_in, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state) ;
@@ -140,7 +141,6 @@ static void setErrMsg(EnsemblServer server, char *new_msg) ;
 
 static void eachAlignment(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
-static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data) ;
 
 static gboolean getAllSimpleFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllDNAAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
@@ -720,23 +720,38 @@ static void addMapping(ZMapFeatureContext feature_context, int req_start, int re
  * we have pre-read the sequence and simple copy/move the data over if it's there
  */
 static ZMapServerResponseType getContextSequence(void *server_in,
-                                                 GHashTable *styles, ZMapFeatureContext feature_context_out)
+                                                 char *sequence_name, int start, int end,
+                                                 int *dna_length_out, char **dna_sequence_out)
 {
   EnsemblServer server = (EnsemblServer)server_in ;
 
-
   if (server->result == ZMAP_SERVERRESPONSE_OK)
     {
-      GetSequenceDataStruct get_sequence_data ;
-      get_sequence_data.server = server ;
-      get_sequence_data.styles = styles ;
+      char *sequence = NULL ;
 
-      DoAllAlignBlocksStruct all_data ;
-      all_data.server = server ;
-      all_data.each_block_func = eachBlockGetSequence ;
-      all_data.each_block_data = &get_sequence_data ;
+      if ((sequence = getSequence(server, sequence_name, start, end, STRAND_UNDEF)))
+        {
+          // Why do we do this....because zmap expects lowercase dna...operations like revcomp
+          // will fail with uppercase currently.....seems wasteful....but simplifies searches etc.   
+          char *tmp = sequence ;
 
-      g_hash_table_foreach(feature_context_out->alignments, eachAlignment, &all_data) ;
+          sequence = g_ascii_strdown(sequence, -1) ;
+
+          g_free(tmp) ;
+
+          *dna_length_out = (end - start) + 1 ;
+          *dna_sequence_out = sequence ;
+        }
+      else
+        {
+          char *estr;
+          estr = g_strdup_printf("Error getting sequence for '%s' (%d to %d)",
+                                 server->sequence, server->zmap_start, server->zmap_end) ;
+
+          setErrMsg(server, estr) ;
+
+          ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+        }
     }
 
   return server->result ;
@@ -1512,100 +1527,6 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   return ;
 }
 
-
-static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data)
-{
-  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
-  GetSequenceData get_sequence_data = (GetSequenceData)user_data ;
-  EnsemblServer server = get_sequence_data->server ;
-  Slice *slice = NULL ;
-  char *sequence = NULL ;
-
-  if (server->result != ZMAP_SERVERRESPONSE_OK)
-    return ;
-
-  sequence = getSequence(server, server->sequence, server->zmap_start, server->zmap_end, STRAND_UNDEF) ;
-
-  if (sequence)
-    {
-      char *tmp = sequence ;
-      sequence = g_ascii_strdown(sequence, -1) ;
-      g_free(tmp) ;
-    }
-
-  if (!sequence)
-    {
-      char *estr;
-      estr = g_strdup_printf("Error getting sequence for '%s' (%d to %d)",
-                             server->sequence, server->zmap_start, server->zmap_end);
-
-      setErrMsg(server, estr) ;
-
-      ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg);
-    }
-  else
-    {
-      /* the servers need styles to add DNA and 3FT */
-      ZMapFeatureContext context = NULL ;
-      ZMapFeatureSet feature_set = NULL ;
-      GHashTable *styles = get_sequence_data->styles ;
-      int sequence_length = strlen(sequence) ;
-
-      if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
-        {
-          ZMapFeatureTypeStyle dna_style = NULL;
-
-          if (styles && (dna_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
-            zMapFeatureDNACreateFeature(feature_block, dna_style, sequence, sequence_length);
-        }
-
-
-      context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, ZMAPFEATURE_STRUCT_CONTEXT) ;
-
-      /* I'm going to create the three frame translation up front! */
-      /* gb10: comment out check on req_feature_set_names as temp fix to get 3ft working in
-       * ensembl. I'm not sure why we need this check anyway - don't we always want 3ft??  */
-      //if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
-        {
-          ZMapFeatureSet translation_fs = NULL;
-
-          if (zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set))
-          {
-            translation_fs = feature_set;
-            ZMapFeatureTypeStyle frame_style = NULL;
-
-            if(styles && (frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
-              zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
-          }
-
-          if (zMapFeatureORFCreateSet(feature_block, &feature_set))
-          {
-            ZMapFeatureTypeStyle orf_style = NULL;
-
-            if (styles && (orf_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
-              zMapFeatureORFSetCreateFeatures(feature_set, orf_style, translation_fs);
-          }
-        }
-
-      /* I'm going to create the show translation up front! */
-        //if (zMap_g_list_find_quark(context->req_feature_set_names,
-        //                           zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
-        {
-          if ((zMapFeatureShowTranslationCreateSet(feature_block, &feature_set)))
-            {
-              ZMapFeatureTypeStyle trans_style = NULL;
-
-              if ((trans_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
-                zMapFeatureShowTranslationSetCreateFeatures(feature_set, trans_style) ;
-            }
-        }
-    }
-
-  if (slice)
-    Slice_free(slice);
-
-  return ;
-}
 
 
 static Slice* getSliceForCoordSystem(const char *coord_system,

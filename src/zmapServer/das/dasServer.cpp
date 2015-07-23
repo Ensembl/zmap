@@ -101,7 +101,9 @@ static ZMapServerResponseType getFeatureSets(void *server,
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 					  ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context) ;
+static ZMapServerResponseType getContextSequence(void *server_in,
+                                                 char *sequence_name, int start, int end,
+                                                 int *dna_length_out, char **dna_sequence_out) ;
 static const char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
@@ -547,7 +549,9 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 }
 
 
-static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getContextSequence(void *server_in,
+                                                 char *sequence_name, int start, int end,
+                                                 int *dna_length_out, char **dna_sequence_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
 

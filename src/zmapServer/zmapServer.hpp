@@ -68,14 +68,14 @@ ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 						 GHashTable **source_2_featureset_out,
 						 GHashTable **source_2_sourcedata_out) ;
 ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GHashTable **types_out) ;
-ZMapServerResponseType zMapServerStylesHaveMode(ZMapServer server, gboolean *have_mode) ;
-ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences_inout) ;
-ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContext feature_context) ;
-ZMapFeatureContext zMapServerCopyContext(ZMapServer server) ;
 ZMapServerResponseType zMapServerGetFeatures(ZMapServer server,
 					     GHashTable *styles, ZMapFeatureContext feature_context) ;
 ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server,
 						     GHashTable *styles, ZMapFeatureContext feature_context) ;
+ZMapServerResponseType zMapServerStylesHaveMode(ZMapServer server, gboolean *have_mode) ;
+ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences_inout) ;
+ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContext feature_context) ;
+ZMapFeatureContext zMapServerCopyContext(ZMapServer server) ;
 const char *zMapServerLastErrorMsg(ZMapServer server) ;
 ZMapServerResponseType zMapServerGetStatus(ZMapServer server, gint *exit_code);
 

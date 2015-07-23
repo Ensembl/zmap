@@ -79,9 +79,10 @@ static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
-  ZMapFeatureContext feature_context_out) ;
+                                          ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in,
- GHashTable *styles, ZMapFeatureContext feature_context_out) ;
+                                                 char *sequence_name, int start, int end,
+                                                 int *dna_length_out, char **dna_sequence_out) ;
 static const char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
@@ -577,17 +578,50 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
  * we have pre-read the sequence and simple copy/move the data over if it's there
  */
 static ZMapServerResponseType getContextSequence(void *server_in,
-                                                 GHashTable *styles,
-                                                 ZMapFeatureContext feature_context_out)
+                                                 char *sequence_name, int start, int end,
+                                                 int *dna_length_out, char **dna_sequence_out)
 {
   FileServer server = (FileServer)server_in ;
 
   if (server->result == ZMAP_SERVERRESPONSE_OK)
     {
-      /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
-       * we would have to parse and reparse the stream....can be done but not needed this second. */
-      g_hash_table_foreach(feature_context_out->alignments, eachAlignmentSequence, (gpointer)server) ;
+      ZMapSequence sequence = NULL ;
+      GQuark seq_id = g_quark_from_string(sequence_name) ;
 
+      if ((sequence = zMapGFFGetSequence(server->parser, seq_id)))
+        {
+          // Why do we do this....because zmap expects lowercase dna...operations like revcomp
+          // will fail with uppercase currently.....seems wasteful....but simplifies searches etc.   
+          char *tmp = sequence->sequence ;
+
+          sequence->sequence = g_ascii_strdown(sequence->sequence, -1) ;
+
+          g_free(tmp) ;
+
+          *dna_length_out = sequence->length ;
+
+          *dna_sequence_out = sequence->sequence ;
+
+          g_free(sequence) ;
+
+          server->result = ZMAP_SERVERRESPONSE_OK ;
+        }
+      else
+        {
+          GError *error;
+          const char *estr;
+
+          error = zMapGFFGetError(server->parser);
+
+          if (error)
+            estr = error->message;
+          else
+            estr = "No error reported";
+
+          setErrMsg(server, estr) ;
+
+          ZMAPSERVER_LOG(Warning, "File", server->path, "%s", server->last_err_msg);
+        }
     }
 
   return server->result ;
@@ -957,122 +991,6 @@ static ZMapServerResponseType fileGetSequence(FileServer server)
 
   return(server->result);
 }
-
-
-
-/* Process all the alignments in a context. */
-static void eachAlignmentSequence(gpointer key, gpointer data, gpointer user_data)
-{
-  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
-  FileServer server = (FileServer)user_data ;
-
-  if (server->result == ZMAP_SERVERRESPONSE_OK)
-    g_hash_table_foreach(alignment->blocks, eachBlockSequence, (gpointer)server) ;
-
-  return ;
-}
-
-
-/* "GFF doesn't understand multiple blocks" therefore there can only be one
- * DNA sequence
- * so we expect one alignment and one block
- */
-static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
-{
-  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
-  FileServer server = (FileServer) user_data ;
-
-  if (server->result != ZMAP_SERVERRESPONSE_OK)
-    return ;
-
-  ZMapSequence sequence;
-  GQuark sequence_name = g_quark_from_string(server->sequence_map->sequence) ;
-  if (!(sequence = zMapGFFGetSequence(server->parser, sequence_name)))
-    {
-      GError *error;
-      const char *estr;
-
-      error = zMapGFFGetError(server->parser);
-
-      if (error)
-        estr = error->message;
-      else
-        estr = "No error reported";
-
-      setErrMsg(server, estr) ;
-
-      ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", server->last_err_msg);
-    }
-  else
-    {
-      /* the servers need styles to add DNA and 3FT
-      * they used to create temp style and then destroy these but that's not very good
-      * they don't have styles info directly but this is stored in the parser
-      * during the protocol steps, so i wrote a GFF function to supply that info
-      * Now that features have style ref'd indirectly via the featureset we can't use temp data
-      */
-      ZMapFeatureContext context;
-      ZMapFeatureSet feature_set;
-      GHashTable *styles = zMapGFFParserGetStyles(server->parser);
-
-      if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
-        {
-          ZMapFeatureTypeStyle dna_style = NULL;
-          ZMapFeature feature;
-
-          if (styles && (dna_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
-            feature = zMapFeatureDNACreateFeature(feature_block, dna_style, sequence->sequence, sequence->length);
-        }
-
-
-      // this is insane: asking a file server for 3FT, however some old code might expect it
-      /* gb10: ZMap can now be run standalone on a GFF file, so everything, including the DNA
-      * for the 3FT, has to come from that file... */
-      context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, ZMAPFEATURE_STRUCT_CONTEXT) ;
-
-      /* I'm going to create the three frame translation up front! */
-      if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
-        {
-          ZMapFeatureSet translation_fs = NULL;
-
-          if (zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set))
-          {
-            translation_fs = feature_set;
-            ZMapFeatureTypeStyle frame_style = NULL;
-
-            if(styles && (frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
-              zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
-          }
-
-          if (zMapFeatureORFCreateSet(feature_block, &feature_set))
-          {
-            ZMapFeatureTypeStyle orf_style = NULL;
-
-            if (styles && (orf_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
-              zMapFeatureORFSetCreateFeatures(feature_set, orf_style, translation_fs);
-          }
-        }
-
-      /* I'm going to create the show translation up front! */
-      if (zMap_g_list_find_quark(context->req_feature_set_names,
-                  zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
-        {
-          if ((zMapFeatureShowTranslationCreateSet(feature_block, &feature_set)))
-            {
-              ZMapFeatureTypeStyle trans_style = NULL;
-
-              if ((trans_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
-                zMapFeatureShowTranslationSetCreateFeatures(feature_set, trans_style) ;
-            }
-        }
-
-      g_free(sequence);
-    }
-
-  return ;
-}
-
-
 
 
 

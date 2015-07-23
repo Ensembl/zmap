@@ -496,7 +496,8 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
         /* If DNA is one of the requested cols and there is an error report it, but not if its
          * just unsupported. */
-        if (zMap_g_list_find_quark(features->context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+        if (zMap_g_list_find_quark(features->context->req_feature_set_names,
+                                   zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
           {
             request->response = zMapServerGetContextSequences(server, features->styles, features->context) ;
 
