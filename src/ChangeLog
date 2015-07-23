@@ -1,3 +1,14 @@
+2015-07-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix regression from 5ebbb0c with export options - REGRESSION FIX
+ src/zmapControl/zmapControlWindowMenubar.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
+
+2015-07-23  zmap  <zmap@sanger.ac.uk>
+ ZMap version 1.7.0-310-gf0bbccc - Update RT and git commit reports
+ src/ChangeLog                                  |   11 +++++++++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 2 files changed, 12 insertions(+), 1 deletions(-)
+
 2015-07-17  Gemma Guest  <gb10@sanger.ac.uk>
  update release notes - DOC
  docs/user/release_notes.shtml |   15 ++++++---------

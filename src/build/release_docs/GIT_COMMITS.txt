@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/2.0.0"
 
+8b6f372 2015-07-21 Fix regression from 5ebbb0c with export options - REGRESSION FIX
 c3c3e0c 2015-07-15 Merge branch 'feature/C++' into develop
 7d377e2 2015-07-08 removed the drawing design document - DOC
 8b551b4 2015-07-07 Merge branch 'feature/editing' into develop

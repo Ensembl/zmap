@@ -51,6 +51,16 @@ Resolved: Fri Jul 10 11:57:34 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
+ticket/479654
+id: ticket/479654
+Queue: zmap
+Subject: export features from file menu
+Requestors: sm23@sanger.ac.uk
+Owner: gb10
+Resolved: Thu Jul 23 14:45:54 2015
+CF.{zmapace_gitcommit}: 682750a
+CF.{zmapace_resolve_version}: 2.0.0
+
 
 End of Request Tracker tickets
 
