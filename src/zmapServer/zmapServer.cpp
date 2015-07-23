@@ -35,6 +35,7 @@
 #include <config.h>
 #include <ZMap/zmapUrl.hpp>
 #include <ZMap/zmapUtils.hpp>
+#include <ZMap/zmapGLibUtils.hpp>
 #include <zmapServer_P.hpp>
 
 
@@ -383,17 +384,94 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server,
 ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GHashTable *styles,
                                                      ZMapFeatureContext feature_context)
 {
-  ZMapServerResponseType result = server->last_response ;
+  ZMapServerResponseType result = server->last_response ;   // Can be called after a previous failure.
+
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
+      char *sequence_name ;
+      int start, end, dna_length = 0 ;
+      char *dna_sequence ;
+      ZMapFeatureAlignment align ;
+      ZMapFeatureBlock feature_block ;
+
+      // HACK.....in the acedbServer code it went through all the aligns and all the blocks of
+      // an align to get all the DNA for all displayed blocks....we never really used that so
+      // here I'm hacking to get the first align and the first block which is all we really use.
+      align = feature_context->master_align ;
+      feature_block = (ZMapFeatureBlock)zMap_g_hash_table_nth(align->blocks, 0) ;
+
+      sequence_name = (char *)g_quark_to_string(feature_context->sequence_name) ;
+      start = feature_block->block_to_sequence.block.x1 ;
+      end = feature_block->block_to_sequence.block.x2 ;
+
+
       result = server->last_response
-        = (server->funcs->get_context_sequences)(server->server_conn, styles, feature_context) ;
+        = (server->funcs->get_context_sequences)(server->server_conn,
+                                                 sequence_name, start, end,
+                                                 &dna_length, &dna_sequence) ;
 
       if (result != ZMAP_SERVERRESPONSE_OK)
-        zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-                                                             server->url->host, "%s",
-                                                             (server->funcs->errmsg)(server->server_conn))) ;
+        {
+          zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
+                                                               server->url->host, "%s",
+                                                               (server->funcs->errmsg)(server->server_conn))) ;
+        }
+      else
+        {
+          ZMapFeature feature = NULL;
+          ZMapFeatureSet feature_set = NULL;
+          ZMapFeatureTypeStyle dna_style = NULL;
+
+
+          /* dna, 3-frame and feature translation are all created up front. (BUT I don't know why
+           * it was done this way - Ed) */
+          if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
+            {
+              if ((dna_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+                feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
+            }
+
+
+          if (zMap_g_list_find_quark(feature_context->req_feature_set_names,
+                                     zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
+            {
+              ZMapFeatureSet translation_fs = NULL;
+
+              if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
+                {
+                  translation_fs = feature_set;
+                  ZMapFeatureTypeStyle frame_style = NULL;
+
+                  if((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
+                    zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
+                }
+
+              if ((zMapFeatureORFCreateSet(feature_block, &feature_set)))
+                {
+                  ZMapFeatureTypeStyle orf_style = NULL;
+
+                  if ((orf_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
+                    zMapFeatureORFSetCreateFeatures(feature_set, orf_style, translation_fs);
+                }
+            }
+
+
+          /* I'm going to create the show translation up front! */
+          if (zMap_g_list_find_quark(feature_context->req_feature_set_names,
+                                     zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
+            {
+              if ((zMapFeatureShowTranslationCreateSet(feature_block, &feature_set)))
+                {
+                  ZMapFeatureTypeStyle frame_style = NULL;
+
+                  if ((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
+                    zMapFeatureShowTranslationSetCreateFeatures(feature_set, frame_style) ;
+                }
+            }
+        }
+      
+
     }
 
   return result ;

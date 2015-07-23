@@ -78,9 +78,11 @@ typedef ZMapServerResponseType (*ZMapServerGetFeatures)(void *server_conn,
 							GHashTable *styles,
 							ZMapFeatureContext feature_context) ;
 
+// ok....need to remove feature context and styles from here and replace with raw dna stuff.....   
 typedef ZMapServerResponseType (*ZMapServerGetContextSequences)(void *server_conn,
-								GHashTable *styles,
-								ZMapFeatureContext feature_context) ;
+                                                                char *sequence_name,
+                                                                int start, int end,
+                                                                int *dna_length_out, char **dna_sequence_out) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetStatusFunc)(void *server_conn, gint *exit_code) ;
 
