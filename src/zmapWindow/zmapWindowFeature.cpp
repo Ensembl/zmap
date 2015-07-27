@@ -53,7 +53,8 @@
 
 #define PFETCH_READ_SIZE 80        /* about a line */
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
-#define PFETCH_TITLE_FORMAT "ZMap - pfetch \"%s\""
+#define PFETCH_TITLE_FORMAT "ZMap - pfetch %s\"%s\""
+#define PFETCH_FULL_RECORD_ARG "-F "
 
 typedef struct PFetchDataStructType
 {
@@ -267,7 +268,9 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 
       pfetch_data->pfetch = pfetch = PFetchHandleNew(pfetch_type);
 
-      if((pfetch_data->title = g_strdup_printf(PFETCH_TITLE_FORMAT, sequence_name)))
+      const char *pfetch_args = prefs.full_record ? PFETCH_FULL_RECORD_ARG : "";
+
+      if((pfetch_data->title = g_strdup_printf(PFETCH_TITLE_FORMAT, pfetch_args, sequence_name)))
         {
           pfetch_data->dialog = zMapGUIShowTextFull(pfetch_data->title, "pfetching...\n",
                                                     FALSE, NULL, &(pfetch_data->text_buffer));
