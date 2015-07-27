@@ -669,23 +669,26 @@ static gboolean pipe_stdout_func(GIOChannel *source, GIOCondition condition, gpo
       else
 	{
 	  guint actual_read_uint = 0;
-	  switch(error->code)
-	    {
-	      /* Derived from errno */
-	    case G_IO_CHANNEL_ERROR_FBIG:
-	    case G_IO_CHANNEL_ERROR_INVAL:
-	    case G_IO_CHANNEL_ERROR_IO:
-	    case G_IO_CHANNEL_ERROR_ISDIR:
-	    case G_IO_CHANNEL_ERROR_NOSPC:
-	    case G_IO_CHANNEL_ERROR_NXIO:
-	    case G_IO_CHANNEL_ERROR_OVERFLOW:
-	    case G_IO_CHANNEL_ERROR_PIPE:
-	      break;
-	      /* Other */
-	    case G_IO_CHANNEL_ERROR_FAILED:
-	    default:
-	      break;
-	    }
+          if (error)
+            {
+              switch(error->code)
+                {
+                  /* Derived from errno */
+                case G_IO_CHANNEL_ERROR_FBIG:
+                case G_IO_CHANNEL_ERROR_INVAL:
+                case G_IO_CHANNEL_ERROR_IO:
+                case G_IO_CHANNEL_ERROR_ISDIR:
+                case G_IO_CHANNEL_ERROR_NOSPC:
+                case G_IO_CHANNEL_ERROR_NXIO:
+                case G_IO_CHANNEL_ERROR_OVERFLOW:
+                case G_IO_CHANNEL_ERROR_PIPE:
+                  break;
+                  /* Other */
+                case G_IO_CHANNEL_ERROR_FAILED:
+                default:
+                  break;
+                }
+            }
 
 	  output[0]   = '\0';
 	  signal_return = emit_signal(PFETCH_HANDLE(user_data),
