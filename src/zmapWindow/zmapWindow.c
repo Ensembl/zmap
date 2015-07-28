@@ -4203,6 +4203,14 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                        but_event->button,
                        event_handled ? "TRUE" : "FALSE") ;
 
+        if (event_handled)
+          {
+            /* If we have handled the event, we must make sure the dragging flags are reset in
+             * the feature handler (because a press usually causes the feature handler to be
+             * called but a release sometimes doesn't) */
+            zmapWindowFeatureItemEventCancelDrag() ;
+          }
+
         break;
       }
 
