@@ -3580,12 +3580,31 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
   /* We record whether we are inside the window to enable user to cancel certain mouse related
    * actions by moving outside the window. */
   if (event->type == GDK_ENTER_NOTIFY)
-    in_window = TRUE ;
+    {
+      in_window = TRUE ;
+    }
   else if (event->type == GDK_LEAVE_NOTIFY)
-    in_window = FALSE ;
-  /* This hack is really only needed for the mac.... */
+    {
+      in_window = FALSE ;
+    }
+  else if (event->type == GDK_FOCUS_CHANGE)
+    {
+      /* We can get here if we left-click and then right-click before releasing the left, and we
+       * need to cancel rubber banding or it will continue with normal mouse motion (i.e. without
+       * the mouse button being held) and the next left-click will do the zoom, probably zooming to 
+       * an unexpected region. */
+      dragging = FALSE ;
+      if (window->rubberband)
+        {
+          gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
+          window->rubberband = NULL ;
+        }
+    }
   else if (event->type == GDK_BUTTON_PRESS)
-    in_window = TRUE ;
+    {
+      /* This hack is really only needed for the mac.... */
+      in_window = TRUE ;
+    }
 
   if (event->type == GDK_BUTTON_PRESS || event->type == GDK_MOTION_NOTIFY || event->type ==  GDK_BUTTON_RELEASE)
     {
