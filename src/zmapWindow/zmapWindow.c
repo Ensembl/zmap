@@ -3580,12 +3580,41 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
   /* We record whether we are inside the window to enable user to cancel certain mouse related
    * actions by moving outside the window. */
   if (event->type == GDK_ENTER_NOTIFY)
-    in_window = TRUE ;
+    {
+      in_window = TRUE ;
+    }
   else if (event->type == GDK_LEAVE_NOTIFY)
-    in_window = FALSE ;
-  /* This hack is really only needed for the mac.... */
+    {
+      in_window = FALSE ;
+    }
+  else if (event->type == GDK_FOCUS_CHANGE)
+    {
+      /* We can get here if we left-click and then right-click before releasing the left, and we
+       * need to cancel rubber banding or it will continue with normal mouse motion (i.e. without
+       * the mouse button being held) and the next left-click will do the zoom, probably zooming to 
+       * an unexpected region. */
+      dragging = FALSE ;
+      if (window->rubberband)
+        {
+          gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
+          window->rubberband = NULL ;
+        }
+    }
+  else if (event->type == GDK_SCROLL)
+    {
+      /* Cancel dragging if scrolling has started or we can end up zooming to an unexpected region */
+      dragging = FALSE ;
+      if (window->rubberband)
+        {
+          gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
+          window->rubberband = NULL ;
+        }
+    }
   else if (event->type == GDK_BUTTON_PRESS)
-    in_window = TRUE ;
+    {
+      /* This hack is really only needed for the mac.... */
+      in_window = TRUE ;
+    }
 
   if (event->type == GDK_BUTTON_PRESS || event->type == GDK_MOTION_NOTIFY || event->type ==  GDK_BUTTON_RELEASE)
     {
@@ -3779,18 +3808,28 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
             }
           case 3:
             {
-              /* Nothing to do, menu callbacks are set on canvas items, not here. */
-
-              if (mark_updater.in_mark_move_region)
+              if (dragging || guide)
                 {
-                  mark_updater.in_mark_move_region = FALSE;
-                  mark_updater.closest_to = NULL;
+                  /* It's possible to press another mouse button while holding the middle
+                   * one down especially if it's a standard PC mouse with the wheel in the middle
+                   * instead of a proper button then you try to do two things at once. */
+                  event_handled = TRUE ;
+                }
+              else
+                {
+                  /* Nothing to do, menu callbacks are set on canvas items, not here. */
 
-                  gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, window->normal_cursor) ;
-                  gdk_cursor_unref(mark_updater.arrow_cursor);
-                  mark_updater.arrow_cursor = NULL;
+                  if (mark_updater.in_mark_move_region)
+                    {
+                      mark_updater.in_mark_move_region = FALSE;
+                      mark_updater.closest_to = NULL;
 
-                  event_handled = TRUE;             /* We _ARE_ handling */
+                      gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, window->normal_cursor) ;
+                      gdk_cursor_unref(mark_updater.arrow_cursor);
+                      mark_updater.arrow_cursor = NULL;
+
+                      event_handled = TRUE;             /* We _ARE_ handling */
+                    }
                 }
 
               break ;
@@ -4202,6 +4241,14 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
         zMapDebugPrint(mouse_debug_G, "Leave: button_release %d - return %s",
                        but_event->button,
                        event_handled ? "TRUE" : "FALSE") ;
+
+        if (event_handled)
+          {
+            /* If we have handled the event, we must make sure the dragging flags are reset in
+             * the feature handler (because a press usually causes the feature handler to be
+             * called but a release sometimes doesn't) */
+            zmapWindowFeatureItemEventButRelease(event) ;
+          }
 
         break;
       }

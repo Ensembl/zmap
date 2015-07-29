@@ -55,6 +55,13 @@
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
 #define PFETCH_TITLE_FORMAT "ZMap - pfetch \"%s\""
 
+
+static gboolean g_dragging = FALSE ;                        /* Have clicked button 1 but not yet released */
+static gboolean g_dnd_in_progress = FALSE ;                 /* Drag and drop is in progress */
+static gboolean g_second_press = FALSE ;                    /* Used for double clicks... */
+static guint32  g_last_but_release = 0 ;                     /* Used for double clicks... */
+
+
 typedef struct PFetchDataStructType
 {
   GtkWidget *dialog;
@@ -319,6 +326,17 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 }
 
 
+gboolean zmapWindowFeatureItemEventButRelease(GdkEvent *event)
+{
+  GdkEventButton *but_event = (GdkEventButton *)event ;
+
+  g_dragging = FALSE ;
+  g_dnd_in_progress = FALSE ;
+  g_second_press = FALSE ;
+  g_last_but_release = but_event->time ;
+}
+
+
 /* Handle events on items, note that events for text items are passed through without processing
  * so the text item code can do highlighting etc.
  *
@@ -332,10 +350,6 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
   gboolean event_handled = FALSE ;                            /* By default we _don't_ handle events. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
   static ZMapFeature feature = NULL ;
-  static guint32 last_but_release = 0 ;                     /* Used for double clicks... */
-  static gboolean second_press = FALSE ;                    /* Used for double clicks... */
-  static gboolean dragging = FALSE ;                        /* Have clicked button 1 but not yet released */
-  static gboolean dnd_in_progress = FALSE ;                 /* Drag and drop is in progress */
   static GtkTargetEntry targetentries[] =                   /* Set up targets for drag and drop */
     {
       { (gchar *)"STRING",        0, TARGET_STRING },
@@ -384,8 +398,8 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
         {
           if (but_event->button == 1)
             {
-              dragging = TRUE ;
-              dnd_in_progress = FALSE ;
+              g_dragging = TRUE ;
+              g_dnd_in_progress = FALSE ;
             }
           else if (but_event->button == 3)
             {
@@ -397,15 +411,15 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
         }
       else if (but_event->type == GDK_2BUTTON_PRESS)
         {
-          second_press = TRUE ;
+          g_second_press = TRUE ;
 
           event_handled = TRUE ;
         }
       else                                                    /* button release */
         {
           /*                            button release                             */
-          dragging = FALSE ;
-          dnd_in_progress = FALSE ;
+          g_dragging = FALSE ;
+          g_dnd_in_progress = FALSE ;
 
           /* Gdk defines double clicks as occuring within 250 milliseconds of each other
            * but unfortunately if on the first click we do a lot of processing,
@@ -415,7 +429,7 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
            * buffer. */
           guint but_threshold = 500 ;                            /* Separation of clicks in milliseconds. */
 
-          if (second_press || but_event->time - last_but_release < but_threshold)
+          if (g_second_press || but_event->time - g_last_but_release < but_threshold)
             {
               const gchar *style_id = g_quark_to_string(zMapStyleGetID(*feature->style)) ;
 
@@ -454,7 +468,7 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
                     }
                 }
 
-              second_press = FALSE ;
+              g_second_press = FALSE ;
             }
           else
             {
@@ -463,7 +477,7 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
               event_handled = handleButton(but_event, window, item, feature) ;
             }
 
-          last_but_release = but_event->time ;
+          g_last_but_release = but_event->time ;
 
           event_handled = TRUE ;
         }
@@ -483,15 +497,15 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
        * selected. "dragging" indicates that a left-click has happened and not been released yet, and
        * "dnd_in_progress" means that a drag-and-drop has already been initiated (so there's
        * nothing left to do). */
-      if (!dnd_in_progress && dragging && item && window)
+      if (!g_dnd_in_progress && g_dragging && item && window)
         {
-          if (zmapWindowFocusIsItemFocused(window->focus, item))
+          if (item != NULL && zmapWindowFocusGetHotItem(window->focus) == item)
             {
               gtk_drag_begin(GTK_WIDGET(window->canvas), targetlist,
                              (GdkDragAction)(GDK_ACTION_COPY|GDK_ACTION_MOVE|GDK_ACTION_LINK),
                              1, (GdkEvent*)event);
 
-              dnd_in_progress = TRUE ;
+              g_dnd_in_progress = TRUE ;
             }
         }
     }
