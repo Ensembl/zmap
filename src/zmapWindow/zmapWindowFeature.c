@@ -58,6 +58,8 @@
 
 static gboolean g_dragging = FALSE ;                        /* Have clicked button 1 but not yet released */
 static gboolean g_dnd_in_progress = FALSE ;                 /* Drag and drop is in progress */
+static gboolean g_second_press = FALSE ;                    /* Used for double clicks... */
+static guint32  g_last_but_release = 0 ;                     /* Used for double clicks... */
 
 
 typedef struct PFetchDataStructType
@@ -324,10 +326,14 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 }
 
 
-gboolean zmapWindowFeatureItemEventCancelDrag()
+gboolean zmapWindowFeatureItemEventButRelease(GdkEvent *event)
 {
+  GdkEventButton *but_event = (GdkEventButton *)event ;
+
   g_dragging = FALSE ;
   g_dnd_in_progress = FALSE ;
+  g_second_press = FALSE ;
+  g_last_but_release = but_event->time ;
 }
 
 
@@ -344,8 +350,6 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
   gboolean event_handled = FALSE ;                            /* By default we _don't_ handle events. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
   static ZMapFeature feature = NULL ;
-  static guint32 last_but_release = 0 ;                     /* Used for double clicks... */
-  static gboolean second_press = FALSE ;                    /* Used for double clicks... */
   static GtkTargetEntry targetentries[] =                   /* Set up targets for drag and drop */
     {
       { (gchar *)"STRING",        0, TARGET_STRING },
@@ -407,7 +411,7 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
         }
       else if (but_event->type == GDK_2BUTTON_PRESS)
         {
-          second_press = TRUE ;
+          g_second_press = TRUE ;
 
           event_handled = TRUE ;
         }
@@ -425,7 +429,7 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
            * buffer. */
           guint but_threshold = 500 ;                            /* Separation of clicks in milliseconds. */
 
-          if (second_press || but_event->time - last_but_release < but_threshold)
+          if (g_second_press || but_event->time - g_last_but_release < but_threshold)
             {
               const gchar *style_id = g_quark_to_string(zMapStyleGetID(*feature->style)) ;
 
@@ -464,7 +468,7 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
                     }
                 }
 
-              second_press = FALSE ;
+              g_second_press = FALSE ;
             }
           else
             {
@@ -473,7 +477,7 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
               event_handled = handleButton(but_event, window, item, feature) ;
             }
 
-          last_but_release = but_event->time ;
+          g_last_but_release = but_event->time ;
 
           event_handled = TRUE ;
         }
