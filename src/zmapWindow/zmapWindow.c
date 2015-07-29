@@ -3798,18 +3798,28 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
             }
           case 3:
             {
-              /* Nothing to do, menu callbacks are set on canvas items, not here. */
-
-              if (mark_updater.in_mark_move_region)
+              if (dragging || guide)
                 {
-                  mark_updater.in_mark_move_region = FALSE;
-                  mark_updater.closest_to = NULL;
+                  /* It's possible to press another mouse button while holding the middle
+                   * one down especially if it's a standard PC mouse with the wheel in the middle
+                   * instead of a proper button then you try to do two things at once. */
+                  event_handled = TRUE ;
+                }
+              else
+                {
+                  /* Nothing to do, menu callbacks are set on canvas items, not here. */
 
-                  gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, window->normal_cursor) ;
-                  gdk_cursor_unref(mark_updater.arrow_cursor);
-                  mark_updater.arrow_cursor = NULL;
+                  if (mark_updater.in_mark_move_region)
+                    {
+                      mark_updater.in_mark_move_region = FALSE;
+                      mark_updater.closest_to = NULL;
 
-                  event_handled = TRUE;             /* We _ARE_ handling */
+                      gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, window->normal_cursor) ;
+                      gdk_cursor_unref(mark_updater.arrow_cursor);
+                      mark_updater.arrow_cursor = NULL;
+
+                      event_handled = TRUE;             /* We _ARE_ handling */
+                    }
                 }
 
               break ;
