@@ -3600,6 +3600,16 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
           window->rubberband = NULL ;
         }
     }
+  else if (event->type == GDK_SCROLL)
+    {
+      /* Cancel dragging if scrolling has started or we can end up zooming to an unexpected region */
+      dragging = FALSE ;
+      if (window->rubberband)
+        {
+          gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
+          window->rubberband = NULL ;
+        }
+    }
   else if (event->type == GDK_BUTTON_PRESS)
     {
       /* This hack is really only needed for the mac.... */
