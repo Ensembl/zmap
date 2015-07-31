@@ -8,12 +8,14 @@
 
 <h4>Version 2.0.0</h4>
 <ul>
+  <li>Converted code base to C++
   <li>Ensembl sources now only load the requested featuresets, if specified
   <li>Ensembl sources can now have an optional database prefix
   <li>Add logging of command line used by zmap to start a new child pipe process
   <li>Fix a bug in edit style dialog where wrong colour is set
   <li>Fix a bug for drawing transcripts
   <li>Fix a crash that could happen when overwriting a feature used as evidence for the Annotation feature
+  <li>Fix several bugs with mouse click handling
 </ul>
 
 <h4>Version 1.7.0</h4>
