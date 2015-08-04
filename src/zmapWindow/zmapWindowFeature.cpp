@@ -63,6 +63,13 @@ static gboolean g_second_press = FALSE ;                    /* Used for double c
 static guint32  g_last_but_release = 0 ;                     /* Used for double clicks... */
 
 
+
+static gboolean g_dragging = FALSE ;                        /* Have clicked button 1 but not yet released */
+static gboolean g_dnd_in_progress = FALSE ;                 /* Drag and drop is in progress */
+static gboolean g_second_press = FALSE ;                    /* Used for double clicks... */
+static guint32  g_last_but_release = 0 ;                     /* Used for double clicks... */
+
+
 typedef struct PFetchDataStructType
 {
   GtkWidget *dialog;
