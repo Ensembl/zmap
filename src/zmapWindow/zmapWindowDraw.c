@@ -94,13 +94,13 @@ typedef struct VisCoordsStructType
 
 
 
-static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
- GQuark align_id, GQuark block_id,
- gboolean force_to, gboolean force) ;
+static void toggleColumnInMultipleBlocks(ZMapWindow window, const char *name,
+                                         GQuark align_id, GQuark block_id,
+                                         gboolean force_to, gboolean force) ;
 static void preZoomCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                       ZMapContainerLevelType level, gpointer user_data) ;
 static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-     ZMapContainerLevelType level, gpointer user_data) ;
+                             ZMapContainerLevelType level, gpointer user_data) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printChild(gpointer data, gpointer user_data) ;
@@ -715,10 +715,15 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
 
 
 /* Makes sure all the things that need to be redrawn when the canvas needs redrawing. */
-void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, char *where)
+void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, const char *where)
 {
-  PositionColumn poscol = g_new0(PositionColumnStruct,1);
-  ZMapWindow window = g_object_get_data(G_OBJECT(root), ZMAP_WINDOW_POINTER);
+  PositionColumn poscol ;
+  ZMapWindow window ;
+
+
+  poscol = g_new0(PositionColumnStruct,1);
+  window = (ZMapWindow)g_object_get_data(G_OBJECT(root), ZMAP_WINDOW_POINTER);
+
 
   /* scan canvas and move columns sideways */
   //printf("full repos %s %p %d\n", where, window, redraw);
@@ -1024,31 +1029,31 @@ static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
     {
     case ZMAP_WINDOW_3FRAME_OFF:
       {
-        ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;    /* comment out to remember selection */
-        ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+        ZMAP_FLAG_OFF(Display3FrameMode, window->display_3_frame, DISPLAY_3FRAME_TRANS) ;    /* comment out to remember selection */
+        ZMAP_FLAG_OFF(Display3FrameMode, window->display_3_frame, DISPLAY_3FRAME_COLS) ;
 
-        ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_ON) ;
+        ZMAP_FLAG_OFF(Display3FrameMode, window->display_3_frame, DISPLAY_3FRAME_ON) ;
         break ;
       }
     case ZMAP_WINDOW_3FRAME_TRANS:
       {
-        ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
-        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
-        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
+        ZMAP_FLAG_OFF(Display3FrameMode, window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+        ZMAP_FLAG_ON(Display3FrameMode, window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
+        ZMAP_FLAG_ON(Display3FrameMode, window->display_3_frame, DISPLAY_3FRAME_ON) ;
         break ;
       }
     case ZMAP_WINDOW_3FRAME_COLS:
       {
-        ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
-        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
-        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
+        ZMAP_FLAG_OFF(Display3FrameMode, window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
+        ZMAP_FLAG_ON(Display3FrameMode, window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+        ZMAP_FLAG_ON(Display3FrameMode, window->display_3_frame, DISPLAY_3FRAME_ON) ;
         break ;
       }
     case ZMAP_WINDOW_3FRAME_ALL:
       {
-        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
-        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
-        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
+        ZMAP_FLAG_ON(Display3FrameMode, window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
+        ZMAP_FLAG_ON(Display3FrameMode, window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+        ZMAP_FLAG_ON(Display3FrameMode, window->display_3_frame, DISPLAY_3FRAME_ON) ;
         break ;
       }
     default:
@@ -1152,7 +1157,7 @@ static gboolean zMapWindowResetWindowWidth(ZMapWindow window, FooCanvasItem *ite
  */
 
 
-static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
+static void toggleColumnInMultipleBlocks(ZMapWindow window, const char *name,
                                          GQuark align_id, GQuark block_id,
                                          gboolean force_to, gboolean force)
 {
@@ -1447,7 +1452,7 @@ static void rebumpColsCB(void *data, void *user_data)
   /* This is called from the Compress Columns code, which _is_ a user
    * action. */
 
-  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(col_group), ZMAPBUMP_INVALID, GPOINTER_TO_UINT(user_data)) ;
+  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(col_group), ZMAPBUMP_INVALID, (ZMapWindowCompressMode)GPOINTER_TO_UINT(user_data)) ;
 
   return ;
 }

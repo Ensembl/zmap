@@ -703,7 +703,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
               /* We default to the master alignment and the first block within that alignment, the xml
                * does not have to contain either making it easier for the peer. */
               request_data->orig_align = request_data->orig_context->master_align ;
-              request_data->orig_block = zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
+              request_data->orig_block = (ZMapFeatureBlock)zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
 
               result = TRUE ;
             }
@@ -844,7 +844,7 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
   else
     {
       /* Get the first one! */
-      request_data->orig_block = zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
+      request_data->orig_block = (ZMapFeatureBlock)zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
 
       result = TRUE ;
     }
@@ -913,8 +913,8 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
     {
       ZMapFeatureSource source_data ;
 
-      if (!(source_data = g_hash_table_lookup(request_data->window->context_map->source_2_sourcedata,
-      GINT_TO_POINTER(unique_set_id))))
+      if (!(source_data = (ZMapFeatureSource)g_hash_table_lookup(request_data->window->context_map->source_2_sourcedata,
+                                                                 GINT_TO_POINTER(unique_set_id))))
         {
           char *err_msg ;
 

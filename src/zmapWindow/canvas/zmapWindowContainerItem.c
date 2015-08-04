@@ -46,8 +46,8 @@
 
 
 
-static void zmap_window_canvas_item_class_init  (ZMapWindowCanvasItemClass class);
-static void zmap_window_canvas_item_init        (ZMapWindowCanvasItem      group);
+static void zmap_window_canvas_item_class_init(ZMapWindowCanvasItemClass item_class);
+static void zmap_window_canvas_item_init(ZMapWindowCanvasItem group);
 static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasItem canvas_item) ;
 static void zmap_window_canvas_item_destroy (GtkObject *gtkobject) ;
 
@@ -87,7 +87,7 @@ GType zMapWindowCanvasItemGetType (void)
       group_type = g_type_register_static (foo_canvas_item_get_type (),
                                            ZMAP_WINDOW_CANVAS_ITEM_NAME,
                                            &group_info,
-                                           0);
+                                           (GTypeFlags)0);
     }
 
   return group_type;
@@ -119,7 +119,7 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
   canvas_item_type = g_type_from_name(ZMAP_WINDOW_CANVAS_ITEM_NAME);
   parent_type      = g_type_parent(canvas_item_type);
 
-  group_parent_class_G = gtk_type_class(parent_type);
+  group_parent_class_G = (FooCanvasItemClass *)gtk_type_class(parent_type);
 
 
   object_class->destroy = zmap_window_canvas_item_destroy;

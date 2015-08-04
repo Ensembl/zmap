@@ -123,7 +123,7 @@ static ZMapFeatureContextExecuteStatus getFeatureFromIdCB(GQuark key,
 
 
 
-/* 
+/*
  *                    Globals
  */
 
@@ -132,7 +132,7 @@ static gboolean catch_hash_abuse_G = TRUE ;
 
 
 
-/* 
+/*
  *                    External routines
  */
 
@@ -251,7 +251,7 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
                 ZMapFeature feature = (ZMapFeature)curr_copy ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-        
+
                 break;
               }
 
@@ -270,10 +270,10 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
               {
                 ZMapFeatureBlock block = (ZMapFeatureBlock)curr_copy ;
                 ZMapFeatureSet feature_set = (ZMapFeatureSet)prev_copy ;
-        
+
                 if (feature_set)
                   zMapFeatureBlockAddFeatureSet(block, feature_set) ;
-        
+
                 break;
               }
 
@@ -292,12 +292,12 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
               {
                 ZMapFeatureContext context = (ZMapFeatureContext)curr_copy ;
                 ZMapFeatureAlignment align = (ZMapFeatureAlignment)prev_copy ;
-        
+
                 if (align)
                   zMapFeatureContextAddAlignment(context, align, TRUE) ;
-        
+
                 copied_context = context ;
-                
+
                 break;
               }
 
@@ -314,7 +314,7 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
 
           prev_copy = curr_copy ;
           curr = curr->parent ;
-        
+
         } while (curr) ;
 
 
@@ -485,7 +485,7 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
   feature_ptr = query_feature;
   while(feature_ptr && feature_ptr->struct_type > ZMAPFEATURE_STRUCT_CONTEXT)
     {
-      feature_ptr = zMapFeatureGetParentGroup(feature_ptr, feature_ptr->struct_type - 1);
+      feature_ptr = zMapFeatureGetParentGroup(feature_ptr, (ZMapFeatureLevelType)(feature_ptr->struct_type - 1));
       switch(feature_ptr->struct_type)
         {
         case ZMAPFEATURE_STRUCT_CONTEXT:
@@ -533,7 +533,7 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
         }
 
       if(current)
-        feature_ptr = g_hash_table_lookup(feature_ptr->children,
+        feature_ptr = (ZMapFeatureAny)g_hash_table_lookup(feature_ptr->children,
                                           zmapFeature2HashKey(current));
       else
         feature_ptr = NULL;
@@ -549,13 +549,10 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
 
 
 
-/* 
+/*
  *                  Package routines
  */
-
-
-/* provide access to private macro, NB start is not used but defined by the macro */
-int zmapFeatureRevCompCoord(int *coord, const int start, const int end)
+void zmapFeatureRevCompCoord(int *coord, const int start, const int end)
 {
   zmapFeatureInvert(coord,start,end);
 }
@@ -763,7 +760,7 @@ static void revcompSpan(GArray *spans, int seq_start, int seq_end)
 {
   int i, j;
 
-  for (i = 0; i < spans->len; i++)
+  for (i = 0; i < (int)spans->len; i++)
     {
       ZMapSpan span ;
 
@@ -856,7 +853,7 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
     {
       int i ;
 
-      for (i = 0; i < feature->feature.homol.align->len; i++)
+      for (i = 0; i < (int)feature->feature.homol.align->len; i++)
         {
           ZMapAlignBlock align ;
 
@@ -870,11 +867,11 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 
         if(feature->feature.homol.sequence && *feature->feature.homol.sequence)/* eg if provided in GFF (BAM) */
           {
-            if (feature->feature.homol.length != strlen(feature->feature.homol.sequence))
+            if (feature->feature.homol.length != (int)strlen(feature->feature.homol.sequence))
               printf("%s: seq lengths differ: %d, %zd\n",
              g_quark_to_string(feature->original_id), feature->feature.homol.length,
              strlen(feature->feature.homol.sequence));
-        
+
             zMapDNAReverseComplement(feature->feature.homol.sequence, feature->feature.homol.length) ;
           }
     }
@@ -1145,7 +1142,7 @@ static void feature_context_execute_full(ZMapFeatureAny feature_any,
 
 /*!
  * \brief Callback called on every child in a FeatureAny.
- * 
+ *
  * For each featureset, compares its id to the id in the user
  * data and if it matches it sets the result in the user data.
  */
@@ -1155,7 +1152,7 @@ static ZMapFeatureContextExecuteStatus getFeaturesetFromIdCB(GQuark key,
                                                              char **err_out)
 {
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  
+
   GetFeaturesetCBData cb_data = (GetFeaturesetCBData) user_data ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
 
@@ -1165,18 +1162,18 @@ static ZMapFeatureContextExecuteStatus getFeaturesetFromIdCB(GQuark key,
       if (feature_any->unique_id == cb_data->set_id)
         cb_data->featureset = (ZMapFeatureSet)feature_any;
       break;
-      
+
     default:
       break;
     };
-  
+
   return status;
 }
 
 
 /*!
  * \brief Callback called on every child in a FeatureAny.
- * 
+ *
  * For each featureset, compares its id to the id in the user
  * data and if it matches it sets the result in the user data.
  */
@@ -1186,7 +1183,7 @@ static ZMapFeatureContextExecuteStatus getFeatureFromIdCB(GQuark key,
                                                           char **err_out)
 {
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  
+
   GetFeaturesetCBData cb_data = (GetFeaturesetCBData) user_data ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
 
@@ -1196,10 +1193,10 @@ static ZMapFeatureContextExecuteStatus getFeatureFromIdCB(GQuark key,
       if (feature_any->unique_id == cb_data->set_id)
         cb_data->featureset = (ZMapFeatureSet)feature_any;
       break;
-      
+
     default:
       break;
     };
-  
+
   return status;
 }

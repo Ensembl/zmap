@@ -88,11 +88,11 @@ static void freeDNAMatchCB(gpointer data, gpointer user_data_unused) ;
 /* menu GLOBAL! */
 static GtkItemFactoryEntry menu_items_G[] = {
  /* File */
- { "/_File",              NULL,         NULL,       0,          "<Branch>", NULL},
- { "/File/Close",         "<control>W", requestDestroyCB, 0,          NULL,       NULL},
+ { (gchar *)"/_File",              NULL,         NULL,       0,          (gchar *)"<Branch>", NULL},
+ { (gchar *)"/File/Close",         (gchar *)"<control>W", (GtkItemFactoryCallback)requestDestroyCB, 0,          NULL,       NULL},
  /* Help */
- { "/_Help",             NULL, NULL,       0,            "<LastBranch>", NULL},
- { "/Help/Overview", NULL, helpMenuCB, 0,  NULL,           NULL}
+ { (gchar *)"/_Help",             NULL, NULL,       0,            (gchar *)"<LastBranch>", NULL},
+ { (gchar *)"/Help/Overview", NULL, (GtkItemFactoryCallback)helpMenuCB, 0,  NULL,           NULL}
 };
 
 
@@ -395,8 +395,8 @@ static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget)
  */
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
 {
-  char *title = "DNA List Window" ;
-  char *help_text =
+  const char *title = "DNA List Window" ;
+  const char *help_text =
     "The ZMap DNA List Window shows all the matches from your DNA search.\n"
     "You can click on a match and the corresponding ZMap window will scroll\n"
     "to the matchs location." ;
@@ -530,7 +530,7 @@ static void zmap_windowdnalist_class_init(ZMapWindowDNAListClass zmap_tv_class)
 
   gobject_class  = (GObjectClass *)zmap_tv_class;
   parent_class   = ZMAP_GUITREEVIEW_CLASS(zmap_tv_class);
-  parent_class_G = g_type_class_peek_parent(zmap_tv_class);
+  parent_class_G = (ZMapGUITreeViewClass)g_type_class_peek_parent(zmap_tv_class);
 
   gobject_class->set_property = zmap_windowdnalist_set_property;
   gobject_class->get_property = zmap_windowdnalist_get_property;
@@ -675,76 +675,76 @@ static void setup_dna_tree(ZMapGUITreeView zmap_tree_view)
 }
 
 static void dna_get_titles_types_funcs(GList **titles_out,
-                               GList **types_out,
-                               GList **funcs_out,
-                               GList **flags_out)
+                                       GList **types_out,
+                                       GList **funcs_out,
+                                       GList **flags_out)
 {
   GList *titles, *types, *funcs, *flags;
-  unsigned int flags_set = (ZMAP_GUITREEVIEW_COLUMN_VISIBLE |
-                      ZMAP_GUITREEVIEW_COLUMN_CLICKABLE);
+  unsigned int flags_set = (ZMAP_GUITREEVIEW_COLUMN_VISIBLE | ZMAP_GUITREEVIEW_COLUMN_CLICKABLE);
+
   titles = types = funcs = flags = NULL;
 
   /* N.B. Order here dictates order of columns */
 
   /* Match */
-  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_MATCH_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWDNALIST_MATCH_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, dna_match_match_to_value);
+  funcs  = g_list_append(funcs, (void *)dna_match_match_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
 
   /* Screen start */
-  titles = g_list_append(titles, ZMAP_WDL_SSTART_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WDL_SSTART_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, dna_match_screen_start_to_value);
+  funcs  = g_list_append(funcs, (void *)dna_match_screen_start_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
 
   /* Screen End */
-  titles = g_list_append(titles, ZMAP_WDL_SEND_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WDL_SEND_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, dna_match_screen_end_to_value);
+  funcs  = g_list_append(funcs, (void *)dna_match_screen_end_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
 
   /* Strand */
-  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_STRAND_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWDNALIST_STRAND_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, dna_match_strand_to_value);
+  funcs  = g_list_append(funcs, (void *)dna_match_strand_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
 
   /* Frame */
-  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_FRAME_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWDNALIST_FRAME_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, dna_match_frame_to_value);
+  funcs  = g_list_append(funcs, (void *)dna_match_frame_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
 
   /* Not visible... real start and end according to zmap */
   /* -start- */
-  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_START_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWDNALIST_START_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, dna_match_start_to_value);
+  funcs  = g_list_append(funcs, (void *)dna_match_start_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
   /* -end- */
-  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_END_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWDNALIST_END_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, dna_match_end_to_value);
+  funcs  = g_list_append(funcs, (void *)dna_match_end_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
   /* Match Sequence Type */
-  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_SEQTYPE_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWDNALIST_SEQTYPE_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, dna_match_seq_type_to_value);
+  funcs  = g_list_append(funcs, (void *)dna_match_seq_type_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
   /* Match Strand as an int/enum */
-  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_STRAND_ENUM_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWDNALIST_STRAND_ENUM_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, dna_match_strand_enum_to_value);
+  funcs  = g_list_append(funcs, (void *)dna_match_strand_enum_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
   /* Match Frame as an int/enum */
-  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_FRAME_ENUM_COLUMN_NAME);
+  titles = g_list_append(titles, (void *)ZMAP_WINDOWDNALIST_FRAME_ENUM_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, dna_match_frame_enum_to_value);
+  funcs  = g_list_append(funcs, (void *)dna_match_frame_enum_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
 

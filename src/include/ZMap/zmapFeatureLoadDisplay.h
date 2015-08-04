@@ -86,7 +86,7 @@ typedef struct ZMapFeatureSetDescStructType
 
   GQuark feature_src_ID;            // the name of the source featureset (with upper case)
                                     // struct is keyed with normalised name
-  char *feature_set_text;           // renamed so we can search for this
+  const char *feature_set_text;           // renamed so we can search for this
 
 } ZMapFeatureSetDescStruct, *ZMapFeatureSetDesc ;
 

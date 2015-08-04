@@ -46,7 +46,7 @@ gboolean zMapConfigDirCreate(char *config_dir, char *config_file) ;
 const char *zMapConfigDirDefaultName(void) ;
 char *zMapConfigDirGetDir(void) ;
 char *zMapConfigDirGetFile(void) ;
-char *zMapConfigDirFindFile(char *filename) ;
+char *zMapConfigDirFindFile(const char *filename) ;
 char *zMapConfigDirGetZmapHomeFile(void);
 char *zMapConfigDirGetSysFile(void);
 void zMapConfigDirDestroy(void) ;

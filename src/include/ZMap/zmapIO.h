@@ -41,7 +41,7 @@ ZMapIOOut zMapOutCreateStr(char *init_value, int size) ;
 ZMapIOOut zMapOutCreateFD(int fd) ;
 char *zMapOutGetStr(ZMapIOOut out) ;
 gboolean zMapOutWrite(ZMapIOOut out, char *text) ;
-gboolean zMapOutWriteFormat(ZMapIOOut out, char *format, ...) ;
+gboolean zMapOutWriteFormat(ZMapIOOut out, const char *format, ...) ;
 void zMapOutDestroy(ZMapIOOut out) ;
 
 

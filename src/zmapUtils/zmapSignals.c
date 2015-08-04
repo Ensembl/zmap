@@ -41,7 +41,7 @@
 #include <ZMap/zmapUtils.h>
 
 
-static void signal_write(int fd, char *buffer, int size, gboolean *result_in_out) ;
+static void signal_write(int fd, const char *buffer, int size, gboolean *result_in_out) ;
 
 
 
@@ -61,7 +61,7 @@ static gboolean enable_core_dumping_G = TRUE;
 /* Our Unix signal handler function, prints a stack trace for some signals. */
 void zMapSignalHandler(int sig_no)
 {
-  char *sig_name = NULL, *pid_output = NULL ;
+  const char *sig_name = NULL, *pid_output = NULL ;
   int sig_name_len = 0 ;
   gboolean write_result = TRUE ;
 
@@ -118,7 +118,7 @@ void zMapSignalHandler(int sig_no)
     }
 
   if (pid_output)
-    g_free(pid_output) ;
+    g_free((void *)pid_output) ;
 
   return ;
 }
@@ -130,7 +130,7 @@ void zMapSignalHandler(int sig_no)
  */
 
 
-static void signal_write(int fd, char *buffer, int size, gboolean *result_in_out)
+static void signal_write(int fd, const char *buffer, int size, gboolean *result_in_out)
 {
   if (result_in_out && (*result_in_out == TRUE))
     {

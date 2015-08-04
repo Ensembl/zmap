@@ -70,7 +70,7 @@ typedef struct _ZMapViewWindowStruct
 
 
 
-/* 
+/*
  * Session data, each connection has various bits of information recorded about it
  * depending on what type of connection it is (http, acedb, pipe etc).
  */
@@ -131,7 +131,7 @@ ZMAP_DEFINE_ENUM(ZMapViewThreadStatus, ZMAP_VIEW_THREAD_STATE_LIST) ;
 typedef struct _ZMapViewConnectionStepListStruct *ZMapViewConnectionStepList ;
 
 
-/* Represents a single connection to a data source. 
+/* Represents a single connection to a data source.
  * We maintain state for our connections otherwise we will try to issue requests that
  * they may not see. curr_request flip-flops between ZMAP_REQUEST_GETDATA and ZMAP_REQUEST_WAIT */
 typedef struct ZMapViewConnectionStructType
@@ -155,7 +155,7 @@ typedef struct ZMapViewConnectionStructType
    * CHECK THIS OUT.......
    *  */
   ZMapViewThreadStatus thread_status ;			    /* probably this is badly placed,
-							       but not as badly as before 
+							       but not as badly as before
 							       at least it has some persistance now */
 
   gboolean show_warning ;
@@ -406,6 +406,10 @@ typedef struct _ZMapViewStruct
   gboolean scratch_start_end_set ;     /* TRUE if the scratch-column forward-strand feature
                                         * start/end has been set */
 
+  GHashTable *feature_cache;           /* cache ZMapFeature pointers for scratch column, key
+                                        * on feature's unique_id. Gets cleared when pointers
+                                        * are invalidated, i.e. revcomp */
+
   GQuark save_file ;                   /* Filename to use for the Save option in standalone
                                         * ZMap. Gets set either from the input file or from the
                                         * first Save As operation.  */
@@ -450,11 +454,11 @@ gboolean zmapViewPassCommandToAllWindows(ZMapView view, gpointer user_data) ;
 
 /* Context Window Hash (CWH) for the correct timing of the call to zMapFeatureContextDestroy */
 GHashTable *zmapViewCWHHashCreate(void);
-void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *list);
-gboolean zmapViewCWHIsLastWindow(GHashTable *hash, ZMapFeatureContext context, ZMapWindow window);
+void zmapViewCWHSetList(GHashTable *ghash, ZMapFeatureContext context, GList *glist);
+gboolean zmapViewCWHIsLastWindow(GHashTable *ghash, ZMapFeatureContext context, ZMapWindow window);
 gboolean zmapViewCWHRemoveContextWindow(GHashTable *table, ZMapFeatureContext *context,
                                         ZMapWindow window, gboolean *is_only_context);
-void zmapViewCWHDestroy(GHashTable **hash);
+void zmapViewCWHDestroy(GHashTable **ghash);
 
 void zmapViewSessionAddServer(ZMapViewSessionServer session_data, ZMapURL url, char *format) ;
 void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServerReqGetServerInfo session) ;
@@ -523,6 +527,10 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
 gboolean zmapViewScratchCopyFeatures(ZMapView zmap_view, GList *features,
                                      const long seq_start, const long seq_end,
                                      ZMapFeatureSubPart subpart, const gboolean use_subfeature);
+gboolean zmapViewScratchSetCDS(ZMapView zmap_view, GList *features,
+                               const long seq_start, const long seq_end,
+                               ZMapFeatureSubPart subpart, const gboolean use_subfeature,
+                               const gboolean set_cds_start, const gboolean set_cds_end);
 gboolean zmapViewScratchDeleteFeatures(ZMapView zmap_view, GList *features,
                                        const long seq_start, const long seq_end,
                                        ZMapFeatureSubPart subpart, const gboolean use_subfeature);

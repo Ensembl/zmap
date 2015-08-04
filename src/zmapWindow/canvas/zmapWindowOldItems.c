@@ -159,7 +159,7 @@ GType zmapWindowContainerContextGetType(void)
       group_type = g_type_register_static (ZMAP_TYPE_CONTAINER_GROUP,
                                            ZMAP_WINDOW_CONTAINER_CONTEXT_NAME,
                                            &group_info,
-                                           0);
+                                           (GTypeFlags)0);
     }
 
   return group_type;
@@ -181,7 +181,7 @@ static void zmap_window_container_context_class_init(ZMapWindowContainerContextC
   gobject_class->set_property = zmap_window_container_context_set_property;
   gobject_class->get_property = zmap_window_container_context_get_property;
 
-  parent_class_G = g_type_class_peek_parent(context_class);
+  parent_class_G = (GObjectClass *)g_type_class_peek_parent(context_class);
   parent_item_class_G = (FooCanvasItemClass *)parent_class_G;
 
   group_class->obj_size = sizeof(zmapWindowContainerContextStruct) ;
@@ -297,7 +297,7 @@ GType zmapWindowContainerAlignmentGetType(void)
       group_type = g_type_register_static (ZMAP_TYPE_CONTAINER_GROUP,
                                            ZMAP_WINDOW_CONTAINER_ALIGNMENT_NAME,
                                            &group_info,
-                                           0);
+                                           (GTypeFlags)0);
     }
 
   return group_type;
@@ -402,7 +402,7 @@ GType zmapWindowContainerBlockGetType(void)
       group_type = g_type_register_static (ZMAP_TYPE_CONTAINER_GROUP,
                                            ZMAP_WINDOW_CONTAINER_BLOCK_NAME,
                                            &group_info,
-                                           0);
+                                           (GTypeFlags)0);
     }
 
   return group_type;
@@ -461,7 +461,7 @@ static void zmap_window_container_block_class_init(ZMapWindowContainerBlockClass
   gobject_class->set_property = zmap_window_container_block_set_property;
   gobject_class->get_property = zmap_window_container_block_get_property;
 
-  parent_class_G = g_type_class_peek_parent(block_data_class);
+  parent_class_G = (GObjectClass *)g_type_class_peek_parent(block_data_class);
 
   group_class->obj_size = sizeof(zmapWindowContainerBlockStruct) ;
   group_class->obj_total = 0 ;
@@ -568,14 +568,14 @@ static void zmap_window_container_block_destroy(GtkObject *gtkobject)
  */
 GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock block_data)
 {
-  GList *list = NULL;
+  GList *glist = NULL;
 
-  zMapReturnValIfFail(block_data, list) ;
+  zMapReturnValIfFail(block_data, glist) ;
 
-  list = block_data->compressed_cols;
+  glist = block_data->compressed_cols;
   block_data->compressed_cols = NULL;
 
-  return list;
+  return glist;
 }
 
 /*!
@@ -590,14 +590,14 @@ GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock 
  */
 GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock block_data)
 {
-  GList *list = NULL;
+  GList *glist = NULL;
 
-  zMapReturnValIfFail(block_data, list) ;
+  zMapReturnValIfFail(block_data, glist) ;
 
-  list = block_data->bumped_cols;
+  glist = block_data->bumped_cols;
   block_data->bumped_cols = NULL;
 
-  return list;
+  return glist;
 }
 
 /*!

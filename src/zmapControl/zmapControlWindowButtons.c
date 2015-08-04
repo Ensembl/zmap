@@ -80,7 +80,7 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
 
 
 static void control_gtk_tooltips_set_tip(GtkTooltips *tooltip, GtkWidget *widget,
-					 char *simple, char *shortcut, char *full) ;
+					 const char *simple, const char *shortcut, const char *full) ;
 
 static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data);
 static gboolean filterSpinButtonCB(GtkWidget *entry, GdkEvent *event, gpointer user_data);
@@ -319,15 +319,15 @@ void zmapControlButtonTooltips(ZMap zmap)
 void filterSetHighlight(ZMap zmap)
 {
   GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;
-  GdkColor *fill = &white;
+  GdkColor *fill_col = &white;
 
   zMapReturnIfFail(zmap) ;
 
   /* highlight if filtering occrured */
   if(zmap->filter.n_filtered && zmap->filter.window)
-    zMapWindowGetFilteredColour(zmap->filter.window,&fill);
+    zMapWindowGetFilteredColour(zmap->filter.window,&fill_col);
 
-  gtk_widget_modify_base ((GtkWidget *) zmap->filter_but, GTK_STATE_NORMAL, fill);
+  gtk_widget_modify_base ((GtkWidget *) zmap->filter_but, GTK_STATE_NORMAL, fill_col);
 }
 
 
@@ -423,12 +423,12 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
     //	  GtkEntry *entry = (GtkEntry *) zmap->filter_but;
     GtkAdjustment *adj = gtk_spin_button_get_adjustment ((GtkSpinButton *) zmap->filter_but);
     double range, step;
-    double min;
+    double min_val;
     //	  guint digits = 0;
 
     /* this is the only place we set the step value */
     /* CanvasFeaturesets remember the current value */
-    range = zmap->filter.max - zmap->filter.min;
+    range = zmap->filter.max_val - zmap->filter.min_val;
     step = 1.0;
 
     while(range / step > 1000.0)
@@ -443,19 +443,19 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
     if(step < 5.0)
       step = 5.0;
 
-    /* style min and max relate to display not feature scores, we can filter on score less than style min
-     * we flag filtering if features are hidden, not if we are on the min score
+    /* style min_val and max relate to display not feature scores, we can filter on score less than style min_val
+     * we flag filtering if features are hidden, not if we are on the min_val score
      */
-    min = 0.0;
-    if(zmap->filter.min < min)
-      zmap->filter.min = min;
+    min_val = 0.0;
+    if(zmap->filter.min_val < min_val)
+      zmap->filter.min_val = min_val;
 
-    if(zmap->filter.value < min)
-      zmap->filter.value = min;
-    if(zmap->filter.value > zmap->filter.max)
-      zmap->filter.value = zmap->filter.max;
+    if(zmap->filter.value < min_val)
+      zmap->filter.value = min_val;
+    if(zmap->filter.value > zmap->filter.max_val)
+      zmap->filter.value = zmap->filter.max_val;
 
-    gtk_adjustment_configure(adj,zmap->filter.value, min, zmap->filter.max, step, 0, 0);
+    gtk_adjustment_configure(adj,zmap->filter.value, min_val, zmap->filter.max_val, step, 0, 0);
 
     /*	  if(digits)*/ 	/*  seems to be interpreted as a vast number */
     /*		gtk_spin_button_set_digits ((GtkSpinButton *) zmap->filter_but, digits); */
@@ -573,18 +573,18 @@ void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status
  */
 
 static void control_gtk_tooltips_set_tip(GtkTooltips *tooltip, GtkWidget *widget,
-					 char *simple, char *shortcut, char *full)
+					 const char *simple, const char *shortcut, const char *full)
 {
   char *simple_with_shortcut = NULL;
 
   if(shortcut)
     simple_with_shortcut = g_strdup_printf("%s\t[%s]", simple, shortcut);
   else
-    simple_with_shortcut = simple;
+    simple_with_shortcut = g_strdup(simple);
 
   gtk_tooltips_set_tip(tooltip, widget, simple_with_shortcut, full);
 
-  if(shortcut && simple_with_shortcut)
+  if(simple_with_shortcut)
     g_free(simple_with_shortcut);
 
   return ;
@@ -903,7 +903,7 @@ static void backButtonCB(GtkWidget *wigdet, gpointer data)
 
 static void makeZoomMenu(GdkEventButton *button_event, ZMapWindow window)
 {
-  char *menu_title = "Zoom menu" ;
+  const char *menu_title = "Zoom menu" ;
   GList *menu_sets = NULL ;
   ZoomMenuCBData menu_data ;
 
@@ -1054,7 +1054,7 @@ static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer dat
 
 static void makeSequenceMenu(GdkEventButton *button_event, ZMapWindow window)
 {
-  char *menu_title = "" ;
+  const char *menu_title = "" ;
   GList *menu_sets = NULL ;
   static ZMapGUIMenuSubMenuData sub_data = NULL;
 
@@ -1142,7 +1142,7 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
     }
 
   /* What on earth is this test about ????? */
-  if ((window = data->original_data))
+  if ((window = (ZMapWindow)data->original_data))
     {
       if (menu_item_id == SHOW_3FEATURES
 	  || menu_item_id == SHOW_3FT || menu_item_id == HIDE_3ALL

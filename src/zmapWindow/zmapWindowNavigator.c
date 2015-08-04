@@ -120,8 +120,8 @@ static gboolean factoryItemHandler(FooCanvasItem       *new_item,
 
 
 static GHashTable *zmapWindowNavigatorLDHCreate(void);
-static LocusEntry zmapWindowNavigatorLDHFind(GHashTable *hash, GQuark key);
-static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
+static LocusEntry zmapWindowNavigatorLDHFind(GHashTable *ghash, GQuark key);
+static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *ghash,
                                                ZMapFeature feature);
 static void zmapWindowNavigatorLDHDestroy(GHashTable **destroy);
 static void destroyLocusEntry(gpointer data);
@@ -184,7 +184,7 @@ enum
     LOCUS_NAMES_LENGTH
   };
 
-static char *locus_names_filter_G[] = {
+static const char *locus_names_filter_G[] = {
   "MGC:",                        /* LOCUS_NAMES_MGC */
   "SK:",
   "MIT:",
@@ -433,7 +433,7 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
         {
           expose_id = g_signal_connect_data(G_OBJECT(canvas), "expose_event",
                                             G_CALLBACK(nav_draw_expose_handler), (gpointer)draw_data_cpy,
-                                            (GClosureNotify)(expose_handler_disconn_cb), 0) ;
+                                            (GClosureNotify)(expose_handler_disconn_cb), (GConnectFlags)(0)) ;
 
           navigate->draw_expose_handler_id = expose_id;
         }
@@ -768,8 +768,8 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
         feature_set = (ZMapFeatureSet)feature_any;
         GQuark col_id = feature_set->unique_id;
 
-        gffset = g_hash_table_lookup(draw_data->navigate->current_window->context_map->featureset_2_column,
-                                     GUINT_TO_POINTER(feature_set->unique_id));
+        gffset = (ZMapFeatureSetDesc)g_hash_table_lookup(draw_data->navigate->current_window->context_map->featureset_2_column,
+                                                         GUINT_TO_POINTER(feature_set->unique_id));
 
         if (gffset)
           col_id = gffset->column_id;
@@ -819,7 +819,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 static gboolean initialiseScaleIfNotExists(ZMapFeatureBlock block)
 {
   ZMapFeatureSet scale;
-  char *scale_id = ZMAP_FIXED_STYLE_SCALE_NAME;
+  const char *scale_id = ZMAP_FIXED_STYLE_SCALE_NAME;
   gboolean got_initialised = FALSE;
 
   if(!(scale = zMapFeatureBlockGetSetByID(block, g_quark_from_string(scale_id))))
@@ -938,8 +938,8 @@ static void createColumnCB(gpointer data, gpointer user_data)
       g_object_set_data(G_OBJECT(draw_data->container_feature_set),
                         ZMAP_WINDOW_POINTER, draw_data->navigate->current_window) ;
 
-      gffset = g_hash_table_lookup(draw_data->navigate->current_window->context_map->featureset_2_column,
-                                   GUINT_TO_POINTER(set_unique_id));
+      gffset = (ZMapFeatureSetDesc)g_hash_table_lookup(draw_data->navigate->current_window->context_map->featureset_2_column,
+                                                       GUINT_TO_POINTER(set_unique_id));
       if(gffset)
         col_id = gffset->column_id;
 
@@ -985,15 +985,15 @@ static void clampCoords(ZMapWindowNavigator navigate,
                         double *c1_inout, double *c2_inout)
 {
   double top, bot;
-  double min, max;
+  double min_val, max_val;
 
-  min = (double)(navigate->full_span.x1);
-  max = (double)(navigate->full_span.x2);
+  min_val = (double)(navigate->full_span.x1);
+  max_val = (double)(navigate->full_span.x2);
 
   top = *c1_inout;
   bot = *c2_inout;
 
-  zMapGUICoordsClampSpanWithLimits(min, max, &top, &bot);
+  zMapGUICoordsClampSpanWithLimits(min_val, max_val, &top, &bot);
 
   *c1_inout = top;
   *c2_inout = bot;
@@ -1413,28 +1413,28 @@ static gboolean variantFeature(ZMapFeature feature, ZMapWindowNavigator navigate
  */
 static GHashTable *zmapWindowNavigatorLDHCreate(void)
 {
-  GHashTable *hash = NULL;
+  GHashTable *ghash = NULL;
 
-  hash = g_hash_table_new_full(NULL, NULL, NULL, destroyLocusEntry);
+  ghash = g_hash_table_new_full(NULL, NULL, NULL, destroyLocusEntry);
 
-  return hash;
+  return ghash;
 }
 
 /*
  * \brief finds the entry.
  */
-static LocusEntry zmapWindowNavigatorLDHFind(GHashTable *hash, GQuark key)
+static LocusEntry zmapWindowNavigatorLDHFind(GHashTable *ghash, GQuark key)
 {
   LocusEntry hash_entry = NULL;
 
-  hash_entry = g_hash_table_lookup(hash, GUINT_TO_POINTER(key));
+  hash_entry = (LocusEntry)g_hash_table_lookup(ghash, GUINT_TO_POINTER(key));
 
   return hash_entry;
 }
 /*
  * \brief creates a new entry from feature, start and end (scaled) and returns it.
  */
-static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
+static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *ghash,
                                                ZMapFeature feature)
 {
   LocusEntry hash_entry = NULL;
@@ -1445,7 +1445,7 @@ static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
       hash_entry->end     = feature->x2;
       hash_entry->strand  = feature->strand;
       hash_entry->feature = feature; /* So we can find the item */
-      g_hash_table_insert(hash,
+      g_hash_table_insert(ghash,
                           GUINT_TO_POINTER(feature->original_id),
                           (gpointer)hash_entry);
     }
@@ -1496,14 +1496,14 @@ static void get_filter_list_up_to(GList **filter_out, int max)
   if(max <= LOCUS_NAMES_LENGTH)
     {
       int i;
-      char **names_ptr = locus_names_filter_G;
+      const char **names_ptr = locus_names_filter_G;
       GList *filter = NULL;
 
       for(i = 0; i < LOCUS_NAMES_LENGTH && names_ptr; i++, names_ptr++)
         {
           if(i < max && i != LOCUS_NAMES_SEPARATOR)
             {
-              filter = g_list_append(filter, *names_ptr);
+              filter = g_list_append(filter, (void *)*names_ptr);
             }
         }
       if(filter_out)

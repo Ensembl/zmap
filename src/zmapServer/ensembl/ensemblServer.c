@@ -34,8 +34,10 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <AceConn.h>
+#include <pthread.h>
+
 #include <glib.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapConfigIni.h>
@@ -45,6 +47,12 @@
 #include <ZMap/zmapUrl.h>
 #include <zmapServerPrototype.h>
 #include <ensemblServer_P.h>
+
+/* ensc-core is compiled as C */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <EnsC.h>
 #include <SliceAdaptor.h>
 #include <SequenceAdaptor.h>
@@ -54,6 +62,12 @@
 #include <RepeatFeature.h>
 #include <Transcript.h>
 #include <PredictionTranscript.h>
+
+#ifdef __cplusplus
+}
+#endif
+
+
 
 #define ENSEMBL_PROTOCOL_STR "Ensembl"                            /* For error messages. */
 
@@ -79,7 +93,7 @@ typedef struct GetSequenceDataStructType
 } GetSequenceDataStruct, *GetSequenceData ;
 
 
-/* Struct to pass to callback function for each alignment. It calls the block 
+/* Struct to pass to callback function for each alignment. It calls the block
  * callback function with the block user data */
 typedef struct DoAllAlignBlocksStructType
 {
@@ -114,7 +128,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
                                           ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles,
                                                  ZMapFeatureContext feature_context_out) ;
-static char *lastErrorMsg(void *server) ;
+static const char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_in, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
@@ -134,19 +148,22 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData 
 static gboolean getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllPredictionTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-//static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+
+#ifdef NOT_USED
+static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+#endif
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 
 static ZMapFeature makeFeature(EnsemblServer server,
-                               SeqFeature *rsf, 
-                               const char *feature_name_id, 
-                               const char *feature_name, 
-                               ZMapStyleMode feature_mode, 
-                               const char *source, 
-                               const int match_start, 
-                               const int match_end, 
-                               GetFeaturesData get_features_data, 
+                               SeqFeature *rsf,
+                               const char *feature_name_id,
+                               const char *feature_name,
+                               ZMapStyleMode feature_mode,
+                               const char *source,
+                               const int match_start,
+                               const int match_end,
+                               GetFeaturesData get_features_data,
                                ZMapFeatureBlock feature_block) ;
 
 static ZMapFeature makeFeatureSimple(EnsemblServer server, SimpleFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
@@ -154,9 +171,12 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server, BaseAlignFeature *
 static ZMapFeature makeFeatureRepeat(EnsemblServer server, RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureTranscript(EnsemblServer server, Transcript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server, PredictionTranscript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-//static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
+#ifdef NOT_USED
+static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+#endif
+
 static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector *exons) ;
 
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
@@ -233,7 +253,6 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout)
 {
   gboolean result = FALSE ;
-  //GError *error = NULL ;
   EnsemblServer server ;
 
   /* Always return a server struct as it contains error message stuff. */
@@ -255,6 +274,7 @@ static gboolean createConnection(void **server_out,
     server->passwd = g_strdup(url->passwd) ;
 
   server->db_name = zMapURLGetQueryValue(url->query, "db_name") ;
+  server->db_prefix = zMapURLGetQueryValue(url->query, "db_prefix") ;
 
   if (server->host && server->db_name)
     {
@@ -286,7 +306,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   server->zmap_start = req_open->zmap_start ;
   server->zmap_end = req_open->zmap_end ;
 
-  ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, 
+  ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host,
                  "Opening connection for '%s'", server->db_name) ;
   server->slice = getSlice(server, server->sequence, server->zmap_start, server->zmap_end, STRAND_UNDEF) ;
 
@@ -297,7 +317,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   else
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
-      setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)", 
+      setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)",
                                         server->db_name, server->sequence, server->zmap_start, server->zmap_end)) ;
       ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
     }
@@ -325,7 +345,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
 
       if (assembly_type)
         {
-          ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, 
+          ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host,
                          "Assembly type %s\n", assembly_type);
 
           g_free(assembly_type) ;
@@ -347,7 +367,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
  * feature sets require.
  *
  * This function takes a list of names, checks that it can find the corresponding objects
- * and then retrieves those objects. 
+ * and then retrieves those objects.
  *
  *  */
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
@@ -360,9 +380,40 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
-  
-  server->source_2_sourcedata = *source_2_sourcedata_inout;
-  server->featureset_2_column = *featureset_2_column_inout;
+
+  if (feature_sets_inout)
+    {
+      server->req_featuresets = *feature_sets_inout ;
+
+      /* Set the flag to only load requested featuresets. We do this if the list is not empty (or
+       * only contains the default featuresets like DNA and 3 Frame) */
+      GQuark dna_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
+      GQuark three_frame_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_3FRAME);
+      GQuark three_frame_trans_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+      GQuark annotation_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
+
+      server->req_featuresets_only = FALSE ;
+      GList *item = server->req_featuresets ;
+
+      for ( ; item ; item = item->next)
+        {
+          GQuark curr_quark = zMapFeatureSetCreateID(g_quark_to_string((GQuark)GPOINTER_TO_INT(item->data)));
+          
+          /* If the list contains any non-default featureset, then we should load req featuresets only */
+          if (curr_quark != dna_quark && curr_quark != three_frame_quark && 
+              curr_quark != three_frame_trans_quark && curr_quark != annotation_quark)
+            {
+              server->req_featuresets_only = TRUE ;
+              break ;
+            }
+        }
+    }
+
+  if (source_2_sourcedata_inout)
+    server->source_2_sourcedata = *source_2_sourcedata_inout;
+
+  if (featureset_2_column_inout)
+    server->featureset_2_column = *featureset_2_column_inout;
 
   result = ZMAP_SERVERRESPONSE_OK ;
   return result ;
@@ -371,7 +422,6 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  //EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
 }
@@ -379,7 +429,6 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
 static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  //EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
 }
@@ -405,7 +454,6 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
 static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
-  //EnsemblServer server = (EnsemblServer)server_in ;
 
   return result ;
 }
@@ -441,8 +489,9 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   return result ;
 }
 
-static gboolean getAllSimpleFeatures(EnsemblServer server, 
-                                     GetFeaturesData get_features_data, 
+
+static gboolean getAllSimpleFeatures(EnsemblServer server,
+                                     GetFeaturesData get_features_data,
                                      ZMapFeatureBlock feature_block)
 {
   gboolean result = TRUE ;
@@ -453,21 +502,21 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
 
   int i = 0 ;
 
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
     {
-      SimpleFeature *sf = Vector_getElementAt(features,i);
-      SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf, server->coord_system,NULL,NULL);
+      SimpleFeature *sf = (SimpleFeature*)Vector_getElementAt(features,i) ;
+      SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,  (char *)(server->coord_system), NULL ,NULL) ;
 
       if (rsf)
         makeFeatureSimple(server, rsf, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", SimpleFeature_getDisplayLabel(sf));
-    }  
+    }
 
   return result;
 }
 
-static gboolean getAllDNAAlignFeatures(EnsemblServer server, 
+static gboolean getAllDNAAlignFeatures(EnsemblServer server,
                                        GetFeaturesData get_features_data,
                                        ZMapFeatureBlock feature_block)
 {
@@ -478,35 +527,35 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
   pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
     {
-      DNAAlignFeature *sf = Vector_getElementAt(features,i);
-      DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, server->coord_system,NULL,NULL);
+      DNAAlignFeature *sf = (DNAAlignFeature*)Vector_getElementAt(features,i);
+      DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
-    }  
+    }
 
   return result;
 }
 
-static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, 
+static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
                                           GetFeaturesData get_features_data,
                                           ZMapFeatureBlock feature_block)
 {
   gboolean result = TRUE ;
-  
+
   pthread_mutex_lock(&server->mutex) ;
   Vector *features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
   pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
     {
-      DNAPepAlignFeature *sf = Vector_getElementAt(features,i);
-      DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, server->coord_system,NULL,NULL);
+      DNAPepAlignFeature *sf = (DNAPepAlignFeature*)Vector_getElementAt(features,i);
+      DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block) ;
@@ -518,7 +567,7 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
 }
 
 
-static gboolean getAllRepeatFeatures(EnsemblServer server, 
+static gboolean getAllRepeatFeatures(EnsemblServer server,
                                      GetFeaturesData get_features_data,
                                      ZMapFeatureBlock feature_block)
 {
@@ -529,22 +578,22 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
   pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
     {
-      RepeatFeature *sf = Vector_getElementAt(features,i);
-      RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, server->coord_system,NULL,NULL);
+      RepeatFeature *sf = (RepeatFeature*)Vector_getElementAt(features,i);
+      RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         makeFeatureRepeat(server, rsf, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", RepeatConsensus_getName(RepeatFeature_getConsensus(sf)));
-    }  
+    }
 
   return result;
 }
 
 
-static gboolean getAllTranscripts(EnsemblServer server, 
+static gboolean getAllTranscripts(EnsemblServer server,
                                   GetFeaturesData get_features_data,
                                   ZMapFeatureBlock feature_block)
 {
@@ -555,22 +604,22 @@ static gboolean getAllTranscripts(EnsemblServer server,
   pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
     {
-      Transcript *sf = Vector_getElementAt(features,i);
-      Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, server->coord_system ,NULL,NULL);
+      Transcript *sf = (Transcript*)Vector_getElementAt(features,i);
+      Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         makeFeatureTranscript(server, rsf, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
-    }  
+    }
 
   return result;
 }
 
 
-static gboolean getAllPredictionTranscripts(EnsemblServer server, 
+static gboolean getAllPredictionTranscripts(EnsemblServer server,
                                             GetFeaturesData get_features_data,
                                             ZMapFeatureBlock feature_block)
 {
@@ -581,45 +630,47 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
   pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
     {
-      PredictionTranscript *sf = Vector_getElementAt(features,i);
-      PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, server->coord_system,NULL,NULL);
+      PredictionTranscript *sf = (PredictionTranscript*)Vector_getElementAt(features,i);
+      PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
-    }  
+    }
 
   return result;
 }
 
 
-//static gboolean getAllGenes(EnsemblServer server, 
-//                            GetFeaturesData get_features_data,
-//                            ZMapFeatureBlock feature_block)
-//{
-//  gboolean result = TRUE ;
-//
-//  pthread_mutex_lock(&server->mutex) ;
-//  Vector *features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
-//  pthread_mutex_unlock(&server->mutex) ;
-//
-//  int i = 0 ;
-//  for (i = 0; i < Vector_getNumElement(features) && result; ++i) 
-//    {
-//      Gene *sf = Vector_getElementAt(features,i);
-//      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf, server->coord_system,NULL,NULL);
-//
-//      if (rsf)
-//        makeFeatureGene(server, rsf, get_features_data, feature_block) ;
-//      else
-//        printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
-//    }  
-//
-//  return result;
-//}
+#ifdef NOT_USED
+static gboolean getAllGenes(EnsemblServer server,
+                            GetFeaturesData get_features_data,
+                            ZMapFeatureBlock feature_block)
+{
+  gboolean result = TRUE ;
+
+  pthread_mutex_lock(&server->mutex) ;
+  Vector *features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
+  pthread_mutex_unlock(&server->mutex) ;
+
+  int i = 0 ;
+  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+    {
+      Gene *sf = Vector_getElementAt(features,i);
+      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+
+      if (rsf)
+        makeFeatureGene(server, rsf, get_features_data, feature_block) ;
+      else
+        printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
+    }
+
+  return result;
+}
+#endif
 
 
 /* A bit of a lash up for now, we need the parent->child mapping for a sequence and since
@@ -693,7 +744,7 @@ static ZMapServerResponseType getContextSequence(void *server_in,
 
 
 /* Return the last error message. */
-static char *lastErrorMsg(void *server_in)
+static const char *lastErrorMsg(void *server_in)
 {
   char *err_msg = NULL ;
   EnsemblServer server = (EnsemblServer)server_in ;
@@ -738,7 +789,7 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
-  
+
   //if (server->slice)
   //  Slice_free(server->slice) ;
 
@@ -799,7 +850,7 @@ static ZMapServerResponseType doGetSequences(EnsemblServer server, GList *sequen
 
       if (seq_name)
         g_free(seq_name) ;
-      
+
       next_seq = g_list_next(next_seq) ;
     }
 
@@ -825,57 +876,57 @@ static const char* featureGetSOTerm(SeqFeature *rsf)
 
   switch (rsf->objectType)
     {
-    case CLASS_SEQFEATURE: 
+    case CLASS_SEQFEATURE:
       break ;
     case CLASS_EXON: /* fall through */
-    case CLASS_STICKYEXON: 
+    case CLASS_STICKYEXON:
       SO_accession = "exon" ;
       break ;
-    case CLASS_TRANSCRIPT: 
+    case CLASS_TRANSCRIPT:
       SO_accession = "transcript" ;
       break ;
-    case CLASS_GENE: 
+    case CLASS_GENE:
       SO_accession = "gene" ;
       break ;
-    case CLASS_SIMPLEFEATURE: 
+    case CLASS_SIMPLEFEATURE:
       SO_accession = "sequence_feature" ;
       break ;
     case CLASS_INTRON: /* fall through */
-    case CLASS_INTRONSUPPORTINGEVIDENCE: 
+    case CLASS_INTRONSUPPORTINGEVIDENCE:
       SO_accession = "intron" ;
       break ;
-    case CLASS_REPEATFEATURE: 
+    case CLASS_REPEATFEATURE:
       SO_accession = "repeat_region" ;
       break ;
-    case CLASS_BASEALIGNFEATURE: 
+    case CLASS_BASEALIGNFEATURE:
       SO_accession = "match" ;
       break ;
-    case CLASS_FEATUREPAIR: 
+    case CLASS_FEATUREPAIR:
       break ;
-    case CLASS_DNADNAALIGNFEATURE: 
+    case CLASS_DNADNAALIGNFEATURE:
       SO_accession = "nucleotide_match" ;
       break ;
-    case CLASS_DNAPEPALIGNFEATURE: 
+    case CLASS_DNAPEPALIGNFEATURE:
       SO_accession = "protein_match" ;
       break ;
-    case CLASS_REPEATCONSENSUS: 
+    case CLASS_REPEATCONSENSUS:
       //SO_accession = "consensus" ;
       break ;
-    case CLASS_PREDICTIONTRANSCRIPT: 
+    case CLASS_PREDICTIONTRANSCRIPT:
       SO_accession = "transcript" ;
       break ;
-    case CLASS_ANNOTATEDSEQFEATURE: 
+    case CLASS_ANNOTATEDSEQFEATURE:
       break ;
-    case CLASS_HOMOLOGY: 
+    case CLASS_HOMOLOGY:
       SO_accession = "match" ;
       break ;
-    case CLASS_SYNTENYREGION: 
+    case CLASS_SYNTENYREGION:
       SO_accession = "syntenic_region" ;
       break ;
-    case CLASS_PREDICTIONEXON: 
+    case CLASS_PREDICTIONEXON:
       SO_accession = "exon" ;
       break ;
-    default: 
+    default:
       break ;
     };
 
@@ -883,8 +934,8 @@ static const char* featureGetSOTerm(SeqFeature *rsf)
 }
 
 
-static ZMapFeature makeFeatureSimple(EnsemblServer server, 
-                                     SimpleFeature *rsf, 
+static ZMapFeature makeFeatureSimple(EnsemblServer server,
+                                     SimpleFeature *rsf,
                                      GetFeaturesData get_features_data,
                                      ZMapFeatureBlock feature_block)
 {
@@ -904,24 +955,16 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
   if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
 
-  if (source)
-    {
-      feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
-                            feature_mode, source, 0, 0, 
-                            get_features_data, feature_block) ;
-    }
-
-  if (!feature)
-    {
-      zMapLogWarning("Failed to create feature '%s' with source '%s'", feature_name, source) ;
-    }
+  feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
+                        feature_mode, source, 0, 0, 
+                        get_features_data, feature_block) ;
 
   return feature ;
 }
 
 
-static ZMapFeature makeFeatureRepeat(EnsemblServer server, 
-                                     RepeatFeature *rsf, 
+static ZMapFeature makeFeatureRepeat(EnsemblServer server,
+                                     RepeatFeature *rsf,
                                      GetFeaturesData get_features_data,
                                      ZMapFeatureBlock feature_block)
 {
@@ -942,33 +985,27 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
   if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
 
-  if (source)
-    {
-      feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
-                            feature_mode, source, 0, 0, 
-                            get_features_data, feature_block) ;
-    }
-
-  if (!feature)
-    {
-      zMapLogWarning("Failed to create feature '%s' with source '%s'", feature_name, source) ;
-    }
+  feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
+                        feature_mode, source, 0, 0, 
+                        get_features_data, feature_block) ;
 
   return feature ;
 }
 
 
-//static ZMapFeature makeFeatureGene(EnsemblServer server, 
-//                                   Gene *rsf, 
-//                                   GetFeaturesData get_features_data,
-//                                   ZMapFeatureBlock feature_block)
-//{
-//  ZMapFeature feature = NULL ;
-//
-//  geneAddTranscripts(server, rsf, get_features_data, feature_block) ;
-//
-//  return feature ;
-//}
+#ifdef NOT_USED
+/* gb10: probably don't need these but leaving them here for now */
+static ZMapFeature makeFeatureGene(EnsemblServer server,
+                                   Gene *rsf,
+                                   GetFeaturesData get_features_data,
+                                   ZMapFeatureBlock feature_block)
+{
+  ZMapFeature feature = NULL ;
+
+  geneAddTranscripts(server, rsf, get_features_data, feature_block) ;
+
+  return feature ;
+}
 
 
 static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block)
@@ -985,10 +1022,11 @@ static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData 
         }
     }
 }
+#endif
 
 
 static ZMapFeature makeFeatureTranscript(EnsemblServer server,
-                                         Transcript *rsf, 
+                                         Transcript *rsf,
                                          GetFeaturesData get_features_data,
                                          ZMapFeatureBlock feature_block)
 {
@@ -1012,15 +1050,15 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
   if (analysis && (!source || *source == '\0'))
     source = Analysis_getLogicName(analysis) ;
 
-  if (source)
-    {
-      feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                            feature_mode, source, 0, 0, 
-                            get_features_data, feature_block) ;
+  feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
+                        feature_mode, source, 0, 0, 
+                        get_features_data, feature_block) ;
 
+  if (feature)
+    {
       /* If coding region start/end are not already set, these calls set them */
       int coding_region_start = Transcript_getCodingRegionStart(rsf) ;
-      int coding_region_end = coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
+      int coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
 
       char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
       char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
@@ -1039,17 +1077,12 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
       transcriptAddExons(server, feature, exons) ;
     }
 
-  if (!feature)
-    {
-      zMapLogWarning("Failed to create feature '%s' with source '%s'", feature_name, source) ;
-    }
-
   return feature ;
 }
 
 
-static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server, 
-                                                   PredictionTranscript *rsf, 
+static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
+                                                   PredictionTranscript *rsf,
                                                    GetFeaturesData get_features_data,
                                                    ZMapFeatureBlock feature_block)
 {
@@ -1076,12 +1109,12 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
   if (!source || *source == '\0')
     source = featureGetSOTerm((SeqFeature*)rsf) ;
   
-  if (source)
-    {
-      feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                            feature_mode, source, 0, 0, 
-                            get_features_data, feature_block) ;
+  feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
+                        feature_mode, source, 0, 0, 
+                        get_features_data, feature_block) ;
 
+  if (feature)
+    {
       char coding_region_start_is_set = PredictionTranscript_getCodingRegionStartIsSet(rsf) ;
       char coding_region_end_is_set = PredictionTranscript_getCodingRegionEndIsSet(rsf) ;
       char start_is_set = PredictionTranscript_getStartIsSet(rsf) ;
@@ -1095,7 +1128,7 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
        * are both unset so we must check first */
       if (coding_region_start_is_set || start_is_set)
         coding_region_start = PredictionTranscript_getCodingRegionStart(rsf) ;
-      
+
       if (coding_region_end_is_set || end_is_set)
         coding_region_end = PredictionTranscript_getCodingRegionEnd(rsf) ;
 
@@ -1111,11 +1144,6 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
       transcriptAddExons(server, feature, exons) ;
     }
 
-  if (!feature)
-    {
-      zMapLogWarning("Failed to create feature '%s' with source '%s'", feature_name, source) ;
-    }
-
   return feature ;
 }
 
@@ -1125,15 +1153,19 @@ static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector
   if (feature && exons)
     {
       int i = 0 ;
-      for (i = 0; i < Vector_getNumElement(exons); ++i) 
+      for (i = 0; i < Vector_getNumElement(exons); ++i)
         {
           SeqFeature *exon = (SeqFeature*)Vector_getElementAt(exons,i);
           const int offset = server->zmap_start - 1 ;
-          ZMapSpanStruct span = {exon->start + offset, exon->end + offset};
+
+          ZMapSpanStruct span = {
+            (int)exon->start + offset,
+            (int)exon->end + offset
+          };
 
           zMapFeatureAddTranscriptExonIntron(feature, &span, NULL) ;
 
-          //zMapLogMessage("Added exon %d, %d (%d, %d)", 
+          //zMapLogMessage("Added exon %d, %d (%d, %d)",
           //               span.x1, span.x2, exon->start, exon->end);
         }
 
@@ -1142,9 +1174,9 @@ static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector
 }
 
 
-static ZMapFeature makeFeatureBaseAlign(EnsemblServer server, 
-                                        BaseAlignFeature *rsf, 
-                                        ZMapHomolType homol_type, 
+static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
+                                        BaseAlignFeature *rsf,
+                                        ZMapHomolType homol_type,
                                         GetFeaturesData get_features_data,
                                         ZMapFeatureBlock feature_block)
 {
@@ -1160,7 +1192,7 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
   int match_end = BaseAlignFeature_getHitEnd(rsf) ;
   const char *source = BaseAlignFeature_getDbName((BaseAlignFeature*)rsf) ;
 
-  feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
+  feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
                         feature_mode, source, match_start, match_end,
                         get_features_data, feature_block) ;
 
@@ -1171,7 +1203,7 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
       double percent_id = 0.0 ;
       int match_length = 0 ;
       ZMapStrand match_strand = ZMAPSTRAND_NONE ;
-      ZMapPhase match_phase = 0;
+      ZMapPhase match_phase = ZMAPPHASE_NONE;
       GArray *align = NULL ; /* to do */
       unsigned int align_error = 0;
       gboolean has_local_sequence = FALSE ;
@@ -1186,7 +1218,8 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
       else if (BaseAlignFeature_getHitStrand(rsf) < 0)
         match_strand = ZMAPSTRAND_REVERSE ;
 
-      match_phase = SeqFeature_getPhase((SeqFeature*)rsf) ;
+      /*! \todo Not sure if we can cast to ZMapPhase here from the seq feature's phase (unsigned char) */
+      match_phase = (ZMapPhase)SeqFeature_getPhase((SeqFeature*)rsf) ;
 
       /* Get the align array from the cigar string */
       cigar = BaseAlignFeature_getCigarString(rsf) ;
@@ -1209,12 +1242,41 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
       zMapFeatureAddAlignmentData(feature, clone_id, percent_id, match_start, match_end,
                                   homol_type, match_length, match_strand, match_phase,
                                   align, align_error, has_local_sequence, sequence) ;
-      
+
       //zMapLogMessage("Added align data: id %f, qstart %d, qend %d, qlen %d, qstrand %d, ph %d, cigar %s",
       //               percent_id, match_start, match_end, match_length, match_strand, match_phase, cigar) ;
     }
 
   return feature ;
+}
+
+
+/* Check whether we should load the given featureset */
+static gboolean loadFeatureset(EnsemblServer server, const char *featureset_name)
+{
+  gboolean result = TRUE ;
+
+  /* If the req_featuresets list is given then only load features in those
+   * featuresets. Otherwise, load all features. */
+  if (server->req_featuresets_only)
+    {
+      result = FALSE ;
+      GQuark check_featureset_id = zMapFeatureSetCreateID(featureset_name) ;
+      GList *item = server->req_featuresets;
+
+      for ( ; item ; item = item->next)
+        {
+          GQuark featureset_id = zMapFeatureSetCreateID(g_quark_to_string(((GQuark)GPOINTER_TO_INT(item->data)))) ;
+          
+          if (featureset_id == check_featureset_id)
+            {
+              result = TRUE ;
+              break ;
+            }
+        }
+    }
+
+  return result ;
 }
 
 
@@ -1230,8 +1292,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
-
-  char *feature_name_id = feature_name_id_in ;
+  const char *feature_name_id = feature_name_id_in ;
   GQuark unique_id = 0 ;
   const char *feature_name = feature_name_in ;
   char *sequence = NULL ;
@@ -1241,10 +1302,11 @@ static ZMapFeature makeFeature(EnsemblServer server,
   gboolean has_score = TRUE ;
   double score = 0.0 ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
+  char *unique_source = NULL ;
 
   SO_accession = featureGetSOTerm(rsf) ;
 
-  if (SO_accession && source)
+  if (SO_accession && source && loadFeatureset(server, source))
     {
       if (!feature_name_id || *feature_name_id == '\0')
         feature_name_id = source ;
@@ -1255,26 +1317,32 @@ static ZMapFeature makeFeature(EnsemblServer server,
       start = SeqFeature_getStart(rsf) ;
       end = SeqFeature_getEnd(rsf) ;
       has_score = TRUE ;
-      score = SeqFeature_getScore(rsf) ;  
+      score = SeqFeature_getScore(rsf) ;
 
       if (SeqFeature_getStrand(rsf) > 0)
         strand = ZMAPSTRAND_FORWARD ;
       else if (SeqFeature_getStrand(rsf) < 0)
         strand = ZMAPSTRAND_REVERSE ;
 
-      /* Create the unique id from the name and coords (cast away const... ugh) */
+      /* Create the unique id from the db name, feature name and coords (cast away const... ugh) */
       unique_id = zMapFeatureCreateID(feature_mode, (char*)feature_name_id, strand, start, end, match_start, match_end);
 
+      /* If a prefix is given, add it to the source name */
+      if (server->db_prefix)
+        unique_source = g_strdup_printf("%s_%s", server->db_prefix, source);
+      else
+        unique_source = g_strdup(source) ;
+
       /* Find the featureset, or create it if it doesn't exist */
-      GQuark feature_set_id = zMapFeatureSetCreateID((char*)source) ;
+      GQuark feature_set_id = zMapFeatureSetCreateID((char*)unique_source) ;
 
       ZMapFeatureSet feature_set = (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block,
-                                                                                feature_set_id, 
+                                                                                feature_set_id,
                                                                                 ZMAPFEATURE_STRUCT_FEATURESET) ;
 
       if (!feature_set)
         {
-          feature_set = makeFeatureSet(feature_name_id, feature_set_id, feature_mode, source, get_features_data, feature_block) ;
+          feature_set = makeFeatureSet(feature_name_id, feature_set_id, feature_mode, unique_source, get_features_data, feature_block) ;
         }
 
       if (feature_set)
@@ -1284,11 +1352,11 @@ static ZMapFeature makeFeature(EnsemblServer server,
 
           /* cast away const... ugh */
           zMapFeatureAddStandardData(feature,
-                                     (char*)g_quark_to_string(unique_id), 
-                                     (char*)feature_name, 
-                                     sequence, 
+                                     (char*)g_quark_to_string(unique_id),
+                                     (char*)feature_name,
+                                     sequence,
                                      (char*)SO_accession,
-                                     feature_mode, 
+                                     feature_mode,
                                      &feature_set->style,
                                      start,
                                      end,
@@ -1296,23 +1364,29 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                      score,
                                      strand) ;
 
-          //zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d", 
+          //zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d",
           //               feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
 
           /* add the new feature to the featureset */
-          ZMapFeature existing_feature = g_hash_table_lookup(((ZMapFeatureAny)feature_set)->children, GINT_TO_POINTER(feature_name_id)) ;
-          
+          ZMapFeature existing_feature = (ZMapFeature)g_hash_table_lookup(((ZMapFeatureAny)feature_set)->children, GINT_TO_POINTER(feature_name_id)) ;
+
           if (!existing_feature)
             zMapFeatureSetAddFeature(feature_set, feature) ;
         }
     }
   else if (!SO_accession)
     {
-      zMapLogWarning("%s", "Could not create feature: could not determine SO accession") ;
+      zMapLogWarning("%s", "Could not create feature [%s]: could not determine SO accession", 
+                     feature_name_id ? feature_name_id : "") ;
+    }
+  else if (!source)
+    {
+      zMapLogWarning("%s", "Could not create feature [%s]: could not determine source",
+                     feature_name_id ? feature_name_id : "") ;
     }
   else
     {
-      zMapLogWarning("%s", "Could not create feature: could not determine source") ;
+      /* Ignoring features in this featureset: nothing to do */
     }
 
   return feature ;
@@ -1320,7 +1394,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
 
 
 static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
-                                     GQuark feature_set_id, 
+                                     GQuark feature_set_id,
                                      ZMapStyleMode feature_mode,
                                      const char *source,
                                      GetFeaturesData get_features_data,
@@ -1337,7 +1411,7 @@ static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
 
   if (get_features_data->source_2_sourcedata)
     {
-      if (!(source_data = g_hash_table_lookup(get_features_data->source_2_sourcedata, GINT_TO_POINTER(source_id))))
+      if (!(source_data = (ZMapFeatureSource)g_hash_table_lookup(get_features_data->source_2_sourcedata, GINT_TO_POINTER(source_id))))
         {
           source_data = g_new0(ZMapFeatureSourceStruct,1);
           source_data->source_id = source_id;
@@ -1370,9 +1444,9 @@ static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
     {
       if (source_data)
         source_data->style_id = feature_style_id;
-                  
+
       g_hash_table_insert(get_features_data->feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
-                  
+
       if (source_data && feature_style->unique_id != feature_style_id)
         source_data->style_id = feature_style->unique_id;
 
@@ -1386,7 +1460,7 @@ static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
     }
   else
     {
-      zMapLogWarning("Error creating feature %s (%s); no feature style found for %s", 
+      zMapLogWarning("Error creating feature %s (%s); no feature style found for %s",
                      feature_name_id, g_quark_to_string(feature_set_id), g_quark_to_string(feature_style_id)) ;
     }
 
@@ -1424,7 +1498,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
       getAllPredictionTranscripts(server, get_features_data, feature_block) ;
       //getAllGenes(server, get_features_data, feature_block) ;
     }
-  
+
   return ;
 }
 
@@ -1452,7 +1526,7 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
   if (!sequence)
     {
       char *estr;
-      estr = g_strdup_printf("Error getting sequence for '%s' (%d to %d)", 
+      estr = g_strdup_printf("Error getting sequence for '%s' (%d to %d)",
                              server->sequence, server->zmap_start, server->zmap_end);
 
       setErrMsg(server, estr) ;
@@ -1471,7 +1545,7 @@ static void eachBlockGetSequence(gpointer key, gpointer data, gpointer user_data
         {
           ZMapFeatureTypeStyle dna_style = NULL;
 
-          if (styles && (dna_style = g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
+          if (styles && (dna_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
             zMapFeatureDNACreateFeature(feature_block, dna_style, sequence, sequence_length);
         }
 
@@ -1537,10 +1611,10 @@ static Slice* getSliceForCoordSystem(const char *coord_system,
   char *seq_name_copy = g_strdup(seq_name);
   char *coord_system_copy = g_strdup(coord_system) ;
 
-  pthread_mutex_lock(&server->mutex) ; 
+  pthread_mutex_lock(&server->mutex) ;
   slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, coord_system_copy, seq_name_copy, start, end, strand, NULL, 0);
   pthread_mutex_unlock(&server->mutex) ;
-      
+
   g_free(seq_name_copy);
   g_free(coord_system_copy) ;
 
@@ -1562,7 +1636,7 @@ static Slice* getSlice(EnsemblServer server,
 
   if (!server->dba)
     {
-      pthread_mutex_lock(&server->mutex) ; 
+      pthread_mutex_lock(&server->mutex) ;
       server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
       pthread_mutex_unlock(&server->mutex) ;
     }
@@ -1587,7 +1661,7 @@ static Slice* getSlice(EnsemblServer server,
         }
       else
         {
-          setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)", 
+          setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)",
                                             server->db_name, server->sequence, server->zmap_start, server->zmap_end)) ;
           ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
         }
@@ -1602,8 +1676,8 @@ static Slice* getSlice(EnsemblServer server,
 }
 
 
-static char* getSequence(EnsemblServer server, 
-                         const char *seq_name, 
+static char* getSequence(EnsemblServer server,
+                         const char *seq_name,
                          long start,
                          long end,
                          int strand)
@@ -1628,29 +1702,32 @@ static char* getSequence(EnsemblServer server,
 
       if (!server->seq_adaptor)
         {
-          pthread_mutex_lock(&server->mutex) ; 
+          pthread_mutex_lock(&server->mutex) ;
           server->seq_adaptor = DBAdaptor_getSequenceAdaptor(server->dba);
           pthread_mutex_unlock(&server->mutex) ;
         }
 
       if (server->slice_adaptor && server->seq_adaptor && server->coord_system)
         {
-          /* copy seq_name because function takes non-const arg... ugh */
-          char *seq_name_copy = g_strdup(seq_name);
+          /* copy seq_name and coord system because function takes non-const arg... ugh */
+          char *seq_name_copy = g_strdup(seq_name) ;
+          char *coord_system = g_strdup("chromosome") ;
 
-          pthread_mutex_lock(&server->mutex) ; 
-          Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, server->coord_system, 
-                                                    seq_name_copy, start, end, 
+          pthread_mutex_lock(&server->mutex) ;
+          Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, coord_system,
+                                                    seq_name_copy, start, end,
                                                     strand, NULL, 0);
           pthread_mutex_unlock(&server->mutex) ;
 
-          g_free(seq_name_copy);
-          seq_name_copy = NULL;
-          
+          g_free(seq_name_copy) ;
+          g_free(coord_system) ;
+          seq_name_copy = NULL ;
+          coord_system = NULL ;
+
           if (slice)
             {
-              pthread_mutex_lock(&server->mutex) ; 
-              
+              pthread_mutex_lock(&server->mutex) ;
+
               seq = SequenceAdaptor_fetchBySliceStartEndStrand(server->seq_adaptor, slice, 1, POS_UNDEF, 1);
               Slice_free(slice) ;
 
@@ -1658,7 +1735,7 @@ static char* getSequence(EnsemblServer server,
             }
         }
     }
-  
+
 
   return seq ;
 }

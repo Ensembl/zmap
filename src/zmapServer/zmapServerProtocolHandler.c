@@ -33,7 +33,7 @@
 /* this file is a collection of code from zmapslave that needs to handle server connections...
  * note that the thread stuff does percolate into this file as we need mutex locks.... */
 
-#include <strings.h>
+#include <string.h>
 
 /* YOU SHOULD BE AWARE THAT ON SOME PLATFORMS (E.G. ALPHAS) THERE SEEMS TO BE SOME INTERACTION
  * BETWEEN pthread.h AND gtk.h SUCH THAT IF pthread.h COMES FIRST THEN gtk.h INCLUDES GET MESSED
@@ -51,7 +51,7 @@
 
 /* Some protocols have global init/cleanup functions that must only be called once, this type/list
  * allows us to do this. */
-typedef struct
+typedef struct ZMapProtocolInitStructType
 {
   int protocol;
   gboolean init_called ;
@@ -67,15 +67,15 @@ typedef struct
 
 
 
-typedef struct
+typedef struct DrawableStructType
 {
   gboolean found_style ;
   GString *missing_styles ;
 } DrawableStruct, *Drawable ;
 
 
-static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
-                                   void **global_init_data) ;
+static gboolean protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
+                                       void **global_init_data) ;
 static int findProtocol(gconstpointer list_protocol, gconstpointer protocol) ;
 static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSequence request, char **err_msg_out) ;
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out) ;
@@ -191,7 +191,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
       }
     }
 
-  req_any = g_malloc0(size) ;
+  req_any = (ZMapServerReqAny)g_malloc0(size) ;
 
 
   /* Fill in the struct. */
@@ -366,24 +366,25 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
         /* Check if we need to call the global init function of the protocol, this is a
          * function that should only be called once, only need to do this when setting up a server. */
-        protocolGlobalInitFunc(&protocol_init_G, create->url, &global_init_data) ;
-
-        if ((request->response
-             = zMapServerCreateConnection(&server, global_init_data, create->config_file,
-                                          create->url, create->format, create->timeout, create->version))
-            != ZMAP_SERVERRESPONSE_OK)
+        if (!protocolGlobalInitFunc(&protocol_init_G, create->url, &global_init_data))
           {
-            *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+            *err_msg_out = g_strdup_printf("Global Init failed for %s.", create->url->protocol) ;
 
-            thread_rc = thread_RC(request->response);
+            request->response = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+            thread_rc = thread_RC(request->response) ;
           }
         else
           {
+            if ((request->response
+                 = zMapServerCreateConnection(&server, global_init_data, create->config_file,
+                                              create->url, create->format, create->timeout, create->version))
+                != ZMAP_SERVERRESPONSE_OK)
+              {
+                *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-            create->server = server ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+                thread_rc = thread_RC(request->response);
+              }
           }
 
         break ;
@@ -625,12 +626,12 @@ ZMapThreadReturnCode zMapServerDestroyHandler(void **slave_data)
 
 /* Static/global list of protocols and whether their global init/cleanup functions have been
  * called. These are functions that must only be called once. */
-static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
-                                   void **global_init_data_out)
+static gboolean protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url, void **global_init_data_out)
 {
+  gboolean result = FALSE ;
   int status = 0;
   GList *curr_ptr ;
-  ZMapProtocolInit init ;
+  ZMapProtocolInit init = NULL ;
   int protocol = (int)(url->scheme);
 
   if ((status = pthread_mutex_lock(&(protocols->mutex))) != 0)
@@ -639,35 +640,44 @@ static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
     }
 
   /* If we don't find the protocol in the list then add it, initialised to FALSE. */
-  if (!(curr_ptr = g_list_find_custom(protocols->protocol_list, &protocol, findProtocol)))
+  if ((curr_ptr = g_list_find_custom(protocols->protocol_list, &protocol, findProtocol)))
     {
-      init = (ZMapProtocolInit)g_new0(ZMapProtocolInitStruct, 1) ;
-      init->protocol = protocol ;
-      init->init_called = init->cleanup_called = FALSE ;
-      init->global_init_data = NULL ;
+      init = (ZMapProtocolInit)(curr_ptr->data) ;
 
-      protocols->protocol_list = g_list_prepend(protocols->protocol_list, init) ;
+      result = TRUE ;
     }
   else
-    init = curr_ptr->data ;
-
-  /* Call the init routine if its not been called yet and either way return the global_init_data. */
-  if (!init->init_called)
     {
-      if (!zMapServerGlobalInit(url, &(init->global_init_data)))
-         zMapLogFatal("Initialisation call for %d protocol failed.", protocol) ;
+      void *global_init_data = NULL ;
 
-      init->init_called = TRUE ;
+      if (!zMapServerGlobalInit(url, &global_init_data))
+        {
+          zMapLogCritical("Initialisation call for %d protocol failed.", protocol) ;
+        }
+      else
+        {
+          init = (ZMapProtocolInit)g_new0(ZMapProtocolInitStruct, 1) ;
+          init->protocol = protocol ;
+          init->init_called = TRUE ;
+          init->cleanup_called = FALSE ;
+          init->global_init_data = NULL ;
+          init->global_init_data = global_init_data ;
+
+          protocols->protocol_list = g_list_prepend(protocols->protocol_list, init) ;
+
+          result = TRUE ;
+        }
     }
 
-  *global_init_data_out = init->global_init_data ;
+  if (result)
+    *global_init_data_out = init->global_init_data ;
 
   if ((status = pthread_mutex_unlock(&(protocols->mutex))) != 0)
     {
       zMapLogFatalSysErr(status, "%s", "protocolGlobalInitFunc() mutex unlock") ;
     }
 
-  return ;
+  return result ;
 }
 
 

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -49,7 +49,7 @@ static void freeSubPart(gpointer data, gpointer user_data_unused) ;
 
 
 
-/* 
+/*
  *                       External routines.
  */
 
@@ -87,20 +87,20 @@ gint zMapFeatureSortFeatures(gconstpointer a, gconstpointer b)
 
 /* Checks to see if any boundary within feature coincides with any
  * boundary in boundaries.
- * 
+ *
  * Returns TRUE if there are matching boundaries, FALSE otherwise, in addition
  * will return a list of ZMapFeatureSubParts of the boundaries, those that
  * do not match have the value zero.
- * 
+ *
  * Note that the actual boundary position may be different from the original
  * because the feature's style might allow "slop" in the precise position.
- * 
+ *
  * If exact_match is TRUE then the function will return FALSE if _any_ boundary
  * in the feature does not match.
- * 
+ *
  * Note that currently only basic, alignment and transcript type features
  * are searched for boundaries.
- * 
+ *
  *  */
 gboolean zMapFeatureHasMatchingBoundaries(ZMapFeature feature,
                                           ZMapFeatureSubPartType part_type,
@@ -116,8 +116,8 @@ gboolean zMapFeatureHasMatchingBoundaries(ZMapFeature feature,
 
   zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
 
-  subparts.min = boundary_start ;
-  subparts.max = boundary_end ;
+  subparts.min_val = boundary_start ;
+  subparts.max_val = boundary_end ;
   subparts.parts = boundaries ;
 
   if (boundaries)
@@ -168,7 +168,7 @@ gboolean zMapFeatureHasMatchingBoundaries(ZMapFeature feature,
 
 
 /* Can be used to get non-overlapping or overlapping features of various types.
- * 
+ *
  * NOTE that this function filters the list IN PLACE, you get a pointer back to
  * your original list that may be shorter or even NULL.
  *  */
@@ -196,7 +196,7 @@ GList *zMapFeatureGetOverlapFeatures(GList *feature_list, int start, int end, ZM
         feature_overlap = ZMAPFEATURE_OVERLAP_PARTIAL_INTERNAL ;
       else
         feature_overlap = ZMAPFEATURE_OVERLAP_NONE ;
-    
+
       if (!((overlap == ZMAPFEATURE_OVERLAP_ALL && feature_overlap != ZMAPFEATURE_OVERLAP_NONE)
             || (overlap == feature_overlap)))
         new_list = g_list_delete_link(new_list, curr) ;
@@ -208,7 +208,7 @@ GList *zMapFeatureGetOverlapFeatures(GList *feature_list, int start, int end, ZM
 }
 
 
-/* 
+/*
  * Functions for manipulating lists of parts (feature subparts, matches etc.).
  */
 
@@ -219,8 +219,8 @@ ZMapFeaturePartsList zMapFeaturePartsListCreate(ZMapFeatureFreePartFunc free_par
 
   parts_list = g_new0(ZMapFeaturePartsListStruct, 1) ;
 
-  parts_list->min = INT_MAX ;
-  parts_list->max = 0 ;
+  parts_list->min_val = INT_MAX ;
+  parts_list->max_val = 0 ;
   parts_list->parts = NULL ;
   parts_list->free_part_func = free_part_func ;
 
@@ -234,11 +234,11 @@ gboolean zMapFeaturePartsListAdd(ZMapFeaturePartsList parts, ZMapFeaturePart par
 
   if (isValidPart(part))
     {
-      if (part->start < parts->min)
-        parts->min = part->start ;
+      if (part->start < parts->min_val)
+        parts->min_val = part->start ;
 
-      if (part->end > parts->max)
-        parts->max = part->end ;
+      if (part->end > parts->max_val)
+        parts->max_val = part->end ;
 
       parts->parts = g_list_insert_sorted(parts->parts, part, sortParts) ;
 
@@ -269,7 +269,7 @@ void zMapFeaturePartsListDestroy(ZMapFeaturePartsList parts)
 
 
 
-/* 
+/*
  * Functions for manipulating subparts (e.g. exon, intron, gap, extent.
  */
 
@@ -377,7 +377,7 @@ void zMapFeatureBoundaryMatchDestroy(ZMapFeatureBoundaryMatch match)
 
 
 
-/* 
+/*
  *                    Package routines
  */
 
@@ -385,12 +385,12 @@ void zMapFeatureBoundaryMatchDestroy(ZMapFeatureBoundaryMatch match)
 /* Checks to see if boundary_start/boundary_end match start/end within +- slop.
  * If full_match == TRUE then _both_ coords must match, otherwise returns
  * TRUE if just one coord matches.
- * 
+ *
  * Can be used to test just one value by only specifying boundary_start/start
  * or boundary_end/end.
- * 
+ *
  * Boundaries and start/end must be > 0.
- * 
+ *
  */
 gboolean zmapFeatureCoordsMatch(int slop, gboolean full_match,
                                 int boundary_start, int boundary_end, int start, int end,
@@ -439,10 +439,10 @@ gboolean zmapFeatureCoordsMatch(int slop, gboolean full_match,
 /* Given a ZMapFeatureSubParts of boundaries returns a ZMapFeatureSubParts
  * containing the features start or end if either matches any of the boundaries
  * or returns NULL.
- * 
+ *
  * Notes:
  *  - if exact_match is TRUE then returns NULL if either the features start or end does not match.
- * 
+ *
  */
 gboolean zmapFeatureMatchingBoundaries(ZMapFeature feature,
                                        gboolean exact_match, int slop,
@@ -457,7 +457,7 @@ gboolean zmapFeatureMatchingBoundaries(ZMapFeature feature,
 
   zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
 
-  if (feature->x2 < boundaries->min || feature->x1 > boundaries->max)
+  if (feature->x2 < boundaries->min_val || feature->x1 > boundaries->max_val)
     {
       /* feature outside of boundaries. */
       feature_start = feature->x1 ;
@@ -602,7 +602,7 @@ gboolean zmapFeatureMatchingBoundaries(ZMapFeature feature,
 
 
 
-/* 
+/*
  *                    Internal routines
  */
 
@@ -612,7 +612,7 @@ gboolean zmapFeatureMatchingBoundaries(ZMapFeature feature,
  * ZMapFeatureSubPartStruct but we don't really need to know that. */
 static void freeSubPart(gpointer data, gpointer user_data_unused)
 {
-  zMapFeatureSubPartDestroy(data) ;
+  zMapFeatureSubPartDestroy((ZMapFeatureSubPart)data) ;
 
   return ;
 }

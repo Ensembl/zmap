@@ -540,15 +540,24 @@ This option allows you to list all the features contained in a column in one win
 ZMap can be used to create new features or edit existing features. ZMap can generate variant objects quickly - existing transcript objects can be used as a template for a new object while a ZMap HSP (or any other feature, nucleotide or peptide) can be used to provide the coordinates for the new variant.
 
 \subsubsection{Standalone ZMap}
-Features are edited by copying them to a temporary feature in the \textbf{Annotation} column (see figure \ref{img_editing_zmap}). The temporary feature can be based on any existing feature(s). Multiple features or nucleotide coords can be used to adjust feature/exon coordinates. The coordinates and other attributes can also be edited manually. When finished, the temporary feature can be saved to the relevant column - either as a new feature, or to overwrite an existing one. 
+Features are edited by copying them to a temporary feature in the \textbf{Annotation} column (see figure \ref{img_editing_zmap}). The Annotation functionality must first be enabled by ticking the \textbf{Enable Annotation} option in the preferences dialog. The temporary feature can be based on any existing feature(s). Multiple features or nucleotide coords can be used to adjust feature/exon coordinates. The coordinates and other attributes can also be edited manually. When finished, the temporary feature can be saved to the relevant column - either as a new feature, or to overwrite an existing one. 
+
+The workflow is roughly as follows:
+\begin{itemize}
+\item Go to the menu option \texttt{Edit -> Preferences} and tick \texttt{Enable Annotation}
+\item Right-click a feature and select \texttt{Annotation -> Copy this feature} to create the temporary feature
+\item Copy other features/coordinates in the same manner to edit the temporary feature
+\item Double-click the temporary feature to set a name/featureset and save it to that featureset
+\item Right-click the new feature and select \texttt{Export -> Feature} to save the new feature to file
+\end{itemize}
+
+To create a new temporary feature, select the transcript (or other feature) you wish to create a variant from and press \textbf{Ctrl-K} (or right-click and select Annotation -> Copy selected transcript(s)\footnote{Note that you need to enable the Annotation column from the Preferences dialog for the Annotation menu to appear. Ctrl-K will automatically enable the Annotation column if it is not already enabled.}). Select other features and use Ctrl-K to copy those in to adjust the coordinates of the original feature. ZMap will do its best to make a sensible merge of the new coordinates, e.g. extending the feature extents if a coordinate lies outside the current range. If ZMap cannot automatically merge a coordinate it will ask for more information, e.g. if a coordinate lies within an intron, ZMap will ask whether it should form a 5' or 3' intron boundary.
 
 The Annotation menu in the right-click menu also offers other options such as: clear the Annotation column; delete an exon/intron; undo/redo the last operation.
 
-Right-click the temporary feature and select \textbf{Highlight evidence} to highlight the feature(s) that were used to construct it.
+You can right-click the temporary feature and select \textbf{Highlight evidence} to highlight the feature(s) that were used to construct it.
 
-To create a new temporary feature, select the transcript (or other feature) you wish to create a variant from and press \textbf{Ctrl-K} (or right-click and select Annotation -> Copy selected transcript(s)\footnote{Note that you need to enable the Annotation column from the Preferences dialog for the Annotation menu to appear. Ctrl-K will automatically enable the Annotation column if it is not already enabled.}. Select other features and use Ctrl-K to copy those in to adjust the coordinates of the original feature. ZMap will do its best to make a sensible merge of the new coordinates, e.g. extending the feature extents if a coordinate lies outside the current range. If ZMap cannot automatically merge a coordinate it will ask for more information, e.g. if a coordinate lies within an intron, ZMap will ask whether it should form a 5' or 3' intron boundary.
-
-\textbf{Double-click} the temporary feature to open the \textbf{Edit Feature} dialog to edit coordinates and other attributes manually. You can specify the new feature's final name and feature set. If you wish to save these attributes to the temporary feature (without saving the feature to the feature set) then click \textbf{Save Attributes}. To go ahead and save the feature to the named feature set, click \textbf{Create Feature}. Note that to save the feature back to file you also need to \textbf{Save/Export} the relevant feature(s) by going to the File menu and selecting one of the Save or Export menu options.
+\textbf{Double-click} the temporary feature to open the \textbf{Edit Feature} dialog to edit coordinates and other attributes manually. You can specify the new feature's final name and feature set. If you wish to save these attributes to the temporary feature (without saving the feature to the feature set) then click \textbf{Save Attributes}. To go ahead and save the feature to the named feature set, click \textbf{Create Feature}. You can overwrite an existing feature by giving the new feature the same name and featureset as the existing one. Note that to save the feature back to file you also need to \textbf{Save/Export} the relevant feature(s) by going to the File menu and selecting one of the Save or Export menu options.
 
 \begin{figure}
 \centering
@@ -635,6 +644,7 @@ Delete, Shift Delete & Hide/Show selected features.\\
 Enter & Show feature details for highlighted feature.\\
 Shift up-arrow, Shift down-arrow & Jump from feature to feature within a column.\\
 Shift left-arrow, Shift right-arrow & Jump from column to column.\\
+Cntl-K & Copy selected feature(s) to the Annotation column for editing. Also enables Annotation if not already enabled.\\
 \hline
 \end{supertabular}
 

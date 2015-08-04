@@ -35,6 +35,7 @@ so, delete this exception statement from your version.  */
 #include <stdio.h>
 
 
+
 typedef struct 
 {
   int verbose;			/* Are we verbose? */
@@ -195,6 +196,7 @@ typedef struct
     restrict_unix,
     restrict_windows
   } restrict_files_os;		/* file name restriction ruleset. */
+
   int restrict_files_ctrl;	/* non-zero if control chars in URLs
 				   are restricted from appearing in
 				   generated file names. */

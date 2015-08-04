@@ -69,11 +69,11 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data);
 static char *fetchBlockDNAPtr(ZMapFeatureAny feature, ZMapFeatureBlock *block_out) ;
 static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
 static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_out, int *end_out) ;
-static gboolean strupDNA(char *string, int length) ;
+static gboolean strupDNA(char *string_arg, int length) ;
 
 
 
-/* 
+/*
  *                    External routines
  */
 
@@ -130,7 +130,7 @@ char *zMapFeatureGetFeatureDNA(ZMapFeature feature)
  * old (a negative value means the new string is shorter, positive means longer). */
 static int dnaApplyVariation(GString *dna_str,
                              const int dna_start,
-                             const int dna_end, 
+                             const int dna_end,
                              ZMapFeature variation,
                              const int total_diff)
 {
@@ -175,7 +175,7 @@ static int dnaApplyVariation(GString *dna_str,
         }
       else
         {
-          zMapWarning("Expected 2-coord position for insertion '%s' but got %d,%d\n", 
+          zMapWarning("Expected 2-coord position for insertion '%s' but got %d,%d\n",
                       variation_str, start, end) ;
         }
     }
@@ -191,7 +191,7 @@ static int dnaApplyVariation(GString *dna_str,
         }
       else
         {
-          zMapWarning("Expected length for deletion '%s' to be %d but got %d [%d,%d]\n", 
+          zMapWarning("Expected length for deletion '%s' to be %d but got %d [%d,%d]\n",
                       variation_str, old_len, replacement_len, start, end) ;
         }
     }
@@ -227,7 +227,7 @@ static int dnaApplyVariation(GString *dna_str,
  * coords are the start/end coords of the input dna string. */
 static int zmapFeatureDNAApplyVariation(GString *result_str,
                                         const int dna_start,
-                                        const int dna_end, 
+                                        const int dna_end,
                                         ZMapFeature variation,
                                         const int total_diff)
 {
@@ -259,7 +259,7 @@ static int zmapFeatureDNAApplyVariation(GString *result_str,
 
 
 /* Calculate the total difference in length of variations in the given range */
-int zmapFeatureDNACalculateVariationDiff(const int start, 
+int zmapFeatureDNACalculateVariationDiff(const int start,
                                          const int end,
                                          GList *variations)
 {
@@ -281,9 +281,9 @@ int zmapFeatureDNACalculateVariationDiff(const int start,
 
 /* Apply the given list of variations to the given dna string. Updates the input string. The given
  * coords are the start/end coords of the input dna string. */
-static void zmapFeatureDNAApplyVariations(char **dna_inout, 
-                                          const int dna_start, 
-                                          const int dna_end, 
+static void zmapFeatureDNAApplyVariations(char **dna_inout,
+                                          const int dna_start,
+                                          const int dna_end,
                                           GList *variations)
 {
   zMapReturnIfFail(dna_inout && *dna_inout) ;
@@ -296,7 +296,7 @@ static void zmapFeatureDNAApplyVariations(char **dna_inout,
 
       /* total difference in length of dna string to original */
       int total_diff = 0 ;
-  
+
       for ( ; variation_item; variation_item = variation_item->next)
         {
           ZMapFeature feature = (ZMapFeature)(variation_item->data) ;
@@ -338,7 +338,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
       if (transcript->strand == ZMAPSTRAND_REVERSE)
         revcomp = TRUE ;
 
-      if ((block_dna = fetchBlockDNAPtr((ZMapFeatureAny)transcript, &block)) 
+      if ((block_dna = fetchBlockDNAPtr((ZMapFeatureAny)transcript, &block))
           && coordsInBlock(block, &start, &end)
           && (dna = getFeatureBlockDNA((ZMapFeatureAny)transcript, start, end, revcomp)))
         {
@@ -347,41 +347,41 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
 
           block_dna = g_strdup(block_dna) ;
 
-          zmapFeatureDNAApplyVariations(&block_dna, 
-                                        block->block_to_sequence.block.x1, 
-                                        block->block_to_sequence.block.x2, 
+          zmapFeatureDNAApplyVariations(&block_dna,
+                                        block->block_to_sequence.block.x1,
+                                        block->block_to_sequence.block.x2,
                                         transcript->feature.transcript.variations) ;
 
           if (!spliced || !exons)
             {
               int i, offset, length;
               gboolean upcase_exons = TRUE;
-        
+
               /* Paint the exons in uppercase. */
               if (upcase_exons)
                 {
                   if (exons)
                     {
                       int exon_start, exon_end ;
-                
+
                       block_dna = dna ;
-                
-                      for (i = 0 ; i < exons->len ; i++)
+
+                      for (i = 0 ; i < (int)exons->len ; i++)
                         {
                           ZMapSpan exon_span ;
-                        
+
                           exon_span = &(g_array_index(exons, ZMapSpanStruct, i)) ;
-                        
+
                           exon_start = exon_span->x1 ;
                           exon_end   = exon_span->x2 ;
-                        
+
                           if (zMapCoordsClamp(start, end, &exon_start, &exon_end))
                             {
                               offset  = dna - block_dna ;
                               offset += exon_start - transcript->x1 ;
                               block_dna += offset ;
                               length  = exon_end - exon_start + 1 ;
-                        
+
                               strupDNA(block_dna, length) ;
                             }
                         }
@@ -421,7 +421,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
 
                       seq_length = dna_str->len ;
                       dna = g_string_free(dna_str, FALSE) ;
-                
+
                       if (revcomp)
                         zMapDNAReverseComplement(dna, seq_length) ;
                     }
@@ -448,7 +448,7 @@ gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
   gboolean result = FALSE;
   ZMapFeatureContext context = NULL;
 
-  if ( !block ) 
+  if ( !block )
     return result ;
 
   if(block->sequence.sequence &&
@@ -556,7 +556,8 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock block, ZMapFeatureTypeS
 
   if ((dna_feature_set = zMapFeatureBlockGetSetByID(block, dna_set_id)))
     {
-      char *feature_name, *sequence, *ontology;
+      char *feature_name, *sequence ;
+      const char *ontology;
       GQuark dna_id;
       int block_start, block_end;
 
@@ -580,13 +581,13 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock block, ZMapFeatureTypeS
       else
         {
           ZMapStrand strand = ZMAPSTRAND_FORWARD; /* DNA is forward */
-        
+
           /* check dna length == block length? */
-          sequence = ontology = NULL;
+          sequence = NULL;
           ontology = "dna";
-        
+
           dna_feature_set->style = style;
-        
+
           dna_feature = zMapFeatureCreateFromStandardData(feature_name,
                                                           sequence,
                                                           ontology,
@@ -596,7 +597,7 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock block, ZMapFeatureTypeS
                                                           block_end,
                                                           FALSE, 0.0,
                                                           strand) ;
-        
+
           zMapFeatureSequenceSetType(dna_feature, ZMAPSEQUENCE_DNA) ;
           zMapFeatureDNAAddSequenceData(dna_feature, dna_str, sequence_length);
 
@@ -682,7 +683,7 @@ gboolean zMapFeatureContextGetDNAStatus(ZMapFeatureContext context)
 
 
 
-/* 
+/*
  *                      Internal functions
  */
 
@@ -785,13 +786,22 @@ static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
 {
   char *dna = NULL ;
   int length ;
+  int dna_len ;
 
   length = end - start + 1 ;
+  dna_len = strlen(dna_sequence) ;
 
-  dna = g_strndup((dna_sequence + start - 1), length) ;
+  if (start + length - 1 <= dna_len)
+    {    
+      dna = g_strndup((dna_sequence + start - 1), length) ;
 
-  if (revcomp)
-    zMapDNAReverseComplement(dna, length) ;
+      if (revcomp)
+        zMapDNAReverseComplement(dna, length) ;
+    }
+  else
+    {
+      zMapLogWarning("Failed to get DNA sequence for [%d  %d]: sequence is too short [%d]", start, end, dna_len) ;
+    }
 
   return dna ;
 }
@@ -823,14 +833,14 @@ static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_inout, int *end
 }
 
 /* should be in dna utils..... */
-static gboolean strupDNA(char *string, int length)
+static gboolean strupDNA(char *string_arg, int length)
 {
   gboolean good = TRUE;
   char up;
 
-  while(length > 0 && good && string && *string)
+  while(length > 0 && good && string_arg && *string_arg)
     {
-      switch(string[0])
+      switch(string_arg[0])
         {
         case 'a':
           up = 'A';
@@ -851,9 +861,9 @@ static gboolean strupDNA(char *string, int length)
 
       if(good)
         {
-          string[0] = up;
+          string_arg[0] = up;
 
-          string++;
+          string_arg++;
 
         }
       length--;

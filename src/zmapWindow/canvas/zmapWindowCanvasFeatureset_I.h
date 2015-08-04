@@ -68,6 +68,11 @@ typedef enum
 
 
 
+
+
+
+
+
 /* Default feature colours, suitably boring to prompt user to set their own. */
 #define CANVAS_DEFAULT_COLOUR_FILL   "grey"
 #define CANVAS_DEFAULT_COLOUR_BORDER "black"
@@ -164,9 +169,7 @@ typedef struct ZMapWindowFeaturesetItemClassStructType
 
   /* these are allocated for all columns, so it does not matter if we have a column with 1 feature */
   /* NOTE we have free lists foe each featuretype; this will waste only a few K of memory */
-
-  int struct_size[FEATURE_N_TYPE];
-  int set_struct_size[FEATURE_N_TYPE];
+  size_t set_struct_size[FEATURE_N_TYPE];
 
 
   /* Cached colourmaps/colours for drawing, provides default colours for all feature drawing. */
@@ -174,9 +177,9 @@ typedef struct ZMapWindowFeaturesetItemClassStructType
                                                                so multi-screen operation would need multiple values. */
 
   gboolean colour_alloc ;                                   /* TRUE => colour allocation worked. */
-  GdkColor fill ;                                           /* Fill/background colour. */
-  GdkColor draw ;                                           /* Overlaid on fill colour. */
-  GdkColor border ;                                         /* Surround/line colour. */
+  GdkColor fill_col ;                                           /* Fill/background colour. */
+  GdkColor draw_col ;                                           /* Overlaid on fill colour. */
+  GdkColor border_col ;                                         /* Surround/line colour. */
 
   /* Should we also have default select colours too ?? */
 
@@ -189,7 +192,7 @@ typedef struct ZMapWindowFeaturesetItemClassStructType
 /* THIS IS A CHILD OF THE COLUMN GROUP CREATED ELSEWHERE....IN ESSENCE IT HOLDS THE
  * FEATURES THOUGH THESE ARE NO LONGER FOOCANVAS OBJECTS. THOUGH I DON'T THINK THERE
  * IS ONE OF THESE PER FEATURESET WITHIN A COLUMN....CHECK THIS THOUGH !
- * 
+ *
  * NOTE this class/ structure is used for all types of columns
  * it is not inherited and various optional functions have been squeezed in
  * eg:

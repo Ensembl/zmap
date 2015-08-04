@@ -111,7 +111,7 @@ typedef struct
 
   GdkColor *current_background_colour;
 
-  char *id;       // for debugging
+  const char *id;       // for debugging
   char *levels[10];
   char *names[10];
 

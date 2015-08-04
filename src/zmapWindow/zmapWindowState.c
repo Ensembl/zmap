@@ -82,7 +82,7 @@ typedef struct
 {
   SerializedItemStruct column;
   ZMapStyleBumpMode bump_mode;
-  gboolean             strand_specific;
+  gboolean strand_specific;
 } StyleBumpModeStruct;
 
 typedef struct
@@ -136,12 +136,12 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *position);
 static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialStruct *serialized);
 static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateStruct *serialized);
-static void print_position(ZMapWindowPositionStruct *position, char *from);
+static void print_position(ZMapWindowPositionStruct *position, const char *from);
 static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serialize);
 /* update stuff is so that queue doesn't get cleared under the feet of a restore... */
 /* Main reason though is to not save whilst doing restore. endless history, no thanks */
-static gboolean queue_doing_update(ZMapWindowStateQueue queue);
-static void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag);
+static gboolean queue_doing_update(ZMapWindowStateQueue zqueue);
+static void mark_queue_updating(ZMapWindowStateQueue zqueue, gboolean update_flag);
 
 static void lockedDisplaySetScrollRegionCB(gpointer key, gpointer value, gpointer user_data);
 static void set_scroll_region(ZMapWindow window,
@@ -158,7 +158,7 @@ static gboolean state_restore_copies_G = TRUE;
 
 
 
-/* 
+/*
  *                      External package routines.
  */
 
@@ -179,7 +179,7 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
 {
   ZMapWindowStateStruct state_copy = {NULL};
 
-  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) 
+  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic))
     return ;
 
   state_copy = *state;                /* n.b. struct copy */
@@ -235,7 +235,7 @@ ZMapWindowState zmapWindowStateCopy(ZMapWindowState state)
 {
   ZMapWindowState new_state = NULL;
 
-  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) 
+  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic))
     return new_state ;
 
   new_state = zmapWindowStateCreate();
@@ -247,7 +247,7 @@ ZMapWindowState zmapWindowStateCopy(ZMapWindowState state)
 
 ZMapWindowState zmapWindowStateDestroy(ZMapWindowState state)
 {
-  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) 
+  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic))
     return state ;
 
   /* Reset magic ptr to invalidate the block. */
@@ -301,7 +301,7 @@ gboolean zmapWindowStateSavePosition(ZMapWindowState state, ZMapWindow window)
 
 gboolean zmapWindowStateSaveZoom(ZMapWindowState state, double zoom_factor)
 {
-  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) 
+  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic))
     return FALSE ;
 
   state->zoom_set    = 1;
@@ -313,7 +313,7 @@ gboolean zmapWindowStateSaveZoom(ZMapWindowState state, double zoom_factor)
 gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
 {
   ZMapWindowMark mark = window->mark;
-  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) 
+  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic))
     return FALSE ;
 
   if ((state->mark_set = zmapWindowMarkIsSet(mark)))
@@ -336,7 +336,7 @@ gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state, ZMapWindow window)
   gboolean result = FALSE ;
   FooCanvasItem *focus_item ;
 
-  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic) || !window) 
+  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic) || !window)
     return result ;
 
   if ((window->focus) && (focus_item = zmapWindowFocusGetHotItem(window->focus)))
@@ -361,7 +361,7 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 
   if(level == ZMAPCONTAINER_LEVEL_FEATURESET)
     {
-      StyleBumpModeStruct bump_data = {{0}, 0};
+      StyleBumpModeStruct bump_data = {{0}, (ZMapStyleBumpMode)0, FALSE};
       ZMapWindowContainerFeatureSet container_set;
       ZMapStyleBumpMode default_bump;
       ZMapFeatureAny feature_any;
@@ -754,7 +754,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
   return ;
 }
 
-static void print_position(ZMapWindowPositionStruct *position, char *from)
+static void print_position(ZMapWindowPositionStruct *position, const char *from)
 {
   printf("%s: position is\n", from);
 
@@ -785,9 +785,9 @@ static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serial
       if (zMapFeatureIsValid((ZMapFeatureAny)feature))
         {
           ZMapWindowContainerFeatureSet container_set;
-          
+
           container_set = (ZMapWindowContainerFeatureSet)container_group ;
-          
+
           /* we need to record strand stuff here.......otherwise we can't set strand correctly later.....*/
           if (feature->style)
             serialize->strand_specific = zMapStyleIsStrandSpecific(*feature->style) ;
@@ -797,20 +797,20 @@ static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serial
           serialize->column_id  = container_set->unique_id;
 
           serialize->feature_id = feature->unique_id;
-          
+
           if (feature->parent)
             {
               serialize->fset_id    = feature->parent->unique_id;
-              
+
               if (feature->parent->parent)
                 {
                   serialize->block_id   = feature->parent->parent->unique_id;
-                  
+
                   if (feature->parent->parent->parent)
                     serialize->align_id   = feature->parent->parent->parent->unique_id;
                 }
             }
-          
+
           serialized = TRUE;
         }
       else
@@ -827,29 +827,29 @@ static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serial
 
 ZMapWindowStateQueue zmapWindowStateQueueCreate(void)
 {
-  ZMapWindowStateQueue queue = NULL;
+  ZMapWindowStateQueue zqueue = NULL;
 
-  if(!(queue = g_queue_new()))
+  if(!(zqueue = g_queue_new()))
     zMapWarnIfReached();
 
-  if(queue)
+  if(zqueue)
     {
       ZMapWindowState head_state;
       if((head_state = zmapWindowStateCreate()))
         {
           head_state->in_state_restore = FALSE;
-          g_queue_push_head(queue, head_state);
+          g_queue_push_head(zqueue, head_state);
         }
     }
 
-  return queue;
+  return zqueue;
 }
 
-int zmapWindowStateQueueLength(ZMapWindowStateQueue queue)
+int zmapWindowStateQueueLength(ZMapWindowStateQueue zqueue)
 {
   int size = 0;
 
-  if((size = g_queue_get_length(queue)) > 0)
+  if((size = g_queue_get_length(zqueue)) > 0)
     size--;
   else if(size == 0)
     zMapLogWarning("%s", "Queue has zero size. This is unexpected!");
@@ -872,9 +872,9 @@ gboolean zmapWindowStateGetPrevious(ZMapWindow window, ZMapWindowState *state_ou
   if(zMapWindowHasHistory(window))
     {
       if(pop)
-        state = g_queue_pop_tail(window->history);
+        state = (ZMapWindowState)g_queue_pop_tail(window->history);
       else
-        state = g_queue_peek_tail(window->history);
+        state = (ZMapWindowState)g_queue_peek_tail(window->history);
     }
 
   if(state_out && state)
@@ -888,24 +888,24 @@ gboolean zmapWindowStateGetPrevious(ZMapWindow window, ZMapWindowState *state_ou
 
 gboolean zmapWindowStateQueueStore(ZMapWindow window, ZMapWindowState state_in, gboolean clear_current)
 {
-  ZMapWindowStateQueue queue = window->history;
+  ZMapWindowStateQueue zqueue = window->history;
   gboolean stored = FALSE;
 
-  if((stored = !queue_doing_update(queue)) == TRUE)
+  if((stored = !queue_doing_update(zqueue)) == TRUE)
     {
       if(clear_current)
-        zmapWindowStateQueueClear(queue);
+        zmapWindowStateQueueClear(zqueue);
 
-      g_queue_push_tail(queue, state_in);
+      g_queue_push_tail(zqueue, state_in);
     }
 #ifdef RDS_DONT_INCLUDE
   else if(state_restore_copies_G == TRUE &&
           stored == FALSE &&
           clear_current == TRUE)
     {
-      zmapWindowStateQueueClear(queue);
+      zmapWindowStateQueueClear(zqueue);
 
-      g_queue_push_tail(queue, state_in);
+      g_queue_push_tail(zqueue, state_in);
 
       stored = TRUE;
     }
@@ -914,20 +914,20 @@ gboolean zmapWindowStateQueueStore(ZMapWindow window, ZMapWindowState state_in, 
   return stored;
 }
 
-void zmapWindowStateQueueRemove(ZMapWindowStateQueue queue,
+void zmapWindowStateQueueRemove(ZMapWindowStateQueue zqueue,
                                 ZMapWindowState      state_del)
 {
-  g_queue_remove_all(queue, state_del);
+  g_queue_remove_all(zqueue, state_del);
 
   return ;
 }
 
-void zmapWindowStateQueueClear(ZMapWindowStateQueue queue)
+void zmapWindowStateQueueClear(ZMapWindowStateQueue zqueue)
 {
   ZMapWindowState state = NULL;
 
-  while(zmapWindowStateQueueLength(queue) &&
-        (state = g_queue_pop_tail(queue)))
+  while(zmapWindowStateQueueLength(zqueue) &&
+        (state = (ZMapWindowState)g_queue_pop_tail(zqueue)))
     {
       state = zmapWindowStateDestroy(state);
     }
@@ -935,39 +935,39 @@ void zmapWindowStateQueueClear(ZMapWindowStateQueue queue)
   return ;
 }
 
-gboolean zmapWindowStateQueueIsRestoring(ZMapWindowStateQueue queue)
+gboolean zmapWindowStateQueueIsRestoring(ZMapWindowStateQueue zqueue)
 {
   gboolean doing_update = FALSE;
 
-  doing_update = queue_doing_update(queue);
+  doing_update = queue_doing_update(zqueue);
 
   return doing_update;
 }
 
-ZMapWindowStateQueue zmapWindowStateQueueDestroy(ZMapWindowStateQueue queue)
+ZMapWindowStateQueue zmapWindowStateQueueDestroy(ZMapWindowStateQueue zqueue)
 {
   ZMapWindowState head_state;
 
-  zmapWindowStateQueueClear(queue);
+  zmapWindowStateQueueClear(zqueue);
 
-  if((head_state = g_queue_pop_head(queue)))
+  if((head_state = (ZMapWindowState)g_queue_pop_head(zqueue)))
     zmapWindowStateDestroy(head_state);
 
-  g_queue_free(queue);
+  g_queue_free(zqueue);
 
-  queue = NULL;
+  zqueue = NULL;
 
-  return queue;
+  return zqueue;
 }
 
 /* Queue internals */
 
-static gboolean queue_doing_update(ZMapWindowStateQueue queue)
+static gboolean queue_doing_update(ZMapWindowStateQueue zqueue)
 {
   ZMapWindowState head_state;
   gboolean doing_update = FALSE;
 
-  if((head_state = g_queue_peek_head(queue)))
+  if((head_state = (ZMapWindowState)g_queue_peek_head(zqueue)))
     {
       doing_update = head_state->in_state_restore;
     }
@@ -975,14 +975,14 @@ static gboolean queue_doing_update(ZMapWindowStateQueue queue)
   return doing_update;
 }
 
-static void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag)
+static void mark_queue_updating(ZMapWindowStateQueue zqueue, gboolean update_flag)
 {
   ZMapWindowState head_state;
 
-  if((head_state = g_queue_peek_head(queue)))
+  if((head_state = (ZMapWindowState)g_queue_peek_head(zqueue)))
     {
       head_state->in_state_restore = update_flag;
-      if(queue_doing_update(queue) != update_flag)
+      if(queue_doing_update(zqueue) != update_flag)
         zMapWarnIfReached();
     }
 

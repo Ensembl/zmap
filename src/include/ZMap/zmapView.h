@@ -31,10 +31,6 @@
  *
  *-------------------------------------------------------------------
  */
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef ZMAPVIEW_H
 #define ZMAPVIEW_H
 
@@ -80,7 +76,7 @@ typedef struct _ZMapViewCallbacksStruct
   ZMapViewCallbackFunc destroy ;
 
   ZMapRemoteAppMakeRequestFunc remote_request_func ;
-  ZMapRemoteAppMakeRequestFunc remote_request_func_data ;
+  void *remote_request_func_data ;
 
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 
@@ -191,7 +187,7 @@ GHashTable *zMapViewGetStyles(ZMapViewWindow view_window) ;
 ZMapWindowNavigator zMapViewGetNavigator(ZMapView view);
 int zMapViewNumWindows(ZMapViewWindow view_window) ;
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
-void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
+void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list_arg);
 char *zMapViewGetDataset(ZMapView zmap_view) ;
 
 void zMapViewForAllZMapWindows(ZMapView view, ZMapViewForAllCallbackFunc user_func_cb, void *user_func_data) ;
@@ -254,6 +250,3 @@ ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapView2Str, ZMapViewState) ;
 
 #endif /* !ZMAPVIEW_H */
 
-#ifdef __cplusplus
-}
-#endif

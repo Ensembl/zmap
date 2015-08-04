@@ -41,6 +41,8 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapXMLHandler.h>
+#include <ZMap/zmapGLibUtils.h>
+#include <ZMap/zmapUtilsGUI.h>
 #include <zmapWindow_P.h>
 #include <gbtools/gbtools.hpp>
 
@@ -257,7 +259,7 @@ static gboolean xml_paragraph_end_cb(gpointer user_data, ZMapXMLElement element,
                                      ZMapXMLParser parser) ;
 static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
                                     ZMapXMLParser parser) ;
-static void printWarning(char *element, char *handler) ;
+static void printWarning(const char *element, const char *handler) ;
 
 
 static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title) ;
@@ -287,7 +289,7 @@ static void addTagValue(gpointer data, gpointer user_data) ;
 static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature feature, const gboolean editable) ;
 
 static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
-                        char *action, FooCanvasItem *real_item,
+                        const char *action, FooCanvasItem *real_item,
                         ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data) ;
 static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
                                   char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
@@ -316,14 +318,14 @@ static ChapterFeature readChapter(ZMapGuiNotebookChapter chapter);
 static GtkItemFactoryEntry menu_items_G[] =
   {
     /* File */
-    { "/_File",                 NULL,         NULL,                                     0,    "<Branch>",   NULL},
-    { "/File/_Preserve",        NULL,         (GtkItemFactoryCallback)preserveCB,       0,    NULL,         NULL},
-    { "/File/_Close",           "<control>W", (GtkItemFactoryCallback)requestDestroyCB, 0,    NULL,         NULL},
+    { (gchar *)"/_File",                 NULL,         NULL,                                     0,    (gchar *)"<Branch>",   NULL},
+    { (gchar *)"/File/_Preserve",        NULL,         (GtkItemFactoryCallback)preserveCB,       0,    NULL,         NULL},
+    { (gchar *)"/File/_Close",           (gchar *)"<control>W", (GtkItemFactoryCallback)requestDestroyCB, 0,    NULL,         NULL},
 
     /* Help */
-    { "/_Help",                 NULL,         NULL,                                     0,  "<LastBranch>", NULL},
-    { "/Help/_Feature Display", NULL,         (GtkItemFactoryCallback)helpMenuCB,       1,  NULL,           NULL},
-    { "/Help/_About ZMap",      NULL,         (GtkItemFactoryCallback)helpMenuCB,       2,  NULL,           NULL}
+    { (gchar *)"/_Help",                 NULL,         NULL,                                     0,  (gchar *)"<LastBranch>", NULL},
+    { (gchar *)"/Help/_Feature Display", NULL,         (GtkItemFactoryCallback)helpMenuCB,       1,  NULL,           NULL},
+    { (gchar *)"/Help/_About ZMap",      NULL,         (GtkItemFactoryCallback)helpMenuCB,       2,  NULL,           NULL}
   } ;
 
 
@@ -453,7 +455,7 @@ void zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
       /* The scratch column is a special case because it exists only in zmap */
       zmapWindowScratchFeatureGetEvidence(window, feature, evidence_cb, evidence_cb_data) ;
     }
-  else
+  else if (window->xremote_client)
     {
       /* Use xremote to get the data from the peer */
       /*! \todo We should check that a peer exists and if not warn the user we cannot get the
@@ -488,6 +490,11 @@ void zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
                   ZACP_DETAILS_FEATURE,
                   show->item,
                   getEvidenceReplyFunc, evidence_data) ;
+    }
+  else
+    {
+      GList *evidence = zMapFeatureTranscriptGetEvidence(feature) ;
+      evidence_cb(evidence, evidence_cb_data) ;
     }
 
   return ;
@@ -678,7 +685,7 @@ static void featureShowReset(ZMapWindowFeatureShow show, ZMapWindow window, char
   show->item = NULL ;
   show->feature = NULL ;
 
-  zMapGUISetToplevelTitle(show->window,"Feature Show", title) ;
+  zMapGUISetToplevelTitle(show->window, "Feature Show", title) ;
 
   return ;
 }
@@ -722,7 +729,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
   ZMapGuiNotebookParagraph paragraph = NULL ;
   ZMapGuiNotebookTagValue tag_value = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
-  char *chapter_title = NULL, *page_title = NULL, *description = NULL ;
+  const char *chapter_title = NULL, *page_title = NULL, *description = NULL ;
   char *tmp = NULL ;
   char *notes = NULL ;
 
@@ -820,12 +827,8 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
       if (show->editable)
         {
-          /* When editing a feature, add an entry to allow the user to set the feature_set.
-           * By default it is the Annotation column but note that if the user saves back to
-           * the annotation column then a new feature is NOT created - rather the temp feature
-           * in the annotation column is overwritten. This allows the user to edit things such
-           * as the CDS or exon coords of the temp feature. */
-          const char *featureset_name = ZMAP_FIXED_STYLE_SCRATCH_NAME ;
+          /* When editing a feature, add an entry to allow the user to set the feature_set. */
+          const char *featureset_name = ZMAP_FIXED_STYLE_HAND_BUILT_NAME ;
 
           /* If the user has previously changed the featureset but not saved the feature to a
            * peer then the new name will have been cached and we show that instead. */
@@ -2054,7 +2057,7 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
 }
 
 
-static void printWarning(char *element, char *handler)
+static void printWarning(const char *element, const char *handler)
 {
   if (alert_client_debug_G)
     zMapLogWarning("In zmap %s %s Handler.", element, handler) ;
@@ -2254,8 +2257,8 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature featu
 /* It is probably just about worth having this here as a unified place to handle requests but
  * that may need revisiting.... */
 static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
-                        char *action, FooCanvasItem *real_item,
-                         ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data)
+                        const char *action, FooCanvasItem *real_item,
+                        ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data)
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapXMLUtilsEventStack xml_elements ;
@@ -2567,6 +2570,86 @@ static ZMapFeatureSet getFeaturesetFromName(ZMapWindow window, char *name)
 }
 
 
+static ZMapFeatureSet makeFeatureSet(ZMapWindow window,
+                                     GQuark feature_set_id, 
+                                     ZMapStyleMode feature_mode,
+                                     const char *source,
+                                     ZMapFeatureBlock feature_block)
+{
+  ZMapFeatureSet feature_set = NULL ;
+
+  /*
+   * Now deal with the source -> data mapping referred to in the parser.
+   */
+  GQuark source_id = zMapFeatureSetCreateID((char*)source) ;
+  GQuark feature_style_id = 0 ;
+  ZMapFeatureSource source_data = NULL ;
+  GHashTable *source_2_sourcedata = NULL ;
+  GHashTable *feature_styles = NULL ;
+  ZMapFeatureTypeStyle feature_style = NULL ;
+
+  if (window && window->context_map)
+    {
+      source_2_sourcedata = window->context_map->source_2_sourcedata ;
+      feature_styles = window->context_map->styles ;
+    }
+
+  if (source_2_sourcedata)
+    {
+      if (!(source_data = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata, GINT_TO_POINTER(source_id))))
+        {
+          source_data = g_new0(ZMapFeatureSourceStruct,1);
+          source_data->source_id = source_id;
+          source_data->source_text = source_id;
+
+          g_hash_table_insert(source_2_sourcedata,GINT_TO_POINTER(source_id), source_data);
+
+          zMapLogMessage("Created source_data: %s", g_quark_to_string(source_id)) ;
+        }
+
+      if (source_data->style_id)
+        feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->style_id)) ;
+      else
+        feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->source_id)) ;
+
+      source_id = source_data->source_id ;
+      source_data->style_id = feature_style_id;
+      //zMapLogMessage("Style id = %s", g_quark_to_string(source_data->style_id)) ;
+    }
+  else
+    {
+      source_id = feature_style_id = zMapStyleCreateID((char*)source) ;
+    }
+
+  feature_style = zMapFindFeatureStyle(feature_styles, feature_style_id, feature_mode) ;
+
+  if (feature_style)
+    {
+      if (source_data)
+        source_data->style_id = feature_style_id;
+                  
+      g_hash_table_insert(feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
+                  
+      if (source_data && feature_style->unique_id != feature_style_id)
+        source_data->style_id = feature_style->unique_id;
+
+      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL) ;
+      zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
+
+      zMapLogMessage("Created feature set: %s", g_quark_to_string(feature_set_id)) ;
+
+      feature_set->style = feature_style;
+    }
+  else
+    {
+      zMapLogWarning("Error creating featureset '%s'; no feature style found for %s", 
+                     g_quark_to_string(feature_set_id), g_quark_to_string(feature_style_id)) ;
+    }
+
+  return feature_set ;
+}
+
+
 /* Save feature details. If create_feature is true, also create a new feature from the details,
  * otherwise just save them in the existing feature (which should be the temp feature in the
  * annotation column).  */
@@ -2591,6 +2674,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
   ZMapFeature feature = NULL ;
   ZMapFeatureSet feature_set = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
+  ZMapFeatureBlock block = NULL ;
   gboolean revcomp = FALSE ;
   int offset = 0 ;
 
@@ -2645,14 +2729,36 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
       feature_set = getFeaturesetFromName(window, (char*)g_quark_to_string(feature_set_id)) ;
     }
 
-  if (ok && feature_set)
+  if (ok && !feature_set)
     {
-      style = feature_set->style ;
+      /* Ask the user if they want to create a new featureset */
+      char *msg = g_strdup_printf("Featureset '%s' does not exist - do you want to create it?", (char*)g_quark_to_string(feature_set_id)) ;
+      ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_INFORMATION, msg) ;
+      g_free(msg) ;
+
+      if (ok)
+        {
+          block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(window->feature_context->master_align->blocks, 0)) ;
+
+          feature_set = makeFeatureSet(window,
+                                       feature_set_id, 
+                                       ZMAPSTYLE_MODE_TRANSCRIPT,
+                                       (char*)g_quark_to_string(feature_set_id),
+                                       block) ;
+        }
     }
-  else
+
+  if (ok)
     {
-      ok = FALSE ;
-      g_set_error(&error, g_quark_from_string("ZMap"), 99, "Please specify a Feature Set") ;
+      if (feature_set)
+        {
+          style = feature_set->style ;
+        }
+      else
+        {
+          ok = FALSE ;
+          g_set_error(&error, g_quark_from_string("ZMap"), 99, "Invalid feature set") ;
+        }
     }
 
   if (ok)
@@ -2676,6 +2782,11 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
     {
       zMapFeatureTranscriptInit(feature);
       //zMapFeatureAddTranscriptStartEnd(feature, chapter_feature->start_not_found, 0, chapter_feature->end_not_found);
+
+      /* Get the list of features used to construct the scratch feature and set it as the
+       * evidence list in the new feature */
+      ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
+      zmapWindowScratchFeatureGetEvidence(window, scratch_feature, zMapFeatureTranscriptSetEvidence, feature) ;
 
       if (chapter_feature->CDS)
         {

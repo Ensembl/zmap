@@ -142,7 +142,7 @@ ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_m
   /* If there is a focus window then that will be the one we split and we need to find out
    * the container parent of that canvas. */
   if (zmap->focus_viewwindow)
-    curr_container = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
+    curr_container = (GtkWidget*)g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
   else
     curr_container = NULL ;
 
@@ -245,7 +245,7 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
   /* If there is a focus window then that will be the one we split and we need to find out
    * the container parent of that canvas. */
   if (zmap->focus_viewwindow)
-    curr_container = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
+    curr_container = (GtkWidget*)g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
   else
     curr_container = NULL ;
 
@@ -382,7 +382,7 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **dest
 
   view = zMapViewGetView(view_window) ;
 
-  close_container = g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
+  close_container = (GtkWidget*)g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
 
 
   /* Make sure we reset focus because we are removing the view it points to ! */
@@ -491,7 +491,7 @@ static void findViewWindow(gpointer key, gpointer value, gpointer user_data)
 
   if (value == widg2View->widget)
     {
-      widg2View->view_window = key ;
+      widg2View->view_window = (ZMapViewWindow)key ;
     }
 
   return ;
@@ -677,7 +677,7 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 	{
 	  GtkWidget *unfocus_frame ;
 
-	  unfocus_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
+	  unfocus_frame = (GtkWidget*)g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
           gtk_frame_set_shadow_type(GTK_FRAME(unfocus_frame), GTK_SHADOW_OUT) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -698,7 +698,7 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
       view = zMapViewGetView(new_viewwindow) ;
       window = zMapViewGetWindow(new_viewwindow) ;
 
-      viewwindow_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
+      viewwindow_frame = (GtkWidget*)g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
       gtk_frame_set_shadow_type(GTK_FRAME(viewwindow_frame), GTK_SHADOW_IN);
 
       /* Swop the frames label text colour to "active", gosh gtk makes this hard work... */
@@ -764,7 +764,7 @@ static void labelDestroyCB(GtkWidget *widget, gpointer cb_data)
 
 static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data)
 {
-  ZMapViewWindow view_window = key ;
+  ZMapViewWindow view_window = (ZMapViewWindow)key ;
   FindViewWindow find_viewwindow = NULL ; 
   zMapReturnIfFail(user_data) ; 
   find_viewwindow = (FindViewWindow)user_data ;

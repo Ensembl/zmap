@@ -154,7 +154,7 @@ void zmapWindowScaleCanvasInit(ZMapWindowScaleCanvas ruler,
                    NULL);
 
   if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(paned),
-                               g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY), ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
+                               g_list_append(NULL, (void *)ZMAP_ZOOM_FONT_FAMILY), ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
                                &(ruler->font), &(ruler->font_desc)))
     zMapLogWarning("%s", "Couldn't get fixed width font\n") ;
   else

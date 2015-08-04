@@ -53,7 +53,7 @@
 
 
 
-char *zMapSOAcc2Term(GQuark SO_acc) ;
+const char *zMapSOAcc2Term(GQuark SO_acc) ;
 GQuark zMapSOAcc2TermID(GQuark SO_accession) ;
 GQuark zMapSOVariation2SO(char *variation_str) ;
 GQuark zMapSOFeature2SO(ZMapFeature feature) ;

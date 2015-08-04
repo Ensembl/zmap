@@ -100,10 +100,10 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   StyleChange my_data = g_new0(StyleChangeStruct,1);
   /* theoretically we could have more than one dialog active. How confusing that would be */
   ZMapFeatureTypeStyle style;
-  char *text;
+  const char *text;
   GtkWidget *toplevel, *top_vbox, *vbox, *hbox, *frame, *button, *label;
   GdkColor colour = {0} ;
-  GdkColor *fill = &colour, *border = &colour;
+  GdkColor *fill_col = &colour, *border_col = &colour;
 
   if(zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature))
     return;
@@ -164,7 +164,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 
 
   /* Make colour buttons. */
-  zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
+  zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
 
 
   frame = gtk_frame_new("Set Colours:") ;
@@ -175,7 +175,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   vbox = gtk_vbox_new(FALSE, 0) ;                /* vbox for rows of colours */
   gtk_container_add(GTK_CONTAINER(frame), vbox) ;
 
-  hbox = gtk_hbox_new(FALSE, 0) ;                /* hbox for fill / border */
+  hbox = gtk_hbox_new(FALSE, 0) ;                /* hbox for fill_col / border_col */
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
   gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING) ;
   gtk_container_set_border_width(GTK_CONTAINER(hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
@@ -185,7 +185,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
   my_data->fill_widget = button = gtk_color_button_new() ;
-  gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill) ;
+  gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill_col) ;
   g_signal_connect(G_OBJECT(button), "color-set",
                    G_CALLBACK(colourSetCB), my_data) ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
@@ -195,19 +195,19 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
   my_data->border_widget = button = gtk_color_button_new() ;
-  gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border) ;
+  gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border_col) ;
   g_signal_connect(G_OBJECT(button), "color-set",
                    G_CALLBACK(colourSetCB), my_data) ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
 
   if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)        /* add CDS colours */
     {
-      zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
+      zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
     }
 
   /* must create these anyway */
   {
-    my_data->cds = hbox = gtk_hbox_new(FALSE, 0) ;                /* hbox for fill / border */
+    my_data->cds = hbox = gtk_hbox_new(FALSE, 0) ;                /* hbox for fill_col / border_col */
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
     gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING) ;
     gtk_container_set_border_width(GTK_CONTAINER(hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
@@ -217,7 +217,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
     gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
     my_data->cds_fill_widget = button = gtk_color_button_new() ;
-    gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill) ;
+    gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill_col) ;
     g_signal_connect(G_OBJECT(button), "color-set",
                      G_CALLBACK(colourSetCB), my_data) ;
     gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
@@ -227,7 +227,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
     gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
     my_data->cds_border_widget = button = gtk_color_button_new() ;
-    gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border) ;
+    gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border_col) ;
     g_signal_connect(G_OBJECT(button), "color-set",
                      G_CALLBACK(colourSetCB), my_data) ;
     gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
@@ -326,18 +326,18 @@ void zmapStyleWindowDestroy(ZMapWindow window)
 gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature)
 {
         StyleChange my_data = (StyleChange) window->style_window;
-        ZMapFeatureSet set = (ZMapFeatureSet) feature->parent;
+        ZMapFeatureSet feature_set = (ZMapFeatureSet) feature->parent;
         ZMapFeatureTypeStyle style;
         GdkColor colour = {0} ;
-        GdkColor *fill = &colour, *border = &colour;
+        GdkColor *fill_col = &colour, *border_col = &colour;
 
         if(!my_data)
                 return FALSE;
 
         my_data->menu_data->item = foo;
-        my_data->menu_data->feature_set = set;
+        my_data->menu_data->feature_set = feature_set;
         my_data->menu_data->feature = feature;
-        style = set->style;
+        style = feature_set->style;
 
         memcpy(& my_data->save, style,sizeof (ZMapFeatureTypeStyleStruct));
 
@@ -350,20 +350,20 @@ gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMa
         if(style->is_default || (!style->overridden && style->unique_id != my_data->menu_data->feature_set->unique_id))
                 my_data->override = TRUE;
 
-        gtk_label_set_text((GtkLabel *) my_data->featureset_name, g_quark_to_string(set->original_id));
+        gtk_label_set_text((GtkLabel *) my_data->featureset_name, g_quark_to_string(feature_set->original_id));
 
         /* Update the colour buttons. */
-        zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
+        zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
 
-      gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->fill_widget), fill) ;
-      gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->border_widget), border) ;
+      gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->fill_widget), fill_col) ;
+      gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->border_widget), border_col) ;
 
         if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
-                zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
+                zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
 
-                gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->cds_fill_widget), fill) ;
-                gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->cds_border_widget), border) ;
+                gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->cds_fill_widget), fill_col) ;
+                gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->cds_border_widget), border_col) ;
                 gtk_widget_show_all(my_data->cds);
         }
         else
@@ -397,7 +397,7 @@ static void cancelCB(GtkWidget *widget, gpointer cb_data)
                 clear_style(my_data);                /* free the created style: cannot be ref'd anywhere else */
 
                 /* find the parent */
-                style = g_hash_table_lookup(styles, GUINT_TO_POINTER(id));
+                style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(id));
         }
         else                                /* restore the existing style */
         {
@@ -507,7 +507,7 @@ static void colourSetCB(GtkColorButton *widget, gpointer user_data)
   else if (GTK_WIDGET(widget) == my_data->border_widget)
         target_string = &(my_data->border_colour_str) ;
   else if (GTK_WIDGET(widget) == my_data->cds_fill_widget)
-        target_string = &(my_data->fill_colour_str) ;
+        target_string = &(my_data->cds_fill_colour_str) ;
   else if (GTK_WIDGET(widget) == my_data->cds_border_widget)
         target_string = &(my_data->cds_border_colour_str) ;
   else
@@ -568,59 +568,58 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
   ZMapFeatureSet feature_set = menu_data->feature_set;
   ZMapFeatureTypeStyle style;
   FooCanvasItem *set_item, *canvas_item;
-  ZMapStrand set_strand;
-  ZMapFrame set_frame;
+  int set_strand, set_frame;
   ID2Canvas id2c;
   int ok = FALSE;
 
 
-  style = g_hash_table_lookup( menu_data->context_map->styles, GUINT_TO_POINTER(menu_item_id));
+  style = (ZMapFeatureTypeStyle)g_hash_table_lookup( menu_data->context_map->styles, GUINT_TO_POINTER(menu_item_id));
   if(style)
-  {
-          ZMapFeatureColumn column;
-          ZMapFeatureSource s2s;
-          ZMapFeatureSetDesc f2c;
-          GList *c2s;
+    {
+      ZMapFeatureColumn column;
+      ZMapFeatureSource s2s;
+      ZMapFeatureSetDesc f2c;
+      GList *c2s;
 
-          /* now tweak featureset & column styles in various places */
-          s2s = g_hash_table_lookup(menu_data->context_map->source_2_sourcedata,GUINT_TO_POINTER(feature_set->unique_id));
-          f2c = g_hash_table_lookup(menu_data->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
-          if(s2s && f2c)
-          {
-                s2s->style_id = style->unique_id;
-                column = g_hash_table_lookup(menu_data->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
-                if(column)
+      /* now tweak featureset & column styles in various places */
+      s2s = (ZMapFeatureSource)g_hash_table_lookup(menu_data->context_map->source_2_sourcedata,GUINT_TO_POINTER(feature_set->unique_id));
+      f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(menu_data->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
+      if(s2s && f2c)
+        {
+          s2s->style_id = style->unique_id;
+          column = (ZMapFeatureColumn)g_hash_table_lookup(menu_data->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+          if(column)
+            {
+
+              c2s = (GList *)g_hash_table_lookup(menu_data->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
+              if(c2s)
                 {
+                  g_list_free(column->style_table);
+                  column->style_table = NULL;
+                  column->style = NULL;        /* must clear this to trigger style table calculation */
+                  /* NOTE column->style_id is column specific not related to a featureset, set by config */
 
-                        c2s = g_hash_table_lookup(menu_data->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
-                        if(c2s)
+                  for( ; c2s; c2s = c2s->next)
+                    {
+                      if(GPOINTER_TO_UINT(c2s->data) == feature_set->style->unique_id)
                         {
-                                g_list_free(column->style_table);
-                                column->style_table = NULL;
-                                column->style = NULL;        /* must clear this to trigger style table calculation */
-                                /* NOTE column->style_id is column specific not related to a featureset, set by config */
-
-                                for( ; c2s; c2s = c2s->next)
-                                {
-                                        if(GPOINTER_TO_UINT(c2s->data) == feature_set->style->unique_id)
-                                        {
-                                                c2s->data = GUINT_TO_POINTER(style->unique_id);
-                                                break;
-                                        }
-                                }
-                                ok = TRUE;
+                          c2s->data = GUINT_TO_POINTER(style->unique_id);
+                          break;
                         }
-
-                        zMapWindowGetSetColumnStyle(menu_data->window, feature_set->unique_id);
+                    }
+                  ok = TRUE;
                 }
-          }
-  }
+
+              zMapWindowGetSetColumnStyle(menu_data->window, feature_set->unique_id);
+            }
+        }
+    }
 
   if(!ok)
-  {
-          zMapWarning("cannot set new style","");
-          return;
-  }
+    {
+      zMapWarning("cannot set new style","");
+      return;
+    }
 
 
   /* get current style strand and frame status and operate on 1 or more columns
@@ -634,69 +633,74 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
    * strand and frame will be handled by the display code
    */
 
-          /* yes really: reverse is bigger than forwards despite appearing on the left */
+  /* yes really: reverse is bigger than forwards despite appearing on the left */
   for(set_strand = ZMAPSTRAND_NONE; set_strand <= ZMAPSTRAND_REVERSE; set_strand++)
-  {
-          /* yes really: frames are numbered 0,1,2 and have the values 1,2,3 */
-    for(set_frame = ZMAPFRAME_NONE; set_frame <= ZMAPFRAME_2; set_frame++)
+    {
+      /* yes really: frames are numbered 0,1,2 and have the values 1,2,3 */
+      for(set_frame = ZMAPFRAME_NONE; set_frame <= ZMAPFRAME_2; set_frame++)
         {
-                /* this is really frustrating:
-                 * every operation of the ftoi hash involves
-                 * repeating the same nested hash table lookups
-                 */
+          ZMapStrand strand = (ZMapStrand)set_strand ;
+          ZMapFrame frame = (ZMapFrame)set_frame ;
 
-                /* does the set appear in a column ? */
-                /* set item is a ContainerFeatureset */
-                set_item = zmapWindowFToIFindSetItem(menu_data->window,
-                                        menu_data->window->context_to_item,
-                                             menu_data->feature_set, set_strand, set_frame);
-                if(!set_item)
-                        continue;
+          /* this is really frustrating:
+           * every operation of the ftoi hash involves
+           * repeating the same nested hash table lookups
+           */
 
-                /* find the canvas item (CanvasFeatureset) containing a feature in this set */
-                id2c = zmapWindowFToIFindID2CFull(menu_data->window, menu_data->window->context_to_item,
-                                    feature_set->parent->parent->unique_id,
-                                    feature_set->parent->unique_id,
-                                    feature_set->unique_id,
-                                    set_strand, set_frame,0);
 
-                canvas_item = NULL;
-                if(id2c)
+
+          /* does the set appear in a column ? */
+          /* set item is a ContainerFeatureset */
+          set_item = zmapWindowFToIFindSetItem(menu_data->window,
+                                               menu_data->window->context_to_item,
+                                               menu_data->feature_set, strand, frame);
+          if(!set_item)
+            continue;
+
+          /* find the canvas item (CanvasFeatureset) containing a feature in this set */
+          id2c = zmapWindowFToIFindID2CFull(menu_data->window, menu_data->window->context_to_item,
+                                            feature_set->parent->parent->unique_id,
+                                            feature_set->parent->unique_id,
+                                            feature_set->unique_id,
+                                            strand, frame,0);
+
+          canvas_item = NULL;
+          if(id2c)
+            {
+              ID2Canvas feat = (ID2Canvas)zMap_g_hash_table_nth(id2c->hash_table,0);
+              if(feat)
+                canvas_item = feat->item;
+            }
+
+
+          /* look it up again to delete it :-( */
+          zmapWindowFToIRemoveSet(menu_data->window->context_to_item,
+                                  feature_set->parent->parent->unique_id,
+                                  feature_set->parent->unique_id,
+                                  feature_set->unique_id,
+                                  strand, frame, TRUE);
+
+
+          if(canvas_item)
+            {
+              FooCanvasGroup *group = (FooCanvasGroup *) set_item;
+
+              /* remove this featureset from the CanvasFeatureset */
+              /* if it's empty it will perform hari kiri */
+              if(ZMAP_IS_WINDOW_FEATURESET_ITEM(canvas_item))
                 {
-                        ID2Canvas feat = zMap_g_hash_table_nth(id2c->hash_table,0);
-                        if(feat)
-                                canvas_item = feat->item;
+                  zMapWindowFeaturesetItemRemoveSet(canvas_item, feature_set, TRUE);
                 }
 
+              /* destroy set item if empty ? */
+              if(!group->item_list)
+                zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup) set_item);
+            }
 
-                /* look it up again to delete it :-( */
-                zmapWindowFToIRemoveSet(menu_data->window->context_to_item,
-                                    feature_set->parent->parent->unique_id,
-                                    feature_set->parent->unique_id,
-                                    feature_set->unique_id,
-                                    set_strand, set_frame, TRUE);
-
-
-                if(canvas_item)
-                {
-                        FooCanvasGroup *group = (FooCanvasGroup *) set_item;
-
-                        /* remove this featureset from the CanvasFeatureset */
-                        /* if it's empty it will perform hari kiri */
-                        if(ZMAP_IS_WINDOW_FEATURESET_ITEM(canvas_item))
-                        {
-                                zMapWindowFeaturesetItemRemoveSet(canvas_item, feature_set, TRUE);
-                        }
-
-                        /* destroy set item if empty ? */
-                        if(!group->item_list)
-                                zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup) set_item);
-                }
-
-                zmapWindowRemoveIfEmptyCol((FooCanvasGroup **) &set_item) ;
+          zmapWindowRemoveIfEmptyCol((FooCanvasGroup **) &set_item) ;
 
         }
-  }
+    }
 
 
   feature_set->style = style;
@@ -705,5 +709,7 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
 
   zmapWindowColOrderColumns(menu_data->window) ;        /* put this column (deleted then created) back into the right place */
   zmapWindowFullReposition(menu_data->window->feature_root_group,TRUE, "window style") ;                /* adjust sizing and shuffle left / right */
+
+  return ;
 }
 

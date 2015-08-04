@@ -71,11 +71,11 @@ void zMapWindowCanvasLocusInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL };
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_PAINT] = zMapWindowCanvasLocusPaintFeature ;
-  funcs[FUNC_ZOOM] = zMapWindowCanvasLocusZoomSet ;
-  funcs[FUNC_FREE] = zMapWindowCanvasLocusFreeSet ;
-  funcs[FUNC_ADD] = zMapWindowCanvasLocusAddFeature ;
-  funcs[FUNC_POINT] = locusPoint ;
+  funcs[FUNC_PAINT] = (void *)zMapWindowCanvasLocusPaintFeature ;
+  funcs[FUNC_ZOOM] = (void *)zMapWindowCanvasLocusZoomSet ;
+  funcs[FUNC_FREE] = (void *)zMapWindowCanvasLocusFreeSet ;
+  funcs[FUNC_ADD] = (void *)zMapWindowCanvasLocusAddFeature ;
+  funcs[FUNC_POINT] = (void *)locusPoint ;
 
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LOCUS, funcs, sizeof(zmapWindowCanvasLocusSetStruct));
 

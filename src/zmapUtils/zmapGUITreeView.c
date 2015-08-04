@@ -123,7 +123,7 @@ static void zmap_guitreeview_add_list_of_tuples(ZMapGUITreeView zmap_tv,
 static void each_tuple_swap_invoke_add(gpointer list_data, gpointer user_data);
 
 
-static void set_column_names (gpointer list_data, gpointer user_data);
+static void set_column_names(gpointer list_data, gpointer user_data);
 static void set_column_quarks(gpointer list_data, gpointer user_data);
 static void set_column_types (gpointer list_data, gpointer user_data);
 static void set_column_funcs (gpointer list_data, gpointer user_data);
@@ -256,7 +256,7 @@ gboolean zMapGUITreeViewPrepare(ZMapGUITreeView zmap_tv)
 
         if(index != GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID &&
            index != GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID  &&
-           index != zmap_tv->sort_index)
+           index != (int)zmap_tv->sort_index)
           zmap_tv->sort_index = index;
 
         if(sort_order != zmap_tv->sort_order)
@@ -301,8 +301,8 @@ gboolean zMapGUITreeViewAttach(ZMapGUITreeView zmap_tv)
 
       set_model  = gtk_tree_view_get_model(tree_view);
 
-      if((zmap_tv->sort_index != GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID) &&
-       (zmap_tv->sort_index != index))
+      if(((int)zmap_tv->sort_index != GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID) &&
+       ((int)zmap_tv->sort_index != index))
       {
         if(zmap_tv->sort_func)
           gtk_tree_sortable_set_sort_func(sort_model,
@@ -372,7 +372,7 @@ void zMapGUITreeViewAddTuples(ZMapGUITreeView zmap_tv, GList *list_of_user_data)
   return ;
 }
 
-int zMapGUITreeViewGetColumnIndexByName(ZMapGUITreeView zmap_tv, char *column_name)
+int zMapGUITreeViewGetColumnIndexByName(ZMapGUITreeView zmap_tv, const char *column_name)
 {
   int index = -1;
 
@@ -382,7 +382,7 @@ int zMapGUITreeViewGetColumnIndexByName(ZMapGUITreeView zmap_tv, char *column_na
       GQuark query   = g_quark_from_string(column_name);
       int i;
 
-      for(i = 0; quarks && i < zmap_tv->column_count; i++, quarks++)
+      for(i = 0; quarks && i < (int)zmap_tv->column_count; ++i, ++quarks)
       {
         GQuark curr_name = *quarks;
 
@@ -400,10 +400,11 @@ int zMapGUITreeViewGetColumnIndexByName(ZMapGUITreeView zmap_tv, char *column_na
 void zMapGUITreeViewUpdateTuple(ZMapGUITreeView zmap_tv, GtkTreeIter *iter, gpointer user_data)
 {
   GtkListStore *store;
+  GList *tuple_list = (GList *)user_data ;
 
   store = GTK_LIST_STORE(zmap_tv->tree_model);
 
-  update_tuple_data_list(zmap_tv, store, iter, FALSE, user_data);
+  update_tuple_data_list(zmap_tv, store, iter, FALSE, tuple_list) ;
 
   return ;
 }
@@ -634,9 +635,9 @@ static void zmap_guitreeview_init(ZMapGUITreeView zmap_tv)
 }
 
 static void zmap_guitreeview_set_property(GObject *gobject,
-                                guint param_id,
-                                const GValue *value,
-                                GParamSpec *pspec)
+                                          guint param_id,
+                                          const GValue *value,
+                                          GParamSpec *pspec)
 {
   ZMapGUITreeView zmap_tv;
 
@@ -690,7 +691,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 
           {
             int i;
-            for(i = 0; i < zmap_tv->column_count; i++)
+            for(i = 0; i < (int)zmap_tv->column_count; i++)
             {
               zmap_tv->column_numbers[i] = i;
               /* Default columns to visible */
@@ -701,11 +702,11 @@ static void zmap_guitreeview_set_property(GObject *gobject,
           if(zmap_tv->tuple_counter)
             {
             zmap_tv->curr_column = 0;
-            set_column_names(ZMAP_GUITREEVIEW_COUNTER_COLUMN_NAME, zmap_tv);
+            set_column_names((void *)ZMAP_GUITREEVIEW_COUNTER_COLUMN_NAME, zmap_tv);
             zmap_tv->curr_column = 0;
             set_column_types(GINT_TO_POINTER(G_TYPE_INT), zmap_tv);
             zmap_tv->curr_column = 0;
-            set_column_funcs(tuple_no_to_model, zmap_tv);
+            set_column_funcs((void *)tuple_no_to_model, zmap_tv);
             zmap_tv->curr_column = 0;
             set_column_flags(GINT_TO_POINTER(DEFAULT_COLUMN_FLAGS), zmap_tv);
             }
@@ -713,11 +714,11 @@ static void zmap_guitreeview_set_property(GObject *gobject,
           if(zmap_tv->add_data_ptr)
             {
             zmap_tv->curr_column = 1;
-            set_column_names(ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME, zmap_tv);
+            set_column_names((void *)ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME, zmap_tv);
             zmap_tv->curr_column = 1;
             set_column_types(GINT_TO_POINTER(G_TYPE_POINTER), zmap_tv);
             zmap_tv->curr_column = 1;
-            set_column_funcs(tuple_pointer_to_model, zmap_tv);
+            set_column_funcs((void *)tuple_pointer_to_model, zmap_tv);
             zmap_tv->curr_column = 1;
             set_column_flags(GINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING), zmap_tv);
             }
@@ -777,11 +778,12 @@ static void zmap_guitreeview_set_property(GObject *gobject,
       {
       gpointer column_func;
       column_func = g_value_get_pointer(value);
+
       if(column_func)
         {
           if(zmap_tv->curr_column < zmap_tv->column_count &&
              zmap_tv->curr_column > 0)
-            zmap_tv->column_funcs[zmap_tv->curr_column - 1] = column_func;
+            zmap_tv->column_funcs[zmap_tv->curr_column - 1] = (ZMapGUITreeViewCellFunc)column_func;
         }
       }
       break;
@@ -802,109 +804,138 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 
     /* specified as GList * */
     case ZMAP_GUITV_COLUMN_NAMES:
-      zmap_tv->curr_column = 0;
-
-      if(zmap_tv->tuple_counter)
-      zmap_tv->curr_column++;
-
-      if(zmap_tv->add_data_ptr)
-      zmap_tv->curr_column++;
-
-      g_list_foreach(g_value_get_pointer(value), set_column_names, zmap_tv);
-
-      if((zmap_tv->curr_column == 0) ||
-       (zmap_tv->curr_column != zmap_tv->column_count) ||
-       (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
       {
-        g_warning("Expected %d column names, but got %d",
-                zmap_tv->column_count,
-                zmap_tv->curr_column);
+        GList *col_list ;
+
+        zmap_tv->curr_column = 0;
+
+        if(zmap_tv->tuple_counter)
+          zmap_tv->curr_column++;
+
+        if(zmap_tv->add_data_ptr)
+          zmap_tv->curr_column++;
+
+        col_list = (GList *)g_value_get_pointer(value) ;
+        g_list_foreach(col_list, set_column_names, zmap_tv);
+
+        if((zmap_tv->curr_column == 0) ||
+           (zmap_tv->curr_column != zmap_tv->column_count) ||
+           (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
+          {
+            g_warning("Expected %d column names, but got %d",
+                      zmap_tv->column_count,
+                      zmap_tv->curr_column);
+          }
+
+        break;
       }
-      break;
     case ZMAP_GUITV_COLUMN_NAME_QUARKS:
-      zmap_tv->curr_column = 0;
-
-      if(zmap_tv->tuple_counter)
-      zmap_tv->curr_column++;
-
-      g_list_foreach(g_value_get_pointer(value), set_column_quarks, zmap_tv);
-
-      if((zmap_tv->curr_column == 0) ||
-       (zmap_tv->curr_column != zmap_tv->column_count) ||
-       (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
       {
-        g_warning("Expected %d column names, but got %d",
-                zmap_tv->column_count,
-                zmap_tv->curr_column);
+        GList *col_list ;
+
+        zmap_tv->curr_column = 0;
+
+        if(zmap_tv->tuple_counter)
+          zmap_tv->curr_column++;
+
+        col_list = (GList *)g_value_get_pointer(value) ;
+        g_list_foreach(col_list, set_column_quarks, zmap_tv);
+
+        if((zmap_tv->curr_column == 0) ||
+           (zmap_tv->curr_column != zmap_tv->column_count) ||
+           (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
+          {
+            g_warning("Expected %d column names, but got %d",
+                      zmap_tv->column_count,
+                      zmap_tv->curr_column);
+          }
+
+        break;
       }
-      break;
     case ZMAP_GUITV_COLUMN_TYPES:
-      zmap_tv->curr_column = 0;
-
-      if(zmap_tv->tuple_counter)
-      zmap_tv->curr_column++;
-
-      if(zmap_tv->add_data_ptr)
-      zmap_tv->curr_column++;
-
-      g_list_foreach(g_value_get_pointer(value), set_column_types, zmap_tv);
-
-      if((zmap_tv->curr_column == 0) ||
-       (zmap_tv->curr_column != zmap_tv->column_count) ||
-       (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
       {
-        g_warning("Expected %d column types, but got %d",
-                zmap_tv->column_count,
-                zmap_tv->curr_column);
+        GList *col_list ;
+
+        zmap_tv->curr_column = 0;
+
+        if(zmap_tv->tuple_counter)
+          zmap_tv->curr_column++;
+
+        if(zmap_tv->add_data_ptr)
+          zmap_tv->curr_column++;
+
+        col_list = (GList *)g_value_get_pointer(value) ;
+        g_list_foreach(col_list, set_column_types, zmap_tv);
+
+        if((zmap_tv->curr_column == 0) ||
+           (zmap_tv->curr_column != zmap_tv->column_count) ||
+           (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
+          {
+            g_warning("Expected %d column types, but got %d",
+                      zmap_tv->column_count,
+                      zmap_tv->curr_column);
+          }
+
+        break;
       }
-      break;
     case ZMAP_GUITV_COLUMN_DATA_FUNCS:
-      zmap_tv->curr_column = 0;
-
-      if(zmap_tv->tuple_counter)
-      zmap_tv->curr_column++;
-
-      if(zmap_tv->add_data_ptr)
-      zmap_tv->curr_column++;
-
-      g_list_foreach(g_value_get_pointer(value), set_column_funcs, zmap_tv);
-
-      if((zmap_tv->curr_column == 0) ||
-       (zmap_tv->curr_column != zmap_tv->column_count) ||
-       (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
       {
-        g_warning("Expected %d column funcs, but got %d",
-                zmap_tv->column_count,
-                zmap_tv->curr_column);
+        GList *col_list ;
+
+        zmap_tv->curr_column = 0;
+
+        if(zmap_tv->tuple_counter)
+          zmap_tv->curr_column++;
+
+        if(zmap_tv->add_data_ptr)
+          zmap_tv->curr_column++;
+
+        col_list = (GList *)g_value_get_pointer(value) ;
+        g_list_foreach(col_list, set_column_funcs, zmap_tv);
+
+        if((zmap_tv->curr_column == 0) ||
+           (zmap_tv->curr_column != zmap_tv->column_count) ||
+           (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
+          {
+            g_warning("Expected %d column funcs, but got %d",
+                      zmap_tv->column_count,
+                      zmap_tv->curr_column);
+          }
+
+        break;
       }
-      break;
     case ZMAP_GUITV_COLUMN_FLAGS_LIST:
-      zmap_tv->curr_column = 0;
-
-      if(zmap_tv->tuple_counter)
-      zmap_tv->curr_column++;
-
-      if(zmap_tv->add_data_ptr)
-      zmap_tv->curr_column++;
-
-      g_list_foreach(g_value_get_pointer(value), set_column_flags, zmap_tv);
-
-      if((zmap_tv->curr_column == 0) ||
-       (zmap_tv->curr_column != zmap_tv->column_count) ||
-       (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
       {
-        g_warning("Expected %d column flag settings, but got %d",
-                zmap_tv->column_count,
-                zmap_tv->curr_column);
-      }
-      break;
+        GList *col_list ;
 
+        zmap_tv->curr_column = 0;
+
+        if(zmap_tv->tuple_counter)
+          zmap_tv->curr_column++;
+
+        if(zmap_tv->add_data_ptr)
+          zmap_tv->curr_column++;
+
+        col_list = (GList *)g_value_get_pointer(value) ;
+        g_list_foreach(col_list, set_column_flags, zmap_tv);
+
+        if((zmap_tv->curr_column == 0) ||
+           (zmap_tv->curr_column != zmap_tv->column_count) ||
+           (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
+          {
+            g_warning("Expected %d column flag settings, but got %d",
+                      zmap_tv->column_count,
+                      zmap_tv->curr_column);
+          }
+
+        break;
+      }
       /* selecting columns */
     case ZMAP_GUITV_SELECT_MODE:
       {
       GtkTreeSelection *selection;
 
-      zmap_tv->select_mode = g_value_get_enum(value);
+      zmap_tv->select_mode = (GtkSelectionMode)g_value_get_enum(value);
       if(zmap_tv->tree_view &&
          (selection = gtk_tree_view_get_selection(zmap_tv->tree_view)))
         {
@@ -913,7 +944,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
       }
       break;
     case ZMAP_GUITV_SELECT_FUNC:
-      zmap_tv->select_func = g_value_get_pointer(value);
+      zmap_tv->select_func = (GtkTreeSelectionFunc)g_value_get_pointer(value);
 
       progressive_set_selection(zmap_tv);
       break;
@@ -923,7 +954,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
       progressive_set_selection(zmap_tv);
       break;
     case ZMAP_GUITV_SELECT_FUNC_DESTROY:
-      zmap_tv->select_destroy = g_value_get_pointer(value);
+      zmap_tv->select_destroy = (GDestroyNotify)g_value_get_pointer(value);
 
       progressive_set_selection(zmap_tv);
       break;
@@ -947,23 +978,23 @@ static void zmap_guitreeview_set_property(GObject *gobject,
       break;
     case ZMAP_GUITV_SORT_COLUMN_INDEX:
       {
-      int index;
+      unsigned int index;
       index = g_value_get_uint(value);
       if(index < zmap_tv->column_count)
         zmap_tv->sort_index = index;
       }
       break;
     case ZMAP_GUITV_SORT_ORDER:
-      zmap_tv->sort_order = g_value_get_enum(value);
+      zmap_tv->sort_order = (GtkSortType)g_value_get_enum(value);
       break;
     case ZMAP_GUITV_SORT_FUNC:
-      zmap_tv->sort_func = g_value_get_pointer(value);
+      zmap_tv->sort_func = (GtkTreeIterCompareFunc)g_value_get_pointer(value);
       break;
     case ZMAP_GUITV_SORT_FUNC_DATA:
       zmap_tv->sort_func_data = g_value_get_pointer(value);
       break;
     case ZMAP_GUITV_SORT_FUNC_DESTROY:
-      zmap_tv->sort_destroy = g_value_get_pointer(value);
+      zmap_tv->sort_destroy = (GDestroyNotify)g_value_get_pointer(value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
@@ -987,7 +1018,7 @@ static void zmap_guitreeview_get_property(GObject *gobject,
   switch(param_id)
     {
     case ZMAP_GUITV_SELECT_FUNC:
-      g_value_set_pointer(value, zmap_tv->select_func);
+      g_value_set_pointer(value, (void *)(zmap_tv->select_func)) ;
       break;
     case ZMAP_GUITV_WIDGET:
       {
@@ -1013,11 +1044,13 @@ static void zmap_guitreeview_get_property(GObject *gobject,
       break;
     case ZMAP_GUITV_DATA_PTR_COLUMN_INDEX:
       {
-      int index;
-      index = zMapGUITreeViewGetColumnIndexByName(zmap_tv, ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME);
-      g_value_set_int(value, index);
+        int index;
+
+        index = zMapGUITreeViewGetColumnIndexByName(zmap_tv, ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME);
+        g_value_set_int(value, index);
+
+        break;
       }
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
       break;
@@ -1187,7 +1220,7 @@ static void set_column_funcs(gpointer list_data, gpointer user_data)
 
   if(zmap_tv->curr_column < zmap_tv->column_count)
     {
-      zmap_tv->column_funcs[zmap_tv->curr_column] = list_data;
+      zmap_tv->column_funcs[zmap_tv->curr_column] = (ZMapGUITreeViewCellFunc)list_data;
 
       (zmap_tv->curr_column)++;
     }
@@ -1222,7 +1255,7 @@ static void set_editable_flag(ZMapGUITreeView zmap_tv, const gboolean editable)
 {
   int column = 0 ;
 
-  for ( ; column < zmap_tv->column_count; ++column)
+  for ( ; column < (int)zmap_tv->column_count; ++column)
     {
       ColumnFlagsStruct *flags = &(zmap_tv->column_flags[column]);
 
@@ -1532,7 +1565,7 @@ static GtkTreeView *createView(ZMapGUITreeView zmap_tv)
       /* This should be a property */
       gtk_tree_view_set_headers_clickable(tree_view, TRUE);
 
-      for(index = 0; index < zmap_tv->column_count; index++, column_name_ptr++, column_type_ptr++, column_flags_ptr++)
+      for(index = 0; index < (int)zmap_tv->column_count; index++, column_name_ptr++, column_type_ptr++, column_flags_ptr++)
       {
         CellEditedCBData edited_cb_data = g_new0(CellEditedCBDataStruct, 1) ;
         edited_cb_data->zmap_tv = zmap_tv ;
@@ -1613,7 +1646,7 @@ static int column_index_from_name(ZMapGUITreeView zmap_tv, char *name)
   names_ptr = zmap_tv->column_names;
   name_id   = g_quark_from_string(name);
 
-  for(i = 0; i < zmap_tv->column_count; i++, names_ptr++)
+  for(i = 0; i < (int)zmap_tv->column_count; i++, names_ptr++)
     {
       if(*names_ptr == name_id)
       index = i;
@@ -1688,7 +1721,7 @@ static void update_tuple_data(ZMapGUITreeView zmap_tv,
 
 
   /* step through the functions and set the values */
-  for(; index < zmap_tv->column_count; index++)
+  for(; index < (int)zmap_tv->column_count; index++)
     {
       GValue *value;
       ZMapGUITreeViewCellFunc func;
@@ -1800,7 +1833,7 @@ static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
         /* Keep the index in step. */
         index++;
       }
-      while((tmp = g_list_next(tmp)) && index < zmap_tv->column_count);
+      while((tmp = g_list_next(tmp)) && index < (int)zmap_tv->column_count);
     }
 
   return ;

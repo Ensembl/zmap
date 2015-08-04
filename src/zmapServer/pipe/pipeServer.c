@@ -63,7 +63,7 @@ typedef enum {PA_FLAG_INVALID, PA_FLAG_START, PA_FLAG_END, PA_FLAG_DATASET, PA_F
 
 typedef struct PipeArgStructType
 {
-  char *arg ;
+  const char *arg ;
   PipeArgDataType type ;
   PipeArgFlag flag ;
 } PipeArgStruct, *PipeArg ;
@@ -79,7 +79,7 @@ typedef struct GetFeaturesDataStructType
 
   ZMapServerResponseType result ;
 
-  char *err_msg ;
+  const char *err_msg ;
 
 } GetFeaturesDataStruct, *GetFeaturesData ;
 
@@ -106,7 +106,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
                                           ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in,
                                                  GHashTable *styles, ZMapFeatureContext feature_context_out) ;
-static char *lastErrorMsg(void *server) ;
+static const char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
@@ -117,7 +117,7 @@ static void childFullReapCB(GPid child_pid, gint child_status, gpointer user_dat
 static void childReapOnlyCB(GPid child_pid, gint child_status, gpointer user_data) ;
 static ZMapServerResponseType childHasFailed(PipeServer server, const char *msg) ;
 
-
+static char *make_arg(PipeArg pipe_arg, const char *prefix, PipeServer server) ;
 
 static ZMapServerResponseType pipeGetHeader(PipeServer server);
 static ZMapServerResponseType pipeGetSequence(PipeServer server);
@@ -133,7 +133,7 @@ static void eachAlignmentSequence(gpointer key, gpointer data, gpointer user_dat
 static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data) ;
 
 static void setErrorMsgGError(PipeServer server, GError **gff_pipe_err_inout) ;
-static void setErrMsg(PipeServer server, char *new_msg) ;
+static void setErrMsg(PipeServer server, const char *new_msg) ;
 
 /*
  *                   Globals
@@ -145,7 +145,7 @@ PipeArgStruct otter_args[] =
     { "end", PA_DATATYPE_INT, PA_FLAG_END },
     { "dataset", PA_DATATYPE_STRING, PA_FLAG_DATASET },
     { "gff_seqname", PA_DATATYPE_STRING, PA_FLAG_SEQUENCE },
-    { NULL, 0, 0 }
+    { NULL, PA_DATATYPE_INVALID, PA_FLAG_INVALID}
   };
 
 PipeArgStruct zmap_args[] =
@@ -154,7 +154,7 @@ PipeArgStruct zmap_args[] =
     { "end", PA_DATATYPE_INT, PA_FLAG_END },
     //      { "dataset", PA_DATATYPE_STRING,PA_FLAG_DATASET },        may need when mapping available
     { "gff_seqname", PA_DATATYPE_STRING, PA_FLAG_SEQUENCE },
-    { NULL, 0, 0 }
+    { NULL, PA_DATATYPE_INVALID, PA_FLAG_INVALID}
   };
 
 
@@ -371,7 +371,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
       /* See if there's already a parser cached (i.e. parsing has already been started) */
       if (server->sequence_map && server->sequence_map->cached_parsers)
         {
-          parser_cache = g_hash_table_lookup(server->sequence_map->cached_parsers, GINT_TO_POINTER(file_quark)) ;
+          parser_cache = (ZMapFeatureParserCache)g_hash_table_lookup(server->sequence_map->cached_parsers, GINT_TO_POINTER(file_quark)) ;
 
           if (parser_cache)
             {
@@ -723,7 +723,7 @@ static ZMapServerResponseType getContextSequence(void *server_in,
 
 
 /* Return the last error message. */
-static char *lastErrorMsg(void *server_in)
+static const char *lastErrorMsg(void *server_in)
 {
   char *err_msg = NULL ;
   PipeServer server = (PipeServer)server_in ;
@@ -912,7 +912,7 @@ static void getConfiguration(PipeServer server)
  * in case of errors or hangups eventually we will time out and an error popped up.
  * downside is limited to not having the data, which is what happens anyway
  */
-static char *make_arg(PipeArg pipe_arg, char *prefix, PipeServer server)
+static char *make_arg(PipeArg pipe_arg, const char *prefix, PipeServer server)
 {
   char *q = NULL;
 
@@ -953,8 +953,8 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
   int i ;
   PipeArg pipe_arg;
   char arg_done = 0;
-  char *mm = "--";
-  char *minus = mm + 2 ;                                    /* this gets set as per the first arg */
+  const char *mm = "--";
+  const char *minus_char = mm + 2 ;                              /* this gets set as per the first arg */
   char *p;
   int n_q_args = 0;
 
@@ -963,15 +963,15 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
   if (q_args && *q_args)
     {
       p = q_args[0];
-      minus = mm+2;
+      minus_char = mm+2;
       if (*p == '-')     /* optional -- allow single as well */
         {
           p++;
-          minus--;
+          minus_char--;
         }
       if (*p == '-')
         {
-          minus--;
+          minus_char--;
         }
       n_q_args = g_strv_length(q_args);
     }
@@ -989,7 +989,7 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
        */
       char *q ;
 
-      p = q_args[i-1] + strlen(minus) ;
+      p = q_args[i-1] + strlen(minus_char) ;
 
       pipe_arg = server->is_otter ? otter_args : zmap_args ;
       for ( ; pipe_arg->type ; pipe_arg++)
@@ -998,7 +998,7 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
             {
               arg_done |= pipe_arg->flag ;
 
-              if ((q = make_arg(pipe_arg, minus, server)))
+              if ((q = make_arg(pipe_arg, minus_char, server)))
                 {
                   g_free(q_args[i-1]) ;
                   q_args[i-1] = q ;
@@ -1019,7 +1019,7 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
       if (!(arg_done & pipe_arg->flag))
         {
           char *q;
-          q = make_arg(pipe_arg,minus,server);
+          q = make_arg(pipe_arg,minus_char,server);
           if (q)
             argv[i++] = q;
 
@@ -1027,20 +1027,22 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
     }
   argv[i]= NULL ;
 
-  //#define MH17_DEBUG_ARGS
-#if defined  MH17_DEBUG_ARGS
+  /* log the actual command line used, very useful for us developers. */
   {
-    char *x = "";
-    int j;
+    GString *arg_str = NULL ;
+    int j ;
 
-    for(j = 0;argv[j] ;j++)
+    arg_str = g_string_new(NULL) ;
+
+    for(j = 0 ; argv[j] ; j++)
       {
-        x = g_strconcat(x," ",argv[j],NULL);
+        g_string_append_printf(arg_str, "%s ", argv[j]) ;
       }
-    zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_end);
-  }
-#endif
 
+    zMapLogMessage("About to launch child process as: \"%s\"", arg_str->str) ;
+
+    g_string_free(arg_str, TRUE) ;
+  }
 
   /* Seems that g_spawn_async_with_pipes() is not thread safe so lock round it. */
   zMapThreadForkLock();
@@ -1302,7 +1304,7 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
       if (!(sequence = zMapGFFGetSequence(server->parser, sequence_name)))
         {
           GError *error;
-          char *estr;
+          const char *estr;
 
           error = zMapGFFGetError(server->parser);
 
@@ -1332,7 +1334,7 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
               ZMapFeatureTypeStyle dna_style = NULL;
               ZMapFeature feature;
 
-              if (styles && (dna_style = g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
+              if (styles && (dna_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
                 feature = zMapFeatureDNACreateFeature(feature_block, dna_style, sequence->sequence, sequence->length);
             }
 
@@ -1568,7 +1570,7 @@ static gboolean getServerInfo(PipeServer server, ZMapServerReqGetServerInfo info
 static void setErrorMsgGError(PipeServer server, GError **gff_pipe_err_inout)
 {
   GError *gff_pipe_err ;
-  char *msg = "failed";
+  const char *msg = "failed";
 
   gff_pipe_err = *gff_pipe_err_inout ;
   if (gff_pipe_err)
@@ -1586,7 +1588,7 @@ static void setErrorMsgGError(PipeServer server, GError **gff_pipe_err_inout)
 
 
 /* It's possible for us to have reported an error and then another error to come along. */
-static void setErrMsg(PipeServer server, char *new_msg)
+static void setErrMsg(PipeServer server, const char *new_msg)
 {
   char *error_msg ;
 

@@ -55,6 +55,13 @@
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
 #define PFETCH_TITLE_FORMAT "ZMap - pfetch \"%s\""
 
+
+static gboolean g_dragging = FALSE ;                        /* Have clicked button 1 but not yet released */
+static gboolean g_dnd_in_progress = FALSE ;                 /* Drag and drop is in progress */
+static gboolean g_second_press = FALSE ;                    /* Used for double clicks... */
+static guint32  g_last_but_release = 0 ;                     /* Used for double clicks... */
+
+
 typedef struct PFetchDataStructType
 {
   GtkWidget *dialog;
@@ -71,7 +78,7 @@ typedef struct RemoteDataStructType
 {
   ZMapWindow window ;
 
-  char *command ;
+  const char *command ;
 
   ZMapFeatureAny feature_any ;
 
@@ -114,7 +121,7 @@ static gboolean mouse_debug_G = FALSE ;
 
 
 
-/* 
+/*
  *                External interface routines.
  */
 
@@ -245,7 +252,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 
 
 
-/* 
+/*
  *                 Package routines.
  */
 
@@ -319,28 +326,35 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 }
 
 
+gboolean zmapWindowFeatureItemEventButRelease(GdkEvent *event)
+{
+  GdkEventButton *but_event = (GdkEventButton *)event ;
+
+  g_dragging = FALSE ;
+  g_dnd_in_progress = FALSE ;
+  g_second_press = FALSE ;
+  g_last_but_release = but_event->time ;
+}
+
+
 /* Handle events on items, note that events for text items are passed through without processing
  * so the text item code can do highlighting etc.
- * 
+ *
  * This is a package routine because features are no longer foocanvas items and so cannot have
  * events attached directly to them. Instead if the column code finds that the mouse click
  * happened on a feature it calls this function to handle the event.
- * 
+ *
  *  */
 gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;                            /* By default we _don't_ handle events. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
   static ZMapFeature feature = NULL ;
-  static guint32 last_but_release = 0 ;                     /* Used for double clicks... */
-  static gboolean second_press = FALSE ;                    /* Used for double clicks... */
-  static gboolean dragging = FALSE ;                        /* Have clicked button 1 but not yet released */
-  static gboolean dnd_in_progress = FALSE ;                 /* Drag and drop is in progress */
   static GtkTargetEntry targetentries[] =                   /* Set up targets for drag and drop */
     {
-      { "STRING",        0, TARGET_STRING },
-      { "text/plain",    0, TARGET_STRING },
-      { "text/uri-list", 0, TARGET_URL },
+      { (gchar *)"STRING",        0, TARGET_STRING },
+      { (gchar *)"text/plain",    0, TARGET_STRING },
+      { (gchar *)"text/uri-list", 0, TARGET_URL },
     };
   static GtkTargetList *targetlist = NULL;
 
@@ -384,8 +398,8 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
         {
           if (but_event->button == 1)
             {
-              dragging = TRUE ;
-              dnd_in_progress = FALSE ;
+              g_dragging = TRUE ;
+              g_dnd_in_progress = FALSE ;
             }
           else if (but_event->button == 3)
             {
@@ -397,15 +411,15 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
         }
       else if (but_event->type == GDK_2BUTTON_PRESS)
         {
-          second_press = TRUE ;
+          g_second_press = TRUE ;
 
           event_handled = TRUE ;
         }
       else                                                    /* button release */
         {
           /*                            button release                             */
-          dragging = FALSE ;
-          dnd_in_progress = FALSE ;
+          g_dragging = FALSE ;
+          g_dnd_in_progress = FALSE ;
 
           /* Gdk defines double clicks as occuring within 250 milliseconds of each other
            * but unfortunately if on the first click we do a lot of processing,
@@ -415,7 +429,7 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
            * buffer. */
           guint but_threshold = 500 ;                            /* Separation of clicks in milliseconds. */
 
-          if (second_press || but_event->time - last_but_release < but_threshold)
+          if (g_second_press || but_event->time - g_last_but_release < but_threshold)
             {
               const gchar *style_id = g_quark_to_string(zMapStyleGetID(*feature->style)) ;
 
@@ -454,7 +468,7 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
                     }
                 }
 
-              second_press = FALSE ;
+              g_second_press = FALSE ;
             }
           else
             {
@@ -463,7 +477,7 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
               event_handled = handleButton(but_event, window, item, feature) ;
             }
 
-          last_but_release = but_event->time ;
+          g_last_but_release = but_event->time ;
 
           event_handled = TRUE ;
         }
@@ -483,15 +497,15 @@ gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event,
        * selected. "dragging" indicates that a left-click has happened and not been released yet, and
        * "dnd_in_progress" means that a drag-and-drop has already been initiated (so there's
        * nothing left to do). */
-      if (!dnd_in_progress && dragging && item && window)
+      if (!g_dnd_in_progress && g_dragging && item && window)
         {
-          if (zmapWindowFocusIsItemFocused(window->focus, item))
+          if (item != NULL && zmapWindowFocusGetHotItem(window->focus) == item)
             {
-              gtk_drag_begin(GTK_WIDGET(window->canvas), targetlist, 
-                             GDK_ACTION_COPY|GDK_ACTION_MOVE|GDK_ACTION_LINK,
+              gtk_drag_begin(GTK_WIDGET(window->canvas), targetlist,
+                             (GdkDragAction)(GDK_ACTION_COPY|GDK_ACTION_MOVE|GDK_ACTION_LINK),
                              1, (GdkEvent*)event);
-              
-              dnd_in_progress = TRUE ;
+
+              g_dnd_in_progress = TRUE ;
             }
         }
     }
@@ -597,7 +611,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window,
     {
       /* THIS IS ALL HACKED UP AS A TEMPORARY SOLUTION TO THE PROBLEM OF FACTORYRUNSINGLE
        * BEING THE PLACE WHERE A FEATURESET IS MADE...DEEP SIGH....
-       * 
+       *
        * It should always be true that if we come in here then there is a
        * featureset_callback_func.
        * This function does get called from featureexpand but there should always be a featureset
@@ -643,7 +657,7 @@ FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
        */
       GQuark col_id ;
       FooCanvasItem * foo = FOO_CANVAS_ITEM(parent_container);
-      GQuark fset_id = feature_stack->set->unique_id;
+      GQuark fset_id = feature_stack->feature_set->unique_id;
       char strand = '+';
       char frame = '0';
       char *x;
@@ -701,10 +715,7 @@ FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
 #if !FEATURESET_AS_COLUMN
       zmapWindowFToIAddSet(ftoi_hash,
                            feature_stack->align->unique_id, feature_stack->block->unique_id,
-                           feature_stack->set->unique_id, feature_stack->strand, feature_stack->frame, (FooCanvasItem *) canvas_item) ;
-
-      //if(zMapStyleGetMode(feature_stack->set->style) == ZMAPSTYLE_MODE_SEQUENCE)
-      //        printf("added set %s (%s) to hash\n", g_quark_to_string(feature_stack->set->unique_id),x);
+                           feature_stack->feature_set->unique_id, feature_stack->strand, feature_stack->frame, (FooCanvasItem *) canvas_item) ;
 #endif
       g_free(x);
     }
@@ -734,7 +745,7 @@ FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
            * NOTE calling code will need to set the feature in the hash as the composite feature
            */
           /*! \todo #warning need to set composite feature in lookup code */
-                  
+
           return (FooCanvasItem *) feature_item;
         }
 
@@ -752,18 +763,12 @@ FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
               feature_stack->col_hash[strand] = zmapWindowFToIGetSetHash(ftoi_hash,
                                                                          feature_stack->align->unique_id,
                                                                          feature_stack->block->unique_id,
-                                                                         feature_stack->set->unique_id, strand, frame);
+                                                                         feature_stack->feature_set->unique_id, strand, frame);
             }
 
           status = zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand],
                                                feature->unique_id, feature_item, feature);
 
-          //if(zMapStyleGetMode(feature_stack->set->style) == ZMAPSTYLE_MODE_SEQUENCE)
-          //        printf("added feature %s to hash\n", g_quark_to_string(feature->unique_id));
-
-          //x = g_quark_to_string(feature->unique_id);
-          //if(frame != ZMAPFRAME_NONE)
-          //        printf("add to hash %p %s %s\n",feature_stack->col_hash[strand], x, g_quark_to_string(feature_stack->set->unique_id));
         }
     }
 
@@ -922,21 +927,21 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
     control_mask = GDK_CONTROL_MASK,
     alt_mask = GDK_MOD1_MASK,
     meta_mask = GDK_META_MASK,
-    unwanted_masks = (GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
-                      | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
-                      | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
+    unwanted_masks = (GdkModifierType)(GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
+                                       | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
+                                       | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
     locks_mask ;
 
   /* In order to make the modifier only checks work we need to OR in the unwanted masks that might be on.
    * This includes the shift lock and num lock. Depending on the setup of X these might be mapped
    * to other things which is why MODs 2-5 are included This in theory should include the new (since 2.10)
    * GDK_SUPER_MASK, GDK_HYPER_MASK and GDK_META_MASK */
-  if ((locks_mask = (but_event->state & unwanted_masks)))
+  if ((locks_mask = (GdkModifierType)(but_event->state & unwanted_masks)))
     {
-      shift_mask |= locks_mask ;
-      control_mask |= locks_mask ;
-      alt_mask |= locks_mask ;
-      meta_mask |= locks_mask ;
+      shift_mask = (GdkModifierType)(shift_mask | locks_mask) ;
+      control_mask = (GdkModifierType)(control_mask | locks_mask) ;
+      alt_mask = (GdkModifierType)(alt_mask | locks_mask) ;
+      meta_mask = (GdkModifierType)(meta_mask | locks_mask) ;
     }
 
   /* Button 1 and 3 are handled, 2 is left for a general handler which could be the root handler. */
@@ -1275,11 +1280,11 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item, GCallback feature
 /* Called by select and edit code to call xremote with "select", "edit" etc commands
  * for peer. The peers reply is handled in handleXRemoteReply() */
 void zmapWindowFeatureCallXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
-                                  char *command, FooCanvasItem *real_item)
+                                  const char *command, FooCanvasItem *real_item)
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapXMLUtilsEventStack xml_elements ;
-  ZMapWindowSelectStruct select = {0} ;
+  ZMapWindowSelectStruct select = {(ZMapWindowSelectType)0} ;
   ZMapFeatureSetStruct feature_set = {0} ;
   ZMapFeatureSet multi_set ;
   ZMapFeature feature_copy ;
@@ -1432,7 +1437,7 @@ static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
             {
               /* Reset the unsaved-changes flag. Really we should wait until the feature has
                * actually been created but the peer may change any of the feature details before
-               * creating and sending it back to us so we have no way of knowing when the correct 
+               * creating and sending it back to us so we have no way of knowing when the correct
                * feature has been created. */
               remote_data->window->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
             }

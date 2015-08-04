@@ -129,7 +129,7 @@ void zMapGUITreeViewAddTuples(ZMapGUITreeView zmap_tv, GList *tuples_list);
 /*!
  * \brief get the index for a column by name
  */
-int zMapGUITreeViewGetColumnIndexByName(ZMapGUITreeView zmap_tv, char *column_name);
+int zMapGUITreeViewGetColumnIndexByName(ZMapGUITreeView zmap_tv, const char *column_name);
 
 /*!
  * \brief update the row with the iterator from the data.

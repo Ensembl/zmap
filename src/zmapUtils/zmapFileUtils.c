@@ -34,7 +34,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <strings.h>
 #include <string.h>
 #include <wordexp.h>
 
@@ -50,7 +49,7 @@ static char *getRelOrAbsPath(char *path_in, gboolean home_relative) ;
 /* this function also only copes with one level of directory creating.... */
 /* this function is whacky at the moment and needs work.....e.g. on directory permissions... */
 /* Check directory. */
-char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir)
+char *zMapGetDir(const char *directory_in, gboolean home_relative, gboolean make_dir)
 {
   char *directory = NULL ;
   gboolean status = FALSE ;
@@ -150,7 +149,7 @@ char *zMapGetBasename(const char *path_in)
  * is returned otherwise the expanded filepath is returned, this string
  * should be released with g_free() when no longer needed.
  */
-char *zMapExpandFilePath(char *path_in)
+char *zMapExpandFilePath(const char *path_in)
 {
   char *filepath = NULL ;
 
@@ -179,9 +178,9 @@ char *zMapExpandFilePath(char *path_in)
 
 
 /* Construct file path from directory and filename and check if it can be accessed, if it
- * doesn't exist then create the file as read/writeable but empty. 'permissions' should be
- * the required permissions, e.g. 'rw' if read and write access are required */
-char *zMapGetFile(char *directory, char *filename, gboolean make_file, const char *permissions, GError **error)
+ * doesn't exist then create the file as read/writeable but empty.'permissions' should be
+ * the required permissions, e.g. 'rw' if read and write access are required   */
+char *zMapGetFile(char *directory, const char *filename, gboolean make_file, const char *permissions, GError **error)
 {
   gboolean status = FALSE ;
   GError *g_error = NULL ;
@@ -230,7 +229,7 @@ char *zMapGetFile(char *directory, char *filename, gboolean make_file, const cha
 
 /* Can the given file be accessed for read or write or execute ?
  * If no mode then test is for "rwx". */
-gboolean zMapFileAccess(char *filepath, char *mode)
+gboolean zMapFileAccess(const char *filepath, const char *mode)
 {
   gboolean can_access = FALSE ;
   struct stat stat_buf ;

@@ -91,7 +91,7 @@ typedef enum
 /* Command descriptor table, records whether command edits the feature context and so on. */
 typedef struct CommandDescriptorStructName
 {
-  char *command ;                                            /* Command name/id. */
+  const char *command ;                                            /* Command name/id. */
   GQuark command_id ;
 
   gboolean is_edit ;                                            /* Does this command edit the feature context ? */
@@ -123,7 +123,7 @@ typedef struct RequestDataStructName
 
   /* Command result. */
   RemoteCommandRCType command_rc ;
-  char *msg ;
+  const char *msg ;
   GString *err_msg ;
 
 
@@ -271,7 +271,7 @@ static CommandDescriptorStruct command_table_G[] =
     {ZACP_COLUMN_SHOW,       0, FALSE, FEATURE_DONT_CARE, FALSE},
     {ZACP_COLUMN_HIDE,       0, FALSE, FEATURE_DONT_CARE, FALSE},
 
-    {NULL, 0, FALSE, FALSE}                                    /* Terminator record. */
+    {NULL, 0, FALSE, FEATURE_INVALID, FALSE}                                    /* Terminator record. */
   } ;
 
 
@@ -929,10 +929,10 @@ static void hideColumn(ZMapView view, RequestData request_data)
 {
   if (!view || !view->window_list || !request_data || !request_data->column_id)
     return ;
-  GList *list = view->window_list ;
-  for ( ; list!=NULL ; list = list->next)
+  GList *glist = view->window_list ;
+  for ( ; glist!=NULL ; glist = glist->next)
     {
-      ZMapViewWindow view_window = (ZMapViewWindow) list->data ;
+      ZMapViewWindow view_window = (ZMapViewWindow) glist->data ;
       zMapWindowColumnHide(view_window->window, request_data->column_id) ;
     }
 }
@@ -944,10 +944,10 @@ static void showColumn(ZMapView view, RequestData request_data)
 {
   if (!view || !view->window_list || !request_data || !request_data->column_id)
     return ;
-  GList *list = view->window_list ;
-  for ( ; list!=NULL ; list = list->next)
+  GList *glist = view->window_list ;
+  for ( ; glist!=NULL ; glist = glist->next)
     {
-      ZMapViewWindow view_window = (ZMapViewWindow) list->data ;
+      ZMapViewWindow view_window = (ZMapViewWindow) glist->data ;
       zMapWindowColumnShow(view_window->window, request_data->column_id) ;
     }
 }
@@ -1325,7 +1325,7 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
   else
     {
       /* Get the first one! */
-      request_data->orig_block = zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
+      request_data->orig_block = (ZMapFeatureBlock)zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
 
       result = TRUE ;
     }
@@ -1406,7 +1406,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   /* Default to first block if client did not specify one. */
   if (!(request_data->orig_block))
     {
-      request_data->orig_block = zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
+      request_data->orig_block = (ZMapFeatureBlock)zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
 
       if (request_data->cmd_desc->is_edit)
         {
@@ -1567,8 +1567,8 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
     {
       ZMapFeatureSource source_data ;
 
-      if (!(source_data = g_hash_table_lookup(request_data->view_window->parent_view->context_map.source_2_sourcedata,
-                                              GINT_TO_POINTER(unique_set_id))))
+      if (!(source_data = (ZMapFeatureSource)g_hash_table_lookup(request_data->view_window->parent_view->context_map.source_2_sourcedata,
+                                                                 GINT_TO_POINTER(unique_set_id))))
         {
           char *err_msg ;
 
@@ -1704,7 +1704,6 @@ static gboolean xml_column_start_cb(gpointer user_data, ZMapXMLElement column_el
   ZMapXMLAttribute attr = NULL;
   RequestData request_data = (RequestData)user_data;
   GQuark column_name_id = 0 ;
-  char * column_name = NULL ;
 
   if (result && (attr = zMapXMLElementGetAttributeByName(column_element, "name")))
     {

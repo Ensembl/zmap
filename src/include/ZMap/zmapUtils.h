@@ -26,9 +26,13 @@
  *-------------------------------------------------------------------
  */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifndef ZMAP_UTILS_H
 #define ZMAP_UTILS_H
@@ -112,15 +116,15 @@ typedef struct  _ZMapLogStruct *ZMapLog ;
  *
  * The address of the string is then used as the unique identifier and the string
  * can be used during debugging.
- * 
+ *
  * If you use the magic in heap allocated structs then you _must_ reset the magic
  * on deallocating the struct to invalidate the memory and hence catch when callers
  * try to erroneously continue to reference it:
- * 
+ *
  * ZMAP_MAGIC_RESET(struct->magic) ;
- * 
+ *
  */
-typedef char* ZMapMagic ;
+typedef const char * ZMapMagic ;
 
 #define ZMAP_MAGIC_NEW(magic_var_name, type_name) static ZMapMagic magic_var_name = ZMAP_MAKESTRING((type_name))  " in file " __FILE__
 #define ZMAP_MAGIC_IS_VALID(magic_var_name, magic_ptr) ((magic_var_name) == (magic_ptr))
@@ -197,25 +201,25 @@ gboolean zMapStack2fd(unsigned int remove, int fd) ;
 
 void zMapSignalHandler(int sig_no) ;
 
-char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir) ;
-char *zMapGetFile(char *directory, char *filename, gboolean make_file, const char *permissions, GError **error) ;
+char *zMapGetDir(const char *directory_in, gboolean home_relative, gboolean make_dir) ;
+char *zMapGetFile(char *directory, const char *filename, gboolean make_file, const char *permissions, GError **error) ;
 char *zMapGetPath(char *path_in) ;
 char *zMapGetBasename(const char *path_in) ;
-char *zMapExpandFilePath(char *path_in) ;
-gboolean zMapFileAccess(char *filepath, char *mode) ;
+char *zMapExpandFilePath(const char *path_in) ;
+gboolean zMapFileAccess(const char *filepath, const char *mode) ;
 gboolean zMapFileEmpty(char *filepath) ;
 
 
 /* routines to return basic version/information about zmap. */
-char *zMapGetAppName(void) ;
-char *zMapGetAppVersionString(void) ;
-char *zMapGetAppTitle(void) ;
-char *zMapGetCopyrightString(void) ;
-char *zMapGetWebSiteString(void) ;
-char *zMapGetCommentsString(void) ;
-char *zMapGetLicenseString(void) ;
-gboolean zMapCompareVersionStings(char *reference_version, char *test_version, GError **error) ;
-char *zMapGetCompileString(void) ;
+const char *zMapGetAppName(void) ;
+const char *zMapGetAppVersionString(void) ;
+const char *zMapGetAppTitle(void) ;
+const char *zMapGetCopyrightString(void) ;
+const char *zMapGetWebSiteString(void) ;
+const char *zMapGetCommentsString(void) ;
+const char *zMapGetLicenseString(void) ;
+gboolean zMapCompareVersionStings(const char *reference_version, const char *test_version, GError **error) ;
+const char *zMapGetCompileString(void) ;
 
 gboolean zMapUtilsConfigDebug(char *config_file) ;
 
@@ -232,9 +236,9 @@ void *zMapUtilsStr2Ptr(char *ptr_str) ;
 char zMapInt2Char(int num) ;
 
 gboolean zMapStr2Bool(char *str, gboolean *bool_out) ;
-gboolean zMapStr2Int(char *str_in, int *int_out) ;
+gboolean zMapStr2Int(const char *str_in, int *int_out) ;
 gboolean zMapInt2Str(int int_in, char **str_out) ;
-gboolean zMapStr2LongInt(char *str, long int *long_int_out) ;
+gboolean zMapStr2LongInt(const char *str, long int *long_int_out) ;
 gboolean zMapStr2Float(char *str, float *float_out) ;
 gboolean zMapStr2Double(char *str, double *double_out) ;
 
@@ -261,7 +265,7 @@ gboolean zMapUtilsUserSetDeveloper(char *passwd) ;
 
 void zMapPrintQuark(GQuark quark) ;
 void zMapLogQuark(GQuark quark) ;
-gboolean zMapLogQuarkIsStr(GQuark quark, char *str) ;
+gboolean zMapLogQuarkIsStr(GQuark quark, const char *str) ;
 gboolean zMapLogQuarkIsExactStr(GQuark quark, char *str) ;
 gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str) ;
 
@@ -273,13 +277,17 @@ void zMapCoordsToOffset(int base, int start_value, int *start_inout, int *end_in
 /* zmapRadixSort.c */
 #define RADIX_BITS      8           /* this will never change so don't*/
 typedef guint ZMapRadixKeyFunc (gconstpointer thing,int digit);
-GList * zMapRadixSort(GList *list, ZMapRadixKeyFunc *key_func,int key_size);
+GList * zMapRadixSort(GList *list_arg, ZMapRadixKeyFunc *key_func,int key_size);
 
 gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromsome_out, int *start_out, int *end_out) ;
 gboolean zMapUtilsBioParseChromNumber(char *chromosome_str, char **chromosome_out) ;
 
 #endif /* ZMAP_UTILS_H */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 }
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+

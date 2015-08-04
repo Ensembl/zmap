@@ -123,7 +123,7 @@ ZMAP_MAGIC_NEW(mark_magic_G, ZMapWindowMarkStruct) ;
 
 
 /*! mark_bitmap_bits_G is the definition of the default stipple. */
-static char mark_bitmap_bits_G[] =
+static unsigned char mark_bitmap_bits_G[] =
   {
     0x11, 0x11,
     0x22, 0x22,
@@ -217,7 +217,7 @@ ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
 
   zmapWindowMarkSetColour(mark, ZMAP_WINDOW_ITEM_MARK) ;
 
-  mark->stipple = gdk_bitmap_create_from_data(NULL, &mark_bitmap_bits_G[0], mark_bitmap_width, mark_bitmap_height) ;
+  mark->stipple = gdk_bitmap_create_from_data(NULL, (gchar *)&mark_bitmap_bits_G[0], mark_bitmap_width, mark_bitmap_height) ;
 
   return mark ;
 }
@@ -319,23 +319,23 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
             {
               if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
                 {
-                  GList *list = NULL;
+                  GList *glist = NULL;
                   ZMapStrand set_strand ;
                   ZMapFrame set_frame ;
                   gboolean result ;
                   double rootx1, rooty1, rootx2, rooty2 ;
 
                   result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
-                  list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
+                  glist = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
                                                          zMapFeatureStrand2Str(set_strand),
                                                          zMapFeatureFrame2Str(set_frame),
                                                          feature) ;
 
-                  zmapWindowGetMaxBoundsItems(window, list, &rootx1, &rooty1, &rootx2, &rooty2) ;
+                  zmapWindowGetMaxBoundsItems(window, glist, &rootx1, &rooty1, &rootx2, &rooty2) ;
 
                   zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
 
-                  g_list_free(list) ;
+                  g_list_free(glist) ;
                 }
               else
                 {
@@ -439,7 +439,7 @@ void zmapWindowMarkShowMark(ZMapWindowMark mark)
  *
  * \return nothing.
  */
-void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour)
+void zmapWindowMarkSetColour(ZMapWindowMark mark, const char *colour)
 {
   if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
     return ;

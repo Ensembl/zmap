@@ -94,7 +94,7 @@ static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,
                                              GQuark id, ZMapStrand strand, ZMapFrame frame) ;
 static void removeList(gpointer data, gpointer user_data_unused) ;
 
-static gboolean in_user_hidden_stack(GQueue *queue, FooCanvasItem *item) ;
+static gboolean in_user_hidden_stack(GQueue *gqueue, FooCanvasItem *item) ;
 static gint find_item_in_user_hidden_stack(gconstpointer list_data, gconstpointer item_data) ;
 
 static void column_hide_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
@@ -128,7 +128,7 @@ void zMapWindowContainerFeatureSetColumnHide(ZMapWindow window, GQuark column_id
   zmapWindowContainerUtilsExecute(window->feature_root_group,
                                   ZMAPCONTAINER_LEVEL_FEATURESET,
                                   column_hide_cb,
-                                  (gpointer)column_id);
+                                  GINT_TO_POINTER(column_id));
 }
 
 
@@ -138,7 +138,7 @@ void zMapWindowContainerFeatureSetColumnShow(ZMapWindow window, GQuark column_id
   zmapWindowContainerUtilsExecute(window->feature_root_group,
                                   ZMAPCONTAINER_LEVEL_FEATURESET,
                                   column_show_cb,
-                                  (gpointer)column_id);
+                                  GINT_TO_POINTER(column_id));
 }
 
 
@@ -166,7 +166,7 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
   gobject_class->set_property = zmap_window_item_feature_set_set_property;
   gobject_class->get_property = zmap_window_item_feature_set_get_property;
 
-  parent_class_G = g_type_class_peek_parent(container_set_class);
+  parent_class_G = (GObjectClass *)g_type_class_peek_parent(container_set_class);
 
   group_class->obj_size = sizeof(zmapWindowContainerFeatureSetStruct) ;
   group_class->obj_total = 0 ;
@@ -292,10 +292,10 @@ static void zmap_window_item_feature_set_set_property(GObject      *gobject,
       //      container_feature_set->style_table = g_value_get_pointer(value) ;
       //      break ;
     case ITEM_FEATURE_SET_USER_HIDDEN_ITEMS:
-      container_feature_set->user_hidden_stack = g_value_get_pointer(value) ;
+      container_feature_set->user_hidden_stack = (GQueue *)g_value_get_pointer(value) ;
       break ;
     case ITEM_FEATURE_SET_VISIBLE:
-      container_feature_set->display_state = g_value_get_uint(value) ;
+      container_feature_set->display_state = (ZMapStyleColumnDisplayState)g_value_get_uint(value) ;
       break ;
     case ITEM_FEATURE_SET_HIDDEN_BUMP_FEATURES:
       container_feature_set->hidden_bump_features = g_value_get_boolean(value) ;
@@ -380,7 +380,7 @@ GType zmapWindowContainerFeatureSetGetType(void)
       group_type = g_type_register_static (ZMAP_TYPE_CONTAINER_GROUP,
                                            ZMAP_WINDOW_CONTAINER_FEATURESET_NAME,
                                            &group_info,
-                                           0);
+                                           (GTypeFlags)0);
     }
 
   return group_type;
@@ -397,7 +397,7 @@ gboolean zMapWindowContainerFeatureSetHasHiddenBumpFeatures(FooCanvasItem *featu
   if ((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
     {
       container = (ZMapWindowContainerFeatureSet)feature_set_container ;
-      
+
       result = container->hidden_bump_features ;
     }
 
@@ -594,17 +594,17 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
   if ((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container)))
     {
       FooCanvasGroup *group ;
-      GList *list;
+      GList *glist;
 
       group = FOO_CANVAS_GROUP(container_features) ;
 
-      for(list = group->item_list;list;)
+      for(glist = group->item_list;glist;)
         {
 
-          if(ZMAP_IS_WINDOW_FEATURESET_ITEM(list->data))
+          if(ZMAP_IS_WINDOW_FEATURESET_ITEM(glist->data))
             {
-              zMapWindowCanvasFeaturesetShowHideMasked((FooCanvasItem *) list->data, show, set_colour);
-              list = list->next;
+              zMapWindowCanvasFeaturesetShowHideMasked((FooCanvasItem *) glist->data, show, set_colour);
+              glist = glist->next;
             }
         }
     }
@@ -779,7 +779,7 @@ GList *zmapWindowContainerFeatureSetPopHiddenStack(ZMapWindowContainerFeatureSet
 
   zMapReturnValIfFail(container_set, hidden_items) ;
 
-  hidden_items = g_queue_pop_head(container_set->user_hidden_stack);
+  hidden_items = (GList *)g_queue_pop_head(container_set->user_hidden_stack);
 
   return hidden_items;
 }
@@ -1174,9 +1174,9 @@ static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,
 
       if(g->level == ZMAPCONTAINER_LEVEL_FEATURESET)
         {
-          ZMapWindowContainerFeatureSet set = ZMAP_CONTAINER_FEATURESET(g);;
+          ZMapWindowContainerFeatureSet cfeature_set = ZMAP_CONTAINER_FEATURESET(g);
 
-          if(set->unique_id == id && set->frame == frame && set->strand == strand)
+          if(cfeature_set->unique_id == id && cfeature_set->frame == frame && cfeature_set->strand == strand)
             return g;
         }
       else
@@ -1201,11 +1201,11 @@ static void removeList(gpointer data, gpointer user_data_unused)
 
 
 
-static gboolean in_user_hidden_stack(GQueue *queue, FooCanvasItem *item)
+static gboolean in_user_hidden_stack(GQueue *gqueue, FooCanvasItem *item)
 {
   gboolean result = FALSE;
   GList *found;
-  if((found = g_queue_find_custom(queue, item, find_item_in_user_hidden_stack)))
+  if((found = g_queue_find_custom(gqueue, item, find_item_in_user_hidden_stack)))
     result = TRUE;
   return result;
 }
@@ -1214,9 +1214,9 @@ static gboolean in_user_hidden_stack(GQueue *queue, FooCanvasItem *item)
 
 static gint find_item_in_user_hidden_stack(gconstpointer list_data, gconstpointer item_data)
 {
-  GList *list = (GList *)list_data, *found;;
+  GList *glist = (GList *)list_data, *found;;
   gint result = -1;
-  if((found = g_list_find(list, item_data)))
+  if((found = g_list_find(glist, item_data)))
     result = 0;
   return result;
 }
@@ -1237,7 +1237,7 @@ static void column_hide_cb(ZMapWindowContainerGroup container, FooCanvasPoints *
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-        GQuark column_id = (GQuark) user_data ;
+        GQuark column_id = (GQuark) GPOINTER_TO_INT(user_data) ;
         ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet)container ;
 
         if (column_id == container_set->unique_id)
@@ -1265,7 +1265,7 @@ static void column_show_cb(ZMapWindowContainerGroup container, FooCanvasPoints *
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-        GQuark column_id = (GQuark) user_data ;
+        GQuark column_id = (GQuark) GPOINTER_TO_INT(user_data) ;
         ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet)container ;
 
         if (column_id == container_set->unique_id)

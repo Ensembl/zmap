@@ -149,7 +149,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
       for (i = 0 ; i < INFO_PANEL_LABELS ; i++)
         {
           if (i == 0)
-            text[i] = "" ;    /* placeholder stops panel disappearing. */
+            text[i] = g_strdup("") ;    /* placeholder stops panel disappearing. */
           else
             text[i] = tooltip[i] = NULL ;
         }

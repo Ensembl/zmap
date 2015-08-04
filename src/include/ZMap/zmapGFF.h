@@ -85,6 +85,7 @@ typedef struct ZMapGFFAttributeFlagsStruct_
   unsigned int target      : 1 ;
   unsigned int variation   : 1 ;
   unsigned int sequence    : 1 ;
+  unsigned int evidence    : 1 ;
 } ZMapGFFAttributeFlagsStruct, *ZMapGFFAttributeFlags;
 
 /*
@@ -221,5 +222,6 @@ gboolean zMapWriteAttributeVariation(ZMapFeature, GString *) ;
 gboolean zMapWriteAttributeTarget(ZMapFeature, GString *) ;
 gboolean zMapWriteAttributePercentID(ZMapFeature, GString *) ;
 gboolean zMapWriteAttributeGap(ZMapFeature, GString *) ;
+gboolean zMapWriteAttributeEvidence(ZMapFeature, GString *) ;
 
 #endif /* ZMAP_GFF_H */

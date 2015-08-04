@@ -3,7 +3,7 @@
 
 
 # the bootstrap script makes the file zmap_version.m4 and puts zmap's current
-# version in it as the macro VERSION_NUMBER which is used in ac_init below.
+# version in it as the macro VERSION_NUMBER which is used in AC_INIT() below.
 m4_include([zmap_version.m4])
 
 
@@ -14,7 +14,7 @@ AC_INIT([ZMap], [VERSION_NUMBER], [zmap@sanger.ac.uk], [zmap], [http://www.sange
 AC_CONFIG_AUX_DIR([config])
 
 # check we can find the source
-AC_CONFIG_SRCDIR([zmapApp/zmapAppmain_c.c])
+AC_CONFIG_SRCDIR([zmapApp/zmapAppmain_c.cc])
 AC_CONFIG_HEADERS([config.h])
 
 # try it....
@@ -42,15 +42,106 @@ AC_CHECK_PROG(GLIB_GENMARSHAL, glib-genmarshal, glib-genmarshal)
 
 
 
+# External libraries
+#
+# Note that macros for external libraries define the same symbol as:
+#    - an automake variable via AM_CONDITIONAL
+#    - a macro available to the compiler via AC_DEFINE
+#    - a shell variable via AC_SUBST
+#
 
 
-# Check if we have mysql
-AX_LIB_MYSQL()
+# Check for aceconn
+#
+AM_CONDITIONAL([USE_ACECONN], [ test -f "$srcdir/AceConn/configure.ac" ])
+AM_COND_IF([USE_ACECONN],
+           [AC_DEFINE([USE_ACECONN], [1], [AceConn interface is available.])])
+AM_COND_IF([USE_ACECONN],
+           [AC_SUBST([USE_ACECONN], [use_aceconn])])
 
-# Only enable ensembl if we have mysql available
-AM_CONDITIONAL([USE_ENSEMBL], [ test -n "$MYSQL_VERSION" ])
-AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -f "$srcdir/ensc-core/src/Makefile" ])
+# Check for ensembl
+#
+# check is more complex:
+#  - we need to check whether mysql is available
+#  - then we check to see if the developer requested that zmap reference
+#    ensembl but we do not build it locally, it's found from LDFLAGS specified by the developer.
+#  - then we check to see if the developer wants to build it locally by checking for the makefile.
+#
+# Note that the below seems arcane and it is, but that's autoconf/automake for you....
+#
 
+# Check for mysql
+AX_LIB_MYSQL()           # Standard macro to test for mysql
+AM_CONDITIONAL([HAVE_MYSQL], [ test -n "$MYSQL_VERSION" ])
+AM_COND_IF([HAVE_MYSQL],
+           [AC_SUBST(HAVE_MYSQL, 'mysql is available')])
+
+#AM_COND_IF([HAVE_MYSQL],
+#           [ echo 'MYSQL IS AVAILABLE !!!' ])
+
+# If we have mysql then check for develop asking to reference but not build ensembl extension, also
+# check whether developer asked for local build of ensembl. Note that autogen.sh makes these
+# two options mutually exclusive.
+AM_COND_IF([HAVE_MYSQL],
+           [AM_CONDITIONAL([REFERENCE_ENSEMBL], [ test -f "$srcdir/ensembl_ref_but_no_build" ])])
+ 
+AM_COND_IF([HAVE_MYSQL],
+           [AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -f "$srcdir/ensc-core/src/Makefile" ])])
+
+#AM_COND_IF([REFERENCE_ENSEMBL],
+#           [ echo 'ENSEMBL IS AVAILABLE BUT WE ARE ONLY REFERENCING IT !!!' ])
+
+#AM_COND_IF([USE_ENSEMBL_SUBDIR],
+#           [ echo 'ENSEMBL IS AVAILABLE AND WE ARE BUILDING IT LOCALLY !!!' ])
+
+# ok....we need a bit of indirection here to create a shell variable we can use in a test
+# to set USE_ENSEMBL which must be set for the build.
+AM_COND_IF([REFERENCE_ENSEMBL],
+           [AC_SUBST(NEED_ENSEMBL, 'need ensembl')])
+
+AM_COND_IF([USE_ENSEMBL_SUBDIR],
+           [AC_SUBST(NEED_ENSEMBL, 'need ensembl')])
+
+AM_CONDITIONAL([USE_ENSEMBL], [ test -n "$NEED_ENSEMBL" ])
+
+#AM_COND_IF([USE_ENSEMBL],
+#           [ echo 'USE_ENSEMBL IS DEFINED !!!' ])
+
+AM_COND_IF([USE_ENSEMBL],
+           [AC_DEFINE([USE_ENSEMBL], [1], [ 'Ensembl interface is available' ])])
+AM_COND_IF([USE_ENSEMBL],
+           [AC_SUBST(USE_ENSEMBL, 'Ensembl interface is available')])
+
+# For local builds copy the ensc-core code to the build directory.
+AM_COND_IF([USE_ENSEMBL_SUBDIR],
+           [AC_DEFINE([USE_ENSEMBL_SUBDIR], [1], [Ensembl interface is built as a subdirectory of ZMap.])])
+AM_COND_IF([USE_ENSEMBL_SUBDIR],
+           [AC_SUBST([USE_ENSEMBL_SUBDIR], [use_ensembl_subdir])])
+AM_COND_IF([USE_ENSEMBL_SUBDIR],
+           [ cp -r $srcdir/ensc-core . ])
+
+
+# Check for htslib
+#
+AM_CONDITIONAL([USE_HTSLIB], [ test -f "$srcdir/htslib/configure.ac" ])
+AM_COND_IF([USE_HTSLIB],
+           [AC_DEFINE([USE_HTSLIB], [1], [Htslib interface is available.])])
+AM_COND_IF([USE_HTSLIB],
+           [AC_SUBST([USE_HTSLIB], [use_htslib])])
+AM_COND_IF([USE_HTSLIB],
+           [ cp -r $srcdir/htslib . ])
+
+# Check for zeromq
+#
+AM_CONDITIONAL([USE_ZEROMQ], [ test -f "$srcdir/zeromq/configure" ])
+AM_COND_IF([USE_ZEROMQ],
+           [AC_DEFINE([USE_ZEROMQ], [1], [Zeromq interface is available.])])
+AM_COND_IF([USE_ZEROMQ],
+           [AC_SUBST([USE_ZEROMQ], [use_zeromq])])
+
+
+# Set ZMap version number
+#
 # Check if this is a Git repository and, if so, use output
 # of git describe abbreviated to just tag which for us is the version string.
 # otherwise use PACKAGE_VERSION which will include info about the current
@@ -68,9 +159,10 @@ echo \
  Welcome to ./configure for $PACKAGE_STRING
  Cmd: $0 $@
  Environment:
-   LDFLAGS          : $LDFLAGS
-   CFLAGS           : $CFLAGS
    CC               : $CC
+   CFLAGS           : $CFLAGS
+   LD               : $LD
+   LDFLAGS          : $LDFLAGS
    PATH             : $PATH
    PACKAGE_CFG      : $PKG_CONFIG
    PACKAGE_CFG_PATH : $PKG_CONFIG_PATH
@@ -172,10 +264,28 @@ AC_DISABLE_SHARED
 AC_ENABLE_STATIC
 
 
-AC_PROG_LIBTOOL
-AM_INIT_AUTOMAKE
 
-AC_LANG(C)
+AC_PROG_CXXCPP
+AC_PROG_CXX
+
+
+AM_PROG_CC_C_O
+
+#AC_PROG_CC
+
+AC_PROG_LIBTOOL
+
+
+
+
+# Tell make to use the ustar tar format as this allows file paths longer than 99 chars.
+#
+AM_INIT_AUTOMAKE([tar-ustar])
+
+
+#AC_LANG(C)
+#AC_LANG([C++])
+
 
 
 
@@ -198,13 +308,21 @@ AC_ARG_ENABLE(profile,
         AS_HELP_STRING(--enable-profile,enable profiling debug info compilation (no)),
         prof=$enableval, prof=no)
 
-if test "x$prof" = "xyes"; then
-   CFLAGS="$CFLAGS -pg -g";
-elif test "x$deb" = "xyes"; then
-   CFLAGS="$CFLAGS -g";
-else
-   CFLAGS="$CFLAGS -O2";
-fi
+# um....what's this all about.....-O2 should _not_ be the default....
+#if test "x$prof" = "xyes"; then
+#   CFLAGS="$CFLAGS -pg -g";
+#elif test "x$deb" = "xyes"; then
+#   CFLAGS="$CFLAGS -g";
+#else
+#   CFLAGS="$CFLAGS -O2";
+#fi
+
+CFLAGS="$CFLAGS -g";
+
+# flags that we could potentially use for warnings are:
+#     -Wpedantic -Wall -Wextra
+#
+CXXFLAGS='-g'
 
 AC_SUBST(PKG_CONFIG)
 AC_SUBST(CFLAGS)
@@ -414,6 +532,9 @@ zmapView \
 zmapWindow \
 zmapXML"
 
+
+# this needs to go....we just don't it any more....
+#
 AC_SUBST(ZMAP_SRC_DIRS)
 ZMAP_SRC_DIRS_DOXYGEN=""
 for zm_srcdir in $ZMAP_SRC_DIRS
@@ -463,15 +584,20 @@ zmap.pc
 dotZMap:dotZmap.in
 ])
 
+
+
 # We've decided not to the doxygen stuff, no one uses it.
 #
 #$srcdir/$DX_CONFIG:Doxyfile.in
 #
 
 
-# Build the aceconn package.
+# Run autoconf in the aceconn directory.
 #
-AC_CONFIG_SUBDIRS([AceConn])
+AM_COND_IF([USE_ACECONN],
+           [AC_CONFIG_SUBDIRS([AceConn])])
+
+
 
 # Build the gbtools library, if it exists. (This can be optionally
 # copied into the zmap tree and we build it. Otherwise, the user
@@ -482,6 +608,14 @@ AC_CONFIG_SUBDIRS([gbtools])
 fi
 
 AM_CONDITIONAL([USE_GBTOOLS], [test -e "$srcdir/gbtools/configure.ac"])
+
+
+# Run autoconf in the htslib directory.
+#
+AM_COND_IF([USE_HTSLIB],
+           [AC_CONFIG_SUBDIRS([htslib])])
+
+
 
 # Build the zeromq package, complicated because we need to tell it to build the
 # static library as well as the dynamic. I got this recipe from:
@@ -515,6 +649,14 @@ AC_CONFIG_SUBDIRS([zeromq])
 #
 AC_OUTPUT
 
+
+echo
+echo "             srcdir = $srcdir"
+echo "      ac_top_srcdir = $ac_top_srcdir"
+echo "ac_top_build_prefix = $ac_top_build_prefix"
+echo "          ac_srcdir = $ac_srcdir"
+echo
+
 echo \
 "---------------------------------------------------------------------
 
@@ -530,11 +672,49 @@ echo \
      <program> - build specific program
 "
 
-if test -z "$MYSQL_VERSION"
+if test -z "$USE_ACECONN"
 then
-  echo " Warning: MySql is not installed; Ensembl server will be disabled"
+  echo " Warning: AceConn is not installed so Acedb server access is disabled."
+  echo
+fi
+
+if test -z "$HAVE_MYSQL"
+then
+  echo " Warning: MySql is not installed so Ensembl server access is disabled."
+  echo
+fi
+
+if test -z "$USE_ENSEMBL"
+then
+  echo " Warning: ensc-core is not installed so Ensembl server access is disabled."
+  echo
+fi
+
+if test -z "$USE_HTSLIB"
+then
+  echo " Warning: htslib is not installed so BAM/CRAM/VCF handling is disabled."
+  echo
+fi
+
+if test -z "$USE_ZEROMQ"
+then
+  echo " Warning: zeromq is not installed so RemoteControl is disabled."
   echo
 fi
 
 echo "---------------------------------------------------------------------
 "
+
+
+
+# debug.....
+#echo "====== debugging......"
+#echo "CC = $CC"
+#echo "CFLAGS = $CFLAGS"
+#
+#echo "CXX = $CXX"
+#echo "CXXFLAGS = $CXXFLAGS"
+#
+#echo "LDFLAGS = $LDFLAGS"
+#
+

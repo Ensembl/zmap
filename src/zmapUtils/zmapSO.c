@@ -41,8 +41,8 @@
 /* struct for SO stuff....only putting in SO_accession and SO_term for now but could add description later. */
 typedef struct SOEntryStructName
 {
-  char *accession ;
-  char *term ;
+  const char *accession ;
+  const char *term ;
 } SOEntryStruct, *SOEntry ;
 
 
@@ -63,9 +63,9 @@ static SOEntry findSOentry(GQuark SO_acc) ;
 
 /* Given the SO accession as a quark will return the SO_term (e.g. "exon") as
  * a string. */
-char *zMapSOAcc2Term(GQuark SO_accession)
+const char *zMapSOAcc2Term(GQuark SO_accession)
 {
-  char *SO_term = NULL ;
+  const char *SO_term = NULL ;
 
   if (SO_accession)
     {
@@ -136,28 +136,28 @@ GQuark zMapSOVariation2SO(char *variation_str)
 
   if (!insertion_exp)
     {
-      deletion_exp = g_regex_new("-/[ACGT]+", 0, 0, NULL) ;
-      lots_deletion_exp = g_regex_new("-/\\([0-9]+ BP DELETION\\)", 0, 0, NULL) ;
-      insertion_exp = g_regex_new("\\([0-9]+ BP INSERTION\\/-", 0, 0, NULL) ;
-      lots_insertion_exp = g_regex_new("[ACGT]+/-", 0, 0, NULL) ;
-      snp_exp = g_regex_new("[ACGT]/[ACGT]", 0, 0, NULL) ;
-      substitution_exp = g_regex_new("[ACGT]+/[ACGT]+", 0, 0, NULL) ;
-      alteration_exp = g_regex_new("([ACGT]*|-)/([ACGT]*|-)/([ACGT]*|-)", 0, 0, NULL) ;
+      deletion_exp = g_regex_new("-/[ACGT]+", (GRegexCompileFlags)0, (GRegexMatchFlags)0, NULL) ;
+      lots_deletion_exp = g_regex_new("-/\\([0-9]+ BP DELETION\\)", (GRegexCompileFlags)0, (GRegexMatchFlags)0, NULL) ;
+      insertion_exp = g_regex_new("\\([0-9]+ BP INSERTION\\/-", (GRegexCompileFlags)0, (GRegexMatchFlags)0, NULL) ;
+      lots_insertion_exp = g_regex_new("[ACGT]+/-", (GRegexCompileFlags)0, (GRegexMatchFlags)0, NULL) ;
+      snp_exp = g_regex_new("[ACGT]/[ACGT]", (GRegexCompileFlags)0, (GRegexMatchFlags)0, NULL) ;
+      substitution_exp = g_regex_new("[ACGT]+/[ACGT]+", (GRegexCompileFlags)0, (GRegexMatchFlags)0, NULL) ;
+      alteration_exp = g_regex_new("([ACGT]*|-)/([ACGT]*|-)/([ACGT]*|-)", (GRegexCompileFlags)0, (GRegexMatchFlags)0, NULL) ;
     }
 
-  if (g_regex_match(alteration_exp, variation_str, 0, NULL))
+  if (g_regex_match(alteration_exp, variation_str, (GRegexMatchFlags)0, NULL))
     var_id = g_quark_from_string(SO_ACC_SEQ_ALT) ;
-  else if (g_regex_match(insertion_exp, variation_str, 0, NULL)
-   || g_regex_match(lots_insertion_exp, variation_str, 0, NULL)
+  else if (g_regex_match(insertion_exp, variation_str, (GRegexMatchFlags)0, NULL)
+   || g_regex_match(lots_insertion_exp, variation_str, (GRegexMatchFlags)0, NULL)
    || g_ascii_strcasecmp("(LARGEINSERTION)/-", variation_str) == 0)
     var_id = g_quark_from_string(SO_ACC_INSERTION) ;
-  else if (g_regex_match(deletion_exp, variation_str, 0, NULL)
-   || g_regex_match(lots_deletion_exp, variation_str, 0, NULL)
+  else if (g_regex_match(deletion_exp, variation_str, (GRegexMatchFlags)0, NULL)
+   || g_regex_match(lots_deletion_exp, variation_str, (GRegexMatchFlags)0, NULL)
    || g_ascii_strcasecmp("-/(LARGEDELETION)", variation_str) == 0)
     var_id = g_quark_from_string(SO_ACC_DELETION) ;
-  else if (g_regex_match(snp_exp, variation_str, 0, NULL))
+  else if (g_regex_match(snp_exp, variation_str, (GRegexMatchFlags)0, NULL))
     var_id = g_quark_from_string(SO_ACC_SNP) ;
-  else if (g_regex_match(substitution_exp, variation_str, 0, NULL))
+  else if (g_regex_match(substitution_exp, variation_str, (GRegexMatchFlags)0, NULL))
     var_id = g_quark_from_string(SO_ACC_SUBSTITUTION) ;
   else if (g_ascii_strcasecmp("CNV_PROBE", variation_str) == 0)
     var_id = g_quark_from_string(SO_ACC_CNV) ;
@@ -262,7 +262,7 @@ static SOEntry findSOentry(GQuark SO_acc)
 {
   SOEntry SO_entry ; ;
 
-  SO_entry = g_hash_table_lookup(getHashTable(), GINT_TO_POINTER(SO_acc)) ;
+  SO_entry = (SOEntry)g_hash_table_lookup(getHashTable(), GINT_TO_POINTER(SO_acc)) ;
 
   return SO_entry ;
 }

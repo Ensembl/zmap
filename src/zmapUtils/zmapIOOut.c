@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -74,9 +74,9 @@ ZMapIOOut zMapOutCreateStr(char *init_value, int size)
   out = allocIOOut(ZMAPIO_STRING) ;
 
   if (size > 0)
-    out->output.string = g_string_new_len(init_value, size) ;
+    out->output.string_value = g_string_new_len(init_value, size) ;
   else
-    out->output.string = g_string_new(init_value) ;
+    out->output.string_value = g_string_new(init_value) ;
 
   return out ;
 }
@@ -123,7 +123,7 @@ ZMapIOOut zMapOutCreateFile(char *full_path, char *mode, GError **error_out)
                                  "No error returned from g_io_channel_new_file!",
                                  full_path, mode);
     }
-  
+
   return out;
 }
 
@@ -132,13 +132,13 @@ char *zMapOutGetStr(ZMapIOOut out)
   char *str = NULL ;
 
   /* zMapAssert(zMapOutValid(out)) ; */
-  if (!zMapOutValid(out)) 
+  if (!zMapOutValid(out))
     return str ;
 
   if (out->type != ZMAPIO_STRING)
     zMapLogWarning("%s", "zMapOutGetStr() failed, zMapIOOut does not contain a string.") ;
   else
-    str = out->output.string->str ;
+    str = out->output.string_value->str ;
 
   return str ;
 }
@@ -149,14 +149,14 @@ gboolean zMapOutWrite(ZMapIOOut out, char *text)
   gboolean result = FALSE ;
 
   /* zMapAssert(zMapOutValid(out) && text && *text) ;*/
-  if (!zMapOutValid(out) || !text || !*text) 
+  if (!zMapOutValid(out) || !text || !*text)
     return result ;
 
   switch (out->type)
     {
     case ZMAPIO_STRING:
       {
-        out->output.string = g_string_append(out->output.string, text) ;
+        out->output.string_value = g_string_append(out->output.string_value, text) ;
 
         result = TRUE ;
         break ;
@@ -184,14 +184,14 @@ gboolean zMapOutWrite(ZMapIOOut out, char *text)
 
 
 
-gboolean zMapOutWriteFormat(ZMapIOOut out, char *format, ...)
+gboolean zMapOutWriteFormat(ZMapIOOut out, const char *format, ...)
 {
   gboolean result = FALSE ;
   va_list args ;
   char *msg_string ;
 
   /* zMapAssert(zMapOutValid(out) && format && *format) ;*/
-  if (!zMapOutValid(out) || !format || !*format) 
+  if (!zMapOutValid(out) || !format || !*format)
     return result ;
 
   switch (out->type)
@@ -203,7 +203,7 @@ gboolean zMapOutWriteFormat(ZMapIOOut out, char *format, ...)
         msg_string = g_strdup_vprintf(format, args) ;
         va_end(args) ;
 
-        out->output.string = g_string_append(out->output.string, msg_string) ;
+        out->output.string_value = g_string_append(out->output.string_value, msg_string) ;
 
         g_free(msg_string) ;
         result = TRUE ;
@@ -246,7 +246,7 @@ char *zMapOutErrorGetString(ZMapIOOut out)
   char *err_text = NULL ;
 
   /* zMapAssert(zMapOutValid(out)) ;*/
-  if (!zMapOutValid(out)) 
+  if (!zMapOutValid(out))
     return err_text ;
 
   if (out->g_error)
@@ -261,7 +261,7 @@ char *zMapOutErrorGetString(ZMapIOOut out)
 void zMapOutErrorClear(ZMapIOOut out)
 {
   /* zMapAssert(zMapOutValid(out)) ; */
-  if (!zMapOutValid(out)) 
+  if (!zMapOutValid(out))
     return ;
 
   if (out->g_error)
@@ -275,14 +275,14 @@ void zMapOutErrorClear(ZMapIOOut out)
 void zMapOutDestroy(ZMapIOOut out)
 {
   /* zMapAssert(zMapOutValid(out)) ;*/
-  if (!zMapOutValid(out)) 
+  if (!zMapOutValid(out))
     return ;
 
   switch (out->type)
     {
     case ZMAPIO_STRING:
       {
-        g_string_free(out->output.string, TRUE) ;
+        g_string_free(out->output.string_value, TRUE) ;
         break ;
       }
     case ZMAPIO_FILE:
@@ -312,8 +312,8 @@ void zMapOutDestroy(ZMapIOOut out)
 
 
 
-/* 
- *                Internal functions 
+/*
+ *                Internal functions
  */
 
 
@@ -321,7 +321,7 @@ static ZMapIOOut allocIOOut(ZMapIOType type)
 {
   ZMapIOOut out ;
 
-  out = g_slice_alloc0(sizeof(ZMapIOOutStruct)) ;
+  out = (ZMapIOOut)g_slice_alloc0(sizeof(ZMapIOOutStruct)) ;
   out->valid = IO_valid_str_G ;
   out->type = type ;
 

@@ -85,11 +85,11 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any, GHashTable *
                                         GString *dump_string_in_out, GError **error, gpointer user_data) ;
 
 GString *feature2Text(GString *feature_str, ZMapFeature feature) ;
-static GString *basicFeature2Txt(GString *result_in, char *indent, ZMapFeature feature) ;
-static GString *alignFeature2Txt(GString *result_in, char *indent, ZMapFeature feature) ;
-static GString *transcriptFeature2Txt(GString *result_in, char *indent, ZMapFeature feature) ;
-static GString *assemblyFeature2Txt(GString *result_in, char *indent, ZMapFeature feature) ;
-static GString *sequenceFeature2Txt(GString *result_in, char *indent, ZMapFeature feature) ;
+static GString *basicFeature2Txt(GString *result_in, const char *indent, ZMapFeature feature) ;
+static GString *alignFeature2Txt(GString *result_in, const char *indent, ZMapFeature feature) ;
+static GString *transcriptFeature2Txt(GString *result_in, const char *indent, ZMapFeature feature) ;
+static GString *assemblyFeature2Txt(GString *result_in, const char *indent, ZMapFeature feature) ;
+static GString *sequenceFeature2Txt(GString *result_in, const char *indent, ZMapFeature feature) ;
 
 
 
@@ -162,7 +162,8 @@ gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GHash
 }
 
 
-gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *filename, char *header, GHashTable *styles, GError **error_out)
+gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context, const char *filename, const char *header,
+                                   GHashTable *styles, GError **error_out)
 {
   gboolean result = FALSE ;
   GIOChannel *file ;
@@ -494,8 +495,8 @@ char   **err_out)
       if (dump_data->channel)
         {
           GError *io_error = NULL;
-          gsize bytes_written = 0;
-          gssize bytes_to_write = dump_data->dump_string->len;
+          gsize bytes_written = 0,
+            bytes_to_write = (gsize)dump_data->dump_string->len;
           GIOStatus write_status;
 
           /* we can now print dump_data->dump_string to file */
@@ -691,8 +692,8 @@ GString *feature2Text(GString *feature_str, ZMapFeature feature)
 {
   GString *result = feature_str ;
   char *feature_mode, *style_mode ;
-  char *strand ;
-  char *indent = "" ;
+  const char *strand ;
+  const char *indent = "" ;
   gsize str_len ;
 
   /* Title */
@@ -792,7 +793,7 @@ GString *feature2Text(GString *feature_str, ZMapFeature feature)
 
 
 
-static GString *basicFeature2Txt(GString *result_in, char *indent, ZMapFeature feature)
+static GString *basicFeature2Txt(GString *result_in, const char *indent, ZMapFeature feature)
 {
   GString *result = result_in ;
 
@@ -807,11 +808,11 @@ static GString *basicFeature2Txt(GString *result_in, char *indent, ZMapFeature f
 }
 
 
-static GString *alignFeature2Txt(GString *result_in, char *indent, ZMapFeature feature)
+static GString *alignFeature2Txt(GString *result_in, const char *indent, ZMapFeature feature)
 {
   GString *result = result_in ;
   char *homol_str ;
-  char *strand ;
+  const char *strand ;
 
   /* Need to do homol type but need to set up enum stuff..... */
   homol_str = zMapFeatureHomol2Str(feature->feature.homol.type) ;
@@ -853,7 +854,7 @@ static GString *alignFeature2Txt(GString *result_in, char *indent, ZMapFeature f
 
       g_string_append_printf(result, "%sGapped align blocks:\n", indent) ;
 
-      for (i = 0 ; i < gaps_array->len ; i++)
+      for (i = 0 ; i < (int)gaps_array->len ; i++)
         {
           ZMapAlignBlock block = NULL ;
 
@@ -868,7 +869,7 @@ static GString *alignFeature2Txt(GString *result_in, char *indent, ZMapFeature f
 }
 
 
-static GString *transcriptFeature2Txt(GString *result_in, char *indent, ZMapFeature feature)
+static GString *transcriptFeature2Txt(GString *result_in, const char *indent, ZMapFeature feature)
 {
   GString *result = result_in ;
 
@@ -902,7 +903,7 @@ static GString *transcriptFeature2Txt(GString *result_in, char *indent, ZMapFeat
 
       g_string_append_printf(result, "%sExons:\n", indent) ;
 
-      for (i = 0 ; i < span_array->len ; i++)
+      for (i = 0 ; i < (int)span_array->len ; i++)
         {
           ZMapSpan span = NULL ;
 
@@ -919,10 +920,10 @@ static GString *transcriptFeature2Txt(GString *result_in, char *indent, ZMapFeat
 }
 
 
-static GString *assemblyFeature2Txt(GString *result_in, char *indent, ZMapFeature feature)
+static GString *assemblyFeature2Txt(GString *result_in, const char *indent, ZMapFeature feature)
 {
   GString *result = result_in ;
-  char *strand ;
+  const char *strand ;
 
   strand = zMapFeatureStrand2Str(feature->feature.assembly_path.strand) ;
   g_string_append_printf(result, "%sStrand = %s\n", indent, strand) ;
@@ -938,7 +939,7 @@ static GString *assemblyFeature2Txt(GString *result_in, char *indent, ZMapFeatur
 
       g_string_append_printf(result, "%sSpans:\n", indent) ;
 
-      for (i = 0 ; i < span_array->len ; i++)
+      for (i = 0 ; i < (int)span_array->len ; i++)
         {
           ZMapSpan span = NULL ;
 
@@ -954,10 +955,10 @@ static GString *assemblyFeature2Txt(GString *result_in, char *indent, ZMapFeatur
 }
 
 
-static GString *sequenceFeature2Txt(GString *result_in, char *indent, ZMapFeature feature)
+static GString *sequenceFeature2Txt(GString *result_in, const char *indent, ZMapFeature feature)
 {
   GString *result = result_in ;
-  char *sequence_type ;
+  const char *sequence_type ;
 
   if (feature->feature.sequence.name)
     g_string_append_printf(result, "%sSequence name: %s\n",

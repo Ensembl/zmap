@@ -28,9 +28,13 @@
  *-------------------------------------------------------------------
  */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifndef ZMAP_FEATURE_H
 #define ZMAP_FEATURE_H
@@ -696,7 +700,8 @@ typedef struct ZMapTranscriptStructType
   GList *variations ;                                      /* List of variations to apply to this
                                                             * transcript's sequence */
 
-
+  GList *evidence ;                                        /* List of evidence for this
+                                                            * transcript */
 } ZMapTranscriptStruct, *ZMapTranscript ;
 
 
@@ -865,7 +870,7 @@ typedef struct ZMapFeaturePartStructType
  * with quick overlap comparisons. */
 typedef struct ZMapFeaturePartsListStructType
 {
-  int min, max ;
+  int min_val, max_val ;
 
   GList *parts ;
 
@@ -926,7 +931,14 @@ _(ZMAPBOUNDARY_MATCH_TYPE_NONE,     =      0, "no_match", "No boundaries match",
 _(ZMAPBOUNDARY_MATCH_TYPE_5_MATCH,  = 1 << 0, "5'_match", "5' boundary matches", "") \
 _(ZMAPBOUNDARY_MATCH_TYPE_3_MATCH,  = 1 << 1, "3'_match", "3' boundary matches", "")
 
-ZMAP_DEFINE_ENUM(ZMapFeatureBoundaryMatchType, ZMAP_BOUNDARY_MATCH_TYPE_LIST) ;
+ZMAP_DEFINE_ENUM(ZMapFeatureBoundaryMatchTypeEnum, ZMAP_BOUNDARY_MATCH_TYPE_LIST) ;
+
+/* ZMapFeatureBoundaryMatchTypeEnum results are combined together with
+ * bit operators so they are no longer values from the ZMapFeatureBoundaryMatchTypeEnum
+ * itself. We therefore can't use this enum to store the results and must use an int
+ * instead. However, partly for historic reasons and partly because it's useful to know
+ * they're related to the enum, let's create a specific type name for these int results. */
+typedef int ZMapFeatureBoundaryMatchType ;
 
 
 typedef struct ZMapFeatureBoundaryMatchStructType
@@ -946,7 +958,7 @@ typedef struct ZMapFeatureBoundaryMatchStructType
 
 
 
-/* 
+/*
  * Struct that supplies text descriptions of the parts of a feature, which fields are filled
  * in depends on the feature type.
  */
@@ -969,13 +981,13 @@ typedef struct ZMapFeatureDescStructName
   char *feature_start ;
   char *feature_end ;
   char *feature_length ;
-  char *feature_strand ;
+  const char *feature_strand ;
   char *feature_frame ;
 
   char *feature_query_start ;
   char *feature_query_end ;
   char *feature_query_length ;
-  char *feature_query_strand ;
+  const char *feature_query_strand ;
 
 
   /* sub feature details (still all strings) */
@@ -986,7 +998,7 @@ typedef struct ZMapFeatureDescStructName
   char *sub_feature_query_end ;
   char *sub_feature_length ;
   char *sub_feature_none_txt ;                             /* If no subfeature, gives reason.... */
-  char *sub_feature_term;                                  /* Avoid monkeying all over the shop. */
+  const char *sub_feature_term;                                  /* Avoid monkeying all over the shop. */
 
   /* more specific details (more strings) */
 
@@ -1022,7 +1034,14 @@ typedef enum
     ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE    = 1 << 0,
     ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND = 1 << 1,
     ZMAP_CONTEXT_EXEC_STATUS_ERROR        = 1 << 2
-  } ZMapFeatureContextExecuteStatus;
+  } ZMapFeatureContextExecuteStatusType;
+
+/* ZMapFeatureContextExecuteStatusType results are combined together with
+ * bit operators so they are no longer values from the ZMapFeatureContextExecuteStatusType
+ * enum itself. We therefore can't use this enum to store the results and must use an int
+ * instead. However, partly for historic reasons and partly because it's useful to know
+ * they're related to the enum, let's create a specific type name for these int results. */
+typedef int ZMapFeatureContextExecuteStatus ;
 
 typedef ZMapFeatureContextExecuteStatus (*ZMapGDataRecurseFunc)(GQuark   key_id,
                                                                 gpointer list_data,
@@ -1069,24 +1088,24 @@ gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable
  */
 
 char *zMapFeatureCreateName(ZMapStyleMode feature_type,
-                            char *feature_name,
+                            const char *feature_name,
 			    ZMapStrand strand,
                             int start, int end,
                             int query_start, int query_end) ;
 GQuark zMapFeatureCreateID(ZMapStyleMode feature_type,
-                           char *feature_name,
+                           const char *feature_name,
 			   ZMapStrand strand,
                            int start, int end,
 			   int query_start, int query_end) ;
 ZMapFeature zMapFeatureCreateEmpty(void) ;
-ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *ontology,
+ZMapFeature zMapFeatureCreateFromStandardData(const char *name, const char *sequence, const char *ontology,
 					      ZMapStyleMode feature_type,
                                               ZMapFeatureTypeStyle *style,
                                               int start, int end,
                                               gboolean has_score, double score,
 					      ZMapStrand strand) ;
-gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
-				    char *sequence, char *ontology,
+gboolean zMapFeatureAddStandardData(ZMapFeature feature, const char *feature_name_id, const char *name,
+				    const char *sequence, const char *ontology,
 				    ZMapStyleMode feature_type,
 				    ZMapFeatureTypeStyle *style,
 				    int start, int end,
@@ -1105,6 +1124,7 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
                                             gboolean, gboolean, int) ;
 gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature, gboolean cds, Coord cds_start, Coord cds_end) ;
 gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest_feature);
+gboolean zMapFeatureMergeTranscriptCDSCoords(ZMapFeature dest_feature, const int cds_start, const int cds_end) ;
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 					  gboolean start_not_found_flag, int start_not_found,
 					  gboolean end_not_found_flag) ;
@@ -1170,7 +1190,7 @@ int zMapFeatureSplitCodonOffset(ZMapFeature feature, int coord) ;
 gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_string) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
-gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_text, char *feature_text) ;
+gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, const char *source_text, char *feature_text) ;
 gboolean zMapFeatureAddDescription(ZMapFeature feature, char *data ) ;
 void zMapFeatureSortGaps(GArray *gaps) ;
 int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
@@ -1184,8 +1204,8 @@ GList *zMapFeatureGetOverlapFeatures(GList *feature_list, int start, int end, ZM
 /*
  * FeatureSet funcs
  */
-GQuark zMapFeatureSetCreateID(char *feature_set_name) ;
-ZMapFeatureSet zMapFeatureSetCreate(char *source, GHashTable *features) ;
+GQuark zMapFeatureSetCreateID(const char *feature_set_name) ;
+ZMapFeatureSet zMapFeatureSetCreate(const char *source, GHashTable *features) ;
 ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
 				      ZMapFeatureTypeStyle style, GHashTable *features) ;
 gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
@@ -1323,7 +1343,7 @@ void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
  * Utils funcs
  */
 
-int zmapFeatureRevCompCoord(int *coord, const int start, const int end);
+void zmapFeatureRevCompCoord(int *coord, const int start, const int end);
 void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2) ;
 void zMapGetFeatureExtent(ZMapFeature feature, gboolean complex, ZMapSpan span);
 void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
@@ -1348,7 +1368,8 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 /* Probably should be merged at some time.... */
 char *zMapFeatureAsString(ZMapFeature feature) ;
 gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GHashTable *styles, GError **error_out) ;
-gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *filename,char *header, GHashTable *styles, GError **error_out);
+gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context, const char *filename, const char *header,
+                                   GHashTable *styles, GError **error_out);
 gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GHashTable *styles,
 				GIOChannel *file, GError **error_out) ;
 
@@ -1423,14 +1444,14 @@ gboolean zMapFeatureTranscriptsEqual(ZMapFeature feature1, ZMapFeature feature2,
 
 gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
                                char *feature_type, ZMapStyleMode *type_out);
-char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type) ;
+const char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type) ;
 char *zMapFeatureType2Str(ZMapStyleMode type) ;
-char *zMapFeatureSubPart2Str(ZMapFeatureSubPartType subpart) ;
+const char *zMapFeatureSubPart2Str(ZMapFeatureSubPartType subpart) ;
 gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out);
-gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand);
-char *zMapFeatureStrand2Str(ZMapStrand strand) ;
+gboolean zMapFeatureStr2Strand(char *string_arg, ZMapStrand *strand);
+const char *zMapFeatureStrand2Str(ZMapStrand strand) ;
 gboolean zMapFeatureFormatFrame(char *frame_str, ZMapFrame *frame_out);
-gboolean zMapFeatureStr2Frame(char *string, ZMapFrame *frame);
+gboolean zMapFeatureStr2Frame(char *string_arg, ZMapFrame *frame);
 char *zMapFeatureFrame2Str(ZMapFrame frame) ;
 gboolean zMapFeatureFormatPhase(char *phase_str, ZMapPhase *phase_out);
 gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase);
@@ -1511,18 +1532,26 @@ gboolean zMapFeatureHasMatchingBoundaries(ZMapFeature feature,
                                           ZMapFeaturePartsList *matching_boundaries_out,
                                           ZMapFeaturePartsList *non_matching_boundaries_out) ;
 
-int zMapFeatureVariationGetSections(const char *variation_str, 
-                                    char **old_str_out, char **new_str_out, 
+int zMapFeatureVariationGetSections(const char *variation_str,
+                                    char **old_str_out, char **new_str_out,
                                     int *old_len_out, int *new_len_out) ;
 
 /* rationalise these two..... */
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 gint zMapFeatureSortFeatures(gconstpointer a, gconstpointer b) ;
 
-
+int zMapFeatureTranscriptGetCDSStart(ZMapFeature feature) ;
+int zMapFeatureTranscriptGetCDSEnd(ZMapFeature feature) ;
+GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature) ;
+void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data) ;
 
 #endif /* ZMAP_FEATURE_H */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 }
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+

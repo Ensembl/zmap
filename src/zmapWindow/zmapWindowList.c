@@ -83,7 +83,7 @@ typedef struct
 {
   ZMapWindowList window_list;
   ZMapFeature    feature;
-  GtkTreeIter   *iterator;
+  GtkTreeIter   *tree_iterator;
 } TreeViewContextMenuDataStruct, *TreeViewContextMenuData;
 
 
@@ -167,12 +167,12 @@ static gboolean windowIsReusable(void) ;
 static void feature_menu_cb(int menu_item_id, gpointer callback_data);
 static ZMapGUIMenuItem getFeatureOps(ZMapWindowList window_list,
                                      ZMapFeature    feature,
-                                     GtkTreeIter   *iterator,
+                                     GtkTreeIter   *tree_iterator,
                                      gpointer       cb_data);
 static void make_list_menu_item(ZMapWindowList  window_list,
                                 GdkEventButton *button,
                                 ZMapFeature     feature,
-                                GtkTreeIter    *iterator);
+                                GtkTreeIter    *tree_iterator);
 
 static GHashTable *default_get_ftoi_hash(gpointer user_data);
 static GList *default_search_hash_func(ZMapWindow window, GHashTable *hash_table, gpointer user_data);
@@ -188,30 +188,30 @@ static gboolean window_list_selection_get_features(ZMapWindowList window_list,
 /* menu GLOBAL! */
 static GtkItemFactoryEntry menu_items_G[] = {
  /* File */
- { "/_File",              NULL,         NULL,       0,          "<Branch>", NULL},
- { "/File/Search",        NULL,         searchCB,   0,          NULL,       NULL},
- { "/File/Preserve",      NULL,         preserveCB, 0,          NULL,       NULL},
- { "/File/Export",        NULL,         NULL,       0,          "<Branch>", NULL},
- { "/File/Export/GFF",    NULL,         exportCB,   WINLISTGFF, NULL,       NULL},
+ { (gchar *)"/_File",              NULL,         NULL,       0,          (gchar *)"<Branch>", NULL},
+ { (gchar *)"/File/Search",        NULL,         (GtkItemFactoryCallback)searchCB,   0,          NULL,       NULL},
+ { (gchar *)"/File/Preserve",      NULL,         (GtkItemFactoryCallback)preserveCB, 0,          NULL,       NULL},
+ { (gchar *)"/File/Export",        NULL,         NULL,       0,          (gchar *)"<Branch>", NULL},
+ { (gchar *)"/File/Export/GFF",    NULL,         (GtkItemFactoryCallback)exportCB,   WINLISTGFF, NULL,       NULL},
 #ifdef MORE_FORMATS
- { "/File/Export/XFF",    NULL,         exportCB,   WINLISTXFF, NULL,       NULL},
+ { (gchar *)"/File/Export/XFF",    NULL,         (GtkItemFactoryCallback)exportCB,   WINLISTXFF, NULL,       NULL},
 #endif /* MORE_FORMATS */
- { "/File/Close",         "<control>W", requestDestroyCB, 0,          NULL,       NULL},
+ { (gchar *)"/File/Close",         (gchar *)"<control>W", (GtkItemFactoryCallback)requestDestroyCB, 0,          NULL,       NULL},
  /* View */
- { "/_View",                 NULL, NULL,      0,                                 "<Branch>",    NULL},
+ { (gchar *)"/_View",                 NULL, NULL,      0,                                 (gchar *)"<Branch>",    NULL},
  /* Operate */
- { "/_Operate",                  NULL, NULL,      0,                      "<Branch>",                   NULL},
- { "/Operate/On Results",        NULL, NULL,      0,                      "<Branch>",                   NULL},
- { "/Operate/On Results/Show",   NULL, operateCB, WINLIST_RESULTS_SHOW,   "<RadioItem>",                NULL},
- { "/Operate/On Results/Hide",   NULL, operateCB, WINLIST_RESULTS_HIDE,   "/Operate/On Results/Show",   NULL},
- { "/Operate/On Selection",      NULL, NULL,      0,                      "<Branch>",                   NULL},
- { "/Operate/On Selection/Show", NULL, operateCB, WINLIST_SELECTION_SHOW, "<RadioItem>",                NULL},
- { "/Operate/On Selection/Hide", NULL, operateCB, WINLIST_SELECTION_HIDE, "/Operate/On Selection/Show", NULL},
+ { (gchar *)"/_Operate",                  NULL, NULL,      0,                      (gchar *)"<Branch>",                   NULL},
+ { (gchar *)"/Operate/On Results",        NULL, NULL,      0,                      (gchar *)"<Branch>",                   NULL},
+ { (gchar *)"/Operate/On Results/Show",   NULL, (GtkItemFactoryCallback)operateCB, WINLIST_RESULTS_SHOW,   (gchar *)"<RadioItem>",                NULL},
+ { (gchar *)"/Operate/On Results/Hide",   NULL, (GtkItemFactoryCallback)operateCB, WINLIST_RESULTS_HIDE,   (gchar *)"/Operate/On Results/Show",   NULL},
+ { (gchar *)"/Operate/On Selection",      NULL, NULL,      0,                      (gchar *)"<Branch>",                   NULL},
+ { (gchar *)"/Operate/On Selection/Show", NULL, (GtkItemFactoryCallback)operateCB, WINLIST_SELECTION_SHOW, (gchar *)"<RadioItem>",                NULL},
+ { (gchar *)"/Operate/On Selection/Hide", NULL, (GtkItemFactoryCallback)operateCB, WINLIST_SELECTION_HIDE, (gchar *)"/Operate/On Selection/Show", NULL},
  /* Help */
- { "/_Help",             NULL, NULL,       0,            "<LastBranch>", NULL},
- { "/Help/Feature List", NULL, helpMenuCB, WINLISTHELP,  NULL,           NULL},
- { "/Help/1-----------", NULL, NULL,       0,            "<Separator>",  NULL},
- { "/Help/About",        NULL, helpMenuCB, WINLISTABOUT, NULL,           NULL}
+ { (gchar *)"/_Help",             NULL, NULL,       0,            (gchar *)"<LastBranch>", NULL},
+ { (gchar *)"/Help/Feature List", NULL, (GtkItemFactoryCallback)helpMenuCB, WINLISTHELP,  NULL,           NULL},
+ { (gchar *)"/Help/1-----------", NULL, NULL,       0,            (gchar *)"<Separator>",  NULL},
+ { (gchar *)"/Help/About",        NULL, (GtkItemFactoryCallback)helpMenuCB, WINLISTABOUT, NULL,           NULL}
 };
 
 
@@ -336,7 +336,7 @@ void zmapWindowListWindowReread(GtkWidget *toplevel)
 {
   ZMapWindowList window_list ;
 
-  window_list = g_object_get_data(G_OBJECT(toplevel), ZMAP_WINDOW_LIST_OBJ_KEY) ;
+  window_list = (ZMapWindowList)g_object_get_data(G_OBJECT(toplevel), ZMAP_WINDOW_LIST_OBJ_KEY) ;
 
   window_list->context_to_item = (window_list->get_hash_func)(window_list->get_hash_data);
 
@@ -1055,7 +1055,7 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
   GIOChannel *file = NULL;
   GError *file_error = NULL;
   gboolean result = FALSE;
-  GList *list = NULL,
+  GList *glist = NULL,
     *list_feature = NULL ;
   GError                *error = NULL;
 
@@ -1092,7 +1092,7 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
            * tree selection object. The stuff using a linked list of pointers to foo canvas items
            * simply does not work, and from what I can see, never has.
            */
-          if (window_list_selection_get_features(window_list, &list, &list_feature))
+          if (window_list_selection_get_features(window_list, &glist, &list_feature))
             {
               zMapGFFDumpList(list_feature, window->context_map->styles, NULL, file, NULL, &error) ;
             }
@@ -1101,7 +1101,7 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
            * This is the old stuff:
            */
           /*
-          if(list && list->data && feature_any)
+          if(glist && glist->data && feature_any)
             {
               if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
                 zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
@@ -1111,9 +1111,9 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
                 {
                   feature_out_data = export_data.data;
 
-                  g_list_foreach(list, invoke_dump_function_cb, &export_data);
+                  g_list_foreach(glist, invoke_dump_function_cb, &export_data);
                 }
-              g_list_free(list);
+              g_list_free(glist);
 
               if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
                 zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
@@ -1321,13 +1321,13 @@ static ZMapWindowList findReusableList(GPtrArray *window_list)
       for (i = 0 ; i < window_list->len ; i++)
         {
           GtkWidget *list_widg ;
-          ZMapWindowList list ;
+          ZMapWindowList wlist ;
 
           list_widg = (GtkWidget *)g_ptr_array_index(window_list, i) ;
-          list = g_object_get_data(G_OBJECT(list_widg), ZMAP_WINDOW_LIST_OBJ_KEY) ;
-          if (list->reusable)
+          wlist = (ZMapWindowList)g_object_get_data(G_OBJECT(list_widg), ZMAP_WINDOW_LIST_OBJ_KEY) ;
+          if (wlist->reusable)
             {
-              reusable_window = list ;
+              reusable_window = wlist ;
               break ;
             }
         }
@@ -1374,7 +1374,7 @@ static void feature_menu_cb(int menu_item_id, gpointer callback_data)
 
 static ZMapGUIMenuItem getFeatureOps(ZMapWindowList window_list,
                                      ZMapFeature    feature,
-                                     GtkTreeIter   *iterator,
+                                     GtkTreeIter   *tree_iterator,
                                      gpointer       cb_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
@@ -1396,7 +1396,7 @@ static ZMapGUIMenuItem getFeatureOps(ZMapWindowList window_list,
 static void make_list_menu_item(ZMapWindowList  window_list,
                                 GdkEventButton *button,
                                 ZMapFeature     feature,
-                                GtkTreeIter    *iterator)
+                                GtkTreeIter    *tree_iterator)
 {
   TreeViewContextMenuData full_data;
   ZMapGUIMenuItem menu = NULL;
@@ -1408,9 +1408,9 @@ static void make_list_menu_item(ZMapWindowList  window_list,
   full_data = g_new0(TreeViewContextMenuDataStruct, 1);
   full_data->window_list = window_list;
   full_data->feature     = feature;
-  full_data->iterator    = iterator;
+  full_data->tree_iterator    = tree_iterator;
 
-  if((menu = getFeatureOps(window_list, feature, iterator, full_data)))
+  if((menu = getFeatureOps(window_list, feature, tree_iterator, full_data)))
     menu_sets  = g_list_append(menu_sets, menu);
 
   if(menu_sets != NULL)

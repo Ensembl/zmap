@@ -28,9 +28,13 @@
  *-------------------------------------------------------------------
  */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifndef ZMAP_XML_H
 #define ZMAP_XML_H
@@ -144,7 +148,7 @@ typedef enum
     ZMAPXMLWRITER_MISMATCHED_TAG
   } ZMapXMLWriterErrorCode;
 
-typedef enum
+typedef enum 
   {
     ZMAPXML_NULL_EVENT          = 0,
 
@@ -157,7 +161,7 @@ typedef enum
 
     ZMAPXML_UNSUPPORTED_EVENT   = 1 << 15,
     ZMAPXML_UNKNOWN_EVENT       = 1 << 16
-  } ZMapXMLWriterEventType;
+  } ZMapXMLWriterEventType ;
 
 typedef enum
   {
@@ -174,7 +178,7 @@ typedef enum
 typedef struct _ZMapXMLUtilsEventStackStruct
 {
   ZMapXMLWriterEventType event_type;
-  char *name;
+  const char *name;
   ZMapXMLWriterEventDataType data_type;
 
   union
@@ -182,7 +186,7 @@ typedef struct _ZMapXMLUtilsEventStackStruct
     int     i ;
     double  d ;
     GQuark  q ;
-    char   *s ;
+    const char *s ;
   } value ;
 
 } ZMapXMLUtilsEventStackStruct, *ZMapXMLUtilsEventStack;
@@ -206,7 +210,7 @@ typedef struct _ZMapXMLWriterEventStruct
         int    integer ;
         double flt ;
         GQuark quark ;
-	char *s ;
+	const char *s ;
       } value;
     } comp ;                    /* complex for attributes and namespaced elements */
 
@@ -247,7 +251,7 @@ typedef gboolean (*ZMapXMLMarkupObjectHandler)(void *userData, ZMapXMLElement el
 
 typedef struct ZMapXMLObjTagFunctionsStruct_
 {
-  char *element_name ;
+  const char *element_name ;
   ZMapXMLMarkupObjectHandler handler ;
 } ZMapXMLObjTagFunctionsStruct, *ZMapXMLObjTagFunctions ;
 
@@ -280,20 +284,13 @@ void zMapXMLDocumentDestroy(ZMapXMLDocument doc) ;
 ZMapXMLElement zMapXMLElementNextSibling(ZMapXMLElement ele);
 ZMapXMLElement zMapXMLElementPreviousSibling(ZMapXMLElement ele);
 
-ZMapXMLElement zMapXMLElementGetChildByPath(ZMapXMLElement parent,
-                                             char *path);
+ZMapXMLElement zMapXMLElementGetChildByPath(ZMapXMLElement parent, const char *path);
 
-ZMapXMLElement zMapXMLElementGetChildByName(ZMapXMLElement parent,
-                                             char *name);
-ZMapXMLElement zMapXMLElementGetChildByName1(ZMapXMLElement parent,
-                                              GQuark name);
-GList *zMapXMLElementGetChildrenByName(ZMapXMLElement parent,
-                                        GQuark name,
-                                        int expect);
-ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele,
-                                                   char *name);
-ZMapXMLAttribute zMapXMLElementGetAttributeByName1(ZMapXMLElement ele,
-                                                    GQuark name);
+ZMapXMLElement zMapXMLElementGetChildByName(ZMapXMLElement parent, const char *name);
+ZMapXMLElement zMapXMLElementGetChildByName1(ZMapXMLElement parent, GQuark name);
+GList *zMapXMLElementGetChildrenByName(ZMapXMLElement parent, GQuark name, int expect);
+ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele, const char *name);
+ZMapXMLAttribute zMapXMLElementGetAttributeByName1(ZMapXMLElement ele, GQuark name);
 char *zMapXMLElementStealContent(ZMapXMLElement element);
 
 
@@ -319,7 +316,7 @@ char *zMapXMLParserLastErrorMsg(ZMapXMLParser parser);
 void zMapXMLParserPauseParsing(ZMapXMLParser parser);
 
 void zMapXMLParserRaiseParsingError(ZMapXMLParser parser,
-                                    char *error_string);
+                                    const char *error_string);
 
 ZMapXMLElement zMapXMLParserGetRoot(ZMapXMLParser parser);
 
@@ -355,12 +352,12 @@ char *zMapXMLParserGetFullXMLTwig(ZMapXMLParser parser, int offset);
 
 /* WRITER */
 ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback, gpointer flush_data) ;
-ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, char *element_name);
-ZMapXMLWriterErrorCode zMapXMLWriterAttribute(ZMapXMLWriter writer, char *name, char *value);
-ZMapXMLWriterErrorCode zMapXMLWriterElementContent(ZMapXMLWriter writer, char *content);
-ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *element, gboolean full_format);
+ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, const char *element_name);
+ZMapXMLWriterErrorCode zMapXMLWriterAttribute(ZMapXMLWriter writer, const char *name, const char *value);
+ZMapXMLWriterErrorCode zMapXMLWriterElementContent(ZMapXMLWriter writer, const char *content);
+ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, const char *element, gboolean full_format);
 ZMapXMLWriterErrorCode zMapXMLWriterEndDocument(ZMapXMLWriter writer);
-ZMapXMLWriterErrorCode zMapXMLWriterStartDocument(ZMapXMLWriter writer, char *document_root_tag);
+ZMapXMLWriterErrorCode zMapXMLWriterStartDocument(ZMapXMLWriter writer, const char *document_root_tag);
 ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *events, gboolean full_format);
 char *zMapXMLWriterGetXMLStr(ZMapXMLWriter writer) ;
 ZMapXMLWriterErrorCode zMapXMLWriterDestroy(ZMapXMLWriter writer);
@@ -375,12 +372,12 @@ GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtil
 GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStack event_stack) ;
 
 GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
-						   char *element_name, int element_index,
-						   char *attribute_name, char *attribute_value,
+						   const char *element_name, int element_index,
+						   const char *attribute_name, const char *attribute_value,
 						   ZMapXMLUtilsEventStack event_stack) ;
 GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
-						      char *element_name,  int element_index,
-						      char *attribute_name, char *attribute_value,
+						      const char *element_name,  int element_index,
+						      const char *attribute_name, const char *attribute_value,
 						      ZMapXMLUtilsEventStackStruct *event_stack) ;
 
 char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out, gboolean full_format) ;
@@ -389,13 +386,17 @@ char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out, gboolean full
 char *zMapXMLUtilsEvent2Txt(ZMapXMLUtilsEventStack event) ;
 char *zMapXMLWriterEvent2Txt(ZMapXMLWriterEvent event) ;
 
-char *zMapXMLUtilsEscapeStr(char *str) ;
-char *zMapXMLUtilsEscapeStrPrintf(char *format, ...) ;
-char *zMapXMLUtilsUnescapeStrdup(char *str);	/* NOTE: incomplete */
+char *zMapXMLUtilsEscapeStr(const char *str) ;
+char *zMapXMLUtilsEscapeStrPrintf(const char *format, ...) ;
+char *zMapXMLUtilsUnescapeStrdup(const char *str);	/* NOTE: incomplete */
 
 
 #endif /* ZMAP_XML_H */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef __cplusplus
 }
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+

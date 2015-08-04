@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *
  * Description: Defines interface to drawing routines for features
  *              in the ZMap.
- *              
+ *
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -136,7 +136,7 @@ typedef struct ZMapDrawTextRowDataStruct_
   /* indices to the string we're displaying */
   /* i.e. slicing the string sequence[seq_index_start..seq_index_end] */
   /* we draw the string sequence[seq_index_start..seq_truncated_idx] */
-  int seq_index_start, seq_truncated_idx, seq_index_end; 
+  int seq_index_start, seq_truncated_idx, seq_index_end;
   int curr_first_index;
   int chars_on_screen, chars_drawn;
 
@@ -182,46 +182,46 @@ typedef struct _ZMapDrawTextIteratorStruct
 
 FooCanvasItem *zMapDrawGlyph(FooCanvasGroup *group, double x, double y, ZMapDrawGlyphType glyph,
 			     GdkColor *colour, double width, guint line_width) ;
-FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
+FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2,
 			    GdkColor *colour, guint line_width) ;
 FooCanvasItem *zMapDrawLineFull(FooCanvasGroup *group, FooCanvasGroupPosition position,
-				double x1, double y1, double x2, double y2, 
+				double x1, double y1, double x2, double y2,
 				GdkColor *colour, guint line_width) ;
 FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
 				GdkColor *colour, guint line_width) ;
-FooCanvasItem *zMapDrawBox(FooCanvasGroup *group, 
-			   double x1, double y1, double x2, double y2, 
+FooCanvasItem *zMapDrawBox(FooCanvasGroup *group,
+			   double x1, double y1, double x2, double y2,
 			   GdkColor *line_colour, GdkColor *fill_colour, guint line_width) ;
 FooCanvasItem *zMapDrawBoxFull(FooCanvasGroup *group,  FooCanvasGroupPosition position,
-			       double x1, double y1, double x2, double y2, 
+			       double x1, double y1, double x2, double y2,
 			       GdkColor *line_colour, GdkColor *fill_colour, guint line_width) ;
 
-FooCanvasItem *zMapDrawBoxSolid(FooCanvasGroup *group, 
-				double x1, double y1, double x2, double y2, 
+FooCanvasItem *zMapDrawBoxSolid(FooCanvasGroup *group,
+				double x1, double y1, double x2, double y2,
 				GdkColor *fill_colour) ;
-FooCanvasItem *zMapDrawBoxOverlay(FooCanvasGroup *group, 
-				  double x1, double y1, double x2, double y2, 
+FooCanvasItem *zMapDrawBoxOverlay(FooCanvasGroup *group,
+				  double x1, double y1, double x2, double y2,
 				  GdkColor *fill_colour) ;
-void zMapDrawBoxChangeSize(FooCanvasItem *box, 
+void zMapDrawBoxChangeSize(FooCanvasItem *box,
 			   double x1, double y1, double x2, double y2) ;
 
 FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
 			       double x, double y) ;
 
 FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
-                                 double x1, double y1, double x2, double y2, 
-                                 GdkColor *border, GdkColor *fill, guint line_width, int zmapStrand);
-FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon, 
+                                 double x1, double y1, double x2, double y2,
+                                 GdkColor *border, GdkColor *fill_col, guint line_width, int zmapStrand);
+FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon,
                                        ZMapAnnotateForm form,
                                        GdkColor *border,
-                                       GdkColor *fill,
+                                       GdkColor *fill_col,
                                        double thickness,
 				       guint line_width,
                                        int zmapStrand);
 
-FooCanvasItem *zMapDrawScale(FooCanvas *canvas, 
+FooCanvasItem *zMapDrawScale(FooCanvas *canvas,
                              PangoFontDescription *font,
-                             double zoom_factor, 
+                             double zoom_factor,
                              double start, double end,
                              double height);
 
@@ -229,8 +229,8 @@ FooCanvasItem *zMapDrawScale(FooCanvas *canvas,
 /* This needs to be a bit cleverer, so you can't actually move the origin */
 FooCanvasItem *zMapDrawRubberbandCreate(FooCanvas *canvas);
 
-void zMapDrawRubberbandResize(FooCanvasItem *band, 
-                              double origin_x, double origin_y, 
+void zMapDrawRubberbandResize(FooCanvasItem *band,
+                              double origin_x, double origin_y,
                               double current_x, double current_y
                               );
 
@@ -244,7 +244,7 @@ FooCanvasGroup *zMapDrawToolTipCreate(FooCanvas *canvas);
 void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, char *text);
 
 /* For drawing/highlighting text on the canvas e.g. dna & 3 frame trans.*/
-void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,                                  
+void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
                                  double firstx, double firsty,
                                  double lastx,  double lasty,
                                  FooCanvasItem *textItem);

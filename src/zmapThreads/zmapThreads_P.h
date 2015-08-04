@@ -76,7 +76,7 @@ typedef struct
   pthread_mutex_t mutex ;				    /* controls access to this struct. */
   ZMapThreadReply state ;				    /* Thread reply from slave. */
   void *reply ;						    /* Reply from callee. */
-  gchar *error_msg ;					    /* Error message for when thread fails. */
+  const char *error_msg ;                                   /* Error message for when thread fails. */
 } ZMapReplyStruct, *ZMapReply ;
 
 
@@ -122,11 +122,11 @@ void zmapVarCreate(ZMapReply thread_state) ;
 void zmapVarSetValue(ZMapReply thread_state, ZMapThreadReply new_state) ;
 gboolean zmapVarGetValue(ZMapReply thread_state, ZMapThreadReply *state_out) ;
 void zmapVarSetValueWithData(ZMapReply thread_state, ZMapThreadReply new_state, void *data) ;
-void zmapVarSetValueWithError(ZMapReply thread_state, ZMapThreadReply new_state, char *err_msg) ;
+void zmapVarSetValueWithError(ZMapReply thread_state, ZMapThreadReply new_state, const char *err_msg) ;
 void zmapVarSetValueWithErrorAndData(ZMapReply thread_state, ZMapThreadReply new_state,
 				     char *err_msg, void *data) ;
 gboolean zmapVarGetValueWithData(ZMapReply thread_state, ZMapThreadReply *state_out,
-				 void **data_out, char **err_msg_out) ;
+				 void **data_out, const char **err_msg_out) ;
 void zmapVarDestroy(ZMapReply thread_state) ;
 
 

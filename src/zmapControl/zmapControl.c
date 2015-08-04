@@ -452,7 +452,7 @@ gboolean zMapCheckIfUnsaved(ZMap zmap)
     {
       ZMapView view ;
 
-      view = list_item->data ;
+      view = (ZMapView)(list_item->data) ;
 
       result = zMapViewCheckIfUnsaved(view);
     }
@@ -956,7 +956,7 @@ static void controlSelectCB(ZMapViewWindow view_window, void *app_data, void *vi
   if (vselect->type == ZMAPWINDOW_SELECT_SINGLE)
     {
       ZMapInfoPanelLabels labels;
-      labels = g_hash_table_lookup(zmap->view2infopanel, zMapViewGetView(view_window));
+      labels = (ZMapInfoPanelLabels)g_hash_table_lookup(zmap->view2infopanel, zMapViewGetView(view_window));
       /* Display the feature details in the info. panel. */
       if (vselect)
 	{
@@ -983,7 +983,7 @@ static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, 
   GtkWidget *window_container = NULL;
   ZMapSplitPattern pattern = NULL;
   char *title = NULL;
-  int i;
+  unsigned int i;
 
   for(i = 0; i < split->split_patterns->len; i++)
     {
@@ -1024,7 +1024,7 @@ static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, 
           title = zMapViewGetSequence(zmap_view);
 
           /* hmmm.... */
-          window_container = g_hash_table_lookup(zmap->viewwindow_2_parent, tmp_vw);
+          window_container = (GtkWidget*)g_hash_table_lookup(zmap->viewwindow_2_parent, tmp_vw);
 
           if((new_view_window = zmapControlNewWidgetAndWindowForView(zmap, zmap_view,
                                                                      zmap_window,
@@ -1236,7 +1236,7 @@ static void killViews(ZMap zmap, GList **destroyed_views_inout)
     {
       ZMapView view ;
 
-      view = list_item->data ;
+      view = (ZMapView)list_item->data ;
 
       zmapControlRemoveView(zmap, view, destroyed_views_inout) ;
     }

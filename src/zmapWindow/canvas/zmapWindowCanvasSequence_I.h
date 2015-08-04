@@ -82,7 +82,7 @@ typedef struct zmapWindowCanvasSequenceStructType
   long n_bases;						    /* actual bases excluding ... */
   long spacing;						    /* between rows */
   long offset;						    /* to centre rows in spacing */
-  char *truncated;					    /* show ... if we run out of space */
+  const char *truncated;                                    /* show ... if we run out of space */
   int factor;						    /* for dna or peptide */
 
   gboolean background_set;

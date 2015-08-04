@@ -46,7 +46,7 @@
 
 
 
-typedef enum {ENVELOPE_REQUEST, ENVELOPE_REPLY} EnvelopeType ;
+typedef enum {ENVELOPE_INVALID, ENVELOPE_REQUEST, ENVELOPE_REPLY} EnvelopeType ;
 
 
 /* Used by lots of the callback functions to return data from parsed xml. */
@@ -82,7 +82,7 @@ typedef struct ParseDataStructName
 
 
   /* User for finding reply attributes. */
-  char *reply ;
+  const char *reply ;
   RemoteCommandRCType return_code ;
   char *reason ;
   char *reply_body ;
@@ -95,9 +95,9 @@ typedef struct ParseSingleDataStructName
 {
   gboolean valid ;    /* If this is FALSE something failed. */
 
-  char *attribute ;
+  const char *attribute ;
 
-  char *attribute_value ;
+  const char *attribute_value ;
 
 } ParseSingleDataStruct, *ParseSingleData ;
 
@@ -105,11 +105,11 @@ typedef struct ParseSingleDataStructName
 
 /* Struct giving command attributes, could be extended to hold others if useful. */
 
-typedef enum {COMMAND_PRIORITY_LOW = 1, COMMAND_PRIORITY_HIGH = 100} CommandPriorityType ;
+typedef enum {COMMAND_PRIORITY_INVALID, COMMAND_PRIORITY_LOW = 1, COMMAND_PRIORITY_HIGH = 100} CommandPriorityType ;
 
 typedef struct CommandAttributeStructType
 {
-  char *command ;
+  const char *command ;
 
   CommandPriorityType priority ;
 
@@ -120,15 +120,15 @@ typedef struct CommandAttributeStructType
 
 static GArray *createRequestReply(EnvelopeType type, GQuark version,
                                   GQuark app_id, GQuark socket_id,
-                                  char *request_id, char *request_time,
-                                  char *command, int timeout_secs,
-                                  RemoteCommandRCType return_code, char *reason, ZMapXMLUtilsEventStack result,
+                                  const char *request_id, const char *request_time,
+                                  const char *command, int timeout_secs,
+                                  RemoteCommandRCType return_code, const char *reason, ZMapXMLUtilsEventStack result,
                                   ...) ;
 static GArray *vCreateRequestReply(EnvelopeType type, GQuark version,
                                    GQuark app_id, GQuark socket_id,
-                                   char *request_id, char *request_time,
-                                   char *command, int timeout_secs,
-                                   RemoteCommandRCType return_code, char *reason, ZMapXMLUtilsEventStack result,
+                                   const char *request_id, const char *request_time,
+                                   const char *command, int timeout_secs,
+                                   RemoteCommandRCType return_code, const char *reason, ZMapXMLUtilsEventStack result,
                                    va_list argp) ;
 static gboolean getRequestAttrs(char *xml_request, GQuark *req_version,
 				GQuark *app_id, GQuark *req_socket_id,
@@ -139,18 +139,18 @@ static gboolean getReplyAttrs(char *xml_request, GQuark *reply_version,
                               char **reply_id, char **reply_time,
                               char **reply_command, char **error_out) ;
 static gboolean checkAttribute(ZMapXMLParser parser, ZMapXMLElement element,
-			       char *attribute, GQuark expected_value, char **error_out) ;
+			       const char *attribute, GQuark expected_value, char **error_out) ;
 static gboolean compareRequests(ZMapRemoteControl remote_control,
 				char *request_1, char *request_2, char **error_out) ;
 static gboolean checkReplyAttrs(ZMapRemoteControl remote_control,
                                 char *original_request, char *reply, char **error_out) ;
 static gboolean getAttribute(ZMapXMLParser parser, ZMapXMLElement element,
-                             char *attribute, char **value_out, char **error_out) ;
+                             const char *attribute, char **value_out, char **error_out) ;
 static RemoteValidateRCType reqReplyValidate(ZMapRemoteControl remote_control,
 					     GQuark msg_type, gboolean validate_command,
 					     GQuark version,
 					     GQuark app_id, GQuark socket_id, char *xml_request, char **error_out) ;
-static char *getReplyContents(char *reply) ;
+static char *getReplyContents(const char *reply) ;
 
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
@@ -207,7 +207,7 @@ CommandAttributeStruct cmd_attrs_G[] =
     {ZACP_FEATURES_LOADED, COMMAND_PRIORITY_LOW},
     {ZACP_DUMP_FEATURES, COMMAND_PRIORITY_LOW},
 
-    {NULL, 0}                                               /* Marks end of array. */
+    {NULL, COMMAND_PRIORITY_INVALID}                        /* Marks end of array. */
 
   } ;
 
@@ -321,14 +321,14 @@ static ZMapXMLObjTagFunctionsStruct parse_single_attr_ends_G[] =
  *
  *  */
 GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
-                                       char *command, int timeout_secs, ...)
+                                       const char *command, int timeout_secs, ...)
 {
   GArray *envelope = NULL ;
   char *request_id ;
   char *request_time ;
   va_list argp ;
 
-  request_id = g_strdup_printf("%u",  zmapRemoteControlGetNewReqID(remote_control)) ;
+  request_id = g_strdup_printf("%u",  zmapRemoteControlGetNewReqID()) ;
 
   request_time = zMapGetTimeString(ZMAPTIME_SEC_MICROSEC, NULL) ;
 
@@ -362,7 +362,7 @@ GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
  *  */
 GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control,
                                                 char *xml_request,
-                                                RemoteCommandRCType return_code, char *reason,
+                                                RemoteCommandRCType return_code, const char *reason,
                                                 ZMapXMLUtilsEventStack reply,
                                                 char **error_out)
 {
@@ -419,7 +419,7 @@ GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control
  *  */
 GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote_control,
                                                         char *xml_request,
-                                                        RemoteCommandRCType return_code, char *reason,
+                                                        RemoteCommandRCType return_code, const char *reason,
                                                         ZMapXMLUtilsEventStack reply,
                                                         char **error_out)
 {
@@ -454,7 +454,7 @@ GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote
 	  }
 	else
 	  {
-	    char *command ;
+	    const char *command ;
 
 	    if (valid_rc == REMOTE_VALIDATE_RC_BODY_COMMAND)
 	      command = "**error**" ;
@@ -485,7 +485,7 @@ GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote
 /* Just a cover func for correct xml call...saves caller needing to know the xml package.
  *
  *  */
-GArray *zMapRemoteCommandAddBody(GArray *request_in_out, char *req_or_reply,
+GArray *zMapRemoteCommandAddBody(GArray *request_in_out, const char *req_or_reply,
                                  ZMapXMLUtilsEventStack request_body)
 {
   GArray *xml_stack = request_in_out ;
@@ -515,7 +515,7 @@ GArray *zMapRemoteCommandAddBody(GArray *request_in_out, char *req_or_reply,
  * The element, attribute and attribute_value you supply need to be around until the xml
  * has been made.
  *  */
-ZMapXMLUtilsEventStack zMapRemoteCommandCreateElement(char *element, char *attribute, char *attribute_value)
+ZMapXMLUtilsEventStack zMapRemoteCommandCreateElement(const char *element, const char *attribute, const char *attribute_value)
 {
   static ZMapXMLUtilsEventStackStruct
     stack[] =
@@ -558,7 +558,7 @@ ZMapXMLUtilsEventStack zMapRemoteCommandCreateElement(char *element, char *attri
  * the need for allocation/free. The stack is "read-only", if you need
  * to alter it then you need to take a copy of it.
  *  */
-ZMapXMLUtilsEventStack zMapRemoteCommandMessage2Element(char *message)
+ZMapXMLUtilsEventStack zMapRemoteCommandMessage2Element(const char *message)
 {
   static ZMapXMLUtilsEventStackStruct
     message_stack[] =
@@ -761,7 +761,7 @@ gboolean zMapRemoteCommandRequestIsCommand(char *request, char *command)
   ParseDataStruct command_data = {ENVELOPE_REQUEST, 0, TRUE, REMOTE_ENVELOPE_ATTR_INVALID, NULL,
 				  FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				  0, 0, 0, NULL, NULL, NULL,
-				  NULL, -1, NULL, NULL} ;
+				  NULL, REMOTE_COMMAND_RC_INVALID, NULL, NULL} ;
   ZMapXMLParser parser ;
 
   parser = zMapXMLParserCreate(&command_data, FALSE, FALSE) ;
@@ -790,7 +790,7 @@ char *zMapRemoteCommandRequestGetCommand(char *request)
   ParseDataStruct command_data = {ENVELOPE_REQUEST, 0, TRUE, REMOTE_ENVELOPE_ATTR_INVALID, NULL,
 				  FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				  0, 0, 0, NULL, NULL, NULL,
-                                  NULL, -1, NULL, NULL} ;
+                                  NULL, REMOTE_COMMAND_RC_INVALID, NULL, NULL} ;
   ZMapXMLParser parser;
 
   parser = zMapXMLParserCreate(&command_data, FALSE, FALSE) ;
@@ -850,7 +850,7 @@ char *zMapRemoteCommandRequestGetEnvelopeAttr(char *request, RemoteEnvelopeAttrT
   ParseDataStruct command_data = {ENVELOPE_REQUEST, 0, TRUE, REMOTE_ENVELOPE_ATTR_INVALID, NULL,
 				  FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				  0, 0, 0, NULL, NULL, NULL,
-                                  NULL, -1, NULL, NULL} ;
+                                  NULL, REMOTE_COMMAND_RC_INVALID, NULL, NULL} ;
   ZMapXMLParser parser ;
 
   command_data.get_env_attr = attr ;
@@ -897,17 +897,18 @@ char *zMapRemoteCommandRequestGetEnvelopeAttr(char *request, RemoteEnvelopeAttrT
  * to REMOTE_COMMAND_RC_BAD_XML and gives the error in error_out.
  *
  */
-gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
+gboolean zMapRemoteCommandReplyGetAttributes(const char *reply,
                                              char **command_out,
-                                             RemoteCommandRCType *return_code_out, char **reason_out,
+                                             RemoteCommandRCType *return_code_out,
+                                             char **reason_out,
                                              char **reply_body_out,
                                              char **error_out)
 {
   gboolean result = FALSE ;
-  ParseDataStruct command_data = {-1, 0, TRUE, REMOTE_ENVELOPE_ATTR_INVALID, NULL,
+  ParseDataStruct command_data = {ENVELOPE_INVALID, 0, TRUE, REMOTE_ENVELOPE_ATTR_INVALID, NULL,
 				  FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				  0, 0, 0, NULL, NULL, NULL,
-                                  NULL, -1, NULL, NULL} ;
+                                  NULL, REMOTE_COMMAND_RC_INVALID, NULL, NULL} ;
   ZMapXMLParser parser ;
 
   command_data.reply = reply ;
@@ -916,7 +917,7 @@ gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
 
   zMapXMLParserSetMarkupObjectTagHandlers(parser, &parse_reply_starts_G[0], &parse_reply_ends_G[0]) ;
 
-  if (!(result = zMapXMLParserParseBuffer(parser, reply, strlen(reply))))
+  if (!(result = zMapXMLParserParseBuffer(parser, (void *)reply, strlen(reply))))
     {
       *error_out = zMapXMLParserLastErrorMsg(parser) ;
 
@@ -950,9 +951,8 @@ gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
  * error should be g_free'd when finished with.
  *
  *  */
-gboolean zMapRemoteCommandGetAttribute(char *message,
-                                       char *element, char *attribute, char **attribute_value_out,
-                                       char **error_out)
+gboolean zMapRemoteCommandGetAttribute(const char *message, const char *element, const char *attribute,
+                                       char **attribute_value_out, char **error_out)
 {
   gboolean result = FALSE ;
   ParseSingleDataStruct attribute_data = {TRUE, NULL, NULL} ;
@@ -967,7 +967,7 @@ gboolean zMapRemoteCommandGetAttribute(char *message,
 
   zMapXMLParserSetMarkupObjectTagHandlers(parser, &parse_single_attr_starts_G[0], &parse_single_attr_ends_G[0]) ;
 
-  if (!(result = zMapXMLParserParseBuffer(parser, message, strlen(message))))
+  if (!(result = zMapXMLParserParseBuffer(parser, (void *)message, strlen(message))))
     {
       *error_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
     }
@@ -979,7 +979,8 @@ gboolean zMapRemoteCommandGetAttribute(char *message,
     }
   else
     {
-      *attribute_value_out = attribute_data.attribute_value ;
+      /* hack to cast like this.... */
+      *attribute_value_out = (char *)attribute_data.attribute_value ;
 
       result = TRUE ;
     }
@@ -996,7 +997,7 @@ gboolean zMapRemoteCommandGetAttribute(char *message,
 ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapRemoteCommandRC2Str, RemoteCommandRCType, REMOTE_COMMAND_RC_LIST) ;
 
 /* The opposite function, given "bad_xml", returns REMOTE_COMMAND_RC_BAD_XML */
-ZMAP_ENUM_FROM_SHORT_TEXT_FUNC(zMapRemoteCommandStr2RC, RemoteCommandRCType, -1, REMOTE_COMMAND_RC_LIST, dummy, dummy) ;
+ZMAP_ENUM_FROM_SHORT_TEXT_FUNC(zMapRemoteCommandStr2RC, RemoteCommandRCType, REMOTE_COMMAND_RC_INVALID, REMOTE_COMMAND_RC_LIST, dummy, dummy) ;
 
 
 ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapRemoteCommandRC2Desc, RemoteValidateRCType, REMOTE_VALIDATE_RC_LIST) ;
@@ -1020,26 +1021,26 @@ static GArray *createRequestReply(EnvelopeType type,
                                   GQuark version,
                                   GQuark app_id,
                                   GQuark socket_id,
-                                  char *request_id,
-                                  char *request_time,
-                                  char *command,
+                                  const char *request_id,
+                                  const char *request_time,
+                                  const char *command,
                                   int timeout_secs,
                                   RemoteCommandRCType return_code,
-                                  char *reason,
+                                  const char *reason,
                                   ZMapXMLUtilsEventStack result,
                                   ...)
 {
-  GArray *array = NULL ;
+  GArray *an_array = NULL ;
 
   va_list argp ;
   va_start(argp, result) ;
 
-  array = vCreateRequestReply(type, version, app_id, socket_id, request_id, request_time,
+  an_array = vCreateRequestReply(type, version, app_id, socket_id, request_id, request_time,
                               command, timeout_secs, return_code, reason, result, argp) ;
 
   va_end(argp) ;
 
-  return array ;
+  return an_array ;
 }
 
 
@@ -1048,12 +1049,12 @@ static GArray *vCreateRequestReply(EnvelopeType type,
                                    GQuark version,
                                    GQuark app_id,
                                    GQuark socket_id,
-                                   char *request_id,
-                                   char *request_time,
-                                   char *command,
+                                   const char *request_id,
+                                   const char *request_time,
+                                   const char *command,
                                    int timeout_secs,
                                    RemoteCommandRCType return_code,
-                                   char *reason,
+                                   const char *reason,
                                    ZMapXMLUtilsEventStack result,
                                    va_list argp)
 {
@@ -1262,7 +1263,7 @@ static gboolean checkReplyAttrs(ZMapRemoteControl remote_control,
                                  &reply_id, &reply_time, &reply_command,
 				 error_out)))
     {
-      char *prefix = "Request/Reply have different" ;
+      const char *prefix = "Request/Reply have different" ;
 
       if (!(result = (req_version == reply_version)))
         *error_out = g_strdup_printf("%s protocol versions: %s vs %s", prefix,
@@ -1301,7 +1302,7 @@ static gboolean compareRequests(ZMapRemoteControl remote_control,
                                    &request_2_id, &request_2_time, &request_2_command,
                                    error_out)))
     {
-      char *prefix = "Request 1/Request 2 have different" ;
+      const char *prefix = "Request 1/Request 2 have different" ;
 
       if (!(result = (request_1_version == request_2_version)))
         *error_out = g_strdup_printf("%s protocol versions: %s vs %s", prefix,
@@ -1334,7 +1335,7 @@ static gboolean getRequestAttrs(char *xml_request, GQuark *req_version,
   ParseDataStruct validate_data = {ENVELOPE_REQUEST, 0, TRUE, REMOTE_ENVELOPE_ATTR_INVALID, NULL,
 				   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				   0, 0, 0, NULL, NULL, NULL,
-				   NULL, -1, NULL, NULL} ;
+				   NULL, REMOTE_COMMAND_RC_INVALID, NULL, NULL} ;
   ZMapXMLParser parser;
 
   if (!req_command)
@@ -1380,7 +1381,7 @@ static gboolean getReplyAttrs(char *xml_reply, GQuark *reply_version,
   ParseDataStruct validate_data = {ENVELOPE_REPLY, 0, TRUE, REMOTE_ENVELOPE_ATTR_INVALID, NULL,
 				   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				   0, 0, 0, NULL, NULL, NULL,
-				   NULL, -1, NULL, NULL} ;
+				   NULL, REMOTE_COMMAND_RC_INVALID, NULL, NULL} ;
   ZMapXMLParser parser;
 
   parser = zMapXMLParserCreate(&validate_data, FALSE, FALSE) ;
@@ -1424,7 +1425,7 @@ static RemoteValidateRCType reqReplyValidate(ZMapRemoteControl remote_control,
   ParseDataStruct validate_data = {ENVELOPE_REQUEST, 0, TRUE, REMOTE_ENVELOPE_ATTR_INVALID, NULL,
 				   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
 				   0, 0, 0, NULL, NULL, NULL,
-				   NULL, -1, NULL, NULL} ;
+				   NULL, REMOTE_COMMAND_RC_INVALID, NULL, NULL} ;
   ZMapXMLParser parser ;
 
   validate_data.message_type = msg_type ;
@@ -1535,7 +1536,7 @@ static gboolean xml_zmap_env_start_cb(gpointer user_data, ZMapXMLElement zmap_el
   gboolean result = TRUE ;
   ParseData command_data = (ParseData)user_data ;
   ZMapXMLAttribute attr = NULL ;
-  char *attr_str = NULL ;
+  const char *attr_str = NULL ;
 
   switch (command_data->get_env_attr)
     {
@@ -1945,7 +1946,7 @@ static gboolean xml_return_true_cb(gpointer user_data, ZMapXMLElement zmap_eleme
  *
  * Probably needs widening to look at data type of attribute to handle ints etc... */
 static gboolean checkAttribute(ZMapXMLParser parser, ZMapXMLElement element,
-                               char *attribute, GQuark expected_value, char **error_out)
+                               const char *attribute, GQuark expected_value, char **error_out)
 {
   gboolean result = TRUE ;
   ZMapXMLAttribute attr ;
@@ -1987,7 +1988,7 @@ static gboolean checkAttribute(ZMapXMLParser parser, ZMapXMLElement element,
  *
  * Probably needs widening to look at data type of attribute to handle ints etc... */
 static gboolean getAttribute(ZMapXMLParser parser, ZMapXMLElement element,
-                             char *attribute, char **value_out, char **error_out)
+                             const char *attribute, char **value_out, char **error_out)
 {
   gboolean result = TRUE ;
   ZMapXMLAttribute attr ;
@@ -2024,10 +2025,10 @@ static gboolean getAttribute(ZMapXMLParser parser, ZMapXMLElement element,
  *
  * Returns NULL on error.
  *  */
-static char *getReplyContents(char *reply)
+static char *getReplyContents(const char *reply)
 {
   char *reply_contents = NULL ;
-  char *start, *end ;
+  const char *start, *end ;
   size_t bytes ;
 
   /* Look for "<reply", then look for closing ">", then look for"</reply" and

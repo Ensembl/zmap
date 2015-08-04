@@ -1,0 +1,19 @@
+#
+# Common defines for zmap only.
+#
+# THIS IS THE WRONG WAY TO DO THIS SO WE SHOULD GET RID OF THIS
+# FILE.....SOMETHING TO BE CLEANED UP AFTER THE FILE RENAME...
+#
+
+# THESE SETTINGS ARE HACKS UNTIL WE RENAME OUR FILES WITH A RECOGNISED C++ SUFFIX.
+CC = g++
+#CC = g++ -std=c++0x
+LD = g++
+
+
+
+
+
+include $(top_srcdir)/Makefile.common
+
+

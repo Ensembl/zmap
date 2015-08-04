@@ -6,6 +6,9 @@
 # make install DESTDIR=/tmp/dist
 # tar -C /tmp/dist -cvf package-version.tar
 # gzip -9 package-version.tar
+
+
+
 ################################################################################
 ################################################################################
 # General Housekeeping
@@ -23,17 +26,32 @@ include $(srcdir)/Makefile.common
 #
 ACLOCAL_AMFLAGS = -I m4
 
-# ZMAP_SRC_DIRS See configure.ac
+
+
+# ZMap dirs, see configure.ac for how these vars are set.
+
 if USE_GBTOOLS
 OPTIONAL_SUBDIRS = gbtools
 endif
 
-SUBDIRS = $(OPTIONAL_SUBDIRS) AceConn zeromq libpfetch libcurlobject libzmapfoocanvas htslib-develop 
+SUBDIRS = $(OPTIONAL_SUBDIRS) libpfetch libcurlobject libzmapfoocanvas
+
+if USE_ACECONN
+SUBDIRS += AceConn
+endif
 
 if USE_ENSEMBL
 if USE_ENSEMBL_SUBDIR
 SUBDIRS += ensc-core/src 
 endif
+endif
+
+if USE_HTSLIB
+SUBDIRS += htslib
+endif
+
+if USE_ZEROMQ
+SUBDIRS += zeromq
 endif
 
 SUBDIRS += include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
@@ -142,38 +160,20 @@ libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
 # Programs we're going to compile.
 
 #bin_PROGRAMS = zmap gffparser xml_writer xremote_gui remotecontrol
-bin_PROGRAMS = zmap xml_writer remotecontrol
+# bin_PROGRAMS = zmap xml_writer remotecontrol
 
+bin_PROGRAMS = zmap
+
+if USE_ZEROMQ
+bin_PROGRAMS += remotecontrol
+endif
 
 # I am perturbed by the fact that the x libs are before the gtk libs....
 #
 
-# Search path version.....
-#zmap_LDADD = $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)         \
-#	-L$(top_builddir)/.libs                              \
-#	-lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML -lPFetch \
-#	$(ACECONN_LIBS) $(GTK_LIBS) $(FOOCANVAS_LIBS)        \
-#	$(LIBCURL) -lexpat -lg2 -lgd                         \
-#	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
+#zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
+zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.cc
 
-
-# Try Jeremy's new build stuff....
-# Give .a files explicitly to ensure we link the right ones.
-#
-#zmap_LDADD =                                                 \
-#	$(top_builddir)/.libs/libZMapApp.a                   \
-#	$(top_builddir)/.libs/libZMap.a                      \
-#	$(top_builddir)/.libs/libZMapThr.a                   \
-#	$(top_builddir)/.libs/libZMap.a                      \
-#	$(top_builddir)/.libs/libZMapXML.a                   \
-#	$(top_builddir)/.libs/libZMapAppServices.a           \
-#	$(top_builddir)/.libs/libZMapUtils.a                 \
-#	$(top_builddir)/.libs/libzmapfoocanvas.a             \
-#	$(top_builddir)/.libs/libPFetch.a                    \
-#        $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
-#	$(ACECONN_LIBS) $(GTK_LIBS)                          \
-#	$(LIBCURL) -lexpat -lg2 -lgd                         \
-#	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapApp.a                   \
@@ -184,14 +184,21 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapXML.a                   \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
-	$(top_builddir)/.libs/libPFetch.a                    \
-	$(top_builddir)/htslib-develop/libhts.a              \
-	$(top_builddir)/AceConn/src/.libs/libAceConn.a       
+	$(top_builddir)/.libs/libPFetch.a
+
+
+if USE_ACECONN
+zmap_LDADD += $(top_builddir)/AceConn/src/.libs/libAceConn.a 
+endif
 
 if USE_ENSEMBL
 if USE_ENSEMBL_SUBDIR
 zmap_LDADD += $(top_builddir)/ensc-core/src/libensc.a
 endif
+endif
+
+if USE_HTSLIB
+zmap_LDADD += $(top_builddir)/htslib/libhts.a
 endif
 
 # If we have gbtools in a subdirectory, add the .a file, otherwise
@@ -203,13 +210,10 @@ zmap_LDADD += -lgbtools
 endif
 
 # The zeromq library has a different suffix on cygwin
-if ON_CYGWIN
-zmap_LDADD +=                                                \
-	$(top_builddir)/zeromq/src/.libs/libzmq.dll.a            
-else
-zmap_LDADD +=                                                \
-	$(top_builddir)/zeromq/src/.libs/libzmq.a            
+if USE_ZEROMQ
+zmap_LDADD += $(top_builddir)/zeromq/src/.libs/libzmq.a            
 endif
+
 
 # I've had to add in the X11 lib otherwise we can't compile on Ubuntu
 # 64-bit machines (-lz is included because htslib needs it).
@@ -220,17 +224,14 @@ zmap_LDADD +=                                                \
 	$(MYSQL_LDFLAGS)                                     \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
-
-zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
-
+zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
+zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp $(MYSQL_CFLAGS)
 
 # zeromq is C++ so we need to link with g++, not gcc.
 #zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-zmap_LINK         = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+zmap_LINK         = $(CXX) -I$(top_srcdir)/zmapApp $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
-zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp $(MYSQL_CFLAGS)
-zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
-# MACOSX_UNIVERSAL_FILE was also in LDFLAGS...
+
 
 
 # gffparser - program to parse gff...
@@ -256,7 +257,8 @@ xml_writer_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 
 # The new program that knows about the xremote protocol.
-remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.c
+#remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.c
+remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.cc
 remotecontrol_LDFLAGS      = 
 remotecontrol_LDADD        = $(zmap_LDADD)
 remotecontrol_DEPENDENCIES = $(noinst_LTLIBRARIES)
@@ -320,12 +322,9 @@ $(NULL)
 # copy from git...so we add some stuff to maintainer-clean to try to achieve
 # this.
 
-#GENERATED_FILES = './.deps ./.libs ./bin ./include ./lib* ./zmap* ./Makefile ./config.* dotZMap gffparser* \
-#./stamp-h1 ./xml_* ./xremote* ./zmap*'
 
-
-# Standard way to add _files_ to the list deleted by the maintainer-clean target.
-#
+# Standard way to add _files_ to the list deleted by the maintainer-clean target, 
+# cannot be used for directories.
 MAINTAINERCLEANFILES = $(top_srcdir)/Makefile.in $(top_srcdir)/aclocal.m4 \
 $(top_srcdir)/config.h.in $(top_srcdir)/configure $(top_srcdir)/zmap_version.m4
 
@@ -336,11 +335,21 @@ $(top_srcdir)/config.h.in $(top_srcdir)/configure $(top_srcdir)/zmap_version.m4
 GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/* $(top_srcdir)/config \
 $(top_srcdir)/autom4te.cache
 
+EXTERNAL_LIBS = $(top_srcdir)/AceConn $(top_srcdir)/ensc-core $(top_srcdir)/gbtools \
+$(top_srcdir)/htslib $(top_srcdir)/zeromq
+EXTERNAL_PLACEHOLDERS = $(top_srcdir)/AceConn/README_ZMAP $(top_srcdir)/ensc-core/README_ZMAP \
+$(top_srcdir)/gbtools/README_ZMAP $(top_srcdir)/htslib/README_ZMAP $(top_srcdir)/zeromq/README_ZMAP
+
 maintainer-clean-local:
 	@echo 'maintainer-clean-local: Removing all generated files....'
 	rm -rf $(GENERATED_FILES)
 	rm -f $(top_srcdir)/m4/*.m4
 	@echo 'maintainer-clean-local: Finished removing all generated files....'
+	@echo 'maintainer-clean-local: Removing all external library files....'
+	rm -rf $(EXTERNAL_LIBS)
+	git checkout $(EXTERNAL_PLACEHOLDERS)
+	@echo 'maintainer-clean-local: Finished removing all external library files....'
+
 
 
 ZMAP_BUILD_FILES = $(top_builddir)/zmapApp/*.o $(top_builddir)/zmapAppServices/*.o $(top_builddir)/zmapConfig/*.o \

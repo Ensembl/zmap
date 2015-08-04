@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -42,7 +42,7 @@
  * NOTE these are set from the style mode but are defined separately as
  * CanvasFeaturesets do not initially handle all style modes.
  * See  zMapWindowFeaturesetAddItem()
- * 
+ *
  * genomic features are FEATURE_BASIC to FEATURE_GLYPH
  *
  * FEATURE_GRAPHICS onwards are unadorned graphics primitives and FEATURE_GRAPHICS
@@ -79,10 +79,10 @@ typedef struct _zmapWindowCanvasFeatureStruct *ZMapWindowCanvasFeature ;
 
 
 void zMapWindowCanvasFeatureInit(void) ;
-void zMapWindowCanvasFeatureSetSize(int featuretype, gpointer *feature_funcs, int feature_struct_size) ;
+void zMapWindowCanvasFeatureSetSize(int featuretype, gpointer *feature_funcs, size_t feature_struct_size) ;
 ZMapWindowCanvasFeature zMapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType type) ;
 ZMapFeature zMapWindowCanvasFeatureGetFeature(ZMapWindowCanvasFeature feature) ;
-gboolean zMapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean complex,
+gboolean zMapWindowCanvasFeatureGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean is_complex,
                                                  ZMapSpan span, double *width) ;
 ZMapFeatureSubPart zMapWindowCanvasFeaturesetGetSubPart(FooCanvasItem *foo,
                                                         ZMapFeature feature, double x, double y) ;

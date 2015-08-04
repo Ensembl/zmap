@@ -409,7 +409,7 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
       GParamSpec **param_specs = NULL, **ps_ptr;
       GObject     *gobject_dest;
       GType        gobject_type;
-      guint        count = 0, i;
+      guint        icount = 0, i;
 
 
       /* Create the object which will the new copy. */
@@ -418,9 +418,9 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
 
       /* Now copy all the original objects data, works by calling get_property on original
        * object and then set_property on new object. */
-      param_specs  = g_object_class_list_properties(gobject_class, &count);
+      param_specs  = g_object_class_list_properties(gobject_class, &icount);
       ps_ptr       = param_specs;
-      for (i = 0; param_specs && i < count; i++, param_specs++)
+      for (i = 0; param_specs && i < icount; i++, param_specs++)
 	{
 	  GParamSpec *current = *param_specs, *redirect;
 	  GType current_type  = G_PARAM_SPEC_VALUE_TYPE(current);

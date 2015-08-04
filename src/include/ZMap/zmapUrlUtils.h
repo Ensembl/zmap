@@ -46,16 +46,16 @@ so, delete this exception statement from your version.  */
 /* `gettext (FOO)' is long to write, so we use `_(FOO)'.  If NLS is
    unavailable, _(STRING) simply returns STRING.  */
 #ifdef HAVE_NLS
-# define _(string) gettext (string)
+# define _(string_arg) gettext (string_arg)
 # ifdef HAVE_LIBINTL_H
 #  include <libintl.h>
 # endif /* HAVE_LIBINTL_H */
 #else  /* not HAVE_NLS */
-# define _(string) string
+# define _(string_arg) string_arg
 #endif /* not HAVE_NLS */
 
 /* No-op version of gettext, used for constant strings. */
-#define N_(string) (string)
+#define N_(string_arg) (string_arg)
 
 /* I18N NOTE: You will notice that none of the DEBUGP messages are
    marked as translatable.  This is intentional, for a few reasons:
@@ -159,7 +159,7 @@ char *xstrdup_real(const char *) ;
   const char *BTA_beg = (beg);			\
   int BTA_len = (end) - BTA_beg;		\
   char **BTA_dest = &(place);			\
-  *BTA_dest = alloca (BTA_len + 1);		\
+  *BTA_dest = (char *)alloca (BTA_len + 1);     \
   memcpy (*BTA_dest, BTA_beg, BTA_len);		\
   (*BTA_dest)[BTA_len] = '\0';			\
 } while (0)
@@ -280,10 +280,13 @@ enum accd {
    ALLABS = 1
 };
 
-/* A linked list of strings.  The list is ordered alphabetically.  */
+/* A linked list of strings.  The list is ordered alphabetically.
+  (sm23) Why do we need these? They're not even used anywhere...
+*/
+/*
 typedef struct _slist
 {
-  char *string;
+  char *string_val;
   struct _slist *next;
 } slist;
 
@@ -291,7 +294,7 @@ struct file_memory {
   char *content;
   long length;
   int mmap_p;
-};
+};*/
 
 struct wget_timer;
 

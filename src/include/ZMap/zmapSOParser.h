@@ -75,7 +75,7 @@ typedef enum
  * deprecated.
  */
 unsigned int zMapSOSetIsNamePresent(ZMapSOSetInUse , const char * const ) ;
-char * zMapSOSetIsIDPresent(ZMapSOSetInUse , unsigned int ) ;
+const char * zMapSOSetIsIDPresent(ZMapSOSetInUse , unsigned int ) ;
 ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse, unsigned int ) ;
 ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse, unsigned int ) ;
 ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse, const char * const ) ;
@@ -86,7 +86,7 @@ gboolean zMapSOIDDataDestroy(ZMapSOIDData) ;
 unsigned int zMapSOIDDataGetID(ZMapSOIDData) ;
 char *       zMapSOIDDataGetIDAsString(ZMapSOIDData ) ;
 char *       zMapSOIDDataName2SOAcc(const char * const ) ;
-char * zMapSOIDDataGetName(ZMapSOIDData ) ;
+const char * zMapSOIDDataGetName(ZMapSOIDData ) ;
 ZMapStyleMode zMapSOIDDataGetStyleMode(ZMapSOIDData ) ;
 ZMapHomolType zMapSOIDDataGetHomol(ZMapSOIDData) ;
 
