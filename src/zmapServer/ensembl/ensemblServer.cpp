@@ -1334,10 +1334,12 @@ static ZMapFeature makeFeature(EnsemblServer server,
       unique_id = zMapFeatureCreateID(feature_mode, (char*)feature_name_id, strand, start, end, match_start, match_end);
 
       /* If a prefix is given, add it to the source name */
+      /* We can get different feature types with the same source, so ensure that the
+       * featureset id is unique by also appending the SO term */
       if (server->db_prefix)
-        unique_source = g_strdup_printf("%s_%s", server->db_prefix, source);
+        unique_source = g_strdup_printf("%s_%s_%s", server->db_prefix, source, SO_accession);
       else
-        unique_source = g_strdup(source) ;
+        unique_source = g_strdup_printf("%s_%s", source, SO_accession) ;
 
       /* Find the featureset, or create it if it doesn't exist */
       GQuark feature_set_id = zMapFeatureSetCreateID((char*)unique_source) ;
