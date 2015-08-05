@@ -385,28 +385,9 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
     {
       server->req_featuresets = *feature_sets_inout ;
 
-      /* Set the flag to only load requested featuresets. We do this if the list is not empty (or
-       * only contains the default featuresets like DNA and 3 Frame) */
-      GQuark dna_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
-      GQuark three_frame_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_3FRAME);
-      GQuark three_frame_trans_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
-      GQuark annotation_quark = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
-
-      server->req_featuresets_only = FALSE ;
-      GList *item = server->req_featuresets ;
-
-      for ( ; item ; item = item->next)
-        {
-          GQuark curr_quark = zMapFeatureSetCreateID(g_quark_to_string((GQuark)GPOINTER_TO_INT(item->data)));
-          
-          /* If the list contains any non-default featureset, then we should load req featuresets only */
-          if (curr_quark != dna_quark && curr_quark != three_frame_quark && 
-              curr_quark != three_frame_trans_quark && curr_quark != annotation_quark)
-            {
-              server->req_featuresets_only = TRUE ;
-              break ;
-            }
-        }
+      /* If any featuresets are requested, then we should load ONLY requested
+       * featuresets. (Otherwise, we will load all featuresets we find.) */
+      server->req_featuresets_only = (g_list_length(server->req_featuresets) > 0) ;
     }
 
   if (source_2_sourcedata_inout)
