@@ -359,7 +359,7 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
       trans_set = zmapWindowFToIFindItemSetFull(window, window->context_to_item,
                                                 align_id, block_id, set_id,
                                                 set_id,
-                                                //                                                window->flags[ZMAPFLAG_REVCOMPED_FEATURES]? "-" : "+", ".",
+//                                                window->flags[ZMAPFLAG_REVCOMPED_FEATURES]? "-" : "+", ".",
                                                 "+", ".",
                                                 feature_id,
                                                 NULL, NULL) ;
