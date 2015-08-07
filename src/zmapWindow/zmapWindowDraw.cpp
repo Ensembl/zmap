@@ -366,7 +366,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
       if (redraw)
         {
           /* If this is the annotation column, update the preferences flag to enable annotation */
-          if (group->feature_any->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
+          if (group->feature_any && group->feature_any->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
             {
               window->flags[ZMAPFLAG_ENABLE_ANNOTATION] = new_visible ;
             }

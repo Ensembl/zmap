@@ -408,7 +408,8 @@ static void cancelCB(GtkWidget *widget, gpointer cb_data)
         my_data->changed = FALSE;
 
         /* update the column */
-        zmapWindowMenuSetStyleCB(style->unique_id, my_data->menu_data);
+        if (style)
+          zmapWindowMenuSetStyleCB(style->unique_id, my_data->menu_data);
 
         /* update this dialog */
         zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature);
