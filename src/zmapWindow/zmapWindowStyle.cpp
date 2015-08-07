@@ -86,7 +86,8 @@ typedef struct
 
 static void destroyCB(GtkWidget *widget, gpointer cb_data);
 static void applyCB(GtkWidget *widget, gpointer cb_data);
-static void cancelCB(GtkWidget *widget, gpointer cb_data);
+static void okCB(GtkWidget *widget, gpointer cb_data);
+static void revertCB(GtkWidget *widget, gpointer cb_data);
 static void closeCB(GtkWidget *widget, gpointer cb_data);
 
 static void colourSetCB(GtkColorButton *widget, gpointer user_data);
@@ -272,22 +273,25 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
   gtk_container_set_border_width(GTK_CONTAINER (hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
-  button = gtk_button_new_from_stock(GTK_STOCK_CLOSE);
-  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(closeCB), my_data);
+  
 
-  button = gtk_button_new_from_stock(GTK_STOCK_CANCEL);
-  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(cancelCB), my_data);
+  button = gtk_button_new_from_stock(GTK_STOCK_REVERT_TO_SAVED);
+  gtk_box_pack_start(GTK_BOX(hbox), button, TRUE, TRUE, 0);
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(revertCB), my_data);
 
   button = gtk_button_new_from_stock(GTK_STOCK_APPLY);
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(applyCB), my_data);
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(applyCB), my_data);
 
-  GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT) ; /* set apply button as default. */
+  button = gtk_button_new_from_stock(GTK_STOCK_CLOSE);
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(closeCB), my_data);
+
+  button = gtk_button_new_from_stock(GTK_STOCK_OK);
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(okCB), my_data);
+
+  GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT) ; /* set ok button as default. */
   gtk_window_set_default(GTK_WINDOW(toplevel), button) ;
 
   gtk_widget_show_all(toplevel) ;
@@ -378,7 +382,7 @@ gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMa
 
 
 
-static void cancelCB(GtkWidget *widget, gpointer cb_data)
+static void revertCB(GtkWidget *widget, gpointer cb_data)
 {
         StyleChange my_data = (StyleChange) cb_data;
         ItemMenuCBData menu_data = my_data->menu_data;
@@ -415,6 +419,11 @@ static void cancelCB(GtkWidget *widget, gpointer cb_data)
         zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature);
 }
 
+static void okCB(GtkWidget *widget, gpointer cb_data)
+{
+  applyCB(widget, cb_data) ;
+  closeCB(widget, cb_data) ;
+}
 
 static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
