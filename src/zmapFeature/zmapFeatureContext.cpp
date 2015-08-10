@@ -376,7 +376,7 @@ void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
       /* Start it all off with the alignments */
       if(full_data.use_remove)
         g_hash_table_foreach_remove(context->alignments, executeDataForeachFunc, &full_data) ;
-      else
+      else if (context)
         g_hash_table_foreach(context->alignments, (GHFunc)executeDataForeachFunc, &full_data) ;
 
       postExecuteProcess(&full_data);
