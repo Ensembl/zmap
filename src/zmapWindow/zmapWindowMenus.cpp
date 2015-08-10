@@ -4374,8 +4374,10 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
   ZMapFeatureBlock block = NULL ;
   const GQuark scratch_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME) ;
 
-  if (!all_features && feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE &&
-      feature->parent && feature->parent->unique_id == scratch_id)
+  if (!all_features && 
+      feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE &&
+      feature->parent && 
+      feature->parent->unique_id == scratch_id)
     {
       /* save the original feature as temp_feature */
       temp_feature = feature ;
@@ -4385,15 +4387,19 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
 
       if (feature)
         {
-          feature->original_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] ;
-          feature->unique_id = feature->original_id ;
+          /* Update the feature name if it is set in the attributes */
+          if (window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] > 0)
+            {
+              feature->original_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURE] ;
+              feature->unique_id = feature->original_id ;
+            }
 
           /* also set the evidence list in the temp feature */
           ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
           zmapWindowScratchFeatureGetEvidence(window, scratch_feature, zMapFeatureTranscriptSetEvidence, feature) ;
 
-          /* We need to update the parent to be the featureset from the attributes. Create a temp
-           * featureset with this name, because it may not exist */
+          /* We need to update the parent to be the featureset from the attributes, if it is set.
+           * Create a temp featureset with this name, because it may not exist */
           GQuark featureset_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] ;
           
           if (featureset_id < 1)
