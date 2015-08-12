@@ -255,12 +255,18 @@ static gboolean createConnection(void **server_out,
   gboolean result = FALSE ;
   EnsemblServer server ;
 
+  /* Create a single mutex used by all ensembl servers */
+  static GMutex *mutex = NULL ;
+
+  if (!mutex)
+    mutex = g_mutex_new();
+
   /* Always return a server struct as it contains error message stuff. */
   server = (EnsemblServer)g_new0(EnsemblServerStruct, 1) ;
   *server_out = (void *)server ;
 
   server->config_file = g_strdup(config_file) ;
-  pthread_mutex_init(&server->mutex, NULL) ;
+  server->mutex = mutex ;
 
   server->host = g_strdup(url->host) ;
   server->port = url->port ;
@@ -332,16 +338,16 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
 
   if (!server->dba)
     {
-      pthread_mutex_lock(&server->mutex) ;
+      g_mutex_lock(server->mutex) ;
       server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
-      pthread_mutex_unlock(&server->mutex) ;
+      g_mutex_unlock(server->mutex) ;
     }
 
   if (server && server->dba && server->dba->dbc)
     {
-      pthread_mutex_lock(&server->mutex) ;
+      g_mutex_lock(server->mutex) ;
       char *assembly_type = DBAdaptor_getAssemblyType(server->dba) ;
-      pthread_mutex_unlock(&server->mutex) ;
+      g_mutex_unlock(server->mutex) ;
 
       if (assembly_type)
         {
@@ -477,12 +483,9 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  pthread_mutex_lock(&server->mutex) ;
   Vector *features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
-  pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
-
   for (i = 0; i < Vector_getNumElement(features) && result; ++i)
     {
       SimpleFeature *sf = (SimpleFeature*)Vector_getElementAt(features,i) ;
@@ -503,9 +506,7 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  pthread_mutex_lock(&server->mutex) ;
   Vector *features =  Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-  pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i)
@@ -528,9 +529,7 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  pthread_mutex_lock(&server->mutex) ;
   Vector *features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-  pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i)
@@ -554,9 +553,7 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  pthread_mutex_lock(&server->mutex) ;
   Vector *features =  Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
-  pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i)
@@ -580,9 +577,7 @@ static gboolean getAllTranscripts(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  pthread_mutex_lock(&server->mutex) ;
   Vector *features = Slice_getAllTranscripts(server->slice, 1, NULL, NULL) ;
-  pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i)
@@ -606,9 +601,7 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  pthread_mutex_lock(&server->mutex) ;
   Vector *features = Slice_getAllPredictionTranscripts(server->slice, NULL, 1, NULL) ;
-  pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i)
@@ -633,9 +626,7 @@ static gboolean getAllGenes(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  pthread_mutex_lock(&server->mutex) ;
   Vector *features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
-  pthread_mutex_unlock(&server->mutex) ;
 
   int i = 0 ;
   for (i = 0; i < Vector_getNumElement(features) && result; ++i)
@@ -940,6 +931,7 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
   const char *feature_name = NULL ;
   const char *source = NULL ;
+
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
   if (!feature_name || *feature_name == '\0')
@@ -1498,6 +1490,8 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
   if (server->slice)
     {
+      g_mutex_lock(server->mutex) ;
+
       getAllSimpleFeatures(server, get_features_data, feature_block) ;
       getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
       getAllDNAPepAlignFeatures(server, get_features_data, feature_block) ;
@@ -1505,6 +1499,8 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
       getAllTranscripts(server, get_features_data, feature_block) ;
       getAllPredictionTranscripts(server, get_features_data, feature_block) ;
       //getAllGenes(server, get_features_data, feature_block) ;
+
+      g_mutex_unlock(server->mutex) ;
     }
 
   return ;
@@ -1525,9 +1521,9 @@ static Slice* getSliceForCoordSystem(const char *coord_system,
   char *seq_name_copy = g_strdup(seq_name);
   char *coord_system_copy = g_strdup(coord_system) ;
 
-  pthread_mutex_lock(&server->mutex) ;
+  g_mutex_lock(server->mutex) ;
   slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, coord_system_copy, seq_name_copy, start, end, strand, NULL, 0);
-  pthread_mutex_unlock(&server->mutex) ;
+  g_mutex_unlock(server->mutex) ;
 
   g_free(seq_name_copy);
   g_free(coord_system_copy) ;
@@ -1550,18 +1546,18 @@ static Slice* getSlice(EnsemblServer server,
 
   if (!server->dba)
     {
-      pthread_mutex_lock(&server->mutex) ;
+      g_mutex_lock(server->mutex) ;
       server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
-      pthread_mutex_unlock(&server->mutex) ;
+      g_mutex_unlock(server->mutex) ;
     }
 
   if (server->dba && server->dba->dbc)
     {
       if (!server->slice_adaptor)
         {
-          pthread_mutex_lock(&server->mutex) ;
+          g_mutex_lock(server->mutex) ;
           server->slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
-          pthread_mutex_unlock(&server->mutex) ;
+          g_mutex_unlock(server->mutex) ;
         }
 
       if (!slice) 
@@ -1600,25 +1596,25 @@ static char* getSequence(EnsemblServer server,
 
   if (!server->dba)
     {
-      pthread_mutex_lock(&server->mutex) ;
+      g_mutex_lock(server->mutex) ;
       server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
-      pthread_mutex_unlock(&server->mutex) ;
+      g_mutex_unlock(server->mutex) ;
     }
 
   if (server->dba && server->dba->dbc)
     {
       if (!server->slice_adaptor)
         {
-          pthread_mutex_lock(&server->mutex) ;
+          g_mutex_lock(server->mutex) ;
           server->slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
-          pthread_mutex_unlock(&server->mutex) ;
+          g_mutex_unlock(server->mutex) ;
         }
 
       if (!server->seq_adaptor)
         {
-          pthread_mutex_lock(&server->mutex) ;
+          g_mutex_lock(server->mutex) ;
           server->seq_adaptor = DBAdaptor_getSequenceAdaptor(server->dba);
-          pthread_mutex_unlock(&server->mutex) ;
+          g_mutex_unlock(server->mutex) ;
         }
 
       if (server->slice_adaptor && server->seq_adaptor && server->coord_system)
@@ -1627,11 +1623,11 @@ static char* getSequence(EnsemblServer server,
           char *seq_name_copy = g_strdup(seq_name) ;
           char *coord_system = g_strdup("chromosome") ;
 
-          pthread_mutex_lock(&server->mutex) ;
+          g_mutex_lock(server->mutex) ;
           Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, coord_system,
                                                     seq_name_copy, start, end,
                                                     strand, NULL, 0);
-          pthread_mutex_unlock(&server->mutex) ;
+          g_mutex_unlock(server->mutex) ;
 
           g_free(seq_name_copy) ;
           g_free(coord_system) ;
@@ -1640,12 +1636,12 @@ static char* getSequence(EnsemblServer server,
 
           if (slice)
             {
-              pthread_mutex_lock(&server->mutex) ;
+              g_mutex_lock(server->mutex) ;
 
               seq = SequenceAdaptor_fetchBySliceStartEndStrand(server->seq_adaptor, slice, 1, POS_UNDEF, 1);
               Slice_free(slice) ;
 
-              pthread_mutex_unlock(&server->mutex) ;
+              g_mutex_unlock(server->mutex) ;
             }
         }
     }
