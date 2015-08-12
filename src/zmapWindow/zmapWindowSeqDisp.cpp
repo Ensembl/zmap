@@ -388,7 +388,8 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
       //        zMapWindowCanvasFeaturesetExpose(fset);                /* so we get a double expose */
 
       /* Brute force, reinit the whole peptide string. */
-      memset(seq, (int)SHOW_TRANS_BACKGROUND, trans_feature->feature.sequence.length) ;
+      if (seq)
+        memset(seq, (int)SHOW_TRANS_BACKGROUND, trans_feature->feature.sequence.length) ;
 
       /* Destroy any previous exon/variation list */
       if (trans_feature->feature.sequence.exon_list)
