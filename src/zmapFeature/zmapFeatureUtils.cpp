@@ -70,7 +70,7 @@ static int span_compare (gconstpointer a, gconstpointer b) ;
 
 static int findExon(ZMapFeature feature, int exon_start, int exon_end) ;
 static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
-      int *exon_cds_start, int *exon_cds_end, ZMapPhase *phase_out) ;
+                              int *exon_cds_start, int *exon_cds_end, ZMapPhase *phase_out) ;
 
 static void printChildCB(gpointer key, gpointer value, gpointer user_data_unused) ;
 
@@ -1356,7 +1356,7 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
  * of the exon and also it's phase. Returns FALSE if the exon is not in the transcript
  * or if the exon has no cds section. */
 gboolean zMapFeatureExon2CDS(ZMapFeature feature,
-     int exon_start, int exon_end, int *exon_cds_start, int *exon_cds_end, ZMapPhase *phase_out)
+                             int exon_start, int exon_end, int *exon_cds_start, int *exon_cds_end, ZMapPhase *phase_out)
 {
   gboolean is_cds_exon = FALSE ;
   int exon_index =0;
@@ -1879,7 +1879,7 @@ static int findExon(ZMapFeature feature, int exon_start, int exon_end)
 /* Returns the coords (in reference sequence coords) of the cds section of the given exon
  * and also it's phase. */
 static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
-      int *exon_cds_start_out, int *exon_cds_end_out, ZMapPhase * p_phase_out)
+                              int *exon_cds_start_out, int *exon_cds_end_out, ZMapPhase * p_phase_out)
 {
   gboolean result = FALSE ;
   int cds_start, cds_end ;
@@ -1947,13 +1947,14 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
           if (i == exon_index)
             {
               /* The first exon must have phase 0 unless it has been annotated as
-               * starting with a different phase, all others are calculated from
+               * starting with start_not_found, all others are calculated from
                * CDS bases so far. */
 
               if (first_exon)
                 {
+                  // N.B. phase = (start_not_found - 1)
                   if (feature->feature.transcript.flags.start_not_found)
-                    phase = feature->feature.transcript.start_not_found ;
+                    phase = (feature->feature.transcript.start_not_found - 1) ;
                   else
                     phase = 0 ;
                 }
