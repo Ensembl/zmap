@@ -85,8 +85,8 @@ gboolean zMapGFFGetVersionFromString(const char* const sString, int * const piOu
  * the line with this function and rewind the GIOChannel to the same point at which
  * we entered. Returns TRUE if this operation returns 2 or 3, FALSE otherwise.
  * If the line encountered is blank, we return with version 2 set as default,
- * and return TRUE. If an error associated with the GIOChannel occurrs, then we
- * return FALSE and return the status and Error from the GIOChannel call.
+ * and return TRUE. If an error associated with the GIOChannel occurs, then we
+ * return FALSE and return the status and Error (if there is one) from the GIOChannel call.
  */
 gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, GString *pString,
                                   int * const piOut, GIOStatus *cStatusOut, GError **pError_out)
@@ -101,7 +101,7 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, GString *pString,
     iTerminatorPos = 0
   ;
   GError *pError = NULL ;
-  GIOStatus cStatus ;
+  GIOStatus cStatus = G_IO_STATUS_NORMAL ;
 
   /*
    * Set the default version to be returned.
@@ -121,6 +121,7 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, GString *pString,
   cStatus = g_io_channel_read_line_string(pChannel, pString, &iTerminatorPos, &pError) ;
   if (pError)
     goto return_point ;
+
   pPos = strchr(pString->str, cNewline) ;
   if (pPos)
     *pPos = cNull ;
@@ -164,6 +165,15 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, GString *pString,
 #endif
 
  return_point:
+  if (!bResult)
+    {
+      if (pError)
+        *pError_out = pError ;
+
+      if (cStatus != G_IO_STATUS_NORMAL)
+        *cStatusOut = cStatus ;
+    }
+
 
   return bResult ;
 }

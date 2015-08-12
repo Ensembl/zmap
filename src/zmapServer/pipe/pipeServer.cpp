@@ -410,29 +410,40 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
           if (!server->gff_line)
             server->gff_line = g_string_sized_new(2000) ;            /* Probably not many lines will be > 2k chars. */
 
-          /* Get the GFF version */
+          /* If no particular GFF version was requested then get if from the data source. */
           if (!(server->gff_version = zMapGFFGetVersion(server->parser)))
             {
+              // A bit HOKEY: this is our first attempt to read from the pipe and if anything goes
+              // wrong then it's an error. We are relying on gff scripts always returning a header
+              // even if there's no data and then we can report "no data", otherwise it's an error.
               if (!zMapGFFGetVersionFromGIO(server->gff_pipe, server->gff_line,
                                             &(server->gff_version),
                                             &pipe_status, &gff_pipe_err))
                 {
-                  /* If status is normal we can still get here if we read an empty string */
-                  if (pipe_status == G_IO_STATUS_EOF)
+                  // Function has returned some kind of error, not just no data.   
+                  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+                  if (gff_pipe_err)
                     {
-                      server->last_err_msg = g_strdup("No data returned from pipe") ;
-                      result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
-                    }
-                  else if (pipe_status == G_IO_STATUS_NORMAL)
-                    {
-                      server->last_err_msg = g_strdup("Empty data returned from pipe") ;
-                      result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
+                      server->last_err_msg = g_strdup_printf("Could not read from pipe because: \"%s\".",
+                                                             gff_pipe_err->message) ;
+                      g_error_free(gff_pipe_err) ;
+                      gff_pipe_err = NULL ;
+                      
                     }
                   else
                     {
-                      server->last_err_msg = g_strdup("Serious GIO error returned from pipe") ;
-                      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+                      if (pipe_status == G_IO_STATUS_EOF)
+                        {
+                          server->last_err_msg = g_strdup("Could not read from pipe because there was no data.") ;
+                        }
+                      else
+                        {
+                          server->last_err_msg = g_strdup_printf("Could not read from pipe because"
+                                                                 " there was a serious GIO error: %d.", pipe_status) ;
+                        }
                     }
+                  
                 }
             }
 
