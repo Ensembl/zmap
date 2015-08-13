@@ -23,7 +23,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Generalised server interface, hides acedb/das/file
+ * Description: Generalised server interface, hides acedb/file
  *              details from caller.
  *
  *-------------------------------------------------------------------

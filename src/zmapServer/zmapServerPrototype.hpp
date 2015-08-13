@@ -117,17 +117,6 @@ typedef struct _ZMapServerFuncsStruct
 } ZMapServerFuncsStruct, *ZMapServerFuncs ;
 
 
-
-/* These are the hard coded function names for specific server implementations.
- * We could make this all more dynamic but this will do for now. */
-/* commented out as only server implementations include this file, zmapServer_P.h has a copy
-void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs) ;
-void dasGetServerFuncs(ZMapServerFuncs das_funcs) ;
-void fileGetServerFuncs(ZMapServerFuncs file_funcs) ;
-void pipeGetServerFuncs(ZMapServerFuncs pipe_funcs) ;
-void ensemblGetServerFuncs(ZMapServerFuncs pipe_funcs) ;
-*/
-
 /* Try to give consistent messages/logging.... */
 #define ZMAP_SERVER_MSGPREFIX "Server %s:%s - "
 

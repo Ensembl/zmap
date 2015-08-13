@@ -123,7 +123,6 @@ libZMap_la_SOURCES =
 libZMap_la_LIBADD  = \
 zmapControl/libZMapControl.la \
 zmapConfig/libZMapConfig.la   \
-zmapDAS/libZMapDas.la         \
 zmapDraw/libZMapDraw.la       \
 zmapFeature/libZMapFeature.la \
 zmapGFF/libZMapGFF.la         \
@@ -353,7 +352,7 @@ maintainer-clean-local:
 
 
 ZMAP_BUILD_FILES = $(top_builddir)/zmapApp/*.o $(top_builddir)/zmapAppServices/*.o $(top_builddir)/zmapConfig/*.o \
-$(top_builddir)/zmapControl/*.o $(top_builddir)/zmapDAS/*.o $(top_builddir)/zmapDraw/*.o $(top_builddir)/zmapFeature/*.o \
+$(top_builddir)/zmapControl/*.o $(top_builddir)/zmapDraw/*.o $(top_builddir)/zmapFeature/*.o \
 $(top_builddir)/zmapGFF/*.o $(top_builddir)/zmapManager/*.o $(top_builddir)/zmapRemoteControl/*.o \
 $(top_builddir)/zmapServer/*.o $(top_builddir)/zmapThreads/*.o $(top_builddir)/zmapUtils/*.o \
 $(top_builddir)/zmapView/*.o $(top_builddir)/zmapWindow/*.o $(top_builddir)/zmapXML/*.o

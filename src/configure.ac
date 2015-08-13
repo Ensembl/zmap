@@ -519,7 +519,6 @@ ZMAP_SRC_DIRS="zmapApp \
 zmapAppServices \
 zmapConfig \
 zmapControl \
-zmapDAS \
 zmapDraw \
 zmapFeature \
 zmapGFF \
@@ -556,7 +555,6 @@ zmapApp/Makefile
 zmapAppServices/Makefile
 zmapConfig/Makefile
 zmapControl/Makefile
-zmapDAS/Makefile
 zmapDraw/Makefile
 zmapFeature/Makefile
 zmapFeature/tests/Makefile
@@ -565,7 +563,6 @@ zmapRemoteControl/Makefile
 zmapRemoteControl/remotetest/Makefile
 zmapServer/Makefile
 zmapServer/acedb/Makefile
-zmapServer/das/Makefile
 zmapServer/pipe/Makefile
 zmapServer/file/Makefile
 zmapServer/ensembl/Makefile

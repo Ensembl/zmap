@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.zmap
 
-SUBDIRS = das pipe file
+SUBDIRS = pipe file
 
 if USE_ACECONN
 SUBDIRS += acedb
@@ -32,7 +32,6 @@ libZMapServers_la_SOURCES =
 libZMapServers_la_LIBADD  = \
 pipe/libPipeServer.la   \
 file/libFileServer.la   \
-das/libDasServer.la     \
 $(NULL)
 
 if USE_ACECONN

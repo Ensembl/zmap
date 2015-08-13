@@ -67,9 +67,8 @@ typedef struct _ZMapServerContextStruct
 
 /* Hard coded for now...sigh....would like to be more dynamic really.... */
 void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs) ;
-void dasGetServerFuncs(ZMapServerFuncs das_funcs) ;
-void fileGetServerFuncs(ZMapServerFuncs das_funcs) ;
-void pipeGetServerFuncs(ZMapServerFuncs das_funcs) ;
-void ensemblGetServerFuncs(ZMapServerFuncs das_funcs) ;
+void fileGetServerFuncs(ZMapServerFuncs file_funcs) ;
+void pipeGetServerFuncs(ZMapServerFuncs pipe_funcs) ;
+void ensemblGetServerFuncs(ZMapServerFuncs ensembl_funcs) ;
 
 #endif /* !ZMAP_SERVER_P_H */

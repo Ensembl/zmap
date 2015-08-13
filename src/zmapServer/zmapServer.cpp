@@ -80,11 +80,6 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
   switch(url->scheme)
     {
     case SCHEME_FILE:     // file only now...
-      /* if(url->params)
-         {
-         dasGetServerFuncs(serverfuncs);
-         break;
-         } */
       fileGetServerFuncs(serverfuncs) ;
       break ;
 
@@ -92,13 +87,14 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
       pipeGetServerFuncs(serverfuncs);
       break;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case SCHEME_HTTP:
       /*  case SCHEME_HTTPS: */
-      /* Force http[s] to BE das at the moment, but later I think we should have FORMAT too */
-      /* Not that Format gets passed in here though!!! we'd need to pass the url struct */
-      /* if(strcasecmp(format, 'das') == 0) */
-      dasGetServerFuncs(serverfuncs);
+      // Not supported at the moment.
       break;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifdef USE_ACECONN
     case SCHEME_ACEDB:
