@@ -423,15 +423,26 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GHashTab
 
           /* dna, 3-frame and feature translation are all created up front. (BUT I don't know why
            * it was done this way - Ed) */
-          if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
+
+          GList *req_sets = feature_context->req_feature_set_names ;
+          GQuark dna_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
+          GQuark threeft_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
+          GQuark orf_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME) ;
+          GQuark showtrans_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
+
+          /* We need the DNA if we are showing DNA, 3FT or ShowTranslation */
+          if (zMap_g_list_find_quark(req_sets, dna_quark) ||
+              zMap_g_list_find_quark(req_sets, threeft_quark) ||
+              zMap_g_list_find_quark(req_sets, showtrans_quark))
             {
-              if ((dna_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-                feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
+              if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
+                {
+                  if ((dna_style = zMapFindStyle(styles, dna_quark)))
+                    feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
+                }
             }
 
-
-          if (zMap_g_list_find_quark(feature_context->req_feature_set_names,
-                                     zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
+          if (zMap_g_list_find_quark(feature_context->req_feature_set_names, threeft_quark))
             {
               ZMapFeatureSet translation_fs = NULL;
 
@@ -440,7 +451,7 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GHashTab
                   translation_fs = feature_set;
                   ZMapFeatureTypeStyle frame_style = NULL;
 
-                  if((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
+                  if((frame_style = zMapFindStyle(styles, threeft_quark)))
                     zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
                 }
 
@@ -448,21 +459,20 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GHashTab
                 {
                   ZMapFeatureTypeStyle orf_style = NULL;
 
-                  if ((orf_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
+                  if ((orf_style = zMapFindStyle(styles, orf_quark)))
                     zMapFeatureORFSetCreateFeatures(feature_set, orf_style, translation_fs);
                 }
             }
 
 
           /* I'm going to create the show translation up front! */
-          if (zMap_g_list_find_quark(feature_context->req_feature_set_names,
-                                     zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
+          if (zMap_g_list_find_quark(feature_context->req_feature_set_names, showtrans_quark))
             {
               if ((zMapFeatureShowTranslationCreateSet(feature_block, &feature_set)))
                 {
                   ZMapFeatureTypeStyle frame_style = NULL;
 
-                  if ((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
+                  if ((frame_style = zMapFindStyle(styles, showtrans_quark)))
                     zMapFeatureShowTranslationSetCreateFeatures(feature_set, frame_style) ;
                 }
             }

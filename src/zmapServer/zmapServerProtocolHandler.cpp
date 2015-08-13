@@ -497,8 +497,16 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
         /* If DNA is one of the requested cols and there is an error report it, but not if its
          * just unsupported. */
-        if (zMap_g_list_find_quark(features->context->req_feature_set_names,
-                                   zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+        GList *req_sets = features->context->req_feature_set_names ;
+        GQuark dna_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
+        GQuark threeft_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
+        GQuark orf_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME) ;
+        GQuark showtrans_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
+
+        /* We need to load the DNA if we are showing DNA, 3FT or ShowTranslation */
+        if (zMap_g_list_find_quark(req_sets, dna_quark) ||
+            zMap_g_list_find_quark(req_sets, threeft_quark) ||
+            zMap_g_list_find_quark(req_sets, showtrans_quark))
           {
             request->response = zMapServerGetContextSequences(server, features->styles, features->context) ;
 
