@@ -325,7 +325,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
       && ZMAPFEATURE_IS_TRANSCRIPT(transcript)
       && (!cds_only || (cds_only && transcript->feature.transcript.flags.cds)))
     {
-      char *block_dna = NULL ;
+      char *block_dna = NULL, *dna_save = NULL ;
       GArray *exons ;
       gboolean revcomp = FALSE ;
       ZMapFeatureBlock block = NULL ;
@@ -345,7 +345,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
           /* If the transcript has any variations, apply them now to the dna string */
           zmapFeatureDNAApplyVariations(&dna, start, end, transcript->feature.transcript.variations) ;
 
-          block_dna = g_strdup(block_dna) ;
+          dna_save = block_dna = g_strdup(block_dna) ;
 
           zmapFeatureDNAApplyVariations(&block_dna,
                                         block->block_to_sequence.block.x1,
@@ -354,7 +354,8 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
 
           if (!spliced || !exons)
             {
-              int i, offset, length;
+              int i=0, length=0;
+              size_t offset = 0 ;
               gboolean upcase_exons = TRUE;
 
               /* Paint the exons in uppercase. */
@@ -378,7 +379,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
                           if (zMapCoordsClamp(start, end, &exon_start, &exon_end))
                             {
                               offset  = dna - block_dna ;
-                              offset += exon_start - transcript->x1 ;
+                              offset += static_cast<size_t>(exon_start - transcript->x1);
                               block_dna += offset ;
                               length  = exon_end - exon_start + 1 ;
 
@@ -429,8 +430,8 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
             }
         }
 
-      if (block_dna)
-        g_free(block_dna) ;
+      if (dna_save)
+        g_free(dna_save) ;
 
     }
 
@@ -792,7 +793,7 @@ static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
   dna_len = strlen(dna_sequence) ;
 
   if (start + length - 1 <= dna_len)
-    {    
+    {
       dna = g_strndup((dna_sequence + start - 1), length) ;
 
       if (revcomp)
