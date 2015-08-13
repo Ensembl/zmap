@@ -1701,9 +1701,9 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
               // Complicated but user can click on a transcript column and then we can end up
               // exporting some transcripts twice, once for the column clicked on and once for the
               // transcript set.
-              if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_NONE
-                  && (!(blixem_data->transcript_sets)
-                      || !(g_list_find(blixem_data->transcript_sets, GINT_TO_POINTER(feature_set_id)))))
+              if (blixem_data->align_set != ZMAPWINDOW_ALIGNCMD_NONE
+                  || ((!(blixem_data->transcript_sets)
+                       || !(g_list_find(blixem_data->transcript_sets, GINT_TO_POINTER(feature_set_id))))))
                 {
                   status = (zMapGFFFormatAttributeSetTranscript(blixem_data->attribute_flags)
                             && zMapGFFWriteFeatureTranscript(feature, blixem_data->attribute_flags,
