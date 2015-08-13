@@ -88,7 +88,8 @@ typedef struct GetFeaturesDataStructType
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
                                  char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout) ;
+                                 char *version_str, int timeout,
+                                 pthread_mutex_t *mutex) ;
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
@@ -218,7 +219,8 @@ static gboolean globalInit(void)
  */
 static gboolean createConnection(void **server_out,
                                  char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout_unused)
+                                 char *version_str, int timeout_unused,
+                                 pthread_mutex_t *mutex_unused)
 {
   gboolean result = FALSE ;
   PipeServer server ;

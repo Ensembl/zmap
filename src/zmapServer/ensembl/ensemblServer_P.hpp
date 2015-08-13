@@ -52,7 +52,7 @@ typedef struct _EnsemblServerStruct
   SequenceAdaptor *seq_adaptor ;
   const char* coord_system ;
   Slice *slice ;
-  GMutex* mutex ;                                           /* lock to protect ensc-core library
+  pthread_mutex_t *mutex ;                                   /* lock to protect ensc-core library
                                                              * calls as they are not thread safe,
                                                              * i.e. anything using dba, slice etc. */
 

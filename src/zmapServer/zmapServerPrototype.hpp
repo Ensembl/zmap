@@ -49,7 +49,8 @@ typedef gboolean (*ZMapServerGlobalFunc)(void) ;
 typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
 					 char *config_file,
 					 ZMapURL url, char *format,
-                                         char *version_str, int timeout) ;
+                                         char *version_str, int timeout,
+                                         pthread_mutex_t *mutex) ;
 
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn, ZMapServerReqOpen req_open) ;
 

@@ -336,6 +336,7 @@ void zMapServerRequestDestroy(ZMapServerReqAny request)
  * service a request from the master thread which includes decoding it, calling the appropriate server
  * routines and returning the answer to the master thread. */
 ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
+                                              pthread_mutex_t *mutex,
                                               void *request_in, void **reply_out,
                                               char **err_msg_out)
 {
@@ -378,7 +379,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
           {
             if ((request->response
                  = zMapServerCreateConnection(&server, global_init_data, create->config_file,
-                                              create->url, create->format, create->timeout, create->version))
+                                              create->url, create->format, create->timeout, create->version, mutex))
                 != ZMAP_SERVERRESPONSE_OK)
               {
                 *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;

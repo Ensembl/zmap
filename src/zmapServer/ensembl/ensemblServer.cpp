@@ -110,7 +110,7 @@ typedef struct DoAllAlignBlocksStructType
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
                                  char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout) ;
+                                 char *version_str, int timeout, pthread_mutex_t *mutex) ;
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
@@ -250,16 +250,10 @@ static gboolean globalInit(void)
 
 static gboolean createConnection(void **server_out,
                                  char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout)
+                                 char *version_str, int timeout, pthread_mutex_t *mutex)
 {
   gboolean result = FALSE ;
   EnsemblServer server ;
-
-  /* Create a single mutex used by all ensembl servers */
-  static GMutex *mutex = NULL ;
-
-  if (!mutex)
-    mutex = g_mutex_new();
 
   /* Always return a server struct as it contains error message stuff. */
   server = (EnsemblServer)g_new0(EnsemblServerStruct, 1) ;
@@ -338,16 +332,16 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
 
   if (!server->dba)
     {
-      g_mutex_lock(server->mutex) ;
+      pthread_mutex_lock(server->mutex) ;
       server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
-      g_mutex_unlock(server->mutex) ;
+      pthread_mutex_unlock(server->mutex) ;
     }
 
   if (server && server->dba && server->dba->dbc)
     {
-      g_mutex_lock(server->mutex) ;
+      pthread_mutex_lock(server->mutex) ;
       char *assembly_type = DBAdaptor_getAssemblyType(server->dba) ;
-      g_mutex_unlock(server->mutex) ;
+      pthread_mutex_unlock(server->mutex) ;
 
       if (assembly_type)
         {
@@ -1490,7 +1484,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
   if (server->slice)
     {
-      g_mutex_lock(server->mutex) ;
+      pthread_mutex_lock(server->mutex) ;
 
       getAllSimpleFeatures(server, get_features_data, feature_block) ;
       getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
@@ -1500,7 +1494,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
       getAllPredictionTranscripts(server, get_features_data, feature_block) ;
       //getAllGenes(server, get_features_data, feature_block) ;
 
-      g_mutex_unlock(server->mutex) ;
+      pthread_mutex_unlock(server->mutex) ;
     }
 
   return ;
@@ -1521,9 +1515,9 @@ static Slice* getSliceForCoordSystem(const char *coord_system,
   char *seq_name_copy = g_strdup(seq_name);
   char *coord_system_copy = g_strdup(coord_system) ;
 
-  g_mutex_lock(server->mutex) ;
+  pthread_mutex_lock(server->mutex) ;
   slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, coord_system_copy, seq_name_copy, start, end, strand, NULL, 0);
-  g_mutex_unlock(server->mutex) ;
+  pthread_mutex_unlock(server->mutex) ;
 
   g_free(seq_name_copy);
   g_free(coord_system_copy) ;
@@ -1546,18 +1540,18 @@ static Slice* getSlice(EnsemblServer server,
 
   if (!server->dba)
     {
-      g_mutex_lock(server->mutex) ;
+      pthread_mutex_lock(server->mutex) ;
       server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
-      g_mutex_unlock(server->mutex) ;
+      pthread_mutex_unlock(server->mutex) ;
     }
 
   if (server->dba && server->dba->dbc)
     {
       if (!server->slice_adaptor)
         {
-          g_mutex_lock(server->mutex) ;
+          pthread_mutex_lock(server->mutex) ;
           server->slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
-          g_mutex_unlock(server->mutex) ;
+          pthread_mutex_unlock(server->mutex) ;
         }
 
       if (!slice) 
@@ -1596,25 +1590,25 @@ static char* getSequence(EnsemblServer server,
 
   if (!server->dba)
     {
-      g_mutex_lock(server->mutex) ;
+      pthread_mutex_lock(server->mutex) ;
       server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
-      g_mutex_unlock(server->mutex) ;
+      pthread_mutex_unlock(server->mutex) ;
     }
 
   if (server->dba && server->dba->dbc)
     {
       if (!server->slice_adaptor)
         {
-          g_mutex_lock(server->mutex) ;
+          pthread_mutex_lock(server->mutex) ;
           server->slice_adaptor = DBAdaptor_getSliceAdaptor(server->dba);
-          g_mutex_unlock(server->mutex) ;
+          pthread_mutex_unlock(server->mutex) ;
         }
 
       if (!server->seq_adaptor)
         {
-          g_mutex_lock(server->mutex) ;
+          pthread_mutex_lock(server->mutex) ;
           server->seq_adaptor = DBAdaptor_getSequenceAdaptor(server->dba);
-          g_mutex_unlock(server->mutex) ;
+          pthread_mutex_unlock(server->mutex) ;
         }
 
       if (server->slice_adaptor && server->seq_adaptor && server->coord_system)
@@ -1623,11 +1617,11 @@ static char* getSequence(EnsemblServer server,
           char *seq_name_copy = g_strdup(seq_name) ;
           char *coord_system = g_strdup("chromosome") ;
 
-          g_mutex_lock(server->mutex) ;
+          pthread_mutex_lock(server->mutex) ;
           Slice *slice = SliceAdaptor_fetchByRegion(server->slice_adaptor, coord_system,
                                                     seq_name_copy, start, end,
                                                     strand, NULL, 0);
-          g_mutex_unlock(server->mutex) ;
+          pthread_mutex_unlock(server->mutex) ;
 
           g_free(seq_name_copy) ;
           g_free(coord_system) ;
@@ -1636,12 +1630,12 @@ static char* getSequence(EnsemblServer server,
 
           if (slice)
             {
-              g_mutex_lock(server->mutex) ;
+              pthread_mutex_lock(server->mutex) ;
 
               seq = SequenceAdaptor_fetchBySliceStartEndStrand(server->seq_adaptor, slice, 1, POS_UNDEF, 1);
               Slice_free(slice) ;
 
-              g_mutex_unlock(server->mutex) ;
+              pthread_mutex_unlock(server->mutex) ;
             }
         }
     }
