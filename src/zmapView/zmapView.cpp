@@ -1613,7 +1613,15 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
   if (server)
     {
-      if (req_sources && (zMap_g_list_find_quark(req_sources, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+      GQuark dna_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
+      GQuark threeft_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
+      GQuark showtrans_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
+
+      /* We need the DNA if we are showing DNA, 3FT or ShowTranslation */
+      if (req_sources && 
+          (zMap_g_list_find_quark(req_sources, dna_quark) ||
+           zMap_g_list_find_quark(req_sources, threeft_quark) ||
+           zMap_g_list_find_quark(req_sources, showtrans_quark)))
         {
           dna_requested = TRUE ;
         }
