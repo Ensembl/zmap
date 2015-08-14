@@ -301,8 +301,10 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
                              "cookie-jar", prefs.cookie_jar,
                              NULL);
 
-      g_free(prefs.location);
-      g_free(prefs.cookie_jar);
+      if (prefs.location)
+        g_free(prefs.location);
+      if (prefs.cookie_jar)
+        g_free(prefs.cookie_jar);
 
       g_signal_connect(G_OBJECT(pfetch), "reader", G_CALLBACK(pfetch_reader_func), pfetch_data);
 
