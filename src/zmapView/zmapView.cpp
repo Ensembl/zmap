@@ -3661,7 +3661,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                          * to the cancel. */
                         /* Warn the user ! */
                         if (view_con->show_warning)
-                          zMapWarning("Source is being cancelled: Error was: %s\n\nSource: %s", (err_msg ? err_msg : "<no error message>"), view_con->url) ;
+                          {
+                            zMapWarning("Error loading source.\n\n %s", (err_msg ? err_msg : "<no error message>")) ;
+                            zMapLogWarning("Source is being cancelled: Error was: '%s'. Source: %s",
+                                           (err_msg ? err_msg : "<no error message>"), view_con->url) ;
+                          }
 
                         THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
                                               "Thread being cancelled because of error \"%s\"",
