@@ -493,6 +493,8 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
 
       Object_decRefCount(rsf);
       free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
 
   if (features)
@@ -522,6 +524,8 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
 
       Object_decRefCount(rsf);
       free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
 
   if (features)
@@ -551,6 +555,8 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
 
       Object_decRefCount(rsf);
       free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
 
   if (features)
@@ -581,6 +587,8 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
 
       Object_decRefCount(rsf);
       free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
 
   if (features)
@@ -611,6 +619,8 @@ static gboolean getAllTranscripts(EnsemblServer server,
 
       Object_decRefCount(rsf);
       free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
 
   if (features)
@@ -641,6 +651,8 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 
       Object_decRefCount(rsf);
       free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
 
   if (features)
@@ -672,6 +684,8 @@ static gboolean getAllGenes(EnsemblServer server,
 
       Object_decRefCount(rsf);
       free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
 
   if (features)
