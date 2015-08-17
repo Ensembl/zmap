@@ -327,7 +327,12 @@ void zmapVarSetValueWithError(ZMapReply thread_state, ZMapThreadReply new_state,
   thread_state->state = new_state ;
 
   if (err_msg)
-    thread_state->error_msg = err_msg ;
+    {
+      if (thread_state->error_msg)
+        g_free(thread_state->error_msg) ;
+
+      thread_state->error_msg = g_strdup(err_msg) ;
+    }
 
   if ((status = pthread_mutex_unlock(&(thread_state->mutex))) != 0)
     {
@@ -341,7 +346,7 @@ void zmapVarSetValueWithError(ZMapReply thread_state, ZMapThreadReply new_state,
 /* Sometimes for Errors we need to return some of the data as it includeds request
  * details and so on. */
 void zmapVarSetValueWithErrorAndData(ZMapReply thread_state, ZMapThreadReply new_state,
-				     char *err_msg, void *data)
+				     const char *err_msg, void *data)
 {
   int status ;
 
@@ -353,7 +358,13 @@ void zmapVarSetValueWithErrorAndData(ZMapReply thread_state, ZMapThreadReply new
   thread_state->state = new_state ;
 
   if (err_msg)
-    thread_state->error_msg = err_msg ;
+    {
+      if (thread_state->error_msg)
+        g_free(thread_state->error_msg) ;
+
+      thread_state->error_msg = g_strdup(err_msg) ;
+    }
+
   thread_state->reply = data ;
 
   if ((status = pthread_mutex_unlock(&(thread_state->mutex))) != 0)
@@ -370,7 +381,7 @@ void zmapVarSetValueWithErrorAndData(ZMapReply thread_state, ZMapThreadReply new
  * is returned in data_out and if there is an err_msg it is returned in err_msg_out,
  * returns FALSE if it could not read the value. */
 gboolean zmapVarGetValueWithData(ZMapReply thread_state, ZMapThreadReply *state_out,
-				 void **data_out, const char **err_msg_out)
+				 void **data_out, char **err_msg_out)
 {
   gboolean unlocked = TRUE ;
   int status ;
