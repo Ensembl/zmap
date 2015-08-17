@@ -166,8 +166,15 @@ void *zmapNewThread(void *thread_args)
 
                 ZMAPTHREAD_DEBUG(thread, "%s", "request failed....") ;
 
+                /* Create an informative error message for the log */
                 error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
                                             zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
+
+                zMapLogWarning("%s", error_msg) ;
+
+                /* Create a simpler message (without the return code etc) to show to the user */
+                g_free(error_msg) ;
+                error_msg = g_strdup_printf("%s", slave_error) ;
 
                 /* Signal that we failed. */
                 zmapVarSetValueWithErrorAndData(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg, request) ;
@@ -182,8 +189,15 @@ void *zmapNewThread(void *thread_args)
 
                 ZMAPTHREAD_DEBUG(thread, "%s", "request failed....") ;
 
+                /* Create an informative error message for the log */
                 error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
                                             zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
+
+                zMapLogWarning("%s", error_msg) ;
+
+                /* Create a simpler message (without the return code etc) to show to the user */
+                g_free(error_msg) ;
+                error_msg = g_strdup_printf("%s", slave_error) ;
 
                 /* Signal that we failed. */
                 zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg) ;
@@ -214,8 +228,11 @@ void *zmapNewThread(void *thread_args)
 
                 ZMAPTHREAD_DEBUG(thread, "%s", "server died....") ;
 
+                /* Create an informative error message for the log */
                 error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
                                             zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
+
+                zMapLogWarning("%s", error_msg) ;
 
                 /* a misnomer, it's the server that the thread talks to */
                 if (!thread_cb->thread_died)
@@ -223,6 +240,10 @@ void *zmapNewThread(void *thread_args)
 
                 thread_cb->thread_died = TRUE ;
                 thread_cb->initial_error = g_strdup(error_msg) ;
+                
+                /* Create a simpler message (without the return code etc) to show to the user */
+                g_free(error_msg) ;
+                error_msg = g_strdup_printf("%s", slave_error) ;
 
                 /* must continue on to getStatus if it's in the step list
                  * zmapServer functions will not run if status is DIED
@@ -244,6 +265,9 @@ void *zmapNewThread(void *thread_args)
                 */
                 error_msg = g_strdup_printf("%s %s - %s (%s)", ZMAPTHREAD_SLAVEREQUEST,
                                             zMapThreadReturnCode2ExactStr(slave_response), "server terminated", slave_error) ;
+
+                zMapLogWarning("%s", error_msg) ;
+
                 zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
 
                 call_clean = 0 ;
