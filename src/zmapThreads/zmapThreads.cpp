@@ -166,7 +166,7 @@ void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state)
 
 
 gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
-				  void **data, const char **err_msg)
+				  void **data, char **err_msg)
 {
   gboolean got_value ;
 

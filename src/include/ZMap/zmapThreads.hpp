@@ -135,7 +135,7 @@ void zMapThreadRequest(ZMapThread thread, void *request) ;
 gboolean zMapThreadGetReply(ZMapThread thread, ZMapThreadReply *state) ;
 void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state) ;
 gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
-				    void **data, const char **err_msg) ;
+				    void **data, char **err_msg) ;
 char *zMapThreadGetThreadID(ZMapThread thread) ;
 char *zMapThreadGetRequestString(ZMapThreadRequest signalled_state) ;
 char *zMapThreadGetReplyString(ZMapThreadReply signalled_state) ;

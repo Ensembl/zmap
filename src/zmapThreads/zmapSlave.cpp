@@ -162,7 +162,7 @@ void *zmapNewThread(void *thread_args)
             case ZMAPTHREAD_RETURNCODE_SOURCEEMPTY:
             case ZMAPTHREAD_RETURNCODE_REQFAIL:
               {
-                char *error_msg ;
+                char *error_msg = NULL ;
 
                 ZMAPTHREAD_DEBUG(thread, "%s", "request failed....") ;
 
@@ -181,11 +181,14 @@ void *zmapNewThread(void *thread_args)
 
                 request = NULL ;
 
+                g_free(error_msg) ;
+                error_msg = NULL ;
+
                 break ;
               }
             case ZMAPTHREAD_RETURNCODE_TIMEDOUT:
               {
-                char *error_msg ;
+                char *error_msg = NULL ;
 
                 ZMAPTHREAD_DEBUG(thread, "%s", "request failed....") ;
 
@@ -202,11 +205,14 @@ void *zmapNewThread(void *thread_args)
                 /* Signal that we failed. */
                 zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg) ;
 
+                g_free(error_msg) ;
+                error_msg = NULL ;
+
                 break ;
               }
             case ZMAPTHREAD_RETURNCODE_BADREQ:
               {
-                char *error_msg ;
+                char *error_msg = NULL ;
 
                 ZMAPTHREAD_DEBUG(thread, "%s", "bad request....") ;
 
@@ -218,13 +224,16 @@ void *zmapNewThread(void *thread_args)
                 thread_cb->thread_died = TRUE ;
                 thread_cb->initial_error = g_strdup(error_msg) ;
 
+                g_free(error_msg) ;
+                error_msg = NULL ;
+
                 goto clean_up ;
 
                 break ;
               }
             case ZMAPTHREAD_RETURNCODE_SERVERDIED:
               {
-                char *error_msg ;
+                char *error_msg = NULL ;
 
                 ZMAPTHREAD_DEBUG(thread, "%s", "server died....") ;
 
@@ -250,11 +259,14 @@ void *zmapNewThread(void *thread_args)
                  */
                 zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
 
+                g_free(error_msg) ;
+                error_msg = NULL ;
+
                 break;
               }
             case ZMAPTHREAD_RETURNCODE_QUIT:
               {
-                const char * error_msg = "OK";
+                char *error_msg = NULL ;
 
                 /* this message goes to the otterlace features loaded message
                    and no error gets mangled into a string that says (Server Pipe: - null)
@@ -271,6 +283,9 @@ void *zmapNewThread(void *thread_args)
                 zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
 
                 call_clean = 0 ;
+
+                g_free(error_msg) ;
+                error_msg = NULL ;
 
                 break;
               }

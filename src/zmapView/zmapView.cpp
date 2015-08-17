@@ -109,7 +109,7 @@
 /* Struct describing features loaded. */
 typedef struct LoadFeaturesDataStructType
 {
-  const char *err_msg;                                      /* from the server mainly */
+  char *err_msg;                                            /* from the server mainly */
   gchar *stderr_out;
   gint exit_code;
 
@@ -1461,7 +1461,7 @@ void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer)
 }
 
 /* Check if there have been changes to the scratch column that have not been
-/* Check if there are any unsaved changes and if so ask the user what they want to do.
+ * Check if there are any unsaved changes and if so ask the user what they want to do.
  * Returns true to continue or false to cancel. */
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view)
 {
@@ -3433,7 +3433,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
           ZMapThread thread ;
           ZMapThreadReply reply = ZMAPTHREAD_REPLY_DIED ;
           void *data = NULL ;
-          const char *err_msg = NULL ;
+          char *err_msg = NULL ;
           gboolean thread_has_died = FALSE ;
           gboolean all_steps_finished = FALSE ;
           gboolean this_step_finished = FALSE ;
@@ -3608,6 +3608,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 
                                 /* TRY THIS HERE.... */
+                                if (err_msg)
+                                  g_free(err_msg) ;
+                                
                                 err_msg = connect_data->err_msg ;
 
                                 this_step_finished = TRUE ;
@@ -3881,11 +3884,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         {
                           /* NOTE on TERMINATE OK/REPLY_QUIT we get thread_has_died and NULL the error message */
                           /* but if we set thread_status for FAILED on successful exit then we get this, so let's not do that: */
-                          err_msg = "Thread failed but there is no error message to say why !" ;
+                          err_msg = g_strdup("Thread failed but there is no error message to say why !") ;
 
                           zMapLogWarning("%s", err_msg) ;
-
-                          err_msg = g_strdup(err_msg) ;            /* Set default message.... */
                         }
 
                       if (view_con->show_warning && is_continue)
@@ -3910,7 +3911,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                     {
                       connect_data->loaded_features->status = (view_con->thread_status == THREAD_STATUS_OK
                                                                ? TRUE : FALSE) ;
-                      connect_data->loaded_features->err_msg = err_msg ;
+
+                      if (connect_data->loaded_features->err_msg)
+                        g_free(connect_data->loaded_features->err_msg) ;
+
+                      connect_data->loaded_features->err_msg = g_strdup(err_msg) ;
                       connect_data->loaded_features->start = connect_data->start;
                       connect_data->loaded_features->end = connect_data->end;
                       connect_data->loaded_features->exit_code = connect_data->exit_code ;
@@ -3937,7 +3942,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
           if (err_msg)
             {
-              g_free((void *)err_msg) ;
+              g_free(err_msg) ;
               err_msg = NULL ;
             }
 
@@ -6804,6 +6809,9 @@ static void destroyLoadFeatures(LoadFeaturesData loaded_features)
 {
   if (loaded_features->feature_sets)
     g_list_free(loaded_features->feature_sets) ;
+
+  if (loaded_features->err_msg)
+    g_free(loaded_features->err_msg) ;
 
   g_free(loaded_features) ;
 
