@@ -459,7 +459,8 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
           dest_start = (dest_start + 2) / 3 ;        /* we assume frame 1, bias other frames backwards */
           dest_end = (dest_end + 2) / 3 ;
 
-          memset(((seq + dest_start) - 1), (int)SHOW_TRANS_INTRON, ((dest_end - dest_start))) ;
+          if (seq)
+            memset(((seq + dest_start) - 1), (int)SHOW_TRANS_INTRON, ((dest_end - dest_start))) ;
 
           /* Now memcpy peptide strings into appropriate places, remember to divide seq positions
            * by 3 !!!!!! */

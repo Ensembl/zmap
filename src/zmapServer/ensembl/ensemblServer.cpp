@@ -53,6 +53,7 @@
 extern "C" {
 #endif
 
+#include <Object.h>
 #include <EnsC.h>
 #include <SliceAdaptor.h>
 #include <SequenceAdaptor.h>
@@ -489,7 +490,15 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
         makeFeatureSimple(server, rsf, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", SimpleFeature_getDisplayLabel(sf));
+
+      Object_decRefCount(rsf);
+      free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
+
+  if (features)
+    Vector_free(features) ;
 
   return result;
 }
@@ -512,7 +521,15 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
         makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
+
+      Object_decRefCount(rsf);
+      free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
+
+  if (features)
+    Vector_free(features) ;
 
   return result;
 }
@@ -535,7 +552,15 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
         makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
+
+      Object_decRefCount(rsf);
+      free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
+
+  if (features)
+    Vector_free(features) ;
 
   return result;
 }
@@ -559,7 +584,15 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
         makeFeatureRepeat(server, rsf, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", RepeatConsensus_getName(RepeatFeature_getConsensus(sf)));
+
+      Object_decRefCount(rsf);
+      free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
+
+  if (features)
+    Vector_free(features) ;
 
   return result;
 }
@@ -583,7 +616,15 @@ static gboolean getAllTranscripts(EnsemblServer server,
         makeFeatureTranscript(server, rsf, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
+
+      Object_decRefCount(rsf);
+      free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
+
+  if (features)
+    Vector_free(features) ;
 
   return result;
 }
@@ -607,7 +648,15 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
         makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
+
+      Object_decRefCount(rsf);
+      free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
+
+  if (features)
+    Vector_free(features) ;
 
   return result;
 }
@@ -632,7 +681,15 @@ static gboolean getAllGenes(EnsemblServer server,
         makeFeatureGene(server, rsf, get_features_data, feature_block) ;
       else
         printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
+
+      Object_decRefCount(rsf);
+      free(rsf);
+      Object_decRefCount(sf);
+      free(sf);
     }
+
+  if (features)
+    Vector_free(features) ;
 
   return result;
 }
@@ -1002,6 +1059,8 @@ static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData 
           Transcript *transcript = Vector_getElementAt(transcripts, i);
           makeFeatureTranscript(server, transcript, get_features_data, feature_block) ;
         }
+
+      Vector_free(transcripts) ;
     }
 }
 #endif
@@ -1057,6 +1116,7 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
 
       Vector *exons = Transcript_getAllExons(rsf) ;
       transcriptAddExons(server, feature, exons) ;
+      Vector_free(exons) ;
     }
 
   return feature ;
@@ -1124,6 +1184,7 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
 
       Vector *exons = PredictionTranscript_getAllExons(rsf, 0) ;
       transcriptAddExons(server, feature, exons) ;
+      Vector_free(exons) ;
     }
 
   return feature ;
