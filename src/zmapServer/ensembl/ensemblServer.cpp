@@ -318,9 +318,10 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   else
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
-      setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)",
-                                        server->db_name, server->sequence, server->zmap_start, server->zmap_end)) ;
-      ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+
+      if (!server->last_err_msg)
+        setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)",
+                                          server->db_name, server->sequence, server->zmap_start, server->zmap_end)) ;
     }
 
   return result ;
@@ -355,7 +356,6 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
       else
         {
           setErrMsg(server, g_strdup_printf("Failed to get assembly type for database %s", server->db_name)) ;
-          ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
         }
     }
 
@@ -1628,13 +1628,11 @@ static Slice* getSlice(EnsemblServer server,
         {
           setErrMsg(server, g_strdup_printf("Failed to get slice for %s (%s %d,%d)",
                                             server->db_name, server->sequence, server->zmap_start, server->zmap_end)) ;
-          ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
         }
     }
   else
     {
       setErrMsg(server, g_strdup_printf("Failed to create database connection for %s", server->db_name)) ;
-      ZMAPSERVER_LOG(Warning, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
     }
 
   return slice ;
