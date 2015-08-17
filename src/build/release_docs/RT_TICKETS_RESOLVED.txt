@@ -1,53 +1,23 @@
 
-Request Tracker Tickets Resolved from 11/06/2015 to 29/07/2015
+Request Tracker Tickets Resolved from 15/07/2015 to 17/08/2015
 
-ticket/468398
-id: ticket/468398
+ticket/476551
+id: ticket/476551
 Queue: zmap
-Subject: Filtering columns
-Requestors: erb@sanger.ac.uk
+Subject: Double click bug
+Requestors: mh19@sanger.ac.uk, mpk@sanger.ac.uk
+Owner: gb10
+Resolved: Fri Jul 31 12:56:23 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/478112
+id: ticket/478112
+Queue: zmap
+Subject: Failed columns show as Empty
+Requestors: jgrg@sanger.ac.uk
 Owner: edgrif
-Resolved: Thu Jun 11 15:29:16 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/468825
-id: ticket/468825
-Queue: zmap
-Subject: zmap ignores non-zero exit of filter_get
-Requestors: gdr@sanger.ac.uk, jgrg@sanger.ac.uk
-Owner: edgrif
-Resolved: Thu Jun 11 15:17:43 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/476861
-id: ticket/476861
-Queue: zmap
-Subject: chromosome coordinates missing in zmap
-Requestors: th2@sanger.ac.uk
-Owner: sm23
-Resolved: Mon Jun 29 14:35:33 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/478110
-id: ticket/478110
-Queue: zmap
-Subject: zmap should log the complete command line it uses when starting a pipeserver
-Requestors: edgrif@sanger.ac.uk
-Owner: edgrif
-Resolved: Mon Jul 06 15:55:45 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/478352
-id: ticket/478352
-Queue: zmap
-Subject: Zmap - GFF import export problems
-Requestors: mt4@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Jul 10 11:57:34 2015
+Resolved: Wed Aug 12 12:01:11 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -60,6 +30,46 @@ Owner: gb10
 Resolved: Thu Jul 23 14:45:54 2015
 CF.{zmapace_gitcommit}: 682750a
 CF.{zmapace_resolve_version}: 2.0.0
+
+ticket/479656
+id: ticket/479656
+Queue: zmap
+Subject: error in call blixem
+Requestors: sm23@sanger.ac.uk
+Owner: gb10
+Resolved: Fri Jul 31 16:03:02 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/479793
+id: ticket/479793
+Queue: zmap
+Subject: Blixem - some transcripts not showing all of CDS
+Requestors: cas@sanger.ac.uk
+Owner: edgrif
+Resolved: Wed Aug 12 17:15:08 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/481405
+id: ticket/481405
+Queue: zmap
+Subject: pfetch not working for mRNAs... (getting no match)
+Requestors: mpk@sanger.ac.uk
+Owner: gb10
+Resolved: Mon Aug 03 14:33:29 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/484181
+id: ticket/484181
+Queue: zmap
+Subject: View or Export Feature, DNA, Peptide 
+Requestors: sb7@sanger.ac.uk
+Owner: sm23
+Resolved: Thu Aug 13 16:40:01 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
 
 
 End of Request Tracker tickets

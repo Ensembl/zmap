@@ -1,2719 +1,1098 @@
+2015-08-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/error_messages' into develop
+2015-08-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix memory leaks and potential corruption with error message string allocations - BUG FIX
+ src/include/ZMap/zmapThreads.hpp     |    2 +-
+ src/zmapThreads/zmapSlave.cpp        |   25 ++++++++++++++++++++-----
+ src/zmapThreads/zmapThreads.cpp      |    2 +-
+ src/zmapThreads/zmapThreadsUtils.cpp |   19 +++++++++++++++----
+ src/zmapThreads/zmapThreads_P.hpp    |    6 +++---
+ src/zmapView/zmapView.cpp            |   24 ++++++++++++++++--------
+ 6 files changed, 56 insertions(+), 22 deletions(-)
+
+2015-08-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove duplicate error messages when ensembl source fails
+ src/zmapServer/ensembl/ensemblServer.cpp |   10 ++++------
+ 1 files changed, 4 insertions(+), 6 deletions(-)
+
+2015-08-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove verbose output from user error messages when slave fails
+ src/zmapThreads/zmapSlave.cpp |   24 ++++++++++++++++++++++++
+ 1 files changed, 24 insertions(+), 0 deletions(-)
+
+2015-08-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove verbose output from user error message when source fails
+ src/zmapView/zmapView.cpp |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+2015-08-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/ensembl' into develop
+2015-08-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix leaks in ensembl server code - TRIVIAL
+ src/zmapServer/ensembl/ensemblServer.cpp |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+2015-08-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix memory leaks in ensembl server code - TRIVIAL
+ src/zmapServer/ensembl/ensemblServer.cpp |   47 ++++++++++++++++++++++++++++++
+ 1 files changed, 47 insertions(+), 0 deletions(-)
+
+2015-08-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Load dna if required for 3ft even if dna not requested - TRIVIAL
+ src/zmapView/zmapView.cpp |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+2015-08-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Avoid potential null access - TRIVIAL
+ src/zmapWindow/zmapWindowSeqDisp.cpp |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+2015-08-14  Steve Miller  <sm23@sanger.ac.uk>
+ fix to possibly unsafe calls to g_free() in zmapWindowPfetchEntry() - RT 484263
+ src/zmapWindow/zmapWindowFeature.cpp |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+2015-08-13  Steve Miller  <sm23@sanger.ac.uk>
+ fix to bug for SIRT:484181 - BUG FIX
+ src/zmapFeature/zmapFeatureDNA.cpp |   15 ++++++++-------
+ 1 files changed, 8 insertions(+), 7 deletions(-)
+
+2015-08-13  Gemma Guest  <gb10@sanger.ac.uk>
+ Only create DNA featureset if it was requested
+ src/zmapServer/zmapServer.cpp                |   32 +++++++++++++++++---------
+ src/zmapServer/zmapServerProtocolHandler.cpp |   12 ++++++++-
+ 2 files changed, 31 insertions(+), 13 deletions(-)
+
+2015-08-13  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix race condition in creating mutex - WIP
+ src/include/ZMap/zmapServerProtocol.hpp      |    1 +
+ src/include/ZMap/zmapThreads.hpp             |    1 +
+ src/zmapServer/acedb/acedbServer.cpp         |    6 ++-
+ src/zmapServer/ensembl/ensemblServer.cpp     |   54 +++++++++++--------------
+ src/zmapServer/ensembl/ensemblServer_P.hpp   |    2 +-
+ src/zmapServer/file/fileServer.cpp           |    8 ++-
+ src/zmapServer/pipe/pipeServer.cpp           |    6 ++-
+ src/zmapServer/zmapServer.cpp                |    5 +-
+ src/zmapServer/zmapServer.hpp                |    3 +-
+ src/zmapServer/zmapServerProtocolHandler.cpp |    3 +-
+ src/zmapServer/zmapServerPrototype.hpp       |    3 +-
+ src/zmapThreads/zmapSlave.cpp                |    2 +-
+ src/zmapThreads/zmapThreads.cpp              |   12 ++++++
+ src/zmapThreads/zmapThreads_P.hpp            |    4 ++
+ 14 files changed, 66 insertions(+), 44 deletions(-)
+
+2015-08-13  Gemma Guest  <gb10@sanger.ac.uk>
+ attempt to remove weird file that shouldn't be in git - BUILD
+ src/zmapWindow/.#zmapWindowMenus.cpp |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+2015-08-12  Gemma Guest  <gb10@sanger.ac.uk>
+ Avoid crash if show translation when seq not available - BUG FIX
+ src/zmapWindow/zmapWindowSeqDisp.cpp |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+2015-08-12  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix instability problems in ensembl - BUG FIX
+ src/zmapServer/ensembl/ensemblServer.cpp   |   68 +++++++++++++---------------
+ src/zmapServer/ensembl/ensemblServer_P.hpp |    3 +-
+ 2 files changed, 33 insertions(+), 38 deletions(-)
+
+2015-08-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Remove all DAS code, it has not been used in years. - BUG FIX
+ src/Makefile.am                        |    3 +-
+ src/configure.ac                       |    3 -
+ src/zmapDAS/Makefile.am                |   20 -
+ src/zmapDAS/zmapDAS1DSN.cpp            |  112 ---
+ src/zmapDAS/zmapDAS1Parser.cpp         |  910 -----------------
+ src/zmapServer/Makefile.am             |    3 +-
+ src/zmapServer/README                  |    7 +-
+ src/zmapServer/das/Makefile.am         |   20 -
+ src/zmapServer/das/README              |  111 ---
+ src/zmapServer/das/dasServer.cpp       | 1680 --------------------------------
+ src/zmapServer/das/dasServer_P.hpp     |  103 --
+ src/zmapServer/zmapServer.cpp          |   14 +-
+ src/zmapServer/zmapServer.hpp          |    2 +-
+ src/zmapServer/zmapServerPrototype.hpp |   11 -
+ src/zmapServer/zmapServer_P.hpp        |    7 +-
+ 15 files changed, 13 insertions(+), 2993 deletions(-)
+
+2015-08-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix buglet in my fix for preventing exporting of transcripts twice. - BUG FIX
+ src/zmapView/zmapViewCallBlixem.cpp |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+2015-08-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Stop duplicate exports of transcripts in case where user clicks on a transcript column. - BUG FIX
+ src/zmapView/zmapViewCallBlixem.cpp |   17 ++++++++++++++---
+ 1 files changed, 14 insertions(+), 3 deletions(-)
+
+2015-08-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix bug in calculating phase from start_not_found. - BUG FIX
+ src/zmapFeature/zmapFeatureUtils.cpp |   11 ++++++-----
+ 1 files changed, 6 insertions(+), 5 deletions(-)
+
+2015-08-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix gff & pipe code meaning we did not catch gff scripts that exit without returning anything. - BUG FIX
+ src/zmapGFF/zmapGFFUtils.cpp       |   16 +++++++++++++---
+ src/zmapServer/pipe/pipeServer.cpp |   35 +++++++++++++++++++++++------------
+ 2 files changed, 36 insertions(+), 15 deletions(-)
+
+2015-08-10  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix bug with exporting temp feature - BUG FIX
+ src/zmapWindow/.#zmapWindowMenus.cpp |    1 +
+ src/zmapWindow/zmapWindowMenus.cpp   |   18 ++++++++++++------
+ 2 files changed, 13 insertions(+), 6 deletions(-)
+
+2015-08-10  Gemma Guest  <gb10@sanger.ac.uk>
+ avoid potential null access - TRIVIAL
+ src/zmapFeature/zmapFeatureContext.cpp |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-08-07  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor improvements to Edit Style dialog layout - TRIVIAL
+ src/zmapWindow/zmapWindowStyle.cpp |   33 +++++++++++++++++++++------------
+ 1 files changed, 21 insertions(+), 12 deletions(-)
+
+2015-08-07  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix potential null accesses - TRIVIAL
+ src/zmapWindow/zmapWindowDraw.cpp  |    2 +-
+ src/zmapWindow/zmapWindowStyle.cpp |    3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+2015-08-07  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor indentation fix - TRIVIAL
+ src/zmapWindow/zmapWindowSeqDisp.cpp |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-08-05  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a bug with different ensembl SO types having same source name - BUG FIX
+ src/zmapServer/ensembl/ensemblServer.cpp |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+2015-08-05  Gemma Guest  <gb10@sanger.ac.uk>
+ Exclude loading of other featuresets in ensembl if DNA specified - TRIVIAL
+ src/zmapServer/ensembl/ensemblServer.cpp |   25 +++----------------------
+ 1 files changed, 3 insertions(+), 22 deletions(-)
+
+2015-08-05  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix merge error - BUILD
+ src/zmapWindow/zmapWindowFeature.cpp |    6 ------
+ 1 files changed, 0 insertions(+), 6 deletions(-)
+
+2015-08-04  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'production' into develop
 2015-07-29  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'mouse_bugs' into release/2.0.0
+ Merge branch 'feature/mouse_bugs' into develop
 2015-07-29  Gemma Guest  <gb10@sanger.ac.uk>
  cancel rubber band if scroll - BUG FIX
- src/zmapWindow/zmapWindow.c |   10 ++++++++++
+ src/zmapWindow/zmapWindow.cpp |   10 ++++++++++
  1 files changed, 10 insertions(+), 0 deletions(-)
 
 2015-07-29  Gemma Guest  <gb10@sanger.ac.uk>
  Disable right-click when dragging in progress - WIP
- src/zmapWindow/zmapWindow.c |   28 +++++++++++++++++++---------
+ src/zmapWindow/zmapWindow.cpp |   28 +++++++++++++++++++---------
  1 files changed, 19 insertions(+), 9 deletions(-)
 
 2015-07-29  Gemma Guest  <gb10@sanger.ac.uk>
  Fix a bug where lasso select wasn't being cancelled on focus change - BUG FIX
- src/zmapWindow/zmapWindow.c |   27 +++++++++++++++++++++++----
+ src/zmapWindow/zmapWindow.cpp |   27 +++++++++++++++++++++++----
  1 files changed, 23 insertions(+), 4 deletions(-)
 
 2015-07-29  Gemma Guest  <gb10@sanger.ac.uk>
  Fix a bug where double click executed at wrong time - BUG FIX
- src/zmapWindow/zmapWindow.c        |    2 +-
- src/zmapWindow/zmapWindowFeature.c |   18 +++++++++++-------
- src/zmapWindow/zmapWindow_P.h      |    2 +-
+ src/zmapWindow/zmapWindow.cpp        |    2 +-
+ src/zmapWindow/zmapWindowFeature.cpp |   18 +++++++++++-------
+ src/zmapWindow/zmapWindow_P.hpp      |    2 +-
  3 files changed, 13 insertions(+), 9 deletions(-)
 
 2015-07-28  Gemma Guest  <gb10@sanger.ac.uk>
  Fix a bug where dragging wasn't being cancelled - BUG FIX
- src/zmapWindow/zmapWindow.c        |    8 ++++++++
- src/zmapWindow/zmapWindowFeature.c |   28 +++++++++++++++++++---------
- src/zmapWindow/zmapWindow_P.h      |    1 +
+ src/zmapWindow/zmapWindow.cpp        |    8 ++++++++
+ src/zmapWindow/zmapWindowFeature.cpp |   28 +++++++++++++++++++---------
+ src/zmapWindow/zmapWindow_P.hpp      |    1 +
  3 files changed, 28 insertions(+), 9 deletions(-)
 
-2015-07-23  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.7.0-312-g8b6f372 - Update RT and git commit reports
- src/ChangeLog                                  |   11 +++++++++++
- src/build/release_docs/GIT_COMMITS.txt         |    1 +
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |   10 ++++++++++
- 3 files changed, 22 insertions(+), 0 deletions(-)
+2015-07-27  Gemma Guest  <gb10@sanger.ac.uk>
+ Include arguments in pfetch dialog title - TRIVIAL
+ src/zmapWindow/zmapWindowFeature.cpp |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+2015-07-27  Gemma Guest  <gb10@sanger.ac.uk>
+ Avoid potential null access if pfetch error is null - BUG FIX
+ src/libpfetch/libpfetch.c |   37 ++++++++++++++++++++-----------------
+ 1 files changed, 20 insertions(+), 17 deletions(-)
+
+2015-07-23  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Rearrange routines into external, package and internal. - TRIVIAL
+ src/zmapView/zmapView.cpp | 1036 +++++++++++++++++++++++----------------------
+ 1 files changed, 526 insertions(+), 510 deletions(-)
+
+2015-07-23  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'feature/Remove_acedb' into develop
+2015-07-23  Ed Griffiths  <edgrif@sanger.ac.uk>
+ fix minor problem in my dna loading code. - NEW FEATURE '<feature_name>'
+ src/zmapServer/file/fileServer.cpp |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-07-23  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Make fetching of genomic sequence from gff work, involved code restructure. - NEW FEATURE '<feature_name>'
+ src/zmapServer/acedb/acedbServer.cpp         |  176 +++++---------------------
+ src/zmapServer/das/dasServer.cpp             |    8 +-
+ src/zmapServer/ensembl/ensemblServer.cpp     |  135 ++++----------------
+ src/zmapServer/file/fileServer.cpp           |  164 ++++++------------------
+ src/zmapServer/pipe/pipeServer.cpp           |  161 ++++++------------------
+ src/zmapServer/zmapServer.cpp                |   88 ++++++++++++-
+ src/zmapServer/zmapServer.hpp                |    8 +-
+ src/zmapServer/zmapServerProtocolHandler.cpp |    3 +-
+ src/zmapServer/zmapServerPrototype.hpp       |    6 +-
+ 9 files changed, 243 insertions(+), 506 deletions(-)
+
+2015-07-23  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix bad bug in xml routine, we were making wrong glib call. - BUG FIX
+ src/zmapXML/zmapXMLUtils.cpp |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+2015-07-23  Ed Griffiths  <edgrif@sanger.ac.uk>
+ more function prototypes out of line sigh... - FORMATTING ONLY
+ src/zmapApp/zmapAppManager.cpp |   81 ++++++++++++++++++++++------------------
+ 1 files changed, 45 insertions(+), 36 deletions(-)
+
+2015-07-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/ensembl' into develop
+2015-07-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix bugs with exporting temp feature - WIP
+ src/zmapGFF/zmapGFF2Dumper.cpp     |    2 +-
+ src/zmapView/zmapViewScratch.cpp   |    6 ------
+ src/zmapWindow/zmapWindowMenus.cpp |   13 ++++++++++++-
+ 3 files changed, 13 insertions(+), 8 deletions(-)
+
+2015-07-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Fixes to previous - REGRESSION FIX
+ src/zmapFeature/zmapFeatureTranscript.cpp |   32 ++++++++++++++--------------
+ src/zmapWindow/zmapWindowMenus.cpp        |    2 +-
+ 2 files changed, 17 insertions(+), 17 deletions(-)
+
+2015-07-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Fixes for export of temp feature - WIP
+ src/zmapWindow/zmapWindowMenus.cpp |   49 ++++++++++++++++++++++--------------
+ 1 files changed, 30 insertions(+), 19 deletions(-)
+
+2015-07-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Add transcript shallow copy - WIP
+ src/include/ZMap/zmapFeature.hpp          |    1 +
+ src/zmapFeature/zmapFeatureTranscript.cpp |   33 +++++++++++++++++++++++++++++
+ 2 files changed, 34 insertions(+), 0 deletions(-)
+
+2015-07-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove export options when click annotation column - TRIVIAL
+ src/zmapWindow/zmapWindowMenus.cpp |   15 +++++++++++++--
+ 1 files changed, 13 insertions(+), 2 deletions(-)
 
 2015-07-21  Gemma Guest  <gb10@sanger.ac.uk>
  Fix regression from 5ebbb0c with export options - REGRESSION FIX
- src/zmapControl/zmapControlWindowMenubar.c |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
+ src/zmapControl/zmapControlWindowMenubar.cpp |   49 ++++++++++++-------------
+ 1 files changed, 24 insertions(+), 25 deletions(-)
 
-2015-07-23  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.7.0-310-gf0bbccc - Update RT and git commit reports
- src/ChangeLog                                  |   11 +++++++++++
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
- 2 files changed, 12 insertions(+), 1 deletions(-)
+2015-07-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Add option to export the temp feature - NEW FEATURE 'export'
+ src/include/ZMap/zmapFeature.hpp   |    3 +
+ src/zmapFeature/zmapFeature.cpp    |  134 ++++++++++++++++++++++++++++++++++++
+ src/zmapWindow/zmapWindowMenus.cpp |   55 +++++++++++++++
+ 3 files changed, 192 insertions(+), 0 deletions(-)
 
-2015-07-17  Gemma Guest  <gb10@sanger.ac.uk>
- update release notes - DOC
- docs/user/release_notes.shtml |   15 ++++++---------
- 1 files changed, 6 insertions(+), 9 deletions(-)
-
-2015-07-17  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.7.0-308-gc1ae327 - Update RT and git commit reports
- src/ChangeLog                                  |   17 +++++++++++++++++
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
- 2 files changed, 18 insertions(+), 1 deletions(-)
-
-2015-07-16  Gemma Guest  <gb10@sanger.ac.uk>
- remove c++0x compile option - BUILD
- src/Makefile.zmap |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-2015-07-15  Gemma Guest  <gb10@sanger.ac.uk>
- update release notes - DOC
- docs/user/release_notes.shtml |   13 +++++++++++++
- 1 files changed, 13 insertions(+), 0 deletions(-)
-
-2015-07-15  zmap  <zmap@sanger.ac.uk>
- ZMap version 1.7.0-305-gc914955 - Update RT and git commit reports
- src/ChangeLog                                  | 5045 ++++++++++++------------
- src/build/release_docs/GIT_COMMITS.txt         |   50 +-
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |   66 +-
- 3 files changed, 2535 insertions(+), 2626 deletions(-)
-
-2015-07-15  Ed Griffiths  <edgrif@sanger.ac.uk>
- make ensc-core include files conditional so we don't need and ensc_core/src directory. - BUILD
- src/Makefile.common |   22 ++++++++++++++--------
- src/autogen.sh      |   10 ----------
- 2 files changed, 14 insertions(+), 18 deletions(-)
-
-2015-07-15  Gemma Guest  <gb10@sanger.ac.uk>
- temp disable win build again - BUILD
- scripts/build_config.sh |    4 ++--
+2015-07-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor update to menu text - TRIVIAL
+ src/zmapWindow/zmapWindowMenus.cpp |    4 ++--
  1 files changed, 2 insertions(+), 2 deletions(-)
 
-2015-07-15  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'feature/C++' into develop
-2015-07-15  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'develop' into feature/C++
-2015-07-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add defs to make it possible to build without ensembl even if mysql is installed. - BUILD
- src/autogen.sh   |   25 +++++++++++----
- src/configure.ac |   83 +++++++++++++++++++++++++++++++++++++++++------------
- 2 files changed, 82 insertions(+), 26 deletions(-)
+2015-07-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Add export option to annotation menu - TRIVIAL
+ src/zmapWindow/zmapWindowMenus.cpp |   14 +++++++++++---
+ 1 files changed, 11 insertions(+), 3 deletions(-)
 
-2015-07-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add ensembl ref. dummy file...needs to be ignored. - BUILD
- src/.gitignore |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+2015-07-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor change to menu text - TRIVIAL
+ src/zmapWindow/zmapWindowMenus.cpp |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-2015-07-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add in missing maintainer-clean stuff for AceConn. - BUILD
- src/Makefile.am |   11 ++++++-----
- 1 files changed, 6 insertions(+), 5 deletions(-)
-
-2015-07-13  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a problem building with external ensc-core lib - BUILD
- src/zmapServer/Makefile.am |    4 ----
- 1 files changed, 0 insertions(+), 4 deletions(-)
-
-2015-07-13  Ed Griffiths  <edgrif@sanger.ac.uk>
- document how to change to v4 of zeromq - BUG FIX
- src/autogen.sh |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-2015-07-13  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ add defs to support v3 or v4 of zeromq  - NEW FEATURE '<feature_name>'
- src/zmapRemoteControl/zmapRemoteControl.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
-
-2015-07-13  Ed Griffiths  <edgrif@sanger.ac.uk>
- Revert C++ build to v3 of zeromq - BUG FIX
- src/autogen.sh   |    2 +-
- src/configure.ac |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-07-13  Ed Griffiths  <edgrif@sanger.ac.uk>
- document compiler options we could use. - DOC
- src/configure.ac |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
-
-2015-07-09  Ed Griffiths  <edgrif@sanger.ac.uk>
- unintentional commit.
- src/zmapApp/.nfs00000000015c7f7700000016 | 1326 ------------------------------
- 1 files changed, 0 insertions(+), 1326 deletions(-)
-
-2015-07-09  Ed Griffiths  <edgrif@sanger.ac.uk>
- Somehow our attempts to merge messed up my changes to remote control, this puts them back. - BUG FIX
- src/zmapApp/.nfs00000000015c7f7700000016 | 1326 ++++++++++++++++++++++++++++++
- src/zmapApp/zmapAppRemoteCommand.c       |    5 +-
- src/zmapApp/zmapAppRemoteControl.c       |  391 +---------
- src/zmapApp/zmapAppRemoteInternal.c      |    6 +-
- src/zmapApp/zmapApp_P.h                  |    5 +
- src/zmapApp/zmapAppmain_c.cc             |    3 -
- src/zmapApp/zmapAppwindow.c              |    2 +-
- 7 files changed, 1346 insertions(+), 392 deletions(-)
-
-2015-07-09  Ed Griffiths  <edgrif@sanger.ac.uk>
- fixing line feeds. - TRIVIAL
- src/zmapGFF/zmapGFFAttribute.c |   56 ++++++++++++++++++++--------------------
- src/zmapGFF/zmapGFFAttribute.h |   22 ++++++++--------
- 2 files changed, 39 insertions(+), 39 deletions(-)
-
-2015-07-08  Steve Miller  <sm23@sanger.ac.uk>
- removed the drawing design document - DOC
- docs/design/New_Drawing/Display_design.shtml |  781 --------------------------
- 1 files changed, 0 insertions(+), 781 deletions(-)
-
-2015-07-08  Gemma Guest  <gb10@sanger.ac.uk>
- Further minor c++ fix from merged code - WIP
- src/zmapApp/zmapAppRemoteControl.c |    4 ++--
+2015-07-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor change to button text - TRIVIAL
+ src/zmapWindow/zmapWindowFeatureShow.cpp |    4 ++--
  1 files changed, 2 insertions(+), 2 deletions(-)
 
-2015-07-08  Gemma Guest  <gb10@sanger.ac.uk>
- Revert "Revert "Fix problem caused by merge at 808198a - REGRESSION FIX""
- src/zmapWindow/zmapWindowMenus.c |    6 ++----
- 1 files changed, 2 insertions(+), 4 deletions(-)
-
-2015-07-08  Gemma Guest  <gb10@sanger.ac.uk>
- Revert "Revert "Merge remote-tracking branch 'origin/feature/C++' into feature/C++""
- src/autogen.sh                                     |    2 +-
- src/zmapApp/Makefile.am                            |    2 ++
- src/zmapApp/zmapAppRemoteControl.c                 |    6 +-----
- src/zmapApp/zmapAppRemoteInternal.h                |    6 +++---
- src/zmapServer/zmapServer.c                        |    1 +
- .../zmapWindowContainerFeatureSetFeatureFuncs.c    |   15 ++++++++++++++-
- 6 files changed, 22 insertions(+), 10 deletions(-)
-
-2015-07-08  Gemma Guest  <gb10@sanger.ac.uk>
- Fix c++ errors from dev code and merge problems from b599a76 - BUG FIX
- src/zmapApp/zmapAppRemoteControl.c                 |   18 ++++---------
- src/zmapApp/zmapAppRemoteInternal.c                |    6 ++--
- src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |    6 ++--
- src/zmapWindow/zmapWindowMenus.c                   |   27 ++++++++++---------
- 4 files changed, 26 insertions(+), 31 deletions(-)
-
-2015-07-08  Gemma Guest  <gb10@sanger.ac.uk>
- Fix missing #endif - BUG FIX
- src/include/ZMap/zmapFeature.h |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-2015-07-08  Ed Griffiths  <edgrif@sanger.ac.uk>
- Revert "Merge remote-tracking branch 'origin/feature/C++' into feature/C++"
- src/autogen.sh                                     |    2 +-
- src/zmapApp/Makefile.am                            |    2 --
- src/zmapApp/zmapAppRemoteControl.c                 |   10 +++++++++-
- src/zmapApp/zmapAppRemoteInternal.h                |    6 +++---
- src/zmapServer/zmapServer.c                        |    1 -
- .../zmapWindowContainerFeatureSetFeatureFuncs.c    |   15 +--------------
- 6 files changed, 14 insertions(+), 22 deletions(-)
-
-2015-07-08  Ed Griffiths  <edgrif@sanger.ac.uk>
- Revert "Fix problem caused by merge at 808198a - REGRESSION FIX"
- src/zmapWindow/zmapWindowMenus.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
-
-2015-07-07  Gemma Guest  <gb10@sanger.ac.uk>
- Fix problem caused by merge at 808198a - REGRESSION FIX
- src/zmapWindow/zmapWindowMenus.c |    6 ++----
- 1 files changed, 2 insertions(+), 4 deletions(-)
-
-2015-07-07  Gemma Guest  <gb10@sanger.ac.uk>
- Merge remote-tracking branch 'origin/feature/C++' into feature/C++
-2015-07-07  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'develop' into feature/C++
-2015-07-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ add new file/headers to allow remote control to be optional. - NEW FEATURE
- src/zmapApp/Makefile.am |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-2015-07-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- interim code for fix for Marie's bug. - BUG FIX
- .../zmapWindowContainerFeatureSetFeatureFuncs.c    |   15 ++++++++++++++-
- 1 files changed, 14 insertions(+), 1 deletions(-)
-
-2015-07-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add in missing config.h header that allows us to optionally include code. - BUG FIX
- src/zmapServer/zmapServer.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2015-07-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++  add code to allow optional inclusion of remote control code. - NEW FEATURE
- src/zmapApp/zmapAppRemoteControl.c  |   10 +---------
- src/zmapApp/zmapAppRemoteInternal.h |    6 +++---
- 2 files changed, 4 insertions(+), 12 deletions(-)
-
-2015-07-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- correct bug in script naming of ens-core subdirectory. - BUG FIX
- src/autogen.sh |    2 +-
+2015-07-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Attempt to fix dist target again, tricky if you just do a make dist without a previous compile. - BUILD
+ src/zmapApp/Makefile.am |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-2015-07-07  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/editing' into develop
-2015-07-03  Gemma Guest  <gb10@sanger.ac.uk>
- Save evidence to gff file - NEW FEATURE 'save evidence'
- src/include/ZMap/zmapGFF.h     |    2 +
- src/zmapGFF/zmapGFF2Dumper.c   |   46 ++++++++++++++++++++++++++++++++++++++-
- src/zmapView/zmapViewScratch.c |   35 +++++++++++++++++++++++-------
- 3 files changed, 73 insertions(+), 10 deletions(-)
-
-2015-07-03  Gemma Guest  <gb10@sanger.ac.uk>
- Default featureset for new features is now hand_built - TRIVIAL
- src/zmapWindow/zmapWindowFeatureShow.cpp |    5 ++---
- 1 files changed, 2 insertions(+), 3 deletions(-)
-
-2015-07-03  Gemma Guest  <gb10@sanger.ac.uk>
- Add evidence list to transcripts - WIP
- src/include/ZMap/zmapFeature.h           |    6 ++++--
- src/zmapFeature/zmapFeatureTranscript.c  |   18 ++++++++++++++++++
- src/zmapWindow/zmapWindowFeatureShow.cpp |   14 ++++++++++++--
- src/zmapWindow/zmapWindowScratch.c       |    2 +-
- src/zmapWindow/zmapWindow_P.h            |    1 +
- 5 files changed, 36 insertions(+), 5 deletions(-)
-
-2015-06-30  Gemma Guest  <gb10@sanger.ac.uk>
- Allow user to create new featureset - NEW FEATURE 'Create featureset'
- src/include/ZMap/zmapGLibUtils.h         |    8 ++
- src/zmapWindow/zmapWindowFeatureShow.cpp |  116 +++++++++++++++++++++++++++--
- 2 files changed, 116 insertions(+), 8 deletions(-)
-
-2015-06-30  Gemma Guest  <gb10@sanger.ac.uk>
- Add options to set CDS from context menu - NEW FEATURE 'Set CDS'
- src/include/ZMap/zmapFeature.h          |    4 +
- src/include/ZMap/zmapWindow.h           |    3 +
- src/zmapFeature/zmapFeatureTranscript.c |   49 ++++++
- src/zmapView/zmapView.c                 |   31 ++++
- src/zmapView/zmapViewScratch.c          |  241 +++++++++++++++++++++++++++--
- src/zmapView/zmapView_P.h               |    8 +
- src/zmapWindow/zmapWindowMenus.c        |  265 ++++++++++++++++++++++++-------
- src/zmapWindow/zmapWindowScratch.c      |   52 ++++++
- src/zmapWindow/zmapWindowScratch_P.h    |    1 +
- 9 files changed, 585 insertions(+), 69 deletions(-)
-
-2015-06-29  Gemma Guest  <gb10@sanger.ac.uk>
- Minor change to warning text when creating feature - TRIVIAL
- src/zmapWindow/zmapWindowFeatureShow.cpp |   14 ++++++++------
- 1 files changed, 8 insertions(+), 6 deletions(-)
-
-2015-06-29  Gemma Guest  <gb10@sanger.ac.uk>
- Avoid crash when overwriting feature used as evidence - BUG FIX
- src/zmapWindow/zmapWindowDrawFeatures.c |    9 +++++++--
- 1 files changed, 7 insertions(+), 2 deletions(-)
-
-2015-06-29  Gemma Guest  <gb10@sanger.ac.uk>
- Minor improvements to feature editing section in manual - DOC
- docs/user/manual/ZMap_User_Manual.pdf |  Bin 4303764 -> 4305827 bytes
- docs/user/manual/ZMap_User_Manual.tex |   20 +++++++++++++++-----
- 2 files changed, 15 insertions(+), 5 deletions(-)
-
-2015-07-06  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'develop' into feature/C++
-2015-07-06  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'develop' into feature/C++
-2015-07-06  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add logging of command line used by zmap to start a new child pipe process. - NEW FEATURE
- src/zmapServer/pipe/pipeServer.c |   20 +++++++++++---------
- 1 files changed, 11 insertions(+), 9 deletions(-)
-
-2015-07-06  Ed Griffiths  <edgrif@sanger.ac.uk>
- Put windows machine back in builds to check if disk problem is fixed. - BUILD
- scripts/build_config.sh |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-07-02  Gemma Barson  <gb10@sanger.ac.uk>
- Re-enable windows build
- scripts/build_config.sh |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-07-02  Gemma Barson  <gb10@sanger.ac.uk>
- Fix error compiling zmq on cygwin - BUILD
- src/Makefile.am |    4 ----
- 1 files changed, 0 insertions(+), 4 deletions(-)
-
-2015-06-26  Steve Miller  <sm23@sanger.ac.uk>
- Merge branch 'production' into develop
-2015-06-25  Gemma Guest  <gb10@sanger.ac.uk>
- Add optional database prefix in ensembl - NEW FEATURE 'ensembl db prefix'
- src/zmapServer/ensembl/ensemblServer.c   |   14 +++++++++++---
- src/zmapServer/ensembl/ensemblServer_P.h |    1 +
- 2 files changed, 12 insertions(+), 3 deletions(-)
-
-2015-06-25  Gemma Guest  <gb10@sanger.ac.uk>
- Avoid potential null access and improve logging - TRIVIAL
- src/zmapConfig/zmapConfigLoader.c       |   13 ++++++++-----
- src/zmapControl/zmapControlImportFile.c |   19 +++++++++++++------
- 2 files changed, 21 insertions(+), 11 deletions(-)
-
-2015-06-25  Gemma Guest  <gb10@sanger.ac.uk>
- Fix crash when importing files - REGRESSION FIX
- src/zmapConfig/zmapConfigLoader.c |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
-
-2015-06-19  Steve Miller  <sm23@sanger.ac.uk>
- bug fix for drawing transcripts - BUG FIX
- src/zmapWindow/canvas/zmapWindowCanvasDraw.c       |  276 +++++++++++++++++--
- src/zmapWindow/canvas/zmapWindowCanvasDraw.h       |    6 +-
- src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |   63 ++----
- 3 files changed, 267 insertions(+), 78 deletions(-)
-
-2015-06-17  Gemma Guest  <gb10@sanger.ac.uk>
- Formatting and logging - FORMATTING ONLY
- src/zmapServer/ensembl/ensemblServer.c |   66 ++++++++++----------------------
- 1 files changed, 20 insertions(+), 46 deletions(-)
-
-2015-06-17  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a bug in edit style dialog where wrong colour is set - BUG FIX
- src/zmapWindow/zmapWindowStyle.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-06-17  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge remote branch 'origin/feature/C++' into feature/C++
-2015-06-17  Gemma Guest  <gb10@sanger.ac.uk>
- Remove spurious warning about non-writable blixem config file - TRIVIAL
- src/zmapView/zmapViewCallBlixem.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-06-17  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ update to get build working. - NEW FEATURE
- src/autogen.sh |    7 -------
- 1 files changed, 0 insertions(+), 7 deletions(-)
-
-2015-06-17  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ merge in develop - NEW FEATURE
- src/autogen.sh                    |    1 -
- src/zmapConfig/zmapConfigLoader.c |    8 ++++----
- src/zmapUtils/zmapUrl.c           |    4 ++--
- src/zmapUtils/zmapWebBrowser.c    |    5 +----
- 4 files changed, 7 insertions(+), 11 deletions(-)
-
-2015-06-17  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'develop' into feature/C++
-2015-06-17  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ Weirdly some things that escaped earlier attempts to clean up, not sure how this happened. # - NEW FEATURE
- src/zmapConfig/zmapConfigIni.c       |    2 +-
- src/zmapConfig/zmapConfigKey.c       |    4 ++--
- src/zmapFeature/zmapFeatureContext.c |    2 +-
- src/zmapUtils/zmapGUIutils.c         |    2 +-
- src/zmapUtils/zmapUrl.c              |    7 ++++---
- src/zmapWindow/zmapWindowNavigator.c |    2 +-
- 6 files changed, 10 insertions(+), 9 deletions(-)
-
-2015-06-17  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix linking temporarily. - NEW FEATURE
- src/Makefile.zmap |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
-
-2015-06-16  Gemma Guest  <gb10@sanger.ac.uk>
- Ensembl now only loads requested featuresets, if specified - BUG FIX
- src/zmapServer/ensembl/ensemblServer.c   |   74 ++++++++++++++++++++++++++++--
- src/zmapServer/ensembl/ensemblServer_P.h |    2 +
- 2 files changed, 72 insertions(+), 4 deletions(-)
-
-2015-06-16  Gemma Guest  <gb10@sanger.ac.uk>
- Avoid potential null access - TRIVIAL
- src/zmapFeature/zmapFeatureTranscript.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-06-16  Gemma Guest  <gb10@sanger.ac.uk>
- Fix broken link - DOC
- docs/user/configuration.shtml |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-06-15  Gemma Guest  <gb10@sanger.ac.uk>
- Disable tilde expansion for url config fields - doesn't work on mac - REGRESSION FIX
- src/zmapUtils/zmapUrl.c |   31 ++++++++++++++++++++-----------
- 1 files changed, 20 insertions(+), 11 deletions(-)
-
-2015-06-15  Steve Miller  <sm23@sanger.ac.uk>
- add code to toggle the navigator coordinate display along with windows - BUILD
- src/zmapView/zmapViewUtils.c         |    3 +++
- src/zmapWindow/zmapWindowNavigator.c |    9 +++++----
- 2 files changed, 8 insertions(+), 4 deletions(-)
-
-2015-06-15  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix compiler/linker flags to remove optimise flags. - NEW FEATURE
- src/Makefile.zmap |    9 +++------
- src/configure.ac  |   34 +++++++++++++++++++++++++++-------
- src/runconfig     |    6 +++++-
- 3 files changed, 35 insertions(+), 14 deletions(-)
-
-2015-06-12  Gemma Barson  <gb10@sanger.ac.uk>
- Add bounds checking on dna string - TRIVIAL
- src/zmapFeature/zmapFeatureDNA.c |   15 ++++++++++++---
- 1 files changed, 12 insertions(+), 3 deletions(-)
-
-2015-06-12  Gemma Barson  <gb10@sanger.ac.uk>
- Fix compile error on mac - BUILD
- src/zmapWindow/zmapWindow.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-06-12  Gemma Barson  <gb10@sanger.ac.uk>
- Avoid potential null access - TRIVIAL
- src/zmapConfig/zmapConfigLoader.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
-
-2015-06-11  Gemma Barson  <gb10@sanger.ac.uk>
- Avoid potential null access - TRIVIAL
- src/zmapConfig/zmapConfigLoader.c |   11 ++++++++---
- 1 files changed, 8 insertions(+), 3 deletions(-)
-
-2015-06-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ change #! line of autogen to find bash version 4 on mac. - NEW FEATURE
- src/autogen.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-06-09  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ make zeromq lib optional, i.e. remote control is optional. - NEW FEATURE
- src/Makefile.am                                |   15 +-
- src/autogen.sh                                 |   19 +-
- src/configure.ac                               |    6 +
- src/zmapApp/Makefile.am                        |    6 +
- src/zmapApp/zmapAppRemoteControl.c             |  529 ++------------------
- src/zmapApp/zmapAppRemoteInternal.c            |  621 ++++++++++++++++++++++++
- src/zmapApp/zmapAppRemoteInternal.h            |   48 ++
- src/zmapApp/zmapApp_P.h                        |    1 +
- src/zmapApp/zmapAppmain_c.cc                   |   38 +-
- src/zmapControl/zmapControlRemoteControl.c     |    1 -
- src/zmapRemoteControl/Makefile.am              |   15 +-
- src/zmapRemoteControl/zmapRemoteCommand.c      |    2 +-
- src/zmapRemoteControl/zmapRemoteControl.c      |    5 +
- src/zmapRemoteControl/zmapRemoteControlUtils.c |   48 ++
- src/zmapRemoteControl/zmapRemoteControl_P.h    |    5 +-
- 15 files changed, 846 insertions(+), 513 deletions(-)
-
-2015-06-09  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ put mac build back in now bash updated on build machine. - NEW FEATURE
- scripts/build_config.sh |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- one more build fix. - TRIVIAL
- scripts/build_config.sh |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- record that we have excluded tools subdir from build because it fails on windows/cygwin. - DOC
- src/zeromq/README_ZMAP |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- and more... - TRIVIAL
- scripts/build_config.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- and more - TRIVIAL
- scripts/build_bootstrap.sh |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- agh, one more fix ? - TRIVIAL
- scripts/build_bootstrap.sh |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- Have another go at master build script. - TRIVIAL
- scripts/build_bootstrap.sh |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- a step closer to a fix... - TRIVIAL
- scripts/build_bootstrap.sh |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ try again to figure out what's wrong with master build - NEW FEATURE
- scripts/build_bootstrap.sh |    9 ++++++++-
- 1 files changed, 8 insertions(+), 1 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- C+= fix my own bug in build script. - NEW FEATURE
- scripts/build_bootstrap.sh |   30 +++++++++++++++---------------
- 1 files changed, 15 insertions(+), 15 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ hack script to test disabling of gbtools checkout. - NEW FEATURE
- scripts/build_bootstrap.sh |   36 ++++++++++++++++++++----------------
- 1 files changed, 20 insertions(+), 16 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ temp hack to omit mac build until bash updated on mac. - NEW FEATURE
- scripts/build_config.sh |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ improve messages. - NEW FEATURE
- src/autogen.sh |   12 ++++++++++--
- 1 files changed, 10 insertions(+), 2 deletions(-)
-
-2015-06-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ improve code for autogen.sh installing of external libs.- NEW FEATURE
- src/autogen.sh |  218 ++++++++++++++++++++------------------------------------
- 1 files changed, 77 insertions(+), 141 deletions(-)
-
-2015-06-03  Steve Miller  <sm23@sanger.ac.uk>
- clear up of signed/unsigned comparisons - WIP
- src/zmapFeature/zmapFeatureAlignment.c             |    5 +-
- src/zmapRemoteControl/zmapRemoteControl.c          |    2 +-
- src/zmapUtils/zmapGUITreeView.c                    |   22 ++++----
- src/zmapView/zmapViewFeatureCollapse.c             |   18 +++----
- .../canvas/zmapWindowCanvasFeaturesetSummarise.c   |    2 +-
- src/zmapWindow/zmapWindowDisplayOps.c              |   10 ++--
- src/zmapWindow/zmapWindowRemoteControlUtils.c      |    6 +-
- src/zmapXML/zmapXMLParse.c                         |    6 +-
- src/zmapXML/zmapXMLUtils.c                         |   52 ++++++++++----------
- 9 files changed, 60 insertions(+), 63 deletions(-)
-
-2015-06-02  Steve Miller  <sm23@sanger.ac.uk>
- removal of some more unused code in FeatureAlignment - WIP
- src/zmapFeature/zmapFeatureAlignment.c |  421 --------------------------------
- 1 files changed, 0 insertions(+), 421 deletions(-)
-
-2015-06-02  Steve Miller  <sm23@sanger.ac.uk>
- clean up of unused code in FeatureAlignment and signed/unsiged comparisons - WIP
- src/zmapFeature/zmapFeatureAlignment.c |  114 +-------------------------------
- src/zmapGFF/zmapGFFAttribute.c         |    2 +-
- 2 files changed, 3 insertions(+), 113 deletions(-)
-
-2015-06-02  Steve Miller  <sm23@sanger.ac.uk>
- clean up of unused/uneeded code in Attribute - WIP
- src/zmapFeature/zmapFeatureAlignment.c  |   27 ++--
- src/zmapFeature/zmapFeatureContext.c    |   44 +++---
- src/zmapFeature/zmapFeatureDNA.c        |    2 +-
- src/zmapFeature/zmapFeatureOutput.c     |   10 +-
- src/zmapFeature/zmapFeatureParams.c     |   14 +-
- src/zmapFeature/zmapFeatureTranscript.c |   24 ++--
- src/zmapFeature/zmapFeatureUtils.c      |   12 +-
- src/zmapGFF/zmapGFF2Dumper.c            |    6 +-
- src/zmapGFF/zmapGFF2parser.c            |    2 +-
- src/zmapGFF/zmapGFF3_P.h                |   59 +------
- src/zmapGFF/zmapGFF3parser.c            |    2 +-
- src/zmapGFF/zmapGFFAttribute.c          |  306 +------------------------------
- src/zmapGFF/zmapGFFAttribute.h          |   46 +----
- 13 files changed, 83 insertions(+), 471 deletions(-)
-
-2015-06-01  Steve Miller  <sm23@sanger.ac.uk>
- another use of void  pointer in arithmetic - WIP
- .../canvas/zmapWindowCanvasFeaturesetSummarise.c   |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
-
-2015-06-01  Steve Miller  <sm23@sanger.ac.uk>
- removal of a couple more compiler warnings - WIP
- src/zmapServer/ensembl/ensemblServer.c |  238 ++++++++++++++++----------------
- src/zmapWindow/zmapWindowMenus.c       |   28 ++--
- 2 files changed, 133 insertions(+), 133 deletions(-)
-
-2015-06-01  Steve Miller  <sm23@sanger.ac.uk>
- some more changes to remove void pointer warnings - WIP
- src/zmapFeature/zmapStyle.c                     |   54 +++++++++++-----------
- src/zmapFeature/zmapStyleObj.c                  |   20 ++++----
- src/zmapWindow/canvas/zmapWindowCanvasFeature.c |   47 +++++++++++---------
- 3 files changed, 63 insertions(+), 58 deletions(-)
-
-2015-06-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ add htslib to list of configure directories. - NEW FEATURE
- src/configure.ac |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
-
-2015-06-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix bad merge of mine from develop. - NEW FEATURE
- src/zmapApp/zmapAppmain_c.cc |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-06-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'develop' into feature/C++
-2015-05-28  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ move ensc-core and htslib copying to configure.ac - BUG FIX
- src/configure.ac |   14 +++++++++++++-
- src/runconfig    |    7 +------
- 2 files changed, 14 insertions(+), 7 deletions(-)
-
-2015-05-28  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix screw ups from merge of develop - NEW FEATURE
- src/zmapServer/ensembl/ensemblServer.c |   48 ++++----------------------------
- src/zmapWindow/zmapWindowNavigator.c   |    2 +-
- src/zmapWindow/zmapWindowScale.c       |    1 -
- src/zmapWindow/zmapWindow_P.h          |    2 +-
- 4 files changed, 8 insertions(+), 45 deletions(-)
-
-2015-05-28  Ed Griffiths  <edgrif@sanger.ac.uk>
- Remove redundant ignore for placeholder file. - BUG FIX
- src/.gitignore |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
-
-2015-05-28  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'develop' into feature/C++
-2015-05-28  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ remove redundant placeholder. - NEW FEATURE
- src/ensc-core/src/README_ZMAP |    4 ----
- 1 files changed, 0 insertions(+), 4 deletions(-)
-
-2015-05-28  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ remove unwanted main and header. - NEW FEATURE
- src/zmapApp/zmapApp_PP.h    |   44 ------------------------------------------
- src/zmapApp/zmapAppmain_c.c |   45 -------------------------------------------
- 2 files changed, 0 insertions(+), 89 deletions(-)
-
-2015-05-28  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ move non-window startup code from zmapAppwindow.c to zmapAppmain_c.cc, get rid of zmapAppmain_c.c - NEW FEATURE
- src/zmapApp/zmapApp_P.h      |   91 +++-
- src/zmapApp/zmapAppmain_c.cc | 1220 ++++++++++++++++++++++++++++++++++++++-
- src/zmapApp/zmapAppwindow.c  | 1326 ++----------------------------------------
- 3 files changed, 1350 insertions(+), 1287 deletions(-)
-
-2015-05-28  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix wrong error message. - BUG FIX
- src/autogen.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-26  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix stupid bug of mine in lib. testing. - BUG FIX
- src/autogen.sh |   24 ++++++++++++------------
- 1 files changed, 12 insertions(+), 12 deletions(-)
-
-2015-05-22  Steve Miller  <sm23@sanger.ac.uk>
- removal of use of 'min' and 'max' as identifiers - WIP
- src/autogen.sh                                     |   34 +-
- src/include/ZMap/zmapFeature.h                     |    2 +-
- src/include/ZMap/zmapStyle.h                       |    2 +-
- src/include/ZMap/zmapWindow.h                      |    2 +-
- src/zmapControl/zmapControlWindowButtons.c         |   24 +-
- src/zmapFeature/zmapFeatureAlignment.c             |   14 +-
- src/zmapFeature/zmapFeatureBasic.c                 |   20 +-
- src/zmapFeature/zmapFeatureData.c                  |   56 +-
- src/zmapView/zmapViewCallBlixem.c                  |    6 +-
- src/zmapWindow/canvas/zmapWindowCanvasGlyph.c      |  574 ++++++++++----------
- .../zmapWindowContainerFeatureSetFeatureFuncs.c    |   66 ++--
- src/zmapWindow/zmapWindow.c                        |    4 +-
- src/zmapWindow/zmapWindowDNA.c                     |   10 +-
- src/zmapWindow/zmapWindowDNAChoose.c               |   10 +-
- src/zmapWindow/zmapWindowDrawFeatures.c            |    4 +-
- src/zmapWindow/zmapWindowNavigator.c               |   16 +-
- src/zmapWindow/zmapWindowZoomControl.c             |   22 +-
- 17 files changed, 433 insertions(+), 433 deletions(-)
-
-2015-05-22  Steve Miller  <sm23@sanger.ac.uk>
- removal of use of 'fill' as an identifier - WIP
- src/include/ZMap/zmapDraw.h                        |   46 +++---
- src/include/ZMap/zmapGLibUtils.h                   |    8 +-
- src/include/ZMap/zmapStyle.h                       |   28 ++--
- src/include/ZMap/zmapWindow.h                      |   12 +-
- src/zmapControl/zmapControlWindowButtons.c         |   74 +++++-----
- src/zmapDraw/zmapDraw.c                            |   12 +-
- src/zmapFeature/zmapFeature.c                      |    6 +-
- src/zmapFeature/zmapFeatureTranscript.c            |   12 +-
- src/zmapFeature/zmapFeatureUtils.c                 |   12 +-
- src/zmapFeature/zmapStyle.c                        |  132 ++++++++--------
- src/zmapFeature/zmapStyleObj.c                     |   36 ++--
- src/zmapFeature/zmapStyleUtils.c                   |   12 +-
- src/zmapServer/acedb/acedbServer.c                 |   50 +++---
- src/zmapUtils/zmapBase.c                           |    6 +-
- src/zmapUtils/zmapGLibUtils.c                      |   50 +++---
- src/zmapUtils/zmapGUINotebook.c                    |   20 ++--
- src/zmapUtils/zmapUrl.c                            |    6 +-
- src/zmapUtils/zmapUrlUtils.c                       |   20 ++--
- src/zmapView/zmapViewCallBlixem.c                  |  170 ++++++++++----------
- src/zmapWindow/canvas/zmapWindowCanvasAlignment.c  |   28 ++--
- src/zmapWindow/canvas/zmapWindowCanvasAssembly.c   |    6 +-
- src/zmapWindow/canvas/zmapWindowCanvasBasic.c      |   12 +-
- src/zmapWindow/canvas/zmapWindowCanvasDraw.c       |   36 ++--
- src/zmapWindow/canvas/zmapWindowCanvasDraw.h       |    8 +-
- src/zmapWindow/canvas/zmapWindowCanvasFeature_I.h  |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |   94 ++++++------
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.h |   12 +-
- .../canvas/zmapWindowCanvasFeatureset_I.h          |    6 +-
- src/zmapWindow/canvas/zmapWindowCanvasGlyph.c      |   32 ++--
- src/zmapWindow/canvas/zmapWindowCanvasGraphItem.c  |   80 +++++-----
- .../canvas/zmapWindowCanvasGraphItem_I.h           |    8 +-
- src/zmapWindow/canvas/zmapWindowCanvasGraphics.c   |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasItem.h       |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |   12 +-
- src/zmapWindow/canvas/zmapWindowContainerGroup.c   |   16 +-
- src/zmapWindow/zmapWindow.c                        |   26 ++--
- src/zmapWindow/zmapWindowDrawFeatures.c            |   42 +++---
- src/zmapWindow/zmapWindowFocus.c                   |   22 ++--
- src/zmapWindow/zmapWindowItem.c                    |    4 +-
- src/zmapWindow/zmapWindowMenus.c                   |   18 +-
- src/zmapWindow/zmapWindowSeqDisp.c                 |   50 +++---
- src/zmapWindow/zmapWindowStyle.c                   |   32 ++--
- src/zmapWindow/zmapWindowUtils.c                   |   10 +-
- src/zmapWindow/zmapWindow_P.h                      |    2 +-
- src/zmapXML/zmapXMLParse.c                         |    6 +-
- 45 files changed, 640 insertions(+), 640 deletions(-)
-
-2015-05-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- remove unecessary remotetest entry. - BUG FIX
- src/configure.ac |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
-
-2015-05-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ add code to abort if htslib or zeromq are not available. - NEW FEATURE
- src/autogen.sh |   17 ++++++++++++++++-
- 1 files changed, 16 insertions(+), 1 deletions(-)
-
-2015-05-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ add maintainer-clean code to clean up external libs. - NEW FEATURE
- src/Makefile.am |   12 +++++++++---
- 1 files changed, 9 insertions(+), 3 deletions(-)
-
-2015-05-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge remote branch 'origin/feature/C++' into feature/C++
-2015-05-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add notes about alterations made to htslib and zeromq for zmap. - DOC
- src/htslib/README_ZMAP |    7 +++++++
- src/zeromq/README_ZMAP |    4 ++++
- 2 files changed, 11 insertions(+), 0 deletions(-)
-
-2015-05-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- Wrong zmap main, add ustar option for tar format with longer name limit. - BUG FIX
- src/configure.ac |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
-
-2015-05-21  Steve Miller  <sm23@sanger.ac.uk>
- removal of some use of 'list' that I missed and 'hash' - WIP
- src/include/ZMap/zmapConfigIni.h                   |    2 +-
- src/zmapConfig/zmapConfigLoader.c                  |   54 ++++++++++----------
- src/zmapUtils/zmapGLibUtils.c                      |    6 +-
- src/zmapView/zmapView.c                            |   42 ++++++++--------
- src/zmapView/zmapViewFeatureCollapse.c             |   26 +++++-----
- src/zmapView/zmapViewUtils.c                       |   28 +++++-----
- src/zmapView/zmapView_P.h                          |    6 +-
- .../canvas/zmapWindowContainerFeatureSet.c         |    6 +-
- src/zmapWindow/zmapWindowNavigator.c               |   18 +++---
- src/zmapWindow/zmapWindowSearch.c                  |    2 +-
- 10 files changed, 95 insertions(+), 95 deletions(-)
-
-2015-05-21  Steve Miller  <sm23@sanger.ac.uk>
- removal of some use of 'list' that I missed - WIP
- src/include/ZMap/zmapGLibUtils.h                 |   16 ++--
- src/include/ZMap/zmapUtils.h                     |    8 +-
- src/include/ZMap/zmapView.h                      |    2 +-
- src/zmapDAS/zmapDAS1DSN.c                        |   22 +++---
- src/zmapUtils/zmapGLibUtils.c                    |    2 +-
- src/zmapView/zmapViewUtils.c                     |   26 ++++----
- src/zmapView/zmapView_P.h                        |    8 +-
- src/zmapWindow/canvas/zmapWindowContainerBlock.h |    2 +-
- src/zmapWindow/zmapWindowColBump.c               |    2 +-
- src/zmapWindow/zmapWindowItemDebug.c             |   10 ++--
- src/zmapWindow/zmapWindowList.c                  |   10 ++--
- src/zmapWindow/zmapWindowScratch.c               |   76 +++++++++++-----------
- src/zmapWindow/zmapWindowSearch.c                |   12 ++--
- src/zmapWindow/zmapWindowUtils.c                 |    8 +-
- src/zmapWindow/zmapWindow_P.h                    |    4 +-
- 15 files changed, 104 insertions(+), 104 deletions(-)
-
-2015-05-21  Steve Miller  <sm23@sanger.ac.uk>
- removal of some remaining usage of 'string' that I missed - WIP
- src/zmapFeature/zmapFeature.c              |    1 -
- src/zmapFeature/zmapStyle.c                |    6 ++--
- src/zmapServer/zmapServer.c                |    6 ++--
- src/zmapServer/zmapServerProtocolHandler.c |    2 +-
- src/zmapUtils/zmapFileUtils.c              |    1 -
- src/zmapUtils/zmapGUImenus.c               |   17 ++++++------
- src/zmapUtils/zmapIOOut.c                  |   34 ++++++++++++------------
- src/zmapUtils/zmapIO_P.h                   |    6 ++--
- src/zmapUtils/zmapUrl.c                    |   38 ++++++++++++---------------
- src/zmapUtils/zmapUrlUtils.c               |   22 ++++++---------
- src/zmapView/zmapViewFeatureCollapse.c     |   37 +++++++++++++--------------
- src/zmapView/zmapViewFeatureMask.c         |    3 +-
- src/zmapWindow/zmapWindowItemDebug.c       |   14 +++++-----
- src/zmapWindow/zmapWindow_P.h              |    2 +-
- 14 files changed, 88 insertions(+), 101 deletions(-)
-
-2015-05-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge remote branch 'origin/feature/C++' into feature/C++
-2015-05-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ move zeromq to be installed like other external libs. - NEW FEATURE
- src/.gitignore    |    5 +++++
- src/Makefile.am   |   20 ++++++++++++--------
- src/Makefile.zmap |    6 ++++--
- src/autogen.sh    |   30 ++++++++++++++++++++++++++++++
- src/configure.ac  |   15 +++++++++++++++
- 5 files changed, 66 insertions(+), 10 deletions(-)
-
-2015-05-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ move zeromq to new external libs structure. - NEW FEATURE
- src/zeromq/.gitignore                              |  263 -
- src/zeromq/AUTHORS                                 |  124 -
- src/zeromq/COPYING                                 |  674 -
- src/zeromq/COPYING.LESSER                          |  181 -
- src/zeromq/ChangeLog                               |35197 --------------------
- src/zeromq/INSTALL                                 |  246 -
- src/zeromq/MAINTAINERS                             |   56 -
- src/zeromq/Makefile.am                             |   40 -
- src/zeromq/NEWS                                    |  527 -
- src/zeromq/acinclude.m4                            |  930 -
- src/zeromq/autogen.sh                              |   45 -
- src/zeromq/builds/msvc/Makefile.am                 |   36 -
- .../builds/msvc/c_local_lat/c_local_lat.vcproj     |  176 -
- .../builds/msvc/c_local_lat/c_local_lat.vcxproj    |   87 -
- .../builds/msvc/c_local_thr/c_local_thr.vcproj     |  178 -
- .../builds/msvc/c_local_thr/c_local_thr.vcxproj    |  107 -
- .../builds/msvc/c_remote_lat/c_remote_lat.vcproj   |  176 -
- .../builds/msvc/c_remote_lat/c_remote_lat.vcxproj  |   87 -
- .../builds/msvc/c_remote_thr/c_remote_thr.vcproj   |  178 -
- .../builds/msvc/c_remote_thr/c_remote_thr.vcxproj  |  107 -
- src/zeromq/builds/msvc/errno.cpp                   |   32 -
- src/zeromq/builds/msvc/errno.hpp                   |   56 -
- .../builds/msvc/inproc_lat/inproc_lat.vcproj       |  176 -
- .../builds/msvc/inproc_lat/inproc_lat.vcxproj      |  106 -
- .../builds/msvc/inproc_thr/inproc_thr.vcproj       |  176 -
- .../builds/msvc/inproc_thr/inproc_thr.vcxproj      |  106 -
- src/zeromq/builds/msvc/libzmq/libzmq.vcproj        |  997 -
- src/zeromq/builds/msvc/libzmq/libzmq.vcxproj       |  328 -
- .../builds/msvc/libzmq/libzmq.vcxproj.filters      |  467 -
- src/zeromq/builds/msvc/msvc.sln                    |   95 -
- src/zeromq/builds/msvc/msvc10.sln                  |  150 -
- src/zeromq/builds/msvc/platform.hpp                |   32 -
- src/zeromq/builds/msvc/properties/Common.props     |   21 -
- src/zeromq/builds/msvc/properties/Debug.props      |   19 -
- src/zeromq/builds/msvc/properties/Dynamic.props    |   20 -
- src/zeromq/builds/msvc/properties/Executable.props |   19 -
- .../builds/msvc/properties/Precompiled.props       |   14 -
- src/zeromq/builds/msvc/properties/Release.props    |   22 -
- src/zeromq/builds/msvc/properties/Static.props     |   15 -
- src/zeromq/builds/msvc/properties/Win32.props      |   12 -
- .../builds/msvc/properties/Win32_Release.props     |   17 -
- .../builds/msvc/properties/WithOpenPGM.props       |   12 -
- src/zeromq/builds/msvc/properties/ZeroMQ.props     |   22 -
- .../builds/msvc/properties/ZeroMQ_Static.props     |   23 -
- src/zeromq/builds/msvc/properties/x64.props        |   12 -
- src/zeromq/builds/redhat/zeromq.spec.in            |  161 -
- src/zeromq/configure.ac                            |  488 -
- src/zeromq/doc/Makefile.am                         |   53 -
- src/zeromq/doc/asciidoc.conf                       |   56 -
- src/zeromq/doc/zmq.7                               |  258 -
- src/zeromq/doc/zmq.html                            | 1129 -
- src/zeromq/doc/zmq.txt                             |  260 -
- src/zeromq/doc/zmq_bind.3                          |  194 -
- src/zeromq/doc/zmq_bind.html                       |  956 -
- src/zeromq/doc/zmq_bind.txt                        |  102 -
- src/zeromq/doc/zmq_close.3                         |   70 -
- src/zeromq/doc/zmq_close.html                      |  825 -
- src/zeromq/doc/zmq_close.txt                       |   52 -
- src/zeromq/doc/zmq_connect.3                       |  171 -
- src/zeromq/doc/zmq_connect.html                    |  938 -
- src/zeromq/doc/zmq_connect.txt                     |  100 -
- src/zeromq/doc/zmq_ctx_destroy.3                   |  126 -
- src/zeromq/doc/zmq_ctx_destroy.html                |  853 -
- src/zeromq/doc/zmq_ctx_destroy.txt                 |   67 -
- src/zeromq/doc/zmq_ctx_get.3                       |   82 -
- src/zeromq/doc/zmq_ctx_get.html                    |  838 -
- src/zeromq/doc/zmq_ctx_get.txt                     |   72 -
- src/zeromq/doc/zmq_ctx_new.3                       |   55 -
- src/zeromq/doc/zmq_ctx_new.html                    |  806 -
- src/zeromq/doc/zmq_ctx_new.txt                     |   50 -
- src/zeromq/doc/zmq_ctx_set.3                       |  118 -
- src/zeromq/doc/zmq_ctx_set.html                    |  883 -
- src/zeromq/doc/zmq_ctx_set.txt                     |   87 -
- src/zeromq/doc/zmq_ctx_term.3                      |  126 -
- src/zeromq/doc/zmq_ctx_term.html                   |  853 -
- src/zeromq/doc/zmq_ctx_term.txt                    |   67 -
- src/zeromq/doc/zmq_curve.7                         |   93 -
- src/zeromq/doc/zmq_curve.html                      |  847 -
- src/zeromq/doc/zmq_curve.txt                       |   92 -
- src/zeromq/doc/zmq_curve_keypair.3                 |   69 -
- src/zeromq/doc/zmq_curve_keypair.html              |  825 -
- src/zeromq/doc/zmq_curve_keypair.txt               |   56 -
- src/zeromq/doc/zmq_disconnect.3                    |   97 -
- src/zeromq/doc/zmq_disconnect.html                 |  854 -
- src/zeromq/doc/zmq_disconnect.txt                  |   67 -
- src/zeromq/doc/zmq_epgm.7                          |  200 -
- src/zeromq/doc/zmq_epgm.html                       |  934 -
- src/zeromq/doc/zmq_epgm.txt                        |  163 -
- src/zeromq/doc/zmq_errno.3                         |   67 -
- src/zeromq/doc/zmq_errno.html                      |  814 -
- src/zeromq/doc/zmq_errno.txt                       |   50 -
- src/zeromq/doc/zmq_getsockopt.3                    | 1645 -
- src/zeromq/doc/zmq_getsockopt.html                 | 2872 --
- src/zeromq/doc/zmq_getsockopt.txt                  |  641 -
- src/zeromq/doc/zmq_init.3                          |   62 -
- src/zeromq/doc/zmq_init.html                       |  816 -
- src/zeromq/doc/zmq_init.txt                        |   52 -
- src/zeromq/doc/zmq_inproc.7                        |  103 -
- src/zeromq/doc/zmq_inproc.html                     |  847 -
- src/zeromq/doc/zmq_inproc.txt                      |   85 -
- src/zeromq/doc/zmq_ipc.7                           |  147 -
- src/zeromq/doc/zmq_ipc.html                        |  876 -
- src/zeromq/doc/zmq_ipc.txt                         |   95 -
- src/zeromq/doc/zmq_msg_close.3                     |   70 -
- src/zeromq/doc/zmq_msg_close.html                  |  828 -
- src/zeromq/doc/zmq_msg_close.txt                   |   56 -
- src/zeromq/doc/zmq_msg_copy.3                      |   84 -
- src/zeromq/doc/zmq_msg_copy.html                   |  836 -
- src/zeromq/doc/zmq_msg_copy.txt                    |   57 -
- src/zeromq/doc/zmq_msg_data.3                      |   65 -
- src/zeromq/doc/zmq_msg_data.html                   |  813 -
- src/zeromq/doc/zmq_msg_data.txt                    |   48 -
- src/zeromq/doc/zmq_msg_get.3                       |   91 -
- src/zeromq/doc/zmq_msg_get.html                    |  849 -
- src/zeromq/doc/zmq_msg_get.txt                     |   73 -
- src/zeromq/doc/zmq_msg_init.3                      |   99 -
- src/zeromq/doc/zmq_msg_init.html                   |  838 -
- src/zeromq/doc/zmq_msg_init.txt                    |   65 -
- src/zeromq/doc/zmq_msg_init_data.3                 |  130 -
- src/zeromq/doc/zmq_msg_init_data.html              |  869 -
- src/zeromq/doc/zmq_msg_init_data.txt               |   85 -
- src/zeromq/doc/zmq_msg_init_size.3                 |   86 -
- src/zeromq/doc/zmq_msg_init_size.html              |  836 -
- src/zeromq/doc/zmq_msg_init_size.txt               |   58 -
- src/zeromq/doc/zmq_msg_more.3                      |   75 -
- src/zeromq/doc/zmq_msg_more.html                   |  825 -
- src/zeromq/doc/zmq_msg_more.txt                    |   65 -
- src/zeromq/doc/zmq_msg_move.3                      |   68 -
- src/zeromq/doc/zmq_msg_move.html                   |  825 -
- src/zeromq/doc/zmq_msg_move.txt                    |   52 -
- src/zeromq/doc/zmq_msg_recv.3                      |  161 -
- src/zeromq/doc/zmq_msg_recv.html                   |  933 -
- src/zeromq/doc/zmq_msg_recv.txt                    |  124 -
- src/zeromq/doc/zmq_msg_send.3                      |  179 -
- src/zeromq/doc/zmq_msg_send.html                   |  951 -
- src/zeromq/doc/zmq_msg_send.txt                    |  125 -
- src/zeromq/doc/zmq_msg_set.3                       |   56 -
- src/zeromq/doc/zmq_msg_set.html                    |  811 -
- src/zeromq/doc/zmq_msg_set.txt                     |   46 -
- src/zeromq/doc/zmq_msg_size.3                      |   65 -
- src/zeromq/doc/zmq_msg_size.html                   |  813 -
- src/zeromq/doc/zmq_msg_size.txt                    |   48 -
- src/zeromq/doc/zmq_null.7                          |   40 -
- src/zeromq/doc/zmq_null.html                       |  783 -
- src/zeromq/doc/zmq_null.txt                        |   27 -
- src/zeromq/doc/zmq_pgm.7                           |  200 -
- src/zeromq/doc/zmq_pgm.html                        |  934 -
- src/zeromq/doc/zmq_pgm.txt                         |  163 -
- src/zeromq/doc/zmq_plain.7                         |   43 -
- src/zeromq/doc/zmq_plain.html                      |  794 -
- src/zeromq/doc/zmq_plain.txt                       |   37 -
- src/zeromq/doc/zmq_poll.3                          |  177 -
- src/zeromq/doc/zmq_poll.html                       |  928 -
- src/zeromq/doc/zmq_poll.txt                        |  128 -
- src/zeromq/doc/zmq_proxy.3                         |   89 -
- src/zeromq/doc/zmq_proxy.html                      |  854 -
- src/zeromq/doc/zmq_proxy.txt                       |   98 -
- src/zeromq/doc/zmq_recv.3                          |  122 -
- src/zeromq/doc/zmq_recv.html                       |  895 -
- src/zeromq/doc/zmq_recv.txt                        |   90 -
- src/zeromq/doc/zmq_recvmsg.3                       |  175 -
- src/zeromq/doc/zmq_recvmsg.html                    |  937 -
- src/zeromq/doc/zmq_recvmsg.txt                     |  121 -
- src/zeromq/doc/zmq_send.3                          |  153 -
- src/zeromq/doc/zmq_send.html                       |  924 -
- src/zeromq/doc/zmq_send.txt                        |  102 -
- src/zeromq/doc/zmq_send_const.3                    |  153 -
- src/zeromq/doc/zmq_send_const.html                 |  925 -
- src/zeromq/doc/zmq_send_const.txt                  |  103 -
- src/zeromq/doc/zmq_sendmsg.3                       |  193 -
- src/zeromq/doc/zmq_sendmsg.html                    |  953 -
- src/zeromq/doc/zmq_sendmsg.txt                     |  119 -
- src/zeromq/doc/zmq_setsockopt.3                    | 1874 --
- src/zeromq/doc/zmq_setsockopt.html                 | 3173 --
- src/zeromq/doc/zmq_setsockopt.txt                  |  776 -
- src/zeromq/doc/zmq_socket.3                        | 1016 -
- src/zeromq/doc/zmq_socket.html                     | 1886 --
- src/zeromq/doc/zmq_socket.txt                      |  444 -
- src/zeromq/doc/zmq_socket_monitor.3                |  241 -
- src/zeromq/doc/zmq_socket_monitor.html             | 1025 -
- src/zeromq/doc/zmq_socket_monitor.txt              |  259 -
- src/zeromq/doc/zmq_strerror.3                      |   67 -
- src/zeromq/doc/zmq_strerror.html                   |  816 -
- src/zeromq/doc/zmq_strerror.txt                    |   56 -
- src/zeromq/doc/zmq_tcp.7                           |  179 -
- src/zeromq/doc/zmq_tcp.html                        |  886 -
- src/zeromq/doc/zmq_tcp.txt                         |  103 -
- src/zeromq/doc/zmq_term.3                          |  126 -
- src/zeromq/doc/zmq_term.html                       |  853 -
- src/zeromq/doc/zmq_term.txt                        |   66 -
- src/zeromq/doc/zmq_unbind.3                        |   92 -
- src/zeromq/doc/zmq_unbind.html                     |  846 -
- src/zeromq/doc/zmq_unbind.txt                      |   65 -
- src/zeromq/doc/zmq_version.3                       |   67 -
- src/zeromq/doc/zmq_version.html                    |  814 -
- src/zeromq/doc/zmq_version.txt                     |   54 -
- src/zeromq/doc/zmq_z85_decode.3                    |   64 -
- src/zeromq/doc/zmq_z85_decode.html                 |  809 -
- src/zeromq/doc/zmq_z85_decode.txt                  |   50 -
- src/zeromq/doc/zmq_z85_encode.3                    |   69 -
- src/zeromq/doc/zmq_z85_encode.html                 |  816 -
- src/zeromq/doc/zmq_z85_encode.txt                  |   57 -
- src/zeromq/foreign/openpgm/Makefile.am             |    8 -
- .../foreign/openpgm/libpgm-5.2.122~dfsg.tar.gz     |  Bin 951536 -> 0 bytes
- src/zeromq/include/zmq.h                           |  416 -
- src/zeromq/include/zmq_utils.h                     |  105 -
- src/zeromq/perf/Makefile.am                        |   22 -
- src/zeromq/perf/inproc_lat.cpp                     |  231 -
- src/zeromq/perf/inproc_thr.cpp                     |  241 -
- src/zeromq/perf/local_lat.cpp                      |  107 -
- src/zeromq/perf/local_thr.cpp                      |  131 -
- src/zeromq/perf/remote_lat.cpp                     |  120 -
- src/zeromq/perf/remote_thr.cpp                     |   98 -
- src/zeromq/src/Makefile.am                         |  190 -
- src/zeromq/src/address.cpp                         |   77 -
- src/zeromq/src/address.hpp                         |   51 -
- src/zeromq/src/array.hpp                           |  153 -
- src/zeromq/src/atomic_counter.hpp                  |  205 -
- src/zeromq/src/atomic_ptr.hpp                      |  202 -
- src/zeromq/src/blob.hpp                            |  129 -
- src/zeromq/src/clock.cpp                           |  201 -
- src/zeromq/src/clock.hpp                           |   59 -
- src/zeromq/src/command.hpp                         |  153 -
- src/zeromq/src/config.hpp                          |   87 -
- src/zeromq/src/ctx.cpp                             |  497 -
- src/zeromq/src/ctx.hpp                             |  204 -
- src/zeromq/src/curve_client.cpp                    |  410 -
- src/zeromq/src/curve_client.hpp                    |  109 -
- src/zeromq/src/curve_server.cpp                    |  629 -
- src/zeromq/src/curve_server.hpp                    |  120 -
- src/zeromq/src/dbuffer.hpp                         |  134 -
- src/zeromq/src/dealer.cpp                          |  125 -
- src/zeromq/src/dealer.hpp                          |   78 -
- src/zeromq/src/decoder.hpp                         |  173 -
- src/zeromq/src/devpoll.cpp                         |  193 -
- src/zeromq/src/devpoll.hpp                         |  105 -
- src/zeromq/src/dist.cpp                            |  196 -
- src/zeromq/src/dist.hpp                            |  104 -
- src/zeromq/src/encoder.hpp                         |  180 -
- src/zeromq/src/epoll.cpp                           |  181 -
- src/zeromq/src/epoll.hpp                           |  101 -
- src/zeromq/src/err.cpp                             |  289 -
- src/zeromq/src/err.hpp                             |  158 -
- src/zeromq/src/fd.hpp                              |   44 -
- src/zeromq/src/fq.cpp                              |  138 -
- src/zeromq/src/fq.hpp                              |   72 -
- src/zeromq/src/i_decoder.hpp                       |   51 -
- src/zeromq/src/i_encoder.hpp                       |   51 -
- src/zeromq/src/i_engine.hpp                        |   55 -
- src/zeromq/src/i_poll_events.hpp                   |   45 -
- src/zeromq/src/io_object.cpp                       |  106 -
- src/zeromq/src/io_object.hpp                       |   79 -
- src/zeromq/src/io_thread.cpp                       |  102 -
- src/zeromq/src/io_thread.hpp                       |   89 -
- src/zeromq/src/ip.cpp                              |  150 -
- src/zeromq/src/ip.hpp                              |   44 -
- src/zeromq/src/ipc_address.cpp                     |  106 -
- src/zeromq/src/ipc_address.hpp                     |   66 -
- src/zeromq/src/ipc_connecter.cpp                   |  265 -
- src/zeromq/src/ipc_connecter.hpp                   |  127 -
- src/zeromq/src/ipc_listener.cpp                    |  211 -
- src/zeromq/src/ipc_listener.hpp                    |   98 -
- src/zeromq/src/kqueue.cpp                          |  214 -
- src/zeromq/src/kqueue.hpp                          |  113 -
- src/zeromq/src/lb.cpp                              |  150 -
- src/zeromq/src/lb.hpp                              |   78 -
- src/zeromq/src/libzmq.pc.in                        |   10 -
- src/zeromq/src/likely.hpp                          |   32 -
- src/zeromq/src/mailbox.cpp                         |   84 -
- src/zeromq/src/mailbox.hpp                         |   80 -
- src/zeromq/src/mechanism.cpp                       |  163 -
- src/zeromq/src/mechanism.hpp                       |  101 -
- src/zeromq/src/msg.cpp                             |  319 -
- src/zeromq/src/msg.hpp                             |  160 -
- src/zeromq/src/mtrie.cpp                           |  430 -
- src/zeromq/src/mtrie.hpp                           |   91 -
- src/zeromq/src/mutex.hpp                           |  157 -
- src/zeromq/src/null_mechanism.cpp                  |  282 -
- src/zeromq/src/null_mechanism.hpp                  |   65 -
- src/zeromq/src/object.cpp                          |  419 -
- src/zeromq/src/object.hpp                          |  137 -
- src/zeromq/src/options.cpp                         |  634 -
- src/zeromq/src/options.hpp                         |  149 -
- src/zeromq/src/own.cpp                             |  205 -
- src/zeromq/src/own.hpp                             |  144 -
- src/zeromq/src/pair.cpp                            |  119 -
- src/zeromq/src/pair.hpp                            |   62 -
- src/zeromq/src/pgm_receiver.cpp                    |  296 -
- src/zeromq/src/pgm_receiver.hpp                    |  142 -
- src/zeromq/src/pgm_sender.cpp                      |  239 -
- src/zeromq/src/pgm_sender.hpp                      |  119 -
- src/zeromq/src/pgm_socket.cpp                      |  706 -
- src/zeromq/src/pgm_socket.hpp                      |  121 -
- src/zeromq/src/pipe.cpp                            |  485 -
- src/zeromq/src/pipe.hpp                            |  216 -
- src/zeromq/src/plain_mechanism.cpp                 |  482 -
- src/zeromq/src/plain_mechanism.hpp                 |   88 -
- src/zeromq/src/poll.cpp                            |  179 -
- src/zeromq/src/poll.hpp                            |  105 -
- src/zeromq/src/poller.hpp                          |   80 -
- src/zeromq/src/poller_base.cpp                     |   99 -
- src/zeromq/src/poller_base.hpp                     |   85 -
- src/zeromq/src/precompiled.cpp                     |   20 -
- src/zeromq/src/precompiled.hpp                     |   46 -
- src/zeromq/src/proxy.cpp                           |  149 -
- src/zeromq/src/proxy.hpp                           |   31 -
- src/zeromq/src/pub.cpp                             |   43 -
- src/zeromq/src/pub.hpp                             |   52 -
- src/zeromq/src/pull.cpp                            |   62 -
- src/zeromq/src/pull.hpp                            |   64 -
- src/zeromq/src/push.cpp                            |   62 -
- src/zeromq/src/push.hpp                            |   63 -
- src/zeromq/src/random.cpp                          |   51 -
- src/zeromq/src/random.hpp                          |   36 -
- src/zeromq/src/raw_decoder.cpp                     |   63 -
- src/zeromq/src/raw_decoder.hpp                     |   66 -
- src/zeromq/src/raw_encoder.cpp                     |   40 -
- src/zeromq/src/raw_encoder.hpp                     |   60 -
- src/zeromq/src/reaper.cpp                          |  127 -
- src/zeromq/src/reaper.hpp                          |   84 -
- src/zeromq/src/rep.cpp                             |  123 -
- src/zeromq/src/rep.hpp                             |   63 -
- src/zeromq/src/req.cpp                             |  279 -
- src/zeromq/src/req.hpp                             |  110 -
- src/zeromq/src/router.cpp                          |  410 -
- src/zeromq/src/router.hpp                          |  124 -
- src/zeromq/src/select.cpp                          |  219 -
- src/zeromq/src/select.hpp                          |  126 -
- src/zeromq/src/session_base.cpp                    |  549 -
- src/zeromq/src/session_base.hpp                    |  163 -
- src/zeromq/src/signaler.cpp                        |  488 -
- src/zeromq/src/signaler.hpp                        |   80 -
- src/zeromq/src/socket_base.cpp                     | 1271 -
- src/zeromq/src/socket_base.hpp                     |  253 -
- src/zeromq/src/stdint.hpp                          |   62 -
- src/zeromq/src/stream.cpp                          |  257 -
- src/zeromq/src/stream.hpp                          |   97 -
- src/zeromq/src/stream_engine.cpp                   |  844 -
- src/zeromq/src/stream_engine.hpp                   |  197 -
- src/zeromq/src/sub.cpp                             |   80 -
- src/zeromq/src/sub.hpp                             |   54 -
- src/zeromq/src/tcp.cpp                             |  151 -
- src/zeromq/src/tcp.hpp                             |   42 -
- src/zeromq/src/tcp_address.cpp                     |  602 -
- src/zeromq/src/tcp_address.hpp                     |   95 -
- src/zeromq/src/tcp_connecter.cpp                   |  324 -
- src/zeromq/src/tcp_connecter.hpp                   |  121 -
- src/zeromq/src/tcp_listener.cpp                    |  304 -
- src/zeromq/src/tcp_listener.hpp                    |   89 -
- src/zeromq/src/thread.cpp                          |  105 -
- src/zeromq/src/thread.hpp                          |   77 -
- src/zeromq/src/trie.cpp                            |  334 -
- src/zeromq/src/trie.hpp                            |   76 -
- src/zeromq/src/v1_decoder.cpp                      |  148 -
- src/zeromq/src/v1_decoder.hpp                      |   57 -
- src/zeromq/src/v1_encoder.cpp                      |   65 -
- src/zeromq/src/v1_encoder.hpp                      |   49 -
- src/zeromq/src/v2_decoder.cpp                      |  142 -
- src/zeromq/src/v2_decoder.hpp                      |   57 -
- src/zeromq/src/v2_encoder.cpp                      |   67 -
- src/zeromq/src/v2_encoder.hpp                      |   49 -
- src/zeromq/src/v2_protocol.hpp                     |   39 -
- src/zeromq/src/windows.hpp                         |  179 -
- src/zeromq/src/wire.hpp                            |   98 -
- src/zeromq/src/xpub.cpp                            |  191 -
- src/zeromq/src/xpub.hpp                            |   94 -
- src/zeromq/src/xsub.cpp                            |  228 -
- src/zeromq/src/xsub.hpp                            |   92 -
- src/zeromq/src/ypipe.hpp                           |  209 -
- src/zeromq/src/ypipe_base.hpp                      |   44 -
- src/zeromq/src/ypipe_conflate.hpp                  |  127 -
- src/zeromq/src/yqueue.hpp                          |  195 -
- src/zeromq/src/zmq.cpp                             | 1038 -
- src/zeromq/src/zmq_utils.cpp                       |  200 -
- src/zeromq/tests/Makefile.am                       |  104 -
- src/zeromq/tests/test_abstract_ipc.cpp             |   57 -
- src/zeromq/tests/test_conflate.cpp                 |   72 -
- src/zeromq/tests/test_connect_resolve.cpp          |   53 -
- src/zeromq/tests/test_ctx_destroy.cpp              |   90 -
- src/zeromq/tests/test_ctx_options.cpp              |   52 -
- src/zeromq/tests/test_disconnect_inproc.cpp        |  125 -
- src/zeromq/tests/test_fork.cpp                     |   81 -
- src/zeromq/tests/test_hwm.cpp                      |  299 -
- src/zeromq/tests/test_immediate.cpp                |  228 -
- src/zeromq/tests/test_inproc_connect.cpp           |  339 -
- src/zeromq/tests/test_invalid_rep.cpp              |   88 -
- src/zeromq/tests/test_iov.cpp                      |  106 -
- src/zeromq/tests/test_issue_566.cpp                |   85 -
- src/zeromq/tests/test_last_endpoint.cpp            |   56 -
- src/zeromq/tests/test_many_sockets.cpp             |   90 -
- src/zeromq/tests/test_monitor.cpp                  |  272 -
- src/zeromq/tests/test_msg_flags.cpp                |   79 -
- src/zeromq/tests/test_pair_inproc.cpp              |   71 -
- src/zeromq/tests/test_pair_ipc.cpp                 |   50 -
- src/zeromq/tests/test_pair_tcp.cpp                 |   50 -
- src/zeromq/tests/test_probe_router.cpp             |   72 -
- src/zeromq/tests/test_req_correlate.cpp            |  177 -
- src/zeromq/tests/test_req_relaxed.cpp              |  116 -
- src/zeromq/tests/test_reqrep_device.cpp            |  135 -
- src/zeromq/tests/test_reqrep_inproc.cpp            |   50 -
- src/zeromq/tests/test_reqrep_ipc.cpp               |   50 -
- src/zeromq/tests/test_reqrep_tcp.cpp               |   50 -
- src/zeromq/tests/test_router_mandatory.cpp         |   81 -
- src/zeromq/tests/test_router_raw_empty.cpp         |   65 -
- src/zeromq/tests/test_security_curve.cpp           |  212 -
- src/zeromq/tests/test_security_null.cpp            |  148 -
- src/zeromq/tests/test_security_plain.cpp           |  150 -
- src/zeromq/tests/test_shutdown_stress.cpp          |   80 -
- src/zeromq/tests/test_spec_dealer.cpp              |  254 -
- src/zeromq/tests/test_spec_pushpull.cpp            |  293 -
- src/zeromq/tests/test_spec_rep.cpp                 |  155 -
- src/zeromq/tests/test_spec_req.cpp                 |  253 -
- src/zeromq/tests/test_spec_router.cpp              |  204 -
- src/zeromq/tests/test_stream.cpp                   |  227 -
- src/zeromq/tests/test_sub_forward.cpp              |   91 -
- src/zeromq/tests/test_system.cpp                   |   82 -
- src/zeromq/tests/test_term_endpoint.cpp            |  104 -
- src/zeromq/tests/test_timeo.cpp                    |   75 -
- src/zeromq/tests/testutil.hpp                      |  279 -
- src/zeromq/tools/Makefile.am                       |    9 -
- src/zeromq/tools/curve_keygen.cpp                  |   58 -
- src/zeromq/version.sh                              |   21 -
- src/zeromq/zeromq.spec                             |  161 -
- 423 files changed, 0 insertions(+), 144262 deletions(-)
-
-2015-05-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ move zeromq to new external libs style. - NEW FEATURE
- src/zeromq/README_ZMAP |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
-
-2015-05-20  Steve Miller  <sm23@sanger.ac.uk>
- changes to remove use of 'minus', 'iterator', 'string' as variable names - WIP
- src/include/ZMap/zmapDAS.h               |   36 ++++++------
- src/include/ZMap/zmapEnum.h              |   92 +++++++++++++++---------------
- src/include/ZMap/zmapFeature.h           |   14 ++--
- src/include/ZMap/zmapGLibUtils.h         |    8 +-
- src/include/ZMap/zmapString.h            |    6 +-
- src/include/ZMap/zmapUrlUtils.h          |   15 +++--
- src/include/ZMap/zmapUtilsDebug.h        |    8 +-
- src/zmapDAS/zmapDAS1Parser.c             |    2 +-
- src/zmapFeature/zmapFeatureDNA.c         |   68 +++++++++++-----------
- src/zmapFeature/zmapFeatureFormatInput.c |   28 +++++-----
- src/zmapServer/pipe/pipeServer.c         |   14 ++--
- src/zmapUtils/zmapGLibUtils.c            |   50 ++++++++--------
- src/zmapUtils/zmapLogging.c              |   50 ++++++++--------
- src/zmapUtils/zmapString.c               |   42 +++++++-------
- src/zmapWindow/zmapWindowFeatureList.c   |   14 ++--
- src/zmapWindow/zmapWindowList.c          |   14 ++--
- src/zmapWindow/zmapWindowUtils.c         |    6 +-
- 17 files changed, 235 insertions(+), 232 deletions(-)
-
-2015-05-20  Steve Miller  <sm23@sanger.ac.uk>
- remove use of 'map' as a variable name - WIP
- src/zmapControl/zmapControlWindowMenubar.c |   20 +++++-----
- src/zmapFeature/zmapFeatureUtils.c         |   60 ++++++++++++++--------------
- 2 files changed, 40 insertions(+), 40 deletions(-)
-
-2015-05-20  Steve Miller  <sm23@sanger.ac.uk>
- removal of 'queue' used as variable names - WIP
- src/zmapRemoteControl/zmapRemoteControl.c |  192 ++++++++++++++--------------
- src/zmapWindow/zmapWindowState.c          |   92 +++++++-------
- 2 files changed, 142 insertions(+), 142 deletions(-)
-
-2015-05-20  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge remote branch 'origin/feature/C++' into feature/C++
-2015-05-20  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix up htslib to be like other external libs. - NEW FEATURE
- src/.gitignore   |    3 +++
- src/Makefile.am  |   10 +++++++++-
- src/autogen.sh   |   35 +++++++++++++++++++++++++++++------
- src/configure.ac |   18 ++++++++++++++++++
- 4 files changed, 59 insertions(+), 7 deletions(-)
-
-2015-05-20  Steve Miller  <sm23@sanger.ac.uk>
- removal of 'list' as a variable name - WIP
- src/zmapConfig/zmapConfigLoader.c                  |  174 ++++++++++----------
- src/zmapDAS/zmapDAS1Parser.c                       |  110 ++++++------
- src/zmapFeature/zmapFeatureUtils.c                 |   24 ++--
- src/zmapServer/das/dasServer.c                     |    8 +-
- src/zmapUtils/zmapGLibUtils.c                      |  116 +++++++-------
- src/zmapUtils/zmapRadixSort.c                      |   12 +-
- src/zmapView/zmapView.c                            |   20 +-
- src/zmapView/zmapViewRemoteControl.c               |   12 +-
- src/zmapView/zmapViewScratch.c                     |   26 ++--
- .../canvas/zmapWindowCanvasFeaturesetBump.c        |   34 ++--
- .../canvas/zmapWindowContainerFeatureSet.c         |   14 +-
- src/zmapWindow/canvas/zmapWindowContainerGroup.c   |   12 +-
- src/zmapWindow/canvas/zmapWindowOldItems.c         |   16 +-
- src/zmapWindow/zmapWindow.c                        |    8 +-
- src/zmapWindow/zmapWindowDNA.c                     |   10 +-
- src/zmapWindow/zmapWindowDrawFeatures.c            |    8 +-
- src/zmapWindow/zmapWindowFocus.c                   |   32 ++--
- src/zmapWindow/zmapWindowItemHash.c                |    6 +-
- src/zmapWindow/zmapWindowList.c                    |    8 +-
- src/zmapWindow/zmapWindowMark.c                    |    8 +-
- src/zmapWindow/zmapWindowMenus.c                   |   20 +-
- src/zmapXML/zmapXMLElement.c                       |   68 ++++----
- src/zmapXML/zmapXMLParse.c                         |   10 +-
- 23 files changed, 378 insertions(+), 378 deletions(-)
-
-2015-05-20  Steve Miller  <sm23@sanger.ac.uk>
- removed use of 'set' as a variable name - WIP
- src/zmapConfig/zmapConfigIni.c                     |   54 ++++++++--------
- src/zmapFeature/zmapFeature.c                      |   34 +++++-----
- src/zmapGFF/zmapGFF2parser.c                       |    8 +-
- src/zmapServer/acedb/acedbServer.c                 |   10 ++--
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |    8 +-
- .../canvas/zmapWindowContainerFeatureSet.c         |    6 +-
- src/zmapWindow/zmapWindowDNA.c                     |   10 ++--
- src/zmapWindow/zmapWindowDrawFeatures.c            |   20 +++---
- src/zmapWindow/zmapWindowFeature.c                 |   33 ++++------
- src/zmapWindow/zmapWindowItem.c                    |   10 ++--
- src/zmapWindow/zmapWindowItemHash.c                |   69 +++++++++-----------
- src/zmapWindow/zmapWindowSearch.c                  |   24 ++++----
- src/zmapWindow/zmapWindowStyle.c                   |   10 ++--
- src/zmapWindow/zmapWindow_P.h                      |    2 +-
- 14 files changed, 142 insertions(+), 156 deletions(-)
-
-2015-05-20  Gemma Barson  <gb10@sanger.ac.uk>
- Fix problem compiling with external ensc-core - BUILD
- src/.gitignore                |    1 +
- src/Makefile.am               |    4 ++++
- src/configure.ac              |    9 +++++++++
- src/ensc-core/README_ZMAP     |   23 ++++++++++++++++++-----
- src/ensc-core/src/README_ZMAP |    4 ++++
- src/zmapServer/Makefile.am    |    4 ++++
- 6 files changed, 40 insertions(+), 5 deletions(-)
-
-2015-05-20  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ remove htslib-develop - NEW FEATURE
- src/htslib-develop/README_ZMAP |   11 -----------
+2015-07-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix a whole load of irritating omissions from the renaming of files. - BUILD
+ scripts/zmap_SO_header.pl         |    4 ++--
+ src/zmapApp/Makefile.am           |    8 ++++++--
+ src/zmapFeature/tests/Makefile.am |    8 ++++----
+ src/zmapGFF/.gitignore            |    2 +-
+ src/zmapGFF/zmapSOParser_P.hpp    |    2 +-
+ src/zmapUtils/tests/Makefile.am   |    2 +-
+ src/zmapView/Makefile.am          |    3 +--
+ 7 files changed, 16 insertions(+), 13 deletions(-)
+
+2015-07-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/ensembl' into develop
+2015-07-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix missing source name in ensembl - BUG FIX
+ src/zmapServer/ensembl/ensemblServer.c |   36 ++++++++++++++++++++-----------
+ 1 files changed, 23 insertions(+), 13 deletions(-)
+
+2015-07-20  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix small problem in naming of test progs. - BUILD
+ src/Makefile.am              |    2 +-
+ src/tests/check_zmapmain.c   |  188 ------------------------------------------
+ src/tests/check_zmapmain.cpp |  188 ++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 189 insertions(+), 189 deletions(-)
+
+2015-07-20  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Remove unneeded mysql attempts by me. - BUILD
+ src/configure.ac |   11 -----------
  1 files changed, 0 insertions(+), 11 deletions(-)
 
-2015-05-20  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ add new htslib - NEW FEATURE
- src/htslib/README_ZMAP |   11 +++++++++++
- 1 files changed, 11 insertions(+), 0 deletions(-)
+2015-07-20  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Try to fix mysql header include stuff. - BUILD
+ src/configure.ac                   |   10 ++++++++++
+ src/runconfig                      |    3 ++-
+ src/zmapServer/ensembl/Makefile.am |    3 +--
+ 3 files changed, 13 insertions(+), 3 deletions(-)
 
-2015-05-20  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ change htslib-develop to htslib - NEW FEATURE
- src/Makefile.am     |    4 ++--
- src/Makefile.common |    2 +-
- src/runconfig       |    2 +-
- 3 files changed, 4 insertions(+), 4 deletions(-)
+2015-07-20  Ed Griffiths  <edgrif@sanger.ac.uk>
+ A bit of hack to fix the default_styles target problem. - BUILD
+ src/zmapApp/Makefile.am    |    9 +++++++++
+ src/zmapConfig/Makefile.am |   26 +++++++++++++++++---------
+ 2 files changed, 26 insertions(+), 9 deletions(-)
 
-2015-05-20  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ remove htslib from our repository - NEW FEATURE
- src/htslib-develop/.gitignore                 |   21 -
- src/htslib-develop/.travis.yml                |    8 -
- src/htslib-develop/Makefile                   |  308 -
- src/htslib-develop/README.md                  |   17 -
- src/htslib-develop/README_ZMAP                |   11 +
- src/htslib-develop/bgzf.c                     | 1085 --
- src/htslib-develop/bgzip.c                    |  283 -
- src/htslib-develop/config.h                   |    3 -
- src/htslib-develop/cram/cram.h                |   66 -
- src/htslib-develop/cram/cram_codecs.c         | 1764 ---
- src/htslib-develop/cram/cram_codecs.h         |  155 -
- src/htslib-develop/cram/cram_decode.c         | 2138 ---
- src/htslib-develop/cram/cram_decode.h         |  112 -
- src/htslib-develop/cram/cram_encode.c         | 2630 ----
- src/htslib-develop/cram/cram_encode.h         |  105 -
- src/htslib-develop/cram/cram_index.c          |  503 -
- src/htslib-develop/cram/cram_index.h          |   98 -
- src/htslib-develop/cram/cram_io.c             | 3647 -----
- src/htslib-develop/cram/cram_io.h             |  532 -
- src/htslib-develop/cram/cram_samtools.c       |  144 -
- src/htslib-develop/cram/cram_samtools.h       |   97 -
- src/htslib-develop/cram/cram_stats.c          |  357 -
- src/htslib-develop/cram/cram_stats.h          |   59 -
- src/htslib-develop/cram/cram_structs.h        |  752 -
- src/htslib-develop/cram/files.c               |   76 -
- src/htslib-develop/cram/mFILE.c               |  634 -
- src/htslib-develop/cram/mFILE.h               |   88 -
- src/htslib-develop/cram/md5.c                 |  295 -
- src/htslib-develop/cram/md5.h                 |   54 -
- src/htslib-develop/cram/misc.h                |  110 -
- src/htslib-develop/cram/open_trace_file.c     |  386 -
- src/htslib-develop/cram/open_trace_file.h     |  115 -
- src/htslib-develop/cram/os.h                  |  306 -
- src/htslib-develop/cram/pooled_alloc.c        |  170 -
- src/htslib-develop/cram/pooled_alloc.h        |   56 -
- src/htslib-develop/cram/sam_header.c          | 1222 --
- src/htslib-develop/cram/sam_header.h          |  452 -
- src/htslib-develop/cram/string_alloc.c        |  153 -
- src/htslib-develop/cram/string_alloc.h        |   69 -
- src/htslib-develop/cram/thread_pool.c         |  713 -
- src/htslib-develop/cram/thread_pool.h         |  197 -
- src/htslib-develop/cram/vlen.c                |  432 -
- src/htslib-develop/cram/vlen.h                |   48 -
- src/htslib-develop/cram/zfio.c                |  185 -
- src/htslib-develop/cram/zfio.h                |   54 -
- src/htslib-develop/faidx.5                    |  124 -
- src/htslib-develop/faidx.c                    |  421 -
- src/htslib-develop/hfile.c                    |  526 -
- src/htslib-develop/hfile_internal.h           |   75 -
- src/htslib-develop/hfile_net.c                |   99 -
- src/htslib-develop/hts.c                      | 1262 --
- src/htslib-develop/htslib.mk                  |  129 -
- src/htslib-develop/htslib/bgzf.h              |  313 -
- src/htslib-develop/htslib/faidx.h             |  112 -
- src/htslib-develop/htslib/hfile.h             |  204 -
- src/htslib-develop/htslib/hts.h               |  308 -
- src/htslib-develop/htslib/hts_defs.h          |   47 -
- src/htslib-develop/htslib/kfunc.h             |   49 -
- src/htslib-develop/htslib/khash.h             |  617 -
- src/htslib-develop/htslib/khash_str2int.h     |   98 -
- src/htslib-develop/htslib/klist.h             |  121 -
- src/htslib-develop/htslib/knetfile.h          |   75 -
- src/htslib-develop/htslib/kseq.h              |  253 -
- src/htslib-develop/htslib/ksort.h             |  285 -
- src/htslib-develop/htslib/kstdint.h           |   64 -
- src/htslib-develop/htslib/kstring.h           |  270 -
- src/htslib-develop/htslib/razf.h              |  134 -
- src/htslib-develop/htslib/sam.h               |  379 -
- src/htslib-develop/htslib/synced_bcf_reader.h |  255 -
- src/htslib-develop/htslib/tbx.h               |   52 -
- src/htslib-develop/htslib/vcf.h               |  817 -
- src/htslib-develop/htslib/vcf_sweep.h         |   15 -
- src/htslib-develop/htslib/vcfutils.h          |   94 -
- src/htslib-develop/htslib_vars.mk             |   21 -
- src/htslib-develop/kfunc.c                    |  254 -
- src/htslib-develop/knetfile.c                 |  622 -
- src/htslib-develop/kstring.c                  |  229 -
- src/htslib-develop/razf.c                     |  856 -
- src/htslib-develop/sam.5                      |   45 -
- src/htslib-develop/sam.c                      | 1771 ---
- src/htslib-develop/synced_bcf_reader.c        | 1217 --
- src/htslib-develop/tabix.1                    |  132 -
- src/htslib-develop/tabix.c                    |  374 -
- src/htslib-develop/tbx.c                      |  290 -
- src/htslib-develop/test/aux#aux.sam           |    5 -
- src/htslib-develop/test/aux.fa                |    2 -
- src/htslib-develop/test/aux.fa.fai            |    1 -
- src/htslib-develop/test/c1#bounds.sam         |    4 -
- src/htslib-develop/test/c1#clip.sam           |    8 -
- src/htslib-develop/test/c1#pad1.sam           |   10 -
- src/htslib-develop/test/c1#pad2.sam           |   14 -
- src/htslib-develop/test/c1#pad3.sam           |   14 -
- src/htslib-develop/test/c1.fa                 |    2 -
- src/htslib-develop/test/c1.fa.fai             |    1 -
- src/htslib-develop/test/ce#1.sam              |    2 -
- src/htslib-develop/test/ce#2.sam              |    3 -
- src/htslib-develop/test/ce#5.sam              |   11 -
- src/htslib-develop/test/ce#5b.sam             |   12 -
- src/htslib-develop/test/ce#large_seq.sam      |    3 -
- src/htslib-develop/test/ce#tag_depadded.sam   |   11 -
- src/htslib-develop/test/ce#tag_padded.sam     |   11 -
- src/htslib-develop/test/ce#unmap.sam          |    6 -
- src/htslib-develop/test/ce#unmap1.sam         |   20 -
- src/htslib-develop/test/ce#unmap2.sam         |   29 -
- src/htslib-develop/test/ce.fa                 |20803 -------------------------
- src/htslib-develop/test/ce.fa.fai             |    7 -
- src/htslib-develop/test/compare_sam.pl        |  150 -
- src/htslib-develop/test/fieldarith.c          |   48 -
- src/htslib-develop/test/fieldarith.sam        |   15 -
- src/htslib-develop/test/hfile.c               |  204 -
- src/htslib-develop/test/sam.c                 |  142 -
- src/htslib-develop/test/test-vcf-api.c        |  191 -
- src/htslib-develop/test/test-vcf-api.out      |   23 -
- src/htslib-develop/test/test-vcf-sweep.c      |   88 -
- src/htslib-develop/test/test-vcf-sweep.out    |    4 -
- src/htslib-develop/test/test.pl               |  180 -
- src/htslib-develop/test/test_view.c           |  133 -
- src/htslib-develop/test/test_view.pl          |   49 -
- src/htslib-develop/test/xx#large_aux.sam      |    4 -
- src/htslib-develop/test/xx#large_aux2.sam     |   11 -
- src/htslib-develop/test/xx#minimal.sam        |   10 -
- src/htslib-develop/test/xx#pair.sam           |    7 -
- src/htslib-develop/test/xx#rg.sam             |   13 -
- src/htslib-develop/test/xx#triplet.sam        |    7 -
- src/htslib-develop/test/xx#unsorted.sam       |    8 -
- src/htslib-develop/test/xx.fa                 |    5 -
- src/htslib-develop/test/xx.fa.fai             |    2 -
- src/htslib-develop/vcf.5                      |   96 -
- src/htslib-develop/vcf.c                      | 2947 ----
- src/htslib-develop/vcf_sweep.c                |  158 -
- src/htslib-develop/vcfutils.c                 |  642 -
- 131 files changed, 11 insertions(+), 59824 deletions(-)
+2015-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ try fix mysql biuld on mac. - BUILD
+ src/runconfig                      |    2 +-
+ src/zmapServer/ensembl/Makefile.am |    3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
 
-2015-05-20  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ Add note to say README_ZMAP is not part of the external lib. - NEW FEATURE
- src/ensc-core/README_ZMAP |    6 ++++++
- src/gbtools/README_ZMAP   |    6 ++++++
- 2 files changed, 12 insertions(+), 0 deletions(-)
+2015-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Try to fix mysql header inclusion on mac. - BUG FIX
+ src/runconfig |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-2015-05-19  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge remote branch 'origin/feature/C++' into feature/C++
-2015-05-19  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge remote branch 'origin/feature/C++' into feature/C++
-2015-05-19  Steve Miller  <sm23@sanger.ac.uk>
- removal of use of the word 'array' in a few places - WIP
- src/zmapFeature/zmapFeatureTranscript.c   |  132 +++++++++++++-------------
- src/zmapFeature/zmapFeatureUtils.c        |   18 ++--
- src/zmapRemoteControl/zmapRemoteCommand.c |    6 +-
- src/zmapUtils/zmapGLibUtils.c             |   14 ++--
- src/zmapXML/zmapXMLParse.c                |  150 ++++++++++++++--------------
- 5 files changed, 160 insertions(+), 160 deletions(-)
-
-2015-05-19  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix up src/.gitignore to handle external libs placeholder files. - NEW FEATURE
- src/.gitignore |   11 ++++++-----
- 1 files changed, 6 insertions(+), 5 deletions(-)
-
-2015-05-19  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix up readme for gbtools - NEW FEATURE
- src/gbtools/README      |   19 -------------------
- src/gbtools/README_ZMAP |   19 +++++++++++++++++++
- 2 files changed, 19 insertions(+), 19 deletions(-)
-
-2015-05-19  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix up README file for ensembl. - NEW FEATURE
- src/ensc-core/.gitignore     |    3 ---
- src/ensc-core/README         |   10 ----------
- src/ensc-core/README_ZMAP    |   10 ++++++++++
- src/ensc-core/src/.gitignore |    2 --
- 4 files changed, 10 insertions(+), 15 deletions(-)
-
-2015-05-19  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix up READMEs for AceConn - NEW FEATURE
- src/AceConn/.gitignore  |    1 -
- src/AceConn/README_ZMAP |   12 ++++++++++++
- 2 files changed, 12 insertions(+), 1 deletions(-)
-
-2015-05-19  Steve Miller  <sm23@sanger.ac.uk>
- removal of use of word \'complex\' as variable names in a few places - WIP
- src/zmapWindow/canvas/zmapWindowCanvasFeature.c    |    6 ++--
- src/zmapWindow/canvas/zmapWindowCanvasFeature.h    |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.h |    2 +-
- .../canvas/zmapWindowCanvasFeaturesetBump.c        |   34 ++++++++++----------
- 4 files changed, 22 insertions(+), 22 deletions(-)
-
-2015-05-19  Steve Miller  <sm23@sanger.ac.uk>
- now can view all types of features correctly - WIP
- src/zmapWindow/canvas/zmapWindowCanvasAssembly.c  |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasBasic.c     |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasFeature.c   |    8 +-------
- src/zmapWindow/canvas/zmapWindowCanvasGraphItem.c |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasGraphics.c  |    6 +++---
- 5 files changed, 7 insertions(+), 13 deletions(-)
-
-2015-05-19  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ replace c with c++ extension, no code changes, to get it to compile. - NEW FEATURE
- .../remotetest/remotecontroltest.c                 | 2597 --------------------
- .../remotetest/remotecontroltest.cc                | 2597 ++++++++++++++++++++
- 2 files changed, 2597 insertions(+), 2597 deletions(-)
-
-2015-05-19  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ Move remotecontrol to have it's own makefile.am. - NEW FEATURE
- src/zmapRemoteControl/Makefile.am            |   10 ++++++++--
- src/zmapRemoteControl/remotetest/Makefile.am |   16 ++++++++++++++++
- 2 files changed, 24 insertions(+), 2 deletions(-)
-
-2015-05-19  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix missing const char* - NEW FEATURE
- src/zmapXML/zmapXMLUtils.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
-
-2015-05-19  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ Add remotecontrol back into build, tidy up. - NEW FEATURE
- src/Makefile.am |   42 ++++++++----------------------------------
- 1 files changed, 8 insertions(+), 34 deletions(-)
-
-2015-05-19  Gemma Barson  <gb10@sanger.ac.uk>
- fix compile errors on cygwin
- src/zmapUtils/zmapGUIutils.c |    4 ++--
+2015-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ somehow this change got lost in the merge to develop. - BUILD
+ src/zmapConfig/Makefile.am |    4 ++--
  1 files changed, 2 insertions(+), 2 deletions(-)
 
-2015-05-18  Steve Miller  <sm23@sanger.ac.uk>
- small change to some memory traversal - WIP
- .../canvas/zmapWindowCanvasFeaturesetSummarise.c   |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
-
-2015-05-18  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ Agh...somehow I missed out part of my fix for the global init. - NEW FEATURE
- src/zmapServer/zmapServerProtocolHandler.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-18  Steve Miller  <sm23@sanger.ac.uk>
- now compiles and shows features including compound ones - WIP
- src/zmapFeature/zmapStyle.c                        |    4 ++--
- src/zmapFeature/zmapStyle_P.h                      |    6 +++---
- src/zmapWindow/canvas/zmapWindowCanvasFeature.c    |    3 ++-
- .../canvas/zmapWindowCanvasFeaturesetSummarise.c   |    2 +-
- 4 files changed, 8 insertions(+), 7 deletions(-)
-
-2015-05-18  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix up aceconn to be optional. - NEW FEATURE
- src/zmapServer/Makefile.am |   12 ++++++++++--
- 1 files changed, 10 insertions(+), 2 deletions(-)
-
-2015-05-18  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ rewrite global init to better handle if an extension is not available. - NEW FEATURE
- src/zmapServer/zmapServerProtocolHandler.c |   78 +++++++++++++++------------
- 1 files changed, 43 insertions(+), 35 deletions(-)
-
-2015-05-18  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ Tidy up ensembl conditional compilation and add acedb. - NEW FEATURE
- src/zmapServer/zmapServer.c |   39 +++++++++++++++------------------------
- 1 files changed, 15 insertions(+), 24 deletions(-)
-
-2015-05-18  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ remove unecessary inclusion of aceconn header. - NEW FEATURE
- src/zmapServer/ensembl/ensemblServer.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
-
-2015-05-18  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ Change aceconn to use same method as ensembl for inclusion. - NEW FEATURE
- src/Makefile.am     |   14 +++++++++++---
- src/Makefile.common |   44 ++++++++++++++++++++++++++++----------------
- src/autogen.sh      |    5 ++++-
- src/configure.ac    |   49 +++++++++++++++++++++++++++++++++++++++----------
- 4 files changed, 82 insertions(+), 30 deletions(-)
-
-2015-05-15  Steve Miller  <sm23@sanger.ac.uk>
- this compiles and displays basic features, and single exon transcripts, but crashes with more complex stuff - WIP
- src/zmapWindow/canvas/zmapWindowCanvasAlignment.c  |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasAssembly.c   |    4 +-
- src/zmapWindow/canvas/zmapWindowCanvasBasic.c      |   14 +++---
- src/zmapWindow/canvas/zmapWindowCanvasFeature.c    |   51 ++++++++++----------
- src/zmapWindow/canvas/zmapWindowCanvasFeature.h    |    8 ++--
- src/zmapWindow/canvas/zmapWindowCanvasFeature_I.h  |    6 +-
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |   20 ++++----
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.h |    2 +-
- .../canvas/zmapWindowCanvasFeaturesetSummarise.c   |    6 +-
- .../canvas/zmapWindowCanvasFeatureset_I.h          |    6 +--
- src/zmapWindow/canvas/zmapWindowCanvasGlyph.c      |    8 ++--
- src/zmapWindow/canvas/zmapWindowCanvasGraphItem.c  |    4 +-
- src/zmapWindow/canvas/zmapWindowCanvasGraphics.c   |   12 ++--
- src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |    8 ++--
- src/zmapWindow/zmapWindowStats.c                   |   12 ++--
- 15 files changed, 80 insertions(+), 83 deletions(-)
-
-2015-05-15  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ don't overwrite external .gitignore with ours in autogen.sh - NEW FEATURE
- src/autogen.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-15  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ oops, wrong dir name for AceConn - NEW FEATURE
- src/.gitignore |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-15  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ more fixes for setting up external libraries. - NEW FEATURE
- src/autogen.sh |   61 ++++++-------------------------------------------------
- 1 files changed, 7 insertions(+), 54 deletions(-)
-
-2015-05-15  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ remove aceconn from our git repository - NEW FEATURE
- src/AceConn/AUTHORS                |   14 -
- src/AceConn/AceConn-1.1.pc.in      |   10 -
- src/AceConn/COPYING                |  340 -----------
- src/AceConn/ChangeLog              |    3 -
- src/AceConn/INSTALL                |  365 ------------
- src/AceConn/Makefile.am            |   15 -
- src/AceConn/NEWS                   |    4 -
- src/AceConn/README                 |  124 ----
- src/AceConn/acinclude.m4           |   96 ---
- src/AceConn/autogen.sh             |   18 -
- src/AceConn/configure.ac           |   51 --
- src/AceConn/doc/AceConn.html       |  414 -------------
- src/AceConn/doc/Makefile.am        |    1 -
- src/AceConn/include/AceConn.h      |  120 ----
- src/AceConn/include/AceConnProto.h |  125 ----
- src/AceConn/include/Makefile.am    |    1 -
- src/AceConn/m4/README              |    1 -
- src/AceConn/src/.cvsignore         |    4 -
- src/AceConn/src/Makefile.am        |   11 -
- src/AceConn/src/aceconn.c          |  379 ------------
- src/AceConn/src/aceconn_.h         |  115 ----
- src/AceConn/src/aceconnsock.c      | 1129 ------------------------------------
- src/AceConn/src/aceconnutils.c     |  215 -------
- src/AceConn/src/global.h           |   69 ---
- src/AceConn/src/md5.h              |   37 --
- src/AceConn/src/md5c.c             |  333 -----------
- src/AceConn/test/Makefile.am       |    9 -
- src/AceConn/test/simpleclient.c    |  255 --------
- src/AceConn/test/simpletest.c      |  214 -------
- 29 files changed, 0 insertions(+), 4472 deletions(-)
-
-2015-05-15  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ improve handling of when there is no ensembl extension - NEW FEATURE
- src/zmapServer/zmapServer.c |   84 ++++++++++++++++++++++++++++--------------
- 1 files changed, 56 insertions(+), 28 deletions(-)
-
-2015-05-15  Ed Griffiths  <edgrif@sanger.ac.uk>
- C+= placeholder for removal of aceconn from our source. - NEW FEATURE
- src/AceConn/.gitignore |   21 +--------------------
- 1 files changed, 1 insertions(+), 20 deletions(-)
-
-2015-05-15  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ make sure external dirs, e.g. ensembl are ignored by git.  - NEW FEATURE
- src/.gitignore |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-2015-05-15  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix build for aceconn to be like ensembl - NEW FEATURE
- src/autogen.sh   |  151 +++++++++++++++++++++++++++++++++++++++++++++---------
- src/configure.ac |    6 ++-
- 2 files changed, 132 insertions(+), 25 deletions(-)
-
-2015-05-14  Steve Miller  <sm23@sanger.ac.uk>
- update that will run with an empty (no features) gff file and display a ruler etc - WIP
- src/zmapFeature/zmapStyle.c                     |  103 ++++++++++++-----------
- src/zmapFeature/zmapStyleObj.c                  |   44 +++++-----
- src/zmapServer/acedb/acedbServer.c              |   38 +++++----
- src/zmapWindow/canvas/zmapWindowCanvasFeature.c |   24 +++---
- 4 files changed, 109 insertions(+), 100 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ change char* to const char* - NEW FEATURE
- src/include/ZMap/zmapStyle.h |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ remove redundant c++ guards - NEW FEATURE
- src/zmapControl/zmapControl_P.h          |    8 --------
- src/zmapWindow/zmapWindowZoomControl_P.h |    8 --------
- src/zmapWindow/zmapWindow_P.h            |    8 --------
- 3 files changed, 0 insertions(+), 24 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ remove redundant c++ guards - NEW FEATURE
- src/include/ZMap/zmapCmdLineArgs.h |    9 ---------
- src/include/ZMap/zmapView.h        |    7 -------
- src/include/ZMap/zmapWindow.h      |    8 --------
- 3 files changed, 0 insertions(+), 24 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix loads of char* to const char* - NEW FEATURE
- src/include/ZMap/zmapFASTA.h      |    6 ++++--
- src/include/ZMap/zmapGLibUtils.h  |    2 +-
- src/include/ZMap/zmapUtils.h      |    8 ++++++++
- src/include/ZMap/zmapUtilsDebug.h |    8 ++++++++
- src/include/ZMap/zmapUtilsGUI.h   |   10 +++++++++-
- src/zmapUtils/zmapFASTA.c         |   19 +++++++++++--------
- src/zmapUtils/zmapGLibUtils.c     |    2 +-
- src/zmapUtils/zmapGUINotebook.c   |    4 ++--
- src/zmapUtils/zmapGUIutils.c      |   13 ++++++-------
- src/zmapUtils/zmapUrl.c           |    2 +-
- src/zmapUtils/zmapUtils.c         |    2 +-
- 11 files changed, 52 insertions(+), 24 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix load of char* to const char* - NEW FEATURE
- src/include/ZMap/zmapXML.h   |   29 +++++++++++++++--------------
- src/zmapXML/zmapXMLElement.c |   15 +++++----------
- src/zmapXML/zmapXMLParse.c   |    7 ++-----
- src/zmapXML/zmapXMLUtils.c   |    6 +++---
- src/zmapXML/zmapXMLWriter.c  |   10 +++++-----
- 5 files changed, 30 insertions(+), 37 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix load of char* to const char* - NEW FEATURE
- src/include/ZMap/zmapRemoteCommand.h      |    8 ++++----
- src/zmapRemoteControl/zmapRemoteCommand.c |   23 ++++++++++++-----------
- src/zmapRemoteControl/zmapRemoteControl.c |    2 +-
- 3 files changed, 17 insertions(+), 16 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix load of char* to const char* - NEW FEATURE
- src/include/ZMap/zmapFeature.h      |   15 +++++++++++----
- src/zmapFeature/zmapFeature.c       |    4 ++--
- src/zmapFeature/zmapFeatureOutput.c |    3 ++-
- src/zmapFeature/zmapFeatureUtils.c  |   18 +++++++++---------
- src/zmapFeature/zmapStyleUtils.c    |    6 +++---
- 5 files changed, 27 insertions(+), 19 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ fix a whole load of char* to const char*. - NEW FEATURE
- src/zmapConfig/zmapConfigFile.c   |   14 +++---
- src/zmapConfig/zmapConfigIni.c    |   79 +++++++++++++++++++------------------
- src/zmapConfig/zmapConfigIni_P.h  |   26 ++++++------
- src/zmapConfig/zmapConfigKey.c    |    6 +-
- src/zmapConfig/zmapConfigLoader.c |   19 +++++----
- 5 files changed, 73 insertions(+), 71 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ switch to c++ main, we need to clear this up now as we don't need two mains. - NEW FEATURE
- src/zmapApp/Makefile.am      |    2 +-
- src/zmapApp/zmapAppmain_c.cc |    6 ++++--
- 2 files changed, 5 insertions(+), 3 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ temp hack to get our "c" files to compile as c++ files. - NEW FEATURE
- src/runconfig |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ add c++ header guards. - NEW FEATURE
- src/libpfetch/libpfetch.h |   12 ++++++++++++
- 1 files changed, 12 insertions(+), 0 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ make sure libcurl is compiled with gcc - NEW FEATURE
- src/libcurlobject/Makefile.am |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ add tests for c++ compiler and a bit more output about linker - NEW FEATURE
- src/configure.ac |   26 +++++++++++++++++++++-----
- 1 files changed, 21 insertions(+), 5 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ temp hack to get build working - NEW FEATURE
- src/Makefile.zmap |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ temp hack to get build going. - NEW FEATURE
- src/Makefile.common |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-2015-05-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ temporary changes to get zmap to build, needs revisiting/cleaning up. - NEW FEATURE
- src/Makefile.am |    9 ++++++---
- 1 files changed, 6 insertions(+), 3 deletions(-)
-
-2015-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ add ens-core to files to be ignored by git. - NEW FEATURE
- src/.gitignore |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
-
-2015-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ add missing pthreads header. - NEW FEATURE
- src/zmapServer/ensembl/ensemblServer.c |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Add autogen flags to disable copy of ensc-core - BUILD
- src/autogen.sh               |   57 ++++++++++++++++++++++++++++++++---------
- src/ensc-core/.gitignore     |    1 -
- src/ensc-core/src/.gitignore |    2 +
- 3 files changed, 46 insertions(+), 14 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Make ensc-core includes extern C - WIP
- src/zmapServer/ensembl/ensemblServer.c   |   13 +++++++++++++
- src/zmapServer/ensembl/ensemblServer_P.h |   10 ++++++++++
- 2 files changed, 23 insertions(+), 0 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Make ensembl code compile with c++ and fix warnings - WIP
- src/zmapServer/ensembl/Makefile.am     |    2 +-
- src/zmapServer/ensembl/ensemblServer.c |  101 +++++++++++++++++++++++---------
- 2 files changed, 75 insertions(+), 28 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Cast to unsigned char when indexing array with char literals - WIP
- src/zmapUtils/zmapDNA.c                |   42 ++++++++++++++++----------------
- src/zmapView/zmapViewFeatureCollapse.c |   10 ++++----
- 2 files changed, 26 insertions(+), 26 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Minor compile warning fix - WIP
- src/include/ZMap/zmapGLibUtils.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Fix warnings comparison between signed and unsigned int - WIP
- src/zmapControl/zmapControl.c |    2 +-
- src/zmapFeature/zmapFeature.c |   12 ++++++------
- 2 files changed, 7 insertions(+), 7 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Cast to GParamFlags - WIP
- src/zmapFeature/zmapStyle.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Fix invalud ++ operator on enum - WIP
- src/zmapFeature/zmapFeature3FrameTranslation.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- More minor compiler warnings - WIP
- src/zmapRemoteControl/zmapRemoteControl.c          |    2 +
- .../zmapWindowContainerFeatureSetFeatureFuncs.c    |    4 +-
- src/zmapWindow/zmapWindowMenus.c                   |   88 ++++++++++----------
- 3 files changed, 49 insertions(+), 45 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Fix various compiler warnings - WIP
- src/zmapServer/ensembl/ensemblServer.c             |    2 +-
- src/zmapUtils/zmapWebBrowser.c                     |    2 +-
- src/zmapView/zmapViewRemoteControl.c               |    1 -
- .../zmapWindowContainerFeatureSetFeatureFuncs.c    |    7 ++-----
- src/zmapWindow/zmapWindowDrawFeatures.c            |    1 -
- src/zmapWindow/zmapWindowItemHash.c                |    1 -
- src/zmapWindow/zmapWindowMenus.c                   |    2 --
- src/zmapWindow/zmapWindowUtils.c                   |    2 --
- 8 files changed, 4 insertions(+), 14 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Fix problem with d37b33e - REGRESSION FIX
- src/include/ZMap/zmapXML.h |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Fix various minor warnings - WIP
- src/zmapGFF/zmapGFF2parser.c              |    2 +-
- src/zmapRemoteControl/zmapRemoteControl.c |    5 +-
- src/zmapServer/das/dasServer.c            |    3 +-
- src/zmapServer/ensembl/ensemblServer.c    |   89 +++++++++++++++-------------
- src/zmapServer/file/fileServer.c          |    1 -
- 5 files changed, 54 insertions(+), 46 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Fix missing typedef for an enum - WIP
- src/include/ZMap/zmapXML.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Use GPOINTER_TO_INT instead of direct cast - BUG FIX
- .../canvas/zmapWindowContainerFeatureSet.c         |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Fix arithmetic on void pointers - WIP
- src/zmapWindow/canvas/zmapWindowCanvasFeature.c    |    4 ++--
- .../canvas/zmapWindowCanvasFeaturesetSummarise.c   |    4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Fix invalid suffix on literal errors on mac - WIP
- .../remotetest/remotecontroltest.c                 |    4 +-
- src/zmapUtils/zmapUtils.c                          |    2 +-
- src/zmapUtils/zmapUtils_P.h                        |    6 ++--
- src/zmapUtils/zmapWebBrowser.c                     |   10 +++---
- src/zmapView/zmapView.c                            |    2 +-
- src/zmapWindow/zmapWindowMenus.c                   |   38 ++++++++++----------
- 6 files changed, 31 insertions(+), 31 deletions(-)
-
-2015-05-11  Gemma Barson  <gb10@sanger.ac.uk>
- Fix a couple of const errors in zmapApp - WIP
- src/zmapApp/zmapAppRemoteControl.c        |    2 +-
- src/zmapApp/zmapApp_P.h                   |    2 +-
- src/zmapRemoteControl/zmapRemoteControl.c |    2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
-
-2015-05-08  Steve Miller  <sm23@sanger.ac.uk>
- get rid of a couple of warnings on the mac
- src/zmapGFF/zmapGFF2parser.c |    2 +-
- src/zmapGFF/zmapGFF3parser.c |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-05-08  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ Fix a load of char* to const char* - NEW FEATURE
- src/include/ZMap/zmapUtils.h    |   16 ++++++++--------
- src/zmapUtils/zmapGLibUtils.c   |    4 ++--
- src/zmapUtils/zmapGUINotebook.c |    4 ++--
- src/zmapUtils/zmapGUImenus.c    |   10 +++++-----
- src/zmapUtils/zmapGUIutils.c    |    4 ++--
- src/zmapUtils/zmapPeptide.c     |   14 +++++++-------
- src/zmapUtils/zmapSignals.c     |    8 ++++----
- src/zmapUtils/zmapUtils.c       |   30 +++++++++++++++---------------
- src/zmapUtils/zmapUtilsUsers.c  |   12 ++++++------
- src/zmapUtils/zmapWebBrowser.c  |    6 +++---
- 10 files changed, 54 insertions(+), 54 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix const char*, casts from/to void, enums. - NEW FEATURE
- src/include/ZMap/zmapXML.h   |    2 +-
- src/zmapXML/zmapXMLElement.c |    6 +++---
- src/zmapXML/zmapXMLParse.c   |   21 ++++++++++++---------
- src/zmapXML/zmapXMLUtils.c   |   21 ++++++++++-----------
- src/zmapXML/zmapXMLWriter.c  |    9 +++++----
- src/zmapXML/zmapXML_P.h      |    2 +-
- 6 files changed, 32 insertions(+), 29 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- fix many menu casts (gtk), enum casts, const char*. - NEW FEATURE
- src/zmapWindow/zmapWindowFeatureShow.cpp      |   26 ++--
- src/zmapWindow/zmapWindowFocus.c              |    6 +-
- src/zmapWindow/zmapWindowItem.c               |    2 +-
- src/zmapWindow/zmapWindowItemDebug.c          |   14 +-
- src/zmapWindow/zmapWindowItemHash.c           |   23 ++--
- src/zmapWindow/zmapWindowList.c               |   42 +++---
- src/zmapWindow/zmapWindowMark.c               |    6 +-
- src/zmapWindow/zmapWindowMark.h               |    2 +-
- src/zmapWindow/zmapWindowMenus.c              |  104 ++++++++------
- src/zmapWindow/zmapWindowNavigator.c          |   20 ++--
- src/zmapWindow/zmapWindowNavigatorMenus.c     |   20 ++--
- src/zmapWindow/zmapWindowNavigatorWidget.c    |   12 +-
- src/zmapWindow/zmapWindowPrint.c              |    8 +-
- src/zmapWindow/zmapWindowRemoteControl.c      |    8 +-
- src/zmapWindow/zmapWindowRemoteControlUtils.c |    6 +-
- src/zmapWindow/zmapWindowScale.c              |    8 +-
- src/zmapWindow/zmapWindowSearch.c             |   52 ++++----
- src/zmapWindow/zmapWindowSeqDisp.c            |   30 ++--
- src/zmapWindow/zmapWindowState.c              |   20 ++--
- src/zmapWindow/zmapWindowStats.c              |    4 +-
- src/zmapWindow/zmapWindowStyle.c              |  196 +++++++++++++------------
- src/zmapWindow/zmapWindowUtils.c              |   20 ++--
- src/zmapWindow/zmapWindowZoomControl.c        |    2 +-
- src/zmapWindow/zmapWindow_P.h                 |   43 ++++--
- 24 files changed, 355 insertions(+), 319 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix enum casts, void* casts, const char*, use new bit filed macros from zmapLogical.h change. - NEW FEATURE
- src/zmapWindow/zmapWindow.c             |   76 +++++++++--------
- src/zmapWindow/zmapWindowColBump.c      |   12 ++--
- src/zmapWindow/zmapWindowColConfig.c    |   48 +++++-----
- src/zmapWindow/zmapWindowDNA.c          |   86 ++++++++++---------
- src/zmapWindow/zmapWindowDNAChoose.c    |   32 ++++----
- src/zmapWindow/zmapWindowDNAList.c      |   64 +++++++-------
- src/zmapWindow/zmapWindowDisplayOps.c   |    2 +-
- src/zmapWindow/zmapWindowDraw.c         |   47 ++++++-----
- src/zmapWindow/zmapWindowDrawFeatures.c |   45 +++++-----
- src/zmapWindow/zmapWindowDump.c         |    2 +-
- src/zmapWindow/zmapWindowFeature.c      |   30 ++++----
- src/zmapWindow/zmapWindowFeatureFuncs.c |    4 +-
- src/zmapWindow/zmapWindowFeatureList.c  |  140 +++++++++++++++---------------
- 13 files changed, 301 insertions(+), 287 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- fix func prototypes, const char - NEW FEATURE
- src/zmapWindow/canvas/zmapWindowContainerItem.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix function prototypes for method funcs, fix const char, fix many void* and enum casts - NEW FEATURE
- src/zmapWindow/canvas/zmapWindowCanvasAlignment.c  |   22 +++---
- src/zmapWindow/canvas/zmapWindowCanvasAssembly.c   |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasBasic.c      |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasFeature.c    |   22 +++--
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c |   90 +++++++++----------
- src/zmapWindow/canvas/zmapWindowCanvasFeatureset.h |   22 +++++-
- .../canvas/zmapWindowCanvasFeaturesetSummarise.c   |   54 ++++++------
- .../canvas/zmapWindowCanvasFeatureset_I.h          |    5 +
- src/zmapWindow/canvas/zmapWindowCanvasGlyph.c      |   20 ++--
- src/zmapWindow/canvas/zmapWindowCanvasGlyph.h      |    1 +
- src/zmapWindow/canvas/zmapWindowCanvasGraphItem.c  |   20 ++--
- src/zmapWindow/canvas/zmapWindowCanvasGraphics.c   |    6 +-
- src/zmapWindow/canvas/zmapWindowCanvasLocus.c      |   10 +-
- src/zmapWindow/canvas/zmapWindowCanvasSequence.c   |   16 ++--
- src/zmapWindow/canvas/zmapWindowCanvasSequence_I.h |    2 +-
- src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |    8 +-
- .../canvas/zmapWindowContainerFeatureSet.c         |   10 +-
- .../zmapWindowContainerFeatureSetFeatureFuncs.c    |    4 +-
- src/zmapWindow/canvas/zmapWindowContainerGroup.c   |    8 +-
- src/zmapWindow/canvas/zmapWindowOldItems.c         |   10 +-
- 20 files changed, 181 insertions(+), 153 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix many void* castes, const char and use of C++ keywords, e.g. "new" - NEW FEATURE
- src/zmapView/zmapView.c                |  109 ++++++++++++++++----------------
- src/zmapView/zmapViewCallBlixem.c      |   12 ++--
- src/zmapView/zmapViewFeatureCollapse.c |   10 ++--
- src/zmapView/zmapViewFeatureMask.c     |    6 +-
- src/zmapView/zmapViewRemoteControl.c   |   14 ++--
- src/zmapView/zmapViewScratch.c         |   18 +++---
- src/zmapView/zmapViewUtils.c           |   23 ++++---
- 7 files changed, 97 insertions(+), 95 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- Change lots of char* to const char* - NEW FEATURE
- src/zmapUtils/zmapGLibUtils.c   |    2 +-
- src/zmapUtils/zmapGUINotebook.c |   18 +++++++++---------
- src/zmapUtils/zmapGUIutils.c    |   25 +++++++++++++------------
- src/zmapUtils/zmapLogging.c     |    2 +-
- src/zmapUtils/zmapPeptide.c     |    4 ++--
- src/zmapUtils/zmapUtils.c       |    2 +-
- 6 files changed, 27 insertions(+), 26 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix const char * - NEW FEATURE
- src/zmapUtils/zmapFASTA.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix const char * - NEW FEATURE
- src/zmapFeature/zmapFeature.c |   14 +++++++-------
- 1 files changed, 7 insertions(+), 7 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix const char * - NEW FEATURE
- src/zmapConfig/zmapConfigIni.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- Change char * to const char * - NEW FEATURE
- src/include/ZMap/zmapConfigIni.h          |    2 +-
- src/include/ZMap/zmapFASTA.h              |   13 +++++++----
- src/include/ZMap/zmapFeature.h            |    9 ++++---
- src/include/ZMap/zmapFeatureLoadDisplay.h |    2 +-
- src/include/ZMap/zmapGLibUtils.h          |    2 +-
- src/include/ZMap/zmapGUITreeView.h        |    2 +-
- src/include/ZMap/zmapPeptide.h            |    4 +-
- src/include/ZMap/zmapStyle.h              |    4 +-
- src/include/ZMap/zmapUtils.h              |    2 +-
- src/include/ZMap/zmapUtilsDebug.h         |    2 +-
- src/include/ZMap/zmapUtilsGUI.h           |   31 +++++++++++++++--------------
- 11 files changed, 39 insertions(+), 34 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- Remove duplicate declares. - NEW FEATURE
- src/include/ZMap/zmapUtilsFoo.h |    4 ++++
- src/include/ZMap/zmapUtilsLog.h |    4 ++++
- 2 files changed, 8 insertions(+), 0 deletions(-)
-
-2015-05-07  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix bit macros to include a type. - NEW FEATURE
- src/include/ZMap/zmapUtilsLogical.h |   11 +++++++++++
- 1 files changed, 11 insertions(+), 0 deletions(-)
-
-2015-05-07  Steve Miller  <sm23@sanger.ac.uk>
- zmapGFF conversion done
- src/include/ZMap/zmapSOParser.h  |    4 +-
- src/zmapGFF/zmapGFF2parser.c     |  194 +++++++++++++++++++-------------------
- src/zmapGFF/zmapGFF3parser.c     |   69 ++++++++------
- src/zmapGFF/zmapGFFAttribute.c   |    2 +-
- src/zmapGFF/zmapGFFAttribute.h   |    4 +-
- src/zmapGFF/zmapGFFDirective.h   |    2 +-
- src/zmapGFF/zmapGFFHeader.c      |    2 +-
- src/zmapGFF/zmapGFFStringUtils.c |    8 +-
- src/zmapGFF/zmapMLF.c            |   18 ++--
- src/zmapGFF/zmapSOParser.c       |   21 ++--
- src/zmapGFF/zmapSOParser_P.h     |    2 +-
- 11 files changed, 171 insertions(+), 155 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- const char* func args - WIP
- src/include/ZMap/zmapIO.h           |    2 +-
- src/include/ZMap/zmapStyle.h        |    2 +-
- src/zmapFeature/zmapFeatureParams.c |    2 +-
- src/zmapFeature/zmapStyle.c         |    2 +-
- src/zmapFeature/zmapStyleUtils.c    |    4 ++--
- src/zmapUtils/zmapIOOut.c           |    2 +-
- 6 files changed, 7 insertions(+), 7 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- Update enum conversion struct to const char* - WIP
- src/include/ZMap/zmapEnum.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- const char* func args - WIP
- src/include/ZMap/zmapStyle.h       |    6 +++---
- src/zmapFeature/zmapFeatureUtils.c |    2 +-
- src/zmapFeature/zmapStyle.c        |   26 ++++++++++++--------------
- 3 files changed, 16 insertions(+), 18 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- Fix potential free of string literal - BUG FIX
- src/zmapFeature/zmapFeatureUtils.c |   12 +++++++-----
- 1 files changed, 7 insertions(+), 5 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- const char* changes - WIP
- src/zmapFeature/zmapFeatureParams.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- Minor warning fix: unused variable - TRIVIAL
- src/zmapFeature/zmapFeatureTranscript.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- Lots of const char* changes - WIP
- src/include/ZMap/zmapConfigIni.h         |    2 +-
- src/include/ZMap/zmapFeature.h           |   16 ++++++++--------
- src/zmapConfig/zmapConfigLoader.c        |    2 +-
- src/zmapFeature/zmapFeature.c            |    4 ++--
- src/zmapFeature/zmapFeatureContext.c     |    5 +----
- src/zmapFeature/zmapFeatureDNA.c         |    5 +++--
- src/zmapFeature/zmapFeatureFormatInput.c |   16 ++++++++--------
- src/zmapFeature/zmapFeatureOutput.c      |   30 +++++++++++++++---------------
- src/zmapFeature/zmapFeatureUtils.c       |   11 ++++++-----
- src/zmapView/zmapViewFeatureCollapse.c   |    2 +-
- src/zmapWindow/zmapWindowItemHash.c      |    6 +++---
- src/zmapWindow/zmapWindow_P.h            |    6 +++---
- 12 files changed, 52 insertions(+), 53 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- const char* func args - WIP
- src/include/ZMap/zmapFeature.h                 |    6 +++---
- src/zmapFeature/zmapFeature.c                  |   12 ++++++------
- src/zmapFeature/zmapFeature3FrameTranslation.c |    4 ++--
- src/zmapFeature/zmapFeatureUtils.c             |    2 +-
- 4 files changed, 12 insertions(+), 12 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- const char* func args - WIP
- src/include/ZMap/zmapDAS.h      |    2 +-
- src/include/ZMap/zmapUtilsGUI.h |    2 +-
- src/zmapUtils/zmapGUIutils.c    |    4 ++--
- 3 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- Cast away const in GtkItemFactoryEntry struct - WIP
- src/zmapControl/zmapControlWindowMenubar.c |  100 ++++++++++++++--------------
- 1 files changed, 50 insertions(+), 50 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- Fix potential free of const string - BUG FIX
- src/zmapControl/zmapControlWindowInfoPanel.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- Fix const char* variables - WIP
- src/include/ZMap/zmapConfigStanzaStructs.h |    2 +-
- src/zmapConfig/zmapConfigLoader.c          |   10 ++++------
- src/zmapConfig/zmap_DefaultStyles.pl       |    2 +-
- 3 files changed, 6 insertions(+), 8 deletions(-)
-
-2015-05-06  Gemma Barson  <gb10@sanger.ac.uk>
- Add const char* args to config funcs - WIP
- src/zmapConfig/zmapConfigLoader.c |   95 +++++++++++++++++--------------------
- 1 files changed, 43 insertions(+), 52 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- Lots more const char* func args - WIP
- src/include/ZMap/zmapConfigIni.h          |    6 +++---
- src/include/ZMap/zmapUtils.h              |    4 ++--
- src/zmapAppServices/zmapAppSequenceView.c |    4 ++--
- src/zmapConfig/zmapConfigDir.c            |    2 +-
- src/zmapConfig/zmapConfigFile.c           |    2 +-
- src/zmapConfig/zmapConfigIni.c            |    4 ++--
- src/zmapConfig/zmapConfigIni_P.h          |    2 +-
- src/zmapConfig/zmapConfigKey.c            |   14 +++++++-------
- src/zmapConfig/zmapConfigLoader.c         |   22 +++++++++++-----------
- src/zmapUtils/zmapFileUtils.c             |    4 ++--
- 10 files changed, 32 insertions(+), 32 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- Remove accidentally-added files - WIP
- src/zmapUtils/zmapGUImenus.c.orig |  702 --------
- src/zmapUtils/zmapGUIutils.c.orig | 3160 -------------------------------------
- 2 files changed, 0 insertions(+), 3862 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- Fix errors from const changes - WIP
- src/include/ZMap/zmapUtils.h         |    4 +-
- src/include/ZMap/zmapUtilsGUI.h.orig |  581 +++++++
- src/zmapUtils/zmapGUImenus.c.orig    |  702 ++++++++
- src/zmapUtils/zmapGUIutils.c.orig    | 3160 ++++++++++++++++++++++++++++++++++
- src/zmapUtils/zmapUtils.c            |    4 +-
- 5 files changed, 4447 insertions(+), 4 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- More const char* - WIP
- src/include/ZMap/zmapUtilsGUI.h            |    6 +++---
- src/zmapAppServices/zmapAppSequenceView.c  |   17 +++++++++--------
- src/zmapControl/zmapControlWindowButtons.c |    6 +++---
- src/zmapUtils/zmapGUINotebook.c            |    2 +-
- 4 files changed, 16 insertions(+), 15 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- More const char* func args - WIP
- src/include/ZMap/zmapUtilsGUI.h            |    2 +-
- src/zmapControl/zmapControlRemoteControl.c |    6 +++++-
- src/zmapControl/zmapControlWindowButtons.c |    6 +++---
- src/zmapUtils/zmapGUImenus.c               |    6 +++---
- 4 files changed, 12 insertions(+), 8 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- More const char* func args - WIP
- src/include/ZMap/zmapUtilsGUI.h            |    8 ++++----
- src/zmapControl/zmapControlRemoteControl.c |    4 +++-
- src/zmapUtils/zmapGUINotebook.c            |   10 +++++-----
- 3 files changed, 12 insertions(+), 10 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- More const char* args - WIP
- src/include/ZMap/zmapUtilsGUI.h          |    6 +++---
- src/zmapControl/zmapControlImportFile.c  |   24 +++++++++++++-----------
- src/zmapControl/zmapControlPreferences.c |    4 ++--
- src/zmapUtils/zmapGUINotebook.c          |    2 +-
- src/zmapUtils/zmapGUIutils.c             |   12 ++++++------
- 5 files changed, 25 insertions(+), 23 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix const char *, different enum syntax, void *. - NEW FEATURE
- src/include/ZMap/zmapUrl.h        |    2 +-
- src/include/ZMap/zmapUrlOptions.h |    2 +
- src/include/ZMap/zmapUrlUtils.h   |    2 +-
- src/zmapUtils/zmapUrl.c           |   61 +++++++++++++++++++------------------
- src/zmapUtils/zmapUrlUtils.c      |    2 +-
- src/zmapUtils/zmapUtils_P.h       |    2 +-
- 6 files changed, 37 insertions(+), 34 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix a load of const char*.  - NEW FEATURE
- src/include/ZMap/zmapUtils.h    |    2 +-
- src/include/ZMap/zmapUtilsGUI.h |    8 ++++----
- 2 files changed, 5 insertions(+), 5 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix lots of const char*, void * castes. - NEW FEATURE
- src/zmapUtils/zmapGUIutils.c |  142 +++++++++++++++++++++++-------------------
- 1 files changed, 78 insertions(+), 64 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix lots of missing gtk casts for gtk funtions. - NEW FEATURE
- src/zmapUtils/zmapGUImenus.c |   34 +++++++++++++++++-----------------
- 1 files changed, 17 insertions(+), 17 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix lots of function pointer casts for gtk stuff. - NEW FEATURE
- src/zmapUtils/zmapGUITreeView.c |  217 ++++++++++++++++++++++-----------------
- 1 files changed, 125 insertions(+), 92 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix lots of missing casts. - NEW FEATURE
- src/zmapUtils/zmapGUINotebook.c |   40 +++++++++++++++++++-------------------
- 1 files changed, 20 insertions(+), 20 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix void* cast for g_list arg. - NEW FEATURE
- src/zmapUtils/zmapFooUtils.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix const on function arg string. - NEW FEATURE
- src/zmapUtils/zmapFileUtils.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix formatting + use of "this" C++ keyword. - NEW FEATURE
- src/zmapUtils/zmapRadixSort.c |  291 +++++++++++++++++++++--------------------
- 1 files changed, 146 insertions(+), 145 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix memory alloc cast and enum usage. - NEW FEATURE
- src/zmapUtils/zmapSequence.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix enum usage and const char * - NEW FEATURE
- src/zmapUtils/zmapLogging.c |   18 +++++++++---------
- 1 files changed, 9 insertions(+), 9 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix const char and bad enums. - NEW FEATURE
- src/zmapUtils/zmapIOOut.c |    2 +-
- src/zmapUtils/zmapIO_P.h  |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix faulty enum usage and const for literals. - NEW FEATURE
- src/zmapUtils/zmapDNA.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix faulty enums, need casts. - NEW FEATURE
- src/zmapUtils/zmapBioUtils.c |   16 ++++++++--------
- 1 files changed, 8 insertions(+), 8 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix bug in zMapPeptideMatch(), wrong arg ! fix come memory alloc costs. - NEW FEATURE
- src/zmapUtils/zmapPeptide.c |   23 ++++++++++++++++-------
- 1 files changed, 16 insertions(+), 7 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Replace new/delete with alternative variable names. - NEW FEATURE
- src/zmapUtils/zmapSkipList.c |   68 +++++++++++++++++++++--------------------
- 1 files changed, 35 insertions(+), 33 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Correct enums to have right type + const to char * stuff. - NEW FEATURE
- src/include/ZMap/zmapSO.h |    2 +-
- src/zmapUtils/zmapSO.c    |   38 +++++++++++++++++++-------------------
- 2 files changed, 20 insertions(+), 20 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Make generated version function return a const. - NEW FEATURE
- src/zmapUtils/Makefile.am |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add const char * to glist based funcs. - NEW FEATURE
- src/include/ZMap/zmapGLibUtils.h |    4 ++--
- src/zmapUtils/zmapGLibUtils.c    |    4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- Fix const char* args in xremote funcs - WIP
- src/include/ZMap/zmapAppRemote.h          |    6 +++---
- src/include/ZMap/zmapRemoteCommand.h      |    8 ++++----
- src/zmapApp/zmapAppManager.c              |    4 ++--
- src/zmapApp/zmapAppRemoteCommand.c        |    9 +++++++--
- src/zmapApp/zmapAppRemoteControl.c        |   15 +++++++++------
- src/zmapApp/zmapApp_P.h                   |    4 ++--
- src/zmapApp/zmapAppwindow.c               |   14 ++++++++------
- src/zmapRemoteControl/zmapRemoteCommand.c |    8 ++++----
- 8 files changed, 39 insertions(+), 29 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- Add const to button labels in message functions - WIP
- src/include/ZMap/zmapUtilsGUI.h |    2 +-
- src/zmapUtils/zmapGUIutils.c    |   12 ++++++------
- 2 files changed, 7 insertions(+), 7 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- Minor const char* change - WIP
- src/zmapApp/zmapAppwindow.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add const to char* vars assigned from string literal, add const to some char* args. - NEW FEATURE
- src/include/ZMap/zmapThreads.h     |    2 +-
- src/zmapThreads/zmapSlave.c        |    2 +-
- src/zmapThreads/zmapThreads.c      |    8 ++++----
- src/zmapThreads/zmapThreadsUtils.c |    4 ++--
- src/zmapThreads/zmapThreads_P.h    |    6 +++---
- 5 files changed, 11 insertions(+), 11 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- Add const to filename arg in some file utils functions - WIP
- src/include/ZMap/zmapConfigDir.h |    2 +-
- src/include/ZMap/zmapUtils.h     |    2 +-
- src/zmapConfig/zmapConfigDir.c   |    2 +-
- src/zmapUtils/zmapFileUtils.c    |    2 +-
- 4 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- Fix const char* cast warnings - WIP
- src/include/ZMap/zmapUtilsGUI.h  |    2 +-
- src/zmapApp/zmapApp_P.h          |    2 +-
- src/zmapApp/zmapAppmanagepanel.c |    8 ++++++--
- src/zmapApp/zmapAppwindow.c      |   14 +++++++-------
- src/zmapFeature/zmapStyle.c      |    6 +++---
- src/zmapUtils/zmapGUIutils.c     |   10 +++++-----
- 6 files changed, 23 insertions(+), 19 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- Fix const char* cast warnings - WIP
- src/zmapFeature/zmapStyle.c   |    2 +-
- src/zmapFeature/zmapStyle_P.h |    6 +++---
- 2 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- Fix errors with previous - REGRESSION FIX
- src/zmapFeature/zmapStyle.c |    7 ++-----
- 1 files changed, 2 insertions(+), 5 deletions(-)
-
-2015-05-05  Gemma Barson  <gb10@sanger.ac.uk>
- More cast and void* arithmetic fixes - WIP
- src/zmapFeature/zmapStyle.c |   15 +++++++++------
- 1 files changed, 9 insertions(+), 6 deletions(-)
-
-2015-05-01  Gemma Barson  <gb10@sanger.ac.uk>
- Fix arithmetic on void pointers - WIP
- src/zmapFeature/zmapStyle.c |   24 ++++++++++++------------
- 1 files changed, 12 insertions(+), 12 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add const to char args to zMapCompareVersionStings() - NEW FEATURE
- src/zmapUtils/zmapUtils.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add const to the getXXX routines string args. - NEW FEATURE
- src/zmapUtils/zmapUrl.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add const to char in zMapStyleSet()  - NEW FEATURE
- src/zmapFeature/zmapStyle.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix some void* type cast problems with general glib function args/return types. - NEW FEATURE
- src/zmapServer/zmapServerProtocolHandler.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add const to geterrmsg func prototype return type. - NEW FEATURE
- src/zmapServer/zmapServerPrototype.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add const to lasterrormsg func. return type. - NEW FEATURE
- src/zmapServer/zmapServer.c |    2 +-
- src/zmapServer/zmapServer.h |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix struct declares with illegal enum values + add const to many char * literals. - NEW FEATURE
- src/zmapServer/pipe/pipeServer.c   |   33 ++++++++++++++++-----------------
- src/zmapServer/pipe/pipeServer_P.h |    4 ++--
- 2 files changed, 18 insertions(+), 19 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add in const to many char * literals. - NEW FEATURE
- src/zmapServer/ensembl/ensemblServer.c |    7 +++----
- src/zmapServer/file/fileServer.c       |   14 +++++++-------
- 2 files changed, 10 insertions(+), 11 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add in const to many char * for literals. - NEW FEATURE
- src/zmapServer/das/dasServer.c   |   78 ++++++++++++++++++++------------------
- src/zmapServer/das/dasServer_P.h |    4 +-
- 2 files changed, 43 insertions(+), 39 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add in const to char * for many literal strings. - NEW FEATURE
- src/zmapServer/acedb/acedbServer.c |   78 ++++++++++++++++++------------------
- 1 files changed, 39 insertions(+), 39 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add in const char * where needed. - NEW FEATURE
- src/include/ZMap/zmapStyle.h |    4 ++--
- src/include/ZMap/zmapUrl.h   |    8 ++++----
- src/include/ZMap/zmapUtils.h |    2 +-
- 3 files changed, 7 insertions(+), 7 deletions(-)
-
-2015-05-05  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add 'invalid" value to enum. - NEW FEATURE
- src/include/ZMap/zmapServerProtocol.h |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
- Various fixes - WIP
- src/include/ZMap/zmapBase.h    |    6 ++--
- src/zmapFeature/zmapStyle.c    |   26 ++++++++--------
- src/zmapFeature/zmapStyleObj.c |   60 ++++++++++++++++++++--------------------
- 3 files changed, 46 insertions(+), 46 deletions(-)
-
-2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
- Fix arithmetic error on void pointer - WIP
- src/zmapFeature/zmapStyle.c |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
-
-2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
- Fix cast of void* - WIP
- src/zmapFeature/zmapFeatureParams.c     |    8 ++++----
- src/zmapFeature/zmapFeatureTranscript.c |    6 +++---
- src/zmapFeature/zmapFeatureUtils.c      |   18 +++++++++---------
- src/zmapFeature/zmapStyle.c             |    2 +-
- 4 files changed, 17 insertions(+), 17 deletions(-)
-
-2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
- Fix problem with casting int to out-of-range enums - WIP
- src/include/ZMap/zmapFeature.h |   18 ++++++++++++++++--
- 1 files changed, 16 insertions(+), 2 deletions(-)
-
-2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
- Fix const correctness - WIP
- src/zmapConfig/zmapConfigKey.c    |    4 ++--
- src/zmapConfig/zmapConfigLoader.c |    4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-04-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- trivial format change. - FORMATTING ONLY
- src/zmapXML/zmapXMLParse.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-04-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix enum and char* to const char* - NEW FEATURE
- src/include/ZMap/zmapRemoteCommand.h      |    1 +
- src/zmapRemoteControl/zmapRemoteCommand.c |   48 ++++++++++++++--------------
- src/zmapRemoteControl/zmapRemoteControl.c |   44 +++++++++++++-------------
- 3 files changed, 47 insertions(+), 46 deletions(-)
-
-2015-04-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix char* to const char* in MAGIC macro. - NEW FEATURE
- src/include/ZMap/zmapUtils.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
- Various fixes, mainly void* cast and const - WIP
- src/include/ZMap/zmapConfigIni.h               |    2 +-
- src/include/ZMap/zmapPeptide.h                 |    2 +-
- src/zmapApp/zmapAppRemoteCommand.c             |    2 +-
- src/zmapApp/zmapAppwindow.c                    |    6 +++-
- src/zmapConfig/zmapConfigIni_P.h               |    8 ++--
- src/zmapConfig/zmapConfigKey.c                 |   10 +++---
- src/zmapConfig/zmapConfigLoader.c              |    8 ++--
- src/zmapControl/zmapControlWindowMenubar.c     |   10 +++---
- src/zmapDAS/zmapDAS1Parser.c                   |    6 ++--
- src/zmapFeature/zmapFeature.c                  |   38 ++++++++++++------------
- src/zmapFeature/zmapFeature3FrameTranslation.c |    2 +-
- src/zmapFeature/zmapFeatureContext.c           |    4 +-
- src/zmapFeature/zmapFeatureData.c              |    2 +-
- src/zmapUtils/zmapPeptide.c                    |    4 +-
- 14 files changed, 54 insertions(+), 50 deletions(-)
-
-2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
- Fix C_CALLBACK casts - WIP
- src/zmapControl/zmapControlWindowMenubar.c |   72 ++++++++++++++--------------
- 1 files changed, 36 insertions(+), 36 deletions(-)
-
-2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
- Fix void* cast errors - WIP
- src/zmapControl/zmapControl.c              |    8 ++++----
- src/zmapControl/zmapControlImportFile.c    |    2 +-
- src/zmapControl/zmapControlViews.c         |   14 +++++++-------
- src/zmapControl/zmapControlWindowButtons.c |    2 +-
- 4 files changed, 13 insertions(+), 13 deletions(-)
-
-2015-04-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix enum usage and const char* errors. - NEW FEATURE
- src/zmapRemoteControl/zmapRemoteCommand.c |   38 ++++++++++++++--------------
- src/zmapRemoteControl/zmapRemoteControl.c |    2 +-
- 2 files changed, 20 insertions(+), 20 deletions(-)
-
-2015-04-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- fix enum usage and const char* errors - NEW FEATURE
- .../remotetest/remotecontroltest.c                 |  158 ++++++++++----------
- 1 files changed, 79 insertions(+), 79 deletions(-)
-
-2015-04-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- fix char* to const char* - NEW FEATURE
- src/zmapUtils/zmapGUIutils.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-04-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- fix enum declaration and char* to const char* - NEW FEATURE
- src/include/ZMap/zmapXML.h |   42 +++++++++++++++++++++---------------------
- src/zmapXML/zmapXMLUtils.c |    6 +++---
- 2 files changed, 24 insertions(+), 24 deletions(-)
-
-2015-04-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- fix lots of char* to const char* - NEW FEATURE
- src/include/ZMap/zmapUtilsDebug.h |    2 +-
- src/include/ZMap/zmapUtilsGUI.h   |    6 +++---
- 2 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-04-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- fix lots of char* to const char* - NEW FEATURE
- src/include/ZMap/zmapRemoteCommand.h |   10 +++++-----
- src/include/ZMap/zmapRemoteControl.h |    2 +-
- 2 files changed, 6 insertions(+), 6 deletions(-)
-
-2015-04-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix lots of char* that should be const char* - NEW FEATURE
- src/include/ZMap/zmapConfigIni.h |   78 +++++++++++++++++++-------------------
- 1 files changed, 39 insertions(+), 39 deletions(-)
-
-2015-04-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add -std flag for newer C++ standard. # - NEW FEATURE
- src/Makefile.zmap |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-04-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- C++ conversion - NEW FEATURE
- src/include/ZMap/zmapRemoteControl.h |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'develop' into feature/C++
-2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
- Fix error where func data was given func pointer type - WIP
- src/include/ZMap/zmapView.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
- Fix void* cast errors - WIP
- src/zmapApp/zmapAppManager.c      |    2 +-
- src/zmapApp/zmapAppwindow.c       |    7 ++++++-
- src/zmapConfig/zmapConfigLoader.c |   16 ++++++++--------
- 3 files changed, 15 insertions(+), 10 deletions(-)
-
-2015-04-30  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'develop' into feature/C++
-2015-04-28  Gemma Barson  <gb10@sanger.ac.uk>
- Merge branch 'develop' into feature/C++
-2015-04-16  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'develop' into feature/C++
-2015-04-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- Try fixing a few c++ compiler warnings. - NEW FEATURE 'C++'
- src/zmapApp/zmapAppmenubar.c |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
-
-2015-04-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add make stuff to get zmap compiled with C++ compiler but not libpfetch, libcurlobj or foocanvas. - NEW FEATURE 'C++'
- src/Makefile.zmap                 |   12 ++++++++++++
- src/zmapApp/Makefile.am           |    2 +-
- src/zmapAppServices/Makefile.am   |    2 +-
- src/zmapConfig/Makefile.am        |    2 +-
- src/zmapControl/Makefile.am       |    2 +-
- src/zmapDAS/Makefile.am           |    2 +-
- src/zmapDraw/Makefile.am          |    2 +-
- src/zmapFeature/Makefile.am       |    2 +-
- src/zmapGFF/Makefile.am           |    2 +-
- src/zmapRemoteControl/Makefile.am |    2 +-
- src/zmapServer/Makefile.am        |    2 +-
- src/zmapServer/acedb/Makefile.am  |    2 +-
- src/zmapServer/das/Makefile.am    |    2 +-
- src/zmapServer/file/Makefile.am   |    2 +-
- src/zmapServer/pipe/Makefile.am   |    2 +-
- src/zmapThreads/Makefile.am       |    2 +-
- src/zmapUtils/Makefile.am         |    2 +-
- src/zmapView/Makefile.am          |    2 +-
- src/zmapWindow/Makefile.am        |    2 +-
- src/zmapXML/Makefile.am           |    2 +-
- 20 files changed, 31 insertions(+), 19 deletions(-)
+2015-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'feature/C++_rename' into develop
+2015-07-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ The big rename of all .c and .h files to .cpp and .hpp
+ src/Makefile.am                                    |    8 +-
+ src/Makefile.zmap                                  |    4 +-
+ src/configure.ac                                   |    5 +-
+ src/include/Makefile.am                            |  120 +-
+ src/include/ZMap/zmap.h                            |   39 -
+ src/include/ZMap/zmap.hpp                          |   39 +
+ src/include/ZMap/zmapAppRemote.h                   |  154 -
+ src/include/ZMap/zmapAppRemote.hpp                 |  154 +
+ src/include/ZMap/zmapAppServices.h                 |   60 -
+ src/include/ZMap/zmapAppServices.hpp               |   60 +
+ src/include/ZMap/zmapBase.h                        |   87 -
+ src/include/ZMap/zmapBase.hpp                      |   87 +
+ src/include/ZMap/zmapCmdLineArgs.h                 |   94 -
+ src/include/ZMap/zmapCmdLineArgs.hpp               |   94 +
+ src/include/ZMap/zmapConfig.h                      |  175 -
+ src/include/ZMap/zmapConfig.hpp                    |  175 +
+ src/include/ZMap/zmapConfigDir.h                   |   56 -
+ src/include/ZMap/zmapConfigDir.hpp                 |   56 +
+ src/include/ZMap/zmapConfigIni.h                   |  174 -
+ src/include/ZMap/zmapConfigIni.hpp                 |  174 +
+ src/include/ZMap/zmapConfigKeyboard.h              |   81 -
+ src/include/ZMap/zmapConfigKeyboard.hpp            |   81 +
+ src/include/ZMap/zmapConfigStanzaStructs.h         |   86 -
+ src/include/ZMap/zmapConfigStanzaStructs.hpp       |   86 +
+ src/include/ZMap/zmapConfigStrings.h               |  955 ---
+ src/include/ZMap/zmapConfigStrings.hpp             |  955 +++
+ src/include/ZMap/zmapConfigStyleDefaults.h         |  167 -
+ src/include/ZMap/zmapConfigStyleDefaults.hpp       |  167 +
+ src/include/ZMap/zmapControl.h                     |  113 -
+ src/include/ZMap/zmapControl.hpp                   |  113 +
+ src/include/ZMap/zmapControlImportFile.h           |   44 -
+ src/include/ZMap/zmapControlImportFile.hpp         |   44 +
+ src/include/ZMap/zmapDAS.h                         |  232 -
+ src/include/ZMap/zmapDAS.hpp                       |  232 +
+ src/include/ZMap/zmapDNA.h                         |  121 -
+ src/include/ZMap/zmapDNA.hpp                       |  121 +
+ src/include/ZMap/zmapDraw.h                        |  257 -
+ src/include/ZMap/zmapDraw.hpp                      |  257 +
+ src/include/ZMap/zmapEnum.h                        |  411 --
+ src/include/ZMap/zmapEnum.hpp                      |  411 ++
+ src/include/ZMap/zmapFASTA.h                       |   48 -
+ src/include/ZMap/zmapFASTA.hpp                     |   48 +
+ src/include/ZMap/zmapFeature.h                     | 1557 ----
+ src/include/ZMap/zmapFeature.hpp                   | 1557 ++++
+ src/include/ZMap/zmapFeatureLoadDisplay.h          |  207 -
+ src/include/ZMap/zmapFeatureLoadDisplay.hpp        |  207 +
+ src/include/ZMap/zmapGFF.h                         |  227 -
+ src/include/ZMap/zmapGFF.hpp                       |  227 +
+ src/include/ZMap/zmapGFFStringUtils.h              |   60 -
+ src/include/ZMap/zmapGFFStringUtils.hpp            |   60 +
+ src/include/ZMap/zmapGLibUtils.h                   |  130 -
+ src/include/ZMap/zmapGLibUtils.hpp                 |  130 +
+ src/include/ZMap/zmapGUITreeView.h                 |  144 -
+ src/include/ZMap/zmapGUITreeView.hpp               |  144 +
+ src/include/ZMap/zmapIO.h                          |   49 -
+ src/include/ZMap/zmapIO.hpp                        |   49 +
+ src/include/ZMap/zmapMLF.h                         |   89 -
+ src/include/ZMap/zmapMLF.hpp                       |   89 +
+ src/include/ZMap/zmapPeptide.h                     |   73 -
+ src/include/ZMap/zmapPeptide.hpp                   |   73 +
+ src/include/ZMap/zmapReadLine.h                    |   52 -
+ src/include/ZMap/zmapReadLine.hpp                  |   52 +
+ src/include/ZMap/zmapRemoteCommand.h               |  142 -
+ src/include/ZMap/zmapRemoteCommand.hpp             |  142 +
+ src/include/ZMap/zmapRemoteControl.h               |  173 -
+ src/include/ZMap/zmapRemoteControl.hpp             |  173 +
+ src/include/ZMap/zmapRemoteProtocol.h              |  193 -
+ src/include/ZMap/zmapRemoteProtocol.hpp            |  193 +
+ src/include/ZMap/zmapSO.h                          |   61 -
+ src/include/ZMap/zmapSO.hpp                        |   61 +
+ src/include/ZMap/zmapSOParser.h                    |  206 -
+ src/include/ZMap/zmapSOParser.hpp                  |  206 +
+ src/include/ZMap/zmapSeqBitmap.h                   |   49 -
+ src/include/ZMap/zmapSeqBitmap.hpp                 |   49 +
+ src/include/ZMap/zmapSequence.h                    |   80 -
+ src/include/ZMap/zmapSequence.hpp                  |   80 +
+ src/include/ZMap/zmapServerProtocol.h              |  336 -
+ src/include/ZMap/zmapServerProtocol.hpp            |  336 +
+ src/include/ZMap/zmapSkipList.h                    |  131 -
+ src/include/ZMap/zmapSkipList.hpp                  |  131 +
+ src/include/ZMap/zmapString.h                      |   42 -
+ src/include/ZMap/zmapString.hpp                    |   42 +
+ src/include/ZMap/zmapStyle.h                       | 1358 ----
+ src/include/ZMap/zmapStyle.hpp                     | 1358 ++++
+ src/include/ZMap/zmapThreads.h                     |  158 -
+ src/include/ZMap/zmapThreads.hpp                   |  158 +
+ src/include/ZMap/zmapUrl.h                         |  120 -
+ src/include/ZMap/zmapUrl.hpp                       |  120 +
+ src/include/ZMap/zmapUrlOptions.h                  |  208 -
+ src/include/ZMap/zmapUrlOptions.hpp                |  208 +
+ src/include/ZMap/zmapUrlUtils.h                    |  312 -
+ src/include/ZMap/zmapUrlUtils.hpp                  |  312 +
+ src/include/ZMap/zmapUtils.h                       |  293 -
+ src/include/ZMap/zmapUtils.hpp                     |  293 +
+ src/include/ZMap/zmapUtilsCheck.h                  |   53 -
+ src/include/ZMap/zmapUtilsCheck.hpp                |   53 +
+ src/include/ZMap/zmapUtilsDebug.h                  |  375 -
+ src/include/ZMap/zmapUtilsDebug.hpp                |  375 +
+ src/include/ZMap/zmapUtilsFoo.h                    |   52 -
+ src/include/ZMap/zmapUtilsFoo.hpp                  |   52 +
+ src/include/ZMap/zmapUtilsGUI.h                    |  580 --
+ src/include/ZMap/zmapUtilsGUI.hpp                  |  580 ++
+ src/include/ZMap/zmapUtilsHandle.h                 |   66 -
+ src/include/ZMap/zmapUtilsHandle.hpp               |   66 +
+ src/include/ZMap/zmapUtilsLog.h                    |  201 -
+ src/include/ZMap/zmapUtilsLog.hpp                  |  201 +
+ src/include/ZMap/zmapUtilsLogical.h                |   58 -
+ src/include/ZMap/zmapUtilsLogical.hpp              |   58 +
+ src/include/ZMap/zmapUtilsMesg.h                   |   89 -
+ src/include/ZMap/zmapUtilsMesg.hpp                 |   89 +
+ src/include/ZMap/zmapView.h                        |  252 -
+ src/include/ZMap/zmapView.hpp                      |  252 +
+ src/include/ZMap/zmapWebPages.h                    |   55 -
+ src/include/ZMap/zmapWebPages.hpp                  |   55 +
+ src/include/ZMap/zmapWindow.h                      |  738 --
+ src/include/ZMap/zmapWindow.hpp                    |  738 ++
+ src/include/ZMap/zmapWindowDrawFeatures.h          |   40 -
+ src/include/ZMap/zmapWindowDrawFeatures.hpp        |   40 +
+ src/include/ZMap/zmapWindowNavigator.h             |   80 -
+ src/include/ZMap/zmapWindowNavigator.hpp           |   80 +
+ src/include/ZMap/zmapXML.h                         |  402 --
+ src/include/ZMap/zmapXML.hpp                       |  402 ++
+ src/include/ZMap/zmapXMLHandler.h                  |   85 -
+ src/include/ZMap/zmapXMLHandler.hpp                |   85 +
+ src/zmapApp/Makefile.am                            |   24 +-
+ src/zmapApp/zmapAppManager.c                       |  999 ---
+ src/zmapApp/zmapAppManager.cpp                     |  999 +++
+ src/zmapApp/zmapAppRemoteCommand.c                 |  631 --
+ src/zmapApp/zmapAppRemoteCommand.cpp               |  631 ++
+ src/zmapApp/zmapAppRemoteControl.c                 |  195 -
+ src/zmapApp/zmapAppRemoteControl.cpp               |  195 +
+ src/zmapApp/zmapAppRemoteInternal.c                |  621 --
+ src/zmapApp/zmapAppRemoteInternal.cpp              |  621 ++
+ src/zmapApp/zmapAppRemoteInternal.h                |   48 -
+ src/zmapApp/zmapAppRemoteInternal.hpp              |   48 +
+ src/zmapApp/zmapApp_P.h                            |  355 -
+ src/zmapApp/zmapApp_P.hpp                          |  355 +
+ src/zmapApp/zmapAppconnect.c                       |  159 -
+ src/zmapApp/zmapAppconnect.cpp                     |  159 +
+ src/zmapApp/zmapAppmain_c.cc                       | 1326 ----
+ src/zmapApp/zmapAppmain_c.cpp                      | 1326 ++++
+ src/zmapApp/zmapAppmanagepanel.c                   |  381 -
+ src/zmapApp/zmapAppmanagepanel.cpp                 |  381 +
+ src/zmapApp/zmapAppmenubar.c                       |  123 -
+ src/zmapApp/zmapAppmenubar.cpp                     |  123 +
+ src/zmapApp/zmapAppwindow.c                        |  660 --
+ src/zmapApp/zmapAppwindow.cpp                      |  660 ++
+ src/zmapAppServices/Makefile.am                    |    4 +-
+ src/zmapAppServices/zmapAppDebugConfig.c           |  295 -
+ src/zmapAppServices/zmapAppDebugConfig.cpp         |  295 +
+ src/zmapAppServices/zmapAppSequenceView.c          |  543 --
+ src/zmapAppServices/zmapAppSequenceView.cpp        |  543 ++
+ src/zmapConfig/.gitignore                          |    2 +-
+ src/zmapConfig/Makefile.am                         |   18 +-
+ src/zmapConfig/zmapConfigDir.c                     |  265 -
+ src/zmapConfig/zmapConfigDir.cpp                   |  265 +
+ src/zmapConfig/zmapConfigDir_P.h                   |   55 -
+ src/zmapConfig/zmapConfigDir_P.hpp                 |   55 +
+ src/zmapConfig/zmapConfigFile.c                    |  398 -
+ src/zmapConfig/zmapConfigFile.cpp                  |  398 +
+ src/zmapConfig/zmapConfigIni.c                     |  705 --
+ src/zmapConfig/zmapConfigIni.cpp                   |  705 ++
+ src/zmapConfig/zmapConfigIni_P.h                   |  219 -
+ src/zmapConfig/zmapConfigIni_P.hpp                 |  219 +
+ src/zmapConfig/zmapConfigKey.c                     |  418 --
+ src/zmapConfig/zmapConfigKey.cpp                   |  418 ++
+ src/zmapConfig/zmapConfigLoader.c                  | 2154 ------
+ src/zmapConfig/zmapConfigLoader.cpp                | 2154 ++++++
+ src/zmapControl/Makefile.am                        |   24 +-
+ src/zmapControl/zmapControl.c                      | 1415 ----
+ src/zmapControl/zmapControl.cpp                    | 1415 ++++
+ src/zmapControl/zmapControlImportFile.c            | 1342 ----
+ src/zmapControl/zmapControlImportFile.cpp          | 1342 ++++
+ src/zmapControl/zmapControlNavigator.c             |  420 --
+ src/zmapControl/zmapControlNavigator.cpp           |  420 ++
+ src/zmapControl/zmapControlPreferences.c           |  235 -
+ src/zmapControl/zmapControlPreferences.cpp         |  235 +
+ src/zmapControl/zmapControlRemoteControl.c         |  630 --
+ src/zmapControl/zmapControlRemoteControl.cpp       |  630 ++
+ src/zmapControl/zmapControlViews.c                 |  814 ---
+ src/zmapControl/zmapControlViews.cpp               |  814 +++
+ src/zmapControl/zmapControlWindow.cpp              |    8 +-
+ src/zmapControl/zmapControlWindowButtons.c         | 1187 ---
+ src/zmapControl/zmapControlWindowButtons.cpp       | 1187 +++
+ src/zmapControl/zmapControlWindowFrame.c           |  198 -
+ src/zmapControl/zmapControlWindowFrame.cpp         |  198 +
+ src/zmapControl/zmapControlWindowInfoPanel.c       |  476 --
+ src/zmapControl/zmapControlWindowInfoPanel.cpp     |  476 ++
+ src/zmapControl/zmapControlWindowMenubar.c         |  703 --
+ src/zmapControl/zmapControlWindowMenubar.cpp       |  704 ++
+ src/zmapControl/zmapControl_P.h                    |  258 -
+ src/zmapControl/zmapControl_P.hpp                  |  258 +
+ src/zmapControl/zmapNavigator_P.h                  |   89 -
+ src/zmapControl/zmapNavigator_P.hpp                |   89 +
+ src/zmapDAS/Makefile.am                            |    2 +-
+ src/zmapDAS/zmapDAS1DSN.c                          |  112 -
+ src/zmapDAS/zmapDAS1DSN.cpp                        |  112 +
+ src/zmapDAS/zmapDAS1Parser.c                       |  910 ---
+ src/zmapDAS/zmapDAS1Parser.cpp                     |  910 +++
+ src/zmapDraw/Makefile.am                           |    4 +-
+ src/zmapDraw/zmapDraw.c                            | 1170 ---
+ src/zmapDraw/zmapDraw.cpp                          | 1170 +++
+ src/zmapDraw/zmapDraw_P.h                          |  107 -
+ src/zmapDraw/zmapDraw_P.hpp                        |  107 +
+ src/zmapFeature/Makefile.am                        |   36 +-
+ src/zmapFeature/tests/check_zmapFeature.c          |  257 -
+ src/zmapFeature/tests/check_zmapFeature.cpp        |  257 +
+ src/zmapFeature/tests/check_zmapFeature.h          |   61 -
+ src/zmapFeature/tests/check_zmapFeature.hpp        |   61 +
+ src/zmapFeature/tests/check_zmapFeature_P.c        |   39 -
+ src/zmapFeature/tests/check_zmapFeature_P.cpp      |   39 +
+ src/zmapFeature/tests/check_zmapFeature_P.h        |   41 -
+ src/zmapFeature/tests/check_zmapFeature_P.hpp      |   41 +
+ src/zmapFeature/tests/check_zmapStyle.c            |  184 -
+ src/zmapFeature/tests/check_zmapStyle.cpp          |  184 +
+ src/zmapFeature/tests/check_zmapStyle.h            |   50 -
+ src/zmapFeature/tests/check_zmapStyle.hpp          |   50 +
+ src/zmapFeature/tests/check_zmapStyle_P.c          |   39 -
+ src/zmapFeature/tests/check_zmapStyle_P.cpp        |   39 +
+ src/zmapFeature/tests/check_zmapStyle_P.h          |   39 -
+ src/zmapFeature/tests/check_zmapStyle_P.hpp        |   39 +
+ src/zmapFeature/zmapFeature.c                      | 3397 ---------
+ src/zmapFeature/zmapFeature.cpp                    | 3397 +++++++++
+ src/zmapFeature/zmapFeature3FrameTranslation.c     |  597 --
+ src/zmapFeature/zmapFeature3FrameTranslation.cpp   |  597 ++
+ src/zmapFeature/zmapFeatureAlignment.c             | 2720 -------
+ src/zmapFeature/zmapFeatureAlignment.cpp           | 2720 +++++++
+ src/zmapFeature/zmapFeatureBasic.c                 |  196 -
+ src/zmapFeature/zmapFeatureBasic.cpp               |  196 +
+ src/zmapFeature/zmapFeatureContext.c               | 1202 ----
+ src/zmapFeature/zmapFeatureContext.cpp             | 1202 ++++
+ src/zmapFeature/zmapFeatureContextUtils.c          |   46 -
+ src/zmapFeature/zmapFeatureContextUtils.cpp        |   46 +
+ src/zmapFeature/zmapFeatureDNA.c                   |  875 ---
+ src/zmapFeature/zmapFeatureDNA.cpp                 |  875 +++
+ src/zmapFeature/zmapFeatureData.c                  |  670 --
+ src/zmapFeature/zmapFeatureData.cpp                |  670 ++
+ src/zmapFeature/zmapFeatureFormatInput.c           |  545 --
+ src/zmapFeature/zmapFeatureFormatInput.cpp         |  545 ++
+ src/zmapFeature/zmapFeatureOutput.c                |  997 ---
+ src/zmapFeature/zmapFeatureOutput.cpp              |  997 +++
+ src/zmapFeature/zmapFeatureParams.c                |  855 ---
+ src/zmapFeature/zmapFeatureParams.cpp              |  855 +++
+ src/zmapFeature/zmapFeatureTranscript.c            | 2363 ------
+ src/zmapFeature/zmapFeatureTranscript.cpp          | 2363 ++++++
+ src/zmapFeature/zmapFeatureUtils.c                 | 2056 ------
+ src/zmapFeature/zmapFeatureUtils.cpp               | 2056 ++++++
+ src/zmapFeature/zmapFeature_P.h                    |   99 -
+ src/zmapFeature/zmapFeature_P.hpp                  |   99 +
+ src/zmapFeature/zmapStyle.c                        | 2973 --------
+ src/zmapFeature/zmapStyle.cpp                      | 2973 ++++++++
+ src/zmapFeature/zmapStyleObj.c                     | 1238 ----
+ src/zmapFeature/zmapStyleObj.cpp                   | 1238 ++++
+ src/zmapFeature/zmapStyleUtils.c                   |  556 --
+ src/zmapFeature/zmapStyleUtils.cpp                 |  556 ++
+ src/zmapFeature/zmapStyle_P.h                      |  142 -
+ src/zmapFeature/zmapStyle_P.hpp                    |  142 +
+ src/zmapGFF/Makefile.am                            |   46 +-
+ src/zmapGFF/gffparser.c                            |  276 -
+ src/zmapGFF/gffparser.cpp                          |  276 +
+ src/zmapGFF/zmapGFF2Dumper.c                       | 2129 ------
+ src/zmapGFF/zmapGFF2Dumper.cpp                     | 2129 ++++++
+ src/zmapGFF/zmapGFF2_P.h                           |   84 -
+ src/zmapGFF/zmapGFF2_P.hpp                         |   84 +
+ src/zmapGFF/zmapGFF2parser.c                       | 3034 --------
+ src/zmapGFF/zmapGFF2parser.cpp                     | 3034 ++++++++
+ src/zmapGFF/zmapGFF3_P.h                           |  169 -
+ src/zmapGFF/zmapGFF3_P.hpp                         |  169 +
+ src/zmapGFF/zmapGFF3parser.c                       | 4642 ------------
+ src/zmapGFF/zmapGFF3parser.cpp                     | 4642 ++++++++++++
+ src/zmapGFF/zmapGFFAttribute.c                     | 1845 -----
+ src/zmapGFF/zmapGFFAttribute.cpp                   | 1845 +++++
+ src/zmapGFF/zmapGFFAttribute.h                     |  170 -
+ src/zmapGFF/zmapGFFAttribute.hpp                   |  169 +
+ src/zmapGFF/zmapGFFDirective.c                     |  179 -
+ src/zmapGFF/zmapGFFDirective.cpp                   |  179 +
+ src/zmapGFF/zmapGFFDirective.h                     |   90 -
+ src/zmapGFF/zmapGFFDirective.hpp                   |   90 +
+ src/zmapGFF/zmapGFFFeatureData.c                   |  525 --
+ src/zmapGFF/zmapGFFFeatureData.cpp                 |  525 ++
+ src/zmapGFF/zmapGFFFeatureData.h                   |  165 -
+ src/zmapGFF/zmapGFFFeatureData.hpp                 |  165 +
+ src/zmapGFF/zmapGFFGeneral.c                       | 1048 ---
+ src/zmapGFF/zmapGFFGeneral.cpp                     | 1048 +++
+ src/zmapGFF/zmapGFFHeader.c                        |  170 -
+ src/zmapGFF/zmapGFFHeader.cpp                      |  170 +
+ src/zmapGFF/zmapGFFHeader.h                        |   90 -
+ src/zmapGFF/zmapGFFHeader.hpp                      |   90 +
+ src/zmapGFF/zmapGFFStringUtils.c                   |  515 --
+ src/zmapGFF/zmapGFFStringUtils.cpp                 |  515 ++
+ src/zmapGFF/zmapGFFUtils.c                         |  170 -
+ src/zmapGFF/zmapGFFUtils.cpp                       |  170 +
+ src/zmapGFF/zmapGFF_P.h                            |  292 -
+ src/zmapGFF/zmapGFF_P.hpp                          |  292 +
+ src/zmapGFF/zmapMLF.c                              |  354 -
+ src/zmapGFF/zmapMLF.cpp                            |  354 +
+ src/zmapGFF/zmapMLF_P.h                            |   50 -
+ src/zmapGFF/zmapMLF_P.hpp                          |   50 +
+ src/zmapGFF/zmapSOParser.c                         | 2044 ------
+ src/zmapGFF/zmapSOParser.cpp                       | 2044 ++++++
+ src/zmapGFF/zmapSOParser_P.h                       |  179 -
+ src/zmapGFF/zmapSOParser_P.hpp                     |  179 +
+ src/zmapRemoteControl/Makefile.am                  |    8 +-
+ src/zmapRemoteControl/remotetest/Makefile.am       |    2 +-
+ .../remotetest/remotecontroltest.cc                | 2597 -------
+ .../remotetest/remotecontroltest.cpp               | 2597 +++++++
+ src/zmapRemoteControl/zmapRemoteCommand.c          | 2047 ------
+ src/zmapRemoteControl/zmapRemoteCommand.cpp        | 2047 ++++++
+ src/zmapRemoteControl/zmapRemoteControl.c          | 2850 --------
+ src/zmapRemoteControl/zmapRemoteControl.cpp        | 2850 ++++++++
+ src/zmapRemoteControl/zmapRemoteControlUtils.c     |   48 -
+ src/zmapRemoteControl/zmapRemoteControlUtils.cpp   |   48 +
+ src/zmapRemoteControl/zmapRemoteControlXML.c       |   75 -
+ src/zmapRemoteControl/zmapRemoteControlXML.cpp     |   75 +
+ src/zmapRemoteControl/zmapRemoteControl_P.h        |  345 -
+ src/zmapRemoteControl/zmapRemoteControl_P.hpp      |  345 +
+ src/zmapServer/Makefile.am                         |   16 +-
+ src/zmapServer/acedb/Makefile.am                   |    4 +-
+ src/zmapServer/acedb/acedbServer.c                 | 4698 ------------
+ src/zmapServer/acedb/acedbServer.cpp               | 4698 ++++++++++++
+ src/zmapServer/acedb/acedbServer_P.h               |  108 -
+ src/zmapServer/acedb/acedbServer_P.hpp             |  108 +
+ src/zmapServer/das/Makefile.am                     |    4 +-
+ src/zmapServer/das/dasServer.c                     | 1675 -----
+ src/zmapServer/das/dasServer.cpp                   | 1676 +++++
+ src/zmapServer/das/dasServer_P.h                   |  103 -
+ src/zmapServer/das/dasServer_P.hpp                 |  103 +
+ src/zmapServer/ensembl/Makefile.am                 |    4 +-
+ src/zmapServer/ensembl/ensemblServer.c             | 1741 -----
+ src/zmapServer/ensembl/ensemblServer.cpp           | 1741 +++++
+ src/zmapServer/ensembl/ensemblServer_P.h           |   85 -
+ src/zmapServer/ensembl/ensemblServer_P.hpp         |   85 +
+ src/zmapServer/file/Makefile.am                    |    4 +-
+ src/zmapServer/file/fileServer.c                   | 1280 ----
+ src/zmapServer/file/fileServer.cpp                 | 1280 ++++
+ src/zmapServer/file/fileServer_P.h                 |   70 -
+ src/zmapServer/file/fileServer_P.hpp               |   70 +
+ src/zmapServer/pipe/Makefile.am                    |    4 +-
+ src/zmapServer/pipe/pipeServer.c                   | 1686 -----
+ src/zmapServer/pipe/pipeServer.cpp                 | 1686 +++++
+ src/zmapServer/pipe/pipeServer_P.h                 |   97 -
+ src/zmapServer/pipe/pipeServer_P.hpp               |   97 +
+ src/zmapServer/zmapDataSource.c                    |  580 --
+ src/zmapServer/zmapDataSource.cpp                  |  580 ++
+ src/zmapServer/zmapDataSource.h                    |   84 -
+ src/zmapServer/zmapDataSource.hpp                  |   84 +
+ src/zmapServer/zmapDataSource_P.h                  |   95 -
+ src/zmapServer/zmapDataSource_P.hpp                |   95 +
+ src/zmapServer/zmapServer.c                        |  479 --
+ src/zmapServer/zmapServer.cpp                      |  479 ++
+ src/zmapServer/zmapServer.h                        |   88 -
+ src/zmapServer/zmapServer.hpp                      |   88 +
+ src/zmapServer/zmapServerProtocolHandler.c         |  983 ---
+ src/zmapServer/zmapServerProtocolHandler.cpp       |  983 +++
+ src/zmapServer/zmapServerPrototype.h               |  141 -
+ src/zmapServer/zmapServerPrototype.hpp             |  141 +
+ src/zmapServer/zmapServer_P.h                      |   75 -
+ src/zmapServer/zmapServer_P.hpp                    |   75 +
+ src/zmapThreads/Makefile.am                        |   10 +-
+ src/zmapThreads/zmapSlave.c                        |  372 -
+ src/zmapThreads/zmapSlave.cpp                      |  372 +
+ src/zmapThreads/zmapSlave.test.c                   |  211 -
+ src/zmapThreads/zmapSlave.test.cpp                 |  211 +
+ src/zmapThreads/zmapSlave_P.h                      |   60 -
+ src/zmapThreads/zmapSlave_P.hpp                    |   60 +
+ src/zmapThreads/zmapThreads.c                      |  373 -
+ src/zmapThreads/zmapThreads.cpp                    |  373 +
+ src/zmapThreads/zmapThreadsUtils.c                 |  483 --
+ src/zmapThreads/zmapThreadsUtils.cpp               |  483 ++
+ src/zmapThreads/zmapThreads_P.h                    |  133 -
+ src/zmapThreads/zmapThreads_P.hpp                  |  133 +
+ src/zmapUtils/.gitignore                           |    2 +-
+ src/zmapUtils/Makefile.am                          |   86 +-
+ src/zmapUtils/safe-ctype.c                         |  180 -
+ src/zmapUtils/safe-ctype.cpp                       |  174 +
+ src/zmapUtils/tests/check_zmapConfigLoader.c       |  143 -
+ src/zmapUtils/tests/check_zmapConfigLoader.cpp     |  143 +
+ src/zmapUtils/tests/check_zmapConfigLoader.h       |   55 -
+ src/zmapUtils/tests/check_zmapConfigLoader.hpp     |   55 +
+ src/zmapUtils/zmapAppRemoteUtils.c                 |  158 -
+ src/zmapUtils/zmapAppRemoteUtils.cpp               |  158 +
+ src/zmapUtils/zmapBase.c                           |  476 --
+ src/zmapUtils/zmapBase.cpp                         |  476 ++
+ src/zmapUtils/zmapBase_I.h                         |   66 -
+ src/zmapUtils/zmapBase_I.hpp                       |   66 +
+ src/zmapUtils/zmapBioUtils.c                       |  221 -
+ src/zmapUtils/zmapBioUtils.cpp                     |  221 +
+ src/zmapUtils/zmapCmdLineArgs.c                    |  461 --
+ src/zmapUtils/zmapCmdLineArgs.cpp                  |  461 ++
+ src/zmapUtils/zmapCmdLineArgs_P.h                  |  131 -
+ src/zmapUtils/zmapCmdLineArgs_P.hpp                |  131 +
+ src/zmapUtils/zmapCoords.c                         |  107 -
+ src/zmapUtils/zmapCoords.cpp                       |  107 +
+ src/zmapUtils/zmapDNA.c                            |  483 --
+ src/zmapUtils/zmapDNA.cpp                          |  483 ++
+ src/zmapUtils/zmapFASTA.c                          |  226 -
+ src/zmapUtils/zmapFASTA.cpp                        |  226 +
+ src/zmapUtils/zmapFileUtils.c                      |  323 -
+ src/zmapUtils/zmapFileUtils.cpp                    |  323 +
+ src/zmapUtils/zmapFooUtils.c                       |  156 -
+ src/zmapUtils/zmapFooUtils.cpp                     |  156 +
+ src/zmapUtils/zmapGLibUtils.c                      | 1332 ----
+ src/zmapUtils/zmapGLibUtils.cpp                    | 1332 ++++
+ src/zmapUtils/zmapGUINotebook.c                    | 2245 ------
+ src/zmapUtils/zmapGUINotebook.cpp                  | 2245 ++++++
+ src/zmapUtils/zmapGUITreeView.c                    | 2014 ------
+ src/zmapUtils/zmapGUITreeView.cpp                  | 2014 ++++++
+ src/zmapUtils/zmapGUITreeView_I.h                  |  128 -
+ src/zmapUtils/zmapGUITreeView_I.hpp                |  128 +
+ src/zmapUtils/zmapGUImenus.c                       |  687 --
+ src/zmapUtils/zmapGUImenus.cpp                     |  687 ++
+ src/zmapUtils/zmapGUIutils.c                       | 3143 --------
+ src/zmapUtils/zmapGUIutils.cpp                     | 3143 ++++++++
+ src/zmapUtils/zmapHandle.c                         |  272 -
+ src/zmapUtils/zmapHandle.cpp                       |  272 +
+ src/zmapUtils/zmapIOOut.c                          |  339 -
+ src/zmapUtils/zmapIOOut.cpp                        |  339 +
+ src/zmapUtils/zmapIO_P.h                           |   57 -
+ src/zmapUtils/zmapIO_P.hpp                         |   57 +
+ src/zmapUtils/zmapLogging.c                        |  933 ---
+ src/zmapUtils/zmapLogging.cpp                      |  933 +++
+ src/zmapUtils/zmapPeptide.c                        | 1221 ----
+ src/zmapUtils/zmapPeptide.cpp                      | 1221 ++++
+ src/zmapUtils/zmapRadixSort.c                      |  230 -
+ src/zmapUtils/zmapRadixSort.cpp                    |  230 +
+ src/zmapUtils/zmapReadLine.c                       |  176 -
+ src/zmapUtils/zmapReadLine.cpp                     |  176 +
+ src/zmapUtils/zmapReadLine_P.h                     |   54 -
+ src/zmapUtils/zmapReadLine_P.hpp                   |   54 +
+ src/zmapUtils/zmapSO.c                             |  355 -
+ src/zmapUtils/zmapSO.cpp                           |  355 +
+ src/zmapUtils/zmapSequence.c                       |  134 -
+ src/zmapUtils/zmapSequence.cpp                     |  134 +
+ src/zmapUtils/zmapSignals.c                        |  156 -
+ src/zmapUtils/zmapSignals.cpp                      |  156 +
+ src/zmapUtils/zmapSkipList.c                       |  445 --
+ src/zmapUtils/zmapSkipList.cpp                     |  445 ++
+ src/zmapUtils/zmapStackTrace.c                     |  140 -
+ src/zmapUtils/zmapStackTrace.cpp                   |  140 +
+ src/zmapUtils/zmapString.c                         |  354 -
+ src/zmapUtils/zmapString.cpp                       |  354 +
+ src/zmapUtils/zmapUrl.c                            | 2265 ------
+ src/zmapUtils/zmapUrl.cpp                          | 2265 ++++++
+ src/zmapUtils/zmapUrlUtils.c                       |  608 --
+ src/zmapUtils/zmapUrlUtils.cpp                     |  608 ++
+ src/zmapUtils/zmapUtils.c                          |  919 ---
+ src/zmapUtils/zmapUtils.cpp                        |  919 +++
+ src/zmapUtils/zmapUtilsSpawn.c                     |  228 -
+ src/zmapUtils/zmapUtilsSpawn.cpp                   |  228 +
+ src/zmapUtils/zmapUtilsSystem.c                    |   73 -
+ src/zmapUtils/zmapUtilsSystem.cpp                  |   73 +
+ src/zmapUtils/zmapUtilsUsers.c                     |  201 -
+ src/zmapUtils/zmapUtilsUsers.cpp                   |  201 +
+ src/zmapUtils/zmapUtils_P.h                        |  107 -
+ src/zmapUtils/zmapUtils_P.hpp                      |  107 +
+ src/zmapUtils/zmapWebBrowser.c                     |  388 -
+ src/zmapUtils/zmapWebBrowser.cpp                   |  388 +
+ src/zmapView/Makefile.am                           |   16 +-
+ src/zmapView/zmapView.c                            | 6847 ------------------
+ src/zmapView/zmapView.cpp                          | 6847 ++++++++++++++++++
+ src/zmapView/zmapViewCallBlixem.c                  | 2455 -------
+ src/zmapView/zmapViewCallBlixem.cpp                | 2455 +++++++
+ src/zmapView/zmapViewCommand.c                     |   88 -
+ src/zmapView/zmapViewCommand.cpp                   |   88 +
+ src/zmapView/zmapViewFeatureCollapse.c             | 1573 ----
+ src/zmapView/zmapViewFeatureCollapse.cpp           | 1573 ++++
+ src/zmapView/zmapViewFeatureMask.c                 |  822 ---
+ src/zmapView/zmapViewFeatureMask.cpp               |  822 +++
+ src/zmapView/zmapViewRemoteControl.c               | 2196 ------
+ src/zmapView/zmapViewRemoteControl.cpp             | 2196 ++++++
+ src/zmapView/zmapViewScratch.c                     | 1809 -----
+ src/zmapView/zmapViewScratch.cpp                   | 1809 +++++
+ src/zmapView/zmapViewUtils.c                       | 1180 ---
+ src/zmapView/zmapViewUtils.cpp                     | 1180 +++
+ src/zmapView/zmapView_P.h                          |  749 --
+ src/zmapView/zmapView_P.hpp                        |  749 ++
+ src/zmapWindow/Makefile.am                         |  212 +-
+ src/zmapWindow/canvas/zmapWindowAllBase.h          |   72 -
+ src/zmapWindow/canvas/zmapWindowAllBase.hpp        |   72 +
+ src/zmapWindow/canvas/zmapWindowCanvasAlignment.c  | 1230 ----
+ .../canvas/zmapWindowCanvasAlignment.cpp           | 1230 ++++
+ src/zmapWindow/canvas/zmapWindowCanvasAlignment.h  |   40 -
+ .../canvas/zmapWindowCanvasAlignment.hpp           |   40 +
+ .../canvas/zmapWindowCanvasAlignment_I.h           |   97 -
+ .../canvas/zmapWindowCanvasAlignment_I.hpp         |   97 +
+ src/zmapWindow/canvas/zmapWindowCanvasAssembly.c   |   91 -
+ src/zmapWindow/canvas/zmapWindowCanvasAssembly.cpp |   91 +
+ src/zmapWindow/canvas/zmapWindowCanvasAssembly.h   |   40 -
+ src/zmapWindow/canvas/zmapWindowCanvasAssembly.hpp |   40 +
+ src/zmapWindow/canvas/zmapWindowCanvasAssembly_I.h |   46 -
+ .../canvas/zmapWindowCanvasAssembly_I.hpp          |   46 +
+ src/zmapWindow/canvas/zmapWindowCanvasBasic.c      |  212 -
+ src/zmapWindow/canvas/zmapWindowCanvasBasic.cpp    |  212 +
+ src/zmapWindow/canvas/zmapWindowCanvasBasic.h      |   41 -
+ src/zmapWindow/canvas/zmapWindowCanvasBasic.hpp    |   41 +
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.c       |  730 --
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.cpp     |  730 ++
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.h       |   93 -
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.hpp     |   93 +
+ src/zmapWindow/canvas/zmapWindowCanvasFeature.c    |  564 --
+ src/zmapWindow/canvas/zmapWindowCanvasFeature.cpp  |  564 ++
+ src/zmapWindow/canvas/zmapWindowCanvasFeature.h    |  100 -
+ src/zmapWindow/canvas/zmapWindowCanvasFeature.hpp  |  100 +
+ src/zmapWindow/canvas/zmapWindowCanvasFeature_I.h  |  150 -
+ .../canvas/zmapWindowCanvasFeature_I.hpp           |  150 +
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.c | 4751 ------------
+ .../canvas/zmapWindowCanvasFeatureset.cpp          | 4751 ++++++++++++
+ src/zmapWindow/canvas/zmapWindowCanvasFeatureset.h |  299 -
+ .../canvas/zmapWindowCanvasFeatureset.hpp          |  299 +
+ .../canvas/zmapWindowCanvasFeaturesetBump.c        |  925 ---
+ .../canvas/zmapWindowCanvasFeaturesetBump.cpp      |  925 +++
+ .../canvas/zmapWindowCanvasFeaturesetSummarise.c   |  423 --
+ .../canvas/zmapWindowCanvasFeaturesetSummarise.cpp |  423 ++
+ .../canvas/zmapWindowCanvasFeatureset_I.h          |  379 -
+ .../canvas/zmapWindowCanvasFeatureset_I.hpp        |  379 +
+ src/zmapWindow/canvas/zmapWindowCanvasGlyph.c      | 1596 ----
+ src/zmapWindow/canvas/zmapWindowCanvasGlyph.cpp    | 1596 ++++
+ src/zmapWindow/canvas/zmapWindowCanvasGlyph.h      |   95 -
+ src/zmapWindow/canvas/zmapWindowCanvasGlyph.hpp    |   95 +
+ src/zmapWindow/canvas/zmapWindowCanvasGlyph_I.h    |  144 -
+ src/zmapWindow/canvas/zmapWindowCanvasGlyph_I.hpp  |  144 +
+ src/zmapWindow/canvas/zmapWindowCanvasGraphItem.c  | 1275 ----
+ .../canvas/zmapWindowCanvasGraphItem.cpp           | 1275 ++++
+ src/zmapWindow/canvas/zmapWindowCanvasGraphItem.h  |   38 -
+ .../canvas/zmapWindowCanvasGraphItem.hpp           |   38 +
+ .../canvas/zmapWindowCanvasGraphItem_I.h           |   79 -
+ .../canvas/zmapWindowCanvasGraphItem_I.hpp         |   79 +
+ src/zmapWindow/canvas/zmapWindowCanvasGraphics.c   |  199 -
+ src/zmapWindow/canvas/zmapWindowCanvasGraphics.cpp |  199 +
+ src/zmapWindow/canvas/zmapWindowCanvasGraphics.h   |   40 -
+ src/zmapWindow/canvas/zmapWindowCanvasGraphics.hpp |   40 +
+ src/zmapWindow/canvas/zmapWindowCanvasGraphics_I.h |   39 -
+ .../canvas/zmapWindowCanvasGraphics_I.hpp          |   39 +
+ src/zmapWindow/canvas/zmapWindowCanvasItem.h       |  149 -
+ src/zmapWindow/canvas/zmapWindowCanvasItem.hpp     |  149 +
+ src/zmapWindow/canvas/zmapWindowCanvasItem_I.h     |  120 -
+ src/zmapWindow/canvas/zmapWindowCanvasItem_I.hpp   |  120 +
+ src/zmapWindow/canvas/zmapWindowCanvasLocus.c      |  527 --
+ src/zmapWindow/canvas/zmapWindowCanvasLocus.cpp    |  527 ++
+ src/zmapWindow/canvas/zmapWindowCanvasLocus.h      |   41 -
+ src/zmapWindow/canvas/zmapWindowCanvasLocus.hpp    |   41 +
+ src/zmapWindow/canvas/zmapWindowCanvasLocus_I.h    |  102 -
+ src/zmapWindow/canvas/zmapWindowCanvasLocus_I.hpp  |  102 +
+ src/zmapWindow/canvas/zmapWindowCanvasSequence.c   |  967 ---
+ src/zmapWindow/canvas/zmapWindowCanvasSequence.cpp |  967 +++
+ src/zmapWindow/canvas/zmapWindowCanvasSequence.h   |   41 -
+ src/zmapWindow/canvas/zmapWindowCanvasSequence.hpp |   41 +
+ src/zmapWindow/canvas/zmapWindowCanvasSequence_I.h |   95 -
+ .../canvas/zmapWindowCanvasSequence_I.hpp          |   95 +
+ src/zmapWindow/canvas/zmapWindowCanvasTranscript.c |  625 --
+ .../canvas/zmapWindowCanvasTranscript.cpp          |  625 ++
+ src/zmapWindow/canvas/zmapWindowCanvasTranscript.h |   40 -
+ .../canvas/zmapWindowCanvasTranscript.hpp          |   40 +
+ .../canvas/zmapWindowCanvasTranscript_I.h          |   90 -
+ .../canvas/zmapWindowCanvasTranscript_I.hpp        |   90 +
+ .../canvas/zmapWindowContainerAlignment.h          |   70 -
+ .../canvas/zmapWindowContainerAlignment.hpp        |   70 +
+ .../canvas/zmapWindowContainerAlignment_I.h        |   54 -
+ .../canvas/zmapWindowContainerAlignment_I.hpp      |   54 +
+ src/zmapWindow/canvas/zmapWindowContainerBlock.h   |   92 -
+ src/zmapWindow/canvas/zmapWindowContainerBlock.hpp |   92 +
+ src/zmapWindow/canvas/zmapWindowContainerBlock_I.h |   60 -
+ .../canvas/zmapWindowContainerBlock_I.hpp          |   60 +
+ src/zmapWindow/canvas/zmapWindowContainerContext.h |   68 -
+ .../canvas/zmapWindowContainerContext.hpp          |   68 +
+ .../canvas/zmapWindowContainerContext_I.h          |   54 -
+ .../canvas/zmapWindowContainerContext_I.hpp        |   54 +
+ .../canvas/zmapWindowContainerFeatureSet.c         | 1287 ----
+ .../canvas/zmapWindowContainerFeatureSet.cpp       | 1287 ++++
+ .../canvas/zmapWindowContainerFeatureSet.h         |  263 -
+ .../canvas/zmapWindowContainerFeatureSet.hpp       |  263 +
+ .../zmapWindowContainerFeatureSetFeatureFuncs.c    | 1416 ----
+ .../zmapWindowContainerFeatureSetFeatureFuncs.cpp  | 1416 ++++
+ .../canvas/zmapWindowContainerFeatureSet_I.h       |  147 -
+ .../canvas/zmapWindowContainerFeatureSet_I.hpp     |  147 +
+ src/zmapWindow/canvas/zmapWindowContainerGroup.c   | 1640 -----
+ src/zmapWindow/canvas/zmapWindowContainerGroup.cpp | 1640 +++++
+ src/zmapWindow/canvas/zmapWindowContainerGroup.h   |  167 -
+ src/zmapWindow/canvas/zmapWindowContainerGroup.hpp |  167 +
+ src/zmapWindow/canvas/zmapWindowContainerGroup_I.h |  112 -
+ .../canvas/zmapWindowContainerGroup_I.hpp          |  112 +
+ src/zmapWindow/canvas/zmapWindowContainerItem.c    |  224 -
+ src/zmapWindow/canvas/zmapWindowContainerItem.cpp  |  224 +
+ src/zmapWindow/canvas/zmapWindowContainerUtils.h   |  136 -
+ src/zmapWindow/canvas/zmapWindowContainerUtils.hpp |  136 +
+ src/zmapWindow/canvas/zmapWindowContainers.h       |   47 -
+ src/zmapWindow/canvas/zmapWindowContainers.hpp     |   47 +
+ src/zmapWindow/canvas/zmapWindowOldItems.c         |  646 --
+ src/zmapWindow/canvas/zmapWindowOldItems.cpp       |  646 ++
+ src/zmapWindow/zmapWindow.c                        | 7596 --------------------
+ src/zmapWindow/zmapWindow.cpp                      | 7596 ++++++++++++++++++++
+ src/zmapWindow/zmapWindowCanvas.c                  |  209 -
+ src/zmapWindow/zmapWindowCanvas.cpp                |  209 +
+ src/zmapWindow/zmapWindowColBump.c                 |  536 --
+ src/zmapWindow/zmapWindowColBump.cpp               |  536 ++
+ src/zmapWindow/zmapWindowColConfig.c               | 2581 -------
+ src/zmapWindow/zmapWindowColConfig.cpp             | 2581 +++++++
+ src/zmapWindow/zmapWindowColOrder.c                |  404 --
+ src/zmapWindow/zmapWindowColOrder.cpp              |  404 ++
+ src/zmapWindow/zmapWindowCommand.c                 |  129 -
+ src/zmapWindow/zmapWindowCommand.cpp               |  129 +
+ src/zmapWindow/zmapWindowDNA.c                     | 1257 ----
+ src/zmapWindow/zmapWindowDNA.cpp                   | 1257 ++++
+ src/zmapWindow/zmapWindowDNAChoose.c               |  679 --
+ src/zmapWindow/zmapWindowDNAChoose.cpp             |  679 ++
+ src/zmapWindow/zmapWindowDNAList.c                 |  856 ---
+ src/zmapWindow/zmapWindowDNAList.cpp               |  856 +++
+ src/zmapWindow/zmapWindowDNAList.h                 |   90 -
+ src/zmapWindow/zmapWindowDNAList.hpp               |   90 +
+ src/zmapWindow/zmapWindowDNAList_I.h               |   66 -
+ src/zmapWindow/zmapWindowDNAList_I.hpp             |   66 +
+ src/zmapWindow/zmapWindowDisplayOps.c              |  683 --
+ src/zmapWindow/zmapWindowDisplayOps.cpp            |  683 ++
+ src/zmapWindow/zmapWindowDraw.c                    | 1461 ----
+ src/zmapWindow/zmapWindowDraw.cpp                  | 1461 ++++
+ src/zmapWindow/zmapWindowDrawFeatures.c            | 3062 --------
+ src/zmapWindow/zmapWindowDrawFeatures.cpp          | 3062 ++++++++
+ src/zmapWindow/zmapWindowDump.c                    | 1114 ---
+ src/zmapWindow/zmapWindowDump.cpp                  | 1114 +++
+ src/zmapWindow/zmapWindowExport.c                  |   56 -
+ src/zmapWindow/zmapWindowExport.cpp                |   56 +
+ src/zmapWindow/zmapWindowFeature.c                 | 1480 ----
+ src/zmapWindow/zmapWindowFeature.cpp               | 1480 ++++
+ src/zmapWindow/zmapWindowFeatureFuncs.c            |  214 -
+ src/zmapWindow/zmapWindowFeatureFuncs.cpp          |  214 +
+ src/zmapWindow/zmapWindowFeatureList.c             | 1946 -----
+ src/zmapWindow/zmapWindowFeatureList.cpp           | 1946 +++++
+ src/zmapWindow/zmapWindowFeatureList.h             |  187 -
+ src/zmapWindow/zmapWindowFeatureList.hpp           |  187 +
+ src/zmapWindow/zmapWindowFeatureList_I.h           |  116 -
+ src/zmapWindow/zmapWindowFeatureList_I.hpp         |  116 +
+ src/zmapWindow/zmapWindowFeatureShow.cpp           |   14 +-
+ src/zmapWindow/zmapWindowFocus.c                   | 1241 ----
+ src/zmapWindow/zmapWindowFocus.cpp                 | 1241 ++++
+ src/zmapWindow/zmapWindowItem.c                    | 1314 ----
+ src/zmapWindow/zmapWindowItem.cpp                  | 1314 ++++
+ src/zmapWindow/zmapWindowItemDebug.c               |  426 --
+ src/zmapWindow/zmapWindowItemDebug.cpp             |  426 ++
+ src/zmapWindow/zmapWindowItemHash.c                | 1680 -----
+ src/zmapWindow/zmapWindowItemHash.cpp              | 1680 +++++
+ src/zmapWindow/zmapWindowList.c                    | 1476 ----
+ src/zmapWindow/zmapWindowList.cpp                  | 1476 ++++
+ src/zmapWindow/zmapWindowMark.c                    | 1039 ---
+ src/zmapWindow/zmapWindowMark.cpp                  | 1039 +++
+ src/zmapWindow/zmapWindowMark.h                    |   89 -
+ src/zmapWindow/zmapWindowMark.hpp                  |   89 +
+ src/zmapWindow/zmapWindowMenus.c                   | 4987 -------------
+ src/zmapWindow/zmapWindowMenus.cpp                 | 4987 +++++++++++++
+ src/zmapWindow/zmapWindowNavigator.c               | 1608 -----
+ src/zmapWindow/zmapWindowNavigator.cpp             | 1608 +++++
+ src/zmapWindow/zmapWindowNavigatorMenus.c          |  708 --
+ src/zmapWindow/zmapWindowNavigatorMenus.cpp        |  708 ++
+ src/zmapWindow/zmapWindowNavigatorWidget.c         |  591 --
+ src/zmapWindow/zmapWindowNavigatorWidget.cpp       |  591 ++
+ src/zmapWindow/zmapWindowNavigator_P.h             |  183 -
+ src/zmapWindow/zmapWindowNavigator_P.hpp           |  183 +
+ src/zmapWindow/zmapWindowPreferences.c             |   70 -
+ src/zmapWindow/zmapWindowPreferences.cpp           |   70 +
+ src/zmapWindow/zmapWindowPrint.c                   |  610 --
+ src/zmapWindow/zmapWindowPrint.cpp                 |  610 ++
+ src/zmapWindow/zmapWindowRemoteControl.c           | 1137 ---
+ src/zmapWindow/zmapWindowRemoteControl.cpp         | 1137 +++
+ src/zmapWindow/zmapWindowRemoteControlUtils.c      |  960 ---
+ src/zmapWindow/zmapWindowRemoteControlUtils.cpp    |  960 +++
+ src/zmapWindow/zmapWindowScale.c                   |  709 --
+ src/zmapWindow/zmapWindowScale.cpp                 |  709 ++
+ src/zmapWindow/zmapWindowScratch.c                 |  465 --
+ src/zmapWindow/zmapWindowScratch.cpp               |  465 ++
+ src/zmapWindow/zmapWindowScratch_P.h               |   48 -
+ src/zmapWindow/zmapWindowScratch_P.hpp             |   48 +
+ src/zmapWindow/zmapWindowSearch.c                  | 1285 ----
+ src/zmapWindow/zmapWindowSearch.cpp                | 1285 ++++
+ src/zmapWindow/zmapWindowSeqDisp.c                 | 1158 ---
+ src/zmapWindow/zmapWindowSeqDisp.cpp               | 1158 +++
+ src/zmapWindow/zmapWindowState.c                   | 1028 ---
+ src/zmapWindow/zmapWindowState.cpp                 | 1028 +++
+ src/zmapWindow/zmapWindowState.h                   |   75 -
+ src/zmapWindow/zmapWindowState.hpp                 |   75 +
+ src/zmapWindow/zmapWindowStats.c                   |  304 -
+ src/zmapWindow/zmapWindowStats.cpp                 |  304 +
+ src/zmapWindow/zmapWindowStyle.c                   |  715 --
+ src/zmapWindow/zmapWindowStyle.cpp                 |  715 ++
+ src/zmapWindow/zmapWindowUtils.c                   |  877 ---
+ src/zmapWindow/zmapWindowUtils.cpp                 |  877 +++
+ src/zmapWindow/zmapWindowZoomControl.c             |  633 --
+ src/zmapWindow/zmapWindowZoomControl.cpp           |  633 ++
+ src/zmapWindow/zmapWindowZoomControl_P.h           |   83 -
+ src/zmapWindow/zmapWindowZoomControl_P.hpp         |   83 +
+ src/zmapWindow/zmapWindow_P.h                      | 1926 -----
+ src/zmapWindow/zmapWindow_P.hpp                    | 1926 +++++
+ src/zmapXML/Makefile.am                            |   14 +-
+ src/zmapXML/example_xml_writer.c                   |  226 -
+ src/zmapXML/example_xml_writer.cpp                 |  226 +
+ src/zmapXML/zmapXMLAttribute.c                     |   76 -
+ src/zmapXML/zmapXMLAttribute.cpp                   |   76 +
+ src/zmapXML/zmapXMLDocument.c                      |   96 -
+ src/zmapXML/zmapXMLDocument.cpp                    |   96 +
+ src/zmapXML/zmapXMLElement.c                       |  374 -
+ src/zmapXML/zmapXMLElement.cpp                     |  374 +
+ src/zmapXML/zmapXMLParse.c                         | 1128 ---
+ src/zmapXML/zmapXMLParse.cpp                       | 1128 +++
+ src/zmapXML/zmapXMLUtils.c                         |  595 --
+ src/zmapXML/zmapXMLUtils.cpp                       |  595 ++
+ src/zmapXML/zmapXMLWriter.c                        |  598 --
+ src/zmapXML/zmapXMLWriter.cpp                      |  598 ++
+ src/zmapXML/zmapXML_P.h                            |  140 -
+ src/zmapXML/zmapXML_P.hpp                          |  140 +
+ 707 files changed, 216575 insertions(+), 216569 deletions(-)
