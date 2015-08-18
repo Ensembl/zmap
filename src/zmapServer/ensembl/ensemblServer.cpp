@@ -162,6 +162,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const char *feature_name,
                                ZMapStyleMode feature_mode,
                                const char *source,
+                               const char *biotype,
                                const int match_start,
                                const int match_end,
                                GetFeaturesData get_features_data,
@@ -1220,7 +1221,7 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
     source = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, 0, 0, 
+                        feature_mode, source, NULL, 0, 0, 
                         get_features_data, feature_block) ;
 
   return feature ;
@@ -1250,7 +1251,7 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
     source = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, 0, 0, 
+                        feature_mode, source, NULL, 0, 0, 
                         get_features_data, feature_block) ;
 
   return feature ;
@@ -1302,6 +1303,7 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
   const char *feature_name_id = NULL ;
   const char *feature_name = NULL ;
   const char *source = NULL ;
+  const char *biotype = Transcript_getBiotype(rsf) ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
   feature_name_id = Transcript_getStableId(rsf);
@@ -1317,7 +1319,7 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
     source = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                        feature_mode, source, 0, 0, 
+                        feature_mode, source, biotype, 0, 0, 
                         get_features_data, feature_block) ;
 
   if (feature)
@@ -1377,7 +1379,7 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
     source = featureGetSOTerm((SeqFeature*)rsf) ;
   
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                        feature_mode, source, 0, 0, 
+                        feature_mode, source, NULL, 0, 0, 
                         get_features_data, feature_block) ;
 
   if (feature)
@@ -1471,7 +1473,7 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
     BaseAlignFeature_getDbName((BaseAlignFeature*)rsf) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
-                        feature_mode, source, match_start, match_end,
+                        feature_mode, source, NULL, match_start, match_end,
                         get_features_data, feature_block) ;
 
   if (feature)
@@ -1564,6 +1566,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const char *feature_name_in,
                                ZMapStyleMode feature_mode,
                                const char *source,
+                               const char *biotype_in,
                                const int match_start,
                                const int match_end,
                                GetFeaturesData get_features_data,
@@ -1581,6 +1584,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
   double score = 0.0 ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
   char *unique_source = NULL ;
+  const char *biotype = biotype_in ;
 
   SO_accession = featureGetSOTerm(rsf) ;
 
@@ -1602,16 +1606,20 @@ static ZMapFeature makeFeature(EnsemblServer server,
       else if (SeqFeature_getStrand(rsf) < 0)
         strand = ZMAPSTRAND_REVERSE ;
 
+      /* If no biotype given, then use the SO type */
+      if (!biotype)
+        biotype = SO_accession ;
+
       /* Create the unique id from the db name, feature name and coords (cast away const... ugh) */
       unique_id = zMapFeatureCreateID(feature_mode, (char*)feature_name_id, strand, start, end, match_start, match_end);
 
       /* If a prefix is given, add it to the source name */
       /* We can get different feature types with the same source, so ensure that the
-       * featureset id is unique by also appending the SO term */
+       * featureset id is unique by also appending the biotype or SO term */
       if (server->db_prefix)
-        unique_source = g_strdup_printf("%s_%s_%s", server->db_prefix, source, SO_accession);
+        unique_source = g_strdup_printf("%s_%s_%s", server->db_prefix, source, biotype);
       else
-        unique_source = g_strdup_printf("%s_%s", source, SO_accession) ;
+        unique_source = g_strdup_printf("%s_%s", source, biotype) ;
 
       /* Find the featureset, or create it if it doesn't exist */
       GQuark feature_set_id = zMapFeatureSetCreateID((char*)unique_source) ;
