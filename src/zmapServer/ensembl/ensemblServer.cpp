@@ -477,11 +477,31 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
                                      ZMapFeatureBlock feature_block)
 {
   gboolean result = TRUE ;
+  Vector *features = NULL ;
 
-  Vector *features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
+  if (server->req_featuresets_only)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new() ;
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllSimpleFeatures(server->slice, (char*)featureset, NULL, NULL);
+          Vector_append(features, new_features);
+          Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
+    }
 
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       SimpleFeature *sf = (SimpleFeature*)Vector_getElementAt(features,i) ;
       SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,  (char *)(server->coord_system), NULL ,NULL) ;
@@ -508,11 +528,31 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
                                        ZMapFeatureBlock feature_block)
 {
   gboolean result = TRUE ;
+  Vector *features = NULL ;
+  
+  if (server->req_featuresets_only)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new() ;
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllDNAAlignFeatures(server->slice, (char*)featureset, NULL, NULL, NULL);
+          Vector_append(features, new_features);
+          Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+    }
 
-  Vector *features =  Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       DNAAlignFeature *sf = (DNAAlignFeature*)Vector_getElementAt(features,i);
       DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
@@ -540,10 +580,31 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  Vector *features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+  Vector *features = NULL ;
 
+  if (server->req_featuresets_only)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new() ;
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllProteinAlignFeatures(server->slice, (char*)featureset, NULL, NULL, NULL);
+          Vector_append(features, new_features);
+          Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+    }
+
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       DNAPepAlignFeature *sf = (DNAPepAlignFeature*)Vector_getElementAt(features,i);
       DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
@@ -572,10 +633,31 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  Vector *features =  Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
+  Vector *features = NULL ;
 
+  if (server->req_featuresets_only)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new() ;
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllRepeatFeatures(server->slice, (char*)featureset, NULL, NULL);
+          Vector_append(features, new_features);
+          Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
+    }
+
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       RepeatFeature *sf = (RepeatFeature*)Vector_getElementAt(features,i);
       RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
@@ -604,10 +686,31 @@ static gboolean getAllTranscripts(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  Vector *features = Slice_getAllTranscripts(server->slice, 1, NULL, NULL) ;
+  Vector *features = NULL ;
 
+  if (server->req_featuresets_only)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new() ;
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllTranscripts(server->slice, 1, (char*)featureset, NULL) ;
+          Vector_append(features, new_features);
+          Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllTranscripts(server->slice, 1, NULL, NULL) ;
+    }
+
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       Transcript *sf = (Transcript*)Vector_getElementAt(features,i);
       Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
@@ -636,10 +739,31 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  Vector *features = Slice_getAllPredictionTranscripts(server->slice, NULL, 1, NULL) ;
+  Vector *features = NULL ;
 
+  if (server->req_featuresets_only)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new() ;
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllPredictionTranscripts(server->slice, (char*)featureset, 1, NULL) ;
+          Vector_append(features, new_features);
+          Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllPredictionTranscripts(server->slice, NULL, 1, NULL) ;
+    }
+
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       PredictionTranscript *sf = (PredictionTranscript*)Vector_getElementAt(features,i);
       PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
@@ -669,10 +793,31 @@ static gboolean getAllGenes(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  Vector *features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
+  Vector *features = NULL ;
 
+  if (server->req_featuresets_only)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new() ;
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllGenes(server->slice, (char*)featureset, NULL, 1, NULL, NULL) ;
+          Vector_append(features, new_features);
+          Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
+    }
+
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       Gene *sf = Vector_getElementAt(features,i);
       Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
