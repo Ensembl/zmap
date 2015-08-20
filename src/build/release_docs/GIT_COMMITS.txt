@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/2.1.0"
 
+5f9f579 2015-08-20 update to fix incorrect coordinates in file import dialogue - RT 485214
 b43cc34 2015-08-17 Merge branch 'feature/error_messages' into develop
 6e5d5b8 2015-08-17 Merge branch 'feature/ensembl' into develop
 6204d00 2015-08-14 fix to possibly unsafe calls to g_free() in zmapWindowPfetchEntry() - RT 484263

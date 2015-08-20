@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 15/07/2015 to 17/08/2015
+Request Tracker Tickets Resolved from 15/07/2015 to 20/08/2015
 
 ticket/476551
 id: ticket/476551
@@ -68,6 +68,16 @@ Subject: View or Export Feature, DNA, Peptide
 Requestors: sb7@sanger.ac.uk
 Owner: sm23
 Resolved: Thu Aug 13 16:40:01 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/485214
+id: ticket/485214
+Queue: zmap
+Subject: Zmap  - GFF import - incorrect coordinates for feature range
+Requestors: mt4@sanger.ac.uk
+Owner: sm23
+Resolved: Thu Aug 20 09:40:41 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

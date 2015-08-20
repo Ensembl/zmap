@@ -1,3 +1,15 @@
+2015-08-20  Steve Miller  <sm23@sanger.ac.uk>
+ update to fix incorrect coordinates in file import dialogue - RT 485214
+ src/zmapControl/zmapControlWindowMenubar.cpp |   20 +++++++++++---------
+ 1 files changed, 11 insertions(+), 9 deletions(-)
+
+2015-08-17  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.0.0-70-gb43cc34 - Update RT and git commit reports
+ src/ChangeLog                                  | 3715 +++++++-----------------
+ src/build/release_docs/GIT_COMMITS.txt         |   37 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   84 +-
+ 3 files changed, 1117 insertions(+), 2719 deletions(-)
+
 2015-08-17  Gemma Guest  <gb10@sanger.ac.uk>
  Merge branch 'feature/error_messages' into develop
 2015-08-17  Gemma Guest  <gb10@sanger.ac.uk>
