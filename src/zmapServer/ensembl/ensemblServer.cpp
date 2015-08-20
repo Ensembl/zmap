@@ -519,8 +519,8 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
           else
             printf("Failed to map feature '%s'\n", SimpleFeature_getDisplayLabel(sf));
 
-          Object_decRefCount(rsf);
-          free(rsf);
+//          Object_decRefCount(rsf);
+//          free(rsf);
 //          Object_decRefCount(sf);
 //          free(sf);
         }
@@ -529,7 +529,9 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
 
 //  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
 //    {
-//      Vector_free((Vector*)(vector_item->data)) ;
+//      Vector *features = (Vector*)(vector_item->data) ;
+//      Vector_setFreeFunc(features, NULL) ;
+//      Vector_free(features) ;
 //    }
 
   g_list_free(vector_list) ;
@@ -583,17 +585,19 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
           else
             printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
 
-        Object_decRefCount(rsf);
-        free(rsf);
+//      Object_decRefCount(rsf);
+//      free(rsf);
 //        Object_decRefCount(sf);
 //        free(sf);
         }
     }
 
-  //for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-  //  {
-  //    Vector_free((Vector*)(vector_item->data)) ;
-  //  }
+//  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+//    {
+//      Vector *features = (Vector*)(vector_item->data) ;
+//      Vector_setFreeFunc(features, NULL);
+//      Vector_free(features) ;
+//    }
 
   g_list_free(vector_list) ;
 
@@ -646,17 +650,19 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
           else
             printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
 
-        Object_decRefCount(rsf);
-        free(rsf);
+//      Object_decRefCount(rsf);
+//      free(rsf);
 //        Object_decRefCount(sf);
 //        free(sf);
         }
     }
 
-  //for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-  //  {
-  //    Vector_free((Vector*)(vector_item->data)) ;
-  //  }
+//  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+//    {
+//      Vector *features = (Vector*)(vector_item->data) ;
+//      Vector_setFreeFunc(features, NULL);
+//      Vector_free(features) ;
+//    }
 
   g_list_free(vector_list) ;
 
@@ -710,17 +716,19 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
           else
             printf("Failed to map feature '%s'\n", RepeatConsensus_getName(RepeatFeature_getConsensus(sf)));
 
-        Object_decRefCount(rsf);
-        free(rsf);
+//      Object_decRefCount(rsf);
+//      free(rsf);
 //        Object_decRefCount(sf);
 //        free(sf);
         }
     }
 
-  //for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-  //  {
-  //    Vector_free((Vector*)(vector_item->data)) ;
-  //  }
+//  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+//    {
+//      Vector *features = (Vector*)(vector_item->data) ;
+//      Vector_setFreeFunc(features, NULL);
+//      Vector_free(features) ;
+//    }
 
   g_list_free(vector_list) ;
 
@@ -774,17 +782,19 @@ static gboolean getAllTranscripts(EnsemblServer server,
           else
             printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
 
-        Object_decRefCount(rsf);
-        free(rsf);
+//      Object_decRefCount(rsf);
+//      free(rsf);
 //        Object_decRefCount(sf);
 //        free(sf);
         }
     }
 
-  //for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-  //  {
-  //    Vector_free((Vector*)(vector_item->data)) ;
-  //  }
+//  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+//    {
+//      Vector *features = (Vector*)(vector_item->data) ;
+//      Vector_setFreeFunc(features, NULL);
+//      Vector_free(features) ;
+//    }
 
   g_list_free(vector_list) ;
 
@@ -838,17 +848,19 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
           else
             printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
 
-        Object_decRefCount(rsf);
-        free(rsf);
+//      Object_decRefCount(rsf);
+//      free(rsf);
 //        Object_decRefCount(sf);
 //        free(sf);
         }
     }
 
-  //for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-  //  {
-  //    Vector_free((Vector*)(vector_item->data)) ;
-  //  }
+//  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+//    {
+//      Vector *features = (Vector*)(vector_item->data) ;
+//      Vector_setFreeFunc(features, NULL);
+//      Vector_free(features) ;
+//    }
 
   g_list_free(vector_list) ;
 
@@ -903,17 +915,19 @@ static gboolean getAllGenes(EnsemblServer server,
           else
             printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
 
-        Object_decRefCount(rsf);
-        free(rsf);
+//      Object_decRefCount(rsf);
+//      free(rsf);
 //        Object_decRefCount(sf);
 //        free(sf);
         }
     }
 
-  //for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-  //  {
-  //    Vector_free((Vector*)(vector_item->data)) ;
-  //  }
+  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+    {
+      Vector *features = (Vector*)(vector_item->data) ;
+      Vector_setFreeFunc(features, NULL);
+      Vector_free(features) ;
+    }
 
   g_list_free(vector_list) ;
 
@@ -1285,7 +1299,7 @@ static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData 
           Transcript *transcript = Vector_getElementAt(transcripts, i);
           makeFeatureTranscript(server, transcript, get_features_data, feature_block) ;
         }
-  
+
       Vector_free(transcripts) ;
     }
 }
