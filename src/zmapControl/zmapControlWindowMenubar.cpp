@@ -314,7 +314,7 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   ZMapViewWindow vw ;
   ZMapFeatureSequenceMap sequence_map ;
   ZMapFeatureSequenceMap view_seq ;
-  int start, end ;
+  int start=0, end=0 ;
 
   zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
 
@@ -337,15 +337,17 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   if(zMapWindowMarkIsSet(zMapViewGetWindow(vw)))
     {
       zMapWindowGetMark(zMapViewGetWindow(vw), &start, &end);
+    }
 
-      /* NOTE we get -fwd coords from this function if revcomped */
-      if(start < 0)
-        start = -start ;
-      if(end < 0)
-        end = -end ;
-
-      start += sequence_map->start ;
-      end += sequence_map->start ;
+  ZMapView view = zMapViewGetView(vw) ;
+  if (view && zMapViewGetRevCompStatus(view))
+    {
+      int length = sequence_map->end - sequence_map->start + 1 ;
+      start = length - start + sequence_map->start ;
+      end = length - end + sequence_map->start ;
+      int store = start ;
+      start = end ;
+      end = store ;
     }
 
   /* need sequence_map to set default seq coords and map sequence name */
