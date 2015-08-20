@@ -246,6 +246,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
                                            gboolean req_styles,
                                            char *styles_file,
                                            GList *req_featuresets,
+                                           GList *req_biotypes,
                                            gboolean dna_requested,
                                            gint start,gint end,
                                            gboolean terminate);
@@ -832,6 +833,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
               {
                 GList *req_featuresets = NULL ;
+                GList *req_biotypes = NULL ;
                 //                ZMapFeatureContext context;
                 //                gboolean dna_requested = FALSE;
 
@@ -848,9 +850,15 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
                       }
                   }
 
+                if(current_server->biotypes)
+                  {
+                    /* req all biotypes  as a list of their quark names. */
+                    req_biotypes = zMapConfigString2QuarkList(current_server->biotypes,FALSE) ;
+                  }
+
                 terminate = g_str_has_prefix(current_server->url,"pipe://");
 
-                zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, current_server,
+                zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
                                      zmap_view->view_sequence->start, zmap_view->view_sequence->end,
                                      SOURCE_GROUP_START,TRUE, terminate) ;
               }
@@ -1547,7 +1555,7 @@ void zMapViewShowLoadStatus(ZMapView view)
 
 /* Hate this but Malcolm seems to have punctured the encapsulation in quite a few places.... */
 gboolean zMapViewRequestServer(ZMapView view,
-                               ZMapFeatureBlock block_orig, GList *req_featuresets,
+                               ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
                                gpointer _server, /* ZMapConfigSource */
                                int req_start, int req_end,
                                gboolean dna_requested, gboolean terminate, gboolean show_warning)
@@ -1556,7 +1564,7 @@ gboolean zMapViewRequestServer(ZMapView view,
   ZMapViewConnection view_conn ;
 
   if ((view_conn = zmapViewRequestServer(view, NULL,
-                                         block_orig, req_featuresets,
+                                         block_orig, req_featuresets, req_biotypes,
                                          _server, /* ZMapConfigSource */
                                          req_start, req_end,
                                          dna_requested, terminate, show_warning)))
@@ -1584,7 +1592,8 @@ gboolean zMapViewRequestServer(ZMapView view,
  *
  * NOTE block is NULL for startup requests
  */
-void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_sources,
+void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, 
+                          GList *req_sources, GList *req_biotypes,
                           ZMapConfigSource server,
                           int features_start, int features_end,
                           gboolean group_flag, gboolean make_new_connection, gboolean terminate)
@@ -1626,7 +1635,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
           dna_requested = TRUE ;
         }
 
-      view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, (gpointer) server,
+      view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, req_biotypes, (gpointer) server,
                                         req_start, req_end, dna_requested, terminate, !view->thread_fail_silent);
       if(view_conn)
         requested = TRUE;
@@ -1792,7 +1801,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
               view_conn = (make_new_connection ? NULL : (existing ? view_conn : NULL)) ;
 
 
-              view_conn = zmapViewRequestServer(view, view_conn, block_orig, req_featuresets,
+              view_conn = zmapViewRequestServer(view, view_conn, block_orig, req_featuresets, req_biotypes,
                                                 (gpointer)server, req_start, req_end,
                                                 dna_requested,
                                                 (!existing && terminate), !view->thread_fail_silent) ;
@@ -2054,7 +2063,7 @@ void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **fe
  * which cannot be delayed as there's no way to fit these into the columns dialog as it currrently exists
  */
 ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
-                                         ZMapFeatureBlock block_orig, GList *req_featuresets,
+                                         ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
                                          gpointer _server, /* ZMapConfigSource */
                                          int req_start, int req_end,
                                          gboolean dna_requested, gboolean terminate, gboolean show_warning)
@@ -2109,6 +2118,7 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
                                         server->req_styles,
                                         server->stylesfile,
                                         req_featuresets,
+                                        req_biotypes,
                                         dna_requested,
                                         req_start,req_end,
                                         terminate || is_pipe)))
@@ -4803,6 +4813,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
                                                gboolean req_styles,
                                                char *styles_file,
                                                GList *req_featuresets,
+                                               GList *req_biotypes,
                                                gboolean dna_requested,
                                                gint features_start, gint features_end,
                                                gboolean terminate)
@@ -4942,7 +4953,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
       //      if (req_featuresets)
       // need to request all if none specified
       {
-        req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, NULL) ;
+        req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, req_biotypes, NULL) ;
         zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_FEATURESETS, req_any, on_fail) ;
 
         if(req_styles || styles_file)
@@ -5908,7 +5919,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
             req_end = tmp;
           }
 
-        zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, NULL,
+        zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, NULL, NULL,
                              req_start, req_end,
                              SOURCE_GROUP_DELAYED, TRUE, FALSE) ;        /* don't terminate, need to keep alive for blixem */
 

@@ -465,7 +465,7 @@ void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServer
 void zmapViewSessionFreeServer(ZMapViewSessionServer session_data) ;
 
 ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
-					 ZMapFeatureBlock block_orig, GList *req_featuresets,
+					 ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
 					 gpointer server, /* ZMapConfigSource */
 					 int req_start, int req__end,
 					 gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
@@ -493,7 +493,7 @@ gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list) ;
 void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
 void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list) ;
 
-void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
+void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
 			  ZMapConfigSource server,
 			  int features_start, int features_end,
 			  gboolean group, gboolean make_new_connection, gboolean terminate) ;

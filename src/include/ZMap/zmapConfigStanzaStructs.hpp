@@ -38,6 +38,7 @@ typedef struct _ZMapConfigSourceStruct
   char *url ;
   char *version ;
   char *featuresets; //, *navigatorsets ;
+  char *biotypes;
 //  char *styles_list;  not used,. pointless
   char *stylesfile ;
   char *format ;

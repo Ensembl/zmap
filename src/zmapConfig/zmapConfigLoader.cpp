@@ -1946,6 +1946,8 @@ static void free_source_list_item(gpointer list_data, gpointer unused_data)
     g_free(source_to_free->version);
   if(source_to_free->featuresets)
     g_free(source_to_free->featuresets);
+  if(source_to_free->biotypes)
+    g_free(source_to_free->biotypes);
   //  if(source_to_free->navigatorsets)
   //    g_free(source_to_free->navigatorsets);
   if(source_to_free->stylesfile)
@@ -1967,6 +1969,7 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(const char **stanza_na
     { ZMAPSTANZA_SOURCE_TIMEOUT,       G_TYPE_INT,     source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_VERSION,       G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_FEATURESETS,   G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_BIOTYPES,      G_TYPE_STRING,  source_set_property, FALSE },
     //    { ZMAPSTANZA_SOURCE_STYLES,        G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_REQSTYLES,     G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_STYLESFILE,    G_TYPE_STRING,  source_set_property, FALSE },
@@ -2008,6 +2011,8 @@ gpointer parent_data, GValue *property_value)
         str_ptr = &(config_source->version) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_FEATURESETS) == 0)
         str_ptr = &(config_source->featuresets) ;
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_BIOTYPES) == 0)
+        str_ptr = &(config_source->biotypes) ;
       //      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_STYLES) == 0)
       //str_ptr = &(config_source->styles_list) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_REQSTYLES) == 0)

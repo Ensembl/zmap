@@ -173,6 +173,9 @@ typedef struct ZMapServerReqFeatureSetsStructType
 							       these are columns so maybe we
 							       should call them that. */
 
+  GList *biotypes_inout ;				    /* List of prespecified biotypes or
+							       NULL to get all available biotypes */
+
   GList *sources ;					    /* Optional list of sources, these
 							       _must_ have a parent feature_set in
 							       feature_sets_inout, if NULL then

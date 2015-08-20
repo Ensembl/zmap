@@ -1295,7 +1295,7 @@ static void importFileCB(gpointer cb_data)
             {
               server = (ZMapConfigSource) servers->data ;
 
-              if (zMapViewRequestServer(view, NULL, req_featuresets, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
+              if (zMapViewRequestServer(view, NULL, req_featuresets, NULL, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
                 zMapViewShowLoadStatus(view);
               else
                 zMapWarning("could not request %s",file_txt);
