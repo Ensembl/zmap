@@ -478,62 +478,46 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  GList *vector_list = NULL ;
+  Vector *features = NULL;
 
   if (server->req_featuresets)
     {
       /* Get features for each requested featureset */
+      features = Vector_new();
       GList *item = server->req_featuresets;
+
       for ( ; item ; item = item->next)
         {
           const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *features = Slice_getAllSimpleFeatures(server->slice, (char*)featureset, NULL, NULL);
-
-          if (features)
-            vector_list = g_list_append(vector_list, features) ;
+          Vector *new_features = Slice_getAllSimpleFeatures(server->slice, (char*)featureset, NULL, NULL);
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
         }
     }
   else
     {
       /* No specific featuresets requested, so get everything */
-      Vector *features = Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
-
-      if (features)
-        vector_list = g_list_append(vector_list, features) ;
+      features = Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
     }
 
-  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+  const int num_element = features ? Vector_getNumElement(features) : 0;
+  int i = 0 ;
+
+  for (i = 0; i < num_element && result; ++i)
     {
-      Vector *features = (Vector*)(vector_item->data) ;
-      const int num_element = features ? Vector_getNumElement(features) : 0;
-      int i = 0 ;
+      SimpleFeature *sf = (SimpleFeature*)Vector_getElementAt(features,i) ;
+      SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,  (char *)(server->coord_system), NULL ,NULL) ;
 
-      for (i = 0; i < num_element && result; ++i)
-        {
-          SimpleFeature *sf = (SimpleFeature*)Vector_getElementAt(features,i) ;
-          SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,  (char *)(server->coord_system), NULL ,NULL) ;
+      if (rsf)
+        makeFeatureSimple(server, rsf, get_features_data, feature_block) ;
+      else
+        printf("Failed to map feature '%s'\n", SimpleFeature_getDisplayLabel(sf));
 
-          if (rsf)
-            makeFeatureSimple(server, rsf, get_features_data, feature_block) ;
-          else
-            printf("Failed to map feature '%s'\n", SimpleFeature_getDisplayLabel(sf));
-
-//          Object_decRefCount(rsf);
-//          free(rsf);
-//          Object_decRefCount(sf);
-//          free(sf);
-        }
+      //          Object_decRefCount(rsf);
+      //          free(rsf);
+      //          Object_decRefCount(sf);
+      //          free(sf);
     }
-
-
-//  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-//    {
-//      Vector *features = (Vector*)(vector_item->data) ;
-//      Vector_setFreeFunc(features, NULL) ;
-//      Vector_free(features) ;
-//    }
-
-  g_list_free(vector_list) ;
 
   return result;
 }
@@ -544,61 +528,45 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  GList *vector_list = NULL ;
+  Vector *features = NULL;
   
   if (server->req_featuresets)
     {
       /* Get features for each requested featureset */
+      features = Vector_new();
       GList *item = server->req_featuresets;
       for ( ; item ; item = item->next)
         {
           const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *features = Slice_getAllDNAAlignFeatures(server->slice, (char*)featureset, NULL, NULL, NULL);
-
-          if (features)
-            vector_list = g_list_append(vector_list, features) ;
+          Vector *new_features = Slice_getAllDNAAlignFeatures(server->slice, (char*)featureset, NULL, NULL, NULL);
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
         }
     }
   else
     {
       /* No specific featuresets requested, so get everything */
-      Vector *features = Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-
-      if (features)
-        vector_list = g_list_append(vector_list, features) ;
+      features = Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
     }
 
-  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+  const int num_element = features ? Vector_getNumElement(features) : 0;
+  int i = 0 ;
+
+  for (i = 0; i < num_element && result; ++i)
     {
-      Vector *features = (Vector*)(vector_item->data) ;
-      const int num_element = features ? Vector_getNumElement(features) : 0;
-      int i = 0 ;
+      DNAAlignFeature *sf = (DNAAlignFeature*)Vector_getElementAt(features,i);
+      DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
-      for (i = 0; i < num_element && result; ++i)
-        {
-          DNAAlignFeature *sf = (DNAAlignFeature*)Vector_getElementAt(features,i);
-          DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
+      if (rsf)
+        makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block) ;
+      else
+        printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
 
-          if (rsf)
-            makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block) ;
-          else
-            printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
-
-//      Object_decRefCount(rsf);
-//      free(rsf);
-//        Object_decRefCount(sf);
-//        free(sf);
-        }
+      //      Object_decRefCount(rsf);
+      //      free(rsf);
+      //        Object_decRefCount(sf);
+      //        free(sf);
     }
-
-//  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-//    {
-//      Vector *features = (Vector*)(vector_item->data) ;
-//      Vector_setFreeFunc(features, NULL);
-//      Vector_free(features) ;
-//    }
-
-  g_list_free(vector_list) ;
 
   return result;
 }
@@ -609,61 +577,45 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  GList *vector_list = NULL ;
+  Vector *features = NULL;
 
   if (server->req_featuresets)
     {
       /* Get features for each requested featureset */
+      features = Vector_new();
       GList *item = server->req_featuresets;
       for ( ; item ; item = item->next)
         {
           const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *features = Slice_getAllProteinAlignFeatures(server->slice, (char*)featureset, NULL, NULL, NULL);
-
-          if (features)
-            vector_list = g_list_append(vector_list, features) ;
+          Vector *new_features = Slice_getAllProteinAlignFeatures(server->slice, (char*)featureset, NULL, NULL, NULL);
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
         }
     }
   else
     {
       /* No specific featuresets requested, so get everything */
-      Vector *features = Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-
-      if (features)
-        vector_list = g_list_append(vector_list, features) ;
+      features = Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
     }
 
-  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+  const int num_element = features ? Vector_getNumElement(features) : 0;
+  int i = 0 ;
+
+  for (i = 0; i < num_element && result; ++i)
     {
-      Vector *features = (Vector*)(vector_item->data) ;
-      const int num_element = features ? Vector_getNumElement(features) : 0;
-      int i = 0 ;
+      DNAPepAlignFeature *sf = (DNAPepAlignFeature*)Vector_getElementAt(features,i);
+      DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
-      for (i = 0; i < num_element && result; ++i)
-        {
-          DNAPepAlignFeature *sf = (DNAPepAlignFeature*)Vector_getElementAt(features,i);
-          DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
+      if (rsf)
+        makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block) ;
+      else
+        printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
 
-          if (rsf)
-            makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block) ;
-          else
-            printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
-
-//      Object_decRefCount(rsf);
-//      free(rsf);
-//        Object_decRefCount(sf);
-//        free(sf);
-        }
+      //      Object_decRefCount(rsf);
+      //      free(rsf);
+      //        Object_decRefCount(sf);
+      //        free(sf);
     }
-
-//  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-//    {
-//      Vector *features = (Vector*)(vector_item->data) ;
-//      Vector_setFreeFunc(features, NULL);
-//      Vector_free(features) ;
-//    }
-
-  g_list_free(vector_list) ;
 
   return result;
 }
@@ -675,61 +627,45 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  GList *vector_list = NULL ;
+  Vector *features = NULL;
 
   if (server->req_featuresets)
     {
       /* Get features for each requested featureset */
+      features = Vector_new();
       GList *item = server->req_featuresets;
       for ( ; item ; item = item->next)
         {
           const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *features = Slice_getAllRepeatFeatures(server->slice, (char*)featureset, NULL, NULL);
-
-          if (features)
-            vector_list = g_list_append(vector_list, features) ;
+          Vector *new_features = Slice_getAllRepeatFeatures(server->slice, (char*)featureset, NULL, NULL);
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
         }
     }
   else
     {
       /* No specific featuresets requested, so get everything */
-      Vector *features = Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
-
-      if (features)
-        vector_list = g_list_append(vector_list, features) ;
+      features = Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
     }
 
-  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+  const int num_element = features ? Vector_getNumElement(features) : 0;
+  int i = 0 ;
+
+  for (i = 0; i < num_element && result; ++i)
     {
-      Vector *features = (Vector*)(vector_item->data) ;
-      const int num_element = features ? Vector_getNumElement(features) : 0;
-      int i = 0 ;
+      RepeatFeature *sf = (RepeatFeature*)Vector_getElementAt(features,i);
+      RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
-      for (i = 0; i < num_element && result; ++i)
-        {
-          RepeatFeature *sf = (RepeatFeature*)Vector_getElementAt(features,i);
-          RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
+      if (rsf)
+        makeFeatureRepeat(server, rsf, get_features_data, feature_block) ;
+      else
+        printf("Failed to map feature '%s'\n", RepeatConsensus_getName(RepeatFeature_getConsensus(sf)));
 
-          if (rsf)
-            makeFeatureRepeat(server, rsf, get_features_data, feature_block) ;
-          else
-            printf("Failed to map feature '%s'\n", RepeatConsensus_getName(RepeatFeature_getConsensus(sf)));
-
-//      Object_decRefCount(rsf);
-//      free(rsf);
-//        Object_decRefCount(sf);
-//        free(sf);
-        }
+      //      Object_decRefCount(rsf);
+      //      free(rsf);
+      //        Object_decRefCount(sf);
+      //        free(sf);
     }
-
-//  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-//    {
-//      Vector *features = (Vector*)(vector_item->data) ;
-//      Vector_setFreeFunc(features, NULL);
-//      Vector_free(features) ;
-//    }
-
-  g_list_free(vector_list) ;
 
   return result;
 }
@@ -741,61 +677,45 @@ static gboolean getAllTranscripts(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  GList *vector_list = NULL ;
+  Vector *features = NULL;
 
   if (server->req_featuresets)
     {
       /* Get features for each requested featureset */
+      features = Vector_new();
       GList *item = server->req_featuresets;
       for ( ; item ; item = item->next)
         {
           const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *features = Slice_getAllTranscripts(server->slice, 1, (char*)featureset, NULL) ;
-
-          if (features)
-            vector_list = g_list_append(vector_list, features) ;
+          Vector *new_features = Slice_getAllTranscripts(server->slice, 1, (char*)featureset, NULL) ;
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
         }
     }
   else
     {
       /* No specific featuresets requested, so get everything */
-      Vector *features = Slice_getAllTranscripts(server->slice, 1, NULL, NULL) ;
-
-      if (features)
-        vector_list = g_list_append(vector_list, features) ;
+      features = Slice_getAllTranscripts(server->slice, 1, NULL, NULL) ;
     }
 
-  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+  const int num_element = features ? Vector_getNumElement(features) : 0;
+  int i = 0 ;
+
+  for (i = 0; i < num_element && result; ++i)
     {
-      Vector *features = (Vector*)(vector_item->data) ;
-      const int num_element = features ? Vector_getNumElement(features) : 0;
-      int i = 0 ;
+      Transcript *sf = (Transcript*)Vector_getElementAt(features,i);
+      Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
-      for (i = 0; i < num_element && result; ++i)
-        {
-          Transcript *sf = (Transcript*)Vector_getElementAt(features,i);
-          Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
+      if (rsf)
+        makeFeatureTranscript(server, rsf, get_features_data, feature_block) ;
+      else
+        printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
 
-          if (rsf)
-            makeFeatureTranscript(server, rsf, get_features_data, feature_block) ;
-          else
-            printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
-
-//      Object_decRefCount(rsf);
-//      free(rsf);
-//        Object_decRefCount(sf);
-//        free(sf);
-        }
+      //      Object_decRefCount(rsf);
+      //      free(rsf);
+      //        Object_decRefCount(sf);
+      //        free(sf);
     }
-
-//  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-//    {
-//      Vector *features = (Vector*)(vector_item->data) ;
-//      Vector_setFreeFunc(features, NULL);
-//      Vector_free(features) ;
-//    }
-
-  g_list_free(vector_list) ;
 
   return result;
 }
@@ -807,61 +727,45 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  GList *vector_list = NULL ;
+  Vector *features = NULL;
 
   if (server->req_featuresets)
     {
       /* Get features for each requested featureset */
+      features = Vector_new();
       GList *item = server->req_featuresets;
       for ( ; item ; item = item->next)
         {
           const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *features = Slice_getAllPredictionTranscripts(server->slice, (char*)featureset, 1, NULL) ;
-
-          if (features)
-            vector_list = g_list_append(vector_list, features) ;
+          Vector *new_features = Slice_getAllPredictionTranscripts(server->slice, (char*)featureset, 1, NULL) ;
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
         }
     }
   else
     {
       /* No specific featuresets requested, so get everything */
-      Vector *features = Slice_getAllPredictionTranscripts(server->slice, NULL, 1, NULL) ;
-
-      if (features)
-        vector_list = g_list_append(vector_list, features) ;
+      features = Slice_getAllPredictionTranscripts(server->slice, NULL, 1, NULL) ;
     }
 
-  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+  const int num_element = Vector_getNumElement(features) ;
+  int i = 0 ;
+
+  for (i = 0; i < num_element && result; ++i)
     {
-      Vector *features = (Vector*)(vector_item->data) ;
-      const int num_element = Vector_getNumElement(features) ;
-      int i = 0 ;
+      PredictionTranscript *sf = (PredictionTranscript*)Vector_getElementAt(features,i);
+      PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
-      for (i = 0; i < num_element && result; ++i)
-        {
-          PredictionTranscript *sf = (PredictionTranscript*)Vector_getElementAt(features,i);
-          PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
+      if (rsf)
+        makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block) ;
+      else
+        printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
 
-          if (rsf)
-            makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block) ;
-          else
-            printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
-
-//      Object_decRefCount(rsf);
-//      free(rsf);
-//        Object_decRefCount(sf);
-//        free(sf);
-        }
+      //      Object_decRefCount(rsf);
+      //      free(rsf);
+      //        Object_decRefCount(sf);
+      //        free(sf);
     }
-
-//  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-//    {
-//      Vector *features = (Vector*)(vector_item->data) ;
-//      Vector_setFreeFunc(features, NULL);
-//      Vector_free(features) ;
-//    }
-
-  g_list_free(vector_list) ;
 
   return result;
 }
@@ -874,61 +778,45 @@ static gboolean getAllGenes(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  GList *vector_list = NULL ;
+  Vector *features = NULL;
 
   if (server->req_featuresets)
     {
       /* Get features for each requested featureset */
+      features = Vector_new();
       GList *item = server->req_featuresets;
       for ( ; item ; item = item->next)
         {
           const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *features = Slice_getAllGenes(server->slice, (char*)featureset, NULL, 1, NULL, NULL) ;
-
-          if (features)
-            vector_list = g_list_append(vector_list, features) ;
+          Vector *new_features = Slice_getAllGenes(server->slice, (char*)featureset, NULL, 1, NULL, NULL) ;
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
         }
     }
   else
     {
       /* No specific featuresets requested, so get everything */
-      Vector *features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
-
-      if (features)
-        vector_list = g_list_append(vector_list, features) ;
+      features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
     }
 
-  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
+  const int num_element = features ? Vector_getNumElement(features) : 0;
+  int i = 0 ;
+
+  for (i = 0; i < num_element && result; ++i)
     {
-      Vector *features = (Vector*)(vector_item->data) ;
-      const int num_element = features ? Vector_getNumElement(features) : 0;
-      int i = 0 ;
+      Gene *sf = Vector_getElementAt(features,i);
+      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
-      for (i = 0; i < num_element && result; ++i)
-        {
-          Gene *sf = Vector_getElementAt(features,i);
-          Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      if (rsf)
+        makeFeatureGene(server, rsf, get_features_data, feature_block) ;
+      else
+        printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
 
-          if (rsf)
-            makeFeatureGene(server, rsf, get_features_data, feature_block) ;
-          else
-            printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
-
-//      Object_decRefCount(rsf);
-//      free(rsf);
-//        Object_decRefCount(sf);
-//        free(sf);
-        }
+      //      Object_decRefCount(rsf);
+      //      free(rsf);
+      //        Object_decRefCount(sf);
+      //        free(sf);
     }
-
-//  for (GList *vector_item = vector_list; vector_item; vector_item = vector_item->next)
-//    {
-//      Vector *features = (Vector*)(vector_item->data) ;
-//      Vector_setFreeFunc(features, NULL);
-//      Vector_free(features) ;
-//    }
-
-  g_list_free(vector_list) ;
 
   return result;
 }
