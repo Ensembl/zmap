@@ -899,11 +899,23 @@ static gboolean setBlixemScope(ZMapBlixemData blixem_data)
       /* Set min/max range for blixem scope. */
       if (is_mark && blixem_data->scope_from_mark)
         {
+          /* Just use the mark */
           blixem_data->scope_min = blixem_data->mark_start ;
           blixem_data->scope_max = blixem_data->mark_end ;
         }
+      else if (blixem_data->position < blixem_data->window_start
+               || blixem_data->position > blixem_data->window_end)
+        {
+          /* We can't set the range to be centred on the given position because the position is not in
+           * the visible window and this would be confusing for users. Instead, set the position
+           * to the centre of the visible region. */
+          blixem_data->position = ((blixem_data->window_end - blixem_data->window_start) / 2) + blixem_data->window_start ;
+          blixem_data->scope_min = blixem_data->position - scope_range ;
+          blixem_data->scope_max = blixem_data->position + scope_range ;
+        }
       else
         {
+          /* Set the scope to be centred on the position */
           blixem_data->scope_min = blixem_data->position - scope_range ;
           blixem_data->scope_max = blixem_data->position + scope_range ;
         }
