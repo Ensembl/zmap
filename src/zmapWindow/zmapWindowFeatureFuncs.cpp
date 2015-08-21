@@ -151,9 +151,10 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
       /* Work out where we are.... */
       if (feature && y_pos == 0.0)
-                y_pos = (double)((feature->x1 + feature->x2) / 2) ;
-        zmapWindowWorld2SeqCoords(window, (item ? item : focus_column), 0, y_pos, 0,0, NULL, &y1,NULL) ;
-        align->cursor_position = y1 ;
+        y_pos = (double)((feature->x1 + feature->x2) / 2) ;
+
+      zmapWindowWorld2SeqCoords(window, (item ? item : focus_column), 0, y_pos, 0,0, NULL, &y1,NULL) ;
+      align->cursor_position = y1 ;
 
 
       align->window_start = window_start ;
