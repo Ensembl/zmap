@@ -419,6 +419,7 @@
 #define ZMAPSTANZA_SOURCE_TIMEOUT        "timeout"
 #define ZMAPSTANZA_SOURCE_VERSION        "version"
 #define ZMAPSTANZA_SOURCE_FEATURESETS    "featuresets"
+#define ZMAPSTANZA_SOURCE_BIOTYPES       "biotypes"
 //#define ZMAPSTANZA_SOURCE_STYLES         "styles"
 #define ZMAPSTANZA_SOURCE_REQSTYLES      "request-styles"
 #define ZMAPSTANZA_SOURCE_STYLESFILE     "stylesfile"

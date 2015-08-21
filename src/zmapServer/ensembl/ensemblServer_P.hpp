@@ -75,6 +75,7 @@ typedef struct _EnsemblServerStruct
 
   gboolean req_featuresets_only ;                           /* if true, only load req fsets */
   GList *req_featuresets ;                                  /* requested featuresets */
+  GList *req_biotypes ;                                     /* requested biotypes */
   GHashTable *source_2_sourcedata ;
   GHashTable *featureset_2_column ;
 
