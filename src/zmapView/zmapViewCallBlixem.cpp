@@ -2121,31 +2121,6 @@ static gboolean check_edited_values(ZMapGuiNotebookAny note_any, const char *ent
 
   if (!text || (text && !*text))
     allowed = FALSE;
-  else if (note_any->name == g_quark_from_string("Launch script"))
-    {
-      if (!(allowed = zMapFileAccess(text, "x")))
-        zMapWarning("%s is not executable.", text);
-      allowed = TRUE;                /* just warn for now */
-    }
-  else if (note_any->name == g_quark_from_string("Config File"))
-    {
-      if (!(allowed = zMapFileAccess(text, "r")))
-        zMapWarning("%s is not readable.", text);
-      allowed = TRUE;                /* just warn for now */
-    }
-  else if (note_any->name == g_quark_from_string("Port"))
-    {
-      int tmp = 0;
-      if (zMapStr2Int(text, &tmp))
-        {
-          int min_val = 1024, max_val = 65535;
-          if (tmp < min_val || tmp > max_val)
-            {
-              allowed = FALSE;
-              zMapWarning("Port should be in range of %d to %d", min_val, max_val);
-            }
-        }
-    }
   else
     allowed = TRUE;
 
@@ -2245,6 +2220,11 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
 
 static void readChapter(ZMapGuiNotebookChapter chapter)
 {
+  /* This result flag is set to false if the user entered invalid values but is currently not
+   * used other than to issue a warning. Ideally we should not save the settings but leave 
+   * the dialog open if a value is invalid. */
+  gboolean result = TRUE ;
+
   ZMapGuiNotebookPage page = NULL ;
   gboolean bool_value = FALSE ;
   int int_value = 0 ;
@@ -2304,15 +2284,13 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
 
   if ((page = zMapGUINotebookFindPage(chapter, BLIX_NB_PAGE_PFETCH)))
     {
-
-      /* ADD VALIDATION.... */
-
       if (zMapGUINotebookGetTagValue(page, "Host network id", "string", &string_value))
         {
           if (string_value && *string_value &&
               (!blixem_config_curr_G.netid ||
                strcmp(string_value, blixem_config_curr_G.netid) != 0))
             {
+              /* Add validation ... */
               g_free(blixem_config_curr_G.netid) ;
 
               blixem_config_curr_G.netid = g_strdup(string_value) ;
@@ -2324,8 +2302,19 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
         {
           if (int_value != blixem_config_curr_G.port)
             {
-              blixem_config_curr_G.port = int_value ;
-              blixem_config_curr_G.is_set.port = TRUE ;
+              /* Check it's in the allowed range */
+              static int min_val = 1024, max_val = 65535;
+
+              if (int_value < min_val || int_value > max_val)
+                {
+                  result = FALSE;
+                  zMapWarning("Port should be in range of %d to %d", min_val, max_val);
+                }
+              else
+                {
+                  blixem_config_curr_G.port = int_value ;
+                  blixem_config_curr_G.is_set.port = TRUE ;
+                }
             }
         }
 
@@ -2333,15 +2322,17 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
 
   if ((page = zMapGUINotebookFindPage(chapter, BLIX_NB_PAGE_ADVANCED)))
     {
-
-      /* ADD VALIDATION.... */
-
       if (zMapGUINotebookGetTagValue(page, "Config File", "string", &string_value))
         {
           if (string_value && *string_value &&
               (!blixem_config_curr_G.config_file ||
                strcmp(string_value, blixem_config_curr_G.config_file) != 0))
             {
+              result = zMapFileAccess(string_value, "r") ;
+
+              if (!result)
+                zMapWarning("Blixem Config File '%s' is not readable.", string_value);
+
               g_free(blixem_config_curr_G.config_file) ;
 
               blixem_config_curr_G.config_file = g_strdup(string_value) ;
@@ -2355,6 +2346,11 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
               (!blixem_config_curr_G.script ||
                strcmp(string_value, blixem_config_curr_G.script) != 0))
             {
+              result = zMapFileAccess(string_value, "x") ;
+              
+              if (!result)
+                zMapWarning("Blixem Launch Script '%s' is not executable.", string_value);
+
               g_free(blixem_config_curr_G.script) ;
 
               blixem_config_curr_G.script = g_strdup(string_value) ;
