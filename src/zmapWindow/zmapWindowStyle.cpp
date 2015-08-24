@@ -159,24 +159,36 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
   gtk_box_pack_start(GTK_BOX(top_vbox), frame, TRUE, TRUE, 0) ;
 
-  hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
-  gtk_container_add(GTK_CONTAINER(frame), hbox) ;
+  vbox = gtk_vbox_new(FALSE, 0) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(vbox), NULL);
+  gtk_container_add(GTK_CONTAINER(frame), vbox) ;
 
   /* The name of the featureset being edited (not editable) */
-  my_data->featureset_name = label = gtk_label_new("Featureset: ") ;
+  hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
+  gtk_container_add(GTK_CONTAINER(vbox), hbox) ;
+
+  label = gtk_label_new("Featureset: ") ;
   gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
 
   my_data->featureset_name = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), g_quark_to_string(my_data->menu_data->feature_set->original_id)) ;
   gtk_widget_set_sensitive(entry, FALSE) ;
-  gtk_box_pack_start(GTK_BOX(hbox), entry, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), entry, TRUE, TRUE, 0) ;
 
   /* The name of the style to edit (editable) */
+  hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
+  gtk_container_add(GTK_CONTAINER(vbox), hbox) ;
+
+  label = gtk_label_new("Style name: ") ;
+  gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+
   my_data->style_name = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), g_quark_to_string(default_style_name)) ;
-  gtk_box_pack_start(GTK_BOX(hbox), entry, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), entry, TRUE, TRUE, 0) ;
 
 
   /* Make colour buttons. */
