@@ -56,16 +56,19 @@
 
 typedef struct
 {
-  ItemMenuCBData menu_data;                /* which featureset etc */
+  ItemMenuCBData menu_data;               /* which featureset etc */
   ZMapFeatureTypeStyleStruct save;        /* copy of original used for Revert only */
-  gboolean changed;                                /* if we have applied any changes */
-  gboolean override;                        /* if we should make a child style */
-  gboolean created;                                /* if we made a child style */
+  gboolean changed;                       /* if we have applied any changes */
+  gboolean created_child;                 /* true if we've already created a new child style with
+                                           * the name given in the style_name widget  */
 
-  gboolean refresh;                                /* clicked on another column */
+  gboolean refresh;                       /* clicked on another column */
 
   GtkWidget *toplevel ;
-  GtkWidget *featureset_name;
+  GtkWidget *featureset_name;             /* Name of the featureset whose style is being
+                                           * edited/created */
+  GtkWidget *style_name;                  /* User-editable style name for the new/existing style
+                                           * to edit */
 
   GtkWidget *fill_widget ;
   GtkWidget *border_widget ;
@@ -101,10 +104,11 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   StyleChange my_data = g_new0(StyleChangeStruct,1);
   /* theoretically we could have more than one dialog active. How confusing that would be */
   ZMapFeatureTypeStyle style;
-  const char *text;
-  GtkWidget *toplevel, *top_vbox, *vbox, *hbox, *frame, *button, *label;
+  const char *text = NULL;
+  GtkWidget *toplevel, *top_vbox, *vbox, *hbox, *frame, *button, *label, *entry;
   GdkColor colour = {0} ;
   GdkColor *fill_col = &colour, *border_col = &colour;
+  GQuark default_style_name = 0;
 
   if(zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature))
     return;
@@ -112,19 +116,6 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   my_data->menu_data = menu_data;
   style = menu_data->feature_set->style;
   memcpy(& my_data->save, style,sizeof (ZMapFeatureTypeStyleStruct));
-
-  /* when to override a style? (create a child)
-   * - if it has not been overridden already
-   * - if it does not have the same name as the featureset
-   * - if it is a default style
-   * NOTE for otterlace we do not edit styles that are not default/ spec'd in styles.ini
-   * for standalone we want to be able to edit the styles file here
-   * NOTE it's conceivable that we could have a default style and featureset of the same name
-   * so we may have to patch this in applyCB()
-   */
-  if(style->is_default || (!style->overridden && style->unique_id != menu_data->feature_set->unique_id))
-    my_data->override = TRUE;
-
 
   /* set up the top level window */
   my_data->toplevel = toplevel = zMapGUIToplevelNew(NULL, "Edit Style") ;
@@ -139,7 +130,19 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 
   /* Add ptr so parent knows about us */
   menu_data->window->style_window = (gpointer) my_data ;
-
+  if (style->unique_id == menu_data->feature_set->unique_id)
+    {
+      /* The current style name is the same as the featureset name. This means that this
+       * featureset probably "owns" this style, so by default we want to overwrite it */
+      default_style_name = style->unique_id;
+    }
+  else
+    {
+      /* The current style name is different to the featureset name. This means that this
+       * featureset probably DOESN'T own the style and therefore we want to create a new child
+       * style named after the featureset name */
+      default_style_name = menu_data->feature_set->original_id;
+    }
 
   top_vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), top_vbox) ;
@@ -149,7 +152,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   //      gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
 
 
-  text = "Featureset " ;
+  text = "Featureset" ;
   frame = gtk_frame_new(text) ;
   gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -159,9 +162,10 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
   gtk_container_add(GTK_CONTAINER(frame), hbox) ;
 
-  my_data->featureset_name = label = gtk_label_new(g_quark_to_string(my_data->menu_data->feature_set->original_id)) ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
+  my_data->style_name = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), g_quark_to_string(default_style_name)) ;
+  //gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(hbox), entry, FALSE, TRUE, 0) ;
 
 
   /* Make colour buttons. */
@@ -304,7 +308,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 
 static void clear_style(StyleChange my_data)
 {
-  if(my_data->created)        /* just remove the child and replace w/ the parent */
+  if(my_data->created_child) /* just remove the child and replace w/ the parent */
     {
       GHashTable *styles = my_data->menu_data->window->context_map->styles;
       ZMapFeatureTypeStyle style = my_data->menu_data->feature_set->style;
@@ -313,7 +317,7 @@ static void clear_style(StyleChange my_data)
       g_hash_table_remove(styles,GUINT_TO_POINTER(my_data->menu_data->feature_set->style->unique_id));
       zMapStyleDestroy(style);
 
-      my_data->created = FALSE;
+      my_data->created_child = FALSE;
       my_data->changed = FALSE;
     }
 }
@@ -345,16 +349,9 @@ gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMa
 
   memcpy(& my_data->save, style,sizeof (ZMapFeatureTypeStyleStruct));
 
-  //        clear_style(my_data);
-  my_data->created = FALSE;        /* different style, override only created on apply */
+  my_data->created_child = FALSE;
 
-  /* see function above for comment re override rules */
-  my_data->override = FALSE;
-
-  if(style->is_default || (!style->overridden && style->unique_id != my_data->menu_data->feature_set->unique_id))
-    my_data->override = TRUE;
-
-  gtk_label_set_text((GtkLabel *) my_data->featureset_name, g_quark_to_string(feature_set->original_id));
+  gtk_entry_set_text((GtkEntry *) my_data->style_name, g_quark_to_string(feature_set->original_id));
 
   /* Update the colour buttons. */
   zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
@@ -392,7 +389,7 @@ static void revertCB(GtkWidget *widget, gpointer cb_data)
   if(!my_data->changed)
     return;
 
-  if(my_data->created)        /* just remove the child and replace w/ the parent */
+  if(my_data->created_child)   /* just remove the child and replace w/ the parent */
     {
       GHashTable *styles = my_data->menu_data->window->context_map->styles;
       style = my_data->menu_data->feature_set->style;
@@ -431,25 +428,19 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
   ZMapFeatureSet feature_set = my_data->menu_data->feature_set;
   ZMapFeatureTypeStyle style = feature_set->style;
   GHashTable *styles = my_data->menu_data->window->context_map->styles;
-  char *name, *description;
 
-  /* make a new child style? */
-  if(my_data->override && !my_data->created)
+  /* We make a new child style if the new style name is different to the existing one
+   * and if we haven't already created it. */
+  if (style->unique_id != my_data->menu_data->feature_set->unique_id && !my_data->created_child)
     {
       ZMapFeatureTypeStyle parent = style;
       ZMapFeatureTypeStyle tmp_style;
+      char *name = NULL;
 
-      /* make new style with same name as the featureset and merge in the parent */
-      name = (char *) g_quark_to_string(feature_set->original_id);
-      name = g_strdup_printf("X_%s",name);
+      /* make new style with the specified name and merge in the parent */
+      name = g_strdup(gtk_entry_get_text(GTK_ENTRY(my_data->style_name))) ;
 
-      if(style->unique_id == feature_set->unique_id)
-        {
-          name = g_strdup_printf("%s_",name);
-        }
-      description = name;
-
-      style = zMapStyleCreate(name, description);
+      style = zMapStyleCreate(name, name);
 
       /* merge is written upside down
        * we have to copy the parent and merge the child onto it
@@ -474,7 +465,9 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
           return;
         }
 
-      my_data->created = TRUE;
+      my_data->created_child = TRUE;
+
+      g_free(name) ;
     }
 
   /* apply the chosen colours etc */
