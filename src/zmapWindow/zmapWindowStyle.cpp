@@ -449,7 +449,7 @@ static void revertCB(GtkWidget *widget, gpointer cb_data)
 
   /* update the column */
   if (style)
-    zmapWindowMenuSetStyleCB(style->unique_id, my_data->menu_data);
+    zmapWindowFeaturesetSetStyle(style->unique_id, menu_data->feature_set, menu_data->context_map, menu_data->window);
 
   /* update this dialog */
   zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature);
@@ -515,7 +515,7 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
    * but this will work for all cases and means no need to write more code
    * we do this _once_ at user/ mouse click speed
    */
-  zmapWindowMenuSetStyleCB(style->unique_id, my_data->menu_data);
+  zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, my_data->menu_data->context_map, my_data->menu_data->window);
 
   my_data->applied_changes = TRUE;
 }
@@ -575,7 +575,7 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
-
+/* Set the properties in the given style from the user-selected options from the dialog */
 static void setParametersInStyle(StyleChange my_data, ZMapFeatureTypeStyle style)
 {
   char *colour_spec;
@@ -599,21 +599,20 @@ static void setParametersInStyle(StyleChange my_data, ZMapFeatureTypeStyle style
 }
 
 
-
-
-
-void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
+/* Sets the style in the given feature_set to the style given by style_id  */
+void zmapWindowFeaturesetSetStyle(GQuark style_id, 
+                                  ZMapFeatureSet feature_set,
+                                  ZMapFeatureContextMap context_map,
+                                  ZMapWindow window)
 {
-  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapFeatureSet feature_set = menu_data->feature_set;
   ZMapFeatureTypeStyle style;
   FooCanvasItem *set_item, *canvas_item;
   int set_strand, set_frame;
   ID2Canvas id2c;
   int ok = FALSE;
 
+  style = (ZMapFeatureTypeStyle)g_hash_table_lookup( context_map->styles, GUINT_TO_POINTER(style_id));
 
-  style = (ZMapFeatureTypeStyle)g_hash_table_lookup( menu_data->context_map->styles, GUINT_TO_POINTER(menu_item_id));
   if(style)
     {
       ZMapFeatureColumn column;
@@ -622,16 +621,16 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
       GList *c2s;
 
       /* now tweak featureset & column styles in various places */
-      s2s = (ZMapFeatureSource)g_hash_table_lookup(menu_data->context_map->source_2_sourcedata,GUINT_TO_POINTER(feature_set->unique_id));
-      f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(menu_data->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
+      s2s = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata,GUINT_TO_POINTER(feature_set->unique_id));
+      f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
       if(s2s && f2c)
         {
           s2s->style_id = style->unique_id;
-          column = (ZMapFeatureColumn)g_hash_table_lookup(menu_data->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+          column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(f2c->column_id));
           if(column)
             {
 
-              c2s = (GList *)g_hash_table_lookup(menu_data->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
+              c2s = (GList *)g_hash_table_lookup(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
               if(c2s)
                 {
                   g_list_free(column->style_table);
@@ -650,7 +649,7 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
                   ok = TRUE;
                 }
 
-              zMapWindowGetSetColumnStyle(menu_data->window, feature_set->unique_id);
+              zMapWindowGetSetColumnStyle(window, feature_set->unique_id);
             }
         }
     }
@@ -691,14 +690,14 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
 
           /* does the set appear in a column ? */
           /* set item is a ContainerFeatureset */
-          set_item = zmapWindowFToIFindSetItem(menu_data->window,
-                                               menu_data->window->context_to_item,
-                                               menu_data->feature_set, strand, frame);
+          set_item = zmapWindowFToIFindSetItem(window,
+                                               window->context_to_item,
+                                               feature_set, strand, frame);
           if(!set_item)
             continue;
 
           /* find the canvas item (CanvasFeatureset) containing a feature in this set */
-          id2c = zmapWindowFToIFindID2CFull(menu_data->window, menu_data->window->context_to_item,
+          id2c = zmapWindowFToIFindID2CFull(window, window->context_to_item,
                                             feature_set->parent->parent->unique_id,
                                             feature_set->parent->unique_id,
                                             feature_set->unique_id,
@@ -714,7 +713,7 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
 
 
           /* look it up again to delete it :-( */
-          zmapWindowFToIRemoveSet(menu_data->window->context_to_item,
+          zmapWindowFToIRemoveSet(window->context_to_item,
                                   feature_set->parent->parent->unique_id,
                                   feature_set->parent->unique_id,
                                   feature_set->unique_id,
@@ -745,10 +744,10 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
 
   feature_set->style = style;
 
-  zmapWindowRedrawFeatureSet(menu_data->window, feature_set);        /* does a complex context thing */
+  zmapWindowRedrawFeatureSet(window, feature_set);        /* does a complex context thing */
 
-  zmapWindowColOrderColumns(menu_data->window) ;        /* put this column (deleted then created) back into the right place */
-  zmapWindowFullReposition(menu_data->window->feature_root_group,TRUE, "window style") ;                /* adjust sizing and shuffle left / right */
+  zmapWindowColOrderColumns(window) ;        /* put this column (deleted then created) back into the right place */
+  zmapWindowFullReposition(window->feature_root_group,TRUE, "window style") ;                /* adjust sizing and shuffle left / right */
 
   return ;
 }
