@@ -65,9 +65,9 @@ typedef struct
   gboolean refresh;                       /* clicked on another column */
 
   GtkWidget *toplevel ;
-  GtkWidget *featureset_name;             /* Name of the featureset whose style is being
+  GtkWidget *featureset_name_widget;      /* Name of the featureset whose style is being
                                            * edited/created */
-  GtkWidget *style_name;                  /* User-editable style name for the new/existing style
+  GtkWidget *style_name_widget;           /* User-editable style name for the new/existing style
                                            * to edit */
 
   GtkWidget *fill_widget ;
@@ -172,7 +172,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
 
-  my_data->featureset_name = entry = gtk_entry_new() ;
+  my_data->featureset_name_widget = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), g_quark_to_string(my_data->menu_data->feature_set->original_id)) ;
   gtk_widget_set_sensitive(entry, FALSE) ;
   gtk_box_pack_start(GTK_BOX(hbox), entry, TRUE, TRUE, 0) ;
@@ -186,7 +186,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
 
-  my_data->style_name = entry = gtk_entry_new() ;
+  my_data->style_name_widget = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), g_quark_to_string(default_style_name)) ;
   gtk_box_pack_start(GTK_BOX(hbox), entry, TRUE, TRUE, 0) ;
 
@@ -376,7 +376,7 @@ gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMa
   my_data->created_child = FALSE;
 
   /* Update the featureset name */
-  gtk_entry_set_text(GTK_ENTRY(my_data->featureset_name), g_quark_to_string(feature_set->original_id)) ;
+  gtk_entry_set_text(GTK_ENTRY(my_data->featureset_name_widget), g_quark_to_string(feature_set->original_id)) ;
 
   /* Update the default style name */
   if (style->unique_id == feature_set->unique_id)
@@ -393,7 +393,7 @@ gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMa
       default_style_name = feature_set->original_id;
     }
 
-  gtk_entry_set_text((GtkEntry*)my_data->style_name, g_quark_to_string(default_style_name));
+  gtk_entry_set_text(GTK_ENTRY(my_data->style_name_widget), g_quark_to_string(default_style_name));
   
   /* Update the colour buttons. */
   zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
@@ -468,7 +468,7 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
   ZMapFeatureTypeStyle style = feature_set->style;
   GHashTable *styles = my_data->menu_data->window->context_map->styles;
 
-  GQuark new_style_id = zMapStyleCreateID(gtk_entry_get_text(GTK_ENTRY(my_data->style_name))) ;
+  GQuark new_style_id = zMapStyleCreateID(gtk_entry_get_text(GTK_ENTRY(my_data->style_name_widget))) ;
 
   /* We make a new child style if the new style name is different to the existing one
    * and if we haven't already created it. */
