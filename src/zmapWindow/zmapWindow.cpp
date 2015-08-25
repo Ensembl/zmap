@@ -5716,7 +5716,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                     filter_data.selected = ZMAP_CANVAS_FILTER_NONE ;
                     filter_data.filter = ZMAP_CANVAS_FILTER_NONE ;
                     filter_data.action = ZMAP_CANVAS_ACTION_SHOW ;
-                    filter_data.target_type = ZMAP_CANVAS_TARGET_NOT_SOURCE_FEATURES ;
+                    filter_data.target_type = ZMAP_CANVAS_TARGET_NOT_FILTER_FEATURES ;
                     filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
                     filter_data.target_column = window->filter_feature_set ;
 
