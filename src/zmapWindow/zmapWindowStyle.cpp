@@ -67,16 +67,11 @@ typedef struct
   GtkWidget *style_name_widget;           /* User-editable style name for the new/existing style
                                            * to edit */
 
-  GtkWidget *fill_widget ;
-  GtkWidget *border_widget ;
-  char *fill_colour_str ;
-  char *border_colour_str ;
-
-  GtkWidget *cds_fill_widget ;
-  GtkWidget *cds_border_widget ;
-  char *cds_fill_colour_str ;
-  char *cds_border_colour_str ;
-  GtkWidget *cds;
+  GtkWidget *fill_widget ;                /* Fill colour button */ 
+  GtkWidget *border_widget ;              /* Border colour button */ 
+  GtkWidget *cds_fill_widget ;            /* CDS fill colour button */ 
+  GtkWidget *cds_border_widget ;          /* CDS border colour button */
+  GtkWidget *cds_container;               /* Container for the CDS colour buttons */ 
 
   GtkWidget *stranded;
 
@@ -90,7 +85,6 @@ static void okCB(GtkWidget *widget, gpointer cb_data);
 static void revertCB(GtkWidget *widget, gpointer cb_data);
 static void closeCB(GtkWidget *widget, gpointer cb_data);
 
-static void colourSetCB(GtkColorButton *widget, gpointer user_data);
 static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style);
 
 
@@ -209,8 +203,6 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 
   my_data->fill_widget = button = gtk_color_button_new() ;
   gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill_col) ;
-  g_signal_connect(G_OBJECT(button), "color-set",
-                   G_CALLBACK(colourSetCB), my_data) ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
 
   label = gtk_label_new("Border:") ;
@@ -219,8 +211,6 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 
   my_data->border_widget = button = gtk_color_button_new() ;
   gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border_col) ;
-  g_signal_connect(G_OBJECT(button), "color-set",
-                   G_CALLBACK(colourSetCB), my_data) ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
 
   if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)        /* add CDS colours */
@@ -230,7 +220,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 
   /* must create these anyway */
   {
-    my_data->cds = hbox = gtk_hbox_new(FALSE, 0) ;                /* hbox for fill_col / border_col */
+    my_data->cds_container = hbox = gtk_hbox_new(FALSE, 0) ;                /* hbox for fill_col / border_col */
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
     gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING) ;
     gtk_container_set_border_width(GTK_CONTAINER(hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
@@ -241,8 +231,6 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 
     my_data->cds_fill_widget = button = gtk_color_button_new() ;
     gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill_col) ;
-    g_signal_connect(G_OBJECT(button), "color-set",
-                     G_CALLBACK(colourSetCB), my_data) ;
     gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
 
     label = gtk_label_new("CDS\nBorder:") ;
@@ -251,14 +239,12 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 
     my_data->cds_border_widget = button = gtk_color_button_new() ;
     gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border_col) ;
-    g_signal_connect(G_OBJECT(button), "color-set",
-                     G_CALLBACK(colourSetCB), my_data) ;
     gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   }
 
   if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)        /* add CDS colours */
     {
-      gtk_widget_hide_all(my_data->cds);
+      gtk_widget_hide_all(my_data->cds_container);
     }
 
 
@@ -389,11 +375,11 @@ gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, 
 
       gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->cds_fill_widget), fill_col) ;
       gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->cds_border_widget), border_col) ;
-      gtk_widget_show_all(my_data->cds);
+      gtk_widget_show_all(my_data->cds_container);
     }
   else
     {
-      gtk_widget_hide_all(my_data->cds);
+      gtk_widget_hide_all(my_data->cds_container);
     }
 
   gtk_toggle_button_set_active((GtkToggleButton *) my_data->stranded, style->strand_specific);
@@ -517,36 +503,6 @@ static void closeCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
-/* Slightly obscure GTK interface...this function is called when the user selects a colour
- * from the colour chooser dialog displayed when they click on the colour button,
- * i.e. it is _not_ a callback for the button itself. */
-static void colourSetCB(GtkColorButton *widget, gpointer user_data)
-{
-  StyleChange my_data = (StyleChange) user_data ;
-  GdkColor colour = {0} ;
-  char **target_string ;
-
-  /* if you add more of these think about using an array or hash */
-  if (GTK_WIDGET(widget) == my_data->fill_widget)
-    target_string = &(my_data->fill_colour_str) ;
-  else if (GTK_WIDGET(widget) == my_data->border_widget)
-    target_string = &(my_data->border_colour_str) ;
-  else if (GTK_WIDGET(widget) == my_data->cds_fill_widget)
-    target_string = &(my_data->cds_fill_colour_str) ;
-  else if (GTK_WIDGET(widget) == my_data->cds_border_widget)
-    target_string = &(my_data->cds_border_colour_str) ;
-  else
-    return;
-
-  if (*target_string)
-    g_free(*target_string) ;
-
-  gtk_color_button_get_color(widget, &colour) ;
-
-  *target_string = gdk_color_to_string(&colour) ;
-}
-
-
 /* Destroy the data associated with the Edit Style dialog */
 static void destroyCB(GtkWidget *widget, gpointer cb_data)
 {
@@ -559,25 +515,61 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+/* Get the color spec string for the given color buttons. The result should be free'd by the caller
+ * with g_free. Returns null if there was a problem. */
+static char* getColorSpecStr(GtkWidget *fill_widget, GtkWidget *border_widget)
+{
+  char *colour_spec = NULL ;
+
+  if (fill_widget && border_widget && 
+      GTK_IS_COLOR_BUTTON(fill_widget) && GTK_IS_COLOR_BUTTON(border_widget))
+    {
+      GdkColor colour ;
+
+      gtk_color_button_get_color(GTK_COLOR_BUTTON(fill_widget), &colour) ;
+      char *fill_str = gdk_color_to_string(&colour) ;
+
+      gtk_color_button_get_color(GTK_COLOR_BUTTON(border_widget), &colour) ;
+      char *border_str = gdk_color_to_string(&colour) ;
+
+      colour_spec = zMapStyleMakeColourString(fill_str, "black", border_str,
+                                              fill_str, "black", border_str) ;
+    }
+
+  return colour_spec ;
+}
+
+
 /* Set the properties in the given style from the user-selected options from the dialog */
 static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style)
 {
-  char *colour_spec;
+  /* Set whether strand-specific */
+  gboolean stranded = gtk_toggle_button_get_active((GtkToggleButton *) my_data->stranded) ;
+  g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC, stranded, NULL);
 
-  colour_spec = zMapStyleMakeColourString(my_data->fill_colour_str, "black", my_data->border_colour_str,
-                                          my_data->fill_colour_str, "black", my_data->border_colour_str) ;
 
-  g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_COLOURS, colour_spec,
-               ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC, gtk_toggle_button_get_active((GtkToggleButton *) my_data->stranded),
-               NULL);
+  /* Set the colours */
+  char *colour_spec = getColorSpecStr(my_data->fill_widget, my_data->border_widget) ;
 
+  if (colour_spec)
+    {
+      g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_COLOURS, colour_spec, NULL);
+      g_free(colour_spec) ;
+      colour_spec = NULL ;
+    }
+
+
+  /* Set the CDS colours, if it's a transcript */
   if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
-      colour_spec = zMapStyleMakeColourString(my_data->cds_fill_colour_str, "black", my_data->cds_border_colour_str,
-                                              my_data->cds_fill_colour_str, "black", my_data->cds_border_colour_str) ;
+      colour_spec = getColorSpecStr(my_data->cds_fill_widget, my_data->cds_border_widget) ;
 
-      g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS, colour_spec, NULL);
-
+      if (colour_spec)
+        {
+          g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS, colour_spec, NULL);
+          g_free(colour_spec) ;
+          colour_spec = NULL ;
+        }
     }
 
 }
