@@ -43,8 +43,9 @@
 #include <math.h>
 #include <string.h>
 
-#include <zmapWindowCanvasItem_I.hpp>
 #include <ZMap/zmapUtilsFoo.hpp>
+#include <zmapWindowCanvasItem_I.hpp>
+#include <zmapWindowContainerGroup_I.hpp>
 #include <zmapWindowContainerUtils.hpp>
 #include <zmapWindowContainerAlignment_I.hpp>
 #include <zmapWindowContainerBlock_I.hpp>
@@ -72,6 +73,28 @@ typedef struct EachIntervalDataStructType
   GdkColor            *border_colour;
   ZMapWindowCanvasItemClass klass;
 } EachIntervalDataStruct, *EachIntervalData;
+
+typedef struct GetColIDsStructType
+{
+  GList *ids_list ;
+  gboolean unique ;
+  ZMapStrand strand ;
+  gboolean visible ;
+} GetColIDsStruct, *GetColIDs ;
+
+typedef struct FindColStructType
+{
+  GQuark col_id ;
+  ZMapWindowContainerFeatureSet feature_set ;
+  ZMapStrand strand ;
+} FindColStruct, *FindCol ;
+
+   
+  
+
+
+
+
 
 
 /* Surprisingly I thought this would be typedef somewhere in the GType header but not so... */
@@ -123,6 +146,12 @@ static void zmap_window_container_alignment_get_property(GObject    *gobject,
                                                          guint       param_id,
                                                          GValue     *value,
                                                          GParamSpec *pspec);
+
+static void getColIdsCB(gpointer data, gpointer user_data) ;
+static void findColCB(gpointer data, gpointer user_data) ;
+
+
+
 
 
 static GObjectClass *parent_class_G = NULL ;
@@ -554,6 +583,66 @@ static void zmap_window_container_block_destroy(GtkObject *gtkobject)
   return ;
 }
 
+ZMapWindowContainerFeatureSet zmapWindowContainerBlockFindColumn(ZMapWindowContainerBlock block_container,
+                                                                 const char *col_name, ZMapStrand strand)
+{
+  ZMapWindowContainerFeatureSet feature_set_container = NULL ;
+  ZMapWindowContainerGroup container_group ;
+  FooCanvasGroup *foo_group ;
+  FindColStruct find_col_data = {0} ;
+  char *canon_name ;
+
+  container_group = ZMAP_CONTAINER_GROUP(block_container) ;
+  foo_group = &(container_group->__parent__) ;
+
+  canon_name = g_strdup(col_name) ;
+  canon_name = zMapFeatureCanonName(canon_name) ;
+  find_col_data.col_id = g_quark_from_string(canon_name) ;
+  find_col_data.strand = strand ;
+
+  g_list_foreach(foo_group->item_list, findColCB, &find_col_data) ;
+
+  feature_set_container = find_col_data.feature_set ;
+
+  g_free(canon_name) ;
+
+  return feature_set_container ;
+}
+
+
+
+
+GList *zmapWindowContainerBlockColumnList(ZMapWindowContainerBlock block_container,
+                                          gboolean unique, ZMapStrand strand, gboolean visible)
+{
+  GList *column_ids = NULL ;
+  GetColIDsStruct get_ids_data = {NULL} ;
+  ZMapWindowContainerGroup container_group ;
+  FooCanvasGroup *foo_group ;
+  
+  // Need args checking.....   
+
+  container_group = ZMAP_CONTAINER_GROUP(block_container) ;
+  foo_group = &(container_group->__parent__) ;
+
+  
+  get_ids_data.unique = unique ;
+  get_ids_data.strand = strand ;
+  get_ids_data.visible = visible ;
+
+  g_list_foreach(foo_group->item_list, getColIdsCB, &get_ids_data) ;
+
+  column_ids = get_ids_data.ids_list ;
+
+  return column_ids ;
+}
+
+
+
+
+
+
+
 
 /*!
  * \brief Remove columns that have been 'compressed' by the application.
@@ -640,6 +729,76 @@ void zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_
 
   block_data->compressed_cols = g_list_append(block_data->compressed_cols, container) ;
 
+  return ;
+}
+
+
+
+
+
+static void getColIdsCB(gpointer data, gpointer user_data)
+{
+  ZMapWindowContainerGroup container_group = (ZMapWindowContainerGroup)data ;
+  ZMapWindowContainerFeatureSet feature_set = (ZMapWindowContainerFeatureSet)data ;
+  GetColIDs get_ids_data = (GetColIDs)user_data ;
+  static GQuark strand_id = 0 ;
+
+  if (!strand_id)
+    {
+      char *canon_strand ;
+
+      canon_strand = g_strdup(ZMAP_FIXED_STYLE_STRAND_SEPARATOR) ;
+
+      canon_strand = zMapFeatureCanonName(canon_strand) ;
+
+      strand_id = g_quark_from_string(canon_strand) ;
+
+      g_free(canon_strand) ;
+    }
+  
+
+
+  if (container_group->level == ZMAPCONTAINER_LEVEL_FEATURESET
+      && feature_set->original_id != strand_id
+      && feature_set->strand == get_ids_data->strand
+      && container_group->flags.visible == get_ids_data->visible)
+    {
+      GQuark name_id ;
+
+
+
+
+      if (get_ids_data->unique)
+        name_id = feature_set->unique_id ;
+      else
+        name_id = feature_set->original_id ;
+
+
+      zMapDebugPrintf("col name: \"%s\"", g_quark_to_string(name_id)) ;
+
+
+      get_ids_data->ids_list = g_list_append(get_ids_data->ids_list, GINT_TO_POINTER(name_id)) ;
+    }
+  
+  return ;
+}
+
+
+static void findColCB(gpointer data, gpointer user_data)
+{
+  ZMapWindowContainerGroup container_group = (ZMapWindowContainerGroup)data ;
+  ZMapWindowContainerFeatureSet feature_set = (ZMapWindowContainerFeatureSet)data ;
+  FindCol find_col_data = (FindCol)user_data ;
+
+  if (container_group->level == ZMAPCONTAINER_LEVEL_FEATURESET
+      && feature_set->strand == find_col_data->strand)
+    {
+      GQuark name_id ;
+
+      if (feature_set->unique_id == find_col_data->col_id)
+        find_col_data->feature_set = feature_set ;
+    }
+  
   return ;
 }
 
