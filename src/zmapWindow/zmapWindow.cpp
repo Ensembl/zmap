@@ -1495,7 +1495,7 @@ void zMapWindowDestroy(ZMapWindow window)
   zmapWindowFreeWindowArray(&(window->feature_show_windows), TRUE) ;
 
   if(window->style_window)
-    zmapStyleWindowDestroy(window);
+    zmapWindowStyleDialogDestroy(window);
 
   /* Get rid of the column configuration window. */
   zmapWindowColumnConfigureDestroy(window) ;
@@ -2795,7 +2795,7 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
       zmapWindowFreeWindowArray(&(window->feature_show_windows), FALSE) ;
 
         if(window->style_window)
-        zmapStyleWindowDestroy(window);
+        zmapWindowStyleDialogDestroy(window);
     }
 
     zmapWindowFocusReset(window->focus);

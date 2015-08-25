@@ -1608,8 +1608,8 @@ ZMapXMLUtilsEventStack zMapFeatureAnyAsXMLEvents(ZMapFeature feature) ;
 
 void zmapWindowShowStyleDialog( ItemMenuCBData menu_data );
 void zmapWindowFeaturesetSetStyle(GQuark style_id, ZMapFeatureSet feature_set, ZMapFeatureContextMap context_map, ZMapWindow window);
-gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature);
-void zmapStyleWindowDestroy(ZMapWindow window);
+gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature);
+void zmapWindowStyleDialogDestroy(ZMapWindow window);
 
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;

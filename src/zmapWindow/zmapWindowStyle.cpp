@@ -58,9 +58,9 @@ typedef struct
 {
   ItemMenuCBData menu_data;               /* which featureset etc */
   ZMapFeatureTypeStyleStruct save;        /* copy of original used for Revert only */
-  gboolean applied_changes;               /* if we have applied any changes */
   gboolean created_child;                 /* true if we've already created a new child style with
                                            * the name given in the style_name widget  */
+  
 
   gboolean refresh;                       /* clicked on another column */
 
@@ -94,11 +94,10 @@ static void revertCB(GtkWidget *widget, gpointer cb_data);
 static void closeCB(GtkWidget *widget, gpointer cb_data);
 
 static void colourSetCB(GtkColorButton *widget, gpointer user_data);
-static void setParametersInStyle(StyleChange my_data, ZMapFeatureTypeStyle style);
+static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style);
 
 
-
-
+/* Entry point to display the Edit Style dialog */
 void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 {
   StyleChange my_data = g_new0(StyleChangeStruct,1);
@@ -110,7 +109,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   GdkColor *fill_col = &colour, *border_col = &colour;
   GQuark default_style_name = 0;
 
-  if(zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature))
+  if(zmapWindowStyleDialogSetFeature(menu_data->window, menu_data->item, menu_data->feature))
     return;
 
   my_data->menu_data = menu_data;
@@ -323,15 +322,16 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 
   gtk_widget_show_all(toplevel) ;
 
-  zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature);
+  zmapWindowStyleDialogSetFeature(menu_data->window, menu_data->item, menu_data->feature);
 
   return ;
 }
 
 
-static void clear_style(StyleChange my_data)
+/* If we have created a new child style, destroy it and replace it with the parent */
+static void clearStyleChanges(StyleChange my_data)
 {
-  if(my_data->created_child) /* just remove the child and replace w/ the parent */
+  if(my_data->created_child)
     {
       GHashTable *styles = my_data->menu_data->window->context_map->styles;
       ZMapFeatureTypeStyle style = my_data->menu_data->feature_set->style;
@@ -341,12 +341,12 @@ static void clear_style(StyleChange my_data)
       zMapStyleDestroy(style);
 
       my_data->created_child = FALSE;
-      my_data->applied_changes = FALSE;
     }
 }
 
 
-void zmapStyleWindowDestroy(ZMapWindow window)
+/* Interface to allow external callers to destroy the style dialog */
+void zmapWindowStyleDialogDestroy(ZMapWindow window)
 {
   StyleChange my_data = (StyleChange) window->style_window;
 
@@ -354,7 +354,11 @@ void zmapStyleWindowDestroy(ZMapWindow window)
   window->style_window = NULL;
 }
 
-gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature)
+
+/* This updates the info in the Edit Style dialog with the given feature, i.e. it takes all of the
+ * style info from the given feature's style. It's called when the dialog is first opened or if
+ * the user selects a different feature while the dialog is still open. */
+gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature)
 {
   StyleChange my_data = (StyleChange) window->style_window;
   ZMapFeatureSet feature_set = (ZMapFeatureSet) feature->parent;
@@ -420,7 +424,8 @@ gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMa
 }
 
 
-
+/* Called when the user hits Revert on the Edit Style dialog. This throws away any changes since
+ * they first opened the dialog, i.e. it reverts to the original style that was in the featureset. */
 static void revertCB(GtkWidget *widget, gpointer cb_data)
 {
   StyleChange my_data = (StyleChange) cb_data;
@@ -434,7 +439,7 @@ static void revertCB(GtkWidget *widget, gpointer cb_data)
       style = my_data->menu_data->feature_set->style;
       id = style->parent_id;
 
-      clear_style(my_data);                /* free the created style: cannot be ref'd anywhere else */
+      clearStyleChanges(my_data);                /* free the created style: cannot be ref'd anywhere else */
 
       /* find the parent */
       style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(id));
@@ -445,22 +450,25 @@ static void revertCB(GtkWidget *widget, gpointer cb_data)
       memcpy((void *) style, (void *) &my_data->save, sizeof (ZMapFeatureTypeStyleStruct));
     }
 
-  my_data->applied_changes = FALSE;
-
   /* update the column */
   if (style)
     zmapWindowFeaturesetSetStyle(style->unique_id, menu_data->feature_set, menu_data->context_map, menu_data->window);
 
   /* update this dialog */
-  zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature);
+  zmapWindowStyleDialogSetFeature(menu_data->window, menu_data->item, menu_data->feature);
 }
 
+
+/* Called when user hits OK on the Edit Style dialog. Just does an Apply then Close */
 static void okCB(GtkWidget *widget, gpointer cb_data)
 {
   applyCB(widget, cb_data) ;
   closeCB(widget, cb_data) ;
 }
 
+
+/* Called when the user applies changes on the Edit Style dialog. It updates the featureset's
+ * style, creating a new child style if necessary  */
 static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
   StyleChange my_data = (StyleChange) cb_data;
@@ -508,7 +516,7 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
     }
 
   /* apply the chosen colours etc */
-  setParametersInStyle(my_data, style);
+  updateStyle(my_data, style);
 
   /* set the style
    * if we are only changing colours we could be more efficient
@@ -516,20 +524,16 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
    * we do this _once_ at user/ mouse click speed
    */
   zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, my_data->menu_data->context_map, my_data->menu_data->window);
-
-  my_data->applied_changes = TRUE;
 }
 
 
-
-
+/* Called when the user closes the Edit Style dialog. Just destroys the dialog without doing anything. */
 static void closeCB(GtkWidget *widget, gpointer cb_data)
 {
   StyleChange my_data = (StyleChange) cb_data ;
 
   gtk_widget_destroy(my_data->toplevel);
 }
-
 
 
 /* Slightly obscure GTK interface...this function is called when the user selects a colour
@@ -562,8 +566,7 @@ static void colourSetCB(GtkColorButton *widget, gpointer user_data)
 }
 
 
-
-
+/* Destroy the data associated with the Edit Style dialog */
 static void destroyCB(GtkWidget *widget, gpointer cb_data)
 {
   StyleChange my_data = (StyleChange) cb_data;
@@ -576,7 +579,7 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* Set the properties in the given style from the user-selected options from the dialog */
-static void setParametersInStyle(StyleChange my_data, ZMapFeatureTypeStyle style)
+static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style)
 {
   char *colour_spec;
 
