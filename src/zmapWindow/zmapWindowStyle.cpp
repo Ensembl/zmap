@@ -60,6 +60,7 @@ typedef struct
   ItemMenuCBData menu_data;               /* which featureset etc */
   ZMapFeatureTypeStyleStruct orig_style_copy;  /* copy of original, used for Revert */
 
+  GQuark created_style_id;                /* if we've created a new style, remember it's id here */
   gboolean refresh;                       /* clicked on another column */
 
   GtkWidget *toplevel ;
@@ -177,7 +178,8 @@ gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, 
   memcpy(&my_data->orig_style_copy, style,sizeof (ZMapFeatureTypeStyleStruct));
 
   /* Update the featureset name */
-  gtk_entry_set_text(GTK_ENTRY(my_data->featureset_name_widget), g_quark_to_string(feature_set->original_id)) ;
+  const char *text = feature_set->original_id ? g_quark_to_string(feature_set->original_id) : "" ;
+  gtk_entry_set_text(GTK_ENTRY(my_data->featureset_name_widget), text) ;
 
   /* Update the default style name */
   if (style->unique_id == feature_set->unique_id)
@@ -194,8 +196,11 @@ gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, 
       default_style_name = feature_set->original_id;
     }
 
-  gtk_entry_set_text(GTK_ENTRY(my_data->orig_style_name_widget), g_quark_to_string(style->unique_id));
-  gtk_entry_set_text(GTK_ENTRY(my_data->new_style_name_widget), g_quark_to_string(default_style_name));
+  text = style->unique_id ? g_quark_to_string(style->unique_id) : "" ;
+  gtk_entry_set_text(GTK_ENTRY(my_data->orig_style_name_widget), text);
+
+  text = default_style_name ? g_quark_to_string(default_style_name) : "" ;
+  gtk_entry_set_text(GTK_ENTRY(my_data->new_style_name_widget), text);
   
   /* Update the colour buttons. */
   zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
@@ -398,7 +403,7 @@ static void createToplevel(StyleChange my_data)
   gtk_container_set_focus_chain (GTK_CONTAINER(my_data->toplevel), NULL);
   gtk_container_border_width(GTK_CONTAINER(my_data->toplevel), 5) ;
   gtk_window_set_default_size(GTK_WINDOW(my_data->toplevel), 500, -1) ;
-  gtk_dialog_set_default_response(GTK_DIALOG(my_data->toplevel), GTK_RESPONSE_OK) ;
+  gtk_dialog_set_default_response(GTK_DIALOG(my_data->toplevel), GTK_RESPONSE_APPLY) ;
 }
 
 
@@ -406,6 +411,7 @@ static void createToplevel(StyleChange my_data)
 static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int cols, int *row)
 {
   ZMapFeatureTypeStyle style = my_data->menu_data->feature_set->style;
+  ZMapFeatureSet feature_set = my_data->menu_data->feature_set ;
   GQuark default_style_name = 0 ;
 
   /* The name of the featureset being edited (not editable) */
@@ -414,7 +420,9 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
   gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
 
   GtkWidget *entry = my_data->featureset_name_widget = gtk_entry_new() ;
-  gtk_entry_set_text(GTK_ENTRY(entry), g_quark_to_string(my_data->menu_data->feature_set->original_id)) ;
+
+  const char *text = feature_set->original_id ? g_quark_to_string(feature_set->original_id) : "" ;
+  gtk_entry_set_text(GTK_ENTRY(entry), text) ;
   gtk_widget_set_sensitive(entry, FALSE) ;
   gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
   *row += 1 ;
@@ -449,7 +457,8 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
   gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
 
   entry = my_data->new_style_name_widget = gtk_entry_new() ;
-  gtk_entry_set_text(GTK_ENTRY(entry), g_quark_to_string(default_style_name)) ;
+  text = default_style_name ? g_quark_to_string(default_style_name) : "";
+  gtk_entry_set_text(GTK_ENTRY(entry), text) ;
   gtk_widget_set_tooltip_text(entry, "If this is different to the original style name, then a new child style will be created; otherwise the original style will be overwritten.") ;
   gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
   *row += 1 ;
@@ -653,12 +662,11 @@ static gboolean applyChanges(gpointer cb_data)
   gboolean ok = TRUE ;
   StyleChange my_data = (StyleChange) cb_data;
   ZMapFeatureSet feature_set = my_data->menu_data->feature_set;
-  ZMapFeatureTypeStyle style = feature_set->style;
   GHashTable *styles = my_data->menu_data->window->context_map->styles;
 
   /* See if the new style already exists */
   GQuark new_style_id = zMapStyleCreateID(gtk_entry_get_text(GTK_ENTRY(my_data->new_style_name_widget))) ;
-  ZMapFeatureTypeStyle new_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(my_data->menu_data->context_map->styles, GUINT_TO_POINTER(new_style_id));
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)g_hash_table_lookup(my_data->menu_data->context_map->styles, GUINT_TO_POINTER(new_style_id));
 
   /* If the style id is the same as the featureset id then we can assume that this featureset "owns" the style */
   const gboolean own_style = (new_style_id == feature_set->unique_id);
@@ -666,11 +674,14 @@ static gboolean applyChanges(gpointer cb_data)
   /* Check whether we're editing the original style for this featureset or assigning a different one */
   const gboolean using_original_style = (new_style_id == my_data->orig_style_copy.unique_id);
 
+  /* Check whether we're editing a new child style that we've already created */
+  const gboolean using_created_style = (new_style_id == my_data->created_style_id) ;
+
   /* We make a new child style if the style doesn't already exist */
   if (!style)
     {
       /* make new style with the specified name and merge in the parent */
-      ZMapFeatureTypeStyle parent = style;
+      ZMapFeatureTypeStyle parent = feature_set->style;
       ZMapFeatureTypeStyle tmp_style;
 
       const char *name = g_quark_to_string(new_style_id) ;
@@ -690,6 +701,9 @@ static gboolean applyChanges(gpointer cb_data)
           style = tmp_style;
 
           g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_PARENT_STYLE, parent->unique_id , NULL);
+
+          /* Remember the new style that we've created */
+          my_data->created_style_id = new_style_id ;
         }
       else
         {
@@ -699,11 +713,12 @@ static gboolean applyChanges(gpointer cb_data)
           ok = FALSE;
         }
     }
-  else if (!using_original_style || !own_style)
+  else if (!using_original_style && !own_style && !using_created_style)
     {
-      /* We're overwriting a style that isn't "owned" by this featureset - check that the user
-       * really wants to do this */
-      char *msg = g_strdup_printf("This will overwrite style '%s'.\n\nAre you sure you want to continue?", 
+      /* We're overwriting a style that isn't "owned" by this featureset and wasn't the
+       * featureset's original style. The user may have accidentally entered a style name that
+       * already exists - check if they want to overwrite it. */
+      char *msg = g_strdup_printf("Style '%s' already exists.\n\nAre you sure you want to overwrite it?", 
                                   g_quark_to_string(new_style_id)) ;
 
       ok = zMapGUIMsgGetBool(GTK_WINDOW(my_data->toplevel), ZMAP_MSG_INFORMATION, msg) ;
