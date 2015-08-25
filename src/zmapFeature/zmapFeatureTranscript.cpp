@@ -949,7 +949,8 @@ gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature transcript, Co
  * - A zero value boundary means "no boundary".
  *  */
 gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
-                                                 ZMapFeatureSubPartType part_type, gboolean exact_match, int slop,
+                                                 ZMapFeatureSubPartType part_type,
+                                                 gboolean exact_match, int slop,
                                                  ZMapFeaturePartsList boundaries,
                                                  ZMapFeaturePartsList *matching_boundaries_out,
                                                  ZMapFeaturePartsList *non_matching_boundaries_out)
@@ -961,14 +962,13 @@ gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
   int i, index ;
   gboolean status ;
   int cds_start, cds_end ;
-  gboolean bad_match = FALSE ;
+  gboolean overall_bad_match = FALSE ;
 
 
+  // Check basic args.   
   zMapReturnValIfFail(ZMAPFEATURE_IS_TRANSCRIPT(feature), FALSE) ;
   zMapReturnValIfFail(boundaries, FALSE) ;
 
-
-  non_matching_boundaries = zMapFeaturePartsListCreate((ZMapFeatureFreePartFunc)zMapFeatureBoundaryMatchDestroy) ;
 
   /* Return FALSE if it's a CDS comparison and the feature has no CDS
    * or it's an intron comparison and the feature has no introns. */
@@ -980,6 +980,7 @@ gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
       return FALSE ;
     }
 
+  non_matching_boundaries = zMapFeaturePartsListCreate((ZMapFeatureFreePartFunc)zMapFeatureBoundaryMatchDestroy) ;
 
   matching_boundaries = zMapFeaturePartsListCreate((ZMapFeatureFreePartFunc)zMapFeatureBoundaryMatchDestroy) ;
 
@@ -1018,6 +1019,8 @@ gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
         }
       else
         {
+          gboolean good_match = TRUE ;
+
           /* Note that we move down the exons or introns as we do the comparision to avoid comparing all with all. */
           while (i < (int)an_array->len)
             {
@@ -1085,9 +1088,9 @@ gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
                     }
                 }
 
-              result = zmapFeatureCoordsMatch(slop, exact_match, curr_boundary->start, curr_boundary->end,
-                                              start, end,
-                                              &match_boundary_start, &match_boundary_end) ;
+              good_match = zmapFeatureCoordsMatch(slop, TRUE, curr_boundary->start, curr_boundary->end,
+                                                  start, end,
+                                                  &match_boundary_start, &match_boundary_end) ;
 
               if (match_boundary_start)
                 match_type |= ZMAPBOUNDARY_MATCH_TYPE_5_MATCH ;
@@ -1096,7 +1099,7 @@ gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
                 match_type |= ZMAPBOUNDARY_MATCH_TYPE_3_MATCH ;
 
 
-              if (result)
+              if (good_match)
                 parts_list = matching_boundaries ;
               else
                 parts_list = non_matching_boundaries ;
@@ -1112,15 +1115,16 @@ gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
                 }
 
 
-              /* If there's a bad match for any comparision then record that. */
-              if (!bad_match && !result && exact_match)
+              /* If there's a bad match for any comparision record it. */
+              if (!overall_bad_match && !good_match)
                 {
-                  bad_match = TRUE ;
+                  overall_bad_match = TRUE ;
                 }
 
               i++ ;
 
-              /* For exact matches we can only compare each coord set once. */
+              /* For exact matches we can only compare each coord set once otherwise we will not
+                 detect missing exons. */
               if (exact_match)
                 break ;
             }
@@ -1138,7 +1142,9 @@ gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
       result = TRUE ;
 
       if (matching_boundaries->parts && matching_boundaries_out)
-        *matching_boundaries_out = matching_boundaries ;
+        {
+          *matching_boundaries_out = matching_boundaries ;
+        }
       else
         {
           zMapFeaturePartsListDestroy(matching_boundaries) ;
@@ -1146,7 +1152,9 @@ gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
         }
 
       if (non_matching_boundaries->parts && non_matching_boundaries_out)
-        *non_matching_boundaries_out = non_matching_boundaries ;
+        {
+          *non_matching_boundaries_out = non_matching_boundaries ;
+        }
       else
         {
           zMapFeaturePartsListDestroy(non_matching_boundaries) ;
@@ -1154,7 +1162,7 @@ gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
         }
 
       /* If there were any bad matches or no matches then the result is FALSE. */
-      if (exact_match && bad_match)
+      if (overall_bad_match)
         result = FALSE ;
       else if (!matching_boundaries && !non_matching_boundaries)
         result = FALSE ;
