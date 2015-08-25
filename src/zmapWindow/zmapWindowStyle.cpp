@@ -57,10 +57,7 @@
 typedef struct
 {
   ItemMenuCBData menu_data;               /* which featureset etc */
-  ZMapFeatureTypeStyleStruct save;        /* copy of original used for Revert only */
-  gboolean created_child;                 /* true if we've already created a new child style with
-                                           * the name given in the style_name widget  */
-  
+  ZMapFeatureTypeStyleStruct orig_style_copy;  /* copy of original, used for Revert */
 
   gboolean refresh;                       /* clicked on another column */
 
@@ -109,18 +106,17 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   GdkColor *fill_col = &colour, *border_col = &colour;
   GQuark default_style_name = 0;
 
+  /* Check if the dialog data has already been created - if so, nothing to do */
   if(zmapWindowStyleDialogSetFeature(menu_data->window, menu_data->item, menu_data->feature))
     return;
 
   my_data->menu_data = menu_data;
   style = menu_data->feature_set->style;
-  memcpy(& my_data->save, style,sizeof (ZMapFeatureTypeStyleStruct));
 
   /* set up the top level window */
   my_data->toplevel = toplevel = zMapGUIToplevelNew(NULL, "Edit Style") ;
 
-  g_signal_connect(GTK_OBJECT(toplevel), "destroy",
-                   GTK_SIGNAL_FUNC(destroyCB), (gpointer)my_data) ;
+  g_signal_connect(GTK_OBJECT(toplevel), "destroy", GTK_SIGNAL_FUNC(destroyCB), (gpointer)my_data) ;
   gtk_window_set_keep_above((GtkWindow *) toplevel,TRUE);
   gtk_container_set_focus_chain (GTK_CONTAINER(toplevel), NULL);
 
@@ -328,23 +324,6 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 }
 
 
-/* If we have created a new child style, destroy it and replace it with the parent */
-static void clearStyleChanges(StyleChange my_data)
-{
-  if(my_data->created_child)
-    {
-      GHashTable *styles = my_data->menu_data->window->context_map->styles;
-      ZMapFeatureTypeStyle style = my_data->menu_data->feature_set->style;
-
-      /* free the created style: cannot be ref'd anywhere else */
-      g_hash_table_remove(styles,GUINT_TO_POINTER(my_data->menu_data->feature_set->style->unique_id));
-      zMapStyleDestroy(style);
-
-      my_data->created_child = FALSE;
-    }
-}
-
-
 /* Interface to allow external callers to destroy the style dialog */
 void zmapWindowStyleDialogDestroy(ZMapWindow window)
 {
@@ -375,9 +354,8 @@ gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, 
   my_data->menu_data->feature = feature;
   style = feature_set->style;
 
-  memcpy(& my_data->save, style,sizeof (ZMapFeatureTypeStyleStruct));
-
-  my_data->created_child = FALSE;
+  /* Make a copy of the original style so we can revert any changes we make */
+  memcpy(&my_data->orig_style_copy, style,sizeof (ZMapFeatureTypeStyleStruct));
 
   /* Update the featureset name */
   gtk_entry_set_text(GTK_ENTRY(my_data->featureset_name_widget), g_quark_to_string(feature_set->original_id)) ;
@@ -430,29 +408,35 @@ static void revertCB(GtkWidget *widget, gpointer cb_data)
 {
   StyleChange my_data = (StyleChange) cb_data;
   ItemMenuCBData menu_data = my_data->menu_data;
+  ZMapFeatureSet feature_set = menu_data->feature_set;
   ZMapFeatureTypeStyle style = NULL;
   GQuark id;
 
-  if(my_data->created_child)   /* just remove the child and replace w/ the parent */
+  /* If the current style is different to the original then we have created a child style. Just
+     remove the child and replace it with the parent */
+  if(feature_set->style->unique_id != my_data->orig_style_copy.unique_id)   
     {
       GHashTable *styles = my_data->menu_data->window->context_map->styles;
-      style = my_data->menu_data->feature_set->style;
+      style = feature_set->style;
       id = style->parent_id;
 
-      clearStyleChanges(my_data);                /* free the created style: cannot be ref'd anywhere else */
+      /* free the created style: cannot be ref'd anywhere else */
+      g_hash_table_remove(styles,GUINT_TO_POINTER(feature_set->style->unique_id));
+      zMapStyleDestroy(style);
 
       /* find the parent */
       style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(id));
     }
   else                                /* restore the existing style */
     {
-      style = my_data->menu_data->feature_set->style;
-      memcpy((void *) style, (void *) &my_data->save, sizeof (ZMapFeatureTypeStyleStruct));
+      /* Overwrite the current style from the copy of the original style */
+      style = feature_set->style;
+      memcpy((void *) style, (void *) &my_data->orig_style_copy, sizeof (ZMapFeatureTypeStyleStruct));
     }
 
   /* update the column */
   if (style)
-    zmapWindowFeaturesetSetStyle(style->unique_id, menu_data->feature_set, menu_data->context_map, menu_data->window);
+    zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, menu_data->context_map, menu_data->window);
 
   /* update this dialog */
   zmapWindowStyleDialogSetFeature(menu_data->window, menu_data->item, menu_data->feature);
@@ -478,9 +462,8 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
 
   GQuark new_style_id = zMapStyleCreateID(gtk_entry_get_text(GTK_ENTRY(my_data->style_name_widget))) ;
 
-  /* We make a new child style if the new style name is different to the existing one
-   * and if we haven't already created it. */
-  if (new_style_id != style->unique_id && !my_data->created_child)
+  /* We make a new child style if the new style name is different to the existing one */
+  if (new_style_id != style->unique_id)
     {
       /* make new style with the specified name and merge in the parent */
       ZMapFeatureTypeStyle parent = style;
@@ -511,8 +494,6 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
           zMapStyleDestroy(style);
           return;
         }
-
-      my_data->created_child = TRUE;
     }
 
   /* apply the chosen colours etc */
