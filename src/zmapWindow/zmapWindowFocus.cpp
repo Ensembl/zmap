@@ -762,6 +762,55 @@ GList *zmapWindowFocusGetFeatureList(ZMapWindowFocus focus)
 }
 
 
+// Return the focused items as a GList of ZMapFeature's, optionally only return those that are
+// within the mark (if set, otherwise ignored).
+gboolean zmapWindowFocusGetFeatureListFull(ZMapWindow window, gboolean in_mark,
+                                           FooCanvasGroup **focus_column_out,
+                                           FooCanvasItem **focus_item_out,
+                                           GList **filterfeatures_out,
+                                           char **err_msg)
+{
+  gboolean result = FALSE ;
+  FooCanvasGroup *focus_column ;
+  FooCanvasItem *focus_item ;
+  GList *filterfeatures = NULL ;
+  int mark_start = 0, mark_end = 0 ;
+
+  if (!((focus_column = zmapWindowFocusGetHotColumn(window->focus))
+        && (focus_item = zmapWindowFocusGetHotItem(window->focus))
+        && (filterfeatures = zmapWindowFocusGetFeatureList(window->focus))))
+    {
+      /* We can't do anything if there is no highlight feature. */
+      *err_msg = g_strdup_printf("%s", "No features selected.") ;
+    }
+  else
+    {
+      /* If the mark is set then exclude any features not overlapping it, this may
+         accidentally result in there being no features for filtering. */
+      if (in_mark && zmapWindowMarkIsSet(window->mark) && zmapWindowMarkGetSequenceRange(window->mark,
+                                                                                         &mark_start, &mark_end))
+        {
+          filterfeatures = zMapFeatureGetOverlapFeatures(filterfeatures,
+                                                         mark_start, mark_end,
+                                                         ZMAPFEATURE_OVERLAP_ALL) ;
+        }
+
+      if (!filterfeatures)
+        {
+          *err_msg = g_strdup_printf("%s", "Current mark excludes all selected filter features.") ;
+        }
+      else
+        {
+          *focus_column_out = focus_column ;
+          *focus_item_out = focus_item ;
+          *filterfeatures_out = filterfeatures ;
+
+          result = TRUE ;
+        }
+    }
+
+  return result ;
+}
 
 
 /* Call given user function for all highlighted items.
