@@ -52,8 +52,8 @@
 #include <zmapWindowContainerUtils.hpp>
 #include <zmapWindowContainerFeatureSet_I.hpp>
 
-#define XPAD 2
-#define YPAD 2
+#define XPAD 3
+#define YPAD 3
 
 typedef struct
 {
@@ -120,7 +120,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   GtkTable *table = GTK_TABLE(gtk_table_new(rows, cols, FALSE)) ;
 
   GtkWidget *top_vbox = GTK_DIALOG(my_data->toplevel)->vbox ;
-  gtk_box_pack_start(GTK_BOX(top_vbox), GTK_WIDGET(table), TRUE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(top_vbox), GTK_WIDGET(table), TRUE, TRUE, ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH) ;
 
   /* Create the content */
   int row = 0 ;
@@ -451,35 +451,30 @@ static void createColourWidgets(StyleChange my_data, GtkTable *table, int *row)
   GdkColor *fill_col = &fill_colour;
   GdkColor *border_col = &border_colour;
   ZMapFeatureTypeStyle style = my_data->menu_data->feature_set->style;
+  const int xpad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
+  const int ypad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
 
   /* Make colour buttons. */
   zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
 
-  //ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING
-  //ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH
-
   GtkWidget *label = gtk_label_new("Fill:") ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5) ;
   gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
 
   GtkWidget *button = my_data->fill_widget = gtk_color_button_new() ;
   gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill_col) ;
-  gtk_misc_set_alignment(GTK_MISC(button), 0, 0.5) ;
-  gtk_table_attach(table, button, 1, 2, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
+  gtk_table_attach(table, button, 1, 2, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad);
 
   label = gtk_label_new("Border:") ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5) ;
   gtk_table_attach(table, label, 2, 3, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
 
   button = my_data->border_widget = gtk_color_button_new() ;
   gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border_col) ;
-  gtk_misc_set_alignment(GTK_MISC(button), 0, 0.5) ;
-  gtk_table_attach(table, button, 3, 4, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
+  gtk_table_attach(table, button, 3, 4, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad);
 
   /* add a final dummy column to expand into any extra space */
-  gtk_table_attach(table, gtk_label_new(""), 4, 5, *row, *row + 1, GTK_EXPAND, GTK_SHRINK, XPAD, YPAD);
+  gtk_table_attach(table, gtk_label_new(""), 4, 5, *row, *row + 1, GTK_EXPAND, GTK_SHRINK, 0, 0);
 
   *row += 1 ;
 }
@@ -493,35 +488,33 @@ static void createCDSColourWidgets(StyleChange my_data, GtkTable *table, int *ro
   GdkColor border_colour;
   GdkColor *fill_col = &fill_colour;
   GdkColor *border_col = &border_colour;
+  const int xpad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
+  const int ypad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
 
   zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
   
-  GtkWidget *label = gtk_label_new("CDS\nFill:") ;
+  GtkWidget *label = gtk_label_new("CDS Fill:") ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5) ;
   my_data->cds_widgets = g_list_append(my_data->cds_widgets, label) ;
   gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
 
   GtkWidget *button = my_data->cds_fill_widget = gtk_color_button_new() ;
   gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill_col) ;
-  gtk_misc_set_alignment(GTK_MISC(button), 0, 0.5) ;
   my_data->cds_widgets = g_list_append(my_data->cds_widgets, button) ;
-  gtk_table_attach(table, button, 1, 2, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
+  gtk_table_attach(table, button, 1, 2, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad);
 
-  label = gtk_label_new("CDS\nBorder:") ;
+  label = gtk_label_new("CDS Border:") ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5) ;
   my_data->cds_widgets = g_list_append(my_data->cds_widgets, label) ;
   gtk_table_attach(table, label, 2, 3, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
 
   button = my_data->cds_border_widget = gtk_color_button_new() ;
   gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border_col) ;
-  gtk_misc_set_alignment(GTK_MISC(button), 0, 0.5) ;
   my_data->cds_widgets = g_list_append(my_data->cds_widgets, button) ;
-  gtk_table_attach(table, button, 3, 4, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
+  gtk_table_attach(table, button, 3, 4, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad);
 
   /* add a final dummy column to expand into any extra space */
-  gtk_table_attach(table, gtk_label_new(""), 4, 5, *row, *row + 1, GTK_EXPAND, GTK_SHRINK, XPAD, YPAD);
+  gtk_table_attach(table, gtk_label_new(""), 4, 5, *row, *row + 1, GTK_EXPAND, GTK_SHRINK, 0, 0);
 
   *row += 1 ;
 }
