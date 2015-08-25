@@ -819,14 +819,15 @@ void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features, int seq
 
       focus_container = (ZMapWindowContainerFeatureSet)focus_column ;
 
-      if ((result = zMapWindowContainerFeatureSetFilterFeatures(ZMAP_CANVAS_FILTER_PARTS,
+      if ((result = zMapWindowContainerFeatureSetFilterFeatures(ZMAP_CANVAS_MATCH_PARTIAL,
+                                                                ZMAP_CANVAS_FILTER_PARTS,
                                                                 ZMAP_CANVAS_FILTER_PARTS,
                                                                 ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE,
                                                                 ZMAP_CANVAS_TARGET_ALL,
                                                                 focus_container,
                                                                 NULL,
                                                                 NULL,
-                                                                seq_start, seq_end, FALSE)))
+                                                                seq_start, seq_end)))
         {
           zmapWindowFullReposition(window->feature_root_group, TRUE, "col filter") ;
 
@@ -902,7 +903,8 @@ void zMapWindowDrawContext(ZMapCanvasData     canvas_data,
                            GList *masked)
 {
 
-  canvas_data->curr_x_offset = -(canvas_data->window->config.align_spacing + canvas_data->window->config.block_spacing);
+  canvas_data->curr_x_offset = -(canvas_data->window->config.align_spacing
+                                 + canvas_data->window->config.block_spacing);
 
   /* Full Context to attach to the items.
    * Diff Context feature any (aligns,blocks,sets) are destroyed! */
