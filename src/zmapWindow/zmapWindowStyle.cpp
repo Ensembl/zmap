@@ -58,7 +58,7 @@ typedef struct
 {
   ItemMenuCBData menu_data;               /* which featureset etc */
   ZMapFeatureTypeStyleStruct save;        /* copy of original used for Revert only */
-  gboolean changed;                       /* if we have applied any changes */
+  gboolean applied_changes;               /* if we have applied any changes */
   gboolean created_child;                 /* true if we've already created a new child style with
                                            * the name given in the style_name widget  */
 
@@ -341,7 +341,7 @@ static void clear_style(StyleChange my_data)
       zMapStyleDestroy(style);
 
       my_data->created_child = FALSE;
-      my_data->changed = FALSE;
+      my_data->applied_changes = FALSE;
     }
 }
 
@@ -428,9 +428,6 @@ static void revertCB(GtkWidget *widget, gpointer cb_data)
   ZMapFeatureTypeStyle style = NULL;
   GQuark id;
 
-  if(!my_data->changed)
-    return;
-
   if(my_data->created_child)   /* just remove the child and replace w/ the parent */
     {
       GHashTable *styles = my_data->menu_data->window->context_map->styles;
@@ -448,7 +445,7 @@ static void revertCB(GtkWidget *widget, gpointer cb_data)
       memcpy((void *) style, (void *) &my_data->save, sizeof (ZMapFeatureTypeStyleStruct));
     }
 
-  my_data->changed = FALSE;
+  my_data->applied_changes = FALSE;
 
   /* update the column */
   if (style)
@@ -520,7 +517,7 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
    */
   zmapWindowMenuSetStyleCB(style->unique_id, my_data->menu_data);
 
-  my_data->changed = TRUE;
+  my_data->applied_changes = TRUE;
 }
 
 
