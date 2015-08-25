@@ -60,7 +60,7 @@ typedef struct
   ItemMenuCBData menu_data;               /* which featureset etc */
   ZMapFeatureTypeStyleStruct orig_style_copy;  /* copy of original, used for Revert */
 
-  GQuark created_style_id;                /* if we've created a new style, remember it's id here */
+  GQuark last_edited_style_id;            /* if we've already changed a style remember its id here */
   gboolean refresh;                       /* clicked on another column */
 
   GtkWidget *toplevel ;
@@ -674,8 +674,8 @@ static gboolean applyChanges(gpointer cb_data)
   /* Check whether we're editing the original style for this featureset or assigning a different one */
   const gboolean using_original_style = (new_style_id == my_data->orig_style_copy.unique_id);
 
-  /* Check whether we're editing a new child style that we've already created */
-  const gboolean using_created_style = (new_style_id == my_data->created_style_id) ;
+  /* Check whether we've already applied changes to this style */
+  const gboolean already_edited_style = (new_style_id == my_data->last_edited_style_id) ;
 
   /* We make a new child style if the style doesn't already exist */
   if (!style)
@@ -701,9 +701,6 @@ static gboolean applyChanges(gpointer cb_data)
           style = tmp_style;
 
           g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_PARENT_STYLE, parent->unique_id , NULL);
-
-          /* Remember the new style that we've created */
-          my_data->created_style_id = new_style_id ;
         }
       else
         {
@@ -713,11 +710,11 @@ static gboolean applyChanges(gpointer cb_data)
           ok = FALSE;
         }
     }
-  else if (!using_original_style && !own_style && !using_created_style)
+  else if (!own_style && !already_edited_style)
     {
-      /* We're overwriting a style that isn't "owned" by this featureset and wasn't the
-       * featureset's original style. The user may have accidentally entered a style name that
-       * already exists - check if they want to overwrite it. */
+      /* We're overwriting a style that isn't "owned" by this featureset. The user may
+       * have accidentally entered a style name that already exists - check if they want
+       * to overwrite it. Only do this if they haven't already confirmed that it's ok! */
       char *msg = g_strdup_printf("Style '%s' already exists.\n\nAre you sure you want to overwrite it?", 
                                   g_quark_to_string(new_style_id)) ;
 
@@ -728,6 +725,9 @@ static gboolean applyChanges(gpointer cb_data)
 
   if (ok)
     {
+      /* Remember that we've edited this style */
+      my_data->last_edited_style_id = new_style_id ;
+
       /* apply the chosen colours etc */
       updateStyle(my_data, style);
 
