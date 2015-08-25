@@ -79,26 +79,26 @@ typedef struct
 } StyleChangeStruct, *StyleChange;
 
 
-static void destroyCB(GtkWidget *widget, gpointer cb_data);
-static void applyCB(GtkWidget *widget, gpointer cb_data);
-static void okCB(GtkWidget *widget, gpointer cb_data);
-static void revertCB(GtkWidget *widget, gpointer cb_data);
-static void closeCB(GtkWidget *widget, gpointer cb_data);
+static void responseCB(GtkDialog *dialog, gint responseId, gpointer data) ;
+static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 
-static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style);
+static gboolean applyChanges(gpointer cb_data) ;
+static gboolean revertChanges(gpointer cb_data) ;
+static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style) ;
 
 
 /* Entry point to display the Edit Style dialog */
 void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 {
   StyleChange my_data = g_new0(StyleChangeStruct,1);
-  /* theoretically we could have more than one dialog active. How confusing that would be */
   ZMapFeatureTypeStyle style;
   const char *text = NULL;
-  GtkWidget *toplevel, *top_vbox, *vbox, *hbox, *frame, *button, *label, *entry;
-  GdkColor colour = {0} ;
-  GdkColor *fill_col = &colour, *border_col = &colour;
+  GdkColor fill_colour = {0} ;
+  GdkColor border_colour = {0} ;
+  GdkColor *fill_col = &fill_colour ;
+  GdkColor *border_col = &border_colour;
   GQuark default_style_name = 0;
+  GtkWidget *toplevel, *top_vbox, *vbox, *hbox, *frame, *button, *label, *entry;
 
   /* Check if the dialog data has already been created - if so, nothing to do */
   if(zmapWindowStyleDialogSetFeature(menu_data->window, menu_data->item, menu_data->feature))
@@ -107,18 +107,29 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
   my_data->menu_data = menu_data;
   style = menu_data->feature_set->style;
 
-  /* set up the top level window */
-  my_data->toplevel = toplevel = zMapGUIToplevelNew(NULL, "Edit Style") ;
+  /* set up the top level dialog window */
+  my_data->toplevel = toplevel = zMapGUIDialogNew(NULL, "Edit Style", G_CALLBACK(responseCB), my_data) ;
 
+  gtk_dialog_add_buttons(GTK_DIALOG(my_data->toplevel), 
+                         GTK_STOCK_REVERT_TO_SAVED, GTK_RESPONSE_REJECT,
+                         GTK_STOCK_CLOSE, GTK_RESPONSE_CANCEL,
+                         GTK_STOCK_APPLY, GTK_RESPONSE_APPLY,
+                         GTK_STOCK_OK, GTK_RESPONSE_OK,
+                         NULL);
+
+  /* Set up the callbacks (note that response callback is already set by zMapGUIDialogNew) */
   g_signal_connect(GTK_OBJECT(toplevel), "destroy", GTK_SIGNAL_FUNC(destroyCB), (gpointer)my_data) ;
+
+  /* Set up other dialog properties */
   gtk_window_set_keep_above((GtkWindow *) toplevel,TRUE);
   gtk_container_set_focus_chain (GTK_CONTAINER(toplevel), NULL);
-
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
   gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
+  gtk_dialog_set_default_response(GTK_DIALOG(toplevel), GTK_RESPONSE_OK) ;
 
   /* Add ptr so parent knows about us */
   menu_data->window->style_window = (gpointer) my_data ;
+
 
   if (style->unique_id == menu_data->feature_set->unique_id)
     {
@@ -134,13 +145,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
       default_style_name = menu_data->feature_set->original_id;
     }
 
-  top_vbox = gtk_vbox_new(FALSE, 0) ;
-  gtk_container_add(GTK_CONTAINER(toplevel), top_vbox) ;
-  gtk_container_set_focus_chain (GTK_CONTAINER(top_vbox), NULL);
-
-  //      menubar = makeMenuBar(my_data) ;
-  //      gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
-
+  top_vbox = GTK_DIALOG(toplevel)->vbox ;
 
   text = "Style" ;
   frame = gtk_frame_new(text) ;
@@ -283,22 +288,6 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 
   
 
-  button = gtk_button_new_from_stock(GTK_STOCK_REVERT_TO_SAVED);
-  gtk_box_pack_start(GTK_BOX(hbox), button, TRUE, TRUE, 0);
-  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(revertCB), my_data);
-
-  button = gtk_button_new_from_stock(GTK_STOCK_APPLY);
-  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(applyCB), my_data);
-
-  button = gtk_button_new_from_stock(GTK_STOCK_CLOSE);
-  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(closeCB), my_data);
-
-  button = gtk_button_new_from_stock(GTK_STOCK_OK);
-  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(okCB), my_data);
-
   GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT) ; /* set ok button as default. */
   gtk_window_set_default(GTK_WINDOW(toplevel), button) ;
 
@@ -385,193 +374,6 @@ gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, 
   gtk_toggle_button_set_active((GtkToggleButton *) my_data->stranded, style->strand_specific);
 
   return TRUE;
-}
-
-
-/* Called when the user hits Revert on the Edit Style dialog. This throws away any changes since
- * they first opened the dialog, i.e. it reverts to the original style that was in the featureset. */
-static void revertCB(GtkWidget *widget, gpointer cb_data)
-{
-  StyleChange my_data = (StyleChange) cb_data;
-  ItemMenuCBData menu_data = my_data->menu_data;
-  ZMapFeatureSet feature_set = menu_data->feature_set;
-  ZMapFeatureTypeStyle style = NULL;
-  GQuark id;
-
-  /* If the current style is different to the original then we have created a child style. Just
-     remove the child and replace it with the parent */
-  if(feature_set->style->unique_id != my_data->orig_style_copy.unique_id)   
-    {
-      GHashTable *styles = my_data->menu_data->window->context_map->styles;
-      style = feature_set->style;
-      id = style->parent_id;
-
-      /* free the created style: cannot be ref'd anywhere else */
-      g_hash_table_remove(styles,GUINT_TO_POINTER(feature_set->style->unique_id));
-      zMapStyleDestroy(style);
-
-      /* find the parent */
-      style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(id));
-    }
-  else                                /* restore the existing style */
-    {
-      /* Overwrite the current style from the copy of the original style */
-      style = feature_set->style;
-      memcpy((void *) style, (void *) &my_data->orig_style_copy, sizeof (ZMapFeatureTypeStyleStruct));
-    }
-
-  /* update the column */
-  if (style)
-    zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, menu_data->context_map, menu_data->window);
-
-  /* update this dialog */
-  zmapWindowStyleDialogSetFeature(menu_data->window, menu_data->item, menu_data->feature);
-}
-
-
-/* Called when user hits OK on the Edit Style dialog. Just does an Apply then Close */
-static void okCB(GtkWidget *widget, gpointer cb_data)
-{
-  applyCB(widget, cb_data) ;
-  closeCB(widget, cb_data) ;
-}
-
-
-/* Called when the user applies changes on the Edit Style dialog. It updates the featureset's
- * style, creating a new child style if necessary  */
-static void applyCB(GtkWidget *widget, gpointer cb_data)
-{
-  StyleChange my_data = (StyleChange) cb_data;
-  ZMapFeatureSet feature_set = my_data->menu_data->feature_set;
-  ZMapFeatureTypeStyle style = feature_set->style;
-  GHashTable *styles = my_data->menu_data->window->context_map->styles;
-
-  GQuark new_style_id = zMapStyleCreateID(gtk_entry_get_text(GTK_ENTRY(my_data->style_name_widget))) ;
-
-  /* We make a new child style if the new style name is different to the existing one */
-  if (new_style_id != style->unique_id)
-    {
-      /* make new style with the specified name and merge in the parent */
-      ZMapFeatureTypeStyle parent = style;
-      ZMapFeatureTypeStyle tmp_style;
-
-      const char *name = g_quark_to_string(new_style_id) ;
-      style = zMapStyleCreate(name, name);
-
-      /* merge is written upside down
-       * we have to copy the parent and merge the child onto it
-       * then delete the style we just created
-       */
-
-      tmp_style = zMapFeatureStyleCopy(parent) ;
-
-      if (zMapStyleMerge(tmp_style, style))
-        {
-          g_hash_table_insert(styles,GUINT_TO_POINTER(style->unique_id),tmp_style);
-          zMapStyleDestroy(style);
-          style = tmp_style;
-
-          g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_PARENT_STYLE, parent->unique_id , NULL);
-        }
-      else
-        {
-          zMapWarning("Cannot create new style %s",name);
-          zMapStyleDestroy(tmp_style);
-          zMapStyleDestroy(style);
-          return;
-        }
-    }
-
-  /* apply the chosen colours etc */
-  updateStyle(my_data, style);
-
-  /* set the style
-   * if we are only changing colours we could be more efficient
-   * but this will work for all cases and means no need to write more code
-   * we do this _once_ at user/ mouse click speed
-   */
-  zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, my_data->menu_data->context_map, my_data->menu_data->window);
-}
-
-
-/* Called when the user closes the Edit Style dialog. Just destroys the dialog without doing anything. */
-static void closeCB(GtkWidget *widget, gpointer cb_data)
-{
-  StyleChange my_data = (StyleChange) cb_data ;
-
-  gtk_widget_destroy(my_data->toplevel);
-}
-
-
-/* Destroy the data associated with the Edit Style dialog */
-static void destroyCB(GtkWidget *widget, gpointer cb_data)
-{
-  StyleChange my_data = (StyleChange) cb_data;
-
-  my_data->menu_data->window->style_window = NULL;
-
-  g_free(my_data->menu_data);
-  g_free(my_data);
-}
-
-
-/* Get the color spec string for the given color buttons. The result should be free'd by the caller
- * with g_free. Returns null if there was a problem. */
-static char* getColorSpecStr(GtkWidget *fill_widget, GtkWidget *border_widget)
-{
-  char *colour_spec = NULL ;
-
-  if (fill_widget && border_widget && 
-      GTK_IS_COLOR_BUTTON(fill_widget) && GTK_IS_COLOR_BUTTON(border_widget))
-    {
-      GdkColor colour ;
-
-      gtk_color_button_get_color(GTK_COLOR_BUTTON(fill_widget), &colour) ;
-      char *fill_str = gdk_color_to_string(&colour) ;
-
-      gtk_color_button_get_color(GTK_COLOR_BUTTON(border_widget), &colour) ;
-      char *border_str = gdk_color_to_string(&colour) ;
-
-      colour_spec = zMapStyleMakeColourString(fill_str, "black", border_str,
-                                              fill_str, "black", border_str) ;
-    }
-
-  return colour_spec ;
-}
-
-
-/* Set the properties in the given style from the user-selected options from the dialog */
-static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style)
-{
-  /* Set whether strand-specific */
-  gboolean stranded = gtk_toggle_button_get_active((GtkToggleButton *) my_data->stranded) ;
-  g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC, stranded, NULL);
-
-
-  /* Set the colours */
-  char *colour_spec = getColorSpecStr(my_data->fill_widget, my_data->border_widget) ;
-
-  if (colour_spec)
-    {
-      g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_COLOURS, colour_spec, NULL);
-      g_free(colour_spec) ;
-      colour_spec = NULL ;
-    }
-
-
-  /* Set the CDS colours, if it's a transcript */
-  if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-    {
-      colour_spec = getColorSpecStr(my_data->cds_fill_widget, my_data->cds_border_widget) ;
-
-      if (colour_spec)
-        {
-          g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS, colour_spec, NULL);
-          g_free(colour_spec) ;
-          colour_spec = NULL ;
-        }
-    }
-
 }
 
 
@@ -727,4 +529,225 @@ void zmapWindowFeaturesetSetStyle(GQuark style_id,
 
   return ;
 }
+
+
+/************ INTERNAL FUNCTIONS **************/
+
+/* Called when the user hits a button on the Edit Style dialog */
+static void responseCB(GtkDialog *dialog, gint responseId, gpointer data)
+{
+  gboolean destroy = FALSE ;
+
+  switch (responseId)
+  {
+    case GTK_RESPONSE_OK:
+      /* Only destroy the window if applying the changes was successful */
+      if (applyChanges(data))
+        destroy = TRUE ;
+      break ;
+      
+    case GTK_RESPONSE_APPLY:
+      applyChanges(data) ;
+      destroy = FALSE;
+      break ;
+
+    case GTK_RESPONSE_REJECT:
+      revertChanges(data) ;
+      destroy = FALSE ;
+      break ;
+
+    case GTK_RESPONSE_CANCEL:
+      destroy = TRUE ;
+      break;
+      
+    default:
+      break;
+  };
+  
+  if (destroy)
+    {
+      gtk_widget_destroy(GTK_WIDGET(dialog));
+    }
+}
+
+
+/* Destroy the data associated with the Edit Style dialog */
+static void destroyCB(GtkWidget *widget, gpointer cb_data)
+{
+  StyleChange my_data = (StyleChange) cb_data;
+
+  my_data->menu_data->window->style_window = NULL;
+
+  g_free(my_data->menu_data);
+  g_free(my_data);
+}
+
+
+/* Called when the user hits Revert on the Edit Style dialog. This throws away any changes since
+ * they first opened the dialog, i.e. it reverts to the original style that was in the featureset. */
+static gboolean revertChanges(gpointer cb_data)
+{
+  gboolean ok = TRUE ;
+  StyleChange my_data = (StyleChange) cb_data;
+  ItemMenuCBData menu_data = my_data->menu_data;
+  ZMapFeatureSet feature_set = menu_data->feature_set;
+  ZMapFeatureTypeStyle style = NULL;
+  GQuark id;
+
+  /* If the current style is different to the original then we have created a child style. Just
+     remove the child and replace it with the parent */
+  if(feature_set->style->unique_id != my_data->orig_style_copy.unique_id)   
+    {
+      GHashTable *styles = my_data->menu_data->window->context_map->styles;
+      style = feature_set->style;
+      id = style->parent_id;
+
+      /* free the created style: cannot be ref'd anywhere else */
+      g_hash_table_remove(styles,GUINT_TO_POINTER(feature_set->style->unique_id));
+      zMapStyleDestroy(style);
+
+      /* find the parent */
+      style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(id));
+    }
+  else                                /* restore the existing style */
+    {
+      /* Overwrite the current style from the copy of the original style */
+      style = feature_set->style;
+      memcpy((void *) style, (void *) &my_data->orig_style_copy, sizeof (ZMapFeatureTypeStyleStruct));
+    }
+
+  /* update the column */
+  if (style)
+    zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, menu_data->context_map, menu_data->window);
+
+  /* update this dialog */
+  zmapWindowStyleDialogSetFeature(menu_data->window, menu_data->item, menu_data->feature);
+
+  return ok;
+}
+
+
+/* Called when the user applies changes on the Edit Style dialog. It updates the featureset's
+ * style, creating a new child style if necessary  */
+static gboolean applyChanges(gpointer cb_data)
+{
+  gboolean ok = TRUE ;
+  StyleChange my_data = (StyleChange) cb_data;
+  ZMapFeatureSet feature_set = my_data->menu_data->feature_set;
+  ZMapFeatureTypeStyle style = feature_set->style;
+  GHashTable *styles = my_data->menu_data->window->context_map->styles;
+
+  GQuark new_style_id = zMapStyleCreateID(gtk_entry_get_text(GTK_ENTRY(my_data->style_name_widget))) ;
+
+  /* We make a new child style if the new style name is different to the existing one */
+  if (new_style_id != style->unique_id)
+    {
+      /* make new style with the specified name and merge in the parent */
+      ZMapFeatureTypeStyle parent = style;
+      ZMapFeatureTypeStyle tmp_style;
+
+      const char *name = g_quark_to_string(new_style_id) ;
+      style = zMapStyleCreate(name, name);
+
+      /* merge is written upside down
+       * we have to copy the parent and merge the child onto it
+       * then delete the style we just created
+       */
+
+      tmp_style = zMapFeatureStyleCopy(parent) ;
+
+      if (zMapStyleMerge(tmp_style, style))
+        {
+          g_hash_table_insert(styles,GUINT_TO_POINTER(style->unique_id),tmp_style);
+          zMapStyleDestroy(style);
+          style = tmp_style;
+
+          g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_PARENT_STYLE, parent->unique_id , NULL);
+        }
+      else
+        {
+          zMapWarning("Cannot create new style %s",name);
+          zMapStyleDestroy(tmp_style);
+          zMapStyleDestroy(style);
+          ok = FALSE;
+        }
+    }
+
+  if (ok)
+    {
+      /* apply the chosen colours etc */
+      updateStyle(my_data, style);
+
+      /* set the style
+       * if we are only changing colours we could be more efficient
+       * but this will work for all cases and means no need to write more code
+       * we do this _once_ at user/ mouse click speed
+       */
+      zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, my_data->menu_data->context_map, my_data->menu_data->window);
+    }
+
+  return ok;
+}
+
+
+/* Get the color spec string for the given color buttons. The result should be free'd by the caller
+ * with g_free. Returns null if there was a problem. */
+static char* getColorSpecStr(GtkWidget *fill_widget, GtkWidget *border_widget)
+{
+  char *colour_spec = NULL ;
+
+  if (fill_widget && border_widget && 
+      GTK_IS_COLOR_BUTTON(fill_widget) && GTK_IS_COLOR_BUTTON(border_widget))
+    {
+      GdkColor colour ;
+
+      gtk_color_button_get_color(GTK_COLOR_BUTTON(fill_widget), &colour) ;
+      char *fill_str = gdk_color_to_string(&colour) ;
+
+      gtk_color_button_get_color(GTK_COLOR_BUTTON(border_widget), &colour) ;
+      char *border_str = gdk_color_to_string(&colour) ;
+
+      colour_spec = zMapStyleMakeColourString(fill_str, "black", border_str,
+                                              fill_str, "black", border_str) ;
+    }
+
+  return colour_spec ;
+}
+
+
+/* Set the properties in the given style from the user-selected options from the dialog */
+static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style)
+{
+  /* Set whether strand-specific */
+  gboolean stranded = gtk_toggle_button_get_active((GtkToggleButton *) my_data->stranded) ;
+  g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC, stranded, NULL);
+
+
+  /* Set the colours */
+  char *colour_spec = getColorSpecStr(my_data->fill_widget, my_data->border_widget) ;
+
+  if (colour_spec)
+    {
+      g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_COLOURS, colour_spec, NULL);
+      g_free(colour_spec) ;
+      colour_spec = NULL ;
+    }
+
+
+  /* Set the CDS colours, if it's a transcript */
+  if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      colour_spec = getColorSpecStr(my_data->cds_fill_widget, my_data->cds_border_widget) ;
+
+      if (colour_spec)
+        {
+          g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS, colour_spec, NULL);
+          g_free(colour_spec) ;
+          colour_spec = NULL ;
+        }
+    }
+
+}
+
+
 
