@@ -64,8 +64,9 @@ typedef struct
 
   GtkWidget *toplevel ;
   GtkWidget *featureset_name_widget;      /* Name of the featureset whose style is being
-                                           * edited/created */
-  GtkWidget *style_name_widget;           /* User-editable style name for the new/existing style
+                                           * edited */
+  GtkWidget *orig_style_name_widget;      /* Widget showing original style name for this featureset */
+  GtkWidget *new_style_name_widget;       /* User-editable style name for the new/existing style
                                            * to edit */
 
   GtkWidget *fill_widget ;                /* Fill colour button */ 
@@ -193,7 +194,8 @@ gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, 
       default_style_name = feature_set->original_id;
     }
 
-  gtk_entry_set_text(GTK_ENTRY(my_data->style_name_widget), g_quark_to_string(default_style_name));
+  gtk_entry_set_text(GTK_ENTRY(my_data->orig_style_name_widget), g_quark_to_string(style->unique_id));
+  gtk_entry_set_text(GTK_ENTRY(my_data->new_style_name_widget), g_quark_to_string(default_style_name));
   
   /* Update the colour buttons. */
   zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
@@ -432,12 +434,23 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
       default_style_name = my_data->menu_data->feature_set->original_id;
     }
 
-  label = gtk_label_new("Style name: ") ;
+  label = gtk_label_new("Original style: ") ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
 
-  entry = my_data->style_name_widget = gtk_entry_new() ;
+  entry = my_data->orig_style_name_widget = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), g_quark_to_string(my_data->orig_style_copy.unique_id)) ;
+  gtk_widget_set_sensitive(entry, FALSE) ;
+  gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
+  *row += 1 ;
+
+  label = gtk_label_new("New style: ") ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
+
+  entry = my_data->new_style_name_widget = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), g_quark_to_string(default_style_name)) ;
+  gtk_widget_set_tooltip_text(entry, "If this is different to the original style name, then a new child style will be created; otherwise the original style will be overwritten.") ;
   gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
   *row += 1 ;
 }
@@ -643,7 +656,7 @@ static gboolean applyChanges(gpointer cb_data)
   ZMapFeatureTypeStyle style = feature_set->style;
   GHashTable *styles = my_data->menu_data->window->context_map->styles;
 
-  GQuark new_style_id = zMapStyleCreateID(gtk_entry_get_text(GTK_ENTRY(my_data->style_name_widget))) ;
+  GQuark new_style_id = zMapStyleCreateID(gtk_entry_get_text(GTK_ENTRY(my_data->new_style_name_widget))) ;
 
   /* We make a new child style if the new style name is different to the existing one */
   if (new_style_id != style->unique_id)
