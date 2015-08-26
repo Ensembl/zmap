@@ -178,8 +178,8 @@ gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, 
   memcpy(&my_data->orig_style_copy, style,sizeof (ZMapFeatureTypeStyleStruct));
 
   /* Update the featureset name */
-  const char *text = feature_set->original_id ? g_quark_to_string(feature_set->original_id) : "" ;
-  gtk_entry_set_text(GTK_ENTRY(my_data->featureset_name_widget), text) ;
+  const char *text = g_quark_to_string(feature_set->original_id) ;
+  gtk_entry_set_text(GTK_ENTRY(my_data->featureset_name_widget), text ? text : "") ;
 
   /* Update the default style name */
   if (style->unique_id == feature_set->unique_id)
@@ -196,11 +196,11 @@ gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, 
       default_style_name = feature_set->original_id;
     }
 
-  text = style->unique_id ? g_quark_to_string(style->unique_id) : "" ;
-  gtk_entry_set_text(GTK_ENTRY(my_data->orig_style_name_widget), text);
+  text = g_quark_to_string(style->unique_id) ;
+  gtk_entry_set_text(GTK_ENTRY(my_data->orig_style_name_widget), text ? text : "");
 
-  text = default_style_name ? g_quark_to_string(default_style_name) : "" ;
-  gtk_entry_set_text(GTK_ENTRY(my_data->new_style_name_widget), text);
+  text = g_quark_to_string(default_style_name) ;
+  gtk_entry_set_text(GTK_ENTRY(my_data->new_style_name_widget), text ? text : "");
   
   /* Update the colour buttons. */
   zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
@@ -421,8 +421,8 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
 
   GtkWidget *entry = my_data->featureset_name_widget = gtk_entry_new() ;
 
-  const char *text = feature_set->original_id ? g_quark_to_string(feature_set->original_id) : "" ;
-  gtk_entry_set_text(GTK_ENTRY(entry), text) ;
+  const char *text = g_quark_to_string(feature_set->original_id) ;
+  gtk_entry_set_text(GTK_ENTRY(entry), text ? text : "") ;
   gtk_widget_set_sensitive(entry, FALSE) ;
   gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
   *row += 1 ;
@@ -447,7 +447,8 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
   gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
 
   entry = my_data->orig_style_name_widget = gtk_entry_new() ;
-  gtk_entry_set_text(GTK_ENTRY(entry), g_quark_to_string(my_data->orig_style_copy.unique_id)) ;
+  text = g_quark_to_string(my_data->orig_style_copy.unique_id);
+  gtk_entry_set_text(GTK_ENTRY(entry), text ? text : "") ;
   gtk_widget_set_sensitive(entry, FALSE) ;
   gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
   *row += 1 ;
@@ -457,8 +458,8 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
   gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
 
   entry = my_data->new_style_name_widget = gtk_entry_new() ;
-  text = default_style_name ? g_quark_to_string(default_style_name) : "";
-  gtk_entry_set_text(GTK_ENTRY(entry), text) ;
+  text = g_quark_to_string(default_style_name) ;
+  gtk_entry_set_text(GTK_ENTRY(entry), text ? text : "") ;
   gtk_widget_set_tooltip_text(entry, "If this is different to the original style name, then a new child style will be created; otherwise the original style will be overwritten.") ;
   gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
   *row += 1 ;
