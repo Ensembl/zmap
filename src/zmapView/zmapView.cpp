@@ -2421,6 +2421,7 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
 static GtkResponseType checkForUnsavedConfig(ZMapView zmap_view, ZMapViewExportType export_type)
 {
   GtkResponseType response = GTK_RESPONSE_OK ;
+  GError *error = NULL ;
 
   if (zmap_view && zmap_view->flags[ZMAPFLAG_FEATURES_NEED_SAVING])
     {
@@ -2447,7 +2448,7 @@ static GtkResponseType checkForUnsavedConfig(ZMapView zmap_view, ZMapViewExportT
            * for a Save option rather than Save As...) */
           const char *file = zMapViewGetSaveFile(zmap_view, export_type, FALSE) ;
           char *filename = g_strdup(file) ;
-          gboolean saved = zMapViewExportConfig(view, export_type, &filename, &error) ;
+          gboolean saved = zMapViewExportConfig(zmap_view, export_type, &filename, &error) ;
 
           if (!saved)
             {
@@ -6947,13 +6948,19 @@ const char* zMapViewGetSaveFile(ZMapView view, const ZMapViewExportType export_t
       
         case ZMAPVIEW_EXPORT_CONFIG:
           {
-            
+            result = zMapConfigDirGetFile() ;
             break ;
           }
 
         case ZMAPVIEW_EXPORT_STYLES:
           {
             
+            break ;
+          }
+
+        default:
+          {
+            zMapWarnIfReached() ;
             break ;
           }
         }
@@ -6974,10 +6981,54 @@ void zMapViewSetSaveFile(ZMapView view, const ZMapViewExportType export_type, co
 
 /* Export config or styles (as given by export_type) to the given file. If filename is null,
  * prompt the user for a filename. Returns true if successful, false if there was an error. */
-gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_type, char **filepath_inout, GError *error)
+gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_type, char **filepath_inout, GError **error)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
+  char *filepath = NULL ;
+  GIOChannel *file = NULL ;
+  GError *tmp_error = NULL ;
 
+  if (filepath_inout && *filepath_inout)
+    filepath = g_strdup(*filepath_inout) ;
+
+  if (!filepath)
+    filepath = zmapGUIFileChooser(NULL, "Configuration Export filename ?", NULL, "ini") ;
+
+  if (filepath)
+    file = g_io_channel_new_file(filepath, "w", &tmp_error) ;
+
+  if (file)
+    //result = zMapConfigExport(export_type, &tmp_error);
+    ;
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
+
+  if (file)
+    {
+      GIOStatus status = g_io_channel_shutdown(file, TRUE, &tmp_error) ;
+
+      if (status != G_IO_STATUS_NORMAL)
+        {
+          zMapShowMsg(ZMAP_MSG_WARNING, "Error exporting configuration:  %s", tmp_error->message) ;
+
+          g_error_free(tmp_error) ;
+        }
+    }
+
+  if (filepath)
+    {
+      if (filepath_inout && !*filepath_inout)
+        {
+          /* We've created the filepath in this function so set the output value from it */
+          *filepath_inout = filepath ;
+        }
+      else
+        {
+          /* Return value wasn't requested so free this */
+          g_free(filepath) ;
+        }
+    }
 
   return result ;
 }

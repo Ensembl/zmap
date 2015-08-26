@@ -252,7 +252,7 @@ void zMapViewUpdateColumnBackground(ZMapView view);
 
 const char* zMapViewGetSaveFile(ZMapView view, const ZMapViewExportType export_type, const gboolean use_input_file) ;
 void zMapViewSetSaveFile(ZMapView view, const ZMapViewExportType export_type, const char *filename) ;
-gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_type, char **filepath_inout, GError *error) ;
+gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_type, char **filepath_inout, GError **error) ;
 
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view) ;
 

@@ -253,7 +253,7 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
     case EXPORT_CONFIG:
       {
-        char *filename = g_strdup(zMapViewGetSaveFile(curr_view, ZMAPVIEW_EXPORT_CONFIG, TRUE)) ;
+        char *filename = g_strdup(zMapViewGetSaveFile(curr_view, ZMAPVIEW_EXPORT_CONFIG, FALSE)) ;
         result = zMapViewExportConfig(curr_view, ZMAPVIEW_EXPORT_CONFIG, &filename, &error) ;
 
         if (result)
@@ -267,7 +267,7 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
     case EXPORT_STYLES:
       {
-        char *filename = g_strdup(zMapViewGetSaveFile(curr_view, ZMAPVIEW_EXPORT_STYLES, TRUE)) ;
+        char *filename = g_strdup(zMapViewGetSaveFile(curr_view, ZMAPVIEW_EXPORT_STYLES, FALSE)) ;
         result = zMapViewExportConfig(curr_view, ZMAPVIEW_EXPORT_STYLES, &filename, &error) ;
 
         if (result)
