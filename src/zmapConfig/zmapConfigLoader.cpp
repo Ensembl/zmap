@@ -153,19 +153,6 @@ ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file)
       if((stanza_group = get_blixem_group_data(&stanza_name, &stanza_type)))
         zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group);
     }
-  else if (context)
-    {
-      const char *err_msg = "no error message" ;
-
-      if (context->error_message)
-        err_msg = context->error_message ;
-      else if (context->config && context->config->sys_key_error)
-        err_msg = context->config->sys_key_error->message ;
-      else if (context->config && context->config->zmap_key_error)
-        err_msg = context->config->zmap_key_error->message ;
-
-      zMapLogWarning("Error reading config file: %s", err_msg) ;
-    }
   else
     {
       zMapLogWarning("%s", "Error creating config file context") ;
