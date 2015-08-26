@@ -410,9 +410,10 @@ typedef struct _ZMapViewStruct
                                         * on feature's unique_id. Gets cleared when pointers
                                         * are invalidated, i.e. revcomp */
 
-  GQuark save_file ;                   /* Filename to use for the Save option in standalone
-                                        * ZMap. Gets set either from the input file or from the
-                                        * first Save As operation.  */
+  /* Filenames to use for the Save option in standalone ZMap. Gets set either from the input 
+   * file or from the first Save As operation. This is an array indexed on the type of export,
+   * e.g. features/config/styles */
+  GQuark save_file[ZMAPVIEW_EXPORT_NUM_TYPES] ;
 } ZMapViewStruct ;
 
 

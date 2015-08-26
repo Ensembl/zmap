@@ -55,6 +55,8 @@ typedef enum {
   EXPORT_FEATURES_ALL,
   EXPORT_FEATURES_MARKED,
   /*EXPORT_FEATURES_SELECTED,*/
+  EXPORT_CONFIG,
+  EXPORT_STYLES,
   SAVE_FEATURES,
   SAVE_FEATURES_AS
 } ExportType ;
@@ -98,8 +100,10 @@ static GtkItemFactoryEntry menu_items[] = {
          /*{ (char*)"/File/Export/_Data",                      NULL,                NULL,                  0,  "<Branch>" }, */
          { (char*)"/File/Export/_DNA",                     NULL,                G_CALLBACK(exportCB),              EXPORT_DNA,  NULL },
          { (char*)"/File/Export/_Features",                (char*)"<control>E", G_CALLBACK(exportCB),              EXPORT_FEATURES_ALL,  NULL },
-         { (char*)"/File/Export/_Features (marked)",       (char*)"<shift><control>E", G_CALLBACK(exportCB),              EXPORT_FEATURES_MARKED, NULL },
-         /*{ "/File/Export/_Features (selected)",     NULL,                exportCB,              EXPORT_FEATURES_SELECTED, NULL },*/
+         { (char*)"/File/Export/Features (_marked)",       (char*)"<shift><control>E", G_CALLBACK(exportCB),              EXPORT_FEATURES_MARKED, NULL },
+         { (char*)"/File/Export/_Configuration",           NULL,                G_CALLBACK(exportCB),              EXPORT_CONFIG, NULL },
+         { (char*)"/File/Export/_Styles",                  NULL,                G_CALLBACK(exportCB),              EXPORT_STYLES, NULL },
+         /*{ "/File/Export/_Features (selected)",          NULL,                exportCB,              EXPORT_FEATURES_SELECTED, NULL },*/
          /* { (char*)"/File/Export/_Context",              NULL,                exportCB,              3,  NULL },
          { (char*)"/File/Export/_Marked Features",         NULL,                NULL,                  0,  (char*)"<Branch>" },
          { (char*)"/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
@@ -247,16 +251,44 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
         break ;
       }*/
 
+    case EXPORT_CONFIG:
+      {
+        char *filename = g_strdup(zMapViewGetSaveFile(curr_view, ZMAPVIEW_EXPORT_CONFIG, TRUE)) ;
+        result = zMapViewExportConfig(curr_view, ZMAPVIEW_EXPORT_CONFIG, &filename, &error) ;
+
+        if (result)
+          zMapViewSetSaveFile(curr_view, ZMAPVIEW_EXPORT_CONFIG, filename) ;
+
+        if (filename)
+          g_free(filename) ;
+
+        break ;
+      }
+
+    case EXPORT_STYLES:
+      {
+        char *filename = g_strdup(zMapViewGetSaveFile(curr_view, ZMAPVIEW_EXPORT_STYLES, TRUE)) ;
+        result = zMapViewExportConfig(curr_view, ZMAPVIEW_EXPORT_STYLES, &filename, &error) ;
+
+        if (result)
+          zMapViewSetSaveFile(curr_view, ZMAPVIEW_EXPORT_STYLES, filename) ;
+
+        if (filename)
+          g_free(filename) ;
+
+        break ;
+      }
+
     /* Save - same as export all features but we pass the existing filename, if there is one;
      * if there isn't then the file chooser will be shown and we'll save the file the user
      * selects for future Save operations. */
     case SAVE_FEATURES:
       {
-        char *filename = g_strdup(zMapViewGetSaveFile(curr_view, TRUE)) ;
+        char *filename = g_strdup(zMapViewGetSaveFile(curr_view, ZMAPVIEW_EXPORT_FEATURES, TRUE)) ;
         result = zMapWindowExportFeatures(curr_window, TRUE, FALSE, NULL, &filename, &error) ;
 
         if (result)
-          zMapViewSetSaveFile(curr_view, filename) ;
+          zMapViewSetSaveFile(curr_view, ZMAPVIEW_EXPORT_FEATURES, filename) ;
 
         if (filename)
           g_free(filename) ;
@@ -271,7 +303,7 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
         result = zMapWindowExportFeatures(curr_window, TRUE, FALSE, NULL, &filename, &error) ;
 
         if (result)
-          zMapViewSetSaveFile(curr_view, filename) ;
+          zMapViewSetSaveFile(curr_view, ZMAPVIEW_EXPORT_FEATURES, filename) ;
 
         if (filename)
           g_free(filename) ;
