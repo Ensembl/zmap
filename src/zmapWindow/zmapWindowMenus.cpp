@@ -104,24 +104,31 @@ typedef enum
     SELECTED_NONE              = 1 << 0,
     SELECTED_GAPS              = 1 << 1,
     SELECTED_PARTS             = 1 << 2,
+    SELECTED_CDS               = 1 << 3,
 
     /* Part of feature to use for filtering. */
-    FILTER_GAPS                = 1 << 4,
-    FILTER_PARTS               = 1 << 5,
-    FILTER_CDS                 = 1 << 6,
-    FILTER_NONE                = 1 << 7,
+    FILTER_NONE                = 1 << 4,
+    FILTER_GAPS                = 1 << 5,
+    FILTER_PARTS               = 1 << 6,
+    FILTER_CDS                 = 1 << 7,
+
 
     /* Action to take on filtering. */
     ACTION_HIGHLIGHT_SPLICE    = 1 << 8,
     ACTION_HIDE                = 1 << 9,
     ACTION_SHOW                = 1 << 10,
-    ACTION_CREATE_NEW          = 1 << 11,
 
 
     /* When filtering, what should be filtered in the selected col. */
     TARGET_NOT_SOURCE_FEATURES = 1 << 12,
     TARGET_NOT_SOURCE_COLUMN   = 1 << 13,
     TARGET_ALL                 = 1 << 14,
+
+    // How to make the match.   
+    MATCH_PARTIAL              = 1 << 15,
+    MATCH_FULL                 = 1 << 16,
+
+    TEST_WINDOW                = 1 << 20,
 
 
     FILTER_ALL                 = 1 << 25                    /* Filter all cols. */
@@ -419,6 +426,7 @@ static GList *getTranscriptTextAttrs(ZMapFeature feature, gboolean spliced, gboo
 static void createExonTextTag(gpointer data, gpointer user_data) ;
 static void offsetTextAttr(gpointer data, gpointer user_data) ;
 
+static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window) ;
 
 
 
@@ -472,37 +480,6 @@ static void offsetTextAttr(gpointer data, gpointer user_data) ;
  */
 
 
-
-/*!
- * \brief Get the ZMapWindowContainerFeatureSet for the scratch column
- */
-static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window)
-{
-  ZMapWindowContainerFeatureSet scratch_container = NULL ;
-  zMapReturnValIfFail(window, scratch_container) ;
-
-  ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
-  zMapReturnValIfFail(scratch_featureset->parent && scratch_featureset->parent->parent,
-                      scratch_container) ;
-
-  if (scratch_featureset)
-    {
-      FooCanvasItem *scratch_column_item = zmapWindowFToIFindItemFull(window, window->context_to_item,
-                                                                      scratch_featureset->parent->parent->unique_id,
-                                                                      scratch_featureset->parent->unique_id,
-                                                                      scratch_featureset->unique_id,
-                                                                      ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0) ;
-
-      ZMapWindowContainerGroup scratch_group  = zmapWindowContainerCanvasItemGetContainer(scratch_column_item) ;
-
-      if (scratch_group && ZMAP_IS_CONTAINER_FEATURESET(scratch_group))
-        {
-          scratch_container = ZMAP_CONTAINER_FEATURESET(scratch_group) ;
-        }
-    }
-
-  return scratch_container ;
-}
 
 /*
  * Build the menu for a feature item.
@@ -1013,6 +990,39 @@ static const char* getFeatureModeStr(ZMapFeature feature)
     result = SELECTED_ALIGNS ;
 
   return result ;
+}
+
+
+
+/*!
+ * \brief Get the ZMapWindowContainerFeatureSet for the scratch column
+ */
+static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window)
+{
+  ZMapWindowContainerFeatureSet scratch_container = NULL ;
+  zMapReturnValIfFail(window, scratch_container) ;
+
+  ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
+  zMapReturnValIfFail(scratch_featureset->parent && scratch_featureset->parent->parent,
+                      scratch_container) ;
+
+  if (scratch_featureset)
+    {
+      FooCanvasItem *scratch_column_item = zmapWindowFToIFindItemFull(window, window->context_to_item,
+                                                                      scratch_featureset->parent->parent->unique_id,
+                                                                      scratch_featureset->parent->unique_id,
+                                                                      scratch_featureset->unique_id,
+                                                                      ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0) ;
+
+      ZMapWindowContainerGroup scratch_group  = zmapWindowContainerCanvasItemGetContainer(scratch_column_item) ;
+
+      if (scratch_group && ZMAP_IS_CONTAINER_FEATURESET(scratch_group))
+        {
+          scratch_container = ZMAP_CONTAINER_FEATURESET(scratch_group) ;
+        }
+    }
+
+  return scratch_container ;
 }
 
 
@@ -3110,6 +3120,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuColFilterOps(int *start_index_inout,
 
       {ZMAPGUI_MENU_TITLE, "_" COL_FILT_THIS_STR COL_FILT_SHOW_STR, FILTER_NONE, NULL, NULL},
 
+      {ZMAPGUI_MENU_RADIO, COL_FILT_THIS_STR "/TEST WINDOW",
+       (TEST_WINDOW), colFilterMenuCB, NULL},
+
       {ZMAPGUI_MENU_RADIO, COL_FILT_THIS_STR "/Common Splices",
        (SELECTED_PARTS | FILTER_PARTS | ACTION_HIGHLIGHT_SPLICE), colFilterMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO, COL_FILT_THIS_STR "/Non-matching Introns",
@@ -3121,7 +3134,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuColFilterOps(int *start_index_inout,
       {ZMAPGUI_MENU_RADIO, COL_FILT_THIS_STR "/Matching Exons",
        (SELECTED_PARTS | FILTER_PARTS | ACTION_SHOW | TARGET_NOT_SOURCE_FEATURES), colFilterMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO, COL_FILT_THIS_STR "/Matching CDS",
-       (SELECTED_PARTS | FILTER_CDS | ACTION_SHOW | TARGET_NOT_SOURCE_FEATURES), colFilterMenuCB, NULL},
+       (SELECTED_CDS | FILTER_CDS | ACTION_SHOW | TARGET_NOT_SOURCE_FEATURES), colFilterMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO, COL_FILT_THIS_STR "/Unfilter",
        (SELECTED_NONE | FILTER_NONE | ACTION_SHOW), colFilterMenuCB, NULL},
 
@@ -3140,7 +3153,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuColFilterOps(int *start_index_inout,
       {ZMAPGUI_MENU_RADIO, COL_FILT_ALL_STR "/Matching Exons",
        (SELECTED_PARTS | FILTER_PARTS | ACTION_SHOW | TARGET_NOT_SOURCE_COLUMN | FILTER_ALL), colFilterMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO, COL_FILT_ALL_STR "/Matching CDS",
-       (SELECTED_PARTS | FILTER_CDS | ACTION_SHOW | TARGET_NOT_SOURCE_COLUMN | FILTER_ALL), colFilterMenuCB, NULL},
+       (SELECTED_CDS | FILTER_CDS | ACTION_SHOW | TARGET_NOT_SOURCE_COLUMN | FILTER_ALL), colFilterMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO, COL_FILT_ALL_STR "/Unfilter",
        (SELECTED_NONE | FILTER_NONE | ACTION_SHOW | FILTER_ALL), colFilterMenuCB, NULL},
 
@@ -3151,7 +3164,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuColFilterOps(int *start_index_inout,
   ZMapWindowContainerFilterType curr_selected_filter_type, curr_filter_type ;
   ZMapWindowContainerActionType curr_action_type ;
   ColFilteringType curr_selected_type, curr_menu_type, curr_menu_action ;
-  gboolean cds_match ;
   ZMapGUIMenuItem menu_item ;
 
   column_container = zmapWindowContainerCanvasItemGetContainer(menu_data->item) ;
@@ -3160,7 +3172,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuColFilterOps(int *start_index_inout,
     = zMapWindowContainerFeatureSetGetSelectedType((ZMapWindowContainerFeatureSet)column_container) ;
   curr_filter_type = zMapWindowContainerFeatureSetGetFilterType((ZMapWindowContainerFeatureSet)column_container) ;
   curr_action_type = zMapWindowContainerFeatureSetGetActionType((ZMapWindowContainerFeatureSet)column_container) ;
-  cds_match = zMapWindowContainerFeatureSetIsCDSMatch((ZMapWindowContainerFeatureSet)column_container) ;
 
   switch (curr_selected_filter_type)
     {
@@ -3172,6 +3183,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuColFilterOps(int *start_index_inout,
       break ;
     case ZMAP_CANVAS_FILTER_GAPS:
       curr_selected_type = SELECTED_GAPS ;
+      break ;
+    case ZMAP_CANVAS_FILTER_CDS:
+      curr_selected_type = SELECTED_CDS ;
       break ;
 
     default:
@@ -3185,13 +3199,13 @@ ZMapGUIMenuItem zmapWindowMakeMenuColFilterOps(int *start_index_inout,
       curr_menu_type = FILTER_NONE ;
       break ;
     case ZMAP_CANVAS_FILTER_PARTS:
-      if (cds_match)
-        curr_menu_type = FILTER_CDS ;
-      else
-        curr_menu_type = FILTER_PARTS ;
+      curr_menu_type = FILTER_PARTS ;
       break ;
     case ZMAP_CANVAS_FILTER_GAPS:
       curr_menu_type = FILTER_GAPS ;
+      break ;
+    case ZMAP_CANVAS_FILTER_CDS:
+      curr_menu_type = FILTER_CDS ;
       break ;
 
     default:
@@ -3210,9 +3224,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuColFilterOps(int *start_index_inout,
       break ;
     case ZMAP_CANVAS_ACTION_SHOW:
       curr_menu_action = ACTION_SHOW ;
-      break ;
-    case ZMAP_CANVAS_ACTION_CREATE_NEW:
-      curr_menu_action = ACTION_CREATE_NEW ;
       break ;
     default:
       curr_menu_action = FILTER_NONE ;
@@ -3267,142 +3278,225 @@ static void colFilterMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindow window = menu_data->window ;
-  ZMapWindowCallbackCommandFilterStruct filter_data = {ZMAPWINDOW_CMD_COLFILTER, FALSE} ;
-  ZMapWindowCallbacks window_cbs_G ;
-  ZMapWindowContainerGroup column_group ;
-  gboolean all_cols = FALSE ;
-  FooCanvasGroup *focus_column ;
-  FooCanvasItem *focus_item ;
+  gboolean status ;
+  int mark_start = 0, mark_end = 0 ;
+  gboolean filtering ;
+  gboolean all_cols ;
+  gboolean filter_window ;
+  FooCanvasGroup *focus_column = NULL ;
+  FooCanvasItem *focus_item = NULL ;
   GList *filterfeatures = NULL ;
 
 
-  window_cbs_G = zmapWindowGetCBs() ;
+  status = TRUE ;
 
-  /* Column where menu was clicked. */
-  column_group = zmapWindowContainerCanvasItemGetContainer(menu_data->item) ;
+  // Are we filtering or unfiltering ?  (bit hacky at the moment with the window stuff...
+  if ((filter_window = (menu_item_id & TEST_WINDOW)))
+    filtering = TRUE ;
+  else
+    filtering = !(menu_item_id & SELECTED_NONE && menu_item_id & FILTER_NONE) ;
 
-
-  if (menu_item_id & FILTER_ALL)
-    all_cols = TRUE ;
-
+  // Is the operation on all columns ?   
+  all_cols = (menu_item_id & FILTER_ALL) ;
 
   /* If we are doing filtering then check for highlighted feature and also for mark... */
-  if (!(menu_item_id & SELECTED_NONE && menu_item_id & FILTER_NONE))
+  if (filtering)
     {
-      if (!((focus_column = zmapWindowFocusGetHotColumn(window->focus))
-            && (focus_item = zmapWindowFocusGetHotItem(window->focus))
-            && (filterfeatures = zmapWindowFocusGetFeatureList(window->focus))))
+      char *err_msg = NULL ;
+      
+      if (!zmapWindowFocusGetFeatureListFull(window, TRUE,
+                                             &focus_column, &focus_item, &filterfeatures,
+                                             &err_msg))
         {
-          /* We can't do anything if there is no highlight feature. */
+          zMapWarning("%s", err_msg) ;
 
-          zMapMessage("%s", "No features selected.") ;
-        }
-      else
-        {
-          /* If the mark is set then exclude any features not overlapping it.... */
-          if (zmapWindowMarkIsSet(window->mark) && zmapWindowMarkGetSequenceRange(window->mark,
-                                                                                  &(filter_data.seq_start),
-                                                                                  &(filter_data.seq_end)))
-            {
-              filterfeatures = zMapFeatureGetOverlapFeatures(filterfeatures,
-                                                             filter_data.seq_start, filter_data.seq_end,
-                                                             ZMAPFEATURE_OVERLAP_ALL) ;
-            }
+          g_free(err_msg) ;
+
+          status = FALSE ;
         }
     }
+  
 
-
-  /* Note, if filtering then any mark may result in no filter features. */
-  if ((menu_item_id & SELECTED_NONE && menu_item_id & FILTER_NONE) || filterfeatures)
+  if (status)
     {
+      ZMapWindowCallbackCommandFilter filter_data ;
+      ZMapFeature filter_feature = NULL, target_feature = NULL ;
+      ZMapWindowContainerGroup column_group ;
 
-      if (menu_item_id & SELECTED_GAPS)
-        filter_data.selected = ZMAP_CANVAS_FILTER_GAPS ;
-      else if (menu_item_id & SELECTED_PARTS)
-        filter_data.selected = ZMAP_CANVAS_FILTER_PARTS ;
-      else
-        filter_data.selected = ZMAP_CANVAS_FILTER_NONE ;
+      filter_data = g_new0(ZMapWindowCallbackCommandFilterStruct, 1) ;
+      filter_data->cmd = ZMAPWINDOW_CMD_COLFILTER ;
+      filter_data->result = FALSE ;
 
-      if (menu_item_id & FILTER_GAPS)
-        filter_data.filter = ZMAP_CANVAS_FILTER_GAPS ;
-      else if (menu_item_id & FILTER_PARTS)
-        filter_data.filter = ZMAP_CANVAS_FILTER_PARTS ;
-      else if (menu_item_id & FILTER_CDS)
-        filter_data.filter = ZMAP_CANVAS_FILTER_PARTS ;
-      else
-        filter_data.filter = ZMAP_CANVAS_FILTER_NONE ;
-
-
-      if (menu_item_id & FILTER_CDS)
-        filter_data.cds_match = TRUE ;
-
-      if (menu_item_id & ACTION_HIGHLIGHT_SPLICE)
-        filter_data.action = ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE ;
-      else if (menu_item_id & ACTION_HIDE)
-        filter_data.action = ZMAP_CANVAS_ACTION_HIDE ;
-      else if (menu_item_id & ACTION_SHOW)
-        filter_data.action = ZMAP_CANVAS_ACTION_SHOW ;
-      else
-        filter_data.action = ZMAP_CANVAS_ACTION_CREATE_NEW ;
-
-      if (menu_item_id & TARGET_NOT_SOURCE_FEATURES)
-        filter_data.target_type = ZMAP_CANVAS_TARGET_NOT_SOURCE_FEATURES ;
-      else if (menu_item_id & TARGET_NOT_SOURCE_COLUMN)
-        filter_data.target_type = ZMAP_CANVAS_TARGET_NOT_SOURCE_COLUMN ;
-      else
-        filter_data.target_type = ZMAP_CANVAS_TARGET_ALL ;
-
-
-      if (menu_item_id & SELECTED_NONE && menu_item_id & FILTER_NONE)
+      if (filtering)
         {
-          filter_data.filter_column = (ZMapWindowContainerFeatureSet)column_group ;
+          if (mark_start && mark_end)
+            {
+              filter_data->seq_start = mark_start ;
+              filter_data->seq_end = mark_end ;
+            }
+        }
+
+
+
+      if (!filter_window)
+        {
+          if (menu_item_id & SELECTED_GAPS)
+            filter_data->selected = ZMAP_CANVAS_FILTER_GAPS ;
+          else if (menu_item_id & SELECTED_PARTS)
+            filter_data->selected = ZMAP_CANVAS_FILTER_PARTS ;
+          else if (menu_item_id & SELECTED_CDS)
+            filter_data->selected = ZMAP_CANVAS_FILTER_CDS ;
+          else
+            filter_data->selected = ZMAP_CANVAS_FILTER_NONE ;
+
+          if (menu_item_id & FILTER_GAPS)
+            filter_data->filter = ZMAP_CANVAS_FILTER_GAPS ;
+          else if (menu_item_id & FILTER_PARTS)
+            filter_data->filter = ZMAP_CANVAS_FILTER_PARTS ;
+          else if (menu_item_id & FILTER_CDS)
+            filter_data->filter = ZMAP_CANVAS_FILTER_CDS ;
+          else
+            filter_data->filter = ZMAP_CANVAS_FILTER_NONE ;
+
+          if (menu_item_id & ACTION_HIGHLIGHT_SPLICE)
+            filter_data->action = ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE ;
+          else if (menu_item_id & ACTION_HIDE)
+            filter_data->action = ZMAP_CANVAS_ACTION_HIDE ;
+          else
+            filter_data->action = ZMAP_CANVAS_ACTION_SHOW ;
+
+          if (menu_item_id & TARGET_NOT_SOURCE_FEATURES)
+            filter_data->target_type = ZMAP_CANVAS_TARGET_NOT_FILTER_FEATURES ;
+          else if (menu_item_id & TARGET_NOT_SOURCE_COLUMN)
+            filter_data->target_type = ZMAP_CANVAS_TARGET_NOT_FILTER_COLUMN ;
+          else
+            filter_data->target_type = ZMAP_CANVAS_TARGET_ALL ;
+        }
+
+
+      /* Column where menu was clicked. */
+      column_group = zmapWindowContainerCanvasItemGetContainer(menu_data->item) ;
+
+      if (!filtering)
+        {
+          filter_data->filter_column = (ZMapWindowContainerFeatureSet)column_group ;
         }
       else
         {
-          filter_data.do_filter = TRUE ;
-          filter_data.filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
-          filter_data.filter_features = filterfeatures ;
+          filter_data->do_filter = TRUE ;
+          filter_data->filter_column = (ZMapWindowContainerFeatureSet)focus_column ;
+          filter_data->filter_features = filterfeatures ;
         }
 
       if (!all_cols)
-        filter_data.target_column = (ZMapWindowContainerFeatureSet)column_group ;
+        filter_data->target_column = (ZMapWindowContainerFeatureSet)column_group ;
       else
-        filter_data.target_column = NULL ;
+        filter_data->target_column = NULL ;
 
 
-      /* send command up to view so it can be run on all windows for this view.... */
-      (*(window_cbs_G->command))(window, window->app_data, &filter_data) ;
-
-
-      /* Hacky showing of errors, may not work when there are multiple windows.....
-       * needs wider fix to window command interface....errors should be reported in view
-       * for each window as it's processed... */
-      if (!filter_data.result)
+      // make some names for the filter and target
+      if (filtering)
         {
-          const char *error, *columns, *err_msg ;
+          ZMapFeature feature ;
 
-          if (filter_data.filter_result == ZMAP_CANVAS_FILTER_NOT_SENSITIVE)
-            error = "is non-filterable (check styles configuration file)." ;
+          // should we be doing just a target feature name here ??? do we even do that...I don't think so.....could make this
+          // an option for filtering...to just do a single feature or a group of features.....
+          if (!filter_data->target_column)
+            {
+              filter_data->target_column_str = "all" ;
+              filter_data->target_str = "all" ;
+            }
           else
-            error = "have no matches" ;
+            {
+             filter_data->target_column_str = zmapWindowContainerFeaturesetGetColumnName(filter_data->target_column) ;
+             filter_data->target_str = "all" ;
+            }
 
-          if (!filter_data.target_column)
-            columns = "All columns" ;
+          feature = (ZMapFeature)(filterfeatures->data) ;
+          filter_data->filter_column_str = zMapFeatureName(feature->parent) ;
+          if (g_list_length(filterfeatures) == 1)
+            {
+              filter_data->filter_str = zMapFeatureName((ZMapFeatureAny)feature) ;
+            }
           else
-            columns = zmapWindowContainerFeaturesetGetColumnName(filter_data.target_column) ;
-
-          err_msg = g_strdup_printf("%s: %s", columns, error) ;
-
-          zMapMessage("%s", err_msg) ;
-
-          g_free((void *)err_msg) ;
-
+            {
+              filter_data->filter_str = "all" ;
+            }
         }
 
-      if (filterfeatures)
-        g_list_free(filterfeatures) ;
-    }
 
+      if (!filter_window)
+        {
+          // If we are filtering (i.e. not unfiltering) then set match type from feature types.
+          if (filtering)
+            {
+              if (ZMAP_IS_CONTAINER_FEATURESET(menu_data->item))
+                {
+                  ZMapWindowContainerFeatureSet container_fset = (ZMapWindowContainerFeatureSet)(menu_data->item) ;
+                  ZMapFeatureSet feature_set = NULL ;
+
+                  // Have to use first item in set.......   
+                  feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_fset) ;
+                  target_feature = (ZMapFeature)zMap_g_hash_table_nth(feature_set->features, 0) ;
+          
+                }
+              else
+                {
+                  target_feature = zMapWindowCanvasItemGetFeature(menu_data->item) ;
+                }
+
+              filter_feature = zMapWindowCanvasItemGetFeature(focus_item) ;
+
+              if (filter_feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT
+                  && target_feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+                filter_data->match_type = ZMAP_CANVAS_MATCH_PARTIAL ;
+              else
+                filter_data->match_type = ZMAP_CANVAS_MATCH_FULL ;
+            }
+        }
+      
+
+      if (filter_window)
+        {
+          zmapWindowCreateFeatureFilterWindow(window, filter_data) ;
+        }
+      else
+        {
+          ZMapWindowCallbacks window_cbs_G ;
+
+          window_cbs_G = zmapWindowGetCBs() ;
+
+          /* send command up to view so it can be run on all windows for this view.... */
+          (*(window_cbs_G->command))(window, window->app_data, filter_data) ;
+
+
+          /* Hacky showing of errors, may not work when there are multiple windows.....
+           * needs wider fix to window command interface....errors should be reported in view
+           * for each window as it's processed... */
+          if (!filter_data->result)
+            {
+              const char *error, *err_msg ;
+
+              if (filter_data->filter_result == ZMAP_CANVAS_FILTER_NOT_SENSITIVE)
+                error = "is non-filterable (check styles configuration file)." ;
+              else
+                error = "have no matches" ;
+
+              err_msg = g_strdup_printf("%s: %s", filter_data->target_str, error) ;
+
+              zMapMessage("%s", err_msg) ;
+
+              g_free((void *)err_msg) ;
+
+              g_free(filter_data) ;
+            }
+
+          // should have destroy for filter_data that does this....   
+          if (filterfeatures)
+            g_list_free(filterfeatures) ;
+        }
+
+    }
 
   g_free(menu_data) ;
 
