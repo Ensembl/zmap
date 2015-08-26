@@ -11,6 +11,19 @@ In common with many packages zmap has two different builds:
 This file covers the former, see ./INSTALL for instructions about the latter.
 
 
+Build Script Dependencies
+-------------------------
+The zmap build system makes use of the gnu autoconf system to prepare machine
+independent builds. You need to make sure that an up to date version of this
+system (including libtool and m4) is installed on your system. These tools will
+have been installed if you chose the 'developer' installs on linux but you may
+need to install them separately on other unix flavours.
+
+In addition autogen.sh makes use of bash associative arrays for which you will
+need to have bash version 4 at least (this has been particularly a problem on
+Mac OSX which by default has bash version 3).
+
+
 Standard Library Dependencies
 -----------------------------
 zmap has some standard library dependencies and you should read the various
