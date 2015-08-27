@@ -117,6 +117,9 @@ gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
 					gboolean value_bool);
 
 gboolean zMapConfigIniContextSave(ZMapConfigIniContext context);
+void zMapConfigIniContextSetUnsavedChanges(ZMapConfigIniContext context, const gboolean value) ;
+void zMapConfigIniContextSetUserFile(ZMapConfigIniContext context, const char *filename) ;
+
 
 gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context);
 gchar *zMapConfigIniContextKeyFileErrorMessage(ZMapConfigIniContext context);

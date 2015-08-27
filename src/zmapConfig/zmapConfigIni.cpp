@@ -101,6 +101,7 @@ ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file)
   if((context = g_new0(ZMapConfigIniContextStruct, 1)))
     {
       context->config = zMapConfigIniNew();
+
       if(config_file)
         context->config_read = zMapConfigIniReadAll(context->config, config_file) ;
     }
@@ -237,6 +238,24 @@ gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context,
     }
 
   return result;
+}
+
+
+/* Update the filename for the user config file. This is used to be able to export to a different
+ * file from the original user file */
+void zMapConfigIniContextSetUserFile(ZMapConfigIniContext context, const char *filename)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  context->config->user_file_name = g_quark_from_string(filename) ;
+}
+
+
+void zMapConfigIniContextSetUnsavedChanges(ZMapConfigIniContext context, const gboolean value)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  context->config->unsaved_alterations = (unsigned int)value ;
 }
 
 

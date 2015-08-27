@@ -55,6 +55,9 @@ typedef struct _ZMapConfigIniStruct
   GError *zmap_key_error;
   GError *sys_key_error;
 
+  /* Store the user key file name so we can overwrite it if the user saves changes */
+  GQuark user_file_name;
+
   unsigned int unsaved_alterations : 1;
 
 } ZMapConfigIniStruct;

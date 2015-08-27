@@ -81,28 +81,18 @@ ZMapConfigIni zMapConfigIniNew(void)
 gboolean zMapConfigIniReadAll(ZMapConfigIni config, const char *config_file)
 {
   gboolean red = FALSE ;
-
-  /* if (!config) 
-    return red ; */
   zMapReturnValIfFail(config, red) ; 
-
-  /* mh17: this assignment invalidates the 2nd if statement and subsequent statement, we'd read the same file twice
-    testing shows that none of these files exist....
-    file_name = (config_file ? config_file : zMapConfigDirGetZmapHomeFile()) ; */ 
 
   if (!system_file_loaded(config) && has_system_file(config))
     {
       config->sys_key_file = read_file(zMapConfigDirGetSysFile(), &(config->sys_key_error)) ;
     }
 
-/*  if (!system_zmap_file_loaded(config) && (config_file || has_system_zmap_file(config))) */ 
   if (!system_zmap_file_loaded(config) && has_system_zmap_file(config))
     {
       config->zmap_key_file = read_file(zMapConfigDirGetZmapHomeFile(), &(config->zmap_key_error)) ;
     }
 
-  /* rather helpfully this function accepts a null arg and then chooses the config file specified on the command line */
-  /* which is much clearer than having that passed through to this function. Yeah right. */
   red = zMapConfigIniReadUser(config, config_file) ;
 
   return red ;
@@ -112,19 +102,18 @@ gboolean zMapConfigIniReadAll(ZMapConfigIni config, const char *config_file)
 gboolean zMapConfigIniReadUser(ZMapConfigIni config, const char *config_file)
 {
   gboolean red = FALSE ;
-  const char *file_name ;
-
-  /* if (!config) 
-    return red ; */
-  zMapReturnValIfFail(config, red) ;
-
-  file_name = (config_file ? config_file : zMapConfigDirGetFile()) ;
+  zMapReturnValIfFail(config && config_file, red) ;
 
   if (!config->unsaved_alterations)
-    config->user_key_file = read_file(file_name, &(config->user_key_error)) ;
+    {
+      config->user_key_file = read_file(config_file, &(config->user_key_error)) ;
+    }
 
   if (config->user_key_file != NULL)
-    red = TRUE ;
+    {
+      config->user_file_name = g_quark_from_string(config_file) ;
+      red = TRUE ;
+    }
 
   return red ;
 }
@@ -156,9 +145,6 @@ gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, const char *buffer)
 
   return red;
 }
-
-
-
 
 
 /* this is used for styles, NOTE not ever freed until the context is destroyed so can have only one file */
@@ -197,69 +183,77 @@ gboolean zMapConfigIniReadFile(ZMapConfigIni config, const char *file)
 gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
 {
   gboolean saved = FALSE;
+  zMapReturnValIfFail(config, saved) ;
 
-  if(config->user_key_file && config->unsaved_alterations)
+  if(config->user_file_name && config->user_key_file && config->unsaved_alterations)
     {
+      const char *filename = g_quark_to_string(config->user_file_name) ;
       char *file_contents = NULL;
       gsize file_size = 0;
-      GError *key_error = NULL;
+      GError *g_error = NULL;
 
       file_contents = g_key_file_to_data(config->user_key_file,
                                          &file_size,
-                                         &key_error);
+                                         &g_error);
 
-      if((!file_contents) || key_error)
-        {
-          /* There was an error */
-        }
-      else
+      if(file_contents && !g_error)
         {
           /* Ok we can write the file contents to disk */
-          char *filename = NULL;
-
-          if ((filename = zMapConfigDirGetFile()))
+          GIOChannel *output = g_io_channel_new_file(filename, "w", &g_error);
+        
+          if(output && !g_error)
             {
-              GIOChannel *output = NULL;
-              GError *error = NULL;
-        
-              if((output = g_io_channel_new_file(filename, "w", &error)) && (!error))
+              GIOStatus status;
+              gsize bytes_written = 0;
+
+              status = g_io_channel_write_chars(output, file_contents, file_size,
+                                                &bytes_written, &g_error);
+                
+              if (status == G_IO_STATUS_NORMAL && !g_error && bytes_written == file_size)
                 {
-                  GIOStatus status;
-                  gsize bytes_written = 0;
-                
-                  status = g_io_channel_write_chars(output, file_contents, file_size,
-                    &bytes_written, &error);
-                
-                  if((status == G_IO_STATUS_NORMAL) && (!error) && bytes_written == file_size)
-                    {
-                      /* Everything was ok */
-                      /* need to flush file... */
-                    }
-                  else if(error)
-                    {
-                      /* Cry about the error */
-                      zMapLogCritical("%s", error->message);
-                      g_error_free(error);
-                      error = NULL;
-                    }
-                  else
-                    zMapLogCritical("g_io_channel_write_chars returned error status '%d', but no error.", status);
+                  /* Everything was ok */
+                  /* need to flush file... */
+                }
+              else
+                {
+                  /* Cry about the error */
+                  zMapLogCritical("Failed writing to file '%s': %s", 
+                                  filename,
+                                  g_error ? g_error->message : "<no error message>");
+
+                  g_error_free(g_error);
+                  g_error = NULL;
+                }
         
-                  status = g_io_channel_shutdown(output, TRUE, &error);
+              status = g_io_channel_shutdown(output, TRUE, &g_error);
         
-                  if(status != G_IO_STATUS_NORMAL && error)
-                    {
-                      /* Cry about another error... */
-                      zMapLogCritical("%s", error->message);
-                      g_error_free(error);
-                      error = NULL;
-                    }
+              if(status != G_IO_STATUS_NORMAL && g_error)
+                {
+                  /* Cry about another error... */
+                  zMapLogCritical("Failed flushing channel: %s", 
+                                  g_error ? g_error->message : "<no error message>");
+
+                  g_error_free(g_error);
+                  g_error = NULL;
                 }
             }
           else
             {
-              /* problem with your file */
+              zMapLogCritical("Failed to create channel for file '%s': %s", 
+                              filename,
+                              g_error ? g_error->message : "<no error message>");
+
+              g_error_free(g_error);
+              g_error = NULL;
             }
+        }
+      else
+        {
+          zMapLogCritical("Failed to create config file contents: %s", 
+                          g_error ? g_error->message : "<no error message>");
+
+          g_error_free(g_error);
+          g_error = NULL;
         }
         
       if(file_contents)

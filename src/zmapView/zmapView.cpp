@@ -6984,50 +6984,52 @@ void zMapViewSetSaveFile(ZMapView view, const ZMapViewExportType export_type, co
 gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_type, char **filepath_inout, GError **error)
 {
   gboolean result = FALSE ;
-  char *filepath = NULL ;
-  GIOChannel *file = NULL ;
-  GError *tmp_error = NULL ;
+  char *output_file = NULL ;
+  char *input_file = view->view_sequence->config_file ;
 
   if (filepath_inout && *filepath_inout)
-    filepath = g_strdup(*filepath_inout) ;
-
-  if (!filepath)
-    filepath = zmapGUIFileChooser(NULL, "Configuration Export filename ?", NULL, "ini") ;
-
-  if (filepath)
-    file = g_io_channel_new_file(filepath, "w", &tmp_error) ;
-
-  if (file)
-    //result = zMapConfigExport(export_type, &tmp_error);
-    ;
-
-  if (tmp_error)
-    g_propagate_error(error, tmp_error) ;
-
-  if (file)
     {
-      GIOStatus status = g_io_channel_shutdown(file, TRUE, &tmp_error) ;
+      output_file = g_strdup(*filepath_inout) ;
+    }
 
-      if (status != G_IO_STATUS_NORMAL)
+  if (!output_file)
+    {
+      output_file = zmapGUIFileChooser(NULL, "Configuration Export filename ?", NULL, "ini") ;
+    }
+
+  if (output_file)
+    {
+      /* Read the context from the original input config file (if there was one - otherwise this
+       * will return an empty context. Note that it will also include any system config files too.) */
+      ZMapConfigIniContext context = zMapConfigIniContextProvide(input_file) ;
+
+      if (context)
         {
-          zMapShowMsg(ZMAP_MSG_WARNING, "Error exporting configuration:  %s", tmp_error->message) ;
+          /* Set the output file name in the context so we write over the correct file (otherwise 
+           * it will write over the input file) */
+          zMapConfigIniContextSetUserFile(context, output_file) ;
 
-          g_error_free(tmp_error) ;
+          /* Indicate that there are unsaved changes */
+          zMapConfigIniContextSetUnsavedChanges(context, TRUE) ;
+
+          /* Do the save */
+          result = zMapConfigIniContextSave(context) ;
+
+          /* Destroy the context */
+          zMapConfigIniContextDestroy(context) ;
+          context = NULL ;
         }
     }
 
-  if (filepath)
+  if (output_file && filepath_inout && !*filepath_inout)
     {
-      if (filepath_inout && !*filepath_inout)
-        {
-          /* We've created the filepath in this function so set the output value from it */
-          *filepath_inout = filepath ;
-        }
-      else
-        {
-          /* Return value wasn't requested so free this */
-          g_free(filepath) ;
-        }
+      /* We've created the filepath in this function so set the output value from it */
+      *filepath_inout = output_file ;
+    }
+  else if (output_file)
+    {
+      /* Return value wasn't requested so free this */
+      g_free(output_file) ;
     }
 
   return result ;
