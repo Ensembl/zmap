@@ -285,6 +285,9 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
           if (freethis)
             g_strfreev(freethis) ;
         }
+
+      zMapConfigIniContextDestroy(context) ;
+      context = NULL ;
     }
 
   /*for( i = 0; i < N_FILE_TYPE; i++)

@@ -2436,6 +2436,7 @@ static void saveUserPrefs(BlixemConfigData prefs)
                                       ZMAPSTANZA_BLIXEM_CONF_FILE, prefs->config_file);
 
       zMapConfigIniContextSave(context);
+      zMapConfigIniContextDestroy(context) ;
     }
 
   return ;
