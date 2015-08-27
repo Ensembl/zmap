@@ -95,9 +95,9 @@ ZMAP_DEFINE_ENUM(ZMapWindowContainerFilterType, ZMAP_CANVAS_FILTER_TYPE_LIST) ;
 /* What action to perform on filtered features. */
 #define ZMAP_CANVAS_ACTION_TYPE_LIST(_)					\
 _(ZMAP_CANVAS_ACTION_INVALID,          , "invalid",      "Invalid value",                    "") \
-_(ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE, , "splice",       "Show splice match/non-matches",    "") \
-_(ZMAP_CANVAS_ACTION_HIDE,             , "hide matches", "Hide features with matches",       "") \
-_(ZMAP_CANVAS_ACTION_SHOW,             , "show matches", "Show features with matches",       "")
+_(ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE, , "splice",       "Show all matches/non-matches",    "") \
+_(ZMAP_CANVAS_ACTION_HIDE,             , "hide matches", "Show non-matching features",       "") \
+_(ZMAP_CANVAS_ACTION_SHOW,             , "show matches", "Show matching features",       "")
 
 ZMAP_DEFINE_ENUM(ZMapWindowContainerActionType, ZMAP_CANVAS_ACTION_TYPE_LIST) ;
 
