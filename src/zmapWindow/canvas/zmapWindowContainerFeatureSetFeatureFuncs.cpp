@@ -70,12 +70,6 @@ typedef struct FeatureFilterStructType
   /* general */
   int seq_start, seq_end ;                                  /* only mark splices in this range. */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gboolean cds_match ;                                      /* For transcripts do a CDS-section
-                                                               only match. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   GList *filter_features ;                                  /* The filtered features (i.e. start/ends)
                                                                of the features. */
 
@@ -299,11 +293,6 @@ ZMapWindowContainerFilterRC zMapWindowContainerFeatureSetFilterFeatures(ZMapWind
     {
       FeatureFilterStruct filter_data = {FALSE, FALSE,
                                          0, 0,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                         FALSE,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
                                          NULL, NULL,
                                          ZMAP_CANVAS_MATCH_INVALID,
                                          ZMAP_CANVAS_FILTER_INVALID, ZMAP_CANVAS_FILTER_INVALID,
@@ -531,11 +520,6 @@ static ZMapWindowContainerFilterRC unfilterFeatures(ZMapWindowContainerActionTyp
     {
       FeatureFilterStruct filter_data = {FALSE, FALSE,
                                          0, 0, 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                         FALSE,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
                                          NULL, NULL,
                                          ZMAP_CANVAS_MATCH_INVALID,
                                          ZMAP_CANVAS_FILTER_INVALID, ZMAP_CANVAS_FILTER_INVALID,
@@ -610,14 +594,8 @@ static void unfilterFeaturesCB(ZMapWindowContainerGroup container, FooCanvasPoin
                 container_set->curr_filter_type = filter_data->filter_type ;
                 container_set->curr_filter_action = filter_data->filter_action ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                container_set->cds_match = filter_data->cds_match ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
                 /* Record that there was at least one splice-aware column. */
                 filter_data->found_filtered_features = TRUE ;
-
               }
           }
 
@@ -720,11 +698,6 @@ static void processFilterColumns(ZMapWindowContainerGroup container, FooCanvasPo
             filter_data->curr_target_column->curr_selected_type = filter_data->selected_type ;
             filter_data->curr_target_column->curr_filter_type = filter_data->filter_type ;
             filter_data->curr_target_column->curr_filter_action = filter_data->filter_action ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-            filter_data->curr_target_column->cds_match = filter_data->cds_match ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
           }
 
         filter_data->curr_target_column = NULL ;
@@ -1410,14 +1383,7 @@ static ZMapFeatureSubPartType featureModeFilterType2SubpartType(ZMapWindowContai
         switch (filter_type)
           {
           case ZMAP_CANVAS_FILTER_PARTS:
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-            if (cds_match)
-              sub_part = ZMAPFEATURE_SUBPART_EXON_CDS ;
-            else
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-              sub_part = ZMAPFEATURE_SUBPART_EXON ;
+            sub_part = ZMAPFEATURE_SUBPART_EXON ;
             break ;
 
           case ZMAP_CANVAS_FILTER_CDS:
@@ -1425,14 +1391,7 @@ static ZMapFeatureSubPartType featureModeFilterType2SubpartType(ZMapWindowContai
             break ;
 
           case ZMAP_CANVAS_FILTER_GAPS:
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-            if (cds_match)
-              sub_part = ZMAPFEATURE_SUBPART_INTRON_CDS ;
-            else
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-              sub_part = ZMAPFEATURE_SUBPART_INTRON ;
+            sub_part = ZMAPFEATURE_SUBPART_INTRON ;
             break ;
 
           case ZMAP_CANVAS_FILTER_FEATURE:
