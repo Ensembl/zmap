@@ -44,6 +44,7 @@ typedef struct FilterDataStructType
   ZMapWindowCallbackCommandFilter command_filter_data ;
 
   GtkWidget *top_level ;
+  GtkWidget *filter_label ;
   GtkWidget *filter_frame ;
   GtkWidget *match_type_combo ;
   GtkWidget *selected_part_combo ;
@@ -58,6 +59,7 @@ typedef struct FilterDataStructType
 } FilterDataStruct, *FilterData ;
 
 
+
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void resetFilterCB(GtkWidget *widget, gpointer cb_data) ;
 static void columnChangedCB(GtkComboBox *widget,  gpointer user_data) ;
@@ -67,14 +69,14 @@ static void filterCB(GtkWidget *widget, gpointer cb_data) ;
 static void makeColumnCombo(FilterData filter_data) ;
 static void makeComboEntryCB(gpointer data, gpointer user_data) ;
 
+static const char *getFrameStr(const char *target_str, const char *target_column_str,
+                               const char *filter_str, const char *filter_column_str) ;
 
 
 
 // 
 //                Globals
 //    
-
-
 
 
 
@@ -97,7 +99,7 @@ void zmapWindowCreateFeatureFilterWindow(ZMapWindow window, ZMapWindowCallbackCo
   GtkWidget *button_box, *close_button, *focus_button, *unfilter_button, *filter_button ;
   FilterData filter_data ;
   const char *title = "Feature Filtering" ;
-  char *frame_str ;
+  const char *frame_str ;
   guint col1_left_attach, col1_right_attach, col2_left_attach, col2_right_attach, top_attach, bottom_attach ;
 
   filter_data = g_new0(FilterDataStruct, 1) ;
@@ -115,22 +117,36 @@ void zmapWindowCreateFeatureFilterWindow(ZMapWindow window, ZMapWindowCallbackCo
   top_vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), top_vbox) ;
 
-  frame_str = g_strdup_printf("Filtering \"%s\" feature(s) in target column \"%s\" "
-                              "against filter feature \"%s\" in column \"%s\"",
-                              command_filter_data->target_str, command_filter_data->target_column_str,
-                              command_filter_data->filter_str, command_filter_data->filter_column_str) ;
-  
-  filter_data->filter_frame = frame = gtk_frame_new(frame_str) ;
+
+  // Top frame showing what's being filtered.
+  frame = gtk_frame_new("What's being filtered:") ;
   gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
-  gtk_box_pack_start(GTK_BOX(top_vbox), frame, TRUE, TRUE, 0) ;
-
-  g_free(frame_str) ;
+  gtk_container_add(GTK_CONTAINER(top_vbox), frame) ;
 
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_set_border_width(GTK_CONTAINER(vbox), 5) ;
   gtk_container_add(GTK_CONTAINER(frame), vbox) ;
 
+
+  frame_str = getFrameStr(command_filter_data->target_str, command_filter_data->target_column_str,
+                          command_filter_data->filter_str, command_filter_data->filter_column_str) ;
+
+  filter_data->filter_label = label = gtk_label_new(frame_str) ;
+  gtk_container_add(GTK_CONTAINER(vbox), label) ;
+
+  g_free((void *)frame_str) ;
+
+
+  // Frame with all filtering options.
+  filter_data->filter_frame = frame = gtk_frame_new("Change filter options:") ;
+  gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
+  gtk_container_border_width(GTK_CONTAINER(frame), 5);
+  gtk_box_pack_start(GTK_BOX(top_vbox), frame, TRUE, TRUE, 0) ;
+
+  vbox = gtk_vbox_new(FALSE, 0) ;
+  gtk_container_set_border_width(GTK_CONTAINER(vbox), 5) ;
+  gtk_container_add(GTK_CONTAINER(frame), vbox) ;
 
   // Table of labels/combo boxes for filtering options.
   table = (GtkTable *)gtk_table_new(4, 2, FALSE) ;
@@ -233,8 +249,8 @@ void zmapWindowCreateFeatureFilterWindow(ZMapWindow window, ZMapWindowCallbackCo
   gtk_table_attach_defaults(table, combo, col2_left_attach, col2_right_attach, top_attach, bottom_attach) ;
 
 
-  // Reset filter and columns button/combo.
-  frame = gtk_frame_new(NULL) ;
+  // Frame with filter/target feature controls
+  frame = gtk_frame_new("Change filter/target features:") ;
   gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
   gtk_box_pack_start(GTK_BOX(top_vbox), frame, TRUE, TRUE, 0) ;
@@ -273,7 +289,7 @@ void zmapWindowCreateFeatureFilterWindow(ZMapWindow window, ZMapWindowCallbackCo
   gtk_signal_connect(GTK_OBJECT(combo), "changed", GTK_SIGNAL_FUNC(columnChangedCB), filter_data) ;
 
 
-  // Close button etc. across the bottom.   
+  // Frame with Close button etc. across the bottom.   
   frame = gtk_frame_new(NULL) ;
   gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -300,6 +316,7 @@ void zmapWindowCreateFeatureFilterWindow(ZMapWindow window, ZMapWindowCallbackCo
   gtk_signal_connect(GTK_OBJECT(filter_button), "clicked", GTK_SIGNAL_FUNC(filterCB), filter_data) ;
   GTK_WIDGET_SET_FLAGS(filter_button, GTK_CAN_DEFAULT) ;    /* set filter button as default. */
   gtk_window_set_default(GTK_WINDOW(toplevel), filter_button) ;
+
 
   gtk_widget_show_all(toplevel) ;
 
@@ -342,24 +359,8 @@ static void resetFilterCB(GtkWidget *widget, gpointer cb_data)
   FooCanvasGroup *focus_column = NULL ;
   FooCanvasItem *focus_item = NULL ;
   GList *filterfeatures = NULL ;
-  char *frame_str ;
+  const char *frame_str ;
   char *err_msg = NULL ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  // code needs combining with that in menu...this should be a package function which the menu
-  // code calls.....   
-  if (!((focus_column = zmapWindowFocusGetHotColumn(filter_data->window->focus))
-        && (focus_item = zmapWindowFocusGetHotItem(filter_data->window->focus))
-        && (filterfeatures = zmapWindowFocusGetFeatureList(filter_data->window->focus))))
-    {
-          /* We can't do anything if there is no highlight feature. */
-
-      zMapWarning("%s", "No features selected.") ;
-
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
   if (!zmapWindowFocusGetFeatureListFull(filter_data->window, TRUE,
@@ -387,23 +388,19 @@ static void resetFilterCB(GtkWidget *widget, gpointer cb_data)
         }
     }
   
-  frame_str = g_strdup_printf("Filtering \"%s\" feature(s) in column \"%s\" "
-                              "against filter feature \"%s\" in column \"%s\"",
-                              command_filter_data->target_str, command_filter_data->target_column_str,
-                              command_filter_data->filter_str, command_filter_data->filter_column_str) ;
+  frame_str = getFrameStr(command_filter_data->target_str, command_filter_data->target_column_str,
+                          command_filter_data->filter_str, command_filter_data->filter_column_str) ;
 
-  gtk_frame_set_label(GTK_FRAME(filter_data->filter_frame), frame_str) ;
+  gtk_label_set_text(GTK_LABEL(filter_data->filter_label), frame_str) ;
   
-  g_free(frame_str) ;
+  g_free((void *)frame_str) ;
   
-
   command_filter_data->filter_features = filterfeatures ;
-
-
 
   return ;
 }
 
+// Unfilter current target features.
 static void unfilterCB(GtkWidget *widget, gpointer cb_data)
 {
   FilterData filter_data = (FilterData)cb_data ;
@@ -413,16 +410,17 @@ static void unfilterCB(GtkWidget *widget, gpointer cb_data)
 
   filter_data->command_filter_data->filter = ZMAP_CANVAS_FILTER_NONE ;
 
-
   /* send command up to view so it can be run on all windows for this view.... */
   window_cbs_G = zmapWindowGetCBs() ;
 
   (*(window_cbs_G->command))(filter_data->window, filter_data->window->app_data, filter_data->command_filter_data) ;
 
-
   return ;
 }
 
+
+// Filter the features, gets all user selected options and applies
+// them to the current filter/target features.
 static void filterCB(GtkWidget *widget, gpointer cb_data)
 {
   FilterData filter_data = (FilterData)cb_data ;
@@ -436,7 +434,7 @@ static void filterCB(GtkWidget *widget, gpointer cb_data)
   ZMapWindowContainerTargetType target_type ;
 
 
-  // HERE WE NEED TO FILL IN    command_filter_data according to what user has selected.....
+  // Retrieve all the users filter settings.
   match_txt = gtk_combo_box_get_active_text(GTK_COMBO_BOX(filter_data->match_type_combo)) ;
   selected_txt = gtk_combo_box_get_active_text(GTK_COMBO_BOX(filter_data->selected_part_combo)) ;
   filter_txt = gtk_combo_box_get_active_text(GTK_COMBO_BOX(filter_data->feature_part_combo)) ;
@@ -466,6 +464,7 @@ static void filterCB(GtkWidget *widget, gpointer cb_data)
   (*(window_cbs_G->command))(window, window->app_data, filter_data->command_filter_data) ;
 
 
+  // Needs revisiting and combining in some way with identical code in zmapWindowMenus.cpp   
   /* Hacky showing of errors, may not work when there are multiple windows.....
    * needs wider fix to window command interface....errors should be reported in view
    * for each window as it's processed... */
@@ -496,14 +495,11 @@ static void filterCB(GtkWidget *widget, gpointer cb_data)
   g_free(filter_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  
-
-
   return ;
 }
 
 
-
+// Make the column choice combo.
 static void makeColumnCombo(FilterData filter_data)
 {
   ZMapWindowCallbackCommandFilter command_filter_data = filter_data->command_filter_data ;
@@ -523,7 +519,7 @@ static void makeColumnCombo(FilterData filter_data)
   return ;
 }
 
-
+// called by makeColumnCombo() for each column entry.
 static void makeComboEntryCB(gpointer data, gpointer user_data)
 {
   GQuark col_id = GPOINTER_TO_INT(data) ;
@@ -552,21 +548,19 @@ static void columnChangedCB(GtkComboBox *widget,  gpointer user_data)
   FilterData filter_data = (FilterData)user_data ;
   ZMapWindowCallbackCommandFilter command_filter_data = filter_data->command_filter_data ;
   char *col_text ;
-  char *frame_str ;
+  const char *frame_str ;
   ZMapWindowContainerFeatureSet target_col ;
 
   col_text = gtk_combo_box_get_active_text(GTK_COMBO_BOX(filter_data->column_combo)) ;
 
   command_filter_data->target_column_str = col_text ;
 
-  frame_str = g_strdup_printf("Filtering \"%s\" feature(s) in target column \"%s\" "
-                              "against filter feature \"%s\" in column \"%s\"",
-                              command_filter_data->target_str, command_filter_data->target_column_str,
-                              command_filter_data->filter_str, command_filter_data->filter_column_str) ;
+  frame_str = getFrameStr(command_filter_data->target_str, command_filter_data->target_column_str,
+                          command_filter_data->filter_str, command_filter_data->filter_column_str) ;
 
-  gtk_frame_set_label(GTK_FRAME(filter_data->filter_frame), frame_str) ;
+  gtk_label_set_text(GTK_LABEL(filter_data->filter_label), frame_str) ;
   
-  g_free(frame_str) ;
+  g_free((void *)frame_str) ;
 
   // reset target column...........
   if (target_col = zmapWindowContainerBlockFindColumn(filter_data->block_container,
@@ -576,5 +570,20 @@ static void columnChangedCB(GtkComboBox *widget,  gpointer user_data)
 
   return ;
 }
-      
+
+
+// Standard string showing what's filtered against what, g_free() when finished with.   
+static const char *getFrameStr(const char *target_str, const char *target_column_str,
+                               const char *filter_str, const char *filter_column_str)
+{
+  const char *frame_str ;
+
+  frame_str = g_strdup_printf("\"%s\" feature(s) in target column \"%s\" "
+                              "against filter feature \"%s\" in column \"%s\"",
+                              target_str, target_column_str, filter_str, filter_column_str) ;
+
+  return frame_str ;
+}
+
+
 
