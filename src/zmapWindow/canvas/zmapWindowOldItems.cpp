@@ -592,6 +592,9 @@ ZMapWindowContainerFeatureSet zmapWindowContainerBlockFindColumn(ZMapWindowConta
   FindColStruct find_col_data = {0} ;
   char *canon_name ;
 
+  zMapReturnValIfFail(ZMAP_IS_CONTAINER_BLOCK(block_container), NULL) ;
+  zMapReturnValIfFail((col_name && *col_name), NULL) ;
+
   container_group = ZMAP_CONTAINER_GROUP(block_container) ;
   foo_group = &(container_group->__parent__) ;
 
@@ -620,7 +623,7 @@ GList *zmapWindowContainerBlockColumnList(ZMapWindowContainerBlock block_contain
   ZMapWindowContainerGroup container_group ;
   FooCanvasGroup *foo_group ;
   
-  // Need args checking.....   
+  zMapReturnValIfFail(ZMAP_IS_CONTAINER_BLOCK(block_container), NULL) ;
 
   container_group = ZMAP_CONTAINER_GROUP(block_container) ;
   foo_group = &(container_group->__parent__) ;
@@ -736,6 +739,14 @@ void zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_
 
 
 
+//
+//                 Internal routines
+//
+
+
+
+// called for each column group including both forward and reverse strand groups
+// and the strand separator group.
 static void getColIdsCB(gpointer data, gpointer user_data)
 {
   ZMapWindowContainerGroup container_group = (ZMapWindowContainerGroup)data ;
@@ -743,6 +754,7 @@ static void getColIdsCB(gpointer data, gpointer user_data)
   GetColIDs get_ids_data = (GetColIDs)user_data ;
   static GQuark strand_id = 0 ;
 
+  // We don't want to return the strand id, it's not a column in the usual sense.
   if (!strand_id)
     {
       char *canon_strand ;
@@ -755,8 +767,6 @@ static void getColIdsCB(gpointer data, gpointer user_data)
 
       g_free(canon_strand) ;
     }
-  
-
 
   if (container_group->level == ZMAPCONTAINER_LEVEL_FEATURESET
       && feature_set->original_id != strand_id
@@ -765,17 +775,12 @@ static void getColIdsCB(gpointer data, gpointer user_data)
     {
       GQuark name_id ;
 
-
-
-
       if (get_ids_data->unique)
         name_id = feature_set->unique_id ;
       else
         name_id = feature_set->original_id ;
 
-
-      zMapDebugPrintf("col name: \"%s\"", g_quark_to_string(name_id)) ;
-
+      // zMapDebugPrintf("col name: \"%s\"", g_quark_to_string(name_id)) ;
 
       get_ids_data->ids_list = g_list_append(get_ids_data->ids_list, GINT_TO_POINTER(name_id)) ;
     }
@@ -783,7 +788,7 @@ static void getColIdsCB(gpointer data, gpointer user_data)
   return ;
 }
 
-
+// Called to check a column group to see if it's the requested one.   
 static void findColCB(gpointer data, gpointer user_data)
 {
   ZMapWindowContainerGroup container_group = (ZMapWindowContainerGroup)data ;
