@@ -2269,25 +2269,6 @@ static void panedResizeCB(gpointer data, gpointer userdata)
 
 
 
-static void foo_bug_print(void *key, const char *where)
-{
-  int i;
-  struct fooBug * fb;
-
-  for(i = 0, fb = foo_wins; i < n_foo_wins; i++, fb++)
-    {
-      if(fb->key == key)
-        {
-          //printf("%s %s %d\n", where, fb->id, i);
-          //fflush(stdout);
-          //zMapPrintStack();
-          //fflush(stdout);
-        }
-    }
-
-  return ;
-}
-
 
 /* We will need to allow caller to specify a routine that gets called whenever the user
  * scrolls.....needed to update the navigator...... */
