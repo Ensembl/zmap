@@ -7026,6 +7026,9 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
            * config, or the 'extra' file for the styles. */
           zMapConfigIniContextSetFile(context, file_type, output_file) ;
 
+          /* Create the key file, if it doesn't exist already */
+          zMapConfigIniContextCreateKeyFile(context, file_type) ;
+
           /* Update the context with the new properties, if anything has changed */
           zMapConfigIniContextSetStyles(context, view->context_map.styles) ;
 

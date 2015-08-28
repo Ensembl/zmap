@@ -182,7 +182,7 @@ ZMapConfigIni zMapConfigIniNew(void) ;
 gboolean zMapConfigIniReadAll(ZMapConfigIni config, const char *config_file) ;
 gboolean zMapConfigIniReadUser(ZMapConfigIni config, const char *config_file);
 gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, const char *buffer);
-gboolean zMapConfigIniReadFile(ZMapConfigIni config, const char *file);
+gboolean zMapConfigIniReadFileStyles(ZMapConfigIni config, const char *file);
 void zMapConfigIniGetStanza(ZMapConfigIni config, const char *stanza_name);
 void zMapConfigIniGetAllStanzas(ZMapConfigIni config);
 void zMapConfigIniGetStanzaValues(ZMapConfigIni, const char *stanza_name);

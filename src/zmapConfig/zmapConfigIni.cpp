@@ -147,7 +147,7 @@ gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, const cha
   gboolean result = FALSE;
 
   if (file && *file)
-    result = zMapConfigIniReadFile(context->config, file) ;
+    result = zMapConfigIniReadFileStyles(context->config, file) ;
 
   return result;
 }
@@ -245,6 +245,19 @@ void zMapConfigIniContextSetFile(ZMapConfigIniContext context,
   zMapReturnIfFail(context && context->config) ;
 
   context->config->key_file_name[file_type] = g_quark_from_string(filename) ;
+}
+
+
+/* Create the key file for the given type, if it doesn't already exist */
+void zMapConfigIniContextCreateKeyFile(ZMapConfigIniContext context, ZMapConfigIniFileType file_type)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  if (!context->config->key_file[file_type])
+    {
+      zMapConfigIniReadFileStyles(context->config, 
+                                  g_quark_to_string(context->config->key_file_name[file_type])) ;
+    }
 }
 
 
@@ -757,11 +770,16 @@ static void context_update_style(gpointer key, gpointer value, gpointer data)
       if (zMapStyleIsPropertySetId(style, (ZMapStyleParamId)param_id))
         {
           const char *param_name = zmapStyleParam2Name((ZMapStyleParamId)param_id) ;
-          GValue result ;
-      
-          if (zMapStyleGetValue(style, param_name, &result))
+
+          if (param_name)
             {
-              zMapConfigIniContextSetValue(context, ZMAPCONFIG_FILE_STYLES, stanza_name, param_name, &result) ;
+              GValue result = {0} ;
+              g_value_init(&result, G_TYPE_STRING);
+      
+              if (zMapStyleGetValue(style, param_name, &result))
+                zMapConfigIniContextSetValue(context, ZMAPCONFIG_FILE_STYLES, stanza_name, param_name, &result) ;
+
+              g_value_unset(&result);
             }
         }
     }

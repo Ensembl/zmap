@@ -152,7 +152,7 @@ gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, const char *buffer)
 
 
 /* this is used for styles, NOTE not ever freed until the context is destroyed so can have only one file */
-gboolean zMapConfigIniReadFile(ZMapConfigIni config, const char *file)
+gboolean zMapConfigIniReadFileStyles(ZMapConfigIni config, const char *file)
 {
   gboolean read = FALSE;
 
