@@ -98,12 +98,12 @@ static ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapS
 static gchar *zmapStyleValueColour(ZMapStyleFullColour this_colour);
 static gboolean parseSubFeatures(ZMapFeatureTypeStyle style,gchar *str);
 static gchar *zmapStyleValueSubFeatures(GQuark *quarks);
+const char *zmapStyleParam2Name(ZMapStyleParamId id) ;
 
 static gboolean styleMergeParam( ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle src, ZMapStyleParamId id) ;
 
 static gpointer glyph_shape_copy(gpointer src) ;
 static void glyph_shape_free(gpointer thing) ;
-
 
 /*
  *                    Globals
@@ -789,6 +789,20 @@ static void zmap_feature_type_style_finalize(GObject *object)
 }
 
 
+/*!
+ * Get the property with the given param_id and return its value as a string. 
+ *
+ * @param   style          The style.
+ * @param   param_id       The id of the parameter.
+ * @return  char*          NULL if the property is not set, otherwise a newly-allocated
+ *                         string which should be free'd with g_free.
+ *  */
+gboolean zMapStyleGetValue(ZMapFeatureTypeStyle style, const char *param_name, GValue *value)
+{
+  g_object_get_property(G_OBJECT(style), param_name, value) ;
+
+  return TRUE ;
+}
 
 
 /*!
@@ -938,10 +952,11 @@ const char *zmapStyleParam2Name(ZMapStyleParamId id)
 
   zMapReturnValIfFailSafe((PARAM_ID_IS_VALID(id)), param_name) ;
 
-  param_name = zmapStyleParams_G[STYLE_PROP_MIN_SCORE].name ;
+  param_name = zmapStyleParams_G[id].name ;
 
   return param_name ;
 }
+
 
 
 

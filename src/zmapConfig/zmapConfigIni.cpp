@@ -264,9 +264,7 @@ void zMapConfigIniContextSetExtraFile(ZMapConfigIniContext context, const char *
 
 void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, GHashTable *styles)
 {
-  GKeyFile *key_file = context->config->extra_key_file ;
-
-  g_hash_table_foreach(styles, context_update_style, key_file) ;
+  g_hash_table_foreach(styles, context_update_style, context) ;
 }
 
 
@@ -741,24 +739,26 @@ static GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys)
 }
 
 
+/* Update the context given in the user data with the style given in the value. */
 static void context_update_style(gpointer key, gpointer value, gpointer data)
 {
-  GQuark style_id = (GQuark)GPOINTER_TO_INT(key) ;
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) value;
-  GKeyFile *key_file = (GKeyFile*)data ;
+  ZMapConfigIniContext context = (ZMapConfigIniContext)data ;
   
   const char *stanza_name = g_quark_to_string(style->unique_id) ;
-  
+
   /* Loop through each possible parameter type */
-  for (ZMapStyleParamId param_id = STYLE_PROP_NONE + 1 ; param_id < _STYLE_PROP_N_ITEMS; ++param_id)
+  for (int param_id = STYLE_PROP_NONE + 1 ; param_id < _STYLE_PROP_N_ITEMS; ++param_id)
     {
-      if (zMapStyleIsPropertySetId(style, param_id))
+      if (zMapStyleIsPropertySetId(style, (ZMapStyleParamId)param_id))
         {
-          const char *param_name = zmapStyleParam2Name(style, param_id) ;
-          
-          
-          if (zMapStyleGet(style, param_name, &value, NULL))
+          const char *param_name = zmapStyleParam2Name(param_id) ;
+          GValue value ;
+      
+          if (zMapStyleGetValue(style, param_name, &value))
             {
+              zMapConfigIniContextSetValue(context, stanza_name, param_name, value) ;
+              g_value_unset(value) ;
             }
         }
     }
