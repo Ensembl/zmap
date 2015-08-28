@@ -271,7 +271,7 @@ gboolean zMapConfigIniContextSave(ZMapConfigIniContext context, ZMapConfigIniFil
   gboolean saved = TRUE;
   zMapReturnValIfFail(context, FALSE);
 
-  saved = zMapConfigIniSaveUser(context->config);
+  saved = zMapConfigIniSave(context->config, file_type);
 
   return saved;
 }
@@ -757,12 +757,11 @@ static void context_update_style(gpointer key, gpointer value, gpointer data)
       if (zMapStyleIsPropertySetId(style, (ZMapStyleParamId)param_id))
         {
           const char *param_name = zmapStyleParam2Name((ZMapStyleParamId)param_id) ;
-          GValue value ;
+          GValue result ;
       
-          if (zMapStyleGetValue(style, param_name, &value))
+          if (zMapStyleGetValue(style, param_name, &result))
             {
-              zMapConfigIniContextSetValue(context, ZMAPCONFIG_FILE_STYLES, stanza_name, param_name, &value) ;
-              g_value_unset(&value) ;
+              zMapConfigIniContextSetValue(context, ZMAPCONFIG_FILE_STYLES, stanza_name, param_name, &result) ;
             }
         }
     }

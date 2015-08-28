@@ -185,7 +185,7 @@ gboolean zMapConfigIniReadFile(ZMapConfigIni config, const char *file)
 }
 
 
-gboolean zMapConfigIniSaveUser(ZMapConfigIni config, ZMapConfigIniFileType file_type)
+gboolean zMapConfigIniSave(ZMapConfigIni config, ZMapConfigIniFileType file_type)
 {
   gboolean saved = FALSE;
   zMapReturnValIfFail(config, saved) ;
@@ -305,7 +305,7 @@ gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name,GK
 void zMapConfigIniDestroy(ZMapConfigIni config, gboolean save_user)
 {
   if(save_user)
-    zMapConfigIniSaveUser(config);
+    zMapConfigIniSave(config, ZMAPCONFIG_FILE_USER);
 
   for (int i = 0; i < ZMAPCONFIG_FILE_NUM_TYPES; ++i)
     {

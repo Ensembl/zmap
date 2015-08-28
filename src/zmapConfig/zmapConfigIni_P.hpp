@@ -201,7 +201,7 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
                            const char *stanza_name,
                            const char *key_name,
                            GValue *value);
-gboolean zMapConfigIniSaveUser(ZMapConfigIni config);
+gboolean zMapConfigIniSave(ZMapConfigIni config, ZMapConfigIniFileType file_type);
 void zMapConfigIniDestroy(ZMapConfigIni config, gboolean save_user);
 
 
