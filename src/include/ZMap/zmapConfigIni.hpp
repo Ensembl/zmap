@@ -37,6 +37,19 @@
 #define ZMAP_DEFAULT_FEATURESETS "DNA ; 3 Frame ; 3 Frame Translation ; Show Translation ; Annotation "
 
 
+/* This enum lists the types of config files that can be supplied */
+typedef enum
+  {
+    ZMAPCONFIG_FILE_BUFFER, /* Config read from a text buffer rather than a file*/
+    ZMAPCONFIG_FILE_STYLES, /* Styles file */
+    ZMAPCONFIG_FILE_USER,   /* User-specified config file */
+    ZMAPCONFIG_FILE_ZMAP,   /* Default zmap config file */
+    ZMAPCONFIG_FILE_SYS,    /* Default system config file */
+
+    ZMAPCONFIG_FILE_NUM_TYPES /* must be last in list */
+  } ZMapConfigIniFileType ;
+
+
 typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(void);
 typedef void (*ZMapConfigIniSetPropertyFunc)(char *current_stanza_name, const char *key, GType type,
 					     gpointer parent_data, GValue *property_value);
@@ -117,9 +130,8 @@ gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
 					gboolean value_bool);
 
 gboolean zMapConfigIniContextSave(ZMapConfigIniContext context);
-void zMapConfigIniContextSetUnsavedChanges(ZMapConfigIniContext context, const gboolean value) ;
-void zMapConfigIniContextSetUserFile(ZMapConfigIniContext context, const char *filename) ;
-void zMapConfigIniContextSetExtraFile(ZMapConfigIniContext context, const char *filename) ;
+void zMapConfigIniContextSetUnsavedChanges(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const gboolean value) ;
+void zMapConfigIniContextSetFile(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *filename) ;
 void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, GHashTable *styles) ;
 
 gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context);

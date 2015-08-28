@@ -364,7 +364,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
            * config->extra_key_file and config->extra_file_name.
            * really truly not good...should all be explicit....for now we do this here so at
            * least the calls in this file are more explicit... */
-          extra_styles_keyfile = context->config->extra_key_file ;
+          extra_styles_keyfile = context->config->key_file[ZMAPCONFIG_FILE_STYLES] ;
         }
       /* else styles are in main config named [style-xxx] */
 
@@ -1120,7 +1120,7 @@ static GList *contextGetStyleList(ZMapConfigIniContext context, char *styles_lis
 }
 
 
-/* return list of all stanzas in context->extra_key_file */
+/* return list of all stanzas in context->key_file[ZMAPCONFIG_FILE_STYLES] */
 /* used when we don't have a styles list */
 static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
      ZMapConfigIniUserDataCreateFunc object_create_func,

@@ -43,25 +43,10 @@
 
 typedef struct _ZMapConfigIniStruct
 {
-  GKeyFile *buffer_key_file;
-  GKeyFile *extra_key_file;
-  GKeyFile *user_key_file;
-  GKeyFile *zmap_key_file;
-  GKeyFile *sys_key_file;
-
-  GError *buffer_key_error;
-  GError *extra_key_error;
-  GError *user_key_error;
-  GError *zmap_key_error;
-  GError *sys_key_error;
-
-  /* Store the 'user' and 'extra' (i.e. styles) key file name so we can
-   * overwrite it if the user saves changes */
-  GQuark user_file_name;
-  GQuark extra_file_name;
-
-  unsigned int unsaved_alterations : 1;
-
+  GKeyFile *key_file[ZMAPCONFIG_FILE_NUM_TYPES] ;
+  GError *key_error[ZMAPCONFIG_FILE_NUM_TYPES] ;
+  GQuark key_file_name[ZMAPCONFIG_FILE_NUM_TYPES] ; 
+  gboolean unsaved_changes[ZMAPCONFIG_FILE_NUM_TYPES] ;
 } ZMapConfigIniStruct;
 
 
