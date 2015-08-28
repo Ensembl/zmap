@@ -119,7 +119,8 @@ gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
 gboolean zMapConfigIniContextSave(ZMapConfigIniContext context);
 void zMapConfigIniContextSetUnsavedChanges(ZMapConfigIniContext context, const gboolean value) ;
 void zMapConfigIniContextSetUserFile(ZMapConfigIniContext context, const char *filename) ;
-
+void zMapConfigIniContextSetExtraFile(ZMapConfigIniContext context, const char *filename) ;
+void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, GHashTable *styles) ;
 
 gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context);
 gchar *zMapConfigIniContextKeyFileErrorMessage(ZMapConfigIniContext context);

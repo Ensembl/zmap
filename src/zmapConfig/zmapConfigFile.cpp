@@ -167,6 +167,7 @@ gboolean zMapConfigIniReadFile(ZMapConfigIni config, const char *file)
   if (filepath
       && (config->extra_key_file = read_file(filepath, &(config->extra_key_error))))
     {
+      config->extra_file_name = g_quark_from_string(file) ;
       read = TRUE;
     }
 

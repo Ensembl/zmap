@@ -360,7 +360,8 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
         {
           zMapConfigIniContextIncludeFile(context, styles_file) ;
 
-          /* This is mucky....the above call puts whatever the file is into config->extra_key_file,
+          /* This is mucky....the above call puts whatever the file is into
+           * config->extra_key_file and config->extra_file_name.
            * really truly not good...should all be explicit....for now we do this here so at
            * least the calls in this file are more explicit... */
           extra_styles_keyfile = context->config->extra_key_file ;

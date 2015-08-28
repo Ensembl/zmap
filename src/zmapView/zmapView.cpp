@@ -6948,13 +6948,13 @@ const char* zMapViewGetSaveFile(ZMapView view, const ZMapViewExportType export_t
       
         case ZMAPVIEW_EXPORT_CONFIG:
           {
-            result = zMapConfigDirGetFile() ;
+            result = view->view_sequence->config_file ;
             break ;
           }
 
         case ZMAPVIEW_EXPORT_STYLES:
           {
-            
+            result = view->view_sequence->stylesfile ;
             break ;
           }
 
@@ -6985,14 +6985,21 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
 {
   gboolean result = FALSE ;
   char *output_file = NULL ;
-  char *input_file = view->view_sequence->config_file ;
+  char *input_file = NULL ;
 
-  if (filepath_inout && *filepath_inout)
+  if (export_type == ZMAPVIEW_EXPORT_CONFIG)
+    input_file = view->view_sequence->config_file ;
+  else if (export_type == ZMAPVIEW_EXPORT_STYLES)
+    input_file = view->view_sequence->stylesfile ;
+  else
+    zMapWarnIfReached() ;
+
+  if (input_file && filepath_inout && *filepath_inout)
     {
       output_file = g_strdup(*filepath_inout) ;
     }
 
-  if (!output_file)
+  if (input_file && !output_file)
     {
       output_file = zmapGUIFileChooser(NULL, "Configuration Export filename ?", NULL, "ini") ;
     }
@@ -7006,13 +7013,18 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
       if (context)
         {
           /* Set the output file name in the context so we write over the correct file (otherwise 
-           * it will write over the input file) */
-          zMapConfigIniContextSetUserFile(context, output_file) ;
+           * it will write over the input file). This is either the 'user' file for the
+           * config, or the 'extra' file for the styles. */
+          if (export_type == ZMAPVIEW_EXPORT_CONFIG)
+            zMapConfigIniContextSetUserFile(context, output_file) ;
+          else if (export_type == ZMAPVIEW_EXPORT_STYLES)
+            zMapConfigIniContextSetExtraFile(context, output_file) ;
 
-          /* Indicate that there are unsaved changes */
+          /* Update the context with the new properties, if anything has changed */
+          zMapConfigIniContextSetStyles(context, view->context_map.styles) ;
+
+          /* Do the save to file (force changes=true so we export even if nothing's changed) */
           zMapConfigIniContextSetUnsavedChanges(context, TRUE) ;
-
-          /* Do the save */
           result = zMapConfigIniContextSave(context) ;
 
           /* Destroy the context */

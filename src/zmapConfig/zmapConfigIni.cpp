@@ -35,6 +35,7 @@
 #include <string.h>/* memset */
 #include <glib.h>
 
+#include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapConfigDir.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapConfigIni.hpp>
@@ -76,7 +77,7 @@ static GType get_stanza_key_type(ZMapConfigIniContext context,
                                  const char *key_name);
 static gint match_name_type(gconstpointer list_data, gconstpointer user_data);
 static void setErrorMessage(ZMapConfigIniContext context,char *error_message);
-
+static void context_update_style(gpointer key, gpointer value, gpointer data);
 
 
 
@@ -248,6 +249,24 @@ void zMapConfigIniContextSetUserFile(ZMapConfigIniContext context, const char *f
   zMapReturnIfFail(context && context->config) ;
 
   context->config->user_file_name = g_quark_from_string(filename) ;
+}
+
+
+/* Update the filename for the 'extra' config file (this is used for styles). This is used to
+ * be able to export to a different file from the original extra file */
+void zMapConfigIniContextSetExtraFile(ZMapConfigIniContext context, const char *filename)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  context->config->user_file_name = g_quark_from_string(filename) ;
+}
+
+
+void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, GHashTable *styles)
+{
+  GKeyFile *key_file = context->config->extra_key_file ;
+
+  g_hash_table_foreach(styles, context_update_style, key_file) ;
 }
 
 
@@ -722,3 +741,27 @@ static GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys)
 }
 
 
+static void context_update_style(gpointer key, gpointer value, gpointer data)
+{
+  GQuark style_id = (GQuark)GPOINTER_TO_INT(key) ;
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) value;
+  GKeyFile *key_file = (GKeyFile*)data ;
+  
+  const char *stanza_name = g_quark_to_string(style->unique_id) ;
+  
+  /* Loop through each possible parameter type */
+  for (ZMapStyleParamId param_id = STYLE_PROP_NONE + 1 ; param_id < _STYLE_PROP_N_ITEMS; ++param_id)
+    {
+      if (zMapStyleIsPropertySetId(style, param_id))
+        {
+          const char *param_name = zmapStyleParam2Name(style, param_id) ;
+          
+          
+          if (zMapStyleGet(style, param_name, &value, NULL))
+            {
+            }
+        }
+    }
+
+  return ;
+}
