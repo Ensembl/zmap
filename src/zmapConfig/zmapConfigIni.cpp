@@ -266,7 +266,7 @@ void zMapConfigIniContextSetUnsavedChanges(ZMapConfigIniContext context,
 }
 
 
-gboolean zMapConfigIniContextSave(ZMapConfigIniContext context)
+gboolean zMapConfigIniContextSave(ZMapConfigIniContext context, ZMapConfigIniFileType file_type)
 {
   gboolean saved = TRUE;
   zMapReturnValIfFail(context, FALSE);
@@ -467,10 +467,11 @@ gboolean zMapConfigIniContextGetInt(ZMapConfigIniContext context,
 }
 
 gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
-       const char *stanza_name,
-       const char *stanza_type,
-       const char *key_name,
-       const char *value_str)
+                                       ZMapConfigIniFileType file_type,
+                                       const char *stanza_name,
+                                       const char *stanza_type,
+                                       const char *key_name,
+                                       const char *value_str)
 {
   GType type = 0;
   gboolean is_set = TRUE;
@@ -485,14 +486,18 @@ gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
 
       g_value_set_static_string(&value, value_str);
 
-      is_set = zMapConfigIniContextSetValue(context, stanza_name,
-                                         key_name, &value);
+      is_set = zMapConfigIniContextSetValue(context, 
+                                            file_type,
+                                            stanza_name,
+                                            key_name,
+                                            &value);
     }
 
   return is_set;
 }
 
 gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
+                                    ZMapConfigIniFileType file_type,
                                     const char *stanza_name,
                                     const char *stanza_type,
                                     const char *key_name,
@@ -511,8 +516,11 @@ gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
 
       g_value_set_int(&value, value_int);
 
-      is_set = zMapConfigIniContextSetValue(context, stanza_name,
-         key_name, &value);
+      is_set = zMapConfigIniContextSetValue(context, 
+                                            file_type,
+                                            stanza_name,
+                                            key_name,
+                                            &value);
     }
 
   return is_set;
@@ -520,6 +528,7 @@ gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
 
 
 gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
+                                        ZMapConfigIniFileType file_type,
                                         const char *stanza_name,
                                         const char *stanza_type,
                                         const char *key_name,
@@ -538,14 +547,18 @@ gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
 
       g_value_set_boolean(&value, value_bool);
 
-      is_set = zMapConfigIniContextSetValue(context, stanza_name,
-         key_name, &value);
+      is_set = zMapConfigIniContextSetValue(context, 
+                                            file_type,
+                                            stanza_name,
+                                            key_name, 
+                                            &value);
     }
 
   return is_set;
 }
 
 gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
+                                      ZMapConfigIniFileType file_type,
                                       const char *stanza_name,
                                       const char *key_name,
                                       GValue *value)
@@ -553,7 +566,7 @@ gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
   gboolean is_set = FALSE ;
   zMapReturnValIfFail(context, is_set ) ;
 
-  zMapConfigIniSetValue(context->config, stanza_name, key_name, value);
+  zMapConfigIniSetValue(context->config, file_type, stanza_name, key_name, value);
 
   is_set = TRUE ;
 
@@ -748,7 +761,7 @@ static void context_update_style(gpointer key, gpointer value, gpointer data)
       
           if (zMapStyleGetValue(style, param_name, &value))
             {
-              zMapConfigIniContextSetValue(context, stanza_name, param_name, &value) ;
+              zMapConfigIniContextSetValue(context, ZMAPCONFIG_FILE_STYLES, stanza_name, param_name, &value) ;
               g_value_unset(&value) ;
             }
         }

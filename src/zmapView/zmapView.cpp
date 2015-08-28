@@ -7031,7 +7031,7 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
 
           /* Do the save to file (force changes=true so we export even if nothing's changed) */
           zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
-          result = zMapConfigIniContextSave(context) ;
+          result = zMapConfigIniContextSave(context, file_type) ;
 
           /* Destroy the context */
           zMapConfigIniContextDestroy(context) ;

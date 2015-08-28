@@ -110,26 +110,30 @@ gboolean zMapConfigIniContextGetInt(ZMapConfigIniContext context,
 				    const char *key_name,
 				    int  *value);
 gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
+                                      ZMapConfigIniFileType file_type,
 				      const char *stanza_name,
 				      const char *key_name,
 				      GValue *value);
 gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
+                                       ZMapConfigIniFileType file_type,
 				       const char *stanza_name,
 				       const char *stanza_type,
 				       const char *key_name,
 				       const char *value_str);
 gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
+                                    ZMapConfigIniFileType file_type,
 				    const char *stanza_name,
 				    const char *stanza_type,
 				    const char *key_name,
 				    int   value_int);
 gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
+                                        ZMapConfigIniFileType file_type,
 					const char *stanza_name,
 					const char *stanza_type,
 					const char *key_name,
 					gboolean value_bool);
 
-gboolean zMapConfigIniContextSave(ZMapConfigIniContext context);
+gboolean zMapConfigIniContextSave(ZMapConfigIniContext context, ZMapConfigIniFileType file_type);
 void zMapConfigIniContextSetUnsavedChanges(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const gboolean value) ;
 void zMapConfigIniContextSetFile(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *filename) ;
 void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, GHashTable *styles) ;

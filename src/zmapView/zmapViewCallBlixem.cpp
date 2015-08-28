@@ -2399,43 +2399,59 @@ static void saveUserPrefs(BlixemConfigData prefs)
 
   if ((context = zMapConfigIniContextProvide(prefs->config_file)))
     {
+      /*! \todo This updates the config in the 'user' file, but I think this is
+       * incorrect because the user file is for zmap config, and this exports the blixem config! */
+      ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_USER ;
+
       if (prefs->netid)
-        zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+        zMapConfigIniContextSetString(context, file_type,
+                                      ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                       ZMAPSTANZA_BLIXEM_NETID, prefs->netid);
 
-      zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetInt(context, file_type,
+                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                  ZMAPSTANZA_BLIXEM_PORT, prefs->port);
 
-      zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetInt(context, file_type,
+                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                  ZMAPSTANZA_BLIXEM_SCOPE, prefs->scope);
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_SCOPE_MARK, prefs->scope_from_mark) ;
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_FEATURES_MARK, prefs->features_from_mark) ;
 
-      zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetInt(context, file_type,
+                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                  ZMAPSTANZA_BLIXEM_MAX, prefs->homol_max);
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_KEEP_TEMP, prefs->keep_tmpfiles);
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_SLEEP, prefs->sleep_on_startup);
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_KILL_EXIT, prefs->kill_on_exit);
 
       if (prefs->script)
-        zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+        zMapConfigIniContextSetString(context, file_type,
+                                      ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                       ZMAPSTANZA_BLIXEM_SCRIPT, prefs->script);
 
       if (prefs->config_file)
-        zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+        zMapConfigIniContextSetString(context, file_type,
+                                      ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                       ZMAPSTANZA_BLIXEM_CONF_FILE, prefs->config_file);
 
-      zMapConfigIniContextSave(context);
+      zMapConfigIniContextSave(context, file_type);
+
       zMapConfigIniContextDestroy(context) ;
     }
 

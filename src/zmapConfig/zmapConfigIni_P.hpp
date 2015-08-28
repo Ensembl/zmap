@@ -197,6 +197,7 @@ gboolean zMapConfigIniGetValue(ZMapConfigIni config,
                                GValue **value_out,
                                GType type);
 void zMapConfigIniSetValue(ZMapConfigIni config,
+                           ZMapConfigIniFileType file_type,
                            const char *stanza_name,
                            const char *key_name,
                            GValue *value);

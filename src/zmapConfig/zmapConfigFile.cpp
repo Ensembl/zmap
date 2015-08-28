@@ -185,21 +185,21 @@ gboolean zMapConfigIniReadFile(ZMapConfigIni config, const char *file)
 }
 
 
-gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
+gboolean zMapConfigIniSaveUser(ZMapConfigIni config, ZMapConfigIniFileType file_type)
 {
   gboolean saved = FALSE;
   zMapReturnValIfFail(config, saved) ;
 
-  if(config->key_file_name[ZMAPCONFIG_FILE_USER] && 
-     config->key_file[ZMAPCONFIG_FILE_USER] && 
-     config->unsaved_changes[ZMAPCONFIG_FILE_USER])
+  if(config->key_file_name[file_type] && 
+     config->key_file[file_type] && 
+     config->unsaved_changes[file_type])
     {
-      const char *filename = g_quark_to_string(config->key_file_name[ZMAPCONFIG_FILE_USER]) ;
+      const char *filename = g_quark_to_string(config->key_file_name[file_type]) ;
       char *file_contents = NULL;
       gsize file_size = 0;
       GError *g_error = NULL;
 
-      file_contents = g_key_file_to_data(config->key_file[ZMAPCONFIG_FILE_USER],
+      file_contents = g_key_file_to_data(config->key_file[file_type],
                                          &file_size,
                                          &g_error);
 

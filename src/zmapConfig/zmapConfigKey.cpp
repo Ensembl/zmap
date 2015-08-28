@@ -125,14 +125,15 @@ gboolean zMapConfigIniGetValue(ZMapConfigIni config,
 
 
 void zMapConfigIniSetValue(ZMapConfigIni config,
+                           ZMapConfigIniFileType file_type,
                            const char *stanza_name,
                            const char *key_name,
                            GValue *value)
 {
-  GKeyFile *user_key_file = NULL;
+  GKeyFile *key_file = NULL;
   zMapReturnIfFail(config) ; 
 
-  if((user_key_file = config->key_file[ZMAPCONFIG_FILE_USER]))
+  if((key_file = config->key_file[file_type]))
     {
       GType type = 0;
       type = G_VALUE_TYPE(value);
@@ -143,28 +144,28 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
           {
             char *string_value = NULL;
             string_value = (char *)g_value_get_string(value);
-            g_key_file_set_string(user_key_file, stanza_name, key_name, string_value);
+            g_key_file_set_string(key_file, stanza_name, key_name, string_value);
           }
           break;
         case G_TYPE_INT:
           {
             int int_value = 0;
             int_value = g_value_get_int(value);
-            g_key_file_set_integer(user_key_file, stanza_name, key_name, int_value);
+            g_key_file_set_integer(key_file, stanza_name, key_name, int_value);
           }
           break;
         case G_TYPE_BOOLEAN:
           {
             gboolean bool_value = FALSE;
             bool_value = g_value_get_boolean(value);
-            g_key_file_set_boolean(user_key_file, stanza_name, key_name, bool_value);
+            g_key_file_set_boolean(key_file, stanza_name, key_name, bool_value);
           }
           break;
         case G_TYPE_DOUBLE:
           {
             double double_value = FALSE;
             double_value = g_value_get_double(value);
-            g_key_file_set_double(user_key_file, stanza_name, key_name, double_value);
+            g_key_file_set_double(key_file, stanza_name, key_name, double_value);
           }
           break;
         default:
