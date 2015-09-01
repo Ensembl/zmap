@@ -895,7 +895,7 @@ gboolean zMapStyleGetValue(ZMapFeatureTypeStyle style, ZMapStyleParamId param_id
         case STYLE_PARAM_TYPE_GLYPH_SHAPE:
           {
             gchar *shape = NULL;
-            g_value_init(value, G_TYPE_BOXED) ;
+            g_value_init(value, zMapStyleGlyphShapeGetType()) ;
             g_value_set_boxed(value, shape);
           }
           break;

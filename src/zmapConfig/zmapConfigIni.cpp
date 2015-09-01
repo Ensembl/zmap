@@ -109,6 +109,44 @@ ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file)
 }
 
 
+ZMapConfigIniContext zMapConfigIniContextCreateType(const char *config_file, ZMapConfigIniFileType file_type)
+{
+  ZMapConfigIniContext context = NULL;
+
+  if((context = g_new0(ZMapConfigIniContextStruct, 1)))
+    {
+      context->config = zMapConfigIniNew();
+
+      if(config_file)
+        {
+          switch (file_type)
+            {
+            case ZMAPCONFIG_FILE_USER:
+              context->config_read = zMapConfigIniReadUser(context->config, config_file) ;
+              break ;
+            case ZMAPCONFIG_FILE_SYS:
+              context->config_read = zMapConfigIniReadSystem(context->config) ;
+              break ;
+            case ZMAPCONFIG_FILE_ZMAP:
+              context->config_read = zMapConfigIniReadZmap(context->config) ;
+              break ;
+            case ZMAPCONFIG_FILE_STYLES:
+              context->config_read = zMapConfigIniReadStyles(context->config, config_file) ;
+              break ;
+            case ZMAPCONFIG_FILE_BUFFER:
+              context->config_read = zMapConfigIniReadBuffer(context->config, config_file) ;
+              break ;
+
+            default:
+              break ;
+            }
+        }
+    }
+
+  return context;
+}
+
+
 // all stanzas froma file, assumed to be of the same type
 gchar **zMapConfigIniContextGetAllStanzaNames(ZMapConfigIniContext context)
 {
@@ -147,7 +185,7 @@ gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, const cha
   gboolean result = FALSE;
 
   if (file && *file)
-    result = zMapConfigIniReadFileStyles(context->config, file) ;
+    result = zMapConfigIniReadStyles(context->config, file) ;
 
   return result;
 }
@@ -255,8 +293,8 @@ void zMapConfigIniContextCreateKeyFile(ZMapConfigIniContext context, ZMapConfigI
 
   if (!context->config->key_file[file_type])
     {
-      zMapConfigIniReadFileStyles(context->config, 
-                                  g_quark_to_string(context->config->key_file_name[file_type])) ;
+      zMapConfigIniReadStyles(context->config, 
+                              g_quark_to_string(context->config->key_file_name[file_type])) ;
     }
 }
 

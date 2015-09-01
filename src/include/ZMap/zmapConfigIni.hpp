@@ -76,6 +76,7 @@ typedef struct _ZMapConfigStruct *ZMapConfig ;
 typedef  struct _ZMapConfigIniStruct *ZMapConfigIni;
 
 ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file) ;
+ZMapConfigIniContext zMapConfigIniContextCreateType(const char *config_file, ZMapConfigIniFileType file_type) ;
 gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, const char *buffer);
 gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, const char *file) ;
 gchar **zMapConfigIniContextGetAllStanzaNames(ZMapConfigIniContext context);

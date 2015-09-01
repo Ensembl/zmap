@@ -85,21 +85,35 @@ gboolean zMapConfigIniReadAll(ZMapConfigIni config, const char *config_file)
 
   if (!system_file_loaded(config) && has_system_file(config))
     {
-      const char *filename = zMapConfigDirGetSysFile() ;
-      config->key_file[ZMAPCONFIG_FILE_SYS] = read_file(filename, &(config->key_error[ZMAPCONFIG_FILE_SYS])) ;
-      config->key_file_name[ZMAPCONFIG_FILE_ZMAP] = g_quark_from_string(filename) ;
+      zMapConfigIniReadSystem(config) ;
     }
 
   if (!system_zmap_file_loaded(config) && has_system_zmap_file(config))
     {
-      const char *filename = zMapConfigDirGetZmapHomeFile() ;
-      config->key_file[ZMAPCONFIG_FILE_ZMAP] = read_file(filename, &(config->key_error[ZMAPCONFIG_FILE_ZMAP])) ;
-      config->key_file_name[ZMAPCONFIG_FILE_ZMAP] = g_quark_from_string(filename) ;
+      zMapConfigIniReadZmap(config) ;
     }
 
   red = zMapConfigIniReadUser(config, config_file) ;
 
   return red ;
+}
+
+
+gboolean zMapConfigIniReadSystem(ZMapConfigIni config)
+{
+  const char *filename = zMapConfigDirGetSysFile() ;
+  config->key_file[ZMAPCONFIG_FILE_SYS] = read_file(filename, &(config->key_error[ZMAPCONFIG_FILE_SYS])) ;
+  config->key_file_name[ZMAPCONFIG_FILE_ZMAP] = g_quark_from_string(filename) ;
+  return TRUE ;
+}
+
+
+gboolean zMapConfigIniReadZmap(ZMapConfigIni config)
+{
+  const char *filename = zMapConfigDirGetZmapHomeFile() ;
+  config->key_file[ZMAPCONFIG_FILE_ZMAP] = read_file(filename, &(config->key_error[ZMAPCONFIG_FILE_ZMAP])) ;
+  config->key_file_name[ZMAPCONFIG_FILE_ZMAP] = g_quark_from_string(filename) ;
+  return TRUE ;
 }
 
 
@@ -152,7 +166,7 @@ gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, const char *buffer)
 
 
 /* this is used for styles, NOTE not ever freed until the context is destroyed so can have only one file */
-gboolean zMapConfigIniReadFileStyles(ZMapConfigIni config, const char *file)
+gboolean zMapConfigIniReadStyles(ZMapConfigIni config, const char *file)
 {
   gboolean read = FALSE;
 

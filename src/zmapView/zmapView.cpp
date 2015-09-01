@@ -7017,7 +7017,8 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
     {
       /* Read the context from the original input config file (if there was one - otherwise this
        * will return an empty context. Note that it will also include any system config files too.) */
-      ZMapConfigIniContext context = zMapConfigIniContextProvide(input_file) ;
+      ZMapConfigIniContext context = zMapConfigIniContextCreateType(input_file, file_type) ;
+      //ZMapConfigIniContext context = zMapConfigIniContextProvide(input_file) ;
 
       if (context)
         {
@@ -7030,7 +7031,8 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
           zMapConfigIniContextCreateKeyFile(context, file_type) ;
 
           /* Update the context with the new properties, if anything has changed */
-          zMapConfigIniContextSetStyles(context, view->context_map.styles) ;
+          if (file_type == ZMAPCONFIG_FILE_STYLES)
+            zMapConfigIniContextSetStyles(context, view->context_map.styles) ;
 
           /* Do the save to file (force changes=true so we export even if nothing's changed) */
           zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
