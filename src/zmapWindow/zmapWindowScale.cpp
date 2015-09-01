@@ -405,7 +405,7 @@ double zmapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
   PangoFontDescription *font_desc;
   double font_width,font_height;
   int text_height;
-  GdkColor black,grey,*colour;
+  GdkColor black,grey;
   double tick_width;
   int scroll_len;
   int seq_len;         /* biggest slice coord to display */
@@ -413,10 +413,7 @@ double zmapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
   ZMapWindowFeaturesetItem featureset;
   GQuark fid;
   char buf[32];
-  double text_max,tick_max;        /* max width of each */
-  int tick_inc = 4.0;                /* diff in size per level */
-  double prev;
-  int first;
+  double text_max;        /* max width of each */
   static ZMapFeatureTypeStyle scale_style = NULL;
   GtkAdjustment *v_adjust ;
 
@@ -486,7 +483,6 @@ double zmapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
     tick_width_default = 3,
     tick_width_number = 7,
     tick_width_special = 5 ;
-  gboolean first_tick = TRUE ;
   int interval_length = 0,
     interval_start = 0,
     interval_end = 0,

@@ -1284,7 +1284,7 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  double x_pos, double y_pos) ;
 
 
-gboolean zmapWindowFeatureItemEventButRelease(GdkEvent *event) ;
+void zmapWindowFeatureItemEventButRelease(GdkEvent *event) ;
 gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 
 ZMapFeatureBlock zmapWindowItemGetFeatureBlock(FooCanvasItem *item) ;

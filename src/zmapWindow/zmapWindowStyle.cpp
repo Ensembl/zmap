@@ -673,7 +673,7 @@ static gboolean applyChanges(gpointer cb_data)
   const gboolean own_style = (new_style_id == feature_set->unique_id);
 
   /* Check whether we're editing the original style for this featureset or assigning a different one */
-  const gboolean using_original_style = (new_style_id == my_data->orig_style_copy.unique_id);
+  //const gboolean using_original_style = (new_style_id == my_data->orig_style_copy.unique_id);
 
   /* Check whether we've already applied changes to this style */
   const gboolean already_edited_style = (new_style_id == my_data->last_edited_style_id) ;

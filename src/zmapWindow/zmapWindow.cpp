@@ -318,7 +318,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
                                                            char **err_out) ;
 static void invokeVisibilityChange(ZMapWindow window) ;
 
-static void foo_bug_print(void *key, const char *where) ;
+//static void foo_bug_print(void *key, const char *where) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printWindowSizeDebug(char *prefix, ZMapWindow window,

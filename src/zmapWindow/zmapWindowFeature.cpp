@@ -332,7 +332,7 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 }
 
 
-gboolean zmapWindowFeatureItemEventButRelease(GdkEvent *event)
+void zmapWindowFeatureItemEventButRelease(GdkEvent *event)
 {
   GdkEventButton *but_event = (GdkEventButton *)event ;
 
