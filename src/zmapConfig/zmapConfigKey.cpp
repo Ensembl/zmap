@@ -144,7 +144,9 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
           {
             char *string_value = NULL;
             string_value = (char *)g_value_get_string(value);
-            g_key_file_set_string(key_file, stanza_name, key_name, string_value);
+
+            if (string_value)
+              g_key_file_set_string(key_file, stanza_name, key_name, string_value);
           }
           break;
         case G_TYPE_INT:

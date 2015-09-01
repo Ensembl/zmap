@@ -767,20 +767,15 @@ static void context_update_style(gpointer key, gpointer value, gpointer data)
   /* Loop through each possible parameter type */
   for (int param_id = STYLE_PROP_NONE + 1 ; param_id < _STYLE_PROP_N_ITEMS; ++param_id)
     {
-      if (zMapStyleIsPropertySetId(style, (ZMapStyleParamId)param_id))
+      const char *param_name = zmapStyleParam2Name((ZMapStyleParamId)param_id) ;
+
+      GValue result = {0} ;
+
+      if (zMapStyleGetValue(style, (ZMapStyleParamId)param_id, &result))
         {
-          const char *param_name = zmapStyleParam2Name((ZMapStyleParamId)param_id) ;
+          zMapConfigIniContextSetValue(context, ZMAPCONFIG_FILE_STYLES, stanza_name, param_name, &result) ;
 
-          if (param_name)
-            {
-              GValue result = {0} ;
-              g_value_init(&result, G_TYPE_STRING);
-      
-              if (zMapStyleGetValue(style, param_name, &result))
-                zMapConfigIniContextSetValue(context, ZMAPCONFIG_FILE_STYLES, stanza_name, param_name, &result) ;
-
-              g_value_unset(&result);
-            }
+          g_value_unset(&result);
         }
     }
 
