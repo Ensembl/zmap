@@ -121,7 +121,6 @@ case $opsys in
 
     CFLAGS_args="-Wall -I$GTK_PREFIX/include -Wno-deprecated-declarations"
 
-
     LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
 
     ;;
@@ -145,6 +144,8 @@ case $opsys in
     ;;
 
 esac
+
+
 
 CC_param="CC=$CC_args"
 CFLAGS_param="CFLAGS=$CFLAGS_args"

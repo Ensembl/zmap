@@ -5,22 +5,22 @@ SUBDIRS = .
 
 noinst_LTLIBRARIES = libZMapApp.la
 
-libZMapApp_la_SOURCES = zmapApp_P.h \
-zmapAppconnect.c \
-zmapAppmain_c.cc \
-zmapAppmanagepanel.c \
-zmapAppmenubar.c \
-zmapAppwindow.c \
-zmapAppRemoteInternal.h \
-zmapAppRemoteInternal.c \
-zmapAppRemoteControl.c \
-zmapAppRemoteCommand.c \
-zmapAppManager.c \
+libZMapApp_la_SOURCES = zmapApp_P.hpp \
+zmapAppconnect.cpp \
+zmapAppmain_c.cpp \
+zmapAppmanagepanel.cpp \
+zmapAppmenubar.cpp \
+zmapAppwindow.cpp \
+zmapAppRemoteInternal.hpp \
+zmapAppRemoteInternal.cpp \
+zmapAppRemoteControl.cpp \
+zmapAppRemoteCommand.cpp \
+zmapAppManager.cpp \
 $(NULL)
 
 
 if USE_ZEROMQ
-libZMapApp_la_SOURCES += zmapAppRemoteInternal.c zmapAppRemoteInternal.h
+libZMapApp_la_SOURCES += zmapAppRemoteInternal.cpp zmapAppRemoteInternal.hpp
 endif
 
 
@@ -31,3 +31,16 @@ libZMapApp_la_CFLAGS = $(INCLUDE_COMMON)
 #
 MAINTAINERCLEANFILES = $(top_srcdir)/zmapApp/Makefile.in
 
+
+# See the explanation in zmapConfig/Makefile.am for why these unrelated
+# targets has been put here.
+#
+all-local:
+	@echo 'about to make zmapConfigs default_styles.cpp'
+	$(top_srcdir)/zmapConfig/zmap_DefaultStyles.pl $(top_srcdir)/zmapConfig/default_styles.txt > $(top_srcdir)/zmapConfig/default_styles.cpp
+	@echo 'finished making zmapConfigs default_styles.cpp'
+
+dist-hook:
+	@echo 'about to make zmapConfigs default_styles.cpp'
+	$(top_srcdir)/zmapConfig/zmap_DefaultStyles.pl $(top_srcdir)/zmapConfig/default_styles.txt > $(top_srcdir)/zmapConfig/default_styles.cpp
+	@echo 'finished making zmapConfigs default_styles.cpp'

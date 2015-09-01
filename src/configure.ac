@@ -14,7 +14,7 @@ AC_INIT([ZMap], [VERSION_NUMBER], [zmap@sanger.ac.uk], [zmap], [http://www.sange
 AC_CONFIG_AUX_DIR([config])
 
 # check we can find the source
-AC_CONFIG_SRCDIR([zmapApp/zmapAppmain_c.cc])
+AC_CONFIG_SRCDIR([zmapApp/zmapAppmain_c.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 # try it....
@@ -38,7 +38,6 @@ AC_PATH_PROGS(PERL, perl perl5)
 
 AC_ARG_VAR(GLIB_GENMARSHAL, [The glib-genmarshal executable.])
 AC_CHECK_PROG(GLIB_GENMARSHAL, glib-genmarshal, glib-genmarshal)
-
 
 
 
@@ -218,7 +217,8 @@ AC_ARG_WITH([macosx-sdk-path],
         AS_HELP_STRING([--with-maxosx-sdk-path=path], [enable building of mac osx universal binary using 'path' to SDK]),
         [], [with_macosx_sdk_path=$ZMAP_FALSE])
 
-
+# NEEDS REMOVING.....
+#
 MACOSX_UNIVERSAL_FILE=".deps/zmap.c"
 MACOSX_UNIVERSAL_FLAGS=""
 AS_IF([test "x$with_macosx_sdk_path" != "x$ZMAP_FALSE"],
@@ -519,7 +519,6 @@ ZMAP_SRC_DIRS="zmapApp \
 zmapAppServices \
 zmapConfig \
 zmapControl \
-zmapDAS \
 zmapDraw \
 zmapFeature \
 zmapGFF \
@@ -556,7 +555,6 @@ zmapApp/Makefile
 zmapAppServices/Makefile
 zmapConfig/Makefile
 zmapControl/Makefile
-zmapDAS/Makefile
 zmapDraw/Makefile
 zmapFeature/Makefile
 zmapFeature/tests/Makefile
@@ -565,7 +563,6 @@ zmapRemoteControl/Makefile
 zmapRemoteControl/remotetest/Makefile
 zmapServer/Makefile
 zmapServer/acedb/Makefile
-zmapServer/das/Makefile
 zmapServer/pipe/Makefile
 zmapServer/file/Makefile
 zmapServer/ensembl/Makefile

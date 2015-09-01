@@ -35,15 +35,15 @@
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmap.h>
+#include <ZMap/zmap.hpp>
 
 #include <string.h>
-#include <ZMap/zmapFeature.h>
-#include <ZMap/zmapUtils.h>
-#include <ZMap/zmapXMLHandler.h>
-#include <ZMap/zmapGLibUtils.h>
-#include <ZMap/zmapUtilsGUI.h>
-#include <zmapWindow_P.h>
+#include <ZMap/zmapFeature.hpp>
+#include <ZMap/zmapUtils.hpp>
+#include <ZMap/zmapXMLHandler.hpp>
+#include <ZMap/zmapGLibUtils.hpp>
+#include <ZMap/zmapUtilsGUI.hpp>
+#include <zmapWindow_P.hpp>
 #include <gbtools/gbtools.hpp>
 
 
@@ -1079,7 +1079,7 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
        * name and not relevant */
       feature_show->window = zMapGUIDialogNew("Edit Feature", NULL, G_CALLBACK(featureShowDialogResponseCB), feature_show) ;
       gtk_dialog_add_button(GTK_DIALOG(feature_show->window), GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL) ;
-      gtk_dialog_add_button(GTK_DIALOG(feature_show->window), "Save Attributes", GTK_RESPONSE_ACCEPT) ;
+      gtk_dialog_add_button(GTK_DIALOG(feature_show->window), "Save Settings", GTK_RESPONSE_ACCEPT) ;
       gtk_dialog_add_button(GTK_DIALOG(feature_show->window), "Create Feature", GTK_RESPONSE_APPLY) ;
       gtk_dialog_set_default_response(GTK_DIALOG(feature_show->window), GTK_RESPONSE_APPLY) ;
     }
@@ -2707,7 +2707,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
         {
           ok = FALSE ;
           g_set_error(&error, g_quark_from_string("ZMap"), 99,
-                      "You cannot create a new feature in the %s column.\n\nEither press Save Attributes instead to save the temp feature, or specify a\ndifferent feature set to create the new feature in.",
+                      "You cannot create a new feature in the %s column.\n\nEither press Save Settings instead to save these attributes to the temp feature, or specify a\ndifferent feature set to create the new feature in.",
                       ZMAP_FIXED_STYLE_SCRATCH_NAME) ;
         }
     }

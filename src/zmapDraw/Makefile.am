@@ -5,8 +5,8 @@ SUBDIRS = .
 
 noinst_LTLIBRARIES = libZMapDraw.la
 
-libZMapDraw_la_SOURCES = zmapDraw_P.h \
-zmapDraw.c \
+libZMapDraw_la_SOURCES = zmapDraw_P.hpp \
+zmapDraw.cpp \
 $(NULL)
 
 libZMapDraw_la_CFLAGS = $(INCLUDE_COMMON)

@@ -123,7 +123,6 @@ libZMap_la_SOURCES =
 libZMap_la_LIBADD  = \
 zmapControl/libZMapControl.la \
 zmapConfig/libZMapConfig.la   \
-zmapDAS/libZMapDas.la         \
 zmapDraw/libZMapDraw.la       \
 zmapFeature/libZMapFeature.la \
 zmapGFF/libZMapGFF.la         \
@@ -172,7 +171,7 @@ endif
 #
 
 #zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
-zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.cc
+zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.cpp
 
 
 zmap_LDADD =                                                 \
@@ -242,7 +241,7 @@ zmap_LINK         = $(CXX) -I$(top_srcdir)/zmapApp $(AM_CFLAGS) $(CFLAGS) $(AM_L
 #gffparser_CPPFLAGS     = $(AM_CPPFLAGS)
 
 # test program to write xml...
-xml_writer_SOURCES      = $(top_srcdir)/zmapXML/example_xml_writer.c
+xml_writer_SOURCES      = $(top_srcdir)/zmapXML/example_xml_writer.cpp
 xml_writer_LDFLAGS      =
 xml_writer_LDADD        = $(zmap_LDADD)
 xml_writer_DEPENDENCIES = $(noinst_LTLIBRARIES)
@@ -258,7 +257,7 @@ xml_writer_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 # The new program that knows about the xremote protocol.
 #remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.c
-remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.cc
+remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.cpp
 remotecontrol_LDFLAGS      = 
 remotecontrol_LDADD        = $(zmap_LDADD)
 remotecontrol_DEPENDENCIES = $(noinst_LTLIBRARIES)
@@ -295,7 +294,7 @@ check_PROGRAMS = check_zmap
 # so that a script can do
 # make check check_zmap_LOG_FILE=log_to_check.log
 check_zmap_LOG_FILE     = "default.log"
-check_zmap_SOURCES      = $(top_srcdir)/tests/check_zmapmain.c
+check_zmap_SOURCES      = $(top_srcdir)/tests/check_zmapmain.cpp
 check_zmap_DEPENDENCIES = $(check_LTLIBRARIES)
 check_zmap_LINK         = $(zmap_LINK)
 check_zmap_LDADD        = @CHECK_LIBS@ -lcheckZMap $(zmap_LDADD)
@@ -353,7 +352,7 @@ maintainer-clean-local:
 
 
 ZMAP_BUILD_FILES = $(top_builddir)/zmapApp/*.o $(top_builddir)/zmapAppServices/*.o $(top_builddir)/zmapConfig/*.o \
-$(top_builddir)/zmapControl/*.o $(top_builddir)/zmapDAS/*.o $(top_builddir)/zmapDraw/*.o $(top_builddir)/zmapFeature/*.o \
+$(top_builddir)/zmapControl/*.o $(top_builddir)/zmapDraw/*.o $(top_builddir)/zmapFeature/*.o \
 $(top_builddir)/zmapGFF/*.o $(top_builddir)/zmapManager/*.o $(top_builddir)/zmapRemoteControl/*.o \
 $(top_builddir)/zmapServer/*.o $(top_builddir)/zmapThreads/*.o $(top_builddir)/zmapUtils/*.o \
 $(top_builddir)/zmapView/*.o $(top_builddir)/zmapWindow/*.o $(top_builddir)/zmapXML/*.o

@@ -6,9 +6,8 @@
 #
 
 # THESE SETTINGS ARE HACKS UNTIL WE RENAME OUR FILES WITH A RECOGNISED C++ SUFFIX.
-CC = g++
 #CC = g++ -std=c++0x
-LD = g++
+#LD = g++
 
 
 

@@ -3,9 +3,11 @@ include $(top_srcdir)/Makefile.zmap
 
 SUBDIRS = .
 
+AM_CPPFLAGS += -I$(top_srcdir)/zmapServer
+
 noinst_LTLIBRARIES = libPipeServer.la
 
-libPipeServer_la_SOURCES = pipeServer.c pipeServer_P.h
+libPipeServer_la_SOURCES = pipeServer.cpp pipeServer_P.hpp
 libPipeServer_la_LIBADD  = 
 libPipeServer_la_CFLAGS  = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapServer
 
