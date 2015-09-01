@@ -1,19 +1,29 @@
 
-Git commits for  from commit "production" until commit "release/2.0.0"
+Git commits for  from commit "production" until commit "release/2.1.0"
 
-8b6f372 2015-07-21 Fix regression from 5ebbb0c with export options - REGRESSION FIX
-c3c3e0c 2015-07-15 Merge branch 'feature/C++' into develop
-7d377e2 2015-07-08 removed the drawing design document - DOC
-8b551b4 2015-07-07 Merge branch 'feature/editing' into develop
-fca3806 2015-06-29 Avoid crash when overwriting feature used as evidence - BUG FIX
-8bdce77 2015-07-06 Add logging of command line used by zmap to start a new child pipe process. - NEW FEATURE
-1c9cc27 2015-06-25 Add optional database prefix in ensembl - NEW FEATURE 'ensembl db prefix'
-56edb09 2015-06-25 Fix crash when importing files - REGRESSION FIX
-8fa8bb6 2015-06-19 bug fix for drawing transcripts - BUG FIX
-5275435 2015-06-17 Fix a bug in edit style dialog where wrong colour is set - BUG FIX
-34e8ff3 2015-06-16 Ensembl now only loads requested featuresets, if specified - BUG FIX
-4ca1ce8 2015-06-16 Fix broken link - DOC
-bb38a51 2015-06-15 Disable tilde expansion for url config fields - doesn't work on mac - REGRESSION FIX
+5f9f579 2015-08-20 update to fix incorrect coordinates in file import dialogue - RT 485214
+b43cc34 2015-08-17 Merge branch 'feature/error_messages' into develop
+6e5d5b8 2015-08-17 Merge branch 'feature/ensembl' into develop
+6204d00 2015-08-14 fix to possibly unsafe calls to g_free() in zmapWindowPfetchEntry() - RT 484263
+fcffc7b 2015-08-13 fix to bug for SIRT:484181 - BUG FIX
+39f5859 2015-08-13 Only create DNA featureset if it was requested
+6400192 2015-08-12 Avoid crash if show translation when seq not available - BUG FIX
+9150fc0 2015-08-12 Fix instability problems in ensembl - BUG FIX
+2125807 2015-08-13 Remove all DAS code, it has not been used in years. - BUG FIX
+2aa4867 2015-08-13 Fix buglet in my fix for preventing exporting of transcripts twice. - BUG FIX
+f19f789 2015-08-12 Stop duplicate exports of transcripts in case where user clicks on a transcript column. - BUG FIX
+d5743c6 2015-08-12 Fix bug in calculating phase from start_not_found. - BUG FIX
+35f509b 2015-08-12 Fix gff & pipe code meaning we did not catch gff scripts that exit without returning anything. - BUG FIX
+2697b73 2015-08-10 Fix bug with exporting temp feature - BUG FIX
+f83487b 2015-08-05 Fix a bug with different ensembl SO types having same source name - BUG FIX
+7eddcdf 2015-07-29 Merge branch 'feature/mouse_bugs' into develop
+5bebb84 2015-07-28 Fix a bug where dragging wasn't being cancelled - BUG FIX
+3955643 2015-07-27 Avoid potential null access if pfetch error is null - BUG FIX
+6e45a97 2015-07-23 Merge branch 'feature/Remove_acedb' into develop
+e65852a 2015-07-22 Merge branch 'feature/ensembl' into develop
+269f131 2015-07-20 Merge branch 'feature/ensembl' into develop
+c05d7fc 2015-07-16 Try to fix mysql header inclusion on mac. - BUG FIX
+dca4851 2015-07-16 Merge branch 'feature/C++_rename' into develop
 
 
 End of git commits
