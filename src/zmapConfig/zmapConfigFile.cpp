@@ -219,6 +219,15 @@ gboolean zMapConfigIniSave(ZMapConfigIni config, ZMapConfigIniFileType file_type
 
       if(file_contents && !g_error)
         {
+          /* Must make sure it's UTF8 or g_io_channel_write_chars will crash,
+           * for now just replace the bad character with a question mark */
+          const gchar *bad_char_out = NULL ;
+          while (!g_utf8_validate(file_contents, -1, &bad_char_out))
+            {
+              char *bad_char = (char *)bad_char_out ;
+              *bad_char='?';
+            }
+
           /* Ok we can write the file contents to disk */
           GIOChannel *output = g_io_channel_new_file(filename, "w", &g_error);
         
