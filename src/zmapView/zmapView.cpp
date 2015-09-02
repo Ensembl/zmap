@@ -7018,7 +7018,6 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
       /* Read the context from the original input config file (if there was one - otherwise this
        * will return an empty context. Note that it will also include any system config files too.) */
       ZMapConfigIniContext context = zMapConfigIniContextCreateType(input_file, file_type) ;
-      //ZMapConfigIniContext context = zMapConfigIniContextProvide(input_file) ;
 
       if (context)
         {

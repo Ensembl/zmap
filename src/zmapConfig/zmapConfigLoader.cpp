@@ -358,7 +358,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
         }
       else if (styles_file)/* separate styles file */
         {
-          zMapConfigIniContextIncludeFile(context, styles_file) ;
+          zMapConfigIniContextIncludeFile(context, styles_file, ZMAPCONFIG_FILE_STYLES) ;
 
           /* This is mucky....the above call puts whatever the file is into
            * config->extra_key_file and config->extra_file_name.

@@ -180,6 +180,7 @@ void zMapConfigDestroyStanza(ZMapConfigStanza stanza) ;
 
 ZMapConfigIni zMapConfigIniNew(void) ;
 gboolean zMapConfigIniReadAll(ZMapConfigIni config, const char *config_file) ;
+gboolean zMapConfigIniReadFileType(ZMapConfigIni config, const char *config_file, ZMapConfigIniFileType file_type) ;
 gboolean zMapConfigIniReadUser(ZMapConfigIni config, const char *config_file);
 gboolean zMapConfigIniReadSystem(ZMapConfigIni config);
 gboolean zMapConfigIniReadZmap(ZMapConfigIni config);

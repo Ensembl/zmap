@@ -180,12 +180,12 @@ gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, const c
 }
 
 /* file can be a full path or a filename. */
-gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, const char *file)
+gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, const char *file, ZMapConfigIniFileType file_type)
 {
   gboolean result = FALSE;
 
   if (file && *file)
-    result = zMapConfigIniReadStyles(context->config, file) ;
+    result = zMapConfigIniReadFileType(context->config, file, file_type) ;
 
   return result;
 }
@@ -291,10 +291,18 @@ void zMapConfigIniContextCreateKeyFile(ZMapConfigIniContext context, ZMapConfigI
 {
   zMapReturnIfFail(context && context->config) ;
 
+  /* If a file is set, then see if we can load that file */
   if (!context->config->key_file[file_type])
     {
-      zMapConfigIniReadStyles(context->config, 
-                              g_quark_to_string(context->config->key_file_name[file_type])) ;
+      zMapConfigIniReadFileType(context->config, 
+                                g_quark_to_string(context->config->key_file_name[file_type]),
+                                file_type) ;
+    }
+
+  /* If the key file wasn't created, then create an empty one */
+  if (!context->config->key_file[file_type])
+    {
+      context->config->key_file[file_type] = g_key_file_new() ;
     }
 }
 
@@ -807,13 +815,19 @@ static void context_update_style(gpointer key, gpointer value, gpointer data)
     {
       const char *param_name = zmapStyleParam2Name((ZMapStyleParamId)param_id) ;
 
-      GValue result = {0} ;
-
-      if (zMapStyleGetValue(style, (ZMapStyleParamId)param_id, &result))
+      if (strcmp(param_name, "name") != 0 && 
+          strcmp(param_name, "description") != 0 &&
+          strcmp(param_name, "is-set") != 0 &&
+          strcmp(param_name, "displayable") != 0)
         {
-          zMapConfigIniContextSetValue(context, ZMAPCONFIG_FILE_STYLES, stanza_name, param_name, &result) ;
+          GValue result = {0} ;
 
-          g_value_unset(&result);
+          if (zMapStyleGetValue(style, (ZMapStyleParamId)param_id, &result))
+            {
+              zMapConfigIniContextSetValue(context, ZMAPCONFIG_FILE_STYLES, stanza_name, param_name, &result) ;
+              
+              g_value_unset(&result);
+            }
         }
     }
 

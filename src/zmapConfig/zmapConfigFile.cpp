@@ -99,11 +99,40 @@ gboolean zMapConfigIniReadAll(ZMapConfigIni config, const char *config_file)
 }
 
 
+gboolean zMapConfigIniReadFileType(ZMapConfigIni config, const char *config_file, ZMapConfigIniFileType file_type)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(config, result) ;
+
+  switch (file_type)
+    {
+    case ZMAPCONFIG_FILE_SYS:
+      zMapConfigIniReadSystem(config) ;
+      break ;
+    case ZMAPCONFIG_FILE_ZMAP:
+      zMapConfigIniReadZmap(config) ;
+      break ;
+    case ZMAPCONFIG_FILE_USER:
+      zMapConfigIniReadUser(config, config_file) ;
+      break ;
+    case ZMAPCONFIG_FILE_STYLES:
+      zMapConfigIniReadStyles(config, config_file) ;
+      break ;
+    case ZMAPCONFIG_FILE_BUFFER: // fall through - buffer is treated differently to files
+    default:
+      zMapWarnIfReached() ;
+      break ;
+    }
+
+  return result ;
+}
+
+
 gboolean zMapConfigIniReadSystem(ZMapConfigIni config)
 {
   const char *filename = zMapConfigDirGetSysFile() ;
   config->key_file[ZMAPCONFIG_FILE_SYS] = read_file(filename, &(config->key_error[ZMAPCONFIG_FILE_SYS])) ;
-  config->key_file_name[ZMAPCONFIG_FILE_ZMAP] = g_quark_from_string(filename) ;
+  config->key_file_name[ZMAPCONFIG_FILE_SYS] = g_quark_from_string(filename) ;
   return TRUE ;
 }
 
