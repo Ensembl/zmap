@@ -291,15 +291,6 @@ void zMapConfigIniContextCreateKeyFile(ZMapConfigIniContext context, ZMapConfigI
 {
   zMapReturnIfFail(context && context->config) ;
 
-  /* If a file is set, then see if we can load that file */
-  if (!context->config->key_file[file_type])
-    {
-      zMapConfigIniReadFileType(context->config, 
-                                g_quark_to_string(context->config->key_file_name[file_type]),
-                                file_type) ;
-    }
-
-  /* If the key file wasn't created, then create an empty one */
   if (!context->config->key_file[file_type])
     {
       context->config->key_file[file_type] = g_key_file_new() ;
