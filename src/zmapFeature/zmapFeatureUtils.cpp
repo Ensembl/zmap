@@ -722,7 +722,7 @@ ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, Z
       {
         /* Try again with the short text version of the style name (e.g. "basic" instead of
          * "zmapstyle_mode_basic" */
-        style_id = g_quark_from_string(zmapStyleMode2ShortText(feature_type)) ;
+        style_id = g_quark_from_string(zMapStyleMode2ShortText(feature_type)) ;
         feature_style = zMapFindStyle(styles, style_id) ;
       }
   }

@@ -958,16 +958,16 @@ char* zMapStyleGetValueAsString(ZMapFeatureTypeStyle style, ZMapStyleParamId par
               break ;                                 \
           }
 
-          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_MODE            , ZMapStyleMode,               zMapStyleMode2ExactStr);
-          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_COLDISP         , ZMapStyleColumnDisplayState, zmapStyleColDisplayState2ExactStr);
-          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_BUMP            , ZMapStyleBumpMode,           zmapStyleBumpMode2ExactStr);
-          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_3FRAME          , ZMapStyle3FrameMode,         zmapStyle3FrameMode2ExactStr);
-          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_SCORE           , ZMapStyleScoreMode,          zmapStyleScoreMode2ExactStr);
-          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_GRAPH_MODE      , ZMapStyleGraphMode,          zmapStyleGraphMode2ExactStr);
-          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_SCALE           , ZMapStyleScale,              zmapStyleScale2ExactStr);
-          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_BLIXEM          , ZMapStyleBlixemType,         zmapStyleBlixemType2ExactStr);
-          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_GLYPH_STRAND    , ZMapStyleGlyphStrand,        zmapStyleGlyphStrand2ExactStr);
-          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_GLYPH_ALIGN     , ZMapStyleGlyphAlign,         zmapStyleGlyphAlign2ExactStr);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_MODE            , ZMapStyleMode,               zMapStyleMode2ShortText);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_COLDISP         , ZMapStyleColumnDisplayState, zmapStyleColDisplayState2ShortText);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_BUMP            , ZMapStyleBumpMode,           zmapStyleBumpMode2ShortText);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_3FRAME          , ZMapStyle3FrameMode,         zmapStyle3FrameMode2ShortText);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_SCORE           , ZMapStyleScoreMode,          zmapStyleScoreMode2ShortText);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_GRAPH_MODE      , ZMapStyleGraphMode,          zmapStyleGraphMode2ShortText);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_SCALE           , ZMapStyleScale,              zmapStyleScale2ShortText);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_BLIXEM          , ZMapStyleBlixemType,         zmapStyleBlixemType2ShortText);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_GLYPH_STRAND    , ZMapStyleGlyphStrand,        zmapStyleGlyphStrand2ShortText);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_GLYPH_ALIGN     , ZMapStyleGlyphAlign,         zmapStyleGlyphAlign2ShortText);
 
         case STYLE_PARAM_TYPE_UINT:
           {

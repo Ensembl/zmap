@@ -1244,7 +1244,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, const char *line, Name
     {
       if(!(feature_style = zMapFindFeatureStyle(parser->sources, feature_style_id, feature_type)))
         {
-          feature_style_id = g_quark_from_string(zmapStyleMode2ShortText(feature_type)) ;
+          feature_style_id = g_quark_from_string(zMapStyleMode2ShortText(feature_type)) ;
         }
 
       if(!(feature_style = zMapFindFeatureStyle(parser->sources, feature_style_id, feature_type)))

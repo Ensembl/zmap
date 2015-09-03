@@ -1818,7 +1818,7 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
       name = get_menu_string(s->original_id, '-');
 
       if(s->mode != cur_style->mode)
-        mode = (char *) zmapStyleMode2ShortText(s->mode);
+        mode = (char *) zMapStyleMode2ShortText(s->mode);
 
       m->name = g_strdup_printf(COLUMN_CONFIG_STR "/" COLUMN_STYLE_OPTS"/%s%s%s", mode, *mode ? "/" : "", name);
       g_free(name);
