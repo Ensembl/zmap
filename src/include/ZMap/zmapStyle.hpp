@@ -1073,6 +1073,7 @@ void zmapStyleUnsetIsSet(ZMapFeatureTypeStyle style, ZMapStyleParamId id);
 const char *zmapStyleParam2Name(ZMapStyleParamId id) ;
 
 gboolean zMapStyleGetValue(ZMapFeatureTypeStyle style, ZMapStyleParamId param_id, GValue *value) ;
+char* zMapStyleGetValueAsString(ZMapFeatureTypeStyle style, ZMapStyleParamId param_id) ;
 gboolean zMapStyleGet(ZMapFeatureTypeStyle style, char *first_property_name, ...) ;
 gboolean zMapStyleSet(ZMapFeatureTypeStyle style, const char *first_property_name, ...) ;
 

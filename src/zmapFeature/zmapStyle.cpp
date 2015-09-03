@@ -796,7 +796,8 @@ static void zmap_feature_type_style_finalize(GObject *object)
  *
  * @param   style          The style.
  * @param   param_id       The id of the parameter.
- * @return  char*          true if succeeded
+ * @param   value          GValue in which to populate the result.
+ * @return  gboolean       true if succeeded
  *  */
 gboolean zMapStyleGetValue(ZMapFeatureTypeStyle style, ZMapStyleParamId param_id, GValue *value)
 {
@@ -861,6 +862,129 @@ gboolean zMapStyleGetValue(ZMapFeatureTypeStyle style, ZMapStyleParamId param_id
     }
 
   return ok ;
+}
+
+
+/*!
+ * Get the property with the given param_id and return its value as a string
+ *
+ * @param   style          The style.
+ * @param   param_id       The id of the parameter.
+ * @return  char*          Newly allocated string.
+ *  */
+char* zMapStyleGetValueAsString(ZMapFeatureTypeStyle style, ZMapStyleParamId param_id)
+{
+  char *result = NULL ;
+  gboolean ok = FALSE ;
+
+  if (style && zMapStyleIsPropertySetId(style, param_id))
+    {
+      ok = TRUE ;
+      const char *param_name = zmapStyleParam2Name(param_id) ;
+      GParamSpec *pspec = g_object_class_find_property(G_OBJECT_CLASS(ZMAP_FEATURE_STYLE_GET_CLASS(style)), param_name) ;
+      ZMapStyleParam param = &zmapStyleParams_G [pspec->param_id];
+
+      /* Not sure if there's a better way to do this but we need to init the gvalue before we can
+       * call get_property */
+      switch(param->type)
+        {
+        case STYLE_PARAM_TYPE_BOOLEAN:
+          {
+            gboolean value = (* (gboolean *) (((size_t) style) + param->offset));
+            result = g_strdup_printf("%s", value ? "true" : "false") ;
+            break;
+          }
+
+        case STYLE_PARAM_TYPE_DOUBLE:
+          {
+            double value = (* (double *) (((size_t) style) + param->offset));
+            result = g_strdup_printf("%f", value) ;
+            break;
+          }
+
+        case STYLE_PARAM_TYPE_STRING:              // gchar *
+          {
+            const gchar *value = (gchar *) (((size_t) style) + param->offset);
+            result = g_strdup(value) ;
+            break;
+          }
+
+        case STYLE_PARAM_TYPE_QUARK: //fall through
+        case STYLE_PARAM_TYPE_SQUARK:              // gchar * stored as a quark
+          {
+            GQuark value = (* (GQuark *) (((size_t) style) + param->offset));
+            result = g_strdup(g_quark_to_string(value)) ;
+            break;
+          }
+
+        case STYLE_PARAM_TYPE_FLAGS:               // bitmap of is_set flags (array of uchar)
+          {
+            result = (gchar*)g_malloc(STYLE_IS_SET_SIZE * 2 + 1);
+            zmap_bin_to_hex(result,(guchar*)(((size_t) style) + param->offset), STYLE_IS_SET_SIZE);
+            break;
+          }
+
+        case STYLE_PARAM_TYPE_COLOUR:              // ZMapStyleFullColourStruct
+          {
+            result = zmapStyleValueColour((ZMapStyleFullColour) (((size_t) style) + param->offset));
+            break;
+          }
+
+        case STYLE_PARAM_TYPE_SUB_FEATURES:        // GQuark[]
+          {
+            result = zmapStyleValueSubFeatures((GQuark *)(((size_t) style) + param->offset));
+            break;
+          }
+
+        case STYLE_PARAM_TYPE_QUARK_LIST_ID:
+          {
+            result = zMap_g_list_quark_to_string(*(GList **)(((size_t) style) + param->offset), NULL);
+            break;
+          }
+
+        //case STYLE_PARAM_TYPE_GLYPH_SHAPE:
+        //  {
+        //    //g_value_set_boxed(value, shape);
+        //    break;
+        //  }
+
+          // enums treated as uint. This is a pain: can we know how big an enum is? (NO)
+          // Some pretty choice code but it's not safe to do it the easy way
+#define STYLE_GET_PROP2(s_param,s_type,s_func)        \
+          { \
+            case s_param : \
+              guint value = (guint) (* (s_type *) (((size_t) style) + param->offset)); \
+              result = g_strdup(s_func((s_type)value)) ;                \
+              break ;                                 \
+          }
+
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_MODE            , ZMapStyleMode,               zMapStyleMode2ExactStr);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_COLDISP         , ZMapStyleColumnDisplayState, zmapStyleColDisplayState2ExactStr);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_BUMP            , ZMapStyleBumpMode,           zmapStyleBumpMode2ExactStr);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_3FRAME          , ZMapStyle3FrameMode,         zmapStyle3FrameMode2ExactStr);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_SCORE           , ZMapStyleScoreMode,          zmapStyleScoreMode2ExactStr);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_GRAPH_MODE      , ZMapStyleGraphMode,          zmapStyleGraphMode2ExactStr);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_SCALE           , ZMapStyleScale,              zmapStyleScale2ExactStr);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_BLIXEM          , ZMapStyleBlixemType,         zmapStyleBlixemType2ExactStr);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_GLYPH_STRAND    , ZMapStyleGlyphStrand,        zmapStyleGlyphStrand2ExactStr);
+          STYLE_GET_PROP2 (STYLE_PARAM_TYPE_GLYPH_ALIGN     , ZMapStyleGlyphAlign,         zmapStyleGlyphAlign2ExactStr);
+
+        case STYLE_PARAM_TYPE_UINT:
+          {
+            guint value = (* (guint *) ((size_t)style + param->offset));
+            result = g_strdup_printf("%d", value) ;
+            break;
+          }
+
+        default:
+          {
+            zMapWarnIfReached() ;
+            break;
+          }
+        }
+    }
+
+  return result ;
 }
 
 

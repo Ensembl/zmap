@@ -809,15 +809,19 @@ static void context_update_style(gpointer key, gpointer value, gpointer data)
       if (strcmp(param_name, "name") != 0 && 
           strcmp(param_name, "description") != 0 &&
           strcmp(param_name, "is-set") != 0 &&
-          strcmp(param_name, "displayable") != 0)
+          strcmp(param_name, "displayable") != 0 &&
+          strcmp(param_name, "original-id") != 0 &&
+          strcmp(param_name, "unique-id") != 0 &&
+          strcmp(param_name, "gff-source") != 0 &&
+          strcmp(param_name, "glyph-shape") != 0 
+          )
         {
-          GValue result = {0} ;
+          char *value = zMapStyleGetValueAsString(style, (ZMapStyleParamId)param_id) ;
 
-          if (zMapStyleGetValue(style, (ZMapStyleParamId)param_id, &result))
+          if (value)
             {
-              zMapConfigIniContextSetValue(context, ZMAPCONFIG_FILE_STYLES, stanza_name, param_name, &result) ;
-              
-              g_value_unset(&result);
+              g_key_file_set_string(context->config->key_file[ZMAPCONFIG_FILE_STYLES], stanza_name, param_name, value);
+              g_free(value) ;
             }
         }
     }
