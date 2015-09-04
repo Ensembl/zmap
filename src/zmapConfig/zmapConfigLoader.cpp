@@ -932,7 +932,7 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
       if(!f_col->column_desc)
         f_col->column_desc = desc;
 
-      f_col->order = zMapFeatureColumnOrderNext() ;
+      f_col->order = zMapFeatureColumnOrderNext(FALSE) ;
 
       g_hash_table_insert(ghash,GUINT_TO_POINTER(f_col->unique_id),f_col);
     }
