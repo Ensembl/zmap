@@ -942,11 +942,12 @@ char* zMapStyleGetValueAsString(ZMapFeatureTypeStyle style, ZMapStyleParamId par
             break;
           }
 
-        //case STYLE_PARAM_TYPE_GLYPH_SHAPE:
-        //  {
-        //    //g_value_set_boxed(value, shape);
-        //    break;
-        //  }
+        case STYLE_PARAM_TYPE_GLYPH_SHAPE:
+          {
+            //! \todo Implement get-value for glyph-shape param
+            //g_value_set_boxed(value, shape);
+            break;
+          }
 
           // enums treated as uint. This is a pain: can we know how big an enum is? (NO)
           // Some pretty choice code but it's not safe to do it the easy way
