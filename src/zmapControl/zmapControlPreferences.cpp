@@ -77,7 +77,7 @@ static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 static void saveCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused) ;
 static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap) ;
-static void saveChapter(ZMapGuiNotebookChapter chapter, ZMapView view) ;
+static void saveChapter(ZMapGuiNotebookChapter chapter, ZMap zmap) ;
 static gboolean getUserPrefs(PrefsData curr_prefs, const char *config_file) ;
 static void saveUserPrefs(PrefsData prefs, const char *config_file) ;
 
@@ -178,7 +178,7 @@ static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data)
 static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_parent, ZMap zmap, ZMapView view)
 {
   ZMapGuiNotebookChapter chapter = NULL ;
-  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, zmap, NULL, NULL, saveCB, view} ;
+  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, zmap, NULL, NULL, saveCB, zmap} ;
   ZMapGuiNotebookPage page ;
   ZMapGuiNotebookSubsection subsection ;
   ZMapGuiNotebookParagraph paragraph ;
@@ -223,9 +223,12 @@ static void applyCB(ZMapGuiNotebookAny any_section, void *user_data)
 /* Save the preferences to the config file */
 static void saveCB(ZMapGuiNotebookAny any_section, void *user_data)
 {
-  ZMapView view = (ZMapView)user_data;
+  ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)any_section ;
+  ZMap zmap = (ZMap)user_data;
 
-  saveChapter((ZMapGuiNotebookChapter)any_section, view) ;
+  readChapter(chapter, zmap);
+
+  saveChapter(chapter, zmap) ;
 
   return ;
 }
@@ -403,7 +406,7 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
 }
 
 
-void saveChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
+void saveChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
 {
   /* By default, save to the input zmap config file, if there was one */
   saveUserPrefs(&prefs_curr_G, zMapConfigDirGetFile());
