@@ -6990,12 +6990,19 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
 
   if (export_type == ZMAPVIEW_EXPORT_CONFIG)
     {
+      /* For config, we'll set up the export context with the same values as the input
+       * context. This is because there are currently only a few config options that are editable
+       * so we'll basically export the original config with just a few changes. */
       input_file = view->view_sequence->config_file ;
       file_type = ZMAPCONFIG_FILE_USER ;
     }
   else if (export_type == ZMAPVIEW_EXPORT_STYLES)
     {
-      input_file = view->view_sequence->stylesfile ;
+      /* For styles, don't use the input file to set up the context because we can easily loop
+       * through all styles and export their current values. If we were to use the input file we
+       * would have to make sure duplicate style names have the same case, because loading
+       * styles is case sensitive. */
+      input_file = NULL; //view->view_sequence->stylesfile ;
       file_type = ZMAPCONFIG_FILE_STYLES ;
     }
   else
@@ -7003,12 +7010,12 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
       zMapWarnIfReached() ;
     }
 
-  if (input_file && filepath_inout && *filepath_inout)
+  if (filepath_inout && *filepath_inout)
     {
       output_file = g_strdup(*filepath_inout) ;
     }
 
-  if (input_file && !output_file)
+  if (!output_file)
     {
       output_file = zmapGUIFileChooser(NULL, "Configuration Export filename ?", NULL, "ini") ;
     }
