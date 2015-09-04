@@ -210,6 +210,9 @@
 
 #define ZMAPSTANZA_APP_EDIT_STYLES       "edit-styles"
 
+#define ZMAPSTANZA_APP_SHRINKABLE        "shrinkable"
+#define ZMAPSTANZA_APP_HIGHLIGHT_FILTERED "highlight-filtered-columns"
+#define ZMAPSTANZA_APP_ENABLE_ANNOTATION "enable-annotation"
 
 
 #define ZMAPSTANZA_PEER_CONFIG           "Peer"

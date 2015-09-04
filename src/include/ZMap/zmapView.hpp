@@ -244,6 +244,8 @@ ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);
 
 ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNotebook note_book_parent) ;
 
+void zMapViewBlixemSaveChapter(ZMapGuiNotebookChapter chapter, ZMapView view) ;
+
 ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook note_book_parent);
 
 gboolean zMapViewGetHighlightFilteredColumns(ZMapView);
