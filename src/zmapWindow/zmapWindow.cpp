@@ -318,7 +318,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
                                                            char **err_out) ;
 static void invokeVisibilityChange(ZMapWindow window) ;
 
-static void foo_bug_print(void *key, const char *where) ;
+//static void foo_bug_print(void *key, const char *where) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printWindowSizeDebug(char *prefix, ZMapWindow window,
@@ -1495,7 +1495,7 @@ void zMapWindowDestroy(ZMapWindow window)
   zmapWindowFreeWindowArray(&(window->feature_show_windows), TRUE) ;
 
   if(window->style_window)
-    zmapStyleWindowDestroy(window);
+    zmapWindowStyleDialogDestroy(window);
 
   /* Get rid of the column configuration window. */
   zmapWindowColumnConfigureDestroy(window) ;
@@ -2269,25 +2269,6 @@ static void panedResizeCB(gpointer data, gpointer userdata)
 
 
 
-static void foo_bug_print(void *key, const char *where)
-{
-  int i;
-  struct fooBug * fb;
-
-  for(i = 0, fb = foo_wins; i < n_foo_wins; i++, fb++)
-    {
-      if(fb->key == key)
-        {
-          //printf("%s %s %d\n", where, fb->id, i);
-          //fflush(stdout);
-          //zMapPrintStack();
-          //fflush(stdout);
-        }
-    }
-
-  return ;
-}
-
 
 /* We will need to allow caller to specify a routine that gets called whenever the user
  * scrolls.....needed to update the navigator...... */
@@ -2795,7 +2776,7 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
       zmapWindowFreeWindowArray(&(window->feature_show_windows), FALSE) ;
 
         if(window->style_window)
-        zmapStyleWindowDestroy(window);
+        zmapWindowStyleDialogDestroy(window);
     }
 
     zmapWindowFocusReset(window->focus);

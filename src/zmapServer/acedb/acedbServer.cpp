@@ -897,7 +897,6 @@ static ZMapServerResponseType getContextSequence(void *server_in,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
-  DoAllAlignBlocksStruct get_sequence ;
   gboolean dna_fetch_result ;
 
   resetErr(server) ;

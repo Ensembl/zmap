@@ -153,19 +153,6 @@ ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file)
       if((stanza_group = get_blixem_group_data(&stanza_name, &stanza_type)))
         zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group);
     }
-  else if (context)
-    {
-      const char *err_msg = "no error message" ;
-
-      if (context->error_message)
-        err_msg = context->error_message ;
-      else if (context->config && context->config->sys_key_error)
-        err_msg = context->config->sys_key_error->message ;
-      else if (context->config && context->config->zmap_key_error)
-        err_msg = context->config->zmap_key_error->message ;
-
-      zMapLogWarning("Error reading config file: %s", err_msg) ;
-    }
   else
     {
       zMapLogWarning("%s", "Error creating config file context") ;
@@ -371,12 +358,13 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
         }
       else if (styles_file)/* separate styles file */
         {
-          zMapConfigIniContextIncludeFile(context, styles_file) ;
+          zMapConfigIniContextIncludeFile(context, styles_file, ZMAPCONFIG_FILE_STYLES) ;
 
-          /* This is mucky....the above call puts whatever the file is into config->extra_key_file,
+          /* This is mucky....the above call puts whatever the file is into
+           * config->extra_key_file and config->extra_file_name.
            * really truly not good...should all be explicit....for now we do this here so at
            * least the calls in this file are more explicit... */
-          extra_styles_keyfile = context->config->extra_key_file ;
+          extra_styles_keyfile = context->config->key_file[ZMAPCONFIG_FILE_STYLES] ;
         }
       /* else styles are in main config named [style-xxx] */
 
@@ -944,7 +932,7 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
       if(!f_col->column_desc)
         f_col->column_desc = desc;
 
-      f_col->order = zMapFeatureColumnOrderNext() ;
+      f_col->order = zMapFeatureColumnOrderNext(FALSE) ;
 
       g_hash_table_insert(ghash,GUINT_TO_POINTER(f_col->unique_id),f_col);
     }
@@ -1132,7 +1120,7 @@ static GList *contextGetStyleList(ZMapConfigIniContext context, char *styles_lis
 }
 
 
-/* return list of all stanzas in context->extra_key_file */
+/* return list of all stanzas in context->key_file[ZMAPCONFIG_FILE_STYLES] */
 /* used when we don't have a styles list */
 static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
      ZMapConfigIniUserDataCreateFunc object_create_func,
@@ -1475,6 +1463,9 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name,
     { ZMAPSTANZA_APP_REPORT_THREAD,      G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_NAVIGATOR_SETS,     G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_SEQ_DATA,           G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_APP_SHRINKABLE,         G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_HIGHLIGHT_FILTERED, G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_ENABLE_ANNOTATION,  G_TYPE_BOOLEAN, NULL, FALSE },
     {NULL}
   };
   static const char *name = ZMAPSTANZA_APP_CONFIG;

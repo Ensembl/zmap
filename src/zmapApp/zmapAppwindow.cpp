@@ -93,7 +93,6 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
   PangoFont *tmp_font = NULL ;
   PangoFontDescription *tmp_font_desc = NULL ;
   int log_size ;
-  gboolean remote_control = FALSE ;
 
 
   /*             GTK initialisation              */

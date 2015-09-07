@@ -35,6 +35,7 @@
 #include <string.h>/* memset */
 #include <glib.h>
 
+#include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapConfigDir.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapConfigIni.hpp>
@@ -45,8 +46,6 @@
 
 
 
-
-#define FILE_COUNT 5
 
 
 typedef struct
@@ -76,7 +75,7 @@ static GType get_stanza_key_type(ZMapConfigIniContext context,
                                  const char *key_name);
 static gint match_name_type(gconstpointer list_data, gconstpointer user_data);
 static void setErrorMessage(ZMapConfigIniContext context,char *error_message);
-
+static void context_update_style(gpointer key, gpointer value, gpointer data);
 
 
 
@@ -101,8 +100,47 @@ ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file)
   if((context = g_new0(ZMapConfigIniContextStruct, 1)))
     {
       context->config = zMapConfigIniNew();
+
       if(config_file)
         context->config_read = zMapConfigIniReadAll(context->config, config_file) ;
+    }
+
+  return context;
+}
+
+
+ZMapConfigIniContext zMapConfigIniContextCreateType(const char *config_file, ZMapConfigIniFileType file_type)
+{
+  ZMapConfigIniContext context = NULL;
+
+  if((context = g_new0(ZMapConfigIniContextStruct, 1)))
+    {
+      context->config = zMapConfigIniNew();
+
+      if(config_file)
+        {
+          switch (file_type)
+            {
+            case ZMAPCONFIG_FILE_USER:
+              context->config_read = zMapConfigIniReadUser(context->config, config_file) ;
+              break ;
+            case ZMAPCONFIG_FILE_SYS:
+              context->config_read = zMapConfigIniReadSystem(context->config) ;
+              break ;
+            case ZMAPCONFIG_FILE_ZMAP:
+              context->config_read = zMapConfigIniReadZmap(context->config) ;
+              break ;
+            case ZMAPCONFIG_FILE_STYLES:
+              context->config_read = zMapConfigIniReadStyles(context->config, config_file) ;
+              break ;
+            case ZMAPCONFIG_FILE_BUFFER:
+              context->config_read = zMapConfigIniReadBuffer(context->config, config_file) ;
+              break ;
+
+            default:
+              break ;
+            }
+        }
     }
 
   return context;
@@ -113,24 +151,20 @@ ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file)
 gchar **zMapConfigIniContextGetAllStanzaNames(ZMapConfigIniContext context)
 {
   gchar **names = NULL;
-  GKeyFile *files[FILE_COUNT];
-  gboolean key_found = FALSE;
-  int i;
+  ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_NUM_TYPES ;
+  int i = 0 ;
 
-  files[0] = context->config->buffer_key_file;
-  files[1] = context->config->extra_key_file;
-  files[2] = context->config->user_key_file;
-  files[3] = context->config->zmap_key_file;
-  files[4] = context->config->sys_key_file;
-
-  for(i = 0; key_found == FALSE && i < FILE_COUNT; i++)
+  for(i = 0; i < ZMAPCONFIG_FILE_NUM_TYPES; i++)
     {
-      if(files[i])
+      file_type = (ZMapConfigIniFileType)i ;
+
+      if(context->config->key_file[file_type])
         break;
     }
 
-  if(i < FILE_COUNT)
-    names = g_key_file_get_groups(files[i],NULL);
+  if(i < ZMAPCONFIG_FILE_NUM_TYPES)
+    names = g_key_file_get_groups(context->config->key_file[file_type], NULL);
+
   return names ;
 }
 
@@ -146,12 +180,12 @@ gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, const c
 }
 
 /* file can be a full path or a filename. */
-gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, const char *file)
+gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, const char *file, ZMapConfigIniFileType file_type)
 {
   gboolean result = FALSE;
 
   if (file && *file)
-    result = zMapConfigIniReadFile(context->config, file) ;
+    result = zMapConfigIniReadFileType(context->config, file, file_type) ;
 
   return result;
 }
@@ -185,7 +219,7 @@ gchar *zMapConfigIniContextKeyFileErrorMessage(ZMapConfigIniContext context)
   gchar *error_msg = NULL ;
   zMapReturnValIfFail(context, error_msg) ;
 
-  error_msg = context->config->extra_key_error->message ;
+  error_msg = context->config->key_error[ZMAPCONFIG_FILE_STYLES]->message ;
 
 
   return error_msg ;
@@ -240,12 +274,54 @@ gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context,
 }
 
 
-gboolean zMapConfigIniContextSave(ZMapConfigIniContext context)
+/* Update the filename for the given config file. This is used to be able to export to a different
+ * file from the original file */
+void zMapConfigIniContextSetFile(ZMapConfigIniContext context, 
+                                 ZMapConfigIniFileType file_type,
+                                 const char *filename)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  context->config->key_file_name[file_type] = g_quark_from_string(filename) ;
+}
+
+
+/* Create the key file for the given type, if it doesn't already exist */
+void zMapConfigIniContextCreateKeyFile(ZMapConfigIniContext context, ZMapConfigIniFileType file_type)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  if (!context->config->key_file[file_type])
+    {
+      context->config->key_file[file_type] = g_key_file_new() ;
+    }
+}
+
+
+/* Update the given key file in the given context with the values from all the styles in the
+ * given table */
+void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, GHashTable *styles)
+{
+  g_hash_table_foreach(styles, context_update_style, context) ;
+}
+
+
+void zMapConfigIniContextSetUnsavedChanges(ZMapConfigIniContext context, 
+                                           ZMapConfigIniFileType file_type,
+                                           const gboolean value)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  context->config->unsaved_changes[file_type] = (unsigned int)value ;
+}
+
+
+gboolean zMapConfigIniContextSave(ZMapConfigIniContext context, ZMapConfigIniFileType file_type)
 {
   gboolean saved = TRUE;
   zMapReturnValIfFail(context, FALSE);
 
-  saved = zMapConfigIniSaveUser(context->config);
+  saved = zMapConfigIniSave(context->config, file_type);
 
   return saved;
 }
@@ -441,10 +517,11 @@ gboolean zMapConfigIniContextGetInt(ZMapConfigIniContext context,
 }
 
 gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
-       const char *stanza_name,
-       const char *stanza_type,
-       const char *key_name,
-       const char *value_str)
+                                       ZMapConfigIniFileType file_type,
+                                       const char *stanza_name,
+                                       const char *stanza_type,
+                                       const char *key_name,
+                                       const char *value_str)
 {
   GType type = 0;
   gboolean is_set = TRUE;
@@ -459,14 +536,18 @@ gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
 
       g_value_set_static_string(&value, value_str);
 
-      is_set = zMapConfigIniContextSetValue(context, stanza_name,
-                                         key_name, &value);
+      is_set = zMapConfigIniContextSetValue(context, 
+                                            file_type,
+                                            stanza_name,
+                                            key_name,
+                                            &value);
     }
 
   return is_set;
 }
 
 gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
+                                    ZMapConfigIniFileType file_type,
                                     const char *stanza_name,
                                     const char *stanza_type,
                                     const char *key_name,
@@ -485,8 +566,11 @@ gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
 
       g_value_set_int(&value, value_int);
 
-      is_set = zMapConfigIniContextSetValue(context, stanza_name,
-         key_name, &value);
+      is_set = zMapConfigIniContextSetValue(context, 
+                                            file_type,
+                                            stanza_name,
+                                            key_name,
+                                            &value);
     }
 
   return is_set;
@@ -494,6 +578,7 @@ gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
 
 
 gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
+                                        ZMapConfigIniFileType file_type,
                                         const char *stanza_name,
                                         const char *stanza_type,
                                         const char *key_name,
@@ -512,14 +597,18 @@ gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
 
       g_value_set_boolean(&value, value_bool);
 
-      is_set = zMapConfigIniContextSetValue(context, stanza_name,
-         key_name, &value);
+      is_set = zMapConfigIniContextSetValue(context, 
+                                            file_type,
+                                            stanza_name,
+                                            key_name, 
+                                            &value);
     }
 
   return is_set;
 }
 
 gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
+                                      ZMapConfigIniFileType file_type,
                                       const char *stanza_name,
                                       const char *key_name,
                                       GValue *value)
@@ -527,7 +616,7 @@ gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
   gboolean is_set = FALSE ;
   zMapReturnValIfFail(context, is_set ) ;
 
-  zMapConfigIniSetValue(context->config, stanza_name, key_name, value);
+  zMapConfigIniSetValue(context->config, file_type, stanza_name, key_name, value);
 
   is_set = TRUE ;
 
@@ -703,3 +792,39 @@ static GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys)
 }
 
 
+/* Update the context given in the user data with the style given in the value. This loops
+ * through all the parameters that are set in the style and updates them in the context's  */
+static void context_update_style(gpointer key, gpointer value, gpointer data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) value;
+  ZMapConfigIniContext context = (ZMapConfigIniContext)data ;
+  
+  const char *stanza_name = g_quark_to_string(style->unique_id) ;
+
+  /* Loop through each possible parameter type */
+  for (int param_id = STYLE_PROP_NONE + 1 ; param_id < _STYLE_PROP_N_ITEMS; ++param_id)
+    {
+      const char *param_name = zmapStyleParam2Name((ZMapStyleParamId)param_id) ;
+
+      if (strcmp(param_name, "name") != 0 && 
+          strcmp(param_name, "description") != 0 &&
+          strcmp(param_name, "is-set") != 0 &&
+          strcmp(param_name, "displayable") != 0 &&
+          strcmp(param_name, "original-id") != 0 &&
+          strcmp(param_name, "unique-id") != 0 &&
+          strcmp(param_name, "gff-source") != 0 &&
+          strcmp(param_name, "glyph-shape") != 0 
+          )
+        {
+          char *value = zMapStyleGetValueAsString(style, (ZMapStyleParamId)param_id) ;
+
+          if (value)
+            {
+              g_key_file_set_string(context->config->key_file[ZMAPCONFIG_FILE_STYLES], stanza_name, param_name, value);
+              g_free(value) ;
+            }
+        }
+    }
+
+  return ;
+}

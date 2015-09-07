@@ -261,8 +261,9 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 
 static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData styles) ;
 
-static gboolean checkForUnsavedChanges(ZMapView zmap_view) ;
+static GtkResponseType checkForUnsavedAnnotation(ZMapView zmap_view) ;
 static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view) ;
+static GtkResponseType checkForUnsavedConfig(ZMapView zmap_view, ZMapViewExportType export_type) ;
 
 
 static GHashTable *getFeatureSourceHash(GList *sources) ;
@@ -1468,24 +1469,26 @@ void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer)
   return ;
 }
 
-/* Check if there have been changes to the scratch column that have not been
- * Check if there are any unsaved changes and if so ask the user what they want to do.
- * Returns true to continue or false to cancel. */
+
+/* Check if there have been any changes of various types that have not been
+ * saved and if so ask the user what they want to do. Returns true to continue 
+ * or false to cancel. */
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view)
 {
   gboolean result = TRUE ;
   GtkResponseType response = GTK_RESPONSE_NONE ;
 
-  response = checkForUnsavedFeatures(zmap_view) ;
+  if (response != GTK_RESPONSE_CANCEL)
+    response = checkForUnsavedFeatures(zmap_view) ;
 
-  if (response == GTK_RESPONSE_CANCEL)
-    {
-      result = FALSE ;
-    }
-  else
-    {
-      result = checkForUnsavedChanges(zmap_view) ;
-    }
+  if (response != GTK_RESPONSE_CANCEL)
+    response = checkForUnsavedAnnotation(zmap_view) ;
+
+  if (response != GTK_RESPONSE_CANCEL)
+    response = checkForUnsavedConfig(zmap_view, ZMAPVIEW_EXPORT_CONFIG) ;
+
+  if (response != GTK_RESPONSE_CANCEL)
+    response = checkForUnsavedConfig(zmap_view, ZMAPVIEW_EXPORT_STYLES) ;
 
   return result ;
 }
@@ -2314,12 +2317,12 @@ ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *ghash, GQuark featu
 
 
 
-/* Check if there have been changes to the scratch column that have not been
+/* Check if there have been changes to the Annotation column that have not been
  * saved and if so ask the user if they really want to quit. Returns OK to
- * continue quitting or Cancel to stop. */
-static gboolean checkForUnsavedChanges(ZMapView zmap_view)
+ * continue quitting or Cancel to stop. Returns OK to quit, or Cancel. */
+static GtkResponseType checkForUnsavedAnnotation(ZMapView zmap_view)
 {
-  gboolean result = TRUE ;
+  GtkResponseType response = GTK_RESPONSE_OK ;
 
   if (zmap_view && zmap_view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING])
     {
@@ -2333,16 +2336,19 @@ static gboolean checkForUnsavedChanges(ZMapView zmap_view)
         g_strdup_printf("There are unsaved edits in the Annotation column for sequence '%s' - do you really want to quit?.",
                         zmap_view->view_sequence ? zmap_view->view_sequence->sequence : "<null>") ;
 
-      result = zMapGUIMsgGetBoolFull(parent,
-        ZMAP_MSG_WARNING,
-        msg,
-        GTK_STOCK_QUIT,
-        GTK_STOCK_CANCEL) ;
+      gboolean result = zMapGUIMsgGetBoolFull(parent,
+                                              ZMAP_MSG_WARNING,
+                                              msg,
+                                              GTK_STOCK_QUIT,
+                                              GTK_STOCK_CANCEL) ;
 
       g_free(msg) ;
+
+      if (!result)
+        response = GTK_RESPONSE_CANCEL ;
     }
 
-  return result ;
+  return response ;
 }
 
 
@@ -2384,7 +2390,7 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
               /* If we've already set a save file then use that. (Don't let it default
                * to the input file though because the user hasn't explicitly asked
                * for a Save option rather than Save As...) */
-              const char *file = zMapViewGetSaveFile(zmap_view, FALSE) ;
+              const char *file = zMapViewGetSaveFile(zmap_view, ZMAPVIEW_EXPORT_FEATURES, FALSE) ;
               char *filename = g_strdup(file) ;
               gboolean saved = zMapWindowExportFeatures(window, TRUE, FALSE, NULL, &filename, &error) ;
 
@@ -2401,6 +2407,61 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
                       g_error_free(error) ;
                       error = NULL ;
                     }
+                }
+            }
+        }
+    }
+
+  return response ;
+}
+
+
+/* Check if there are unsaved changes to config/styles and if so ask the
+ * user if they really want to quit. Returns OK to quit, Cancel, or Close if we saved. */
+static GtkResponseType checkForUnsavedConfig(ZMapView zmap_view, ZMapViewExportType export_type)
+{
+  GtkResponseType response = GTK_RESPONSE_OK ;
+  GError *error = NULL ;
+
+  if (zmap_view && zmap_view->flags[ZMAPFLAG_FEATURES_NEED_SAVING])
+    {
+      GtkWindow *parent = NULL ;
+
+      /* The responses for the 3 button arguments are ok, cancel, close. */
+      char *msg =
+        g_strdup_printf("There are unsaved features for sequence '%s' - do you really want to quit?",
+                        zmap_view->view_sequence ? zmap_view->view_sequence->sequence : "<null>") ;
+
+      response = zMapGUIMsgGetSaveFull(parent,
+                                       ZMAP_MSG_WARNING,
+                                       msg,
+                                       GTK_STOCK_QUIT,
+                                       GTK_STOCK_CANCEL,
+                                       GTK_STOCK_SAVE) ;
+
+      g_free(msg) ;
+
+      if (response == GTK_RESPONSE_CLOSE)
+        {
+          /* If we've already set a save file then use that. (Don't let it default
+           * to the input file though because the user hasn't explicitly asked
+           * for a Save option rather than Save As...) */
+          const char *file = zMapViewGetSaveFile(zmap_view, export_type, FALSE) ;
+          char *filename = g_strdup(file) ;
+          gboolean saved = zMapViewExportConfig(zmap_view, export_type, &filename, &error) ;
+
+          if (!saved)
+            {
+              /* There was a problem saving so don't continue quitting zmap */
+              response = GTK_RESPONSE_CANCEL ;
+
+              /* If error is null then the user cancelled the save so don't report
+               * an error */
+              if (error)
+                {
+                  zMapWarning("Save failed: %s", error->message) ;
+                  g_error_free(error) ;
+                  error = NULL ;
                 }
             }
         }
@@ -6858,23 +6919,50 @@ void getFilename(gpointer key, gpointer value, gpointer data)
 
 /* Get the filename of the default file to use for the Save operation. Returns null if
  * it hasn't been set. */
-const char* zMapViewGetSaveFile(ZMapView view, const gboolean use_input_file)
+const char* zMapViewGetSaveFile(ZMapView view, const ZMapViewExportType export_type, const gboolean use_input_file)
 {
   const char *result = NULL ;
   zMapReturnValIfFail(view && view->view_sequence, result) ;
 
-  result = g_quark_to_string(view->save_file) ;
+  result = g_quark_to_string(view->save_file[export_type]) ;
 
   /* If it hasn't been set yet, check if there was an input file and use that (but only if
    * the flag allows, and if there was one and only one input file) */
   if (!result && use_input_file)
     {
-      GHashTable *cached_parsers = view->view_sequence->cached_parsers ;
-
-      if (g_hash_table_size(cached_parsers) == 1)
+      switch (export_type)
         {
-          g_hash_table_foreach(cached_parsers, getFilename, &view->save_file) ;
-          result = g_quark_to_string(view->save_file) ;
+        case ZMAPVIEW_EXPORT_FEATURES:
+          {
+            /* The cached parsers give all of the input files */
+            GHashTable *cached_parsers = view->view_sequence->cached_parsers ;
+
+            if (g_hash_table_size(cached_parsers) == 1)
+              {
+                g_hash_table_foreach(cached_parsers, getFilename, &view->save_file[export_type]) ;
+                result = g_quark_to_string(view->save_file[export_type]) ;
+              }
+            
+            break ;
+          }
+      
+        case ZMAPVIEW_EXPORT_CONFIG:
+          {
+            result = view->view_sequence->config_file ;
+            break ;
+          }
+
+        case ZMAPVIEW_EXPORT_STYLES:
+          {
+            result = view->view_sequence->stylesfile ;
+            break ;
+          }
+
+        default:
+          {
+            zMapWarnIfReached() ;
+            break ;
+          }
         }
     }
 
@@ -6883,12 +6971,95 @@ const char* zMapViewGetSaveFile(ZMapView view, const gboolean use_input_file)
 
 
 /* Set the default filename to use for the Save operation. */
-void zMapViewSetSaveFile(ZMapView view, const char *filename)
+void zMapViewSetSaveFile(ZMapView view, const ZMapViewExportType export_type, const char *filename)
 {
   zMapReturnIfFail(view) ;
-  view->save_file = g_quark_from_string(filename) ;
+  view->save_file[export_type] = g_quark_from_string(filename) ;
   view->flags[ZMAPFLAG_FEATURES_NEED_SAVING] = FALSE ;
 }
 
 
+/* Export config or styles (as given by export_type) to the given file. If filename is null,
+ * prompt the user for a filename. Returns true if successful, false if there was an error. */
+gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_type, char **filepath_inout, GError **error)
+{
+  gboolean result = FALSE ;
+  char *output_file = NULL ;
+  char *input_file = NULL ;
+  ZMapConfigIniFileType file_type ;
 
+  if (export_type == ZMAPVIEW_EXPORT_CONFIG)
+    {
+      /* For config, we'll set up the export context with the same values as the input
+       * context. This is because there are currently only a few config options that are editable
+       * so we'll basically export the original config with just a few changes. */
+      input_file = view->view_sequence->config_file ;
+      file_type = ZMAPCONFIG_FILE_USER ;
+    }
+  else if (export_type == ZMAPVIEW_EXPORT_STYLES)
+    {
+      /* For styles, don't use the input file to set up the context because we can easily loop
+       * through all styles and export their current values. If we were to use the input file we
+       * would have to make sure duplicate style names have the same case, because loading
+       * styles is case sensitive. */
+      input_file = NULL; //view->view_sequence->stylesfile ;
+      file_type = ZMAPCONFIG_FILE_STYLES ;
+    }
+  else
+    {
+      zMapWarnIfReached() ;
+    }
+
+  if (filepath_inout && *filepath_inout)
+    {
+      output_file = g_strdup(*filepath_inout) ;
+    }
+
+  if (!output_file)
+    {
+      output_file = zmapGUIFileChooser(NULL, "Configuration Export filename ?", NULL, "ini") ;
+    }
+
+  if (output_file)
+    {
+      /* Read the context from the original input config file (if there was one - otherwise this
+       * will return an empty context. Note that it will also include any system config files too.) */
+      ZMapConfigIniContext context = zMapConfigIniContextCreateType(input_file, file_type) ;
+
+      if (context)
+        {
+          /* Set the output file name in the context so we write over the correct file (otherwise 
+           * it will write over the input file). This is either the 'user' file for the
+           * config, or the 'extra' file for the styles. */
+          zMapConfigIniContextSetFile(context, file_type, output_file) ;
+
+          /* Create the key file, if it doesn't exist already */
+          zMapConfigIniContextCreateKeyFile(context, file_type) ;
+
+          /* Update the context with the new properties, if anything has changed */
+          if (file_type == ZMAPCONFIG_FILE_STYLES)
+            zMapConfigIniContextSetStyles(context, view->context_map.styles) ;
+
+          /* Do the save to file (force changes=true so we export even if nothing's changed) */
+          zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+          result = zMapConfigIniContextSave(context, file_type) ;
+
+          /* Destroy the context */
+          zMapConfigIniContextDestroy(context) ;
+          context = NULL ;
+        }
+    }
+
+  if (output_file && filepath_inout && !*filepath_inout)
+    {
+      /* We've created the filepath in this function so set the output value from it */
+      *filepath_inout = output_file ;
+    }
+  else if (output_file)
+    {
+      /* Return value wasn't requested so free this */
+      g_free(output_file) ;
+    }
+
+  return result ;
+}

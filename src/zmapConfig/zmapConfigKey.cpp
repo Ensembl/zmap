@@ -125,14 +125,15 @@ gboolean zMapConfigIniGetValue(ZMapConfigIni config,
 
 
 void zMapConfigIniSetValue(ZMapConfigIni config,
+                           ZMapConfigIniFileType file_type,
                            const char *stanza_name,
                            const char *key_name,
                            GValue *value)
 {
-  GKeyFile *user_key_file = NULL;
+  GKeyFile *key_file = NULL;
   zMapReturnIfFail(config) ; 
 
-  if((user_key_file = config->user_key_file))
+  if((key_file = config->key_file[file_type]))
     {
       GType type = 0;
       type = G_VALUE_TYPE(value);
@@ -143,28 +144,30 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
           {
             char *string_value = NULL;
             string_value = (char *)g_value_get_string(value);
-            g_key_file_set_string(user_key_file, stanza_name, key_name, string_value);
+
+            if (string_value)
+              g_key_file_set_string(key_file, stanza_name, key_name, string_value);
           }
           break;
         case G_TYPE_INT:
           {
             int int_value = 0;
             int_value = g_value_get_int(value);
-            g_key_file_set_integer(user_key_file, stanza_name, key_name, int_value);
+            g_key_file_set_integer(key_file, stanza_name, key_name, int_value);
           }
           break;
         case G_TYPE_BOOLEAN:
           {
             gboolean bool_value = FALSE;
             bool_value = g_value_get_boolean(value);
-            g_key_file_set_boolean(user_key_file, stanza_name, key_name, bool_value);
+            g_key_file_set_boolean(key_file, stanza_name, key_name, bool_value);
           }
           break;
         case G_TYPE_DOUBLE:
           {
             double double_value = FALSE;
             double_value = g_value_get_double(value);
-            g_key_file_set_double(user_key_file, stanza_name, key_name, double_value);
+            g_key_file_set_double(key_file, stanza_name, key_name, double_value);
           }
           break;
         default:
@@ -192,9 +195,9 @@ static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
   zMapReturnValIfFail(value, success) ;
   zMapReturnValIfFail(config, success) ; 
 
-  if((!merge_files) && (config->user_key_file != NULL))
+  if((!merge_files) && (config->key_file[ZMAPCONFIG_FILE_USER] != NULL))
     {
-      success = get_value(config->user_key_file, stanza_name, key_name, value, type, TRUE, TRUE);
+      success = get_value(config->key_file[ZMAPCONFIG_FILE_USER], stanza_name, key_name, value, type, TRUE, TRUE);
     }
   else
     {
@@ -217,7 +220,7 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
      GValue *value,
      GType type)
 {
-  GKeyFile *files[FILE_COUNT], *important_files[IMPORTANT_COUNT];
+  GKeyFile *important_files[IMPORTANT_COUNT];
   gboolean key_found = FALSE;
   gboolean honour_important = TRUE;
   char *important_key = NULL;
@@ -228,15 +231,15 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
       important_key = g_strdup_printf("!%s", key_name);
 
       /* get the system first, then the zmap one */
-      important_files[1] = config->sys_key_file;
-      important_files[0] = config->zmap_key_file;
+      important_files[1] = config->key_file[ZMAPCONFIG_FILE_SYS];
+      important_files[0] = config->key_file[ZMAPCONFIG_FILE_ZMAP];
 
       for(i = 0; key_found == FALSE && i < IMPORTANT_COUNT; i++)
         {
           if(important_files[i])
             {
               if(get_value(important_files[i], stanza_name, key_name, value, type, TRUE, FALSE))
-        key_found = TRUE;
+                key_found = TRUE;
             }
         }
         
@@ -246,17 +249,13 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
 
   if(key_found == FALSE)
     {
-      files[0] = config->buffer_key_file;
-      files[1] = config->extra_key_file;
-      files[2] = config->user_key_file;
-      files[3] = config->zmap_key_file;
-      files[4] = config->sys_key_file;
-
       for(i = 0; key_found == FALSE && i < FILE_COUNT; i++)
         {
-          if(files[i])
+          ZMapConfigIniFileType file_type = (ZMapConfigIniFileType)i ;
+
+          if(config->key_file[file_type])
             {
-              if(get_value(files[i], stanza_name, key_name, value, type, TRUE, FALSE))
+              if(get_value(config->key_file[file_type], stanza_name, key_name, value, type, TRUE, FALSE))
                 key_found = TRUE;
             }
         }

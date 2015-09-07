@@ -37,6 +37,19 @@
 #define ZMAP_DEFAULT_FEATURESETS "DNA ; 3 Frame ; 3 Frame Translation ; Show Translation ; Annotation "
 
 
+/* This enum lists the types of config files that can be supplied */
+typedef enum
+  {
+    ZMAPCONFIG_FILE_BUFFER, /* Config read from a text buffer rather than a file*/
+    ZMAPCONFIG_FILE_STYLES, /* Styles file */
+    ZMAPCONFIG_FILE_USER,   /* User-specified config file */
+    ZMAPCONFIG_FILE_ZMAP,   /* Default zmap config file */
+    ZMAPCONFIG_FILE_SYS,    /* Default system config file */
+
+    ZMAPCONFIG_FILE_NUM_TYPES /* must be last in list */
+  } ZMapConfigIniFileType ;
+
+
 typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(void);
 typedef void (*ZMapConfigIniSetPropertyFunc)(char *current_stanza_name, const char *key, GType type,
 					     gpointer parent_data, GValue *property_value);
@@ -63,8 +76,9 @@ typedef struct _ZMapConfigStruct *ZMapConfig ;
 typedef  struct _ZMapConfigIniStruct *ZMapConfigIni;
 
 ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file) ;
+ZMapConfigIniContext zMapConfigIniContextCreateType(const char *config_file, ZMapConfigIniFileType file_type) ;
 gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, const char *buffer);
-gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, const char *file) ;
+gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, const char *file, ZMapConfigIniFileType file_type) ;
 gchar **zMapConfigIniContextGetAllStanzaNames(ZMapConfigIniContext context);
 
 gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context,
@@ -97,26 +111,34 @@ gboolean zMapConfigIniContextGetInt(ZMapConfigIniContext context,
 				    const char *key_name,
 				    int  *value);
 gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
+                                      ZMapConfigIniFileType file_type,
 				      const char *stanza_name,
 				      const char *key_name,
 				      GValue *value);
 gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
+                                       ZMapConfigIniFileType file_type,
 				       const char *stanza_name,
 				       const char *stanza_type,
 				       const char *key_name,
 				       const char *value_str);
 gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
+                                    ZMapConfigIniFileType file_type,
 				    const char *stanza_name,
 				    const char *stanza_type,
 				    const char *key_name,
 				    int   value_int);
 gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
+                                        ZMapConfigIniFileType file_type,
 					const char *stanza_name,
 					const char *stanza_type,
 					const char *key_name,
 					gboolean value_bool);
 
-gboolean zMapConfigIniContextSave(ZMapConfigIniContext context);
+gboolean zMapConfigIniContextSave(ZMapConfigIniContext context, ZMapConfigIniFileType file_type);
+void zMapConfigIniContextSetUnsavedChanges(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const gboolean value) ;
+void zMapConfigIniContextSetFile(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *filename) ;
+void zMapConfigIniContextCreateKeyFile(ZMapConfigIniContext context, ZMapConfigIniFileType file_type) ;
+void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, GHashTable *styles) ;
 
 gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context);
 gchar *zMapConfigIniContextKeyFileErrorMessage(ZMapConfigIniContext context);

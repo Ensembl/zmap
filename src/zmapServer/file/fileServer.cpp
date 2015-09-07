@@ -113,9 +113,6 @@ static void addMapping(ZMapFeatureContext feature_context, int req_start, int re
 static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 
-static void eachAlignmentSequence(gpointer key, gpointer data, gpointer user_data) ;
-static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data) ;
-
 static void setErrorMsgGError(FileServer server, GError **gff_file_err_inout) ;
 static void setErrMsg(FileServer server, const char *new_msg) ;
 

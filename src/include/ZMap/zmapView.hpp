@@ -98,6 +98,16 @@ _(ZMAPVIEW_DYING,           , "Dying",         "View terminating.",     "")
 ZMAP_DEFINE_ENUM(ZMapViewState, VIEW_STATE_LIST) ;
 
 
+/* This enum list the types of export operations that zmap can perform */
+typedef enum 
+  {
+    ZMAPVIEW_EXPORT_FEATURES,
+    ZMAPVIEW_EXPORT_CONFIG,
+    ZMAPVIEW_EXPORT_STYLES,
+    
+    ZMAPVIEW_EXPORT_NUM_TYPES /* must be last */
+  } ZMapViewExportType ;
+
 
 /* data passed back from view for destroy callback. */
 typedef struct
@@ -234,14 +244,17 @@ ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);
 
 ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNotebook note_book_parent) ;
 
+void zMapViewBlixemSaveChapter(ZMapGuiNotebookChapter chapter, ZMapView view) ;
+
 ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook note_book_parent);
 
 gboolean zMapViewGetHighlightFilteredColumns(ZMapView);
 
 void zMapViewUpdateColumnBackground(ZMapView view);
 
-const char* zMapViewGetSaveFile(ZMapView view, const gboolean use_input_file) ;
-void zMapViewSetSaveFile(ZMapView view, const char *filename) ;
+const char* zMapViewGetSaveFile(ZMapView view, const ZMapViewExportType export_type, const gboolean use_input_file) ;
+void zMapViewSetSaveFile(ZMapView view, const ZMapViewExportType export_type, const char *filename) ;
+gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_type, char **filepath_inout, GError **error) ;
 
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view) ;
 

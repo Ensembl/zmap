@@ -722,7 +722,7 @@ ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, Z
       {
         /* Try again with the short text version of the style name (e.g. "basic" instead of
          * "zmapstyle_mode_basic" */
-        style_id = g_quark_from_string(zmapStyleMode2ShortText(feature_type)) ;
+        style_id = g_quark_from_string(zMapStyleMode2ShortText(feature_type)) ;
         feature_style = zMapFindStyle(styles, style_id) ;
       }
   }
@@ -823,13 +823,28 @@ gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap context_map,GQuark fse
 
 
 /*
- *for new columns that appear out of nowhere put them on the right
- *this does not get reset on a new view, but with 100 columns it will take a very long time to wrap round
- */
-int zMapFeatureColumnOrderNext(void)
+ * For new columns that appear out of nowhere put them on the right
+ * this does not get reset on a new view, but with 100 columns it will take a very long time to wrap round
+ * We can be called with the reset flag to start again from 0. In this case, the return value
+ * will be 0, which is not a valid value and should not be used. 
+*/
+int zMapFeatureColumnOrderNext(const gboolean reset)
 {
+  int result = 0;
   static int which = 0;
-  return ++which;/* 0 is invalid */
+
+  if (reset)
+    {
+      which = 0 ;
+      result = 0 ; /* result should not be used when resetting */
+    }
+  else 
+    {
+      ++which ; /* 0 is invalid */
+      result = which ;
+    }
+
+  return result ;
 }
 
 
@@ -881,7 +896,7 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap context_map,GQua
         column->unique_id =
           column->column_id = set_id;
 
-        column->order = zMapFeatureColumnOrderNext();
+        column->order = zMapFeatureColumnOrderNext(FALSE);
 
         gff_source = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata,GUINT_TO_POINTER(set_id));
         column->column_desc = name;

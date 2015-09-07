@@ -105,15 +105,12 @@ int main(int argc, char *argv[])
   int main_rc = EXIT_FAILURE ;
   ZMapAppContext app_context ;
   char *peer_socket, *peer_timeout_list ;
-  int log_size ;
   int sleep_seconds = 0 ;
   GList *seq_maps = NULL ;
   GError *g_error = NULL ;
   char *config_file = NULL ;
   char *config_dir = NULL ;
   char *styles_file = NULL ;
-  PangoFont *tmp_font = NULL ;
-  PangoFontDescription *tmp_font_desc = NULL ;
   ZMapRemoteAppMakeRequestFunc remote_control_cb_func = NULL ;
   void *remote_control_cb_data = NULL ;
 

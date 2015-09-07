@@ -137,7 +137,6 @@ void zMap_draw_line_hack(GdkDrawable* drawable, ZMapWindowFeaturesetItem feature
   GdkGC *context = NULL ;
   void (*draw_points)(GdkDrawable*, GdkGC*, GdkPoint*, gint) = NULL ;
   void (*draw_segments)(GdkDrawable*, GdkGC*, GdkSegment*, gint) = NULL ;
-  GdkDrawableClass *dclass = NULL ;
   GdkPoint point = {0} ;
   GdkSegment segment = {0} ;
 

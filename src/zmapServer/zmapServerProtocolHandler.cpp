@@ -502,7 +502,6 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
         GList *req_sets = features->context->req_feature_set_names ;
         GQuark dna_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
         GQuark threeft_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
-        GQuark orf_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME) ;
         GQuark showtrans_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
 
         /* We need to load the DNA if we are showing DNA, 3FT or ShowTranslation */

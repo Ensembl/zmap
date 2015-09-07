@@ -33,8 +33,12 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <ZMap/zmapConfigIni.hpp>
+#include <ZMap/zmapConfigDir.hpp>
+#include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapUtilsGUI.hpp>
+#include <ZMap/zmapGLibUtils.hpp>
 #include <zmapControl_P.hpp>
 
 
@@ -44,15 +48,38 @@
 #define CONTROL_FILTERED "Highlight Filtered Columns"
 #define CONTROL_ANNOTATION "Enable Annotation"
 
+/*
+ * Holds just the user-configurable preferences
+ */
+typedef struct PrefsDataStructType
+{
+  gboolean init ;                            /* TRUE when struct has been initialised. */
+
+  /* Used to detect when user has set data fields. */
+  struct
+  {
+    unsigned int shrinkable : 1 ;
+    unsigned int highlight_filtered : 1 ;
+    unsigned int enable_annotation : 1 ;
+    unsigned int columns_list : 1 ;
+  } is_set ;
+
+  gboolean shrinkable ;
+  gboolean highlight_filtered ;
+  gboolean enable_annotation ;
+  char *columns_list ;
+} PrefsDataStruct, *PrefsData ;
 
 
 static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_parent, ZMap zmap, ZMapView view) ;
 static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
+static void saveCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused) ;
 static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap) ;
-
-
+static void saveChapter(ZMapGuiNotebookChapter chapter, ZMap zmap) ;
+static gboolean getUserPrefs(PrefsData curr_prefs, const char *config_file) ;
+static void saveUserPrefs(PrefsData prefs, const char *config_file) ;
 
 /* 
  *                  Globals
@@ -77,6 +104,8 @@ static const char *help_text_G =
  */
 /* static ZMapGuiNotebook note_book_G = NULL ; */
 
+/* Configuration global, holds current config for general preferences, gets overloaded with new user selections. */
+static PrefsDataStruct prefs_curr_G = {(FALSE)} ;
 
 
 /* 
@@ -104,6 +133,9 @@ void zmapControlShowPreferences(ZMap zmap)
       ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
 
       /* Add prefs for control. */
+      if (!prefs_curr_G.init)
+        getUserPrefs(&prefs_curr_G, zMapConfigDirGetFile()) ;
+
       addControlPrefsChapter(note_book, zmap, zmap_view) ;
       
       /* Add blixmem view prefs. */
@@ -146,7 +178,7 @@ static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data)
 static ZMapGuiNotebookChapter addControlPrefsChapter(ZMapGuiNotebook note_book_parent, ZMap zmap, ZMapView view)
 {
   ZMapGuiNotebookChapter chapter = NULL ;
-  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, zmap, NULL, NULL, NULL, NULL} ;
+  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, zmap, NULL, NULL, saveCB, zmap} ;
   ZMapGuiNotebookPage page ;
   ZMapGuiNotebookSubsection subsection ;
   ZMapGuiNotebookParagraph paragraph ;
@@ -188,12 +220,140 @@ static void applyCB(ZMapGuiNotebookAny any_section, void *user_data)
   return ;
 }
 
+/* Save the preferences to the config file */
+static void saveCB(ZMapGuiNotebookAny any_section, void *user_data)
+{
+  ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)any_section ;
+  ZMap zmap = (ZMap)user_data;
+
+  readChapter(chapter, zmap);
+
+  saveChapter(chapter, zmap) ;
+
+  return ;
+}
+
 /* User cancels preferences. */
 static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
 {
   return ;
 }
 
+
+/* Get any user preferences specified in config file. */
+static gboolean getUserPrefs(PrefsData curr_prefs, const char *config_file)
+{
+  gboolean status = FALSE ;
+  ZMapConfigIniContext context = NULL ;
+  PrefsDataStruct file_prefs = {FALSE} ;
+
+  if (!curr_prefs)
+    return status ;
+
+  if ((context = zMapConfigIniContextProvide(config_file)))
+    {
+      char *tmp_string = NULL ;
+      gboolean tmp_bool ;
+
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                         ZMAPSTANZA_APP_SHRINKABLE, &tmp_bool))
+        {
+          file_prefs.shrinkable = tmp_bool;
+        }
+
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                         ZMAPSTANZA_APP_HIGHLIGHT_FILTERED, &tmp_bool))
+        {
+          file_prefs.highlight_filtered = tmp_bool;
+        }
+
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                         ZMAPSTANZA_APP_ENABLE_ANNOTATION, &tmp_bool))
+        {
+          file_prefs.enable_annotation = tmp_bool;
+        }
+
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                        ZMAPSTANZA_APP_COLUMNS, &tmp_string))
+        {
+          file_prefs.columns_list = tmp_string;
+        }
+
+      zMapConfigIniContextDestroy(context);
+    }
+
+  /* If curr_prefs is initialised then copy any curr prefs set by user into file prefs,
+   * thus overriding file prefs with user prefs. Then copy file prefs into curr_prefs
+   * so that curr prefs now represents latest config file and user prefs combined. */
+  if (curr_prefs->init)
+    {
+      file_prefs.is_set = curr_prefs->is_set ;                    /* struct copy. */
+
+      if (curr_prefs->is_set.shrinkable)
+        file_prefs.shrinkable = curr_prefs->shrinkable ;
+
+      if (curr_prefs->is_set.highlight_filtered)
+        file_prefs.highlight_filtered = curr_prefs->highlight_filtered ;
+
+      if (curr_prefs->is_set.enable_annotation)
+        file_prefs.enable_annotation = curr_prefs->enable_annotation ;
+
+      if (curr_prefs->is_set.columns_list)
+        {
+          g_free(file_prefs.columns_list) ;
+          file_prefs.columns_list = curr_prefs->columns_list ;
+        }
+
+      
+    }
+
+
+  *curr_prefs = file_prefs ;                                    /* Struct copy. */
+
+  return status ;
+}
+
+
+/* Save user preferences back to the config file. */
+static void saveUserPrefs(PrefsData prefs, const char *config_file)
+{
+  zMapReturnIfFail(prefs && config_file) ;
+
+  ZMapConfigIniContext context = NULL;
+
+  /* Create the context from the existing config file (if any - otherwise create an empty
+   * context). */
+  if ((context = zMapConfigIniContextProvide(config_file)))
+    {
+      /* Update the settings in the context. Note that the file type of 'user' means the
+       * user-specified config file, i.e. the one we passed in to ContextProvide */
+      ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_USER ;
+
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                    ZMAPSTANZA_APP_SHRINKABLE, prefs->shrinkable);
+
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                    ZMAPSTANZA_APP_HIGHLIGHT_FILTERED, prefs->highlight_filtered);
+
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                    ZMAPSTANZA_APP_ENABLE_ANNOTATION, prefs->enable_annotation);
+
+      if (prefs->columns_list)
+        {
+          zMapConfigIniContextSetString(context, file_type,
+                                        ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                        ZMAPSTANZA_APP_COLUMNS, prefs->columns_list);
+        }
+
+      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+      zMapConfigIniContextSave(context, file_type);
+
+      zMapConfigIniContextDestroy(context) ;
+    }
+}
 
 
 /* Set the preferences. */
@@ -211,6 +371,9 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
 	    {
               zmap->shrinkable = bool_value ;
 
+              prefs_curr_G.shrinkable = bool_value ;
+              prefs_curr_G.is_set.shrinkable = TRUE ;
+
               gtk_window_set_policy(GTK_WINDOW(zmap->toplevel), zmap->shrinkable, TRUE, FALSE ) ;
 	    }
 	}
@@ -218,13 +381,23 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
       if (zMapGUINotebookGetTagValue(page, CONTROL_FILTERED, "bool", &bool_value))
         {
           if (zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS) != bool_value)
-            zMapViewSetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, bool_value) ;
+            {
+              zMapViewSetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, bool_value) ;
+
+              prefs_curr_G.highlight_filtered = bool_value ;
+              prefs_curr_G.is_set.highlight_filtered = TRUE ;
+            }
         }
 
       if (zMapGUINotebookGetTagValue(page, CONTROL_ANNOTATION, "bool", &bool_value))
         {
           if (zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION) != bool_value)
-            zMapViewSetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION, bool_value) ;
+            {
+              zMapViewSetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION, bool_value) ;
+
+              prefs_curr_G.enable_annotation = bool_value ;
+              prefs_curr_G.is_set.enable_annotation = TRUE ;
+            }
         }
 
     }
@@ -232,4 +405,12 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
   return ;
 }
 
+
+void saveChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
+{
+  /* By default, save to the input zmap config file, if there was one */
+  saveUserPrefs(&prefs_curr_G, zMapConfigDirGetFile());
+
+  return ;
+}
 

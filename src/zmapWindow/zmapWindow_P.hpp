@@ -1284,7 +1284,7 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  double x_pos, double y_pos) ;
 
 
-gboolean zmapWindowFeatureItemEventButRelease(GdkEvent *event) ;
+void zmapWindowFeatureItemEventButRelease(GdkEvent *event) ;
 gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 
 ZMapFeatureBlock zmapWindowItemGetFeatureBlock(FooCanvasItem *item) ;
@@ -1607,9 +1607,9 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 ZMapXMLUtilsEventStack zMapFeatureAnyAsXMLEvents(ZMapFeature feature) ;
 
 void zmapWindowShowStyleDialog( ItemMenuCBData menu_data );
-void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data);
-gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature);
-void zmapStyleWindowDestroy(ZMapWindow window);
+void zmapWindowFeaturesetSetStyle(GQuark style_id, ZMapFeatureSet feature_set, ZMapFeatureContextMap context_map, ZMapWindow window);
+gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature);
+void zmapWindowStyleDialogDestroy(ZMapWindow window);
 
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;

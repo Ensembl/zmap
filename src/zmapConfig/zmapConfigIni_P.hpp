@@ -43,20 +43,10 @@
 
 typedef struct _ZMapConfigIniStruct
 {
-  GKeyFile *buffer_key_file;
-  GKeyFile *extra_key_file;
-  GKeyFile *user_key_file;
-  GKeyFile *zmap_key_file;
-  GKeyFile *sys_key_file;
-
-  GError *buffer_key_error;
-  GError *extra_key_error;
-  GError *user_key_error;
-  GError *zmap_key_error;
-  GError *sys_key_error;
-
-  unsigned int unsaved_alterations : 1;
-
+  GKeyFile *key_file[ZMAPCONFIG_FILE_NUM_TYPES] ;
+  GError *key_error[ZMAPCONFIG_FILE_NUM_TYPES] ;
+  GQuark key_file_name[ZMAPCONFIG_FILE_NUM_TYPES] ; 
+  gboolean unsaved_changes[ZMAPCONFIG_FILE_NUM_TYPES] ;
 } ZMapConfigIniStruct;
 
 
@@ -190,9 +180,12 @@ void zMapConfigDestroyStanza(ZMapConfigStanza stanza) ;
 
 ZMapConfigIni zMapConfigIniNew(void) ;
 gboolean zMapConfigIniReadAll(ZMapConfigIni config, const char *config_file) ;
+gboolean zMapConfigIniReadFileType(ZMapConfigIni config, const char *config_file, ZMapConfigIniFileType file_type) ;
 gboolean zMapConfigIniReadUser(ZMapConfigIni config, const char *config_file);
+gboolean zMapConfigIniReadSystem(ZMapConfigIni config);
+gboolean zMapConfigIniReadZmap(ZMapConfigIni config);
 gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, const char *buffer);
-gboolean zMapConfigIniReadFile(ZMapConfigIni config, const char *file);
+gboolean zMapConfigIniReadStyles(ZMapConfigIni config, const char *file);
 void zMapConfigIniGetStanza(ZMapConfigIni config, const char *stanza_name);
 void zMapConfigIniGetAllStanzas(ZMapConfigIni config);
 void zMapConfigIniGetStanzaValues(ZMapConfigIni, const char *stanza_name);
@@ -207,10 +200,11 @@ gboolean zMapConfigIniGetValue(ZMapConfigIni config,
                                GValue **value_out,
                                GType type);
 void zMapConfigIniSetValue(ZMapConfigIni config,
+                           ZMapConfigIniFileType file_type,
                            const char *stanza_name,
                            const char *key_name,
                            GValue *value);
-gboolean zMapConfigIniSaveUser(ZMapConfigIni config);
+gboolean zMapConfigIniSave(ZMapConfigIni config, ZMapConfigIniFileType file_type);
 void zMapConfigIniDestroy(ZMapConfigIni config, gboolean save_user);
 
 

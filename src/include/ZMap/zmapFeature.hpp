@@ -1349,7 +1349,7 @@ void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2) 
 void zMapGetFeatureExtent(ZMapFeature feature, gboolean complex, ZMapSpan span);
 void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 
-int zMapFeatureColumnOrderNext(void);	/* order of columns L -> R */
+  int zMapFeatureColumnOrderNext(const gboolean reset);	/* order of columns L -> R */
 
 
 /* ????? Impossible to understand why this is here ?? */

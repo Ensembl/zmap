@@ -50,6 +50,7 @@
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapConfigIni.hpp>
+#include <ZMap/zmapConfigDir.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapThreads.hpp>
 #include <ZMap/zmapGFF.hpp>
@@ -262,7 +263,7 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data) ;
 static int findFeature(gconstpointer a, gconstpointer b) ;
 static void freeSequences(gpointer data, gpointer user_data_unused) ;
 
-static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent) ;
+static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view) ;
 static void readChapter(ZMapGuiNotebookChapter chapter) ;
 static void saveCB(ZMapGuiNotebookAny any_section, void *user_data_unused);
 static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data) ;
@@ -274,6 +275,7 @@ static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
 
 GList * zMapViewGetColumnFeatureSets(ZMapBlixemData data,GQuark column_id);
 
+static void saveUserPrefs(BlixemConfigData prefs, const char *zmap_config_file) ;
 
 /*
  *                Globals
@@ -501,7 +503,7 @@ ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNote
     getUserPrefs(view->view_sequence->config_file, &blixem_config_curr_G) ;
 
 
-  chapter = makeChapter(note_book_parent) ; /* mh17: this uses blixen_config_curr_G */
+  chapter = makeChapter(note_book_parent, view) ; /* mh17: this uses blixen_config_curr_G */
 
   return chapter ;
 }
@@ -514,6 +516,13 @@ gboolean zMapViewBlixemGetConfigFunctions(ZMapView view, gpointer *edit_func,
 }
 
 
+void zMapViewBlixemSaveChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
+{
+  /* By default, save to the input zmap config file, if there was one */
+  saveUserPrefs(&blixem_config_curr_G, view->view_sequence->config_file);
+
+  return ;
+}
 
 
 /*
@@ -2127,12 +2136,12 @@ static gboolean check_edited_values(ZMapGuiNotebookAny note_any, const char *ent
   return allowed;
 }
 
-static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
+static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view)
 {
   ZMapGuiNotebookChapter chapter = NULL ;
   static ZMapGuiNotebookCBStruct user_CBs =
     {
-      cancelCB, NULL, applyCB, NULL, check_edited_values, NULL, saveCB, NULL
+      cancelCB, NULL, applyCB, NULL, check_edited_values, NULL, saveCB, view
     } ;
   ZMapGuiNotebookPage page = NULL ;
   ZMapGuiNotebookSubsection subsection = NULL ;
@@ -2391,61 +2400,76 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
   return ;
 }
 
-static void saveUserPrefs(BlixemConfigData prefs)
+static void saveUserPrefs(BlixemConfigData prefs, const char *zmap_config_file)
 {
-  ZMapConfigIniContext context = NULL;
-  if (!prefs)
-    return ;
+  zMapReturnIfFail(prefs && zmap_config_file) ;
 
-  if ((context = zMapConfigIniContextProvide(prefs->config_file)))
+  ZMapConfigIniContext context = NULL;
+
+  /* Create the context from the existing zmap config file (if any - otherwise create an empty
+   * context). */
+  if ((context = zMapConfigIniContextProvide(zmap_config_file)))
     {
+      /* Update the settings in the context. Note that the file type of 'user' means the
+       * user-specified config file, i.e. the one we passed in to ContextProvide */
+      ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_USER ;
+
       if (prefs->netid)
-        zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+        zMapConfigIniContextSetString(context, file_type,
+                                      ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                       ZMAPSTANZA_BLIXEM_NETID, prefs->netid);
 
-      zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetInt(context, file_type,
+                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                  ZMAPSTANZA_BLIXEM_PORT, prefs->port);
 
-      zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetInt(context, file_type,
+                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                  ZMAPSTANZA_BLIXEM_SCOPE, prefs->scope);
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_SCOPE_MARK, prefs->scope_from_mark) ;
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_FEATURES_MARK, prefs->features_from_mark) ;
 
-      zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetInt(context, file_type,
+                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                  ZMAPSTANZA_BLIXEM_MAX, prefs->homol_max);
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_KEEP_TEMP, prefs->keep_tmpfiles);
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_SLEEP, prefs->sleep_on_startup);
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_KILL_EXIT, prefs->kill_on_exit);
 
       if (prefs->script)
-        zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+        zMapConfigIniContextSetString(context, file_type,
+                                      ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                       ZMAPSTANZA_BLIXEM_SCRIPT, prefs->script);
 
       if (prefs->config_file)
-        zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+        zMapConfigIniContextSetString(context, file_type,
+                                      ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                       ZMAPSTANZA_BLIXEM_CONF_FILE, prefs->config_file);
 
-      zMapConfigIniContextSave(context);
+      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+      zMapConfigIniContextSave(context, file_type);
+
+      zMapConfigIniContextDestroy(context) ;
     }
 
   return ;
 }
-static void saveChapter(ZMapGuiNotebookChapter chapter)
-{
-  saveUserPrefs(&blixem_config_curr_G);
 
-  return ;
-}
 
 static void applyCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
 {
@@ -2454,13 +2478,14 @@ static void applyCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
   return ;
 }
 
-static void saveCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
+static void saveCB(ZMapGuiNotebookAny any_section, void *user_data)
 {
   ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)any_section;
+  ZMapView view = (ZMapView)user_data ;
 
   readChapter(chapter);
 
-  saveChapter(chapter);
+  zMapViewBlixemSaveChapter(chapter, view);
 
   return ;
 }

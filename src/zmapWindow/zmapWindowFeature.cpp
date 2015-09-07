@@ -332,7 +332,7 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 }
 
 
-gboolean zmapWindowFeatureItemEventButRelease(GdkEvent *event)
+void zmapWindowFeatureItemEventButRelease(GdkEvent *event)
 {
   GdkEventButton *but_event = (GdkEventButton *)event ;
 
@@ -1030,7 +1030,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
                                   NULL, replace_highlight, highlight_same_names, highlight_sub_part, &display_style) ;
 
         /* if we have an active dialog update it: they have to click on a feature not the column */
-        zmapWindowSetStyleFeatureset(window, item, feature);
+        zmapWindowStyleDialogSetFeature(window, item, feature);
 
       }
 
