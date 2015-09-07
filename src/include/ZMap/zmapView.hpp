@@ -36,6 +36,7 @@
 
 #include <gtk/gtk.h>
 
+#include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapEnum.hpp>
 #include <ZMap/zmapWindow.hpp>
 #include <ZMap/zmapWindowNavigator.hpp>
@@ -243,6 +244,7 @@ void zMapViewDestroy(ZMapView zmap_view) ;
 ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);
 
 ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNotebook note_book_parent) ;
+void zMapViewBlixemUserPrefsUpdateContext(ZMapConfigIniContext context, const ZMapConfigIniFileType file_type) ;
 
 void zMapViewBlixemSaveChapter(ZMapGuiNotebookChapter chapter, ZMapView view) ;
 
@@ -254,7 +256,9 @@ void zMapViewUpdateColumnBackground(ZMapView view);
 
 const char* zMapViewGetSaveFile(ZMapView view, const ZMapViewExportType export_type, const gboolean use_input_file) ;
 void zMapViewSetSaveFile(ZMapView view, const ZMapViewExportType export_type, const char *filename) ;
-gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_type, char **filepath_inout, GError **error) ;
+gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_type, 
+                              ZMapConfigIniContextUpdatePrefsFunc update_func,
+                              char **filepath_inout, GError **error) ;
 
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view) ;
 

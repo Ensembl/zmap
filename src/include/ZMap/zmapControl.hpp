@@ -34,6 +34,7 @@
 /* It turns out we need some way to refer to zmapviews at this level, while I don't really
  * want to expose all the zmapview stuff I do want the opaque ZMapView type.
  * Think about this some more. */
+#include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapView.hpp>
 #include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapWindow.hpp>
@@ -108,6 +109,8 @@ void zMapAddClient(ZMap zmap, void *client);
 char *zMapControlRemoteReceiveAccepts(ZMap zmap);
 gboolean zMapReset(ZMap zmap) ;
 void zMapDestroy(ZMap zmap, GList **destroyed_views_inout) ;
+
+void zMapControlPreferencesUpdateContext(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, gpointer data) ;
 
 
 #endif /* !ZMAP_CONTROL_H */

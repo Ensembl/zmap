@@ -2400,6 +2400,119 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
   return ;
 }
 
+/* Update the given context with any preferences that have been changed by the user */
+void zMapViewBlixemUserPrefsUpdateContext(ZMapConfigIniContext context, const ZMapConfigIniFileType file_type)
+{ 
+  BlixemConfigData prefs = &blixem_config_curr_G ;
+  gboolean changed = FALSE ;
+
+  if (prefs->is_set.netid && prefs->netid)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetString(context, file_type,
+                                    ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                    ZMAPSTANZA_BLIXEM_NETID, prefs->netid);
+    }
+
+  if (prefs->is_set.port)
+    {
+      changed = TRUE ;
+      
+      zMapConfigIniContextSetInt(context, file_type,
+                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                 ZMAPSTANZA_BLIXEM_PORT, prefs->port);
+    }
+
+  if (prefs->is_set.scope)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetInt(context, file_type,
+                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                 ZMAPSTANZA_BLIXEM_SCOPE, prefs->scope);
+    }
+
+  if (prefs->is_set.scope_from_mark)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                     ZMAPSTANZA_BLIXEM_SCOPE_MARK, prefs->scope_from_mark) ;
+    }
+
+  if (prefs->is_set.features_from_mark)
+    {
+      changed = TRUE ;
+      
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                     ZMAPSTANZA_BLIXEM_FEATURES_MARK, prefs->features_from_mark) ;
+    }
+
+  if (prefs->is_set.homol_max)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetInt(context, file_type,
+                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                 ZMAPSTANZA_BLIXEM_MAX, prefs->homol_max);
+    }
+
+  if (prefs->is_set.keep_tmpfiles)
+    {
+      changed = TRUE ;
+      
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                     ZMAPSTANZA_BLIXEM_KEEP_TEMP, prefs->keep_tmpfiles);
+    }
+
+  if (prefs->is_set.sleep_on_startup)
+    {
+      changed = TRUE ;
+      
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                     ZMAPSTANZA_BLIXEM_SLEEP, prefs->sleep_on_startup);
+    }
+
+  if (prefs->is_set.kill_on_exit)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                     ZMAPSTANZA_BLIXEM_KILL_EXIT, prefs->kill_on_exit);
+    }
+
+  if (prefs->is_set.script && prefs->script)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetString(context, file_type,
+                                    ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                    ZMAPSTANZA_BLIXEM_SCRIPT, prefs->script);
+    }
+
+  if (prefs->is_set.config_file && prefs->config_file)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetString(context, file_type,
+                                    ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                    ZMAPSTANZA_BLIXEM_CONF_FILE, prefs->config_file);
+    }
+
+  /* Set the unsaved flag in the context if there were any changes */
+  if (changed)
+    {
+      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+    }
+}
+
+
 static void saveUserPrefs(BlixemConfigData prefs, const char *zmap_config_file)
 {
   zMapReturnIfFail(prefs && zmap_config_file) ;
@@ -2414,54 +2527,8 @@ static void saveUserPrefs(BlixemConfigData prefs, const char *zmap_config_file)
        * user-specified config file, i.e. the one we passed in to ContextProvide */
       ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_USER ;
 
-      if (prefs->netid)
-        zMapConfigIniContextSetString(context, file_type,
-                                      ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                      ZMAPSTANZA_BLIXEM_NETID, prefs->netid);
+      zMapViewBlixemUserPrefsUpdateContext(context, file_type) ;
 
-      zMapConfigIniContextSetInt(context, file_type,
-                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                 ZMAPSTANZA_BLIXEM_PORT, prefs->port);
-
-      zMapConfigIniContextSetInt(context, file_type,
-                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                 ZMAPSTANZA_BLIXEM_SCOPE, prefs->scope);
-
-      zMapConfigIniContextSetBoolean(context, file_type,
-                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                     ZMAPSTANZA_BLIXEM_SCOPE_MARK, prefs->scope_from_mark) ;
-
-      zMapConfigIniContextSetBoolean(context, file_type,
-                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                     ZMAPSTANZA_BLIXEM_FEATURES_MARK, prefs->features_from_mark) ;
-
-      zMapConfigIniContextSetInt(context, file_type,
-                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                 ZMAPSTANZA_BLIXEM_MAX, prefs->homol_max);
-
-      zMapConfigIniContextSetBoolean(context, file_type,
-                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                     ZMAPSTANZA_BLIXEM_KEEP_TEMP, prefs->keep_tmpfiles);
-
-      zMapConfigIniContextSetBoolean(context, file_type,
-                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                     ZMAPSTANZA_BLIXEM_SLEEP, prefs->sleep_on_startup);
-
-      zMapConfigIniContextSetBoolean(context, file_type,
-                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                     ZMAPSTANZA_BLIXEM_KILL_EXIT, prefs->kill_on_exit);
-
-      if (prefs->script)
-        zMapConfigIniContextSetString(context, file_type,
-                                      ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                      ZMAPSTANZA_BLIXEM_SCRIPT, prefs->script);
-
-      if (prefs->config_file)
-        zMapConfigIniContextSetString(context, file_type,
-                                      ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                      ZMAPSTANZA_BLIXEM_CONF_FILE, prefs->config_file);
-
-      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
       zMapConfigIniContextSave(context, file_type);
 
       zMapConfigIniContextDestroy(context) ;

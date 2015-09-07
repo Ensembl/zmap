@@ -75,6 +75,14 @@ typedef struct _ZMapConfigStruct *ZMapConfig ;
 
 typedef  struct _ZMapConfigIniStruct *ZMapConfigIni;
 
+
+/* This function pointer is for functions which update a context with user-specified preferences,
+ * e.g. blixem prefs or control prefs */
+typedef void (*ZMapConfigIniContextUpdatePrefsFunc)(ZMapConfigIniContext context, 
+                                                    ZMapConfigIniFileType file_type, 
+                                                    gpointer data) ;
+
+
 ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file) ;
 ZMapConfigIniContext zMapConfigIniContextCreateType(const char *config_file, ZMapConfigIniFileType file_type) ;
 gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, const char *buffer);
@@ -138,7 +146,7 @@ gboolean zMapConfigIniContextSave(ZMapConfigIniContext context, ZMapConfigIniFil
 void zMapConfigIniContextSetUnsavedChanges(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const gboolean value) ;
 void zMapConfigIniContextSetFile(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *filename) ;
 void zMapConfigIniContextCreateKeyFile(ZMapConfigIniContext context, ZMapConfigIniFileType file_type) ;
-void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, GHashTable *styles) ;
+void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, gpointer data) ;
 
 gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context);
 gchar *zMapConfigIniContextKeyFileErrorMessage(ZMapConfigIniContext context);
