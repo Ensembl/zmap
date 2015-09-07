@@ -1114,6 +1114,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
               column = g_new0(ZMapFeatureColumnStruct,1);
               column->unique_id = col_id;
               column->style_table = g_list_prepend(NULL, (gpointer)  style);
+              column->order = zMapFeatureColumnOrderNext(FALSE) ;
               /* the rest shoudl get filled in elsewhere */
               g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(col_id), column);
             }
