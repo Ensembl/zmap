@@ -2806,7 +2806,7 @@ static void setColours(ZMapWindow window)
   gdk_color_parse(ZMAP_WINDOW_ITEM_EVIDENCE_FILL, &(window->colour_evidence_fill)) ;
   window->highlights_set.evidence = TRUE ;
 
-  if ((context = zMapConfigIniContextProvide(window->sequence->config_file)))
+  if ((context = zMapConfigIniContextProvide(window->sequence->config_file, ZMAPCONFIG_FILE_NONE)))
     {
       char *colour = NULL;
       gboolean truth = FALSE;                /* i always wanted to say that :-) */

@@ -224,7 +224,7 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
     }*/
   /*scripts[2].args = g_strsplit("--fruit=apple --car=jeep --weather=sunny", " ", 0); */
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       GKeyFile *gkf;
       gchar ** keys,**freethis;

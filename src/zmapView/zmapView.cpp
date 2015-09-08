@@ -2197,7 +2197,7 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** styles
   GList *settings_list = NULL;
   ZMapConfigIniContext context ;
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
 
       if (config_str)
@@ -2593,7 +2593,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 
   zMapLogTime(TIMER_LOAD,TIMER_CLEAR,0,"View init");
 
-  if ((context = zMapConfigIniContextProvide(view->view_sequence->config_file)))
+  if ((context = zMapConfigIniContextProvide(view->view_sequence->config_file, ZMAPCONFIG_FILE_NONE)))
     {
       if(config_str)
         zMapConfigIniContextIncludeBuffer(context, config_str);
@@ -7044,7 +7044,7 @@ gboolean zMapViewExportConfig(ZMapView view,
     {
       /* Read the context from the original input config file (if there was one - otherwise this
        * will return an empty context. Note that it will also include any system config files too.) */
-      context = zMapConfigIniContextCreateType(input_file, file_type) ;
+      context = zMapConfigIniContextProvide(input_file, file_type) ;
 
       if (!context)
         ok = FALSE ;

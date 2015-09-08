@@ -650,7 +650,7 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
   if (!curr_prefs)
     return status ;
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_USER)))
     {
       char *tmp_string = NULL ;
       int tmp_int ;
@@ -2521,7 +2521,7 @@ static void saveUserPrefs(BlixemConfigData prefs, const char *zmap_config_file)
 
   /* Create the context from the existing zmap config file (if any - otherwise create an empty
    * context). */
-  if ((context = zMapConfigIniContextProvide(zmap_config_file)))
+  if ((context = zMapConfigIniContextProvide(zmap_config_file, ZMAPCONFIG_FILE_USER)))
     {
       /* Update the settings in the context. Note that the file type of 'user' means the
        * user-specified config file, i.e. the one we passed in to ContextProvide */

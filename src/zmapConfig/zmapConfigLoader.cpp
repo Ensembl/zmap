@@ -123,11 +123,17 @@ static void stylesFreeList(GList *config_styles_list) ;
 
 /* Note that config_file can be null here - this returns a new context which has  
  * the config_read flag as false. */
-ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file)
+ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file, ZMapConfigIniFileType file_type)
 {
-  ZMapConfigIniContext context = zMapConfigIniContextCreate(config_file) ;
+  ZMapConfigIniContext context = NULL ;
 
-  if(context)
+  if (file_type == ZMAPCONFIG_FILE_NONE)
+    context = zMapConfigIniContextCreate(config_file) ;
+  else
+    context = zMapConfigIniContextCreateType(config_file, file_type) ;
+
+  /* Add the default groups for standard zmap config files (i.e. anything except a styles file) */
+  if(context && file_type != ZMAPCONFIG_FILE_STYLES)
     {
       ZMapConfigIniContextKeyEntry stanza_group = NULL;
       const char *stanza_name, *stanza_type;
@@ -164,7 +170,8 @@ ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file)
 
 
 
-ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name_in)
+ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name_in, 
+                                                      ZMapConfigIniFileType file_type)
 {
   ZMapConfigIniContext context = NULL;
 
@@ -174,7 +181,13 @@ ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, c
   zMapReturnValIfFail(stanza_name_in, context) ;
   zMapReturnValIfFail(*stanza_name_in, context) ;
 
-  if ((context = zMapConfigIniContextCreate(config_file)))
+  if (file_type == ZMAPCONFIG_FILE_NONE)
+    context = zMapConfigIniContextCreate(config_file) ;
+  else
+    context = zMapConfigIniContextCreateType(config_file, file_type) ;
+
+
+  if (context)
     {
       ZMapConfigIniContextKeyEntry stanza_group = NULL;
       const char *stanza_name, *stanza_type;
@@ -348,7 +361,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
 
 
   /* ERROR HANDLING ???? */
-  if ((context = zMapConfigIniContextProvideNamed(config_file, ZMAPSTANZA_STYLE_CONFIG)))
+  if ((context = zMapConfigIniContextProvideNamed(config_file, ZMAPSTANZA_STYLE_CONFIG, ZMAPCONFIG_FILE_NONE)))
     {
       GKeyFile *extra_styles_keyfile = NULL ;
 
@@ -1079,7 +1092,7 @@ gboolean zMapConfigLegacyStyles(char *config_file)
   if (!got)
     {
       got = TRUE ;
-      if ((context = zMapConfigIniContextProvide(config_file)))
+      if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
         {
           zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                          ZMAPSTANZA_APP_LEGACY_STYLES, &result);

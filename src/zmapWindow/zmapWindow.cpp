@@ -3405,7 +3405,7 @@ static gboolean getConfiguration(ZMapWindow window)
   window->display_forward_coords = TRUE;
   window->show_3_frame_reverse = FALSE;
 
-  if ((context = zMapConfigIniContextProvide(window->sequence->config_file)))
+  if ((context = zMapConfigIniContextProvide(window->sequence->config_file, ZMAPCONFIG_FILE_NONE)))
     {
       int tmp_int;
       gboolean tmp_bool;

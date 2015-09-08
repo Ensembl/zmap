@@ -259,7 +259,7 @@ static gboolean getUserPrefs(PrefsData curr_prefs, const char *config_file)
   if (!curr_prefs)
     return status ;
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_USER)))
     {
       char *tmp_string = NULL ;
       gboolean tmp_bool ;
@@ -333,7 +333,7 @@ static void saveUserPrefs(PrefsData prefs, const char *config_file)
 
   /* Create the context from the existing config file (if any - otherwise create an empty
    * context). */
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_USER)))
     {
       /* Update the settings in the context. Note that the file type of 'user' means the
        * user-specified config file, i.e. the one we passed in to ContextProvide */

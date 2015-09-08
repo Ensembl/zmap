@@ -33,6 +33,7 @@
 #include <glib-object.h>
 
 
+
 /* default list of in-built columns if not specified in config file */
 #define ZMAP_DEFAULT_FEATURESETS "DNA ; 3 Frame ; 3 Frame Translation ; Show Translation ; Annotation "
 
@@ -40,6 +41,8 @@
 /* This enum lists the types of config files that can be supplied */
 typedef enum
   {
+    ZMAPCONFIG_FILE_NONE,
+
     ZMAPCONFIG_FILE_BUFFER, /* Config read from a text buffer rather than a file*/
     ZMAPCONFIG_FILE_STYLES, /* Styles file */
     ZMAPCONFIG_FILE_USER,   /* User-specified config file */
@@ -168,8 +171,8 @@ GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
 
 // zmapConfigLoader.c
 
-ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file) ;
-ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name) ;
+ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file, ZMapConfigIniFileType file_type) ;
+ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name, ZMapConfigIniFileType file_type) ;
 
 gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name, GKeyFile **which);
 
