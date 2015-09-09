@@ -398,6 +398,8 @@ static gboolean scratchMergeCoords(ScratchMergeData merge_data, const int coord1
     {
       merge_data->dest_feature->x1 = coord1;
       merge_data->dest_feature->x2 = coord2;
+
+      scratchSetStartEndFlag(merge_data->view, TRUE);
     }
 
   result = zMapFeatureTranscriptMergeExon(merge_data->dest_feature, coord1, coord2);
@@ -611,6 +613,8 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data,
     {
       merge_data->dest_feature->x1 = feature->x1;
       merge_data->dest_feature->x2 = feature->x2;
+
+      scratchSetStartEndFlag(merge_data->view, TRUE);
     }
 
   if (feature)
@@ -742,12 +746,6 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data,
           if (!merged)
             break ;
         }
-    }
-
-  /* Once finished merging, the start/end should now be set */
-  if (merged)
-    {
-      scratchSetStartEndFlag(merge_data->view, TRUE);
     }
 
   if (merge_data->error && *(merge_data->error))

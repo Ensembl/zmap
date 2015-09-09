@@ -103,6 +103,7 @@ typedef struct _CreateExonsDataStruct
 
 
 static void extendTranscript(ZMapFeature transcript, ZMapSpanStruct * span) ;
+static void extendTranscriptCoords(ZMapFeature transcript, const int x1, const int x2) ;
 
 static void getDetailedExon(gpointer exon_data, gpointer user_data) ;
 static void calculateExonPositions(ItemShowTranslationTextData full_data, ZMapSpan exon_span,
@@ -845,10 +846,10 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
 
       zMapFeatureAddTranscriptExonIntron(transcript, new_exon, NULL);
       zMapFeatureTranscriptSortExons(transcript);
-
-      /* If this is the first/last exon set the start/end coord */
-      extendTranscript(transcript, new_exon);
     }
+
+  /* We must make sure the transcript's extent includes the new coords */
+  extendTranscriptCoords(transcript, x1, x2) ;
 
   zMapFeatureTranscriptRecreateIntrons(transcript);
 
@@ -2364,13 +2365,20 @@ static void printDetailedExons(gpointer exon_data, gpointer user_data)
 }
 
 
+/* Blindly extend transcripts start/end to encompass the given coords. */
+static void extendTranscriptCoords(ZMapFeature transcript, const int x1, const int x2)
+{
+  if (transcript->x1 == 0 || x1 < transcript->x1)
+    transcript->x1 = x1 ;
+  if (transcript->x2 == 0 || x2 > transcript->x2)
+    transcript->x2 = x2 ;
+}
+
+
 /* Blindly extend transcripts start/end to encompass the given span. */
 static void extendTranscript(ZMapFeature transcript, ZMapSpanStruct * span)
 {
-  if (transcript->x1 == 0 || span->x1 < transcript->x1)
-    transcript->x1 = span->x1 ;
-  if (transcript->x2 == 0 || span->x2 > transcript->x2)
-    transcript->x2 = span->x2 ;
+  extendTranscriptCoords(transcript, span->x1, span->x2) ;
 
   return ;
 }
