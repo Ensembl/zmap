@@ -80,6 +80,7 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap) ;
 static void saveChapter(ZMapGuiNotebookChapter chapter, ZMap zmap) ;
 static gboolean getUserPrefs(PrefsData curr_prefs, const char *config_file) ;
 static void saveUserPrefs(PrefsData prefs, const char *config_file) ;
+void userPrefsUpdateContext(ZMapConfigIniContext context, const ZMapConfigIniFileType file_type) ;
 
 /* 
  *                  Globals
@@ -155,6 +156,14 @@ void zmapControlShowPreferences(ZMap zmap)
 }
 
 
+/* Main entry point for saving all user-specified preferences into a context. This is provided
+ * in addition to the saveCB (which is called from the prefs dialog itsef) so that we can save 
+ * preferences from an external interface such as the main menu or columns dialog */
+void zMapControlPreferencesUpdateContext(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, gpointer data)
+{
+  userPrefsUpdateContext(context, file_type) ;
+  zMapViewBlixemUserPrefsUpdateContext(context, file_type) ;
+}
 
 
 /* 
@@ -250,7 +259,7 @@ static gboolean getUserPrefs(PrefsData curr_prefs, const char *config_file)
   if (!curr_prefs)
     return status ;
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_USER)))
     {
       char *tmp_string = NULL ;
       gboolean tmp_bool ;
@@ -314,7 +323,8 @@ static gboolean getUserPrefs(PrefsData curr_prefs, const char *config_file)
 }
 
 
-/* Save user preferences back to the config file. */
+/* Save user preferences back to the given config file (don't lose anything already in that config
+ * file). */
 static void saveUserPrefs(PrefsData prefs, const char *config_file)
 {
   zMapReturnIfFail(prefs && config_file) ;
@@ -323,35 +333,67 @@ static void saveUserPrefs(PrefsData prefs, const char *config_file)
 
   /* Create the context from the existing config file (if any - otherwise create an empty
    * context). */
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_USER)))
     {
       /* Update the settings in the context. Note that the file type of 'user' means the
        * user-specified config file, i.e. the one we passed in to ContextProvide */
       ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_USER ;
 
-      zMapConfigIniContextSetBoolean(context, file_type,
-                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                    ZMAPSTANZA_APP_SHRINKABLE, prefs->shrinkable);
+      userPrefsUpdateContext(context, file_type) ;
 
-      zMapConfigIniContextSetBoolean(context, file_type,
-                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                    ZMAPSTANZA_APP_HIGHLIGHT_FILTERED, prefs->highlight_filtered);
-
-      zMapConfigIniContextSetBoolean(context, file_type,
-                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                    ZMAPSTANZA_APP_ENABLE_ANNOTATION, prefs->enable_annotation);
-
-      if (prefs->columns_list)
-        {
-          zMapConfigIniContextSetString(context, file_type,
-                                        ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                        ZMAPSTANZA_APP_COLUMNS, prefs->columns_list);
-        }
-
-      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
       zMapConfigIniContextSave(context, file_type);
 
       zMapConfigIniContextDestroy(context) ;
+    }
+}
+
+
+/* Update the given context with any preferences that have been changed by the user */
+void userPrefsUpdateContext(ZMapConfigIniContext context, const ZMapConfigIniFileType file_type)
+{ 
+  PrefsData prefs = &prefs_curr_G ;
+  gboolean changed = FALSE ;
+
+  if (prefs->is_set.shrinkable)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                     ZMAPSTANZA_APP_SHRINKABLE, prefs->shrinkable);
+    }
+
+  if (prefs->is_set.highlight_filtered)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                     ZMAPSTANZA_APP_HIGHLIGHT_FILTERED, prefs->highlight_filtered);
+    }
+
+  if (prefs->is_set.enable_annotation)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                     ZMAPSTANZA_APP_ENABLE_ANNOTATION, prefs->enable_annotation);
+    }
+
+  if (prefs->is_set.columns_list)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetString(context, file_type,
+                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                    ZMAPSTANZA_APP_COLUMNS, prefs->columns_list);
+    }
+  
+  /* Set the unsaved flag in the context if there were any changes */
+  if (changed)
+    {
+      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
     }
 }
 

@@ -33,6 +33,7 @@
 #include <glib-object.h>
 
 
+
 /* default list of in-built columns if not specified in config file */
 #define ZMAP_DEFAULT_FEATURESETS "DNA ; 3 Frame ; 3 Frame Translation ; Show Translation ; Annotation "
 
@@ -40,6 +41,8 @@
 /* This enum lists the types of config files that can be supplied */
 typedef enum
   {
+    ZMAPCONFIG_FILE_NONE,
+
     ZMAPCONFIG_FILE_BUFFER, /* Config read from a text buffer rather than a file*/
     ZMAPCONFIG_FILE_STYLES, /* Styles file */
     ZMAPCONFIG_FILE_USER,   /* User-specified config file */
@@ -74,6 +77,14 @@ typedef struct _ZMapConfigIniContextStruct
 typedef struct _ZMapConfigStruct *ZMapConfig ;
 
 typedef  struct _ZMapConfigIniStruct *ZMapConfigIni;
+
+
+/* This function pointer is for functions which update a context with user-specified preferences,
+ * e.g. blixem prefs or control prefs */
+typedef void (*ZMapConfigIniContextUpdatePrefsFunc)(ZMapConfigIniContext context, 
+                                                    ZMapConfigIniFileType file_type, 
+                                                    gpointer data) ;
+
 
 ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file) ;
 ZMapConfigIniContext zMapConfigIniContextCreateType(const char *config_file, ZMapConfigIniFileType file_type) ;
@@ -138,7 +149,7 @@ gboolean zMapConfigIniContextSave(ZMapConfigIniContext context, ZMapConfigIniFil
 void zMapConfigIniContextSetUnsavedChanges(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const gboolean value) ;
 void zMapConfigIniContextSetFile(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *filename) ;
 void zMapConfigIniContextCreateKeyFile(ZMapConfigIniContext context, ZMapConfigIniFileType file_type) ;
-void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, GHashTable *styles) ;
+void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, gpointer data) ;
 
 gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context);
 gchar *zMapConfigIniContextKeyFileErrorMessage(ZMapConfigIniContext context);
@@ -160,8 +171,8 @@ GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
 
 // zmapConfigLoader.c
 
-ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file) ;
-ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name) ;
+ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file, ZMapConfigIniFileType file_type) ;
+ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name, ZMapConfigIniFileType file_type) ;
 
 gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name, GKeyFile **which);
 

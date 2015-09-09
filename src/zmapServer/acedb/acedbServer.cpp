@@ -4579,7 +4579,7 @@ static gboolean isStyleFromMethod(char *config_file)
   gboolean style_from_method = FALSE ;
   ZMapConfigIniContext context;
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       gboolean tmp_bool = FALSE;
 

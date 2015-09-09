@@ -728,7 +728,7 @@ static void getConfiguration(FileServer server)
 {
   ZMapConfigIniContext context;
 
-  if ((context = zMapConfigIniContextProvide(server->config_file)))
+  if ((context = zMapConfigIniContextProvide(server->config_file, ZMAPCONFIG_FILE_NONE)))
     {
       char *tmp_string  = NULL;
 

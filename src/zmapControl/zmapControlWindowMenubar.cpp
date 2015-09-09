@@ -254,7 +254,12 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
     case EXPORT_CONFIG:
       {
         char *filename = g_strdup(zMapViewGetSaveFile(curr_view, ZMAPVIEW_EXPORT_CONFIG, FALSE)) ;
-        result = zMapViewExportConfig(curr_view, ZMAPVIEW_EXPORT_CONFIG, &filename, &error) ;
+
+        result = zMapViewExportConfig(curr_view, 
+                                      ZMAPVIEW_EXPORT_CONFIG, 
+                                      zMapControlPreferencesUpdateContext,
+                                      &filename,
+                                      &error) ;
 
         if (result)
           zMapViewSetSaveFile(curr_view, ZMAPVIEW_EXPORT_CONFIG, filename) ;
@@ -268,7 +273,12 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
     case EXPORT_STYLES:
       {
         char *filename = g_strdup(zMapViewGetSaveFile(curr_view, ZMAPVIEW_EXPORT_STYLES, FALSE)) ;
-        result = zMapViewExportConfig(curr_view, ZMAPVIEW_EXPORT_STYLES, &filename, &error) ;
+
+        result = zMapViewExportConfig(curr_view, 
+                                      ZMAPVIEW_EXPORT_STYLES,
+                                      zMapConfigIniContextSetStyles,
+                                      &filename,
+                                      &error) ;
 
         if (result)
           zMapViewSetSaveFile(curr_view, ZMAPVIEW_EXPORT_STYLES, filename) ;

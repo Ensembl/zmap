@@ -41,7 +41,7 @@ gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *
   ZMapConfigIniContext context = NULL;
   gboolean result = FALSE;
   
-  if((context = zMapConfigIniContextProvide(config_file)))
+  if((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       char *tmp_string;
 

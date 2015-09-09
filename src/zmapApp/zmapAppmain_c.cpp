@@ -495,7 +495,7 @@ static gboolean checkPeerID(char *config_file, char **peer_socket_out, char **pe
       *peer_socket_out = g_strdup(socket_value.s) ;
     }
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       char *tmp_string = NULL ;
 
@@ -535,7 +535,7 @@ static gboolean getConfiguration(ZMapAppContext app_context, char *config_file)
   app_context->show_mainwindow = TRUE;
   app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       gboolean tmp_bool = FALSE;
       char *tmp_string  = NULL;
@@ -620,7 +620,7 @@ static gboolean configureLog(char *config_file, char *config_dir, GError **error
   log_name = g_strdup(ZMAPLOG_FILENAME) ;
 
 
-  if (config_file && (context = zMapConfigIniContextProvide(config_file)))
+  if (config_file && (context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       gboolean tmp_bool ;
       char *tmp_string = NULL;

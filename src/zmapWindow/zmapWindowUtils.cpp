@@ -764,7 +764,7 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
 
   chapter = zMapGUINotebookCreateChapter(parent_note_book, "Window Settings", &callbacks);
 
-  context = zMapConfigIniContextProvide(window->sequence->config_file) ;
+  context = zMapConfigIniContextProvide(window->sequence->config_file, ZMAPCONFIG_FILE_NONE) ;
 
   /* Sizes... */
   page = zMapGUINotebookCreatePage(chapter, "Sizes");

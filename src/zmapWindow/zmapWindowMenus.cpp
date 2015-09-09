@@ -4406,12 +4406,12 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
 
           /* We need to update the parent to be the featureset from the attributes, if it is set.
            * Create a temp featureset with this name, because it may not exist */
-          GQuark featureset_id = window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET] ;
+          GQuark featureset_id = zMapStyleCreateID(g_quark_to_string(window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET])) ;
           
           if (featureset_id < 1)
             {
               /* No featureset specified: use the hand_built column */
-              featureset_id = g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_NAME) ;
+              featureset_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_HAND_BUILT_NAME) ;
             }
 
           block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(window->feature_context->master_align->blocks, 0)) ;
@@ -4427,6 +4427,12 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
             {
               const GQuark featureset_unique_id = zMapFeatureSetCreateID(g_quark_to_string(featureset_id)) ;
               temp_featureset = zMapFeatureSetIDCreate(featureset_id, featureset_unique_id, NULL, NULL) ;
+
+              ZMapFeatureTypeStyle style = zMapFindStyle(window->context_map->styles, 
+                                                         zMapStyleCreateID(g_quark_to_string(featureset_id))) ;
+              zMapFeatureStyleCopy(style);
+              temp_featureset->style = style ;
+
               zMapFeatureBlockAddFeatureSet(block, temp_featureset) ;
               feature->parent = (ZMapFeatureAny)temp_featureset ;
             }

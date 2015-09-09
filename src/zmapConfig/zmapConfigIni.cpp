@@ -300,8 +300,12 @@ void zMapConfigIniContextCreateKeyFile(ZMapConfigIniContext context, ZMapConfigI
 
 /* Update the given key file in the given context with the values from all the styles in the
  * given table */
-void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, GHashTable *styles)
+void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, gpointer data)
 {
+  zMapReturnIfFail(file_type == ZMAPCONFIG_FILE_STYLES) ;
+
+  GHashTable *styles = (GHashTable*)data ;
+
   g_hash_table_foreach(styles, context_update_style, context) ;
 }
 
