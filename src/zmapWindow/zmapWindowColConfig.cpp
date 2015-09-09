@@ -146,6 +146,11 @@ typedef struct _ShowHidePageDataStruct
   GList *rev_show_list;
   GList *rev_default_list;
   GList *rev_hide_list;
+  /* Fwd and rev strand lists of UpDownButton pointers*/
+  GList *fwd_up_list;
+  GList *fwd_down_list;
+  GList *rev_up_list;
+  GList *rev_down_list;
 
   /*  */
   ShowHidePageResetFunc reset_func;
@@ -164,6 +169,13 @@ typedef struct
   GtkWidget                  *show_hide_button;
 } ShowHideButtonStruct, *ShowHideButton;
 
+
+typedef struct
+{
+  GHashTable *columns;
+  GQuark column_id;
+  int direction;
+} UpDownButtonStruct, *UpDownButton;
 
 
 
@@ -219,10 +231,11 @@ typedef struct
 
 
 static GtkWidget *make_menu_bar(ColConfigure configure_data);
-static GtkWidget *loaded_cols_panel(NotebookPage notebook_page, const char *frame_title, GList *column_groups,
-                                    GList **show_list_out, GList **default_list_out, GList **hide_list_out) ;
+static GtkWidget *loaded_cols_panel(NotebookPage notebook_page, ZMapWindow window, const char *frame_title, GList *column_groups,
+                                    GList **show_list_out, GList **default_list_out, GList **hide_list_out,
+                                    GList **up_list_out, GList **down_list_out) ;
 static char *label_text_from_column(FooCanvasGroup *column_group);
-static GtkWidget *create_label(GtkWidget *parent, char *text);
+static GtkWidget *create_label(GtkWidget *parent, const char *text);
 static GtkWidget *create_revert_apply_button(ColConfigure configure_data);
 
 static GtkWidget *make_scrollable_vbox(GtkWidget *vbox);
@@ -609,10 +622,13 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
   if (reverse_cols)
     {
       cols = loaded_cols_panel(notebook_page,
+                               configure_data->window,
                                "Reverse Strand", reverse_cols,
                                &(show_hide_data->rev_show_list),
                                &(show_hide_data->rev_default_list),
-                               &(show_hide_data->rev_hide_list)) ;
+                               &(show_hide_data->rev_hide_list),
+                               &(show_hide_data->rev_up_list),
+                               &(show_hide_data->rev_down_list)) ;
 
       gtk_box_pack_start(GTK_BOX(hbox), cols, TRUE, TRUE, 0) ;
 
@@ -622,10 +638,13 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
   if (forward_cols)
     {
       cols = loaded_cols_panel(notebook_page,
+                               configure_data->window,
                                "Forward Strand", forward_cols,
                                &(show_hide_data->fwd_show_list),
                                &(show_hide_data->fwd_default_list),
-                               &(show_hide_data->fwd_hide_list)) ;
+                               &(show_hide_data->fwd_hide_list),
+                               &(show_hide_data->fwd_up_list),
+                               &(show_hide_data->fwd_down_list)) ;
 
       gtk_box_pack_start(GTK_BOX(hbox), cols, TRUE, TRUE, 0) ;
 
@@ -733,6 +752,22 @@ static void loaded_page_clear  (NotebookPage notebook_page)
   g_list_foreach(page_data->rev_hide_list, (GFunc)g_free, NULL);
   g_list_free(page_data->rev_hide_list);
   page_data->rev_hide_list = NULL;
+
+  g_list_foreach(page_data->fwd_up_list, (GFunc)g_free, NULL);
+  g_list_free(page_data->fwd_up_list);
+  page_data->fwd_up_list = NULL;
+
+  g_list_foreach(page_data->fwd_down_list, (GFunc)g_free, NULL);
+  g_list_free(page_data->fwd_down_list);
+  page_data->fwd_down_list = NULL;
+
+  g_list_foreach(page_data->rev_up_list, (GFunc)g_free, NULL);
+  g_list_free(page_data->rev_up_list);
+  page_data->rev_up_list = NULL;
+
+  g_list_foreach(page_data->rev_down_list, (GFunc)g_free, NULL);
+  g_list_free(page_data->rev_down_list);
+  page_data->rev_down_list = NULL;
 
   return ;
 }
@@ -850,7 +885,6 @@ static void loaded_radio_buttons(GtkWidget      *parent,
                    G_CALLBACK(loaded_show_button_cb), hide_data);
   g_signal_connect(G_OBJECT(radio_hide), "event",
                    G_CALLBACK(show_press_button_cb), hide_data);
-
 
   /* Return the data... We need to add it to the list */
   if(show_out)
@@ -1728,19 +1762,72 @@ static GtkWidget *make_scrollable_vbox(GtkWidget *vbox)
   return scroll_vbox;
 }
 
+
+/* Find the ZMapFeatureColumn struct in the given hash table with the given order. Returns null
+ * if not found. */
+static ZMapFeatureColumn find_column_by_order(GHashTable *columns, const int order)
+{
+  ZMapFeatureColumn result = NULL ;
+
+  GList *iter = NULL ;
+  gpointer key = NULL ;
+  ZMapFeatureColumn column = NULL ;
+
+  zMap_g_hash_table_iter_init(&iter, columns) ;
+ 
+  while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer*)(&column)) && !result)
+    {
+      if(column->order == order)
+        result = column ;
+    }
+
+  return result ;
+}
+
+
+/* Callback when user presses Up/Down buttons (to reorder columns) */
+static void move_button_cb(GtkWidget *button, gpointer user_data)
+{
+  UpDownButton data = (UpDownButton)user_data ;
+
+  ZMapFeatureColumn this_column = (ZMapFeatureColumn)g_hash_table_lookup(data->columns, GINT_TO_POINTER(data->column_id)) ;
+  
+  if (this_column)
+    {
+      const int next_column_order = this_column->order + data->direction ;
+
+      if (next_column_order >= 0)
+        {
+          ZMapFeatureColumn next_column = find_column_by_order(data->columns, next_column_order) ;
+          
+          if  (next_column)
+            {
+              next_column->order = this_column->order ;
+              this_column->order = next_column_order ;
+            }
+        }
+    }
+}
+
+
 static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
+                                    ZMapWindow window,
                                     const char        *frame_title,
                                     GList       *columns_list,
                                     GList      **show_list_out,
                                     GList      **default_list_out,
-                                    GList      **hide_list_out)
+                                    GList      **hide_list_out,
+                                    GList      **up_list_out,
+                                    GList      **down_list_out)
 {
   GtkWidget *cols_panel, *named_frame, *vbox, *hbox, *label_box, *column_box ;
   GtkWidget *scroll_vbox;
   GList *column   = NULL,/* If only GList's were better */
     *show_list    = NULL,
     *default_list = NULL,
-    *hide_list    = NULL;
+    *hide_list    = NULL,
+    *up_list    = NULL,
+    *down_list    = NULL;
 
   int list_length = 0;
 
@@ -1775,10 +1862,13 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
         {
           FooCanvasGroup *column_group = FOO_CANVAS_GROUP(column->data) ;
           ShowHideButton show_data, default_data, hide_data;
-          GtkWidget *label, *button_box;
-          char *label_text;
-
-          label_text = label_text_from_column(column_group);
+          UpDownButton up_data, down_data;
+          GtkWidget *label, *button_box, *up_button, *down_button;
+          const char *label_text;
+          GQuark column_id ;
+          
+          column_id = zmapWindowContainerFeaturesetGetColumnId((ZMapWindowContainerFeatureSet)column_group) ;
+          label_text = g_quark_to_string(column_id);
 
           if(!g_list_find_custom(make_unique, label_text, find_name_cb))
             {
@@ -1816,10 +1906,32 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
 #endif
                                              hide_data->show_hide_button);
 
+              /* Move up/down buttons (for changing column order) */
+              up_data = g_new0(UpDownButtonStruct, 1);
+              up_data->columns = window->context_map->columns;
+              up_data->column_id = column_id ;
+              up_data->direction = -1 ;
+              up_list = g_list_append(up_list, up_data) ;
+
+              up_button = gtk_button_new_from_stock(GTK_STOCK_GO_UP) ;
+              gtk_button_set_label(GTK_BUTTON(up_button), NULL) ;
+              gtk_box_pack_start(GTK_BOX(button_box), up_button, TRUE, FALSE, 0) ;
+              g_signal_connect(G_OBJECT(up_button), "clicked", G_CALLBACK(move_button_cb), up_data) ;
+
+              down_data = g_new0(UpDownButtonStruct, 1);
+              down_data->columns = window->context_map->columns;
+              down_data->column_id = column_id ;
+              down_data->direction = 1;
+              down_list = g_list_append(down_list, down_data);
+
+              down_button = gtk_button_new_from_stock(GTK_STOCK_GO_DOWN) ;
+              gtk_button_set_label(GTK_BUTTON(down_button), NULL) ;
+              gtk_box_pack_start(GTK_BOX(button_box), down_button, TRUE, FALSE, 0) ;
+              g_signal_connect(G_OBJECT(down_button), "clicked", G_CALLBACK(move_button_cb), down_data) ;
 
               list_length++;
 
-              make_unique = g_list_append(make_unique, label_text);
+              make_unique = g_list_append(make_unique, g_strdup(label_text));
             }
         }
       while ((column = g_list_next(column))) ;
@@ -1832,6 +1944,10 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
         *default_list_out = default_list;
       if(hide_list_out)
         *hide_list_out = hide_list;
+      if(up_list_out)
+        *up_list_out = up_list;
+      if(down_list_out)
+        *down_list_out = down_list;
     }
 
   {
@@ -1876,7 +1992,7 @@ static char *label_text_from_column(FooCanvasGroup *column_group)
 /* Quick function to create an aligned label with the name of the style.
  * Label has a destroy callback for the button_data!
  */
-static GtkWidget *create_label(GtkWidget *parent, char *text)
+static GtkWidget *create_label(GtkWidget *parent, const char *text)
 {
   GtkWidget *label;
 
