@@ -721,11 +721,13 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data,
           /* If the first feature is a transcript then we save its attributes so that the user
            * can easily overwrite the same transcript. Currently only applicable in standalone
            * zmap. */
-          const gboolean save_attributes =
-            !merge_data->view->xremote_client &&
-            first_feature &&
-            !merge_data->operation->use_subfeature &&
-            feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT ;
+          /* gb10: disable this for now because it causes confusion if exporting the temp feature
+           * because the temp feature has the same name as the original feature */
+          const gboolean save_attributes = FALSE ;
+            //!merge_data->view->xremote_client &&
+            //first_feature &&
+            //!merge_data->operation->use_subfeature &&
+            //feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT ;
 
           merged = scratchMergeFeature(merge_data, feature, save_attributes) ;
 

@@ -4407,8 +4407,9 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
           /* We need to update the parent to be the featureset from the attributes, if it is set.
            * Create a temp featureset with this name, because it may not exist */
           GQuark featureset_id = zMapStyleCreateID(g_quark_to_string(window->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET])) ;
+          const char *featureset_name = g_quark_to_string(featureset_id) ;
           
-          if (featureset_id < 1)
+          if (featureset_id < 1 || featureset_name == NULL || *featureset_name == '\0')
             {
               /* No featureset specified: use the hand_built column */
               featureset_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_HAND_BUILT_NAME) ;
