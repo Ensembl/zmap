@@ -618,8 +618,16 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data,
       /*
        * (sm23) This is a bit of a hack and may not be the best place for this operation.
        *  But the new feature must be given an SO term!
+       *
+       * (gb10) The SO term must always be "transcript". We shouldn't be able to get here without this
+       * being set because it should always be set when the feature is created. I'll leave this check 
+       * in just in case, though... 
        */
-      merge_data->dest_feature->SO_accession = feature->SO_accession ;
+      if (!merge_data->dest_feature->SO_accession)
+        {
+          zMapWarnIfReached() ;
+          merge_data->dest_feature->SO_accession = g_quark_from_string("transcript") ;
+        }
 
       switch (feature->mode)
         {
