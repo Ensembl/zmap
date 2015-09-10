@@ -81,6 +81,7 @@ typedef struct FeatureFilterStructType
   ZMapWindowContainerActionType filter_action ;             /* What action should be done on the filtered features. */
   ZMapWindowContainerTargetType filter_target ;             /* What should filtering be applied to. */
 
+  int base_allowance ;                                      // +/- bases to allow in match comparisons.
 
   ZMapWindowContainerFeatureSet selected_container_set ;
   ZMapWindowContainerFeatureSet target_column ;
@@ -127,7 +128,7 @@ typedef struct FeatMatchStructType
 } FeatMatchStruct, *FeatMatch ;
 
 
-
+static GList *excludeOverlaps(GList *filter_features) ;
 static void getFeatureCoords(gpointer data, gpointer user_data) ;
 static GList *getPartBoundaries(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds,
                                 int seq_start, int seq_end, int *start_out, int *end_out) ;
@@ -274,6 +275,7 @@ ZMapWindowContainerActionType zMapWindowContainerFeatureSetGetActionType(ZMapWin
 
 
 ZMapWindowContainerFilterRC zMapWindowContainerFeatureSetFilterFeatures(ZMapWindowContainerMatchType match_type,
+                                                                        int base_allowance,
                                                                         ZMapWindowContainerFilterType selected_type,
                                                                         ZMapWindowContainerFilterType filter_type,
                                                                         ZMapWindowContainerActionType filter_action,
@@ -298,6 +300,7 @@ ZMapWindowContainerFilterRC zMapWindowContainerFeatureSetFilterFeatures(ZMapWind
                                          ZMAP_CANVAS_FILTER_INVALID, ZMAP_CANVAS_FILTER_INVALID,
                                          ZMAP_CANVAS_ACTION_INVALID,
                                          ZMAP_CANVAS_TARGET_INVALID,
+                                         0,
                                          NULL, NULL, NULL,
                                          NULL,
                                          INT_MAX, 0, INT_MAX, 0,
@@ -315,6 +318,7 @@ ZMapWindowContainerFilterRC zMapWindowContainerFeatureSetFilterFeatures(ZMapWind
       filter_data.filter_type = filter_type ;
       filter_data.filter_action = filter_action ;
       filter_data.filter_target = filter_target ;
+      filter_data.base_allowance = base_allowance ;
       filter_data.selected_container_set = filter_column ;
       filter_data.target_column = target_column ;
 
@@ -323,6 +327,12 @@ ZMapWindowContainerFilterRC zMapWindowContainerFeatureSetFilterFeatures(ZMapWind
 
       if (filter)
         {
+          // We aren't guaranteed that the features will have been position-sorted so do it now.   
+          filter_features = g_list_sort(filter_features, zMapFeatureSortFeatures) ;
+
+          // Remove overlapping features.   
+          filter_features = excludeOverlaps(filter_features) ;
+
           /* Get the splice coords of all the splice features, returns them in filter_data.splices. */
           g_list_foreach(filter_features, getFeatureCoords, &filter_data) ;
 
@@ -525,6 +535,7 @@ static ZMapWindowContainerFilterRC unfilterFeatures(ZMapWindowContainerActionTyp
                                          ZMAP_CANVAS_FILTER_INVALID, ZMAP_CANVAS_FILTER_INVALID,
                                          ZMAP_CANVAS_ACTION_INVALID,
                                          ZMAP_CANVAS_TARGET_INVALID,
+                                         0,
                                          NULL, NULL, NULL,
                                          NULL,
                                          INT_MAX, 0, INT_MAX, 0,
@@ -914,7 +925,10 @@ static void filterFeatureCB(gpointer data, gpointer user_data)
   if (filter_data->filter_type == ZMAP_CANVAS_FILTER_CDS)
     cds_match = TRUE ;
 
-  slop = zMapStyleFilterTolerance(*(feature->style)) ;
+  if (filter_data->base_allowance)
+    slop = filter_data->base_allowance ;
+  else
+    slop = zMapStyleFilterTolerance(*(feature->style)) ;
 
   result = zMapFeatureHasMatchingBoundaries(feature, req_sub_part,
                                             (filter_data->match_type == ZMAP_CANVAS_MATCH_PARTIAL
@@ -1071,9 +1085,12 @@ static void highlightFeature(gpointer data, gpointer user_data)
   gboolean cds_match = FALSE ;
   int slop ;
 
-
+  char *feature_name ;
 
   feature = zMapWindowCanvasFeatureGetFeature(feature_item) ;
+
+  feature_name = zMapFeatureName((ZMapFeatureAny)feature) ;
+  
 
   /* Keep the head of the splices to be compared moving down through the coords list
    * as we move through the features, note we can do this because splices and features are
@@ -1085,11 +1102,16 @@ static void highlightFeature(gpointer data, gpointer user_data)
 
       if (feature->x1 > splice_span->end)
         {
-          curr = g_list_next(curr) ;
+          if ((curr = g_list_next(curr)))
+            {
+              filter_data->curr_splices = curr ;
 
-          filter_data->curr_splices = curr ;
-
-          filter_data->curr_start = ((ZMapFeatureSubPart)(curr->data))->start ;
+              filter_data->curr_start = ((ZMapFeatureSubPart)(curr->data))->start ;
+            }
+          else
+            {
+              break ;
+            }
         }
       else
         {
@@ -1098,53 +1120,60 @@ static void highlightFeature(gpointer data, gpointer user_data)
         }
     }
 
-  subpart_types = featureModeFilterType2SubpartType(filter_data->filter_type, feature) ;
-
-  if (filter_data->filter_type == ZMAP_CANVAS_FILTER_CDS)
-    cds_match = TRUE ;
-
-  slop = zMapStyleFilterTolerance(*(feature->style)) ;
-
-  if ((result = zMapFeatureHasMatchingBoundaries(feature, subpart_types,
-                                                 (filter_data->match_type == ZMAP_CANVAS_MATCH_PARTIAL
-                                                  ? FALSE : TRUE),
-                                                 cds_match, slop,
-                                                 curr, filter_data->curr_start, filter_data->curr_end,
-                                                 &splice_matches, &non_matches)))
+  if (curr)
     {
-      /* record this feature item in the list of splice highlighted features. */
-      target_column->filtered_features
-        = g_list_append(target_column->filtered_features, feature_item) ;
+      subpart_types = featureModeFilterType2SubpartType(filter_data->filter_type, feature) ;
+
+      if (filter_data->filter_type == ZMAP_CANVAS_FILTER_CDS)
+        cds_match = TRUE ;
+
+      if (filter_data->base_allowance)
+        slop = filter_data->base_allowance ;
+      else
+        slop = zMapStyleFilterTolerance(*(feature->style)) ;
+
+      if ((result = zMapFeatureHasMatchingBoundaries(feature, subpart_types,
+                                                     (filter_data->match_type == ZMAP_CANVAS_MATCH_PARTIAL
+                                                      ? FALSE : TRUE),
+                                                     cds_match, slop,
+                                                     curr, filter_data->curr_start, filter_data->curr_end,
+                                                     &splice_matches, &non_matches)))
+        {
+          /* record this feature item in the list of splice highlighted features. */
+          target_column->filtered_features
+            = g_list_append(target_column->filtered_features, feature_item) ;
+
+          if (splice_matches)
+            g_list_foreach(splice_matches->parts, addSplicesCB, feature_item) ;
+
+          if (non_matches)
+            g_list_foreach(non_matches->parts, addSplicesCB, feature_item) ;
+
+
+          filter_data->found_filtered_features = TRUE ;                   /* Record we found one. */
+        }
+
+      else
+        {
+          /* record this feature item in the list of splice highlighted features. */
+          target_column->filtered_features
+            = g_list_append(target_column->filtered_features, feature_item) ;
+
+
+          if (splice_matches)
+            g_list_foreach(splice_matches->parts, addSplicesCB, feature_item) ;
+
+          if (non_matches)
+            g_list_foreach(non_matches->parts, addSplicesCB, feature_item) ;
+
+          filter_data->found_filtered_features = TRUE ;                   /* Record we found one. */
+
+        }
 
       if (splice_matches)
-        g_list_foreach(splice_matches->parts, addSplicesCB, feature_item) ;
-
-      if (non_matches)
-        g_list_foreach(non_matches->parts, addSplicesCB, feature_item) ;
-
-
-      filter_data->found_filtered_features = TRUE ;                   /* Record we found one. */
+        zMapFeaturePartsListDestroy(splice_matches) ;
     }
 
-  else
-    {
-      /* record this feature item in the list of splice highlighted features. */
-      target_column->filtered_features
-        = g_list_append(target_column->filtered_features, feature_item) ;
-
-
-      if (splice_matches)
-        g_list_foreach(splice_matches->parts, addSplicesCB, feature_item) ;
-
-      if (non_matches)
-        g_list_foreach(non_matches->parts, addSplicesCB, feature_item) ;
-
-      filter_data->found_filtered_features = TRUE ;                   /* Record we found one. */
-
-    }
-
-  if (splice_matches)
-    zMapFeaturePartsListDestroy(splice_matches) ;
 
   return ;
 }
@@ -1411,4 +1440,40 @@ static ZMapFeatureSubPartType featureModeFilterType2SubpartType(ZMapWindowContai
 
   return sub_part ;
 }
+
+
+
+static GList *excludeOverlaps(GList *filter_features)
+{
+  GList *new_list = filter_features ;
+  GList *curr, *next ;
+  ZMapFeature curr_feat, next_feat ;
+  ZMapSpanStruct curr_span ;
+
+  curr = filter_features ;
+  curr_feat = (ZMapFeature)(curr->data) ;
+  curr_span.x1 = curr_feat->x1 ;
+  curr_span.x2 = curr_feat->x2 ;
+  while (curr)
+    {
+      if ((next = g_list_next(curr)))
+        {
+          next_feat = (ZMapFeature)(next->data) ;
+
+          if (next_feat->x1 < curr_span.x2)
+            {
+              new_list = g_list_delete_link(new_list, next) ;
+            }
+          else
+            {
+              curr_span.x2 = next_feat->x2 ;
+            }
+        }
+
+      curr = g_list_next(curr) ;
+    }
+
+  return new_list ;
+}
+
 
