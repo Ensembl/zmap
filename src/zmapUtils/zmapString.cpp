@@ -33,11 +33,69 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <ZMap/zmapUtilsDebug.hpp>
 #include <ZMap/zmapString.hpp>
 #include <string.h>
 
 
+
+
+
 static int findMatch(char *target, char *query, gboolean caseSensitive) ;
+
+
+
+
+
+
+//
+//             External functions
+//
+
+// Code to do this is repeated in a number of places in our code....this should be the one place.
+//
+// HOMEWORK: implement using the C++ String class....
+const char *zMapStringAbbrevStr(const char *orig_str,
+                                const char *optional_abbrev_chars, const unsigned int optional_max_orig_len)
+{
+  const char *abbrev_str ;
+  const char *abbrev_chars = optional_abbrev_chars ;
+  unsigned int max_len = optional_max_orig_len ;
+  
+  zMapReturnValIfFail((orig_str && *orig_str), NULL) ;
+  zMapReturnValIfFail((optional_abbrev_chars && *optional_abbrev_chars), NULL) ;
+  zMapReturnValIfFail((optional_max_orig_len), NULL) ;
+  
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (optional_abbrev_chars)
+    abbrev_chars = optional_abbrev_chars ;
+  
+  if (optional_max_orig_len)
+    max_len = optional_max_orig_len ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  if (strlen(orig_str) <= max_len)
+    {
+      abbrev_str = NULL ;
+    }
+  else
+    {
+      GString *tmp ;
+
+      tmp = g_string_new_len(orig_str, max_len) ;
+
+      tmp = g_string_overwrite(tmp, (max_len - strlen(abbrev_chars)), abbrev_chars) ;
+
+      abbrev_str = g_string_free(tmp, FALSE) ;
+    }
+
+  return abbrev_str ;
+}
+
+
+
+
 
 
 /* This code was taken from acedb (www.acedb.org)
