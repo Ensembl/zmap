@@ -171,11 +171,14 @@ typedef struct ZMapWindowCallbackCommandFilterStructType
 
   gboolean do_filter ;                                      /* FALSE => undo filtering */
 
+  // Filtering settings   
   ZMapWindowContainerMatchType match_type ;                 // Partial, full matching.
   ZMapWindowContainerFilterType selected ;                  /* Which part of selected feature to use for filtering. */
   ZMapWindowContainerFilterType filter ;                    /* Type of filtering. */
   ZMapWindowContainerActionType action ;                    /* What to do to filtered features. */
   ZMapWindowContainerTargetType target_type ;               /* What should filtering be applied to. */
+
+  int base_allowance ;                                      // +/- bases to allow in splice comparison.
 
   /* Column + feature(s) whose coordinates are used to filter other features. */
   ZMapWindowContainerFeatureSet filter_column ;
