@@ -272,7 +272,7 @@ void zmapWindowCreateFeatureFilterWindow(ZMapWindow window, ZMapWindowCallbackCo
   reset_hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_box_pack_start(GTK_BOX(top_vbox), reset_hbox, TRUE, TRUE, 0) ;
 
-  frame = gtk_frame_new("Change filter feature:") ;
+  frame = gtk_frame_new("Change filter feature(s):") ;
   gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
   gtk_box_pack_start(GTK_BOX(reset_hbox), frame, TRUE, TRUE, 0) ;
@@ -281,25 +281,9 @@ void zmapWindowCreateFeatureFilterWindow(ZMapWindow window, ZMapWindowCallbackCo
   gtk_container_set_border_width(GTK_CONTAINER(hbox), 5) ;
   gtk_container_add(GTK_CONTAINER(frame), hbox) ;
 
-  
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  // THIS DOESN'T WORK...I THINK IT'S POSSIBLE TO HAVE A STOCK IMAGE
-  // WITH YOUR OWN TEXT BUT IT'S SOME WORK.....WRITE A FUNCTION LATER...
-  focus_button = gtk_button_new_from_stock(GTK_STOCK_ADD) ;
-  GtkWidget *image ;
-  
-  image = gtk_button_get_image (GTK_BUTTON(focus_button)) ;
-
-  gtk_button_set_label(GTK_BUTTON(focus_button), "Re-focus") ;
-
-
-  gtk_button_set_image (GTK_BUTTON(focus_button),
-                      image);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   focus_button = gtk_button_new_with_label("Set to current highlight") ;
   gtk_container_add(GTK_CONTAINER(hbox), focus_button) ;
   gtk_signal_connect(GTK_OBJECT(focus_button), "clicked", GTK_SIGNAL_FUNC(resetFilterCB), filter_data) ;
-
 
   frame = gtk_frame_new("Change target features:") ;
   gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
