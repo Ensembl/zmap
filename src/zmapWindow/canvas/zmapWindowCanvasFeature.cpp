@@ -217,7 +217,8 @@ void zMapWindowCanvasFeatureAddSplicePos(ZMapWindowCanvasFeature feature_item, i
                                          gboolean match, ZMapBoundaryType boundary_type)
 {
   ZMapSplicePosition splice_pos ;
-  int splice_width = 10 ;
+  enum {SPLICE_WIDTH = 10} ;
+  int splice_incr = SPLICE_WIDTH - 1 ;
 
   splice_pos = g_new0(ZMapSplicePositionStruct, 1) ;
   splice_pos->match = match ;
@@ -225,14 +226,15 @@ void zMapWindowCanvasFeatureAddSplicePos(ZMapWindowCanvasFeature feature_item, i
 
   if (boundary_type == ZMAPBOUNDARY_5_SPLICE)
     {
-      splice_pos->start = feature_pos - splice_width ;
-      splice_pos->end = feature_pos - 1 ;
+      splice_pos->start = feature_pos ;
+      splice_pos->end = feature_pos + splice_incr  ;
     }
   else
     {
-      splice_pos->start = feature_pos + 1 ;
-      splice_pos->end = feature_pos + splice_width ;
+      splice_pos->start = feature_pos - splice_incr ;
+      splice_pos->end = feature_pos ;
     }
+
 
   feature_item->splice_positions = g_list_append(feature_item->splice_positions, splice_pos) ;
 
