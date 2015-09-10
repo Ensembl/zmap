@@ -33,6 +33,7 @@
 #include <string.h>
 #include <ZMap/zmap.hpp>
 #include <ZMap/zmapSOParser.hpp>
+#include <ZMap/zmapString.hpp>
 
 #include <zmapControl_P.hpp>
 
@@ -120,13 +121,10 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap, ZMapInfoPanelLabels labels)
  */
 void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeatureDesc feature_desc)
 {
-  static const int text_length_max = 20 ;
-  static const char *format_name_max = "%s %s" ;
   GtkWidget *label[INFO_PANEL_LABELS] = {NULL} ;
   char *text[INFO_PANEL_LABELS] = {NULL} ;
   char *tooltip[INFO_PANEL_LABELS] = {NULL} ;
-  char *temp_string = NULL, *temp_string_part = NULL ;
-  int i = 0, name_length = 0 ;
+  int i = 0 ;
   GString *desc_str = NULL ;
 
   zMapReturnIfFail(zmap && labels) ;
@@ -175,34 +173,26 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
            */
           if (feature_desc->feature_name)
             {
-              name_length = strlen(feature_desc->feature_name) ;
-              if (name_length > text_length_max)
-                {
-                  temp_string_part = g_strndup(feature_desc->feature_name, text_length_max) ;
-                  temp_string = g_strdup_printf(format_name_max, temp_string_part, "[...]") ;
-                }
-              else
-                {
-                  temp_string = g_strdup(feature_desc->feature_name) ;
-                }
+              char *feat_name, *temp_string ;
+
+              feat_name = feature_desc->feature_name ;
+
+              if ((temp_string = (char *)zMapStringAbbrevStr(feat_name)))
+                feat_name = temp_string ;
+
+
               text[0] = g_strdup_printf("%s%s%s%s%s%s%s",
-                                        temp_string,
+                                        feat_name,
                                         (feature_desc->feature_known_name ? "  (" : ""),
                                         (feature_desc->feature_known_name ? feature_desc->feature_known_name : ""),
                                         (feature_desc->feature_known_name ? ")" : ""),
                                         (feature_desc->feature_total_length ? "  (" : ""),
                                         (feature_desc->feature_total_length ? feature_desc->feature_total_length : ""),
                                         (feature_desc->feature_total_length ? ")" : "")) ;
+
               if (temp_string)
-                {
-                  g_free(temp_string) ;
-                  temp_string = NULL ;
-                }
-              if (temp_string_part)
-                {
-                  g_free(temp_string_part) ;
-                  temp_string_part = NULL ;
-                }
+                g_free(temp_string) ;
+
             }
 
           /*
@@ -295,53 +285,32 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
           /* Feature set */
           if (feature_desc->feature_set)
             {
-              name_length = strlen(feature_desc->feature_set) ;
-              if (name_length > text_length_max)
-                {
-                  temp_string_part = g_strndup(feature_desc->feature_set, text_length_max) ;
-                  temp_string = g_strdup_printf(format_name_max, temp_string_part, "[...]") ;
-                }
+              char *feat_name ;
+              char *temp_string ;
+
+              feat_name = feature_desc->feature_set ;
+
+              if ((temp_string = (char *)zMapStringAbbrevStr(feat_name)))
+                feat_name = temp_string ;
               else
-                {
-                  temp_string = g_strdup(feature_desc->feature_set) ;
-                }
-              text[8] = g_strdup(temp_string) ;
-              if (temp_string)
-                {
-                  g_free(temp_string) ;
-                  temp_string = NULL ;
-                }
-              if (temp_string_part)
-                {
-                  g_free(temp_string_part) ;
-                  temp_string_part = NULL ;
-                }
+                feat_name = g_strdup(feat_name) ;
+
+              text[8] = feat_name ;
             }
 
           /* Source */
           if (feature_desc->feature_source)
             {
-              name_length = strlen(feature_desc->feature_source) ;
-              if (name_length > text_length_max)
-                {
-                  temp_string_part = g_strndup(feature_desc->feature_source, text_length_max) ;
-                  temp_string = g_strdup_printf(format_name_max, temp_string_part, "[...]") ;
-                }
+              char *feat_name, *temp_string ;
+
+              feat_name = feature_desc->feature_source ;
+              
+              if ((temp_string = (char *)zMapStringAbbrevStr(feat_name)))
+                feat_name = temp_string ;
               else
-                {
-                  temp_string = g_strdup(feature_desc->feature_source) ;
-                }
-              text[9] = g_strdup(temp_string) ;
-              if (temp_string)
-                {
-                  g_free(temp_string) ;
-                  temp_string = NULL ;
-                }
-              if (temp_string_part)
-                {
-                  g_free(temp_string_part) ;
-                  temp_string_part = NULL ;
-                }
+                feat_name = g_strdup(feat_name) ;
+
+              text[9] = feat_name ;
             }
 
           /* Now to the tooltips... */
