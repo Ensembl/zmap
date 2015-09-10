@@ -1050,6 +1050,10 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
           web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_KEYBOARD_DOC) ;
           break ;
 
+        case ZMAPGUI_HELP_FILTER:
+          web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_FILTER_DOC) ;
+          break ;
+
         case ZMAPGUI_HELP_RELEASE_NOTES:
           web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_RELEASE_NOTES) ;
           break ;
