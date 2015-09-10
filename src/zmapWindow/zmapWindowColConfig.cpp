@@ -172,7 +172,7 @@ typedef struct
 
 typedef struct
 {
-  GHashTable *columns;
+  ZMapWindow window;
   GQuark column_id;
   int direction;
 } UpDownButtonStruct, *UpDownButton;
@@ -612,7 +612,9 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
   if((reverse_cols && forward_cols) ||
      g_list_length(reverse_cols) > 1 ||
      g_list_length(forward_cols) > 1)
-    configure_data->has_apply_button = TRUE;
+    {
+      configure_data->has_apply_button = TRUE;
+    }
   else
     {
       show_hide_data->apply_now  = TRUE;
@@ -1763,49 +1765,44 @@ static GtkWidget *make_scrollable_vbox(GtkWidget *vbox)
 }
 
 
-/* Find the ZMapFeatureColumn struct in the given hash table with the given order. Returns null
- * if not found. */
-static ZMapFeatureColumn find_column_by_order(GHashTable *columns, const int order)
-{
-  ZMapFeatureColumn result = NULL ;
-
-  GList *iter = NULL ;
-  gpointer key = NULL ;
-  ZMapFeatureColumn column = NULL ;
-
-  zMap_g_hash_table_iter_init(&iter, columns) ;
- 
-  while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer*)(&column)) && !result)
-    {
-      if(column->order == order)
-        result = column ;
-    }
-
-  return result ;
-}
-
-
 /* Callback when user presses Up/Down buttons (to reorder columns) */
 static void move_button_cb(GtkWidget *button, gpointer user_data)
 {
   UpDownButton data = (UpDownButton)user_data ;
+  zMapReturnIfFail(data && data->window && data->direction && data->column_id) ;
 
-  ZMapFeatureColumn this_column = (ZMapFeatureColumn)g_hash_table_lookup(data->columns, GINT_TO_POINTER(data->column_id)) ;
-  
-  if (this_column)
+  GList *featuresets = data->window->feature_set_names ;
+  GList *this_item = g_list_find(featuresets, GINT_TO_POINTER(data->column_id)) ;
+
+  if (this_item)
     {
-      const int next_column_order = this_column->order + data->direction ;
+      /* We want to swap it with the prev/next item, depending on the direction */
+      GList *swap_item = data->direction < 0 ? this_item->prev : this_item->next ;
 
-      if (next_column_order >= 0)
+      /* If there's no item to swap with we're already at the start/end, so nothing to do */
+      if (swap_item)
         {
-          ZMapFeatureColumn next_column = find_column_by_order(data->columns, next_column_order) ;
-          
-          if  (next_column)
-            {
-              next_column->order = this_column->order ;
-              this_column->order = next_column_order ;
-            }
+          featuresets = g_list_remove_link(featuresets, this_item) ;
+
+          if (data->direction < 0)
+            featuresets = g_list_insert_before(featuresets, swap_item, GINT_TO_POINTER(data->column_id)) ;
+          else if (swap_item->next)
+            featuresets = g_list_insert_before(featuresets, swap_item->next, GINT_TO_POINTER(data->column_id)) ;
+          else
+            featuresets = g_list_append(featuresets, GINT_TO_POINTER(data->column_id)) ;
+
+          g_list_free(this_item) ;
+
+          /* Reorder and redraw */
+          zmapWindowBusy(data->window, FALSE) ;
+          zmapWindowColOrderColumns(data->window);
+          zmapWindowFullReposition(data->window->feature_root_group, TRUE, "move_button_cb") ;
+          zmapWindowBusy(data->window, FALSE) ;
         }
+    }
+  else
+    {
+      zMapCritical("Error: could not find column '%s' in feature set list", g_quark_to_string(data->column_id)) ;
     }
 }
 
@@ -1908,24 +1905,24 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
 
               /* Move up/down buttons (for changing column order) */
               up_data = g_new0(UpDownButtonStruct, 1);
-              up_data->columns = window->context_map->columns;
+              up_data->window = window ;
               up_data->column_id = column_id ;
               up_data->direction = -1 ;
               up_list = g_list_append(up_list, up_data) ;
 
-              up_button = gtk_button_new_from_stock(GTK_STOCK_GO_UP) ;
-              gtk_button_set_label(GTK_BUTTON(up_button), NULL) ;
+              up_button = gtk_button_new() ;
+              gtk_button_set_image(GTK_BUTTON(up_button), gtk_image_new_from_stock(GTK_STOCK_GO_UP, GTK_ICON_SIZE_BUTTON));
               gtk_box_pack_start(GTK_BOX(button_box), up_button, TRUE, FALSE, 0) ;
               g_signal_connect(G_OBJECT(up_button), "clicked", G_CALLBACK(move_button_cb), up_data) ;
 
               down_data = g_new0(UpDownButtonStruct, 1);
-              down_data->columns = window->context_map->columns;
+              down_data->window = window ;
               down_data->column_id = column_id ;
               down_data->direction = 1;
               down_list = g_list_append(down_list, down_data);
 
-              down_button = gtk_button_new_from_stock(GTK_STOCK_GO_DOWN) ;
-              gtk_button_set_label(GTK_BUTTON(down_button), NULL) ;
+              down_button = gtk_button_new() ;
+              gtk_button_set_image(GTK_BUTTON(down_button), gtk_image_new_from_stock(GTK_STOCK_GO_UP, GTK_ICON_SIZE_BUTTON));
               gtk_box_pack_start(GTK_BOX(button_box), down_button, TRUE, FALSE, 0) ;
               g_signal_connect(G_OBJECT(down_button), "clicked", G_CALLBACK(move_button_cb), down_data) ;
 
