@@ -76,6 +76,8 @@ typedef struct _ColConfigureStruct
 
   GtkWidget *vbox;
 
+  GtkWidget *rev_cols_container;
+
   unsigned int has_apply_button : 1 ;
 
 } ColConfigureStruct;
@@ -136,21 +138,34 @@ typedef struct _ShowHidePageDataStruct *ShowHidePageData;
 
 typedef void (*ShowHidePageResetFunc)(ShowHidePageData page_data);
 
+
+typedef struct
+{
+  GtkWidget *fwd_cols_container ;
+  GtkWidget *rev_cols_container ;
+} ToggleStrandDataStruct, *ToggleStrandData;
+
+
 typedef struct _ShowHidePageDataStruct
 {
   /* Forward strand lists of ShowHideButton pointers */
   GList *fwd_show_list;
   GList *fwd_default_list;
   GList *fwd_hide_list;
+
   /* Reverse strand lists of ShowHideButton pointers */
   GList *rev_show_list;
   GList *rev_default_list;
   GList *rev_hide_list;
+
   /* Fwd and rev strand lists of UpDownButton pointers*/
   GList *fwd_up_list;
   GList *fwd_down_list;
   GList *rev_up_list;
   GList *rev_down_list;
+
+  /* Pointer to the toggle-strand data */
+  ToggleStrandData strand_data;
 
   /*  */
   ShowHidePageResetFunc reset_func;
@@ -231,7 +246,7 @@ typedef struct
 
 
 static GtkWidget *make_menu_bar(ColConfigure configure_data);
-static GtkWidget *loaded_cols_panel(NotebookPage notebook_page, ZMapWindow window, const char *frame_title, GList *column_groups,
+static GtkWidget *loaded_cols_panel(NotebookPage notebook_page, ZMapWindow window, const gboolean rev_strand, GList *column_groups,
                                     GList **show_list_out, GList **default_list_out, GList **hide_list_out,
                                     GList **up_list_out, GList **down_list_out) ;
 static char *label_text_from_column(FooCanvasGroup *column_group);
@@ -246,6 +261,7 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_data) ;
+static void select_strand_cb(GtkToggleButton *togglebutton, gpointer user_data) ;
 
 static GtkWidget *configure_make_toplevel(ColConfigure configure_data);
 static void configure_add_pages(ColConfigure configure_data);
@@ -399,6 +415,10 @@ void zmapWindowColumnConfigure(ZMapWindow                 window,
       gtk_notebook_set_current_page(GTK_NOTEBOOK(configure_data->notebook), page_no);
 
       gtk_widget_show_all(window->col_config_window);
+
+      /* Hide the reverse strand by default */
+      if (configure_data->rev_cols_container)
+        gtk_widget_hide_all(configure_data->rev_cols_container) ;
     }
 
   return ;
@@ -595,14 +615,28 @@ static void loaded_page_construct(NotebookPage notebook_page, GtkWidget *page)
 static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *column_group)
 {
   ShowHidePageData show_hide_data;
+  ToggleStrandData strand_data;
   ColConfigure configure_data;
-  GtkWidget *hbox, *cols;
+  GtkWidget *hbox, *vbox, *fwd_cols_container, *rev_cols_container;
   GList *forward_cols, *reverse_cols;
 
   configure_data = notebook_page->configure_data;
 
-  hbox = notebook_page->page_container;
+  vbox = gtk_vbox_new(FALSE, 0) ;
+  gtk_container_add(GTK_CONTAINER(notebook_page->page_container), vbox) ;
 
+  /* Create radio buttons for choosing the strand */
+  hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+
+  GtkWidget *radio_fwd = gtk_radio_button_new_with_label(NULL, "Forward Strand") ;
+  GtkWidget *radio_rev = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio_fwd), "Reverse Strand") ;
+
+  gtk_box_pack_start(GTK_BOX(hbox), radio_fwd, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(hbox), radio_rev, FALSE, FALSE, 0);
+
+
+  /* Get the lists of columns for the forward and reverse strands */
   configure_get_column_lists(configure_data,
                              column_group,
                              &forward_cols, &reverse_cols);
@@ -621,39 +655,50 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
       show_hide_data->reposition = TRUE;
     }
 
-  if (reverse_cols)
-    {
-      cols = loaded_cols_panel(notebook_page,
-                               configure_data->window,
-                               "Reverse Strand", reverse_cols,
-                               &(show_hide_data->rev_show_list),
-                               &(show_hide_data->rev_default_list),
-                               &(show_hide_data->rev_hide_list),
-                               &(show_hide_data->rev_up_list),
-                               &(show_hide_data->rev_down_list)) ;
+  fwd_cols_container = loaded_cols_panel(notebook_page,
+                                         configure_data->window,
+                                         FALSE,
+                                         forward_cols,
+                                         &(show_hide_data->fwd_show_list),
+                                         &(show_hide_data->fwd_default_list),
+                                         &(show_hide_data->fwd_hide_list),
+                                         &(show_hide_data->fwd_up_list),
+                                         &(show_hide_data->fwd_down_list)) ;
 
-      gtk_box_pack_start(GTK_BOX(hbox), cols, TRUE, TRUE, 0) ;
+  rev_cols_container = loaded_cols_panel(notebook_page,
+                                         configure_data->window,
+                                         TRUE,
+                                         reverse_cols,
+                                         &(show_hide_data->rev_show_list),
+                                         &(show_hide_data->rev_default_list),
+                                         &(show_hide_data->rev_hide_list),
+                                         &(show_hide_data->rev_up_list),
+                                         &(show_hide_data->rev_down_list)) ;
 
-      g_list_free(reverse_cols);
-    }
+  /* Pack both strand containers into the parent, but only show forward strand by default */
+  hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
 
-  if (forward_cols)
-    {
-      cols = loaded_cols_panel(notebook_page,
-                               configure_data->window,
-                               "Forward Strand", forward_cols,
-                               &(show_hide_data->fwd_show_list),
-                               &(show_hide_data->fwd_default_list),
-                               &(show_hide_data->fwd_hide_list),
-                               &(show_hide_data->fwd_up_list),
-                               &(show_hide_data->fwd_down_list)) ;
+  gtk_box_pack_start(GTK_BOX(hbox), rev_cols_container, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), fwd_cols_container, TRUE, TRUE, 0) ;
 
-      gtk_box_pack_start(GTK_BOX(hbox), cols, TRUE, TRUE, 0) ;
+  /* Create the data for the toggle-strand callback. Need to do this after we create the
+   * forward/rev strand widgets */
+  show_hide_data->strand_data = strand_data = g_new0(ToggleStrandDataStruct, 1);
+  strand_data->fwd_cols_container = fwd_cols_container ;
+  strand_data->rev_cols_container = rev_cols_container ;
 
-      g_list_free(forward_cols);
-    }
+  /* Also add pointers to the configure data because we need to hide the rev cols by default
+   * AFTER we show the whole widget */
+  configure_data->rev_cols_container = rev_cols_container ;
 
+  /* Only need to connect callback on one button as we only have two options so we'll always get
+   * called when the option is toggled on or off */
+  g_signal_connect(G_OBJECT(radio_fwd), "toggled", G_CALLBACK(select_strand_cb), strand_data) ;
 
+  g_list_free(reverse_cols);
+  g_list_free(forward_cols);
+  
   return ;
 }
 
@@ -1812,7 +1857,7 @@ static void move_button_cb(GtkWidget *button, gpointer user_data)
 
 static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
                                     ZMapWindow window,
-                                    const char        *frame_title,
+                                    const gboolean rev_strand,
                                     GList       *columns_list,
                                     GList      **show_list_out,
                                     GList      **default_list_out,
@@ -1830,6 +1875,7 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
     *down_list    = NULL;
 
   int list_length = 0;
+  const char *frame_title = rev_strand ? "Reverse Strand" : "Forward Strand" ;
 
   /* Create a new frame (Forward|Reverse Strand) */
   cols_panel = named_frame = gtk_frame_new(frame_title) ;
@@ -1910,7 +1956,7 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
               up_data = g_new0(UpDownButtonStruct, 1);
               up_data->window = window ;
               up_data->column_id = column_id ;
-              up_data->direction = -1 ;
+              up_data->direction = rev_strand ? 1 : -1 ;
               up_list = g_list_append(up_list, up_data) ;
 
               up_button = gtk_button_new() ;
@@ -1921,11 +1967,11 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
               down_data = g_new0(UpDownButtonStruct, 1);
               down_data->window = window ;
               down_data->column_id = column_id ;
-              down_data->direction = 1;
+              down_data->direction = rev_strand ? -1 : 1;
               down_list = g_list_append(down_list, down_data);
 
               down_button = gtk_button_new() ;
-              gtk_button_set_image(GTK_BUTTON(down_button), gtk_image_new_from_stock(GTK_STOCK_GO_UP, GTK_ICON_SIZE_BUTTON));
+              gtk_button_set_image(GTK_BUTTON(down_button), gtk_image_new_from_stock(GTK_STOCK_GO_DOWN, GTK_ICON_SIZE_BUTTON));
               gtk_box_pack_start(GTK_BOX(button_box), down_button, TRUE, FALSE, 0) ;
               g_signal_connect(G_OBJECT(down_button), "clicked", G_CALLBACK(move_button_cb), down_data) ;
 
@@ -2170,6 +2216,26 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
   g_free(configure_data) ;
 
   return ;
+}
+
+
+/* Called when the user selects the strand. We only have two options so this is only connected to
+ * the 'forward strand' option to avoid getting called twice. */
+static void select_strand_cb(GtkToggleButton *togglebutton, gpointer user_data)
+{
+  gboolean forward = gtk_toggle_button_get_active(togglebutton) ;
+  ToggleStrandData data = (ToggleStrandData)user_data ;
+
+  if (forward)
+    {
+      gtk_widget_show_all(data->fwd_cols_container) ;
+      gtk_widget_hide_all(data->rev_cols_container) ;
+    }
+  else
+    {
+      gtk_widget_show_all(data->rev_cols_container) ;
+      gtk_widget_hide_all(data->fwd_cols_container) ;
+    }
 }
 
 
