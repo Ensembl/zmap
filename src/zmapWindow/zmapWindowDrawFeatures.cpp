@@ -803,7 +803,7 @@ void zmapWindowDrawRemove3FrameFeatures(ZMapWindow window)
 }
 
 
-
+// CHECK WHERE THIS IS CALLED FROM.....   
 void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features, int seq_start, int seq_end)
 {
   FooCanvasGroup *focus_column ;
@@ -820,6 +820,7 @@ void zmapWindowDrawSplices(ZMapWindow window, GList *highlight_features, int seq
       focus_container = (ZMapWindowContainerFeatureSet)focus_column ;
 
       if ((result = zMapWindowContainerFeatureSetFilterFeatures(ZMAP_CANVAS_MATCH_PARTIAL,
+                                                                0,
                                                                 ZMAP_CANVAS_FILTER_PARTS,
                                                                 ZMAP_CANVAS_FILTER_PARTS,
                                                                 ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE,
