@@ -697,30 +697,39 @@ static void highlightSplice(gpointer data, gpointer user_data)
    */
   ZMapFeatureTypeStyle style = *(highlight_data->feature->feature->style) ;
 
-  ZMapWindowCanvasGlyph start, end ;
+  ZMapWindowCanvasGlyph five_start, three_end ;
 
   col_width = zMapStyleGetWidth(highlight_data->featureset->style) ;
 
-  /* HACKED POSITIONS BECAUSE THEY HAVE ALREADY BEEN OFFSET.....IN THE SPLICE POS.... */
+
   if (splice_pos->match)
     {
-      start = match_junction_glyph_start_G ;
-      end = match_junction_glyph_end_G ;
+      five_start = match_junction_glyph_start_G ;
+      three_end = match_junction_glyph_end_G ;
     }
   else
     {
-      start = non_match_junction_glyph_start_G ;
-      end = non_match_junction_glyph_end_G ;
+      five_start = non_match_junction_glyph_start_G ;
+      three_end = non_match_junction_glyph_end_G ;
     }
 
+
+  /* HACKED POSITIONS BECAUSE THEY HAVE ALREADY BEEN OFFSET.....IN THE SPLICE POS.... */
   if (splice_pos->boundary_type == ZMAPBOUNDARY_5_SPLICE)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     zMapWindowCanvasGlyphDrawGlyph(highlight_data->featureset, highlight_data->feature,
-                                   style, start,
+                                   style, five_start,
                                    highlight_data->drawable, col_width, splice_pos->end + 1) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    zMapWindowCanvasGlyphDrawGlyph(highlight_data->featureset, highlight_data->feature,
+                                   style, five_start,
+                                   highlight_data->drawable, col_width, splice_pos->start) ;
+
   else
     zMapWindowCanvasGlyphDrawGlyph(highlight_data->featureset, highlight_data->feature,
-                                   style, end,
-                                   highlight_data->drawable, col_width, splice_pos->start) ;
+                                   style, three_end,
+                                   highlight_data->drawable, col_width, splice_pos->end + 1) ;
 
 
   return ;
