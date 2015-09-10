@@ -80,7 +80,7 @@ static void deleteGFFFormatData(ZMapGFFFormatData *) ;
  */
 static const char *anon_source = "anon_source",
     *anon_source_ab = ".",
-    *reserved_allowed = " ()+-:;@/" ;
+    *reserved_allowed = " |()+-:;@/" ;
 
 /*
  * Some callbacks used for searching.
