@@ -105,6 +105,7 @@ static gboolean doFilter(ZMapWindow window, ZMapWindowCallbackCommandFilter filt
   gboolean result = FALSE ;
 
   filter_data->filter_result = zMapWindowContainerFeatureSetFilterFeatures(filter_data->match_type,
+                                                                           filter_data->base_allowance,
                                                                            filter_data->selected,
                                                                            filter_data->filter,
                                                                            filter_data->action,
