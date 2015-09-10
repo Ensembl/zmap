@@ -85,10 +85,10 @@ ZMAP_DEFINE_ENUM(ZMapWindowContainerMatchType, ZMAP_CANVAS_MATCH_TYPE_LIST) ;
 #define ZMAP_CANVAS_FILTER_TYPE_LIST(_)					\
 _(ZMAP_CANVAS_FILTER_INVALID, , "invalid", "Invalid value",          "") \
 _(ZMAP_CANVAS_FILTER_NONE,    , "none",    "Undo existing filter",   "") \
-_(ZMAP_CANVAS_FILTER_PARTS,   , "parts",   "Same matches or exons",  "") \
-_(ZMAP_CANVAS_FILTER_GAPS,    , "gaps",    "Same gaps or introns",   "") \
-_(ZMAP_CANVAS_FILTER_CDS,     , "cds",     "Same CDS",               "") \
-_(ZMAP_CANVAS_FILTER_FEATURE, , "feature", "Same overall start/end", "")
+_(ZMAP_CANVAS_FILTER_PARTS,   , "parts",   "Matches or Exons",  "") \
+_(ZMAP_CANVAS_FILTER_GAPS,    , "gaps",    "Gaps or Introns",   "") \
+_(ZMAP_CANVAS_FILTER_CDS,     , "cds",     "CDS",               "") \
+_(ZMAP_CANVAS_FILTER_FEATURE, , "feature", "Overall start/end", "")
 
 ZMAP_DEFINE_ENUM(ZMapWindowContainerFilterType, ZMAP_CANVAS_FILTER_TYPE_LIST) ;
 
@@ -240,6 +240,7 @@ ZMapWindowContainerFilterType zMapWindowContainerFeatureSetGetFilterType(ZMapWin
 ZMapWindowContainerActionType zMapWindowContainerFeatureSetGetActionType(ZMapWindowContainerFeatureSet container_set) ;
 gboolean zMapWindowContainerFeatureSetIsCDSMatch(ZMapWindowContainerFeatureSet container_set) ;
 ZMapWindowContainerFilterRC zMapWindowContainerFeatureSetFilterFeatures(ZMapWindowContainerMatchType match_type,
+                                                                        int base_allowance,
                                                                         ZMapWindowContainerFilterType selected_type,
                                                                         ZMapWindowContainerFilterType filter_type,
                                                                         ZMapWindowContainerActionType filter_action,
