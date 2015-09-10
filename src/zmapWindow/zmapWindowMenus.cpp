@@ -47,6 +47,7 @@
 #include <string.h>
 
 #include <ZMap/zmapUtils.hpp>
+#include <ZMap/zmapString.hpp>
 #include <ZMap/zmapGLibUtils.hpp> /* zMap_g_hash_table_nth */
 #include <ZMap/zmapFASTA.hpp>
 #include <ZMap/zmapGFF.hpp>
@@ -488,19 +489,21 @@ static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow wi
  */
 void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   static const int max_name_length = 20 ;
   static const char* filler =  "[...]" ;
   int name_length = 0, fill_length = 0 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   ZMapWindowContainerGroup column_group =  NULL ;
   static ZMapGUIMenuItemStruct separator[] =
     {
       {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
-  char *menu_title = NULL,
-    *the_name = NULL,
-    *temp_name1 = NULL,
-    *temp_name2 = NULL ;
+  char *menu_title = NULL ;
+  char *feat_name, *set_name, *temp_name1 = NULL, *temp_name2 = NULL ;
   GList *menu_sets = NULL ;
   ItemMenuCBData menu_data = NULL ;
   ZMapFeature feature = NULL ;
@@ -522,6 +525,8 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
    * Make sure that the menu title cannot exceed a certain length due to a long
    * feature name or featureset name.
    */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   fill_length = strlen(filler) ;
   temp_name1 = g_new0(char, max_name_length+1+fill_length) ;
   temp_name2 = g_new0(char, max_name_length+1+fill_length) ;
@@ -549,13 +554,24 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
     {
       strncpy(temp_name2, the_name, max_name_length) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  feat_name = zMapFeatureName((ZMapFeatureAny)feature) ;
+  set_name = zMapFeatureName((ZMapFeatureAny)feature_set) ;
 
-  menu_title = g_strdup_printf("%s (%s)", temp_name1, temp_name2 ) ;
+  if ((temp_name1 = (char *)zMapStringAbbrevStr(feat_name)))
+    feat_name = temp_name1 ;
+
+  if ((temp_name2 = (char *)zMapStringAbbrevStr(set_name)))
+    set_name = temp_name2 ;
+
+  menu_title = g_strdup_printf("%s (%s)", feat_name, set_name) ;
 
   if (temp_name1)
     g_free(temp_name1) ;
   if (temp_name2)
     g_free(temp_name2) ;
+
+
 
 
   column_group  = zmapWindowContainerCanvasItemGetContainer(item) ;
@@ -3116,13 +3132,14 @@ ZMapGUIMenuItem zmapWindowMakeMenuColFilterOps(int *start_index_inout,
     {
       {ZMAPGUI_MENU_BRANCH, "_" COL_FILTERING_STR, FILTER_NONE, NULL, NULL},
 
-      {ZMAPGUI_MENU_BRANCH, "_" COL_FILT_THIS_STR, FILTER_NONE, NULL, NULL},
-
-      {ZMAPGUI_MENU_TITLE, "_" COL_FILT_THIS_STR COL_FILT_SHOW_STR, FILTER_NONE, NULL, NULL},
-
-      {ZMAPGUI_MENU_RADIO, COL_FILT_THIS_STR "/TEST WINDOW",
+      // Test Filter window.....   
+      {ZMAPGUI_MENU_NORMAL, COL_FILTERING_STR "/Filter test window",
        (TEST_WINDOW), colFilterMenuCB, NULL},
 
+
+      // Filter this column ops.   
+      {ZMAPGUI_MENU_BRANCH, "_" COL_FILT_THIS_STR, FILTER_NONE, NULL, NULL},
+      {ZMAPGUI_MENU_TITLE, "_" COL_FILT_THIS_STR COL_FILT_SHOW_STR, FILTER_NONE, NULL, NULL},
       {ZMAPGUI_MENU_RADIO, COL_FILT_THIS_STR "/Common Splices",
        (SELECTED_PARTS | FILTER_PARTS | ACTION_HIGHLIGHT_SPLICE), colFilterMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO, COL_FILT_THIS_STR "/Non-matching Introns",
@@ -3138,9 +3155,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuColFilterOps(int *start_index_inout,
       {ZMAPGUI_MENU_RADIO, COL_FILT_THIS_STR "/Unfilter",
        (SELECTED_NONE | FILTER_NONE | ACTION_SHOW), colFilterMenuCB, NULL},
 
-      /* selected needs adding here..... */
+      // Filter all column ops.
       {ZMAPGUI_MENU_BRANCH, "_" COL_FILT_ALL_STR, FILTER_NONE, NULL, NULL},
       {ZMAPGUI_MENU_TITLE, "_" COL_FILT_ALL_STR COL_FILT_SHOW_STR, FILTER_NONE, NULL, NULL},
+
+      {ZMAPGUI_MENU_RADIO, COL_FILT_ALL_STR "/TEST WINDOW",
+       (TEST_WINDOW), colFilterMenuCB, NULL},
 
       {ZMAPGUI_MENU_RADIO, COL_FILT_ALL_STR "/Common Splices",
        (SELECTED_PARTS | FILTER_PARTS | ACTION_HIGHLIGHT_SPLICE | FILTER_ALL), colFilterMenuCB, NULL},
