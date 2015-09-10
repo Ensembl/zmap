@@ -1798,6 +1798,9 @@ static void move_button_cb(GtkWidget *button, gpointer user_data)
           zmapWindowColOrderColumns(data->window);
           zmapWindowFullReposition(data->window->feature_root_group, TRUE, "move_button_cb") ;
           zmapWindowBusy(data->window, FALSE) ;
+
+          /* Refresh the columns dialog */
+          zmapWindowColumnConfigure(data->window, NULL, ZMAPWINDOWCOLUMN_CONFIGURE_ALL) ;
         }
     }
   else
