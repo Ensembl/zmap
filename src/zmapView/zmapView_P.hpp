@@ -516,6 +516,7 @@ gboolean zmapViewMergeNewFeatures(ZMapView view,
                                   GList **feature_list) ;
 void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list) ;
 
+GList* zmapViewGetOrderedColumnsListIDs(ZMapView view) ;
 GList* zmapViewGetOrderedColumnsList(ZMapView view) ;
 
 /* zmapViewFeatureMask.c */

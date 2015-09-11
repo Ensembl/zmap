@@ -708,7 +708,6 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
   gsize len;
   char *normalkey;
   ZMapFeatureColumn f_col;
-  int n = g_hash_table_size(columns);
 
   zMapReturnValIfFail(context, ghash) ;
 
@@ -740,7 +739,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
               f_col->column_id = g_quark_from_string(normalkey);
               f_col->unique_id = column_id;
               f_col->column_desc = normalkey;
-              f_col->order = ++n;
+              f_col->order = zMapFeatureColumnOrderNext(FALSE);
 
               g_hash_table_insert(columns,GUINT_TO_POINTER(f_col->unique_id),f_col);
             }
