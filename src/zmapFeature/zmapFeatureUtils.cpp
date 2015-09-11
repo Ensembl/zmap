@@ -848,6 +848,48 @@ int zMapFeatureColumnOrderNext(const gboolean reset)
 }
 
 
+/* Get a GList of column IDs as GQuarks in the correct order according to the 'order' field in
+ * each ZMapFeatureColumn struct (from the context_map.columns hash table).
+ * Returns a new GList which should be free'd with g_list_free() */
+GList* zMapFeatureGetOrderedColumnsListIDs(ZMapFeatureContextMap context_map)
+{
+  GList *columns = NULL ;
+  GList *kv = NULL;
+  gpointer key = NULL,value = NULL;
+
+  zMap_g_hash_table_iter_init(&kv, context_map->columns);
+  while(zMap_g_hash_table_iter_next(&kv,&key,&value))
+    {
+      columns = g_list_prepend(columns,key);
+    }
+
+  columns = g_list_sort_with_data(columns, colOrderCB, context_map->columns);
+
+  return columns ;
+}
+
+
+/* Get a GList of columns as ZMapFeatureColumn structs in the correct order according to 
+ * the 'order' field in the struct (from the context_map.columns hash table).
+ * Returns a new GList which should be free'd with g_list_free() */
+GList* zMapFeatureGetOrderedColumnsList(ZMapFeatureContextMap context_map)
+{
+  GList *columns = NULL ;
+  GList *kv = NULL;
+  gpointer key = NULL,value = NULL;
+
+  zMap_g_hash_table_iter_init(&kv, context_map->columns);
+  while(zMap_g_hash_table_iter_next(&kv,&key,&value))
+    {
+      columns = g_list_prepend(columns,key);
+    }
+
+  columns = g_list_sort_with_data(columns, colOrderCB, context_map->columns);
+
+  return columns ;
+}
+
+
 
 /* get the column struct for a featureset */
 ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap context_map,GQuark set_id)

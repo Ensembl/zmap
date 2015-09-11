@@ -748,7 +748,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
            *
            * due to constraints w/ old config we need to give the window a list of column name quarks in order
            */
-          GList *columns = zmapViewGetOrderedColumnsListIDs(zmap_view) ;
+          GList *columns = zmapFeatureGetOrderedColumnsListIDs(&zmap_view->context_map) ;
 
           g_list_foreach(zmap_view->window_list, invoke_merge_in_names, columns);
 
@@ -2216,49 +2216,6 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** styles
     }
 
   return(settings_list);
-}
-
-
-
-/* Get a GList of column IDs as GQuarks in the correct order according to the 'order' field in
- * each ZMapFeatureColumn struct (from the context_map.columns hash table).
- * Returns a new GList which should be free'd with g_list_free() */
-GList* zmapViewGetOrderedColumnsListIDs(ZMapView zmap_view)
-{
-  GList *columns = NULL ;
-  GList *kv = NULL;
-  gpointer key = NULL,value = NULL;
-
-  zMap_g_hash_table_iter_init(&kv, zmap_view->context_map.columns);
-  while(zMap_g_hash_table_iter_next(&kv,&key,&value))
-    {
-      columns = g_list_prepend(columns,key);
-    }
-
-  columns = g_list_sort_with_data(columns, colOrderCB, zmap_view->context_map.columns);
-
-  return columns ;
-}
-
-
-/* Get a GList of columns as ZMapFeatureColumn structs in the correct order according to 
- * the 'order' field in the struct (from the context_map.columns hash table).
- * Returns a new GList which should be free'd with g_list_free() */
-GList* zmapViewGetOrderedColumnsList(ZMapView zmap_view)
-{
-  GList *columns = NULL ;
-  GList *kv = NULL;
-  gpointer key = NULL,value = NULL;
-
-  zMap_g_hash_table_iter_init(&kv, zmap_view->context_map.columns);
-  while(zMap_g_hash_table_iter_next(&kv,&key,&value))
-    {
-      columns = g_list_prepend(columns,key);
-    }
-
-  columns = g_list_sort_with_data(columns, colOrderCB, zmap_view->context_map.columns);
-
-  return columns ;
 }
 
 
