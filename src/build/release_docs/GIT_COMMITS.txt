@@ -1,29 +1,40 @@
 
-Git commits for  from commit "production" until commit "release/2.1.0"
+Git commits for  from commit "production" until commit "release/2.2.0"
 
-5f9f579 2015-08-20 update to fix incorrect coordinates in file import dialogue - RT 485214
-b43cc34 2015-08-17 Merge branch 'feature/error_messages' into develop
-6e5d5b8 2015-08-17 Merge branch 'feature/ensembl' into develop
-6204d00 2015-08-14 fix to possibly unsafe calls to g_free() in zmapWindowPfetchEntry() - RT 484263
-fcffc7b 2015-08-13 fix to bug for SIRT:484181 - BUG FIX
-39f5859 2015-08-13 Only create DNA featureset if it was requested
-6400192 2015-08-12 Avoid crash if show translation when seq not available - BUG FIX
-9150fc0 2015-08-12 Fix instability problems in ensembl - BUG FIX
-2125807 2015-08-13 Remove all DAS code, it has not been used in years. - BUG FIX
-2aa4867 2015-08-13 Fix buglet in my fix for preventing exporting of transcripts twice. - BUG FIX
-f19f789 2015-08-12 Stop duplicate exports of transcripts in case where user clicks on a transcript column. - BUG FIX
-d5743c6 2015-08-12 Fix bug in calculating phase from start_not_found. - BUG FIX
-35f509b 2015-08-12 Fix gff & pipe code meaning we did not catch gff scripts that exit without returning anything. - BUG FIX
-2697b73 2015-08-10 Fix bug with exporting temp feature - BUG FIX
-f83487b 2015-08-05 Fix a bug with different ensembl SO types having same source name - BUG FIX
-7eddcdf 2015-07-29 Merge branch 'feature/mouse_bugs' into develop
-5bebb84 2015-07-28 Fix a bug where dragging wasn't being cancelled - BUG FIX
-3955643 2015-07-27 Avoid potential null access if pfetch error is null - BUG FIX
-6e45a97 2015-07-23 Merge branch 'feature/Remove_acedb' into develop
-e65852a 2015-07-22 Merge branch 'feature/ensembl' into develop
-269f131 2015-07-20 Merge branch 'feature/ensembl' into develop
-c05d7fc 2015-07-16 Try to fix mysql header inclusion on mac. - BUG FIX
-dca4851 2015-07-16 Merge branch 'feature/C++_rename' into develop
+e09f672 2015-09-10 RT477879, added pipe symbol to allowed symbols. - BUG FIX
+ffd4ed5 2015-09-10 Add filter help docs to help system. - NEW FEATURE 'Filter Feature window'
+2af1528 2015-09-10 Improve some text labels. - NEW FEATURE 'Filter Feature window'
+016a990 2015-09-10 docs for new filtering window. - NEW FEATURE 'Filter Feature window'
+3552236 2015-09-10 Fix a few bugs in comparing multiple features and different parts. - NEW FEATURE 'Filter Feature Window'
+f425856 2015-09-10 Fix but in splice position. - BUG FIX
+71fedb5 2015-09-10 Improve enum descriptions/types for filtering. - NEW FEATURE 'Filter Feature Window'
+41cab11 2015-09-10 Fix faulty positioning of splice markers. - BUG FIX
+eb94c6c 2015-09-10 Redo splice marker positioning so it is positioned at the required base. - BUG FIX
+08ded18 2015-09-10 Add code to support resetting filter feature and target column. - NEW FEATURE 'Filter Feature Window'
+0645397 2015-09-10 Add in item to start up new filter window. - NEW FEATURE 'New Feature Filter Window'
+ab712fd 2015-09-10 Change to use new abbrev function. - BUG FIX
+7ebf21f 2015-09-10 Rationalise the abbrev code into a func. - BUG FIX
+044f838 2015-08-27 remove redundant cds stuff. - NEW FEATURE 'develop'
+d03e86c 2015-08-27 Update descriptions to be more intelligible. - NEW FEATURE '<feature_name>'
+1b02101 2015-08-26 changes to support new filter window. - NEW FEATURE 'develop'
+1b3bd19 2015-08-26 Add code to support new filter window. - NEW FEATURE 'develop'
+21a59f7 2015-08-26 Add new dialog for filtering. - NEW FEATURE '<feature_name>'
+a0c9b19 2015-08-25 add new zmapWindowFocusGetFeatureListFull() func to return current focus feature list and col/item. - NEW FEATURE '<feature_name>'
+5f59d02 2015-08-25 Convert enums to use zmapEnum.h, add code to support filter window. - NEW FEATURE 'develop'
+daea230 2015-08-25 Add funcs to list columns and find a column, strangely missing at this level. - NEW FEATURE 'develop'
+9fa98a2 2015-08-25 Fix but in handling of partial match, i.e. missing exons. - BUG FIX
+273c1ba 2015-08-25 Fix bug in handling bad match for whole feature coords. - BUG FIX
+5401fa9 2015-08-25 Add missing macros for getting/converting the long text in one of our enums. - BUG FIX
+db3f48e 2015-09-09 Fix a bug where temp feature coords incorrect - BUG FIX
+89800c7 2015-09-09 Fix a bug with exporting incorrect SO term for temp feature - BUG FIX
+0d68da7 2015-09-09 Merge branch 'feature/config' into develop
+6b4c5b8 2015-09-07 Merge branch 'feature/styles' into develop - NEW FEATURE 'Edit/export styles'
+a6595b4 2015-08-24 Fix intrusive validation messages in Preferences dialog - BUG FIX
+6879c7b 2015-08-21 Fix a problem with incorrect blixem range when using keyboard shortcut - RT 468772
+d747eb2 2015-08-21 Merge branch 'feature/ensembl' into develop
+f9f50ae 2015-08-20 update to fix incorrect coordinates in file import dialogue - RT 485214
+47fbb2a 2015-08-18 Fix major memory leaks in ensembl server code - BUG FIX
+801040e 2015-08-18 Fix bug whereby zeromq lib. always installed even if present. - BUG FIX
 
 
 End of git commits
