@@ -49,6 +49,8 @@ typedef struct
 static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoints *container_points,
                                ZMapContainerLevelType container_level, gpointer func_data) ;
 
+static void getColByID(ZMapWindowContainerGroup container, FooCanvasPoints *container_points,
+                       ZMapContainerLevelType container_level, gpointer func_data) ;
 
 
 
@@ -184,10 +186,9 @@ static void getColByID(ZMapWindowContainerGroup container, FooCanvasPoints *cont
 
               if (ZMAP_IS_CONTAINER_FEATURESET(column))
                 {
-                  ZMapFeatureTypeStyle style = zMapWindowContainerFeatureSetGetStyle(ZMAP_CONTAINER_FEATURESET(column)) ;
-                  GQuark style_id = zMapStyleGetUniqueID(style) ;
+                  GQuark cur_column_id = zMapWindowContainerFeatureSetGetUniqueId(ZMAP_CONTAINER_FEATURESET(column)) ;
 
-                  if (style_id == strand_data->column_id)
+                  if (cur_column_id == strand_data->column_id)
                     {
                       strand_data->column_group = column ;
                       break ;

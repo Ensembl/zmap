@@ -44,7 +44,7 @@ extern "C" {
 #include <ZMap/zmapConfigStyleDefaults.hpp>
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapUtils.hpp>
-
+#include <ZMap/zmapFeatureLoadDisplay.hpp>
 
 /* Some basic macros. */
 #define ZMAPFEATURE_FORWARD(FEATURE)       ((FEATURE)->strand == ZMAPSTRAND_FORWARD)
@@ -1350,8 +1350,8 @@ void zMapGetFeatureExtent(ZMapFeature feature, gboolean complex, ZMapSpan span);
 void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 
 int zMapFeatureColumnOrderNext(const gboolean reset);	/* order of columns L -> R */
-GList* zmapFeatureGetOrderedColumnsListIDs(ZMapFeatureContextMap context_map) ;
-GList* zmapFeatureGetOrderedColumnsList(ZMapFeatureContextMap context_map) ;
+GList* zMapFeatureGetOrderedColumnsListIDs(ZMapFeatureContextMap context_map) ;
+GList* zMapFeatureGetOrderedColumnsList(ZMapFeatureContextMap context_map) ;
 
 
 /* ????? Impossible to understand why this is here ?? */

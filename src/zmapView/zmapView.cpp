@@ -312,8 +312,6 @@ static void styleCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
 static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
 
-static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
-
 static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData lfd) ;
 
 static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data) ;
@@ -748,7 +746,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
            *
            * due to constraints w/ old config we need to give the window a list of column name quarks in order
            */
-          GList *columns = zmapFeatureGetOrderedColumnsListIDs(&zmap_view->context_map) ;
+          GList *columns = zMapFeatureGetOrderedColumnsListIDs(&zmap_view->context_map) ;
 
           g_list_foreach(zmap_view->window_list, invoke_merge_in_names, columns);
 
@@ -2979,24 +2977,6 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
     }
 
   return ;
-}
-
-
-static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
-{
-  ZMapFeatureColumn pa,pb;
-  GHashTable *ghash = (GHashTable *) user_data;
-
-  pa = (ZMapFeatureColumn)g_hash_table_lookup(ghash,a);
-  pb = (ZMapFeatureColumn)g_hash_table_lookup(ghash,b);
-  if(pa && pb)
-    {
-      if(pa->order < pb->order)
-        return(-1);
-      if(pa->order > pb->order)
-        return(1);
-    }
-  return(0);
 }
 
 

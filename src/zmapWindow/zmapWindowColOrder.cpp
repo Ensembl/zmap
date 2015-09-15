@@ -85,7 +85,7 @@ static gboolean order_debug_G = FALSE ;
  */
 void zmapWindowColOrderColumns(ZMapWindow window)
 {
-  return orderPositionColumns(window);
+  orderPositionColumns(window);
 }
 
 
@@ -98,9 +98,8 @@ void zmapWindowColOrderColumns(ZMapWindow window)
 static void orderPositionColumns(ZMapWindow window)
 {
   OrderColumnsDataStruct order_data = {NULL} ;
-  GList *names;
-  guint i;
-  GQuark threeframe;
+  guint i = 0;
+  GList *names = NULL ;
 
   order_data.window = window;
   order_data.strand = ZMAPSTRAND_FORWARD; /* makes things simpler */
@@ -108,12 +107,15 @@ static void orderPositionColumns(ZMapWindow window)
   if(order_debug_G)
     printf("%s: starting column ordering\n", __PRETTY_FUNCTION__);
 
+  // Get the current order
+  GList *orig_columns = zMapFeatureGetOrderedColumnsList(window->context_map) ;
+
   // make a hash table of positions for easy lookup
   order_data.names_hash = g_hash_table_new(NULL,NULL);
-  threeframe = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME);
+  GQuark threeframe = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME);
 
   // start at 1 to let us catch 0 == not found
-  for(names = window->feature_set_names,i = 1;names;names = names->next,i++)
+  for(names = window->feature_set_names, i = 1; names; names = names->next, ++i)
     {
       GQuark id = zMapFeatureSetCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(names->data)));
 
@@ -125,7 +127,29 @@ static void orderPositionColumns(ZMapWindow window)
         printf("WFSN %s = %d\n",g_quark_to_string(GPOINTER_TO_UINT(names->data)),i);
     }
 
-  // empty columns to the end as we can't find them
+  // Now loop through the original ordered list and append any that weren't in the feature_set_names to
+  // the end.
+  for (GList *col_item = orig_columns; col_item; col_item = col_item->next, ++i)
+    {
+      ZMapFeatureColumn column = (ZMapFeatureColumn)(col_item->data) ;
+
+      guint order = GPOINTER_TO_INT(g_hash_table_lookup(order_data.names_hash, GINT_TO_POINTER(column->order))) ;
+
+      // order should never be 0, so 0 means it was null and therefore not found
+      if (order)
+        {
+          // Update the struct with the order number that has already been set
+          column->order = order ;
+        }
+      else
+        {
+          // Append this column name to the hash and update the column with the new order
+          g_hash_table_insert(order_data.names_hash, GINT_TO_POINTER(column->unique_id), GUINT_TO_POINTER(i)) ;
+          column->order = i ;
+        }
+    }
+
+  // Append 0 to indicate the end of the list. Anything else will be added after this.
   g_hash_table_insert(order_data.names_hash,GUINT_TO_POINTER(0), GUINT_TO_POINTER(i));
   order_data.n_names = i;
 
@@ -144,6 +168,7 @@ static void orderPositionColumns(ZMapWindow window)
     window->feature_set_names = g_list_reverse(window->feature_set_names);
 
   g_hash_table_destroy(order_data.names_hash);
+  g_list_free(orig_columns) ;
 
   if (order_debug_G)
     {
