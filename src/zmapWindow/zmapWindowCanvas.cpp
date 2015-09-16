@@ -187,8 +187,9 @@ static void getColByID(ZMapWindowContainerGroup container, FooCanvasPoints *cont
               if (ZMAP_IS_CONTAINER_FEATURESET(column))
                 {
                   GQuark cur_column_id = zMapWindowContainerFeatureSetGetUniqueId(ZMAP_CONTAINER_FEATURESET(column)) ;
+                  ZMapStrand cur_strand = zmapWindowContainerFeatureSetGetStrand(ZMAP_CONTAINER_FEATURESET(column)) ;
 
-                  if (cur_column_id == strand_data->column_id)
+                  if (cur_column_id == strand_data->column_id && cur_strand == strand_data->strand)
                     {
                       strand_data->column_group = column ;
                       break ;
