@@ -870,8 +870,8 @@ static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
   ZMapFeatureColumn pa,pb;
   GHashTable *ghash = (GHashTable *) user_data;
 
-  pa = (ZMapFeatureColumn)g_hash_table_lookup(ghash,GINT_TO_POINTER(((ZMapFeatureColumn)a)->order));
-  pb = (ZMapFeatureColumn)g_hash_table_lookup(ghash,GINT_TO_POINTER(((ZMapFeatureColumn)b)->order));
+  pa = (ZMapFeatureColumn)g_hash_table_lookup(ghash,GINT_TO_POINTER(((ZMapFeatureColumn)a)->unique_id));
+  pb = (ZMapFeatureColumn)g_hash_table_lookup(ghash,GINT_TO_POINTER(((ZMapFeatureColumn)b)->unique_id));
   if(pa && pb)
     {
       if(pa->order < pb->order)

@@ -129,11 +129,12 @@ static void orderPositionColumns(ZMapWindow window)
 
   // Now loop through the original ordered list and append any that weren't in the feature_set_names to
   // the end.
-  for (GList *col_item = orig_columns; col_item; col_item = col_item->next, ++i)
+  for (GList *col_item = orig_columns; col_item; col_item = col_item->next)
     {
       ZMapFeatureColumn column = (ZMapFeatureColumn)(col_item->data) ;
 
-      guint order = GPOINTER_TO_INT(g_hash_table_lookup(order_data.names_hash, GINT_TO_POINTER(column->order))) ;
+      // look up this column id and see if the order is set in the names hash
+      guint order = GPOINTER_TO_INT(g_hash_table_lookup(order_data.names_hash, GINT_TO_POINTER(column->unique_id))) ;
 
       // order should never be 0, so 0 means it was null and therefore not found
       if (order)
@@ -146,6 +147,7 @@ static void orderPositionColumns(ZMapWindow window)
           // Append this column name to the hash and update the column with the new order
           g_hash_table_insert(order_data.names_hash, GINT_TO_POINTER(column->unique_id), GUINT_TO_POINTER(i)) ;
           column->order = i ;
+          ++i ;
         }
     }
 
