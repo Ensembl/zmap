@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 17/08/2015 to 14/09/2015
+Request Tracker Tickets Resolved from 17/08/2015 to 16/09/2015
 
 ticket/468459
 id: ticket/468459
@@ -48,6 +48,16 @@ Subject: Zmap  - GFF import - incorrect coordinates for feature range
 Requestors: mt4@sanger.ac.uk
 Owner: sm23
 Resolved: Thu Aug 20 09:40:41 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/485716
+id: ticket/485716
+Queue: zmap
+Subject: otterlace error: ZMAP crash whilst  I clicked on model. ZMAP still loading at the time.
+Requestors: aeb@sanger.ac.uk
+Owner: edgrif
+Resolved: Tue Sep 15 09:33:58 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/2.2.0"
 
+e05ee76 2015-09-16 filter help not included in list files for dist. - BUG FIX
 e09f672 2015-09-10 RT477879, added pipe symbol to allowed symbols. - BUG FIX
 ffd4ed5 2015-09-10 Add filter help docs to help system. - NEW FEATURE 'Filter Feature window'
 2af1528 2015-09-10 Improve some text labels. - NEW FEATURE 'Filter Feature window'

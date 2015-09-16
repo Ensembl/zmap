@@ -1,3 +1,15 @@
+2015-09-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ filter help not included in list files for dist. - BUG FIX
+ src/Makefile.am |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2015-09-14  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.1.0-112-ge09f672 - Update RT and git commit reports
+ src/ChangeLog                                  | 1739 +++++++++---------------
+ src/build/release_docs/GIT_COMMITS.txt         |   59 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   72 +-
+ 3 files changed, 710 insertions(+), 1160 deletions(-)
+
 2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
  RT477879, added pipe symbol to allowed symbols. - BUG FIX
  src/zmapGFF/zmapGFF2Dumper.cpp |    2 +-
