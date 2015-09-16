@@ -41,7 +41,7 @@ if (( $# > 2 )) ; then
   ERROR_ID="-a $3"
 fi
 
-./build_run.sh -c -e -g -s $SEQTOOLS_DIR $GBTOOLS_BRANCH $BUILD_PREFIX $ERROR_ID || RC=1
+./build_run.sh $ERROR_ID -c -e -g -s $SEQTOOLS_DIR $GBTOOLS_BRANCH $BUILD_PREFIX || RC=1
 
 
 exit $RC

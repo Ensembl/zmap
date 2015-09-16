@@ -43,6 +43,6 @@ if (( $# > 3 )) ; then
 fi
 
 
-./build_run.sh  -b $BRANCH -g $SEQTOOLS_BUILD $GBTOOLS_BRANCH $BUILD_PREFIX $ERROR_ID || RC=1
+./build_run.sh  $ERROR_ID -b $BRANCH -g $SEQTOOLS_BUILD $GBTOOLS_BRANCH $BUILD_PREFIX || RC=1
 
 exit $RC
