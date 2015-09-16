@@ -39,14 +39,6 @@
 #include <zmapWindowContainers.hpp>
 
 
-// RT 160187 - just remove the button from the dialog, code left in to handle then if they get clicked
-// just remove the button from the dialog, code left in to handle then if they get clicked
-// further investigations reveal that default means 'show or hide depending on zoom and presence of data'
-// so we need this button: I called it auto as that's closer to what it does.
-#define INCLUDE_RADIO_DEFAULT       1
-
-
-
 /* Labels for column state, used in code and the help page. */
 #define SHOW_LABEL     "Show"
 #define SHOWHIDE_LABEL "Auto"
@@ -769,11 +761,9 @@ static void column_group_set_active_button(ZMapWindowContainerFeatureSet contain
         case ZMAPSTYLE_COLDISPLAY_HIDE:
           active_button = radio_hide ;
           break ;
-#if INCLUDE_RADIO_DEFAULT
         case ZMAPSTYLE_COLDISPLAY_SHOW_HIDE:
           active_button = radio_maybe ;
           break ;
-#endif
         case ZMAPSTYLE_COLDISPLAY_SHOW:
         default:
           active_button = radio_show ;
@@ -795,9 +785,7 @@ static void loaded_radio_buttons(GtkWidget      *parent,
                                  ShowHideButton *hide_out)
 {
   GtkWidget *radio_show,
-#if INCLUDE_RADIO_DEFAULT
     *radio_maybe,
-#endif
     *radio_hide;
   GtkRadioButton *radio_group_button;
   ShowHideButton show_data = NULL, default_data = NULL, hide_data = NULL;
@@ -810,13 +798,11 @@ static void loaded_radio_buttons(GtkWidget      *parent,
   /* Get the group so we can add the other buttons to the same group */
   radio_group_button = GTK_RADIO_BUTTON(radio_show);
 
-#if INCLUDE_RADIO_DEFAULT
   /* Create the "default" radio button */
   radio_maybe = gtk_radio_button_new_with_label_from_widget(radio_group_button,
                                                             SHOWHIDE_LABEL) ;
 
   gtk_box_pack_start(GTK_BOX(parent), radio_maybe, TRUE, TRUE, 0) ;
-#endif
 
   /* Create the "hide" radio button */
   radio_hide = gtk_radio_button_new_with_label_from_widget(radio_group_button,
@@ -839,7 +825,6 @@ static void loaded_radio_buttons(GtkWidget      *parent,
 
   /* Default */
   default_data = g_new0(ShowHideButtonStruct, 1);
-#if INCLUDE_RADIO_DEFAULT
   default_data->show_hide_button = radio_maybe;
   default_data->show_hide_state  = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE;
   default_data->show_hide_column = column_group;
@@ -848,7 +833,6 @@ static void loaded_radio_buttons(GtkWidget      *parent,
                    G_CALLBACK(loaded_show_button_cb), default_data);
   g_signal_connect(G_OBJECT(radio_maybe), "event",
                    G_CALLBACK(show_press_button_cb), default_data);
-#endif
 
   /* Hide */
   hide_data = g_new0(ShowHideButtonStruct, 1);
@@ -1820,60 +1804,55 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
           
       label_text = g_quark_to_string(column->column_id);
 
-      if(!g_list_find_custom(make_unique, label_text, find_name_cb))
+      if((column_group_fwd || column_group_rev) && !g_list_find_custom(make_unique, label_text, find_name_cb))
         {
           /* create the label that the user can understand */
           /* this also creates the button_data... */
           label = create_label(label_box, label_text);
-
           button_box   = gtk_hbox_new(FALSE, 0) ;
+
           /* Show set of radio buttons for each column to change column display state. */
           gtk_box_pack_start(GTK_BOX(column_box), button_box, TRUE, TRUE, 0);
-
           g_object_set_data(G_OBJECT(label), RADIO_BUTTONS_CONTAINER, button_box);
 
           /* create the actual radio buttons... */
-          loaded_radio_buttons(button_box, column_group_fwd,
-                               &show_data_fwd, &default_data_fwd, &hide_data_fwd);
+          if (column_group_fwd)
+            {
+              loaded_radio_buttons(button_box, column_group_fwd,
+                                   &show_data_fwd, &default_data_fwd, &hide_data_fwd);
 
-          loaded_radio_buttons(button_box, column_group_rev,
-                               &show_data_rev, &default_data_rev, &hide_data_rev);
+              default_data_fwd->loaded_page_data = (LoadedPageData)(notebook_page->page_data);
+              show_data_fwd->loaded_page_data    = (LoadedPageData)(notebook_page->page_data);
+              hide_data_fwd->loaded_page_data    = (LoadedPageData)(notebook_page->page_data);
 
-#if INCLUDE_RADIO_DEFAULT
-          default_data_fwd->loaded_page_data =
-          default_data_rev->loaded_page_data =
-#endif
-          show_data_fwd->loaded_page_data    =
-          show_data_rev->loaded_page_data    =
-          hide_data_fwd->loaded_page_data    =
-          hide_data_rev->loaded_page_data    = (LoadedPageData)(notebook_page->page_data);
+              default_list = g_list_append(default_list, default_data_fwd);
+              show_list    = g_list_append(show_list, show_data_fwd);
+              hide_list    = g_list_append(hide_list, hide_data_fwd);
 
-#if INCLUDE_RADIO_DEFAULT
-          default_list = g_list_append(default_list, default_data_fwd);
-          default_list = g_list_append(default_list, default_data_rev);
-#endif
-          show_list    = g_list_append(show_list, show_data_fwd);
-          show_list    = g_list_append(show_list, show_data_rev);
-          hide_list    = g_list_append(hide_list, hide_data_fwd);
-          hide_list    = g_list_append(hide_list, hide_data_rev);
+              column_group_set_active_button((ZMapWindowContainerFeatureSet)column_group_fwd,
+                                             show_data_fwd->show_hide_button,
+                                             default_data_fwd->show_hide_button,
+                                             hide_data_fwd->show_hide_button);
+            }
 
-          column_group_set_active_button((ZMapWindowContainerFeatureSet)column_group_fwd,
-                                         show_data_fwd->show_hide_button,
-#if INCLUDE_RADIO_DEFAULT
-                                         default_data_fwd->show_hide_button,
-#else
-                                         NULL,
-#endif
-                                         hide_data_fwd->show_hide_button);
+          if (column_group_rev)
+            {
+              loaded_radio_buttons(button_box, column_group_rev,
+                                   &show_data_rev, &default_data_rev, &hide_data_rev);
 
-          column_group_set_active_button((ZMapWindowContainerFeatureSet)column_group_rev,
-                                         show_data_rev->show_hide_button,
-#if INCLUDE_RADIO_DEFAULT
-                                         default_data_rev->show_hide_button,
-#else
-                                         NULL,
-#endif
-                                         hide_data_rev->show_hide_button);
+              default_data_rev->loaded_page_data = (LoadedPageData)(notebook_page->page_data);
+              show_data_rev->loaded_page_data    = (LoadedPageData)(notebook_page->page_data);
+              hide_data_rev->loaded_page_data    = (LoadedPageData)(notebook_page->page_data);
+
+              default_list = g_list_append(default_list, default_data_rev);
+              show_list    = g_list_append(show_list, show_data_rev);
+              hide_list    = g_list_append(hide_list, hide_data_rev);
+
+              column_group_set_active_button((ZMapWindowContainerFeatureSet)column_group_rev,
+                                             show_data_rev->show_hide_button,
+                                             default_data_rev->show_hide_button,
+                                             hide_data_rev->show_hide_button);
+            }
 
           /* Move up/down buttons (for changing column order) */
           up_data = g_new0(UpDownButtonStruct, 1);
@@ -1934,9 +1913,7 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
     gtk_container_add(GTK_CONTAINER(frame), button_box) ;
 
     create_select_all_button(button_box, SHOW_LABEL " All", show_list);
-#if INCLUDE_RADIO_DEFAULT
     create_select_all_button(button_box, SHOWHIDE_LABEL " All", default_list);
-#endif
     create_select_all_button(button_box, HIDE_LABEL " All", hide_list);
   }
 
