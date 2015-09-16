@@ -18,7 +18,6 @@ RC=0
 
 BUILD_PREFIX='FEATURE'
 SEQTOOLS_DIR='FEATURE'
-#ERROR_ID='edgrif@sanger.ac.uk'
 ERROR_ID=''
 GBTOOLS_BRANCH=''
 
@@ -41,6 +40,11 @@ if (( $# > 2 )) ; then
   GBTOOLS_BRANCH="-t $3"
 fi
 
-./build_run.sh $ERROR_ID -b $FEATURE_BRANCH -g -m -s $SEQTOOLS_DIR $GBTOOLS_BRANCH $BUILD_PREFIX || RC=1
+if (( $# > 3 )) ; then
+  ERROR_ID="-a $4"
+fi
+
+
+./build_run.sh -b $FEATURE_BRANCH -g -m -s $SEQTOOLS_DIR $GBTOOLS_BRANCH $BUILD_PREFIX $ERROR_ID || RC=1
 
 exit $RC
