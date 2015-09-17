@@ -73,6 +73,7 @@ USER_DIR=$(srcdir)/doc/user
 dist_doc_DATA = $(USER_DIR)/Splice_highlight_off.png \
 	$(USER_DIR)/config_file.shtml \
 	$(USER_DIR)/keyboard_mouse.shtml \
+	$(USER_DIR)/filter_window.shtml \
 	$(USER_DIR)/styles.shtml \
 	$(USER_DIR)/zmap_quick_start.shtml \
 	$(USER_DIR)/Splice_highlight_on.png \
