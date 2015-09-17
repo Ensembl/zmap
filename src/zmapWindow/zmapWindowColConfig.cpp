@@ -37,6 +37,7 @@
 #include <ZMap/zmapGLibUtils.hpp>
 #include <zmapWindow_P.hpp>
 #include <zmapWindowContainers.hpp>
+#include <gbtools/gbtools.hpp>
 
 
 /* Labels for column state, used in code and the help page. */
@@ -507,6 +508,13 @@ static GtkWidget *configure_make_toplevel(ColConfigure configure_data)
 
       toplevel = zMapGUIToplevelNew("Column configuration", seq_name) ;
 
+      /* Calculate a sensible initial height - say 3/4 of screen height */
+      int height = 0 ;
+      if (gbtools::GUIGetTrueMonitorSize(toplevel, NULL, &height))
+        {
+          gtk_window_set_default_size(GTK_WINDOW(toplevel), -1, height * 0.75) ;
+        }
+
       /* Add destroy func - destroyCB */
       g_signal_connect(GTK_OBJECT(toplevel), "destroy",
                        GTK_SIGNAL_FUNC(destroyCB), (gpointer)configure_data) ;
@@ -833,10 +841,8 @@ static void loaded_radio_buttons(GtkTable       *table,
   show_data->show_hide_state  = ZMAPSTYLE_COLDISPLAY_SHOW;
   show_data->show_hide_column = column_group;
 
-  g_signal_connect(G_OBJECT(radio_show), "toggled",
-                   G_CALLBACK(loaded_show_button_cb), show_data) ;
-  g_signal_connect(G_OBJECT(radio_show), "event",
-                   G_CALLBACK(show_press_button_cb), show_data) ;
+  g_signal_connect(G_OBJECT(radio_show), "toggled", G_CALLBACK(loaded_show_button_cb), show_data) ;
+  g_signal_connect(G_OBJECT(radio_show), "event", G_CALLBACK(show_press_button_cb), show_data) ;
 
 
   /* Default */
@@ -845,10 +851,8 @@ static void loaded_radio_buttons(GtkTable       *table,
   default_data->show_hide_state  = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE;
   default_data->show_hide_column = column_group;
 
-  g_signal_connect(G_OBJECT(radio_maybe), "toggled",
-                   G_CALLBACK(loaded_show_button_cb), default_data);
-  g_signal_connect(G_OBJECT(radio_maybe), "event",
-                   G_CALLBACK(show_press_button_cb), default_data);
+  g_signal_connect(G_OBJECT(radio_maybe), "toggled", G_CALLBACK(loaded_show_button_cb), default_data);
+  g_signal_connect(G_OBJECT(radio_maybe), "event", G_CALLBACK(show_press_button_cb), default_data);
 
   /* Hide */
   hide_data = g_new0(ShowHideButtonStruct, 1);
@@ -856,10 +860,8 @@ static void loaded_radio_buttons(GtkTable       *table,
   hide_data->show_hide_state  = ZMAPSTYLE_COLDISPLAY_HIDE;
   hide_data->show_hide_column = column_group;
 
-  g_signal_connect(G_OBJECT(radio_hide), "toggled",
-                   G_CALLBACK(loaded_show_button_cb), hide_data);
-  g_signal_connect(G_OBJECT(radio_hide), "event",
-                   G_CALLBACK(show_press_button_cb), hide_data);
+  g_signal_connect(G_OBJECT(radio_hide), "toggled", G_CALLBACK(loaded_show_button_cb), hide_data);
+  g_signal_connect(G_OBJECT(radio_hide), "event", G_CALLBACK(show_press_button_cb), hide_data);
 
   /* Return the data... We need to add it to the list */
   if(show_out)
@@ -1807,7 +1809,6 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
   //zmapAddSizingSignalHandlers(scrolled, FALSE, -1, -1);
 
   /* Display some header labels */
-  gtk_table_attach(table, gtk_label_new("Column"), 0, 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
   gtk_table_attach(table, gtk_label_new("Forward strand"), 1, 4, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
   gtk_table_attach(table, gtk_label_new("Reverse strand"), 4, 7, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
   gtk_table_attach(table, gtk_label_new("Move"), 7, 9, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
