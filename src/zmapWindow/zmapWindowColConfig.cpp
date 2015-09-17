@@ -141,9 +141,12 @@ typedef void (*LoadedPageResetFunc)(LoadedPageData page_data);
 typedef struct _LoadedPageDataStruct
 {
   /* Lists of all ShowHideButton pointers */
-  GList *show_list;
-  GList *default_list;
-  GList *hide_list;
+  GList *show_list_fwd;
+  GList *default_list_fwd;
+  GList *hide_list_fwd;
+  GList *show_list_rev;
+  GList *default_list_rev;
+  GList *hide_list_rev;
 
   /* Fwd and rev strand lists of UpDownButton pointers*/
   GList *up_list;
@@ -228,9 +231,7 @@ typedef struct
 
 
 static GtkWidget *make_menu_bar(ColConfigure configure_data);
-static GtkWidget *loaded_cols_panel(NotebookPage notebook_page, ZMapWindow window,
-                                    GList **show_list_out, GList **default_list_out, GList **hide_list_out,
-                                    GList **up_list_out, GList **down_list_out) ;
+static GtkWidget *loaded_cols_panel(NotebookPage notebook_page, ZMapWindow window, LoadedPageData loaded_page_data) ;
 static char *label_text_from_column(FooCanvasGroup *column_group);
 static GtkWidget *create_label(GtkWidget *parent, const char *text);
 static GtkWidget *create_revert_apply_button(ColConfigure configure_data);
@@ -635,11 +636,7 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
 
   cols_container = loaded_cols_panel(notebook_page,
                                      configure_data->window,
-                                     &(loaded_page_data->show_list),
-                                     &(loaded_page_data->default_list),
-                                     &(loaded_page_data->hide_list),
-                                     &(loaded_page_data->up_list),
-                                     &(loaded_page_data->down_list)) ;
+                                     loaded_page_data) ;
 
   /* Pack both strand containers into the parent, but only show forward strand by default */
   gtk_container_add(GTK_CONTAINER(notebook_page->page_container), cols_container) ;
@@ -682,9 +679,12 @@ static void loaded_page_apply(NotebookPage notebook_page)
   loaded_page_data->apply_now  = TRUE;
   loaded_page_data->reposition = FALSE;
 
-  g_list_foreach(loaded_page_data->show_list,    each_button_toggle_if_active, configure_data);
-  g_list_foreach(loaded_page_data->default_list, each_button_toggle_if_active, configure_data);
-  g_list_foreach(loaded_page_data->hide_list,    each_button_toggle_if_active, configure_data);
+  g_list_foreach(loaded_page_data->show_list_fwd,    each_button_toggle_if_active, configure_data);
+  g_list_foreach(loaded_page_data->default_list_fwd, each_button_toggle_if_active, configure_data);
+  g_list_foreach(loaded_page_data->hide_list_fwd,    each_button_toggle_if_active, configure_data);
+  g_list_foreach(loaded_page_data->show_list_rev,    each_button_toggle_if_active, configure_data);
+  g_list_foreach(loaded_page_data->default_list_rev, each_button_toggle_if_active, configure_data);
+  g_list_foreach(loaded_page_data->hide_list_rev,    each_button_toggle_if_active, configure_data);
 
   loaded_page_data->apply_now  = save_apply_now;
   loaded_page_data->reposition = save_reposition;
@@ -719,17 +719,29 @@ static void loaded_page_clear  (NotebookPage notebook_page)
 
   page_data = (LoadedPageData)(notebook_page->page_data) ;
 
-  g_list_foreach(page_data->show_list, (GFunc)g_free, NULL) ;
-  g_list_free(page_data->show_list);
-  page_data->show_list = NULL;
+  g_list_foreach(page_data->show_list_fwd, (GFunc)g_free, NULL) ;
+  g_list_free(page_data->show_list_fwd);
+  page_data->show_list_fwd = NULL;
 
-  g_list_foreach(page_data->default_list, (GFunc)g_free, NULL) ;
-  g_list_free(page_data->default_list);
-  page_data->default_list = NULL;
+  g_list_foreach(page_data->default_list_fwd, (GFunc)g_free, NULL) ;
+  g_list_free(page_data->default_list_fwd);
+  page_data->default_list_fwd = NULL;
 
-  g_list_foreach(page_data->hide_list, (GFunc)g_free, NULL);
-  g_list_free(page_data->hide_list);
-  page_data->hide_list = NULL;
+  g_list_foreach(page_data->hide_list_fwd, (GFunc)g_free, NULL);
+  g_list_free(page_data->hide_list_fwd);
+  page_data->hide_list_fwd = NULL;
+
+  g_list_foreach(page_data->show_list_rev, (GFunc)g_free, NULL) ;
+  g_list_free(page_data->show_list_rev);
+  page_data->show_list_rev = NULL;
+
+  g_list_foreach(page_data->default_list_rev, (GFunc)g_free, NULL) ;
+  g_list_free(page_data->default_list_rev);
+  page_data->default_list_rev = NULL;
+
+  g_list_foreach(page_data->hide_list_rev, (GFunc)g_free, NULL);
+  g_list_free(page_data->hide_list_rev);
+  page_data->hide_list_rev = NULL;
 
   g_list_foreach(page_data->up_list, (GFunc)g_free, NULL);
   g_list_free(page_data->up_list);
@@ -797,6 +809,7 @@ static void loaded_radio_buttons(GtkTable       *table,
 
   /* Create the "show" radio button, which will create the group too. */
   radio_show = gtk_radio_button_new(NULL) ;
+  gtk_widget_set_tooltip_text(radio_show, SHOW_LABEL) ;
   gtk_table_attach(table, radio_show, col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
 
   /* Get the group so we can add the other buttons to the same group */
@@ -804,10 +817,12 @@ static void loaded_radio_buttons(GtkTable       *table,
 
   /* Create the "default" radio button */
   radio_maybe = gtk_radio_button_new_from_widget(radio_group_button) ;
+  gtk_widget_set_tooltip_text(radio_maybe, SHOWHIDE_LABEL) ;
   gtk_table_attach(table, radio_maybe, col + 1, col + 2, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
 
   /* Create the "hide" radio button */
   radio_hide = gtk_radio_button_new_from_widget(radio_group_button) ;
+  gtk_widget_set_tooltip_text(radio_hide, HIDE_LABEL) ;
   gtk_table_attach(table, radio_hide, col + 2, col + 3, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
   
   /* Now create the data to attach to the buttons and connect the callbacks */
@@ -863,7 +878,8 @@ static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData
 {
   ColConfigure configure_data;
   ZMapStrand strand;
-  GList *button_list = NULL ;
+  GList *button_list_fwd = NULL ;
+  GList *button_list_rev = NULL ;
   ZMapWindowColConfigureMode mode ;
   LoadedPageData loaded_page_data;
 
@@ -884,19 +900,22 @@ static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData
   switch(mode)
     {
     case ZMAPWINDOWCOLUMN_HIDE:
-      button_list = loaded_page_data->hide_list ;
+      button_list_fwd = loaded_page_data->hide_list_fwd ;
+      button_list_rev = loaded_page_data->hide_list_rev ;
       break;
 
     case ZMAPWINDOWCOLUMN_SHOW:
-      button_list = loaded_page_data->show_list ;
+      button_list_fwd = loaded_page_data->show_list_fwd ;
+      button_list_rev = loaded_page_data->show_list_rev ;
       break;
 
     default:
-      button_list = loaded_page_data->default_list;
+      button_list_fwd = loaded_page_data->default_list_fwd;
+      button_list_rev = loaded_page_data->default_list_rev;
       break;
     }
 
-  if (button_list)
+  if (button_list_fwd || button_list_rev)
     {
       gboolean save_reposition, save_apply_now;
 
@@ -907,7 +926,8 @@ static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData
       loaded_page_data->apply_now  = TRUE;
       loaded_page_data->reposition = TRUE;
 
-      g_list_foreach(button_list, activate_matching_column, cb_data) ;
+      g_list_foreach(button_list_fwd, activate_matching_column, cb_data) ;
+      g_list_foreach(button_list_rev, activate_matching_column, cb_data) ;
 
       loaded_page_data->apply_now  = save_apply_now;
       loaded_page_data->reposition = save_reposition;
@@ -1660,17 +1680,20 @@ static GtkWidget *make_menu_bar(ColConfigure configure_data)
   return menubar ;
 }
 
-static void create_select_all_button(GtkWidget *button_box, const char *label,
-                                     GList *show_hide_button_list)
+static void create_select_all_button(GtkTable *table, const int row, const int col,
+                                     GList *show_hide_button_list, const char *desc)
 {
   GtkWidget *button;
 
-  button = gtk_button_new_with_label(label);
+  button = gtk_button_new();
+  gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(GTK_STOCK_APPLY, GTK_ICON_SIZE_BUTTON)) ;
 
-  gtk_box_pack_start(GTK_BOX(button_box), button, TRUE, TRUE, 0);
+  char *text = g_strdup_printf("Set all columns to '%s'", desc) ;
+  gtk_widget_set_tooltip_text(button, text) ;
+  g_free(text) ;
 
-  g_signal_connect(G_OBJECT(button), "clicked",
-                   G_CALLBACK(select_all_buttons), show_hide_button_list);
+  gtk_table_attach(table, button, col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(select_all_buttons), show_hide_button_list);
 
   return ;
 }
@@ -1753,22 +1776,12 @@ static void move_button_cb(GtkWidget *button, gpointer user_data)
 
 static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
                                     ZMapWindow window,
-                                    GList      **show_list_out,
-                                    GList      **default_list_out,
-                                    GList      **hide_list_out,
-                                    GList      **up_list_out,
-                                    GList      **down_list_out)
+                                    LoadedPageData page_data)
 {
   GtkWidget *cols_panel = NULL ;
   GtkTable *table = NULL ;
   GtkWidget *scrolled = NULL;
-  GList *show_list    = NULL,
-    *default_list = NULL,
-    *hide_list    = NULL,
-    *up_list    = NULL,
-    *down_list    = NULL;
   GList *ordered_columns = NULL ;
-  int list_length = 0;
   const int cols = 9 ;
 
   /* Get list of column structs in current display order */
@@ -1800,15 +1813,15 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
   gtk_table_attach(table, gtk_label_new("Move"), 7, 9, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
   ++row ;
 
-  gtk_table_attach(table, gtk_label_new(SHOW_LABEL), 1, 2, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  gtk_table_attach(table, gtk_label_new(SHOWHIDE_LABEL), 2, 3, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  gtk_table_attach(table, gtk_label_new(HIDE_LABEL), 3, 4, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  gtk_table_attach(table, gtk_label_new(SHOW_LABEL), 4, 5, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  gtk_table_attach(table, gtk_label_new(SHOWHIDE_LABEL), 5, 6, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  gtk_table_attach(table, gtk_label_new(HIDE_LABEL), 6, 7, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  gtk_table_attach(table, gtk_label_new(UP_LABEL), 7, 8, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  gtk_table_attach(table, gtk_label_new(DOWN_LABEL), 8, 9, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  ++row ;
+  //gtk_table_attach(table, gtk_label_new(SHOW_LABEL), 1, 2, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+  //gtk_table_attach(table, gtk_label_new(SHOWHIDE_LABEL), 2, 3, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+  //gtk_table_attach(table, gtk_label_new(HIDE_LABEL), 3, 4, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+  //gtk_table_attach(table, gtk_label_new(SHOW_LABEL), 4, 5, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+  //gtk_table_attach(table, gtk_label_new(SHOWHIDE_LABEL), 5, 6, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+  //gtk_table_attach(table, gtk_label_new(HIDE_LABEL), 6, 7, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+  //gtk_table_attach(table, gtk_label_new(UP_LABEL), 7, 8, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+  //gtk_table_attach(table, gtk_label_new(DOWN_LABEL), 8, 9, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+  //++row ;
 
   /* Loop through all columns in display order (columns are shown in mirror order on the rev
    * strand but we always use forward-strand order) */
@@ -1848,9 +1861,9 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
               show_data_fwd->loaded_page_data    = (LoadedPageData)(notebook_page->page_data);
               hide_data_fwd->loaded_page_data    = (LoadedPageData)(notebook_page->page_data);
 
-              default_list = g_list_append(default_list, default_data_fwd);
-              show_list    = g_list_append(show_list, show_data_fwd);
-              hide_list    = g_list_append(hide_list, hide_data_fwd);
+              page_data->default_list_fwd = g_list_append(page_data->default_list_fwd, default_data_fwd);
+              page_data->show_list_fwd    = g_list_append(page_data->show_list_fwd, show_data_fwd);
+              page_data->hide_list_fwd    = g_list_append(page_data->hide_list_fwd, hide_data_fwd);
 
               column_group_set_active_button((ZMapWindowContainerFeatureSet)column_group_fwd,
                                              show_data_fwd->show_hide_button,
@@ -1869,9 +1882,9 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
               show_data_rev->loaded_page_data    = (LoadedPageData)(notebook_page->page_data);
               hide_data_rev->loaded_page_data    = (LoadedPageData)(notebook_page->page_data);
 
-              default_list = g_list_append(default_list, default_data_rev);
-              show_list    = g_list_append(show_list, show_data_rev);
-              hide_list    = g_list_append(hide_list, hide_data_rev);
+              page_data->default_list_rev = g_list_append(page_data->default_list_rev, default_data_rev);
+              page_data->show_list_rev    = g_list_append(page_data->show_list_rev, show_data_rev);
+              page_data->hide_list_rev    = g_list_append(page_data->hide_list_rev, hide_data_rev);
 
               column_group_set_active_button((ZMapWindowContainerFeatureSet)column_group_rev,
                                              show_data_rev->show_hide_button,
@@ -1886,7 +1899,7 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
           up_data->window = window ;
           up_data->column_id = column->unique_id ;
           up_data->direction = -1 ;
-          up_list = g_list_append(up_list, up_data) ;
+          page_data->up_list = g_list_append(page_data->up_list, up_data) ;
 
           up_button = gtk_button_new() ;
           gtk_button_set_image(GTK_BUTTON(up_button), gtk_image_new_from_stock(GTK_STOCK_GO_UP, GTK_ICON_SIZE_BUTTON));
@@ -1898,7 +1911,7 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
           down_data->window = window ;
           down_data->column_id = column->unique_id ;
           down_data->direction = 1;
-          down_list = g_list_append(down_list, down_data);
+          page_data->down_list = g_list_append(page_data->down_list, down_data);
 
           down_button = gtk_button_new() ;
           gtk_button_set_image(GTK_BUTTON(down_button), gtk_image_new_from_stock(GTK_STOCK_GO_DOWN, GTK_ICON_SIZE_BUTTON));
@@ -1906,29 +1919,20 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
           gtk_table_attach(table, down_button, col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
           ++col ;
 
-          ++list_length;
           ++row ;
         }
     }
      
-  if(show_list_out)
-    *show_list_out = show_list;
-  if(default_list_out)
-    *default_list_out = default_list;
-  if(hide_list_out)
-    *hide_list_out = hide_list;
-  if(up_list_out)
-    *up_list_out = up_list;
-  if(down_list_out)
-    *down_list_out = down_list;
+  /* Add buttons to show/hide all columns in each strand. */
+  col = 1 ;
+  create_select_all_button(table, row, col, page_data->show_list_fwd, SHOW_LABEL);
+  create_select_all_button(table, row, col + 1, page_data->default_list_fwd, SHOWHIDE_LABEL);
+  create_select_all_button(table, row, col + 2, page_data->hide_list_fwd, HIDE_LABEL);
 
-  /* Add the buttons to apply the users changes. */
-  GtkWidget *button_box = gtk_hbutton_box_new() ;
-  gtk_box_pack_end(GTK_BOX(cols_panel), button_box, FALSE, FALSE, 0);
-
-  create_select_all_button(button_box, SHOW_LABEL " All", show_list);
-  create_select_all_button(button_box, SHOWHIDE_LABEL " All", default_list);
-  create_select_all_button(button_box, HIDE_LABEL " All", hide_list);
+  col = 4 ;
+  create_select_all_button(table, row, col, page_data->show_list_rev, SHOW_LABEL);
+  create_select_all_button(table, row, col + 1, page_data->default_list_rev, SHOWHIDE_LABEL);
+  create_select_all_button(table, row, col + 2, page_data->hide_list_rev, HIDE_LABEL);
 
   return cols_panel ;
 }
@@ -2058,7 +2062,7 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
   gtk_signal_connect(GTK_OBJECT(revert_button), "clicked",
                      GTK_SIGNAL_FUNC(revert_button_cb), (gpointer)configure_data) ;
 
-  cancel_button = gtk_button_new_with_label(GTK_STOCK_CLOSE) ;
+  cancel_button = gtk_button_new_from_stock(GTK_STOCK_CLOSE) ;
   gtk_box_pack_start(GTK_BOX(button_box), cancel_button, FALSE, FALSE, 0) ;
   gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked",
                      GTK_SIGNAL_FUNC(cancel_button_cb), (gpointer)configure_data) ;
