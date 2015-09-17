@@ -72,12 +72,6 @@ typedef struct _ColConfigureStruct
 
   GtkWidget *vbox;
 
-  GtkWidget *rev_cols_container;
-  
-  GList *forward_cols;
-  GList *reverse_cols;
-  GList *all_cols;
-
   unsigned int has_apply_button : 1 ;
 
 } ColConfigureStruct;
@@ -398,10 +392,6 @@ void zmapWindowColumnConfigure(ZMapWindow                 window,
       gtk_notebook_set_current_page(GTK_NOTEBOOK(configure_data->notebook), page_no);
 
       gtk_widget_show_all(window->col_config_window);
-
-      /* Hide the reverse strand by default */
-      if (configure_data->rev_cols_container)
-        gtk_widget_hide_all(configure_data->rev_cols_container) ;
     }
 
   return ;
@@ -529,84 +519,6 @@ static GtkWidget *configure_make_toplevel(ColConfigure configure_data)
 }
 
 
-
-//static void configure_get_column_lists(ColConfigure configure_data,
-//                                       FooCanvasGroup *column_group,
-//                                       GList **forward_columns_out,
-//                                       GList **reverse_columns_out,
-//                                       GList **all_columns_out)
-//{
-//  ZMapWindowColConfigureMode configure_mode;
-//  GList *forward_columns = NULL, *reverse_columns = NULL ;
-//  ZMapWindow window;
-//
-//  configure_mode = configure_data->mode;
-//  window         = configure_data->window;
-//
-//  if (configure_mode == ZMAPWINDOWCOLUMN_CONFIGURE  && column_group)    // group can be null for deferred_page_populate()
-//    {
-//      ZMapStrand strand ;
-//
-//      strand = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet) column_group);
-//
-//      if (strand == ZMAPSTRAND_FORWARD)
-//        forward_columns = g_list_append(forward_columns, column_group) ;
-//      else
-//        reverse_columns = g_list_append(reverse_columns, column_group) ;
-//    }
-//  else
-//    {
-//      ForwardReverseColumnListsStruct forward_reverse_lists = {NULL};
-//      FooCanvasGroup *block_group;
-//      ZMapFeatureBlock block;
-//      gboolean use_mark_if_marked = FALSE;
-//
-//      /* get block */
-//      block_group = configure_get_point_block_container(configure_data, column_group);
-//
-//      block = zmapWindowItemGetFeatureBlock((FooCanvasItem *)block_group);
-//
-//      forward_reverse_lists.loaded_or_deferred = FALSE;
-//      forward_reverse_lists.block_group = (ZMapWindowContainerBlock)block_group;
-//
-//      if(use_mark_if_marked && window->mark && zmapWindowMarkIsSet(window->mark))
-//        {
-//          zmapWindowMarkGetSequenceRange(window->mark,
-//                                         &(forward_reverse_lists.mark1),
-//                                         &(forward_reverse_lists.mark2));
-//        }
-//      else
-//        {
-//          forward_reverse_lists.mark1 = block->block_to_sequence.block.x1;
-//          forward_reverse_lists.mark2 = block->block_to_sequence.block.x2;
-//        }
-//
-//      zmapWindowContainerUtilsExecute((ZMapWindowContainerGroup)block_group,
-//                                      ZMAPCONTAINER_LEVEL_FEATURESET,
-//                                      set_column_lists_cb, &forward_reverse_lists);
-//
-//      forward_columns = forward_reverse_lists.forward;
-//      reverse_columns = forward_reverse_lists.reverse;
-//    }
-//
-//  if(all_columns_out)
-//    {
-//      /* Combine forward and reverse lists into a single list of all columns, making sure we
-//       * don't ahve duplicates. The rev list is in the rev order, so reverse it */
-//      reverse_columns = g_list_reverse(reverse_columns) ;
-//
-//      *all_columns_out = forward_columns ;
-//      *all_columns_out = g_list_concat(*all_columns_out, reverse_columns) ;
-//    }
-//  else
-//    {
-//      g_list_free(forward_columns) ;
-//      g_list_free(reverse_columns) ;
-//    }
-//
-//  return ;
-//}
-
 static void loaded_page_construct(NotebookPage notebook_page, GtkWidget *page)
 {
   notebook_page->page_container = page;
@@ -619,20 +531,16 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
   LoadedPageData loaded_page_data;
   ColConfigure configure_data;
   GtkWidget *cols_container ;
-  GList *all_cols = NULL;
 
   configure_data = notebook_page->configure_data;
 
-  /* Get the lists of columns for the forward and reverse strands */
-//  configure_get_column_lists(configure_data,
-//                             column_group,
-//                             NULL,
-//                             NULL,
-//                             &all_cols);
-
   loaded_page_data = (LoadedPageData)(notebook_page->page_data);
 
-  if(all_cols && g_list_length(all_cols) > 1)
+  cols_container = loaded_cols_panel(notebook_page,
+                                     configure_data->window,
+                                     loaded_page_data) ;
+
+  if (loaded_page_data->show_list_fwd || loaded_page_data->show_list_rev)
     {
       configure_data->has_apply_button = TRUE;
     }
@@ -642,15 +550,9 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
       loaded_page_data->reposition = TRUE;
     }
 
-  cols_container = loaded_cols_panel(notebook_page,
-                                     configure_data->window,
-                                     loaded_page_data) ;
-
   /* Pack both strand containers into the parent, but only show forward strand by default */
   gtk_container_add(GTK_CONTAINER(notebook_page->page_container), cols_container) ;
 
-  configure_data->all_cols = all_cols;
-  
   return ;
 }
 
@@ -1537,14 +1439,6 @@ static void deferred_page_apply(NotebookPage notebook_page)
         zmapWindowFetchData(configure_data->window, block, mark_list, TRUE, FALSE) ;
       if (all_list)
         zmapWindowFetchData(configure_data->window, block, all_list, FALSE, FALSE) ;
-
-
-      /* dismiss the dialog and let the user see ZMap.
-       * if they change the mark then we'd have to refresh the options
-       * so easier to make them refresh it via a re-request
-       */
-      gtk_widget_destroy(configure_data->window->col_config_window) ;
-
     }
 
   return ;
@@ -2040,7 +1934,7 @@ static void apply_state_cb(GtkWidget *widget, gpointer user_data)
 
 static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
 {
-  GtkWidget *button_box, *cancel_button, *revert_button, *frame, *parent;
+  GtkWidget *button_box, *apply_button, *cancel_button, *revert_button, *frame, *parent;
 
   parent = configure_data->vbox;
 
@@ -2050,13 +1944,6 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
                        ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
   gtk_container_set_border_width (GTK_CONTAINER (button_box),
                                   ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
-
-  /* gb10: Actions now apply immediately, so get rid of the Apply button and rename Cancel to
-   * Close. */
-//  apply_button = gtk_button_new_from_stock(GTK_STOCK_APPLY) ;
-//  gtk_box_pack_end(GTK_BOX(button_box), apply_button, FALSE, FALSE, 0) ;
-//  gtk_signal_connect(GTK_OBJECT(apply_button), "clicked",
-//     GTK_SIGNAL_FUNC(apply_button_cb), (gpointer)configure_data) ;
 
   revert_button = gtk_button_new_from_stock(GTK_STOCK_REVERT_TO_SAVED) ;
   gtk_box_pack_start(GTK_BOX(button_box), revert_button, FALSE, FALSE, 0) ;
@@ -2068,8 +1955,13 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
   gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked",
                      GTK_SIGNAL_FUNC(cancel_button_cb), (gpointer)configure_data) ;
 
+  apply_button = gtk_button_new_from_stock(GTK_STOCK_APPLY) ;
+  gtk_box_pack_end(GTK_BOX(button_box), apply_button, FALSE, FALSE, 0) ;
+  gtk_signal_connect(GTK_OBJECT(apply_button), "clicked",
+     GTK_SIGNAL_FUNC(apply_button_cb), (gpointer)configure_data) ;
+
   /* set close button as default. */
-  GTK_WIDGET_SET_FLAGS(cancel_button, GTK_CAN_DEFAULT) ;
+  GTK_WIDGET_SET_FLAGS(apply_button, GTK_CAN_DEFAULT) ;
 
   frame = gtk_frame_new(NULL) ;
   gtk_container_set_border_width(GTK_CONTAINER(frame),
@@ -2078,7 +1970,7 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
 
   gtk_container_add(GTK_CONTAINER(frame), button_box);
 
-  return cancel_button;
+  return apply_button;
 }
 
 /* This is not the way to do help, we should really used html and have a set of help files. */
