@@ -693,7 +693,12 @@ static void loaded_page_clear  (NotebookPage notebook_page)
 
   LoadedPageData page_data = (LoadedPageData)(notebook_page->page_data) ;
 
+  /* Clear the callback data pointers */
   loaded_page_clear_data(page_data) ;
+
+  /* Clear any other data */
+  g_list_free(page_data->columns_list) ;
+  page_data->columns_list = NULL ;
 
   return ;
 }
