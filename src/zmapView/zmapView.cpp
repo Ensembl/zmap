@@ -349,7 +349,7 @@ static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_
 static void getWindowList(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
+static void columnOrderUpdateContext(ZMapView view, ZMapConfigIniContext context, const ZMapViewExportType export_type, ZMapConfigIniFileType file_type) ;
 
 
 
@@ -7018,6 +7018,9 @@ gboolean zMapViewExportConfig(ZMapView view,
       /* Update the context with the new preferences or styles, if anything has changed */
       update_func(context, file_type, view->context_map.styles) ;
 
+      /* Update the context with the column order */
+      columnOrderUpdateContext(view, context, export_type, file_type) ;
+
       /* Do the save to file (force changes=true so we export even if nothing's changed) */
       zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
       result = zMapConfigIniContextSave(context, file_type) ;
@@ -7039,4 +7042,34 @@ gboolean zMapViewExportConfig(ZMapView view,
     }
 
   return result ;
+}
+
+
+/* Update the given context with the column order */
+static void columnOrderUpdateContext(ZMapView view, 
+                                     ZMapConfigIniContext context, 
+                                     const ZMapViewExportType export_type,
+                                     ZMapConfigIniFileType file_type)
+{
+  gboolean changed = FALSE ;
+
+  if (export_type == ZMAPVIEW_EXPORT_CONFIG && view != NULL)
+    {
+      GList *ordered_list = zMapFeatureGetOrderedColumnsListIDs(&view->context_map) ;
+      char *result = zMap_g_list_quark_to_string(ordered_list, NULL) ;
+
+      zMapConfigIniContextSetString(context, file_type,
+                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                    ZMAPSTANZA_APP_COLUMNS, result);
+
+      g_free(result) ;
+      changed = TRUE ;
+    }
+
+  
+  /* Set the unsaved flag in the context if there were any changes */
+  if (changed)
+    {
+      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+    }
 }
