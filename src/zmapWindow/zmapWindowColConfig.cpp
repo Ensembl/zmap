@@ -1742,7 +1742,7 @@ static void loaded_cols_panel(LoadedPageData page_data)
   /* Create the table that will be our main container. We need one row for each column plus the
    * header, and it needs to be scrollable. */
   const int rows = g_list_length(page_data->columns_list) + 1 ;
-  const int cols = 9 ;
+  const int cols = 10 ;
   int row = 0 ;
   int col = 0 ;
 
@@ -1758,8 +1758,8 @@ static void loaded_cols_panel(LoadedPageData page_data)
 
   /* Display some header labels */
   gtk_table_attach(table, gtk_label_new("Forward strand"), 1, 4, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  gtk_table_attach(table, gtk_label_new("Reverse strand"), 4, 7, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  gtk_table_attach(table, gtk_label_new("Move"), 7, 9, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+  gtk_table_attach(table, gtk_label_new("-"), 4, 5, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+  gtk_table_attach(table, gtk_label_new("Reverse strand"), 5, 8, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
   ++row ;
 
   /* Loop through all columns in display order (columns are shown in mirror order on the rev
@@ -1809,8 +1809,11 @@ static void loaded_cols_panel(LoadedPageData page_data)
                                              default_data_fwd->show_hide_button,
                                              hide_data_fwd->show_hide_button);
             }
-
           col += 3 ;
+
+          /* Add a separator between the forward and rev strand buttons */
+          gtk_table_attach(table, gtk_label_new("-"), col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+          ++col ;
 
           if (column_group_rev)
             {
@@ -1830,7 +1833,6 @@ static void loaded_cols_panel(LoadedPageData page_data)
                                              default_data_rev->show_hide_button,
                                              hide_data_rev->show_hide_button);
             }
-
           col += 3 ;
 
           /* Move up/down buttons (for changing column order) */
@@ -1862,7 +1864,7 @@ static void loaded_cols_panel(LoadedPageData page_data)
   create_select_all_button(table, row, col + 1, page_data->default_list_fwd, SHOWHIDE_LABEL);
   create_select_all_button(table, row, col + 2, page_data->hide_list_fwd, HIDE_LABEL);
 
-  col = 4 ;
+  col = 5 ;
   create_select_all_button(table, row, col, page_data->show_list_rev, SHOW_LABEL);
   create_select_all_button(table, row, col + 1, page_data->default_list_rev, SHOWHIDE_LABEL);
   create_select_all_button(table, row, col + 2, page_data->hide_list_rev, HIDE_LABEL);
