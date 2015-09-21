@@ -3721,7 +3721,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                           dragging = TRUE;
 
                           if (!window->rubberband)
-                            window->rubberband = zMapDrawRubberbandCreate(window->canvas);
+                            window->rubberband = zMapDrawRubberbandCreate(window->canvas, &window->colour_rubber_band);
                         }
 
                       /* At this stage we don't know if we are rubber banding etc. so pass the
