@@ -172,7 +172,7 @@ ZMapDataSource zMapDataSourceCreateFromGIO(GIOChannel * const io_channel)
 gboolean zMapDataSourceIsOpen(ZMapDataSource const source)
 {
   gboolean result = FALSE ;
-  if (source->type == ZMAPDATASOURCE_TYPE_GIO)
+  if (source && source->type == ZMAPDATASOURCE_TYPE_GIO)
     {
       GIOChannel *io_channel = ((ZMapDataSourceGIO) source)->io_channel ;
       if (io_channel)
@@ -180,7 +180,7 @@ gboolean zMapDataSourceIsOpen(ZMapDataSource const source)
           result = TRUE ;
         }
     }
-  else if (source->type == ZMAPDATASOURCE_TYPE_HTS)
+  else if (source && source->type == ZMAPDATASOURCE_TYPE_HTS)
     {
       htsFile *hts_file = ((ZMapDataSourceHTSFile) source)->hts_file ;
       if (hts_file)

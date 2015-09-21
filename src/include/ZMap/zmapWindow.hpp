@@ -100,6 +100,7 @@ typedef enum
                                           * that have not been "saved" to a real featureset */
     ZMAPFLAG_CONFIG_NEEDS_SAVING,        /* True if there are unsaved changes to prefs */
     ZMAPFLAG_STYLES_NEED_SAVING,         /* True if there are unsaved changes to styles */
+    ZMAPFLAG_COLUMNS_NEED_SAVING,        /* True if there are unsaved changes to the columns order */
     ZMAPFLAG_ENABLE_ANNOTATION,          /* True if we should enable editing via the annotation column */
     ZMAPFLAG_ENABLE_ANNOTATION_INIT,     /* False until the enable-annotation flag has been initialised */
 

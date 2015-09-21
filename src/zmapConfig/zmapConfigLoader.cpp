@@ -708,7 +708,6 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
   gsize len;
   char *normalkey;
   ZMapFeatureColumn f_col;
-  int n = g_hash_table_size(columns);
 
   zMapReturnValIfFail(context, ghash) ;
 
@@ -740,7 +739,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
               f_col->column_id = g_quark_from_string(normalkey);
               f_col->unique_id = column_id;
               f_col->column_desc = normalkey;
-              f_col->order = ++n;
+              f_col->order = zMapFeatureColumnOrderNext(FALSE);
 
               g_hash_table_insert(columns,GUINT_TO_POINTER(f_col->unique_id),f_col);
             }
@@ -1466,11 +1465,12 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name,
     { ZMAPSTANZA_APP_LOCALE,             G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_COOKIE_JAR,         G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_PFETCH_MODE,        G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_APP_PFETCH_LOCATION,    G_TYPE_STRING, NULL, FALSE },
-    //    { ZMAPSTANZA_APP_SCRIPTS,      G_TYPE_STRING, NULL, FALSE },
+    { ZMAPSTANZA_APP_PFETCH_LOCATION,    G_TYPE_STRING,  NULL, FALSE },
+    //    { ZMAPSTANZA_APP_SCRIPTS,      G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_DATA,               G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_STYLESFILE,         G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_LEGACY_STYLES,      G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_COLUMNS,            G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_STYLE_FROM_METHOD,  G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_XREMOTE_DEBUG,      G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_REPORT_THREAD,      G_TYPE_BOOLEAN, NULL, FALSE },

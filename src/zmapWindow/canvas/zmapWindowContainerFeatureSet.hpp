@@ -170,6 +170,8 @@ GList *zmapWindowContainerFeatureSetGetFeatureSets(ZMapWindowContainerFeatureSet
 
 gboolean zmapWindowContainerHasFeaturesetItem(ZMapWindowContainerFeatureSet container);
 
+GQuark zMapWindowContainerFeatureSetGetUniqueId(ZMapWindowContainerFeatureSet container) ;
+
 /* Style lookup */
 ZMapFeatureTypeStyle zMapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFeatureSet container) ;
 ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromStyle(ZMapWindowContainerFeatureSet container_set,

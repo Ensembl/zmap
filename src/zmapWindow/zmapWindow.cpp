@@ -7605,8 +7605,6 @@ void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data)
 }
 
 
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printAdjusters(ZMapWindow window)
 {
