@@ -74,6 +74,8 @@ typedef struct _ColConfigureStruct
 
   unsigned int has_apply_button : 1 ;
 
+  gboolean columns_changed ;
+
 } ColConfigureStruct;
 
 
@@ -138,6 +140,8 @@ typedef struct _LoadedPageDataStruct
   ZMapWindow window ;
   GtkWidget *cols_panel ;    // the container widget for the columns panel
   GtkWidget *page_container ; // the container for cols_panel
+
+  ColConfigure configure_data ;
 
   /* Lists of all ShowHideButton pointers */
   GList *show_list_fwd;
@@ -545,6 +549,7 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
   loaded_page_data = (LoadedPageData)(notebook_page->page_data);
   loaded_page_data->window = configure_data->window ; 
   loaded_page_data->page_container = notebook_page->page_container ;
+  loaded_page_data->configure_data = configure_data ;
 
   loaded_cols_panel(loaded_page_data) ;
 
@@ -1687,6 +1692,9 @@ static void move_button_cb(GtkWidget *button, gpointer user_data)
   /* If there's no item to swap with we're already at the start/end, so nothing to do */
   if (swap_item)
     {
+      /* Flag that there are changes */
+      page_data->configure_data->columns_changed = TRUE ;
+
       /* Swap the items in the columns list */
       page_data->columns_list = g_list_remove_link(page_data->columns_list, this_item) ;
 
@@ -2309,6 +2317,8 @@ static void revert_button_cb(GtkWidget *apply_button, gpointer user_data)
 
   zmapWindowColumnConfigure(configure_data->window, NULL, configure_data->mode);
 
+  configure_data->columns_changed = FALSE ;
+
   return ;
 }
 
@@ -2317,6 +2327,9 @@ static void apply_button_cb(GtkWidget *apply_button, gpointer user_data)
   ColConfigure configure_data = (ColConfigure)user_data;
 
   notebook_foreach_page(configure_data->notebook, FALSE, NOTEBOOK_APPLY_FUNC, NULL);
+
+  if (configure_data->columns_changed)
+    configure_data->window->flags[ZMAPFLAG_COLUMNS_NEED_SAVING] = TRUE ;
 
   return ;
 }

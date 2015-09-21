@@ -7052,8 +7052,9 @@ static void columnOrderUpdateContext(ZMapView view,
                                      ZMapConfigIniFileType file_type)
 {
   gboolean changed = FALSE ;
+  zMapReturnIfFail(view) ;
 
-  if (export_type == ZMAPVIEW_EXPORT_CONFIG && view != NULL)
+  if (export_type == ZMAPVIEW_EXPORT_CONFIG && view->flags[ZMAPFLAG_COLUMNS_NEED_SAVING])
     {
       GList *ordered_list = zMapFeatureGetOrderedColumnsListIDs(&view->context_map) ;
       char *result = zMap_g_list_quark_to_string(ordered_list, NULL) ;
@@ -7070,6 +7071,7 @@ static void columnOrderUpdateContext(ZMapView view,
   /* Set the unsaved flag in the context if there were any changes */
   if (changed)
     {
+      view->flags[ZMAPFLAG_COLUMNS_NEED_SAVING] = FALSE ;
       zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
     }
 }

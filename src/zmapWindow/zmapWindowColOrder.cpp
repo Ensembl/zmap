@@ -55,7 +55,7 @@ typedef struct OrderColumnsDataStructType
 
 
 
-static void orderPositionColumns(ZMapWindow window);
+static void orderPositionColumns(ZMapWindow window, const gboolean use_config);
 static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                            ZMapContainerLevelType level, gpointer user_data);
 static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user_data);
@@ -85,7 +85,12 @@ static gboolean order_debug_G = FALSE ;
  */
 void zmapWindowColOrderColumns(ZMapWindow window)
 {
-  orderPositionColumns(window);
+  /* Read the order from the config file the first time around only. */
+  static gboolean first = TRUE ;
+
+  orderPositionColumns(window, first);
+
+  first = FALSE ;
 }
 
 
@@ -95,7 +100,7 @@ void zmapWindowColOrderColumns(ZMapWindow window)
  *               Internal routines
  */
 
-static void orderPositionColumns(ZMapWindow window)
+static void orderPositionColumns(ZMapWindow window, const gboolean use_config)
 {
   OrderColumnsDataStruct order_data = {NULL} ;
   guint i = 0;
@@ -115,16 +120,19 @@ static void orderPositionColumns(ZMapWindow window)
   GQuark threeframe = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME);
 
   // start at 1 to let us catch 0 == not found
-  for(names = window->feature_set_names, i = 1; names; names = names->next, ++i)
+  if (use_config)
     {
-      GQuark id = zMapFeatureSetCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(names->data)));
+      for(names = window->feature_set_names, i = 1; names; names = names->next, ++i)
+        {
+          GQuark id = zMapFeatureSetCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(names->data)));
 
-      g_hash_table_insert(order_data.names_hash,GUINT_TO_POINTER(id), GUINT_TO_POINTER(i));
-      if(id == threeframe)
-        order_data.three_frame_position = i;
+          g_hash_table_insert(order_data.names_hash,GUINT_TO_POINTER(id), GUINT_TO_POINTER(i));
+          if(id == threeframe)
+            order_data.three_frame_position = i;
 
-      if(order_debug_G)
-        printf("WFSN %s = %d\n",g_quark_to_string(GPOINTER_TO_UINT(names->data)),i);
+          if(order_debug_G)
+            printf("WFSN %s = %d\n",g_quark_to_string(GPOINTER_TO_UINT(names->data)),i);
+        }
     }
 
   // Now loop through the original ordered list and append any that weren't in the feature_set_names to
