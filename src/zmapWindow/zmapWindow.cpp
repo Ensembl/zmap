@@ -7290,7 +7290,7 @@ static void setupRuler(ZMapWindow       window,
   zMapReturnIfFail(window) ;
 
   if(horizon && !*horizon)
-    *horizon = zMapDrawHorizonCreate(window->canvas) ;
+    *horizon = zMapDrawHorizonCreate(window->canvas, &window->colour_horizon) ;
 
   if (tooltip && !*tooltip)
     *tooltip = zMapDrawToolTipCreate(window->canvas);

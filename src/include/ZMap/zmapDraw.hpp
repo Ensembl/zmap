@@ -234,7 +234,7 @@ void zMapDrawRubberbandResize(FooCanvasItem *band,
                               double current_x, double current_y
                               );
 
-FooCanvasItem *zMapDrawHorizonCreate(FooCanvas *canvas);
+FooCanvasItem *zMapDrawHorizonCreate(FooCanvas *canvas, GdkColor *colour);
 
 void zMapDrawHorizonReposition(FooCanvasItem *line, double current_x);
 

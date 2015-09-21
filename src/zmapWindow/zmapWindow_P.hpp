@@ -664,6 +664,7 @@ typedef enum {TARGET_STRING, TARGET_URL} DragDropTargetType;
 /* Colour for highlighting a whole columns background. */
 #define ZMAP_WINDOW_COLUMN_HIGHLIGHT "grey"
 #define ZMAP_WINDOW_RUBBER_BAND "black"
+#define ZMAP_WINDOW_HORIZON "black"
 #define ZMAP_WINDOW_ITEM_HIGHLIGHT "dark grey"
 
 /* Colours for highlighting 3 frame data */
@@ -983,6 +984,7 @@ typedef struct ZMapWindowStructType
   GdkColor colour_column_highlight ;
 
   GdkColor colour_rubber_band ;
+  GdkColor colour_horizon ;
 
   GdkColor colour_evidence_border ;
   GdkColor colour_evidence_fill ;
