@@ -227,14 +227,14 @@ FooCanvasItem *zMapDrawScale(FooCanvas *canvas,
 
 
 /* This needs to be a bit cleverer, so you can't actually move the origin */
-FooCanvasItem *zMapDrawRubberbandCreate(FooCanvas *canvas);
+FooCanvasItem *zMapDrawRubberbandCreate(FooCanvas *canvas, GdkColor *colour);
 
 void zMapDrawRubberbandResize(FooCanvasItem *band,
                               double origin_x, double origin_y,
                               double current_x, double current_y
                               );
 
-FooCanvasItem *zMapDrawHorizonCreate(FooCanvas *canvas);
+FooCanvasItem *zMapDrawHorizonCreate(FooCanvas *canvas, GdkColor *colour);
 
 void zMapDrawHorizonReposition(FooCanvasItem *line, double current_x);
 

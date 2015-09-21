@@ -870,6 +870,22 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
                                              ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                              "string", colour);
 
+  if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+                                    ZMAPSTANZA_WINDOW_RUBBER_BAND, &colour))
+    colour = (char *)ZMAP_WINDOW_RUBBER_BAND;
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_rubber_band", NULL,
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", colour);
+
+  if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+                                    ZMAPSTANZA_WINDOW_HORIZON, &colour))
+    colour = (char *)ZMAP_WINDOW_HORIZON;
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_horizon", NULL,
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", colour);
+
   zMapConfigIniContextDestroy(context);
 
   return chapter;

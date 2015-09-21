@@ -847,14 +847,20 @@ GdkColor *colour, guint line_width)
  * raise to top and always see it. It'll hide behind widgets though,
  * but we don't have any of those.
  */
-FooCanvasItem *zMapDrawRubberbandCreate(FooCanvas *canvas)
+FooCanvasItem *zMapDrawRubberbandCreate(FooCanvas *canvas, GdkColor *colour)
 {
   FooCanvasItem *rubberband;
+
+  char *colour_str = gdk_color_to_string(colour) ;
+
   rubberband = foo_canvas_item_new (foo_canvas_root(FOO_CANVAS(canvas)),
                              foo_canvas_rect_get_type (),
-                             "outline_color", "black",
+                             "outline_color", colour_str,
                              "width_pixels", 1,
                              NULL);
+
+  g_free(colour_str) ;
+
   return rubberband;
 }
 
@@ -875,15 +881,20 @@ void zMapDrawRubberbandResize(FooCanvasItem *band,
   return ;
 }
 
-FooCanvasItem *zMapDrawHorizonCreate(FooCanvas *canvas)
+FooCanvasItem *zMapDrawHorizonCreate(FooCanvas *canvas, GdkColor *colour)
 {
   FooCanvasItem *line;
 
+  char *colour_str = gdk_color_to_string(colour) ;
+
   line = foo_canvas_item_new (foo_canvas_root(FOO_CANVAS(canvas)),
                              foo_canvas_line_get_type (),
-                             "fill_color", "black",
+                             "fill_color", colour_str,
                              "width_pixels", 1,
                              NULL);
+
+  g_free(colour_str) ;
+
   return line;
 }
 

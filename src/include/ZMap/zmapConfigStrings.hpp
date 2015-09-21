@@ -716,6 +716,8 @@
 #define ZMAPSTANZA_WINDOW_Q_REVERSECOL "colour-q-reversecol"
 #define ZMAPSTANZA_WINDOW_SEPARATOR    "colour-separator"
 #define ZMAPSTANZA_WINDOW_COL_HIGH     "colour-column-highlight"
+#define ZMAPSTANZA_WINDOW_RUBBER_BAND  "colour-rubber-band"
+#define ZMAPSTANZA_WINDOW_HORIZON      "colour-horizon"
 #define ZMAPSTANZA_WINDOW_ITEM_MARK    "colour-item-mark"
 #define ZMAPSTANZA_WINDOW_ITEM_HIGH    "colour-item-highlight"
 #define ZMAPSTANZA_WINDOW_FRAME_0      "colour-frame-0"
