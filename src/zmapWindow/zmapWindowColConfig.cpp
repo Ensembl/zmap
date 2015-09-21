@@ -593,9 +593,11 @@ static void loaded_page_apply(NotebookPage notebook_page)
   LoadedPageData loaded_page_data;
   ColConfigure configure_data;
   gboolean save_apply_now, save_reposition;
+  ZMapWindow window ;
 
   configure_data = notebook_page->configure_data;
   loaded_page_data = (LoadedPageData)(notebook_page->page_data);
+  window = loaded_page_data->window ;
 
   /* Reset the flags so that we apply changes now but don't reposition yet. Save the original
    * flag values first */
@@ -620,6 +622,13 @@ static void loaded_page_apply(NotebookPage notebook_page)
       ZMapFeatureColumn column = (ZMapFeatureColumn)(item->data) ;
       column->order = i ;
     }
+
+  /* Need to set the feature_set_names list to the correct order. Not sure if we should include
+   * all featuresets or just reorder the list that is there. For now, include all. */
+  if (window->feature_set_names)
+    g_list_free(window->feature_set_names) ;
+
+  window->feature_set_names = zMapFeatureGetOrderedColumnsListIDs(window->context_map) ;
 
   zmapWindowBusy(loaded_page_data->window, FALSE) ;
   zmapWindowColOrderColumns(loaded_page_data->window);
