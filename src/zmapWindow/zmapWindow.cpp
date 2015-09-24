@@ -7462,11 +7462,10 @@ static void updateColumnBackground(ZMapWindow window,
                                   strand,
                                   frame);
 
-  if (foo)
+  if (foo && foo->parent)
     {
       ZMapWindowContainerGroup column = (ZMapWindowContainerGroup)foo->parent;
-      GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;/* is there a column background config colour? */
-      GdkColor *fill_col = &white;
+      GdkColor *fill_col = &window->canvas_background;
 
       int n_filtered = zMapWindowFeaturesetItemGetNFiltered(foo);
 
