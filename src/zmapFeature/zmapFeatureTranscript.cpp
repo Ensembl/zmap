@@ -1677,12 +1677,20 @@ GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature)
   return result ;
 }
 
+/* Set the evidence list for the given transcript. Takes ownership of the list
+ * if it succeeds or free's the list if it doesn't. */
 void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data)
 {
   ZMapFeature feature = (ZMapFeature)data ;
 
-  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-    feature->feature.transcript.evidence = evidence ;
+  if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      feature->feature.transcript.evidence = evidence ;
+    }
+  else
+    {
+      g_list_free(evidence) ;
+    }
 }
 
 
