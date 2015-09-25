@@ -1251,7 +1251,6 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
           //Vector_free(exons) ;
 
           /* Get list of supporting features and convert it to a list of unique ids */
-          printf("%s %s", feature_name_id, feature_name) ;
           Vector *supporting_features = Transcript_getAllSupportingFeatures(rsf);
           GList *evidence_list = NULL ;
 
