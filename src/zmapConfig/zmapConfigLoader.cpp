@@ -663,7 +663,7 @@ GList *zMapConfigString2QuarkList(const char *string_list, gboolean cannonical)
   return zmapConfigString2QuarkListExtra(string_list,cannonical,FALSE);
 }
 
-GList *zMapConfigString2QuarkIDList(char *string_list)
+GList *zMapConfigString2QuarkIDList(const char *string_list)
 {
   return zmapConfigString2QuarkListExtra(string_list,TRUE,TRUE);
 }

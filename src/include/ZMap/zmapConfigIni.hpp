@@ -188,7 +188,7 @@ gboolean zMapConfigLegacyStyles(char *config_file) ;
 
 char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical);
 GList *zMapConfigString2QuarkList(const char *string_list,gboolean cannonical);
-GList *zMapConfigString2QuarkIDList(char *string_list);
+GList *zMapConfigString2QuarkIDList(const char *string_list);
 
 GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context, const char *stanza, int how) ;
 #define QQ_STRING 0
