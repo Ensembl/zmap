@@ -32,7 +32,16 @@
 
 #include <glib.h>
 
+// Defaults for abbreviating strings.
+#define STR_ABBREV_CHARS   "[...]"
+#define STR_ABBREV_MAX_LEN 20
 
+
+
+
+const char *zMapStringAbbrevStr(const char *orig_str,
+                                const char *optional_abbrev_chars = STR_ABBREV_CHARS,
+                                const unsigned int optional_max_orig_len = STR_ABBREV_MAX_LEN) ;
 int zMapStringFindMatch(char *target, char *query) ;
 int zMapStringFindMatchCase(char *target, char *query, gboolean caseSensitive) ;
 gboolean zMapStringBlank(char *string_arg) ;

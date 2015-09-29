@@ -50,6 +50,7 @@
 /* gb10: for some reason the open command fails with this: user_interface.shtml#alignment_display */
 
 #define ZMAPWEB_KEYBOARD_DOC  "keyboard_mouse.shtml"
+#define ZMAPWEB_FILTER_DOC  "filter_window.shtml"
 
 
 #endif /* ZMAP_WEBPAGES_H */

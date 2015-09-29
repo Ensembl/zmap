@@ -26,7 +26,7 @@ ZMap may also be used as a standalone browser taking data either from external s
 
 INSTALLATION
 ------------
-Briefly, the shell commands `./configure; make; make install' should configure, build, and install this package on Linux and Mac OS X. See the INSTALL file for more details. For installation on Windows, see the file INSTALL.windows.
+Briefly, the shell commands `./configure; make; make install' should configure, build, and install this package on Linux, Mac OS X or Windows (under Cygwin). See the platform-specific INSTALL.xxx files for more details.
 
 
 USAGE

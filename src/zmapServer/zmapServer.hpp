@@ -63,6 +63,7 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server,ZMapServerReqO
 ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerReqGetServerInfo info) ;
 ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 						 GList **feature_sets_inout,
+						 GList **biotypes_inout,
 						 GList *sources,
 						 GList **required_styles,
 						 GHashTable **featureset_2_stylelist_out,

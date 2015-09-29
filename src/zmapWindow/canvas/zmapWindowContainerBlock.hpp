@@ -64,6 +64,12 @@ typedef struct _zmapWindowContainerBlockClassStruct  zmapWindowContainerBlockCla
 GType zmapWindowContainerBlockGetType(void);
 ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBlock container_block,
 							 ZMapFeatureBlock feature_block);
+
+ZMapWindowContainerFeatureSet zmapWindowContainerBlockFindColumn(ZMapWindowContainerBlock block_container,
+                                                                 const char *col_name, ZMapStrand strand) ;
+GList *zmapWindowContainerBlockColumnList(ZMapWindowContainerBlock block_container,
+                                          gboolean unique, ZMapStrand strand, gboolean visible) ;
+
 void   zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_data,
 						   FooCanvasGroup *container);
 GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock block_data);

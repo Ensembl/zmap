@@ -410,9 +410,10 @@ typedef struct _ZMapViewStruct
                                         * on feature's unique_id. Gets cleared when pointers
                                         * are invalidated, i.e. revcomp */
 
-  GQuark save_file ;                   /* Filename to use for the Save option in standalone
-                                        * ZMap. Gets set either from the input file or from the
-                                        * first Save As operation.  */
+  /* Filenames to use for the Save option in standalone ZMap. Gets set either from the input 
+   * file or from the first Save As operation. This is an array indexed on the type of export,
+   * e.g. features/config/styles */
+  GQuark save_file[ZMAPVIEW_EXPORT_NUM_TYPES] ;
 } ZMapViewStruct ;
 
 
@@ -465,7 +466,7 @@ void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServer
 void zmapViewSessionFreeServer(ZMapViewSessionServer session_data) ;
 
 ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
-					 ZMapFeatureBlock block_orig, GList *req_featuresets,
+					 ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
 					 gpointer server, /* ZMapConfigSource */
 					 int req_start, int req__end,
 					 gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
@@ -493,7 +494,7 @@ gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list) ;
 void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
 void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list) ;
 
-void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
+void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
 			  ZMapConfigSource server,
 			  int features_start, int features_end,
 			  gboolean group, gboolean make_new_connection, gboolean terminate) ;
@@ -514,6 +515,8 @@ gboolean zmapViewMergeNewFeatures(ZMapView view,
                                   ZMapFeatureContext *context, ZMapFeatureContextMergeStats *merge_stats_out,
                                   GList **feature_list) ;
 void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list) ;
+
+GList* zmapViewGetOrderedColumnsList(ZMapView view) ;
 
 /* zmapViewFeatureMask.c */
 GList *zMapViewMaskFeatureSets(ZMapView view, GList *feature_set_names);

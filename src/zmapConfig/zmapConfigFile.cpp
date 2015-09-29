@@ -81,50 +81,86 @@ ZMapConfigIni zMapConfigIniNew(void)
 gboolean zMapConfigIniReadAll(ZMapConfigIni config, const char *config_file)
 {
   gboolean red = FALSE ;
-
-  /* if (!config) 
-    return red ; */
   zMapReturnValIfFail(config, red) ; 
-
-  /* mh17: this assignment invalidates the 2nd if statement and subsequent statement, we'd read the same file twice
-    testing shows that none of these files exist....
-    file_name = (config_file ? config_file : zMapConfigDirGetZmapHomeFile()) ; */ 
 
   if (!system_file_loaded(config) && has_system_file(config))
     {
-      config->sys_key_file = read_file(zMapConfigDirGetSysFile(), &(config->sys_key_error)) ;
+      zMapConfigIniReadSystem(config) ;
     }
 
-/*  if (!system_zmap_file_loaded(config) && (config_file || has_system_zmap_file(config))) */ 
   if (!system_zmap_file_loaded(config) && has_system_zmap_file(config))
     {
-      config->zmap_key_file = read_file(zMapConfigDirGetZmapHomeFile(), &(config->zmap_key_error)) ;
+      zMapConfigIniReadZmap(config) ;
     }
 
-  /* rather helpfully this function accepts a null arg and then chooses the config file specified on the command line */
-  /* which is much clearer than having that passed through to this function. Yeah right. */
   red = zMapConfigIniReadUser(config, config_file) ;
 
   return red ;
 }
 
 
+gboolean zMapConfigIniReadFileType(ZMapConfigIni config, const char *config_file, ZMapConfigIniFileType file_type)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(config, result) ;
+
+  switch (file_type)
+    {
+    case ZMAPCONFIG_FILE_SYS:
+      zMapConfigIniReadSystem(config) ;
+      break ;
+    case ZMAPCONFIG_FILE_ZMAP:
+      zMapConfigIniReadZmap(config) ;
+      break ;
+    case ZMAPCONFIG_FILE_USER:
+      zMapConfigIniReadUser(config, config_file) ;
+      break ;
+    case ZMAPCONFIG_FILE_STYLES:
+      zMapConfigIniReadStyles(config, config_file) ;
+      break ;
+    case ZMAPCONFIG_FILE_BUFFER: // fall through - buffer is treated differently to files
+    default:
+      zMapWarnIfReached() ;
+      break ;
+    }
+
+  return result ;
+}
+
+
+gboolean zMapConfigIniReadSystem(ZMapConfigIni config)
+{
+  const char *filename = zMapConfigDirGetSysFile() ;
+  config->key_file[ZMAPCONFIG_FILE_SYS] = read_file(filename, &(config->key_error[ZMAPCONFIG_FILE_SYS])) ;
+  config->key_file_name[ZMAPCONFIG_FILE_SYS] = g_quark_from_string(filename) ;
+  return TRUE ;
+}
+
+
+gboolean zMapConfigIniReadZmap(ZMapConfigIni config)
+{
+  const char *filename = zMapConfigDirGetZmapHomeFile() ;
+  config->key_file[ZMAPCONFIG_FILE_ZMAP] = read_file(filename, &(config->key_error[ZMAPCONFIG_FILE_ZMAP])) ;
+  config->key_file_name[ZMAPCONFIG_FILE_ZMAP] = g_quark_from_string(filename) ;
+  return TRUE ;
+}
+
+
 gboolean zMapConfigIniReadUser(ZMapConfigIni config, const char *config_file)
 {
   gboolean red = FALSE ;
-  const char *file_name ;
+  zMapReturnValIfFail(config && config_file, red) ;
 
-  /* if (!config) 
-    return red ; */
-  zMapReturnValIfFail(config, red) ;
+  if (!config->unsaved_changes[ZMAPCONFIG_FILE_USER])
+    {
+      config->key_file[ZMAPCONFIG_FILE_USER] = read_file(config_file, &(config->key_error[ZMAPCONFIG_FILE_USER])) ;
+    }
 
-  file_name = (config_file ? config_file : zMapConfigDirGetFile()) ;
-
-  if (!config->unsaved_alterations)
-    config->user_key_file = read_file(file_name, &(config->user_key_error)) ;
-
-  if (config->user_key_file != NULL)
-    red = TRUE ;
+  if (config->key_file[ZMAPCONFIG_FILE_USER] != NULL)
+    {
+      config->key_file_name[ZMAPCONFIG_FILE_USER] = g_quark_from_string(config_file) ;
+      red = TRUE ;
+    }
 
   return red ;
 }
@@ -139,16 +175,16 @@ gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, const char *buffer)
 
   if(buffer != NULL)
     {
-      config->buffer_key_file = g_key_file_new();
+      config->key_file[ZMAPCONFIG_FILE_BUFFER] = g_key_file_new();
 
-      if(!(g_key_file_load_from_data(config->buffer_key_file,
+      if(!(g_key_file_load_from_data(config->key_file[ZMAPCONFIG_FILE_BUFFER],
              buffer, strlen(buffer),
              G_KEY_FILE_KEEP_COMMENTS,
-             &(config->buffer_key_error))))
+             &(config->key_error[ZMAPCONFIG_FILE_BUFFER]))))
         {
           /* Do something with the error... */
-          g_key_file_free(config->buffer_key_file);
-          config->buffer_key_file = NULL;
+          g_key_file_free(config->key_file[ZMAPCONFIG_FILE_BUFFER]);
+          config->key_file[ZMAPCONFIG_FILE_BUFFER] = NULL;
         }
       else
         red = TRUE;
@@ -158,11 +194,8 @@ gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, const char *buffer)
 }
 
 
-
-
-
 /* this is used for styles, NOTE not ever freed until the context is destroyed so can have only one file */
-gboolean zMapConfigIniReadFile(ZMapConfigIni config, const char *file)
+gboolean zMapConfigIniReadStyles(ZMapConfigIni config, const char *file)
 {
   gboolean read = FALSE;
 
@@ -179,8 +212,9 @@ gboolean zMapConfigIniReadFile(ZMapConfigIni config, const char *file)
     filepath = g_strdup(file_expanded) ;
 
   if (filepath
-      && (config->extra_key_file = read_file(filepath, &(config->extra_key_error))))
+      && (config->key_file[ZMAPCONFIG_FILE_STYLES] = read_file(filepath, &(config->key_error[ZMAPCONFIG_FILE_STYLES]))))
     {
+      config->key_file_name[ZMAPCONFIG_FILE_STYLES] = g_quark_from_string(file) ;
       read = TRUE;
     }
 
@@ -194,72 +228,91 @@ gboolean zMapConfigIniReadFile(ZMapConfigIni config, const char *file)
 }
 
 
-gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
+gboolean zMapConfigIniSave(ZMapConfigIni config, ZMapConfigIniFileType file_type)
 {
   gboolean saved = FALSE;
+  zMapReturnValIfFail(config, saved) ;
 
-  if(config->user_key_file && config->unsaved_alterations)
+  if(config->key_file_name[file_type] && 
+     config->key_file[file_type] && 
+     config->unsaved_changes[file_type])
     {
+      const char *filename = g_quark_to_string(config->key_file_name[file_type]) ;
       char *file_contents = NULL;
       gsize file_size = 0;
-      GError *key_error = NULL;
+      GError *g_error = NULL;
 
-      file_contents = g_key_file_to_data(config->user_key_file,
+      file_contents = g_key_file_to_data(config->key_file[file_type],
                                          &file_size,
-                                         &key_error);
+                                         &g_error);
 
-      if((!file_contents) || key_error)
+      if(file_contents && !g_error)
         {
-          /* There was an error */
-        }
-      else
-        {
-          /* Ok we can write the file contents to disk */
-          char *filename = NULL;
-
-          if ((filename = zMapConfigDirGetFile()))
+          /* Must make sure it's UTF8 or g_io_channel_write_chars will crash,
+           * for now just replace the bad character with a question mark */
+          const gchar *bad_char_out = NULL ;
+          while (!g_utf8_validate(file_contents, -1, &bad_char_out))
             {
-              GIOChannel *output = NULL;
-              GError *error = NULL;
+              char *bad_char = (char *)bad_char_out ;
+              *bad_char='?';
+            }
+
+          /* Ok we can write the file contents to disk */
+          GIOChannel *output = g_io_channel_new_file(filename, "w", &g_error);
         
-              if((output = g_io_channel_new_file(filename, "w", &error)) && (!error))
+          if(output && !g_error)
+            {
+              GIOStatus status;
+              gsize bytes_written = 0;
+
+              status = g_io_channel_write_chars(output, file_contents, file_size,
+                                                &bytes_written, &g_error);
+                
+              if (status == G_IO_STATUS_NORMAL && !g_error && bytes_written == file_size)
                 {
-                  GIOStatus status;
-                  gsize bytes_written = 0;
-                
-                  status = g_io_channel_write_chars(output, file_contents, file_size,
-                    &bytes_written, &error);
-                
-                  if((status == G_IO_STATUS_NORMAL) && (!error) && bytes_written == file_size)
-                    {
-                      /* Everything was ok */
-                      /* need to flush file... */
-                    }
-                  else if(error)
-                    {
-                      /* Cry about the error */
-                      zMapLogCritical("%s", error->message);
-                      g_error_free(error);
-                      error = NULL;
-                    }
-                  else
-                    zMapLogCritical("g_io_channel_write_chars returned error status '%d', but no error.", status);
+                  /* Everything was ok */
+                  /* need to flush file... */
+                }
+              else
+                {
+                  /* Cry about the error */
+                  zMapLogCritical("Failed writing to file '%s': %s", 
+                                  filename,
+                                  g_error ? g_error->message : "<no error message>");
+
+                  g_error_free(g_error);
+                  g_error = NULL;
+                }
         
-                  status = g_io_channel_shutdown(output, TRUE, &error);
+              status = g_io_channel_shutdown(output, TRUE, &g_error);
         
-                  if(status != G_IO_STATUS_NORMAL && error)
-                    {
-                      /* Cry about another error... */
-                      zMapLogCritical("%s", error->message);
-                      g_error_free(error);
-                      error = NULL;
-                    }
+              if(status != G_IO_STATUS_NORMAL && g_error)
+                {
+                  /* Cry about another error... */
+                  zMapLogCritical("Failed flushing channel: %s", 
+                                  g_error ? g_error->message : "<no error message>");
+
+                  g_error_free(g_error);
+                  g_error = NULL;
                 }
             }
           else
             {
-              /* problem with your file */
+              zMapLogCritical("Failed to create channel for file '%s': %s", 
+                              filename,
+                              g_error ? g_error->message : "<no error message>");
+
+              g_error_free(g_error);
+              g_error = NULL;
             }
+        }
+      else
+        {
+          zMapLogCritical("Failed to create config file contents: %s", 
+                          g_error ? g_error->message : "<no error message>");
+
+          g_error_free(g_error);
+          g_error = NULL;
         }
         
       if(file_contents)
@@ -275,25 +328,26 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
 
 gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name,GKeyFile **which)
 {
-  GKeyFile *files[FILE_COUNT];
   gboolean result = FALSE;
-  int i;
 
-  files[0] = config->sys_key_file;
-  files[1] = config->zmap_key_file;
-  files[2] = config->user_key_file;
-  files[3] = config->extra_key_file;
-  files[4] = config->buffer_key_file;
+  /* gb10: Not sure why this is in reverse order (maybe it doesn't matter) but I'm keeping it
+   * that way in case it's important. */
+  int i = ZMAPCONFIG_FILE_NUM_TYPES ;
+  ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_NUM_TYPES ;
 
-  for (i = 0;i < FILE_COUNT; i++)
+  for ( ; i >= 0; --i)
     {
-      if(files[i])
-        result = g_key_file_has_group(files[i], stanza_name);
+      file_type = (ZMapConfigIniFileType)i ;
+
+      if(config->key_file[file_type])
+        result = g_key_file_has_group(config->key_file[file_type], stanza_name);
+
       if(result)
-            break;
+        break;
     }
+
   if(result && which)
-      *which = files[i];
+    *which = config->key_file[file_type];
 
   return result;
 }
@@ -303,27 +357,19 @@ gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name,GK
 void zMapConfigIniDestroy(ZMapConfigIni config, gboolean save_user)
 {
   if(save_user)
-    zMapConfigIniSaveUser(config);
+    zMapConfigIniSave(config, ZMAPCONFIG_FILE_USER);
 
-  /* Free the key files */
-  if(config->sys_key_file)
-    g_key_file_free(config->sys_key_file);
-  if(config->zmap_key_file)
-    g_key_file_free(config->zmap_key_file);
-  if(config->user_key_file)
-    g_key_file_free(config->user_key_file);
-  if(config->extra_key_file)
-    g_key_file_free(config->extra_key_file);
+  for (int i = 0; i < ZMAPCONFIG_FILE_NUM_TYPES; ++i)
+    {
+      ZMapConfigIniFileType file_type = (ZMapConfigIniFileType)i ;
 
-  /* And any errors left hanging around */
-  if(config->sys_key_error)
-    g_error_free(config->sys_key_error);
-  if(config->zmap_key_error)
-    g_error_free(config->zmap_key_error);
-  if(config->user_key_error)
-    g_error_free(config->user_key_error);
-  if(config->extra_key_error)
-    g_error_free(config->extra_key_error);
+      /* Free the key files */
+      if(config->key_file[file_type])
+        g_key_file_free(config->key_file[file_type]);
+
+      if (config->key_error[file_type])
+        g_error_free(config->key_error[file_type]) ;
+    }
 
   /* zero the memory */
   memset(config, 0, sizeof(ZMapConfigIniStruct));
@@ -347,7 +393,7 @@ static gboolean system_file_loaded(ZMapConfigIni config)
 {
   gboolean exists = FALSE;
 
-  if(config->sys_key_file)
+  if(config->key_file[ZMAPCONFIG_FILE_SYS])
     exists = TRUE;
 
   return exists;
@@ -368,7 +414,7 @@ static gboolean system_zmap_file_loaded(ZMapConfigIni config)
 {
   gboolean exists = FALSE;
 
-  if(config->zmap_key_file)
+  if(config->key_file[ZMAPCONFIG_FILE_ZMAP])
     exists = TRUE;
 
   return exists;

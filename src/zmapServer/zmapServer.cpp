@@ -203,6 +203,7 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server, ZMapServerReq
 
 ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
                                                  GList **feature_sets_inout,
+                                                 GList **biotypes_inout,
                                                  GList *sources,
                                                  GList **required_styles_out,
                                                  GHashTable **featureset_2_stylelist_out,
@@ -219,6 +220,7 @@ ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
       result = server->last_response
         = (server->funcs->feature_set_names)(server->server_conn,
                                              feature_sets_inout,
+                                             biotypes_inout,
                                              sources,
                                              required_styles_out,
                                              featureset_2_stylelist_out,

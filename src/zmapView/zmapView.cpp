@@ -246,6 +246,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
                                            gboolean req_styles,
                                            char *styles_file,
                                            GList *req_featuresets,
+                                           GList *req_biotypes,
                                            gboolean dna_requested,
                                            gint start,gint end,
                                            gboolean terminate);
@@ -260,8 +261,9 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 
 static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData styles) ;
 
-static gboolean checkForUnsavedChanges(ZMapView zmap_view) ;
+static GtkResponseType checkForUnsavedAnnotation(ZMapView zmap_view) ;
 static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view) ;
+//static GtkResponseType checkForUnsavedConfig(ZMapView zmap_view, ZMapViewExportType export_type) ;
 
 
 static GHashTable *getFeatureSourceHash(GList *sources) ;
@@ -594,8 +596,6 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 }
 
 
-
-
 /* Connect a View to its databases via threads, at this point the View is blank and waiting
  * to be called to load some data.
  *
@@ -742,23 +742,16 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
       if (zmap_view->columns_set)
         {
-          GList *columns = NULL,*kv;
-          gpointer key,value;
-
           /* MH17:
            * due to an oversight I lost this ordering when converting columns to a hash table from a list
            * the columns struct contains the order, and bump status too
            *
            * due to constraints w/ old config we need to give the window a list of column name quarks in order
            */
-          zMap_g_hash_table_iter_init(&kv,zmap_view->context_map.columns);
-          while(zMap_g_hash_table_iter_next(&kv,&key,&value))
-            {
-              columns = g_list_prepend(columns,key);
-            }
+          GList *columns = zmapViewGetOrderedColumnsList(zmap_view) ;
 
-          columns = g_list_sort_with_data(columns,colOrderCB,zmap_view->context_map.columns);
           g_list_foreach(zmap_view->window_list, invoke_merge_in_names, columns);
+
           g_list_free(columns);
         }
 
@@ -832,6 +825,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
               {
                 GList *req_featuresets = NULL ;
+                GList *req_biotypes = NULL ;
                 //                ZMapFeatureContext context;
                 //                gboolean dna_requested = FALSE;
 
@@ -848,9 +842,15 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
                       }
                   }
 
+                if(current_server->biotypes)
+                  {
+                    /* req all biotypes  as a list of their quark names. */
+                    req_biotypes = zMapConfigString2QuarkList(current_server->biotypes,FALSE) ;
+                  }
+
                 terminate = g_str_has_prefix(current_server->url,"pipe://");
 
-                zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, current_server,
+                zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
                                      zmap_view->view_sequence->start, zmap_view->view_sequence->end,
                                      SOURCE_GROUP_START,TRUE, terminate) ;
               }
@@ -1460,24 +1460,26 @@ void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer)
   return ;
 }
 
-/* Check if there have been changes to the scratch column that have not been
- * Check if there are any unsaved changes and if so ask the user what they want to do.
- * Returns true to continue or false to cancel. */
+
+/* Check if there have been any changes of various types that have not been
+ * saved and if so ask the user what they want to do. Returns true to continue 
+ * or false to cancel. */
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view)
 {
   gboolean result = TRUE ;
   GtkResponseType response = GTK_RESPONSE_NONE ;
 
-  response = checkForUnsavedFeatures(zmap_view) ;
+  if (response != GTK_RESPONSE_CANCEL)
+    response = checkForUnsavedFeatures(zmap_view) ;
 
-  if (response == GTK_RESPONSE_CANCEL)
-    {
-      result = FALSE ;
-    }
-  else
-    {
-      result = checkForUnsavedChanges(zmap_view) ;
-    }
+  if (response != GTK_RESPONSE_CANCEL)
+    response = checkForUnsavedAnnotation(zmap_view) ;
+
+//  if (response != GTK_RESPONSE_CANCEL)
+//    response = checkForUnsavedConfig(zmap_view, ZMAPVIEW_EXPORT_CONFIG) ;
+//
+//  if (response != GTK_RESPONSE_CANCEL)
+//    response = checkForUnsavedConfig(zmap_view, ZMAPVIEW_EXPORT_STYLES) ;
 
   return result ;
 }
@@ -1547,7 +1549,7 @@ void zMapViewShowLoadStatus(ZMapView view)
 
 /* Hate this but Malcolm seems to have punctured the encapsulation in quite a few places.... */
 gboolean zMapViewRequestServer(ZMapView view,
-                               ZMapFeatureBlock block_orig, GList *req_featuresets,
+                               ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
                                gpointer _server, /* ZMapConfigSource */
                                int req_start, int req_end,
                                gboolean dna_requested, gboolean terminate, gboolean show_warning)
@@ -1556,7 +1558,7 @@ gboolean zMapViewRequestServer(ZMapView view,
   ZMapViewConnection view_conn ;
 
   if ((view_conn = zmapViewRequestServer(view, NULL,
-                                         block_orig, req_featuresets,
+                                         block_orig, req_featuresets, req_biotypes,
                                          _server, /* ZMapConfigSource */
                                          req_start, req_end,
                                          dna_requested, terminate, show_warning)))
@@ -1584,7 +1586,8 @@ gboolean zMapViewRequestServer(ZMapView view,
  *
  * NOTE block is NULL for startup requests
  */
-void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_sources,
+void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, 
+                          GList *req_sources, GList *req_biotypes,
                           ZMapConfigSource server,
                           int features_start, int features_end,
                           gboolean group_flag, gboolean make_new_connection, gboolean terminate)
@@ -1626,7 +1629,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
           dna_requested = TRUE ;
         }
 
-      view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, (gpointer) server,
+      view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, req_biotypes, (gpointer) server,
                                         req_start, req_end, dna_requested, terminate, !view->thread_fail_silent);
       if(view_conn)
         requested = TRUE;
@@ -1792,7 +1795,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
               view_conn = (make_new_connection ? NULL : (existing ? view_conn : NULL)) ;
 
 
-              view_conn = zmapViewRequestServer(view, view_conn, block_orig, req_featuresets,
+              view_conn = zmapViewRequestServer(view, view_conn, block_orig, req_featuresets, req_biotypes,
                                                 (gpointer)server, req_start, req_end,
                                                 dna_requested,
                                                 (!existing && terminate), !view->thread_fail_silent) ;
@@ -2054,7 +2057,7 @@ void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **fe
  * which cannot be delayed as there's no way to fit these into the columns dialog as it currrently exists
  */
 ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
-                                         ZMapFeatureBlock block_orig, GList *req_featuresets,
+                                         ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
                                          gpointer _server, /* ZMapConfigSource */
                                          int req_start, int req_end,
                                          gboolean dna_requested, gboolean terminate, gboolean show_warning)
@@ -2109,6 +2112,7 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
                                         server->req_styles,
                                         server->stylesfile,
                                         req_featuresets,
+                                        req_biotypes,
                                         dna_requested,
                                         req_start,req_end,
                                         terminate || is_pipe)))
@@ -2193,7 +2197,7 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** styles
   GList *settings_list = NULL;
   ZMapConfigIniContext context ;
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
 
       if (config_str)
@@ -2215,6 +2219,26 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** styles
 }
 
 
+
+/* Get a GList of column IDs as GQuarks in the correct order according to the 'order' field in
+ * each ZMapFeatureColumn struct (from the context_map.columns hash table).
+ * Returns a new GList which should be free'd with g_list_free() */
+GList* zmapViewGetOrderedColumnsList(ZMapView zmap_view)
+{
+  GList *columns = NULL ;
+  GList *kv = NULL;
+  gpointer key = NULL,value = NULL;
+
+  zMap_g_hash_table_iter_init(&kv, zmap_view->context_map.columns);
+  while(zMap_g_hash_table_iter_next(&kv,&key,&value))
+    {
+      columns = g_list_prepend(columns,key);
+    }
+
+  columns = g_list_sort_with_data(columns, colOrderCB, zmap_view->context_map.columns);
+
+  return columns ;
+}
 
 
 
@@ -2304,12 +2328,12 @@ ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *ghash, GQuark featu
 
 
 
-/* Check if there have been changes to the scratch column that have not been
+/* Check if there have been changes to the Annotation column that have not been
  * saved and if so ask the user if they really want to quit. Returns OK to
- * continue quitting or Cancel to stop. */
-static gboolean checkForUnsavedChanges(ZMapView zmap_view)
+ * continue quitting or Cancel to stop. Returns OK to quit, or Cancel. */
+static GtkResponseType checkForUnsavedAnnotation(ZMapView zmap_view)
 {
-  gboolean result = TRUE ;
+  GtkResponseType response = GTK_RESPONSE_OK ;
 
   if (zmap_view && zmap_view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING])
     {
@@ -2323,16 +2347,19 @@ static gboolean checkForUnsavedChanges(ZMapView zmap_view)
         g_strdup_printf("There are unsaved edits in the Annotation column for sequence '%s' - do you really want to quit?.",
                         zmap_view->view_sequence ? zmap_view->view_sequence->sequence : "<null>") ;
 
-      result = zMapGUIMsgGetBoolFull(parent,
-        ZMAP_MSG_WARNING,
-        msg,
-        GTK_STOCK_QUIT,
-        GTK_STOCK_CANCEL) ;
+      gboolean result = zMapGUIMsgGetBoolFull(parent,
+                                              ZMAP_MSG_WARNING,
+                                              msg,
+                                              GTK_STOCK_QUIT,
+                                              GTK_STOCK_CANCEL) ;
 
       g_free(msg) ;
+
+      if (!result)
+        response = GTK_RESPONSE_CANCEL ;
     }
 
-  return result ;
+  return response ;
 }
 
 
@@ -2374,7 +2401,7 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
               /* If we've already set a save file then use that. (Don't let it default
                * to the input file though because the user hasn't explicitly asked
                * for a Save option rather than Save As...) */
-              const char *file = zMapViewGetSaveFile(zmap_view, FALSE) ;
+              const char *file = zMapViewGetSaveFile(zmap_view, ZMAPVIEW_EXPORT_FEATURES, FALSE) ;
               char *filename = g_strdup(file) ;
               gboolean saved = zMapWindowExportFeatures(window, TRUE, FALSE, NULL, &filename, &error) ;
 
@@ -2398,6 +2425,64 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
 
   return response ;
 }
+
+
+/* Check if there are unsaved changes to config/styles and if so ask the
+ * user if they really want to quit. Returns OK to quit, Cancel, or Close if we saved. */
+//static GtkResponseType checkForUnsavedConfig(ZMapView zmap_view, ZMapViewExportType export_type)
+//{
+//  GtkResponseType response = GTK_RESPONSE_OK ;
+//  GError *error = NULL ;
+//
+//  if (zmap_view && zmap_view->flags[ZMAPFLAG_CONFIG_NEEDS_SAVING])
+//    {
+//      GtkWindow *parent = NULL ;
+//
+//      /* The responses for the 3 button arguments are ok, cancel, close. */
+//      char *msg = NULL ;
+//
+//      if (export_type == ZMAPVIEW_EXPORT_STYLES)
+//        msg = g_strdup_printf("There are unsaved styles - do you really want to quit?") ;
+//      else
+//        msg = g_strdup_printf("There are unsaved changes to the configuration - do you really want to quit?") ;
+//
+//      response = zMapGUIMsgGetSaveFull(parent,
+//                                       ZMAP_MSG_WARNING,
+//                                       msg,
+//                                       GTK_STOCK_QUIT,
+//                                       GTK_STOCK_CANCEL,
+//                                       GTK_STOCK_SAVE) ;
+//
+//      g_free(msg) ;
+//
+//      if (response == GTK_RESPONSE_CLOSE)
+//        {
+//          /* If we've already set a save file then use that. (Don't let it default
+//           * to the input file though because the user hasn't explicitly asked
+//           * for a Save option rather than Save As...) */
+//          const char *file = zMapViewGetSaveFile(zmap_view, export_type, FALSE) ;
+//          char *filename = g_strdup(file) ;
+//          gboolean saved = zMapViewExportConfig(zmap_view, export_type, &filename, &error) ;
+//
+//          if (!saved)
+//            {
+//              /* There was a problem saving so don't continue quitting zmap */
+//              response = GTK_RESPONSE_CANCEL ;
+//
+//              /* If error is null then the user cancelled the save so don't report
+//               * an error */
+//              if (error)
+//                {
+//                  zMapWarning("Save failed: %s", error->message) ;
+//                  g_error_free(error) ;
+//                  error = NULL ;
+//                }
+//            }
+//        }
+//    }
+//
+//  return response ;
+//}
 
 
 
@@ -2508,7 +2593,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 
   zMapLogTime(TIMER_LOAD,TIMER_CLEAR,0,"View init");
 
-  if ((context = zMapConfigIniContextProvide(view->view_sequence->config_file)))
+  if ((context = zMapConfigIniContextProvide(view->view_sequence->config_file, ZMAPCONFIG_FILE_NONE)))
     {
       if(config_str)
         zMapConfigIniContextIncludeBuffer(context, config_str);
@@ -4803,6 +4888,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
                                                gboolean req_styles,
                                                char *styles_file,
                                                GList *req_featuresets,
+                                               GList *req_biotypes,
                                                gboolean dna_requested,
                                                gint features_start, gint features_end,
                                                gboolean terminate)
@@ -4942,7 +5028,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
       //      if (req_featuresets)
       // need to request all if none specified
       {
-        req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, NULL) ;
+        req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, req_biotypes, NULL) ;
         zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_FEATURESETS, req_any, on_fail) ;
 
         if(req_styles || styles_file)
@@ -5908,7 +5994,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
             req_end = tmp;
           }
 
-        zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, NULL,
+        zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, NULL, NULL,
                              req_start, req_end,
                              SOURCE_GROUP_DELAYED, TRUE, FALSE) ;        /* don't terminate, need to keep alive for blixem */
 
@@ -6847,23 +6933,50 @@ void getFilename(gpointer key, gpointer value, gpointer data)
 
 /* Get the filename of the default file to use for the Save operation. Returns null if
  * it hasn't been set. */
-const char* zMapViewGetSaveFile(ZMapView view, const gboolean use_input_file)
+const char* zMapViewGetSaveFile(ZMapView view, const ZMapViewExportType export_type, const gboolean use_input_file)
 {
   const char *result = NULL ;
   zMapReturnValIfFail(view && view->view_sequence, result) ;
 
-  result = g_quark_to_string(view->save_file) ;
+  result = g_quark_to_string(view->save_file[export_type]) ;
 
   /* If it hasn't been set yet, check if there was an input file and use that (but only if
    * the flag allows, and if there was one and only one input file) */
   if (!result && use_input_file)
     {
-      GHashTable *cached_parsers = view->view_sequence->cached_parsers ;
-
-      if (g_hash_table_size(cached_parsers) == 1)
+      switch (export_type)
         {
-          g_hash_table_foreach(cached_parsers, getFilename, &view->save_file) ;
-          result = g_quark_to_string(view->save_file) ;
+        case ZMAPVIEW_EXPORT_FEATURES:
+          {
+            /* The cached parsers give all of the input files */
+            GHashTable *cached_parsers = view->view_sequence->cached_parsers ;
+
+            if (g_hash_table_size(cached_parsers) == 1)
+              {
+                g_hash_table_foreach(cached_parsers, getFilename, &view->save_file[export_type]) ;
+                result = g_quark_to_string(view->save_file[export_type]) ;
+              }
+            
+            break ;
+          }
+      
+        case ZMAPVIEW_EXPORT_CONFIG:
+          {
+            result = view->view_sequence->config_file ;
+            break ;
+          }
+
+        case ZMAPVIEW_EXPORT_STYLES:
+          {
+            result = view->view_sequence->stylesfile ;
+            break ;
+          }
+
+        default:
+          {
+            zMapWarnIfReached() ;
+            break ;
+          }
         }
     }
 
@@ -6872,12 +6985,103 @@ const char* zMapViewGetSaveFile(ZMapView view, const gboolean use_input_file)
 
 
 /* Set the default filename to use for the Save operation. */
-void zMapViewSetSaveFile(ZMapView view, const char *filename)
+void zMapViewSetSaveFile(ZMapView view, const ZMapViewExportType export_type, const char *filename)
 {
   zMapReturnIfFail(view) ;
-  view->save_file = g_quark_from_string(filename) ;
+  view->save_file[export_type] = g_quark_from_string(filename) ;
   view->flags[ZMAPFLAG_FEATURES_NEED_SAVING] = FALSE ;
 }
 
 
+/* Export config or styles (as given by export_type) to the given file. If filename is null,
+ * prompt the user for a filename. Returns true if successful, false if there was an error. */
+gboolean zMapViewExportConfig(ZMapView view, 
+                              const ZMapViewExportType export_type,
+                              ZMapConfigIniContextUpdatePrefsFunc update_func,
+                              char **filepath_inout, 
+                              GError **error)
+{
+  gboolean result = FALSE ;
+  gboolean ok = TRUE ;
+  char *output_file = NULL ;
+  char *input_file = NULL ;
+  ZMapConfigIniFileType file_type ;
+  ZMapConfigIniContext context = NULL ;
 
+  if (export_type == ZMAPVIEW_EXPORT_CONFIG)
+    {
+      /* For config, we'll set up the export context with the same values as the input
+       * context. This is because there are currently only a few config options that are editable
+       * so we'll basically export the original config with just a few changes. */
+      input_file = view->view_sequence->config_file ;
+      file_type = ZMAPCONFIG_FILE_USER ;
+    }
+  else if (export_type == ZMAPVIEW_EXPORT_STYLES)
+    {
+      /* For styles, don't use the input file to set up the context because we can easily loop
+       * through all styles and export their current values. If we were to use the input file we
+       * would have to make sure duplicate style names have the same case, because loading
+       * styles is case sensitive. */
+      input_file = NULL; //view->view_sequence->stylesfile ;
+      file_type = ZMAPCONFIG_FILE_STYLES ;
+    }
+  else
+    {
+      ok = FALSE ;
+    }
+
+  if (ok && filepath_inout && *filepath_inout)
+    {
+      output_file = g_strdup(*filepath_inout) ;
+    }
+
+  if (ok && !output_file)
+    {
+      output_file = zmapGUIFileChooser(NULL, "Configuration Export filename ?", NULL, "ini") ;
+    }
+
+  if (ok && output_file)
+    {
+      /* Read the context from the original input config file (if there was one - otherwise this
+       * will return an empty context. Note that it will also include any system config files too.) */
+      context = zMapConfigIniContextProvide(input_file, file_type) ;
+
+      if (!context)
+        ok = FALSE ;
+    }
+
+  if (ok)
+    {
+      /* Set the output file name in the context so we write over the correct file (otherwise 
+       * it will write over the input file). This is either the 'user' file for the
+       * config, or the 'extra' file for the styles. */
+      zMapConfigIniContextSetFile(context, file_type, output_file) ;
+
+      /* Create the key file, if it doesn't exist already */
+      zMapConfigIniContextCreateKeyFile(context, file_type) ;
+
+      /* Update the context with the new preferences or styles, if anything has changed */
+      update_func(context, file_type, view->context_map.styles) ;
+
+      /* Do the save to file (force changes=true so we export even if nothing's changed) */
+      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+      result = zMapConfigIniContextSave(context, file_type) ;
+
+      /* Destroy the context */
+      zMapConfigIniContextDestroy(context) ;
+      context = NULL ;
+    }
+
+  if (output_file && filepath_inout && !*filepath_inout)
+    {
+      /* We've created the filepath in this function so set the output value from it */
+      *filepath_inout = output_file ;
+    }
+  else if (output_file)
+    {
+      /* Return value wasn't requested so free this */
+      g_free(output_file) ;
+    }
+
+  return result ;
+}

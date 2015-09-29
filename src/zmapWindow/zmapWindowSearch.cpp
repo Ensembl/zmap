@@ -406,7 +406,8 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
 //        zMapPrintQuark(GPOINTER_TO_UINT(l->data)) ;
 
 
-        if ((f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(search_data->window->context_map->featureset_2_column, l->data)))
+        if ((f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(search_data->window->context_map->featureset_2_column,
+                                                           l->data)))
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           /* I think I was trying to parameterise this.... */
         if ((f2c = g_hash_table_lookup(search_data->context_map->featureset_2_column, l->data)))

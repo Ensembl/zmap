@@ -94,6 +94,7 @@ static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
                                                  GList **feature_sets_out,
+                                                 GList **biotypes_out,
                                                  GList *sources,
                                                  GList **required_styles,
                                                  GHashTable **featureset_2_stylelist_inout,
@@ -515,6 +516,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
  *  */
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
                                                  GList **feature_sets_inout,
+                                                 GList **biotypes_inout,
                                                  GList *sources,
                                                  GList **required_styles_out,
                                                  GHashTable **featureset_2_stylelist_inout,
@@ -921,7 +923,7 @@ static void getConfiguration(PipeServer server)
 {
   ZMapConfigIniContext context;
 
-  if ((context = zMapConfigIniContextProvide(server->config_file)))
+  if ((context = zMapConfigIniContextProvide(server->config_file, ZMAPCONFIG_FILE_NONE)))
     {
       char *tmp_string  = NULL;
 

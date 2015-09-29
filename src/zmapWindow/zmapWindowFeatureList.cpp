@@ -35,6 +35,7 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <ZMap/zmapString.hpp>
 #include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapBase.hpp>
 #include <zmapWindowFeatureList_I.hpp>
@@ -367,11 +368,8 @@ static void setup_tree(ZMapWindowFeatureList zmap_tv,
  * but they _are_ limited to ZMapFeature types really. */
 static void feature_name_to_value(GValue *value, gpointer feature_data)
 {
-  static const int max_name_length = 20 ;
-  static const char* filler =  "[...]" ;
-  const char * the_name = NULL ;
+  const char *the_name ;
   char *temp_name = NULL ;
-  int name_length = 0, fill_length = 0 ;
   AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
   ZMapFeatureAny    feature = NULL ;
 
@@ -383,23 +381,16 @@ static void feature_name_to_value(GValue *value, gpointer feature_data)
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
       the_name = g_quark_to_string(feature->original_id) ;
-      name_length = strlen(the_name) ;
-      fill_length = strlen(filler) ;
-      temp_name = g_new0(char, max_name_length+1+fill_length) ;
+
+      if ((temp_name = (char *)zMapStringAbbrevStr(the_name)))
+        the_name = temp_name ;
+
+      g_value_set_string(value, the_name) ;
+
       if (temp_name)
-        {
-          if (name_length >= max_name_length)
-            {
-              strncpy(temp_name, the_name, max_name_length) ;
-              strncat(temp_name, filler, fill_length) ;
-            }
-          else
-            {
-              strncpy(temp_name, the_name, max_name_length) ;
-            }
-          g_value_set_string(value, temp_name);
-          g_free(temp_name) ;
-        }
+        g_free(temp_name) ;
+
+
     }
   else
     zMapWarnIfReached();

@@ -159,9 +159,9 @@ static ZMapStyleGlyphShapeStruct truncation_shape_end_G =
 /* AND HERE'S SOME HACKERY FOR MY SPLICE GLYPHS....NEED TO CONVERT BOTH TO STYLES AT THE SAME TIME... */
 static ZMapStyleGlyphShapeStruct junction_shape_start_G =
 {
-  {-6,0, -6,-6, 6,-6, 6,0, -6,0},                           /* length 32 coordinate array */
+  {-6,1, -6,6, 6,6, 6,1, -6,1},                             /* length 32 coordinate array */
   5,                                                        /* number of coordinates */
-  12, 6,                                                     /* width and height */
+  12, 6,                                                    /* width and height */
   0,                                                        /* quark ID */
   GLYPH_DRAW_POLYGON                                        /* ZMapStyleGlyphDrawType:
                                                                LINES == OUTLINE, POLYGON == filled */
@@ -169,7 +169,7 @@ static ZMapStyleGlyphShapeStruct junction_shape_start_G =
 
 static ZMapStyleGlyphShapeStruct junction_shape_end_G =
 {
-  {-6,0, -6,6, 6,6, 6,0, -6,0},
+  {-6,0, -6,-6, 6,-6, 6,0, -6,0},
   5,
   12, 6,
   0,

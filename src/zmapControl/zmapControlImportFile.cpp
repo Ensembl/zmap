@@ -224,7 +224,7 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
     }*/
   /*scripts[2].args = g_strsplit("--fruit=apple --car=jeep --weather=sunny", " ", 0); */
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       GKeyFile *gkf;
       gchar ** keys,**freethis;
@@ -285,6 +285,9 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
           if (freethis)
             g_strfreev(freethis) ;
         }
+
+      zMapConfigIniContextDestroy(context) ;
+      context = NULL ;
     }
 
   /*for( i = 0; i < N_FILE_TYPE; i++)
@@ -1295,7 +1298,7 @@ static void importFileCB(gpointer cb_data)
             {
               server = (ZMapConfigSource) servers->data ;
 
-              if (zMapViewRequestServer(view, NULL, req_featuresets, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
+              if (zMapViewRequestServer(view, NULL, req_featuresets, NULL, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
                 zMapViewShowLoadStatus(view);
               else
                 zMapWarning("could not request %s",file_txt);

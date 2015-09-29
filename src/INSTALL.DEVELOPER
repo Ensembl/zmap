@@ -1,0 +1,121 @@
+
+BUILDING ZMAP AS A DEVELOPER
+============================
+
+In common with many packages zmap has two different builds:
+
+- a developer build for working on zmap
+
+- a distribution build for simply compiling and using zmap.
+
+This file covers the former, see ./INSTALL for instructions about the latter.
+
+
+Build Script Dependencies
+-------------------------
+The zmap build system makes use of the gnu autoconf system to prepare machine
+independent builds. You need to make sure that an up to date version of this
+system (including libtool and m4) is installed on your system. These tools will
+have been installed if you chose the 'developer' installs on linux but you may
+need to install them separately on other unix flavours.
+
+In addition autogen.sh makes use of bash associative arrays for which you will
+need to have bash version 4 at least (this has been particularly a problem on
+Mac OSX which by default has bash version 3).
+
+
+Standard Library Dependencies
+-----------------------------
+zmap has some standard library dependencies and you should read the various
+INSTALL.XXXX machine-specific files to make sure you have installed them before
+you try to build zmap. On the whole these dependencies should mostly be
+installed already as they are standard libraries on most linux-like/gnu-like
+distributions.
+
+
+Non-Standard Library Dependencies
+---------------------------------
+In addition to the standard libraries zmap makes use of various other libraries
+to provide support for interfacing to acedb, ensembl, BAM files etc.  These
+libraries are included in the distibution file making it self-contained but they
+are NOT included in the raw developer build tree. There are a number of ways of
+dealing with this, here are several setups in order of increasing complexity:
+
+1) build zmap on a Sanger system where the autogen.sh script will have access to
+these libraries and will automatically copy them into the build tree.
+
+2) copy a developer tree from someone who has already copied the libraries into
+the developer tree and you can then build a fully functional zmap.
+
+3) run autogen.sh with a flag to exclude these libraries, this will mean that a
+number of features will not be available in zmap but you will be able to build
+and work on most of zmap.
+
+4) copy the libraries you require into the build tree yourself. This option is
+not recommended but if you do want to do this you should contact the developers
+at zmap@sanger.ac.uk for instructions about what to do.
+
+
+Overview
+--------
+All building takes place in the src directory and its subdirectories.
+
+The build tree has been set up so that you can build on multiple architectures
+using the same source tree if you want to. You can build in the existing
+src/build/xxxx directories or add extra directories of your own in src/build.
+
+There are two custom scripts needed for building:
+
+src/autogen.sh	- bootstraps the build running autoconf etc.
+
+src/runconfig	- runs the configure script to prepare the makefile
+
+The following sections describe how to use these to build zmap.
+
+
+Bootstrapping and building
+--------------------------
+
+Builds for setups 1) and 2):
+
+> cd src
+
+> ./autogen.sh
+
+> cd build/xxxxx	# e.g. linux
+
+> ../../runconfig
+
+> make
+
+
+Building for setup 3):
+
+> cd src
+
+> ./autogen.sh -z
+
+> cd build/xxxxx	# e.g. linux
+
+> ../../runconfig
+
+> make
+
+
+Testing
+-------
+
+If the build worked you will find you have a zmap executable in the build/xxxx
+directory that you can test by checking it's version flag:
+
+> ./zmap --version
+ZMap - 2.0.0-53-g2125807
+>
+
+
+
+
+
+
+
+

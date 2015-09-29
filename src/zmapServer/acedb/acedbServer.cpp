@@ -158,6 +158,7 @@ static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
+						 GList **biotypes_out,
 						 GList *sources,
 						 GList **required_styles,
 						 GHashTable **featureset_2_stylelist_inout,
@@ -444,6 +445,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
  *  */
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
 						 GList **feature_sets_inout,
+						 GList **biotypes_inout,
 						 GList *sources,
 						 GList **required_styles_out,
 						 GHashTable **featureset_2_stylelist_inout,
@@ -895,7 +897,6 @@ static ZMapServerResponseType getContextSequence(void *server_in,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
-  DoAllAlignBlocksStruct get_sequence ;
   gboolean dna_fetch_result ;
 
   resetErr(server) ;
@@ -4578,7 +4579,7 @@ static gboolean isStyleFromMethod(char *config_file)
   gboolean style_from_method = FALSE ;
   ZMapConfigIniContext context;
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       gboolean tmp_bool = FALSE;
 

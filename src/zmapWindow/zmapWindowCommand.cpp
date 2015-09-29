@@ -71,6 +71,8 @@ gboolean zMapWindowExecuteCommand(ZMapWindow window, ZMapWindowCallbackCommandAn
             if (filter_data->target_column && filter_data->do_filter)
               {
                 window->filter_feature_set = filter_data->target_column ;
+                window->filter_match_type = filter_data->match_type ;
+                
                 window->filter_selected = filter_data->selected ;
                 window->filter_filter = filter_data->filter ;
                 window->filter_action = filter_data->action ;
@@ -102,7 +104,9 @@ static gboolean doFilter(ZMapWindow window, ZMapWindowCallbackCommandFilter filt
 {
   gboolean result = FALSE ;
 
-  filter_data->filter_result = zMapWindowContainerFeatureSetFilterFeatures(filter_data->selected,
+  filter_data->filter_result = zMapWindowContainerFeatureSetFilterFeatures(filter_data->match_type,
+                                                                           filter_data->base_allowance,
+                                                                           filter_data->selected,
                                                                            filter_data->filter,
                                                                            filter_data->action,
                                                                            filter_data->target_type,
@@ -110,8 +114,9 @@ static gboolean doFilter(ZMapWindow window, ZMapWindowCallbackCommandFilter filt
                                                                            filter_data->filter_features,
                                                                            filter_data->target_column,
                                                                            filter_data->seq_start,
-                                                                           filter_data->seq_end,
-                                                                           filter_data->cds_match) ;
+                                                                           filter_data->seq_end) ;
+  
+
 
   /* Need reposition because we will have unfiltered the features first so they will need to
    * be redrawn even if we subsequently find no matches. */

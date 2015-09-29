@@ -2461,7 +2461,7 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
   if (!strcmp(sSource, "."))
     {
       char *sTemp = NULL ;
-      sTemp = g_strdup_printf("anon_source (%s type)", zmapStyleMode2ShortText(zMapSOIDDataGetStyleMode(pSOIDData))) ;
+      sTemp = g_strdup_printf("anon_source (%s type)", zMapStyleMode2ShortText(zMapSOIDDataGetStyleMode(pSOIDData))) ;
       strcpy(sSource, sTemp) ;
       if (sTemp)
         g_free(sTemp) ;
@@ -4090,7 +4090,7 @@ static gboolean findFeatureset(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatur
         {
           if (!(pFeatureStyle = zMapFindFeatureStyle(pParser->sources, gqFeatureStyleID, cFeatureStyleMode)))
             {
-              gqFeatureStyleID = g_quark_from_string(zmapStyleMode2ShortText(cFeatureStyleMode)) ;
+              gqFeatureStyleID = g_quark_from_string(zMapStyleMode2ShortText(cFeatureStyleMode)) ;
             }
 
           if (!(pFeatureStyle = zMapFindFeatureStyle(pParser->sources, gqFeatureStyleID, cFeatureStyleMode)))

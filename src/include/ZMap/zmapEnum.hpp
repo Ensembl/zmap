@@ -131,8 +131,12 @@
 #define AS_LONG_TEXT(NAME, dummy_value, dummy_short_text, LONG_TEXT, dummy_unused) \
   case NAME: { return LONG_TEXT ; }
 
-#define ENUM2STR(NAME, dummy_value, STRING, dummy_long_text, dummy_unused)   \
-  {NAME, STRING},
+#define ENUM2SHORT_STR(NAME, dummy_value, SHORT_STRING, dummy_long_text, dummy_unused)   \
+  {NAME, SHORT_STRING},
+
+#define ENUM2LONG_STR(NAME, dummy_value, dummy_short_text, LONG_STRING, dummy_unused)   \
+  {NAME, LONG_STRING},
+
 
 /* Only the ZMAP_xxxxx Functions swallow the semi-colon! */
 #define SWALLOW_SEMI_COLON struct enum_dummy
@@ -241,7 +245,7 @@
     TYPE result = INVALID_VALUE ;                                       \
     TYPE##Enum2StrStruct values[] =                                     \
       {                                                                 \
-	LIST(ENUM2STR)                                                  \
+	LIST(ENUM2SHORT_STR)                                                  \
 	{INVALID_VALUE, NULL}                                           \
       } ;                                                               \
     TYPE##Enum2StrStruct *curr = values ;                               \
@@ -282,6 +286,53 @@ SWALLOW_SEMI_COLON
         }                                      \
     }                                          \
 SWALLOW_SEMI_COLON
+
+
+
+
+/* Defines  long description -> enum  convertor function, i.e. the
+ * opposite of ZMAP_ENUM_TO_LONG_TEXT_NNN, with the added function
+ * that the case of "long description" is ignored. Function is of
+ * the form
+ *
+ * enumtype fname(const char *short_description) ;
+ *
+ *
+ * e.g. given "ok" or "OK" or "Ok" returns ZMAP_PROCTERM_OK
+ *
+ */
+#define ZMAP_ENUM_FROM_LONG_TEXT_DEC(FUNCNAME, TYPE) \
+  TYPE FUNCNAME(const char* str) ;                \
+  SWALLOW_SEMI_COLON
+
+
+#define ZMAP_ENUM_FROM_LONG_TEXT_FUNC(FNAME, TYPE, INVALID_VALUE, LIST, dummy0, dummy1) \
+  TYPE FNAME(const char* str)                                           \
+  {                                                                     \
+    typedef struct {TYPE enum_value ; const char *string_val ;} TYPE##Enum2StrStruct ; \
+                                                                        \
+    TYPE result = INVALID_VALUE ;                                       \
+    TYPE##Enum2StrStruct values[] =                                     \
+      {                                                                 \
+	LIST(ENUM2LONG_STR)                                                  \
+	{INVALID_VALUE, NULL}                                           \
+      } ;                                                               \
+    TYPE##Enum2StrStruct *curr = values ;                               \
+                                                                        \
+    while(curr->string_val)                                                 \
+      {                                                                 \
+	if (g_ascii_strcasecmp(str, curr->string_val) == 0)                 \
+	  {                                                             \
+	    result = curr->enum_value ;                                 \
+	    break ;                                                     \
+	  }                                                             \
+                                                                        \
+	curr++ ;                                                        \
+      }                                                                 \
+                                                                        \
+    return result ;                                                     \
+  }                                                                     \
+  SWALLOW_SEMI_COLON
 
 
 

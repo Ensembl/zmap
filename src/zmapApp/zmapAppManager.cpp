@@ -978,7 +978,7 @@ static gboolean getSessionColourConfiguration(char *config_file, GdkColor *sessi
   gboolean result = FALSE ;
   ZMapConfigIniContext context ;
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       char *tmp_string  = NULL ;
 

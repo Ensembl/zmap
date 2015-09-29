@@ -1051,9 +1051,20 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleSubFeature2ExactStr,     ZMapStyleSubFeat
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGlyphAlign2ExactStr,     ZMapStyleGlyphAlign) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleBlixemType2ExactStr,     ZMapStyleBlixemType) ;
 
-
-ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleBumpMode2ShortText, ZMapStyleBumpMode) ;
-ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleMode2ShortText, ZMapStyleMode) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapStyleMode2ShortText,            ZMapStyleMode) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleColDisplayState2ShortText, ZMapStyleColumnDisplayState) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyle3FrameMode2ShortText, ZMapStyle3FrameMode) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleGraphMode2ShortText,       ZMapStyleGraphMode) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleScale2ShortText,           ZMapStyleScale) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleDrawContext2ShortText,     ZMapStyleDrawContext) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleColourType2ShortText,      ZMapStyleColourType) ;
+//ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleColourTarget2ShortText,    ZMapStyleColourTarget) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleScoreMode2ShortText,       ZMapStyleScoreMode) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleBumpMode2ShortText,     ZMapStyleBumpMode) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleGlyphStrand2ShortText,     ZMapStyleGlyphStrand) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleSubFeature2ShortText,     ZMapStyleSubFeature) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleGlyphAlign2ShortText,     ZMapStyleGlyphAlign) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleBlixemType2ShortText,     ZMapStyleBlixemType) ;
 
 
 
@@ -1072,6 +1083,8 @@ void zmapStyleSetIsSet(ZMapFeatureTypeStyle style, ZMapStyleParamId id);
 void zmapStyleUnsetIsSet(ZMapFeatureTypeStyle style, ZMapStyleParamId id);
 const char *zmapStyleParam2Name(ZMapStyleParamId id) ;
 
+gboolean zMapStyleGetValue(ZMapFeatureTypeStyle style, ZMapStyleParamId param_id, GValue *value) ;
+char* zMapStyleGetValueAsString(ZMapFeatureTypeStyle style, ZMapStyleParamId param_id) ;
 gboolean zMapStyleGet(ZMapFeatureTypeStyle style, char *first_property_name, ...) ;
 gboolean zMapStyleSet(ZMapFeatureTypeStyle style, const char *first_property_name, ...) ;
 

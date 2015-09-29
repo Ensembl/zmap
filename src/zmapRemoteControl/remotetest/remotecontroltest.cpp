@@ -2510,7 +2510,7 @@ static void getZMapConfiguration(AppData app_data)
   ZMapConfigIniContext context;
 
 
-  if ((context = zMapConfigIniContextProvide(app_data->cmd_line_args->zmap_config_file)))
+  if ((context = zMapConfigIniContextProvide(app_data->cmd_line_args->zmap_config_file, ZMAPCONFIG_FILE_NONE)))
     {
       gboolean got_sequence, got_start, got_end ;
       char *tmp_sequence ;

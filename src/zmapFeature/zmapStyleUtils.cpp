@@ -172,10 +172,21 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleBlixemType2ExactStr,     ZMapStyleBlixem
  *  }
  *
  *  */
-ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleBumpMode2ShortText, ZMapStyleBumpMode, ZMAP_STYLE_BUMP_MODE_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapStyleMode2ShortText,            ZMapStyleMode, ZMAP_STYLE_MODE_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleColDisplayState2ShortText, ZMapStyleColumnDisplayState, ZMAP_STYLE_COLUMN_DISPLAY_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyle3FrameMode2ShortText, ZMapStyle3FrameMode, ZMAP_STYLE_3_FRAME_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleGraphMode2ShortText,       ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleScale2ShortText,           ZMapStyleScale, ZMAP_STYLE_SCALE_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleDrawContext2ShortText,     ZMapStyleDrawContext, ZMAP_STYLE_DRAW_CONTEXT_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleColourType2ShortText,      ZMapStyleColourType, ZMAP_STYLE_COLOUR_TYPE_LIST) ;
+//ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleColourTarget2ShortText,    ZMapStyleColourTarget, ZMAP_STYLE_COLOUR_TARGET_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleScoreMode2ShortText,       ZMapStyleScoreMode, ZMAP_STYLE_SCORE_MODE_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleBumpMode2ShortText,     ZMapStyleBumpMode, ZMAP_STYLE_BUMP_MODE_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleGlyphStrand2ShortText,     ZMapStyleGlyphStrand, ZMAP_STYLE_GLYPH_STRAND_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleSubFeature2ShortText,     ZMapStyleSubFeature, ZMAP_STYLE_SUB_FEATURE_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleGlyphAlign2ShortText,     ZMapStyleGlyphAlign, ZMAP_STYLE_GLYPH_ALIGN_LIST) ;
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleBlixemType2ShortText,     ZMapStyleBlixemType, ZMAP_STYLE_BLIXEM_LIST) ;
 
-
-ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleMode2ShortText, ZMapStyleMode, ZMAP_STYLE_MODE_LIST) ;
 
 
 /* The too-many bump modes have been remapped to just a few (too few ?) which breaks our

@@ -1,0 +1,218 @@
+<!--#set var="banner" value="ZMap User Guide - Filter Window"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+</style>
+
+<p><hr>
+<h2 id="filter_window">Using the Filter Window</h2>
+<p>
+
+
+<h2 id="background">Background</h2>
+
+<p>There are many different options for the process of filtering one set of
+features against some other feature(s). There are some obvious choices,
+e.g. "show all matching splices", but also other perhaps less obvious ones,
+e.g. "hide all transcripts with the same CDS".</p>
+
+<p>The new zmap filtering window gives the user access to all the possible
+combinations that the code supports allowing them to select the one most
+useful to them.</p>
+
+
+<h2 id="overview">Overview</h2>
+
+<p>The action of filtering is the process of comparing a set of "target" features
+with a chosen "filter" feature, currently the comparison is made using the
+coordinates of the start/end of feature or sub parts of that feature. The code
+then processes the target features according to whether and how they match the
+filter feature, e.g. perhaps to hide all non-matching features.</p>
+
+<p>You should think of it as "I have this filter feature, now how do all these
+target features match up to it".</p>
+
+<p>Note the following restrictions on what gets filtered:</p>
+
+<p>
+<ul>
+  <li><p>The style for a set of features determines whether it is filterable,
+      if you right click on a column and can't see the "Column Filtering"
+      option then that's because it has not been set in the style. Ask
+      your administrator to set this up for featuresets if it is
+      missing.</p></li>
+      
+  <li><p>The filter and target features must be on the same strand</p></li>
+
+  <li><p>Where several filter features have been selected by the user they
+      should be non-overlapping, where features overlap the most 5' feature
+      will be chosen and if they have the same 5' coordinate then the longest
+      feature will be chosen.</p></li>
+      
+  <li><p>Filtering options are <b>not</b> cumulative, each new option
+      first undoes the previous one.</p></li>
+      
+</ul>
+</p>
+
+<p>The filter window has many options but has been set up so that the default
+action is to show all features with their matching/non-matching splices so
+that just by clicking "Filter" you will see something useful without having to
+select anything else.</p>
+
+
+<h2 id="filter_window">The Filter Window</h2>
+
+<p>The Filtering window is divided into 5 panels:</p>
+
+
+<h3>1st Panel - "Current filter/target features:"</h3>
+
+<p>Displays the currently selected filter and target features, this will change
+if you use the 3rd panel to change either the filter or the target
+features.</p>
+
+
+<h3>2nd Panel - "Change filter options:"</h3>
+
+<p>Allows you to change all of the filtering options that are available
+including the parts of features compared, what to do with matching or
+non-matching features and so on. See next section for details.</p>
+
+
+<h3>3rd Panel - "Change filter feature(s):"</h3>
+
+<p>Change the filter feature(s) to the feature(s) you currently have highlighted in zmap.</p>
+
+
+<h3>4th Panel - "Change target features:"</h3>
+
+<p>Change the currently selected target features to either "all" columns or a
+particular column. Note that filtering is done on one strand only so the
+strands of the filter feature and target feature(s) are automatically kept in
+sync.</p>
+
+
+<h3>5th Panel - (unamed)</h3>
+
+<p>This panel has the usual "Close" button to remove the Filter window (you can
+also use the "close" button in the window decorations provided by your
+desktop).</p>
+
+<p>It also has the "Filter" and "Unfilter" buttons to let you filter and then undo
+the filter. Note that you do NOT have to "undo" filtering before you select a
+new filter, any previous filtering is automatically undone before applying the
+new one.</p>
+
+
+<h2 id="filtering_options">Filtering options</h2>
+
+<p>The many different filtering options are now described in more details:</p>
+
+<h3>"Type of Match":</h3>
+
+<p>Controls how comparisons are made between features.</p>
+
+<p>Exact - all coordinates of the target feature must exactly match all
+coordinates of the filter feature.</p>
+
+<p>Partial - wholly missing exons or introns are allowed but any exons or introns
+that overlap just match exactly.</p>
+
+
+<h3>"+/- Bases for Matching":</h3>
+
+<p>Allows you to set a "fudge" factor for the coordinate comparison, you might
+want to do this with a protein match for example where the precise start/end
+of the match may vary by several bases.</p>
+
+
+<h3>"Part of Filter Feature to match from"/"Part of Target Features to match to":</h3>
+
+<p>These options allow you to select what is compared with what, you can mix
+comparisons freely allowing you to compare exons with one feature with the
+cds of another feature or for something like "confirmed introns" you could
+compare their "overall start/ends" with the introns of a transcript for
+instance.</p>
+
+
+<h3>"Action to perform on Features":</h3>
+
+<p>Whichever action you select, any features displayed will have matching splices
+marked in green and non-matching in red. You can select to simply see all
+splices on all features or to show all matching or all non-matching features.</p>
+
+
+<h3>"Features/Columns to filter":</h3>
+
+<p>Generally you will want to leave this set at the default which is simply to
+filter everything you have chosen. But if you have chosen to filter all
+columns then you may wish to exclude the column containing the filter feature or
+perhaps just the filter feature itself. You can also use this option to
+compare one feature in a column with the other features in that same column by
+excluding just the filter feature itself.</p>
+
+
+
+
+<h2 id="changing_filter_and_target_features">Changing Filter and Target Features</h2>
+
+<p>You may find that having filtered one set of target features you now want to
+filter a second set or perhaps you want to filter the same set but against a
+different filter feature. You can do either or both of these using just one filter
+window, you do not have to relaunch the filter window each time.</p>
+
+<p><b>To change the filter feature(s)</b> you just need to highlight the new feature(s)
+that you want to use as "filter features" and then click the "Set to current
+highlight" button and then refilter.</p>
+
+<p><b>To change the target features</b> you have one of two choices:</p>
+
+<p>
+<ul>
+  <li><p>Click on "Filter All Columns" button to select to filter all filterable
+      columns.</p></li>
+
+  <li><p>Click on the columns list (the column will be set to whichever one
+      you last chose, perhaps by using the menu) and then select the column
+      you want from the list.</p></li>
+</ul>
+</p>
+
+<p>Once you have made your choices click on "Filter" to filter the features.</p>
+
+
+<h2 id="examples">Examples</h2>
+
+<h3>1) Transcript vs. other transcripts</h3>
+
+<p>Click on the transcript that you want to compare other transcripts with.
+Then right click on a column of transcripts and select the "Filter Test window"
+option from the "Column Filtering" sub-menu.</p>
+
+<p>There are various options you could set but at this stage just clicking the
+"Filter" button will show you how the exons in the target transcripts match
+the exons in transcript you first selected.</p>
+
+<h3>2) Confirmed Introns vs. transcript-like feature</h3>
+
+<p>Click on the confirmed introns you want to use (use Shift-click for the
+multiple select) and then select the filter window from the menu for the
+transcripts column (as in example 1).</p>
+
+<p>In the filter window you need to select "overall start/end" for the "Part of
+Filter Feature to match from" (i.e. the start/end of the confirmed introns) and
+"Gaps or introns" for the "Part of Target features to match to" (i.e. the
+transcripts introns).</p>
+
+<p>Now the filter will compare the introns of the transcripts with the
+confirmed introns you selected and show you which match and which don't.</p>
+
+
+<p><hr>
+
+<!--#include virtual="/perl/footer"-->

@@ -210,6 +210,9 @@
 
 #define ZMAPSTANZA_APP_EDIT_STYLES       "edit-styles"
 
+#define ZMAPSTANZA_APP_SHRINKABLE        "shrinkable"
+#define ZMAPSTANZA_APP_HIGHLIGHT_FILTERED "highlight-filtered-columns"
+#define ZMAPSTANZA_APP_ENABLE_ANNOTATION "enable-annotation"
 
 
 #define ZMAPSTANZA_PEER_CONFIG           "Peer"
@@ -419,6 +422,7 @@
 #define ZMAPSTANZA_SOURCE_TIMEOUT        "timeout"
 #define ZMAPSTANZA_SOURCE_VERSION        "version"
 #define ZMAPSTANZA_SOURCE_FEATURESETS    "featuresets"
+#define ZMAPSTANZA_SOURCE_BIOTYPES       "biotypes"
 //#define ZMAPSTANZA_SOURCE_STYLES         "styles"
 #define ZMAPSTANZA_SOURCE_REQSTYLES      "request-styles"
 #define ZMAPSTANZA_SOURCE_STYLESFILE     "stylesfile"

@@ -70,31 +70,42 @@ zmapWindowContainerFeatureSetClass, *ZMapWindowContainerFeatureSetClass ;
 typedef ColinearityType (*ZMapFeatureCompareFunc)(ZMapFeature feature_a, ZMapFeature feature_b, gpointer user_data);
 
 
+// Types for filtering features.
+//         
 
-/* What part of the feature will be used to filter. */
-typedef enum
-  {
-    ZMAP_CANVAS_FILTER_INVALID,
-    ZMAP_CANVAS_FILTER_NONE,                                /* None => undo any existing filter. */
-    ZMAP_CANVAS_FILTER_PARTS,                               /* Find features with same matches or exons. */
-    ZMAP_CANVAS_FILTER_GAPS,                                /* Find features with same gaps or introns. */
-    ZMAP_CANVAS_FILTER_FEATURE                              /* Find features with same overall start/end. */
-  } ZMapWindowContainerFilterType ;
+// What sort of match is required.
+#define ZMAP_CANVAS_MATCH_TYPE_LIST(_)					\
+_(ZMAP_CANVAS_MATCH_INVALID, , "invalid", "Invalid value", "") \
+_(ZMAP_CANVAS_MATCH_PARTIAL, , "partial", "Partial (allow missing exons/gaps)",       "") \
+_(ZMAP_CANVAS_MATCH_FULL,    , "exact",   "Exact",         "")
 
+ZMAP_DEFINE_ENUM(ZMapWindowContainerMatchType, ZMAP_CANVAS_MATCH_TYPE_LIST) ;
+
+// What part of the feature will be used to filter.
+#define ZMAP_CANVAS_FILTER_TYPE_LIST(_)					\
+_(ZMAP_CANVAS_FILTER_INVALID, , "invalid", "Invalid value",          "") \
+_(ZMAP_CANVAS_FILTER_NONE,    , "none",    "Undo existing filter",   "") \
+_(ZMAP_CANVAS_FILTER_PARTS,   , "parts",   "Matches or Exons",  "") \
+_(ZMAP_CANVAS_FILTER_GAPS,    , "gaps",    "Gaps or Introns",   "") \
+_(ZMAP_CANVAS_FILTER_CDS,     , "cds",     "CDS",               "") \
+_(ZMAP_CANVAS_FILTER_FEATURE, , "feature", "Overall start/end", "")
+
+ZMAP_DEFINE_ENUM(ZMapWindowContainerFilterType, ZMAP_CANVAS_FILTER_TYPE_LIST) ;
 
 /* What action to perform on filtered features. */
-typedef enum
-  {
-    ZMAP_CANVAS_ACTION_INVALID,
-    ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE,                    /* Highlight matching splices. */
-    ZMAP_CANVAS_ACTION_HIDE,                                /* Hide features with matches. */
-    ZMAP_CANVAS_ACTION_SHOW,                                /* Show features with matches (=> hide non-matching). */
-    ZMAP_CANVAS_ACTION_CREATE_NEW                           /* Create new features with matches. */
-  } ZMapWindowContainerActionType ;
+#define ZMAP_CANVAS_ACTION_TYPE_LIST(_)					\
+_(ZMAP_CANVAS_ACTION_INVALID,          , "invalid",      "Invalid value",                    "") \
+_(ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE, , "splice",       "Show all matches/non-matches",    "") \
+_(ZMAP_CANVAS_ACTION_HIDE,             , "hide matches", "Show non-matching features",       "") \
+_(ZMAP_CANVAS_ACTION_SHOW,             , "show matches", "Show matching features",       "")
+
+ZMAP_DEFINE_ENUM(ZMapWindowContainerActionType, ZMAP_CANVAS_ACTION_TYPE_LIST) ;
 
 
 /* Which features to perform the action on, where "source" is the feature against which
  * other features are filtered. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 typedef enum
   {
     ZMAP_CANVAS_TARGET_INVALID,
@@ -102,6 +113,17 @@ typedef enum
     ZMAP_CANVAS_TARGET_NOT_SOURCE_COLUMN,                   /* Do not apply to source column. */
     ZMAP_CANVAS_TARGET_ALL,                                 /* Apply to all features in all columns. */
   } ZMapWindowContainerTargetType ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#define ZMAP_CANVAS_TARGET_TYPE_LIST(_)					\
+_(ZMAP_CANVAS_TARGET_INVALID,             , "invalid",            "Invalid value",                   "") \
+_(ZMAP_CANVAS_TARGET_ALL,                 , "all",                "Apply to all features/columns",   "") \
+_(ZMAP_CANVAS_TARGET_NOT_FILTER_COLUMN,   , "not filter column",  "Do not apply to filter column",   "") \
+_(ZMAP_CANVAS_TARGET_NOT_FILTER_FEATURES, , "not filter feature", "Do not apply to filter feature(s)", "")
+
+
+
+ZMAP_DEFINE_ENUM(ZMapWindowContainerTargetType, ZMAP_CANVAS_TARGET_TYPE_LIST) ;
 
 
 /* Return code from filtering...it seems important to be able to indicate to the user
@@ -203,20 +225,30 @@ gboolean zmapWindowContainerFeatureSetGetDeferred(ZMapWindowContainerFeatureSet 
 void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeatureSet container,
                                                          gboolean show, gboolean set_colour);
 
+
+ZMAP_ENUM_TO_LONG_TEXT_DEC(zMapWindowContainerFeatureSetMatchTypeEnum2LongText, ZMapWindowContainerMatchType) ;
+ZMAP_ENUM_TO_LONG_TEXT_DEC(zMapWindowContainerFeatureSetFilterTypeEnum2LongText, ZMapWindowContainerFilterType) ;
+ZMAP_ENUM_TO_LONG_TEXT_DEC(zMapWindowContainerFeatureSetActionTypeEnum2LongText, ZMapWindowContainerActionType) ;
+ZMAP_ENUM_TO_LONG_TEXT_DEC(zMapWindowContainerFeatureSetTargetTypeEnum2LongText, ZMapWindowContainerTargetType) ;
+ZMAP_ENUM_FROM_LONG_TEXT_DEC(zMapWindowContainerFeatureSetMatchTypeLongText2Enum, ZMapWindowContainerMatchType) ;
+ZMAP_ENUM_FROM_LONG_TEXT_DEC(zMapWindowContainerFeatureSetFilterTypeLongText2Enum, ZMapWindowContainerFilterType) ;
+ZMAP_ENUM_FROM_LONG_TEXT_DEC(zMapWindowContainerFeatureSetActionTypeLongText2Enum, ZMapWindowContainerActionType) ;
+ZMAP_ENUM_FROM_LONG_TEXT_DEC(zMapWindowContainerFeatureSetTargetTypeLongText2Enum, ZMapWindowContainerTargetType) ;
 gboolean zMapWindowContainerFeatureSetIsFilterable(ZMapWindowContainerFeatureSet container_set) ;
 ZMapWindowContainerFilterType zMapWindowContainerFeatureSetGetSelectedType(ZMapWindowContainerFeatureSet container_set) ;
 ZMapWindowContainerFilterType zMapWindowContainerFeatureSetGetFilterType(ZMapWindowContainerFeatureSet container_set) ;
 ZMapWindowContainerActionType zMapWindowContainerFeatureSetGetActionType(ZMapWindowContainerFeatureSet container_set) ;
 gboolean zMapWindowContainerFeatureSetIsCDSMatch(ZMapWindowContainerFeatureSet container_set) ;
-ZMapWindowContainerFilterRC zMapWindowContainerFeatureSetFilterFeatures(ZMapWindowContainerFilterType selected_type,
+ZMapWindowContainerFilterRC zMapWindowContainerFeatureSetFilterFeatures(ZMapWindowContainerMatchType match_type,
+                                                                        int base_allowance,
+                                                                        ZMapWindowContainerFilterType selected_type,
                                                                         ZMapWindowContainerFilterType filter_type,
                                                                         ZMapWindowContainerActionType filter_action,
                                                                         ZMapWindowContainerTargetType filter_target,
                                                                         ZMapWindowContainerFeatureSet filter_column,
                                                                         GList *filter_features,
                                                                         ZMapWindowContainerFeatureSet target_column,
-                                                                        int seq_start, int seq_end,
-                                                                        gboolean cds_match) ;
+                                                                        int seq_start, int seq_end) ;
 
 
 /* hidden stack code */
@@ -257,7 +289,9 @@ void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet
 
 gboolean zMapWindowContainerFeatureSetHasHiddenBumpFeatures(FooCanvasItem *feature_item) ;
 gboolean zMapWindowContainerFeatureSetIsUserHidden(FooCanvasItem *feature_item) ;
-  gboolean zMapWindowContainerFeatureSetIsVisible(FooCanvasItem *feature_item) ;
+gboolean zMapWindowContainerFeatureSetIsVisible(FooCanvasItem *feature_item) ;
+
+
 
 
 #endif /* ZMAP_WINDOW_CONTAINER_FEATURESET_H */

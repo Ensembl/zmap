@@ -105,15 +105,12 @@ int main(int argc, char *argv[])
   int main_rc = EXIT_FAILURE ;
   ZMapAppContext app_context ;
   char *peer_socket, *peer_timeout_list ;
-  int log_size ;
   int sleep_seconds = 0 ;
   GList *seq_maps = NULL ;
   GError *g_error = NULL ;
   char *config_file = NULL ;
   char *config_dir = NULL ;
   char *styles_file = NULL ;
-  PangoFont *tmp_font = NULL ;
-  PangoFontDescription *tmp_font_desc = NULL ;
   ZMapRemoteAppMakeRequestFunc remote_control_cb_func = NULL ;
   void *remote_control_cb_data = NULL ;
 
@@ -498,7 +495,7 @@ static gboolean checkPeerID(char *config_file, char **peer_socket_out, char **pe
       *peer_socket_out = g_strdup(socket_value.s) ;
     }
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       char *tmp_string = NULL ;
 
@@ -538,7 +535,7 @@ static gboolean getConfiguration(ZMapAppContext app_context, char *config_file)
   app_context->show_mainwindow = TRUE;
   app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       gboolean tmp_bool = FALSE;
       char *tmp_string  = NULL;
@@ -623,7 +620,7 @@ static gboolean configureLog(char *config_file, char *config_dir, GError **error
   log_name = g_strdup(ZMAPLOG_FILENAME) ;
 
 
-  if (config_file && (context = zMapConfigIniContextProvide(config_file)))
+  if (config_file && (context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       gboolean tmp_bool ;
       char *tmp_string = NULL;

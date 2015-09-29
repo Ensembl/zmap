@@ -73,7 +73,7 @@ gboolean zMapUtilsConfigDebug(char *config_file)
   ZMapConfigIniContext context = NULL;
   gboolean result = FALSE;
 
-  if((context = zMapConfigIniContextProvide(config_file)))
+  if((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       result = TRUE;
 #if 0
@@ -214,7 +214,7 @@ void zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error)
   ZMapConfigIniContext context;
   GError *tmp_error = NULL ;
 
-  if (seq_map && seq_map->config_file && (context = zMapConfigIniContextProvide(seq_map->config_file)))
+  if (seq_map && seq_map->config_file && (context = zMapConfigIniContextProvide(seq_map->config_file, ZMAPCONFIG_FILE_NONE)))
     {
       char *tmp_string  = NULL ;
       int start = 0 ;

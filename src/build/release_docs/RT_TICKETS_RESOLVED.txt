@@ -1,73 +1,43 @@
 
-Request Tracker Tickets Resolved from 15/07/2015 to 20/08/2015
+Request Tracker Tickets Resolved from 17/08/2015 to 16/09/2015
 
-ticket/476551
-id: ticket/476551
+ticket/468459
+id: ticket/468459
 Queue: zmap
-Subject: Double click bug
-Requestors: mh19@sanger.ac.uk, mpk@sanger.ac.uk
-Owner: gb10
-Resolved: Fri Jul 31 12:56:23 2015
+Subject: several column filtering bugs
+Requestors: mms@sanger.ac.uk
+Owner: edgrif
+Resolved: Thu Sep 10 14:53:09 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/478112
-id: ticket/478112
+ticket/468772
+id: ticket/468772
 Queue: zmap
-Subject: Failed columns show as Empty
+Subject: blixem display window doesn't match zmap's
 Requestors: jgrg@sanger.ac.uk
+Owner: gb10
+Resolved: Fri Aug 21 17:26:38 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/477879
+id: ticket/477879
+Queue: zmap
+Subject: FASTA header issue with OTF alignment
+Requestors: th2@sanger.ac.uk
 Owner: edgrif
-Resolved: Wed Aug 12 12:01:11 2015
+Resolved: Thu Sep 10 16:03:15 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/479654
-id: ticket/479654
+ticket/484263
+id: ticket/484263
 Queue: zmap
-Subject: export features from file menu
-Requestors: sm23@sanger.ac.uk
-Owner: gb10
-Resolved: Thu Jul 23 14:45:54 2015
-CF.{zmapace_gitcommit}: 682750a
-CF.{zmapace_resolve_version}: 2.0.0
-
-ticket/479656
-id: ticket/479656
-Queue: zmap
-Subject: error in call blixem
-Requestors: sm23@sanger.ac.uk
-Owner: gb10
-Resolved: Fri Jul 31 16:03:02 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/479793
-id: ticket/479793
-Queue: zmap
-Subject: Blixem - some transcripts not showing all of CDS
-Requestors: cas@sanger.ac.uk
-Owner: edgrif
-Resolved: Wed Aug 12 17:15:08 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/481405
-id: ticket/481405
-Queue: zmap
-Subject: pfetch not working for mRNAs... (getting no match)
-Requestors: mpk@sanger.ac.uk
-Owner: gb10
-Resolved: Mon Aug 03 14:33:29 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/484181
-id: ticket/484181
-Queue: zmap
-Subject: View or Export Feature, DNA, Peptide 
-Requestors: sb7@sanger.ac.uk
+Subject: Otter-94-05 pfecth from Zmap crashes Zmap
+Requestors: mms@sanger.ac.uk
 Owner: sm23
-Resolved: Thu Aug 13 16:40:01 2015
+Resolved: Fri Aug 21 16:33:24 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -78,6 +48,16 @@ Subject: Zmap  - GFF import - incorrect coordinates for feature range
 Requestors: mt4@sanger.ac.uk
 Owner: sm23
 Resolved: Thu Aug 20 09:40:41 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/485716
+id: ticket/485716
+Queue: zmap
+Subject: otterlace error: ZMAP crash whilst  I clicked on model. ZMAP still loading at the time.
+Requestors: aeb@sanger.ac.uk
+Owner: edgrif
+Resolved: Tue Sep 15 09:33:58 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

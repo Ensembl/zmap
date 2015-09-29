@@ -154,6 +154,9 @@ typedef struct ZMapWindowFocusItemStructType
  */
 /* Try having all the command structs in here ? opaque to the outside...??? */
 
+
+
+
 /* Filter features. */
 typedef struct ZMapWindowCallbackCommandFilterStructType
 {
@@ -168,12 +171,16 @@ typedef struct ZMapWindowCallbackCommandFilterStructType
 
   gboolean do_filter ;                                      /* FALSE => undo filtering */
 
+  // Filtering settings   
+  ZMapWindowContainerMatchType match_type ;                 // Partial, full matching.
   ZMapWindowContainerFilterType selected ;                  /* Which part of selected feature to use for filtering. */
   ZMapWindowContainerFilterType filter ;                    /* Type of filtering. */
   ZMapWindowContainerActionType action ;                    /* What to do to filtered features. */
   ZMapWindowContainerTargetType target_type ;               /* What should filtering be applied to. */
 
-  /* Column/feature(s) whose coordinates are used to filter other features. */
+  int base_allowance ;                                      // +/- bases to allow in splice comparison.
+
+  /* Column + feature(s) whose coordinates are used to filter other features. */
   ZMapWindowContainerFeatureSet filter_column ;
   GList *filter_features ;
 
@@ -182,9 +189,23 @@ typedef struct ZMapWindowCallbackCommandFilterStructType
   ZMapWindowContainerFeatureSet target_column ;
   int seq_start, seq_end ;                                  /* filter between start/end. */
 
+  // Used for reporting what is being filtered against what, complex because there may be multiple
+  // filter features and multiple target columns.....
+  const char *filter_column_str ;
+  const char *filter_str ;
+  const char *target_column_str ;
+  const char *target_str ;
+
+
+  // IS THIS USED....SHOULD BE REMOVED AS IT'S GIVEN IN THE ABOVE TYPES....   
   /* Attributes of the filtering..... */
   gboolean exact_match ;                                    /* TRUE => all parts of feature must match. */
-  gboolean cds_match ;                                      /* TRUE => for transcripts match on CDS part only. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  gboolean cds_match ;                                      /* TRUE => for transcripts match on
+                                                               CDS part only. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 } ZMapWindowCallbackCommandFilterStruct, *ZMapWindowCallbackCommandFilter ;
@@ -806,6 +827,7 @@ typedef struct ZMapWindowStructType
   /* TRY HOLDING Filtering data here for 'F' shortcut key........ */
   ZMapWindowContainerFeatureSet filter_feature_set ;
   gboolean filter_on ;                                      /* TRUE => col is filtered */
+  ZMapWindowContainerMatchType filter_match_type ;          // partial/full matching.
   ZMapWindowContainerFilterType filter_selected ;           /* Which part of selected feature to use for filtering. */
   ZMapWindowContainerFilterType filter_filter ;             /* Type of filtering. */
   ZMapWindowContainerActionType filter_action ;             /* What to do to filtered features. */
@@ -1284,7 +1306,7 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  double x_pos, double y_pos) ;
 
 
-gboolean zmapWindowFeatureItemEventButRelease(GdkEvent *event) ;
+void zmapWindowFeatureItemEventButRelease(GdkEvent *event) ;
 gboolean zmapWindowFeatureItemEventHandler(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 
 ZMapFeatureBlock zmapWindowItemGetFeatureBlock(FooCanvasItem *item) ;
@@ -1607,9 +1629,9 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 ZMapXMLUtilsEventStack zMapFeatureAnyAsXMLEvents(ZMapFeature feature) ;
 
 void zmapWindowShowStyleDialog( ItemMenuCBData menu_data );
-void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data);
-gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature);
-void zmapStyleWindowDestroy(ZMapWindow window);
+void zmapWindowFeaturesetSetStyle(GQuark style_id, ZMapFeatureSet feature_set, ZMapFeatureContextMap context_map, ZMapWindow window);
+gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature);
+void zmapWindowStyleDialogDestroy(ZMapWindow window);
 
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;
@@ -1704,6 +1726,11 @@ gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboole
 void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item) ;
 
 
+void zmapWindowCreateFeatureFilterWindow(ZMapWindow window, ZMapWindowCallbackCommandFilter filter_data) ;
+
+
+
+
 
 
 /*!-------------------------------------------------------------------!
@@ -1784,12 +1811,14 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 			       gboolean replace_highlight_item, gboolean highlight_same_names,
                                ZMapFeatureSubPart sub_part) ;
-
 void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus) ;
-
 GList *zmapWindowFocusGetFeatureList(ZMapWindowFocus focus) ;
-
+gboolean zmapWindowFocusGetFeatureListFull(ZMapWindow window, gboolean in_mark,
+                                           FooCanvasGroup **focus_column_out,
+                                           FooCanvasItem **focus_item_out,
+                                           GList **filterfeatures_out,
+                                           char **err_msg) ;
 void zmapWindowHighlightFocusItems(ZMapWindow window) ;
 void zmapWindowUnHighlightFocusItems(ZMapWindow window) ;
 

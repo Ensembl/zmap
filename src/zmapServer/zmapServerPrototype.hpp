@@ -58,6 +58,7 @@ typedef ZMapServerResponseType (*ZMapServerGetServerInfo)(void *server_in, ZMapS
 
 typedef ZMapServerResponseType (*ZMapServerGetFeatureSets)(void *server_in,
 							   GList **feature_sets_inout,
+							   GList **biotypes_inout,
 							   GList *sources,
 							   GList **required_styles_out,
 							   GHashTable **featureset_2_stylelist_out,

@@ -230,6 +230,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
         ZMapServerReqFeatureSets feature_sets = (ZMapServerReqFeatureSets)req_any ;
 
         feature_sets->feature_sets_inout = va_arg(args, GList *) ;
+        feature_sets->biotypes_inout = va_arg(args, GList *) ;
         feature_sets->sources = va_arg(args, GList *) ;
 
         break ;
@@ -431,6 +432,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
         request->response = zMapServerFeatureSetNames(server,
                                                       &(feature_sets->feature_sets_inout),
+                                                      &(feature_sets->biotypes_inout),
                                                       feature_sets->sources,
                                                       &(feature_sets->required_styles_out),
                                                       &(feature_sets->featureset_2_stylelist_out),
@@ -500,7 +502,6 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
         GList *req_sets = features->context->req_feature_set_names ;
         GQuark dna_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
         GQuark threeft_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
-        GQuark orf_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME) ;
         GQuark showtrans_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
 
         /* We need to load the DNA if we are showing DNA, 3FT or ShowTranslation */

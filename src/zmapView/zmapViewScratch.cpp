@@ -398,6 +398,8 @@ static gboolean scratchMergeCoords(ScratchMergeData merge_data, const int coord1
     {
       merge_data->dest_feature->x1 = coord1;
       merge_data->dest_feature->x2 = coord2;
+
+      scratchSetStartEndFlag(merge_data->view, TRUE);
     }
 
   result = zMapFeatureTranscriptMergeExon(merge_data->dest_feature, coord1, coord2);
@@ -611,6 +613,8 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data,
     {
       merge_data->dest_feature->x1 = feature->x1;
       merge_data->dest_feature->x2 = feature->x2;
+
+      scratchSetStartEndFlag(merge_data->view, TRUE);
     }
 
   if (feature)
@@ -618,8 +622,16 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data,
       /*
        * (sm23) This is a bit of a hack and may not be the best place for this operation.
        *  But the new feature must be given an SO term!
+       *
+       * (gb10) The SO term must always be "transcript". We shouldn't be able to get here without this
+       * being set because it should always be set when the feature is created. I'll leave this check 
+       * in just in case, though... 
        */
-      merge_data->dest_feature->SO_accession = feature->SO_accession ;
+      if (!merge_data->dest_feature->SO_accession)
+        {
+          zMapWarnIfReached() ;
+          merge_data->dest_feature->SO_accession = g_quark_from_string("transcript") ;
+        }
 
       switch (feature->mode)
         {
@@ -721,23 +733,19 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data,
           /* If the first feature is a transcript then we save its attributes so that the user
            * can easily overwrite the same transcript. Currently only applicable in standalone
            * zmap. */
-          const gboolean save_attributes =
-            !merge_data->view->xremote_client &&
-            first_feature &&
-            !merge_data->operation->use_subfeature &&
-            feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT ;
+          /* gb10: disable this for now because it causes confusion if exporting the temp feature
+           * because the temp feature has the same name as the original feature */
+          const gboolean save_attributes = FALSE ;
+            //!merge_data->view->xremote_client &&
+            //first_feature &&
+            //!merge_data->operation->use_subfeature &&
+            //feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT ;
 
           merged = scratchMergeFeature(merge_data, feature, save_attributes) ;
 
           if (!merged)
             break ;
         }
-    }
-
-  /* Once finished merging, the start/end should now be set */
-  if (merged)
-    {
-      scratchSetStartEndFlag(merge_data->view, TRUE);
     }
 
   if (merge_data->error && *(merge_data->error))
@@ -1114,6 +1122,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
               column = g_new0(ZMapFeatureColumnStruct,1);
               column->unique_id = col_id;
               column->style_table = g_list_prepend(NULL, (gpointer)  style);
+              column->order = zMapFeatureColumnOrderNext(FALSE) ;
               /* the rest shoudl get filled in elsewhere */
               g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(col_id), column);
             }
@@ -1319,7 +1328,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
               column = g_new0(ZMapFeatureColumnStruct,1);
               column->unique_id = col_id;
               column->style_table = g_list_prepend(NULL, (gpointer)  style);
-              column->order = zMapFeatureColumnOrderNext();
+              column->order = zMapFeatureColumnOrderNext(FALSE);
               /* the rest shoudl get filled in elsewhere */
               g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(col_id), column);
             }

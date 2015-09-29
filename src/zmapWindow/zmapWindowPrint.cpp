@@ -575,7 +575,7 @@ static gboolean getConfiguration(PrintCBData print_cb)
   ZMapConfigIniContext context = NULL;
   gboolean result  = FALSE;
 
-  if((context = zMapConfigIniContextProvide(print_cb->window->sequence->config_file)))
+  if((context = zMapConfigIniContextProvide(print_cb->window->sequence->config_file, ZMAPCONFIG_FILE_NONE)))
     {
       char *tmp_string;
 

@@ -36,6 +36,7 @@
 
 #include <gtk/gtk.h>
 
+#include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapEnum.hpp>
 #include <ZMap/zmapWindow.hpp>
 #include <ZMap/zmapWindowNavigator.hpp>
@@ -97,6 +98,16 @@ _(ZMAPVIEW_DYING,           , "Dying",         "View terminating.",     "")
 
 ZMAP_DEFINE_ENUM(ZMapViewState, VIEW_STATE_LIST) ;
 
+
+/* This enum list the types of export operations that zmap can perform */
+typedef enum 
+  {
+    ZMAPVIEW_EXPORT_FEATURES,
+    ZMAPVIEW_EXPORT_CONFIG,
+    ZMAPVIEW_EXPORT_STYLES,
+    
+    ZMAPVIEW_EXPORT_NUM_TYPES /* must be last */
+  } ZMapViewExportType ;
 
 
 /* data passed back from view for destroy callback. */
@@ -204,7 +215,7 @@ void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value) ;
 gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag) ;
 GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfile);
 
-gboolean zMapViewRequestServer(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
+gboolean zMapViewRequestServer(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
 			       gpointer server, /* ZMapConfigSource */
 			       int req_start, int req_end,
 			       gboolean dna_requested, gboolean terminate, gboolean show_warning);
@@ -233,6 +244,9 @@ void zMapViewDestroy(ZMapView zmap_view) ;
 ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);
 
 ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNotebook note_book_parent) ;
+void zMapViewBlixemUserPrefsUpdateContext(ZMapConfigIniContext context, const ZMapConfigIniFileType file_type) ;
+
+void zMapViewBlixemSaveChapter(ZMapGuiNotebookChapter chapter, ZMapView view) ;
 
 ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook note_book_parent);
 
@@ -240,8 +254,11 @@ gboolean zMapViewGetHighlightFilteredColumns(ZMapView);
 
 void zMapViewUpdateColumnBackground(ZMapView view);
 
-const char* zMapViewGetSaveFile(ZMapView view, const gboolean use_input_file) ;
-void zMapViewSetSaveFile(ZMapView view, const char *filename) ;
+const char* zMapViewGetSaveFile(ZMapView view, const ZMapViewExportType export_type, const gboolean use_input_file) ;
+void zMapViewSetSaveFile(ZMapView view, const ZMapViewExportType export_type, const char *filename) ;
+gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_type, 
+                              ZMapConfigIniContextUpdatePrefsFunc update_func,
+                              char **filepath_inout, GError **error) ;
 
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view) ;
 

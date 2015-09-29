@@ -50,6 +50,7 @@
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapConfigIni.hpp>
+#include <ZMap/zmapConfigDir.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapThreads.hpp>
 #include <ZMap/zmapGFF.hpp>
@@ -262,7 +263,7 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data) ;
 static int findFeature(gconstpointer a, gconstpointer b) ;
 static void freeSequences(gpointer data, gpointer user_data_unused) ;
 
-static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent) ;
+static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view) ;
 static void readChapter(ZMapGuiNotebookChapter chapter) ;
 static void saveCB(ZMapGuiNotebookAny any_section, void *user_data_unused);
 static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data) ;
@@ -274,6 +275,7 @@ static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
 
 GList * zMapViewGetColumnFeatureSets(ZMapBlixemData data,GQuark column_id);
 
+static void saveUserPrefs(BlixemConfigData prefs, const char *zmap_config_file) ;
 
 /*
  *                Globals
@@ -501,7 +503,7 @@ ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNote
     getUserPrefs(view->view_sequence->config_file, &blixem_config_curr_G) ;
 
 
-  chapter = makeChapter(note_book_parent) ; /* mh17: this uses blixen_config_curr_G */
+  chapter = makeChapter(note_book_parent, view) ; /* mh17: this uses blixen_config_curr_G */
 
   return chapter ;
 }
@@ -514,6 +516,13 @@ gboolean zMapViewBlixemGetConfigFunctions(ZMapView view, gpointer *edit_func,
 }
 
 
+void zMapViewBlixemSaveChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
+{
+  /* By default, save to the input zmap config file, if there was one */
+  saveUserPrefs(&blixem_config_curr_G, view->view_sequence->config_file);
+
+  return ;
+}
 
 
 /*
@@ -641,7 +650,7 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
   if (!curr_prefs)
     return status ;
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_USER)))
     {
       char *tmp_string = NULL ;
       int tmp_int ;
@@ -899,11 +908,23 @@ static gboolean setBlixemScope(ZMapBlixemData blixem_data)
       /* Set min/max range for blixem scope. */
       if (is_mark && blixem_data->scope_from_mark)
         {
+          /* Just use the mark */
           blixem_data->scope_min = blixem_data->mark_start ;
           blixem_data->scope_max = blixem_data->mark_end ;
         }
+      else if (blixem_data->position < blixem_data->window_start
+               || blixem_data->position > blixem_data->window_end)
+        {
+          /* We can't set the range to be centred on the given position because the position is not in
+           * the visible window and this would be confusing for users. Instead, set the position
+           * to the centre of the visible region. */
+          blixem_data->position = ((blixem_data->window_end - blixem_data->window_start) / 2) + blixem_data->window_start ;
+          blixem_data->scope_min = blixem_data->position - scope_range ;
+          blixem_data->scope_max = blixem_data->position + scope_range ;
+        }
       else
         {
+          /* Set the scope to be centred on the position */
           blixem_data->scope_min = blixem_data->position - scope_range ;
           blixem_data->scope_max = blixem_data->position + scope_range ;
         }
@@ -2109,43 +2130,18 @@ static gboolean check_edited_values(ZMapGuiNotebookAny note_any, const char *ent
 
   if (!text || (text && !*text))
     allowed = FALSE;
-  else if (note_any->name == g_quark_from_string("Launch script"))
-    {
-      if (!(allowed = zMapFileAccess(text, "x")))
-        zMapWarning("%s is not executable.", text);
-      allowed = TRUE;                /* just warn for now */
-    }
-  else if (note_any->name == g_quark_from_string("Config File"))
-    {
-      if (!(allowed = zMapFileAccess(text, "r")))
-        zMapWarning("%s is not readable.", text);
-      allowed = TRUE;                /* just warn for now */
-    }
-  else if (note_any->name == g_quark_from_string("Port"))
-    {
-      int tmp = 0;
-      if (zMapStr2Int(text, &tmp))
-        {
-          int min_val = 1024, max_val = 65535;
-          if (tmp < min_val || tmp > max_val)
-            {
-              allowed = FALSE;
-              zMapWarning("Port should be in range of %d to %d", min_val, max_val);
-            }
-        }
-    }
   else
     allowed = TRUE;
 
   return allowed;
 }
 
-static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
+static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view)
 {
   ZMapGuiNotebookChapter chapter = NULL ;
   static ZMapGuiNotebookCBStruct user_CBs =
     {
-      cancelCB, NULL, applyCB, NULL, check_edited_values, NULL, saveCB, NULL
+      cancelCB, NULL, applyCB, NULL, check_edited_values, NULL, saveCB, view
     } ;
   ZMapGuiNotebookPage page = NULL ;
   ZMapGuiNotebookSubsection subsection = NULL ;
@@ -2233,6 +2229,11 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
 
 static void readChapter(ZMapGuiNotebookChapter chapter)
 {
+  /* This result flag is set to false if the user entered invalid values but is currently not
+   * used other than to issue a warning. Ideally we should not save the settings but leave 
+   * the dialog open if a value is invalid. */
+  gboolean result = TRUE ;
+
   ZMapGuiNotebookPage page = NULL ;
   gboolean bool_value = FALSE ;
   int int_value = 0 ;
@@ -2292,15 +2293,13 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
 
   if ((page = zMapGUINotebookFindPage(chapter, BLIX_NB_PAGE_PFETCH)))
     {
-
-      /* ADD VALIDATION.... */
-
       if (zMapGUINotebookGetTagValue(page, "Host network id", "string", &string_value))
         {
           if (string_value && *string_value &&
               (!blixem_config_curr_G.netid ||
                strcmp(string_value, blixem_config_curr_G.netid) != 0))
             {
+              /* Add validation ... */
               g_free(blixem_config_curr_G.netid) ;
 
               blixem_config_curr_G.netid = g_strdup(string_value) ;
@@ -2312,8 +2311,19 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
         {
           if (int_value != blixem_config_curr_G.port)
             {
-              blixem_config_curr_G.port = int_value ;
-              blixem_config_curr_G.is_set.port = TRUE ;
+              /* Check it's in the allowed range */
+              static int min_val = 1024, max_val = 65535;
+
+              if (int_value < min_val || int_value > max_val)
+                {
+                  result = FALSE;
+                  zMapWarning("Port should be in range of %d to %d", min_val, max_val);
+                }
+              else
+                {
+                  blixem_config_curr_G.port = int_value ;
+                  blixem_config_curr_G.is_set.port = TRUE ;
+                }
             }
         }
 
@@ -2321,15 +2331,17 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
 
   if ((page = zMapGUINotebookFindPage(chapter, BLIX_NB_PAGE_ADVANCED)))
     {
-
-      /* ADD VALIDATION.... */
-
       if (zMapGUINotebookGetTagValue(page, "Config File", "string", &string_value))
         {
           if (string_value && *string_value &&
               (!blixem_config_curr_G.config_file ||
                strcmp(string_value, blixem_config_curr_G.config_file) != 0))
             {
+              result = zMapFileAccess(string_value, "r") ;
+
+              if (!result)
+                zMapWarning("Blixem Config File '%s' is not readable.", string_value);
+
               g_free(blixem_config_curr_G.config_file) ;
 
               blixem_config_curr_G.config_file = g_strdup(string_value) ;
@@ -2343,6 +2355,11 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
               (!blixem_config_curr_G.script ||
                strcmp(string_value, blixem_config_curr_G.script) != 0))
             {
+              result = zMapFileAccess(string_value, "x") ;
+              
+              if (!result)
+                zMapWarning("Blixem Launch Script '%s' is not executable.", string_value);
+
               g_free(blixem_config_curr_G.script) ;
 
               blixem_config_curr_G.script = g_strdup(string_value) ;
@@ -2383,61 +2400,143 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
   return ;
 }
 
-static void saveUserPrefs(BlixemConfigData prefs)
-{
-  ZMapConfigIniContext context = NULL;
-  if (!prefs)
-    return ;
+/* Update the given context with any preferences that have been changed by the user */
+void zMapViewBlixemUserPrefsUpdateContext(ZMapConfigIniContext context, const ZMapConfigIniFileType file_type)
+{ 
+  BlixemConfigData prefs = &blixem_config_curr_G ;
+  gboolean changed = FALSE ;
 
-  if ((context = zMapConfigIniContextProvide(prefs->config_file)))
+  if (prefs->is_set.netid && prefs->netid)
     {
-      if (prefs->netid)
-        zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                      ZMAPSTANZA_BLIXEM_NETID, prefs->netid);
+      changed = TRUE ;
 
-      zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+      zMapConfigIniContextSetString(context, file_type,
+                                    ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                    ZMAPSTANZA_BLIXEM_NETID, prefs->netid);
+    }
+
+  if (prefs->is_set.port)
+    {
+      changed = TRUE ;
+      
+      zMapConfigIniContextSetInt(context, file_type,
+                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                  ZMAPSTANZA_BLIXEM_PORT, prefs->port);
+    }
 
-      zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+  if (prefs->is_set.scope)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetInt(context, file_type,
+                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                  ZMAPSTANZA_BLIXEM_SCOPE, prefs->scope);
+    }
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+  if (prefs->is_set.scope_from_mark)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_SCOPE_MARK, prefs->scope_from_mark) ;
+    }
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+  if (prefs->is_set.features_from_mark)
+    {
+      changed = TRUE ;
+      
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_FEATURES_MARK, prefs->features_from_mark) ;
+    }
 
-      zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+  if (prefs->is_set.homol_max)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetInt(context, file_type,
+                                 ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                  ZMAPSTANZA_BLIXEM_MAX, prefs->homol_max);
+    }
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+  if (prefs->is_set.keep_tmpfiles)
+    {
+      changed = TRUE ;
+      
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_KEEP_TEMP, prefs->keep_tmpfiles);
+    }
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+  if (prefs->is_set.sleep_on_startup)
+    {
+      changed = TRUE ;
+      
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_SLEEP, prefs->sleep_on_startup);
+    }
 
-      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+  if (prefs->is_set.kill_on_exit)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetBoolean(context, file_type,
+                                     ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                      ZMAPSTANZA_BLIXEM_KILL_EXIT, prefs->kill_on_exit);
+    }
 
-      if (prefs->script)
-        zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                      ZMAPSTANZA_BLIXEM_SCRIPT, prefs->script);
+  if (prefs->is_set.script && prefs->script)
+    {
+      changed = TRUE ;
 
-      if (prefs->config_file)
-        zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                      ZMAPSTANZA_BLIXEM_CONF_FILE, prefs->config_file);
+      zMapConfigIniContextSetString(context, file_type,
+                                    ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                    ZMAPSTANZA_BLIXEM_SCRIPT, prefs->script);
+    }
 
-      zMapConfigIniContextSave(context);
+  if (prefs->is_set.config_file && prefs->config_file)
+    {
+      changed = TRUE ;
+
+      zMapConfigIniContextSetString(context, file_type,
+                                    ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+                                    ZMAPSTANZA_BLIXEM_CONF_FILE, prefs->config_file);
+    }
+
+  /* Set the unsaved flag in the context if there were any changes */
+  if (changed)
+    {
+      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+    }
+}
+
+
+static void saveUserPrefs(BlixemConfigData prefs, const char *zmap_config_file)
+{
+  zMapReturnIfFail(prefs && zmap_config_file) ;
+
+  ZMapConfigIniContext context = NULL;
+
+  /* Create the context from the existing zmap config file (if any - otherwise create an empty
+   * context). */
+  if ((context = zMapConfigIniContextProvide(zmap_config_file, ZMAPCONFIG_FILE_USER)))
+    {
+      /* Update the settings in the context. Note that the file type of 'user' means the
+       * user-specified config file, i.e. the one we passed in to ContextProvide */
+      ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_USER ;
+
+      zMapViewBlixemUserPrefsUpdateContext(context, file_type) ;
+
+      zMapConfigIniContextSave(context, file_type);
+
+      zMapConfigIniContextDestroy(context) ;
     }
 
   return ;
 }
-static void saveChapter(ZMapGuiNotebookChapter chapter)
-{
-  saveUserPrefs(&blixem_config_curr_G);
 
-  return ;
-}
 
 static void applyCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
 {
@@ -2446,13 +2545,14 @@ static void applyCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
   return ;
 }
 
-static void saveCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
+static void saveCB(ZMapGuiNotebookAny any_section, void *user_data)
 {
   ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)any_section;
+  ZMapView view = (ZMapView)user_data ;
 
   readChapter(chapter);
 
-  saveChapter(chapter);
+  zMapViewBlixemSaveChapter(chapter, view);
 
   return ;
 }

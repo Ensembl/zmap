@@ -123,11 +123,17 @@ static void stylesFreeList(GList *config_styles_list) ;
 
 /* Note that config_file can be null here - this returns a new context which has  
  * the config_read flag as false. */
-ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file)
+ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file, ZMapConfigIniFileType file_type)
 {
-  ZMapConfigIniContext context = zMapConfigIniContextCreate(config_file) ;
+  ZMapConfigIniContext context = NULL ;
 
-  if(context)
+  if (file_type == ZMAPCONFIG_FILE_NONE)
+    context = zMapConfigIniContextCreate(config_file) ;
+  else
+    context = zMapConfigIniContextCreateType(config_file, file_type) ;
+
+  /* Add the default groups for standard zmap config files (i.e. anything except a styles file) */
+  if(context && file_type != ZMAPCONFIG_FILE_STYLES)
     {
       ZMapConfigIniContextKeyEntry stanza_group = NULL;
       const char *stanza_name, *stanza_type;
@@ -153,19 +159,6 @@ ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file)
       if((stanza_group = get_blixem_group_data(&stanza_name, &stanza_type)))
         zMapConfigIniContextAddGroup(context, stanza_name, stanza_type, stanza_group);
     }
-  else if (context)
-    {
-      const char *err_msg = "no error message" ;
-
-      if (context->error_message)
-        err_msg = context->error_message ;
-      else if (context->config && context->config->sys_key_error)
-        err_msg = context->config->sys_key_error->message ;
-      else if (context->config && context->config->zmap_key_error)
-        err_msg = context->config->zmap_key_error->message ;
-
-      zMapLogWarning("Error reading config file: %s", err_msg) ;
-    }
   else
     {
       zMapLogWarning("%s", "Error creating config file context") ;
@@ -177,7 +170,8 @@ ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file)
 
 
 
-ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name_in)
+ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name_in, 
+                                                      ZMapConfigIniFileType file_type)
 {
   ZMapConfigIniContext context = NULL;
 
@@ -187,7 +181,13 @@ ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, c
   zMapReturnValIfFail(stanza_name_in, context) ;
   zMapReturnValIfFail(*stanza_name_in, context) ;
 
-  if ((context = zMapConfigIniContextCreate(config_file)))
+  if (file_type == ZMAPCONFIG_FILE_NONE)
+    context = zMapConfigIniContextCreate(config_file) ;
+  else
+    context = zMapConfigIniContextCreateType(config_file, file_type) ;
+
+
+  if (context)
     {
       ZMapConfigIniContextKeyEntry stanza_group = NULL;
       const char *stanza_name, *stanza_type;
@@ -361,7 +361,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
 
 
   /* ERROR HANDLING ???? */
-  if ((context = zMapConfigIniContextProvideNamed(config_file, ZMAPSTANZA_STYLE_CONFIG)))
+  if ((context = zMapConfigIniContextProvideNamed(config_file, ZMAPSTANZA_STYLE_CONFIG, ZMAPCONFIG_FILE_NONE)))
     {
       GKeyFile *extra_styles_keyfile = NULL ;
 
@@ -371,12 +371,13 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
         }
       else if (styles_file)/* separate styles file */
         {
-          zMapConfigIniContextIncludeFile(context, styles_file) ;
+          zMapConfigIniContextIncludeFile(context, styles_file, ZMAPCONFIG_FILE_STYLES) ;
 
-          /* This is mucky....the above call puts whatever the file is into config->extra_key_file,
+          /* This is mucky....the above call puts whatever the file is into
+           * config->extra_key_file and config->extra_file_name.
            * really truly not good...should all be explicit....for now we do this here so at
            * least the calls in this file are more explicit... */
-          extra_styles_keyfile = context->config->extra_key_file ;
+          extra_styles_keyfile = context->config->key_file[ZMAPCONFIG_FILE_STYLES] ;
         }
       /* else styles are in main config named [style-xxx] */
 
@@ -944,7 +945,7 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
       if(!f_col->column_desc)
         f_col->column_desc = desc;
 
-      f_col->order = zMapFeatureColumnOrderNext() ;
+      f_col->order = zMapFeatureColumnOrderNext(FALSE) ;
 
       g_hash_table_insert(ghash,GUINT_TO_POINTER(f_col->unique_id),f_col);
     }
@@ -1091,7 +1092,7 @@ gboolean zMapConfigLegacyStyles(char *config_file)
   if (!got)
     {
       got = TRUE ;
-      if ((context = zMapConfigIniContextProvide(config_file)))
+      if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
         {
           zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                          ZMAPSTANZA_APP_LEGACY_STYLES, &result);
@@ -1132,7 +1133,7 @@ static GList *contextGetStyleList(ZMapConfigIniContext context, char *styles_lis
 }
 
 
-/* return list of all stanzas in context->extra_key_file */
+/* return list of all stanzas in context->key_file[ZMAPCONFIG_FILE_STYLES] */
 /* used when we don't have a styles list */
 static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
      ZMapConfigIniUserDataCreateFunc object_create_func,
@@ -1475,6 +1476,9 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name,
     { ZMAPSTANZA_APP_REPORT_THREAD,      G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_NAVIGATOR_SETS,     G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_SEQ_DATA,           G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_APP_SHRINKABLE,         G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_HIGHLIGHT_FILTERED, G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_ENABLE_ANNOTATION,  G_TYPE_BOOLEAN, NULL, FALSE },
     {NULL}
   };
   static const char *name = ZMAPSTANZA_APP_CONFIG;
@@ -1946,6 +1950,8 @@ static void free_source_list_item(gpointer list_data, gpointer unused_data)
     g_free(source_to_free->version);
   if(source_to_free->featuresets)
     g_free(source_to_free->featuresets);
+  if(source_to_free->biotypes)
+    g_free(source_to_free->biotypes);
   //  if(source_to_free->navigatorsets)
   //    g_free(source_to_free->navigatorsets);
   if(source_to_free->stylesfile)
@@ -1967,6 +1973,7 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(const char **stanza_na
     { ZMAPSTANZA_SOURCE_TIMEOUT,       G_TYPE_INT,     source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_VERSION,       G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_FEATURESETS,   G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_BIOTYPES,      G_TYPE_STRING,  source_set_property, FALSE },
     //    { ZMAPSTANZA_SOURCE_STYLES,        G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_REQSTYLES,     G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_STYLESFILE,    G_TYPE_STRING,  source_set_property, FALSE },
@@ -2008,6 +2015,8 @@ gpointer parent_data, GValue *property_value)
         str_ptr = &(config_source->version) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_FEATURESETS) == 0)
         str_ptr = &(config_source->featuresets) ;
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_BIOTYPES) == 0)
+        str_ptr = &(config_source->biotypes) ;
       //      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_STYLES) == 0)
       //str_ptr = &(config_source->styles_list) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_REQSTYLES) == 0)

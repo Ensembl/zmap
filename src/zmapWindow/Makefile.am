@@ -29,6 +29,7 @@ zmapWindowDrawFeatures.cpp \
 zmapWindowDump.cpp \
 zmapWindowExport.cpp \
 zmapWindowFeature.cpp \
+zmapWindowFeatureFilter.cpp \
 zmapWindowFeatureFuncs.cpp \
 zmapWindowFeatureList.cpp \
 zmapWindowFeatureList.hpp \

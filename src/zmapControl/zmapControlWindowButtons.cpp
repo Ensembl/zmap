@@ -51,7 +51,6 @@ enum{ SHOW_DNA, HIDE_DNA, HIDE_3ALL, SHOW_3FEATURES, SHOW_3FT, SHOW_3ALL };
 
 static void reloadCB(GtkWidget *widget, gpointer cb_data) ;
 static void stopCB(GtkWidget *widget, gpointer cb_data) ;
-static void setDisplayCoordinatesCB(GtkWindow* widget, gpointer cb_data ) ;
 static void zoomInCB(GtkWindow *widget, gpointer cb_data) ;
 static void zoomOutCB(GtkWindow *widget, gpointer cb_data) ;
 static void vertSplitPaneCB(GtkWidget *widget, gpointer data) ;
@@ -766,15 +765,6 @@ static void stopCB(GtkWidget *widget, gpointer cb_data)
   ZMap zmap = (ZMap)cb_data ;
 
   zmapControlResetCB(zmap) ;
-
-  return ;
-}
-
-static void setDisplayCoordinatesCB(GtkWindow* widget, gpointer cb_data )
-{
-  ZMap zmap = (ZMap) cb_data ;
-
-  zmapControlWindowToggleDisplayCoordinates(zmap) ;
 
   return ;
 }

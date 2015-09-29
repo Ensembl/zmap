@@ -116,6 +116,7 @@ static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
                                                  GList **feature_sets_out,
+                                                 GList **biotypes_out,
                                                  GList *sources,
                                                  GList **required_styles,
                                                  GHashTable **featureset_2_stylelist_inout,
@@ -162,6 +163,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const char *feature_name,
                                ZMapStyleMode feature_mode,
                                const char *source,
+                               const char *biotype,
                                const int match_start,
                                const int match_end,
                                GetFeaturesData get_features_data,
@@ -373,6 +375,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
  *  */
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
                                                  GList **feature_sets_inout,
+                                                 GList **biotypes_inout,
                                                  GList *sources,
                                                  GList **required_styles_out,
                                                  GHashTable **featureset_2_stylelist_inout,
@@ -385,10 +388,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   if (feature_sets_inout)
     {
       server->req_featuresets = *feature_sets_inout ;
-
-      /* If any featuresets are requested, then we should load ONLY requested
-       * featuresets. (Otherwise, we will load all featuresets we find.) */
-      server->req_featuresets_only = (g_list_length(server->req_featuresets) > 0) ;
+      server->req_biotypes = *biotypes_inout ;
     }
 
   if (source_2_sourcedata_inout)
@@ -478,10 +478,32 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  Vector *features =  Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
+  Vector *features = NULL;
 
+  if (server->req_featuresets)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new();
+      GList *item = server->req_featuresets;
+
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllSimpleFeatures(server->slice, (char*)featureset, NULL, NULL);
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
+    }
+
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       SimpleFeature *sf = (SimpleFeature*)Vector_getElementAt(features,i) ;
       SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,  (char *)(server->coord_system), NULL ,NULL) ;
@@ -491,14 +513,11 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
       else
         printf("Failed to map feature '%s'\n", SimpleFeature_getDisplayLabel(sf));
 
-      Object_decRefCount(rsf);
-      free(rsf);
-      Object_decRefCount(sf);
-      free(sf);
+      //          Object_decRefCount(rsf);
+      //          free(rsf);
+      //          Object_decRefCount(sf);
+      //          free(sf);
     }
-
-  if (features)
-    Vector_free(features) ;
 
   return result;
 }
@@ -509,10 +528,31 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  Vector *features =  Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+  Vector *features = NULL;
+  
+  if (server->req_featuresets)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new();
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllDNAAlignFeatures(server->slice, (char*)featureset, NULL, NULL, NULL);
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+    }
 
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       DNAAlignFeature *sf = (DNAAlignFeature*)Vector_getElementAt(features,i);
       DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
@@ -522,14 +562,11 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
       else
         printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
 
-      Object_decRefCount(rsf);
-      free(rsf);
-      Object_decRefCount(sf);
-      free(sf);
+      //      Object_decRefCount(rsf);
+      //      free(rsf);
+      //        Object_decRefCount(sf);
+      //        free(sf);
     }
-
-  if (features)
-    Vector_free(features) ;
 
   return result;
 }
@@ -540,10 +577,31 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  Vector *features =  Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+  Vector *features = NULL;
 
+  if (server->req_featuresets)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new();
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllProteinAlignFeatures(server->slice, (char*)featureset, NULL, NULL, NULL);
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
+    }
+
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       DNAPepAlignFeature *sf = (DNAPepAlignFeature*)Vector_getElementAt(features,i);
       DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
@@ -553,14 +611,11 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
       else
         printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
 
-      Object_decRefCount(rsf);
-      free(rsf);
-      Object_decRefCount(sf);
-      free(sf);
+      //      Object_decRefCount(rsf);
+      //      free(rsf);
+      //        Object_decRefCount(sf);
+      //        free(sf);
     }
-
-  if (features)
-    Vector_free(features) ;
 
   return result;
 }
@@ -572,10 +627,31 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  Vector *features =  Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
+  Vector *features = NULL;
 
+  if (server->req_featuresets)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new();
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllRepeatFeatures(server->slice, (char*)featureset, NULL, NULL);
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
+    }
+
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       RepeatFeature *sf = (RepeatFeature*)Vector_getElementAt(features,i);
       RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
@@ -585,14 +661,11 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
       else
         printf("Failed to map feature '%s'\n", RepeatConsensus_getName(RepeatFeature_getConsensus(sf)));
 
-      Object_decRefCount(rsf);
-      free(rsf);
-      Object_decRefCount(sf);
-      free(sf);
+      //      Object_decRefCount(rsf);
+      //      free(rsf);
+      //        Object_decRefCount(sf);
+      //        free(sf);
     }
-
-  if (features)
-    Vector_free(features) ;
 
   return result;
 }
@@ -604,10 +677,31 @@ static gboolean getAllTranscripts(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  Vector *features = Slice_getAllTranscripts(server->slice, 1, NULL, NULL) ;
+  Vector *features = NULL;
 
+  if (server->req_featuresets)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new();
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllTranscripts(server->slice, 1, (char*)featureset, NULL) ;
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllTranscripts(server->slice, 1, NULL, NULL) ;
+    }
+
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       Transcript *sf = (Transcript*)Vector_getElementAt(features,i);
       Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
@@ -617,14 +711,11 @@ static gboolean getAllTranscripts(EnsemblServer server,
       else
         printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
 
-      Object_decRefCount(rsf);
-      free(rsf);
-      Object_decRefCount(sf);
-      free(sf);
+      //      Object_decRefCount(rsf);
+      //      free(rsf);
+      //        Object_decRefCount(sf);
+      //        free(sf);
     }
-
-  if (features)
-    Vector_free(features) ;
 
   return result;
 }
@@ -636,10 +727,31 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  Vector *features = Slice_getAllPredictionTranscripts(server->slice, NULL, 1, NULL) ;
+  Vector *features = NULL;
 
+  if (server->req_featuresets)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new();
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllPredictionTranscripts(server->slice, (char*)featureset, 1, NULL) ;
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllPredictionTranscripts(server->slice, NULL, 1, NULL) ;
+    }
+
+  const int num_element = Vector_getNumElement(features) ;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       PredictionTranscript *sf = (PredictionTranscript*)Vector_getElementAt(features,i);
       PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
@@ -649,14 +761,11 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
       else
         printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
 
-      Object_decRefCount(rsf);
-      free(rsf);
-      Object_decRefCount(sf);
-      free(sf);
+      //      Object_decRefCount(rsf);
+      //      free(rsf);
+      //        Object_decRefCount(sf);
+      //        free(sf);
     }
-
-  if (features)
-    Vector_free(features) ;
 
   return result;
 }
@@ -669,10 +778,31 @@ static gboolean getAllGenes(EnsemblServer server,
 {
   gboolean result = TRUE ;
 
-  Vector *features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
+  Vector *features = NULL;
 
+  if (server->req_featuresets)
+    {
+      /* Get features for each requested featureset */
+      features = Vector_new();
+      GList *item = server->req_featuresets;
+      for ( ; item ; item = item->next)
+        {
+          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
+          Vector *new_features = Slice_getAllGenes(server->slice, (char*)featureset, NULL, 1, NULL, NULL) ;
+          Vector_append(features, new_features);
+          //Vector_free(new_features);
+        }
+    }
+  else
+    {
+      /* No specific featuresets requested, so get everything */
+      features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
+    }
+
+  const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-  for (i = 0; i < Vector_getNumElement(features) && result; ++i)
+
+  for (i = 0; i < num_element && result; ++i)
     {
       Gene *sf = Vector_getElementAt(features,i);
       Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
@@ -682,14 +812,11 @@ static gboolean getAllGenes(EnsemblServer server,
       else
         printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
 
-      Object_decRefCount(rsf);
-      free(rsf);
-      Object_decRefCount(sf);
-      free(sf);
+      //      Object_decRefCount(rsf);
+      //      free(rsf);
+      //        Object_decRefCount(sf);
+      //        free(sf);
     }
-
-  if (features)
-    Vector_free(features) ;
 
   return result;
 }
@@ -995,7 +1122,7 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
     source = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, 0, 0, 
+                        feature_mode, source, NULL, 0, 0, 
                         get_features_data, feature_block) ;
 
   return feature ;
@@ -1025,7 +1152,7 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
     source = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, 0, 0, 
+                        feature_mode, source, NULL, 0, 0, 
                         get_features_data, feature_block) ;
 
   return feature ;
@@ -1060,7 +1187,7 @@ static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData 
           makeFeatureTranscript(server, transcript, get_features_data, feature_block) ;
         }
 
-      Vector_free(transcripts) ;
+      //Vector_free(transcripts) ;
     }
 }
 #endif
@@ -1077,46 +1204,52 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
   const char *feature_name_id = NULL ;
   const char *feature_name = NULL ;
   const char *source = NULL ;
+  const char *biotype = Transcript_getBiotype(rsf) ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
-  feature_name_id = Transcript_getStableId(rsf);
-  feature_name = Transcript_getExternalName(rsf) ;
-
-  if (!feature_name || *feature_name == '\0')
-    feature_name = feature_name_id ;
-
-  if (analysis && (!source || *source == '\0'))
-    source = Analysis_getLogicName(analysis) ;
-
-  if (analysis && (!source || *source == '\0'))
-    source = Analysis_getGFFSource(analysis) ;
-
-  feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                        feature_mode, source, 0, 0, 
-                        get_features_data, feature_block) ;
-
-  if (feature)
+  /* If there are specific biotypes requested, only create this feature if it's in the list */
+  if (!server->req_biotypes || 
+      (biotype && zMap_g_list_find_quark(server->req_biotypes, g_quark_from_string(biotype))))
     {
-      /* If coding region start/end are not already set, these calls set them */
-      int coding_region_start = Transcript_getCodingRegionStart(rsf) ;
-      int coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
+      feature_name_id = Transcript_getStableId(rsf);
+      feature_name = Transcript_getExternalName(rsf) ;
 
-      char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
-      char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
+      if (!feature_name || *feature_name == '\0')
+        feature_name = feature_name_id ;
 
-      const int offset = server->zmap_start - 1 ;
+      if (analysis && (!source || *source == '\0'))
+        source = Analysis_getLogicName(analysis) ;
 
-      zMapFeatureTranscriptInit(feature);
-      zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+      if (analysis && (!source || *source == '\0'))
+        source = Analysis_getGFFSource(analysis) ;
 
-      if (coding_region_start_is_set && coding_region_end_is_set)
+      feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
+                            feature_mode, source, biotype, 0, 0, 
+                            get_features_data, feature_block) ;
+
+      if (feature)
         {
-          zMapFeatureAddTranscriptCDS(feature, TRUE, coding_region_start + offset, coding_region_end + offset);
-        }
+          /* If coding region start/end are not already set, these calls set them */
+          int coding_region_start = Transcript_getCodingRegionStart(rsf) ;
+          int coding_region_end = Transcript_getCodingRegionEnd(rsf) ;
 
-      Vector *exons = Transcript_getAllExons(rsf) ;
-      transcriptAddExons(server, feature, exons) ;
-      Vector_free(exons) ;
+          char coding_region_start_is_set = Transcript_getCodingRegionStartIsSet(rsf) ;
+          char coding_region_end_is_set = Transcript_getCodingRegionEndIsSet(rsf) ;
+
+          const int offset = server->zmap_start - 1 ;
+
+          zMapFeatureTranscriptInit(feature);
+          zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+
+          if (coding_region_start_is_set && coding_region_end_is_set)
+            {
+              zMapFeatureAddTranscriptCDS(feature, TRUE, coding_region_start + offset, coding_region_end + offset);
+            }
+
+          Vector *exons = Transcript_getAllExons(rsf) ;
+          transcriptAddExons(server, feature, exons) ;
+          //Vector_free(exons) ;
+        }
     }
 
   return feature ;
@@ -1152,7 +1285,7 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
     source = featureGetSOTerm((SeqFeature*)rsf) ;
   
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                        feature_mode, source, 0, 0, 
+                        feature_mode, source, NULL, 0, 0, 
                         get_features_data, feature_block) ;
 
   if (feature)
@@ -1184,7 +1317,7 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
 
       Vector *exons = PredictionTranscript_getAllExons(rsf, 0) ;
       transcriptAddExons(server, feature, exons) ;
-      Vector_free(exons) ;
+      //Vector_free(exons) ;
     }
 
   return feature ;
@@ -1246,7 +1379,7 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
     BaseAlignFeature_getDbName((BaseAlignFeature*)rsf) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
-                        feature_mode, source, match_start, match_end,
+                        feature_mode, source, NULL, match_start, match_end,
                         get_features_data, feature_block) ;
 
   if (feature)
@@ -1311,7 +1444,7 @@ static gboolean loadFeatureset(EnsemblServer server, const char *featureset_name
 
   /* If the req_featuresets list is given then only load features in those
    * featuresets. Otherwise, load all features. */
-  if (server->req_featuresets_only)
+  if (server->req_featuresets)
     {
       result = FALSE ;
       GQuark check_featureset_id = zMapFeatureSetCreateID(featureset_name) ;
@@ -1339,6 +1472,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const char *feature_name_in,
                                ZMapStyleMode feature_mode,
                                const char *source,
+                               const char *biotype_in,
                                const int match_start,
                                const int match_end,
                                GetFeaturesData get_features_data,
@@ -1356,6 +1490,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
   double score = 0.0 ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
   char *unique_source = NULL ;
+  const char *biotype = biotype_in ;
 
   SO_accession = featureGetSOTerm(rsf) ;
 
@@ -1377,16 +1512,20 @@ static ZMapFeature makeFeature(EnsemblServer server,
       else if (SeqFeature_getStrand(rsf) < 0)
         strand = ZMAPSTRAND_REVERSE ;
 
+      /* If no biotype given, then use the SO type */
+      if (!biotype)
+        biotype = SO_accession ;
+
       /* Create the unique id from the db name, feature name and coords (cast away const... ugh) */
       unique_id = zMapFeatureCreateID(feature_mode, (char*)feature_name_id, strand, start, end, match_start, match_end);
 
       /* If a prefix is given, add it to the source name */
       /* We can get different feature types with the same source, so ensure that the
-       * featureset id is unique by also appending the SO term */
+       * featureset id is unique by also appending the biotype or SO term */
       if (server->db_prefix)
-        unique_source = g_strdup_printf("%s_%s_%s", server->db_prefix, source, SO_accession);
+        unique_source = g_strdup_printf("%s_%s_%s", server->db_prefix, source, biotype);
       else
-        unique_source = g_strdup_printf("%s_%s", source, SO_accession) ;
+        unique_source = g_strdup_printf("%s_%s", source, biotype) ;
 
       /* Find the featureset, or create it if it doesn't exist */
       GQuark feature_set_id = zMapFeatureSetCreateID((char*)unique_source) ;

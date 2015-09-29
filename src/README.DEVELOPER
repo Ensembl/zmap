@@ -1,0 +1,28 @@
+=================================================================
+WELCOME TO ZMAP
+
+ZMap is a desktop genome browser that provides fast access to high
+volume data.
+
+Homepage: www.sanger.ac.uk/resources/software/zmap/
+
+Authors:  Ed Griffiths    <edgrif@sanger.ac.uk>
+          Roy Storey      <rds@sanger.ac.uk>
+          Malcolm Hinsley <mh17@sanger.ac.uk>
+          Gemma Barson    <gb10@sanger.ac.uk> 
+          Steve Miller    <sm23@sanger.ac.uk>
+
+=================================================================
+
+
+Dear developer,
+
+If you are reading this file it is because you have a copy of the development
+source tree of zmap rather than a distribution copy.
+
+Building zmap as a developer is different from building zmap from the distribution
+file and you should read the instructions in INSTALL.DEVELOPER on how to do this.
+
+regards, the zmap team.
+
+

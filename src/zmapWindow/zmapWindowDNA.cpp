@@ -133,7 +133,7 @@ static int DNA_group_G = 0;
  */
 
 void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feature_item,
-  ZMapSequenceType sequence_type)
+                                          ZMapSequenceType sequence_type)
 {
   GtkWidget *toplevel, *vbox, *menubar, *topbox, *hbox, *frame, *entry, *label, *button,
     *start_end, *errors,

@@ -97,6 +97,9 @@ gint zMapFeatureSortFeatures(gconstpointer a, gconstpointer b)
  *
  * If exact_match is TRUE then the function will return FALSE if _any_ boundary
  * in the feature does not match.
+ * If exact_match is FALSE then missing exons/introns/matches/gaps are allowed
+ * but if either boundary on matches that are made does not match then returns
+ * FALSE.
  *
  * Note that currently only basic, alignment and transcript type features
  * are searched for boundaries.
@@ -115,12 +118,21 @@ gboolean zMapFeatureHasMatchingBoundaries(ZMapFeature feature,
   ZMapFeaturePartsListStruct subparts ;
 
   zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
+  zMapReturnValIfFail((boundaries), FALSE) ;
 
   subparts.min_val = boundary_start ;
   subparts.max_val = boundary_end ;
   subparts.parts = boundaries ;
 
-  if (boundaries)
+  if (part_type == ZMAPFEATURE_SUBPART_FEATURE)
+    {
+      result = zmapFeatureBasicMatchingBoundaries(feature,
+                                                  part_type, exact_match, slop,
+                                                  &subparts,
+                                                  matching_boundaries_out,
+                                                  non_matching_boundaries_out) ;
+    }
+  else
     {
       switch (feature->mode)
         {
@@ -534,9 +546,7 @@ gboolean zmapFeatureMatchingBoundaries(ZMapFeature feature,
         }
 
 
-      if (!((exact_match
-             && (match_type & ZMAPBOUNDARY_MATCH_TYPE_5_MATCH) && (match_type & ZMAPBOUNDARY_MATCH_TYPE_3_MATCH))
-            || ((match_type & ZMAPBOUNDARY_MATCH_TYPE_5_MATCH) || (match_type & ZMAPBOUNDARY_MATCH_TYPE_3_MATCH))))
+      if (!((match_type & ZMAPBOUNDARY_MATCH_TYPE_5_MATCH) && (match_type & ZMAPBOUNDARY_MATCH_TYPE_3_MATCH)))
         {
           result = FALSE ;
         }
