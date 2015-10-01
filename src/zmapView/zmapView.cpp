@@ -350,7 +350,11 @@ static void getWindowList(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void configUpdateContext(ZMapView view, ZMapConfigIniContext context, const ZMapViewExportType export_type, ZMapConfigIniFileType file_type) ;
-void updateContextFeaturesetStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *stanza, GHashTable *ghash) ;
+void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *stanza, GHashTable *ghash) ;
+static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
+                                                                    gpointer data,
+                                                                    gpointer user_data,
+                                                                    char **err_out) ;
 
 
 
@@ -7073,8 +7077,15 @@ static void configUpdateContext(ZMapView view,
 
   if (view->flags[ZMAPFLAG_CHANGED_FEATURESET_STYLE])
     {
-      //zMapConfigIniSetQQHash(context, file_type, ZMAPSTANZA_FEATURESET_STYLE_CONFIG, featuresets_2_styles) ;
-      updateContextFeaturesetStyles(context, file_type, ZMAPSTANZA_COLUMN_STYLE_CONFIG, view->context_map.column_2_styles);
+      /* Set values in the context for the column-style stanza based on the column_2_styles hash table */
+      updateContextColumnStyles(context, file_type, ZMAPSTANZA_COLUMN_STYLE_CONFIG, view->context_map.column_2_styles);
+
+      /* Set values for the featureset-style stanza */
+      GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;
+
+      zMapFeatureContextExecute((ZMapFeatureAny)view->features, ZMAPFEATURE_STRUCT_FEATURESET, 
+                                updateContextFeatureSetStyle, gkf) ;
+
       changed = TRUE ;
     }
   
@@ -7089,7 +7100,7 @@ static void configUpdateContext(ZMapView view,
 
 
 /*  Update the given context with featureset-style relationships */
-void updateContextFeaturesetStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
+void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
                                    const char *stanza, GHashTable *ghash)
 {
   zMapReturnIfFail(context && context->config) ;
@@ -7132,7 +7143,6 @@ void updateContextFeaturesetStyles(ZMapConfigIniContext context, ZMapConfigIniFi
                       strcmp(value_str, "plain") &&
                       strcmp(value_str, "meta") &&
                       strcmp(value_str, "search hit marker"))
-
                     {
                       if (!values_str)
                         values_str = g_string_new(value_str) ;
@@ -7147,6 +7157,49 @@ void updateContextFeaturesetStyles(ZMapConfigIniContext context, ZMapConfigIniFi
                   g_string_free(values_str, TRUE) ;
                 }
             }
+        }
+    }
+}
+
+
+/* Callback called for all featuresets to set the key-value pair for the featureset-style stanza
+ * in the given key file. Note that featuresets that have their default are not included. */
+static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
+                                                                    gpointer data,
+                                                                    gpointer user_data,
+                                                                    char **err_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
+  GKeyFile *gkf = (GKeyFile *)user_data ;
+
+  if (gkf && feature_any && feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+    {
+      ZMapFeatureSet featureset = (ZMapFeatureSet)feature_any ;
+      const char *key_str = g_quark_to_string(featureset->unique_id) ;
+      const char *value_str = g_quark_to_string(featureset->style->unique_id) ;
+          
+      /* Only export if value is different to key (otherwise the style name is the
+       * same as the column name, and this stanza doesn't add anything). Also don't
+       * export if it's a default style. */
+      if (featureset->style && featureset->unique_id != featureset->style->unique_id &&
+          strcmp(value_str, "invalid") &&
+          strcmp(value_str, "basic") &&
+          strcmp(value_str, "alignment") &&
+          strcmp(value_str, "transcript") &&
+          strcmp(value_str, "sequence") &&
+          strcmp(value_str, "assembly-path") &&
+          strcmp(value_str, "text") &&
+          strcmp(value_str, "graph") &&
+          strcmp(value_str, "glyph") &&
+          strcmp(value_str, "plain") &&
+          strcmp(value_str, "meta") &&
+          strcmp(value_str, "search hit marker"))
+        {
+          key_str = g_quark_to_string(featureset->original_id) ;
+          value_str = g_quark_to_string(featureset->style->original_id) ;
+
+          g_key_file_set_string(gkf, ZMAPSTANZA_FEATURESET_STYLE_CONFIG, key_str, value_str) ;
         }
     }
 }
