@@ -278,6 +278,7 @@ void zmapWindowFeaturesetSetStyle(GQuark style_id,
                 }
 
               zMapWindowGetSetColumnStyle(window, feature_set->unique_id);
+              window->flags[ZMAPFLAG_CHANGED_FEATURESET_STYLE] = TRUE ;
             }
         }
     }

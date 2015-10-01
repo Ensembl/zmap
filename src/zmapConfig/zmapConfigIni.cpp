@@ -984,3 +984,15 @@ void zMapConfigIniSetQQHash(ZMapConfigIniContext context, ZMapConfigIniFileType 
         }
     }
 }
+
+
+GKeyFile *zMapConfigIniGetKeyFile(ZMapConfigIniContext context,
+                                  ZMapConfigIniFileType file_type)
+{
+  GKeyFile *result = NULL ;
+
+  if (context && context->config)
+    result = context->config->key_file[file_type] ;
+
+  return result ;
+}

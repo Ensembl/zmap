@@ -196,6 +196,8 @@ void zMapConfigIniSetQQHash(ZMapConfigIniContext context, ZMapConfigIniFileType 
 #define QQ_QUARK  1
 #define QQ_STYLE  2
 
+GKeyFile *zMapConfigIniGetKeyFile(ZMapConfigIniContext config, ZMapConfigIniFileType file_type) ;
+
 GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
 						  GHashTable *fset_src, GHashTable *fset2col) ;
 

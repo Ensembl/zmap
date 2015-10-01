@@ -349,7 +349,8 @@ static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_
 static void getWindowList(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static void columnOrderUpdateContext(ZMapView view, ZMapConfigIniContext context, const ZMapViewExportType export_type, ZMapConfigIniFileType file_type) ;
+static void configUpdateContext(ZMapView view, ZMapConfigIniContext context, const ZMapViewExportType export_type, ZMapConfigIniFileType file_type) ;
+void updateContextFeaturesetStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *stanza, GHashTable *ghash) ;
 
 
 
@@ -7018,8 +7019,8 @@ gboolean zMapViewExportConfig(ZMapView view,
       /* Update the context with the new preferences or styles, if anything has changed */
       update_func(context, file_type, view->context_map.styles) ;
 
-      /* Update the context with the column order */
-      columnOrderUpdateContext(view, context, export_type, file_type) ;
+      /* Update the context with any configuration values that have changed */
+      configUpdateContext(view, context, export_type, file_type) ;
 
       /* Do the save to file (force changes=true so we export even if nothing's changed) */
       zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
@@ -7045,11 +7046,11 @@ gboolean zMapViewExportConfig(ZMapView view,
 }
 
 
-/* Update the given context with the column order */
-static void columnOrderUpdateContext(ZMapView view, 
-                                     ZMapConfigIniContext context, 
-                                     const ZMapViewExportType export_type,
-                                     ZMapConfigIniFileType file_type)
+/* Update the given context with any configuration values that have been changed, e.g. column order */
+static void configUpdateContext(ZMapView view, 
+                                ZMapConfigIniContext context, 
+                                const ZMapViewExportType export_type,
+                                ZMapConfigIniFileType file_type)
 {
   gboolean changed = FALSE ;
   zMapReturnIfFail(view) ;
@@ -7070,16 +7071,82 @@ static void columnOrderUpdateContext(ZMapView view,
     }
 
 
-  //zMapConfigIniSetQQHash(context, file_type, ZMAPSTANZA_FEATURESET_STYLE_CONFIG, featuresets_2_styles) ;
-  //zMapConfigIniSetQQHash(context, file_type, ZMAPSTANZA_COLUMN_STYLE_CONFIG, view->context_map.column_2_styles);
-
+  if (view->flags[ZMAPFLAG_CHANGED_FEATURESET_STYLE])
+    {
+      //zMapConfigIniSetQQHash(context, file_type, ZMAPSTANZA_FEATURESET_STYLE_CONFIG, featuresets_2_styles) ;
+      updateContextFeaturesetStyles(context, file_type, ZMAPSTANZA_COLUMN_STYLE_CONFIG, view->context_map.column_2_styles);
+      changed = TRUE ;
+    }
   
   /* Set the unsaved flag in the context if there were any changes */
   if (changed)
     {
       view->flags[ZMAPFLAG_COLUMNS_NEED_SAVING] = FALSE ;
+      view->flags[ZMAPFLAG_CHANGED_FEATURESET_STYLE] = FALSE ;
       zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
     }
 }
 
 
+/*  Update the given context with featureset-style relationships */
+void updateContextFeaturesetStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
+                                   const char *stanza, GHashTable *ghash)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;
+
+  if (gkf)
+    {
+      /* Loop through all entries in the hash table */
+      GList *iter = NULL ;
+      gpointer key = NULL,value = NULL;
+
+      zMap_g_hash_table_iter_init(&iter, ghash) ;
+
+      while(zMap_g_hash_table_iter_next(&iter, &key, &value))
+        {
+          const char *key_str = g_quark_to_string(GPOINTER_TO_INT(key)) ;
+
+          if (key_str)
+            {
+              GString *values_str = NULL ;
+
+              for (GList *item = (GList*)value ; item ; item = item->next) 
+                {
+                  const char *value_str = g_quark_to_string(GPOINTER_TO_INT(item->data)) ;
+
+                  /* Only export if value is different to key (otherwise the style name is the
+                   * same as the column name, and this stanza doesn't add anything). Also don't
+                   * export if it's a default style. */
+                  if (value_str != key_str &&
+                      strcmp(value_str, "invalid") &&
+                      strcmp(value_str, "basic") &&
+                      strcmp(value_str, "alignment") &&
+                      strcmp(value_str, "transcript") &&
+                      strcmp(value_str, "sequence") &&
+                      strcmp(value_str, "assembly-path") &&
+                      strcmp(value_str, "text") &&
+                      strcmp(value_str, "graph") &&
+                      strcmp(value_str, "glyph") &&
+                      strcmp(value_str, "plain") &&
+                      strcmp(value_str, "meta") &&
+                      strcmp(value_str, "search hit marker"))
+
+                    {
+                      if (!values_str)
+                        values_str = g_string_new(value_str) ;
+                      else
+                        g_string_append_printf(values_str, " ; %s", value_str) ;
+                    }
+                }
+
+              if (values_str)
+                {
+                  g_key_file_set_string(gkf, stanza, key_str, values_str->str) ;
+                  g_string_free(values_str, TRUE) ;
+                }
+            }
+        }
+    }
+}
