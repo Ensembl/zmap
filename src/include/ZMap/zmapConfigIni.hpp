@@ -191,6 +191,7 @@ GList *zMapConfigString2QuarkList(const char *string_list,gboolean cannonical);
 GList *zMapConfigString2QuarkIDList(const char *string_list);
 
 GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context, const char *stanza, int how) ;
+void zMapConfigIniSetQQHash(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *stanza, GHashTable *ghash) ;
 #define QQ_STRING 0
 #define QQ_QUARK  1
 #define QQ_STYLE  2
