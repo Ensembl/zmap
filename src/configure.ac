@@ -71,7 +71,15 @@ AM_COND_IF([USE_ACECONN],
 
 # Check for mysql
 AX_LIB_MYSQL()           # Standard macro to test for mysql
-AM_CONDITIONAL([HAVE_MYSQL], [ test -n "$MYSQL_VERSION" ])
+AM_CONDITIONAL([HAVE_MYSQL_LIB], [ test -n "$MYSQL_VERSION" ])
+AM_COND_IF([HAVE_MYSQL_LIB], [AC_SUBST([HAVE_MYSQL_LIB], ['mysql lib is available'])])
+
+# Also need to check for headers - need mysql include directory in cflags or AC_CHECK_HEADERS
+# fails
+AM_COND_IF([HAVE_MYSQL_LIB], [[ CFLAGS="$CFLAGS $MYSQL_CFLAGS" ]])
+AC_CHECK_HEADERS([mysql.h], [HAVE_MYSQL_HEADER=1])
+
+AM_CONDITIONAL([HAVE_MYSQL], [ test -n "$HAVE_MYSQL_HEADER" && test -n "$HAVE_MYSQL_LIB" ])
 AM_COND_IF([HAVE_MYSQL],
            [AC_SUBST(HAVE_MYSQL, 'mysql is available')])
 
@@ -81,11 +89,9 @@ AM_COND_IF([HAVE_MYSQL],
 # If we have mysql then check for develop asking to reference but not build ensembl extension, also
 # check whether developer asked for local build of ensembl. Note that autogen.sh makes these
 # two options mutually exclusive.
-AM_COND_IF([HAVE_MYSQL],
-           [AM_CONDITIONAL([REFERENCE_ENSEMBL], [ test -f "$srcdir/ensembl_ref_but_no_build" ])])
- 
-AM_COND_IF([HAVE_MYSQL],
-           [AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -f "$srcdir/ensc-core/src/Makefile" ])])
+AM_CONDITIONAL([REFERENCE_ENSEMBL], [ test -n "$HAVE_MYSQL" && test -f "$srcdir/ensembl_ref_but_no_build" ])
+   
+AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -n "$HAVE_MYSQL" && test -f "$srcdir/ensc-core/src/Makefile" ])
 
 #AM_COND_IF([REFERENCE_ENSEMBL],
 #           [ echo 'ENSEMBL IS AVAILABLE BUT WE ARE ONLY REFERENCING IT !!!' ])
