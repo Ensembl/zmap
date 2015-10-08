@@ -220,12 +220,21 @@ endif
 zmap_LDADD +=                                                \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
 	$(GTK_LIBS)			                     \
-	$(LIBCURL) -lexpat -lX11 -lz                         \
-	$(MYSQL_LDFLAGS)                                     \
+	$(LIBCURL) -lexpat -lX11 -lz                         
+
+if USE_ENSEMBL
+zmap_LDADD += $(MYSQL_LDFLAGS)                                     
+endif
+
+zmap_LDADD +=                                                \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
-zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp $(MYSQL_CFLAGS)
+zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
+
+if USE_ENSEMBL
+zmap_CFLAGS += $(MYSQL_CFLAGS)
+endif
 
 # zeromq is C++ so we need to link with g++, not gcc.
 #zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
