@@ -919,16 +919,27 @@ gboolean zMapGFFFormatGap2GFF(GString *attribute, GArray *gaps, ZMapStrand q_str
                   next_ref = gap->t1 ;
                 }
 
+              /* If the match coord has increased, it's an insertion. If the ref coord has
+               * increased, it's a deletion/intron. 
+               * gb10: If both have increased, then we have an insertion and deletion/intron 
+               * adjacent to each other - not sure if this is strictly valid but I've come across
+               * some data like this so for now allow it. */
               if (next_match > curr_match + 1)
                 {
                   coord = calcGapLength(match_seq_type, curr_match, next_match) ;
                   g_string_append_printf(attribute, "I%d ", coord) ;
                 }
-              else if (next_ref > curr_ref + 1)
+
+              if (next_ref > curr_ref + 1)
                 {
                   coord = calcGapLength(match_seq_type, curr_ref, next_ref) ;
 
-                  /* Check if it's an intron or deletion */
+                  /* Check if it's an intron or deletion.
+                   * gb10: Strictly speaking the GFF Gap attribute doesn't support the 'N'
+                   * operator so we should really output these as 'D'. I'm allowing 'N's for now
+                   * though because we're using the Gap string to export to blixem and blixem
+                   * understands the 'N's. We should change to a better cigar string type for the
+                   * export to blixem, then we can get rid of the 'N's here. */
                   AlignBlockBoundaryType boundary_type = ALIGN_BLOCK_BOUNDARY_EDGE ;
                   if (gap->q_strand == gap->t_strand)
                     boundary_type = gap->end_boundary ;
