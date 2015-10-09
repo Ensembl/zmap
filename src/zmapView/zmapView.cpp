@@ -7173,7 +7173,10 @@ static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
   GKeyFile *gkf = (GKeyFile *)user_data ;
 
-  if (gkf && feature_any && feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+  if (gkf && 
+      feature_any && 
+      feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET &&
+      ((ZMapFeatureSet)feature_any)->style)
     {
       ZMapFeatureSet featureset = (ZMapFeatureSet)feature_any ;
       const char *key_str = g_quark_to_string(featureset->unique_id) ;
@@ -7202,4 +7205,6 @@ static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
           g_key_file_set_string(gkf, ZMAPSTANZA_FEATURESET_STYLE_CONFIG, key_str, value_str) ;
         }
     }
+
+  return status ;
 }
