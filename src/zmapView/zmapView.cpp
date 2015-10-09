@@ -151,7 +151,7 @@ typedef struct ConnectionDataStructType
   gint start,end;
 
   /* Move into loaded_features ? */
-  char *err_msg;                                            // from the server mainly
+  GError *error;
   gchar *stderr_out;
   gint exit_code;
   gboolean status;                                            // load sucessful?
@@ -3479,6 +3479,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
           ZMapThreadReply reply = ZMAPTHREAD_REPLY_DIED ;
           void *data = NULL ;
           char *err_msg = NULL ;
+          gint err_code = -1 ;
           gboolean thread_has_died = FALSE ;
           gboolean all_steps_finished = FALSE ;
           gboolean this_step_finished = FALSE ;
@@ -3654,9 +3655,16 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                                 /* TRY THIS HERE.... */
                                 if (err_msg)
-                                  g_free(err_msg) ;
+                                  {
+                                    g_free(err_msg) ;
+                                    err_msg = NULL ;
+                                  }
                                 
-                                err_msg = connect_data->err_msg ;
+                                if (connect_data && connect_data->error)
+                                  {
+                                    err_msg = g_strdup(connect_data->error->message) ;
+                                    err_code = connect_data->error->code ;
+                                  }
 
                                 this_step_finished = TRUE ;
                               }
@@ -3710,7 +3718,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         /* Warn the user ! */
                         if (view_con->show_warning)
                           {
-                            zMapWarning("Error loading source.\n\n %s", (err_msg ? err_msg : "<no error message>")) ;
+                            /* Don't bother the user if it's just that there were no features in
+                             * the source */
+                            if (err_code != ZMAPVIEW_ERROR_CONTEXT_EMPTY)
+                              zMapWarning("Error loading source.\n\n %s", (err_msg ? err_msg : "<no error message>")) ;
+                            
                             zMapLogWarning("Source is being cancelled: Error was: '%s'. Source: %s",
                                            (err_msg ? err_msg : "<no error message>"), view_con->url) ;
                           }
@@ -5074,6 +5086,12 @@ static void destroyViewConnection(ZMapView view, ZMapViewConnection view_conn)
           connect_data->loaded_features = NULL ;
         }
 
+      if (connect_data->error)
+        {
+          g_error_free(connect_data->error) ;
+          connect_data->error = NULL ;
+        }
+
       g_free(connect_data) ;
       view_conn->request_data = NULL ;
     }
@@ -5522,15 +5540,17 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
 
           if (merge_results == ZMAPFEATURE_CONTEXT_NONE)
             {
-              connect_data->err_msg = g_strdup("Context merge failed because no new features found in new context.") ;
+              g_set_error(&connect_data->error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONTEXT_EMPTY,
+                          "Context merge failed because no new features found in new context.") ;
 
-              zMapLogWarning("%s", connect_data->err_msg) ;
+              zMapLogWarning("%s", connect_data->error->message) ;
             }
           else
             {
-              connect_data->err_msg = g_strdup("Context merge failed, serious error.") ;
+              g_set_error(&connect_data->error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONTEXT_SERIOUS,
+                          "Context merge failed, serious error.") ;
 
-              zMapLogCritical("%s", connect_data->err_msg) ;
+              zMapLogCritical("%s", connect_data->error->message) ;
             }
 
           result = FALSE ;
