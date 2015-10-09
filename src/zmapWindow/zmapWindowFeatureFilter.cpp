@@ -101,7 +101,7 @@ static const char *getFrameStr(const char *target_str, const char *target_column
 void zmapWindowCreateFeatureFilterWindow(ZMapWindow window, ZMapWindowCallbackCommandFilter command_filter_data)
 {
   GtkWidget *toplevel, *top_vbox, *vbox, *hbox, *frame, *reset_hbox ;
-  GtkWidget *label, *combo = NULL, *spin, *entry, *separator ;
+  GtkWidget *label, *combo = NULL, *spin, *separator ;
   GtkTable *table ;
   GtkWidget *button_box, *close_button, *focus_button, *all_button, *unfilter_button, *filter_button ;
   FilterData filter_data ;
@@ -565,7 +565,6 @@ static void filterCB(GtkWidget *widget, gpointer cb_data)
 // Make the column choice combo.
 static void makeColumnCombo(FilterData filter_data)
 {
-  ZMapWindowCallbackCommandFilter command_filter_data = filter_data->command_filter_data ;
   GList *column_ids ;
   gboolean unique = FALSE ;
   ZMapStrand strand = ZMAPSTRAND_FORWARD ;
@@ -675,10 +674,12 @@ static void setNewTargetCol(FilterData filter_data)
   
 
   // reset target column...........
-  if (target_col = zmapWindowContainerBlockFindColumn(filter_data->block_container,
-                                                      command_filter_data->target_column_str,
-                                                      target_strand))
-    command_filter_data->target_column = target_col ;
+  if ((target_col = zmapWindowContainerBlockFindColumn(filter_data->block_container,
+                                                       command_filter_data->target_column_str,
+                                                       target_strand)))
+    {
+      command_filter_data->target_column = target_col ;
+    }
 
   return ;
 }

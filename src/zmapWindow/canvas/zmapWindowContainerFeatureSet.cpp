@@ -813,7 +813,7 @@ ZMapFeatureTypeStyle zMapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFe
 
 GQuark zMapWindowContainerFeatureSetGetUniqueId(ZMapWindowContainerFeatureSet container)
 {
-  zMapReturnValIfFail(container, NULL ) ;
+  zMapReturnValIfFail(container, 0) ;
   return container->unique_id;
 }
 
