@@ -39,6 +39,7 @@
 #include <ZMap/zmapConfigDir.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapConfigIni.hpp>
+#include <ZMap/zmapGLibUtils.hpp>
 #include <zmapConfigIni_P.hpp>
 
 
@@ -945,4 +946,53 @@ static void context_update_style(gpointer key, gpointer value, gpointer data)
     }
 
   return ;
+}
+
+
+/*
+ * Write a named stanza from values in a hash table
+ * NOTE: this function operates differently from normal ConfigIni in that we do not know
+ *  the names of the keys in the stanza and cannot create a struct to hold these and thier values
+ * So instead we have to use GLib directly.
+ * This is a simple generic table of quark->quark
+ * used for [featureset_styles] [GFF_source] and [column_styles]
+ */
+void zMapConfigIniSetQQHash(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
+                            const char *stanza, GHashTable *ghash)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  GKeyFile *gkf = context->config->key_file[file_type] ;
+
+  if (gkf)
+    {
+      /* Loop through all entries in the hash table */
+      GList *iter = NULL ;
+      gpointer key = NULL,value = NULL;
+
+      zMap_g_hash_table_iter_init(&iter, ghash) ;
+
+      while(zMap_g_hash_table_iter_next(&iter, &key, &value))
+        {
+          if (key && value)
+            {
+              const char *key_str = g_quark_to_string(GPOINTER_TO_INT(key)) ;
+              const char *value_str = g_quark_to_string(GPOINTER_TO_INT(value)) ;
+
+              g_key_file_set_string(gkf, stanza, key_str, value_str) ;
+            }
+        }
+    }
+}
+
+
+GKeyFile *zMapConfigIniGetKeyFile(ZMapConfigIniContext context,
+                                  ZMapConfigIniFileType file_type)
+{
+  GKeyFile *result = NULL ;
+
+  if (context && context->config)
+    result = context->config->key_file[file_type] ;
+
+  return result ;
 }

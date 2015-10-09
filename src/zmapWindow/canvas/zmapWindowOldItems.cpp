@@ -798,8 +798,6 @@ static void findColCB(gpointer data, gpointer user_data)
   if (container_group->level == ZMAPCONTAINER_LEVEL_FEATURESET
       && feature_set->strand == find_col_data->strand)
     {
-      GQuark name_id ;
-
       if (feature_set->unique_id == find_col_data->col_id)
         find_col_data->feature_set = feature_set ;
     }

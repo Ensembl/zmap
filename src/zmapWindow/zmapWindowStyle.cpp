@@ -278,6 +278,7 @@ void zmapWindowFeaturesetSetStyle(GQuark style_id,
                 }
 
               zMapWindowGetSetColumnStyle(window, feature_set->unique_id);
+              window->flags[ZMAPFLAG_CHANGED_FEATURESET_STYLE] = TRUE ;
             }
         }
     }
@@ -668,6 +669,11 @@ static gboolean applyChanges(gpointer cb_data)
   /* See if the new style already exists */
   GQuark new_style_id = zMapStyleCreateID(gtk_entry_get_text(GTK_ENTRY(my_data->new_style_name_widget))) ;
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)g_hash_table_lookup(my_data->menu_data->context_map->styles, GUINT_TO_POINTER(new_style_id));
+
+  /* It's possible the styles table has our style id but that it points to a different style,
+   * e.g. a default style. We only want to update it if it's the exact style we're looking for. */
+  if (style->unique_id != new_style_id)
+    style = NULL ;
 
   /* If the style id is the same as the featureset id then we can assume that this featureset "owns" the style */
   const gboolean own_style = (new_style_id == feature_set->unique_id);
