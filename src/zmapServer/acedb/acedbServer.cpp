@@ -653,7 +653,7 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
 
   resetErr(server) ;
 
-  if (findMethods(server, NULL, NULL) != ZMAP_SERVERRESPONSE_OK)
+  if (!findMethods(server, NULL, NULL) == ZMAP_SERVERRESPONSE_OK)
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,

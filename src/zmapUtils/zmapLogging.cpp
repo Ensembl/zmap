@@ -81,8 +81,8 @@ typedef struct
 /* State for the logger as a whole. */
 typedef struct  _ZMapLogStruct
 {
-  GMutex  log_lock ;    /* Ensure only single threading in log
-                           handler routine. */
+  GMutex*  log_lock ;    /* Ensure only single threading in log
+       handler routine. */
 
   /* Logging action. */
   gboolean logging ;    /* logging on or off ? */
@@ -300,11 +300,11 @@ gboolean zMapLogStart(GError **error)
   if (!log)
     return result  ;
 
-  g_mutex_lock(&log->log_lock) ;
+  g_mutex_lock(log->log_lock) ;
 
   result = startLogging(log, &g_error) ;
 
-  g_mutex_unlock(&log->log_lock) ;
+  g_mutex_unlock(log->log_lock) ;
 
   if (g_error)
     g_propagate_error(error, g_error) ;
@@ -482,7 +482,7 @@ void zMapLogStack(void)
   if (!log || !log->logging)
     return ;
 
-  g_mutex_lock(&log->log_lock);
+  g_mutex_lock(log->log_lock);
 
   if (log->active_handler.logfile &&
      (log_fd = g_io_channel_unix_get_fd(log->active_handler.logfile)))
@@ -490,7 +490,7 @@ void zMapLogStack(void)
       logged = zMapStack2fd(1, log_fd) ;
     }
 
-  g_mutex_unlock(&log->log_lock);
+  g_mutex_unlock(log->log_lock);
 
   /*  if (!logged)
       zMapLogWarning("Failed to log stack trace to fd %d. "
@@ -510,11 +510,11 @@ gboolean zMapLogStop(void)
   if (!log)
     return result ;
 
-  g_mutex_lock(&log->log_lock) ;
+  g_mutex_lock(log->log_lock) ;
 
   result = stopLogging(log, FALSE) ;
 
-  g_mutex_unlock(&log->log_lock) ;
+  g_mutex_unlock(log->log_lock) ;
 
   return result ;
 }
@@ -533,11 +533,11 @@ void zMapLogDestroy(void)
   if (!log)
     return ;
 
-  g_mutex_lock(&log->log_lock) ;
+  g_mutex_lock(log->log_lock) ;
 
   stopLogging(log, TRUE) ;
 
-  g_mutex_unlock(&log->log_lock) ;
+  g_mutex_unlock(log->log_lock) ;
 
   destroyLog(log) ;
 
@@ -563,7 +563,7 @@ static ZMapLog createLog(void)
   log = g_new0(ZMapLogStruct, 1) ;
 
   /* Must lock access to log as may come from serveral different threads. */
-  g_mutex_init(&log->log_lock) ;
+  log->log_lock = g_mutex_new() ;
 
   /* Default will be logging active. */
   log->logging = TRUE ;
@@ -607,7 +607,7 @@ static void destroyLog(ZMapLog log)
 
   g_free(log->nodeid) ;
 
-  g_mutex_clear(&log->log_lock) ;
+  g_mutex_free(log->log_lock) ;
 
   g_free(log) ;
 
@@ -876,7 +876,7 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
     }
 
   /* glib logging routines are not thread safe so must lock here. */
-  g_mutex_lock(&log->log_lock) ;
+  g_mutex_lock(log->log_lock) ;
 
   if ((g_io_channel_write_chars(log->active_handler.logfile, message, -1, &bytes_written, &g_error)
        != G_IO_STATUS_NORMAL)
@@ -891,7 +891,7 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 
 
   /* now unlock. */
-  g_mutex_unlock(&log->log_lock) ;
+  g_mutex_unlock(log->log_lock) ;
 
   return ;
 }
