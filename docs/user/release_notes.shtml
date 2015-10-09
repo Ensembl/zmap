@@ -6,6 +6,39 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.2.1</h4>
+<ul>
+  <li>Fix a bug where incorrect alignments were being exported to Blixem for alignments that contain adjacent insertions and introns.
+</ul>
+
+<h4>Version 2.2.0</h4>
+<ul>
+  <li>Added configuration to allow the user to specify which biotypes to load from an Ensembl database.
+  <li>Style editing and export in ZMap: the user can now explicitly create a new style or edit an existing one, and export the modified styles to a file.
+  <li>Configuration editing and export in ZMap: the user can now export ZMap's configuration settings to a file, including any options they have modified via the Preferences dialog.
+  <li>New feature filter window offering the user much more and much easier control over filtering.
+  <li>Fix major memory leaks when loading an Ensembl source, in particular when only loading a small subset of features from a database.	
+  <li>(RT:468772) Fix a problem where ZMap could open Blixem on the wrong range when using the keyboard shortcut.
+  <li>Fix intrusive warning messages when editing the Blixem preferences. (Warning messages could pop up about the script/config file being invalid while you were still trying to finish typing.)
+  <li> Fix a bug where new features created within ZMap could be given the wrong SO term when they are exported.
+  <li>Allow pipe symbol in gff text.
+  <li>(RT:485716) Memory allocation error in xml handling code caused later error in freeing that memory.
+</ul>
+
+<h4>Version 2.1.0</h4>
+<ul>
+  <li> Editing in zmap: improve the Annotation menu options, and add a facility to export the temp feature without having to assign it to a featureset
+  <li> Call pfetch from ZMap right-click menu caused a segmentation fault on mac - Corrected a couple of unsafe calls to g_free() in calling code.
+  <li> (RT:485214) File import dialogue has incorrect coordinates - Code to call file import handled revcomping and mark setting incorrectly
+  <li> (RT:484181) Fix a ZMap crash - string problem flagged up by the move to cpp
+  <li> Fix a problem where failed columns come back as Empty
+  <li> Fix intermittent crashing when loading ensembl databases
+  <li> Fix a bug where ensembl features of different types could appear in the same column
+  <li> Fix a bug where the source name was not being set for some ensembl features
+  <li> Fixes memory leaks in ensembl server code
+  <li> Fix several problems in mouse pointer handling where e.g. dragging was not being cancelled
+</ul>
+
 <h4>Version 2.0.0</h4>
 <ul>
   <li>Converted code base to C++
