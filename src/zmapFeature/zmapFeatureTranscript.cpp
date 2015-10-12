@@ -158,10 +158,10 @@ gboolean zMapFeatureTranscriptInit(ZMapFeature feature)
     {
 
       feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
-    sizeof(ZMapSpanStruct), 30) ;
+                                                            sizeof(ZMapSpanStruct), 30) ;
 
       feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
-      sizeof(ZMapSpanStruct), 30) ;
+                                                              sizeof(ZMapSpanStruct), 30) ;
 
       result = TRUE ;
     }
@@ -189,7 +189,7 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
   if (end < start)
     return result ;
   Coord start_s = feature->feature.transcript.cds_start,
-        end_s   = feature->feature.transcript.cds_end ;
+    end_s   = feature->feature.transcript.cds_end ;
 
   /*
    * Set flag for this feature to be a CDS.
@@ -234,7 +234,7 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
 
 /* Adds initial data to a transcript feature, will overwrite any existing settings. */
 gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature,
-     gboolean cds, Coord cds_start, Coord cds_end)
+                                     gboolean cds, Coord cds_start, Coord cds_end)
 {
   gboolean result = FALSE ;
 
@@ -321,13 +321,13 @@ gboolean zMapFeatureMergeTranscriptCDSCoords(ZMapFeature dest_feature, const int
 
 /* Add start/end "not found" data to a transcript feature. */
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
-  gboolean start_not_found_flag, int start_not_found,
-  gboolean end_not_found_flag)
+                                          gboolean start_not_found_flag, int start_not_found,
+                                          gboolean end_not_found_flag)
 {
   gboolean result = FALSE ;
 
   if (!(feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT
-     && (!start_not_found_flag || (start_not_found_flag && (start_not_found >= 1 || start_not_found <= 3)))) )
+        && (!start_not_found_flag || (start_not_found_flag && (start_not_found >= 1 || start_not_found <= 3)))) )
     return result ;
 
   result = TRUE ;
@@ -648,9 +648,9 @@ void zMapFeatureAnnotatedExonsDestroy(GList *exon_list)
  * but GFF does not enforce this so to be safe we need to do this
  */
 ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key,
-      gpointer data,
-      gpointer user_data,
-      char **error_out)
+                                                                      gpointer data,
+                                                                      gpointer user_data,
+                                                                      char **error_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
@@ -1435,7 +1435,7 @@ static gboolean mergeCoordOutsideLastExon(ZMapFeature transcript,
   gboolean merged = FALSE ;
 
   if (*boundary_inout == ZMAPBOUNDARY_NONE || *boundary_inout == ZMAPBOUNDARY_5_SPLICE)
-   {
+    {
       exon->x2 = x;
       transcript->x2 = x;
       merged = TRUE;
@@ -1480,7 +1480,7 @@ static gboolean mergeCoordInIntron(ZMapFeature transcript,
 }
 
 
-  /* x lies in this exon: ask whether to trim the start or end*/
+/* x lies in this exon: ask whether to trim the start or end*/
 static gboolean mergeCoordInExon(ZMapFeature transcript,
                                  ZMapBoundaryType *boundary_inout,
                                  const int x,
@@ -2206,13 +2206,13 @@ static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZM
     {
       if (region_type != EXON_START_NOT_FOUND)
         {
-        /* mh17:
-         * else we get 1 out of step with peptides: CDS is used for getting AA's
-         * not trans pos, which is used to set phase
-         * (RT 266769)
-         */
+          /* mh17:
+           * else we get 1 out of step with peptides: CDS is used for getting AA's
+           * not trans pos, which is used to set phase
+           * (RT 266769)
+           */
 
-        *curr_cds_pos += exon_length ;
+          *curr_cds_pos += exon_length ;
         }
 
       if (region_type != EXON_START_NOT_FOUND)
