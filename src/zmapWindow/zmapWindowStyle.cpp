@@ -672,7 +672,7 @@ static gboolean applyChanges(gpointer cb_data)
 
   /* It's possible the styles table has our style id but that it points to a different style,
    * e.g. a default style. We only want to update it if it's the exact style we're looking for. */
-  if (style->unique_id != new_style_id)
+  if (style && style->unique_id != new_style_id)
     style = NULL ;
 
   /* If the style id is the same as the featureset id then we can assume that this featureset "owns" the style */
