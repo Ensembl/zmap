@@ -48,7 +48,7 @@
 #define DOWN_LABEL     "Down"
 
 #define XPAD 4
-#define YPAD 4
+#define YPAD 0
 
 #define NOTEBOOK_PAGE_DATA "notebook_page_data"
 
@@ -1803,7 +1803,8 @@ static void loaded_cols_panel(LoadedPageData page_data)
 
           /* create the label that the user can understand */
           label = create_label(NULL, label_text);
-          gtk_table_attach(table, label, col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
+          gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5) ;
+          gtk_table_attach(table, label, col, col + 1, row, row + 1, GTK_FILL, GTK_SHRINK, XPAD, YPAD) ;
           ++col ;
 
           /* Show two sets of radio buttons for each column to change column display state for
