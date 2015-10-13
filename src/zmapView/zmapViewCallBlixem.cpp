@@ -270,7 +270,7 @@ static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 
 static void featureSetGetAlignList(gpointer data, gpointer user_data) ;
-static void getFeatureCB(gpointer key, gpointer data, gpointer user_data) ;
+static void getAlignFeatureCB(gpointer key, gpointer data, gpointer user_data) ;
 static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
 
 GList * zMapViewGetColumnFeatureSets(ZMapBlixemData data,GQuark column_id);
@@ -1435,7 +1435,7 @@ static void getRequestedHomologyList(ZMapBlixemData blixem_data)
     }
   else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SET)
     {
-      g_hash_table_foreach(blixem_data->feature_set->features, getFeatureCB, blixem_data) ;
+      g_hash_table_foreach(blixem_data->feature_set->features, getAlignFeatureCB, blixem_data) ;
     }
   else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET)
     {
@@ -1803,7 +1803,7 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
 
       if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
         status = writeFeatureLineAlignment(blixem_data, feature) ;
-      else if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+      else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
         status = writeFeatureLineTranscript(blixem_data, feature) ;
       else if (feature->mode == ZMAPSTYLE_MODE_BASIC)
         status = writeFeatureLineBasic(blixem_data, feature) ;
@@ -1843,7 +1843,7 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
 
   if(feature_set)
     {
-      g_hash_table_foreach(feature_set->features, getFeatureCB, blixem_data);
+      g_hash_table_foreach(feature_set->features, getAlignFeatureCB, blixem_data);
     }
   else
     {
@@ -1863,7 +1863,7 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
         {
           if((feature_set = (ZMapFeatureSet)g_hash_table_lookup(blixem_data->block->feature_sets, column_2_featureset->data)))
             {
-              g_hash_table_foreach(feature_set->features, getFeatureCB, blixem_data) ;
+              g_hash_table_foreach(feature_set->features, getAlignFeatureCB, blixem_data) ;
             }
         }
     }
@@ -1871,7 +1871,10 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
   return ;
 }
 
-static void getFeatureCB(gpointer key, gpointer data, gpointer user_data)
+
+/* Callback called on each feature in a featureset. Adds the feature to the align_list if it is
+ * an alignment of the correct type */
+static void getAlignFeatureCB(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ;
   ZMapBlixemData  blixem_data = (ZMapBlixemData)user_data ;
@@ -1879,25 +1882,13 @@ static void getFeatureCB(gpointer key, gpointer data, gpointer user_data)
   if (!feature || !blixem_data)
     return ;
 
-  /* Only process features we want to dump. We then filter those features according to the
-   * following rules (inherited from acedb): alignment features must be wholly within the
-   * blixem max/min to be included, for transcripts we include as many introns/exons as will fit. */
-  if (feature->mode == blixem_data->required_feature_type)
+  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT &&
+      feature->feature.homol.type == blixem_data->align_type)
     {
-      switch (feature->mode)
+      if ( (*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+           || (*blixem_data->opts == 'N' && feature->feature.homol.type == ZMAPHOMOL_N_HOMOL))
         {
-        case ZMAPSTYLE_MODE_ALIGNMENT:
-          {
-            if (feature->feature.homol.type == blixem_data->align_type)
-              {
-                if (   (*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
-                    || (*blixem_data->opts == 'N' && feature->feature.homol.type == ZMAPHOMOL_N_HOMOL))
-                  blixem_data->align_list = g_list_append(blixem_data->align_list, feature) ;
-              }
-            break ;
-          }
-        default:
-          break ;
+          blixem_data->align_list = g_list_append(blixem_data->align_list, feature) ;
         }
     }
 
