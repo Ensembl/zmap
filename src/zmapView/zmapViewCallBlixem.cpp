@@ -150,8 +150,10 @@ typedef struct ZMapBlixemDataStruct_
   ZMapStyleMode required_feature_type ;     /* specifies what type of feature
                                              * needs to be processed. */
 
-  /* If true, only process alignment features; otherwise process everything except alignments */
+  /* Indicate whether to process alignments and other feature types */
   gboolean do_alignments ;
+  gboolean do_transcripts ;
+  gboolean do_basic ;
 
   /* User can specify sets of homologies that can be passed to blixem, if the set they selected
    * is in one of these sets then all the features in all the sets are sent to blixem. */
@@ -159,9 +161,7 @@ typedef struct ZMapBlixemDataStruct_
 
   ZMapWindowAlignSetType align_set ;        /* Which set of alignments ? */
 
-  GList *dna_sets ;
-  GList *protein_sets ;
-  GList *transcript_sets ;
+  GList *assoc_featuresets ;                /* list of associated featuresets */
 
   GString *line ;
 
@@ -216,10 +216,7 @@ typedef struct BlixemConfigDataStructType
   gboolean      keep_tmpfiles ;
   gboolean      sleep_on_startup ;
 
-  /* Not user configurable */
-  GList *dna_sets ;
-  GList *protein_sets ;
-  GList *transcript_sets ;
+  GList *assoc_featuresets ;
 
 } BlixemConfigDataStruct, *BlixemConfigData ;
 
@@ -623,12 +620,8 @@ static void deleteBlixemData(ZMapBlixemData *p_blixem_data)
   if (blixem_data->config_file)
     g_free(blixem_data->config_file);
 
-  if (blixem_data->dna_sets)
-    g_list_free(blixem_data->dna_sets) ;
-  if (blixem_data->protein_sets)
-    g_list_free(blixem_data->protein_sets) ;
-  if (blixem_data->transcript_sets)
-    g_list_free(blixem_data->transcript_sets) ;
+  if (blixem_data->assoc_featuresets)
+    g_list_free(blixem_data->assoc_featuresets) ;
 
   if (blixem_data->local_sequences)
     {
@@ -710,26 +703,33 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
                                         ZMAPSTANZA_BLIXEM_KILL_EXIT, &tmp_bool))
         file_prefs.kill_on_exit = tmp_bool;
 
+      /* dna-featuresets and protein-featuresets have been replaced with a single featuresets
+       * list. Check for them for backwards compatibility and add them into the assoc_featuresets
+       * list if found. */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                        ZMAPSTANZA_BLIXEM_DNA_FS, &tmp_string))
         {
-          file_prefs.dna_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
+          GList *dna_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
+          file_prefs.assoc_featuresets = g_list_concat(file_prefs.assoc_featuresets, dna_sets) ;
           g_free(tmp_string);
         }
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                        ZMAPSTANZA_BLIXEM_PROT_FS, &tmp_string))
         {
-          file_prefs.protein_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
+          GList *protein_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
+          file_prefs.assoc_featuresets = g_list_concat(file_prefs.assoc_featuresets, protein_sets) ;
           g_free(tmp_string);
         }
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                        ZMAPSTANZA_BLIXEM_FS, &tmp_string))
         {
-          file_prefs.transcript_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
+          GList *assoc_featuresets = zMapConfigString2QuarkList(tmp_string,FALSE);
+          file_prefs.assoc_featuresets = g_list_concat(file_prefs.assoc_featuresets, assoc_featuresets) ;
           g_free(tmp_string);
         }
+
       zMapConfigIniContextDestroy(context);
     }
 
@@ -864,20 +864,10 @@ static void setPrefs(BlixemConfigData curr_prefs, ZMapBlixemData blixem_data)
 
   blixem_data->kill_on_exit = curr_prefs->kill_on_exit ;
 
-  if (blixem_data->dna_sets)
-    g_list_free(blixem_data->dna_sets) ;
-  if (curr_prefs->dna_sets)
-    blixem_data->dna_sets = zMapFeatureCopyQuarkList(curr_prefs->dna_sets) ;
-
-  if (blixem_data->protein_sets)
-    g_list_free(blixem_data->protein_sets) ;
-  if (curr_prefs->protein_sets)
-    blixem_data->protein_sets = zMapFeatureCopyQuarkList(curr_prefs->protein_sets) ;
-
-  if (blixem_data->transcript_sets)
-    g_list_free(blixem_data->transcript_sets) ;
-  if (curr_prefs->transcript_sets)
-    blixem_data->transcript_sets = zMapFeatureCopyQuarkList(curr_prefs->transcript_sets) ;
+  if (blixem_data->assoc_featuresets)
+    g_list_free(blixem_data->assoc_featuresets) ;
+  if (curr_prefs->assoc_featuresets)
+    blixem_data->assoc_featuresets = zMapFeatureCopyQuarkList(curr_prefs->assoc_featuresets) ;
 
   return ;
 }
@@ -1447,6 +1437,8 @@ static void writeRequestedHomologyList(ZMapBlixemData blixem_data)
 
   /* Set the flag so that we only process alignments */
   blixem_data->do_alignments = TRUE ;
+  blixem_data->do_transcripts = FALSE ;
+  blixem_data->do_basic = FALSE ;
 
   if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_FEATURES
       || blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_EXPANDED)
@@ -1469,14 +1461,9 @@ static void writeRequestedHomologyList(ZMapBlixemData blixem_data)
     }
   else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET)
     {
-      GList *set_list = NULL ;
-
-      if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
-        set_list = blixem_data->dna_sets ;
-      else
-        set_list = blixem_data->protein_sets ;
-
-      g_list_foreach(set_list, featureSetGetAlignList, blixem_data) ;
+      /* Include all features in the associated alignment featuresets. Note that this only adds
+       * features that are alignments of the correct type (dna/protein) */
+      g_list_foreach(blixem_data->assoc_featuresets, featureSetGetAlignList, blixem_data) ;
     }
 
   /* If a max number of homols is set, clip the list to it */
@@ -1485,9 +1472,6 @@ static void writeRequestedHomologyList(ZMapBlixemData blixem_data)
   /* Write the alignments in the list to the file */
   if (blixem_data->align_list)
     g_list_foreach(blixem_data->align_list, writeFeatureLineList, blixem_data) ;
-
-  /* Reset the flag to indicate we're processing alignments */
-  blixem_data->do_alignments = FALSE ;
 }
 
 
@@ -1562,18 +1546,29 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
       if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_NONE && feature_set)
         {
           blixem_data->do_alignments = FALSE ;
+          blixem_data->do_transcripts = TRUE ;
+          blixem_data->do_basic = TRUE ;
+
           g_hash_table_foreach(feature_set->features, writeFeatureLineHash, blixem_data) ;
         }
 
-      /* Now do transcripts */
-      blixem_data->do_alignments = FALSE ;
-      
-      if (blixem_data->transcript_sets)
+      /* Now do transcripts and other associated featuresets. */
+      if (blixem_data->assoc_featuresets)
         {
-          g_list_foreach(blixem_data->transcript_sets, writeFeatureSetList, blixem_data) ;
+          /* Set do_alignments = false so we don't include alignments from the associated
+           * featuresets as we've already done these with the requested homols */
+          blixem_data->do_alignments = FALSE ;      
+          blixem_data->do_transcripts = TRUE ;
+          blixem_data->do_basic = TRUE ;
+
+          g_list_foreach(blixem_data->assoc_featuresets, writeFeatureSetList, blixem_data) ;
         }
       else
         {
+          blixem_data->do_alignments = TRUE ;
+          blixem_data->do_transcripts = TRUE ;
+          blixem_data->do_basic = TRUE ;
+
           g_hash_table_foreach(blixem_data->block->feature_sets, writeFeatureSetHash, blixem_data) ;
         }
     }
@@ -1750,7 +1745,7 @@ static gboolean writeFeatureLineTranscript(ZMapBlixemData blixem_data, ZMapFeatu
   gboolean status = FALSE ;
   zMapReturnValIfFail(blixem_data && feature, status) ;
 
-  if (!blixem_data->do_alignments && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if (blixem_data->do_transcripts && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       ZMapFeatureSet feature_set = (ZMapFeatureSet)(feature->parent) ;
       GQuark feature_set_id = feature_set->unique_id ;
@@ -1759,8 +1754,8 @@ static gboolean writeFeatureLineTranscript(ZMapBlixemData blixem_data, ZMapFeatu
       // exporting some transcripts twice, once for the column clicked on and once for the
       // transcript set.
       if (blixem_data->align_set != ZMAPWINDOW_ALIGNCMD_NONE
-          || ((!(blixem_data->transcript_sets)
-               || !(g_list_find(blixem_data->transcript_sets, GINT_TO_POINTER(feature_set_id))))))
+          || ((!(blixem_data->assoc_featuresets)
+               || !(g_list_find(blixem_data->assoc_featuresets, GINT_TO_POINTER(feature_set_id))))))
         {
           status = zMapGFFFormatAttributeSetTranscript(blixem_data->attribute_flags) ;
 
@@ -1778,7 +1773,7 @@ static gboolean writeFeatureLineBasic(ZMapBlixemData blixem_data, ZMapFeature fe
   gboolean status = FALSE ;
   zMapReturnValIfFail(blixem_data && feature, status) ;
 
-  if (!blixem_data->do_alignments && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if (blixem_data->do_basic && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       status = zMapGFFFormatAttributeSetBasic(blixem_data->attribute_flags) ;
 
