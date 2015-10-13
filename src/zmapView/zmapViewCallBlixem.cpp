@@ -150,6 +150,9 @@ typedef struct ZMapBlixemDataStruct_
   ZMapStyleMode required_feature_type ;     /* specifies what type of feature
                                              * needs to be processed. */
 
+  /* If true, only process alignment features; otherwise process everything except alignments */
+  gboolean do_alignments ;
+
   /* User can specify sets of homologies that can be passed to blixem, if the set they selected
    * is in one of these sets then all the features in all the sets are sent to blixem. */
   ZMapHomolType align_type ;                /* What type of alignment are we doing ? */
@@ -1409,14 +1412,41 @@ static gboolean writeGFFHeader(ZMapBlixemData blixem_data, const int start, cons
 }
 
 
-/* Set the align_list to the list of requested dna or peptide alignments
- * NOTE the request data is a column which contains multiple featuresets.
- * We have to include a line for each one. */
-static void getRequestedHomologyList(ZMapBlixemData blixem_data)
+/* If a max number of homols is specified, then clip the align_list to that number of
+ * entries. This keeps the highest scoring homols. */
+static void limitToMaxHomol(ZMapBlixemData blixem_data)
 {
   zMapReturnIfFail(blixem_data) ;
 
-  blixem_data->required_feature_type = ZMAPSTYLE_MODE_ALIGNMENT ;
+  if (blixem_data->homol_max)
+    {
+      const int num_homols = g_list_length(blixem_data->align_list) ;
+      if (num_homols && blixem_data->homol_max < num_homols)
+        {
+          GList *break_point ;
+
+          blixem_data->align_list = g_list_sort(blixem_data->align_list, scoreOrderCB) ;
+
+          break_point = g_list_nth(blixem_data->align_list, blixem_data->homol_max + 1) ;
+          /* "+ 1" to go past last homol. */
+
+          /* Now remove entries.... */
+          if ((break_point = zMap_g_list_split(blixem_data->align_list, break_point)))
+            g_list_free(break_point) ;
+        }
+    }
+}
+
+
+/* Set the align_list to the list of requested dna or peptide alignments
+ * NOTE the request data is a column which contains multiple featuresets.
+ * We have to include a line for each one. */
+static void writeRequestedHomologyList(ZMapBlixemData blixem_data)
+{
+  zMapReturnIfFail(blixem_data) ;
+
+  /* Set the flag so that we only process alignments */
+  blixem_data->do_alignments = TRUE ;
 
   if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_FEATURES
       || blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_EXPANDED)
@@ -1449,6 +1479,15 @@ static void getRequestedHomologyList(ZMapBlixemData blixem_data)
       g_list_foreach(set_list, featureSetGetAlignList, blixem_data) ;
     }
 
+  /* If a max number of homols is set, clip the list to it */
+  limitToMaxHomol(blixem_data) ;
+
+  /* Write the alignments in the list to the file */
+  if (blixem_data->align_list)
+    g_list_foreach(blixem_data->align_list, writeFeatureLineList, blixem_data) ;
+
+  /* Reset the flag to indicate we're processing alignments */
+  blixem_data->do_alignments = FALSE ;
 }
 
 
@@ -1489,31 +1528,6 @@ static void writeCoverageColumn(ZMapBlixemData blixem_data, const int start, con
 }
 
 
-/* If a max number of homols is specified, then clip the align_list to that number of
- * entries. This keeps the highest scoring homols. */
-static void limitToMaxHomol(ZMapBlixemData blixem_data)
-{
-  zMapReturnIfFail(blixem_data) ;
-
-  if (blixem_data->homol_max)
-    {
-      const int num_homols = g_list_length(blixem_data->align_list) ;
-      if (num_homols && blixem_data->homol_max < num_homols)
-        {
-          GList *break_point ;
-
-          blixem_data->align_list = g_list_sort(blixem_data->align_list, scoreOrderCB) ;
-
-          break_point = g_list_nth(blixem_data->align_list, blixem_data->homol_max + 1) ;
-          /* "+ 1" to go past last homol. */
-
-          /* Now remove entries.... */
-          if ((break_point = zMap_g_list_split(blixem_data->align_list, break_point)))
-            g_list_free(break_point) ;
-        }
-    }
-}
-
 static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
 {
   zMapReturnValIfFail(blixem_data, FALSE) ;
@@ -1537,26 +1551,23 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
       blixem_data->errorMsg = NULL ;
       blixem_data->align_list = NULL ;
 
-      /* Do requested Homology data first. */
-      getRequestedHomologyList(blixem_data) ;
-
+      /* Do coverage columns */
       writeCoverageColumn(blixem_data, start, end) ;
 
-      /* If a max number of homols is specified, clip the list */
-      limitToMaxHomol(blixem_data) ;
-
-      /* Write out the alignments. */
-      if (blixem_data->align_list)
-        g_list_foreach(blixem_data->align_list, writeFeatureLineList, blixem_data) ;
+      /* Do requested Homology data */
+      writeRequestedHomologyList(blixem_data) ;
 
       /* If user clicked on something not an alignment then show that feature
        * and others nearby in blixems overview window. */
       if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_NONE && feature_set)
         {
+          blixem_data->do_alignments = FALSE ;
           g_hash_table_foreach(feature_set->features, writeFeatureLineHash, blixem_data) ;
         }
 
-      /* Now do transcripts (may need to filter further...) */
+      /* Now do transcripts */
+      blixem_data->do_alignments = FALSE ;
+      
       if (blixem_data->transcript_sets)
         {
           g_list_foreach(blixem_data->transcript_sets, writeFeatureSetList, blixem_data) ;
@@ -1683,6 +1694,8 @@ static void writeFeatureLineList(gpointer data, gpointer user_data)
 static gboolean includeFeature(ZMapBlixemData blixem_data, ZMapFeature feature)
 {
   gboolean include_feature = FALSE ;
+  zMapReturnValIfFail(blixem_data && feature, include_feature) ;
+
   gboolean fully_contained = FALSE ;   /* TRUE => feature must be fully
                                           contained, FALSE => just overlapping. */
 
@@ -1701,7 +1714,8 @@ static gboolean writeFeatureLineAlignment(ZMapBlixemData blixem_data, ZMapFeatur
   gboolean status = FALSE ;
   zMapReturnValIfFail(blixem_data && feature, status) ;
 
-  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && 
+  if (blixem_data->do_alignments &&
+      feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && 
       feature->feature.homol.type == blixem_data->align_type)
     {
       if (   (*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
@@ -1736,7 +1750,7 @@ static gboolean writeFeatureLineTranscript(ZMapBlixemData blixem_data, ZMapFeatu
   gboolean status = FALSE ;
   zMapReturnValIfFail(blixem_data && feature, status) ;
 
-  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if (!blixem_data->do_alignments && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       ZMapFeatureSet feature_set = (ZMapFeatureSet)(feature->parent) ;
       GQuark feature_set_id = feature_set->unique_id ;
@@ -1764,7 +1778,7 @@ static gboolean writeFeatureLineBasic(ZMapBlixemData blixem_data, ZMapFeature fe
   gboolean status = FALSE ;
   zMapReturnValIfFail(blixem_data && feature, status) ;
 
-  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if (!blixem_data->do_alignments && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       status = zMapGFFFormatAttributeSetBasic(blixem_data->attribute_flags) ;
 
@@ -1852,9 +1866,7 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
 
       if(!column_2_featureset)
         {
-          zMapLogWarning("Could not find %s feature set or column \"%s\" in context feature sets.",
-                         (blixem_data->required_feature_type == ZMAPSTYLE_MODE_ALIGNMENT
-                          ? "alignment" : "transcript"),
+          zMapLogWarning("Could not find alignment feature set or column \"%s\" in context feature sets.",
                          g_quark_to_string(set_id)) ;
         }
 
