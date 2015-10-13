@@ -36,7 +36,7 @@ graph-density=true
 graph-mode=heatmap
 bump-style=line
 default-bump-mode=style
-colours=normal fill white; normal border black
+colours=normal border black
 graph-baseline=0.000000
 max-score=1000.000000
 min-score=0.000000
@@ -138,7 +138,7 @@ mode=assembly-path
 
 [style-transcript]
 description=generic transcript
-transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold
+transcript-cds-colours=normal border SlateBlue ; selected fill gold
 width=7.000000
 colours=normal fill LightGray ; normal border SteelBlue ; selected fill #ecc806
 parent-style=root
@@ -197,7 +197,7 @@ default-bump-mode=all
 #[style-Plain]
 #description=internal style used for decorations
 #mode=plain
-#colours=normal fill white; normal border black
+#colours=normal border black
 #displayable=true
 
 [style-3 Frame]
@@ -216,7 +216,7 @@ bump-mode=unbump
 default-bump-mode=unbump
 bump-fixed=true
 width=30
-colours = normal fill white ; normal draw black ; selected fill red
+colours = selected fill red
 sequence-non-coding-colours = normal fill red ; normal draw black ; selected fill pink
 sequence-coding-colours = normal fill OliveDrab ; normal draw black ; selected fill pink
 sequence-split-codon-5-colours = normal fill orange ; normal draw black ; selected fill pink
@@ -246,7 +246,6 @@ display-mode=hide
 bump-mode=unbump
 default-bump-mode=unbump
 strand-specific=true
-colours = normal fill white ; normal draw black
 width=20
 
 # due to the vagaries of ACEDB we only request GF features if
@@ -264,7 +263,6 @@ bump-fixed=true
 [style-Scale]
 description=scale bar display
 mode=plain
-colours=normal fill white; normal border black
 displayable=true
 
 [style-Strand Separator]
@@ -321,7 +319,7 @@ show-when-empty=true
 display-mode=hide
 frame-mode=never
 colours=normal border #000000 ; selected border #000000 ; selected fill #ffddcc
-transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold
+transcript-cds-colours=normal border SlateBlue ; selected fill gold
 strand-specific=false
 show-reverse-strand=false
 
