@@ -258,6 +258,11 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
           fill_colour = zMap_gdk_color_to_rgba(gdk_fill);
           ufill = foo_canvas_get_color_pixel(foo->canvas, fill_colour);
         }
+      else
+        {
+          /* Set fill_set = false so that the cds colour defaults to the background colour */
+          fill_set = FALSE ;
+        }
 
       if(gdk_outline)
         {
@@ -266,6 +271,11 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
           outline_set = TRUE;
           outline_colour = zMap_gdk_color_to_rgba(gdk_outline);
           outline = foo_canvas_get_color_pixel(foo->canvas, outline_colour);
+        }
+      else
+        {
+          /* Don't set fill_set to false so that the border colour defaults to the
+           * UTR border colour, if set */
         }
 
     }
