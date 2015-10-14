@@ -76,6 +76,12 @@ enum
 
 #define BLX_ARGV_ARGC_MAX 100
 
+typedef struct RadioButtonDataStruct_
+{
+  GQuark *result ;
+  GQuark group_id ;
+} RadioButtonDataStruct, *RadioButtonData ;
+
 /* Control block for preparing data to call blixem. */
 typedef struct ZMapBlixemDataStruct_
 {
@@ -1570,6 +1576,106 @@ static void getColumnGroups(ZMapBlixemData blixem_data)
 }
 
 
+/* Called when the user toggles the radio button on the group dialog. Updates the value in the
+ * user data. */
+static void radio_button_cb(GtkToggleButton *togglebutton, gpointer user_data)
+{
+  RadioButtonData data = (RadioButtonData)user_data ;
+
+  if (gtk_toggle_button_get_active(togglebutton))
+    {
+      *(data->result) = data->group_id ;
+    }
+}
+
+
+/* Show a dialog to ask the user which column-group they want to use. Returns 0 if the user
+ * cancels or the column group id otherwise */
+static GQuark showGroupDialog(ZMapBlixemData blixem_data)
+{
+  GQuark result = 0 ;
+  zMapReturnValIfFail(blixem_data && blixem_data->column_groups, result) ;
+
+  GtkWidget *dialog = gtk_dialog_new_with_buttons("Blixem column group",
+                                                  NULL,
+                                                  (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                  GTK_STOCK_OK, 
+                                                  GTK_RESPONSE_ACCEPT,
+                                                  GTK_STOCK_CANCEL, 
+                                                  GTK_RESPONSE_CANCEL,
+                                                  NULL) ;
+
+
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT) ;
+
+  GtkBox *vbox = GTK_BOX((GTK_DIALOG(dialog))->vbox) ;
+  gtk_box_pack_start(vbox, gtk_label_new("Select which column group you would like to Blixem:"), FALSE, FALSE, 0) ;
+
+  GtkBox *hbox = GTK_BOX(gtk_hbox_new(FALSE, 0)) ;
+  gtk_box_pack_start(vbox, GTK_WIDGET(hbox), FALSE, FALSE, 0) ;
+
+  GtkBox *vbox1 = GTK_BOX(gtk_vbox_new(FALSE, 0)) ; /* labels */
+  GtkBox *vbox2 = GTK_BOX(gtk_vbox_new(FALSE, 0)) ; /* radio buttons */
+  gtk_box_pack_start(hbox, GTK_WIDGET(vbox1), FALSE, FALSE, 5) ;
+  gtk_box_pack_start(hbox, GTK_WIDGET(vbox2), FALSE, FALSE, 5) ;
+
+  GtkWidget *radio_group = NULL ;
+  static GQuark last_selection = 0 ;
+  GList *free_me = NULL ;
+
+  for (GList *item = blixem_data->column_groups; item ; item = item->next)
+    {
+      RadioButtonData data = g_new0(RadioButtonDataStruct, 1) ;
+      free_me = g_list_append(free_me, data) ;
+
+      data->result = &result ;
+
+      data->group_id = (GQuark)GPOINTER_TO_INT(item->data) ;
+      GtkWidget *label = gtk_label_new(g_quark_to_string(data->group_id)) ;
+      gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.0) ;
+      gtk_box_pack_start(vbox1, label, FALSE, FALSE, 0) ;
+
+      GtkWidget *radio_button = NULL ;
+
+      if (!radio_group)
+        {
+          radio_button = radio_group = gtk_radio_button_new(NULL) ;
+
+          /* default to first group found */
+          result = data->group_id ; 
+          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_button), TRUE) ;
+        }
+      else
+        {
+          radio_button = gtk_radio_button_new_from_widget(GTK_RADIO_BUTTON(radio_group)) ;
+        }
+
+      /* If this is the group that we selected last time then select it by default */
+      if (data->group_id == last_selection)
+        {
+          result = data->group_id ; 
+          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_button), TRUE) ;
+        }        
+
+      g_signal_connect(G_OBJECT(radio_button), "toggled", G_CALLBACK(radio_button_cb), data) ;
+      gtk_box_pack_start(vbox2, radio_button, FALSE, FALSE, 0) ;
+    }
+  
+  gtk_widget_show_all(dialog) ;
+
+  if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_CANCEL)
+    result = 0 ;
+  else
+    last_selection = result ;
+
+  g_list_free_full(free_me, g_free) ;
+
+  gtk_widget_destroy(dialog) ;
+
+  return result ;
+}
+
+
 /* Get the list of associated featuresets. If already set from the config then does
  * nothing. Otherwise checks for column groups and sets it from there if applicable. */
 static void getAssocFeaturesets(ZMapBlixemData blixem_data)
@@ -1583,19 +1689,17 @@ static void getAssocFeaturesets(ZMapBlixemData blixem_data)
 
       if (blixem_data->column_groups)
         {
-          if (g_list_length(blixem_data->column_groups) == 1)
-            {
-              GQuark group_id = (GQuark)GPOINTER_TO_INT(blixem_data->column_groups->data) ;
+          GQuark group_id = (GQuark)GPOINTER_TO_INT(blixem_data->column_groups->data) ;
 
+          if (g_list_length(blixem_data->column_groups) > 1)
+            group_id = showGroupDialog(blixem_data) ;
+
+          if (group_id)
+            {
               GList *group_featuresets = (GList*)g_hash_table_lookup(blixem_data->view->context_map.column_groups, 
                                                                            GINT_TO_POINTER(group_id)) ;
 
               blixem_data->assoc_featuresets = zMapFeatureCopyQuarkList(group_featuresets) ;
-            }
-          else
-            {
-              zMapWarning("Featureset '%s' is in multiple groups - not implemented yet", 
-                          g_quark_to_string(blixem_data->feature_set->original_id)) ;
             }
         }
     }
