@@ -1653,9 +1653,28 @@ static void writeFeatureSet(GQuark set_id, ZMapBlixemData blixem_data)
 
   feature_set = (ZMapFeatureSet)g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id));
 
-  if (feature_set)
+  if (feature_set && feature_set->style)
     {
-      g_hash_table_foreach(feature_set->features, writeFeatureLineHash, blixem_data);
+      /* Check if we're processing this type of style */
+      gboolean process = FALSE ;
+
+      switch (feature_set->style->mode)
+        {
+        case ZMAPSTYLE_MODE_ALIGNMENT:
+          process = blixem_data->do_alignments ;
+          break ;
+      
+        case ZMAPSTYLE_MODE_TRANSCRIPT:
+          process = blixem_data->do_transcripts ;
+          break ;
+
+        default: /* everything else */
+          process = blixem_data->do_basic ;
+          break ;
+        }
+
+      if (process)
+        g_hash_table_foreach(feature_set->features, writeFeatureLineHash, blixem_data);
     }
 
   return ;
@@ -1773,7 +1792,7 @@ static gboolean writeFeatureLineBasic(ZMapBlixemData blixem_data, ZMapFeature fe
   gboolean status = FALSE ;
   zMapReturnValIfFail(blixem_data && feature, status) ;
 
-  if (blixem_data->do_basic && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if (blixem_data->do_basic && feature->mode == ZMAPSTYLE_MODE_BASIC)
     {
       status = zMapGFFFormatAttributeSetBasic(blixem_data->attribute_flags) ;
 
@@ -1852,7 +1871,8 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
 
   if(feature_set)
     {
-      g_hash_table_foreach(feature_set->features, getAlignFeatureCB, blixem_data);
+      if (feature_set->style && feature_set->style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+        g_hash_table_foreach(feature_set->features, getAlignFeatureCB, blixem_data);
     }
   else
     {
@@ -1868,7 +1888,9 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
       /* Loop through each featureset in the column and add all features to the align_list */
       for(;column_2_featureset;column_2_featureset = column_2_featureset->next)
         {
-          if((feature_set = (ZMapFeatureSet)g_hash_table_lookup(blixem_data->block->feature_sets, column_2_featureset->data)))
+          feature_set = (ZMapFeatureSet)g_hash_table_lookup(blixem_data->block->feature_sets, column_2_featureset->data) ;
+          
+          if (feature_set && feature_set->style && feature_set->style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
             {
               g_hash_table_foreach(feature_set->features, getAlignFeatureCB, blixem_data) ;
             }
