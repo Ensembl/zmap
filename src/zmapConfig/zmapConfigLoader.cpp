@@ -894,6 +894,61 @@ g_strfreev(freethis);
 }
 
 
+/* This loads the column-groups configuration and populates a hash table of the group name
+ * (GQuark) to a GList of column names (GQuark)
+ * 
+ * [column-groups]
+ * mygroup = column1 ; column2 ;  etc
+ *
+ */
+GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context)
+{
+  GHashTable *column_groups = NULL ;
+  GKeyFile *gkf;
+  gchar ** keys, **freethis ;
+  GList *columns;
+  gsize len = 0;
+  GQuark group_id = 0;
+  char *names;
+
+  zMapReturnValIfFail(context, column_groups) ;
+
+  column_groups = g_hash_table_new(NULL, NULL) ;
+
+  if(zMapConfigIniHasStanza(context->config, ZMAPSTANZA_COLUMN_GROUPS, &gkf))
+    {
+      freethis = keys = g_key_file_get_keys(gkf,ZMAPSTANZA_COLUMN_GROUPS,&len,NULL);
+
+      for(;len--;keys++)
+        {
+          names = g_key_file_get_string(gkf,ZMAPSTANZA_COLUMN_GROUPS,*keys,NULL);
+
+          if(!names || !*names)
+            {
+              if (!*names)    /* Can this even happen ? */
+                g_free(names) ;
+
+              continue ;
+            }
+
+          /* this featureset will not actually exist, it's virtual */
+          group_id = zMapStyleCreateID(*keys);
+
+          columns = zMapConfigString2QuarkList(names,FALSE);
+          g_free(names);
+          names = NULL ;
+
+          g_hash_table_insert(column_groups,GUINT_TO_POINTER(group_id), columns);
+        }
+
+      if(freethis)
+        g_strfreev(freethis);
+    }
+
+  return column_groups;
+}
+
+
 // get the complete list of columns to display, in order
 // somewhere this gets mangled by strandedness
 GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)

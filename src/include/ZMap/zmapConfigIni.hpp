@@ -201,6 +201,8 @@ GKeyFile *zMapConfigIniGetKeyFile(ZMapConfigIniContext config, ZMapConfigIniFile
 GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
 						  GHashTable *fset_src, GHashTable *fset2col) ;
 
+GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context) ;
+
 GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context);
 
 void zMapConfigSourcesFreeList(GList *config_sources_list);
