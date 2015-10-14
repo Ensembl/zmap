@@ -241,7 +241,7 @@ static char ** createBlixArgArray();
 static void deleteBlixArgArray(char ***) ;
 
 static void setPrefs(BlixemConfigData curr_prefs, ZMapBlixemData blixem_data) ;
-static gboolean getUserPrefs(char *config_file, BlixemConfigData prefs) ;
+static gboolean getUserPrefs(ZMapView view, char *config_file, BlixemConfigData prefs) ;
 
 static void checkForLocalSequence(gpointer key, gpointer data, gpointer user_data) ;
 static gboolean makeTmpfiles(ZMapBlixemData blixem_data) ;
@@ -502,7 +502,7 @@ ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNote
 
   /* If the current configuration has not been set yet then read stuff from the config file. */
   if (!blixem_config_curr_G.init)
-    getUserPrefs(view->view_sequence->config_file, &blixem_config_curr_G) ;
+    getUserPrefs(view, view->view_sequence->config_file, &blixem_config_curr_G) ;
 
 
   chapter = makeChapter(note_book_parent, view) ; /* mh17: this uses blixen_config_curr_G */
@@ -575,7 +575,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 
   if (status)
     {
-      if ((status = getUserPrefs(blixem_data->config_file, &blixem_config_curr_G)))
+      if ((status = getUserPrefs(view, blixem_data->config_file, &blixem_config_curr_G)))
         setPrefs(&blixem_config_curr_G, blixem_data) ;
     }
 
@@ -640,7 +640,7 @@ static void deleteBlixemData(ZMapBlixemData *p_blixem_data)
 
 
 /* Get any user preferences specified in config file. */
-static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
+static gboolean getUserPrefs(ZMapView view, char *config_file, BlixemConfigData curr_prefs)
 {
   gboolean status = FALSE ;
   ZMapConfigIniContext context = NULL ;
@@ -731,6 +731,12 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
           file_prefs.assoc_featuresets = g_list_concat(file_prefs.assoc_featuresets, assoc_featuresets) ;
           g_free(tmp_string);
         }
+
+      /* Reload the column groups from file */
+      if (view->context_map.column_groups)
+        g_hash_table_destroy(view->context_map.column_groups) ;
+
+      view->context_map.column_groups = zMapConfigIniGetColumnGroups(context) ;
 
       zMapConfigIniContextDestroy(context);
     }
