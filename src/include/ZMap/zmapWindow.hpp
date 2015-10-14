@@ -344,12 +344,12 @@ typedef struct
 typedef enum
   {
     ZMAPWINDOW_ALIGNCMD_INVALID,
-    ZMAPWINDOW_ALIGNCMD_NONE,
-    ZMAPWINDOW_ALIGNCMD_FEATURES,
-    ZMAPWINDOW_ALIGNCMD_EXPANDED,
-    ZMAPWINDOW_ALIGNCMD_SET,
-    ZMAPWINDOW_ALIGNCMD_MULTISET,
-    ZMAPWINDOW_ALIGNCMD_SEQ
+    ZMAPWINDOW_ALIGNCMD_NONE,       /* column with no aligns. */
+    ZMAPWINDOW_ALIGNCMD_FEATURES,   /* all matches for selected features in this column. */
+    ZMAPWINDOW_ALIGNCMD_EXPANDED,   /* selected features expanded into hidden underlying data */
+    ZMAPWINDOW_ALIGNCMD_SET,        /* all matches for all features in this column. */
+    ZMAPWINDOW_ALIGNCMD_MULTISET,   /* all matches for all features in the list of columns in the blixem config file. */
+    ZMAPWINDOW_ALIGNCMD_SEQ         /* a coverage column: find the real data column */
   } ZMapWindowAlignSetType ;
 
 typedef struct ZMapWindowCallbackCommandAlignStructName

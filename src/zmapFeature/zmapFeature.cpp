@@ -3529,3 +3529,31 @@ ZMapFeatureSet zMapFeatureSetShallowCopy(ZMapFeatureSet src)
 
   return dest ;
 }
+
+
+/* Return the homol type for the given featureset, if it is an alignment. Returns ZMAPHOMOL_NONE
+ * if not applicable or not found. */
+ZMapHomolType zMapFeatureSetGetHomolType(ZMapFeatureSet feature_set)
+{
+  ZMapHomolType result = ZMAPHOMOL_NONE ;
+
+  if (feature_set && 
+      feature_set->features && 
+      feature_set->style && 
+      feature_set->style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+    {
+      /* Assume that all features in the featureset are the same type so just 
+       * check the first one. */
+      GList *first = g_hash_table_get_values(feature_set->features) ;
+
+      if (first)
+        {
+          ZMapFeature feature = (ZMapFeature)(first->data) ;
+
+          if (feature)
+            result = feature->feature.homol.type;
+        }
+    }
+
+  return result ;
+}
