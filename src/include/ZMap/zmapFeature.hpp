@@ -1545,6 +1545,8 @@ gint zMapFeatureSortFeatures(gconstpointer a, gconstpointer b) ;
 ZMapFeature zMapFeatureShallowCopy(ZMapFeature src) ;
 ZMapFeatureSet zMapFeatureSetShallowCopy(ZMapFeatureSet src) ;
 
+ZMapHomolType zMapFeatureSetGetHomolType(ZMapFeatureSet feature_set) ;
+
 int zMapFeatureTranscriptGetCDSStart(ZMapFeature feature) ;
 int zMapFeatureTranscriptGetCDSEnd(ZMapFeature feature) ;
 GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature) ;

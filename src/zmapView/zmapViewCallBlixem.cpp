@@ -1871,8 +1871,14 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
 
   if(feature_set)
     {
+      /* Check it's an alignment type */
       if (feature_set->style && feature_set->style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
-        g_hash_table_foreach(feature_set->features, getAlignFeatureCB, blixem_data);
+        {
+          /* Also check that it's the correct alignment type (dna/protein) - we don't want to
+           * check every feature individually if we know it's not relevant.  */
+          if (zMapFeatureSetGetHomolType(feature_set) == blixem_data->align_type)
+            g_hash_table_foreach(feature_set->features, getAlignFeatureCB, blixem_data);
+        }
     }
   else
     {
