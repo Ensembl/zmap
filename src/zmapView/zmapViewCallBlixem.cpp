@@ -76,6 +76,12 @@ enum
 
 #define BLX_ARGV_ARGC_MAX 100
 
+typedef struct RadioButtonDataStruct_
+{
+  GQuark *result ;
+  GQuark group_id ;
+} RadioButtonDataStruct, *RadioButtonData ;
+
 /* Control block for preparing data to call blixem. */
 typedef struct ZMapBlixemDataStruct_
 {
@@ -162,6 +168,8 @@ typedef struct ZMapBlixemDataStruct_
   ZMapWindowAlignSetType align_set ;        /* Which set of alignments ? */
 
   GList *assoc_featuresets ;                /* list of associated featuresets */
+  GList *column_groups ;                    /* the unique_id (GQuark) of any column groups that the
+                                             * selected featureset is in */
 
   GString *line ;
 
@@ -239,7 +247,7 @@ static char ** createBlixArgArray();
 static void deleteBlixArgArray(char ***) ;
 
 static void setPrefs(BlixemConfigData curr_prefs, ZMapBlixemData blixem_data) ;
-static gboolean getUserPrefs(char *config_file, BlixemConfigData prefs) ;
+static gboolean getUserPrefs(ZMapView view, char *config_file, BlixemConfigData prefs) ;
 
 static void checkForLocalSequence(gpointer key, gpointer data, gpointer user_data) ;
 static gboolean makeTmpfiles(ZMapBlixemData blixem_data) ;
@@ -500,7 +508,7 @@ ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNote
 
   /* If the current configuration has not been set yet then read stuff from the config file. */
   if (!blixem_config_curr_G.init)
-    getUserPrefs(view->view_sequence->config_file, &blixem_config_curr_G) ;
+    getUserPrefs(view, view->view_sequence->config_file, &blixem_config_curr_G) ;
 
 
   chapter = makeChapter(note_book_parent, view) ; /* mh17: this uses blixen_config_curr_G */
@@ -573,7 +581,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 
   if (status)
     {
-      if ((status = getUserPrefs(blixem_data->config_file, &blixem_config_curr_G)))
+      if ((status = getUserPrefs(view, blixem_data->config_file, &blixem_config_curr_G)))
         setPrefs(&blixem_config_curr_G, blixem_data) ;
     }
 
@@ -638,7 +646,7 @@ static void deleteBlixemData(ZMapBlixemData *p_blixem_data)
 
 
 /* Get any user preferences specified in config file. */
-static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
+static gboolean getUserPrefs(ZMapView view, char *config_file, BlixemConfigData curr_prefs)
 {
   gboolean status = FALSE ;
   ZMapConfigIniContext context = NULL ;
@@ -729,6 +737,12 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
           file_prefs.assoc_featuresets = g_list_concat(file_prefs.assoc_featuresets, assoc_featuresets) ;
           g_free(tmp_string);
         }
+
+      /* Reload the column groups from file */
+      if (view->context_map.column_groups)
+        g_hash_table_destroy(view->context_map.column_groups) ;
+
+      view->context_map.column_groups = zMapConfigIniGetColumnGroups(context) ;
 
       zMapConfigIniContextDestroy(context);
     }
@@ -868,6 +882,10 @@ static void setPrefs(BlixemConfigData curr_prefs, ZMapBlixemData blixem_data)
     g_list_free(blixem_data->assoc_featuresets) ;
   if (curr_prefs->assoc_featuresets)
     blixem_data->assoc_featuresets = zMapFeatureCopyQuarkList(curr_prefs->assoc_featuresets) ;
+
+  if (blixem_data->column_groups)
+    g_list_free(blixem_data->column_groups) ;
+  blixem_data->column_groups = NULL ;
 
   return ;
 }
@@ -1463,7 +1481,8 @@ static void writeRequestedHomologyList(ZMapBlixemData blixem_data)
     {
       /* Include all features in the associated alignment featuresets. Note that this only adds
        * features that are alignments of the correct type (dna/protein) */
-      g_list_foreach(blixem_data->assoc_featuresets, featureSetGetAlignList, blixem_data) ;
+      if (blixem_data->assoc_featuresets)
+        g_list_foreach(blixem_data->assoc_featuresets, featureSetGetAlignList, blixem_data) ;
     }
 
   /* If a max number of homols is set, clip the list to it */
@@ -1512,6 +1531,181 @@ static void writeCoverageColumn(ZMapBlixemData blixem_data, const int start, con
 }
 
 
+/* Called for each column group in the context. Adds the group to the blixem_data column_groups
+ * list if the selected featureset is in the group. */
+static void getColumnGroupCB(gpointer key, gpointer data, gpointer user_data)
+{
+  GQuark group_id = (GQuark)GPOINTER_TO_INT(key) ;
+  GList *group_featuresets = (GList*)data ;
+  ZMapBlixemData blixem_data = (ZMapBlixemData)user_data ;
+
+  zMapReturnIfFail(blixem_data && blixem_data->feature_set && group_featuresets) ;
+
+  for (GList *group_item = group_featuresets; group_item ; group_item = group_item->next)
+    {
+      GQuark group_featureset = (GQuark)GPOINTER_TO_INT(group_item->data) ;
+
+      GQuark group_featureset_id = zMapStyleCreateID(g_quark_to_string(group_featureset)) ;
+
+      if (group_featureset_id == blixem_data->feature_set->unique_id)
+        {
+          blixem_data->column_groups = g_list_append(blixem_data->column_groups, GINT_TO_POINTER(group_id)) ;
+          break ;
+        }
+    }
+}
+
+
+/* Get the column group(s) that the selected feature_set is in, if any. Sets the result in the
+ * column_groups member of the blixem_data. The result should be free'd with g_list_free. */
+static void getColumnGroups(ZMapBlixemData blixem_data)
+{
+  zMapReturnIfFail(blixem_data && blixem_data->feature_set) ;
+
+  if (blixem_data && blixem_data->view && blixem_data->view->context_map.column_groups)
+    {
+      /* Clear any previous list first */
+      if (blixem_data->column_groups)
+        {
+          g_list_free(blixem_data->column_groups) ;
+          blixem_data->column_groups = NULL ;
+        }
+
+      g_hash_table_foreach(blixem_data->view->context_map.column_groups, getColumnGroupCB, blixem_data) ;
+    }
+}
+
+
+/* Called when the user toggles the radio button on the group dialog. Updates the value in the
+ * user data. */
+static void radio_button_cb(GtkToggleButton *togglebutton, gpointer user_data)
+{
+  RadioButtonData data = (RadioButtonData)user_data ;
+
+  if (gtk_toggle_button_get_active(togglebutton))
+    {
+      *(data->result) = data->group_id ;
+    }
+}
+
+
+/* Show a dialog to ask the user which column-group they want to use. Returns 0 if the user
+ * cancels or the column group id otherwise */
+static GQuark showGroupDialog(ZMapBlixemData blixem_data)
+{
+  GQuark result = 0 ;
+  zMapReturnValIfFail(blixem_data && blixem_data->column_groups, result) ;
+
+  GtkWidget *dialog = gtk_dialog_new_with_buttons("Blixem column group",
+                                                  NULL,
+                                                  (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                  GTK_STOCK_OK, 
+                                                  GTK_RESPONSE_ACCEPT,
+                                                  GTK_STOCK_CANCEL, 
+                                                  GTK_RESPONSE_CANCEL,
+                                                  NULL) ;
+
+
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT) ;
+
+  GtkBox *vbox = GTK_BOX((GTK_DIALOG(dialog))->vbox) ;
+  gtk_box_pack_start(vbox, gtk_label_new("Select which column group you would like to Blixem:"), FALSE, FALSE, 0) ;
+
+  GtkBox *hbox = GTK_BOX(gtk_hbox_new(FALSE, 0)) ;
+  gtk_box_pack_start(vbox, GTK_WIDGET(hbox), FALSE, FALSE, 0) ;
+
+  GtkBox *vbox1 = GTK_BOX(gtk_vbox_new(FALSE, 0)) ; /* labels */
+  GtkBox *vbox2 = GTK_BOX(gtk_vbox_new(FALSE, 0)) ; /* radio buttons */
+  gtk_box_pack_start(hbox, GTK_WIDGET(vbox1), FALSE, FALSE, 5) ;
+  gtk_box_pack_start(hbox, GTK_WIDGET(vbox2), FALSE, FALSE, 5) ;
+
+  GtkWidget *radio_group = NULL ;
+  static GQuark last_selection = 0 ;
+  GList *free_me = NULL ;
+
+  for (GList *item = blixem_data->column_groups; item ; item = item->next)
+    {
+      RadioButtonData data = g_new0(RadioButtonDataStruct, 1) ;
+      free_me = g_list_append(free_me, data) ;
+
+      data->result = &result ;
+
+      data->group_id = (GQuark)GPOINTER_TO_INT(item->data) ;
+      GtkWidget *label = gtk_label_new(g_quark_to_string(data->group_id)) ;
+      gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.0) ;
+      gtk_box_pack_start(vbox1, label, FALSE, FALSE, 0) ;
+
+      GtkWidget *radio_button = NULL ;
+
+      if (!radio_group)
+        {
+          radio_button = radio_group = gtk_radio_button_new(NULL) ;
+
+          /* default to first group found */
+          result = data->group_id ; 
+          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_button), TRUE) ;
+        }
+      else
+        {
+          radio_button = gtk_radio_button_new_from_widget(GTK_RADIO_BUTTON(radio_group)) ;
+        }
+
+      /* If this is the group that we selected last time then select it by default */
+      if (data->group_id == last_selection)
+        {
+          result = data->group_id ; 
+          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_button), TRUE) ;
+        }        
+
+      g_signal_connect(G_OBJECT(radio_button), "toggled", G_CALLBACK(radio_button_cb), data) ;
+      gtk_box_pack_start(vbox2, radio_button, FALSE, FALSE, 0) ;
+    }
+  
+  gtk_widget_show_all(dialog) ;
+
+  if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_CANCEL)
+    result = 0 ;
+  else
+    last_selection = result ;
+
+  g_list_free_full(free_me, g_free) ;
+
+  gtk_widget_destroy(dialog) ;
+
+  return result ;
+}
+
+
+/* Get the list of associated featuresets. If already set from the config then does
+ * nothing. Otherwise checks for column groups and sets it from there if applicable. */
+static void getAssocFeaturesets(ZMapBlixemData blixem_data)
+{
+  zMapReturnIfFail(blixem_data && blixem_data->feature_set) ;
+
+  if (!blixem_data->assoc_featuresets && blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET)
+    {
+      /* First, populate the list of column groups that the selected feature set is in */
+      getColumnGroups(blixem_data) ;
+
+      if (blixem_data->column_groups)
+        {
+          GQuark group_id = (GQuark)GPOINTER_TO_INT(blixem_data->column_groups->data) ;
+
+          if (g_list_length(blixem_data->column_groups) > 1)
+            group_id = showGroupDialog(blixem_data) ;
+
+          if (group_id)
+            {
+              GList *group_featuresets = (GList*)g_hash_table_lookup(blixem_data->view->context_map.column_groups, 
+                                                                           GINT_TO_POINTER(group_id)) ;
+
+              blixem_data->assoc_featuresets = zMapFeatureCopyQuarkList(group_featuresets) ;
+            }
+        }
+    }
+}
+
+
 static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
 {
   zMapReturnValIfFail(blixem_data, FALSE) ;
@@ -1534,6 +1728,7 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
       ZMapFeatureSet feature_set = blixem_data->feature_set ;
       blixem_data->errorMsg = NULL ;
       blixem_data->align_list = NULL ;
+      getAssocFeaturesets(blixem_data) ;
 
       /* Do coverage columns */
       writeCoverageColumn(blixem_data, start, end) ;

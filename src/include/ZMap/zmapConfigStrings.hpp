@@ -946,6 +946,7 @@
 
 
 #define ZMAPSTANZA_COLUMN_CONFIG              "columns"
+#define ZMAPSTANZA_COLUMN_GROUPS              "column-groups"
 #define ZMAPSTANZA_COLUMN_STYLE_CONFIG        "column-style"
 #define ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG  "column-description"
 #define ZMAPSTANZA_FEATURESET_STYLE_CONFIG    "featureset-style"

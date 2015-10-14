@@ -2615,6 +2615,11 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
       if (g_hash_table_size(view->context_map.columns))
         view->columns_set = TRUE;
 
+      /*-------------------------------------
+       * column groups
+       *-------------------------------------
+       */
+      view->context_map.column_groups = zMapConfigIniGetColumnGroups(context);
 
       {
         /*-------------------------------------------------------------------------------
