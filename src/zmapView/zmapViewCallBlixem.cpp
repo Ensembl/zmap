@@ -1682,7 +1682,7 @@ static void getAssocFeaturesets(ZMapBlixemData blixem_data)
 {
   zMapReturnIfFail(blixem_data && blixem_data->feature_set) ;
 
-  if (!blixem_data->assoc_featuresets)
+  if (!blixem_data->assoc_featuresets && blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET)
     {
       /* First, populate the list of column groups that the selected feature set is in */
       getColumnGroups(blixem_data) ;
