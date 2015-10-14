@@ -162,6 +162,8 @@ typedef struct ZMapBlixemDataStruct_
   ZMapWindowAlignSetType align_set ;        /* Which set of alignments ? */
 
   GList *assoc_featuresets ;                /* list of associated featuresets */
+  GList *column_groups ;                    /* the unique_id (GQuark) of any column groups that the
+                                             * selected featureset is in */
 
   GString *line ;
 
@@ -1463,7 +1465,23 @@ static void writeRequestedHomologyList(ZMapBlixemData blixem_data)
     {
       /* Include all features in the associated alignment featuresets. Note that this only adds
        * features that are alignments of the correct type (dna/protein) */
-      g_list_foreach(blixem_data->assoc_featuresets, featureSetGetAlignList, blixem_data) ;
+      if (blixem_data->assoc_featuresets)
+        {
+          g_list_foreach(blixem_data->assoc_featuresets, featureSetGetAlignList, blixem_data) ;
+        }
+      else if (blixem_data->column_groups && g_list_length(blixem_data->column_groups) == 1)
+        {
+          GQuark group_id = (GQuark)GPOINTER_TO_INT(blixem_data->column_groups->data) ;
+
+          GList *group_featuresets = (GList*)g_hash_table_lookup(blixem_data->view->context_map.column_groups, 
+                                                                 GINT_TO_POINTER(group_id)) ;
+
+          g_list_foreach(group_featuresets, featureSetGetAlignList, blixem_data) ;
+        }
+      else
+        {
+          zMapWarning("%s", "Column is in multiple groups - not implemented yet\t") ;
+        }
     }
 
   /* If a max number of homols is set, clip the list to it */
@@ -1512,6 +1530,44 @@ static void writeCoverageColumn(ZMapBlixemData blixem_data, const int start, con
 }
 
 
+/* Called for each column group in the context. Adds the group to the blixem_data column_groups
+ * list if the selected featureset is in the group. */
+static void getColumnGroupCB(gpointer key, gpointer data, gpointer user_data)
+{
+  GQuark group_id = (GQuark)GPOINTER_TO_INT(key) ;
+  GList *group_featuresets = (GList*)data ;
+  ZMapBlixemData blixem_data = (ZMapBlixemData)user_data ;
+
+  zMapReturnIfFail(blixem_data && blixem_data->feature_set && group_featuresets) ;
+
+  for (GList *group_item = group_featuresets; group_item ; group_item = group_item->next)
+    {
+      GQuark group_featureset = (GQuark)GPOINTER_TO_INT(group_item->data) ;
+
+      GQuark group_featureset_id = zMapStyleCreateID(g_quark_to_string(group_featureset)) ;
+
+      if (group_featureset_id == blixem_data->feature_set->unique_id)
+        {
+          blixem_data->column_groups = g_list_append(blixem_data->column_groups, GINT_TO_POINTER(group_id)) ;
+          break ;
+        }
+    }
+}
+
+
+/* Get the column group(s) that the selected feature_set is in, if any. Sets the result in the
+ * column_groups member of the blixem_data. The result should be free'd with g_list_free. */
+static void getColumnGroups(ZMapBlixemData blixem_data)
+{
+  zMapReturnIfFail(blixem_data && blixem_data->feature_set) ;
+
+  if (blixem_data && blixem_data->view && blixem_data->view->context_map.column_groups)
+    {
+      g_hash_table_foreach(blixem_data->view->context_map.column_groups, getColumnGroupCB, blixem_data) ;
+    }
+}
+
+
 static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
 {
   zMapReturnValIfFail(blixem_data, FALSE) ;
@@ -1534,6 +1590,7 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
       ZMapFeatureSet feature_set = blixem_data->feature_set ;
       blixem_data->errorMsg = NULL ;
       blixem_data->align_list = NULL ;
+      getColumnGroups(blixem_data) ;
 
       /* Do coverage columns */
       writeCoverageColumn(blixem_data, start, end) ;
