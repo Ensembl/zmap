@@ -243,7 +243,7 @@ ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 
 # temporary until we've sorted out why the build fail on windows.....
 #ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64 precise-dev64 mac106229i t119-win-build"
-ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64 precise-dev64 mac106229i"
+ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64 trusty-dev64 mac106229i"
 
 
 
