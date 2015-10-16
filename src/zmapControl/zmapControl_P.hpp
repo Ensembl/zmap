@@ -135,6 +135,9 @@ typedef struct _ZMapStruct
   /* The navigator. */
   ZMapNavigator    navigator ;
 
+  /* Notebook for styles, should only be one per zmap. */
+  ZMapGuiNotebook styles_note_book ;
+
   /* Notebook for preferences, should only be one per zmap. */
   ZMapGuiNotebook preferences_note_book ;
 
@@ -215,6 +218,7 @@ int zmapControlNumViews(ZMap zmap) ;
 
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config);
 void zmapControlShowPreferences(ZMap zmap) ;
+void zmapControlShowStyles(ZMap zmap) ;
 
 gboolean zmapControlWindowToggleDisplayCoordinates(ZMap zmap) ;
 
