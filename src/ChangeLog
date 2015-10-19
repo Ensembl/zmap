@@ -1,691 +1,379 @@
-2015-09-16  Ed Griffiths  <edgrif@sanger.ac.uk>
- filter help not included in list files for dist. - BUG FIX
- src/Makefile.am |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2015-09-14  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.1.0-112-ge09f672 - Update RT and git commit reports
- src/ChangeLog                                  | 1739 +++++++++---------------
- src/build/release_docs/GIT_COMMITS.txt         |   59 +-
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |   72 +-
- 3 files changed, 710 insertions(+), 1160 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- RT477879, added pipe symbol to allowed symbols. - BUG FIX
- src/zmapGFF/zmapGFF2Dumper.cpp |    2 +-
+2015-10-19  Ed Griffiths  <edgrif@sanger.ac.uk>
+ switch back to precise. - BUILD
+ scripts/build_config.sh |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add filter help docs to help system. - NEW FEATURE 'Filter Feature window'
- src/include/ZMap/zmapUtilsGUI.hpp            |   11 +++++++++--
- src/include/ZMap/zmapWebPages.hpp            |    1 +
- src/zmapControl/zmapControlWindowMenubar.cpp |    1 +
- src/zmapUtils/zmapGUIutils.cpp               |    4 ++++
- 4 files changed, 15 insertions(+), 2 deletions(-)
+2015-10-14  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.2.1-64-g42af70f - Update RT and git commit reports
+ src/ChangeLog                                  | 1028 ++++++++----------------
+ src/build/release_docs/GIT_COMMITS.txt         |   50 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   46 +-
+ 3 files changed, 384 insertions(+), 740 deletions(-)
 
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Improve some text labels. - NEW FEATURE 'Filter Feature window'
- src/zmapWindow/zmapWindowFeatureFilter.cpp |   18 +-----------------
- 1 files changed, 1 insertions(+), 17 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- docs for new filtering window. - NEW FEATURE 'Filter Feature window'
- docs/user/filter_window.shtml |  218 +++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 218 insertions(+), 0 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix a few bugs in comparing multiple features and different parts. - NEW FEATURE 'Filter Feature Window'
- .../zmapWindowContainerFeatureSetFeatureFuncs.cpp  |  143 ++++++++++++++------
- 1 files changed, 104 insertions(+), 39 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix but in splice position. - BUG FIX
- src/zmapWindow/canvas/zmapWindowCanvasFeature.cpp |   12 +++++++-----
- 1 files changed, 7 insertions(+), 5 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Improve enum descriptions/types for filtering. - NEW FEATURE 'Filter Feature Window'
- .../canvas/zmapWindowContainerFeatureSet.hpp       |    9 +++++----
- 1 files changed, 5 insertions(+), 4 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix faulty positioning of splice markers. - BUG FIX
- src/zmapWindow/canvas/zmapWindowCanvasGlyph.cpp |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Redo splice marker positioning so it is positioned at the required base. - BUG FIX
- src/zmapWindow/canvas/zmapWindowCanvasDraw.cpp |   27 ++++++++++++++++--------
- 1 files changed, 18 insertions(+), 9 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add code to support resetting filter feature and target column. - NEW FEATURE 'Filter Feature Window'
- src/zmapWindow/zmapWindowFeatureFilter.cpp |  174 +++++++++++++++++++++++++---
- 1 files changed, 158 insertions(+), 16 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Small change to add base allowance to filter feature params. - TRIVIAL
- src/zmapWindow/zmapWindow_P.hpp |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add in item to start up new filter window. - NEW FEATURE 'New Feature Filter Window'
- src/zmapWindow/zmapWindowMenus.cpp |   42 ++++++++++++++++++++++++++---------
- 1 files changed, 31 insertions(+), 11 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Small change to filter features args. - TRIVIAL
- src/zmapWindow/zmapWindowCommand.cpp |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Small change to filter feature args. - TRIVIAL
- src/zmapWindow/zmapWindowDrawFeatures.cpp |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Change to use new abbrev function. - BUG FIX
- src/zmapControl/zmapControlWindowInfoPanel.cpp |   97 ++++++++----------------
- src/zmapWindow/zmapWindowFeatureList.cpp       |   31 +++-----
- 2 files changed, 44 insertions(+), 84 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Remove redundant C++ guards in header and add missing utils include. - TRIVIAL
- src/include/ZMap/zmapUtilsDebug.hpp |   18 ++----------------
- 1 files changed, 2 insertions(+), 16 deletions(-)
-
-2015-09-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Rationalise the abbrev code into a func. - BUG FIX
- src/include/ZMap/zmapString.hpp |    9 ++++++
- src/zmapUtils/zmapString.cpp    |   58 +++++++++++++++++++++++++++++++++++++++
- 2 files changed, 67 insertions(+), 0 deletions(-)
-
-2015-08-27  Ed Griffiths  <edgrif@sanger.ac.uk>
- code tidy up. - TRIVIAL
- src/zmapWindow/zmapWindowFeatureFilter.cpp |  123 +++++++++++++++-------------
- 1 files changed, 66 insertions(+), 57 deletions(-)
-
-2015-08-27  Ed Griffiths  <edgrif@sanger.ac.uk>
- remove debug stuff. - TRIVIAL
- src/zmapWindow/canvas/zmapWindowOldItems.cpp |   25 +++++++++++++++----------
- 1 files changed, 15 insertions(+), 10 deletions(-)
-
-2015-08-27  Ed Griffiths  <edgrif@sanger.ac.uk>
- remove redundant cds stuff. - NEW FEATURE 'develop'
- .../zmapWindowContainerFeatureSetFeatureFuncs.cpp  |   45 +-------------------
- 1 files changed, 2 insertions(+), 43 deletions(-)
-
-2015-08-27  Ed Griffiths  <edgrif@sanger.ac.uk>
- Update descriptions to be more intelligible. - NEW FEATURE '<feature_name>'
- .../canvas/zmapWindowContainerFeatureSet.hpp       |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
-
-2015-08-26  Ed Griffiths  <edgrif@sanger.ac.uk>
- changes to support new filter window. - NEW FEATURE 'develop'
- src/zmapWindow/zmapWindow_P.hpp |   36 +++++++++++++++++++++++++++++++-----
- 1 files changed, 31 insertions(+), 5 deletions(-)
-
-2015-08-26  Ed Griffiths  <edgrif@sanger.ac.uk>
- boring. - FORMATTING ONLY
- src/zmapWindow/zmapWindowSearch.cpp |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-2015-08-26  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add code to support new filter window. - NEW FEATURE 'develop'
- src/zmapWindow/zmapWindowMenus.cpp |  370 ++++++++++++++++++++++-------------
- 1 files changed, 232 insertions(+), 138 deletions(-)
-
-2015-08-26  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add new dialog for filtering. - NEW FEATURE '<feature_name>'
- src/zmapWindow/zmapWindowFeatureFilter.cpp |  580 ++++++++++++++++++++++++++++
- 1 files changed, 580 insertions(+), 0 deletions(-)
-
-2015-08-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- add new zmapWindowFocusGetFeatureListFull() func to return current focus feature list and col/item. - NEW FEATURE '<feature_name>'
- src/zmapWindow/zmapWindowFocus.cpp |   49 ++++++++++++++++++++++++++++++++++++
- 1 files changed, 49 insertions(+), 0 deletions(-)
-
-2015-08-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- Minor filter argument changes. - TRIVIAL
- src/zmapWindow/zmapWindowDrawFeatures.cpp |    8 +++++---
- 1 files changed, 5 insertions(+), 3 deletions(-)
-
-2015-08-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- Minor filtering arg changes. - TRIVIAL
- src/zmapWindow/zmapWindowDNA.cpp |    2 +-
+2015-10-14  Ed Griffiths  <edgrif@sanger.ac.uk>
+ swop from precise to trusty as there's a space issue on the precise machine. - BUILD
+ scripts/build_config.sh |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-2015-08-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- Minor arg changes for filter call. - TRIVIAL
- src/zmapWindow/zmapWindowCommand.cpp |   10 +++++++---
- 1 files changed, 7 insertions(+), 3 deletions(-)
+2015-10-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/blixem' into develop - NEW FEATURE 'Blixem config'
+2015-10-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Filter on homol type before checking all features - WIP
+ src/include/ZMap/zmapFeature.hpp    |    2 ++
+ src/zmapFeature/zmapFeature.cpp     |   28 ++++++++++++++++++++++++++++
+ src/zmapView/zmapViewCallBlixem.cpp |    8 +++++++-
+ 3 files changed, 37 insertions(+), 1 deletions(-)
 
-2015-08-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- horrendous, somehow func args all over the place. - FORMATTING ONLY
- src/zmapWindow/zmapWindowColConfig.cpp |  120 ++++++++++++++++----------------
- 1 files changed, 60 insertions(+), 60 deletions(-)
+2015-10-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Filter on featureset type before checking features - WIP
+ src/zmapView/zmapViewCallBlixem.cpp |   32 +++++++++++++++++++++++++++-----
+ 1 files changed, 27 insertions(+), 5 deletions(-)
 
-2015-08-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- Minor rename of filter struct memeber. - TRIVIAL
- src/zmapWindow/zmapWindow.cpp |    2 +-
+2015-10-13  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove dna- and protein-featuresets config - NEW FEATURE 'blixem config'
+ src/zmapView/zmapViewCallBlixem.cpp |   97 ++++++++++++++++------------------
+ 1 files changed, 46 insertions(+), 51 deletions(-)
+
+2015-10-13  Gemma Guest  <gb10@sanger.ac.uk>
+ Preparation for removing dna-featuresets and protein-featuresets config - WIP
+ src/zmapView/zmapViewCallBlixem.cpp |   98 +++++++++++++++++++---------------
+ 1 files changed, 55 insertions(+), 43 deletions(-)
+
+2015-10-13  Gemma Guest  <gb10@sanger.ac.uk>
+ Tidying - FORMATTING ONLY
+ src/zmapView/zmapViewCallBlixem.cpp |   37 +++++++++++++---------------------
+ 1 files changed, 14 insertions(+), 23 deletions(-)
+
+2015-10-13  Gemma Guest  <gb10@sanger.ac.uk>
+ Reorganise blixem code into smaller functions - FORMATTING ONLY
+ src/zmapView/zmapViewCallBlixem.cpp |  507 ++++++++++++++++++++---------------
+ 1 files changed, 288 insertions(+), 219 deletions(-)
+
+2015-10-13  Gemma Guest  <gb10@sanger.ac.uk>
+ Commenting only - FORMATTING ONLY
+ src/include/ZMap/zmapWindow.hpp |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
+
+2015-10-13  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor improvements to layout of columns dialog - TRIVIAL
+ src/zmapWindow/zmapWindowColConfig.cpp |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+2015-10-13  Gemma Guest  <gb10@sanger.ac.uk>
+ Improve default CDS fill colour - NEW FEATURE 'styles'
+ .../canvas/zmapWindowCanvasTranscript.cpp          |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+2015-10-13  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove hard-coded black/white styles - NEW FEATURE 'styles'
+ src/zmapConfig/default_styles.txt |   12 +++++-------
+ 1 files changed, 5 insertions(+), 7 deletions(-)
+
+2015-10-12  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix crash when creating new style - REGRESSION FIX
+ src/zmapWindow/zmapWindowStyle.cpp |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-2015-08-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- Convert enums to use zmapEnum.h, add code to support filter window. - NEW FEATURE 'develop'
- .../canvas/zmapWindowContainerFeatureSet.hpp       |   75 ++++++++---
- .../zmapWindowContainerFeatureSetFeatureFuncs.cpp  |  133 +++++++++++++-------
- 2 files changed, 140 insertions(+), 68 deletions(-)
+2015-10-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix indenting. - TRIVIAL
+ src/zmapFeature/zmapFeatureTranscript.cpp |   36 ++++++++++++++--------------
+ 1 files changed, 18 insertions(+), 18 deletions(-)
 
-2015-08-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add funcs to list columns and find a column, strangely missing at this level. - NEW FEATURE 'develop'
- src/zmapWindow/canvas/zmapWindowContainerBlock.hpp |    6 +
- src/zmapWindow/canvas/zmapWindowOldItems.cpp       |  161 +++++++++++++++++++-
- 2 files changed, 166 insertions(+), 1 deletions(-)
-
-2015-08-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- add new zmapWindowFeatureFeature.cpp to build - BUILD
- src/zmapWindow/Makefile.am |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2015-08-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix but in handling of partial match, i.e. missing exons. - BUG FIX
- src/zmapFeature/zmapFeatureTranscript.cpp |   38 +++++++++++++++++-----------
- 1 files changed, 23 insertions(+), 15 deletions(-)
-
-2015-08-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix bug in handling bad match for whole feature coords. - BUG FIX
- src/zmapFeature/zmapFeatureData.cpp |   18 ++++++++++++++----
- 1 files changed, 14 insertions(+), 4 deletions(-)
-
-2015-08-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add missing macros for getting/converting the long text in one of our enums. - BUG FIX
- src/include/ZMap/zmapEnum.hpp |   57 ++++++++++++++++++++++++++++++++++++++--
- 1 files changed, 54 insertions(+), 3 deletions(-)
-
-2015-09-09  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a bug where temp feature coords incorrect - BUG FIX
- src/zmapFeature/zmapFeatureTranscript.cpp |   22 +++++++++++++++-------
- src/zmapView/zmapViewScratch.cpp          |   10 ++++------
- 2 files changed, 19 insertions(+), 13 deletions(-)
-
-2015-09-09  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a bug with exporting incorrect SO term for temp feature - BUG FIX
- src/zmapView/zmapViewScratch.cpp |   10 +++++++++-
- 1 files changed, 9 insertions(+), 1 deletions(-)
-
-2015-09-09  Gemma Guest  <gb10@sanger.ac.uk>
- Disable confusing behaviour of naming temp feature after copied feature - TRIVIAL
- src/zmapView/zmapViewScratch.cpp   |   12 +++++++-----
- src/zmapWindow/zmapWindowMenus.cpp |    3 ++-
- 2 files changed, 9 insertions(+), 6 deletions(-)
-
-2015-09-09  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/config' into develop
-2015-09-08  Gemma Guest  <gb10@sanger.ac.uk>
- Fix bugs with exporting temp feature - BUG FIX
- src/zmapWindow/zmapWindowMenus.cpp |   10 ++++++++--
- 1 files changed, 8 insertions(+), 2 deletions(-)
-
-2015-09-08  Gemma Guest  <gb10@sanger.ac.uk>
- Fix bug with missing groups in config - WIP
- src/include/ZMap/zmapConfigIni.hpp                 |    7 +++-
- src/zmapApp/zmapAppManager.cpp                     |    2 +-
- src/zmapApp/zmapAppmain_c.cpp                      |    6 ++--
- src/zmapAppServices/zmapAppDebugConfig.cpp         |    4 +-
- src/zmapConfig/zmapConfigLoader.cpp                |   27 ++++++++++++++-----
- src/zmapControl/zmapControlImportFile.cpp          |    2 +-
- src/zmapControl/zmapControlPreferences.cpp         |    4 +-
- .../remotetest/remotecontroltest.cpp               |    2 +-
- src/zmapServer/acedb/acedbServer.cpp               |    2 +-
- src/zmapServer/file/fileServer.cpp                 |    2 +-
- src/zmapServer/pipe/pipeServer.cpp                 |    2 +-
- src/zmapView/zmapView.cpp                          |    6 ++--
- src/zmapView/zmapViewCallBlixem.cpp                |    4 +-
- src/zmapWindow/zmapWindow.cpp                      |    2 +-
- src/zmapWindow/zmapWindowDrawFeatures.cpp          |    2 +-
- src/zmapWindow/zmapWindowPreferences.cpp           |    2 +-
- src/zmapWindow/zmapWindowPrint.cpp                 |    2 +-
- src/zmapWindow/zmapWindowUtils.cpp                 |    2 +-
- 18 files changed, 48 insertions(+), 32 deletions(-)
-
-2015-09-07  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a bug with the position of the hand_built column - BUG FIX
- src/zmapView/zmapViewScratch.cpp |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2015-09-07  Gemma Guest  <gb10@sanger.ac.uk>
- Include user prefs in config when using export menu - WIP
- src/include/ZMap/zmapConfigIni.hpp           |   10 ++-
- src/include/ZMap/zmapControl.hpp             |    3 +
- src/include/ZMap/zmapView.hpp                |    6 +-
- src/include/ZMap/zmapWindow.hpp              |    2 +
- src/zmapConfig/zmapConfigIni.cpp             |    6 +-
- src/zmapControl/zmapControlPreferences.cpp   |   74 +++++++++---
- src/zmapControl/zmapControlWindowMenubar.cpp |   14 ++-
- src/zmapView/zmapView.cpp                    |  173 ++++++++++++++------------
- src/zmapView/zmapViewCallBlixem.cpp          |  113 +++++++++++++----
- 9 files changed, 276 insertions(+), 125 deletions(-)
-
-2015-09-07  Gemma Guest  <gb10@sanger.ac.uk>
- Minor code reorganisation to get ordered cols list - WIP
- src/zmapView/zmapView.cpp   |   33 ++++++++++++++++++++++-----------
+2015-10-09  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/config' into develop - NEW FEATURE 'styles and config'
+2015-10-09  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove warning when source is empty - BUG FIX
+ src/zmapView/zmapView.cpp   |   36 ++++++++++++++++++++++++++++--------
  src/zmapView/zmapView_P.hpp |    2 ++
- 2 files changed, 24 insertions(+), 11 deletions(-)
+ 2 files changed, 30 insertions(+), 8 deletions(-)
 
-2015-09-07  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/styles' into develop - NEW FEATURE 'Edit/export styles'
-2015-09-04  Gemma Guest  <gb10@sanger.ac.uk>
- Allow column-order function to reset - WIP
- src/include/ZMap/zmapFeature.hpp     |    2 +-
- src/zmapConfig/zmapConfigLoader.cpp  |    2 +-
- src/zmapFeature/zmapFeatureUtils.cpp |   29 ++++++++++++++++++++++-------
- src/zmapView/zmapViewScratch.cpp     |    2 +-
- 4 files changed, 25 insertions(+), 10 deletions(-)
-
-2015-09-04  Gemma Guest  <gb10@sanger.ac.uk>
- Fix bugs with previous - WIP
- src/zmapControl/zmapControlPreferences.cpp |   13 ++++++++-----
- 1 files changed, 8 insertions(+), 5 deletions(-)
-
-2015-09-04  Gemma Guest  <gb10@sanger.ac.uk>
- Initial work to export prefs to config file - WIP
- src/include/ZMap/zmapConfigStrings.hpp     |    3 +
- src/include/ZMap/zmapView.hpp              |    2 +
- src/zmapConfig/zmapConfigLoader.cpp        |    3 +
- src/zmapControl/zmapControlPreferences.cpp |  188 +++++++++++++++++++++++++++-
- src/zmapView/zmapViewCallBlixem.cpp        |   42 ++++---
- 5 files changed, 216 insertions(+), 22 deletions(-)
-
-2015-09-04  Gemma Guest  <gb10@sanger.ac.uk>
- Fix problem with case insensitivity in style export - WIP
- src/zmapView/zmapView.cpp |   13 ++++++++++---
- 1 files changed, 10 insertions(+), 3 deletions(-)
-
-2015-09-04  Gemma Guest  <gb10@sanger.ac.uk>
- Fix warnings - WIP
- src/zmapFeature/zmapStyle.cpp |   11 ++++++-----
- 1 files changed, 6 insertions(+), 5 deletions(-)
-
-2015-09-03  Gemma Guest  <gb10@sanger.ac.uk>
- Add functions to get short-name for exported style enums - WIP
- src/include/ZMap/zmapStyle.hpp       |   17 ++++++++++++++---
- src/zmapFeature/zmapFeatureUtils.cpp |    2 +-
- src/zmapFeature/zmapStyle.cpp        |   20 ++++++++++----------
- src/zmapFeature/zmapStyleUtils.cpp   |   17 ++++++++++++++---
- src/zmapGFF/zmapGFF2parser.cpp       |    2 +-
- src/zmapGFF/zmapGFF3parser.cpp       |    4 ++--
- src/zmapWindow/zmapWindowMenus.cpp   |    2 +-
- 7 files changed, 43 insertions(+), 21 deletions(-)
-
-2015-09-03  Gemma Guest  <gb10@sanger.ac.uk>
- Fix problems with exporting non-string values - WIP
- src/include/ZMap/zmapStyle.hpp   |    1 +
- src/zmapConfig/zmapConfigIni.cpp |   16 +++--
- src/zmapFeature/zmapStyle.cpp    |  126 +++++++++++++++++++++++++++++++++++++-
- 3 files changed, 136 insertions(+), 7 deletions(-)
-
-2015-09-02  Gemma Guest  <gb10@sanger.ac.uk>
- Another bug with exporting styles - WIP
- src/zmapConfig/zmapConfigIni.cpp |    9 ---------
- 1 files changed, 0 insertions(+), 9 deletions(-)
-
-2015-09-02  Gemma Guest  <gb10@sanger.ac.uk>
- Remove unused styles from example files - TRIVIAL
- examples/styles.ini |  390 ---------------------------------------------------
- 1 files changed, 0 insertions(+), 390 deletions(-)
-
-2015-09-02  Gemma Guest  <gb10@sanger.ac.uk>
- Fix more bugs with exporting styles - WIP
- src/include/ZMap/zmapConfigIni.hpp  |    2 +-
- src/zmapConfig/zmapConfigFile.cpp   |   31 ++++++++++++++++++++++++++++++-
- src/zmapConfig/zmapConfigIni.cpp    |   32 +++++++++++++++++++++++---------
- src/zmapConfig/zmapConfigIni_P.hpp  |    1 +
- src/zmapConfig/zmapConfigLoader.cpp |    2 +-
- src/zmapView/zmapView.cpp           |    1 -
- 6 files changed, 56 insertions(+), 13 deletions(-)
-
-2015-09-01  Gemma Guest  <gb10@sanger.ac.uk>
- Make sure we don't try to write non-utf8 text - WIP
- src/zmapConfig/zmapConfigFile.cpp |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
-
-2015-09-01  Gemma Guest  <gb10@sanger.ac.uk>
- Tidying - TRIVIAL
- src/zmapFeature/zmapStyle.cpp |  121 ++++++++---------------------------------
- 1 files changed, 24 insertions(+), 97 deletions(-)
-
-2015-09-01  Gemma Guest  <gb10@sanger.ac.uk>
- More bug fixes with exporting styles - WIP
- src/include/ZMap/zmapConfigIni.hpp |    1 +
- src/zmapConfig/zmapConfigFile.cpp  |   28 +++++++++++++++++-----
- src/zmapConfig/zmapConfigIni.cpp   |   44 +++++++++++++++++++++++++++++++++--
- src/zmapConfig/zmapConfigIni_P.hpp |    4 ++-
- src/zmapFeature/zmapStyle.cpp      |    2 +-
- src/zmapView/zmapView.cpp          |    6 +++-
- 6 files changed, 71 insertions(+), 14 deletions(-)
-
-2015-09-01  Gemma Guest  <gb10@sanger.ac.uk>
- Fix bugs wth previous - WIP
- src/include/ZMap/zmapStyle.hpp   |    2 +-
- src/zmapConfig/zmapConfigIni.cpp |   19 ++---
- src/zmapConfig/zmapConfigKey.cpp |    4 +-
- src/zmapFeature/zmapStyle.cpp    |  144 ++++++++++++++++++++++++++++++++++++--
- 4 files changed, 149 insertions(+), 20 deletions(-)
-
-2015-09-01  Gemma Guest  <gb10@sanger.ac.uk>
+2015-10-09  Gemma Guest  <gb10@sanger.ac.uk>
  Fix compiler warnings - BUILD
- src/zmapWindow/canvas/zmapWindowCanvasDraw.cpp |    1 -
- src/zmapWindow/zmapWindow.cpp                  |    2 +-
- src/zmapWindow/zmapWindowFeature.cpp           |    2 +-
- src/zmapWindow/zmapWindowScale.cpp             |    8 ++------
- src/zmapWindow/zmapWindowStyle.cpp             |    2 +-
- src/zmapWindow/zmapWindow_P.hpp                |    2 +-
- 6 files changed, 6 insertions(+), 11 deletions(-)
+ .../canvas/zmapWindowContainerFeatureSet.cpp       |    2 +-
+ src/zmapWindow/canvas/zmapWindowOldItems.cpp       |    2 --
+ src/zmapWindow/zmapWindowFeatureFilter.cpp         |   13 +++++++------
+ 3 files changed, 8 insertions(+), 9 deletions(-)
 
-2015-08-28  Gemma Guest  <gb10@sanger.ac.uk>
- Fix bugs with saving styles - WIP
+2015-10-09  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a bug where default style is updated - BUG FIX
+ src/zmapWindow/zmapWindowStyle.cpp |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+2015-10-09  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix compiler warning - BUILD
+ src/zmapView/zmapView.cpp |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+2015-10-09  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix compiler warning and spurious file - TRIVIAL
+ src/zmapServer/acedb/acedbServer.cpp |    2 +-
+ src/zmapView/.#zmapView.cpp          |    1 -
+ 2 files changed, 1 insertions(+), 2 deletions(-)
+
+2015-10-01  Gemma Guest  <gb10@sanger.ac.uk>
+ Export featureset-style and column-style stanzas - WIP
+ src/zmapView/.#zmapView.cpp |    1 +
+ src/zmapView/zmapView.cpp   |   63 +++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 59 insertions(+), 5 deletions(-)
+
+2015-10-01  Gemma Guest  <gb10@sanger.ac.uk>
+ Fixes for exporting featureset-style - WIP
+ src/include/ZMap/zmapConfigIni.hpp |    2 +
+ src/include/ZMap/zmapWindow.hpp    |    2 +
+ src/zmapConfig/zmapConfigIni.cpp   |   12 +++++
+ src/zmapConfig/zmapConfigKey.cpp   |    1 -
+ src/zmapView/zmapView.cpp          |   89 +++++++++++++++++++++++++++++++----
+ src/zmapWindow/zmapWindowStyle.cpp |    1 +
+ 6 files changed, 95 insertions(+), 12 deletions(-)
+
+2015-10-01  Gemma Guest  <gb10@sanger.ac.uk>
+ Export featureset-style relationships - WIP
  src/include/ZMap/zmapConfigIni.hpp |    1 +
- src/zmapConfig/zmapConfigFile.cpp  |    2 +-
- src/zmapConfig/zmapConfigIni.cpp   |   28 +++++++++++++++++++++++-----
- src/zmapConfig/zmapConfigIni_P.hpp |    2 +-
- src/zmapView/zmapView.cpp          |    3 +++
- 5 files changed, 29 insertions(+), 7 deletions(-)
+ src/zmapConfig/zmapConfigIni.cpp   |   38 ++++++++++++++++++++++++++++++++++++
+ src/zmapView/zmapView.cpp          |   10 ++++++++-
+ 3 files changed, 48 insertions(+), 1 deletions(-)
 
-2015-08-28  Gemma Guest  <gb10@sanger.ac.uk>
- Fix compiler warnings - TRIVIAL
- src/zmapServer/acedb/acedbServer.cpp         |    1 -
- src/zmapServer/file/fileServer.cpp           |    3 ---
- src/zmapServer/zmapServerProtocolHandler.cpp |    1 -
- src/zmapWindow/zmapWindow.cpp                |   19 -------------------
- 4 files changed, 0 insertions(+), 24 deletions(-)
+2015-10-09  Gemma Guest  <gb10@sanger.ac.uk>
+ Update release notes for 2.1.0 to 2.2.1 - DOC
+ docs/user/release_notes.shtml |   33 +++++++++++++++++++++++++++++++++
+ 1 files changed, 33 insertions(+), 0 deletions(-)
 
-2015-08-28  Gemma Guest  <gb10@sanger.ac.uk>
- Fix errors with previous - WIP
- src/zmapConfig/zmapConfigFile.cpp  |    4 ++--
- src/zmapConfig/zmapConfigIni.cpp   |    9 ++++-----
- src/zmapConfig/zmapConfigIni_P.hpp |    2 +-
- 3 files changed, 7 insertions(+), 8 deletions(-)
+2015-10-09  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'production' into develop
+2015-10-09  Gemma Guest  <gb10@sanger.ac.uk>
+ Revert "Fix compiler warnings - BUILD"
+ src/zmapServer/acedb/acedbServer.cpp |    2 +-
+ src/zmapUtils/zmapLogging.cpp        |   28 ++++++++++++++--------------
+ 2 files changed, 15 insertions(+), 15 deletions(-)
 
-2015-08-28  Gemma Guest  <gb10@sanger.ac.uk>
- Update config-save function with file-type arg - WIP
- src/include/ZMap/zmapConfigIni.hpp  |    6 ++++-
- src/zmapConfig/zmapConfigFile.cpp   |   12 +++++-----
- src/zmapConfig/zmapConfigIni.cpp    |   39 ++++++++++++++++++++++-----------
- src/zmapConfig/zmapConfigIni_P.hpp  |    1 +
- src/zmapConfig/zmapConfigKey.cpp    |   13 ++++++-----
- src/zmapView/zmapView.cpp           |    2 +-
- src/zmapView/zmapViewCallBlixem.cpp |   40 ++++++++++++++++++++++++----------
- 7 files changed, 74 insertions(+), 39 deletions(-)
+2015-10-08  Steve Miller  <sm23@sanger.ac.uk>
+ adding some test targets for qt
+ src/Makefile.am |   15 +++++++++++++++
+ 1 files changed, 15 insertions(+), 0 deletions(-)
 
-2015-08-28  Gemma Guest  <gb10@sanger.ac.uk>
- Reorganise config files so they're indexed by an enum - WIP
- src/include/ZMap/zmapConfigIni.hpp  |   18 +++++-
- src/zmapConfig/zmapConfigFile.cpp   |   97 +++++++++++++++++------------------
- src/zmapConfig/zmapConfigIni.cpp    |   63 ++++++++++-------------
- src/zmapConfig/zmapConfigIni_P.hpp  |   23 ++-------
- src/zmapConfig/zmapConfigKey.cpp    |   26 ++++-----
- src/zmapConfig/zmapConfigLoader.cpp |    4 +-
- src/zmapView/zmapView.cpp           |   22 +++++---
- 7 files changed, 121 insertions(+), 132 deletions(-)
+2015-10-08  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a bug exporting features to blixem that have adjacent insertion/intron - BUG FIX
+ src/zmapGFF/zmapGFF2Dumper.cpp |   15 +++++++++++++--
+ 1 files changed, 13 insertions(+), 2 deletions(-)
 
-2015-08-28  Gemma Guest  <gb10@sanger.ac.uk>
- Remove accidental file - TRIVIAL
- src/zmapConfig/.#zmapConfigIni.cpp |    1 -
+2015-10-08  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix compiler warnings - BUILD
+ src/zmapServer/acedb/acedbServer.cpp |    2 +-
+ src/zmapUtils/zmapLogging.cpp        |   28 ++++++++++++++--------------
+ 2 files changed, 15 insertions(+), 15 deletions(-)
+
+2015-10-08  Gemma Guest  <gb10@sanger.ac.uk>
+ Only include mysql libs if using ensembl - BUILD
+ src/Makefile.am |   15 ++++++++++++---
+ 1 files changed, 12 insertions(+), 3 deletions(-)
+
+2015-10-07  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix configure error when mysql headers missing - BUILD
+ src/configure.ac |   18 ++++++++++++------
+ 1 files changed, 12 insertions(+), 6 deletions(-)
+
+2015-09-28  Gemma Guest  <gb10@sanger.ac.uk>
+ Export parent-child style relationships correctly - NEW FEATURE 'Export styles'
+ src/include/ZMap/zmapConfigIni.hpp  |    2 +-
+ src/zmapConfig/zmapConfigIni.cpp    |  142 +++++++++++++++++++++++++++++++----
+ src/zmapConfig/zmapConfigLoader.cpp |    2 +-
+ 3 files changed, 130 insertions(+), 16 deletions(-)
+
+2015-09-25  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove debug output - TRIVIAL
+ src/zmapServer/ensembl/ensemblServer.cpp |    1 -
  1 files changed, 0 insertions(+), 1 deletions(-)
 
-2015-08-28  Gemma Guest  <gb10@sanger.ac.uk>
- Further support functions for saving styles - WIP
- src/include/ZMap/zmapStyle.hpp     |    1 +
- src/zmapConfig/.#zmapConfigIni.cpp |    1 +
- src/zmapConfig/zmapConfigIni.cpp   |   24 ++++++++++++------------
- src/zmapFeature/zmapStyle.cpp      |   19 +++++++++++++++++--
- 4 files changed, 31 insertions(+), 14 deletions(-)
+2015-09-24  Gemma Guest  <gb10@sanger.ac.uk>
+ Ensembl: add supporting evidence - NEW FEATURE 'Ensembl evidence'
+ src/zmapFeature/zmapFeatureTranscript.cpp |   12 ++++++++-
+ src/zmapServer/ensembl/ensemblServer.cpp  |   33 +++++++++++++++++++++++++++++
+ 2 files changed, 43 insertions(+), 2 deletions(-)
 
-2015-08-28  Gemma Guest  <gb10@sanger.ac.uk>
- Initial code to save styles to file - WIP
- src/include/ZMap/zmapConfigIni.hpp  |    3 +-
- src/zmapConfig/zmapConfigFile.cpp   |    1 +
- src/zmapConfig/zmapConfigIni.cpp    |   45 ++++++++++++++++++++++++++++++++++-
- src/zmapConfig/zmapConfigIni_P.hpp  |    4 ++-
- src/zmapConfig/zmapConfigLoader.cpp |    3 +-
- src/zmapView/zmapView.cpp           |   32 +++++++++++++++++-------
- 6 files changed, 74 insertions(+), 14 deletions(-)
+2015-09-24  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix bugs with updating filtered column backgrounds - BUG FIX
+ src/zmapWindow/zmapWindow.cpp |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
 
-2015-08-27  Gemma Guest  <gb10@sanger.ac.uk>
- Add menu option to export configuration - WIP
- src/include/ZMap/zmapConfigIni.hpp |    3 +
- src/zmapConfig/zmapConfigFile.cpp  |  126 +++++++++++++++++-------------------
- src/zmapConfig/zmapConfigIni.cpp   |   19 ++++++
- src/zmapConfig/zmapConfigIni_P.hpp |    3 +
- src/zmapView/zmapView.cpp          |   66 ++++++++++---------
- 5 files changed, 119 insertions(+), 98 deletions(-)
+2015-09-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/colours' into develop - NEW FEATURE 'Colour configuration'
+2015-09-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Add config for horizon line - WIP
+ src/include/ZMap/zmapConfigStrings.hpp    |    1 +
+ src/include/ZMap/zmapDraw.hpp             |    2 +-
+ src/zmapConfig/zmapConfigLoader.cpp       |    1 +
+ src/zmapDraw/zmapDraw.cpp                 |    9 +++++++--
+ src/zmapWindow/zmapWindow.cpp             |    2 +-
+ src/zmapWindow/zmapWindowDrawFeatures.cpp |    5 +++++
+ src/zmapWindow/zmapWindowUtils.cpp        |    8 ++++++++
+ src/zmapWindow/zmapWindow_P.hpp           |    2 ++
+ 8 files changed, 26 insertions(+), 4 deletions(-)
 
-2015-08-27  Gemma Guest  <gb10@sanger.ac.uk>
- Fix leaks with not destroying context - TRIVIAL
- src/zmapControl/zmapControlImportFile.cpp |    3 +++
- src/zmapView/zmapViewCallBlixem.cpp       |    1 +
- 2 files changed, 4 insertions(+), 0 deletions(-)
+2015-09-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Add config to change rubber band colour - WIP
+ src/include/ZMap/zmapConfigStrings.hpp    |    1 +
+ src/include/ZMap/zmapDraw.hpp             |    2 +-
+ src/zmapConfig/zmapConfigLoader.cpp       |    1 +
+ src/zmapDraw/zmapDraw.cpp                 |   10 ++++++++--
+ src/zmapWindow/zmapWindow.cpp             |    2 +-
+ src/zmapWindow/zmapWindowDrawFeatures.cpp |    7 +++++++
+ src/zmapWindow/zmapWindowUtils.cpp        |    8 ++++++++
+ src/zmapWindow/zmapWindow_P.hpp           |    3 +++
+ 8 files changed, 30 insertions(+), 4 deletions(-)
 
-2015-08-26  Gemma Guest  <gb10@sanger.ac.uk>
- Remove obsolete code - TRIVIAL
- src/zmapConfig/zmapConfigLoader.cpp |   13 -------------
- 1 files changed, 0 insertions(+), 13 deletions(-)
+2015-09-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix error with column reordering - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |    9 +++++++++
+ src/zmapWindow/zmapWindowColOrder.cpp  |   28 ++++++++++------------------
+ 2 files changed, 19 insertions(+), 18 deletions(-)
 
-2015-08-26  Gemma Guest  <gb10@sanger.ac.uk>
- Fix compiler warnings - BUILD
- src/zmapApp/zmapAppmain_c.cpp                |    3 ---
- src/zmapApp/zmapAppwindow.cpp                |    1 -
- src/zmapControl/zmapControlWindowButtons.cpp |   10 ----------
- 3 files changed, 0 insertions(+), 14 deletions(-)
+2015-09-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/config' into develop - NEW FEATURE 'dynamic column reordering'
+2015-09-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Only export columns list if order has been changed - WIP
+ src/include/ZMap/zmapWindow.hpp        |    1 +
+ src/zmapView/zmapView.cpp              |    4 +++-
+ src/zmapWindow/zmapWindowColConfig.cpp |   13 +++++++++++++
+ src/zmapWindow/zmapWindowColOrder.cpp  |   28 ++++++++++++++++++----------
+ 4 files changed, 35 insertions(+), 11 deletions(-)
 
-2015-08-26  Gemma Guest  <gb10@sanger.ac.uk>
- Further work on exporting config - WIP
- src/include/ZMap/zmapView.hpp                |    2 +-
- src/zmapControl/zmapControlWindowMenubar.cpp |    4 +-
- src/zmapView/zmapView.cpp                    |   59 ++++++++++++++++++++++++--
- 3 files changed, 58 insertions(+), 7 deletions(-)
+2015-09-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a bug with columns not being exported - WIP
+ src/zmapConfig/zmapConfigLoader.cpp |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-2015-08-26  Gemma Guest  <gb10@sanger.ac.uk>
- Add initial code to export styles - WIP
- src/include/ZMap/zmapView.hpp                |   15 ++-
- src/zmapControl/zmapControlWindowMenubar.cpp |   42 ++++++-
- src/zmapView/zmapView.cpp                    |  155 ++++++++++++++++++++------
- src/zmapView/zmapView_P.hpp                  |    7 +-
- 4 files changed, 176 insertions(+), 43 deletions(-)
+2015-09-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Set columns order in context - WIP
+ src/zmapView/zmapView.cpp |   35 ++++++++++++++++++++++++++++++++++-
+ 1 files changed, 34 insertions(+), 1 deletions(-)
 
-2015-08-26  Gemma Guest  <gb10@sanger.ac.uk>
- Minor fix - WIP
- src/zmapWindow/zmapWindowStyle.cpp |   23 ++++++++++++-----------
- 1 files changed, 12 insertions(+), 11 deletions(-)
+2015-09-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor change to columns dialog layout - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |   14 ++++++++------
+ 1 files changed, 8 insertions(+), 6 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Don't ask for confirmation more than once - WIP
- src/zmapWindow/zmapWindowStyle.cpp |   20 ++++++++++----------
- 1 files changed, 10 insertions(+), 10 deletions(-)
+2015-09-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix problem with reverting column order - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Fix problems overwriting existing styles - WIP
- src/zmapWindow/zmapWindowStyle.cpp |   41 ++++++++++++++++++++++++-----------
- 1 files changed, 28 insertions(+), 13 deletions(-)
+2015-09-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Column reordering now implemented - NEW FEATURE 'Column reordering'
+ src/zmapWindow/zmapWindowColConfig.cpp |  208 +++++++++++++++++++-------------
+ 1 files changed, 122 insertions(+), 86 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Ask for confirmation when overwriting existing style - WIP
- src/zmapWindow/zmapWindowStyle.cpp |   23 +++++++++++++++++++++--
- 1 files changed, 21 insertions(+), 2 deletions(-)
+2015-09-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Add apply button back - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |  134 +++----------------------------
+ 1 files changed, 13 insertions(+), 121 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Add widget so user can see the original style name - WIP
- src/zmapWindow/zmapWindowStyle.cpp |   25 +++++++++++++++++++------
- 1 files changed, 19 insertions(+), 6 deletions(-)
+2015-09-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Set sensible initial size - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |   27 ++++++++++++++-------------
+ 1 files changed, 14 insertions(+), 13 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Minor fixes for dialog - WIP
- src/zmapWindow/zmapWindowStyle.cpp |   37 ++++++++++++++---------------------
- 1 files changed, 15 insertions(+), 22 deletions(-)
+2015-09-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix show-all/hide-all buttons - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |  170 ++++++++++++++++----------------
+ 1 files changed, 87 insertions(+), 83 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Minor fixes to layout - WIP
- src/zmapWindow/zmapWindowStyle.cpp |   22 +++++++++++++++-------
- 1 files changed, 15 insertions(+), 7 deletions(-)
+2015-09-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Reorganise layout of columns dialog using table - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |  202 ++++++++++++++------------------
+ 1 files changed, 88 insertions(+), 114 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Simplify edit-style dialog layout using tables - WIP
- src/zmapWindow/zmapWindowStyle.cpp |  383 ++++++++++++++++++------------------
- 1 files changed, 193 insertions(+), 190 deletions(-)
+2015-09-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix problem with incorrect strand - WIP
+ src/zmapWindow/zmapWindowCanvas.cpp |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Make edit-style dialog a proper dialog and simplify callbacks - TRIVIAL
- src/zmapWindow/zmapWindowStyle.cpp |  469 +++++++++++++++++++-----------------
- 1 files changed, 246 insertions(+), 223 deletions(-)
+2015-09-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix bugs with columns dialog buttons - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |   97 ++++++++++++--------------------
+ 1 files changed, 37 insertions(+), 60 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Tidying and simplification - TRIVIAL
- src/zmapWindow/zmapWindowStyle.cpp |  118 +++++++++++++++++-------------------
- 1 files changed, 55 insertions(+), 63 deletions(-)
+2015-09-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix several bugs with internal column ordering - WIP
+ src/zmapFeature/zmapFeatureUtils.cpp  |    4 ++--
+ src/zmapServer/zmapDataSource.cpp     |    4 ++--
+ src/zmapWindow/zmapWindowColOrder.cpp |    6 ++++--
+ 3 files changed, 8 insertions(+), 6 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Tidying and get rid of obsolete variables - TRIVIAL
- src/zmapWindow/zmapWindowStyle.cpp |   57 ++++++++++++------------------------
- 1 files changed, 19 insertions(+), 38 deletions(-)
+2015-09-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Start to rearrange columns dialog - WIP
+ src/include/ZMap/zmapFeature.hpp                   |    6 +-
+ src/zmapFeature/zmapFeatureUtils.cpp               |   39 ++-
+ src/zmapView/zmapView.cpp                          |   22 +-
+ src/zmapView/zmapViewScratch.cpp                   |    6 +-
+ .../canvas/zmapWindowContainerFeatureSet.cpp       |    7 +
+ .../canvas/zmapWindowContainerFeatureSet.hpp       |    2 +
+ src/zmapWindow/zmapWindowCanvas.cpp                |    7 +-
+ src/zmapWindow/zmapWindowColConfig.cpp             |  667 +++++++++-----------
+ src/zmapWindow/zmapWindowColOrder.cpp              |   39 +-
+ src/zmapWindow/zmapWindow_P.hpp                    |    1 +
+ 10 files changed, 375 insertions(+), 421 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Tidying - TRIVIAL
- src/zmapWindow/zmapWindow.cpp        |    4 +-
- src/zmapWindow/zmapWindowFeature.cpp |    2 +-
- src/zmapWindow/zmapWindowStyle.cpp   |   53 ++++++++++++++++++----------------
- src/zmapWindow/zmapWindow_P.hpp      |    4 +-
- 4 files changed, 33 insertions(+), 30 deletions(-)
+2015-09-11  Gemma Guest  <gb10@sanger.ac.uk>
+ Add function to get container featureset for a column id - TRIVIAL
+ src/include/ZMap/zmapFeature.hpp     |    4 +-
+ src/zmapFeature/zmapFeatureUtils.cpp |   42 +++++++++++++
+ src/zmapView/zmapView.cpp            |   45 +--------------
+ src/zmapView/zmapView_P.hpp          |    3 -
+ src/zmapWindow/zmapWindowCanvas.cpp  |  107 ++++++++++++++++++++++++---------
+ 5 files changed, 124 insertions(+), 77 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Minor variable name change - TRIVIAL
- src/zmapWindow/zmapWindowStyle.cpp |   14 +++++++-------
- 1 files changed, 7 insertions(+), 7 deletions(-)
+2015-09-11  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a bug where internal column order is messed up - BUG FIX
+ src/zmapConfig/zmapConfigLoader.cpp |    3 +--
+ src/zmapView/zmapView.cpp           |   28 +++++++++++++++++++++++-----
+ src/zmapView/zmapView_P.hpp         |    1 +
+ 3 files changed, 25 insertions(+), 7 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Minor function reorganisation - TRIVIAL
- src/zmapWindow/zmapWindowMenus.cpp |    8 +++++-
- src/zmapWindow/zmapWindowStyle.cpp |   45 +++++++++++++++++------------------
- src/zmapWindow/zmapWindow_P.hpp    |    2 +-
- 3 files changed, 30 insertions(+), 25 deletions(-)
+2015-09-10  Gemma Guest  <gb10@sanger.ac.uk>
+ Add toggle button for forward/reverse strand columns - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |  140 +++++++++++++++++++++++---------
+ 1 files changed, 103 insertions(+), 37 deletions(-)
 
-2015-08-25  Gemma Guest  <gb10@sanger.ac.uk>
- Minor change to variable name - FORMATTING ONLY
- src/zmapWindow/zmapWindowStyle.cpp |   11 ++++-------
- 1 files changed, 4 insertions(+), 7 deletions(-)
+2015-09-10  Gemma Guest  <gb10@sanger.ac.uk>
+ Refresh columns dialog after changing order - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-2015-08-24  Gemma Guest  <gb10@sanger.ac.uk>
- Improvements to layout of edit-style dialog - WIP
- src/zmapWindow/zmapWindowStyle.cpp |   22 +++++++++++++++++-----
- 1 files changed, 17 insertions(+), 5 deletions(-)
+2015-09-10  Gemma Guest  <gb10@sanger.ac.uk>
+ First implementation of column reordering almost working - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |   81 +++++++++++++++----------------
+ 1 files changed, 39 insertions(+), 42 deletions(-)
 
-2015-08-24  Gemma Guest  <gb10@sanger.ac.uk>
- Improvements to previous - WIP
- src/zmapWindow/zmapWindowStyle.cpp |   48 ++++++++++++++++++++++++++++-------
- 1 files changed, 38 insertions(+), 10 deletions(-)
+2015-09-09  Gemma Guest  <gb10@sanger.ac.uk>
+ Add buttons to change column order - WIP
+ src/zmapWindow/zmapWindow.cpp          |    2 -
+ src/zmapWindow/zmapWindowColConfig.cpp |  144 ++++++++++++++++++++++++++++---
+ 2 files changed, 130 insertions(+), 16 deletions(-)
 
-2015-08-24  Gemma Guest  <gb10@sanger.ac.uk>
- Reorganise edit-styles dialog code - WIP
- src/zmapWindow/zmapWindowStyle.cpp |   97 +++++++++++++++++-------------------
- 1 files changed, 45 insertions(+), 52 deletions(-)
+2015-09-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'release/2.2.0' into develop
+2015-09-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix buglet in where email address is on command line. - BUILD
+ scripts/zmap_build_development.sh |    2 +-
+ scripts/zmap_build_feature.sh     |    2 +-
+ scripts/zmap_build_one_off.sh     |    2 +-
+ scripts/zmap_build_overnight.sh   |    2 +-
+ scripts/zmap_build_production.sh  |    2 +-
+ scripts/zmap_build_release.sh     |    2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
 
-2015-08-24  Gemma Guest  <gb10@sanger.ac.uk>
- Indenting - FORMATTING ONLY
- src/zmapWindow/zmapWindowStyle.cpp |  346 ++++++++++++++++++------------------
- 1 files changed, 173 insertions(+), 173 deletions(-)
+2015-09-16  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Make sure build email address percolates through. - BUILD
+ scripts/zmap_build_development.sh |    8 ++++++--
+ scripts/zmap_build_feature.sh     |    8 ++++++--
+ scripts/zmap_build_one_off.sh     |    9 +++++++--
+ scripts/zmap_build_overnight.sh   |    8 +++++++-
+ scripts/zmap_build_production.sh  |    8 ++++++--
+ scripts/zmap_build_release.sh     |    8 ++++++--
+ scripts/zmap_master_build         |   11 ++++++++---
+ 7 files changed, 46 insertions(+), 14 deletions(-)
 
-2015-09-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'production' into develop
-2015-08-26  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add dependency information about autoconf and bash. - BUILD
- src/INSTALL.DEVELOPER |   13 +++++++++++++
- 1 files changed, 13 insertions(+), 0 deletions(-)
-
-2015-08-26  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add developer build instructions. - BUILD
- src/INSTALL.DEVELOPER |  108 +++++++++++++++++++++++++++++++++++++++++++++++++
- src/README.DEVELOPER  |   28 +++++++++++++
- 2 files changed, 136 insertions(+), 0 deletions(-)
-
-2015-08-24  Gemma Guest  <gb10@sanger.ac.uk>
- Minor change to scripts README file - DOC
- scripts/README |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-2015-08-24  Gemma Guest  <gb10@sanger.ac.uk>
- Minor change to readme file - DOC
- src/README |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-08-24  Gemma Guest  <gb10@sanger.ac.uk>
- Fix intrusive validation messages in Preferences dialog - BUG FIX
- src/zmapView/zmapViewCallBlixem.cpp |   62 ++++++++++++++++------------------
- 1 files changed, 29 insertions(+), 33 deletions(-)
-
-2015-08-21  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a problem with incorrect blixem range when using keyboard shortcut - RT 468772
- src/zmapView/zmapViewCallBlixem.cpp |   12 ++++++++++++
- 1 files changed, 12 insertions(+), 0 deletions(-)
-
-2015-08-21  Gemma Guest  <gb10@sanger.ac.uk>
- Minor indentation formatting - FORMATTING ONLY
- src/zmapWindow/zmapWindowFeatureFuncs.cpp |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
-
-2015-08-21  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/ensembl' into develop
-2015-08-21  Gemma Guest  <gb10@sanger.ac.uk>
- More fixes for leaks/memory allocs - WIP
- src/zmapServer/ensembl/ensemblServer.cpp |  408 +++++++++++-------------------
- 1 files changed, 148 insertions(+), 260 deletions(-)
-
-2015-08-20  Gemma Guest  <gb10@sanger.ac.uk>
- Added config to allow user to specify which biotypes to load - NEW FEATURE 'biotypes'
- src/include/ZMap/zmapConfigStanzaStructs.hpp |    1 +
- src/include/ZMap/zmapConfigStrings.hpp       |    1 +
- src/include/ZMap/zmapServerProtocol.hpp      |    3 +
- src/include/ZMap/zmapView.hpp                |    2 +-
- src/zmapConfig/zmapConfigLoader.cpp          |    5 ++
- src/zmapControl/zmapControlImportFile.cpp    |    2 +-
- src/zmapServer/acedb/acedbServer.cpp         |    2 +
- src/zmapServer/ensembl/ensemblServer.cpp     |  100 +++++++++++++------------
- src/zmapServer/ensembl/ensemblServer_P.hpp   |    1 +
- src/zmapServer/file/fileServer.cpp           |    2 +
- src/zmapServer/pipe/pipeServer.cpp           |    2 +
- src/zmapServer/zmapServer.cpp                |    2 +
- src/zmapServer/zmapServer.hpp                |    1 +
- src/zmapServer/zmapServerProtocolHandler.cpp |    2 +
- src/zmapServer/zmapServerPrototype.hpp       |    1 +
- src/zmapView/zmapView.cpp                    |   29 +++++---
- src/zmapView/zmapViewRemoteControl.cpp       |    2 +-
- src/zmapView/zmapView_P.hpp                  |    4 +-
- 18 files changed, 100 insertions(+), 62 deletions(-)
-
-2015-08-20  Gemma Guest  <gb10@sanger.ac.uk>
- More fixes for memory problems - WIP
- src/zmapServer/ensembl/ensemblServer.cpp |   94 +++++++++++++++++-------------
- 1 files changed, 54 insertions(+), 40 deletions(-)
-
-2015-08-18  Gemma Guest  <gb10@sanger.ac.uk>
- Use biotype as suffix - WIP
- src/zmapServer/ensembl/ensemblServer.cpp |   24 ++++++++++++++++--------
- 1 files changed, 16 insertions(+), 8 deletions(-)
-
-2015-08-20  Gemma Guest  <gb10@sanger.ac.uk>
- Attempt to fix crashes caused by double free's - WIP
- src/zmapServer/ensembl/ensemblServer.cpp |  404 ++++++++++++++++++------------
- 1 files changed, 242 insertions(+), 162 deletions(-)
-
-2015-08-20  Steve Miller  <sm23@sanger.ac.uk>
- update to fix incorrect coordinates in file import dialogue - RT 485214
- src/zmapControl/zmapControlWindowMenubar.cpp |   20 +++++++++++---------
- 1 files changed, 11 insertions(+), 9 deletions(-)
-
-2015-08-18  Gemma Guest  <gb10@sanger.ac.uk>
- Fix major memory leaks in ensembl server code - BUG FIX
- src/zmapServer/ensembl/ensemblServer.cpp |  175 +++++++++++++++++++++++++++---
- 1 files changed, 160 insertions(+), 15 deletions(-)
-
-2015-08-18  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix bug whereby zeromq lib. always installed even if present. - BUG FIX
- src/autogen.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+2015-09-15  Ed Griffiths  <edgrif@sanger.ac.uk>
+ RT485716 error in remotecommand code, leading to a free of unallocated memory. - BUG FIX
+ src/zmapRemoteControl/zmapRemoteCommand.cpp |   45 ++++++++++----------------
+ 1 files changed, 17 insertions(+), 28 deletions(-)
