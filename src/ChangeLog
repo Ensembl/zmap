@@ -1,3 +1,15 @@
+2015-10-19  Ed Griffiths  <edgrif@sanger.ac.uk>
+ switch back to precise. - BUILD
+ scripts/build_config.sh |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-10-14  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.2.1-64-g42af70f - Update RT and git commit reports
+ src/ChangeLog                                  | 1028 ++++++++----------------
+ src/build/release_docs/GIT_COMMITS.txt         |   50 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   46 +-
+ 3 files changed, 384 insertions(+), 740 deletions(-)
+
 2015-10-14  Ed Griffiths  <edgrif@sanger.ac.uk>
  swop from precise to trusty as there's a space issue on the precise machine. - BUILD
  scripts/build_config.sh |    2 +-
