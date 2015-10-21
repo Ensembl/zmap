@@ -346,8 +346,8 @@ $(top_srcdir)/autom4te.cache
 
 EXTERNAL_LIBS = $(top_srcdir)/AceConn $(top_srcdir)/ensc-core $(top_srcdir)/gbtools \
 $(top_srcdir)/htslib $(top_srcdir)/zeromq
-EXTERNAL_PLACEHOLDERS = $(top_srcdir)/AceConn/README_ZMAP $(top_srcdir)/ensc-core/README_ZMAP \
-$(top_srcdir)/gbtools/README_ZMAP $(top_srcdir)/htslib/README_ZMAP $(top_srcdir)/zeromq/README_ZMAP
+EXTERNAL_PLACEHOLDERS = $(top_srcdir)/AceConn $(top_srcdir)/ensc-core \
+$(top_srcdir)/gbtools $(top_srcdir)/htslib $(top_srcdir)/zeromq
 
 maintainer-clean-local:
 	@echo 'maintainer-clean-local: Removing all generated files....'
