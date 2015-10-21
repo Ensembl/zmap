@@ -48,12 +48,18 @@
 class TreeNode
 {
 public:
+  TreeNode() ;
+  TreeNode(ZMapFeatureTypeStyle style) ;
+
   TreeNode* find(ZMapFeatureTypeStyle style) ;
   void add_child_style(ZMapFeatureTypeStyle style) ;
-  void set_style(ZMapFeatureTypeStyle) ;
+
+  ZMapFeatureTypeStyle get_style() ;
+
+  std::vector<TreeNode*> get_children() ;
 
 private:
-  ZMapFeatureTypeStyle m_style = NULL ;
+  ZMapFeatureTypeStyle m_style ;
   std::vector<TreeNode*> m_children ;
 };
 
@@ -113,6 +119,9 @@ void zmapControlShowStyles(ZMap zmap)
       
       addStylesChapter(note_book, zmap, zmap_view) ;
 
+      /* Display the styles. */
+      zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
+
       zmap->styles_note_book = note_book ;
     }
   else
@@ -140,6 +149,9 @@ static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data)
 }
 
 
+/* Add the given style into the style hierarchy tree in the appropriate place according to its
+ * parent. Recursively add the style's parent(s) if not already in the tree. Does nothing if the
+ * style is already in the tree. */
 static void treeAddStyle(TreeNode *tree, ZMapFeatureTypeStyle style, GHashTable *styles)
 {
   if (!tree->find(style))
@@ -169,6 +181,7 @@ static void treeAddStyle(TreeNode *tree, ZMapFeatureTypeStyle style, GHashTable 
 }
 
 
+/* For a given style, add it to the appropriate node in the style hierarchy tree */
 static void populateStyleHierarchy(gpointer key, gpointer value, gpointer user_data)
 {
   //GQuark style_id = (GQuark)(GPOINTER_TO_INT(key)) ;
@@ -181,6 +194,7 @@ static void populateStyleHierarchy(gpointer key, gpointer value, gpointer user_d
 }
 
 
+/* Get the styles as a tree representing the parent-child hierarchy */
 static TreeNode* getStylesHierarchy(ZMap zmap)
 {
   TreeNode *result = new TreeNode ;
@@ -199,6 +213,43 @@ static TreeNode* getStylesHierarchy(ZMap zmap)
 }
 
 
+static void treeNodeAddToStore(TreeNode *node, ZMapGuiNotebookParagraph paragraph)
+{
+  /* Add a row for this node into the parent iterator (or root of the store if parent_iter is
+   * null). Note that the root node in the tree doesn't have a style so nothing to add. */
+  ZMapFeatureTypeStyle style = node->get_style() ;
+
+  if (style)
+    {
+      char *style_name = g_strdup(g_quark_to_string(style->original_id)) ;
+      char *parent_name = style->parent_id ? g_strdup(g_quark_to_string(style->parent_id)) : NULL ;
+
+      GList *column_data = NULL ;
+      column_data = g_list_append(column_data, style_name) ;
+      column_data = g_list_append(column_data, parent_name) ;
+          
+      zMapGUINotebookCreateTagValue(paragraph,
+                                    style_name, NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,
+                                    "compound", column_data,
+                                    NULL) ;
+
+      /* Process the child nodes */
+      std::vector<TreeNode*> children = node->get_children() ;
+
+      for (std::vector<TreeNode*>::iterator child = children.begin(); child != children.end(); ++child)
+        treeNodeAddToStore(*child, paragraph) ;
+    }
+  else
+    {
+      /* Just process the children */
+      std::vector<TreeNode*> children = node->get_children() ;
+
+      for (std::vector<TreeNode*>::iterator child = children.begin(); child != children.end(); ++child)
+        treeNodeAddToStore(*child, paragraph) ;
+    }
+}
+
+
 /* Does the work to create a chapter in the styles notebook for listing current styles. */
 static ZMapGuiNotebookChapter addStylesChapter(ZMapGuiNotebook note_book_parent, ZMap zmap, ZMapView view)
 {
@@ -207,6 +258,8 @@ static ZMapGuiNotebookChapter addStylesChapter(ZMapGuiNotebook note_book_parent,
   ZMapGuiNotebookPage page ;
   ZMapGuiNotebookSubsection subsection ;
   ZMapGuiNotebookParagraph paragraph ;
+  GList *headers = NULL ;
+  GList *types = NULL ;
 
   chapter = zMapGUINotebookCreateChapter(note_book_parent, STYLES_CHAPTER, &user_CBs) ;
 
@@ -214,12 +267,17 @@ static ZMapGuiNotebookChapter addStylesChapter(ZMapGuiNotebook note_book_parent,
 
   subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
 
+  headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Style"))) ;
+  headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Parent"))) ;
+  types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
+  types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
+
   paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
-                                             ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
-                                             NULL, NULL) ;
+                                             ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE,
+                                             headers, types) ;
 
   TreeNode *styles_hierarchy = getStylesHierarchy(zmap) ;
-
+  treeNodeAddToStore(styles_hierarchy, paragraph) ;
 
   return chapter ;
 }
@@ -281,6 +339,16 @@ void saveChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
  *                  TreeNode
  */
 
+TreeNode::TreeNode()
+{
+  m_style = NULL ;
+}
+
+TreeNode::TreeNode(ZMapFeatureTypeStyle style)
+{
+  m_style = style ;
+}
+
 TreeNode* TreeNode::find(ZMapFeatureTypeStyle style)
 {
   TreeNode *result = NULL ;
@@ -309,13 +377,17 @@ TreeNode* TreeNode::find(ZMapFeatureTypeStyle style)
 void TreeNode::add_child_style(ZMapFeatureTypeStyle style)
 {
   /* Add a new child tree node with this style to our list of children */
-  TreeNode *node = new TreeNode ;
-  node->set_style(style) ;
+  TreeNode *node = new TreeNode(style) ;
 
   m_children.push_back(node) ;
 }
 
-void TreeNode::set_style(ZMapFeatureTypeStyle style)
+ZMapFeatureTypeStyle TreeNode::get_style()
 {
-  m_style = style ;
+  return m_style ;
+}
+
+std::vector<TreeNode*> TreeNode::get_children()
+{
+  return m_children ;
 }
