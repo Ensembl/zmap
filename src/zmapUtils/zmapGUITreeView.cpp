@@ -1110,6 +1110,7 @@ static void zmap_guitreeview_simple_add(ZMapGUITreeView zmap_tv,
   return ;
 }
 
+
 /* Returns true if the given column in the given iterator has the given value */
 static gboolean tree_iter_col_has_string_value(GtkTreeModel *tree_model, GtkTreeIter *iter, const int col, const GQuark parent_tag)
 {
@@ -1136,37 +1137,40 @@ static gboolean tree_iter_col_has_string_value(GtkTreeModel *tree_model, GtkTree
   return result ;
 }
 
-static gboolean tree_model_find_parent(GtkTreeModel *tree_model, 
-                                       const GQuark parent_tag, 
-                                       GtkTreeIter *curr_iter, 
-                                       GtkTreeIter **parent_iter_out)
-{
-  gboolean found = FALSE ;
 
-  if (tree_iter_col_has_string_value(tree_model, curr_iter, 1, parent_tag))
+/* Recurse through the given tree model starting at the given iterator looking for the row where
+ * the given column has the given string value. Returns the GtkTreePath if found or null if not. */
+static GtkTreePath* tree_model_find_parent(GtkTreeModel *tree_model, 
+                                           GtkTreeIter *curr_iter,
+                                           const int col,
+                                           const GQuark parent_tag)
+{
+  GtkTreePath *parent_path = NULL ;
+
+  if (tree_iter_col_has_string_value(tree_model, curr_iter, col, parent_tag))
     {
-      found = TRUE ;
-      *parent_iter_out = curr_iter ;
+      parent_path = gtk_tree_model_get_path(tree_model, curr_iter) ;
     }
   
-  if (!found)
+  if (!parent_path)
     {
       /* Recurse through any children */
       GtkTreeIter child;
   
       if (gtk_tree_model_iter_children (tree_model, &child, curr_iter))
-        found = tree_model_find_parent(tree_model, parent_tag, &child, parent_iter_out) ;
+        parent_path = tree_model_find_parent(tree_model, &child, col, parent_tag) ;
     }
 
-  if (!found)
+  if (!parent_path)
     {
       /* Recurse through subsequent nodes on the same level */
       if (gtk_tree_model_iter_next(tree_model, curr_iter))
-        found = tree_model_find_parent(tree_model, parent_tag, curr_iter, parent_iter_out) ;
+        parent_path = tree_model_find_parent(tree_model, curr_iter, col, parent_tag) ;
     }
 
-  return found ;
+  return parent_path ;
 }
+
 
 static void zmap_guitreeview_simple_add_values(ZMapGUITreeView zmap_tv,
                                                GList *values_list,
@@ -1177,35 +1181,41 @@ static void zmap_guitreeview_simple_add_values(ZMapGUITreeView zmap_tv,
   /* step through the list and set the values */
   if((tmp = values_list))
     {
+      /* Check if there's a parent iter with the same value as parent_tag in the first col (not
+       * including the index col) */
+      const int col = 1 ;
+      GtkTreePath *parent_path = NULL ;
+      GtkTreeIter root_iter ; 
+
+      if (parent_tag && gtk_tree_model_get_iter_first(zmap_tv->tree_model, &root_iter))
+        {
+          parent_path = tree_model_find_parent(zmap_tv->tree_model, &root_iter, col, parent_tag) ;
+        }
+
+      /* Add a new row to the tree */
       GtkTreeStore *store = GTK_TREE_STORE(zmap_tv->tree_model);
-
-      /* Check if there's a parent iter with the same value as parent_tag in the first col */
-      GtkTreeIter *parent_iter = NULL ;
-      GtkTreeIter curr_iter ; 
-      gboolean found_parent = FALSE ;
-
-      if (parent_tag && gtk_tree_model_get_iter_first(zmap_tv->tree_model, &curr_iter))
-        {
-          found_parent = tree_model_find_parent(zmap_tv->tree_model, parent_tag, &curr_iter, &parent_iter) ;
-        }
-
-      if (found_parent && !parent_iter)
-        {
-          zMapLogWarning("Error finding parent tag '%s' in tree - null iterator", g_quark_to_string(parent_tag)) ;
-        }
-      else if (found_parent && !gtk_tree_store_iter_is_valid(store, parent_iter))
-        {
-          zMapLogWarning("Error finding parent tag '%s' in tree - invalid iterator", g_quark_to_string(parent_tag)) ;
-          parent_iter = NULL ; /* add to toplevel */
-        }
-
-      /* Add a new row to the store (under parent_iter if it is non-null) */
       GtkTreeIter iter;
-      gtk_tree_store_append(store, &iter, parent_iter);
+
+      if (parent_path)
+        {
+          /* Add it under the parent node */
+          GtkTreeIter parent_iter;
+          gtk_tree_model_get_iter(zmap_tv->tree_model, &parent_iter, parent_path) ;
+          gtk_tree_store_append(store, &iter, &parent_iter);
+        }
+      else
+        {
+          /* No parent - add it as a toplevel node */
+          gtk_tree_store_append(store, &iter, NULL);
+        }
 
       update_tuple_data_list(zmap_tv, store, &iter, TRUE, tmp);
 
       zmap_tv->tag_values_lists = g_list_append(zmap_tv->tag_values_lists, values_list) ;
+
+      /* Clean up */
+      if (parent_path)
+        gtk_tree_path_free(parent_path) ;
     }
 
   return ;
