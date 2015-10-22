@@ -116,7 +116,8 @@ static void zmap_guitreeview_finalize(GObject *object);
 static void zmap_guitreeview_simple_add(ZMapGUITreeView zmap_tv,
                               gpointer user_data);
 static void zmap_guitreeview_simple_add_values(ZMapGUITreeView zmap_tv,
-                                     GList *values_list);
+                                               GList *values_list,
+                                               const GQuark parent_tag);
 static void zmap_guitreeview_add_list_of_tuples(ZMapGUITreeView zmap_tv,
                                     GList *tuples_list);
 
@@ -140,12 +141,12 @@ static int column_index_from_name(ZMapGUITreeView zmap_tv, char *name);
 static void progressive_set_selection(ZMapGUITreeView zmap_tv);
 
 static void update_tuple_data(ZMapGUITreeView zmap_tv,
-                        GtkListStore   *store,
+                        GtkTreeStore   *store,
                         GtkTreeIter    *iter,
                         gboolean        update_counter,
                         gpointer        user_data);
 static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
-                           GtkListStore   *store,
+                           GtkTreeStore   *store,
                            GtkTreeIter    *iter,
                            gboolean        update_counter,
                            GList          *values_list);
@@ -356,10 +357,11 @@ void zMapGUITreeViewAddTuple(ZMapGUITreeView zmap_tv, gpointer user_data)
 }
 
 void zMapGUITreeViewAddTupleFromColumnData(ZMapGUITreeView zmap_tv,
-                                 GList *values_list)
+                                           GList *values_list,
+                                           const GQuark parent_tag)
 {
   if(ZMAP_GUITREEVIEW_GET_CLASS(zmap_tv)->add_tuple_value_list)
-    (* ZMAP_GUITREEVIEW_GET_CLASS(zmap_tv)->add_tuple_value_list)(zmap_tv, values_list);
+    (* ZMAP_GUITREEVIEW_GET_CLASS(zmap_tv)->add_tuple_value_list)(zmap_tv, values_list, parent_tag);
 
   return ;
 }
@@ -399,10 +401,10 @@ int zMapGUITreeViewGetColumnIndexByName(ZMapGUITreeView zmap_tv, const char *col
 
 void zMapGUITreeViewUpdateTuple(ZMapGUITreeView zmap_tv, GtkTreeIter *iter, gpointer user_data)
 {
-  GtkListStore *store;
+  GtkTreeStore *store;
   GList *tuple_list = (GList *)user_data ;
 
-  store = GTK_LIST_STORE(zmap_tv->tree_model);
+  store = GTK_TREE_STORE(zmap_tv->tree_model);
 
   update_tuple_data_list(zmap_tv, store, iter, FALSE, tuple_list) ;
 
@@ -1096,32 +1098,110 @@ static void zmap_guitreeview_finalize(GObject *object)
 static void zmap_guitreeview_simple_add(ZMapGUITreeView zmap_tv,
                               gpointer user_data)
 {
-  GtkListStore *store;
+  GtkTreeStore *store;
   GtkTreeIter iter;
 
-  store = GTK_LIST_STORE(zmap_tv->tree_model);
+  store = GTK_TREE_STORE(zmap_tv->tree_model);
 
-  gtk_list_store_append(store, &iter);
+  gtk_tree_store_append(store, &iter, NULL);
 
   update_tuple_data(zmap_tv, store, &iter, TRUE, user_data);
 
   return ;
 }
 
+/* Returns true if the given column in the given iterator has the given value */
+static gboolean tree_iter_col_has_string_value(GtkTreeModel *tree_model, GtkTreeIter *iter, const int col, const GQuark parent_tag)
+{
+  gboolean result = FALSE ;
+  
+  GType column_type = gtk_tree_model_get_column_type(tree_model, col);
+
+  if (column_type == G_TYPE_STRING)
+    {
+      char *value_str = NULL;
+      gtk_tree_model_get(tree_model, iter, col, &value_str, -1);
+
+      if (value_str && strcmp(value_str, g_quark_to_string(parent_tag)) == 0)
+        result = TRUE ;
+
+      if (value_str)
+        g_free(value_str) ;
+    }
+  else
+    {
+      zMapWarnIfReached() ;
+    }
+
+  return result ;
+}
+
+static gboolean tree_model_find_parent(GtkTreeModel *tree_model, 
+                                       const GQuark parent_tag, 
+                                       GtkTreeIter *curr_iter, 
+                                       GtkTreeIter **parent_iter_out)
+{
+  gboolean found = FALSE ;
+
+  if (tree_iter_col_has_string_value(tree_model, curr_iter, 1, parent_tag))
+    {
+      found = TRUE ;
+      *parent_iter_out = curr_iter ;
+    }
+  
+  if (!found)
+    {
+      /* Recurse through any children */
+      GtkTreeIter child;
+  
+      if (gtk_tree_model_iter_children (tree_model, &child, curr_iter))
+        found = tree_model_find_parent(tree_model, parent_tag, &child, parent_iter_out) ;
+    }
+
+  if (!found)
+    {
+      /* Recurse through subsequent nodes on the same level */
+      if (gtk_tree_model_iter_next(tree_model, curr_iter))
+        found = tree_model_find_parent(tree_model, parent_tag, curr_iter, parent_iter_out) ;
+    }
+
+  return found ;
+}
+
 static void zmap_guitreeview_simple_add_values(ZMapGUITreeView zmap_tv,
-                                     GList *values_list)
+                                               GList *values_list,
+                                               const GQuark parent_tag)
 {
   GList *tmp;
 
   /* step through the list and set the values */
   if((tmp = values_list))
     {
+      GtkTreeStore *store = GTK_TREE_STORE(zmap_tv->tree_model);
+
+      /* Check if there's a parent iter with the same value as parent_tag in the first col */
+      GtkTreeIter *parent_iter = NULL ;
+      GtkTreeIter curr_iter ; 
+      gboolean found_parent = FALSE ;
+
+      if (parent_tag && gtk_tree_model_get_iter_first(zmap_tv->tree_model, &curr_iter))
+        {
+          found_parent = tree_model_find_parent(zmap_tv->tree_model, parent_tag, &curr_iter, &parent_iter) ;
+        }
+
+      if (found_parent && !parent_iter)
+        {
+          zMapLogWarning("Error finding parent tag '%s' in tree - null iterator", g_quark_to_string(parent_tag)) ;
+        }
+      else if (found_parent && !gtk_tree_store_iter_is_valid(store, parent_iter))
+        {
+          zMapLogWarning("Error finding parent tag '%s' in tree - invalid iterator", g_quark_to_string(parent_tag)) ;
+          parent_iter = NULL ; /* add to toplevel */
+        }
+
+      /* Add a new row to the store (under parent_iter if it is non-null) */
       GtkTreeIter iter;
-      GtkListStore *store;
-
-      store = GTK_LIST_STORE(zmap_tv->tree_model);
-
-      gtk_list_store_append(store, &iter);
+      gtk_tree_store_append(store, &iter, parent_iter);
 
       update_tuple_data_list(zmap_tv, store, &iter, TRUE, tmp);
 
@@ -1383,8 +1463,8 @@ static void cell_edited_cb(GtkCellRendererText *renderer,
 
       if (GTK_IS_LIST_STORE(tree_model))
         {
-          GtkListStore *store = GTK_LIST_STORE(tree_model);
-          gtk_list_store_set_value(store, &iter, index, column_value);
+          GtkTreeStore *store = GTK_TREE_STORE(tree_model);
+          gtk_tree_store_set_value(store, &iter, index, column_value);
         }
     }
 }
@@ -1610,14 +1690,14 @@ static void row_deletion_cb(GtkTreeModel *tree_model,
 static GtkTreeModel *createModel(ZMapGUITreeView zmap_tv)
 {
   GtkTreeModel *model = NULL;
-  GtkListStore *store;
+  GtkTreeStore *store;
   GType *types;
 
   if(zmap_tv->column_count > 0)
     {
       types = zmap_tv->column_types;
 
-      store = gtk_list_store_newv(zmap_tv->column_count, types) ;
+      store = gtk_tree_store_newv(zmap_tv->column_count, types) ;
 
       model = GTK_TREE_MODEL(store);
     }
@@ -1683,7 +1763,7 @@ static void progressive_set_selection(ZMapGUITreeView zmap_tv)
 }
 
 static void update_tuple_data(ZMapGUITreeView zmap_tv,
-                        GtkListStore   *store,
+                        GtkTreeStore   *store,
                         GtkTreeIter    *iter,
                         gboolean        update_counter,
                         gpointer        user_data)
@@ -1700,7 +1780,7 @@ static void update_tuple_data(ZMapGUITreeView zmap_tv,
       {
         tuple_no_to_model(column_value, zmap_tv);
 
-        gtk_list_store_set_value(store, iter, index, column_value);
+        gtk_tree_store_set_value(store, iter, index, column_value);
       }
 
       index++;
@@ -1714,7 +1794,7 @@ static void update_tuple_data(ZMapGUITreeView zmap_tv,
 
       tuple_pointer_to_model(column_value, user_data);
 
-      gtk_list_store_set_value(store, iter, index, column_value);
+      gtk_tree_store_set_value(store, iter, index, column_value);
 
       index++;
     }
@@ -1737,7 +1817,7 @@ static void update_tuple_data(ZMapGUITreeView zmap_tv,
 
         (func)(value, user_data);
 
-        gtk_list_store_set_value(store, iter, index, value);
+        gtk_tree_store_set_value(store, iter, index, value);
       }
     }
 
@@ -1745,7 +1825,7 @@ static void update_tuple_data(ZMapGUITreeView zmap_tv,
 }
 
 static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
-                           GtkListStore   *store,
+                           GtkTreeStore   *store,
                            GtkTreeIter    *iter,
                            gboolean        update_counter,
                            GList          *values_list)
@@ -1767,7 +1847,7 @@ static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
           {
             tuple_no_to_model(column_value, zmap_tv);
 
-            gtk_list_store_set_value(store, iter, index, column_value);
+            gtk_tree_store_set_value(store, iter, index, column_value);
           }
 
         index++;
@@ -1781,7 +1861,7 @@ static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
 
         tuple_pointer_to_model(column_value, NULL);
 
-        gtk_list_store_set_value(store, iter, index, column_value);
+        gtk_tree_store_set_value(store, iter, index, column_value);
 
         index++;
       }
@@ -1829,7 +1909,7 @@ static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
           g_warning("%s", "Bad column type");
 
         /* Send the values off to the store... */
-        gtk_list_store_set_value(store, iter, index, column_value);
+        gtk_tree_store_set_value(store, iter, index, column_value);
         /* Keep the index in step. */
         index++;
       }

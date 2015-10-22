@@ -114,9 +114,6 @@ void zmapControlShowStyles(ZMap zmap)
     {
       ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
 
-      /* Display the styles. */
-      zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
-      
       addStylesChapter(note_book, zmap, zmap_view) ;
 
       /* Display the styles. */
@@ -228,10 +225,11 @@ static void treeNodeAddToStore(TreeNode *node, ZMapGuiNotebookParagraph paragrap
       column_data = g_list_append(column_data, style_name) ;
       column_data = g_list_append(column_data, parent_name) ;
           
-      zMapGUINotebookCreateTagValue(paragraph,
-                                    style_name, NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,
-                                    "compound", column_data,
-                                    NULL) ;
+      zMapGUINotebookCreateTagValueChild(paragraph,
+                                         style_name, NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND, 
+                                         g_quark_from_string(parent_name),
+                                         "compound", column_data,
+                                         NULL) ;
 
       /* Process the child nodes */
       std::vector<TreeNode*> children = node->get_children() ;
