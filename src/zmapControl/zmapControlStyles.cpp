@@ -210,7 +210,7 @@ static TreeNode* getStylesHierarchy(ZMap zmap)
 }
 
 
-static void treeNodeAddToStore(TreeNode *node, ZMapGuiNotebookParagraph paragraph)
+static void treeNodeCreateTag(TreeNode *node, ZMapGuiNotebookParagraph paragraph, int *tag_no, const int parent_tag_no)
 {
   /* Add a row for this node into the parent iterator (or root of the store if parent_iter is
    * null). Note that the root node in the tree doesn't have a style so nothing to add. */
@@ -227,15 +227,19 @@ static void treeNodeAddToStore(TreeNode *node, ZMapGuiNotebookParagraph paragrap
           
       zMapGUINotebookCreateTagValueChild(paragraph,
                                          style_name, NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND, 
-                                         g_quark_from_string(parent_name),
+                                         parent_tag_no,
                                          "compound", column_data,
                                          NULL) ;
+
+      /* Remember this as the parent for the child items and increment the tag no count */
+      const int new_parent = *tag_no ;
+      *tag_no += 1 ;
 
       /* Process the child nodes */
       std::vector<TreeNode*> children = node->get_children() ;
 
       for (std::vector<TreeNode*>::iterator child = children.begin(); child != children.end(); ++child)
-        treeNodeAddToStore(*child, paragraph) ;
+        treeNodeCreateTag(*child, paragraph, tag_no, new_parent) ;
     }
   else
     {
@@ -243,7 +247,7 @@ static void treeNodeAddToStore(TreeNode *node, ZMapGuiNotebookParagraph paragrap
       std::vector<TreeNode*> children = node->get_children() ;
 
       for (std::vector<TreeNode*>::iterator child = children.begin(); child != children.end(); ++child)
-        treeNodeAddToStore(*child, paragraph) ;
+        treeNodeCreateTag(*child, paragraph, tag_no, parent_tag_no) ;
     }
 }
 
@@ -274,8 +278,13 @@ static ZMapGuiNotebookChapter addStylesChapter(ZMapGuiNotebook note_book_parent,
                                              ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE,
                                              headers, types) ;
 
+  /* Loop through the styles hierarchy and create a tag for each node in the tree. Keep a count
+   * so we know which index each tag has and pass the parent tag no (0 for the root node) so that
+   * we can look up a tag's parent in the tree view (the first column has a 1-based index) added
+   * in this same order. */
   TreeNode *styles_hierarchy = getStylesHierarchy(zmap) ;
-  treeNodeAddToStore(styles_hierarchy, paragraph) ;
+  int tag_no = 1 ;
+  treeNodeCreateTag(styles_hierarchy, paragraph, &tag_no, 0) ;
 
   return chapter ;
 }
@@ -357,15 +366,10 @@ TreeNode* TreeNode::find(ZMapFeatureTypeStyle style)
     }
   else
     {
-      for (std::vector<TreeNode*>::iterator iter = m_children.begin(); iter != m_children.end(); ++iter)
+      for (std::vector<TreeNode*>::iterator iter = m_children.begin(); !result && iter != m_children.end(); ++iter)
         {
           TreeNode *node = *iter ;
-
-          if (node->find(style))
-            {
-              result = node ;
-              break ;
-            }
+          result = node->find(style) ;
         }
     }
 

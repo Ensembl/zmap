@@ -112,7 +112,7 @@ typedef struct _zmapGUITreeViewClassStruct {
 
   void (* add_tuple_simple)(ZMapGUITreeView zmap_tv, gpointer user_data);
 
-  void (* add_tuple_value_list)(ZMapGUITreeView zmap_tv, GList *list_of_user_data, const GQuark parent_tag);
+  void (* add_tuple_value_list)(ZMapGUITreeView zmap_tv, GList *list_of_user_data, const int parent_tag);
 
   void (* add_tuples)(ZMapGUITreeView zmap_tv, GList *list_of_user_data);
 } zmapGUITreeViewClassStruct;
