@@ -54,27 +54,28 @@ typedef struct GetStylesDataStruct_
 } GetStylesDataStruct, *GetStylesData ;
 
 
-static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data) ;
-static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
-static void saveCB(ZMapGuiNotebookAny any_section, void *user_data) ;
-static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused) ;
-static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap) ;
-static void saveChapter(ZMapGuiNotebookChapter chapter, ZMap zmap) ;
+typedef struct EditStylesDialogStruct_
+{
+  GtkWidget *dialog ;
+  ZMap zmap ;
+  GtkTreeModel *tree_model ;
+  char *selected_style_name ;
+} EditStylesDialogStruct, *EditStylesDialog ;
 
-static ZMapGuiNotebookChapter addStylesChapter(ZMapGuiNotebook note_book_parent, ZMap zmap, ZMapView view) ;
+
+typedef enum {STYLE_COLUMN, PARENT_COLUMN, N_COLUMNS} TreeColumn ;
 
 
-/* 
- *                  Globals
- */
+static void saveCB(void *user_data) ;
+static void cancelCB(void *user_data_unused) ;
 
-static const char *help_title_G = "ZMap Styles" ;
-static const char *help_text_G =
-  "The ZMap Styles Window allows you to configure the appearance\n"
-  " of the featuresets in ZMap.\n\n"
-  "After you have made your changes you can click:\n\n"
-  "\t\"Cancel\" to discard them and quit the resources dialog\n"
-  "\t\"Ok\" to apply them and quit the resources dialog\n" ;
+static void addContentTree(EditStylesDialog data, GtkBox *box) ;
+static void addContentButtons(EditStylesDialog data, GtkBox *box) ;
+static void treeNodeCreateWidgets(ZMapStyleTree *node, GtkTreeStore *store, GtkTreeIter *parent) ;
+void editStylesDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data) ;
+static ZMapStyleTree* getStylesHierarchy(ZMap zmap) ;
+static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data) ;
+
 
 
 /* 
@@ -83,31 +84,21 @@ static const char *help_text_G =
 
 void zmapControlShowStyles(ZMap zmap)
 {
-  ZMapGuiNotebook note_book ;
-  char *notebook_title ;
+  EditStylesDialogStruct *data = g_new0(EditStylesDialogStruct, 1) ;
+  data->zmap = zmap ;
 
-  zMapReturnIfFailSafe(!(zmap->styles_note_book)) ;
+  data->dialog = zMapGUIDialogNew(NULL, "Edit Styles", G_CALLBACK(editStylesDialogResponseCB), data) ;
 
-  /* Construct the styles representation */
-  notebook_title = g_strdup_printf("Edit Styles for zmap %s", zMapGetZMapID(zmap)) ;
-  note_book = zMapGUINotebookCreateNotebook(notebook_title, TRUE, cleanUpCB, zmap) ;
-  g_free(notebook_title) ;
+  gtk_dialog_add_button(GTK_DIALOG(data->dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE) ;
+  gtk_dialog_set_default_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_CLOSE) ;
 
-  if (note_book)
-    {
-      ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
+  GtkBox *vbox = GTK_BOX(GTK_DIALOG(data->dialog)->vbox) ;
+  addContentTree(data, vbox) ;
+  addContentButtons(data, vbox) ;
 
-      addStylesChapter(note_book, zmap, zmap_view) ;
-
-      /* Display the styles. */
-      zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
-
-      zmap->styles_note_book = note_book ;
-    }
-  else
-    {
-      zMapWarning("%s", "Error creating preferences dialog\n") ;
-    }
+  gtk_widget_show_all(data->dialog) ;
+      
+  zMapGUIRaiseToTop(data->dialog);
 }
 
 
@@ -116,14 +107,185 @@ void zmapControlShowStyles(ZMap zmap)
  *                      Internal routines
  */
 
-static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data)
+static void treeViewAddColumn(GtkWidget *tree, GtkCellRenderer *renderer, 
+                              const char *name, const char *type, TreeColumn column_id)
 {
-  ZMapGuiNotebook note_book = (ZMapGuiNotebook)any_section ;
-  ZMap zmap = (ZMap)user_data ;
+  GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (name,
+                                                                        renderer,
+                                                                        type, column_id,
+                                                                        NULL);
 
-  zMapGUINotebookDestroyNotebook(note_book) ;
+  gtk_tree_view_append_column(GTK_TREE_VIEW(tree), column);
+}
 
-  zmap->styles_note_book = NULL ;
+static void addContentTree(EditStylesDialog data, GtkBox *box)
+{
+  ZMapStyleTree *styles_hierarchy = getStylesHierarchy(data->zmap) ;
+
+  GtkTreeStore *store = gtk_tree_store_new(N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING) ;
+  treeNodeCreateWidgets(styles_hierarchy, store, NULL) ;
+
+  data->tree_model = GTK_TREE_MODEL(store) ;
+
+  GtkWidget *tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL (store));
+
+  GtkTreeSelection *select = gtk_tree_view_get_selection (GTK_TREE_VIEW (tree));
+  gtk_tree_selection_set_mode (select, GTK_SELECTION_SINGLE);
+  g_signal_connect (G_OBJECT (select), "changed",
+                    G_CALLBACK (tree_selection_changed_cb),
+                    data);
+
+
+  GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
+  gtk_container_add(GTK_CONTAINER(scrolled_window), tree) ;
+
+  GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new ();
+
+  treeViewAddColumn(tree, text_renderer, "Style", "text", STYLE_COLUMN) ;
+  treeViewAddColumn(tree, text_renderer, "Parent", "text", PARENT_COLUMN) ;
+  
+  gtk_box_pack_start(box, scrolled_window, TRUE, TRUE, 0) ;
+}
+
+
+static void edit_button_clicked_cb(GtkWidget *button, gpointer user_data)
+{
+  EditStylesDialog data = (EditStylesDialog)user_data ;
+  zMapReturnIfFail(data && data->tree_model) ;
+
+  if (data->selected_style_name)
+    {
+    }
+  else
+    {
+    }
+}
+
+
+static void delete_button_clicked_cb(GtkWidget *button, gpointer user_data)
+{
+  EditStylesDialog data = (EditStylesDialog)user_data ;
+  zMapReturnIfFail(data && data->tree_model) ;
+
+  if (data->selected_style_name)
+    {
+    }
+  else
+    {
+    }
+}
+
+
+static void add_button_clicked_cb(GtkWidget *button, gpointer user_data)
+{
+  EditStylesDialog data = (EditStylesDialog)user_data ;
+  zMapReturnIfFail(data && data->tree_model) ;
+
+  if (data->selected_style_name)
+    {
+    }
+  else
+    {
+    }
+}
+
+
+static void addContentButtons(EditStylesDialog data, GtkBox *box)
+{
+  GtkBox *hbox = GTK_BOX(gtk_hbox_new(FALSE, 0)) ;
+  gtk_box_pack_start(box, GTK_WIDGET(hbox), FALSE, FALSE, 0) ;
+
+  GtkWidget *button = gtk_button_new_with_label("Edit") ;
+  gtk_box_pack_start(hbox, button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(edit_button_clicked_cb), data) ;
+
+  button = gtk_button_new_with_label("Delete") ;
+  gtk_box_pack_start(hbox, button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(delete_button_clicked_cb), data) ;
+
+  button = gtk_button_new_with_label("Add") ;
+  gtk_box_pack_start(hbox, button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(add_button_clicked_cb), data) ;
+}
+
+
+static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer user_data)
+{
+  EditStylesDialog data = (EditStylesDialog)user_data ;
+  zMapReturnIfFail(data) ;
+
+  GtkTreeIter iter;
+  GtkTreeModel *model;
+
+  if (gtk_tree_selection_get_selected (selection, &model, &iter))
+    {
+      char *style_name = NULL ;
+      gtk_tree_model_get(data->tree_model, &iter, STYLE_COLUMN, &style_name, -1);
+
+      if (style_name)
+        {
+          if (data->selected_style_name)
+            g_free(data->selected_style_name) ;
+              
+          data->selected_style_name = style_name ;
+        }
+    }
+  else if (data->selected_style_name)
+    {
+      g_free(data->selected_style_name) ;
+      data->selected_style_name = NULL ;
+
+    }
+}
+
+/* Handles the response to the feature-show dialog */
+void editStylesDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
+{
+  switch (response_id)
+  {
+    case GTK_RESPONSE_APPLY: //fall through
+    case GTK_RESPONSE_ACCEPT:
+      saveCB(data) ;
+      break;
+
+    case GTK_RESPONSE_CANCEL:
+    case GTK_RESPONSE_CLOSE:
+    case GTK_RESPONSE_REJECT:
+      cancelCB(data) ;
+      break;
+
+    default:
+      break;
+  };
+}
+
+
+static void saveCB(void *user_data)
+{
+  EditStylesDialog data = (EditStylesDialog)user_data ;
+
+  if (data)
+    {
+      gboolean ok = TRUE ;
+
+      /* only destroy the dialog if the save succeeded */
+      if (ok)
+        gtk_widget_destroy(data->dialog) ;
+    }
+
+  return ;
+}
+
+static void cancelCB(void *user_data)
+{
+  EditStylesDialog data = (EditStylesDialog)user_data ;
+
+  if (data)
+    {
+      gtk_widget_destroy(data->dialog) ;
+
+      g_free(data) ;
+    }
 
   return ;
 }
@@ -157,11 +319,14 @@ static ZMapStyleTree* getStylesHierarchy(ZMap zmap)
       g_hash_table_foreach(styles, populateStyleHierarchy, &data) ;
     }
 
+  /* Sort styles alphabetically so they're easier to read  */
+  result->sort() ;
+
   return result ;
 }
 
 
-static void treeNodeCreateTag(ZMapStyleTree *node, ZMapGuiNotebookParagraph paragraph, int *tag_no, const int parent_tag_no)
+static void treeNodeCreateWidgets(ZMapStyleTree *node, GtkTreeStore *store, GtkTreeIter *parent_iter)
 {
   /* Add a row for this node into the parent iterator (or root of the store if parent_iter is
    * null). Note that the root node in the tree doesn't have a style so nothing to add. */
@@ -172,25 +337,16 @@ static void treeNodeCreateTag(ZMapStyleTree *node, ZMapGuiNotebookParagraph para
       char *style_name = g_strdup(g_quark_to_string(style->original_id)) ;
       char *parent_name = style->parent_id ? g_strdup(g_quark_to_string(style->parent_id)) : NULL ;
 
-      GList *column_data = NULL ;
-      column_data = g_list_append(column_data, style_name) ;
-      column_data = g_list_append(column_data, parent_name) ;
-          
-      zMapGUINotebookCreateTagValueChild(paragraph,
-                                         style_name, NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND, 
-                                         parent_tag_no,
-                                         "compound", column_data,
-                                         NULL) ;
-
-      /* Remember this as the parent for the child items and increment the tag no count */
-      const int new_parent = *tag_no ;
-      *tag_no += 1 ;
+      /* Add a row to the tree store for this node */
+      GtkTreeIter iter ;
+      gtk_tree_store_append(store, &iter, parent_iter);
+      gtk_tree_store_set(store, &iter, 0, style_name, 1, parent_name, -1);
 
       /* Process the child nodes */
       std::vector<ZMapStyleTree*> children = node->get_children() ;
 
       for (std::vector<ZMapStyleTree*>::iterator child = children.begin(); child != children.end(); ++child)
-        treeNodeCreateTag(*child, paragraph, tag_no, new_parent) ;
+        treeNodeCreateWidgets(*child, store, &iter) ;
     }
   else
     {
@@ -198,97 +354,8 @@ static void treeNodeCreateTag(ZMapStyleTree *node, ZMapGuiNotebookParagraph para
       std::vector<ZMapStyleTree*> children = node->get_children() ;
 
       for (std::vector<ZMapStyleTree*>::iterator child = children.begin(); child != children.end(); ++child)
-        treeNodeCreateTag(*child, paragraph, tag_no, parent_tag_no) ;
+        treeNodeCreateWidgets(*child, store, parent_iter) ;
     }
 }
 
-
-/* Does the work to create a chapter in the styles notebook for listing current styles. */
-static ZMapGuiNotebookChapter addStylesChapter(ZMapGuiNotebook note_book_parent, ZMap zmap, ZMapView view)
-{
-  ZMapGuiNotebookChapter chapter = NULL ;
-  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, zmap, NULL, NULL, saveCB, zmap} ;
-  ZMapGuiNotebookPage page ;
-  ZMapGuiNotebookSubsection subsection ;
-  ZMapGuiNotebookParagraph paragraph ;
-  GList *headers = NULL ;
-  GList *types = NULL ;
-
-  chapter = zMapGUINotebookCreateChapter(note_book_parent, STYLES_CHAPTER, &user_CBs) ;
-
-  page = zMapGUINotebookCreatePage(chapter, STYLES_PAGE) ;
-
-  subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
-
-  headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Style"))) ;
-  headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Parent"))) ;
-  types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
-  types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
-
-  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
-                                             ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE,
-                                             headers, types) ;
-
-  /* Loop through the styles hierarchy and create a tag for each node in the tree. Keep a count
-   * so we know which index each tag has and pass the parent tag no (0 for the root node) so that
-   * we can look up a tag's parent in the tree view (the first column has a 1-based index) added
-   * in this same order. */
-  ZMapStyleTree *styles_hierarchy = getStylesHierarchy(zmap) ;
-  int tag_no = 1 ;
-  treeNodeCreateTag(styles_hierarchy, paragraph, &tag_no, 0) ;
-
-  return chapter ;
-}
-
-
-/* User applies the preferences. */
-static void applyCB(ZMapGuiNotebookAny any_section, void *user_data)
-{
-  ZMap zmap = (ZMap)user_data;
-
-  readChapter((ZMapGuiNotebookChapter)any_section, zmap) ;
-
-  return ;
-}
-
-/* Save the preferences to the config file */
-static void saveCB(ZMapGuiNotebookAny any_section, void *user_data)
-{
-  ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)any_section ;
-  ZMap zmap = (ZMap)user_data;
-
-  readChapter(chapter, zmap);
-
-  saveChapter(chapter, zmap) ;
-
-  return ;
-}
-
-/* User cancels preferences. */
-static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
-{
-  return ;
-}
-
-
-/* Set the preferences. */
-static void readChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
-{
-  ZMapGuiNotebookPage page ;
-  //ZMapView view = zMapViewGetView(zmap->focus_viewwindow);
-
-  if ((page = zMapGUINotebookFindPage(chapter, STYLES_PAGE)))
-    {
-
-    }
-  
-  return ;
-}
-
-
-void saveChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
-{
-
-  return ;
-}
 

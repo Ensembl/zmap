@@ -540,7 +540,6 @@ static GQuark splice_style_id_G = 0 ;
  */
 
 
-
 GType zMapStyleGlyphShapeGetType(void)
 {
   static GType type = 0 ;

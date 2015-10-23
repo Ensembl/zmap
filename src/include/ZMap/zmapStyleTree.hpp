@@ -42,12 +42,12 @@ public:
   ZMapStyleTree() ;
   ZMapStyleTree(ZMapFeatureTypeStyle style) ;
 
+  ZMapFeatureTypeStyle get_style() const ;
+  std::vector<ZMapStyleTree*> get_children() const ;
+
+  void sort() ;
   ZMapStyleTree* find(ZMapFeatureTypeStyle style) ;
   void add_style(ZMapFeatureTypeStyle style, GHashTable *styles) ;
-
-  ZMapFeatureTypeStyle get_style() ;
-
-  std::vector<ZMapStyleTree*> get_children() ;
 
 private:
 

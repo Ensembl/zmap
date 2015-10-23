@@ -863,7 +863,6 @@ typedef struct ZMapStyleAssemblyPathStructType
 
 
 
-
 /* THIS STRUCT NEEDS A MAGIC PTR, ONCE IT HAS ONE THEN ADD A TEST TO zmapStyleIsValid() FOR IT.... */
 
 /*! @struct ZMapFeatureTypeStyle zmapStyle_P.h
@@ -1006,7 +1005,6 @@ typedef struct ZMapFeatureTypeStyleStructType
     ZMapStyleGraphStruct graph ;
     ZMapStyleGlyphStruct glyph ;
   } mode_data ;
-
 
 } ZMapFeatureTypeStyleStruct ;
 

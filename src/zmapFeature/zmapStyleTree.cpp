@@ -86,13 +86,13 @@ void ZMapStyleTree::add_child_style(ZMapFeatureTypeStyle style)
 }
 
 
-ZMapFeatureTypeStyle ZMapStyleTree::get_style()
+ZMapFeatureTypeStyle ZMapStyleTree::get_style() const
 {
   return m_style ;
 }
 
 
-std::vector<ZMapStyleTree*> ZMapStyleTree::get_children()
+std::vector<ZMapStyleTree*> ZMapStyleTree::get_children() const
 {
   return m_children ;
 }
@@ -126,5 +126,38 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles)
           this->add_child_style(style) ;
         }
       
+    }
+}
+
+
+/* Predicate for sorting styles alphabetically */
+inline bool styleLessThan(const ZMapStyleTree *node1, const ZMapStyleTree *node2)
+{
+  bool result = FALSE ;
+
+  ZMapFeatureTypeStyle style1 = node1->get_style() ;
+  ZMapFeatureTypeStyle style2 = node2->get_style() ;
+
+  if (style1 && style1->original_id && style2 && style2->original_id)
+    {
+      result = (strcmp(g_quark_to_string(style1->original_id), 
+                       g_quark_to_string(style2->original_id)) < 0);
+    }
+  
+  return result ;
+}
+
+
+/* Sort all list of nodes alphabetically by style name */
+void ZMapStyleTree::sort()
+{
+  /* Sort our own list of children */
+  std::sort(m_children.begin(), m_children.end(), styleLessThan);
+  
+  /* Recurse */
+  for (std::vector<ZMapStyleTree*>::iterator iter = m_children.begin(); iter != m_children.end(); ++iter)
+    {
+      ZMapStyleTree *child = *iter ;
+      child->sort() ;
     }
 }
