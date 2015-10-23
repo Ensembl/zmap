@@ -21,6 +21,7 @@ zmapFeatureParams.cpp \
 zmapFeatureTranscript.cpp        \
 zmapFeatureUtils.cpp  \
 zmapStyle.cpp         \
+zmapStyleTree.cpp         \
 zmapStyle_P.hpp       \
 zmapStyleObj.cpp  \
 zmapStyleUtils.cpp    \

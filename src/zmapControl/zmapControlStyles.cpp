@@ -38,6 +38,8 @@
 //#include <ZMap/zmapGLibUtils.hpp>
 #include <zmapControl_P.hpp>
 
+#include <ZMap/zmapStyleTree.hpp>
+
 #include <vector>
 
 
@@ -45,28 +47,9 @@
 #define STYLES_PAGE "Styles"
 
 
-class TreeNode
-{
-public:
-  TreeNode() ;
-  TreeNode(ZMapFeatureTypeStyle style) ;
-
-  TreeNode* find(ZMapFeatureTypeStyle style) ;
-  void add_child_style(ZMapFeatureTypeStyle style) ;
-
-  ZMapFeatureTypeStyle get_style() ;
-
-  std::vector<TreeNode*> get_children() ;
-
-private:
-  ZMapFeatureTypeStyle m_style ;
-  std::vector<TreeNode*> m_children ;
-};
-
-
 typedef struct GetStylesDataStruct_
 {
-  TreeNode *result ;
+  ZMapStyleTree *result ;
   GHashTable *styles ;
 } GetStylesDataStruct, *GetStylesData ;
 
@@ -146,38 +129,6 @@ static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data)
 }
 
 
-/* Add the given style into the style hierarchy tree in the appropriate place according to its
- * parent. Recursively add the style's parent(s) if not already in the tree. Does nothing if the
- * style is already in the tree. */
-static void treeAddStyle(TreeNode *tree, ZMapFeatureTypeStyle style, GHashTable *styles)
-{
-  if (!tree->find(style))
-    {
-      ZMapFeatureTypeStyle parent = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style->parent_id)) ;
-
-      if (parent)
-        {
-          /* If the parent doesn't exist, recursively create it */
-          treeAddStyle(tree, parent, styles) ;
-
-          TreeNode *parent_node = tree->find(parent) ;
-
-          /* Add the child to the parent node */
-          if (parent_node)
-            parent_node->add_child_style(style) ;
-          else
-            zMapWarning("%s", "Error adding style to tree") ;
-        }
-      else
-        {
-          /* This style has no parent, so add it to the root style in the tree */
-          tree->add_child_style(style) ;
-        }
-      
-    }
-}
-
-
 /* For a given style, add it to the appropriate node in the style hierarchy tree */
 static void populateStyleHierarchy(gpointer key, gpointer value, gpointer user_data)
 {
@@ -185,16 +136,16 @@ static void populateStyleHierarchy(gpointer key, gpointer value, gpointer user_d
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)value ;
   GetStylesData data = (GetStylesData)user_data ;
 
-  TreeNode *tree = data->result ;
+  ZMapStyleTree *tree = data->result ;
 
-  treeAddStyle(tree, style, data->styles) ;
+  tree->add_style(style, data->styles) ;
 }
 
 
 /* Get the styles as a tree representing the parent-child hierarchy */
-static TreeNode* getStylesHierarchy(ZMap zmap)
+static ZMapStyleTree* getStylesHierarchy(ZMap zmap)
 {
-  TreeNode *result = new TreeNode ;
+  ZMapStyleTree *result = new ZMapStyleTree ;
   zMapReturnValIfFail(zmap, result) ;
 
   GHashTable *styles = zMapViewGetStyles(zmap->focus_viewwindow) ;
@@ -210,7 +161,7 @@ static TreeNode* getStylesHierarchy(ZMap zmap)
 }
 
 
-static void treeNodeCreateTag(TreeNode *node, ZMapGuiNotebookParagraph paragraph, int *tag_no, const int parent_tag_no)
+static void treeNodeCreateTag(ZMapStyleTree *node, ZMapGuiNotebookParagraph paragraph, int *tag_no, const int parent_tag_no)
 {
   /* Add a row for this node into the parent iterator (or root of the store if parent_iter is
    * null). Note that the root node in the tree doesn't have a style so nothing to add. */
@@ -236,17 +187,17 @@ static void treeNodeCreateTag(TreeNode *node, ZMapGuiNotebookParagraph paragraph
       *tag_no += 1 ;
 
       /* Process the child nodes */
-      std::vector<TreeNode*> children = node->get_children() ;
+      std::vector<ZMapStyleTree*> children = node->get_children() ;
 
-      for (std::vector<TreeNode*>::iterator child = children.begin(); child != children.end(); ++child)
+      for (std::vector<ZMapStyleTree*>::iterator child = children.begin(); child != children.end(); ++child)
         treeNodeCreateTag(*child, paragraph, tag_no, new_parent) ;
     }
   else
     {
       /* Just process the children */
-      std::vector<TreeNode*> children = node->get_children() ;
+      std::vector<ZMapStyleTree*> children = node->get_children() ;
 
-      for (std::vector<TreeNode*>::iterator child = children.begin(); child != children.end(); ++child)
+      for (std::vector<ZMapStyleTree*>::iterator child = children.begin(); child != children.end(); ++child)
         treeNodeCreateTag(*child, paragraph, tag_no, parent_tag_no) ;
     }
 }
@@ -282,7 +233,7 @@ static ZMapGuiNotebookChapter addStylesChapter(ZMapGuiNotebook note_book_parent,
    * so we know which index each tag has and pass the parent tag no (0 for the root node) so that
    * we can look up a tag's parent in the tree view (the first column has a 1-based index) added
    * in this same order. */
-  TreeNode *styles_hierarchy = getStylesHierarchy(zmap) ;
+  ZMapStyleTree *styles_hierarchy = getStylesHierarchy(zmap) ;
   int tag_no = 1 ;
   treeNodeCreateTag(styles_hierarchy, paragraph, &tag_no, 0) ;
 
@@ -341,55 +292,3 @@ void saveChapter(ZMapGuiNotebookChapter chapter, ZMap zmap)
   return ;
 }
 
-
-/* 
- *                  TreeNode
- */
-
-TreeNode::TreeNode()
-{
-  m_style = NULL ;
-}
-
-TreeNode::TreeNode(ZMapFeatureTypeStyle style)
-{
-  m_style = style ;
-}
-
-TreeNode* TreeNode::find(ZMapFeatureTypeStyle style)
-{
-  TreeNode *result = NULL ;
-
-  if (m_style == style)
-    {
-      result = this ;
-    }
-  else
-    {
-      for (std::vector<TreeNode*>::iterator iter = m_children.begin(); !result && iter != m_children.end(); ++iter)
-        {
-          TreeNode *node = *iter ;
-          result = node->find(style) ;
-        }
-    }
-
-  return result ;
-}
-
-void TreeNode::add_child_style(ZMapFeatureTypeStyle style)
-{
-  /* Add a new child tree node with this style to our list of children */
-  TreeNode *node = new TreeNode(style) ;
-
-  m_children.push_back(node) ;
-}
-
-ZMapFeatureTypeStyle TreeNode::get_style()
-{
-  return m_style ;
-}
-
-std::vector<TreeNode*> TreeNode::get_children()
-{
-  return m_children ;
-}
