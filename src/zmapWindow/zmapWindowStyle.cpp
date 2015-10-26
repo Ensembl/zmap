@@ -57,7 +57,12 @@
 
 typedef struct
 {
-  ItemMenuCBData menu_data;               /* which featureset etc */
+  ZMapWindow window ;
+  ZMapFeatureTypeStyle style ;
+  ZMapFeature feature ;
+  ZMapFeatureSet feature_set ;
+  FooCanvasItem *item ;
+
   ZMapFeatureTypeStyleStruct orig_style_copy;  /* copy of original, used for Revert */
 
   GQuark last_edited_style_id;            /* if we've already changed a style remember its id here */
@@ -98,19 +103,38 @@ static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style) ;
 
 
 /* Entry point to display the Edit Style dialog */
-void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
+void zMapWindowShowStyleDialog(ZMapWindow window,
+                               ZMapFeatureTypeStyle style_in,
+                               ZMapFeature feature,
+                               ZMapFeatureSet feature_set, 
+                               FooCanvasItem *item)
 {
-  StyleChange my_data = g_new0(StyleChangeStruct,1);
-
-  /* Check if the dialog data has already been created - if so, nothing to do */
-  if(zmapWindowStyleDialogSetFeature(menu_data->window, menu_data->item, menu_data->feature))
+  /* Check if the dialog data has already been created - if so, just update the existing data
+   * from the given feature/style */
+  if(zmapWindowStyleDialogSetFeature(window, style_in, item, feature))
     return;
 
-  my_data->menu_data = menu_data;
-  ZMapFeatureTypeStyle style = menu_data->feature_set->style;
+  ZMapFeatureTypeStyle style = style_in ;
+
+  if (!style && feature_set)
+    style = feature_set->style;
+
+  if (!style)
+    {
+      zMapWarning("%s", "Style is null") ;
+      return ;
+    }
+
+  StyleChange my_data = g_new0(StyleChangeStruct,1);
+
+  my_data->window = window;
+  my_data->feature = feature ;
+  my_data->feature_set = feature_set ;
+  my_data->item = item ;
+  my_data->style = style ;
 
   /* Add ptr so parent knows about us */
-  my_data->menu_data->window->style_window = (gpointer) my_data ;
+  my_data->window->style_window = (gpointer) my_data ;
 
   /* set up the top level dialog window */
   createToplevel(my_data) ;
@@ -138,7 +162,7 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
       g_list_foreach(my_data->cds_widgets, (GFunc)gtk_widget_hide_all, NULL) ;
     }
 
-  zmapWindowStyleDialogSetFeature(menu_data->window, menu_data->item, menu_data->feature);
+  zmapWindowStyleDialogSetFeature(my_data->window, my_data->style, my_data->item, my_data->feature);
 
   return ;
 }
@@ -157,11 +181,12 @@ void zmapWindowStyleDialogDestroy(ZMapWindow window)
 /* This updates the info in the Edit Style dialog with the given feature, i.e. it takes all of the
  * style info from the given feature's style. It's called when the dialog is first opened or if
  * the user selects a different feature while the dialog is still open. */
-gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature)
+gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, ZMapFeatureTypeStyle style_in, 
+                                         FooCanvasItem *foo, ZMapFeature feature)
 {
   StyleChange my_data = (StyleChange) window->style_window;
-  ZMapFeatureSet feature_set = (ZMapFeatureSet) feature->parent;
-  ZMapFeatureTypeStyle style;
+  ZMapFeatureSet feature_set = feature ? (ZMapFeatureSet) feature->parent : NULL;
+  ZMapFeatureTypeStyle style = style_in;
   GdkColor colour = {0} ;
   GdkColor *fill_col = &colour, *border_col = &colour;
   GQuark default_style_name ;
@@ -169,20 +194,38 @@ gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, 
   if(!my_data)
     return FALSE;
 
-  my_data->menu_data->item = foo;
-  my_data->menu_data->feature_set = feature_set;
-  my_data->menu_data->feature = feature;
-  style = feature_set->style;
+  my_data->item = foo;
+  my_data->feature_set = feature_set;
+  my_data->feature = feature;
+
+  if (!style && feature_set)
+    style = feature_set->style;
+
+  if (!style)
+    {
+      zMapWarning("%s", "Style is null") ;
+      return TRUE ;
+    }
+
+  my_data->style = style ;
 
   /* Make a copy of the original style so we can revert any changes we make */
   memcpy(&my_data->orig_style_copy, style,sizeof (ZMapFeatureTypeStyleStruct));
 
   /* Update the featureset name */
-  const char *text = g_quark_to_string(feature_set->original_id) ;
-  gtk_entry_set_text(GTK_ENTRY(my_data->featureset_name_widget), text ? text : "") ;
+  if (feature_set)
+    {
+      const char *text = g_quark_to_string(feature_set->original_id) ;
+      gtk_entry_set_text(GTK_ENTRY(my_data->featureset_name_widget), text ? text : "") ;
+    }
 
   /* Update the default style name */
-  if (style->unique_id == feature_set->unique_id)
+  if (!feature_set)
+    {
+      /* Editing a style directly, so by default we want to overwrite it */
+      default_style_name = style->unique_id;
+    }
+  else if (style->unique_id == feature_set->unique_id)
     {
       /* The current style name is the same as the featureset name. This means that this
        * featureset probably "owns" this style, so by default we want to overwrite it */
@@ -196,7 +239,7 @@ gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, 
       default_style_name = feature_set->original_id;
     }
 
-  text = g_quark_to_string(style->unique_id) ;
+  const char *text = g_quark_to_string(style->unique_id) ;
   gtk_entry_set_text(GTK_ENTRY(my_data->orig_style_name_widget), text ? text : "");
 
   text = g_quark_to_string(default_style_name) ;
@@ -411,8 +454,8 @@ static void createToplevel(StyleChange my_data)
 /* Create the widgets that display details about the current featureset and style */
 static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int cols, int *row)
 {
-  ZMapFeatureTypeStyle style = my_data->menu_data->feature_set->style;
-  ZMapFeatureSet feature_set = my_data->menu_data->feature_set ;
+  ZMapFeatureTypeStyle style = my_data->style;
+  ZMapFeatureSet feature_set = my_data->feature_set ;
   GQuark default_style_name = 0 ;
 
   /* The name of the featureset being edited (not editable) */
@@ -422,17 +465,17 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
 
   GtkWidget *entry = my_data->featureset_name_widget = gtk_entry_new() ;
 
-  const char *text = g_quark_to_string(feature_set->original_id) ;
+  const char *text = feature_set ? g_quark_to_string(feature_set->original_id) : "" ;
   gtk_entry_set_text(GTK_ENTRY(entry), text ? text : "") ;
   gtk_widget_set_sensitive(entry, FALSE) ;
   gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
   *row += 1 ;
 
   /* The name of the style to edit (editable) */
-  if (style->unique_id == my_data->menu_data->feature_set->unique_id)
+  if (!feature_set || style->unique_id == my_data->feature_set->unique_id)
     {
-      /* The current style name is the same as the featureset name. This means that this
-       * featureset probably "owns" this style, so by default we want to overwrite it */
+      /* Editing the style directly or the current style name is the same as the featureset name. 
+       * This means that we can consider that we "own" this style, so by default we want to overwrite it */
       default_style_name = style->unique_id;
     }
   else
@@ -440,7 +483,7 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
       /* The current style name is different to the featureset name. This means that this
        * featureset probably DOESN'T own the style and therefore we want to create a new child
        * style named after the featureset name */
-      default_style_name = my_data->menu_data->feature_set->original_id;
+      default_style_name = my_data->feature_set->original_id;
     }
 
   label = gtk_label_new("Original style: ") ;
@@ -474,7 +517,7 @@ static void createColourWidgets(StyleChange my_data, GtkTable *table, int *row)
   GdkColor border_colour;
   GdkColor *fill_col = &fill_colour;
   GdkColor *border_col = &border_colour;
-  ZMapFeatureTypeStyle style = my_data->menu_data->feature_set->style;
+  ZMapFeatureTypeStyle style = my_data->style;
   const int xpad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
   const int ypad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
 
@@ -507,7 +550,7 @@ static void createColourWidgets(StyleChange my_data, GtkTable *table, int *row)
 /* Create colour-button widgets for CDS colours */
 static void createCDSColourWidgets(StyleChange my_data, GtkTable *table, int *row)
 {
-  ZMapFeatureTypeStyle style = my_data->menu_data->feature_set->style;
+  ZMapFeatureTypeStyle style = my_data->style;
   GdkColor fill_colour;
   GdkColor border_colour;
   GdkColor *fill_col = &fill_colour;
@@ -606,9 +649,8 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 {
   StyleChange my_data = (StyleChange) cb_data;
 
-  my_data->menu_data->window->style_window = NULL;
+  my_data->window->style_window = NULL;
 
-  g_free(my_data->menu_data);
   g_free(my_data);
 }
 
@@ -619,21 +661,19 @@ static gboolean revertChanges(gpointer cb_data)
 {
   gboolean ok = TRUE ;
   StyleChange my_data = (StyleChange) cb_data;
-  ItemMenuCBData menu_data = my_data->menu_data;
-  ZMapFeatureSet feature_set = menu_data->feature_set;
-  ZMapFeatureTypeStyle style = NULL;
+  ZMapFeatureSet feature_set = my_data->feature_set;
+  ZMapFeatureTypeStyle style = my_data->style;
   GQuark id;
 
   /* If the current style is different to the original then we have created a child style. Just
-     remove the child and replace it with the parent */
-  if(feature_set->style->unique_id != my_data->orig_style_copy.unique_id)   
+   * remove the child and replace it with the parent */
+  if(style->unique_id != my_data->orig_style_copy.unique_id)   
     {
-      GHashTable *styles = my_data->menu_data->window->context_map->styles;
-      style = feature_set->style;
+      GHashTable *styles = my_data->window->context_map->styles;
       id = style->parent_id;
 
       /* free the created style: cannot be ref'd anywhere else */
-      g_hash_table_remove(styles,GUINT_TO_POINTER(feature_set->style->unique_id));
+      g_hash_table_remove(styles,GUINT_TO_POINTER(style->unique_id));
       zMapStyleDestroy(style);
 
       /* find the parent */
@@ -642,16 +682,15 @@ static gboolean revertChanges(gpointer cb_data)
   else                                /* restore the existing style */
     {
       /* Overwrite the current style from the copy of the original style */
-      style = feature_set->style;
       memcpy((void *) style, (void *) &my_data->orig_style_copy, sizeof (ZMapFeatureTypeStyleStruct));
     }
 
   /* update the column */
-  if (style)
-    zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, menu_data->context_map, menu_data->window);
+  if (style && feature_set)
+    zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, my_data->window->context_map, my_data->window);
 
   /* update this dialog */
-  zmapWindowStyleDialogSetFeature(menu_data->window, menu_data->item, menu_data->feature);
+  zmapWindowStyleDialogSetFeature(my_data->window, my_data->style, my_data->item, my_data->feature);
 
   return ok;
 }
@@ -663,20 +702,21 @@ static gboolean applyChanges(gpointer cb_data)
 {
   gboolean ok = TRUE ;
   StyleChange my_data = (StyleChange) cb_data;
-  ZMapFeatureSet feature_set = my_data->menu_data->feature_set;
-  GHashTable *styles = my_data->menu_data->window->context_map->styles;
+  ZMapFeatureSet feature_set = my_data->feature_set;
+  GHashTable *styles = my_data->window->context_map->styles;
 
   /* See if the new style already exists */
   GQuark new_style_id = zMapStyleCreateID(gtk_entry_get_text(GTK_ENTRY(my_data->new_style_name_widget))) ;
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)g_hash_table_lookup(my_data->menu_data->context_map->styles, GUINT_TO_POINTER(new_style_id));
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)g_hash_table_lookup(my_data->window->context_map->styles, GUINT_TO_POINTER(new_style_id));
 
   /* It's possible the styles table has our style id but that it points to a different style,
    * e.g. a default style. We only want to update it if it's the exact style we're looking for. */
   if (style && style->unique_id != new_style_id)
     style = NULL ;
 
-  /* If the style id is the same as the featureset id then we can assume that this featureset "owns" the style */
-  const gboolean own_style = (new_style_id == feature_set->unique_id);
+  /* If editing the style directly, or if the style id is the same as the featureset id, then we
+   * can assume that we "own" the style */
+  const gboolean own_style = (!feature_set || new_style_id == feature_set->unique_id);
 
   /* Check whether we're editing the original style for this featureset or assigning a different one */
   //const gboolean using_original_style = (new_style_id == my_data->orig_style_copy.unique_id);
@@ -688,7 +728,7 @@ static gboolean applyChanges(gpointer cb_data)
   if (!style)
     {
       /* make new style with the specified name and merge in the parent */
-      ZMapFeatureTypeStyle parent = feature_set->style;
+      ZMapFeatureTypeStyle parent = my_data->style;
       ZMapFeatureTypeStyle tmp_style;
 
       const char *name = g_quark_to_string(new_style_id) ;
@@ -743,7 +783,8 @@ static gboolean applyChanges(gpointer cb_data)
        * but this will work for all cases and means no need to write more code
        * we do this _once_ at user/ mouse click speed
        */
-      zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, my_data->menu_data->context_map, my_data->menu_data->window);
+      if (feature_set)
+        zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, my_data->window->context_map, my_data->window);
     }
 
   return ok;

@@ -248,10 +248,6 @@ typedef struct ZMapExonStructType
 } ZMapExonStruct, *ZMapExon ;
 
 
-
-
-
-
 /* Assumes x1 <= x2. */
 #define ZMAP_SPAN_LENGTH(SPAN_STRUCT)                 \
   (((SPAN_STRUCT)->x2 - (SPAN_STRUCT)->x1) + 1)

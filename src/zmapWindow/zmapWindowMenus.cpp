@@ -2729,7 +2729,7 @@ static void colourMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
-  zmapWindowShowStyleDialog(menu_data);
+  zMapWindowShowStyleDialog(menu_data->window, NULL, menu_data->feature, menu_data->feature_set, menu_data->item);
   /* don't free the callback data, it's in use */
 
   return ;

@@ -164,9 +164,17 @@ static void edit_button_clicked_cb(GtkWidget *button, gpointer user_data)
 
   if (data->selected_style_name)
     {
+      ZMapWindow window = zMapViewGetWindow(data->zmap->focus_viewwindow) ;
+      GHashTable *styles = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
+      
+      GQuark style_id = zMapStyleCreateID(data->selected_style_name) ;
+      ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style_id)) ;
+
+      zMapWindowShowStyleDialog(window, style, NULL, NULL, NULL);
     }
   else
     {
+      zMapWarning("%s", "Please select a style") ;
     }
 }
 

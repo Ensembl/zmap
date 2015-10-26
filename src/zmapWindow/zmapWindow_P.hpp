@@ -1633,9 +1633,8 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 /* UM....WHY ON EARTH IS THIS IN HERE....????? */
 ZMapXMLUtilsEventStack zMapFeatureAnyAsXMLEvents(ZMapFeature feature) ;
 
-void zmapWindowShowStyleDialog( ItemMenuCBData menu_data );
 void zmapWindowFeaturesetSetStyle(GQuark style_id, ZMapFeatureSet feature_set, ZMapFeatureContextMap context_map, ZMapWindow window);
-gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature);
+gboolean zmapWindowStyleDialogSetFeature(ZMapWindow window, ZMapFeatureTypeStyle style_in, FooCanvasItem *foo, ZMapFeature feature);
 void zmapWindowStyleDialogDestroy(ZMapWindow window);
 
 /* ================= in zmapWindowZoomControl.c ========================= */
