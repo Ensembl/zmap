@@ -1408,6 +1408,18 @@ ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
   return window ;
 }
 
+ZMapFeatureContext zMapViewGetContext(ZMapViewWindow view_window)
+{
+  ZMapFeatureContext context = NULL ;
+
+  zMapReturnValIfFail((view_window), context) ;
+
+  if (view_window->parent_view->state != ZMAPVIEW_DYING)
+    context = view_window->parent_view->features ;
+
+  return context ;
+}
+
 ZMapWindowNavigator zMapViewGetNavigator(ZMapView view)
 {
   ZMapWindowNavigator navigator = NULL ;
