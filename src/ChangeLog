@@ -1,3 +1,18 @@
+2015-10-27  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix really bad log message for style not loaded. - BUG FIX
+ src/zmapConfig/zmapConfigLoader.cpp |   24 ++++++++++++++++--------
+ 1 files changed, 16 insertions(+), 8 deletions(-)
+
+2015-10-27  Ed Griffiths  <edgrif@sanger.ac.uk>
+ add returniffail call.  - TRIVIAL
+ src/zmapFeature/zmapStyleObj.cpp |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+2015-10-19  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.2.1-77-g5818f65 - Update RT and git commit reports
+ src/ChangeLog |   51 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 51 insertions(+), 0 deletions(-)
+
 2015-10-19  Gemma Guest  <gb10@sanger.ac.uk>
  Remove glib function not available on tviewsrv - BUILD
  src/zmapView/zmapViewCallBlixem.cpp |    7 ++++++-
