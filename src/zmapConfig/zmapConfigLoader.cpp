@@ -102,7 +102,8 @@ static gint match_type(gconstpointer list_data, gconstpointer user_data);
 static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data) ;
 static void fetchStanzas(FetchReferencedStanzas full_data, GKeyFile *key_file, char *stanza_name) ;
 static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, const char *stanza_type) ;
-static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context, const char *parent_name, const char *parent_key) ;
+static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context,
+                                             const char *parent_name, const char *parent_key) ;
 static void set_is_default(gpointer key, gpointer value, gpointer data) ;
 static GList *get_names_as_list(char *styles) ;
 static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
@@ -112,6 +113,12 @@ static GList *contextGetStyleList(ZMapConfigIniContext context, char *styles_lis
 static GHashTable *configIniGetGlyph(ZMapConfigIniContext context, GKeyFile *extra_styles_keyfile) ;
 static void stylesFreeList(GList *config_styles_list) ;
 
+
+//
+//                  Globals
+//
+
+static bool debug_loading_G = false ;                       // Use to turn debugging logging/messages on/off.
 
 
 
@@ -540,19 +547,20 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
           if (!(new_style = zMapStyleCreateV(num_params, params)))
             {
               zMapLogWarning("Styles file \"%s\": could not create new style %s.",
-             styles_file, curr_config_style->name) ;
+                             styles_file, curr_config_style->name) ;
             }
           else
             {
-              /* Try to add the new style, can fail if a style with that name already
-               * exists. */
+              /* Try to add the new style, fails if a style with that name already exists, this is
+                 completely to be expected so we don't usually log it. */
               if (!zMapStyleSetAdd(styles, new_style))
                 {
-                  /* Free style, report error and move on. */
-                  zMapStyleDestroy(new_style) ;
+                  /* Style already loaded so free this copy. */
+                  if (debug_loading_G)
+                    zMapLogWarning("Styles file \"%s\": could not add style %s as it is already in the styles set.",
+                                   styles_file, zMapStyleGetName(new_style)) ;
 
-                  zMapLogWarning("Styles file \"%s\": could not add style %s to styles set.",
-                 styles_file, curr_config_style->name) ;
+                  zMapStyleDestroy(new_style) ;
                 }
             }
         } while((settings_list = g_list_next(settings_list)));
