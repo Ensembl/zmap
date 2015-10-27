@@ -59,7 +59,7 @@ typedef struct EditStylesDialogStruct_
   GtkWidget *dialog ;
   ZMap zmap ;
   GtkTreeModel *tree_model ;
-  char *selected_style_name ;
+  GtkTreePath *selected_tree_path ;
 } EditStylesDialogStruct, *EditStylesDialog ;
 
 
@@ -150,38 +150,88 @@ static void addContentTree(EditStylesDialog data, GtkBox *box)
 }
 
 
+/* Get the style id of the style in the given row of the given tree model. Returns 0 if not found */
+static GQuark getSelectedStyleID(GtkTreeModel *tree_model, GtkTreePath *tree_path)
+{
+  GQuark style_id = 0 ;
+  zMapReturnValIfFail(tree_model && tree_path, style_id) ;
+
+  GtkTreeIter iter ;
+  gtk_tree_model_get_iter(tree_model, &iter, tree_path) ;
+
+  char *style_name = NULL ;
+  gtk_tree_model_get(tree_model, &iter, STYLE_COLUMN, &style_name, -1) ;
+
+  if (style_name)
+    {
+      style_id = zMapStyleCreateID(style_name) ;
+      g_free(style_name) ;
+    }
+
+  return style_id ;
+}
+
+
+/* Get the style that is in the currently selected row. Returns NULL if not found */
+static ZMapFeatureTypeStyle getSelectedStyle(EditStylesDialog data)
+{
+  ZMapFeatureTypeStyle style = NULL ;
+
+  if (data && data->selected_tree_path)
+    {
+      GHashTable *styles = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
+      GQuark style_id = getSelectedStyleID(data->tree_model, data->selected_tree_path) ;
+      
+      style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style_id)) ;
+    }  
+
+  return style ;
+}
+
+
+/* Callback called when the user clicks the edit button. Opens the Edit Style dialog on the
+ * currently selected style */
 static void edit_button_clicked_cb(GtkWidget *button, gpointer user_data)
 {
   EditStylesDialog data = (EditStylesDialog)user_data ;
   zMapReturnIfFail(data && data->tree_model) ;
 
-  if (data->selected_style_name)
+  ZMapFeatureTypeStyle style = getSelectedStyle(data) ;
+
+  if (style)
     {
       ZMapWindow window = zMapViewGetWindow(data->zmap->focus_viewwindow) ;
-      GHashTable *styles = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
-      
-      GQuark style_id = zMapStyleCreateID(data->selected_style_name) ;
-      ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style_id)) ;
 
       zMapWindowShowStyleDialog(window, style, NULL, NULL, NULL);
     }
   else
     {
-      zMapWarning("%s", "Please select a style") ;
+      zMapWarning("%s", "Please select a style to edit") ;
     }
 }
 
 
+/* Callback called when the user clicks the edit button. Deletes the currently selected style
+ * (asking for confirmation first) */
 static void delete_button_clicked_cb(GtkWidget *button, gpointer user_data)
 {
   EditStylesDialog data = (EditStylesDialog)user_data ;
   zMapReturnIfFail(data && data->tree_model) ;
 
-  if (data->selected_style_name)
+  ZMapFeatureTypeStyle style = getSelectedStyle(data) ;
+
+  if (style)
     {
+      char *msg = g_strdup_printf("Are you sure you want to delete style '%s'?", g_quark_to_string(style->original_id)) ;
+
+      if (zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, msg))
+        {
+          //deleteStyle(style) ;
+        }
     }
   else
     {
+      zMapWarning("%s", "Please select a style to delete") ;
     }
 }
 
@@ -191,7 +241,9 @@ static void add_button_clicked_cb(GtkWidget *button, gpointer user_data)
   EditStylesDialog data = (EditStylesDialog)user_data ;
   zMapReturnIfFail(data && data->tree_model) ;
 
-  if (data->selected_style_name)
+  ZMapFeatureTypeStyle parent_style = getSelectedStyle(data) ;
+  
+  if (parent_style)
     {
     }
   else
@@ -227,24 +279,15 @@ static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer use
   GtkTreeIter iter;
   GtkTreeModel *model;
 
+  if (data->selected_tree_path)
+    {
+      gtk_tree_path_free(data->selected_tree_path) ;
+      data->selected_tree_path = NULL ;
+    }
+
   if (gtk_tree_selection_get_selected (selection, &model, &iter))
     {
-      char *style_name = NULL ;
-      gtk_tree_model_get(data->tree_model, &iter, STYLE_COLUMN, &style_name, -1);
-
-      if (style_name)
-        {
-          if (data->selected_style_name)
-            g_free(data->selected_style_name) ;
-              
-          data->selected_style_name = style_name ;
-        }
-    }
-  else if (data->selected_style_name)
-    {
-      g_free(data->selected_style_name) ;
-      data->selected_style_name = NULL ;
-
+      data->selected_tree_path = gtk_tree_model_get_path(data->tree_model, &iter);
     }
 }
 
