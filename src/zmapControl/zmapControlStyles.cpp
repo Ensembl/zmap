@@ -63,13 +63,6 @@ typedef struct EditStylesDialogStruct_
 } EditStylesDialogStruct, *EditStylesDialog ;
 
 
-/* Utility struct used for callback when finding featuresets for a given style */
-typedef struct GetStyleFeaturesetsStruct_
-{
-  GList *featuresets ;
-  ZMapFeatureTypeStyle style ;
-} GetStyleFeaturesetsStruct, *GetStyleFeaturesets ;
-
 
 typedef enum {STYLE_COLUMN, PARENT_COLUMN, FEATURESETS_COLUMN, N_COLUMNS} TreeColumn ;
 
@@ -343,45 +336,6 @@ static ZMapStyleTree* getStylesHierarchy(ZMap zmap)
 }
 
 
-static ZMapFeatureContextExecuteStatus get_style_featuresets_cb(GQuark key, gpointer data,
-                                                                gpointer user_data, char **err_out)
-{
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
-  ZMapFeatureAny feature_any = (ZMapFeatureAny) data ;
-  GetStyleFeaturesets get_data = (GetStyleFeaturesets)user_data ;
-
-  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
-    {
-      ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any ;
-
-      if (feature_set->style == get_data->style)
-        get_data->featuresets = g_list_append(get_data->featuresets, GINT_TO_POINTER(feature_set->original_id)) ;
-    }
-
-  return status ;
-}
-
-
-/* Get the list of featuresets that use the given style as a semi-colon separated list. Result
- * should be free'd by the caller with g_free. */
-static char* styleGetFeaturesets(EditStylesDialog data, ZMapFeatureTypeStyle style)
-{
-  char *result = NULL ;
-
-  ZMapFeatureContext context = zMapViewGetContext(data->zmap->focus_viewwindow) ;
-
-  GetStyleFeaturesetsStruct get_data = {NULL, style} ;
-
-  zMapFeatureContextExecute(ZMapFeatureAny(context), ZMAPFEATURE_STRUCT_FEATURESET,
-                            get_style_featuresets_cb, &get_data) ;
-
-  if (get_data.featuresets)
-    result = zMap_g_list_quark_to_string(get_data.featuresets, ";") ;
-
-  return result ;
-}
-
-
 static void treeNodeCreateWidgets(EditStylesDialog data, ZMapStyleTree *node, GtkTreeStore *store, GtkTreeIter *parent_iter)
 {
   /* Add a row for this node into the parent iterator (or root of the store if parent_iter is
@@ -392,12 +346,19 @@ static void treeNodeCreateWidgets(EditStylesDialog data, ZMapStyleTree *node, Gt
     {
       char *style_name = g_strdup(g_quark_to_string(style->original_id)) ;
       char *parent_name = style->parent_id ? g_strdup(g_quark_to_string(style->parent_id)) : NULL ;
-      char *featuresets = styleGetFeaturesets(data, style) ;
+
+      ZMapFeatureContext context = zMapViewGetContext(data->zmap->focus_viewwindow) ;
+
+      GList *featuresets_list = zMapStyleGetFeaturesetsIDs(style, (ZMapFeatureAny)context) ;
+      char *featuresets = zMap_g_list_quark_to_string(featuresets_list, ";") ;
 
       /* Add a row to the tree store for this node */
       GtkTreeIter iter ;
       gtk_tree_store_append(store, &iter, parent_iter);
       gtk_tree_store_set(store, &iter, 0, style_name, 1, parent_name, 2, featuresets, -1);
+
+      g_free(featuresets) ;
+      g_list_free(featuresets_list) ;
 
       /* Process the child nodes */
       std::vector<ZMapStyleTree*> children = node->get_children() ;

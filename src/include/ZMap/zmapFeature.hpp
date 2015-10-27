@@ -1218,6 +1218,9 @@ GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int
 GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark original_id) ;
 GList *zMapFeatureSetGetNamedFeaturesForStrand(ZMapFeatureSet feature_set, GQuark original_id, ZMapStrand strand) ;
 
+GList* zMapStyleGetFeaturesetsIDs(ZMapFeatureTypeStyle style, ZMapFeatureAny feature_any) ;
+GList* zMapStyleGetFeaturesets(ZMapFeatureTypeStyle style, ZMapFeatureAny feature_any) ;
+
 ZMapFeatureSet zMapFeatureSetCopy(ZMapFeatureSet feature_set);
 
 gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block, GQuark unique_id,int start, int end);

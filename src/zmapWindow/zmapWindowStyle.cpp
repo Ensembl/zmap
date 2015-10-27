@@ -655,6 +655,26 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+/* Update any featuresets affected by changes to the given style */
+static void updateFeaturesets(StyleChange my_data, ZMapFeatureTypeStyle style)
+{
+  /* redraw affected featuresets */
+  if (style && my_data && my_data->window && my_data->window->feature_context)
+    {
+      GList *featuresets_list = zMapStyleGetFeaturesets(style, (ZMapFeatureAny)my_data->window->feature_context) ;
+  
+      for (GList *featureset_item = featuresets_list ; featureset_item ; featureset_item = featureset_item->next)
+        {
+          ZMapFeatureSet feature_set = (ZMapFeatureSet)(featureset_item->data) ;
+          zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, my_data->window->context_map, my_data->window);
+        }
+    }
+
+  zmapWindowColOrderColumns(my_data->window) ;        /* put this column (deleted then created) back into the right place */
+  zmapWindowFullReposition(my_data->window->feature_root_group,TRUE, "window style") ;                /* adjust sizing and shuffle left / right */
+}
+
+
 /* Called when the user hits Revert on the Edit Style dialog. This throws away any changes since
  * they first opened the dialog, i.e. it reverts to the original style that was in the featureset. */
 static gboolean revertChanges(gpointer cb_data)
@@ -685,9 +705,7 @@ static gboolean revertChanges(gpointer cb_data)
       memcpy((void *) style, (void *) &my_data->orig_style_copy, sizeof (ZMapFeatureTypeStyleStruct));
     }
 
-  /* update the column */
-  if (style && feature_set)
-    zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, my_data->window->context_map, my_data->window);
+  updateFeaturesets(my_data, style) ;
 
   /* update this dialog */
   zmapWindowStyleDialogSetFeature(my_data->window, my_data->style, my_data->item, my_data->feature);
@@ -783,8 +801,7 @@ static gboolean applyChanges(gpointer cb_data)
        * but this will work for all cases and means no need to write more code
        * we do this _once_ at user/ mouse click speed
        */
-      if (feature_set)
-        zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, my_data->window->context_map, my_data->window);
+      updateFeaturesets(my_data, style) ;
     }
 
   return ok;
