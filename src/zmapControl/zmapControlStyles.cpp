@@ -202,7 +202,7 @@ static void edit_button_clicked_cb(GtkWidget *button, gpointer user_data)
     {
       ZMapWindow window = zMapViewGetWindow(data->zmap->focus_viewwindow) ;
 
-      zMapWindowShowStyleDialog(window, style, NULL, NULL, NULL);
+      zMapWindowShowStyleDialog(window, style, 0);
     }
   else
     {
@@ -241,14 +241,15 @@ static void add_button_clicked_cb(GtkWidget *button, gpointer user_data)
   EditStylesDialog data = (EditStylesDialog)user_data ;
   zMapReturnIfFail(data && data->tree_model) ;
 
+  ZMapWindow window = zMapViewGetWindow(data->zmap->focus_viewwindow) ;
   ZMapFeatureTypeStyle parent_style = getSelectedStyle(data) ;
-  
-  if (parent_style)
-    {
-    }
-  else
-    {
-    }
+
+  static int count = 1 ;
+  char *new_style_name = g_strdup_printf("new-style-%d", count) ;
+
+  zMapWindowShowStyleDialog(window, parent_style, g_quark_from_string(new_style_name)) ;
+
+  g_free(new_style_name) ;
 }
 
 
