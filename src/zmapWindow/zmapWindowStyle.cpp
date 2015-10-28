@@ -691,7 +691,8 @@ static gboolean applyChanges(gpointer cb_data)
   GHashTable *styles = my_data->window->context_map->styles;
 
   /* See if the new style already exists */
-  GQuark new_style_id = zMapStyleCreateID(gtk_entry_get_text(GTK_ENTRY(my_data->new_style_name_widget))) ;
+  const char *new_style_name = gtk_entry_get_text(GTK_ENTRY(my_data->new_style_name_widget)) ;
+  GQuark new_style_id = zMapStyleCreateID(new_style_name) ;
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)g_hash_table_lookup(my_data->window->context_map->styles, GUINT_TO_POINTER(new_style_id));
 
   /* It's possible the styles table has our style id but that it points to a different style,
@@ -716,8 +717,7 @@ static gboolean applyChanges(gpointer cb_data)
       ZMapFeatureTypeStyle parent = my_data->style;
       ZMapFeatureTypeStyle tmp_style;
 
-      const char *name = g_quark_to_string(new_style_id) ;
-      style = zMapStyleCreate(name, name);
+      style = zMapStyleCreate(new_style_name, new_style_name);
 
       /* merge is written upside down
        * we have to copy the parent and merge the child onto it
@@ -736,7 +736,7 @@ static gboolean applyChanges(gpointer cb_data)
         }
       else
         {
-          zMapWarning("Cannot create new style %s",name);
+          zMapWarning("Cannot create new style %s",new_style_name);
           zMapStyleDestroy(tmp_style);
           zMapStyleDestroy(style);
           ok = FALSE;
