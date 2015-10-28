@@ -39,8 +39,9 @@ class ZMapStyleTree
 {
 public:
 
-  ZMapStyleTree() ;
-  ZMapStyleTree(ZMapFeatureTypeStyle style) ;
+  ZMapStyleTree() : m_style(NULL) {} ;
+  ZMapStyleTree(ZMapFeatureTypeStyle style) : m_style(style) {} ;
+  ~ZMapStyleTree() ;
 
   ZMapFeatureTypeStyle get_style() const ;
   std::vector<ZMapStyleTree*> get_children() const ;
@@ -48,13 +49,16 @@ public:
   void sort() ;
   ZMapStyleTree* find(ZMapFeatureTypeStyle style) ;
   void add_style(ZMapFeatureTypeStyle style, GHashTable *styles) ;
+  void remove_style(ZMapFeatureTypeStyle style, GHashTable *styles) ;
 
 private:
 
   ZMapFeatureTypeStyle m_style ;
   std::vector<ZMapStyleTree*> m_children ;
 
+  gboolean is_style(ZMapFeatureTypeStyle style) ;
   void add_child_style(ZMapFeatureTypeStyle style) ;
+  ZMapStyleTree* find_parent(ZMapFeatureTypeStyle style) ;
 
 };
 

@@ -43,15 +43,23 @@
 #include <ZMap/zmapUtilsMesg.hpp>
 
 
-ZMapStyleTree::ZMapStyleTree()
+ZMapStyleTree::~ZMapStyleTree()
 {
-  m_style = NULL ;
+  for (std::vector<ZMapStyleTree*>::iterator iter = m_children.begin(); iter != m_children.end(); ++iter)
+    {
+      delete *iter ;
+    }
 }
 
 
-ZMapStyleTree::ZMapStyleTree(ZMapFeatureTypeStyle style)
+gboolean ZMapStyleTree::is_style(ZMapFeatureTypeStyle style)
 {
-  m_style = style ;
+  gboolean result = FALSE ;
+
+  if (m_style == style)
+    result = TRUE ;
+
+  return result ;
 }
 
 
@@ -60,7 +68,7 @@ ZMapStyleTree* ZMapStyleTree::find(ZMapFeatureTypeStyle style)
 {
   ZMapStyleTree *result = NULL ;
 
-  if (m_style == style)
+  if (is_style(style))
     {
       result = this ;
     }
@@ -68,13 +76,40 @@ ZMapStyleTree* ZMapStyleTree::find(ZMapFeatureTypeStyle style)
     {
       for (std::vector<ZMapStyleTree*>::iterator iter = m_children.begin(); !result && iter != m_children.end(); ++iter)
         {
-          ZMapStyleTree *node = *iter ;
-          result = node->find(style) ;
+          ZMapStyleTree *child = *iter ;
+          result = child->find(style) ;
         }
     }
 
   return result ;
 }
+
+
+/* Find the parent node of the given style. Return the tree node or null if not found. */
+ZMapStyleTree* ZMapStyleTree::find_parent(ZMapFeatureTypeStyle style)
+{
+  ZMapStyleTree *result = NULL ;
+
+  /* Check if any of our child nodes are the given style */
+  for (std::vector<ZMapStyleTree*>::iterator iter = m_children.begin(); !result && iter != m_children.end(); ++iter)
+    {
+      ZMapStyleTree *child = *iter ;
+      
+      if (child->is_style(style))
+        result = this ;
+    }
+
+  /* if not found, recurse */
+  for (std::vector<ZMapStyleTree*>::iterator iter = m_children.begin(); !result && iter != m_children.end(); ++iter)
+    {
+      ZMapStyleTree *child = *iter ;
+      result = child->find_parent(style) ;
+    }
+  
+
+  return result ;
+}
+
 
 
 /* Add a new child tree node with this style to our list of children */
@@ -103,16 +138,16 @@ std::vector<ZMapStyleTree*> ZMapStyleTree::get_children() const
  * style is already in the tree. */
 void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles)
 {
-  if (!this->find(style))
+  if (!find(style))
     {
       ZMapFeatureTypeStyle parent = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style->parent_id)) ;
 
       if (parent)
         {
           /* If the parent doesn't exist, recursively create it */
-          this->add_style(parent, styles) ;
+          add_style(parent, styles) ;
 
-          ZMapStyleTree *parent_node = this->find(parent) ;
+          ZMapStyleTree *parent_node = find(parent) ;
 
           /* Add the child to the parent node */
           if (parent_node)
@@ -123,9 +158,25 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles)
       else
         {
           /* This style has no parent, so add it to the root style in the tree */
-          this->add_child_style(style) ;
+          add_child_style(style) ;
         }
       
+    }
+}
+
+
+/* Remove the given style from the style hierarchy tree */
+void ZMapStyleTree::remove_style(ZMapFeatureTypeStyle style, GHashTable *styles)
+{
+  ZMapStyleTree *parent = find_parent(style) ;
+  ZMapStyleTree *node = find(style) ;
+
+  if (parent && node)
+    {
+      std::vector<ZMapStyleTree*>::iterator iter = std::find(m_children.begin(), m_children.end(), node) ;
+
+      if (iter != m_children.end())
+        m_children.erase(iter) ;
     }
 }
 

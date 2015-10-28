@@ -49,7 +49,7 @@
 
 typedef struct GetStylesDataStruct_
 {
-  ZMapStyleTree *result ;
+  ZMapStyleTree &styles_tree ;
   GHashTable *styles ;
 } GetStylesDataStruct, *GetStylesData ;
 
@@ -58,6 +58,7 @@ typedef struct EditStylesDialogStruct_
 {
   GtkWidget *dialog ;
   ZMap zmap ;
+  ZMapStyleTree styles_tree ;
   GtkTreeModel *tree_model ;
   GtkTreePath *selected_tree_path ;
 } EditStylesDialogStruct, *EditStylesDialog ;
@@ -74,7 +75,7 @@ static void addContentTree(EditStylesDialog data, GtkBox *box) ;
 static void addContentButtons(EditStylesDialog data, GtkBox *box) ;
 static void treeNodeCreateWidgets(EditStylesDialog data, ZMapStyleTree *node, GtkTreeStore *store, GtkTreeIter *parent) ;
 void editStylesDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data) ;
-static ZMapStyleTree* getStylesHierarchy(ZMap zmap) ;
+static void getStylesHierarchy(ZMap zmap, ZMapStyleTree &styles_tree) ;
 static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data) ;
 
 
@@ -121,10 +122,10 @@ static void treeViewAddColumn(GtkWidget *tree, GtkCellRenderer *renderer,
 
 static void addContentTree(EditStylesDialog data, GtkBox *box)
 {
-  ZMapStyleTree *styles_hierarchy = getStylesHierarchy(data->zmap) ;
+  getStylesHierarchy(data->zmap, data->styles_tree) ;
 
   GtkTreeStore *store = gtk_tree_store_new(N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING) ;
-  treeNodeCreateWidgets(data, styles_hierarchy, store, NULL) ;
+  treeNodeCreateWidgets(data, &data->styles_tree, store, NULL) ;
 
   data->tree_model = GTK_TREE_MODEL(store) ;
 
@@ -226,7 +227,12 @@ static void delete_button_clicked_cb(GtkWidget *button, gpointer user_data)
 
       if (zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, msg))
         {
-          //deleteStyle(style) ;
+          GHashTable *styles = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
+          
+          data->styles_tree.remove_style(style, styles) ;
+          g_hash_table_remove(styles,GUINT_TO_POINTER(style->unique_id));
+
+          zMapStyleDestroy(style);
         }
     }
   else
@@ -348,35 +354,28 @@ static void cancelCB(void *user_data)
 /* For a given style, add it to the appropriate node in the style hierarchy tree */
 static void populateStyleHierarchy(gpointer key, gpointer value, gpointer user_data)
 {
-  //GQuark style_id = (GQuark)(GPOINTER_TO_INT(key)) ;
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)value ;
   GetStylesData data = (GetStylesData)user_data ;
 
-  ZMapStyleTree *tree = data->result ;
-
-  tree->add_style(style, data->styles) ;
+  data->styles_tree.add_style(style, data->styles) ;
 }
 
 
 /* Get the styles as a tree representing the parent-child hierarchy */
-static ZMapStyleTree* getStylesHierarchy(ZMap zmap)
+static void getStylesHierarchy(ZMap zmap, ZMapStyleTree &styles_tree)
 {
-  ZMapStyleTree *result = new ZMapStyleTree ;
-  zMapReturnValIfFail(zmap, result) ;
-
   GHashTable *styles = zMapViewGetStyles(zmap->focus_viewwindow) ;
+  zMapReturnIfFail(zmap) ;
 
   if (styles)
     {
-      GetStylesDataStruct data = {result, styles} ;
+      GetStylesDataStruct data = {styles_tree, styles} ;
 
       g_hash_table_foreach(styles, populateStyleHierarchy, &data) ;
     }
 
   /* Sort styles alphabetically so they're easier to read  */
-  result->sort() ;
-
-  return result ;
+  styles_tree.sort() ;
 }
 
 
