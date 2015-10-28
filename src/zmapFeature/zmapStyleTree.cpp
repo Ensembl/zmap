@@ -166,7 +166,7 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles)
 
 
 /* Remove the given style from the style hierarchy tree */
-void ZMapStyleTree::remove_style(ZMapFeatureTypeStyle style, GHashTable *styles)
+void ZMapStyleTree::remove_style(ZMapFeatureTypeStyle style)
 {
   ZMapStyleTree *parent = find_parent(style) ;
   ZMapStyleTree *node = find(style) ;

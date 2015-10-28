@@ -227,12 +227,26 @@ static void delete_button_clicked_cb(GtkWidget *button, gpointer user_data)
 
       if (zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, msg))
         {
+          data->styles_tree.remove_style(style) ;
+
           GHashTable *styles = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
-          
-          data->styles_tree.remove_style(style, styles) ;
           g_hash_table_remove(styles,GUINT_TO_POINTER(style->unique_id));
 
           zMapStyleDestroy(style);
+
+          /* Remove it from our dialog's tree view */
+          GtkTreeStore *tree_store = GTK_TREE_STORE(data->tree_model) ;
+          GtkTreeIter iter ;
+
+          gtk_tree_model_get_iter(data->tree_model, &iter, data->selected_tree_path) ;
+          gtk_tree_store_remove(tree_store, &iter) ;
+
+          /* Reset the selection to iter, which will point to the next row (if valid) */
+          gtk_tree_path_free(data->selected_tree_path) ;
+          data->selected_tree_path = NULL ;
+              
+          if (gtk_tree_store_iter_is_valid(tree_store, &iter))
+            data->selected_tree_path = gtk_tree_model_get_path(data->tree_model, &iter) ;
         }
     }
   else

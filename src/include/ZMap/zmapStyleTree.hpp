@@ -49,7 +49,7 @@ public:
   void sort() ;
   ZMapStyleTree* find(ZMapFeatureTypeStyle style) ;
   void add_style(ZMapFeatureTypeStyle style, GHashTable *styles) ;
-  void remove_style(ZMapFeatureTypeStyle style, GHashTable *styles) ;
+  void remove_style(ZMapFeatureTypeStyle style) ;
 
 private:
 
