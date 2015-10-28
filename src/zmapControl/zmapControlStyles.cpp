@@ -202,7 +202,7 @@ static void edit_button_clicked_cb(GtkWidget *button, gpointer user_data)
     {
       ZMapWindow window = zMapViewGetWindow(data->zmap->focus_viewwindow) ;
 
-      zMapWindowShowStyleDialog(window, style, 0);
+      zMapWindowShowStyleDialog(window, style, 0, NULL);
     }
   else
     {
@@ -247,7 +247,7 @@ static void add_button_clicked_cb(GtkWidget *button, gpointer user_data)
   static int count = 1 ;
   char *new_style_name = g_strdup_printf("new-style-%d", count) ;
 
-  zMapWindowShowStyleDialog(window, parent_style, g_quark_from_string(new_style_name)) ;
+  zMapWindowShowStyleDialog(window, parent_style, g_quark_from_string(new_style_name), NULL) ;
 
   g_free(new_style_name) ;
 }

@@ -65,8 +65,8 @@ typedef struct
   GList *feature_sets ;                   /* all featuresets that have the style being edited
                                            * (may be null if creating a new style) */
 
-  GQuark new_style_name ;                /* If different to the style's id, create a new child
-                                           * with this name, rather than changing the original style */
+  gboolean create_new_style ;            /* True if we're creating a new style */
+  GQuark new_style_name ;                /* New name if creating a new style */
 
   GQuark new_style_id ;                  /* unique id version of new_style_name */
   ZMapFeatureTypeStyleStruct orig_style_copy;  /* copy of original, used for Revert */
@@ -111,10 +111,15 @@ static gboolean revertChanges(gpointer cb_data) ;
 static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style) ;
 
 
-/* Entry point to display the Edit Style dialog */
+/* Entry point to display the Edit Style dialog. Edits the given style or creates a new one with
+ * the given name (if non-0) as a child of the given style (or a new root style if the given
+ * style is null). If a new style is created and feature_set is non-null then the style will be
+ * applied only to that featureset; otherwise it will be applied to all featuresets that use the
+ * original style. */
 void zMapWindowShowStyleDialog(ZMapWindow window,
                                ZMapFeatureTypeStyle style,
-                               GQuark new_style_name)
+                               GQuark new_style_name,
+                               ZMapFeatureSet feature_set)
 {
   /* Check if the dialog data has already been created - if so, just update the existing data
    * from the given feature/style */
@@ -131,7 +136,6 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
 
   my_data->window = window;
   my_data->style = style ;
-  my_data->feature_sets = zMapStyleGetFeaturesetsIDs(style, (ZMapFeatureAny)window->feature_context) ;
 
   /* If a new style name is given then we use that to create a new child style. Otherwise we edit
    * the original style, so the new name is the same as the existing style name */
@@ -141,6 +145,12 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
     my_data->new_style_name = my_data->style->original_id ;
 
   my_data->new_style_id = zMapStyleCreateID(g_quark_to_string(my_data->new_style_name)) ;
+  
+  /* If creating a new style and a featureset is given then just apply the style to that featureset */
+  if (feature_set && my_data->new_style_id != style->unique_id)
+    my_data->feature_sets = g_list_append(my_data->feature_sets, GINT_TO_POINTER(feature_set->original_id)) ;
+  else
+    my_data->feature_sets = zMapStyleGetFeaturesetsIDs(style, (ZMapFeatureAny)window->feature_context) ;
 
   /* Add ptr so parent knows about us */
   my_data->window->style_window = (gpointer) my_data ;
@@ -432,7 +442,7 @@ static void createToplevel(StyleChange my_data)
 static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int cols, int *row)
 {
   /* The names of the featuresets for this style (not editable) */
-  GtkWidget *label = gtk_label_new("Featureset: ") ;
+  GtkWidget *label = gtk_label_new("Featuresets: ") ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
 
