@@ -49,6 +49,7 @@
 #define STYLES_PAGE "Styles"
 
 
+/* Utility struct used to populate the styles hierarchy tree */
 typedef struct GetStylesDataStruct_
 {
   ZMapStyleTree &styles_tree ;
@@ -213,7 +214,7 @@ static void edit_button_clicked_cb(GtkWidget *button, gpointer user_data)
     {
       ZMapWindow window = zMapViewGetWindow(data->zmap->focus_viewwindow) ;
 
-      zMapWindowShowStyleDialog(window, style, 0, NULL);
+      zMapWindowShowStyleDialog(window, style, 0, NULL, NULL, NULL);
     }
   else
     {
@@ -266,6 +267,50 @@ static void delete_button_clicked_cb(GtkWidget *button, gpointer user_data)
 }
 
 
+
+/* This is called after a new style has been added to update the tree with the new style */
+static void updateNewStyle(gpointer cb_data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)cb_data ;
+  EditStylesDialog data = (EditStylesDialog)user_data ;
+  zMapReturnIfFail(style && data && data->zmap && data->zmap->focus_viewwindow) ;
+
+  GHashTable *styles = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
+
+  GtkTreeStore *tree_store = GTK_TREE_STORE(data->tree_model) ;
+  ZMapFeatureContext context = zMapViewGetContext(data->zmap->focus_viewwindow) ;
+
+  /* Add the style to the hierarchy */
+  data->styles_tree.add_style(style, styles) ;
+
+  /* Add a new row to the tree store under the currently-selected row (or to the root if
+   * no row is selected) */
+  GtkTreeIter parent_iter ;
+  GtkTreeIter iter ;
+  gtk_tree_model_get_iter(data->tree_model, &parent_iter, data->selected_tree_path) ;
+  gtk_tree_store_append(tree_store, &iter, &parent_iter) ;
+
+  const char *parent_name = "" ;
+  if (style->parent_id)
+    {
+      ZMapFeatureTypeStyle parent_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style->parent_id)) ;
+      parent_name = g_quark_to_string(parent_style->original_id) ;
+    }
+
+  GList *featuresets_list = zMapStyleGetFeaturesetsIDs(style, (ZMapFeatureAny)context) ;
+  char *featuresets = zMap_g_list_quark_to_string(featuresets_list, ";") ;
+
+  g_free(featuresets) ;
+  g_list_free(featuresets_list) ;
+
+  gtk_tree_store_set(tree_store, &iter, 
+                     0, g_quark_to_string(style->original_id), 
+                     1, parent_name, 
+                     2, featuresets, 
+                     -1);
+}
+
+
 static void add_button_clicked_cb(GtkWidget *button, gpointer user_data)
 {
   EditStylesDialog data = (EditStylesDialog)user_data ;
@@ -277,7 +322,7 @@ static void add_button_clicked_cb(GtkWidget *button, gpointer user_data)
   static int count = 1 ;
   char *new_style_name = g_strdup_printf("new-style-%d", count) ;
 
-  zMapWindowShowStyleDialog(window, parent_style, g_quark_from_string(new_style_name), NULL) ;
+  zMapWindowShowStyleDialog(window, parent_style, g_quark_from_string(new_style_name), NULL, updateNewStyle, data) ;
 
   g_free(new_style_name) ;
 }

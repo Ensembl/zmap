@@ -730,7 +730,7 @@ void zMapWindowColumnHide(ZMapWindow window, GQuark column_id) ;
 void zMapWindowColumnShow(ZMapWindow window, GQuark column_id) ;
 double zMapWindowGetDisplayOrigin(ZMapWindow window) ;
 void zMapWindowSetDisplayOrigin(ZMapWindow window, double origin) ;
-void zMapWindowShowStyleDialog(ZMapWindow window, ZMapFeatureTypeStyle style, GQuark new_style_name, ZMapFeatureSet feature_set) ;
+void zMapWindowShowStyleDialog(ZMapWindow window, ZMapFeatureTypeStyle style, GQuark new_style_name, ZMapFeatureSet feature_set, GFunc cb_func, gpointer cb_data) ;
 
 /*
  * Set whether we are to display slice or chromosome coordinates.

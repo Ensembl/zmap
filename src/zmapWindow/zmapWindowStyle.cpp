@@ -73,6 +73,8 @@ typedef struct
 
   GQuark last_edited_style_id;            /* if we've already changed a style remember its id here */
 
+  GFunc cb_func ;                         /* if non-null, called when changes are applied */
+  gpointer cb_data ;
 
 
   /*Widgets on the dialog */
@@ -119,7 +121,9 @@ static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style) ;
 void zMapWindowShowStyleDialog(ZMapWindow window,
                                ZMapFeatureTypeStyle style,
                                GQuark new_style_name,
-                               ZMapFeatureSet feature_set)
+                               ZMapFeatureSet feature_set,
+                               GFunc cb_func,
+                               gpointer cb_data)
 {
   /* Check if the dialog data has already been created - if so, just update the existing data
    * from the given feature/style */
@@ -136,6 +140,8 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
 
   my_data->window = window;
   my_data->style = style ;
+  my_data->cb_func = cb_func ;
+  my_data->cb_data = cb_data ;
 
   /* If a new style name is given then we use that to create a new child style. Otherwise we edit
    * the original style, so the new name is the same as the existing style name */
@@ -774,6 +780,9 @@ static gboolean applyChanges(gpointer cb_data)
        * we do this _once_ at user/ mouse click speed
        */
       updateFeaturesets(my_data, style) ;
+
+      if (my_data->cb_func)
+        my_data->cb_func(style, my_data->cb_data) ;
     }
 
   return ok;
