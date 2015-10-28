@@ -40,6 +40,8 @@
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 
+#include <gbtools/gbtools.hpp>
+
 #include <vector>
 
 
@@ -97,6 +99,14 @@ void zmapControlShowStyles(ZMap zmap)
   GtkBox *vbox = GTK_BOX(GTK_DIALOG(data->dialog)->vbox) ;
   addContentTree(data, vbox) ;
   addContentButtons(data, vbox) ;
+
+  int width ;
+  int height ;
+  gbtools::GUIGetTrueMonitorSizeFraction(data->dialog, 0.5, 0.8, &width, &height) ;
+  width = std::min(width, 700) ;
+  height = std::min(height, 800) ;
+
+  gtk_window_set_default_size(GTK_WINDOW(data->dialog), width, height) ;
 
   gtk_widget_show_all(data->dialog) ;
       

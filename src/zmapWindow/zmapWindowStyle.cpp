@@ -434,8 +434,7 @@ static void createToplevel(StyleChange my_data)
   gtk_container_set_focus_chain (GTK_CONTAINER(my_data->toplevel), NULL);
   gtk_container_border_width(GTK_CONTAINER(my_data->toplevel), 5) ;
   gtk_dialog_set_default_response(GTK_DIALOG(my_data->toplevel), GTK_RESPONSE_APPLY) ;
-
-  gtk_window_set_default_size(GTK_WINDOW(my_data->toplevel), 500, 800) ;
+  gtk_window_set_default_size(GTK_WINDOW(my_data->toplevel), 500, -1) ;
 }
 
 
