@@ -100,7 +100,7 @@ typedef struct
 
 
 static void createToplevel(StyleChange my_data) ;
-static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int cols, int *row) ;
+static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int cols, const int rows, int *row) ;
 static void createColourWidgets(StyleChange my_data, GtkTable *table, int *row) ;
 static void createCDSColourWidgets(StyleChange my_data, GtkTable *table, int *row) ;
 static void createOtherWidgets(StyleChange my_data, GtkTable *table, int *row) ;
@@ -156,7 +156,7 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
   if (feature_set && my_data->new_style_id != style->unique_id)
     my_data->feature_sets = g_list_append(my_data->feature_sets, GINT_TO_POINTER(feature_set->original_id)) ;
   else
-    my_data->feature_sets = zMapStyleGetFeaturesetsIDs(style, (ZMapFeatureAny)window->feature_context) ;
+    my_data->feature_sets = zMapStyleGetFeaturesets(style, (ZMapFeatureAny)window->feature_context) ;
 
   /* Add ptr so parent knows about us */
   my_data->window->style_window = (gpointer) my_data ;
@@ -175,7 +175,7 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
 
   /* Create the content */
   int row = 0 ;
-  createInfoWidgets(my_data, table, cols, &row) ;
+  createInfoWidgets(my_data, table, cols, rows, &row) ;
   createColourWidgets(my_data, table, &row) ;
   createCDSColourWidgets(my_data, table, &row) ;
   createOtherWidgets(my_data, table, &row) ;
@@ -227,7 +227,7 @@ gboolean zmapWindowStyleDialogSetStyle(ZMapWindow window, ZMapFeatureTypeStyle s
   if (my_data->feature_sets)
     g_list_free(my_data->feature_sets) ;
 
-  my_data->feature_sets = zMapStyleGetFeaturesetsIDs(style, (ZMapFeatureAny)window->feature_context) ;
+  my_data->feature_sets = zMapStyleGetFeaturesets(style, (ZMapFeatureAny)window->feature_context) ;
 
   /* Make a copy of the original style so we can revert any changes we make */
   memcpy(&my_data->orig_style_copy, style,sizeof (ZMapFeatureTypeStyleStruct));
@@ -444,12 +444,64 @@ static void createToplevel(StyleChange my_data)
 }
 
 
+/* Predicate for sorting featuresets alphabetically */
+static int featuresetsCompareFunc(gconstpointer a, gconstpointer b)
+{
+  int result = 0 ;
+
+  ZMapFeatureSet fs1 = (ZMapFeatureSet)a ;
+  ZMapFeatureSet fs2 = (ZMapFeatureSet)b ;
+
+  if (fs1 && fs1->original_id && fs2 && fs2->original_id)
+    {
+      result = strcmp(g_quark_to_string(fs1->original_id), 
+                      g_quark_to_string(fs2->original_id));
+    }
+  
+  return result ;
+}
+
+
+static GtkWidget* createFeaturesetsWidget(StyleChange my_data)
+{
+  /* Put all the featuresets into a tree store */
+  my_data->feature_sets = g_list_sort(my_data->feature_sets, featuresetsCompareFunc) ;
+
+  GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING) ;
+
+  for (GList *item = my_data->feature_sets ; item ; item = item->next)
+    {
+      ZMapFeatureSet feature_set = (ZMapFeatureSet)(item->data) ;
+
+      GtkTreeIter iter ;
+      gtk_list_store_append(store, &iter);
+      gtk_list_store_set(store, &iter, 0, g_quark_to_string(feature_set->original_id), -1);
+    }
+
+  /* Create the tree view */
+  GtkWidget *tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL (store));
+  GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new ();
+  GtkTreeViewColumn *column = 
+    gtk_tree_view_column_new_with_attributes("Featuresets", text_renderer, "text", 0, NULL);
+
+  gtk_tree_view_append_column(GTK_TREE_VIEW(tree), column);
+
+  /* Put the tree in a scrolled window */
+  GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
+  gtk_container_add(GTK_CONTAINER(scrolled_window), tree) ;
+
+  return scrolled_window ;
+}
+
+
 /* Create the widgets that display details about the current featureset and style */
-static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int cols, int *row)
+static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int cols, const int rows, int *row)
 {
   GtkWidget *label = NULL ;
   GtkWidget *entry = NULL ;
   const char *text = NULL ;
+  const int fcol = 4 ;
+  const int frow = *row ;
 
   /* The new style name */
   label = gtk_label_new("New style: ") ;
@@ -460,7 +512,7 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
   text = g_quark_to_string(my_data->new_style_name) ;
   gtk_entry_set_text(GTK_ENTRY(entry), text ? text : "") ;
   gtk_widget_set_tooltip_text(entry, "If this is different to the original style name, then a new child style will be created; otherwise the original style will be overwritten.") ;
-  gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
+  gtk_table_attach(table, entry, 1, fcol, *row, *row + 1, GTK_FILL, GTK_SHRINK, XPAD, YPAD);
   *row += 1 ;
 
   /* The original/parent style name */
@@ -472,20 +524,12 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
   text = g_quark_to_string(my_data->orig_style_copy.original_id);
   gtk_entry_set_text(GTK_ENTRY(entry), text ? text : "") ;
   gtk_widget_set_sensitive(entry, FALSE) ;
-  gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
+  gtk_table_attach(table, entry, 1, fcol, *row, *row + 1, GTK_FILL, GTK_SHRINK, XPAD, YPAD);
   *row += 1 ;
 
-  /* The names of the featuresets for this style (not editable) */
-  label = gtk_label_new("Featuresets: ") ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
-
-  entry = my_data->featureset_name_widget = gtk_entry_new() ;
-  char *feature_sets = my_data->feature_sets ? zMap_g_list_quark_to_string(my_data->feature_sets, ";") : g_strdup("") ;
-  gtk_entry_set_text(GTK_ENTRY(entry), feature_sets) ;
-  g_free(feature_sets) ;
-  gtk_widget_set_sensitive(entry, FALSE) ;
-  gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
+  /* The list of the featuresets for this style */
+  GtkWidget *tree = createFeaturesetsWidget(my_data) ;
+  gtk_table_attach(table, tree, fcol, fcol + 1, frow, rows, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), XPAD, YPAD);
   *row += 1 ;
 }
 
