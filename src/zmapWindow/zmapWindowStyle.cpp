@@ -433,39 +433,20 @@ static void createToplevel(StyleChange my_data)
   gtk_window_set_keep_above((GtkWindow *) my_data->toplevel,TRUE);
   gtk_container_set_focus_chain (GTK_CONTAINER(my_data->toplevel), NULL);
   gtk_container_border_width(GTK_CONTAINER(my_data->toplevel), 5) ;
-  gtk_window_set_default_size(GTK_WINDOW(my_data->toplevel), 500, -1) ;
   gtk_dialog_set_default_response(GTK_DIALOG(my_data->toplevel), GTK_RESPONSE_APPLY) ;
+
+  gtk_window_set_default_size(GTK_WINDOW(my_data->toplevel), 500, 800) ;
 }
 
 
 /* Create the widgets that display details about the current featureset and style */
 static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int cols, int *row)
 {
-  /* The names of the featuresets for this style (not editable) */
-  GtkWidget *label = gtk_label_new("Featuresets: ") ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
+  GtkWidget *label = NULL ;
+  GtkWidget *entry = NULL ;
+  const char *text = NULL ;
 
-  GtkWidget *entry = my_data->featureset_name_widget = gtk_entry_new() ;
-
-  char *feature_sets = my_data->feature_sets ? zMap_g_list_quark_to_string(my_data->feature_sets, ";") : g_strdup("") ;
-  gtk_entry_set_text(GTK_ENTRY(entry), feature_sets) ;
-  g_free(feature_sets) ;
-  gtk_widget_set_sensitive(entry, FALSE) ;
-  gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
-  *row += 1 ;
-
-  label = gtk_label_new("Original style: ") ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
-
-  entry = my_data->orig_style_name_widget = gtk_entry_new() ;
-  const char *text = g_quark_to_string(my_data->orig_style_copy.unique_id);
-  gtk_entry_set_text(GTK_ENTRY(entry), text ? text : "") ;
-  gtk_widget_set_sensitive(entry, FALSE) ;
-  gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
-  *row += 1 ;
-
+  /* The new style name */
   label = gtk_label_new("New style: ") ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
@@ -474,6 +455,31 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
   text = g_quark_to_string(my_data->new_style_name) ;
   gtk_entry_set_text(GTK_ENTRY(entry), text ? text : "") ;
   gtk_widget_set_tooltip_text(entry, "If this is different to the original style name, then a new child style will be created; otherwise the original style will be overwritten.") ;
+  gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
+  *row += 1 ;
+
+  /* The original/parent style name */
+  label = gtk_label_new("Original style: ") ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
+
+  entry = my_data->orig_style_name_widget = gtk_entry_new() ;
+  text = g_quark_to_string(my_data->orig_style_copy.original_id);
+  gtk_entry_set_text(GTK_ENTRY(entry), text ? text : "") ;
+  gtk_widget_set_sensitive(entry, FALSE) ;
+  gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
+  *row += 1 ;
+
+  /* The names of the featuresets for this style (not editable) */
+  label = gtk_label_new("Featuresets: ") ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_table_attach(table, label, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
+
+  entry = my_data->featureset_name_widget = gtk_entry_new() ;
+  char *feature_sets = my_data->feature_sets ? zMap_g_list_quark_to_string(my_data->feature_sets, ";") : g_strdup("") ;
+  gtk_entry_set_text(GTK_ENTRY(entry), feature_sets) ;
+  g_free(feature_sets) ;
+  gtk_widget_set_sensitive(entry, FALSE) ;
   gtk_table_attach(table, entry, 1, cols, *row, *row + 1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), GTK_SHRINK, XPAD, YPAD);
   *row += 1 ;
 }
