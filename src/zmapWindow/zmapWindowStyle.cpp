@@ -154,7 +154,7 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
   
   /* If creating a new style and a featureset is given then just apply the style to that featureset */
   if (feature_set && my_data->new_style_id != style->unique_id)
-    my_data->feature_sets = g_list_append(my_data->feature_sets, GINT_TO_POINTER(feature_set->original_id)) ;
+    my_data->feature_sets = g_list_append(my_data->feature_sets, feature_set) ;
   else
     my_data->feature_sets = zMapStyleGetFeaturesets(style, (ZMapFeatureAny)window->feature_context) ;
 
