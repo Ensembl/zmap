@@ -293,10 +293,11 @@ static void notebook_foreach_page(GtkWidget *notebook_widget, gboolean current_p
 static FooCanvasGroup *configure_get_point_block_container(ColConfigure configure_data,
                                                            FooCanvasGroup *column_group);
 
-static void column_group_set_active_button(ZMapWindowContainerFeatureSet container,
-                                           GtkWidget *radio_show,
-                                           GtkWidget *radio_maybe,
-                                           GtkWidget *radio_hide);
+static void set_tree_store_value_from_state(ZMapStyleColumnDisplayState col_state,
+                                           GtkListStore *store,
+                                           GtkTreeIter *iter,
+                                           const gboolean forward) ;
+
 static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
                                             int width, int height);
 static void activate_matching_column(gpointer list_data, gpointer user_data) ;
@@ -732,35 +733,70 @@ static void loaded_page_destroy(NotebookPage notebook_page)
   return ;
 }
 
-static void column_group_set_active_button(ZMapWindowContainerFeatureSet container,
-                                           GtkWidget *radio_show,
-                                           GtkWidget *radio_maybe,
-                                           GtkWidget *radio_hide)
+
+/* Return the appropriate display state for the given tree view column */
+static ZMapStyleColumnDisplayState get_state_from_tree_store_column(DialogColumns tree_col_id)
 {
-  if(container)
+  ZMapStyleColumnDisplayState result;
+
+  switch (tree_col_id)
     {
-      ZMapStyleColumnDisplayState col_state ;
-      GtkWidget *active_button = NULL;
+    case SHOW_FWD_COLUMN: //fall through
+    case SHOW_REV_COLUMN:
+      result = ZMAPSTYLE_COLDISPLAY_SHOW ;
+      break ;
 
-      col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
+    case AUTO_FWD_COLUMN: //fall through
+    case AUTO_REV_COLUMN:
+      result = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE ;
+      break ;
 
-      switch(col_state)
-        {
-        case ZMAPSTYLE_COLDISPLAY_HIDE:
-          active_button = radio_hide ;
-          break ;
-        case ZMAPSTYLE_COLDISPLAY_SHOW_HIDE:
-          active_button = radio_maybe ;
-          break ;
-        case ZMAPSTYLE_COLDISPLAY_SHOW:
-        default:
-          active_button = radio_show ;
-          break ;
-        }
+    case HIDE_FWD_COLUMN: //fall through
+    case HIDE_REV_COLUMN:
+      result = ZMAPSTYLE_COLDISPLAY_HIDE ;
+      break ;
 
-      if(active_button)
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(active_button), TRUE) ;
+    default:
+      result = ZMAPSTYLE_COLDISPLAY_SHOW ;
+      zMapLogWarning("Unexpected tree column number %d", tree_col_id) ;
+      break ;
     }
+
+  return result ;
+}
+
+
+static void set_tree_store_value_from_state(ZMapStyleColumnDisplayState col_state,
+                                            GtkListStore *store,
+                                            GtkTreeIter *iter,
+                                            const gboolean forward)
+{
+  DialogColumns show_col = forward ? SHOW_FWD_COLUMN : SHOW_REV_COLUMN ;
+  DialogColumns auto_col = forward ? AUTO_FWD_COLUMN : AUTO_REV_COLUMN ;
+  DialogColumns hide_col = forward ? HIDE_FWD_COLUMN : HIDE_REV_COLUMN ;
+  gboolean show_val = FALSE ;
+  gboolean auto_val = FALSE ;
+  gboolean hide_val = FALSE ;
+
+  switch(col_state)
+    {
+    case ZMAPSTYLE_COLDISPLAY_HIDE:
+      hide_val = TRUE ;
+      break ;
+    case ZMAPSTYLE_COLDISPLAY_SHOW_HIDE:
+      auto_val = TRUE ;
+      break ;
+    case ZMAPSTYLE_COLDISPLAY_SHOW:
+    default:
+      show_val = TRUE ;
+      break ;
+    }
+
+  gtk_list_store_set(store, iter, 
+                     show_col, show_val,
+                     auto_col, auto_val, 
+                     hide_col, hide_val,
+                     -1);
 
   return ;
 }
@@ -784,7 +820,6 @@ static void loaded_radio_buttons(GtkListStore *store,
   /* Create the "show" radio button, which will create the group too. */
   radio_show = gtk_radio_button_new(NULL) ;
   gtk_widget_set_tooltip_text(radio_show, SHOW_LABEL) ;
-  gtk_list_store_set(store, iter, fwd ? SHOW_FWD_COLUMN : SHOW_REV_COLUMN, FALSE, -1);
 
   /* Get the group so we can add the other buttons to the same group */
   radio_group_button = GTK_RADIO_BUTTON(radio_show);
@@ -792,14 +827,10 @@ static void loaded_radio_buttons(GtkListStore *store,
   /* Create the "default" radio button */
   radio_maybe = gtk_radio_button_new_from_widget(radio_group_button) ;
   gtk_widget_set_tooltip_text(radio_maybe, SHOWHIDE_LABEL) ;
-  //gtk_table_attach(table, radio_maybe, col + 1, col + 2, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  gtk_list_store_set(store, iter, fwd ? AUTO_FWD_COLUMN : AUTO_REV_COLUMN, TRUE, -1);
 
   /* Create the "hide" radio button */
   radio_hide = gtk_radio_button_new_from_widget(radio_group_button) ;
   gtk_widget_set_tooltip_text(radio_hide, HIDE_LABEL) ;
-  //gtk_table_attach(table, radio_hide, col + 2, col + 3, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  gtk_list_store_set(store, iter, fwd ? HIDE_FWD_COLUMN : HIDE_REV_COLUMN, FALSE, -1);
 
   /* Now create the data to attach to the buttons and connect the callbacks */
 
@@ -1830,10 +1861,12 @@ static void loaded_cols_panel(LoadedPageData page_data)
               page_data->show_list_fwd    = g_list_append(page_data->show_list_fwd, show_data_fwd);
               page_data->hide_list_fwd    = g_list_append(page_data->hide_list_fwd, hide_data_fwd);
 
-              column_group_set_active_button((ZMapWindowContainerFeatureSet)column_group_fwd,
-                                             show_data_fwd->show_hide_button,
-                                             default_data_fwd->show_hide_button,
-                                             hide_data_fwd->show_hide_button);
+              ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)column_group_rev ;
+              if (container)
+                {
+                  ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
+                  set_tree_store_value_from_state(col_state, store, &iter, TRUE) ;
+                }
             }
 
           if (column_group_rev)
@@ -1849,10 +1882,12 @@ static void loaded_cols_panel(LoadedPageData page_data)
               page_data->show_list_rev    = g_list_append(page_data->show_list_rev, show_data_rev);
               page_data->hide_list_rev    = g_list_append(page_data->hide_list_rev, hide_data_rev);
 
-              column_group_set_active_button((ZMapWindowContainerFeatureSet)column_group_rev,
-                                             show_data_rev->show_hide_button,
-                                             default_data_rev->show_hide_button,
-                                             hide_data_rev->show_hide_button);
+              ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)column_group_rev ;
+              if (container)
+                {
+                  ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
+                  set_tree_store_value_from_state(col_state, store, &iter, FALSE) ;
+                }
             }
         }
     }
@@ -2035,12 +2070,7 @@ static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_strin
   ColConfigure configure_data = loaded_page_data->configure_data;
   GQuark column_id = 0 ;
   FooCanvasGroup *column_group = NULL ;
-  gboolean cell_active = FALSE ;
-  gboolean cell_value = FALSE ;
   ZMapStyleColumnDisplayState show_hide_state ;
-
-
-  g_object_get( G_OBJECT( cell ), "active", &cell_active, NULL );
 
   GtkTreeIter  iter;
   GtkTreePath *path = gtk_tree_path_new_from_string (path_string);
@@ -2064,7 +2094,6 @@ static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_strin
 
       gtk_tree_model_get (model, &iter,
                           NAME_COLUMN, &column_name,
-                          button_data->tree_col_id, &cell_value, 
                           -1);
 
       if (!column_name)
@@ -2083,54 +2112,15 @@ static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_strin
 
   if (ok)
     {
-      /* Set the display state from the toggle buttons and toggle the cell values
-       * (the selected cell should be set to active and the others in the
+      show_hide_state = get_state_from_tree_store_column(button_data->tree_col_id) ;
+    }
+
+  if (ok)
+    {
+      /* Toggle the cell values (the selected cell should be set to active and the others in the
        * group set to inactive) */
-      gtk_list_store_set (GTK_LIST_STORE(model), &iter, button_data->tree_col_id, TRUE, -1);
-
-      switch (button_data->tree_col_id)
-        {
-        case SHOW_FWD_COLUMN:
-          gtk_list_store_set (GTK_LIST_STORE(model), &iter, AUTO_FWD_COLUMN, FALSE, -1);
-          gtk_list_store_set (GTK_LIST_STORE(model), &iter, HIDE_FWD_COLUMN, FALSE, -1);
-          show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
-          break ;
-
-        case SHOW_REV_COLUMN:
-          gtk_list_store_set (GTK_LIST_STORE(model), &iter, AUTO_REV_COLUMN, FALSE, -1);
-          gtk_list_store_set (GTK_LIST_STORE(model), &iter, HIDE_REV_COLUMN, FALSE, -1);
-          show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
-          break ;
-
-        case AUTO_FWD_COLUMN:
-          gtk_list_store_set (GTK_LIST_STORE(model), &iter, SHOW_FWD_COLUMN, FALSE, -1);
-          gtk_list_store_set (GTK_LIST_STORE(model), &iter, HIDE_FWD_COLUMN, FALSE, -1);
-          show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE ;
-          break ;
-
-        case AUTO_REV_COLUMN:
-          gtk_list_store_set (GTK_LIST_STORE(model), &iter, SHOW_REV_COLUMN, FALSE, -1);
-          gtk_list_store_set (GTK_LIST_STORE(model), &iter, HIDE_REV_COLUMN, FALSE, -1);
-          show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE ;
-          break ;
-
-        case HIDE_FWD_COLUMN:
-          gtk_list_store_set (GTK_LIST_STORE(model), &iter, SHOW_FWD_COLUMN, FALSE, -1);
-          gtk_list_store_set (GTK_LIST_STORE(model), &iter, AUTO_FWD_COLUMN, FALSE, -1);
-          show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
-          break ;
-
-        case HIDE_REV_COLUMN:
-          gtk_list_store_set (GTK_LIST_STORE(model), &iter, SHOW_REV_COLUMN, FALSE, -1);
-          gtk_list_store_set (GTK_LIST_STORE(model), &iter, AUTO_REV_COLUMN, FALSE, -1);
-          show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
-          break ;
-
-        default:
-          zMapLogWarning("Unexpected tree column number %d", button_data->tree_col_id) ;
-          ok = FALSE ;
-          break ;
-        }
+      gboolean forward = (button_data->strand == ZMAPSTRAND_FORWARD) ;
+      set_tree_store_value_from_state(show_hide_state, GTK_LIST_STORE(model), &iter, forward) ;
     }
 
   if (ok)
@@ -2141,33 +2131,6 @@ static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_strin
         {
           ok = FALSE ;
           zMapLogWarning("Error finding column group for column %s", g_quark_to_string(column_id)) ;
-        }
-    }
-
-  if (ok)
-    {
-      /* Set the display state from the toggle buttons */
-      switch (button_data->tree_col_id)
-        {
-        case SHOW_FWD_COLUMN: //fall through
-        case SHOW_REV_COLUMN:
-          show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
-          break ;
-
-        case AUTO_FWD_COLUMN: //fall through
-        case AUTO_REV_COLUMN:
-          show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE ;
-          break ;
-
-        case HIDE_FWD_COLUMN: //fall through
-        case HIDE_REV_COLUMN:
-          show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
-          break ;
-
-        default:
-          zMapLogWarning("Unexpected tree column number %d", button_data->tree_col_id) ;
-          ok = FALSE ;
-          break ;
         }
     }
 
