@@ -1121,6 +1121,8 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
             {
               column = g_new0(ZMapFeatureColumnStruct,1);
               column->unique_id = col_id;
+              column->column_id = col_quark ;
+              column->column_desc = g_strdup(ZMAP_FIXED_STYLE_HAND_BUILT_TEXT);
               column->style_table = g_list_prepend(NULL, (gpointer)  style);
               column->order = zMapFeatureColumnOrderNext(FALSE) ;
               /* the rest shoudl get filled in elsewhere */
@@ -1327,6 +1329,8 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
             {
               column = g_new0(ZMapFeatureColumnStruct,1);
               column->unique_id = col_id;
+              column->column_id = col_quark ;
+              column->column_desc = g_strdup(ZMAP_FIXED_STYLE_SCRATCH_TEXT);
               column->style_table = g_list_prepend(NULL, (gpointer)  style);
               column->order = zMapFeatureColumnOrderNext(FALSE);
               /* the rest shoudl get filled in elsewhere */
