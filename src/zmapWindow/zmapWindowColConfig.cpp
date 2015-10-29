@@ -282,21 +282,20 @@ static FooCanvasGroup *configure_get_point_block_container(ColConfigure configur
                                                            FooCanvasGroup *column_group);
 
 static void set_tree_store_value_from_state(ZMapStyleColumnDisplayState col_state,
-                                           GtkListStore *store,
-                                           GtkTreeIter *iter,
-                                           const gboolean forward) ;
+                                            GtkListStore *store,
+                                            GtkTreeIter *iter,
+                                            const gboolean forward) ;
 
 static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
                                             int width, int height);
 
-static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, 
-                                       GtkTreeIter *iter, ZMapStyleColumnDisplayState show_hide_state) ;
+static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, GtkTreeIter *iter) ;
 
 static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter) ;
 
 static ZMapStyleColumnDisplayState get_state_from_tree_store_value(GtkTreeModel *model, 
                                                                    GtkTreeIter *iter, 
-                                                                   const gboolean forward) ;
+                                                                   ZMapStrand strand) ;
 
 
 
@@ -575,11 +574,8 @@ static void loaded_page_apply_all_tree_rows(LoadedPageData loaded_page_data)
     {
       do
         {
-          ZMapStyleColumnDisplayState state_fwd = get_state_from_tree_store_value(model, &iter, TRUE) ;
-          ZMapStyleColumnDisplayState state_rev = get_state_from_tree_store_value(model, &iter, FALSE) ;
-
-          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_FORWARD, &iter, state_fwd) ;
-          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_REVERSE, &iter, state_rev) ;
+          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_FORWARD, &iter) ;
+          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_REVERSE, &iter) ;
         } while (gtk_tree_model_iter_next(model, &iter)) ;
     }
 }
@@ -731,9 +727,11 @@ static ZMapStyleColumnDisplayState get_state_from_tree_store_column(DialogColumn
  * that column */
 static ZMapStyleColumnDisplayState get_state_from_tree_store_value(GtkTreeModel *model, 
                                                                    GtkTreeIter *iter, 
-                                                                   const gboolean forward)
+                                                                   ZMapStrand strand)
 {
   ZMapStyleColumnDisplayState result ;
+
+  const gboolean forward = (strand == ZMAPSTRAND_FORWARD) ;
 
   DialogColumns show_col = forward ? SHOW_FWD_COLUMN : SHOW_REV_COLUMN ;
   DialogColumns auto_col = forward ? AUTO_FWD_COLUMN : AUTO_REV_COLUMN ;
@@ -831,7 +829,7 @@ static void loaded_page_update_matching_tree_rows(LoadedPageData loaded_page_dat
               set_tree_store_value_from_state(required_state, GTK_LIST_STORE(model), &iter, forward) ;
 
               /* Apply the changes */
-              loaded_page_apply_tree_row(loaded_page_data, strand, &iter, required_state) ;
+              loaded_page_apply_tree_row(loaded_page_data, strand, &iter) ;
               
               break ; // should only be one row with this column id
             }
@@ -1980,16 +1978,21 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* For the given row and strand, apply the updates to the appropriate column */
-static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, 
-                                       GtkTreeIter *iter, ZMapStyleColumnDisplayState show_hide_state)
+static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, GtkTreeIter *iter)
 {
   zMapReturnIfFail(loaded_page_data && 
                    loaded_page_data->configure_data &&
                    loaded_page_data->configure_data->window) ;
 
   ColConfigure configure_data = loaded_page_data->configure_data ;
+  GtkTreeModel *model = loaded_page_data->tree_model ;
+  
+  /* Get the column that's in this tree row */
   GQuark column_id = tree_model_get_column_id(loaded_page_data->tree_model, iter) ;
   FooCanvasGroup *column_group = zmapWindowGetColumnByID(loaded_page_data->window, strand, column_id) ;
+
+  /* Get the required state of this tree row according to the toggle value in the tree model */
+  ZMapStyleColumnDisplayState show_hide_state = get_state_from_tree_store_value(model, iter, strand) ;
 
   /* We only do this if there is no apply button.  */
   if(column_group && loaded_page_data->apply_now)
@@ -2121,7 +2124,7 @@ static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_strin
   if (ok)
     {
       /* Set the correct state. */
-      loaded_page_apply_tree_row(loaded_page_data, button_data->strand, &iter, show_hide_state) ;
+      loaded_page_apply_tree_row(loaded_page_data, button_data->strand, &iter) ;
     }
 
   return ;
