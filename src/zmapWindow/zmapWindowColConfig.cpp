@@ -44,8 +44,6 @@
 #define SHOW_LABEL     "Show"
 #define SHOWHIDE_LABEL "Auto"
 #define HIDE_LABEL     "Hide"
-#define UP_LABEL       "Up"
-#define DOWN_LABEL     "Down"
 
 #define XPAD 4
 #define YPAD 0
@@ -161,13 +159,6 @@ typedef struct _LoadedPageDataStruct
   /* Remember data we've created so we can free it */
   GList *cb_data_list ;
 
-  /* Fwd and rev strand lists of UpDownButton pointers. */
-  GList *up_list;
-  GList *down_list;
-
-  /* This list maintains the current order of the columns on the dialog */
-  GList *columns_list ;
-
   unsigned int apply_now        : 1 ;
   unsigned int reposition       : 1 ;
 
@@ -180,16 +171,6 @@ typedef struct
   DialogColumns tree_col_id ;
   ZMapStrand strand ;
 } ShowHideDataStruct, *ShowHideData;
-
-
-typedef struct
-{
-  GQuark column_id ;         // the id of the column this button will move
-  int direction ;            // -1 to move up, 1 to move down
-
-  LoadedPageData page_data ;
-  GList *columns_list_iter ; // the iter into columns_list for this column
-} UpDownButtonStruct, *UpDownButton;
 
 
 
@@ -581,6 +562,40 @@ static void loaded_page_apply_all_tree_rows(LoadedPageData loaded_page_data)
 }
 
 
+/* Reorder the columns based on their order in the tree */
+static void reorder_columns(LoadedPageData page_data)
+{
+  zMapReturnIfFail(page_data && 
+                   page_data->tree_model &&
+                   page_data->window &&
+                   page_data->window->context_map &&
+                   page_data->window->context_map->columns) ;
+
+  GtkTreeModel *model = page_data->tree_model ;
+  GHashTable *columns = page_data->window->context_map->columns ;
+
+  /* Loop through all rows in the tree and set the column order index */
+  GtkTreeIter iter;
+  int i = 0 ;
+
+  if (gtk_tree_model_get_iter_first(model, &iter))
+    {
+      do
+        {
+          GQuark column_id = tree_model_get_column_id(model, &iter) ;
+
+          ZMapFeatureColumn column = (ZMapFeatureColumn)g_hash_table_lookup(columns, GINT_TO_POINTER(column_id)) ;
+
+          if (column)
+            {
+              column->order = i ;
+              ++i ;
+            }
+        } while (gtk_tree_model_iter_next(model, &iter)) ;
+    }
+}
+
+
 /* Apply changes on the loaded-columns page */
 static void loaded_page_apply(NotebookPage notebook_page)
 {
@@ -603,13 +618,8 @@ static void loaded_page_apply(NotebookPage notebook_page)
 
   loaded_page_apply_all_tree_rows(loaded_page_data) ;
 
-  /* Apply the new column order */
-  int i = 0 ;
-  for (GList *item = loaded_page_data->columns_list ; item ; item = item->next, ++i)
-    {
-      ZMapFeatureColumn column = (ZMapFeatureColumn)(item->data) ;
-      column->order = i ;
-    }
+  /* Apply the new column order based on the tree order */
+  reorder_columns(loaded_page_data) ;
 
   /* Need to set the feature_set_names list to the correct order. Not sure if we should include
    * all featuresets or just reorder the list that is there. For now, include all. */
@@ -620,7 +630,7 @@ static void loaded_page_apply(NotebookPage notebook_page)
 
   zmapWindowBusy(loaded_page_data->window, FALSE) ;
   zmapWindowColOrderColumns(loaded_page_data->window);
-  zmapWindowFullReposition(loaded_page_data->window->feature_root_group, TRUE, "move_button_cb") ;
+  zmapWindowFullReposition(loaded_page_data->window->feature_root_group, TRUE, "loaded_page_apply") ;
   zmapWindowBusy(loaded_page_data->window, FALSE) ;
 
   /* Restore the original flag values */
@@ -657,14 +667,6 @@ static void loaded_page_clear_data(LoadedPageData page_data)
   g_list_free(page_data->cb_data_list);
   page_data->cb_data_list = NULL;
 
-  g_list_foreach(page_data->up_list, (GFunc)g_free, NULL);
-  g_list_free(page_data->up_list);
-  page_data->up_list = NULL;
-
-  g_list_foreach(page_data->down_list, (GFunc)g_free, NULL);
-  g_list_free(page_data->down_list);
-  page_data->down_list = NULL;
-
   return ;
 }
 
@@ -677,10 +679,6 @@ static void loaded_page_clear  (NotebookPage notebook_page)
 
   /* Clear the callback data pointers */
   loaded_page_clear_data(page_data) ;
-
-  /* Clear any other data */
-  g_list_free(page_data->columns_list) ;
-  page_data->columns_list = NULL ;
 
   return ;
 }
@@ -1658,72 +1656,6 @@ static GtkWidget *make_scrollable_vbox(GtkWidget *child)
 }
 
 
-/* Callback when user presses Up/Down buttons (to reorder columns) */
-static void move_button_cb(GtkWidget *button, gpointer user_data)
-{
-  UpDownButton data = (UpDownButton)user_data ;
-  zMapReturnIfFail(data
-                   && data->direction
-                   && data->page_data
-                   && data->column_id
-                   && data->columns_list_iter
-                   && data->page_data->columns_list) ;
-
-  LoadedPageData page_data = data->page_data ;
-
-  /* The columns_list_iter is the position in the columns_list for this column */
-  GList *this_item = data->columns_list_iter ;
-  ZMapFeatureColumn this_column = (ZMapFeatureColumn)(this_item->data) ;
-
-  /* We want to swap it with the prev/next item, depending on the direction */
-  GList *swap_item = data->direction < 0 ? this_item->prev : this_item->next ;
-
-  /* If there's no item to swap with we're already at the start/end, so nothing to do */
-  if (swap_item)
-    {
-      /* Flag that there are changes */
-      page_data->configure_data->columns_changed = TRUE ;
-
-      /* Swap the items in the columns list */
-      page_data->columns_list = g_list_remove_link(page_data->columns_list, this_item) ;
-
-      if (data->direction < 0)
-        page_data->columns_list = g_list_insert_before(page_data->columns_list, swap_item, this_column) ;
-      else if (swap_item->next)
-        page_data->columns_list = g_list_insert_before(page_data->columns_list, swap_item->next, this_column) ;
-      else
-        page_data->columns_list = g_list_append(page_data->columns_list, this_column) ;
-
-      /* Recreate the columns panel on the dialog. This re-creates the data lists based on the new
-       * columns list, so we need to clear the existing data first. This is pretty dodgy because
-       * it will free the user_data pointers that gets passed to this callback (so our own
-       * user_data will be invalidated after this). Should really tidy this up but it would
-       * require quite a bit of reorganisation and I'm not sure it's worth it. We destroy the
-       * widgets first so it's unlikely the callback will be called with the invalidated data pointers. */
-
-      gtk_widget_destroy(page_data->cols_panel) ; // destroy all the current widgets
-      page_data->cols_panel = NULL ;
-      loaded_page_clear_data(page_data) ;         // free all the callback data
-      loaded_cols_panel(page_data) ;              // recreate all the widgets and data
-    }
-}
-
-static UpDownButton create_up_down_button_data(GQuark column_id, 
-                                               const int direction,
-                                               LoadedPageData page_data,
-                                               GList *columns_list_iter)
-{
-  UpDownButton data = g_new0(UpDownButtonStruct, 1);
-
-  data->column_id = column_id ;
-  data->direction = direction ;
-  data->page_data = page_data ;
-  data->columns_list_iter = columns_list_iter ;
-
-  return data ;
-}
-
-
 /* Create a column in the given tree for the given toggle button column */
 static void loaded_cols_panel_create_column(LoadedPageData page_data,
                                             GtkTreeModel *model,
@@ -1754,8 +1686,7 @@ static void loaded_cols_panel(LoadedPageData page_data)
   GtkWidget *cols_panel = NULL ;
 
   /* Get list of column structs in current display order */
-  if (!page_data->columns_list)
-    page_data->columns_list = zMapFeatureGetOrderedColumnsList(page_data->window->context_map) ;
+  GList *columns_list = zMapFeatureGetOrderedColumnsList(page_data->window->context_map) ;
 
   /* Create the overall container */
   cols_panel = gtk_vbox_new(FALSE, 0) ;
@@ -1765,14 +1696,14 @@ static void loaded_cols_panel(LoadedPageData page_data)
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
   gtk_box_pack_start(GTK_BOX(cols_panel), scrolled, TRUE, TRUE, 0) ;
 
-  /* Create a tree view listing all the columns */
+  /* Create a tree store containing one row per column */
   GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, 
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, 
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN) ;
 
   /* Loop through all columns in display order (columns are shown in mirror order on the rev
    * strand but we always use forward-strand order) */
-  for (GList *col_iter = page_data->columns_list; col_iter; col_iter = col_iter->next)
+  for (GList *col_iter = columns_list; col_iter; col_iter = col_iter->next)
     {
       /* Create a new row in the list store */
       GtkTreeIter iter ;
@@ -1819,18 +1750,21 @@ static void loaded_cols_panel(LoadedPageData page_data)
 
   /* Create the tree view widget */
   GtkWidget *tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
-  gtk_tree_view_set_search_column (GTK_TREE_VIEW (tree), NAME_COLUMN);
+  GtkTreeView *tree_view = GTK_TREE_VIEW(tree) ;
+  gtk_tree_selection_set_mode(gtk_tree_view_get_selection(tree_view), GTK_SELECTION_MULTIPLE);
+  gtk_tree_view_set_reorderable(tree_view, TRUE);
+  gtk_tree_view_set_enable_search(tree_view, FALSE);
+  gtk_tree_view_set_search_column(tree_view, NAME_COLUMN);
 
   /* Create the text column */
   GtkTreeViewColumn *column = NULL ;
 
   GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
   column = gtk_tree_view_column_new_with_attributes("Column", text_renderer, "text", NAME_COLUMN, NULL);
-  gtk_tree_view_append_column(GTK_TREE_VIEW(tree), column);
+  gtk_tree_view_append_column(tree_view, column);
 
   /* Create the radio button columns */
   GtkTreeModel *model = GTK_TREE_MODEL(store) ;
-  GtkTreeView *tree_view = GTK_TREE_VIEW(tree) ;
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, SHOW_FWD_COLUMN, "Show") ;
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, AUTO_FWD_COLUMN, "Auto") ;
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, HIDE_FWD_COLUMN, "Hide") ;
