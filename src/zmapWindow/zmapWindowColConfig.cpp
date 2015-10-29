@@ -226,7 +226,7 @@ typedef struct
 
 
 static GtkWidget *make_menu_bar(ColConfigure configure_data);
-static void loaded_cols_panel(LoadedPageData loaded_page_data) ;
+static void loaded_cols_panel(LoadedPageData loaded_page_data, FooCanvasGroup *column_group) ;
 static char *label_text_from_column(FooCanvasGroup *column_group);
 static GtkWidget *create_label(GtkWidget *parent, const char *text);
 static GtkWidget *create_revert_apply_button(ColConfigure configure_data);
@@ -533,7 +533,7 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
   loaded_page_data->page_container = notebook_page->page_container ;
   loaded_page_data->configure_data = configure_data ;
 
-  loaded_cols_panel(loaded_page_data) ;
+  loaded_cols_panel(loaded_page_data, column_group) ;
 
   if (!loaded_page_data->configure_data->has_apply_button)
     {
@@ -571,27 +571,31 @@ static void reorder_columns(LoadedPageData page_data)
                    page_data->window->context_map &&
                    page_data->window->context_map->columns) ;
 
-  GtkTreeModel *model = page_data->tree_model ;
-  GHashTable *columns = page_data->window->context_map->columns ;
-
-  /* Loop through all rows in the tree and set the column order index */
-  GtkTreeIter iter;
-  int i = 0 ;
-
-  if (gtk_tree_model_get_iter_first(model, &iter))
+  /* We must only reorder columns if the tree contains all of them! */
+  if (page_data->configure_data->mode == ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
     {
-      do
+      GtkTreeModel *model = page_data->tree_model ;
+      GHashTable *columns = page_data->window->context_map->columns ;
+
+      /* Loop through all rows in the tree and set the column order index */
+      GtkTreeIter iter;
+      int i = 0 ;
+
+      if (gtk_tree_model_get_iter_first(model, &iter))
         {
-          GQuark column_id = tree_model_get_column_id(model, &iter) ;
-
-          ZMapFeatureColumn column = (ZMapFeatureColumn)g_hash_table_lookup(columns, GINT_TO_POINTER(column_id)) ;
-
-          if (column)
+          do
             {
-              column->order = i ;
-              ++i ;
-            }
-        } while (gtk_tree_model_iter_next(model, &iter)) ;
+              GQuark column_id = tree_model_get_column_id(model, &iter) ;
+          
+              ZMapFeatureColumn column = (ZMapFeatureColumn)g_hash_table_lookup(columns, GINT_TO_POINTER(column_id)) ;
+
+              if (column)
+                {
+                  column->order = i ;
+                  ++i ;
+                }
+            } while (gtk_tree_model_iter_next(model, &iter)) ;
+        }
     }
 }
 
@@ -1681,9 +1685,18 @@ static void loaded_cols_panel_create_column(LoadedPageData page_data,
 }
 
 
-static void loaded_cols_panel(LoadedPageData page_data)
+static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_group)
 {
+  zMapReturnIfFail(page_data && page_data->configure_data) ;
+
   GtkWidget *cols_panel = NULL ;
+  ZMapWindowColConfigureMode configure_mode = page_data->configure_data->mode ;
+
+  /* If configured only to show one column, set the column group we should show */
+  FooCanvasGroup *required_column_group = NULL ;
+
+  if (configure_mode == ZMAPWINDOWCOLUMN_CONFIGURE && column_group)
+    required_column_group = column_group ;
 
   /* Get list of column structs in current display order */
   GList *columns_list = zMapFeatureGetOrderedColumnsList(page_data->window->context_map) ;
@@ -1705,16 +1718,20 @@ static void loaded_cols_panel(LoadedPageData page_data)
    * strand but we always use forward-strand order) */
   for (GList *col_iter = columns_list; col_iter; col_iter = col_iter->next)
     {
-      /* Create a new row in the list store */
-      GtkTreeIter iter ;
-      gtk_list_store_append(store, &iter);
-
       ZMapFeatureColumn column = (ZMapFeatureColumn)(col_iter->data) ;
 
       FooCanvasGroup *column_group_fwd = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column->unique_id) ;
       FooCanvasGroup *column_group_rev = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_REVERSE, column->unique_id) ;
       ZMapWindowContainerFeatureSet container_fwd = (ZMapWindowContainerFeatureSet)column_group_fwd ;
       ZMapWindowContainerFeatureSet container_rev = (ZMapWindowContainerFeatureSet)column_group_rev ;
+
+      /* If looking for a specific column group, skip if this isn't it */
+      if (required_column_group && required_column_group != column_group_fwd && required_column_group != column_group_rev)
+        continue ;
+
+      /* Create a new row in the list store */
+      GtkTreeIter iter ;
+      gtk_list_store_append(store, &iter);
 
       const char *label_text = g_quark_to_string(column->column_id);
 
