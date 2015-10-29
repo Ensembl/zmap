@@ -565,6 +565,26 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
 }
 
 
+/* Update all of the columns based on the values in the tree store */
+static void loaded_page_apply_all_tree_rows(LoadedPageData loaded_page_data)
+{
+  GtkTreeIter iter ;
+  GtkTreeModel *model = loaded_page_data->tree_model ;
+
+  if (gtk_tree_model_get_iter_first(model, &iter))
+    {
+      do
+        {
+          ZMapStyleColumnDisplayState state_fwd = get_state_from_tree_store_value(model, &iter, TRUE) ;
+          ZMapStyleColumnDisplayState state_rev = get_state_from_tree_store_value(model, &iter, FALSE) ;
+
+          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_FORWARD, &iter, state_fwd) ;
+          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_REVERSE, &iter, state_rev) ;
+        } while (gtk_tree_model_iter_next(model, &iter)) ;
+    }
+}
+
+
 /* Apply changes on the loaded-columns page */
 static void loaded_page_apply(NotebookPage notebook_page)
 {
@@ -585,20 +605,7 @@ static void loaded_page_apply(NotebookPage notebook_page)
   loaded_page_data->apply_now  = TRUE;
   loaded_page_data->reposition = FALSE;
 
-  /* Update all of the columns based on the values in the tree store */
-  GtkTreeIter iter ;
-  GtkTreeModel *model = loaded_page_data->tree_model ;
-  if (gtk_tree_model_get_iter_first(model, &iter))
-    {
-      do
-        {
-          ZMapStyleColumnDisplayState state_fwd = get_state_from_tree_store_value(model, &iter, TRUE) ;
-          ZMapStyleColumnDisplayState state_rev = get_state_from_tree_store_value(model, &iter, FALSE) ;
-
-          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_FORWARD, &iter, state_fwd) ;
-          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_REVERSE, &iter, state_rev) ;
-        } while (gtk_tree_model_iter_next(model, &iter)) ;
-    }
+  loaded_page_apply_all_tree_rows(loaded_page_data) ;
 
   /* Apply the new column order */
   int i = 0 ;
@@ -794,6 +801,49 @@ static void set_tree_store_value_from_state(ZMapStyleColumnDisplayState col_stat
 }
 
 
+/* Update the values in the tree store based on the current real state of the given column */
+static void loaded_page_update_matching_tree_rows(LoadedPageData loaded_page_data,
+                                                  ZMapStrand strand,
+                                                  FooCanvasGroup *search_column_group,
+                                                  ZMapStyleColumnDisplayState required_state)
+{
+  zMapReturnIfFail(loaded_page_data &&
+                   loaded_page_data->tree_model &&
+                   search_column_group) ;
+
+
+  const gboolean forward = (strand == ZMAPSTRAND_FORWARD) ;
+
+  /* Loop through all rows in the tree until we find the given column group */
+  GtkTreeIter iter ;
+  GtkTreeModel *model = loaded_page_data->tree_model ;
+
+  if (gtk_tree_model_get_iter_first(model, &iter))
+    {
+      do
+        {
+          GQuark column_id = tree_model_get_column_id(model, &iter) ;
+          FooCanvasGroup *column_group = zmapWindowGetColumnByID(loaded_page_data->window, strand, column_id) ;
+
+          if (column_group == search_column_group)
+            {
+              /* Update the tree store */
+              set_tree_store_value_from_state(required_state, GTK_LIST_STORE(model), &iter, forward) ;
+
+              /* Apply the changes */
+              loaded_page_apply_tree_row(loaded_page_data, strand, &iter, required_state) ;
+              
+              break ; // should only be one row with this column id
+            }
+
+        } while (gtk_tree_model_iter_next(model, &iter)) ;
+    }
+}
+
+
+/* This callback is called to update an exsiting dialog when the user has updated the
+ * column display status via another method, e.g. right-click and hide a column. It may only be
+ * applicable to a particular column so the relevant column group is passed in the cb_data. */
 static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData cb_data)
 {
   ColConfigure configure_data;
@@ -815,6 +865,23 @@ static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData
   if (strand != ZMAPSTRAND_FORWARD && strand != ZMAPSTRAND_REVERSE)
     return ;
 
+  ZMapStyleColumnDisplayState state;
+
+  switch(mode)
+    {
+    case ZMAPWINDOWCOLUMN_HIDE:
+      state = ZMAPSTYLE_COLDISPLAY_HIDE ;
+      break;
+
+    case ZMAPWINDOWCOLUMN_SHOW:
+      state = ZMAPSTYLE_COLDISPLAY_SHOW ;
+      break;
+
+    default:
+      state = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE ;
+      break;
+    }
+
   gboolean save_reposition, save_apply_now;
 
   save_apply_now  = loaded_page_data->apply_now;
@@ -823,6 +890,9 @@ static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData
   /* We're only aiming to find one button to toggle so reposition = TRUE is ok. */
   loaded_page_data->apply_now  = TRUE;
   loaded_page_data->reposition = TRUE;
+
+  /* Update the relevant row in the tree store with the required state */
+  loaded_page_update_matching_tree_rows(loaded_page_data, strand, cb_data->column_group, state) ;
 
   //g_list_foreach(button_list_fwd, activate_matching_column, cb_data) ;
   //g_list_foreach(button_list_rev, activate_matching_column, cb_data) ;
