@@ -170,9 +170,6 @@ typedef struct _LoadedPageDataStruct
   /* This list maintains the current order of the columns on the dialog */
   GList *columns_list ;
 
-  /*  */
-  LoadedPageResetFunc reset_func;
-
   unsigned int apply_now        : 1 ;
   unsigned int reposition       : 1 ;
 
@@ -282,7 +279,6 @@ static void configure_populate_containers(ColConfigure    configure_data,
                                           FooCanvasGroup *column_group);
 static void configure_clear_containers(ColConfigure configure_data);
 
-static gboolean show_press_button_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data);
 static void cancel_button_cb(GtkWidget *apply_button, gpointer user_data) ;
 static void revert_button_cb(GtkWidget *apply_button, gpointer user_data);
 static void apply_button_cb(GtkWidget *apply_button, gpointer user_data);
@@ -813,9 +809,6 @@ static void loaded_radio_buttons(GtkListStore *store,
   show_data->show_hide_state  = ZMAPSTYLE_COLDISPLAY_SHOW;
   show_data->show_hide_column = column_group;
 
-  //g_signal_connect(G_OBJECT(radio_show), "toggled", G_CALLBACK(loaded_show_button_cb), show_data) ;
-  //g_signal_connect(G_OBJECT(radio_show), "event", G_CALLBACK(show_press_button_cb), show_data) ;
-
 
   /* Default */
   default_data = g_new0(ShowHideButtonStruct, 1);
@@ -823,17 +816,11 @@ static void loaded_radio_buttons(GtkListStore *store,
   default_data->show_hide_state  = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE;
   default_data->show_hide_column = column_group;
 
-  //g_signal_connect(G_OBJECT(radio_maybe), "toggled", G_CALLBACK(loaded_show_button_cb), default_data);
-  //g_signal_connect(G_OBJECT(radio_maybe), "event", G_CALLBACK(show_press_button_cb), default_data);
-
   /* Hide */
   hide_data = g_new0(ShowHideButtonStruct, 1);
   hide_data->show_hide_button = radio_hide;
   hide_data->show_hide_state  = ZMAPSTYLE_COLDISPLAY_HIDE;
   hide_data->show_hide_column = column_group;
-
-  //g_signal_connect(G_OBJECT(radio_hide), "toggled", G_CALLBACK(loaded_show_button_cb), hide_data);
-  //g_signal_connect(G_OBJECT(radio_hide), "event", G_CALLBACK(show_press_button_cb), hide_data);
 
   /* Return the data... We need to add it to the list */
   if(show_out)
@@ -1930,73 +1917,6 @@ static GtkWidget *create_label(GtkWidget *parent, const char *text)
   return label;
 }
 
-static void finished_press_cb(LoadedPageData loaded_page_data)
-{
-  loaded_page_data->reposition = loaded_page_data->apply_now = FALSE;
-  loaded_page_data->reset_func = NULL;
-
-  return;
-}
-
-/* This allows for the temporary immediate redraw, see
- * finished_press_cb and ->reset_func invocation in loaded_show_button_cb */
-/* Implemented like this as I couldn't find how to "wrap" the "toggle" signal */
-static gboolean show_press_button_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data)
-{
-  GdkModifierType unwanted = (GdkModifierType)(GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK);
-  ShowHideButton button_data = (ShowHideButton)user_data;
-  LoadedPageData loaded_page_data;
-
-  switch(event->type)
-    {
-    case GDK_BUTTON_PRESS:
-    case GDK_BUTTON_RELEASE:
-      {
-        GdkEventButton *button = (GdkEventButton *)event;
-        GdkModifierType locks, control = GDK_CONTROL_MASK;
-
-        locks = (GdkModifierType)(button->state & unwanted) ;
-        control = (GdkModifierType)(control | locks) ;
-
-        if(zMapGUITestModifiersOnly(button, control))
-          {
-            if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)))
-              {
-                loaded_page_data = (LoadedPageData)(button_data->loaded_page_data);
-                /* Only do this if we're going to toggle, otherwise it'll remain set... */
-                loaded_page_data->reposition = loaded_page_data->apply_now = TRUE;
-                loaded_page_data->reset_func = finished_press_cb;
-              }
-          }
-      }
-      break;
-    default:
-      break;
-    }
-
-  return FALSE;
-}
-
-#if 0
-static void apply_state_cb(GtkWidget *widget, gpointer user_data)
-{
-  if(GTK_IS_TOGGLE_BUTTON(widget))
-    {
-      if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)))
-        g_signal_emit_by_name(G_OBJECT(widget), "toggled");
-    }
-  else if(GTK_IS_CONTAINER(widget))
-    {
-      gtk_container_foreach(GTK_CONTAINER(widget),
-                            apply_state_cb, user_data);
-    }
-  else
-    zMapLogWarning("widget '%s' is not a radio button", G_OBJECT_TYPE_NAME(G_OBJECT(widget)));
-
-
-  return ;
-}
-#endif
 
 static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
 {
@@ -2312,9 +2232,6 @@ static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_strin
                                        loaded_page_data->reposition) ;
             }
         }
-
-      if(loaded_page_data->reset_func)
-        (loaded_page_data->reset_func)(loaded_page_data);
     }
 
   return ;
