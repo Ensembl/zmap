@@ -152,6 +152,7 @@ typedef struct _LoadedPageDataStruct
   ZMapWindow window ;
   GtkWidget *cols_panel ;    // the container widget for the columns panel
   GtkWidget *page_container ; // the container for cols_panel
+  GtkTreeModel *tree_model ;
 
   ColConfigure configure_data ;
 
@@ -188,7 +189,6 @@ typedef struct
 typedef struct
 {
   LoadedPageData loaded_page_data ;
-  GtkTreeModel *tree_model ;
   DialogColumns tree_col_id ;
   ZMapStrand strand ;
 } ShowHideDataStruct, *ShowHideData;
@@ -302,10 +302,14 @@ static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
                                             int width, int height);
 static void activate_matching_column(gpointer list_data, gpointer user_data) ;
 
+static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, 
+                                       GtkTreeIter *iter, ZMapStyleColumnDisplayState show_hide_state) ;
 
+static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter) ;
 
-
-
+static ZMapStyleColumnDisplayState get_state_from_tree_store_value(GtkTreeModel *model, 
+                                                                   GtkTreeIter *iter, 
+                                                                   const gboolean forward) ;
 
 
 
@@ -618,13 +622,20 @@ static void loaded_page_apply(NotebookPage notebook_page)
   loaded_page_data->apply_now  = TRUE;
   loaded_page_data->reposition = FALSE;
 
-  /* For all of the radio buttons, emit the "toggled" signal for the active button so that */
-  g_list_foreach(loaded_page_data->show_list_fwd,    each_button_toggle_if_active, configure_data);
-  g_list_foreach(loaded_page_data->default_list_fwd, each_button_toggle_if_active, configure_data);
-  g_list_foreach(loaded_page_data->hide_list_fwd,    each_button_toggle_if_active, configure_data);
-  g_list_foreach(loaded_page_data->show_list_rev,    each_button_toggle_if_active, configure_data);
-  g_list_foreach(loaded_page_data->default_list_rev, each_button_toggle_if_active, configure_data);
-  g_list_foreach(loaded_page_data->hide_list_rev,    each_button_toggle_if_active, configure_data);
+  /* Update all of the columns based on the values in the tree store */
+  GtkTreeIter iter ;
+  GtkTreeModel *model = loaded_page_data->tree_model ;
+  if (gtk_tree_model_get_iter_first(model, &iter))
+    {
+      do
+        {
+          ZMapStyleColumnDisplayState state_fwd = get_state_from_tree_store_value(model, &iter, TRUE) ;
+          ZMapStyleColumnDisplayState state_rev = get_state_from_tree_store_value(model, &iter, FALSE) ;
+
+          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_FORWARD, &iter, state_fwd) ;
+          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_REVERSE, &iter, state_rev) ;
+        } while (gtk_tree_model_iter_next(model, &iter)) ;
+    }
 
   /* Apply the new column order */
   int i = 0 ;
@@ -761,6 +772,44 @@ static ZMapStyleColumnDisplayState get_state_from_tree_store_column(DialogColumn
       zMapLogWarning("Unexpected tree column number %d", tree_col_id) ;
       break ;
     }
+
+  return result ;
+}
+
+
+/* Finds which radio button in the given tree row is active and returns the appropriate state for
+ * that column */
+static ZMapStyleColumnDisplayState get_state_from_tree_store_value(GtkTreeModel *model, 
+                                                                   GtkTreeIter *iter, 
+                                                                   const gboolean forward)
+{
+  ZMapStyleColumnDisplayState result ;
+
+  DialogColumns show_col = forward ? SHOW_FWD_COLUMN : SHOW_REV_COLUMN ;
+  DialogColumns auto_col = forward ? AUTO_FWD_COLUMN : AUTO_REV_COLUMN ;
+  DialogColumns hide_col = forward ? HIDE_FWD_COLUMN : HIDE_REV_COLUMN ;
+  gboolean show_val = FALSE ;
+  gboolean auto_val = FALSE ;
+  gboolean hide_val = FALSE ;
+
+  gtk_tree_model_get(model, iter,
+                     show_col, &show_val,
+                     auto_col, &auto_val,
+                     hide_col, &hide_val,
+                     -1) ;
+
+  DialogColumns active_col = show_col ;
+
+  if (show_val)
+    active_col = show_col ;
+  else if (auto_val)
+    active_col = auto_col ;
+  else if (hide_val)
+    active_col = hide_col ;
+  else
+    zMapLogWarning("%s", "Expected one of show/auto/hide to be true but none is") ;
+
+  result = get_state_from_tree_store_column(active_col) ;
 
   return result ;
 }
@@ -1789,7 +1838,6 @@ static void loaded_cols_panel_create_column(LoadedPageData page_data,
 {
   ShowHideData show_hide_data = g_new0(ShowHideDataStruct, 1) ;
   show_hide_data->loaded_page_data = page_data ;
-  show_hide_data->tree_model = model ;
   show_hide_data->tree_col_id = tree_col_id ;
   show_hide_data->strand = strand ;
 
@@ -1916,6 +1964,7 @@ static void loaded_cols_panel(LoadedPageData page_data)
   /* pack the panel into the page container. */
   gtk_container_add(GTK_CONTAINER(scrolled), tree) ;
   page_data->cols_panel = cols_panel ;
+  page_data->tree_model = GTK_TREE_MODEL(store) ;
   gtk_container_add(GTK_CONTAINER(page_data->page_container), cols_panel) ;
   gtk_widget_show_all(cols_panel) ;
 }
@@ -2051,6 +2100,99 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+/* For the given row and strand, apply the updates to the appropriate column */
+static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, 
+                                       GtkTreeIter *iter, ZMapStyleColumnDisplayState show_hide_state)
+{
+  zMapReturnIfFail(loaded_page_data && 
+                   loaded_page_data->configure_data &&
+                   loaded_page_data->configure_data->window) ;
+
+  ColConfigure configure_data = loaded_page_data->configure_data ;
+  GQuark column_id = tree_model_get_column_id(loaded_page_data->tree_model, iter) ;
+  FooCanvasGroup *column_group = zmapWindowGetColumnByID(loaded_page_data->window, strand, column_id) ;
+
+  /* We only do this if there is no apply button.  */
+  if(column_group && loaded_page_data->apply_now)
+    {
+      ZMapWindow window = configure_data->window;
+
+      if (IS_3FRAME(window->display_3_frame))
+        {
+          ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)(column_group);;
+          ZMapFeatureSet feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container);
+
+          if(feature_set)
+            {
+              /* MH17: we need to find the 3frame columns from a given column id
+               * Although we are only looking at one featureset out of possibly many
+               * each one will have the same featureset attatched
+               * so this will work. Phew!
+               *
+               * but only if the featureset is in the hash for that frame and strand combo.
+               * Hmmm... this was always the case, but all the features were in one context featureset
+               *
+               */
+
+              for(int i = ZMAPFRAME_NONE ; i <= ZMAPFRAME_2; i++)
+                {
+                  FooCanvasItem *frame_column;
+                  ZMapFrame frame = (ZMapFrame)i;
+
+                  frame_column = zmapWindowFToIFindSetItem(window, window->context_to_item,feature_set,
+                                                           zmapWindowContainerFeatureSetGetStrand(container), frame);
+
+                  if(frame_column &&
+                     ZMAP_IS_CONTAINER_GROUP(frame_column) &&
+                     (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(frame_column)) ||
+                      zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(frame_column))))
+                    {
+                      zmapWindowColumnSetState(window,
+                                               FOO_CANVAS_GROUP(frame_column),
+                                               show_hide_state,
+                                               FALSE) ;
+                    }
+                }
+
+              if(loaded_page_data->reposition)
+                zmapWindowFullReposition(window->feature_root_group,TRUE,"show button");
+            }
+          else
+            {
+
+            }
+        }
+      else
+        {
+          zmapWindowColumnSetState(window,
+                                   column_group,
+                                   show_hide_state,
+                                   loaded_page_data->reposition) ;
+        }
+    }
+}
+
+
+/* Get the column name for the given row in the given tree. Return it as a unique id */
+static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter)
+{
+  GQuark column_id = 0 ;
+  char *column_name = NULL ;
+
+  gtk_tree_model_get (model, iter,
+                      NAME_COLUMN, &column_name,
+                      -1);
+
+  if (column_name)
+    {
+      column_id = zMapStyleCreateID(column_name) ;
+      g_free(column_name) ;
+    }
+
+  return column_id ;
+}
+
+
 /* Called when user selects one of the display state radio buttons.
  *
  * NOTE: selecting a button will deselect the other buttons, this routine
@@ -2060,16 +2202,13 @@ static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_strin
   ShowHideData button_data = (ShowHideData)user_data ;
   zMapReturnIfFail(path_string && 
                    button_data && 
-                   button_data->tree_model && 
+                   button_data->loaded_page_data->tree_model && 
                    button_data->loaded_page_data && 
                    button_data->loaded_page_data->configure_data) ;
 
   gboolean ok = TRUE ;
-  GtkTreeModel *model = button_data->tree_model ;
+  GtkTreeModel *model = button_data->loaded_page_data->tree_model ;
   LoadedPageData loaded_page_data = button_data->loaded_page_data;
-  ColConfigure configure_data = loaded_page_data->configure_data;
-  GQuark column_id = 0 ;
-  FooCanvasGroup *column_group = NULL ;
   ZMapStyleColumnDisplayState show_hide_state ;
 
   GtkTreeIter  iter;
@@ -2087,29 +2226,6 @@ static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_strin
       gtk_tree_path_free (path);
     }
 
-  /* Get the value from the tree store */
-  if (ok)
-    {
-      char *column_name = NULL ;
-
-      gtk_tree_model_get (model, &iter,
-                          NAME_COLUMN, &column_name,
-                          -1);
-
-      if (!column_name)
-        {
-          /* Must have a column name */
-          ok = FALSE ;
-          zMapLogWarning("%s", "Error finding column name") ;
-        }
-      else
-        {
-          column_id = zMapStyleCreateID(column_name) ;
-          g_free(column_name) ;
-          column_name = NULL ;
-        }
-    }
-
   if (ok)
     {
       show_hide_state = get_state_from_tree_store_column(button_data->tree_col_id) ;
@@ -2125,76 +2241,8 @@ static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_strin
 
   if (ok)
     {
-      column_group = zmapWindowGetColumnByID(loaded_page_data->window, button_data->strand, column_id) ;
-
-      if (!column_group)
-        {
-          ok = FALSE ;
-          zMapLogWarning("Error finding column group for column %s", g_quark_to_string(column_id)) ;
-        }
-    }
-
-  if (ok)
-    {
       /* Set the correct state. */
-      /* We only do this if there is no apply button.  */
-      if(loaded_page_data->apply_now)
-        {
-          ZMapWindow window = configure_data->window;
-
-          if (IS_3FRAME(window->display_3_frame))
-            {
-              ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)(column_group);;
-              ZMapFeatureSet feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container);
-
-              if(feature_set)
-                {
-                  /* MH17: we need to find the 3frame columns from a given column id
-                   * Although we are only looking at one featureset out of possibly many
-                   * each one will have the same featureset attatched
-                   * so this will work. Phew!
-                   *
-                   * but only if the featureset is in the hash for that frame and strand combo.
-                   * Hmmm... this was always the case, but all the features were in one context featureset
-                   *
-                   */
-
-                  for(int i = ZMAPFRAME_NONE ; i <= ZMAPFRAME_2; i++)
-                    {
-                      FooCanvasItem *frame_column;
-                      ZMapFrame frame = (ZMapFrame)i;
-
-                      frame_column = zmapWindowFToIFindSetItem(window, window->context_to_item,feature_set,
-                                                               zmapWindowContainerFeatureSetGetStrand(container), frame);
-
-                      if(frame_column &&
-                         ZMAP_IS_CONTAINER_GROUP(frame_column) &&
-                         (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(frame_column)) ||
-                          zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(frame_column))))
-                        {
-                          zmapWindowColumnSetState(window,
-                                                   FOO_CANVAS_GROUP(frame_column),
-                                                   show_hide_state,
-                                                   FALSE) ;
-                        }
-                    }
-
-                  if(loaded_page_data->reposition)
-                    zmapWindowFullReposition(window->feature_root_group,TRUE,"show button");
-                }
-              else
-                {
-
-                }
-            }
-          else
-            {
-              zmapWindowColumnSetState(window,
-                                       column_group,
-                                       show_hide_state,
-                                       loaded_page_data->reposition) ;
-            }
-        }
+      loaded_page_apply_tree_row(loaded_page_data, button_data->strand, &iter, show_hide_state) ;
     }
 
   return ;
