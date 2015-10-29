@@ -158,13 +158,8 @@ typedef struct _LoadedPageDataStruct
 
   ColConfigure configure_data ;
 
-  /* Lists of all ShowHideButton pointers */
-  GList *show_list_fwd;
-  GList *default_list_fwd;
-  GList *hide_list_fwd;
-  GList *show_list_rev;
-  GList *default_list_rev;
-  GList *hide_list_rev;
+  /* Remember data we've created so we can free it */
+  GList *cb_data_list ;
 
   /* Fwd and rev strand lists of UpDownButton pointers. */
   GList *up_list;
@@ -177,15 +172,6 @@ typedef struct _LoadedPageDataStruct
   unsigned int reposition       : 1 ;
 
 } LoadedPageDataStruct;
-
-
-typedef struct
-{
-  LoadedPageData              loaded_page_data;
-  ZMapStyleColumnDisplayState show_hide_state;
-  FooCanvasGroup             *show_hide_column;
-  GtkWidget                  *show_hide_button;
-} ShowHideButtonStruct, *ShowHideButton;
 
 
 typedef struct
@@ -302,7 +288,6 @@ static void set_tree_store_value_from_state(ZMapStyleColumnDisplayState col_stat
 
 static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
                                             int width, int height);
-static void activate_matching_column(gpointer list_data, gpointer user_data) ;
 
 static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, 
                                        GtkTreeIter *iter, ZMapStyleColumnDisplayState show_hide_state) ;
@@ -580,26 +565,6 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
 }
 
 
-/* This emits a "toggled" signal for all radio buttons in the given list that are currently active */
-static void each_button_toggle_if_active(gpointer list_data, gpointer user_data)
-{
-  ShowHideButton button_data  = (ShowHideButton)list_data;
-
-  GtkWidget *widget;
-
-  widget = button_data->show_hide_button;
-
-  if (GTK_IS_TOGGLE_BUTTON(widget))
-    {
-      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)))
-        g_signal_emit_by_name(G_OBJECT(widget), "toggled");
-    }
-
-
-  return ;
-}
-
-
 /* Apply changes on the loaded-columns page */
 static void loaded_page_apply(NotebookPage notebook_page)
 {
@@ -685,29 +650,9 @@ static void container_clear(GtkWidget *widget)
 
 static void loaded_page_clear_data(LoadedPageData page_data)
 {
-  g_list_foreach(page_data->show_list_fwd, (GFunc)g_free, NULL) ;
-  g_list_free(page_data->show_list_fwd);
-  page_data->show_list_fwd = NULL;
-
-  g_list_foreach(page_data->default_list_fwd, (GFunc)g_free, NULL) ;
-  g_list_free(page_data->default_list_fwd);
-  page_data->default_list_fwd = NULL;
-
-  g_list_foreach(page_data->hide_list_fwd, (GFunc)g_free, NULL);
-  g_list_free(page_data->hide_list_fwd);
-  page_data->hide_list_fwd = NULL;
-
-  g_list_foreach(page_data->show_list_rev, (GFunc)g_free, NULL) ;
-  g_list_free(page_data->show_list_rev);
-  page_data->show_list_rev = NULL;
-
-  g_list_foreach(page_data->default_list_rev, (GFunc)g_free, NULL) ;
-  g_list_free(page_data->default_list_rev);
-  page_data->default_list_rev = NULL;
-
-  g_list_foreach(page_data->hide_list_rev, (GFunc)g_free, NULL);
-  g_list_free(page_data->hide_list_rev);
-  page_data->hide_list_rev = NULL;
+  g_list_foreach(page_data->cb_data_list, (GFunc)g_free, NULL) ;
+  g_list_free(page_data->cb_data_list);
+  page_data->cb_data_list = NULL;
 
   g_list_foreach(page_data->up_list, (GFunc)g_free, NULL);
   g_list_free(page_data->up_list);
@@ -849,76 +794,10 @@ static void set_tree_store_value_from_state(ZMapStyleColumnDisplayState col_stat
 }
 
 
-/* Create enough radio buttons for the user to toggle between all the states of column visibility */
-static void loaded_radio_buttons(GtkListStore *store, 
-                                 GtkTreeIter *iter,
-                                 const gboolean fwd,
-                                 FooCanvasGroup *column_group,
-                                 ShowHideButton *show_out,
-                                 ShowHideButton *default_out,
-                                 ShowHideButton *hide_out)
-{
-  GtkWidget *radio_show,
-    *radio_maybe,
-    *radio_hide;
-  GtkRadioButton *radio_group_button;
-  ShowHideButton show_data = NULL, default_data = NULL, hide_data = NULL;
-
-  /* Create the "show" radio button, which will create the group too. */
-  radio_show = gtk_radio_button_new(NULL) ;
-  gtk_widget_set_tooltip_text(radio_show, SHOW_LABEL) ;
-
-  /* Get the group so we can add the other buttons to the same group */
-  radio_group_button = GTK_RADIO_BUTTON(radio_show);
-
-  /* Create the "default" radio button */
-  radio_maybe = gtk_radio_button_new_from_widget(radio_group_button) ;
-  gtk_widget_set_tooltip_text(radio_maybe, SHOWHIDE_LABEL) ;
-
-  /* Create the "hide" radio button */
-  radio_hide = gtk_radio_button_new_from_widget(radio_group_button) ;
-  gtk_widget_set_tooltip_text(radio_hide, HIDE_LABEL) ;
-
-  /* Now create the data to attach to the buttons and connect the callbacks */
-
-  /* Show */
-  show_data = g_new0(ShowHideButtonStruct, 1);
-  show_data->show_hide_button = radio_show;
-  show_data->show_hide_state  = ZMAPSTYLE_COLDISPLAY_SHOW;
-  show_data->show_hide_column = column_group;
-
-
-  /* Default */
-  default_data = g_new0(ShowHideButtonStruct, 1);
-  default_data->show_hide_button = radio_maybe;
-  default_data->show_hide_state  = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE;
-  default_data->show_hide_column = column_group;
-
-  /* Hide */
-  hide_data = g_new0(ShowHideButtonStruct, 1);
-  hide_data->show_hide_button = radio_hide;
-  hide_data->show_hide_state  = ZMAPSTYLE_COLDISPLAY_HIDE;
-  hide_data->show_hide_column = column_group;
-
-  /* Return the data... We need to add it to the list */
-  if(show_out)
-    *show_out = show_data;
-
-  if(default_out)
-    *default_out = default_data;
-
-  if(hide_out)
-    *hide_out = hide_data;
-
-  return ;
-}
-
 static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData cb_data)
 {
   ColConfigure configure_data;
   ZMapStrand strand;
-  GList *button_list_fwd = NULL ;
-  GList *button_list_rev = NULL ;
   ZMapWindowColConfigureMode mode ;
   LoadedPageData loaded_page_data;
 
@@ -936,72 +815,23 @@ static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData
   if (strand != ZMAPSTRAND_FORWARD && strand != ZMAPSTRAND_REVERSE)
     return ;
 
-  switch(mode)
-    {
-    case ZMAPWINDOWCOLUMN_HIDE:
-      button_list_fwd = loaded_page_data->hide_list_fwd ;
-      button_list_rev = loaded_page_data->hide_list_rev ;
-      break;
+  gboolean save_reposition, save_apply_now;
 
-    case ZMAPWINDOWCOLUMN_SHOW:
-      button_list_fwd = loaded_page_data->show_list_fwd ;
-      button_list_rev = loaded_page_data->show_list_rev ;
-      break;
+  save_apply_now  = loaded_page_data->apply_now;
+  save_reposition = loaded_page_data->reposition;
 
-    default:
-      button_list_fwd = loaded_page_data->default_list_fwd;
-      button_list_rev = loaded_page_data->default_list_rev;
-      break;
-    }
+  /* We're only aiming to find one button to toggle so reposition = TRUE is ok. */
+  loaded_page_data->apply_now  = TRUE;
+  loaded_page_data->reposition = TRUE;
 
-  if (button_list_fwd || button_list_rev)
-    {
-      gboolean save_reposition, save_apply_now;
+  //g_list_foreach(button_list_fwd, activate_matching_column, cb_data) ;
+  //g_list_foreach(button_list_rev, activate_matching_column, cb_data) ;
 
-      save_apply_now  = loaded_page_data->apply_now;
-      save_reposition = loaded_page_data->reposition;
-
-      /* We're only aiming to find one button to toggle so reposition = TRUE is ok. */
-      loaded_page_data->apply_now  = TRUE;
-      loaded_page_data->reposition = TRUE;
-
-      g_list_foreach(button_list_fwd, activate_matching_column, cb_data) ;
-      g_list_foreach(button_list_rev, activate_matching_column, cb_data) ;
-
-      loaded_page_data->apply_now  = save_apply_now;
-      loaded_page_data->reposition = save_reposition;
-    }
-
+  loaded_page_data->apply_now  = save_apply_now;
+  loaded_page_data->reposition = save_reposition;
 
   return ;
 }
-
-
-static void activate_matching_column(gpointer list_data, gpointer user_data)
-{
-  ShowHideButton button_data = (ShowHideButton)list_data;
-  ChangeButtonStateData cb_data = (ChangeButtonStateData)user_data ;
-
-  if (!(cb_data->button_found) && button_data->show_hide_column == cb_data->column_group)
-    {
-      GtkWidget *widget;
-
-      widget = button_data->show_hide_button ;
-
-      if (GTK_IS_TOGGLE_BUTTON(widget))
-        {
-          if (!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)))
-            {
-              gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE) ;
-
-              cb_data->button_found = TRUE ;
-            }
-        }
-    }
-
-  return ;
-}
-
 
 
 static NotebookPage loaded_page_create(ColConfigure configure_data, char **page_name_out)
@@ -1839,6 +1669,8 @@ static void loaded_cols_panel_create_column(LoadedPageData page_data,
   show_hide_data->tree_col_id = tree_col_id ;
   show_hide_data->strand = strand ;
 
+  page_data->cb_data_list = g_list_append(page_data->cb_data_list, show_hide_data) ;
+
   GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
   gtk_cell_renderer_toggle_set_radio(GTK_CELL_RENDERER_TOGGLE(renderer), TRUE) ;
   g_signal_connect (renderer, "toggled", G_CALLBACK (loaded_show_button_cb), show_hide_data);
@@ -1884,9 +1716,6 @@ static void loaded_cols_panel(LoadedPageData page_data)
       FooCanvasGroup *column_group_rev = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_REVERSE, column->unique_id) ;
       ZMapWindowContainerFeatureSet container_fwd = (ZMapWindowContainerFeatureSet)column_group_fwd ;
       ZMapWindowContainerFeatureSet container_rev = (ZMapWindowContainerFeatureSet)column_group_rev ;
-
-      ShowHideButton show_data_fwd, default_data_fwd, hide_data_fwd;
-      ShowHideButton show_data_rev, default_data_rev, hide_data_rev;
 
       const char *label_text = g_quark_to_string(column->column_id);
 
@@ -2228,49 +2057,23 @@ static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_strin
   return ;
 }
 
-static void each_radio_button_activate(gpointer list_data, gpointer user_data)
-{
-  ShowHideButton show_hide_button = (ShowHideButton)list_data;
-  GtkWidget *widget;
-
-  widget = show_hide_button->show_hide_button;
-
-  if(GTK_IS_RADIO_BUTTON(widget))
-    {
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE) ;
-    }
-  else
-    zMapLogWarning("widget '%s' is not a radio button", G_OBJECT_TYPE_NAME(G_OBJECT(widget)));
-
-  return ;
-}
-
 static void select_all_buttons(GtkWidget *button, gpointer user_data)
 {
-  GList *show_hide_button_list = (GList *)user_data;
-  gboolean needs_reposition;
-  //  ColConfigure configure_data;
-  LoadedPageData loaded_page_data;
-
-  if(show_hide_button_list)
-    {
-      ShowHideButton first;
-
-      first = (ShowHideButton)(show_hide_button_list->data);
-
-      loaded_page_data = first->loaded_page_data;
-
-      needs_reposition = loaded_page_data->reposition;
-
-      loaded_page_data->reposition = FALSE;
-
-      g_list_foreach(show_hide_button_list, each_radio_button_activate, NULL);
-
-      // unitiialised
-      //      if((loaded_page_data->reposition = needs_reposition))
-      //zmapWindowFullReposition(configure_data->window->feature_root_group,TRUE);
-    }
-
+//  GList *show_hide_button_list = (GList *)user_data;
+//  gboolean needs_reposition;
+//  //  ColConfigure configure_data;
+//  LoadedPageData loaded_page_data;
+//
+//  if(show_hide_button_list)
+//    {
+//      loaded_page_data = first->loaded_page_data;
+//
+//      needs_reposition = loaded_page_data->reposition;
+//
+//      loaded_page_data->reposition = FALSE;
+//
+//      g_list_foreach(show_hide_button_list, each_radio_button_activate, NULL);
+//    }
 
   return ;
 }
