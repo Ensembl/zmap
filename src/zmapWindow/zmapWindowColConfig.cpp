@@ -784,7 +784,7 @@ static void loaded_radio_buttons(GtkListStore *store,
   /* Create the "show" radio button, which will create the group too. */
   radio_show = gtk_radio_button_new(NULL) ;
   gtk_widget_set_tooltip_text(radio_show, SHOW_LABEL) ;
-  gtk_list_store_set(store, iter, fwd ? SHOW_FWD_COLUMN : SHOW_REV_COLUMN, radio_show, -1);
+  gtk_list_store_set(store, iter, fwd ? SHOW_FWD_COLUMN : SHOW_REV_COLUMN, FALSE, -1);
 
   /* Get the group so we can add the other buttons to the same group */
   radio_group_button = GTK_RADIO_BUTTON(radio_show);
