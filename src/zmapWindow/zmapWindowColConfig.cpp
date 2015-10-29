@@ -1884,59 +1884,60 @@ static void loaded_cols_panel(LoadedPageData page_data)
 
       FooCanvasGroup *column_group_fwd = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column->unique_id) ;
       FooCanvasGroup *column_group_rev = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_REVERSE, column->unique_id) ;
+      ZMapWindowContainerFeatureSet container_fwd = (ZMapWindowContainerFeatureSet)column_group_fwd ;
+      ZMapWindowContainerFeatureSet container_rev = (ZMapWindowContainerFeatureSet)column_group_rev ;
 
       ShowHideButton show_data_fwd, default_data_fwd, hide_data_fwd;
       ShowHideButton show_data_rev, default_data_rev, hide_data_rev;
 
       const char *label_text = g_quark_to_string(column->column_id);
 
-      if((column_group_fwd || column_group_rev))
+      gtk_list_store_set(store, &iter, NAME_COLUMN, label_text, -1);
+
+      /* Show two sets of radio buttons for each column to change column display state for
+       * each strand. */
+      if (container_fwd)
         {
-          gtk_list_store_set(store, &iter, NAME_COLUMN, label_text, -1);
+          loaded_radio_buttons(store, &iter, TRUE, column_group_fwd,
+                               &show_data_fwd, &default_data_fwd, &hide_data_fwd);
 
-          /* Show two sets of radio buttons for each column to change column display state for
-           * each strand. */
-          if (column_group_fwd)
-            {
-              loaded_radio_buttons(store, &iter, TRUE, column_group_fwd,
-                                   &show_data_fwd, &default_data_fwd, &hide_data_fwd);
+          default_data_fwd->loaded_page_data = page_data ;
+          show_data_fwd->loaded_page_data    = page_data ;
+          hide_data_fwd->loaded_page_data    = page_data ;
 
-              default_data_fwd->loaded_page_data = page_data ;
-              show_data_fwd->loaded_page_data    = page_data ;
-              hide_data_fwd->loaded_page_data    = page_data ;
+          page_data->default_list_fwd = g_list_append(page_data->default_list_fwd, default_data_fwd);
+          page_data->show_list_fwd    = g_list_append(page_data->show_list_fwd, show_data_fwd);
+          page_data->hide_list_fwd    = g_list_append(page_data->hide_list_fwd, hide_data_fwd);
 
-              page_data->default_list_fwd = g_list_append(page_data->default_list_fwd, default_data_fwd);
-              page_data->show_list_fwd    = g_list_append(page_data->show_list_fwd, show_data_fwd);
-              page_data->hide_list_fwd    = g_list_append(page_data->hide_list_fwd, hide_data_fwd);
+          ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container_fwd) ;
+          set_tree_store_value_from_state(col_state, store, &iter, TRUE) ;
+        }
+      else
+        {
+          /* Auto by default */
+          set_tree_store_value_from_state(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, store, &iter, TRUE) ;
+        }
 
-              ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)column_group_rev ;
-              if (container)
-                {
-                  ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
-                  set_tree_store_value_from_state(col_state, store, &iter, TRUE) ;
-                }
-            }
+      if (container_rev)
+        {
+          loaded_radio_buttons(store, &iter, FALSE, column_group_rev,
+                               &show_data_rev, &default_data_rev, &hide_data_rev);
 
-          if (column_group_rev)
-            {
-              loaded_radio_buttons(store, &iter, FALSE, column_group_rev,
-                                   &show_data_rev, &default_data_rev, &hide_data_rev);
+          default_data_rev->loaded_page_data = page_data ;
+          show_data_rev->loaded_page_data    = page_data ;
+          hide_data_rev->loaded_page_data    = page_data ;
 
-              default_data_rev->loaded_page_data = page_data ;
-              show_data_rev->loaded_page_data    = page_data ;
-              hide_data_rev->loaded_page_data    = page_data ;
+          page_data->default_list_rev = g_list_append(page_data->default_list_rev, default_data_rev);
+          page_data->show_list_rev    = g_list_append(page_data->show_list_rev, show_data_rev);
+          page_data->hide_list_rev    = g_list_append(page_data->hide_list_rev, hide_data_rev);
 
-              page_data->default_list_rev = g_list_append(page_data->default_list_rev, default_data_rev);
-              page_data->show_list_rev    = g_list_append(page_data->show_list_rev, show_data_rev);
-              page_data->hide_list_rev    = g_list_append(page_data->hide_list_rev, hide_data_rev);
-
-              ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)column_group_rev ;
-              if (container)
-                {
-                  ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
-                  set_tree_store_value_from_state(col_state, store, &iter, FALSE) ;
-                }
-            }
+          ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container_rev) ;
+          set_tree_store_value_from_state(col_state, store, &iter, FALSE) ;
+        }
+      else
+        {
+          /* Auto by default */
+          set_tree_store_value_from_state(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, store, &iter, FALSE) ;
         }
     }
 
