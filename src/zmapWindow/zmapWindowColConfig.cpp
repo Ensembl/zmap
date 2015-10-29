@@ -152,6 +152,7 @@ typedef struct _LoadedPageDataStruct
   ZMapWindow window ;
   GtkWidget *cols_panel ;    // the container widget for the columns panel
   GtkWidget *page_container ; // the container for cols_panel
+  GtkTreeView *tree_view ;
   GtkTreeModel *tree_model ;
 
   ColConfigure configure_data ;
@@ -161,6 +162,9 @@ typedef struct _LoadedPageDataStruct
 
   unsigned int apply_now        : 1 ;
   unsigned int reposition       : 1 ;
+
+  gboolean clicked_button ; /* set to true when the user clicked a radio button; false if they
+                             * clicked another column */
 
 } LoadedPageDataStruct;
 
@@ -198,7 +202,14 @@ typedef struct
 } DeferredButtonStruct, *DeferredButton;
 
 
-
+/* Utility struct to pass data to a callback to set the state for a particular row in the tree
+ * model */
+typedef struct _SetTreeRowStateDataStruct
+{
+  LoadedPageData loaded_page_data ;
+  ZMapStrand strand ;
+  ZMapStyleColumnDisplayState state ;
+} SetTreeRowStateDataStruct, *SetTreeRowStateData ;
 
 
 /* Arrgh, pain this is needed.  Also, will fall over when multiple alignments... */
@@ -238,7 +249,7 @@ static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *wi
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
-static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_string, gpointer user_data) ;
+static void loaded_column_visibility_toggled_cb(GtkCellRendererToggle *cell, gchar *path_string, gpointer user_data) ;
 
 static GtkWidget *configure_make_toplevel(ColConfigure configure_data);
 static void configure_add_pages(ColConfigure configure_data);
@@ -252,7 +263,6 @@ static void cancel_button_cb(GtkWidget *apply_button, gpointer user_data) ;
 static void revert_button_cb(GtkWidget *apply_button, gpointer user_data);
 static void apply_button_cb(GtkWidget *apply_button, gpointer user_data);
 
-static void select_all_buttons(GtkWidget *button, gpointer user_data);
 
 static void notebook_foreach_page(GtkWidget *notebook_widget, gboolean current_page_only,
                                   NotebookFuncType func_type, gpointer foreach_data);
@@ -1611,24 +1621,6 @@ static GtkWidget *make_menu_bar(ColConfigure configure_data)
   return menubar ;
 }
 
-static void create_select_all_button(GtkTable *table, const int row, const int col,
-                                     GList *show_hide_button_list, const char *desc)
-{
-  GtkWidget *button;
-
-  button = gtk_button_new();
-  gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(GTK_STOCK_APPLY, GTK_ICON_SIZE_BUTTON)) ;
-
-  char *text = g_strdup_printf("Set all columns to '%s'", desc) ;
-  gtk_widget_set_tooltip_text(button, text) ;
-  g_free(text) ;
-
-  gtk_table_attach(table, button, col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD) ;
-  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(select_all_buttons), show_hide_button_list);
-
-  return ;
-}
-
 
 static GtkWidget *make_scrollable_vbox(GtkWidget *child)
 {
@@ -1677,11 +1669,51 @@ static void loaded_cols_panel_create_column(LoadedPageData page_data,
 
   GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
   gtk_cell_renderer_toggle_set_radio(GTK_CELL_RENDERER_TOGGLE(renderer), TRUE) ;
-  g_signal_connect (renderer, "toggled", G_CALLBACK (loaded_show_button_cb), show_hide_data);
+  g_signal_connect (renderer, "toggled", G_CALLBACK (loaded_column_visibility_toggled_cb), show_hide_data);
 
   GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(col_name, renderer, "active", tree_col_id, NULL);
 
   gtk_tree_view_append_column(GTK_TREE_VIEW(tree), column);
+}
+
+
+/* Callback called when the user clicks a row, before the selection is changed. Returns true
+ * if it's ok to change the selection, false otherwise. This is used to disable changing the
+ * selection when also clicking on a toggle button */
+static gboolean tree_select_function_cb(GtkTreeSelection *selection, 
+                                        GtkTreeModel *model,
+                                        GtkTreePath *path,
+                                        gboolean path_currently_selected,
+                                        gpointer user_data)
+{
+  gboolean result = TRUE ;
+
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnValIfFail(page_data, result) ;
+
+  const int num_selected = gtk_tree_selection_count_selected_rows(selection) ;
+
+  /* Disable changing the selection if the user clicked on a toggle button and
+   * we have a multiple selection */
+  if (page_data->clicked_button && num_selected > 1)
+    {
+      result = FALSE ;
+    }
+
+  return result ;
+}
+
+
+gboolean tree_view_button_release_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+  gboolean result = FALSE ;
+
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnValIfFail(page_data, result) ;
+
+  page_data->clicked_button = FALSE ;
+
+  return result ;
 }
 
 
@@ -1767,11 +1799,16 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
 
   /* Create the tree view widget */
   GtkWidget *tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
+  g_signal_connect(G_OBJECT(tree), "button-release-event", G_CALLBACK(tree_view_button_release_cb), page_data) ;
+
   GtkTreeView *tree_view = GTK_TREE_VIEW(tree) ;
-  gtk_tree_selection_set_mode(gtk_tree_view_get_selection(tree_view), GTK_SELECTION_MULTIPLE);
   gtk_tree_view_set_reorderable(tree_view, TRUE);
   gtk_tree_view_set_enable_search(tree_view, FALSE);
   gtk_tree_view_set_search_column(tree_view, NAME_COLUMN);
+
+  GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
+  gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
+  gtk_tree_selection_set_select_function(tree_selection, tree_select_function_cb, page_data, NULL) ;
 
   /* Create the text column */
   GtkTreeViewColumn *column = NULL ;
@@ -1792,6 +1829,7 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
   /* pack the panel into the page container. */
   gtk_container_add(GTK_CONTAINER(scrolled), tree) ;
   page_data->cols_panel = cols_panel ;
+  page_data->tree_view = tree_view ;
   page_data->tree_model = GTK_TREE_MODEL(store) ;
   gtk_container_add(GTK_CONTAINER(page_data->page_container), cols_panel) ;
   gtk_widget_show_all(cols_panel) ;
@@ -2026,11 +2064,26 @@ static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter)
 }
 
 
-/* Called when user selects one of the display state radio buttons.
- *
- * NOTE: selecting a button will deselect the other buttons, this routine
- * gets called for each of those deselections as well. */
-static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_string, gpointer user_data)
+/* Callback called for each tree row in the current selection to set and apply a new state for
+ * the cells */
+static void set_and_apply_tree_store_value_cb(GtkTreeModel *model, 
+                                              GtkTreePath *path, 
+                                              GtkTreeIter *iter, 
+                                              gpointer user_data)
+{
+  SetTreeRowStateData set_state_data = (SetTreeRowStateData)user_data ;
+
+  /* Set the state of the cells */
+  gboolean forward = (set_state_data->strand == ZMAPSTRAND_FORWARD) ;
+  set_tree_store_value_from_state(set_state_data->state, GTK_LIST_STORE(model), iter, forward) ;
+
+  /* Apply the new states. */
+  loaded_page_apply_tree_row(set_state_data->loaded_page_data, set_state_data->strand, iter) ;
+}
+
+
+/* Called when user selects one of the display state radio buttons. */
+static void loaded_column_visibility_toggled_cb(GtkCellRendererToggle *cell, gchar *path_string, gpointer user_data)
 {
   ShowHideData button_data = (ShowHideData)user_data ;
   zMapReturnIfFail(path_string && 
@@ -2043,6 +2096,9 @@ static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_strin
   GtkTreeModel *model = button_data->loaded_page_data->tree_model ;
   LoadedPageData loaded_page_data = button_data->loaded_page_data;
   ZMapStyleColumnDisplayState show_hide_state ;
+
+  /* Set the flag to indicate that the user clicked on a toggle button column */
+  loaded_page_data->clicked_button = TRUE ;
 
   GtkTreeIter  iter;
   GtkTreePath *path = gtk_tree_path_new_from_string (path_string);
@@ -2061,43 +2117,26 @@ static void loaded_show_button_cb(GtkCellRendererToggle *cell, gchar *path_strin
 
   if (ok)
     {
+      /* Only toggle the button if the clicked row is in the selection */
+      GtkTreeSelection *selection = gtk_tree_view_get_selection(loaded_page_data->tree_view) ;
+
+      if (!gtk_tree_selection_iter_is_selected(selection, &iter))
+        ok = FALSE ;
+    }
+
+  if (ok)
+    {
       show_hide_state = get_state_from_tree_store_column(button_data->tree_col_id) ;
     }
 
   if (ok)
     {
-      /* Toggle the cell values (the selected cell should be set to active and the others in the
-       * group set to inactive) */
-      gboolean forward = (button_data->strand == ZMAPSTRAND_FORWARD) ;
-      set_tree_store_value_from_state(show_hide_state, GTK_LIST_STORE(model), &iter, forward) ;
+      /* Do this for all tree rows in the current selection. */
+      GtkTreeSelection *selection = gtk_tree_view_get_selection(loaded_page_data->tree_view) ;
+      SetTreeRowStateDataStruct set_state_data = {loaded_page_data, button_data->strand, show_hide_state} ;
+
+      gtk_tree_selection_selected_foreach(selection, set_and_apply_tree_store_value_cb, &set_state_data) ;
     }
-
-  if (ok)
-    {
-      /* Set the correct state. */
-      loaded_page_apply_tree_row(loaded_page_data, button_data->strand, &iter) ;
-    }
-
-  return ;
-}
-
-static void select_all_buttons(GtkWidget *button, gpointer user_data)
-{
-//  GList *show_hide_button_list = (GList *)user_data;
-//  gboolean needs_reposition;
-//  //  ColConfigure configure_data;
-//  LoadedPageData loaded_page_data;
-//
-//  if(show_hide_button_list)
-//    {
-//      loaded_page_data = first->loaded_page_data;
-//
-//      needs_reposition = loaded_page_data->reposition;
-//
-//      loaded_page_data->reposition = FALSE;
-//
-//      g_list_foreach(show_hide_button_list, each_radio_button_activate, NULL);
-//    }
 
   return ;
 }
