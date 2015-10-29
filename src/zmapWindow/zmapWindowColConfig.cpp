@@ -84,6 +84,8 @@ typedef struct _ColConfigureStruct
 
   GtkWidget *vbox;
 
+  /* If true, flag indicates that changes will only be applied when the Apply button is pressed;
+   * if false, there will be no Apply button and changes will take effect immediately. */
   unsigned int has_apply_button : 1 ;
 
   gboolean columns_changed ;
@@ -568,11 +570,7 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
 
   loaded_cols_panel(loaded_page_data) ;
 
-  if (loaded_page_data->show_list_fwd || loaded_page_data->show_list_rev)
-    {
-      configure_data->has_apply_button = TRUE;
-    }
-  else
+  if (!loaded_page_data->configure_data->has_apply_button)
     {
       loaded_page_data->apply_now  = TRUE;
       loaded_page_data->reposition = TRUE;
@@ -1895,22 +1893,13 @@ static void loaded_cols_panel(LoadedPageData page_data)
       gtk_list_store_set(store, &iter, NAME_COLUMN, label_text, -1);
 
       /* Show two sets of radio buttons for each column to change column display state for
-       * each strand. */
+       * each strand. gb10: not sure why but historically we only added an apply button if we set
+       * non-default values for either forward or rev strand. I've kept this behaviour for now.  */
       if (container_fwd)
         {
-          loaded_radio_buttons(store, &iter, TRUE, column_group_fwd,
-                               &show_data_fwd, &default_data_fwd, &hide_data_fwd);
-
-          default_data_fwd->loaded_page_data = page_data ;
-          show_data_fwd->loaded_page_data    = page_data ;
-          hide_data_fwd->loaded_page_data    = page_data ;
-
-          page_data->default_list_fwd = g_list_append(page_data->default_list_fwd, default_data_fwd);
-          page_data->show_list_fwd    = g_list_append(page_data->show_list_fwd, show_data_fwd);
-          page_data->hide_list_fwd    = g_list_append(page_data->hide_list_fwd, hide_data_fwd);
-
           ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container_fwd) ;
           set_tree_store_value_from_state(col_state, store, &iter, TRUE) ;
+          page_data->configure_data->has_apply_button = TRUE;
         }
       else
         {
@@ -1920,19 +1909,9 @@ static void loaded_cols_panel(LoadedPageData page_data)
 
       if (container_rev)
         {
-          loaded_radio_buttons(store, &iter, FALSE, column_group_rev,
-                               &show_data_rev, &default_data_rev, &hide_data_rev);
-
-          default_data_rev->loaded_page_data = page_data ;
-          show_data_rev->loaded_page_data    = page_data ;
-          hide_data_rev->loaded_page_data    = page_data ;
-
-          page_data->default_list_rev = g_list_append(page_data->default_list_rev, default_data_rev);
-          page_data->show_list_rev    = g_list_append(page_data->show_list_rev, show_data_rev);
-          page_data->hide_list_rev    = g_list_append(page_data->hide_list_rev, hide_data_rev);
-
           ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container_rev) ;
           set_tree_store_value_from_state(col_state, store, &iter, FALSE) ;
+          page_data->configure_data->has_apply_button = TRUE;
         }
       else
         {
