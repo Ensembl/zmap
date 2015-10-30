@@ -155,6 +155,8 @@ typedef struct _LoadedPageDataStruct
   GtkTreeView *tree_view ;
   GtkTreeModel *tree_model ;
   GtkTreeModel *tree_filtered ;
+  GtkEntry *search_entry ;
+  GtkEntry *filter_entry ;
 
   ColConfigure configure_data ;
 
@@ -1751,8 +1753,7 @@ gboolean tree_view_search_equal_func_cb(GtkTreeModel *model,
 
 /* Create the tree view widget */
 static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data, 
-                                                     GtkTreeModel *model,
-                                                     GtkEntry *search_entry)
+                                                     GtkTreeModel *model)
 {
   GtkWidget *tree = NULL ;
   zMapReturnValIfFail(page_data && model, tree) ;
@@ -1767,10 +1768,13 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   gtk_tree_view_set_reorderable(tree_view, TRUE);
 
   /* Set up searching */
-  gtk_tree_view_set_enable_search(tree_view, FALSE);
-  gtk_tree_view_set_search_column(tree_view, NAME_COLUMN);
-  gtk_tree_view_set_search_entry(tree_view, search_entry) ;
-  gtk_tree_view_set_search_equal_func(tree_view, tree_view_search_equal_func_cb, NULL, NULL) ;
+  if (page_data->search_entry)
+    {
+      gtk_tree_view_set_enable_search(tree_view, FALSE);
+      gtk_tree_view_set_search_column(tree_view, NAME_COLUMN);
+      gtk_tree_view_set_search_entry(tree_view, page_data->search_entry) ;
+      gtk_tree_view_set_search_equal_func(tree_view, tree_view_search_equal_func_cb, NULL, NULL) ;
+    }
 
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
   gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
@@ -1880,8 +1884,7 @@ gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gp
 
 /* Create the tree store containing info about the columns */
 static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_data, 
-                                                         FooCanvasGroup *required_column_group,
-                                                         GtkEntry *filter_entry)
+                                                         FooCanvasGroup *required_column_group)
 {
   GtkTreeModel *model = NULL ;
   zMapReturnValIfFail(page_data && page_data->window, model) ;
@@ -1912,13 +1915,19 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
 
   /* Return the standard model - this will be used by default so that it can be reordered */
   model = GTK_TREE_MODEL(store) ;
+  page_data->tree_model = model ;
 
   /* Create a filtered tree model which will filter by the text in the filter_entry (if not empty) */
-  GtkTreeModel *filtered = gtk_tree_model_filter_new(model, NULL) ;
-  gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filtered), tree_model_filter_visible_cb, filter_entry, NULL);
-
-  page_data->tree_model = model ;
-  page_data->tree_filtered = filtered ;
+  if (page_data->filter_entry)
+    {
+      GtkTreeModel *filtered = gtk_tree_model_filter_new(model, NULL) ;
+     
+      gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filtered), 
+                                             tree_model_filter_visible_cb, 
+                                             page_data->filter_entry,
+                                             NULL);
+      page_data->tree_filtered = filtered ;
+    }
 
   return model ;
 }
@@ -1947,6 +1956,59 @@ static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
 }
 
 
+static void clear_button_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_model) ;
+
+  if (page_data->search_entry)
+    gtk_entry_set_text(page_data->search_entry, "") ;
+
+  if (page_data->filter_entry)
+    gtk_entry_set_text(page_data->filter_entry, "") ;
+
+  /* Refilter the filtered model */
+  GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(page_data->tree_filtered) ;
+  if (filter)
+    gtk_tree_model_filter_refilter(filter) ;
+
+  /* Use the unfiltered tree model so that it can be reordered */
+  gtk_tree_view_set_model(page_data->tree_view, page_data->tree_model) ;
+}
+
+
+static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
+{
+  zMapReturnValIfFail(page_data && page_data->configure_data, NULL) ;
+  GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
+
+  /* Add search/filter boxes (only if viewing multiple columns) */
+  if (page_data->configure_data->mode == ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
+    {
+      gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Search:"), FALSE, FALSE, 0) ;
+      page_data->search_entry = GTK_ENTRY(gtk_entry_new()) ;
+      gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(page_data->search_entry), FALSE, FALSE, 0) ;
+
+      gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Filter:"), FALSE, FALSE, 0) ;
+      page_data->filter_entry = GTK_ENTRY(gtk_entry_new()) ;
+      gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(page_data->filter_entry), FALSE, FALSE, 0) ;
+      g_signal_connect(G_OBJECT(page_data->filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), page_data) ;
+
+      /* Add a button to clear the contents of the search/filter boxes */
+      GtkWidget *button = gtk_button_new_from_stock(GTK_STOCK_CLEAR) ;
+      gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+      g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(clear_button_cb), page_data) ;
+    }
+
+  /* Add a button to choose a new style for the selected column(s) */
+  //GtkWidget *button = gtk_button_new_with_label("Choose style") ;
+  //gtk_box_pack_end(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  //g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(choose_style_button_cb), page_data) ;
+
+  return hbox ;
+}
+
+
 static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_group)
 {
   zMapReturnIfFail(page_data && page_data->configure_data) ;
@@ -1964,23 +2026,9 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
   cols_panel = gtk_vbox_new(FALSE, YPAD) ;
   gtk_container_add(GTK_CONTAINER(page_data->page_container), cols_panel) ;
 
-  /* Add search/filter boxes (only if viewing multiple columns) */
-  GtkEntry *search_entry = NULL ;
-  GtkEntry *filter_entry = NULL ;
-
-  if (configure_mode == ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
-    {
-      GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
-      gtk_box_pack_start(GTK_BOX(cols_panel), hbox, FALSE, FALSE, 0) ;
-
-      gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Search:"), FALSE, FALSE, 0) ;
-      search_entry = GTK_ENTRY(gtk_entry_new()) ;
-      gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(search_entry), FALSE, FALSE, 0) ;
-
-      gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Filter:"), FALSE, FALSE, 0) ;
-      filter_entry = GTK_ENTRY(gtk_entry_new()) ;
-      gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(filter_entry), FALSE, FALSE, 0) ;
-    }
+  /* Create search/filter buttons */
+  GtkWidget *buttons_container = loaded_cols_panel_create_buttons(page_data) ;
+  gtk_box_pack_start(GTK_BOX(cols_panel), buttons_container, FALSE, FALSE, 0) ;
 
   /* Create a scrolled window for our tree */
   GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL);
@@ -1988,16 +2036,9 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
   gtk_box_pack_start(GTK_BOX(cols_panel), scrolled, TRUE, TRUE, 0) ;
 
   /* Create the tree view that will list the columns */
-  GtkTreeModel *model = loaded_cols_panel_create_tree_model(page_data, required_column_group, filter_entry) ;
-  GtkWidget *tree = loaded_cols_panel_create_tree_view(page_data, model, search_entry) ;
+  GtkTreeModel *model = loaded_cols_panel_create_tree_model(page_data, required_column_group) ;
+  GtkWidget *tree = loaded_cols_panel_create_tree_view(page_data, model) ;
   gtk_container_add(GTK_CONTAINER(scrolled), tree) ;
-
-  /* Now we've created the filtered model, connect the signal to refilter when the filter entry
-   * is changed */
-  if (filter_entry)
-    {
-      g_signal_connect(G_OBJECT(filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), page_data) ;
-    }
   
   /* Cache pointers to the widgets. */
   page_data->cols_panel = cols_panel ;
