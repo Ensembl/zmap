@@ -24,6 +24,8 @@ htslib/*
 zeromq/*
 !zeromq/README_ZMAP
 
-
+# this is the location of qmake (and other QT tools) and is system
+# dependent
+qmake.location
 
 

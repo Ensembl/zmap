@@ -296,6 +296,18 @@ zmap_message_out "ZMap version is: $ZMAP_VERSION"
 #
 $BASE_DIR/../scripts/zmap_SO_header.pl || zmap_message_exit "zmap failed to generate SO header"
 
+#
+# This should find the location of the local installation of qmake 
+# and save it to the file specified. This will be modified at some point 
+# to find the location from a function in scripts/zmap_functions.sh
+#
+QMAKE_LOCAL=`find /usr/local/[QTqt]*/5.5 -type f -executable -name qmake`
+zmap_message_out "qmake is found in $QMAKE_LOCAL"
+qmake_location='qmake.location'
+rm -f $qmake_location
+echo "QMAKE_LOCAL=$QMAKE_LOCAL" > $qmake_location 
+
+
 
 
 # SURELY THIS ISN'T NEEDED NOW....OR WE SHOULD DELETE THE CVSIGNORE STUFF FROM THE REPOSITORY.
