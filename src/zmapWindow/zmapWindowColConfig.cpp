@@ -154,6 +154,7 @@ typedef struct _LoadedPageDataStruct
   GtkWidget *page_container ; // the container for cols_panel
   GtkTreeView *tree_view ;
   GtkTreeModel *tree_model ;
+  GtkTreeModel *tree_filtered ;
 
   ColConfigure configure_data ;
 
@@ -280,7 +281,7 @@ static void set_tree_store_value_from_state(ZMapStyleColumnDisplayState col_stat
 static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
                                             int width, int height);
 
-static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, GtkTreeIter *iter) ;
+static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, GtkTreeModel *model, GtkTreeIter *iter) ;
 
 static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter) ;
 
@@ -565,8 +566,8 @@ static void loaded_page_apply_all_tree_rows(LoadedPageData loaded_page_data)
     {
       do
         {
-          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_FORWARD, &iter) ;
-          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_REVERSE, &iter) ;
+          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_FORWARD, model, &iter) ;
+          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_REVERSE, model, &iter) ;
         } while (gtk_tree_model_iter_next(model, &iter)) ;
     }
 }
@@ -841,7 +842,7 @@ static void loaded_page_update_matching_tree_rows(LoadedPageData loaded_page_dat
               set_tree_store_value_from_state(required_state, GTK_LIST_STORE(model), &iter, forward) ;
 
               /* Apply the changes */
-              loaded_page_apply_tree_row(loaded_page_data, strand, &iter) ;
+              loaded_page_apply_tree_row(loaded_page_data, strand, model, &iter) ;
               
               break ; // should only be one row with this column id
             }
@@ -1716,6 +1717,37 @@ gboolean tree_view_button_release_cb(GtkWidget *widget, GdkEvent *event, gpointe
   return result ;
 }
 
+/* Callback used to determine if a search term matches a row in the tree. Returns false if it
+ * matches, true otherwise. */
+gboolean tree_view_search_equal_func_cb(GtkTreeModel *model,
+                                        gint column,
+                                        const gchar *key,
+                                        GtkTreeIter *iter,
+                                        gpointer user_data)
+{
+  gboolean result = TRUE ;
+
+  char *column_name = NULL ;
+
+  gtk_tree_model_get(model, iter,
+                     NAME_COLUMN, &column_name,
+                     -1) ;
+
+  if (column_name && 
+      key && 
+      strlen(column_name) > 0 && 
+      strlen(key) > 0 &&
+      strstr(column_name, key) != NULL)
+    {
+      result = FALSE ;
+    }
+
+  g_free(column_name) ;
+
+  return result ;
+}
+
+
 
 /* Create the tree view widget */
 static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data, 
@@ -1738,6 +1770,7 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   gtk_tree_view_set_enable_search(tree_view, FALSE);
   gtk_tree_view_set_search_column(tree_view, NAME_COLUMN);
   gtk_tree_view_set_search_entry(tree_view, search_entry) ;
+  gtk_tree_view_set_search_equal_func(tree_view, tree_view_search_equal_func_cb, NULL, NULL) ;
 
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
   gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
@@ -1757,6 +1790,8 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, SHOW_REV_COLUMN, SHOW_LABEL) ;
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, AUTO_REV_COLUMN, SHOWHIDE_LABEL) ;
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, HIDE_REV_COLUMN, HIDE_LABEL) ;
+
+  page_data->tree_view = GTK_TREE_VIEW(tree) ;
 
   return tree ;
 }
@@ -1810,8 +1845,43 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
 }
 
 
+/* Callback used to determine if a given row in the filtered tree model is visible */
+gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
+{
+  gboolean result = FALSE ;
+
+  GtkEntry *search_entry = GTK_ENTRY(user_data) ;
+  zMapReturnValIfFail(search_entry, result) ;
+
+  const char *text = gtk_entry_get_text(search_entry) ;
+  char *column_name = NULL ;
+
+  gtk_tree_model_get(model, iter,
+                     NAME_COLUMN, &column_name,
+                     -1) ;
+
+  if (!text || *text == 0)
+    {
+      /* If text isn't specified, show everything */
+      result = TRUE ;
+    }
+  else if (column_name && 
+           *column_name != 0 && 
+           strstr(column_name, text) != NULL)
+    {
+      result = TRUE ;
+    }
+
+  g_free(column_name) ;
+
+  return result ;
+}
+
+
 /* Create the tree store containing info about the columns */
-static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_data, FooCanvasGroup *required_column_group)
+static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_data, 
+                                                         FooCanvasGroup *required_column_group,
+                                                         GtkEntry *filter_entry)
 {
   GtkTreeModel *model = NULL ;
   zMapReturnValIfFail(page_data && page_data->window, model) ;
@@ -1840,9 +1910,40 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
       loaded_cols_panel_create_tree_row(page_data, store, column, column_group_fwd, column_group_rev) ;
     }
 
+  /* Return the standard model - this will be used by default so that it can be reordered */
   model = GTK_TREE_MODEL(store) ;
 
+  /* Create a filtered tree model which will filter by the text in the filter_entry (if not empty) */
+  GtkTreeModel *filtered = gtk_tree_model_filter_new(model, NULL) ;
+  gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filtered), tree_model_filter_visible_cb, filter_entry, NULL);
+
+  page_data->tree_model = model ;
+  page_data->tree_filtered = filtered ;
+
   return model ;
+}
+
+
+/* Callback called when the user hits the enter key in the filter text entry box */
+static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_model) ;
+
+  GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(page_data->tree_filtered) ;
+
+  /* Refilter the filtered model */
+  if (filter)
+    gtk_tree_model_filter_refilter(filter) ;
+
+  /* If the entry is empty then use the unfiltered tree model so that it can be
+   * reordered. Otherwise use the filtered model (which will disable reordering). */
+  const char *text = gtk_entry_get_text(entry) ;
+
+  if (!text || *text == 0 || !filter)
+    gtk_tree_view_set_model(page_data->tree_view, page_data->tree_model) ;
+  else
+    gtk_tree_view_set_model(page_data->tree_view, page_data->tree_filtered) ;
 }
 
 
@@ -1863,15 +1964,22 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
   cols_panel = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(page_data->page_container), cols_panel) ;
 
-  /* Add a search box (only if viewing multiple columns) */
+  /* Add search/filter boxes (only if viewing multiple columns) */
   GtkEntry *search_entry = NULL ;
+  GtkEntry *filter_entry = NULL ;
+
   if (configure_mode == ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
     {
       GtkWidget *hbox = gtk_hbox_new(FALSE, 0) ;
       gtk_box_pack_start(GTK_BOX(cols_panel), hbox, FALSE, FALSE, 0) ;
-      gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Find:"), FALSE, FALSE, 0) ;
+
+      gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Search:"), FALSE, FALSE, 0) ;
       search_entry = GTK_ENTRY(gtk_entry_new()) ;
       gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(search_entry), FALSE, FALSE, 0) ;
+
+      gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Filter:"), FALSE, FALSE, 0) ;
+      filter_entry = GTK_ENTRY(gtk_entry_new()) ;
+      gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(filter_entry), FALSE, FALSE, 0) ;
     }
 
   /* Create a scrolled window for our tree */
@@ -1880,14 +1988,19 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
   gtk_box_pack_start(GTK_BOX(cols_panel), scrolled, TRUE, TRUE, 0) ;
 
   /* Create the tree view that will list the columns */
-  GtkTreeModel *model = loaded_cols_panel_create_tree_model(page_data, required_column_group) ;
+  GtkTreeModel *model = loaded_cols_panel_create_tree_model(page_data, required_column_group, filter_entry) ;
   GtkWidget *tree = loaded_cols_panel_create_tree_view(page_data, model, search_entry) ;
   gtk_container_add(GTK_CONTAINER(scrolled), tree) ;
+
+  /* Now we've created the filtered model, connect the signal to refilter when the filter entry
+   * is changed */
+  if (filter_entry)
+    {
+      g_signal_connect(G_OBJECT(filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), page_data) ;
+    }
   
   /* Cache pointers to the widgets. */
   page_data->cols_panel = cols_panel ;
-  page_data->tree_view = GTK_TREE_VIEW(tree) ;
-  page_data->tree_model = model ;
 
   /* Show the columns panel */
   gtk_widget_show_all(cols_panel) ;
@@ -2025,17 +2138,17 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* For the given row and strand, apply the updates to the appropriate column */
-static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, GtkTreeIter *iter)
+static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, 
+                                       GtkTreeModel *model, GtkTreeIter *iter)
 {
   zMapReturnIfFail(loaded_page_data && 
                    loaded_page_data->configure_data &&
                    loaded_page_data->configure_data->window) ;
 
   ColConfigure configure_data = loaded_page_data->configure_data ;
-  GtkTreeModel *model = loaded_page_data->tree_model ;
   
   /* Get the column that's in this tree row */
-  GQuark column_id = tree_model_get_column_id(loaded_page_data->tree_model, iter) ;
+  GQuark column_id = tree_model_get_column_id(model, iter) ;
   FooCanvasGroup *column_group = zmapWindowGetColumnByID(loaded_page_data->window, strand, column_id) ;
 
   /* Get the required state of this tree row according to the toggle value in the tree model */
@@ -2124,19 +2237,31 @@ static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter)
 
 /* Callback called for each tree row in the current selection to set and apply a new state for
  * the cells */
-static void set_and_apply_tree_store_value_cb(GtkTreeModel *model, 
+static void set_and_apply_tree_store_value_cb(GtkTreeModel *model_in, 
                                               GtkTreePath *path, 
-                                              GtkTreeIter *iter, 
+                                              GtkTreeIter *iter_in, 
                                               gpointer user_data)
 {
   SetTreeRowStateData set_state_data = (SetTreeRowStateData)user_data ;
+  
+  GtkTreeModel *model = model_in ;
+  GtkTreeIter *iter = iter_in ;
+  GtkTreeIter iter_val ;
+
+  /* If this is a filtered model, get the child model and iter (which will be the list store) */
+  if (GTK_IS_TREE_MODEL_FILTER(model_in))
+    {
+      model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model_in)) ;
+      gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), &iter_val, iter_in) ;
+      iter = &iter_val ;
+    }
 
   /* Set the state of the cells */
   gboolean forward = (set_state_data->strand == ZMAPSTRAND_FORWARD) ;
   set_tree_store_value_from_state(set_state_data->state, GTK_LIST_STORE(model), iter, forward) ;
 
   /* Apply the new states. */
-  loaded_page_apply_tree_row(set_state_data->loaded_page_data, set_state_data->strand, iter) ;
+  loaded_page_apply_tree_row(set_state_data->loaded_page_data, set_state_data->strand, model, iter) ;
 }
 
 
@@ -2151,7 +2276,7 @@ static void loaded_column_visibility_toggled_cb(GtkCellRendererToggle *cell, gch
                    button_data->loaded_page_data->configure_data) ;
 
   gboolean ok = TRUE ;
-  GtkTreeModel *model = button_data->loaded_page_data->tree_model ;
+  GtkTreeModel *model = gtk_tree_view_get_model(button_data->loaded_page_data->tree_view) ;
   LoadedPageData loaded_page_data = button_data->loaded_page_data;
   ZMapStyleColumnDisplayState show_hide_state ;
 
