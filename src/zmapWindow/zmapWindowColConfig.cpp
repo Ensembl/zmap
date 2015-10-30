@@ -1717,88 +1717,14 @@ gboolean tree_view_button_release_cb(GtkWidget *widget, GdkEvent *event, gpointe
 }
 
 
-static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_group)
+/* Create the tree view widget */
+static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data, GtkTreeModel *model)
 {
-  zMapReturnIfFail(page_data && page_data->configure_data) ;
-
-  GtkWidget *cols_panel = NULL ;
-  ZMapWindowColConfigureMode configure_mode = page_data->configure_data->mode ;
-
-  /* If configured only to show one column, set the column group we should show */
-  FooCanvasGroup *required_column_group = NULL ;
-
-  if (configure_mode == ZMAPWINDOWCOLUMN_CONFIGURE && column_group)
-    required_column_group = column_group ;
-
-  /* Get list of column structs in current display order */
-  GList *columns_list = zMapFeatureGetOrderedColumnsList(page_data->window->context_map) ;
-
-  /* Create the overall container */
-  cols_panel = gtk_vbox_new(FALSE, 0) ;
-
-  /* Create a scrolled window for our tree */
-  GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL);
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-  gtk_box_pack_start(GTK_BOX(cols_panel), scrolled, TRUE, TRUE, 0) ;
-
-  /* Create a tree store containing one row per column */
-  GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, 
-                                           G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, 
-                                           G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN) ;
-
-  /* Loop through all columns in display order (columns are shown in mirror order on the rev
-   * strand but we always use forward-strand order) */
-  for (GList *col_iter = columns_list; col_iter; col_iter = col_iter->next)
-    {
-      ZMapFeatureColumn column = (ZMapFeatureColumn)(col_iter->data) ;
-
-      FooCanvasGroup *column_group_fwd = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column->unique_id) ;
-      FooCanvasGroup *column_group_rev = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_REVERSE, column->unique_id) ;
-      ZMapWindowContainerFeatureSet container_fwd = (ZMapWindowContainerFeatureSet)column_group_fwd ;
-      ZMapWindowContainerFeatureSet container_rev = (ZMapWindowContainerFeatureSet)column_group_rev ;
-
-      /* If looking for a specific column group, skip if this isn't it */
-      if (required_column_group && required_column_group != column_group_fwd && required_column_group != column_group_rev)
-        continue ;
-
-      /* Create a new row in the list store */
-      GtkTreeIter iter ;
-      gtk_list_store_append(store, &iter);
-
-      const char *label_text = g_quark_to_string(column->column_id);
-
-      gtk_list_store_set(store, &iter, NAME_COLUMN, label_text, -1);
-
-      /* Show two sets of radio buttons for each column to change column display state for
-       * each strand. gb10: not sure why but historically we only added an apply button if we set
-       * non-default values for either forward or rev strand. I've kept this behaviour for now.  */
-      if (container_fwd)
-        {
-          ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container_fwd) ;
-          set_tree_store_value_from_state(col_state, store, &iter, TRUE) ;
-          page_data->configure_data->has_apply_button = TRUE;
-        }
-      else
-        {
-          /* Auto by default */
-          set_tree_store_value_from_state(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, store, &iter, TRUE) ;
-        }
-
-      if (container_rev)
-        {
-          ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container_rev) ;
-          set_tree_store_value_from_state(col_state, store, &iter, FALSE) ;
-          page_data->configure_data->has_apply_button = TRUE;
-        }
-      else
-        {
-          /* Auto by default */
-          set_tree_store_value_from_state(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, store, &iter, FALSE) ;
-        }
-    }
+  GtkWidget *tree = NULL ;
+  zMapReturnValIfFail(page_data && model, tree) ;
 
   /* Create the tree view widget */
-  GtkWidget *tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
+  tree = gtk_tree_view_new_with_model(model);
   g_signal_connect(G_OBJECT(tree), "button-release-event", G_CALLBACK(tree_view_button_release_cb), page_data) ;
 
   GtkTreeView *tree_view = GTK_TREE_VIEW(tree) ;
@@ -1818,20 +1744,134 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
   gtk_tree_view_append_column(tree_view, column);
 
   /* Create the radio button columns */
-  GtkTreeModel *model = GTK_TREE_MODEL(store) ;
-  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, SHOW_FWD_COLUMN, "Show") ;
-  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, AUTO_FWD_COLUMN, "Auto") ;
-  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, HIDE_FWD_COLUMN, "Hide") ;
-  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, SHOW_REV_COLUMN, "Show") ;
-  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, AUTO_REV_COLUMN, "Auto") ;
-  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, HIDE_REV_COLUMN, "Hide") ;
-  
-  /* pack the panel into the page container. */
-  gtk_container_add(GTK_CONTAINER(scrolled), tree) ;
-  page_data->cols_panel = cols_panel ;
-  page_data->tree_view = tree_view ;
-  page_data->tree_model = GTK_TREE_MODEL(store) ;
+  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, SHOW_FWD_COLUMN, SHOW_LABEL) ;
+  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, AUTO_FWD_COLUMN, SHOWHIDE_LABEL) ;
+  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, HIDE_FWD_COLUMN, HIDE_LABEL) ;
+  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, SHOW_REV_COLUMN, SHOW_LABEL) ;
+  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, AUTO_REV_COLUMN, SHOWHIDE_LABEL) ;
+  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, HIDE_REV_COLUMN, HIDE_LABEL) ;
+
+  return tree ;
+}
+
+
+static void loaded_cols_panel_create_tree_row(LoadedPageData page_data, 
+                                              GtkListStore *store,
+                                              ZMapFeatureColumn column,
+                                              FooCanvasGroup *column_group_fwd,
+                                              FooCanvasGroup *column_group_rev)
+{
+  ZMapWindowContainerFeatureSet container_fwd = (ZMapWindowContainerFeatureSet)column_group_fwd ;
+  ZMapWindowContainerFeatureSet container_rev = (ZMapWindowContainerFeatureSet)column_group_rev ;
+
+  zMapReturnIfFail(page_data && page_data->configure_data && column && store) ;
+
+  /* Create a new row in the list store */
+  GtkTreeIter iter ;
+  gtk_list_store_append(store, &iter);
+
+  const char *label_text = g_quark_to_string(column->column_id);
+
+  gtk_list_store_set(store, &iter, NAME_COLUMN, label_text, -1);
+
+  /* Show two sets of radio buttons for each column to change column display state for
+   * each strand. gb10: not sure why but historically we only added an apply button if we set
+   * non-default values for either forward or rev strand. I've kept this behaviour for now.  */
+  if (container_fwd)
+    {
+      ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container_fwd) ;
+      set_tree_store_value_from_state(col_state, store, &iter, TRUE) ;
+      page_data->configure_data->has_apply_button = TRUE;
+    }
+  else
+    {
+      /* Auto by default */
+      set_tree_store_value_from_state(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, store, &iter, TRUE) ;
+    }
+
+  if (container_rev)
+    {
+      ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container_rev) ;
+      set_tree_store_value_from_state(col_state, store, &iter, FALSE) ;
+      page_data->configure_data->has_apply_button = TRUE;
+    }
+  else
+    {
+      /* Auto by default */
+      set_tree_store_value_from_state(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, store, &iter, FALSE) ;
+    }
+}
+
+
+/* Create the tree store containing info about the columns */
+static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_data, FooCanvasGroup *required_column_group)
+{
+  GtkTreeModel *model = NULL ;
+  zMapReturnValIfFail(page_data && page_data->window, model) ;
+
+  /* Get list of column structs in current display order */
+  GList *columns_list = zMapFeatureGetOrderedColumnsList(page_data->window->context_map) ;
+
+  /* Create a tree store containing one row per column */
+  GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, 
+                                           G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, 
+                                           G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN) ;
+
+  /* Loop through all columns in display order (columns are shown in mirror order on the rev
+   * strand but we always use forward-strand order) */
+  for (GList *col_iter = columns_list; col_iter; col_iter = col_iter->next)
+    {
+      ZMapFeatureColumn column = (ZMapFeatureColumn)(col_iter->data) ;
+
+      FooCanvasGroup *column_group_fwd = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column->unique_id) ;
+      FooCanvasGroup *column_group_rev = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_REVERSE, column->unique_id) ;
+
+      /* If looking for a specific column group, skip if this isn't it */
+      if (required_column_group && required_column_group != column_group_fwd && required_column_group != column_group_rev)
+        continue ;
+
+      loaded_cols_panel_create_tree_row(page_data, store, column, column_group_fwd, column_group_rev) ;
+    }
+
+  model = GTK_TREE_MODEL(store) ;
+
+  return model ;
+}
+
+
+static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_group)
+{
+  zMapReturnIfFail(page_data && page_data->configure_data) ;
+
+  GtkWidget *cols_panel = NULL ;
+  ZMapWindowColConfigureMode configure_mode = page_data->configure_data->mode ;
+
+  /* If configured only to show one column, set the column group we should show */
+  FooCanvasGroup *required_column_group = NULL ;
+
+  if (configure_mode == ZMAPWINDOWCOLUMN_CONFIGURE && column_group)
+    required_column_group = column_group ;
+
+  /* Create the overall container */
+  cols_panel = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(page_data->page_container), cols_panel) ;
+
+  /* Create a scrolled window for our tree */
+  GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+  gtk_box_pack_start(GTK_BOX(cols_panel), scrolled, TRUE, TRUE, 0) ;
+
+  /* Create the tree view that will list the columns */
+  GtkTreeModel *model = loaded_cols_panel_create_tree_model(page_data, required_column_group) ;
+  GtkWidget *tree = loaded_cols_panel_create_tree_view(page_data, model) ;
+  gtk_container_add(GTK_CONTAINER(scrolled), tree) ;
+  
+  /* Cache pointers to the widgets. */
+  page_data->cols_panel = cols_panel ;
+  page_data->tree_view = GTK_TREE_VIEW(tree) ;
+  page_data->tree_model = model ;
+
+  /* Show the columns panel */
   gtk_widget_show_all(cols_panel) ;
 }
 
