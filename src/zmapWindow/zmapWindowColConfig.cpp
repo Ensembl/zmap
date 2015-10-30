@@ -1718,7 +1718,9 @@ gboolean tree_view_button_release_cb(GtkWidget *widget, GdkEvent *event, gpointe
 
 
 /* Create the tree view widget */
-static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data, GtkTreeModel *model)
+static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data, 
+                                                     GtkTreeModel *model,
+                                                     GtkEntry *search_entry)
 {
   GtkWidget *tree = NULL ;
   zMapReturnValIfFail(page_data && model, tree) ;
@@ -1728,9 +1730,14 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data, G
   g_signal_connect(G_OBJECT(tree), "button-release-event", G_CALLBACK(tree_view_button_release_cb), page_data) ;
 
   GtkTreeView *tree_view = GTK_TREE_VIEW(tree) ;
+
+  /* Make the tree reorderable so users can drag-and-drop rows to reorder columns */
   gtk_tree_view_set_reorderable(tree_view, TRUE);
+
+  /* Set up searching */
   gtk_tree_view_set_enable_search(tree_view, FALSE);
   gtk_tree_view_set_search_column(tree_view, NAME_COLUMN);
+  gtk_tree_view_set_search_entry(tree_view, search_entry) ;
 
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
   gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
@@ -1856,6 +1863,17 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
   cols_panel = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(page_data->page_container), cols_panel) ;
 
+  /* Add a search box (only if viewing multiple columns) */
+  GtkEntry *search_entry = NULL ;
+  if (configure_mode == ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
+    {
+      GtkWidget *hbox = gtk_hbox_new(FALSE, 0) ;
+      gtk_box_pack_start(GTK_BOX(cols_panel), hbox, FALSE, FALSE, 0) ;
+      gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Find:"), FALSE, FALSE, 0) ;
+      search_entry = GTK_ENTRY(gtk_entry_new()) ;
+      gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(search_entry), FALSE, FALSE, 0) ;
+    }
+
   /* Create a scrolled window for our tree */
   GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL);
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
@@ -1863,7 +1881,7 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
 
   /* Create the tree view that will list the columns */
   GtkTreeModel *model = loaded_cols_panel_create_tree_model(page_data, required_column_group) ;
-  GtkWidget *tree = loaded_cols_panel_create_tree_view(page_data, model) ;
+  GtkWidget *tree = loaded_cols_panel_create_tree_view(page_data, model, search_entry) ;
   gtk_container_add(GTK_CONTAINER(scrolled), tree) ;
   
   /* Cache pointers to the widgets. */
