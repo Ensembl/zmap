@@ -46,7 +46,7 @@
 #define HIDE_LABEL     "Hide"
 
 #define XPAD 4
-#define YPAD 0
+#define YPAD 4
 
 #define NOTEBOOK_PAGE_DATA "notebook_page_data"
 
@@ -1961,7 +1961,7 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
     required_column_group = column_group ;
 
   /* Create the overall container */
-  cols_panel = gtk_vbox_new(FALSE, 0) ;
+  cols_panel = gtk_vbox_new(FALSE, YPAD) ;
   gtk_container_add(GTK_CONTAINER(page_data->page_container), cols_panel) ;
 
   /* Add search/filter boxes (only if viewing multiple columns) */
@@ -1970,7 +1970,7 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
 
   if (configure_mode == ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
     {
-      GtkWidget *hbox = gtk_hbox_new(FALSE, 0) ;
+      GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
       gtk_box_pack_start(GTK_BOX(cols_panel), hbox, FALSE, FALSE, 0) ;
 
       gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Search:"), FALSE, FALSE, 0) ;
