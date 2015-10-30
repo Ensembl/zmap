@@ -1707,7 +1707,52 @@ static gboolean tree_select_function_cb(GtkTreeSelection *selection,
 }
 
 
-gboolean tree_view_button_release_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+/* Called when the user selects a style on the tree right-click menu */
+static void tree_view_popup_menu_selected_cb(GtkWidget *menuitem, gpointer userdata)
+{
+}
+
+
+static gboolean tree_view_show_popup_menu(GtkWidget *tree_view, LoadedPageData page_data, GdkEvent *event)
+{
+  gboolean result = FALSE ;
+
+  GtkWidget *menu = gtk_menu_new();
+
+  GtkWidget *menuitem = gtk_menu_item_new_with_label("Do something");
+
+  g_signal_connect(menuitem, "activate", G_CALLBACK(tree_view_popup_menu_selected_cb), page_data);
+
+  gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
+
+  gtk_widget_show_all(menu);
+
+  /* Note: event can be NULL here when called from view_onPopupMenu;
+   *  gdk_event_get_time() accepts a NULL argument */
+  gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, gdk_event_get_time(event));
+
+  return result ;
+}
+
+
+static gboolean tree_view_button_press_cb(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+  gboolean result = FALSE ;
+
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnValIfFail(page_data, result) ;
+
+  if (event->type == GDK_BUTTON_PRESS && event->button == 3)
+    {
+      /* single click with the right mouse button - show context menu */
+      result = tree_view_show_popup_menu(widget, page_data, (GdkEvent*)event) ;
+    }
+
+  return result ;
+}
+
+
+static gboolean tree_view_button_release_cb(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
   gboolean result = FALSE ;
 
@@ -1718,6 +1763,20 @@ gboolean tree_view_button_release_cb(GtkWidget *widget, GdkEvent *event, gpointe
 
   return result ;
 }
+
+
+static gboolean tree_view_popup_menu_cb(GtkWidget *tree_view, gpointer user_data)
+{
+  gboolean result = FALSE ;
+
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnValIfFail(page_data, result) ;
+
+  result = tree_view_show_popup_menu(tree_view, page_data, NULL) ;
+
+  return result ;
+}
+
 
 /* Callback used to determine if a search term matches a row in the tree. Returns false if it
  * matches, true otherwise. */
@@ -1760,7 +1819,10 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
 
   /* Create the tree view widget */
   tree = gtk_tree_view_new_with_model(model);
+  g_signal_connect(G_OBJECT(tree), "button-press-event", G_CALLBACK(tree_view_button_press_cb), page_data) ;
   g_signal_connect(G_OBJECT(tree), "button-release-event", G_CALLBACK(tree_view_button_release_cb), page_data) ;
+  g_signal_connect(G_OBJECT(tree), "popup-menu", G_CALLBACK(tree_view_popup_menu_cb), page_data) ;
+
 
   GtkTreeView *tree_view = GTK_TREE_VIEW(tree) ;
 
@@ -1999,11 +2061,6 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
       gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
       g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(clear_button_cb), page_data) ;
     }
-
-  /* Add a button to choose a new style for the selected column(s) */
-  //GtkWidget *button = gtk_button_new_with_label("Choose style") ;
-  //gtk_box_pack_end(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
-  //g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(choose_style_button_cb), page_data) ;
 
   return hbox ;
 }
