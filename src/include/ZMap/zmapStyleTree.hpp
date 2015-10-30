@@ -47,7 +47,13 @@ public:
   std::vector<ZMapStyleTree*> get_children() const ;
 
   void sort() ;
+
   ZMapStyleTree* find(ZMapFeatureTypeStyle style) ;
+  ZMapStyleTree* find(const GQuark style_id) ;
+  ZMapFeatureTypeStyle find_style(const GQuark style_id) ;
+
+  void merge(GHashTable *styles_hash) ;
+
   void add_style(ZMapFeatureTypeStyle style, GHashTable *styles) ;
   void remove_style(ZMapFeatureTypeStyle style) ;
 
@@ -57,7 +63,10 @@ private:
   std::vector<ZMapStyleTree*> m_children ;
 
   gboolean is_style(ZMapFeatureTypeStyle style) ;
+  gboolean is_style(const GQuark style_id) ;
+
   void add_child_style(ZMapFeatureTypeStyle style) ;
+
   ZMapStyleTree* find_parent(ZMapFeatureTypeStyle style) ;
 
 };

@@ -49,14 +49,6 @@
 #define STYLES_PAGE "Styles"
 
 
-/* Utility struct used to populate the styles hierarchy tree */
-typedef struct GetStylesDataStruct_
-{
-  ZMapStyleTree &styles_tree ;
-  GHashTable *styles ;
-} GetStylesDataStruct, *GetStylesData ;
-
-
 typedef struct EditStylesDialogStruct_
 {
   GtkWidget *dialog ;
@@ -78,7 +70,6 @@ static void addContentTree(EditStylesDialog data, GtkBox *box) ;
 static void addContentButtons(EditStylesDialog data, GtkBox *box) ;
 static void treeNodeCreateWidgets(EditStylesDialog data, ZMapStyleTree *node, GtkTreeStore *store, GtkTreeIter *parent) ;
 void editStylesDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data) ;
-static void getStylesHierarchy(ZMap zmap, ZMapStyleTree &styles_tree) ;
 static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data) ;
 
 
@@ -133,7 +124,14 @@ static void treeViewAddColumn(GtkWidget *tree, GtkCellRenderer *renderer,
 
 static void addContentTree(EditStylesDialog data, GtkBox *box)
 {
-  getStylesHierarchy(data->zmap, data->styles_tree) ;
+  zMapReturnIfFail(data && data->zmap && data->zmap->focus_viewwindow) ;
+
+  /* Create the styles tree from the styles hash table */
+  GHashTable *styles = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
+  data->styles_tree.merge(styles) ;
+
+  /* Sort styles alphabetically so they're easier to read  */
+  data->styles_tree.sort() ;
 
   GtkTreeStore *store = gtk_tree_store_new(N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING) ;
   treeNodeCreateWidgets(data, &data->styles_tree, store, NULL) ;
@@ -417,34 +415,6 @@ static void cancelCB(void *user_data)
     }
 
   return ;
-}
-
-
-/* For a given style, add it to the appropriate node in the style hierarchy tree */
-static void populateStyleHierarchy(gpointer key, gpointer value, gpointer user_data)
-{
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)value ;
-  GetStylesData data = (GetStylesData)user_data ;
-
-  data->styles_tree.add_style(style, data->styles) ;
-}
-
-
-/* Get the styles as a tree representing the parent-child hierarchy */
-static void getStylesHierarchy(ZMap zmap, ZMapStyleTree &styles_tree)
-{
-  GHashTable *styles = zMapViewGetStyles(zmap->focus_viewwindow) ;
-  zMapReturnIfFail(zmap) ;
-
-  if (styles)
-    {
-      GetStylesDataStruct data = {styles_tree, styles} ;
-
-      g_hash_table_foreach(styles, populateStyleHierarchy, &data) ;
-    }
-
-  /* Sort styles alphabetically so they're easier to read  */
-  styles_tree.sort() ;
 }
 
 

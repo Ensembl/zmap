@@ -43,6 +43,16 @@
 #include <ZMap/zmapUtilsMesg.hpp>
 
 
+
+/* Utility struct used to merge a styles hash table into a tree */
+typedef struct MergeDataStruct_
+{
+  ZMapStyleTree *styles_tree ;
+  GHashTable *styles_hash ;
+} MergeDataStruct, *MergeData ;
+
+
+
 ZMapStyleTree::~ZMapStyleTree()
 {
   for (std::vector<ZMapStyleTree*>::iterator iter = m_children.begin(); iter != m_children.end(); ++iter)
@@ -52,6 +62,7 @@ ZMapStyleTree::~ZMapStyleTree()
 }
 
 
+/* Return true if this tree node represents the given style */
 gboolean ZMapStyleTree::is_style(ZMapFeatureTypeStyle style)
 {
   gboolean result = FALSE ;
@@ -63,7 +74,19 @@ gboolean ZMapStyleTree::is_style(ZMapFeatureTypeStyle style)
 }
 
 
-/* Find the given style in the tree. Return the tree node or null if not found. */
+/* Return true if this tree node represents the given style id */
+gboolean ZMapStyleTree::is_style(const GQuark style_id)
+{
+  gboolean result = FALSE ;
+
+  if (m_style && m_style->unique_id == style_id)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+/* Find the tree node for the given style. Return the tree node or null if not found. */
 ZMapStyleTree* ZMapStyleTree::find(ZMapFeatureTypeStyle style)
 {
   ZMapStyleTree *result = NULL ;
@@ -80,6 +103,41 @@ ZMapStyleTree* ZMapStyleTree::find(ZMapFeatureTypeStyle style)
           result = child->find(style) ;
         }
     }
+
+  return result ;
+}
+
+
+/* Find the tree node for the given style id. Return the tree node or null if not found. */
+ZMapStyleTree* ZMapStyleTree::find(const GQuark style_id)
+{
+  ZMapStyleTree *result = NULL ;
+
+  if (is_style(style_id))
+    {
+      result = this ;
+    }
+  else
+    {
+      for (std::vector<ZMapStyleTree*>::iterator iter = m_children.begin(); !result && iter != m_children.end(); ++iter)
+        {
+          ZMapStyleTree *child = *iter ;
+          result = child->find(style_id) ;
+        }
+    }
+
+  return result ;
+}
+
+
+/* Find the style struct for the given style id. Return the struct pointer or null if not found. */
+ZMapFeatureTypeStyle ZMapStyleTree::find_style(const GQuark style_id)
+{
+  ZMapFeatureTypeStyle result = NULL ;
+  ZMapStyleTree *node = find(style_id) ;
+
+  if (node)
+    result = node->get_style() ;
 
   return result ;
 }
@@ -210,5 +268,27 @@ void ZMapStyleTree::sort()
     {
       ZMapStyleTree *child = *iter ;
       child->sort() ;
+    }
+}
+
+
+/* Called for each style in a hash table. Add the style to the appropriate node 
+ * in the tree */
+static void mergeStyleCB(gpointer key, gpointer value, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)value ;
+  MergeData merge_data = (MergeData)user_data ;
+
+  merge_data->styles_tree->add_style(style, merge_data->styles_hash) ;
+}
+
+
+void ZMapStyleTree::merge(GHashTable *styles_hash)
+{
+  if (styles_hash)
+    {
+      MergeDataStruct merge_data = {this, styles_hash} ;
+      
+      g_hash_table_foreach(styles_hash, mergeStyleCB, &merge_data) ;
     }
 }
