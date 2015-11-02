@@ -170,7 +170,7 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
   /* check for style too. */
   /* sometimes we don't have a feature_context ... ODD! */
   if(window->feature_context
-     && zMapFindStyle(window->context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+     && window->context_map->styles.find_style(zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
     {
       drawable = zMapFeatureContextGetDNAStatus(window->feature_context);
     }

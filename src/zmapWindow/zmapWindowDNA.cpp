@@ -728,8 +728,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       ZMapFeatureTypeStyle orig_style ;
       GList *match_list ;
 
-      orig_style = zMapFindStyle(search_data->window->context_map->styles,
-         zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME)) ;
+      orig_style = search_data->window->context_map->styles.find_style(zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME)) ;
 
       if (search_data->sequence_type == ZMAPSEQUENCE_DNA
           && (match_list = zMapDNAFindAllMatches(dna, query_txt, strand, start, end - start + 1,

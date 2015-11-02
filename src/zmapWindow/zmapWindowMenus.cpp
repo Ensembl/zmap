@@ -677,7 +677,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
     if(!(style->is_default) && (parent_id = style->parent_id))
       {
-        parent = (ZMapFeatureTypeStyle)g_hash_table_lookup(window->context_map->styles, GUINT_TO_POINTER(parent_id));
+        parent = window->context_map->styles.find_style(parent_id);
       }
 
     /*
@@ -2248,8 +2248,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
            * partial transcript as an enhancement if/when users ask for it. */
           if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT
               && (user_start <= feature->x1 && user_end >= feature->x2)
-              && ((style = zMapFindStyle(menu_data->window->context_map->styles,
-                                         zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+              && ((style = menu_data->window->context_map->styles.find_style(zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
                   && getSeqColours(style, &non_coding, &coding, &split_5, &split_3)))
             {
               char *dna_fasta_title ;
@@ -4306,7 +4305,7 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
 {
   gboolean result = FALSE ;
   ZMapFeatureAny context = NULL ;
-  ZMapStyleTree &styles = NULL ;
+  ZMapStyleTree &styles ;
   ZMapSpanStruct mark_region = {0,0};
   GIOChannel *file = NULL ;
   char *filepath = NULL ;
@@ -4547,8 +4546,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
               const GQuark featureset_unique_id = zMapFeatureSetCreateID(g_quark_to_string(featureset_id)) ;
               temp_featureset = zMapFeatureSetIDCreate(featureset_id, featureset_unique_id, NULL, NULL) ;
 
-              ZMapFeatureTypeStyle style = zMapFindStyle(window->context_map->styles, 
-                                                         zMapStyleCreateID(g_quark_to_string(featureset_id))) ;
+              ZMapFeatureTypeStyle style = window->context_map->styles.find_style(zMapStyleCreateID(g_quark_to_string(featureset_id))) ;
               zMapFeatureStyleCopy(style);
               temp_featureset->style = style ;
 

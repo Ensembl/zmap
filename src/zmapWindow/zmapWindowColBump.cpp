@@ -480,9 +480,7 @@ static gboolean containerBumpStyle(ZMapWindow window,
       //printf("col style: %d %s -> %s\n", bump, g_quark_to_string(col_style->unique_id), g_quark_to_string(col_style->bump_style));
 
       if(bump)
-        col_style
-          = (ZMapFeatureTypeStyle)g_hash_table_lookup(window->context_map->styles,
-                                                      GUINT_TO_POINTER(zMapStyleCreateID( (char *)g_quark_to_string(col_style->bump_style))));
+        col_style = window->context_map->styles.find_style(zMapStyleCreateID( (char *)g_quark_to_string(col_style->bump_style)));
 
 
       /* Umm....hateful coding, truly hateful....Ed */
@@ -510,9 +508,7 @@ static gboolean containerBumpStyle(ZMapWindow window,
           //printf("item style: %d %s -> %s\n", bump, g_quark_to_string(col_style->unique_id), g_quark_to_string(style->bump_style));
           if(bump)
             {
-              bump_style
-                = (ZMapFeatureTypeStyle)g_hash_table_lookup(window->context_map->styles,
-                                                            GUINT_TO_POINTER(zMapStyleCreateID((char *)g_quark_to_string(style->bump_style))));
+              bump_style = window->context_map->styles.find_style(zMapStyleCreateID((char *)g_quark_to_string(style->bump_style)));
               if(!bump_style)
                 bump_style = col_style;
             }
