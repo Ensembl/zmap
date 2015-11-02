@@ -1,7 +1,59 @@
+2015-10-27  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix really bad log message for style not loaded. - BUG FIX
+ src/zmapConfig/zmapConfigLoader.cpp |   24 ++++++++++++++++--------
+ 1 files changed, 16 insertions(+), 8 deletions(-)
+
+2015-10-27  Ed Griffiths  <edgrif@sanger.ac.uk>
+ add returniffail call.  - TRIVIAL
+ src/zmapFeature/zmapStyleObj.cpp |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+2015-10-19  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.2.1-77-g5818f65 - Update RT and git commit reports
+ src/ChangeLog |   51 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 51 insertions(+), 0 deletions(-)
+
+2015-10-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove glib function not available on tviewsrv - BUILD
+ src/zmapView/zmapViewCallBlixem.cpp |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+2015-10-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into release/2.3.0
+2015-10-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'release/2.3.0' into develop
+2015-10-19  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.2.1-66-g44c606e - Update RT and git commit reports
+ src/ChangeLog                                  |   12 ++++++++++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 2 files changed, 13 insertions(+), 1 deletions(-)
+
 2015-10-19  Ed Griffiths  <edgrif@sanger.ac.uk>
  switch back to precise. - BUILD
  scripts/build_config.sh |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-10-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/column_groups' into develop - NEW FEATURE 'column groups'
+2015-10-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Only use column groups in multiset blixem - WIP
+ src/zmapView/zmapViewCallBlixem.cpp |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-10-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Ask user which column group to use - WIP
+ src/zmapView/zmapViewCallBlixem.cpp |  120 ++++++++++++++++++++++++++++++++---
+ 1 files changed, 112 insertions(+), 8 deletions(-)
+
+2015-10-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Dynamically reload column groups when calling blixem - WIP
+ src/zmapView/zmapViewCallBlixem.cpp |   14 ++++++++++----
+ 1 files changed, 10 insertions(+), 4 deletions(-)
+
+2015-10-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Use column group when calling blixem - WIP
+ src/zmapView/zmapViewCallBlixem.cpp |   62 +++++++++++++++++++++++++---------
+ 1 files changed, 45 insertions(+), 17 deletions(-)
 
 2015-10-14  zmap  <zmap@sanger.ac.uk>
  ZMap version 2.2.1-64-g42af70f - Update RT and git commit reports
@@ -14,6 +66,20 @@
  swop from precise to trusty as there's a space issue on the precise machine. - BUILD
  scripts/build_config.sh |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
+
+2015-10-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Use column group when calling blixem - WIP
+ src/zmapView/zmapViewCallBlixem.cpp |   59 ++++++++++++++++++++++++++++++++++-
+ 1 files changed, 58 insertions(+), 1 deletions(-)
+
+2015-10-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Add column-groups stanza - WIP
+ src/include/ZMap/zmapConfigIni.hpp          |    2 +
+ src/include/ZMap/zmapConfigStrings.hpp      |    1 +
+ src/include/ZMap/zmapFeatureLoadDisplay.hpp |   56 ++++++++++++++++++++------
+ src/zmapConfig/zmapConfigLoader.cpp         |   55 ++++++++++++++++++++++++++
+ src/zmapView/zmapView.cpp                   |    5 ++
+ 5 files changed, 106 insertions(+), 13 deletions(-)
 
 2015-10-14  Gemma Guest  <gb10@sanger.ac.uk>
  Merge branch 'feature/blixem' into develop - NEW FEATURE 'Blixem config'

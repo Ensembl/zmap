@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/2.3.0"
 
+6f38384 2015-10-27 Fix really bad log message for style not loaded. - BUG FIX
 5e89e32 2015-10-14 Merge branch 'feature/blixem' into develop - NEW FEATURE 'Blixem config'
 72968d5 2015-10-13 Improve default CDS fill colour - NEW FEATURE 'styles'
 60cfe62 2015-10-13 Remove hard-coded black/white styles - NEW FEATURE 'styles'
