@@ -104,7 +104,7 @@ static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
+static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
                                           ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in,
                                                  char *sequence_name, int start, int end,
@@ -635,7 +635,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
  * so we are at the start of the BODY part of the stream. BUT note that
  * there may be no more lines in the file, we handle that as this point
  * as it's only here that the caller has asked for the features. */
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
+static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
                                           ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
@@ -659,7 +659,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 
           zMapGFFParseSetSourceHash(server->parser, server->featureset_2_column, server->source_2_sourcedata) ;
 
-          zMapGFFParserInitForFeatures(server->parser, styles, FALSE) ;  // FALSE = create features
+          zMapGFFParserInitForFeatures(server->parser, &styles, FALSE) ;  // FALSE = create features
 
           zMapGFFSetDefaultToBasic(server->parser, TRUE);
 

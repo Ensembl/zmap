@@ -167,7 +167,7 @@ typedef struct ConnectionDataStructType
   GHashTable *featureset_2_column;                            /* needed by pipeServers */
   GHashTable *source_2_sourcedata;
 
-  GHashTable *curr_styles ;                                    /* Styles for this context. */
+  ZMapStyleTree *curr_styles ;                                    /* Styles for this context. */
   ZMapFeatureContext curr_context ;
 
   ZMapServerReqGetFeatures get_features;                    /* features got from the server,
@@ -4632,7 +4632,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
         /* Store the curr styles for use in creating the context and drawing features. */
         //        connect_data->curr_styles = get_styles->styles_out ;
         /* as the styles in the window get replaced we need to have all of them not the new ones */
-        connect_data->curr_styles = zmap_view->context_map.styles ;
+        connect_data->curr_styles = &zmap_view->context_map.styles ;
 
         break ;
       }

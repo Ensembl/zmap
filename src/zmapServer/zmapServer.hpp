@@ -71,9 +71,9 @@ ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 						 GHashTable **source_2_sourcedata_out) ;
 ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GHashTable **types_out) ;
 ZMapServerResponseType zMapServerGetFeatures(ZMapServer server,
-					     GHashTable *styles, ZMapFeatureContext feature_context) ;
+					     ZMapStyleTree &styles, ZMapFeatureContext feature_context) ;
 ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server,
-						     GHashTable *styles, ZMapFeatureContext feature_context) ;
+						     ZMapStyleTree &styles, ZMapFeatureContext feature_context) ;
 ZMapServerResponseType zMapServerStylesHaveMode(ZMapServer server, gboolean *have_mode) ;
 ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences_inout) ;
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContext feature_context) ;

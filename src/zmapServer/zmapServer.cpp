@@ -361,7 +361,7 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContex
 
 
 ZMapServerResponseType zMapServerGetFeatures(ZMapServer server,
-                                             GHashTable *styles, ZMapFeatureContext feature_context)
+                                             ZMapStyleTree &styles, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = server->last_response ;
 
@@ -380,7 +380,7 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server,
 }
 
 
-ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GHashTable *styles,
+ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, ZMapStyleTree &styles,
                                                      ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = server->last_response ;   // Can be called after a previous failure.
@@ -439,7 +439,7 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GHashTab
             {
               if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
                 {
-                  if ((dna_style = zMapFindStyle(styles, dna_quark)))
+                  if ((dna_style = styles.find_style(dna_quark)))
                     feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
                 }
             }
@@ -453,7 +453,7 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GHashTab
                   translation_fs = feature_set;
                   ZMapFeatureTypeStyle frame_style = NULL;
 
-                  if((frame_style = zMapFindStyle(styles, threeft_quark)))
+                  if((frame_style = styles.find_style(threeft_quark)))
                     zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
                 }
 
@@ -461,7 +461,7 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GHashTab
                 {
                   ZMapFeatureTypeStyle orf_style = NULL;
 
-                  if ((orf_style = zMapFindStyle(styles, orf_quark)))
+                  if ((orf_style = styles.find_style(orf_quark)))
                     zMapFeatureORFSetCreateFeatures(feature_set, orf_style, translation_fs);
                 }
             }
@@ -474,7 +474,7 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GHashTab
                 {
                   ZMapFeatureTypeStyle frame_style = NULL;
 
-                  if ((frame_style = zMapFindStyle(styles, showtrans_quark)))
+                  if ((frame_style = styles.find_style(showtrans_quark)))
                     zMapFeatureShowTranslationSetCreateFeatures(feature_set, frame_style) ;
                 }
             }

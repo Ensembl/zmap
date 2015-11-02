@@ -746,6 +746,17 @@ ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, Z
 }
 
 
+ZMapFeatureTypeStyle zMapFindFeatureStyle(ZMapStyleTree *styles, GQuark style_id, ZMapStyleMode feature_type)
+{
+  ZMapFeatureTypeStyle style = NULL ;
+
+  if (styles)
+    style = zMapFindFeatureStyle(*styles, style_id, feature_type) ;
+
+  return style ;
+}
+
+
 ZMapFeatureTypeStyle zMapFindFeatureStyle(ZMapStyleTree &styles, GQuark style_id, ZMapStyleMode feature_type)
 {
   ZMapFeatureTypeStyle feature_style = NULL ;
