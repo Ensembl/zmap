@@ -413,16 +413,15 @@ install-zmap-static-libs:
 # location on tviewsrv is '/usr/local/qt5/5.5/gcc/bin/qmake' and the command to use is of the form:
 #/usr/local/Qt5.5.0/5.5/gcc_64/bin/qmake /nfs/users/nfs_s/sm23/Work/TestCode/QT/QT01/QT01.pro -r -spec linux-g++ ;\
 #
-# these two lines work together as part of the shell command below...
-#QMAKE_LOCAL=`find /usr/local/[QTqt]*/5.5 -type f -executable -name qmake` 
-#$$QMAKE_LOCAL /nfs/users/nfs_s/sm23/Work/TestCode/QT/QT01/QT01.pro -r -spec linux-g++
+# OK so this just has my test program in place temporarily to check that things work; eventually this
+# will become something of the form: $(QMAKE_LOCAL) $(ZMAP_SRC_DIRS)
 #
 include qmake.location
 test-qt:
 	@echo "make test-qt"
 	mkdir $(top_builddir)/test-qt ;\
 	cd $(top_builddir)/test-qt ;\
-	$(QMAKE_LOCAL) /nfs/users/nfs_s/sm23/Work/TestCode/QT/QT01/QT01.pro -r -spec linux-g++ ;\
+        $(QMAKE_LOCAL) /nfs/users/nfs_s/sm23/Work/TestCode/QT/QT01/QT01.pro $(QMAKE_ARGS) ;\
 	make ;\
 	cd $(top_builddir)
 
