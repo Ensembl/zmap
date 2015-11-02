@@ -305,8 +305,8 @@ static void killAllSpawned(ZMapView zmap_view);
 static gboolean checkContinue(ZMapView zmap_view) ;
 
 
-static gboolean makeStylesDrawable(char *config_file, GHashTable *styles, char **missing_styles_out) ;
-static void drawableCB(gpointer key_id, gpointer data, gpointer user_data) ;
+static gboolean makeStylesDrawable(char *config_file, ZMapStyleTree &styles, char **missing_styles_out) ;
+static void drawableCB(ZMapFeatureTypeStyle style, gpointer user_data) ;
 
 static void addPredefined(ZMapStyleTree &styles, GHashTable **column_2_styles_inout) ;
 static void styleCB(gpointer key_id, gpointer data, gpointer user_data) ;
@@ -6646,14 +6646,14 @@ static gboolean checkContinue(ZMapView zmap_view)
 
 
 
-static gboolean makeStylesDrawable(char *config_file, GHashTable *styles, char **missing_styles_out)
+static gboolean makeStylesDrawable(char *config_file, ZMapStyleTree &styles, char **missing_styles_out)
 {
   gboolean result = FALSE ;
   DrawableDataStruct drawable_data = {NULL, FALSE, NULL} ;
 
   drawable_data.config_file = config_file ;
 
-  g_hash_table_foreach(styles, drawableCB, &drawable_data) ;
+  styles.foreach(drawableCB, &drawable_data) ;
 
   if (drawable_data.missing_styles)
     *missing_styles_out = g_string_free(drawable_data.missing_styles, FALSE) ;
@@ -6665,11 +6665,9 @@ static gboolean makeStylesDrawable(char *config_file, GHashTable *styles, char *
 
 
 
-/* A GHashListForeachFunc() to make the given style drawable. */
-static void drawableCB(gpointer key, gpointer data, gpointer user_data)
+/* A callback to make the given style drawable. */
+static void drawableCB(ZMapFeatureTypeStyle style, gpointer user_data)
 {
-  GQuark key_id = GPOINTER_TO_UINT(key);
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   DrawableData drawable_data = (DrawableData)user_data ;
 
   if (zMapStyleIsDisplayable(style))
@@ -6683,7 +6681,7 @@ static void drawableCB(gpointer key, gpointer data, gpointer user_data)
           if (!(drawable_data->missing_styles))
             drawable_data->missing_styles = g_string_sized_new(1000) ;
 
-          g_string_append_printf(drawable_data->missing_styles, "%s ", g_quark_to_string(key_id)) ;
+          g_string_append_printf(drawable_data->missing_styles, "%s ", g_quark_to_string(style->unique_id)) ;
         }
     }
 
@@ -6703,7 +6701,7 @@ static void addPredefined(ZMapStyleTree &styles_tree, GHashTable **column_2_styl
 
   g_hash_table_foreach(styles_hash, styleCB, f2s) ;
 
-  styles_tree.merge(styles_hash) ;
+  styles_tree.merge(styles_hash, ZMAPSTYLE_MERGE_PRESERVE) ;
 
   *column_2_styles_inout = f2s ;
 
@@ -7077,7 +7075,7 @@ gboolean zMapViewExportConfig(ZMapView view,
       zMapConfigIniContextCreateKeyFile(context, file_type) ;
 
       /* Update the context with the new preferences or styles, if anything has changed */
-      update_func(context, file_type, view->context_map.styles) ;
+      update_func(context, file_type, &view->context_map.styles) ;
 
       /* Update the context with any configuration values that have changed */
       configUpdateContext(view, context, export_type, file_type) ;

@@ -1050,7 +1050,7 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
 
 static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context)
 {
-  zMapReturnIfFail(zmap_view && zmap_view->context_map.styles);
+  zMapReturnIfFail(zmap_view);
 
   ZMapFeatureSet featureset = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
@@ -1061,7 +1061,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
 
   ZMapFeatureContextMap context_map = &zmap_view->context_map;
 
-  if((style = zMapFindStyle(context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_HAND_BUILT_NAME))))
+  if((style = context_map->styles.find_style(zMapStyleCreateID(ZMAP_FIXED_STYLE_HAND_BUILT_NAME))))
     {
       /* Create the featureset */
       featureset = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_HAND_BUILT_NAME, NULL);
@@ -1254,7 +1254,7 @@ static void scratchFeatureRecreate(ZMapView view)
  */
 void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context_in, ZMapFeatureBlock block_in)
 {
-  zMapReturnIfFail(zmap_view && zmap_view->context_map.styles);
+  zMapReturnIfFail(zmap_view);
 
   ZMapFeatureSet scratch_featureset = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
@@ -1267,7 +1267,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
   ZMapFeatureContext context = context_in;
   ZMapFeatureBlock block = block_in;
 
-  if((style = zMapFindStyle(context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))))
+  if((style = context_map->styles.find_style(zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))))
     {
       /* Create the featureset */
       scratch_featureset = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SCRATCH_NAME, NULL);

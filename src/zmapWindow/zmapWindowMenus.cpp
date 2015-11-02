@@ -4306,7 +4306,7 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
 {
   gboolean result = FALSE ;
   ZMapFeatureAny context = NULL ;
-  GHashTable *styles = NULL ;
+  ZMapStyleTree &styles = NULL ;
   ZMapSpanStruct mark_region = {0,0};
   GIOChannel *file = NULL ;
   char *filepath = NULL ;
@@ -4325,8 +4325,7 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
   context = (ZMapFeatureAny) window->feature_context ;
 
 
-  zMapReturnValIfFail(    (context->struct_type == ZMAPFEATURE_STRUCT_CONTEXT)
-                       && window->context_map->styles,
+  zMapReturnValIfFail(    (context->struct_type == ZMAPFEATURE_STRUCT_CONTEXT),
                           result ) ;
 
   styles = window->context_map->styles ;

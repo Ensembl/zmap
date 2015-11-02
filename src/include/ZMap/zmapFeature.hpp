@@ -1376,20 +1376,20 @@ gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GHashTable *
 				GIOChannel *file, GError **error_out) ;
 
 gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             feature_any,
-				      GHashTable *styles,
+				      ZMapStyleTree &styles,
 				      ZMapFeatureDumpFeatureFunc dump_func,
 				      gpointer                   dump_user_data,
 				      GIOChannel                *dump_file,
 				      GError                   **dump_error_out);
 gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
-					   GHashTable                     *styles,
+					   ZMapStyleTree                     &styles,
 					   ZMapSpan                   span_data,
 					   ZMapFeatureDumpFeatureFunc dump_func,
 					   gpointer                   dump_user_data,
 					   GIOChannel                *dump_file,
 					   GError                   **dump_error_out) ;
 gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_list,
-                                           GHashTable *styles,
+                                           ZMapStyleTree &styles,
                                            ZMapFeatureDumpFeatureFunc dump_func,
                                            gpointer                   dump_user_data,
                                            GIOChannel                *dump_file,

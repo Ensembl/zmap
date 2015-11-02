@@ -203,12 +203,12 @@ gboolean zMapGFFFormatMandatory(gboolean, GString *, const char *, const char *,
   int, int, float, ZMapStrand, ZMapPhase, gboolean, gboolean ) ;
 gboolean zMapGFFDumpVersionSet(ZMapGFFVersion gff_version ) ;
 ZMapGFFVersion zMapGFFDumpVersionGet() ;
-gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out);
-gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
+gboolean zMapGFFDump(ZMapFeatureAny dump_set, ZMapStyleTree &styles, GIOChannel *file, GError **error_out);
+gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, ZMapStyleTree &styles,
   ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
-gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence,
+gboolean zMapGFFDumpList(GList *dump_list, ZMapStyleTree &styles, char *sequence,
   GIOChannel *file, GString *text_out, GError **error_out) ;
-gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny, GHashTable *, GList*, ZMapSpan,
+gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny, ZMapStyleTree &, GList*, ZMapSpan,
   GIOChannel *, GError **) ;
 
 gboolean zMapWriteAttributeURL(ZMapFeature, GString *) ;

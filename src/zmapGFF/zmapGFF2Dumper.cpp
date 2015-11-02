@@ -154,7 +154,7 @@ ZMapGFFVersion zMapGFFDumpVersionGet()
  * sequences.
  *
  */
-gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out)
+gboolean zMapGFFDump(ZMapFeatureAny dump_set, ZMapStyleTree &styles, GIOChannel *file, GError **error_out)
 {
   gboolean result = TRUE;
 
@@ -163,7 +163,7 @@ gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *fi
   return result;
 }
 
-gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
+gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, ZMapStyleTree &styles,
                            ZMapSpan region_span, GIOChannel *file, GError **error_out)
 {
   gboolean result = FALSE ;
@@ -214,7 +214,7 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
  * values of the featureset->unique_id. If the region_span
  * is NULL then use all features available, otherwise only output ones that overlap.
  */
-gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny feature_any, GHashTable *styles,
+gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny feature_any, ZMapStyleTree &styles,
   GList* featuresets, ZMapSpan region_span, GIOChannel *file, GError **error_out)
 {
   gboolean result = FALSE ;
@@ -226,7 +226,6 @@ gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny feature_any, GHashTable *styles,
 
   zMapReturnValIfFail(    feature_any
                        && (feature_any->struct_type == ZMAPFEATURE_STRUCT_CONTEXT)
-                       && styles
                        && featuresets
                        && g_list_length(featuresets)
                        && file,
@@ -311,7 +310,7 @@ gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny feature_any, GHashTable *styles,
  * Dump a list of features to file or string buffer.
  */
 gboolean zMapGFFDumpList(GList *dump_list,
-                         GHashTable *styles,
+                         ZMapStyleTree &styles,
                          char *sequence,
                          GIOChannel *file,
                          GString *text_out,
