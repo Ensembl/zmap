@@ -1779,7 +1779,7 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
   static int n_menu = 0;
   ItemMenuCBData cbdata  = (ItemMenuCBData)callback_data;
   ZMapGUIMenuItem m;
-  GHashTable *styles = NULL ;
+  ZMapStyleTree &styles = NULL ;
   GList *style_list, *sl;
   int n_styles;
   int i = 0;

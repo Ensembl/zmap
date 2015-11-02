@@ -408,13 +408,9 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
                                      ZMapStyleTree &styles)
 {
   FooCanvas *canvas = NULL;
-  NavigateDrawStruct draw_data = {NULL};
+  NavigateDrawStruct draw_data = {navigate, full_context, styles};
 
 //printf("nav draw features %p -> %p\n",navigate, navigate->current_window);
-
-  draw_data.navigate  = navigate;
-  draw_data.context   = full_context;
-  draw_data.styles    = styles;
 
   navigate->full_span.x1 = full_context->master_align->sequence_span.x1;
   navigate->full_span.x2 = full_context->master_align->sequence_span.x2 + 1.0;

@@ -744,12 +744,12 @@ static gboolean applyChanges(gpointer cb_data)
 {
   gboolean ok = TRUE ;
   StyleChange my_data = (StyleChange) cb_data;
-  GHashTable *styles = my_data->window->context_map->styles;
+  ZMapStyleTree &styles = my_data->window->context_map->styles;
 
   /* See if the new style already exists */
   const char *new_style_name = gtk_entry_get_text(GTK_ENTRY(my_data->new_style_name_widget)) ;
   GQuark new_style_id = zMapStyleCreateID(new_style_name) ;
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)g_hash_table_lookup(my_data->window->context_map->styles, GUINT_TO_POINTER(new_style_id));
+  ZMapFeatureTypeStyle style = styles.find_style(new_style_id);
 
   /* It's possible the styles table has our style id but that it points to a different style,
    * e.g. a default style. We only want to update it if it's the exact style we're looking for. */
@@ -784,8 +784,10 @@ static gboolean applyChanges(gpointer cb_data)
 
       if (zMapStyleMerge(tmp_style, style))
         {
-          g_hash_table_insert(styles,GUINT_TO_POINTER(style->unique_id),tmp_style);
+          styles.remove_style(style) ;
           zMapStyleDestroy(style);
+
+          styles.add_style(tmp_style) ;
           style = tmp_style;
 
           g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_PARENT_STYLE, parent->unique_id , NULL);

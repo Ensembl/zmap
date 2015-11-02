@@ -2577,6 +2577,7 @@ static ZMapFeatureSet makeFeatureSet(ZMapWindow window,
                                      ZMapFeatureBlock feature_block)
 {
   ZMapFeatureSet feature_set = NULL ;
+  zMapReturnValIfFail(window && window->context_map) ;
 
   /*
    * Now deal with the source -> data mapping referred to in the parser.
@@ -2585,14 +2586,11 @@ static ZMapFeatureSet makeFeatureSet(ZMapWindow window,
   GQuark feature_style_id = 0 ;
   ZMapFeatureSource source_data = NULL ;
   GHashTable *source_2_sourcedata = NULL ;
-  GHashTable *feature_styles = NULL ;
+  ZMapStyleTree &feature_styles ;
   ZMapFeatureTypeStyle feature_style = NULL ;
 
-  if (window && window->context_map)
-    {
-      source_2_sourcedata = window->context_map->source_2_sourcedata ;
-      feature_styles = window->context_map->styles ;
-    }
+  source_2_sourcedata = window->context_map->source_2_sourcedata ;
+  feature_styles = window->context_map->styles ;
 
   if (source_2_sourcedata)
     {
@@ -2628,7 +2626,7 @@ static ZMapFeatureSet makeFeatureSet(ZMapWindow window,
       if (source_data)
         source_data->style_id = feature_style_id;
                   
-      g_hash_table_insert(feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
+      feature_styles.add_style(feature_style) ;
                   
       if (source_data && feature_style->unique_id != feature_style_id)
         source_data->style_id = feature_style->unique_id;
