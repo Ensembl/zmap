@@ -2577,7 +2577,7 @@ static ZMapFeatureSet makeFeatureSet(ZMapWindow window,
                                      ZMapFeatureBlock feature_block)
 {
   ZMapFeatureSet feature_set = NULL ;
-  zMapReturnValIfFail(window && window->context_map) ;
+  zMapReturnValIfFail(window && window->context_map, feature_set) ;
 
   /*
    * Now deal with the source -> data mapping referred to in the parser.
@@ -2586,11 +2586,10 @@ static ZMapFeatureSet makeFeatureSet(ZMapWindow window,
   GQuark feature_style_id = 0 ;
   ZMapFeatureSource source_data = NULL ;
   GHashTable *source_2_sourcedata = NULL ;
-  ZMapStyleTree &feature_styles ;
+  ZMapStyleTree &feature_styles = window->context_map->styles ;
   ZMapFeatureTypeStyle feature_style = NULL ;
 
   source_2_sourcedata = window->context_map->source_2_sourcedata ;
-  feature_styles = window->context_map->styles ;
 
   if (source_2_sourcedata)
     {

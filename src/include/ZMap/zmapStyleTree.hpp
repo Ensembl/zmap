@@ -49,6 +49,7 @@ public:
 
   ZMapFeatureTypeStyle get_style() const ;
   std::vector<ZMapStyleTree*> get_children() const ;
+  int count() const ;
 
   void foreach(ZMapStyleForeachFunc func, gpointer data) ;
 

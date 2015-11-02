@@ -337,7 +337,6 @@ typedef struct FilterColsDataStructType
 
 
 
-
 static void maskToggleMenuCB(int menu_item_id, gpointer callback_data);
 
 static void searchListMenuCB(int menu_item_id, gpointer callback_data) ;
@@ -429,6 +428,11 @@ static void offsetTextAttr(gpointer data, gpointer user_data) ;
 
 static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window) ;
 
+static void construct_style_menu(ZMapStyleTree *style_node, 
+                                 ZMapGUIMenuItem *menu,
+                                 const char *parent_name,
+                                 ZMapFeatureTypeStyle cur_style,
+                                 ZMapStyleMode f_type) ;
 
 
 
@@ -1770,6 +1774,49 @@ gboolean style_is_compatable(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
 }
 
 
+/* Recursively called on each node in the styles hierarchy to add a menu item for it and its children */
+static void construct_style_menu(ZMapStyleTree *style_node, 
+                                 ZMapGUIMenuItem *menu,
+                                 const char *parent_name,
+                                 ZMapFeatureTypeStyle cur_style,
+                                 ZMapStyleMode f_type)
+{
+
+  /* Add this style node */
+  ZMapFeatureTypeStyle style = style_node->get_style() ;
+
+  if (style_is_compatable(style, f_type))
+    {
+      (*menu)->type = ZMAPGUI_MENU_NORMAL;
+
+      const char *mode = "";
+
+      if(style->mode != cur_style->mode)
+        mode = (char *) zMapStyleMode2ShortText(style->mode);
+
+      /* Construct the name for this node based on the parent name */
+      char *name = get_menu_string(style->original_id, '-');
+      char *new_name = g_strdup_printf("%s/%s%s%s", parent_name, mode, *mode ? "/" : "", name);
+      (*menu)->name = new_name ;
+
+      (*menu)->id = style->unique_id;
+      (*menu)->callback_func = setStyleCB;
+      (*menu)++;
+
+      /* Recurse through the children */
+      std::vector<ZMapStyleTree*> children = style_node->get_children() ;
+  
+      for (std::vector<ZMapStyleTree*>::iterator child = children.begin(); child != children.end(); ++child)
+        {
+          construct_style_menu(*child, menu, new_name, cur_style, f_type) ;
+        }
+
+      g_free(name);
+      g_free(new_name) ;
+    }
+}
+
+
 static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
                                                ZMapGUIMenuItemCallbackFunc callback_func, gpointer callback_data,
                                                ZMapFeatureTypeStyle cur_style, ZMapStyleMode f_type)
@@ -1779,20 +1826,18 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
   static int n_menu = 0;
   ItemMenuCBData cbdata  = (ItemMenuCBData)callback_data;
   ZMapGUIMenuItem m;
-  ZMapStyleTree &styles = NULL ;
-  GList *style_list, *sl;
+  ZMapStyleTree *styles = NULL ;
   int n_styles;
-  int i = 0;
 
   zMapReturnValIfFail(cbdata && cbdata->window && cbdata->window->context_map, NULL ) ;
 
-  styles = cbdata->window->context_map->styles;
+  styles = &cbdata->window->context_map->styles;
 
-  zMap_g_hash_table_get_data(&style_list,styles);
-  style_list = g_list_sort_with_data(style_list, style_menu_sort, (gpointer) cur_style);
-  n_styles = g_list_length(style_list);                /* max possible, will never be reached */
+  //zMap_g_hash_table_get_data(&style_list,styles);
+  //style_list = g_list_sort_with_data(style_list, style_menu_sort, (gpointer) cur_style);
+  n_styles = styles->count();                /* max possible, will never be reached */
 
-  if (!n_styles)
+  if (n_styles < 1)
     return NULL;
 
 
@@ -1817,42 +1862,28 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
 
   m = menu;
 
+  /* Add the Edit Style menu option */
   m->type = ZMAPGUI_MENU_NORMAL;
   m->name = g_strdup(COLUMN_CONFIG_STR "/" COLUMN_COLOUR);
   m->id = 0;
   m->callback_func = colourMenuCB;
   m++;
 
-  /* add sub menu */
+  /* Add the Choose Style menu option */
   m->type = ZMAPGUI_MENU_BRANCH;
   m->name = g_strdup(COLUMN_CONFIG_STR "/" COLUMN_STYLE_OPTS);
   m->id = 0;
   m->callback_func = NULL;
   m++;
 
-  for( i = 0, sl = style_list;i < n_styles; i++, sl = sl->next)
-    {
-      char *name;
-      const char *mode = "";
-      ZMapFeatureTypeStyle s = (ZMapFeatureTypeStyle) sl->data;
+  /* Add sub-menu options under Choose Style. Loop through each node in the styles tree. 
+   * Pass the name prefix each time so that we can compile sub menus under the correct parent
+   * menu item */
+  char *name_prefix = g_strdup(COLUMN_CONFIG_STR "/" COLUMN_STYLE_OPTS) ;
 
-      if (!style_is_compatable(s,f_type))
-        continue;
+  construct_style_menu(styles, &m, name_prefix, cur_style, f_type) ;
 
-      m->type = ZMAPGUI_MENU_NORMAL;
-
-      name = get_menu_string(s->original_id, '-');
-
-      if(s->mode != cur_style->mode)
-        mode = (char *) zMapStyleMode2ShortText(s->mode);
-
-      m->name = g_strdup_printf(COLUMN_CONFIG_STR "/" COLUMN_STYLE_OPTS"/%s%s%s", mode, *mode ? "/" : "", name);
-      g_free(name);
-
-      m->id = s->unique_id;
-      m->callback_func = setStyleCB;
-      m++;
-    }
+  g_free(name_prefix) ;
 
   if (m <= menu + 3)        /* empty sub_menu or choice of current */
     m = menu + 1;
@@ -4305,7 +4336,6 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
 {
   gboolean result = FALSE ;
   ZMapFeatureAny context = NULL ;
-  ZMapStyleTree &styles ;
   ZMapSpanStruct mark_region = {0,0};
   GIOChannel *file = NULL ;
   char *filepath = NULL ;
@@ -4327,7 +4357,7 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
   zMapReturnValIfFail(    (context->struct_type == ZMAPFEATURE_STRUCT_CONTEXT),
                           result ) ;
 
-  styles = window->context_map->styles ;
+  ZMapStyleTree &styles = window->context_map->styles ;
 
   /*
    * Fish out the marked region if it is available; otherwise leave its start

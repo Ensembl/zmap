@@ -421,3 +421,19 @@ void ZMapStyleTree::foreach(ZMapStyleForeachFunc func, gpointer data)
     }
 }
 
+
+/* Return the total number of styles in the entire tree hierarchy */
+int ZMapStyleTree::count() const
+{
+  /* Count this node */
+  int total = 1 ;
+
+  /* Recurse through children */
+  for (std::vector<ZMapStyleTree*>::const_iterator iter = m_children.begin(); iter != m_children.end(); ++iter)
+    {
+      ZMapStyleTree *child = *iter ;
+      total += child->count() ;
+    }
+
+  return total ;
+}
