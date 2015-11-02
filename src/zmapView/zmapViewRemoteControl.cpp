@@ -744,7 +744,7 @@ static void viewDumpContextToFile(ZMapView view, RequestData request_data)
 #endif /* STYLES_PRINT_TO_FILE */
 
       else
-        result = zMapFeatureContextDump(view->features, view->context_map.styles, file, &error);
+        result = zMapFeatureContextDump(view->features, &view->context_map.styles, file, &error);
 
       if(!result)
         {

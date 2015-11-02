@@ -1046,7 +1046,7 @@ typedef ZMapFeatureContextExecuteStatus (*ZMapGDataRecurseFunc)(GQuark   key_id,
 
 /* For custom feature context dumping. */
 typedef gboolean (*ZMapFeatureDumpFeatureFunc)(ZMapFeatureAny feature_any,
-					       GHashTable    *styles,
+					       ZMapStyleTree *styles,
 					       GString       *dump_string_in_out,
 					       GError       **error,
 					       gpointer       user_data) ;
@@ -1369,27 +1369,27 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
 /* Probably should be merged at some time.... */
 char *zMapFeatureAsString(ZMapFeature feature) ;
-gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GHashTable *styles, GError **error_out) ;
+gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, ZMapStyleTree *styles, GError **error_out) ;
 gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context, const char *filename, const char *header,
-                                   GHashTable *styles, GError **error_out);
-gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GHashTable *styles,
+                                   ZMapStyleTree *styles, GError **error_out);
+gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, ZMapStyleTree *styles,
 				GIOChannel *file, GError **error_out) ;
 
 gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             feature_any,
-				      ZMapStyleTree &styles,
+				      ZMapStyleTree *styles,
 				      ZMapFeatureDumpFeatureFunc dump_func,
 				      gpointer                   dump_user_data,
 				      GIOChannel                *dump_file,
 				      GError                   **dump_error_out);
 gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
-					   ZMapStyleTree                     &styles,
+					   ZMapStyleTree                     *styles,
 					   ZMapSpan                   span_data,
 					   ZMapFeatureDumpFeatureFunc dump_func,
 					   gpointer                   dump_user_data,
 					   GIOChannel                *dump_file,
 					   GError                   **dump_error_out) ;
 gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_list,
-                                           ZMapStyleTree &styles,
+                                           ZMapStyleTree *styles,
                                            ZMapFeatureDumpFeatureFunc dump_func,
                                            gpointer                   dump_user_data,
                                            GIOChannel                *dump_file,

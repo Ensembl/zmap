@@ -4654,7 +4654,7 @@ void dumpConfig(GHashTable *f2c, GHashTable *f2s)
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "Config Dump filename ?", NULL, "zmap"))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapFeatureContextDump(window->feature_context, window->context_map->styles, file, &error))
+      || !zMapFeatureContextDump(window->feature_context, &window->context_map->styles, file, &error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */
@@ -4732,7 +4732,7 @@ gboolean zMapWindowExportContext(ZMapWindow window, GError **error)
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "Context Export filename ?", NULL, "zmap"))
       || !(file = g_io_channel_new_file(filepath, "w", &tmp_error))
-      || !zMapFeatureContextDump(window->feature_context, window->context_map->styles, file, &tmp_error))
+      || !zMapFeatureContextDump(window->feature_context, &window->context_map->styles, file, &tmp_error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */

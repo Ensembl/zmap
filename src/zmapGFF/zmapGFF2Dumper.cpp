@@ -119,7 +119,7 @@ static void deleteFeatureSearch(FeatureSearch *) ;
  * ZMapFeatureDumpFeatureFunc to dump gff. Writes lines into gstring buffer.
  *
  */
-static gboolean dump_gff_cb(ZMapFeatureAny feature_any, GHashTable *styles,
+static gboolean dump_gff_cb(ZMapFeatureAny feature_any, ZMapStyleTree  *styles,
   GString *gff_string,  GError **error, gpointer user_data);
 
 
@@ -192,10 +192,10 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, ZMapStyleTree &styles,
       /* This might get overwritten later, but as DumpToFile uses
        * Subset, there's a chance it wouldn't get set at all */
       if(region_span)
-        result = zMapFeatureContextRangeDumpToFile((ZMapFeatureAny)dump_set, styles, region_span,
+        result = zMapFeatureContextRangeDumpToFile((ZMapFeatureAny)dump_set, &styles, region_span,
                    dump_gff_cb, format_data, file, error_out) ;
       else
-        result = zMapFeatureContextDumpToFile((ZMapFeatureAny)dump_set, styles,
+        result = zMapFeatureContextDumpToFile((ZMapFeatureAny)dump_set, &styles,
                    dump_gff_cb, format_data, file, error_out) ;
     }
 
@@ -340,7 +340,7 @@ gboolean zMapGFFDumpList(GList *dump_list,
 
   if (result)
     {
-      result = zMapFeatureListDumpToFileOrBuffer(dump_list, styles, dump_gff_cb,
+      result = zMapFeatureListDumpToFileOrBuffer(dump_list, &styles, dump_gff_cb,
                                                  format_data, file, text_out, error_out) ;
     }
 
@@ -556,7 +556,7 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark  key, gpoin
  * in this case).
  */
 static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
-    GHashTable         *styles,
+    ZMapStyleTree          *styles,
     GString       *line,
     GError       **error,
     gpointer       user_data)
