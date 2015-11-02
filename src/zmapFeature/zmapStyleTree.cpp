@@ -41,6 +41,8 @@
 #include <zmapStyle_P.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 #include <ZMap/zmapUtilsMesg.hpp>
+#include <ZMap/zmapUtilsDebug.hpp>
+
 
 
 
@@ -49,6 +51,7 @@ typedef struct MergeDataStruct_
 {
   ZMapStyleTree *styles_tree ;
   GHashTable *styles_hash ;
+  ZMapStyleMergeMode merge_mode ;
 } MergeDataStruct, *MergeData ;
 
 
@@ -63,7 +66,7 @@ ZMapStyleTree::~ZMapStyleTree()
 
 
 /* Return true if this tree node represents the given style */
-gboolean ZMapStyleTree::is_style(ZMapFeatureTypeStyle style)
+gboolean ZMapStyleTree::is_style(ZMapFeatureTypeStyle style) const
 {
   gboolean result = FALSE ;
 
@@ -75,7 +78,7 @@ gboolean ZMapStyleTree::is_style(ZMapFeatureTypeStyle style)
 
 
 /* Return true if this tree node represents the given style id */
-gboolean ZMapStyleTree::is_style(const GQuark style_id)
+gboolean ZMapStyleTree::is_style(const GQuark style_id) const
 {
   gboolean result = FALSE ;
 
@@ -185,6 +188,12 @@ ZMapFeatureTypeStyle ZMapStyleTree::get_style() const
 }
 
 
+void ZMapStyleTree::set_style(ZMapFeatureTypeStyle style)
+{
+  m_style = style ;
+}
+
+
 std::vector<ZMapStyleTree*> ZMapStyleTree::get_children() const
 {
   return m_children ;
@@ -219,6 +228,71 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles)
           add_child_style(style) ;
         }
       
+    }
+}
+
+
+/* Add/update the given style into the style hierarchy tree in the appropriate place according to its
+ * parent. Recursively add/update the style's parent(s) if not already in the tree. If the style
+ * is already in the tree it is ignored/updated/replaced depending on the merge mode */
+void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZMapStyleMergeMode merge_mode)
+{
+  ZMapStyleTree *found_node = find(style) ;
+
+  if (!found_node)
+    {
+      ZMapFeatureTypeStyle parent = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style->parent_id)) ;
+
+      if (parent)
+        {
+          /* If the parent doesn't exist, recursively create it */
+          add_style(parent, styles) ;
+
+          ZMapStyleTree *parent_node = find(parent) ;
+
+          /* Add the child to the parent node */
+          if (parent_node)
+            parent_node->add_child_style(style) ;
+          else
+            zMapWarning("%s", "Error adding style to tree") ;
+        }
+      else
+        {
+          /* This style has no parent, so add it to the root style in the tree */
+          add_child_style(style) ;
+        }
+      
+    }
+  else
+    {
+      switch (merge_mode)
+        {
+        case ZMAPSTYLE_MERGE_PRESERVE:
+          {
+            /* Leave the existing style untouched. */
+            break ;
+          }
+        case ZMAPSTYLE_MERGE_REPLACE:
+          {
+            /* Remove the existing style and put the new one in its place. */
+            ZMapFeatureTypeStyle curr_style = found_node->get_style() ;
+            found_node->set_style(style) ;
+            zMapStyleDestroy(curr_style) ;
+            break ;
+          }
+        case ZMAPSTYLE_MERGE_MERGE:
+          {
+            /* Merge the existing and new styles. */
+            ZMapFeatureTypeStyle curr_style = found_node->get_style() ;
+            zMapStyleMerge(curr_style, style) ;
+            break ;
+          }
+        default:
+          {
+            zMapWarnIfReached() ;
+            break ;
+          }
+        }
     }
 }
 
@@ -283,12 +357,30 @@ static void mergeStyleCB(gpointer key, gpointer value, gpointer user_data)
 }
 
 
-void ZMapStyleTree::merge(GHashTable *styles_hash)
+void ZMapStyleTree::merge(GHashTable *styles_hash, ZMapStyleMergeMode merge_mode)
 {
   if (styles_hash)
     {
-      MergeDataStruct merge_data = {this, styles_hash} ;
+      MergeDataStruct merge_data = {this, styles_hash, merge_mode} ;
       
       g_hash_table_foreach(styles_hash, mergeStyleCB, &merge_data) ;
+    }
+}
+
+
+/* Call the given function on each style in the tree */
+void ZMapStyleTree::foreach(ZMapStyleForeachFunc func, gpointer data)
+{
+  if (func)
+    {
+      /* Call the function on this style */
+      (*func)(m_style, data) ;
+
+      /* Recurse */
+      for (std::vector<ZMapStyleTree*>::iterator iter = m_children.begin(); iter != m_children.end(); ++iter)
+        {
+          ZMapStyleTree *child = *iter ;
+          child->foreach(func, data) ;
+        }
     }
 }

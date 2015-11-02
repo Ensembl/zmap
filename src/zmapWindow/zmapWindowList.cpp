@@ -1104,7 +1104,7 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
           if(glist && glist->data && feature_any)
             {
               if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-                zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+                zMapFeatureContextReverseComplement(window->feature_context) ;
 
               if (zMapGFFDumpForeachList(feature_any, window->context_map->styles, file, &error, NULL,
                                          &(export_data.func), &(export_data.data)))
@@ -1116,7 +1116,7 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
               g_list_free(glist);
 
               if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-                zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+                zMapFeatureContextReverseComplement(window->feature_context) ;
             }
           */
         }

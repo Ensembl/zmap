@@ -1173,7 +1173,7 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
 void zMapFeature2BlockCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 void zMapBlock2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 
-void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable *styles) ;
+void zMapFeatureContextReverseComplement(ZMapFeatureContext context) ;
 void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature feature) ;
 void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_inout, int *end_inout) ;
 

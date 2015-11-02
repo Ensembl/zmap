@@ -539,7 +539,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             GList *feature_set_names, gboolean *flags, int *int_values) ;
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap sequence,
                           void *app_data, ZMapWindow old,
-                          ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
+                          ZMapFeatureContext features,
                           ZMapWindowLockType window_locking) ;
 
 void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;

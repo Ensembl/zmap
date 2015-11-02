@@ -195,7 +195,7 @@ gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
 ZMapFeatureContext zMapViewGetContext(ZMapViewWindow view_window) ;
 ZMapView zMapViewGetView(ZMapViewWindow view_window) ;
-GHashTable *zMapViewGetStyles(ZMapViewWindow view_window) ;
+ZMapStyleTree* zMapViewGetStyles(ZMapViewWindow view_window) ;
 ZMapWindowNavigator zMapViewGetNavigator(ZMapView view);
 int zMapViewNumWindows(ZMapViewWindow view_window) ;
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);

@@ -40,6 +40,9 @@ typedef void (*ZMapWindowNavigatorValueChanged)(void *user_data, double start, d
 typedef void (*ZMapWindowNavigatorFunction)(ZMapWindowNavigator navigator);
 
 
+class ZMapStyleTree ;
+
+
 typedef struct _ZMapNavigatorCallbackStruct
 {
 #if RUN_AROUND
@@ -60,7 +63,7 @@ void zMapWindowNavigatorMergeInFeatureSetNames(ZMapWindowNavigator navigate,
 void zMapWindowNavigatorSetStrand(ZMapWindowNavigator navigate, gboolean is_reversed);
 void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
                                      ZMapFeatureContext  full_context,
-				     GHashTable              *styles);
+				     ZMapStyleTree       &styles);
 void zmapWindowNavigatorLocusRedraw(ZMapWindowNavigator navigate);
 
 void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,

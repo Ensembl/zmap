@@ -36,6 +36,7 @@
 #include <glib.h>
 
 #include <ZMap/zmapStyle.hpp>
+#include <ZMap/zmapStyleTree.hpp>
 #include <ZMap/zmapConfigDir.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapConfigIni.hpp>
@@ -68,7 +69,7 @@ typedef struct
 /* Struct to pass data to the callback function to update a style */
 typedef struct
 {
-  GHashTable *styles ;
+  ZMapStyleTree *styles ;
   ZMapConfigIniContext context ;
 } UpdateStyleDataStruct, *UpdateStyleData ;
 
@@ -83,7 +84,7 @@ static GType get_stanza_key_type(ZMapConfigIniContext context,
                                  const char *key_name);
 static gint match_name_type(gconstpointer list_data, gconstpointer user_data);
 static void setErrorMessage(ZMapConfigIniContext context,char *error_message);
-static void context_update_style(gpointer key, gpointer value, gpointer data);
+static void context_update_style(ZMapFeatureTypeStyle style, gpointer data);
 
 
 
@@ -312,11 +313,11 @@ void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, ZMapConfigIniFi
 {
   zMapReturnIfFail(file_type == ZMAPCONFIG_FILE_STYLES) ;
 
-  GHashTable *styles = (GHashTable*)data ;
+  ZMapStyleTree *styles = (ZMapStyleTree*)data ;
 
   UpdateStyleDataStruct update_data = {styles, context} ;
 
-  g_hash_table_foreach(styles, context_update_style, &update_data) ;
+  styles->foreach(context_update_style, &update_data) ;
 }
 
 
@@ -870,9 +871,8 @@ static gboolean param_value_diffs(char **value, const char *parent_value, const 
 
 /* Update the context given in the user data with the style given in the value. This loops
  * through all the parameters that are set in the style and updates them in the context's  */
-static void context_update_style(gpointer key, gpointer value, gpointer data)
+static void context_update_style(ZMapFeatureTypeStyle style, gpointer data)
 {
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) value;
   UpdateStyleData update_data = (UpdateStyleData)data ;
 
   zMapReturnIfFail(style && 
@@ -912,10 +912,9 @@ static void context_update_style(gpointer key, gpointer value, gpointer data)
               /* If the style has a parent with the same value then only include that value in the
                * parent, i.e. exclude it from this child. Always include the parent-style value
                * itself though. */
-              if (ok && strcmp(param_name, "parent-style") != 0 && style->parent_id && update_data->styles)
+              if (ok && strcmp(param_name, "parent-style") != 0 && style->parent_id)
                 {
-                  ZMapFeatureTypeStyle parent_style = (ZMapFeatureTypeStyle)
-                    g_hash_table_lookup(update_data->styles, GINT_TO_POINTER(style->parent_id)) ;
+                  ZMapFeatureTypeStyle parent_style = update_data->styles->find_style(style->parent_id) ;
 
                   if (parent_style)
                     {

@@ -4359,7 +4359,7 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
        * Revcomp if required.
       */
       if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-        zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+        zMapFeatureContextReverseComplement(window->feature_context) ;
 
       /*
        * Do the filenames/path business and create the IOChannel.
@@ -4410,7 +4410,7 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
        * succeeded.
        */
       if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-        zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+        zMapFeatureContextReverseComplement(window->feature_context) ;
 
     }
 
@@ -4487,7 +4487,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
 
   /* Swop to other strand..... */
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+    zMapFeatureContextReverseComplement(window->feature_context) ;
 
   if (!filepath)
     filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel), "Feature Export filename ?", NULL, "gff") ;
@@ -4611,7 +4611,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
 
   /* And swop it back again. */
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+    zMapFeatureContextReverseComplement(window->feature_context) ;
 
   if (filepath)
     {

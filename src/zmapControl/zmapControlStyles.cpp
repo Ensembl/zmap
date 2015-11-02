@@ -53,7 +53,7 @@ typedef struct EditStylesDialogStruct_
 {
   GtkWidget *dialog ;
   ZMap zmap ;
-  ZMapStyleTree styles_tree ;
+  ZMapStyleTree *styles_tree ;
   GtkTreeModel *tree_model ;
   GtkTreePath *selected_tree_path ;
 } EditStylesDialogStruct, *EditStylesDialog ;
@@ -82,6 +82,10 @@ void zmapControlShowStyles(ZMap zmap)
 {
   EditStylesDialogStruct *data = g_new0(EditStylesDialogStruct, 1) ;
   data->zmap = zmap ;
+  data->styles_tree = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
+
+  /* Sort styles alphabetically so they're easier to read  */
+  data->styles_tree->sort() ;
 
   data->dialog = zMapGUIDialogNew(NULL, "Edit Styles", G_CALLBACK(editStylesDialogResponseCB), data) ;
 
@@ -126,15 +130,8 @@ static void addContentTree(EditStylesDialog data, GtkBox *box)
 {
   zMapReturnIfFail(data && data->zmap && data->zmap->focus_viewwindow) ;
 
-  /* Create the styles tree from the styles hash table */
-  GHashTable *styles = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
-  data->styles_tree.merge(styles) ;
-
-  /* Sort styles alphabetically so they're easier to read  */
-  data->styles_tree.sort() ;
-
   GtkTreeStore *store = gtk_tree_store_new(N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING) ;
-  treeNodeCreateWidgets(data, &data->styles_tree, store, NULL) ;
+  treeNodeCreateWidgets(data, data->styles_tree, store, NULL) ;
 
   data->tree_model = GTK_TREE_MODEL(store) ;
 
@@ -189,10 +186,9 @@ static ZMapFeatureTypeStyle getSelectedStyle(EditStylesDialog data)
 
   if (data && data->selected_tree_path)
     {
-      GHashTable *styles = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
       GQuark style_id = getSelectedStyleID(data->tree_model, data->selected_tree_path) ;
       
-      style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style_id)) ;
+      style = data->styles_tree->find_style(style_id) ;
     }  
 
   return style ;
@@ -236,12 +232,8 @@ static void delete_button_clicked_cb(GtkWidget *button, gpointer user_data)
 
       if (zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, msg))
         {
-          data->styles_tree.remove_style(style) ;
-
-          GHashTable *styles = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
-          g_hash_table_remove(styles,GUINT_TO_POINTER(style->unique_id));
-
-          zMapStyleDestroy(style);
+          /* Remove the style from the tree in the context */
+          data->styles_tree->remove_style(style) ;
 
           /* Remove it from our dialog's tree view */
           GtkTreeStore *tree_store = GTK_TREE_STORE(data->tree_model) ;
@@ -256,6 +248,9 @@ static void delete_button_clicked_cb(GtkWidget *button, gpointer user_data)
               
           if (gtk_tree_store_iter_is_valid(tree_store, &iter))
             data->selected_tree_path = gtk_tree_model_get_path(data->tree_model, &iter) ;
+
+          /* Destroy the style */
+          zMapStyleDestroy(style);
         }
     }
   else
@@ -273,13 +268,11 @@ static void updateNewStyle(gpointer cb_data, gpointer user_data)
   EditStylesDialog data = (EditStylesDialog)user_data ;
   zMapReturnIfFail(style && data && data->zmap && data->zmap->focus_viewwindow) ;
 
-  GHashTable *styles = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
-
   GtkTreeStore *tree_store = GTK_TREE_STORE(data->tree_model) ;
   ZMapFeatureContext context = zMapViewGetContext(data->zmap->focus_viewwindow) ;
 
   /* Add the style to the hierarchy */
-  data->styles_tree.add_style(style, styles) ;
+  data->styles_tree->add_style(style) ;
 
   /* Add a new row to the tree store under the currently-selected row (or to the root if
    * no row is selected) */

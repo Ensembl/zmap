@@ -35,6 +35,10 @@
 #include "ZMap/zmapStyle.hpp"
 
 
+typedef void (*ZMapStyleForeachFunc)(ZMapFeatureTypeStyle style, gpointer data) ;
+
+
+
 class ZMapStyleTree
 {
 public:
@@ -46,28 +50,30 @@ public:
   ZMapFeatureTypeStyle get_style() const ;
   std::vector<ZMapStyleTree*> get_children() const ;
 
-  void sort() ;
+  void foreach(ZMapStyleForeachFunc func, gpointer data) ;
 
   ZMapStyleTree* find(ZMapFeatureTypeStyle style) ;
   ZMapStyleTree* find(const GQuark style_id) ;
   ZMapFeatureTypeStyle find_style(const GQuark style_id) ;
 
-  void merge(GHashTable *styles_hash) ;
-
   void add_style(ZMapFeatureTypeStyle style, GHashTable *styles) ;
+  void add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZMapStyleMergeMode merge_mode) ;
   void remove_style(ZMapFeatureTypeStyle style) ;
+  void merge(GHashTable *styles_hash, ZMapStyleMergeMode merge_mode) ;
+  void sort() ;
 
 private:
 
   ZMapFeatureTypeStyle m_style ;
   std::vector<ZMapStyleTree*> m_children ;
 
-  gboolean is_style(ZMapFeatureTypeStyle style) ;
-  gboolean is_style(const GQuark style_id) ;
+  gboolean is_style(ZMapFeatureTypeStyle style) const ;
+  gboolean is_style(const GQuark style_id) const ;
+
+  void set_style(ZMapFeatureTypeStyle style) ;
+  ZMapStyleTree* find_parent(ZMapFeatureTypeStyle style) ;
 
   void add_child_style(ZMapFeatureTypeStyle style) ;
-
-  ZMapStyleTree* find_parent(ZMapFeatureTypeStyle style) ;
 
 };
 

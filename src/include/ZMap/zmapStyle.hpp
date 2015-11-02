@@ -39,6 +39,7 @@
 #include <ZMap/zmapIO.hpp>
 
 
+class ZMapStyleTree ;
 
 
 
@@ -1346,7 +1347,7 @@ ZMapFeatureTypeStyle zMapFindStyle(GHashTable *styles, GQuark style_id) ;
 ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, ZMapStyleMode type);
 GList *zMapStylesGetNames(GHashTable *styles) ;
 GHashTable *zMapStyleGetAllPredefined(void) ;
-GHashTable *zMapStyleMergeStyles(GHashTable *curr_styles, GHashTable *new_styles, ZMapStyleMergeMode merge_mode) ;
+void zMapStyleMergeStyles(ZMapStyleTree &curr_styles, GHashTable *new_styles, ZMapStyleMergeMode merge_mode) ;
 void zMapStyleDestroyStyles(GHashTable *styles) ;
 
 

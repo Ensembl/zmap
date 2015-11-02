@@ -729,13 +729,13 @@ static void viewDumpContextToFile(ZMapView view, RequestData request_data)
         {
           /* Swop to other strand..... */
           if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-            zMapFeatureContextReverseComplement(view->features, view->context_map.styles) ;
+            zMapFeatureContextReverseComplement(view->features) ;
 
           result = zMapGFFDump((ZMapFeatureAny)view->features, view->context_map.styles, file, &error);
 
           /* And swop it back again. */
           if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-            zMapFeatureContextReverseComplement(view->features, view->context_map.styles) ;
+            zMapFeatureContextReverseComplement(view->features) ;
         }
 
 #ifdef STYLES_PRINT_TO_FILE

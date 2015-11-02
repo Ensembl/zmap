@@ -38,6 +38,7 @@
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapUtilsDebug.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
+#include <ZMap/zmapStyleTree.hpp>
 
 /* This should go in the end..... */
 //#include <zmapFeature_P.h>
@@ -58,13 +59,6 @@ typedef struct
 } CheckSetListStruct, *CheckSetList ;
 
 
-
-typedef struct
-{
-  ZMapStyleMergeMode merge_mode ;
-
-  GHashTable *curr_styles ;
-} MergeStyleCBStruct, *MergeStyleCB ;
 
 
 typedef struct
@@ -97,7 +91,6 @@ static void checkListName(gpointer data, gpointer user_data) ;
 static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data) ;
 
 static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new_style) ;
-static void mergeStyle(gpointer style_id, gpointer data, gpointer user_data_unused) ;
 static gboolean destroyStyle(gpointer style_id, gpointer data, gpointer user_data_unused) ;
 
 static void copySetCB(gpointer key_id, gpointer data, gpointer user_data) ;
@@ -931,19 +924,9 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles)
  * overloads curr_style.
  *
  *  */
-GHashTable *zMapStyleMergeStyles(GHashTable *curr_styles, GHashTable *new_styles, ZMapStyleMergeMode merge_mode)
+void zMapStyleMergeStyles(ZMapStyleTree &curr_styles, GHashTable *new_styles, ZMapStyleMergeMode merge_mode)
 {
-  GHashTable *merged_styles = NULL ;
-  MergeStyleCBStruct merge_data = {ZMAPSTYLE_MERGE_INVALID} ;
-
-  merge_data.merge_mode = merge_mode ;
-  merge_data.curr_styles = curr_styles ;
-
-  g_hash_table_foreach(new_styles, mergeStyle, &merge_data) ;
-
-  merged_styles = merge_data.curr_styles ;
-
-  return merged_styles ;
+  curr_styles.merge(new_styles, merge_mode) ;
 }
 
 
@@ -994,69 +977,6 @@ static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data
     result = 0 ;
 
   return result ;
-}
-
-
-
-/* Either merges a new style or adds it to current list. */
-static void mergeStyle(gpointer style_id, gpointer data, gpointer user_data)
-{
-  ZMapFeatureTypeStyle new_style = (ZMapFeatureTypeStyle)data ;
-  MergeStyleCB merge_data = (MergeStyleCB)user_data ;
-  GHashTable *curr_styles = merge_data->curr_styles ;
-  ZMapFeatureTypeStyle curr_style = NULL ;
-
-
-  /* If we find the style then process according to merge_mode, if not then add a copy to the curr_styles. */
-  if ((curr_style =(ZMapFeatureTypeStyle) g_hash_table_lookup(curr_styles, GUINT_TO_POINTER(new_style->unique_id))))
-    {
-      switch (merge_data->merge_mode)
-        {
-        case ZMAPSTYLE_MERGE_PRESERVE:
-          {
-            /* Leave the existing style untouched. */
-            break ;
-          }
-        case ZMAPSTYLE_MERGE_REPLACE:
-          {
-            /* Remove the existing style and put the new one in its place. */
-            ZMapFeatureTypeStyle copied_style = NULL ;
-
-            copied_style = zMapFeatureStyleCopy(new_style);
-            g_hash_table_replace(curr_styles,GUINT_TO_POINTER(new_style->unique_id),copied_style);
-
-            zMapStyleDestroy(curr_style) ;
-
-            merge_data->curr_styles = curr_styles ;
-
-            break ;
-          }
-        case ZMAPSTYLE_MERGE_MERGE:
-          {
-            /* Merge the existing and new styles. */
-            zMapStyleMerge(curr_style, new_style) ;
-
-            break ;
-          }
-        default:
-          {
-            zMapLogFatalLogicErr("switch(), unknown value: %d", merge_data->merge_mode) ;
-
-            break ;
-          }
-
-        }
-    }
-  else
-    {
-      ZMapFeatureTypeStyle copied_style = NULL ;
-
-      copied_style = zMapFeatureStyleCopy(new_style);
-        g_hash_table_insert(curr_styles, GUINT_TO_POINTER(new_style->unique_id), copied_style) ;
-        merge_data->curr_styles = curr_styles ;
-    }
-
-  return ;
 }
 
 

@@ -275,7 +275,7 @@ static gboolean nextIsQuoted(char **text) ;
 
 static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
                                                     ZMapFeatureContextMergeStats *merge_stats_out,
-                                                    GHashTable *styles, GList **masked,
+                                                    GList **masked,
                                                     gboolean request_as_columns, gboolean revcomp_if_needed) ;
 
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
@@ -307,7 +307,7 @@ static gboolean checkContinue(ZMapView zmap_view) ;
 static gboolean makeStylesDrawable(char *config_file, GHashTable *styles, char **missing_styles_out) ;
 static void drawableCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
-static void addPredefined(GHashTable **styles_inout, GHashTable **column_2_styles_inout) ;
+static void addPredefined(ZMapStyleTree &styles, GHashTable **column_2_styles_inout) ;
 static void styleCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
 static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
@@ -666,7 +666,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       /* There are a number of predefined methods that we require so add these in as well
        * and the mapping for "feature set" -> style for these.
        */
-      addPredefined(&(zmap_view->context_map.styles), &(zmap_view->context_map.column_2_styles)) ;
+      addPredefined(zmap_view->context_map.styles, &(zmap_view->context_map.column_2_styles)) ;
 
       if (stylesfile)
         {
@@ -674,8 +674,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
           if (zMapConfigIniGetStylesFromFile(zmap_view->view_sequence->config_file, NULL, stylesfile, &styles, NULL))
             {
-              zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles,
-                                                                   styles, ZMAPSTYLE_MERGE_MERGE) ;
+              zMapStyleMergeStyles(zmap_view->context_map.styles, styles, ZMAPSTYLE_MERGE_MERGE) ;
             }
           else
             {
@@ -706,7 +705,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
           if ((feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, NULL)))
             {
-              style = (ZMapFeatureTypeStyle)g_hash_table_lookup(zmap_view->context_map.styles, GUINT_TO_POINTER(style_id)) ;
+              style = zmap_view->context_map.styles.find_style(style_id) ;
 
               zMapFeatureSetStyle(feature_set,style);
 
@@ -727,10 +726,10 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
           /* now merge and draw it */
           if ((merge = justMergeContext(zmap_view,
                                         &context, &merge_stats,
-                                        zmap_view->context_map.styles, &dummy, FALSE, TRUE))
+                                        &dummy, FALSE, TRUE))
               == ZMAPFEATURE_CONTEXT_OK)
             {
-              justDrawContext(zmap_view, context, zmap_view->context_map.styles, dummy, NULL, NULL) ;
+              justDrawContext(zmap_view, context, dummy, NULL, NULL) ;
             }
           else if (merge == ZMAPFEATURE_CONTEXT_NONE)
             {
@@ -935,14 +934,11 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
   zMapReturnValIfFail((zmap_view && parent_widget && zmap_view->window_list), view_window) ;
 
   /* the view _must_ already have a window _and_ data. */
-  copy_styles = zmap_view->context_map.styles ;
-
   view_window = createWindow(zmap_view, NULL) ;
 
   if (!(view_window->window = zMapWindowCopy(parent_widget, zmap_view->view_sequence,
                                              view_window, copy_window,
                                              zmap_view->features,
-                                             zmap_view->context_map.styles, copy_styles,
                                              window_locking)))
     {
       /* should glog and/or gerror at this stage....really need g_errors.... */
@@ -1093,7 +1089,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       zMapLogTime(TIMER_REVCOMP,TIMER_START,0,"Context");
 
       /* Call the feature code that will do the revcomp. */
-      zMapFeatureContextReverseComplement(zmap_view->features, zmap_view->context_map.styles) ;
+      zMapFeatureContextReverseComplement(zmap_view->features) ;
 
       zMapLogTime(TIMER_REVCOMP,TIMER_STOP,0,"Context");
 
@@ -1912,7 +1908,7 @@ ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext cont
     {
       ZMapFeatureContextMergeCode result = ZMAPFEATURE_CONTEXT_ERROR ;
 
-      result = justMergeContext(view, &context, merge_stats_out, NULL, NULL, TRUE, FALSE) ;
+      result = justMergeContext(view, &context, merge_stats_out, NULL, TRUE, FALSE) ;
 
       if (result == ZMAPFEATURE_CONTEXT_OK)
         zMapLogMessage("%s", "Context merge successful.") ;
@@ -2104,7 +2100,7 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
       if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
         {
           /* revcomp our empty context to get external fwd strand coordinates */
-          zMapFeatureContextReverseComplement(context, view->context_map.styles);
+          zMapFeatureContextReverseComplement(context);
         }
     }
   else
@@ -4592,8 +4588,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
               }
 #endif
 
-            zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles,
-                                                                 get_styles->styles_out, ZMAPSTYLE_MERGE_PRESERVE) ;
+            zMapStyleMergeStyles(zmap_view->context_map.styles, get_styles->styles_out, ZMAPSTYLE_MERGE_PRESERVE) ;
 
             /* need to patch in sub style pointers after merge/ copy */
             zMapStyleSetSubStyles(zmap_view->context_map.styles);
@@ -5534,7 +5529,6 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
 
       merge_results = justMergeContext(zmap_view,
                                        &new_features, &merge_stats,
-                                       connect_data->curr_styles,
                                        &masked, connect_data->session.request_as_columns, TRUE) ;
 
       connect_data->loaded_features->merge_stats = *merge_stats ;
@@ -5720,7 +5714,7 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
   /* When coming from xremote we don't need to do this. */
   if (revcomp_if_needed && view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     {
-      zMapFeatureContextReverseComplement(new_features, view->context_map.styles);
+      zMapFeatureContextReverseComplement(new_features);
     }
 
 
@@ -6676,16 +6670,17 @@ static void drawableCB(gpointer key, gpointer data, gpointer user_data)
 
 
 
-static void addPredefined(GHashTable **styles_out, GHashTable **column_2_styles_inout)
+static void addPredefined(ZMapStyleTree &styles_tree, GHashTable **column_2_styles_inout)
 {
-  GHashTable *styles ;
+  GHashTable *styles_hash ;
   GHashTable *f2s = *column_2_styles_inout ;
 
-  styles = zmapConfigIniGetDefaultStyles();                // zMapStyleGetAllPredefined() ;
+  styles_hash = zmapConfigIniGetDefaultStyles();                // zMapStyleGetAllPredefined() ;
 
-  g_hash_table_foreach(styles, styleCB, f2s) ;
+  g_hash_table_foreach(styles_hash, styleCB, f2s) ;
 
-  *styles_out = styles ;
+  styles_tree.merge(styles_hash) ;
+
   *column_2_styles_inout = f2s ;
 
   return ;

@@ -54,7 +54,7 @@ typedef struct
   /* inputs */
   ZMapWindowNavigator navigate;
   ZMapFeatureContext  context;
-  GHashTable              *styles;
+  ZMapStyleTree       &styles;
 
   /* The current features in the recursion */
   ZMapFeatureAlignment current_align;
@@ -405,7 +405,7 @@ void zMapWindowNavigatorMergeInFeatureSetNames(ZMapWindowNavigator navigate,
 /* draw features */
 void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
                                      ZMapFeatureContext full_context,
-                                     GHashTable *styles)
+                                     ZMapStyleTree &styles)
 {
   FooCanvas *canvas = NULL;
   NavigateDrawStruct draw_data = {NULL};
@@ -913,7 +913,7 @@ static void createColumnCB(gpointer data, gpointer user_data)
   /* mh17: need to canonicalise the set name to find the style */
   set_unique_id = zMapStyleCreateID((char *) g_quark_to_string(set_id)) ;
 
-  style = zMapFindStyle(draw_data->styles, set_unique_id) ;
+  style = draw_data->styles.find_style(set_unique_id) ;
 
   draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_unique_id);
 
