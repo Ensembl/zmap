@@ -275,7 +275,7 @@ void zmapWindowFeaturesetSetStyle(GQuark style_id,
   ID2Canvas id2c;
   int ok = FALSE;
 
-  style = (ZMapFeatureTypeStyle)g_hash_table_lookup( context_map->styles, GUINT_TO_POINTER(style_id));
+  style = context_map->styles.find_style(style_id);
 
   if(style)
     {
@@ -712,15 +712,16 @@ static gboolean revertChanges(gpointer cb_data)
    * remove the child and replace it with the parent */
   if(style->unique_id != my_data->orig_style_copy.unique_id)   
     {
-      GHashTable *styles = my_data->window->context_map->styles;
+      ZMapStyleTree &styles = my_data->window->context_map->styles;
       id = style->parent_id;
 
       /* free the created style: cannot be ref'd anywhere else */
-      g_hash_table_remove(styles,GUINT_TO_POINTER(style->unique_id));
+      styles.remove_style(style) ;
+
       zMapStyleDestroy(style);
 
       /* find the parent */
-      style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GUINT_TO_POINTER(id));
+      style = styles.find_style(id);
     }
   else                                /* restore the existing style */
     {
