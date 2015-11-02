@@ -206,7 +206,7 @@ static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data
 static void destroyZMapView(ZMapView *zmap) ;
 static void displayDataWindows(ZMapView zmap_view,
                                ZMapFeatureContext all_features, ZMapFeatureContext new_features,
-                               GHashTable *new_styles, LoadFeaturesData loaded_features,
+                               LoadFeaturesData loaded_features,
                                gboolean undisplay, GList *masked,
                                ZMapFeature highlight_feature, gboolean splice_highlight,
                                gboolean allow_clean) ;
@@ -279,7 +279,7 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
                                                     gboolean request_as_columns, gboolean revcomp_if_needed) ;
 
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
-                            GHashTable *styles, GList *masked, ZMapFeature highlight_feature,
+                            GList *masked, ZMapFeature highlight_feature,
                             ConnectionData connect_data);
 
 static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
@@ -928,7 +928,6 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
                                   ZMapWindow copy_window, ZMapWindowLockType window_locking)
 {
   ZMapViewWindow view_window = NULL ;
-  GHashTable *copy_styles ;
 
   zMapReturnValIfFail((zmap_view->state != ZMAPVIEW_DYING), view_window) ;
   zMapReturnValIfFail((zmap_view && parent_widget && zmap_view->window_list), view_window) ;
@@ -1289,13 +1288,13 @@ ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view)
   return features ;
 }
 
-GHashTable *zMapViewGetStyles(ZMapViewWindow view_window)
+ZMapStyleTree *zMapViewGetStyles(ZMapViewWindow view_window)
 {
-  GHashTable *styles = NULL ;
+  ZMapStyleTree *styles = NULL ;
   ZMapView view = zMapViewGetView(view_window);
 
   if (view->state != ZMAPVIEW_DYING)
-    styles = view->context_map.styles ;
+    styles = &view->context_map.styles ;
 
   return styles;
 }
@@ -1943,7 +1942,7 @@ gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context
       if (view->features == *diff_context)
         context_freed = FALSE ;
 
-      justDrawContext(view, *diff_context, NULL, NULL, highlight_feature, NULL) ;
+      justDrawContext(view, *diff_context, NULL, highlight_feature, NULL) ;
     }
   else
     {
@@ -5150,7 +5149,7 @@ static void resetWindows(ZMapView zmap_view)
 /* Signal all windows there is data to draw. */
 void displayDataWindows(ZMapView zmap_view,
                         ZMapFeatureContext all_features, ZMapFeatureContext new_features,
-                        GHashTable *new_styles, LoadFeaturesData loaded_features_in,
+                        LoadFeaturesData loaded_features_in,
                         gboolean undisplay, GList *masked,
                         ZMapFeature highlight_feature, gboolean splice_highlight,
                         gboolean allow_clean)
@@ -5541,7 +5540,7 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
         {
           diff_context = new_features ;
 
-          justDrawContext(zmap_view, diff_context, connect_data->curr_styles , masked, NULL, connect_data) ;
+          justDrawContext(zmap_view, diff_context, masked, NULL, connect_data) ;
 
           result = TRUE ;
         }
@@ -5678,7 +5677,7 @@ static ZMapFeatureContextExecuteStatus add_default_styles(GQuark key,
 
 static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
                                                     ZMapFeatureContextMergeStats *merge_stats_out,
-                                                    GHashTable *styles, GList **masked,
+                                                    GList **masked,
                                                     gboolean request_as_columns, gboolean revcomp_if_needed)
 {
   ZMapFeatureContextMergeCode result = ZMAPFEATURE_CONTEXT_ERROR ;
@@ -5871,7 +5870,7 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
 
 
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
-                            GHashTable *new_styles, GList *masked, ZMapFeature highlight_feature,
+                            GList *masked, ZMapFeature highlight_feature,
                             ConnectionData connect_data)
 {
   LoadFeaturesData loaded_features = NULL ;
@@ -5888,7 +5887,7 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
     }
 
   /* Signal the ZMap that there is work to be done. */
-  displayDataWindows(view, view->features, diff_context, new_styles,
+  displayDataWindows(view, view->features, diff_context, 
                      loaded_features, FALSE, masked, NULL, FALSE, TRUE) ;
 
   /* Not sure about the timing of the next bit. */
@@ -5920,7 +5919,7 @@ static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inou
     }
   else
     {
-      displayDataWindows(view, view->features, diff_context, NULL, NULL, TRUE, NULL, NULL, FALSE, TRUE) ;
+      displayDataWindows(view, view->features, diff_context, NULL, TRUE, NULL, NULL, FALSE, TRUE) ;
 
       zMapFeatureContextDestroy(diff_context, TRUE) ;
     }

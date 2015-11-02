@@ -201,8 +201,44 @@ std::vector<ZMapStyleTree*> ZMapStyleTree::get_children() const
 
 
 /* Add the given style into the style hierarchy tree in the appropriate place according to its
+ * parent. Does nothing if the style is already in the tree. Assumes the style's parent is already
+ * in the tree or that it should be added to the root node if not. */
+void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style)
+{
+  if (!find(style))
+    {
+      if (style->parent_id)
+        {
+          /* Add the child to the parent node */
+          ZMapStyleTree *parent_node = find(style->parent_id) ;
+
+          if (parent_node)
+            {
+              parent_node->add_child_style(style) ;
+            }
+          else
+            {
+              zMapWarning("Adding style '%s' to parent '%s' failed; parent style not found",
+                          g_quark_to_string(style->unique_id), g_quark_to_string(style->parent_id)) ;
+            }
+        }
+      else
+        {
+          /* This style has no parent, so add it to the root style in the tree */
+          add_child_style(style) ;
+        }
+      
+    }
+}
+
+
+/* Add the given style into the style hierarchy tree in the appropriate place according to its
  * parent. Recursively add the style's parent(s) if not already in the tree. Does nothing if the
- * style is already in the tree. */
+ * style is already in the tree. 
+ * This function is provided to support the old acedb way of loading styles where we may only
+ * know the parent id up front and not have the whole parent style available. In this case the
+ * ids are added into a hash table and we only merge them into the styles tree when we've parsed
+ * them all. */
 void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles)
 {
   if (!find(style))
@@ -384,3 +420,4 @@ void ZMapStyleTree::foreach(ZMapStyleForeachFunc func, gpointer data)
         }
     }
 }
+

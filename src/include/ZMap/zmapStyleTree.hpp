@@ -56,6 +56,7 @@ public:
   ZMapStyleTree* find(const GQuark style_id) ;
   ZMapFeatureTypeStyle find_style(const GQuark style_id) ;
 
+  void add_style(ZMapFeatureTypeStyle style) ;
   void add_style(ZMapFeatureTypeStyle style, GHashTable *styles) ;
   void add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZMapStyleMergeMode merge_mode) ;
   void remove_style(ZMapFeatureTypeStyle style) ;

@@ -284,7 +284,7 @@ static void updateNewStyle(gpointer cb_data, gpointer user_data)
   const char *parent_name = "" ;
   if (style->parent_id)
     {
-      ZMapFeatureTypeStyle parent_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style->parent_id)) ;
+      ZMapFeatureTypeStyle parent_style = data->styles_tree->find_style(style->parent_id) ;
       parent_name = g_quark_to_string(parent_style->original_id) ;
     }
 
