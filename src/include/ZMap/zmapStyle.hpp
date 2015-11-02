@@ -1331,6 +1331,7 @@ GQuark zMapStyleCreateID(const char *style_name) ;
 ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;
 
 
+void zMapStyleSetSubStyle(ZMapFeatureTypeStyle style, gpointer data);
 gboolean zMapStyleSetSubStyles(GHashTable *style_set);
 
 

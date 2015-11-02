@@ -192,7 +192,8 @@ typedef struct DrawableDataStructType
 
 typedef struct FindStylesStructType
 {
-  GHashTable *all_styles ;
+  ZMapStyleTree *all_styles_tree ;
+  GHashTable *all_styles_hash ;
   gboolean found_style ;
   GString *missing_styles ;
 } FindStylesStruct, *FindStyles ;
@@ -4253,7 +4254,9 @@ static void findStyleCB(gpointer data, gpointer user_data)
 
   style_id = zMapStyleCreateID((char *)g_quark_to_string(style_id)) ;
 
-  if ((zMapFindStyle(find_data->all_styles, style_id)))
+  if (find_data->all_styles_hash && zMapFindStyle(find_data->all_styles_hash, style_id))
+    find_data->found_style = TRUE ;
+  else if (find_data->all_styles_tree && find_data->all_styles_tree->find(style_id))
     find_data->found_style = TRUE;
   else
     {
@@ -4267,6 +4270,28 @@ static void findStyleCB(gpointer data, gpointer user_data)
 }
 
 // returns whether we have any of the needed styles and lists the ones we don't
+static gboolean haveRequiredStyles(ZMapStyleTree &all_styles, GList *required_styles, char **missing_styles_out)
+{
+  gboolean result = FALSE ;
+  FindStylesStruct find_data = {NULL} ;
+
+  if(!required_styles)  // MH17: semantics -> don't need styles therefore have those that are required
+    return(TRUE);
+
+  find_data.all_styles_tree = &all_styles ;
+
+  g_list_foreach(required_styles, findStyleCB, &find_data) ;
+
+  if (find_data.missing_styles)
+    *missing_styles_out = g_string_free(find_data.missing_styles, FALSE) ;
+
+  result = find_data.found_style ;
+
+  return result ;
+}
+
+
+// returns whether we have any of the needed styles and lists the ones we don't
 static gboolean haveRequiredStyles(GHashTable *all_styles, GList *required_styles, char **missing_styles_out)
 {
   gboolean result = FALSE ;
@@ -4275,7 +4300,7 @@ static gboolean haveRequiredStyles(GHashTable *all_styles, GList *required_style
   if(!required_styles)  // MH17: semantics -> don't need styles therefore have those that are required
     return(TRUE);
 
-  find_data.all_styles = all_styles ;
+  find_data.all_styles_hash = all_styles ;
 
   g_list_foreach(required_styles, findStyleCB, &find_data) ;
 
@@ -4590,7 +4615,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
             zMapStyleMergeStyles(zmap_view->context_map.styles, get_styles->styles_out, ZMAPSTYLE_MERGE_PRESERVE) ;
 
             /* need to patch in sub style pointers after merge/ copy */
-            zMapStyleSetSubStyles(zmap_view->context_map.styles);
+            zmap_view->context_map.styles.foreach(zMapStyleSetSubStyle, &zmap_view->context_map.styles) ;
 
             /* test here, where we have global and predefined styles too */
 
