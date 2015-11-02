@@ -4291,28 +4291,6 @@ static gboolean haveRequiredStyles(ZMapStyleTree &all_styles, GList *required_st
 }
 
 
-// returns whether we have any of the needed styles and lists the ones we don't
-static gboolean haveRequiredStyles(GHashTable *all_styles, GList *required_styles, char **missing_styles_out)
-{
-  gboolean result = FALSE ;
-  FindStylesStruct find_data = {NULL} ;
-
-  if(!required_styles)  // MH17: semantics -> don't need styles therefore have those that are required
-    return(TRUE);
-
-  find_data.all_styles_hash = all_styles ;
-
-  g_list_foreach(required_styles, findStyleCB, &find_data) ;
-
-  if (find_data.missing_styles)
-    *missing_styles_out = g_string_free(find_data.missing_styles, FALSE) ;
-
-  result = find_data.found_style ;
-
-  return result ;
-}
-
-
 
 
 /* This is _not_ a generalised processing function, it handles a sequence of replies from
@@ -5046,7 +5024,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
           }
         else
           {
-            connect_data->curr_styles = zmap_view->context_map.styles ;
+            connect_data->curr_styles = &zmap_view->context_map.styles ;
           }
 
         req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
@@ -6670,7 +6648,7 @@ static void drawableCB(ZMapFeatureTypeStyle style, gpointer user_data)
 {
   DrawableData drawable_data = (DrawableData)user_data ;
 
-  if (zMapStyleIsDisplayable(style))
+  if (style && zMapStyleIsDisplayable(style))
     {
       if (zMapStyleMakeDrawable(drawable_data->config_file, style))
         {

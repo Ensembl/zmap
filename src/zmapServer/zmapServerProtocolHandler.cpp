@@ -483,7 +483,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
       {
         ZMapServerReqGetFeatures features = (ZMapServerReqGetFeatures)request_in ;
 
-        if ((request->response = zMapServerGetFeatures(server, features->styles, features->context))
+        if (features->styles && (request->response = zMapServerGetFeatures(server, *features->styles, features->context))
             != ZMAP_SERVERRESPONSE_OK)
           {
             *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
@@ -509,7 +509,10 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
             zMap_g_list_find_quark(req_sets, threeft_quark) ||
             zMap_g_list_find_quark(req_sets, showtrans_quark))
           {
-            request->response = zMapServerGetContextSequences(server, features->styles, features->context) ;
+            if (features->styles)
+              request->response = zMapServerGetContextSequences(server, *features->styles, features->context) ;
+            else
+              request->response = ZMAP_SERVERRESPONSE_REQFAIL ;
 
             if (request->response != ZMAP_SERVERRESPONSE_OK && request->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
               {
