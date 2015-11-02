@@ -18,7 +18,6 @@ RC=0
 
 BUILD_PREFIX='RELEASE'
 SEQTOOLS_DIR='RELEASE'
-#ERROR_ID='-a edgrif@sanger.ac.uk'
 ERROR_ID=''
 GBTOOLS_BRANCH=''
 
@@ -43,7 +42,12 @@ if (( $# > 2 )) ; then
 fi
 
 
-./build_run.sh $ERROR_ID -b $RELEASE_BRANCH -d -g -m -s $SEQTOOLS_DIR $GBTOOLS_BRANCH $BUILD_PREFIX || RC=1
+if (( $# > 3 )) ; then
+  ERROR_ID="-a $4"
+fi
+
+
+./build_run.sh  $ERROR_ID -b $RELEASE_BRANCH -d -g -m -s $SEQTOOLS_DIR $GBTOOLS_BRANCH $BUILD_PREFIX || RC=1
 
 
 exit $RC

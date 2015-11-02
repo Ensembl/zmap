@@ -719,9 +719,9 @@ static gboolean scratchDoMergeOperation(ScratchMergeData merge_data,
     {
       /* Special treatment if it's the first feature to be merged. Only applicable if merging a
        * single feature and if merging the entire feature (i.e. not a subfeature).*/
-      gboolean first_feature = first_merge &&
-        !merge_data->operation->use_subfeature &&
-        (g_list_length(operation->src_feature_ids) == 1) ;
+      //gboolean first_feature = first_merge &&
+      //  !merge_data->operation->use_subfeature &&
+      //  (g_list_length(operation->src_feature_ids) == 1) ;
 
       /* Loop through each feature in the list */
       GList *item = operation->src_feature_ids ;

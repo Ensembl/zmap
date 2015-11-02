@@ -19,7 +19,7 @@ RC=0
 BRANCH='develop'
 SEQTOOLS_DIR='DEVELOPMENT'
 BUILD_PREFIX='ONE_OFF'
-ERROR_RECIPIENT='edgrif@sanger.ac.uk'
+ERROR_ID=''
 GBTOOLS_BRANCH=''
 
 # Two optional args: 1st specifies the FULL branch name and the 2nd is
@@ -38,6 +38,11 @@ if (( $# > 2 )) ; then
   GBTOOLS_BRANCH="-t $3"
 fi
 
-./build_run.sh -a $ERROR_RECIPIENT -b $BRANCH -g $SEQTOOLS_BUILD $GBTOOLS_BRANCH $BUILD_PREFIX || RC=1
+if (( $# > 3 )) ; then
+  ERROR_ID="-a $4"
+fi
+
+
+./build_run.sh  $ERROR_ID -b $BRANCH -g $SEQTOOLS_BUILD $GBTOOLS_BRANCH $BUILD_PREFIX || RC=1
 
 exit $RC

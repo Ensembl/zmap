@@ -811,6 +811,13 @@ ZMapFeatureTypeStyle zMapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFe
 }
 
 
+GQuark zMapWindowContainerFeatureSetGetUniqueId(ZMapWindowContainerFeatureSet container)
+{
+  zMapReturnValIfFail(container, 0) ;
+  return container->unique_id;
+}
+
+
 /*!
  *  Functions to set/get display state of column, i.e. show, show_hide or hide. Complicated
  * by having an overall state for the column and potentially sub-states for sub-features.

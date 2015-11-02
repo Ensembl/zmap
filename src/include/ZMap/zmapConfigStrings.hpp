@@ -716,6 +716,8 @@
 #define ZMAPSTANZA_WINDOW_Q_REVERSECOL "colour-q-reversecol"
 #define ZMAPSTANZA_WINDOW_SEPARATOR    "colour-separator"
 #define ZMAPSTANZA_WINDOW_COL_HIGH     "colour-column-highlight"
+#define ZMAPSTANZA_WINDOW_RUBBER_BAND  "colour-rubber-band"
+#define ZMAPSTANZA_WINDOW_HORIZON      "colour-horizon"
 #define ZMAPSTANZA_WINDOW_ITEM_MARK    "colour-item-mark"
 #define ZMAPSTANZA_WINDOW_ITEM_HIGH    "colour-item-highlight"
 #define ZMAPSTANZA_WINDOW_FRAME_0      "colour-frame-0"
@@ -944,6 +946,7 @@
 
 
 #define ZMAPSTANZA_COLUMN_CONFIG              "columns"
+#define ZMAPSTANZA_COLUMN_GROUPS              "column-groups"
 #define ZMAPSTANZA_COLUMN_STYLE_CONFIG        "column-style"
 #define ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG  "column-description"
 #define ZMAPSTANZA_FEATURESET_STYLE_CONFIG    "featureset-style"

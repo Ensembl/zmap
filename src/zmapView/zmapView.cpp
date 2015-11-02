@@ -151,7 +151,7 @@ typedef struct ConnectionDataStructType
   gint start,end;
 
   /* Move into loaded_features ? */
-  char *err_msg;                                            // from the server mainly
+  GError *error;
   gchar *stderr_out;
   gint exit_code;
   gboolean status;                                            // load sucessful?
@@ -312,8 +312,6 @@ static void styleCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
 static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
 
-static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
-
 static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData lfd) ;
 
 static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data) ;
@@ -351,7 +349,12 @@ static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_
 static void getWindowList(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
+static void configUpdateContext(ZMapView view, ZMapConfigIniContext context, const ZMapViewExportType export_type, ZMapConfigIniFileType file_type) ;
+void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *stanza, GHashTable *ghash) ;
+static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
+                                                                    gpointer data,
+                                                                    gpointer user_data,
+                                                                    char **err_out) ;
 
 
 
@@ -748,7 +751,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
            *
            * due to constraints w/ old config we need to give the window a list of column name quarks in order
            */
-          GList *columns = zmapViewGetOrderedColumnsList(zmap_view) ;
+          GList *columns = zMapFeatureGetOrderedColumnsListIDs(&zmap_view->context_map) ;
 
           g_list_foreach(zmap_view->window_list, invoke_merge_in_names, columns);
 
@@ -2220,28 +2223,6 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** styles
 
 
 
-/* Get a GList of column IDs as GQuarks in the correct order according to the 'order' field in
- * each ZMapFeatureColumn struct (from the context_map.columns hash table).
- * Returns a new GList which should be free'd with g_list_free() */
-GList* zmapViewGetOrderedColumnsList(ZMapView zmap_view)
-{
-  GList *columns = NULL ;
-  GList *kv = NULL;
-  gpointer key = NULL,value = NULL;
-
-  zMap_g_hash_table_iter_init(&kv, zmap_view->context_map.columns);
-  while(zMap_g_hash_table_iter_next(&kv,&key,&value))
-    {
-      columns = g_list_prepend(columns,key);
-    }
-
-  columns = g_list_sort_with_data(columns, colOrderCB, zmap_view->context_map.columns);
-
-  return columns ;
-}
-
-
-
 /*
  *                      Internal routines
  */
@@ -2634,6 +2615,11 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
       if (g_hash_table_size(view->context_map.columns))
         view->columns_set = TRUE;
 
+      /*-------------------------------------
+       * column groups
+       *-------------------------------------
+       */
+      view->context_map.column_groups = zMapConfigIniGetColumnGroups(context);
 
       {
         /*-------------------------------------------------------------------------------
@@ -3004,24 +2990,6 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 }
 
 
-static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
-{
-  ZMapFeatureColumn pa,pb;
-  GHashTable *ghash = (GHashTable *) user_data;
-
-  pa = (ZMapFeatureColumn)g_hash_table_lookup(ghash,a);
-  pb = (ZMapFeatureColumn)g_hash_table_lookup(ghash,b);
-  if(pa && pb)
-    {
-      if(pa->order < pb->order)
-        return(-1);
-      if(pa->order > pb->order)
-        return(1);
-    }
-  return(0);
-}
-
-
 
 /* retro fit/ invent the columns config implied by server featuresets= command
  * needed for the status bar and maybe some other things
@@ -3029,9 +2997,6 @@ static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets)
 {
   ZMapFeatureColumn col;
-  int n ;
-
-  n = g_hash_table_size(view->context_map.columns);
 
   for(;featuresets; featuresets = featuresets->next)
     {
@@ -3045,7 +3010,7 @@ static void zmapViewCreateColumns(ZMapView view,GList *featuresets)
           col->column_id = GPOINTER_TO_UINT(featuresets->data);
           col->unique_id = zMapFeatureSetCreateID(str);
           col->column_desc = str;
-          col->order = ++n;
+          col->order = zMapFeatureColumnOrderNext(FALSE);
 
           /* no column specific style possible from servers */
 
@@ -3519,6 +3484,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
           ZMapThreadReply reply = ZMAPTHREAD_REPLY_DIED ;
           void *data = NULL ;
           char *err_msg = NULL ;
+          gint err_code = -1 ;
           gboolean thread_has_died = FALSE ;
           gboolean all_steps_finished = FALSE ;
           gboolean this_step_finished = FALSE ;
@@ -3694,9 +3660,16 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                                 /* TRY THIS HERE.... */
                                 if (err_msg)
-                                  g_free(err_msg) ;
+                                  {
+                                    g_free(err_msg) ;
+                                    err_msg = NULL ;
+                                  }
                                 
-                                err_msg = connect_data->err_msg ;
+                                if (connect_data && connect_data->error)
+                                  {
+                                    err_msg = g_strdup(connect_data->error->message) ;
+                                    err_code = connect_data->error->code ;
+                                  }
 
                                 this_step_finished = TRUE ;
                               }
@@ -3750,7 +3723,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         /* Warn the user ! */
                         if (view_con->show_warning)
                           {
-                            zMapWarning("Error loading source.\n\n %s", (err_msg ? err_msg : "<no error message>")) ;
+                            /* Don't bother the user if it's just that there were no features in
+                             * the source */
+                            if (err_code != ZMAPVIEW_ERROR_CONTEXT_EMPTY)
+                              zMapWarning("Error loading source.\n\n %s", (err_msg ? err_msg : "<no error message>")) ;
+                            
                             zMapLogWarning("Source is being cancelled: Error was: '%s'. Source: %s",
                                            (err_msg ? err_msg : "<no error message>"), view_con->url) ;
                           }
@@ -5114,6 +5091,12 @@ static void destroyViewConnection(ZMapView view, ZMapViewConnection view_conn)
           connect_data->loaded_features = NULL ;
         }
 
+      if (connect_data->error)
+        {
+          g_error_free(connect_data->error) ;
+          connect_data->error = NULL ;
+        }
+
       g_free(connect_data) ;
       view_conn->request_data = NULL ;
     }
@@ -5562,15 +5545,17 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
 
           if (merge_results == ZMAPFEATURE_CONTEXT_NONE)
             {
-              connect_data->err_msg = g_strdup("Context merge failed because no new features found in new context.") ;
+              g_set_error(&connect_data->error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONTEXT_EMPTY,
+                          "Context merge failed because no new features found in new context.") ;
 
-              zMapLogWarning("%s", connect_data->err_msg) ;
+              zMapLogWarning("%s", connect_data->error->message) ;
             }
           else
             {
-              connect_data->err_msg = g_strdup("Context merge failed, serious error.") ;
+              g_set_error(&connect_data->error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONTEXT_SERIOUS,
+                          "Context merge failed, serious error.") ;
 
-              zMapLogCritical("%s", connect_data->err_msg) ;
+              zMapLogCritical("%s", connect_data->error->message) ;
             }
 
           result = FALSE ;
@@ -7063,6 +7048,9 @@ gboolean zMapViewExportConfig(ZMapView view,
       /* Update the context with the new preferences or styles, if anything has changed */
       update_func(context, file_type, view->context_map.styles) ;
 
+      /* Update the context with any configuration values that have changed */
+      configUpdateContext(view, context, export_type, file_type) ;
+
       /* Do the save to file (force changes=true so we export even if nothing's changed) */
       zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
       result = zMapConfigIniContextSave(context, file_type) ;
@@ -7084,4 +7072,164 @@ gboolean zMapViewExportConfig(ZMapView view,
     }
 
   return result ;
+}
+
+
+/* Update the given context with any configuration values that have been changed, e.g. column order */
+static void configUpdateContext(ZMapView view, 
+                                ZMapConfigIniContext context, 
+                                const ZMapViewExportType export_type,
+                                ZMapConfigIniFileType file_type)
+{
+  gboolean changed = FALSE ;
+  zMapReturnIfFail(view) ;
+
+  zMapReturnIfFailSafe(export_type == ZMAPVIEW_EXPORT_CONFIG) ;
+
+  if (view->flags[ZMAPFLAG_COLUMNS_NEED_SAVING])
+    {
+      GList *ordered_list = zMapFeatureGetOrderedColumnsListIDs(&view->context_map) ;
+      char *result = zMap_g_list_quark_to_string(ordered_list, NULL) ;
+
+      zMapConfigIniContextSetString(context, file_type,
+                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                    ZMAPSTANZA_APP_COLUMNS, result);
+
+      g_free(result) ;
+      changed = TRUE ;
+    }
+
+
+  if (view->flags[ZMAPFLAG_CHANGED_FEATURESET_STYLE])
+    {
+      /* Set values in the context for the column-style stanza based on the column_2_styles hash table */
+      updateContextColumnStyles(context, file_type, ZMAPSTANZA_COLUMN_STYLE_CONFIG, view->context_map.column_2_styles);
+
+      /* Set values for the featureset-style stanza */
+      GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;
+
+      zMapFeatureContextExecute((ZMapFeatureAny)view->features, ZMAPFEATURE_STRUCT_FEATURESET, 
+                                updateContextFeatureSetStyle, gkf) ;
+
+      changed = TRUE ;
+    }
+  
+  /* Set the unsaved flag in the context if there were any changes */
+  if (changed)
+    {
+      view->flags[ZMAPFLAG_COLUMNS_NEED_SAVING] = FALSE ;
+      view->flags[ZMAPFLAG_CHANGED_FEATURESET_STYLE] = FALSE ;
+      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+    }
+}
+
+
+/*  Update the given context with featureset-style relationships */
+void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
+                                   const char *stanza, GHashTable *ghash)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;
+
+  if (gkf)
+    {
+      /* Loop through all entries in the hash table */
+      GList *iter = NULL ;
+      gpointer key = NULL,value = NULL;
+
+      zMap_g_hash_table_iter_init(&iter, ghash) ;
+
+      while(zMap_g_hash_table_iter_next(&iter, &key, &value))
+        {
+          const char *key_str = g_quark_to_string(GPOINTER_TO_INT(key)) ;
+
+          if (key_str)
+            {
+              GString *values_str = NULL ;
+
+              for (GList *item = (GList*)value ; item ; item = item->next) 
+                {
+                  const char *value_str = g_quark_to_string(GPOINTER_TO_INT(item->data)) ;
+
+                  /* Only export if value is different to key (otherwise the style name is the
+                   * same as the column name, and this stanza doesn't add anything). Also don't
+                   * export if it's a default style. */
+                  if (value_str != key_str &&
+                      strcmp(value_str, "invalid") &&
+                      strcmp(value_str, "basic") &&
+                      strcmp(value_str, "alignment") &&
+                      strcmp(value_str, "transcript") &&
+                      strcmp(value_str, "sequence") &&
+                      strcmp(value_str, "assembly-path") &&
+                      strcmp(value_str, "text") &&
+                      strcmp(value_str, "graph") &&
+                      strcmp(value_str, "glyph") &&
+                      strcmp(value_str, "plain") &&
+                      strcmp(value_str, "meta") &&
+                      strcmp(value_str, "search hit marker"))
+                    {
+                      if (!values_str)
+                        values_str = g_string_new(value_str) ;
+                      else
+                        g_string_append_printf(values_str, " ; %s", value_str) ;
+                    }
+                }
+
+              if (values_str)
+                {
+                  g_key_file_set_string(gkf, stanza, key_str, values_str->str) ;
+                  g_string_free(values_str, TRUE) ;
+                }
+            }
+        }
+    }
+}
+
+
+/* Callback called for all featuresets to set the key-value pair for the featureset-style stanza
+ * in the given key file. Note that featuresets that have their default are not included. */
+static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
+                                                                    gpointer data,
+                                                                    gpointer user_data,
+                                                                    char **err_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
+  GKeyFile *gkf = (GKeyFile *)user_data ;
+
+  if (gkf && 
+      feature_any && 
+      feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET &&
+      ((ZMapFeatureSet)feature_any)->style)
+    {
+      ZMapFeatureSet featureset = (ZMapFeatureSet)feature_any ;
+      const char *key_str = g_quark_to_string(featureset->unique_id) ;
+      const char *value_str = g_quark_to_string(featureset->style->unique_id) ;
+          
+      /* Only export if value is different to key (otherwise the style name is the
+       * same as the column name, and this stanza doesn't add anything). Also don't
+       * export if it's a default style. */
+      if (featureset->style && featureset->unique_id != featureset->style->unique_id &&
+          strcmp(value_str, "invalid") &&
+          strcmp(value_str, "basic") &&
+          strcmp(value_str, "alignment") &&
+          strcmp(value_str, "transcript") &&
+          strcmp(value_str, "sequence") &&
+          strcmp(value_str, "assembly-path") &&
+          strcmp(value_str, "text") &&
+          strcmp(value_str, "graph") &&
+          strcmp(value_str, "glyph") &&
+          strcmp(value_str, "plain") &&
+          strcmp(value_str, "meta") &&
+          strcmp(value_str, "search hit marker"))
+        {
+          key_str = g_quark_to_string(featureset->original_id) ;
+          value_str = g_quark_to_string(featureset->style->original_id) ;
+
+          g_key_file_set_string(gkf, ZMAPSTANZA_FEATURESET_STYLE_CONFIG, key_str, value_str) ;
+        }
+    }
+
+  return status ;
 }

@@ -2799,6 +2799,10 @@ static void setColours(ZMapWindow window)
 
   gdk_color_parse(ZMAP_WINDOW_COLUMN_HIGHLIGHT, &(window->colour_column_highlight)) ;
   window->highlights_set.column = TRUE ;
+  
+  gdk_color_parse(ZMAP_WINDOW_RUBBER_BAND, &(window->colour_rubber_band)) ;
+  gdk_color_parse(ZMAP_WINDOW_HORIZON, &(window->colour_horizon)) ;
+  
   //  gdk_color_parse(ZMAP_WINDOW_ITEM_HIGHLIGHT, &(window->colour_item_highlight)) ;
   //  window->highlights_set.item = TRUE ;
   gdk_color_parse(ZMAP_WINDOW_FRAME_0, &(window->colour_frame_0)) ;
@@ -2873,6 +2877,14 @@ static void setColours(ZMapWindow window)
           gdk_color_parse(colour, &window->colour_column_highlight) ;
           window->highlights_set.column = TRUE ;
         }
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+                                       ZMAPSTANZA_WINDOW_RUBBER_BAND, &colour))
+        gdk_color_parse(colour, &window->colour_rubber_band) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+                                       ZMAPSTANZA_WINDOW_HORIZON, &colour))
+        gdk_color_parse(colour, &window->colour_horizon) ;
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
                                        ZMAPSTANZA_WINDOW_ITEM_MARK, &colour))

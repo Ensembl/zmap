@@ -102,7 +102,8 @@ static gint match_type(gconstpointer list_data, gconstpointer user_data);
 static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data) ;
 static void fetchStanzas(FetchReferencedStanzas full_data, GKeyFile *key_file, char *stanza_name) ;
 static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, const char *stanza_type) ;
-static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context, const char *parent_name, const char *parent_key) ;
+static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context,
+                                             const char *parent_name, const char *parent_key) ;
 static void set_is_default(gpointer key, gpointer value, gpointer data) ;
 static GList *get_names_as_list(char *styles) ;
 static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
@@ -112,6 +113,12 @@ static GList *contextGetStyleList(ZMapConfigIniContext context, char *styles_lis
 static GHashTable *configIniGetGlyph(ZMapConfigIniContext context, GKeyFile *extra_styles_keyfile) ;
 static void stylesFreeList(GList *config_styles_list) ;
 
+
+//
+//                  Globals
+//
+
+static bool debug_loading_G = false ;                       // Use to turn debugging logging/messages on/off.
 
 
 
@@ -540,19 +547,20 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
           if (!(new_style = zMapStyleCreateV(num_params, params)))
             {
               zMapLogWarning("Styles file \"%s\": could not create new style %s.",
-             styles_file, curr_config_style->name) ;
+                             styles_file, curr_config_style->name) ;
             }
           else
             {
-              /* Try to add the new style, can fail if a style with that name already
-               * exists. */
+              /* Try to add the new style, fails if a style with that name already exists, this is
+                 completely to be expected so we don't usually log it. */
               if (!zMapStyleSetAdd(styles, new_style))
                 {
-                  /* Free style, report error and move on. */
-                  zMapStyleDestroy(new_style) ;
+                  /* Style already loaded so free this copy. */
+                  if (debug_loading_G)
+                    zMapLogWarning("Styles file \"%s\": could not add style %s as it is already in the styles set.",
+                                   styles_file, zMapStyleGetName(new_style)) ;
 
-                  zMapLogWarning("Styles file \"%s\": could not add style %s to styles set.",
-                 styles_file, curr_config_style->name) ;
+                  zMapStyleDestroy(new_style) ;
                 }
             }
         } while((settings_list = g_list_next(settings_list)));
@@ -663,7 +671,7 @@ GList *zMapConfigString2QuarkList(const char *string_list, gboolean cannonical)
   return zmapConfigString2QuarkListExtra(string_list,cannonical,FALSE);
 }
 
-GList *zMapConfigString2QuarkIDList(char *string_list)
+GList *zMapConfigString2QuarkIDList(const char *string_list)
 {
   return zmapConfigString2QuarkListExtra(string_list,TRUE,TRUE);
 }
@@ -708,7 +716,6 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
   gsize len;
   char *normalkey;
   ZMapFeatureColumn f_col;
-  int n = g_hash_table_size(columns);
 
   zMapReturnValIfFail(context, ghash) ;
 
@@ -740,7 +747,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
               f_col->column_id = g_quark_from_string(normalkey);
               f_col->unique_id = column_id;
               f_col->column_desc = normalkey;
-              f_col->order = ++n;
+              f_col->order = zMapFeatureColumnOrderNext(FALSE);
 
               g_hash_table_insert(columns,GUINT_TO_POINTER(f_col->unique_id),f_col);
             }
@@ -892,6 +899,61 @@ g_strfreev(freethis);
     }
 
   return virtual_featuresets;
+}
+
+
+/* This loads the column-groups configuration and populates a hash table of the group name
+ * (GQuark) to a GList of column names (GQuark)
+ * 
+ * [column-groups]
+ * mygroup = column1 ; column2 ;  etc
+ *
+ */
+GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context)
+{
+  GHashTable *column_groups = NULL ;
+  GKeyFile *gkf;
+  gchar ** keys, **freethis ;
+  GList *columns;
+  gsize len = 0;
+  GQuark group_id = 0;
+  char *names;
+
+  zMapReturnValIfFail(context, column_groups) ;
+
+  column_groups = g_hash_table_new(NULL, NULL) ;
+
+  if(zMapConfigIniHasStanza(context->config, ZMAPSTANZA_COLUMN_GROUPS, &gkf))
+    {
+      freethis = keys = g_key_file_get_keys(gkf,ZMAPSTANZA_COLUMN_GROUPS,&len,NULL);
+
+      for(;len--;keys++)
+        {
+          names = g_key_file_get_string(gkf,ZMAPSTANZA_COLUMN_GROUPS,*keys,NULL);
+
+          if(!names || !*names)
+            {
+              if (!*names)    /* Can this even happen ? */
+                g_free(names) ;
+
+              continue ;
+            }
+
+          /* this featureset will not actually exist, it's virtual */
+          group_id = zMapStyleCreateID(*keys);
+
+          columns = zMapConfigString2QuarkList(names,FALSE);
+          g_free(names);
+          names = NULL ;
+
+          g_hash_table_insert(column_groups,GUINT_TO_POINTER(group_id), columns);
+        }
+
+      if(freethis)
+        g_strfreev(freethis);
+    }
+
+  return column_groups;
 }
 
 
@@ -1466,11 +1528,12 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name,
     { ZMAPSTANZA_APP_LOCALE,             G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_COOKIE_JAR,         G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_PFETCH_MODE,        G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_APP_PFETCH_LOCATION,    G_TYPE_STRING, NULL, FALSE },
-    //    { ZMAPSTANZA_APP_SCRIPTS,      G_TYPE_STRING, NULL, FALSE },
+    { ZMAPSTANZA_APP_PFETCH_LOCATION,    G_TYPE_STRING,  NULL, FALSE },
+    //    { ZMAPSTANZA_APP_SCRIPTS,      G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_DATA,               G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_STYLESFILE,         G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_LEGACY_STYLES,      G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_COLUMNS,            G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_STYLE_FROM_METHOD,  G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_XREMOTE_DEBUG,      G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_REPORT_THREAD,      G_TYPE_BOOLEAN, NULL, FALSE },
@@ -2103,6 +2166,8 @@ static ZMapConfigIniContextKeyEntry get_window_group_data(const char **stanza_na
     { ZMAPSTANZA_WINDOW_Q_FORWARDCOL, G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_WINDOW_Q_REVERSECOL, G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_WINDOW_COL_HIGH,     G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_WINDOW_RUBBER_BAND,  G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_WINDOW_HORIZON,      G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_WINDOW_SEPARATOR,    G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_WINDOW_COL_HIGH,     G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_WINDOW_ITEM_MARK,    G_TYPE_STRING,  NULL, FALSE },

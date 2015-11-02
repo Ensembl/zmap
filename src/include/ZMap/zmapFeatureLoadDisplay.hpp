@@ -128,36 +128,66 @@ typedef struct ZMapFeatureColumnStructType
 /* All the featureset/featureset data/column/style data - used by view and window */
 typedef struct ZMapFeatureContextMapStructType
 {
-  /* All the styles known to the view or window */
+  /* All the styles known to the view or window.
+   * Maps the style's unique_id (GQuark) to ZMapFeatureTypeStyle. */
   GHashTable *styles ;
 
-  /* Mapping of each column to all the styles it requires. using a GHashTable of
-   * GLists of style quark id's. NB: this stores data from ZMap config
-   * sections [featureset_styles] _and_ [column_styles] _and_ ACEDB
-   * collisions are merged Columns treated as fake featuresets so as to have a style. */
-  GHashTable *column_2_styles ;
+  /* All the columns that ZMap will display.
+   * These may contain several featuresets each, They are in display order left to right.
+   * Maps the column's unique_id (GQuark) to ZMapFeatureColumn */
+  GHashTable *columns ;
+
 
   /* Mapping of a feature source to a column using ZMapFeatureSetDesc
    * NB: this contains data from ZMap config sections [columns] [featureset_description] _and_
    * ACEDB */
+  /* gb10: Note that this relationship is cached in reverse in the ZMapFeatureColumn, but the data
+   * originates from this hash table. It's something to do with acedb servers returning this
+   * relationship after the column has been created so we don't know it up front. Perhaps that's
+   * something we could revisit and maybe get rid of this hash table? */
   GHashTable *featureset_2_column ;
 
+  /* Mapping of each column to all the styles it requires. 
+   * NB: this stores data from ZMap config sections [featureset_styles] _and_ [column_styles] 
+   * _and_ ACEDB collisions are merged Columns treated as fake featuresets so as to have a style.
+   * Maps the column's unique_id (GQuark) to GList of style unique_ids (GQuark). */
+  /* gb10: It looks like this is duplicate information because each ZMapFeatureColumn has a
+   * style_table listing all of the styles that column requires. Also, the column has a list of
+   * featuresets and each featureset has a pointer to the style. Perhaps we can get rid of this
+   * hash table and use the column's style_table instead? Or get rid of both of those and just
+   * access the styles directly from the featuresets. */
+  GHashTable *column_2_styles ;
 
-  /* Mapping of a feature source to its data using ZMapFeatureSource
+  /* The source data for a featureset. 
    * This consists of style id and description and source id
    * NB: the GFFSource.source  (quark) is the GFF_source name the hash table
-   * is indexed by the featureset name quark. */
+   * Maps the featureset unique_id (GQuark) to ZMapFeatureSource. */
+  /* gb10: Could we just get the ZMapFeatureSet to point directly to this data and get rid 
+   * of this hash table? */
   GHashTable *source_2_sourcedata ;
 
-  /* All the columns that ZMap will display stored as ZMapFeatureColumn
-   * These may contain several featuresets each, They are in display order left to right. */
-  GHashTable *columns ;
 
-  /* sources of BAM data  as unique id's, use source_2_sourcedata  for display name */
+  /* This is a list BAM featureset unique id's (GQuark). It is only used to create the Blixem and
+   * ZMap right-click menus for short-read options. This info is also available via the is_seq
+   * member of the ZMapFeatureSource struct. */
+  /* gb10: I'm not sure how much those menus are used so maybe we should look into getting rid of
+   * them? Or look at using is_seq to construct these menus instead (if that's not too slow)? */
   GList *seq_data_featuresets ;
 
-  /* place holder for lists of featuresets */
+  /* This maps virtual featuresets to their lists of real featuresets. The reverse mapping is
+   * provided by the maps_to field in the ZMapFeatureSource. 
+   * Maps the virtual featureset unique_id (GQuark) to a GList of real featureset unique_ids
+   * (GQuarks) */
+  /* gb10: This is currently only used in one place (zmapWindowFetchData) to get the list of
+   * real featureset IDs from the virtual featureset ID. Perhaps we can use the info from maps_to
+   * to do that instead (if that's not too slow)? */
   GHashTable *virtual_featuresets ;
+
+  
+  /* This allows columns to be grouped together on a user-defined/configured basis, e.g. for
+   * running blixem on a related set of columns. A column can be in multiple groups. 
+   * Maps the group unique_id (GQuark) to a GList of column unique ids (GQuark) */
+  GHashTable *column_groups ;
 
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap ;
 

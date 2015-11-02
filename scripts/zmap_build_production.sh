@@ -18,7 +18,6 @@ RC=0
 
 BUILD_PREFIX='PRODUCTION'
 SEQTOOLS_DIR='PRODUCTION'
-#ERROR_ID='-a edgrif@sanger.ac.uk'
 ERROR_ID=''
 GBTOOLS_BRANCH=''
 
@@ -32,6 +31,11 @@ fi
 if (( $# > 1 )) ; then
   GBTOOLS_BRANCH="-t $2"
 fi
+
+if (( $# > 2 )) ; then
+  ERROR_ID="-a $3"
+fi
+
 
 ./build_run.sh $ERROR_ID -b production -m -s $SEQTOOLS_DIR $GBTOOLS_BRANCH $BUILD_PREFIX || RC=1
 

@@ -53,6 +53,8 @@ typedef enum
   ZMAPVIEW_ERROR_STATE,
   ZMAPVIEW_ERROR_SOURCES_LOADING,
   ZMAPVIEW_ERROR_SERVERS,
+  ZMAPVIEW_ERROR_CONTEXT_EMPTY,        /* no new features found when merging context */
+  ZMAPVIEW_ERROR_CONTEXT_SERIOUS       /* serious error when merging context */
 } ZMapViewError ;
 
 
@@ -515,8 +517,6 @@ gboolean zmapViewMergeNewFeatures(ZMapView view,
                                   ZMapFeatureContext *context, ZMapFeatureContextMergeStats *merge_stats_out,
                                   GList **feature_list) ;
 void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list) ;
-
-GList* zmapViewGetOrderedColumnsList(ZMapView view) ;
 
 /* zmapViewFeatureMask.c */
 GList *zMapViewMaskFeatureSets(ZMapView view, GList *feature_set_names);

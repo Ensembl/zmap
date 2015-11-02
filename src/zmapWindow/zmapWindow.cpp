@@ -3721,7 +3721,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                           dragging = TRUE;
 
                           if (!window->rubberband)
-                            window->rubberband = zMapDrawRubberbandCreate(window->canvas);
+                            window->rubberband = zMapDrawRubberbandCreate(window->canvas, &window->colour_rubber_band);
                         }
 
                       /* At this stage we don't know if we are rubber banding etc. so pass the
@@ -7290,7 +7290,7 @@ static void setupRuler(ZMapWindow       window,
   zMapReturnIfFail(window) ;
 
   if(horizon && !*horizon)
-    *horizon = zMapDrawHorizonCreate(window->canvas) ;
+    *horizon = zMapDrawHorizonCreate(window->canvas, &window->colour_horizon) ;
 
   if (tooltip && !*tooltip)
     *tooltip = zMapDrawToolTipCreate(window->canvas);
@@ -7462,11 +7462,10 @@ static void updateColumnBackground(ZMapWindow window,
                                   strand,
                                   frame);
 
-  if (foo)
+  if (foo && foo->parent)
     {
       ZMapWindowContainerGroup column = (ZMapWindowContainerGroup)foo->parent;
-      GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;/* is there a column background config colour? */
-      GdkColor *fill_col = &white;
+      GdkColor *fill_col = &window->canvas_background;
 
       int n_filtered = zMapWindowFeaturesetItemGetNFiltered(foo);
 
@@ -7603,8 +7602,6 @@ void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data)
 
   return ;
 }
-
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

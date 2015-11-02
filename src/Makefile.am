@@ -220,12 +220,21 @@ endif
 zmap_LDADD +=                                                \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
 	$(GTK_LIBS)			                     \
-	$(LIBCURL) -lexpat -lX11 -lz                         \
-	$(MYSQL_LDFLAGS)                                     \
+	$(LIBCURL) -lexpat -lX11 -lz                         
+
+if USE_ENSEMBL
+zmap_LDADD += $(MYSQL_LDFLAGS)                                     
+endif
+
+zmap_LDADD +=                                                \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
-zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp $(MYSQL_CFLAGS)
+zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
+
+if USE_ENSEMBL
+zmap_CFLAGS += $(MYSQL_CFLAGS)
+endif
 
 # zeromq is C++ so we need to link with g++, not gcc.
 #zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -399,4 +408,19 @@ install-zmap-static-libs:
 
 @MACOSX_UNIVERSAL_FILE@:
 	touch @MACOSX_UNIVERSAL_FILE@
+
+#
+# location on tviewsrv is '/usr/local/qt5/5.5/gcc/bin/qmake'
+#
+test-qt:
+	@echo "make test-qt"
+	mkdir $(top_builddir)/test-qt ;\
+	cd $(top_builddir)/test-qt ;\
+	/usr/local/Qt5.5.0/5.5/gcc_64/bin/qmake /nfs/users/nfs_s/sm23/Work/TestCode/QT/QT01/QT01.pro -r -spec linux-g++ ;\
+	make ;\
+	cd $(top_builddir)
+
+test-qt-clean:
+	@echo "make test-qt-clean"
+	rm -rf $(top_builddir)/test-qt
 

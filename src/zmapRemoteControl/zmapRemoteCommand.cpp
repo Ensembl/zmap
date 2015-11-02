@@ -367,7 +367,6 @@ GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control
                                                 char **error_out)
 {
   GArray *envelope = NULL ;
-  char *err_msg = NULL ;
   GQuark req_version ;
   GQuark req_app_id ;
   GQuark req_socket_id ;
@@ -376,17 +375,11 @@ GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control
   char *req_command ;
 
 
-  if (reqReplyValidate(remote_control, g_quark_from_string(ZACP_REQUEST), TRUE, 0, 0, 0, xml_request, &err_msg)
-      != REMOTE_VALIDATE_RC_OK)
+  if (reqReplyValidate(remote_control, g_quark_from_string(ZACP_REQUEST),
+                       TRUE, 0, 0, 0, xml_request, error_out) == REMOTE_VALIDATE_RC_OK
+      && getRequestAttrs(xml_request, &req_version, &req_app_id, &req_socket_id,
+                         &req_request_id, &req_request_time,  &req_command, error_out))
     {
-      *error_out = err_msg ;
-    }
-  else
-    {
-      getRequestAttrs(xml_request, &req_version, &req_app_id, &req_socket_id,
-		      &req_request_id, &req_request_time,  &req_command, &err_msg) ;
-
-
       if ((return_code == REMOTE_COMMAND_RC_OK && !reason) || (return_code != REMOTE_COMMAND_RC_OK && reason))
         envelope = createRequestReply(ENVELOPE_REPLY, remote_control->version,
                                       remote_control->receive->our_app_name_id, req_socket_id,
@@ -919,7 +912,7 @@ gboolean zMapRemoteCommandReplyGetAttributes(const char *reply,
 
   if (!(result = zMapXMLParserParseBuffer(parser, (void *)reply, strlen(reply))))
     {
-      *error_out = zMapXMLParserLastErrorMsg(parser) ;
+      *error_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
 
       result = FALSE ;
     }
@@ -1261,7 +1254,7 @@ static gboolean checkReplyAttrs(ZMapRemoteControl remote_control,
       && (result = getReplyAttrs(reply,
 				 &reply_version, &reply_app_id, &reply_socket_id,
                                  &reply_id, &reply_time, &reply_command,
-				 error_out)))
+                                 error_out)))
     {
       const char *prefix = "Request/Reply have different" ;
 
@@ -1350,7 +1343,7 @@ static gboolean getRequestAttrs(char *xml_request, GQuark *req_version,
 
   if (!(result = zMapXMLParserParseBuffer(parser, xml_request, strlen(xml_request))))
     {
-      *error_out = zMapXMLParserLastErrorMsg(parser) ;
+      *error_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
     }
   else
     {
@@ -1393,7 +1386,7 @@ static gboolean getReplyAttrs(char *xml_reply, GQuark *reply_version,
 
   if (!(result = zMapXMLParserParseBuffer(parser, xml_reply, strlen(xml_reply))))
     {
-      *error_out = zMapXMLParserLastErrorMsg(parser) ;
+      *error_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
     }
   else
     {
@@ -1438,14 +1431,13 @@ static RemoteValidateRCType reqReplyValidate(ZMapRemoteControl remote_control,
 
   zMapXMLParserSetMarkupObjectTagHandlers(parser, &validate_starts_G[0], &validate_ends_G[0]) ;
 
-  if (!(parse_result = zMapXMLParserParseBuffer(parser, xml_request, strlen(xml_request)))
-      || (!validate_data.zmap_start || !validate_data.req_reply_start
-          || !validate_data.req_reply_end || !validate_data.zmap_end))
+  if (!(parse_result = zMapXMLParserParseBuffer(parser, xml_request, strlen(xml_request))))
     {
-      char *err_msg = NULL ;
-
-      err_msg = zMapXMLParserLastErrorMsg(parser) ;
-
+      *error_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
+    }
+  else if (!validate_data.zmap_start || !validate_data.req_reply_start
+           || !validate_data.req_reply_end || !validate_data.zmap_end)
+    {
       if (!validate_data.zmap_start)
         result = REMOTE_VALIDATE_RC_ENVELOPE_XML ;
       else if (validate_data.zmap_start && !validate_data.zmap_content)
@@ -1461,12 +1453,9 @@ static RemoteValidateRCType reqReplyValidate(ZMapRemoteControl remote_control,
       else if (!validate_data.zmap_end)
         result = REMOTE_VALIDATE_RC_ENVELOPE_XML ;
 
-      if (!err_msg)
-        err_msg = g_strdup_printf("\"%s\" in \"%s\"",
-                                  zMapRemoteCommandRC2Desc(result),
-                                  xml_request) ;
-
-      *error_out = err_msg ;
+      *error_out = g_strdup_printf("\"%s\" in \"%s\"",
+                                   zMapRemoteCommandRC2Desc(result),
+                                   xml_request) ;
     }
   else
     {

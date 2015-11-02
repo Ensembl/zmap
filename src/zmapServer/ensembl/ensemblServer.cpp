@@ -1249,6 +1249,38 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
           Vector *exons = Transcript_getAllExons(rsf) ;
           transcriptAddExons(server, feature, exons) ;
           //Vector_free(exons) ;
+
+          /* Get list of supporting features and convert it to a list of unique ids */
+          Vector *supporting_features = Transcript_getAllSupportingFeatures(rsf);
+          GList *evidence_list = NULL ;
+
+          for (int k=0; k < Vector_getNumElement(supporting_features); ++k) 
+            {
+              BaseAlignFeature *baf = (BaseAlignFeature*)Vector_getElementAt(supporting_features, k) ;
+
+              const char *baf_name = BaseAlignFeature_getHitSeqName(baf) ;
+              const int baf_start = BaseAlignFeature_getStart(baf) ; 
+              const int baf_end = BaseAlignFeature_getEnd(baf) ; 
+              const int baf_hit_start = BaseAlignFeature_getHitStart(baf) ; 
+              const int baf_hit_end = BaseAlignFeature_getHitEnd(baf) ; 
+              const char baf_strand_c = BaseAlignFeature_getStrand(baf);
+
+              ZMapStrand baf_strand = ZMAPSTRAND_NONE ;
+
+              if (baf_strand_c > 0)
+                baf_strand = ZMAPSTRAND_FORWARD ;
+              else if (baf_strand_c < 0)
+                baf_strand = ZMAPSTRAND_REVERSE ;
+
+              GQuark baf_unique_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_ALIGNMENT,
+                                                        baf_name, baf_strand, baf_start, baf_end,
+                                                        baf_hit_start, baf_hit_end);
+              
+              evidence_list = g_list_append(evidence_list, GINT_TO_POINTER(baf_unique_id)) ;
+            }
+
+          /* Set the evidence list in the transcript. This takes ownership of the list. */
+          zMapFeatureTranscriptSetEvidence(evidence_list, feature) ;
         }
     }
 
