@@ -316,10 +316,11 @@ static void addContentTree(EditStylesDialog data, GtkBox *box)
                     G_CALLBACK (tree_selection_changed_cb),
                     data);
 
-  /* If the default path has been set then update the selection */
+  /* If the default path has been set then update the selection and expand and scroll to it */
   if (data->selected_tree_path)
     {
       gtk_tree_view_expand_to_path(data->tree_view, data->selected_tree_path) ;
+      gtk_tree_view_scroll_to_cell(data->tree_view, data->selected_tree_path, NULL, FALSE, 0.0, 0.0) ;
       gtk_tree_selection_select_path(select, data->selected_tree_path) ;
     }
 
