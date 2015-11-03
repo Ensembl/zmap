@@ -57,6 +57,7 @@ typedef struct _ColConfigureStruct *ColConfigure;
 typedef enum
   {
     NAME_COLUMN, 
+    STYLE_COLUMN,
     SHOW_FWD_COLUMN, 
     AUTO_FWD_COLUMN, 
     HIDE_FWD_COLUMN, 
@@ -1850,11 +1851,15 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
   gtk_tree_selection_set_select_function(tree_selection, tree_select_function_cb, page_data, NULL) ;
 
-  /* Create the text column */
+  /* Create the name column */
   GtkTreeViewColumn *column = NULL ;
 
   GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
   column = gtk_tree_view_column_new_with_attributes("Column", text_renderer, "text", NAME_COLUMN, NULL);
+  gtk_tree_view_append_column(tree_view, column);
+
+  /* Create the style column */
+  column = gtk_tree_view_column_new_with_attributes("Style", text_renderer, "text", STYLE_COLUMN, NULL);
   gtk_tree_view_append_column(tree_view, column);
 
   /* Create the radio button columns */
@@ -1864,6 +1869,7 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, SHOW_REV_COLUMN, SHOW_LABEL) ;
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, AUTO_REV_COLUMN, SHOWHIDE_LABEL) ;
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, HIDE_REV_COLUMN, HIDE_LABEL) ;
+
 
   page_data->tree_view = GTK_TREE_VIEW(tree) ;
 
@@ -1886,9 +1892,13 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
   GtkTreeIter iter ;
   gtk_list_store_append(store, &iter);
 
+  /* Set the column name */
   const char *label_text = g_quark_to_string(column->column_id);
-
   gtk_list_store_set(store, &iter, NAME_COLUMN, label_text, -1);
+
+  /* Set the style name */
+  if (column->style)
+    gtk_list_store_set(store, &iter, STYLE_COLUMN, g_quark_to_string(column->style->original_id), -1);
 
   /* Show two sets of radio buttons for each column to change column display state for
    * each strand. gb10: not sure why but historically we only added an apply button if we set
@@ -1963,7 +1973,7 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
   GList *columns_list = zMapFeatureGetOrderedColumnsList(page_data->window->context_map) ;
 
   /* Create a tree store containing one row per column */
-  GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, 
+  GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING,
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, 
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN) ;
 
