@@ -238,6 +238,11 @@ typedef struct
 } SizingDataStruct, *SizingData;
 
 
+typedef struct GetFeaturesetsDataStructType
+{
+  LoadedPageData page_data ;
+  GList *result ;
+} GetFeaturesetsDataStruct, *GetFeaturesetsData ;
 
 
 static GtkWidget *make_menu_bar(ColConfigure configure_data);
@@ -286,12 +291,14 @@ static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
 
 static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, GtkTreeModel *model, GtkTreeIter *iter) ;
 
+static ZMapFeatureSet tree_model_get_column_featureset(LoadedPageData page_data, GtkTreeModel *model, GtkTreeIter *iter) ;
 static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter) ;
 
 static ZMapStyleColumnDisplayState get_state_from_tree_store_value(GtkTreeModel *model, 
                                                                    GtkTreeIter *iter, 
                                                                    ZMapStrand strand) ;
 
+static GList* tree_view_get_selected_featuresets(LoadedPageData page_data) ;
 
 
 static GtkItemFactoryEntry menu_items_G[] =
@@ -2026,12 +2033,7 @@ static void set_column_style_cb(GtkTreeModel *model, GtkTreePath *path, GtkTreeI
   LoadedPageData page_data = (LoadedPageData)user_data ;
   zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
 
-  GQuark column_id = tree_model_get_column_id(model, iter) ;
-  FooCanvasGroup *column_group = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column_id) ;
-
-  ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)(column_group);
-
-  ZMapFeatureSet feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container);
+  ZMapFeatureSet feature_set = tree_model_get_column_featureset(page_data, model, iter) ;
 
   if (feature_set)
     {
@@ -2050,10 +2052,12 @@ static void choose_style_button_cb(GtkButton *button, gpointer user_data)
 
   GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
 
+  GList *feature_sets = tree_view_get_selected_featuresets(page_data) ;
+
   if (selection)
     {
       /* Open a dialog for the user to choose a style */
-      GQuark style_id = zMapWindowChooseStyleDialog(page_data->window, NULL, page_data->last_style_id) ;
+      GQuark style_id = zMapWindowChooseStyleDialog(page_data->window, feature_sets) ;
 
       if (style_id)
         {
@@ -2368,6 +2372,20 @@ static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStra
 }
 
 
+/* Called for each row in the current selection to set the list of selected featuresets */
+static void get_selected_featuresets_cb(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer user_data)
+{
+  GetFeaturesetsData data = (GetFeaturesetsData)user_data ;
+  
+  ZMapFeatureSet feature_set = tree_model_get_column_featureset(data->page_data, model, iter) ;
+
+  if (feature_set)
+    {
+      data->result = g_list_append(data->result, feature_set) ;
+    }
+}
+
+
 /* Get the column name for the given row in the given tree. Return it as a unique id */
 static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter)
 {
@@ -2385,6 +2403,41 @@ static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter)
     }
 
   return column_id ;
+}
+
+
+/* Get the featureset for the given row in the given tree. Returns null if not found */
+static ZMapFeatureSet tree_model_get_column_featureset(LoadedPageData page_data, GtkTreeModel *model, GtkTreeIter *iter)
+{
+  ZMapFeatureSet result = NULL ;
+
+  GQuark column_id = tree_model_get_column_id(model, iter) ;
+
+  FooCanvasGroup *column_group = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column_id) ;
+
+  if (!column_group)
+    column_group = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_REVERSE, column_id) ;
+
+  ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)(column_group);
+
+  result = zmapWindowContainerFeatureSetRecoverFeatureSet(container);
+
+  return result ;
+}
+
+
+/* Get the list of selected featuresets in the tree view */
+static GList* tree_view_get_selected_featuresets(LoadedPageData page_data)
+{
+  zMapReturnValIfFail(page_data && page_data->tree_view, NULL) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+  
+  GetFeaturesetsDataStruct data = {page_data, NULL} ;
+
+  gtk_tree_selection_selected_foreach(selection, &get_selected_featuresets_cb, &data) ;
+
+  return data.result ;
 }
 
 

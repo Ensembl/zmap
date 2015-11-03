@@ -2665,7 +2665,7 @@ static void chooseStyleCB(int menu_item_id, gpointer callback_data)
 
   if (menu_data && menu_data->feature_set)
     {
-      GQuark style_id = zMapWindowChooseStyleDialog(menu_data->window, menu_data->feature_set, 0) ;
+      GQuark style_id = zMapWindowChooseStyleDialog(menu_data->window, menu_data->feature_set) ;
 
       if (style_id)
         {

@@ -735,7 +735,8 @@ double zMapWindowGetDisplayOrigin(ZMapWindow window) ;
 void zMapWindowSetDisplayOrigin(ZMapWindow window, double origin) ;
 void zMapWindowShowStyleDialog(ZMapWindow window, ZMapFeatureTypeStyle style, GQuark new_style_name, ZMapFeatureSet feature_set, GFunc cb_func, gpointer cb_data) ;
 void zMapWindowShowStylesDialog(ZMapWindow window) ;
-GQuark zMapWindowChooseStyleDialog(ZMapWindow window, ZMapFeatureSet feature_set, const GQuark default_style_id) ;
+GQuark zMapWindowChooseStyleDialog(ZMapWindow window, ZMapFeatureSet feature_set) ;
+GQuark zMapWindowChooseStyleDialog(ZMapWindow window, GList* feature_sets) ;
 
 /*
  * Set whether we are to display slice or chromosome coordinates.

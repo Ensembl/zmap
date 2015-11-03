@@ -80,6 +80,7 @@ static EditStylesDialog createStylesDialog(ZMapWindow window,
 static void destroyCB(GtkWidget *widget, gpointer user_data) ;
 static gboolean keyPressCB(GtkWidget *widget, GdkEventKey *event, gpointer user_data) ;
 GQuark getSelectedStyleID(EditStylesDialog data) ;
+GQuark showChooseStyleDialog(ZMapWindow window, const char *title, const GQuark default_style_id) ;
 
 
 /* 
@@ -110,11 +111,46 @@ void zMapWindowShowStylesDialog(ZMapWindow window)
 
 
 /* Entry point to show the Choose Style dialog. Returns the id of the chosen style or 0 if
- * cancelled. Starts up with default_style_id selected if it is specified (non 0) and exists */
-GQuark zMapWindowChooseStyleDialog(ZMapWindow window, ZMapFeatureSet feature_set, const GQuark default_style_id)
+ * cancelled. Starts up with the given featuresets' style selected if it exists */
+GQuark zMapWindowChooseStyleDialog(ZMapWindow window, GList *feature_sets)
 {
   GQuark result = 0 ;
   zMapReturnValIfFail(window, result) ;
+
+  /* If all the feature sets have the same style then use that as the default style */
+  GQuark default_style_id = 0 ;
+  gboolean same_style = TRUE ;
+
+  for (GList *item = feature_sets; item && same_style; item = item->next)
+    {
+      ZMapFeatureSet feature_set = (ZMapFeatureSet)(item->data);
+
+      if (feature_set->style)
+        {
+          if (!default_style_id)
+            {
+              default_style_id = feature_set->style->unique_id ;
+            }
+          else if (default_style_id != feature_set->style->unique_id)
+            {
+              same_style = FALSE ;
+              default_style_id = 0 ;
+            }
+        }
+    }
+
+  result = showChooseStyleDialog(window, "Choose style", default_style_id) ;
+
+  return result ;
+}
+
+
+/* Entry point to show the Choose Style dialog. Returns the id of the chosen style or 0 if
+ * cancelled. Starts up with the given featureset's style selected if it exists */
+GQuark zMapWindowChooseStyleDialog(ZMapWindow window, ZMapFeatureSet feature_set)
+{
+  GQuark result = 0 ;
+  zMapReturnValIfFail(feature_set, result) ;
 
   char *title = NULL ;
 
@@ -123,18 +159,30 @@ GQuark zMapWindowChooseStyleDialog(ZMapWindow window, ZMapFeatureSet feature_set
   else
     title = g_strdup("Choose Style") ;
 
-  GQuark orig_style_id = default_style_id ;
+  GQuark default_style_id = 0 ;
 
-  if (!orig_style_id && feature_set)
-    orig_style_id = feature_set->style->unique_id ;
+  if (feature_set && feature_set->style)
+    default_style_id = feature_set->style->unique_id ;
+
+  result = showChooseStyleDialog(window, title, default_style_id) ;
+
+  g_free(title) ;
+
+  return result ;
+}
+
+
+/* Does the work to show the choose-style dialog */
+GQuark showChooseStyleDialog(ZMapWindow window, const char *title, const GQuark default_style_id)
+{
+  GQuark result = 0 ;
+  zMapReturnValIfFail(window, result) ;
 
   EditStylesDialog data = createStylesDialog(window,
                                              FALSE, 
                                              title,
                                              NULL,
-                                             orig_style_id) ;
-
-  g_free(title) ;
+                                             default_style_id) ;
 
   if (data && data->dialog)
     {
