@@ -193,6 +193,14 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
 }
 
 
+/* Entry point to show the Choose Style dialog. Returns the id of the chosen style or 0 if
+ * cancelled. */
+GQuark zMapWindowChooseStyleDialog(ZMapWindow window)
+{
+  
+}
+
+
 /* Interface to allow external callers to destroy the style dialog */
 void zmapWindowStyleDialogDestroy(ZMapWindow window)
 {

@@ -428,12 +428,6 @@ static void offsetTextAttr(gpointer data, gpointer user_data) ;
 
 static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window) ;
 
-static void construct_style_menu(ZMapStyleTree *style_node, 
-                                 ZMapGUIMenuItem *menu,
-                                 const char *parent_name,
-                                 ZMapFeatureTypeStyle cur_style,
-                                 ZMapStyleMode f_type) ;
-
 
 
 
@@ -1779,39 +1773,59 @@ static void construct_style_menu(ZMapStyleTree *style_node,
                                  ZMapGUIMenuItem *menu,
                                  const char *parent_name,
                                  ZMapFeatureTypeStyle cur_style,
-                                 ZMapStyleMode f_type)
+                                 ZMapStyleMode f_type,
+                                 gpointer callback_data,
+                                 int *count,
+                                 const int max_count)
 {
+  zMapReturnIfFail(style_node && menu && parent_name && cur_style) ;
 
-  /* Add this style node */
   ZMapFeatureTypeStyle style = style_node->get_style() ;
+  std::vector<ZMapStyleTree*> children = style_node->get_children() ;
+  char *new_name = NULL ;
 
-  if (style_is_compatable(style, f_type))
+  if (style)
     {
-      (*menu)->type = ZMAPGUI_MENU_NORMAL;
+      if (*count >= max_count - 1)
+        {
+          zMapLogWarning("%s", "Exceeded max style menu count") ;
+        }
+      else
+        {
+          /* Add this style node */
+          new_name = g_strdup_printf("%s/%s", parent_name, g_quark_to_string(style->original_id));
+          zMapLogMessage("Adding style: %s", new_name) ;
 
-      const char *mode = "";
+          if (children.size() > 0)
+            (*menu)->type = ZMAPGUI_MENU_BRANCH;
+          else
+            (*menu)->type = ZMAPGUI_MENU_NORMAL;
 
-      if(style->mode != cur_style->mode)
-        mode = (char *) zMapStyleMode2ShortText(style->mode);
+          (*menu)->name = new_name ;
+          (*menu)->id = style->unique_id;
+          (*menu)->callback_func = setStyleCB;
+          (*menu)->callback_data = callback_data;
 
-      /* Construct the name for this node based on the parent name */
-      char *name = get_menu_string(style->original_id, '-');
-      char *new_name = g_strdup_printf("%s/%s%s%s", parent_name, mode, *mode ? "/" : "", name);
-      (*menu)->name = new_name ;
+          *menu += 1 ;
+          *count += 1 ;
+        }
+    }
+  else
+    {
+      /* The root node in the tree has a null style so we don't want to add it but we 
+       * do want to process its children */
+      new_name = g_strdup(parent_name) ;
+    }
 
-      (*menu)->id = style->unique_id;
-      (*menu)->callback_func = setStyleCB;
-      (*menu)++;
-
+  if (new_name)
+    {
       /* Recurse through the children */
-      std::vector<ZMapStyleTree*> children = style_node->get_children() ;
-  
+ 
       for (std::vector<ZMapStyleTree*>::iterator child = children.begin(); child != children.end(); ++child)
         {
-          construct_style_menu(*child, menu, new_name, cur_style, f_type) ;
+          construct_style_menu(*child, menu, new_name, cur_style, f_type, callback_data, count, max_count) ;
         }
 
-      g_free(name);
       g_free(new_name) ;
     }
 }
@@ -1827,7 +1841,8 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
   ItemMenuCBData cbdata  = (ItemMenuCBData)callback_data;
   ZMapGUIMenuItem m;
   ZMapStyleTree *styles = NULL ;
-  int n_styles;
+  int n_styles = 0;
+  int count = 0;
 
   zMapReturnValIfFail(cbdata && cbdata->window && cbdata->window->context_map, NULL ) ;
 
@@ -1835,7 +1850,7 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
 
   //zMap_g_hash_table_get_data(&style_list,styles);
   //style_list = g_list_sort_with_data(style_list, style_menu_sort, (gpointer) cur_style);
-  n_styles = styles->count();                /* max possible, will never be reached */
+  n_styles = 1 ;//styles->count();                /* max possible, will never be reached */
 
   if (n_styles < 1)
     return NULL;
@@ -1855,9 +1870,12 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
           g_free(menu);
         }
 
-        n_menu = n_styles + N_STYLE_MODE + 10;
+      n_menu = n_styles + N_STYLE_MODE + 10;
       menu = g_new0(ZMapGUIMenuItemStruct, n_menu);
 
+      int i = 0 ;
+      for (i = 0, m = menu ; i < n_styles; ++i, ++m)
+        m->type = ZMAPGUI_MENU_NONE ;
     }
 
   m = menu;
@@ -1867,32 +1885,31 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
   m->name = g_strdup(COLUMN_CONFIG_STR "/" COLUMN_COLOUR);
   m->id = 0;
   m->callback_func = colourMenuCB;
-  m++;
+  m->callback_data = callback_data ;
+  ++m;
+  ++count ;
 
   /* Add the Choose Style menu option */
-  m->type = ZMAPGUI_MENU_BRANCH;
+  m->type = ZMAPGUI_MENU_NORMAL;
   m->name = g_strdup(COLUMN_CONFIG_STR "/" COLUMN_STYLE_OPTS);
   m->id = 0;
-  m->callback_func = NULL;
-  m++;
+  m->callback_func = chooseStyleCB;
+  m->callback_data = callback_data ;
+  ++m;
+  ++count ;
 
   /* Add sub-menu options under Choose Style. Loop through each node in the styles tree. 
    * Pass the name prefix each time so that we can compile sub menus under the correct parent
    * menu item */
-  char *name_prefix = g_strdup(COLUMN_CONFIG_STR "/" COLUMN_STYLE_OPTS) ;
+//char *name_prefix = g_strdup(COLUMN_CONFIG_STR "/" COLUMN_STYLE_OPTS) ;
+//construct_style_menu(styles, &m, name_prefix, cur_style, f_type, callback_data, &count, n_menu) ;
+//g_free(name_prefix) ;
 
-  construct_style_menu(styles, &m, name_prefix, cur_style, f_type) ;
-
-  g_free(name_prefix) ;
-
+  
   if (m <= menu + 3)        /* empty sub_menu or choice of current */
     m = menu + 1;
   m->type = ZMAPGUI_MENU_NONE;
   m->name = NULL;
-
-
-  /* this overrides data in the menus as given in the args, but index and func are always NULL */
-  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
   return menu;
 }
@@ -2770,6 +2787,7 @@ static void colourMenuCB(int menu_item_id, gpointer callback_data)
   return ;
 }
 
+/* Not used because the Choose Style context menu is not currently working */
 static void setStyleCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
@@ -2780,6 +2798,29 @@ static void setStyleCB(int menu_item_id, gpointer callback_data)
                                    menu_data->feature_set,
                                    menu_data->context_map,
                                    menu_data->window);
+    }
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+/* Called to show the Choose Style dialog */
+static void chooseStyleCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+
+  if (menu_data && menu_data->feature_set)
+    {
+      GQuark style_id = zMapWindowChooseStyleDialog(menu_data->window) ;
+
+      if (style_id)
+        {
+          zmapWindowFeaturesetSetStyle(style_id,
+                                       menu_data->feature_set,
+                                       menu_data->context_map,
+                                       menu_data->window);
+        }
     }
 
   g_free(menu_data) ;
