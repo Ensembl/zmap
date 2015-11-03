@@ -70,7 +70,7 @@ gboolean ZMapStyleTree::is_style(ZMapFeatureTypeStyle style) const
 {
   gboolean result = FALSE ;
 
-  if (m_style == style)
+  if (m_style && style && m_style->unique_id == style->unique_id)
     result = TRUE ;
 
   return result ;
@@ -247,10 +247,14 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles)
 
       if (parent)
         {
-          /* If the parent doesn't exist, recursively create it */
-          add_style(parent, styles) ;
-
           ZMapStyleTree *parent_node = find(parent) ;
+
+          /* If the parent doesn't exist, recursively create it */
+          if (!parent_node)
+            {
+              add_style(parent, styles) ;
+              parent_node = find(parent) ;
+            }
 
           /* Add the child to the parent node */
           if (parent_node)
@@ -281,10 +285,14 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZM
 
       if (parent)
         {
-          /* If the parent doesn't exist, recursively create it */
-          add_style(parent, styles) ;
-
           ZMapStyleTree *parent_node = find(parent) ;
+
+          /* If the parent doesn't exist, recursively create it */
+          if (!parent_node)
+            {
+              add_style(parent, styles, merge_mode) ;
+              parent_node = find(parent) ;
+            }
 
           /* Add the child to the parent node */
           if (parent_node)
@@ -389,7 +397,7 @@ static void mergeStyleCB(gpointer key, gpointer value, gpointer user_data)
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)value ;
   MergeData merge_data = (MergeData)user_data ;
 
-  merge_data->styles_tree->add_style(style, merge_data->styles_hash) ;
+  merge_data->styles_tree->add_style(style, merge_data->styles_hash, merge_data->merge_mode) ;
 }
 
 
