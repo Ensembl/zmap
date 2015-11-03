@@ -110,15 +110,23 @@ void zMapWindowShowStylesDialog(ZMapWindow window)
 
 
 /* Entry point to show the Choose Style dialog. Returns the id of the chosen style or 0 if
- * cancelled. */
-GQuark zMapWindowChooseStyleDialog(ZMapWindow window, ZMapFeatureSet feature_set)
+ * cancelled. Starts up with default_style_id selected if it is specified (non 0) and exists */
+GQuark zMapWindowChooseStyleDialog(ZMapWindow window, ZMapFeatureSet feature_set, const GQuark default_style_id)
 {
   GQuark result = 0 ;
-  zMapReturnValIfFail(window && feature_set, result) ;
+  zMapReturnValIfFail(window, result) ;
 
-  char *title = g_strdup_printf("Choose Style for %s", g_quark_to_string(feature_set->original_id)) ;
+  char *title = NULL ;
 
-  GQuark orig_style_id = feature_set->style ? feature_set->style->unique_id : 0 ;
+  if (feature_set)
+    title = g_strdup_printf("Choose Style for %s", g_quark_to_string(feature_set->original_id)) ;
+  else
+    title = g_strdup("Choose Style") ;
+
+  GQuark orig_style_id = default_style_id ;
+
+  if (!orig_style_id && feature_set)
+    orig_style_id = feature_set->style->unique_id ;
 
   EditStylesDialog data = createStylesDialog(window,
                                              FALSE, 

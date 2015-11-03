@@ -169,6 +169,7 @@ typedef struct _LoadedPageDataStruct
   gboolean clicked_button ; /* set to true when the user clicked a radio button; false if they
                              * clicked another column */
 
+  GQuark last_style_id ;   /* the last style id that was chosen using the Choose Style option */
 } LoadedPageDataStruct;
 
 
@@ -2018,6 +2019,55 @@ static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
 }
 
 
+/* Called for each row in the current selection to set the style to the last-selected style in
+ * the data */
+static void set_column_style_cb(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
+
+  GQuark column_id = tree_model_get_column_id(model, iter) ;
+  FooCanvasGroup *column_group = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column_id) ;
+
+  ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)(column_group);
+
+  ZMapFeatureSet feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container);
+
+  if (feature_set)
+    {
+      zmapWindowFeaturesetSetStyle(page_data->last_style_id,
+                                   feature_set,
+                                   page_data->window->context_map,
+                                   page_data->window);
+    }
+}
+
+
+static void choose_style_button_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+
+  if (selection)
+    {
+      /* Open a dialog for the user to choose a style */
+      GQuark style_id = zMapWindowChooseStyleDialog(page_data->window, NULL, page_data->last_style_id) ;
+
+      if (style_id)
+        {
+          page_data->last_style_id = style_id ;
+          gtk_tree_selection_selected_foreach(selection, &set_column_style_cb, page_data) ;
+        }
+    }
+  else
+    {
+      zMapWarning("%s", "Please select one or more columns") ;
+    }
+}
+
+
 static void clear_button_cb(GtkButton *button, gpointer user_data)
 {
   LoadedPageData page_data = (LoadedPageData)user_data ;
@@ -2061,6 +2111,11 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
       gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
       g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(clear_button_cb), page_data) ;
     }
+
+  /* Add a button to choose a style for the selected columns */
+  GtkWidget *button = gtk_button_new_with_mnemonic("_Choose Style") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(choose_style_button_cb), page_data) ;
 
   return hbox ;
 }
