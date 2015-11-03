@@ -591,19 +591,27 @@ static void treeNodeCreateWidgets(EditStylesDialog data, ZMapStyleTree *node, Gt
 }
 
 
-static void expandCollapseSelectedRow(EditStylesDialog data, const gboolean expand)
+static gboolean expandCollapseSelectedRow(EditStylesDialog data, const gboolean expand, const gboolean expand_all)
 {
+  gboolean handled = FALSE ;
+  
   if (data && data->tree_view && data->selected_tree_path)
     {
       if (expand)
-        gtk_tree_view_expand_row(data->tree_view, data->selected_tree_path, FALSE) ;
+        gtk_tree_view_expand_row(data->tree_view, data->selected_tree_path, expand_all) ;
       else
         gtk_tree_view_collapse_row(data->tree_view, data->selected_tree_path) ;
+
+      handled = TRUE ;
     }
+
+  return handled ;
 }
 
-static void expandCollapseAll(EditStylesDialog data, const gboolean expand)
+static gboolean expandCollapseAll(EditStylesDialog data, const gboolean expand)
 {
+  gboolean handled = FALSE ;
+
   if (data && data->tree_view)
     {
       if (expand)
@@ -611,6 +619,8 @@ static void expandCollapseAll(EditStylesDialog data, const gboolean expand)
       else
         gtk_tree_view_collapse_all(data->tree_view) ;
     }  
+
+  return handled ;
 }
 
 static gboolean keyPressCB(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
@@ -621,31 +631,38 @@ static gboolean keyPressCB(GtkWidget *widget, GdkEventKey *event, gpointer user_
   zMapReturnValIfFail(data, handled) ;
   
   const gboolean ctrlModifier = (event->state & GDK_CONTROL_MASK) == GDK_CONTROL_MASK;
-  //const gboolean shiftModifier = (event->state & GDK_SHIFT_MASK) == GDK_SHIFT_MASK;
+  const gboolean shiftModifier = (event->state & GDK_SHIFT_MASK) == GDK_SHIFT_MASK;
   //const gboolean metaModifier = (event->state & GDK_META_MASK) == GDK_META_MASK;
 
   switch (event->keyval)
     {
     case GDK_Return:
       gtk_dialog_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_APPLY) ;
+      handled = TRUE ;
       break ;
       
     case GDK_Escape:
       gtk_dialog_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_CANCEL) ;
+      handled = TRUE ;
       break ;
       
     case GDK_Left:
       if (ctrlModifier)
-        expandCollapseAll(data, FALSE) ;
+        handled = expandCollapseAll(data, FALSE) ;
       else
-        expandCollapseSelectedRow(data, FALSE) ;
+        handled = expandCollapseSelectedRow(data, FALSE, shiftModifier) ;
+
       break ;
 
     case GDK_Right:
       if (ctrlModifier)
-        expandCollapseAll(data, TRUE);
+        handled = expandCollapseAll(data, TRUE);
       else
-        expandCollapseSelectedRow(data, TRUE) ;
+        handled = expandCollapseSelectedRow(data, TRUE, shiftModifier) ;
+
+      break ;
+
+    default:
       break ;
     }
 
