@@ -409,6 +409,27 @@ ZMapWindowCallbacks zmapWindowGetCBs(void)
 }
 
 
+ZMapStyleTree* zMapWindowGetStyles(ZMapWindow window)
+{
+  ZMapStyleTree *result = NULL ;
+
+  if (window && window->context_map)
+    result = window->context_map->styles ;
+
+  return result ;
+}
+
+ZMapFeatureContext zMapWindowGetContext(ZMapWindow window)
+{
+  ZMapStyleTree *result = NULL ;
+
+  if (window)
+    result = window->feature_context ;
+
+  return result ;
+}
+
+
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             ZMapFeatureSequenceMap sequence, void *app_data,
                             GList *feature_set_names, gboolean *flags, int *int_values)

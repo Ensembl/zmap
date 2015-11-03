@@ -348,6 +348,7 @@ static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void colourMenuCB(int menu_item_id, gpointer callback_data);
 static void setStyleCB(int menu_item_id, gpointer callback_data);
+static void chooseStyleCB(int menu_item_id, gpointer callback_data) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

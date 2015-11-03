@@ -52,7 +52,7 @@
 typedef struct EditStylesDialogStruct_
 {
   GtkWidget *dialog ;
-  ZMap zmap ;
+  ZMapWindow window ;
   ZMapStyleTree *styles_tree ;
   GtkTreeModel *tree_model ;
   GtkTreePath *selected_tree_path ;
@@ -80,9 +80,10 @@ static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer dat
 
 void zmapControlShowStyles(ZMap zmap)
 {
+  zMapReturnIfFail(zmap) ;
   EditStylesDialogStruct *data = g_new0(EditStylesDialogStruct, 1) ;
-  data->zmap = zmap ;
-  data->styles_tree = zMapViewGetStyles(data->zmap->focus_viewwindow) ;
+  data->window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+  data->styles_tree = zMapWindowGetStyles(data->window) ;
 
   /* Sort styles alphabetically so they're easier to read  */
   data->styles_tree->sort() ;
@@ -128,7 +129,7 @@ static void treeViewAddColumn(GtkWidget *tree, GtkCellRenderer *renderer,
 
 static void addContentTree(EditStylesDialog data, GtkBox *box)
 {
-  zMapReturnIfFail(data && data->zmap && data->zmap->focus_viewwindow) ;
+  zMapReturnIfFail(data && data->window) ;
 
   GtkTreeStore *store = gtk_tree_store_new(N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING) ;
   treeNodeCreateWidgets(data, data->styles_tree, store, NULL) ;
@@ -206,9 +207,7 @@ static void edit_button_clicked_cb(GtkWidget *button, gpointer user_data)
 
   if (style)
     {
-      ZMapWindow window = zMapViewGetWindow(data->zmap->focus_viewwindow) ;
-
-      zMapWindowShowStyleDialog(window, style, 0, NULL, NULL, NULL);
+      zMapWindowShowStyleDialog(data->window, style, 0, NULL, NULL, NULL);
     }
   else
     {
@@ -266,10 +265,10 @@ static void updateNewStyle(gpointer cb_data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)cb_data ;
   EditStylesDialog data = (EditStylesDialog)user_data ;
-  zMapReturnIfFail(style && data && data->zmap && data->zmap->focus_viewwindow) ;
+  zMapReturnIfFail(style && data && data->window) ;
 
   GtkTreeStore *tree_store = GTK_TREE_STORE(data->tree_model) ;
-  ZMapFeatureContext context = zMapViewGetContext(data->zmap->focus_viewwindow) ;
+  ZMapFeatureContext context = zMapWindowGetContext(data->window) ;
 
   /* Add the style to the hierarchy */
   data->styles_tree->add_style(style) ;
@@ -307,13 +306,12 @@ static void add_button_clicked_cb(GtkWidget *button, gpointer user_data)
   EditStylesDialog data = (EditStylesDialog)user_data ;
   zMapReturnIfFail(data && data->tree_model) ;
 
-  ZMapWindow window = zMapViewGetWindow(data->zmap->focus_viewwindow) ;
   ZMapFeatureTypeStyle parent_style = getSelectedStyle(data) ;
 
   static int count = 1 ;
   char *new_style_name = g_strdup_printf("new-style-%d", count) ;
 
-  zMapWindowShowStyleDialog(window, parent_style, g_quark_from_string(new_style_name), NULL, updateNewStyle, data) ;
+  zMapWindowShowStyleDialog(data->window, parent_style, g_quark_from_string(new_style_name), NULL, updateNewStyle, data) ;
 
   g_free(new_style_name) ;
 }
@@ -422,7 +420,7 @@ static void treeNodeCreateWidgets(EditStylesDialog data, ZMapStyleTree *node, Gt
       char *style_name = g_strdup(g_quark_to_string(style->original_id)) ;
       char *parent_name = style->parent_id ? g_strdup(g_quark_to_string(style->parent_id)) : NULL ;
 
-      ZMapFeatureContext context = zMapViewGetContext(data->zmap->focus_viewwindow) ;
+      ZMapFeatureContext context = zMapWindowGetContext(data->window) ;
 
       GList *featuresets_list = zMapStyleGetFeaturesetsIDs(style, (ZMapFeatureAny)context) ;
       char *featuresets = zMap_g_list_quark_to_string(featuresets_list, ";") ;

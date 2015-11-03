@@ -48,6 +48,7 @@
 
 #define SCRATCH_FEATURE_NAME "temp_feature"
 
+class ZMapStyleTree ;
 
 /*! Opaque type, represents an individual ZMap window. */
 typedef struct ZMapWindowStructType *ZMapWindow ;
@@ -573,6 +574,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
                              gboolean reversed) ;
 void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 gboolean zMapWindowZoomFromClipboard(ZMapWindow window) ;
+ZMapStyleTree* zMapWindowGetStyles(ZMapWindow window) ;
+ZMapFeatureContext zMapWindowGetContext(ZMapWindow window) ;
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
 double zMapWindowGetZoomFactor(ZMapWindow window);
 double zMapWindowGetZoomMin(ZMapWindow window) ;

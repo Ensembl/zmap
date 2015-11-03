@@ -197,7 +197,10 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
  * cancelled. */
 GQuark zMapWindowChooseStyleDialog(ZMapWindow window)
 {
-  
+  GQuark result = 0 ;
+
+
+  return result ;
 }
 
 
