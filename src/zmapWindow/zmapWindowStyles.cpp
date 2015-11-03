@@ -99,9 +99,9 @@ void zMapWindowShowStylesDialog(ZMapWindow window)
 
   if (data && data->dialog)
     {
-      gtk_dialog_add_button(GTK_DIALOG(data->dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE) ;
+      gtk_dialog_add_button(GTK_DIALOG(data->dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_APPLY) ;
 
-      gtk_dialog_set_default_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_CLOSE) ;
+      gtk_dialog_set_default_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_APPLY) ;
       
       gtk_widget_show_all(data->dialog) ;
       zMapGUIRaiseToTop(data->dialog);
@@ -138,13 +138,17 @@ GQuark zMapWindowChooseStyleDialog(ZMapWindow window, ZMapFeatureSet feature_set
       gtk_widget_show_all(data->dialog) ;
       
       gint response = gtk_dialog_run(GTK_DIALOG(data->dialog)) ;
-      
+
       if (response == GTK_RESPONSE_APPLY)
         {
           result = getSelectedStyleID(data) ;
         }
 
-      gtk_widget_destroy(data->dialog) ;
+      /* If response is 'none' that means it's already been destroyed */
+      if (response != GTK_RESPONSE_NONE)
+        {
+          gtk_widget_destroy(data->dialog) ;
+        }
     }
 
   return result ;
@@ -615,10 +619,11 @@ static gboolean keyPressCB(GtkWidget *widget, GdkEventKey *event, gpointer user_
   switch (event->keyval)
     {
     case GDK_Return:
+      gtk_dialog_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_APPLY) ;
       break ;
       
     case GDK_Escape:
-      cancelCB(user_data) ;
+      gtk_dialog_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_CANCEL) ;
       break ;
       
     case GDK_Left:
