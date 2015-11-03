@@ -40,6 +40,7 @@
 #include <gbtools/gbtools.hpp>
 
 #include <vector>
+#include <gdk/gdkkeysyms.h>
 
 
 #define STYLES_CHAPTER "Styles"
@@ -54,6 +55,7 @@ typedef struct EditStylesDialogStruct_
   GtkTreeView *tree_view ;
   GtkTreeModel *tree_model ;
   GtkTreePath *selected_tree_path ;
+  GQuark orig_style_id ;
 } EditStylesDialogStruct, *EditStylesDialog ;
 
 
@@ -72,9 +74,11 @@ static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer dat
 static EditStylesDialog createStylesDialog(ZMapWindow window, 
                                            const gboolean add_edit_buttons,
                                            const char *title,
-                                           GCallback response_cb) ;
+                                           GCallback response_cb,
+                                           const GQuark orig_style_id) ;
 
 static void destroyCB(GtkWidget *widget, gpointer user_data) ;
+static gboolean keyPressCB(GtkWidget *widget, GdkEventKey *event, gpointer user_data) ;
 GQuark getSelectedStyleID(EditStylesDialog data) ;
 
 
@@ -90,7 +94,8 @@ void zMapWindowShowStylesDialog(ZMapWindow window)
   EditStylesDialog data = createStylesDialog(window, 
                                              TRUE, 
                                              "Edit Styles",
-                                             G_CALLBACK(editStylesDialogResponseCB)) ;
+                                             G_CALLBACK(editStylesDialogResponseCB),
+                                             0) ;
 
   if (data && data->dialog)
     {
@@ -106,14 +111,22 @@ void zMapWindowShowStylesDialog(ZMapWindow window)
 
 /* Entry point to show the Choose Style dialog. Returns the id of the chosen style or 0 if
  * cancelled. */
-GQuark zMapWindowChooseStyleDialog(ZMapWindow window)
+GQuark zMapWindowChooseStyleDialog(ZMapWindow window, ZMapFeatureSet feature_set)
 {
   GQuark result = 0 ;
+  zMapReturnValIfFail(window && feature_set, result) ;
+
+  char *title = g_strdup_printf("Choose Style for %s", g_quark_to_string(feature_set->original_id)) ;
+
+  GQuark orig_style_id = feature_set->style ? feature_set->style->unique_id : 0 ;
 
   EditStylesDialog data = createStylesDialog(window,
                                              FALSE, 
-                                             "Choose Style",
-                                             NULL) ;
+                                             title,
+                                             NULL,
+                                             orig_style_id) ;
+
+  g_free(title) ;
 
   if (data && data->dialog)
     {
@@ -130,6 +143,8 @@ GQuark zMapWindowChooseStyleDialog(ZMapWindow window)
         {
           result = getSelectedStyleID(data) ;
         }
+
+      gtk_widget_destroy(data->dialog) ;
     }
 
   return result ;
@@ -145,17 +160,21 @@ GQuark zMapWindowChooseStyleDialog(ZMapWindow window)
 static EditStylesDialog createStylesDialog(ZMapWindow window, 
                                            const gboolean add_edit_buttons, 
                                            const char *title,
-                                           GCallback response_cb)
+                                           GCallback response_cb,
+                                           const GQuark orig_style_id)
 {
   EditStylesDialogStruct *data = g_new0(EditStylesDialogStruct, 1) ;
   data->window = window ;
   data->styles_tree = zMapWindowGetStyles(data->window) ;
+  data->orig_style_id = orig_style_id ; 
 
   /* Sort styles alphabetically so they're easier to read  */
   data->styles_tree->sort() ;
 
   data->dialog = zMapGUIDialogNew(NULL, title, response_cb, data) ;
+
   g_signal_connect(GTK_OBJECT(data->dialog), "destroy", GTK_SIGNAL_FUNC(destroyCB), data) ;
+  g_signal_connect(GTK_OBJECT(data->dialog), "key_press_event", GTK_SIGNAL_FUNC(keyPressCB), data) ;
 
   GtkBox *vbox = GTK_BOX(GTK_DIALOG(data->dialog)->vbox) ;
 
@@ -237,6 +256,12 @@ static void addContentTree(EditStylesDialog data, GtkBox *box)
                     G_CALLBACK (tree_selection_changed_cb),
                     data);
 
+  /* If the default path has been set then update the selection */
+  if (data->selected_tree_path)
+    {
+      gtk_tree_view_expand_to_path(data->tree_view, data->selected_tree_path) ;
+      gtk_tree_selection_select_path(select, data->selected_tree_path) ;
+    }
 
   GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
   gtk_container_add(GTK_CONTAINER(scrolled_window), tree) ;
@@ -533,6 +558,10 @@ static void treeNodeCreateWidgets(EditStylesDialog data, ZMapStyleTree *node, Gt
       g_free(featuresets) ;
       g_list_free(featuresets_list) ;
 
+      /* If this style is the original style id then by default select it */
+      if (style->unique_id == data->orig_style_id)
+        data->selected_tree_path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter) ;
+
       /* Process the child nodes */
       std::vector<ZMapStyleTree*> children = node->get_children() ;
 
@@ -550,3 +579,62 @@ static void treeNodeCreateWidgets(EditStylesDialog data, ZMapStyleTree *node, Gt
 }
 
 
+static void expandCollapseSelectedRow(EditStylesDialog data, const gboolean expand)
+{
+  if (data && data->tree_view && data->selected_tree_path)
+    {
+      if (expand)
+        gtk_tree_view_expand_row(data->tree_view, data->selected_tree_path, FALSE) ;
+      else
+        gtk_tree_view_collapse_row(data->tree_view, data->selected_tree_path) ;
+    }
+}
+
+static void expandCollapseAll(EditStylesDialog data, const gboolean expand)
+{
+  if (data && data->tree_view)
+    {
+      if (expand)
+        gtk_tree_view_expand_all(data->tree_view) ;
+      else
+        gtk_tree_view_collapse_all(data->tree_view) ;
+    }  
+}
+
+static gboolean keyPressCB(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
+{
+  gboolean handled = FALSE ;
+  EditStylesDialog data = (EditStylesDialog)user_data ;
+
+  zMapReturnValIfFail(data, handled) ;
+  
+  const gboolean ctrlModifier = (event->state & GDK_CONTROL_MASK) == GDK_CONTROL_MASK;
+  //const gboolean shiftModifier = (event->state & GDK_SHIFT_MASK) == GDK_SHIFT_MASK;
+  //const gboolean metaModifier = (event->state & GDK_META_MASK) == GDK_META_MASK;
+
+  switch (event->keyval)
+    {
+    case GDK_Return:
+      break ;
+      
+    case GDK_Escape:
+      cancelCB(user_data) ;
+      break ;
+      
+    case GDK_Left:
+      if (ctrlModifier)
+        expandCollapseAll(data, FALSE) ;
+      else
+        expandCollapseSelectedRow(data, FALSE) ;
+      break ;
+
+    case GDK_Right:
+      if (ctrlModifier)
+        expandCollapseAll(data, TRUE);
+      else
+        expandCollapseSelectedRow(data, TRUE) ;
+      break ;
+    }
+
+  return handled ;
+}
