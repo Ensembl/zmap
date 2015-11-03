@@ -457,8 +457,7 @@ static void stylesCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   zmap = (ZMap)cb_data ;
 
   ZMapWindow zmap_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
-  //zMapWindowShowStyles(zmap_window) ;
-  zmapControlShowStyles(zmap) ;
+  zMapWindowShowStylesDialog(zmap_window) ;
 
   return ;
 }

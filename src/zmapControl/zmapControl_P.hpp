@@ -218,7 +218,6 @@ int zmapControlNumViews(ZMap zmap) ;
 
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config);
 void zmapControlShowPreferences(ZMap zmap) ;
-void zmapControlShowStyles(ZMap zmap) ;
 
 gboolean zmapControlWindowToggleDisplayCoordinates(ZMap zmap) ;
 

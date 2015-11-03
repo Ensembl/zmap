@@ -8,7 +8,6 @@ noinst_LTLIBRARIES = libZMapControl.la
 libZMapControl_la_SOURCES = zmapControl.cpp \
 zmapControlImportFile.cpp\
 zmapControlNavigator.cpp \
-zmapControlStyles.cpp \
 zmapControlPreferences.cpp \
 zmapControlRemoteControl.cpp \
 zmapControlViews.cpp \

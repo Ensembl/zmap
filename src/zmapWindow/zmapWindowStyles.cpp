@@ -1,4 +1,4 @@
-/*  File: zmapControlStyles.cpp
+/*  File: zmapWindowStyles.cpp
  *  Author: Gemma Barson (gb10@sanger.ac.uk)
  *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -24,19 +24,16 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Implements showing the preferences configuration
- *              window for a zmapControl instance.
+ * Description: Implements showing the preferences for all styles
+ *              for a zmapWindow instance.
  *
- * Exported functions: See zmapControl_P.h
+ * Exported functions: See zmapWindow_P.h
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.hpp>
 
-//#include <ZMap/zmapUtils.hpp>
-//#include <ZMap/zmapUtilsGUI.hpp>
-//#include <ZMap/zmapGLibUtils.hpp>
-#include <zmapControl_P.hpp>
+#include <zmapWindow_P.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 
@@ -54,6 +51,7 @@ typedef struct EditStylesDialogStruct_
   GtkWidget *dialog ;
   ZMapWindow window ;
   ZMapStyleTree *styles_tree ;
+  GtkTreeView *tree_view ;
   GtkTreeModel *tree_model ;
   GtkTreePath *selected_tree_path ;
 } EditStylesDialogStruct, *EditStylesDialog ;
@@ -71,31 +69,100 @@ static void addContentButtons(EditStylesDialog data, GtkBox *box) ;
 static void treeNodeCreateWidgets(EditStylesDialog data, ZMapStyleTree *node, GtkTreeStore *store, GtkTreeIter *parent) ;
 void editStylesDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data) ;
 static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data) ;
+static EditStylesDialog createStylesDialog(ZMapWindow window, 
+                                           const gboolean add_edit_buttons,
+                                           const char *title,
+                                           GCallback response_cb) ;
 
+static void destroyCB(GtkWidget *widget, gpointer user_data) ;
+GQuark getSelectedStyleID(EditStylesDialog data) ;
 
 
 /* 
  *                   External interface routines
  */
 
-void zmapControlShowStyles(ZMap zmap)
+/* Entry point to show the Edit Styles dialog */
+void zMapWindowShowStylesDialog(ZMapWindow window)
 {
-  zMapReturnIfFail(zmap) ;
+  zMapReturnIfFail(window) ;
+
+  EditStylesDialog data = createStylesDialog(window, 
+                                             TRUE, 
+                                             "Edit Styles",
+                                             G_CALLBACK(editStylesDialogResponseCB)) ;
+
+  if (data && data->dialog)
+    {
+      gtk_dialog_add_button(GTK_DIALOG(data->dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE) ;
+
+      gtk_dialog_set_default_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_CLOSE) ;
+      
+      gtk_widget_show_all(data->dialog) ;
+      zMapGUIRaiseToTop(data->dialog);
+    }
+}
+
+
+/* Entry point to show the Choose Style dialog. Returns the id of the chosen style or 0 if
+ * cancelled. */
+GQuark zMapWindowChooseStyleDialog(ZMapWindow window)
+{
+  GQuark result = 0 ;
+
+  EditStylesDialog data = createStylesDialog(window,
+                                             FALSE, 
+                                             "Choose Style",
+                                             NULL) ;
+
+  if (data && data->dialog)
+    {
+      gtk_dialog_add_button(GTK_DIALOG(data->dialog), GTK_STOCK_APPLY, GTK_RESPONSE_APPLY) ;
+      gtk_dialog_add_button(GTK_DIALOG(data->dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL) ;
+
+      gtk_dialog_set_default_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_APPLY) ;
+
+      gtk_widget_show_all(data->dialog) ;
+      
+      gint response = gtk_dialog_run(GTK_DIALOG(data->dialog)) ;
+      
+      if (response == GTK_RESPONSE_APPLY)
+        {
+          result = getSelectedStyleID(data) ;
+        }
+    }
+
+  return result ;
+}
+
+
+
+/* 
+ *                      Internal routines
+ */
+
+/* Create the content for the styles dialog. */
+static EditStylesDialog createStylesDialog(ZMapWindow window, 
+                                           const gboolean add_edit_buttons, 
+                                           const char *title,
+                                           GCallback response_cb)
+{
   EditStylesDialogStruct *data = g_new0(EditStylesDialogStruct, 1) ;
-  data->window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+  data->window = window ;
   data->styles_tree = zMapWindowGetStyles(data->window) ;
 
   /* Sort styles alphabetically so they're easier to read  */
   data->styles_tree->sort() ;
 
-  data->dialog = zMapGUIDialogNew(NULL, "Edit Styles", G_CALLBACK(editStylesDialogResponseCB), data) ;
-
-  gtk_dialog_add_button(GTK_DIALOG(data->dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE) ;
-  gtk_dialog_set_default_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_CLOSE) ;
+  data->dialog = zMapGUIDialogNew(NULL, title, response_cb, data) ;
+  g_signal_connect(GTK_OBJECT(data->dialog), "destroy", GTK_SIGNAL_FUNC(destroyCB), data) ;
 
   GtkBox *vbox = GTK_BOX(GTK_DIALOG(data->dialog)->vbox) ;
+
   addContentTree(data, vbox) ;
-  addContentButtons(data, vbox) ;
+
+  if (add_edit_buttons)
+    addContentButtons(data, vbox) ;
 
   int width ;
   int height ;
@@ -105,16 +172,41 @@ void zmapControlShowStyles(ZMap zmap)
 
   gtk_window_set_default_size(GTK_WINDOW(data->dialog), width, height) ;
 
-  gtk_widget_show_all(data->dialog) ;
-      
-  zMapGUIRaiseToTop(data->dialog);
+  return data ;
 }
 
 
+/* Get the currently-selected style and return its id */
+GQuark getSelectedStyleID(EditStylesDialog data)
+{
+  GQuark result = 0 ;
+  zMapReturnValIfFail(data && data->tree_view, result) ;
 
-/* 
- *                      Internal routines
- */
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(data->tree_view)) ;
+  
+  if (selection)
+    {
+      GtkTreeIter iter;
+      GtkTreeModel *model = NULL;
+      
+      gtk_tree_selection_get_selected(selection, &model, &iter) ;
+
+      if (model)
+        {
+          char *style_name = NULL ;
+          gtk_tree_model_get(model, &iter, STYLE_COLUMN, &style_name, -1) ;
+
+          if (style_name)
+            {
+              result = g_quark_from_string(style_name) ;
+              g_free(style_name) ;
+            }
+        }
+    }    
+
+  return result ;
+}
+
 
 static void treeViewAddColumn(GtkWidget *tree, GtkCellRenderer *renderer, 
                               const char *name, const char *type, TreeColumn column_id)
@@ -134,9 +226,10 @@ static void addContentTree(EditStylesDialog data, GtkBox *box)
   GtkTreeStore *store = gtk_tree_store_new(N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING) ;
   treeNodeCreateWidgets(data, data->styles_tree, store, NULL) ;
 
-  data->tree_model = GTK_TREE_MODEL(store) ;
-
   GtkWidget *tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL (store));
+
+  data->tree_model = GTK_TREE_MODEL(store) ;
+  data->tree_view = GTK_TREE_VIEW(tree) ;
 
   GtkTreeSelection *select = gtk_tree_view_get_selection (GTK_TREE_VIEW (tree));
   gtk_tree_selection_set_mode (select, GTK_SELECTION_SINGLE);
@@ -401,11 +494,18 @@ static void cancelCB(void *user_data)
   if (data)
     {
       gtk_widget_destroy(data->dialog) ;
-
-      g_free(data) ;
     }
 
   return ;
+}
+
+
+static void destroyCB(GtkWidget *widget, gpointer user_data)
+{
+  EditStylesDialog data = (EditStylesDialog)user_data ;
+
+  if (data)
+    g_free(data) ;
 }
 
 

@@ -60,6 +60,7 @@ zmapWindowState.cpp \
 zmapWindowState.hpp \
 zmapWindowStats.cpp \
 zmapWindowStyle.cpp \
+zmapWindowStyles.cpp \
 zmapWindowUtils.cpp \
 zmapWindowZoomControl.cpp \
 zmapWindowZoomControl_P.hpp \
