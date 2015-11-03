@@ -414,14 +414,14 @@ ZMapStyleTree* zMapWindowGetStyles(ZMapWindow window)
   ZMapStyleTree *result = NULL ;
 
   if (window && window->context_map)
-    result = window->context_map->styles ;
+    result = &window->context_map->styles ;
 
   return result ;
 }
 
 ZMapFeatureContext zMapWindowGetContext(ZMapWindow window)
 {
-  ZMapStyleTree *result = NULL ;
+  ZMapFeatureContext result = NULL ;
 
   if (window)
     result = window->feature_context ;
