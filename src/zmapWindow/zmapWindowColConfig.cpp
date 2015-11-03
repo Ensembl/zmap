@@ -2047,10 +2047,16 @@ static void set_column_style_cb(GtkTreeModel *model, GtkTreePath *path, GtkTreeI
 
   if (feature_set)
     {
+      /* Update the featureset */
       zmapWindowFeaturesetSetStyle(page_data->last_style_id,
                                    feature_set,
                                    page_data->window->context_map,
                                    page_data->window);
+
+      /* Update the style column in the tree model */
+      gtk_list_store_set(GTK_LIST_STORE(model), iter, 
+                         STYLE_COLUMN, g_quark_to_string(page_data->last_style_id),
+                         -1) ;
     }
 }
 
@@ -2127,7 +2133,7 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
     }
 
   /* Add a button to choose a style for the selected columns */
-  GtkWidget *button = gtk_button_new_with_mnemonic("_Choose Style") ;
+  GtkWidget *button = gtk_button_new_with_mnemonic("Choose _Style") ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(choose_style_button_cb), page_data) ;
 
