@@ -2262,23 +2262,19 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
   cols_panel = gtk_vbox_new(FALSE, YPAD) ;
   gtk_container_add(GTK_CONTAINER(page_data->page_container), cols_panel) ;
 
+  /* Add a short key to the abbreviations */
+  GtkWidget *label = gtk_label_new("FS/FA/FH => Forward strand Show/Auto/Hide   RS/RA/RH => Reverse strand Show/Auto/Hide") ;
+  gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.0) ;
+  gtk_box_pack_start(GTK_BOX(cols_panel), label, FALSE, FALSE, YPAD) ;
+
   /* Create search/filter buttons */
   GtkWidget *buttons_container = loaded_cols_panel_create_buttons(page_data) ;
-  gtk_box_pack_start(GTK_BOX(cols_panel), buttons_container, FALSE, FALSE, 0) ;
-
-  /* Add a short key to the abbreviations */
-  GtkWidget *label = gtk_label_new("FS/FA/FH => Forward strand Show/Auto/Hide") ;
-  gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.0) ;
-  gtk_box_pack_start(GTK_BOX(cols_panel), label, FALSE, FALSE, 0) ;
-
-  label = gtk_label_new("RS/RA/RH => Reverse strand Show/Auto/Hide") ;
-  gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.0) ;
-  gtk_box_pack_start(GTK_BOX(cols_panel), label, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(cols_panel), buttons_container, FALSE, FALSE, YPAD) ;
 
   /* Create a scrolled window for our tree */
   GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL);
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-  gtk_box_pack_start(GTK_BOX(cols_panel), scrolled, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(cols_panel), scrolled, TRUE, TRUE, YPAD) ;
 
   /* Create the tree view that will list the columns */
   GtkTreeModel *model = loaded_cols_panel_create_tree_model(page_data, required_column_group) ;
@@ -2570,25 +2566,26 @@ static GQuark tree_model_get_style_id(GtkTreeModel *model, GtkTreeIter *iter)
 
 /* Convert a list of featureset ids to a list of ZMapFeatureSet structs. Returns a newly
  * allocated GList. */
-static GList* getFeaturesetStructsFromIDs(GList *featureset_ids, ZMapFeatureContext context)
-{
-  GList *result = NULL ;
-  zMapReturnValIfFail(context, result) ;
+//static GList* getFeaturesetStructsFromIDs(GList *featureset_ids, ZMapFeatureContext context)
+//{
+//  GList *result = NULL ;
+//  zMapReturnValIfFail(context, result) ;
+//
+//  /* Convert the list of ids into list of featureset structs */
+//  for (GList *item = featureset_ids; item; item = item->next)
+//    {
+//      GQuark featureset_id = GPOINTER_TO_INT(item->data) ;
+//      ZMapFeatureSet feature_set = zmapFeatureContextGetFeaturesetFromId(context, featureset_id) ;
+//
+//      if (feature_set)
+//        result = g_list_append(result, feature_set) ;
+//      else
+//        zMapLogWarning("Failed to find featureset struct for '%s'", g_quark_to_string(featureset_id)) ;
+//    }
+//
+//  return result ;
+//}
 
-  /* Convert the list of ids into list of featureset structs */
-  for (GList *item = featureset_ids; item; item = item->next)
-    {
-      GQuark featureset_id = GPOINTER_TO_INT(item->data) ;
-      ZMapFeatureSet feature_set = zmapFeatureContextGetFeaturesetFromId(context, featureset_id) ;
-
-      if (feature_set)
-        result = g_list_append(result, feature_set) ;
-      else
-        zMapLogWarning("Failed to find featureset struct for '%s'", g_quark_to_string(featureset_id)) ;
-    }
-
-  return result ;
-}
 
 /* Get the featureset structs for the given row in the given tree. Returns null if not found */
 static GList* tree_model_get_column_featuresets(LoadedPageData page_data, GtkTreeModel *model, GtkTreeIter *iter)
