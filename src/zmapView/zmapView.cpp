@@ -7110,7 +7110,9 @@ static void configUpdateContext(ZMapView view,
   if (view->flags[ZMAPFLAG_CHANGED_FEATURESET_STYLE])
     {
       /* Set values in the context for the column-style stanza based on the column_2_styles hash table */
-      updateContextColumnStyles(context, file_type, ZMAPSTANZA_COLUMN_STYLE_CONFIG, view->context_map.column_2_styles);
+      /* gb10: not implemented yet - we don't yet allow the user to edit the column styles, just
+       * the featureset styles */
+      //updateContextColumnStyles(context, file_type, ZMAPSTANZA_COLUMN_STYLE_CONFIG, view->context_map.column_2_styles);
 
       /* Set values for the featureset-style stanza */
       GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;

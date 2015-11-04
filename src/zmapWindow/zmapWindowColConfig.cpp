@@ -591,6 +591,7 @@ static void loaded_page_apply_visibility(LoadedPageData loaded_page_data)
 static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
 {
   zMapReturnIfFail(page_data && 
+                   page_data->configure_data &&
                    page_data->tree_model &&
                    page_data->window &&
                    page_data->window->context_map &&
@@ -619,6 +620,8 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
                 {
                   column->order = i ;
                   ++i ;
+
+                  page_data->configure_data->columns_changed = TRUE ;
                 }
             } while (gtk_tree_model_iter_next(model, &iter)) ;
         }
@@ -659,6 +662,11 @@ static void loaded_page_apply_styles(LoadedPageData page_data)
                                                    feature_set,
                                                    page_data->window->context_map,
                                                    page_data->window);
+
+
+                      /* Indicate that there are changes to the featureset->style relationships
+                       * that need saving in the config */
+                      page_data->window->flags[ZMAPFLAG_CONFIG_NEEDS_SAVING] = FALSE ;
                     }
                 }
             } while (gtk_tree_model_iter_next(model, &iter)) ;
