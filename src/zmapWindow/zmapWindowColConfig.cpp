@@ -2558,6 +2558,8 @@ static GList* tree_model_get_column_featuresets(LoadedPageData page_data, GtkTre
 
   ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)(column_group);
 
+  /* gb10: it feels like we should apply these changes to all featuresets in the column but it
+   * causes a crash so leaving it at just this one featureset for now, which was the original behaviour */
   ZMapFeatureSet feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container) ;
   result = g_list_append(result, feature_set) ;
 
