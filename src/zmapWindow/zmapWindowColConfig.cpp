@@ -2074,17 +2074,19 @@ static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
 
 /* Called for each row in the current selection to set the style to the last-selected style in
  * the data */
-static void set_column_style_cb(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer user_data)
+static void set_column_style_cb(GtkTreeModel *model_in, GtkTreePath *path, GtkTreeIter *iter_in, gpointer user_data)
 {
   LoadedPageData page_data = (LoadedPageData)user_data ;
   zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
 
-  ZMapFeatureSet feature_set = tree_model_get_column_featureset(page_data, model, iter) ;
+  ZMapFeatureSet feature_set = tree_model_get_column_featureset(page_data, model_in, iter_in) ;
 
   if (feature_set)
     {
+      GQuark unique_style_id = zMapStyleCreateID(g_quark_to_string(page_data->last_style_id)) ;
+
       /* Update the featureset */
-      gboolean ok = zmapWindowFeaturesetSetStyle(page_data->last_style_id,
+      gboolean ok = zmapWindowFeaturesetSetStyle(unique_style_id,
                                                  feature_set,
                                                  page_data->window->context_map,
                                                  page_data->window);
@@ -2092,6 +2094,18 @@ static void set_column_style_cb(GtkTreeModel *model, GtkTreePath *path, GtkTreeI
       if (ok)
         {
           /* Update the style column in the tree model */
+          GtkTreeIter iter_val ;
+          GtkTreeIter *iter = iter_in ;
+          GtkTreeModel *model = model_in ;
+
+          if (GTK_IS_TREE_MODEL_FILTER(model_in))
+            {
+              /* Its the filtered model, so we must find the child model and iter */
+              model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
+              gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), &iter_val, iter_in) ;
+              iter = &iter_val ;
+            }
+
           gtk_list_store_set(GTK_LIST_STORE(model), iter, 
                              STYLE_COLUMN, g_quark_to_string(page_data->last_style_id),
                              -1) ;
