@@ -1723,14 +1723,18 @@ static void createTreeViewColumn(GtkTreeView *tree_view,
                                  const char *col_name, 
                                  DialogColumns tree_col_id,
                                  GtkCellRenderer *renderer,
-                                 const char *property)
+                                 const char *property,
+                                 const gboolean sortable)
 {
   GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(col_name, renderer, property, tree_col_id, NULL);
   
   gtk_tree_view_column_set_resizable(column, TRUE) ;
   gtk_tree_view_column_set_reorderable(column, TRUE) ;
-  gtk_tree_view_column_set_sort_column_id(column, tree_col_id) ;
+  gtk_tree_view_column_set_min_width(column, 30) ;
 
+  if (sortable)
+    gtk_tree_view_column_set_sort_column_id(column, tree_col_id) ;
+ 
   gtk_tree_view_append_column(tree_view, column);
 }
 
@@ -1754,7 +1758,7 @@ static void loaded_cols_panel_create_column(LoadedPageData page_data,
   gtk_cell_renderer_toggle_set_radio(GTK_CELL_RENDERER_TOGGLE(renderer), TRUE) ;
   g_signal_connect (renderer, "toggled", G_CALLBACK (loaded_column_visibility_toggled_cb), show_hide_data);
 
-  createTreeViewColumn(GTK_TREE_VIEW(tree), col_name, tree_col_id, renderer, "active") ;
+  createTreeViewColumn(GTK_TREE_VIEW(tree), col_name, tree_col_id, renderer, "active", FALSE) ;
 }
 
 
@@ -1942,18 +1946,18 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
 
   /* Create the name column */
   GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
-  createTreeViewColumn(tree_view, "Column", NAME_COLUMN, text_renderer, "text") ;
+  createTreeViewColumn(tree_view, "Column", NAME_COLUMN, text_renderer, "text", TRUE) ;
 
   /* Create the radio button columns */
-  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, SHOW_FWD_COLUMN, SHOW_LABEL) ;
-  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, AUTO_FWD_COLUMN, SHOWHIDE_LABEL) ;
-  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, HIDE_FWD_COLUMN, HIDE_LABEL) ;
-  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, SHOW_REV_COLUMN, SHOW_LABEL) ;
-  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, AUTO_REV_COLUMN, SHOWHIDE_LABEL) ;
-  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, HIDE_REV_COLUMN, HIDE_LABEL) ;
+  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, SHOW_FWD_COLUMN, "FS") ;
+  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, AUTO_FWD_COLUMN, "FA") ;
+  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, HIDE_FWD_COLUMN, "FH") ;
+  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, SHOW_REV_COLUMN, "RS") ;
+  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, AUTO_REV_COLUMN, "RA") ;
+  loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, HIDE_REV_COLUMN, "RH") ;
 
   /* Create the style column */
-  createTreeViewColumn(tree_view, "Style", STYLE_COLUMN, text_renderer, "text") ;
+  createTreeViewColumn(tree_view, "Style", STYLE_COLUMN, text_renderer, "text", TRUE) ;
 
 
   page_data->tree_view = GTK_TREE_VIEW(tree) ;
@@ -2262,6 +2266,15 @@ static void loaded_cols_panel(LoadedPageData page_data, FooCanvasGroup *column_g
   GtkWidget *buttons_container = loaded_cols_panel_create_buttons(page_data) ;
   gtk_box_pack_start(GTK_BOX(cols_panel), buttons_container, FALSE, FALSE, 0) ;
 
+  /* Add a short key to the abbreviations */
+  GtkWidget *label = gtk_label_new("FS/FA/FH => Forward strand Show/Auto/Hide") ;
+  gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.0) ;
+  gtk_box_pack_start(GTK_BOX(cols_panel), label, FALSE, FALSE, 0) ;
+
+  label = gtk_label_new("RS/RA/RH => Reverse strand Show/Auto/Hide") ;
+  gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.0) ;
+  gtk_box_pack_start(GTK_BOX(cols_panel), label, FALSE, FALSE, 0) ;
+
   /* Create a scrolled window for our tree */
   GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL);
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
@@ -2358,7 +2371,7 @@ static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
     "The ZMap Column Configuration Window allows you to change various Column-specific settings.\n"
     "\n"
     "Select one or more rows in the list of Columns. Then you can change the visibility by\n"
-    "selecting Show/Auto/Hide (see the Help->Display menu for more information) or you can\n"
+    "selecting S/A/H (Show/Auto/Hide - see the Help->Display menu for more information) or you can\n"
     "assign a new style for the Columns by pressing the Choose Style button.\n"
     "\n"
     "You can navigate up/down the list with the up/down arrows on your keyboard. Hold down shift\n"
@@ -2398,6 +2411,9 @@ static void helpDisplayCB(gpointer data, guint callback_action, GtkWidget *w)
     "\"" SHOWHIDE_LABEL "\"  - show the column depending on ZMap settings (e.g. zoom, compress etc.)\n"
     "\n"
     "\"" HIDE_LABEL "\"  - always hide the column\n"
+    "\n"
+    "These options are abbreviated to S/A/H respectively in the headers and are preceeded by F/R\n"
+    "for the Forward/Reverse strand, i.e. 'RH' means 'Reverse strand - Hide'.\n"
     "\n"
     "By default column display is controlled by settings in the Style for that column,\n"
     "including the min and max zoom levels at which the column should be shown, how the\n"
