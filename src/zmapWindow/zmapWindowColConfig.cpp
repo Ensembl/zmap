@@ -242,7 +242,7 @@ typedef struct
 typedef struct GetFeaturesetsDataStructType
 {
   LoadedPageData page_data ;
-  GList *result ;
+  GList *feature_sets ;
 } GetFeaturesetsDataStruct, *GetFeaturesetsData ;
 
 
@@ -290,10 +290,11 @@ static void set_tree_store_value_from_state(ZMapStyleColumnDisplayState col_stat
 static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
                                             int width, int height);
 
-static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, GtkTreeModel *model, GtkTreeIter *iter) ;
+static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, GtkTreeModel *model, GtkTreeIter *iter) ;
 
-static ZMapFeatureSet tree_model_get_column_featureset(LoadedPageData page_data, GtkTreeModel *model, GtkTreeIter *iter) ;
+static GList* tree_model_get_column_featuresets(LoadedPageData page_data, GtkTreeModel *model, GtkTreeIter *iter) ;
 static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter) ;
+static GQuark tree_model_get_style_id(GtkTreeModel *model, GtkTreeIter *iter) ;
 
 static ZMapStyleColumnDisplayState get_state_from_tree_store_value(GtkTreeModel *model, 
                                                                    GtkTreeIter *iter, 
@@ -568,7 +569,7 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
 
 
 /* Update all of the columns based on the values in the tree store */
-static void loaded_page_apply_all_tree_rows(LoadedPageData loaded_page_data)
+static void loaded_page_apply_visibility(LoadedPageData loaded_page_data)
 {
   GtkTreeIter iter ;
   GtkTreeModel *model = loaded_page_data->tree_model ;
@@ -577,15 +578,15 @@ static void loaded_page_apply_all_tree_rows(LoadedPageData loaded_page_data)
     {
       do
         {
-          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_FORWARD, model, &iter) ;
-          loaded_page_apply_tree_row(loaded_page_data, ZMAPSTRAND_REVERSE, model, &iter) ;
+          loaded_page_apply_visibility_tree_row(loaded_page_data, ZMAPSTRAND_FORWARD, model, &iter) ;
+          loaded_page_apply_visibility_tree_row(loaded_page_data, ZMAPSTRAND_REVERSE, model, &iter) ;
         } while (gtk_tree_model_iter_next(model, &iter)) ;
     }
 }
 
 
 /* Reorder the columns based on their order in the tree */
-static void reorder_columns(LoadedPageData page_data)
+static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
 {
   zMapReturnIfFail(page_data && 
                    page_data->tree_model &&
@@ -594,7 +595,8 @@ static void reorder_columns(LoadedPageData page_data)
                    page_data->window->context_map->columns) ;
 
   /* We must only reorder columns if the tree contains all of them! */
-  if (page_data->configure_data->mode == ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
+  if (page_data->apply_now &&
+      page_data->configure_data->mode == ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
     {
       GtkTreeModel *model = page_data->tree_model ;
       GHashTable *columns = page_data->window->context_map->columns ;
@@ -622,6 +624,47 @@ static void reorder_columns(LoadedPageData page_data)
 }
 
 
+/* Assign styles based on their values in the tree */
+static void loaded_page_apply_styles(LoadedPageData page_data)
+{
+  zMapReturnIfFail(page_data && 
+                   page_data->tree_model &&
+                   page_data->window &&
+                   page_data->window->context_map &&
+                   page_data->window->context_map->columns) ;
+
+  if (page_data->apply_now)
+    {
+      GtkTreeModel *model = page_data->tree_model ;
+
+      /* Loop through all rows in the tree and set the style for each column */
+      GtkTreeIter iter;
+  
+      if (gtk_tree_model_get_iter_first(model, &iter))
+        {
+          do
+            {
+              GQuark style_id = tree_model_get_style_id(model, &iter) ;
+              GList *featuresets = tree_model_get_column_featuresets(page_data, model, &iter) ;
+
+              for (GList *item = featuresets; item; item = item->next)
+                {
+                  ZMapFeatureSet feature_set = (ZMapFeatureSet)(item->data) ;
+
+                  if (feature_set && feature_set->style && feature_set->style->unique_id != style_id)
+                    {
+                      zmapWindowFeaturesetSetStyle(style_id,
+                                                   feature_set,
+                                                   page_data->window->context_map,
+                                                   page_data->window);
+                    }
+                }
+            } while (gtk_tree_model_iter_next(model, &iter)) ;
+        }
+    }
+}
+
+
 /* Apply changes on the loaded-columns page */
 static void loaded_page_apply(NotebookPage notebook_page)
 {
@@ -642,10 +685,14 @@ static void loaded_page_apply(NotebookPage notebook_page)
   loaded_page_data->apply_now  = TRUE;
   loaded_page_data->reposition = FALSE;
 
-  loaded_page_apply_all_tree_rows(loaded_page_data) ;
+  /* Apply the new visibility states */
+  loaded_page_apply_visibility(loaded_page_data) ;
+
+  /* Apply the new styles */
+  loaded_page_apply_styles(loaded_page_data) ;
 
   /* Apply the new column order based on the tree order */
-  reorder_columns(loaded_page_data) ;
+  loaded_page_apply_reorder_columns(loaded_page_data) ;
 
   /* Need to set the feature_set_names list to the correct order. Not sure if we should include
    * all featuresets or just reorder the list that is there. For now, include all. */
@@ -858,7 +905,7 @@ static void loaded_page_update_matching_tree_rows(LoadedPageData loaded_page_dat
               set_tree_store_value_from_state(required_state, GTK_LIST_STORE(model), &iter, forward) ;
 
               /* Apply the changes */
-              loaded_page_apply_tree_row(loaded_page_data, strand, model, &iter) ;
+              loaded_page_apply_visibility_tree_row(loaded_page_data, strand, model, &iter) ;
               
               break ; // should only be one row with this column id
             }
@@ -2079,38 +2126,25 @@ static void set_column_style_cb(GtkTreeModel *model_in, GtkTreePath *path, GtkTr
   LoadedPageData page_data = (LoadedPageData)user_data ;
   zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
 
-  ZMapFeatureSet feature_set = tree_model_get_column_featureset(page_data, model_in, iter_in) ;
+  /* Update the style column in the tree model */
+  GtkTreeIter iter_val ;
+  GtkTreeIter *iter = iter_in ;
+  GtkTreeModel *model = model_in ;
 
-  if (feature_set)
+  if (GTK_IS_TREE_MODEL_FILTER(model_in))
     {
-      GQuark unique_style_id = zMapStyleCreateID(g_quark_to_string(page_data->last_style_id)) ;
-
-      /* Update the featureset */
-      gboolean ok = zmapWindowFeaturesetSetStyle(unique_style_id,
-                                                 feature_set,
-                                                 page_data->window->context_map,
-                                                 page_data->window);
-
-      if (ok)
-        {
-          /* Update the style column in the tree model */
-          GtkTreeIter iter_val ;
-          GtkTreeIter *iter = iter_in ;
-          GtkTreeModel *model = model_in ;
-
-          if (GTK_IS_TREE_MODEL_FILTER(model_in))
-            {
-              /* Its the filtered model, so we must find the child model and iter */
-              model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
-              gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), &iter_val, iter_in) ;
-              iter = &iter_val ;
-            }
-
-          gtk_list_store_set(GTK_LIST_STORE(model), iter, 
-                             STYLE_COLUMN, g_quark_to_string(page_data->last_style_id),
-                             -1) ;
-        }
+      /* Its the filtered model, so we must find the child model and iter */
+      model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
+      gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), &iter_val, iter_in) ;
+      iter = &iter_val ;
     }
+      
+  gtk_list_store_set(GTK_LIST_STORE(model), iter, 
+                     STYLE_COLUMN, g_quark_to_string(page_data->last_style_id),
+                     -1) ;
+
+  /* Apply the changes (if the apply-now flag is set) */
+  loaded_page_apply_styles(page_data) ;
 }
 
 
@@ -2371,8 +2405,8 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* For the given row and strand, apply the updates to the appropriate column */
-static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, 
-                                       GtkTreeModel *model, GtkTreeIter *iter)
+static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, 
+                                                  GtkTreeModel *model, GtkTreeIter *iter)
 {
   zMapReturnIfFail(loaded_page_data && 
                    loaded_page_data->configure_data &&
@@ -2395,10 +2429,12 @@ static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStra
       if (IS_3FRAME(window->display_3_frame))
         {
           ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)(column_group);;
-          ZMapFeatureSet feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container);
+          GList *feature_sets = zmapWindowContainerFeatureSetGetFeatureSets(container) ;
 
-          if(feature_set)
+          for (GList *item = feature_sets; item; item = item->next)
             {
+              ZMapFeatureSet feature_set = (ZMapFeatureSet)(item->data) ;
+
               /* MH17: we need to find the 3frame columns from a given column id
                * Although we are only looking at one featureset out of possibly many
                * each one will have the same featureset attatched
@@ -2432,10 +2468,6 @@ static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStra
               if(loaded_page_data->reposition)
                 zmapWindowFullReposition(window->feature_root_group,TRUE,"show button");
             }
-          else
-            {
-
-            }
         }
       else
         {
@@ -2447,19 +2479,6 @@ static void loaded_page_apply_tree_row(LoadedPageData loaded_page_data, ZMapStra
     }
 }
 
-
-/* Called for each row in the current selection to set the list of selected featuresets */
-static void get_selected_featuresets_cb(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer user_data)
-{
-  GetFeaturesetsData data = (GetFeaturesetsData)user_data ;
-  
-  ZMapFeatureSet feature_set = tree_model_get_column_featureset(data->page_data, model, iter) ;
-
-  if (feature_set)
-    {
-      data->result = g_list_append(data->result, feature_set) ;
-    }
-}
 
 
 /* Get the column name for the given row in the given tree. Return it as a unique id */
@@ -2482,10 +2501,53 @@ static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter)
 }
 
 
-/* Get the featureset for the given row in the given tree. Returns null if not found */
-static ZMapFeatureSet tree_model_get_column_featureset(LoadedPageData page_data, GtkTreeModel *model, GtkTreeIter *iter)
+/* Get the unique style id for the given row in the given tree. Return it as a unique id */
+static GQuark tree_model_get_style_id(GtkTreeModel *model, GtkTreeIter *iter)
 {
-  ZMapFeatureSet result = NULL ;
+  GQuark style_id = 0 ;
+  char *style_name = NULL ;
+
+  gtk_tree_model_get (model, iter,
+                      STYLE_COLUMN, &style_name,
+                      -1);
+
+  if (style_name)
+    {
+      style_id = zMapStyleCreateID(style_name) ;
+      g_free(style_name) ;
+    }
+
+  return style_id ;
+}
+
+
+/* Convert a list of featureset ids to a list of ZMapFeatureSet structs. Returns a newly
+ * allocated GList. */
+static GList* getFeaturesetStructsFromIDs(GList *featureset_ids, ZMapFeatureContext context)
+{
+  GList *result = NULL ;
+  zMapReturnValIfFail(context, result) ;
+
+  /* Convert the list of ids into list of featureset structs */
+  for (GList *item = featureset_ids; item; item = item->next)
+    {
+      GQuark featureset_id = GPOINTER_TO_INT(item->data) ;
+      ZMapFeatureSet feature_set = zmapFeatureContextGetFeaturesetFromId(context, featureset_id) ;
+
+      if (feature_set)
+        result = g_list_append(result, feature_set) ;
+      else
+        zMapLogWarning("Failed to find featureset struct for '%s'", g_quark_to_string(featureset_id)) ;
+    }
+
+  return result ;
+}
+
+/* Get the featureset structs for the given row in the given tree. Returns null if not found */
+static GList* tree_model_get_column_featuresets(LoadedPageData page_data, GtkTreeModel *model, GtkTreeIter *iter)
+{
+  GList *result = NULL ;
+  zMapReturnValIfFail(page_data && page_data->window, result) ;
 
   GQuark column_id = tree_model_get_column_id(model, iter) ;
 
@@ -2496,16 +2558,43 @@ static ZMapFeatureSet tree_model_get_column_featureset(LoadedPageData page_data,
 
   ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)(column_group);
 
-  result = zmapWindowContainerFeatureSetRecoverFeatureSet(container);
+  ZMapFeatureSet feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container) ;
+  result = g_list_append(result, feature_set) ;
+
+  //GList *featureset_ids = zmapWindowContainerFeatureSetGetFeatureSets(container);
+  //
+  //if (featureset_ids)
+  //  result = getFeaturesetStructsFromIDs(featureset_ids, page_data->window->feature_context) ;
+  //
+  //g_list_free(featureset_ids) ;
 
   return result ;
 }
 
 
-/* Get the list of selected featuresets in the tree view */
+/* Called for each row in the current selection to set the list of selected featuresets */
+static void get_selected_featuresets_cb(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer user_data)
+{
+  GetFeaturesetsData data = (GetFeaturesetsData)user_data ;
+  
+  GList *featuresets = tree_model_get_column_featuresets(data->page_data, model, iter) ;
+
+  for (GList *item = featuresets; item; item = item->next)
+    {
+      data->feature_sets = g_list_append(data->feature_sets, item->data) ;
+    }
+}
+
+
+/* Get the list of selected featuresets in the tree view. Result is a list of ZMapFeatureSet
+ * structs or NULL if there are none. */
 static GList* tree_view_get_selected_featuresets(LoadedPageData page_data)
 {
-  zMapReturnValIfFail(page_data && page_data->tree_view, NULL) ;
+  zMapReturnValIfFail(page_data && 
+                      page_data->tree_view &&
+                      page_data->window &&
+                      page_data->window->feature_context, 
+                      NULL) ;
 
   GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
   
@@ -2513,16 +2602,15 @@ static GList* tree_view_get_selected_featuresets(LoadedPageData page_data)
 
   gtk_tree_selection_selected_foreach(selection, &get_selected_featuresets_cb, &data) ;
 
-  return data.result ;
+  return data.feature_sets ;
 }
 
 
-/* Callback called for each tree row in the current selection to set and apply a new state for
- * the cells */
-static void set_and_apply_tree_store_value_cb(GtkTreeModel *model_in, 
-                                              GtkTreePath *path, 
-                                              GtkTreeIter *iter_in, 
-                                              gpointer user_data)
+/* Set the visibility in the given row and apply it, based on the given state (in the user data) */
+static void set_and_apply_state_cb(GtkTreeModel *model_in, 
+                                   GtkTreePath *path, 
+                                   GtkTreeIter *iter_in, 
+                                   gpointer user_data)
 {
   SetTreeRowStateData set_state_data = (SetTreeRowStateData)user_data ;
   
@@ -2543,7 +2631,7 @@ static void set_and_apply_tree_store_value_cb(GtkTreeModel *model_in,
   set_tree_store_value_from_state(set_state_data->state, GTK_LIST_STORE(model), iter, forward) ;
 
   /* Apply the new states. */
-  loaded_page_apply_tree_row(set_state_data->loaded_page_data, set_state_data->strand, model, iter) ;
+  loaded_page_apply_visibility_tree_row(set_state_data->loaded_page_data, set_state_data->strand, model, iter) ;
 }
 
 
@@ -2600,7 +2688,7 @@ static void loaded_column_visibility_toggled_cb(GtkCellRendererToggle *cell, gch
       GtkTreeSelection *selection = gtk_tree_view_get_selection(loaded_page_data->tree_view) ;
       SetTreeRowStateDataStruct set_state_data = {loaded_page_data, button_data->strand, show_hide_state} ;
 
-      gtk_tree_selection_selected_foreach(selection, set_and_apply_tree_store_value_cb, &set_state_data) ;
+      gtk_tree_selection_selected_foreach(selection, set_and_apply_state_cb, &set_state_data) ;
     }
 
   return ;
