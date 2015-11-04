@@ -56,6 +56,8 @@ typedef struct EditStylesDialogStruct_
   GtkTreeModel *tree_model ;
   GtkTreePath *selected_tree_path ;
   GQuark orig_style_id ;
+  gboolean destroy_on_response ;
+  gint *response ;
 } EditStylesDialogStruct, *EditStylesDialog ;
 
 
@@ -100,6 +102,8 @@ void zMapWindowShowStylesDialog(ZMapWindow window)
 
   if (data && data->dialog)
     {
+      data->destroy_on_response = TRUE ;
+
       gtk_dialog_add_button(GTK_DIALOG(data->dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_APPLY) ;
 
       gtk_dialog_set_default_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_APPLY) ;
@@ -179,9 +183,9 @@ GQuark showChooseStyleDialog(ZMapWindow window, const char *title, const GQuark 
   zMapReturnValIfFail(window, result) ;
 
   EditStylesDialog data = createStylesDialog(window,
-                                             FALSE, 
+                                             TRUE, 
                                              title,
-                                             NULL,
+                                             G_CALLBACK(editStylesDialogResponseCB),
                                              default_style_id) ;
 
   if (data && data->dialog)
@@ -190,21 +194,30 @@ GQuark showChooseStyleDialog(ZMapWindow window, const char *title, const GQuark 
       gtk_dialog_add_button(GTK_DIALOG(data->dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL) ;
 
       gtk_dialog_set_default_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_APPLY) ;
+      
+      /* Wait until we get a response. Can't use gtk_dialog_run because that blocks the Edit
+       * Style dialog that the user may open from this dialog. We pass a pointer to a response id
+       * that gets updated in the response callback, then we return here to finish up. */
+      const int no_response = 1 ; // all predefined responses are negative so can use any positive value 
+      gint response = no_response ;
+      
+      data->response = &response ;
+      data->destroy_on_response = FALSE ;
 
       gtk_widget_show_all(data->dialog) ;
       
-      gint response = gtk_dialog_run(GTK_DIALOG(data->dialog)) ;
+      while (response == no_response)
+        {
+          while (gtk_events_pending())
+            gtk_main_iteration() ;
+        }
 
       if (response == GTK_RESPONSE_APPLY)
         {
           result = getSelectedStyleID(data) ;
         }
 
-      /* If response is 'none' that means it's already been destroyed */
-      if (response != GTK_RESPONSE_NONE)
-        {
-          gtk_widget_destroy(data->dialog) ;
-        }
+      gtk_widget_destroy(data->dialog) ;
     }
 
   return result ;
@@ -536,8 +549,13 @@ static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer use
 }
 
 /* Handles the response to the feature-show dialog */
-void editStylesDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
+void editStylesDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer user_data)
 {
+  EditStylesDialog data = (EditStylesDialog)user_data ;
+
+  if (data->response)
+    *data->response = response_id ;
+
   switch (response_id)
   {
     case GTK_RESPONSE_APPLY: //fall through
@@ -566,7 +584,7 @@ static void saveCB(void *user_data)
       gboolean ok = TRUE ;
 
       /* only destroy the dialog if the save succeeded */
-      if (ok)
+      if (ok && data->destroy_on_response)
         gtk_widget_destroy(data->dialog) ;
     }
 
@@ -577,7 +595,7 @@ static void cancelCB(void *user_data)
 {
   EditStylesDialog data = (EditStylesDialog)user_data ;
 
-  if (data)
+  if (data && data->destroy_on_response)
     {
       gtk_widget_destroy(data->dialog) ;
     }
