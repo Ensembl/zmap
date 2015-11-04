@@ -57,13 +57,13 @@ typedef struct _ColConfigureStruct *ColConfigure;
 typedef enum
   {
     NAME_COLUMN, 
-    STYLE_COLUMN,
     SHOW_FWD_COLUMN, 
     AUTO_FWD_COLUMN, 
     HIDE_FWD_COLUMN, 
     SHOW_REV_COLUMN, 
     AUTO_REV_COLUMN, 
     HIDE_REV_COLUMN,
+    STYLE_COLUMN,
 
     N_COLUMNS
   } DialogColumns ;
@@ -259,6 +259,7 @@ static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *wi
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
+static void helpDisplayCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void loaded_column_visibility_toggled_cb(GtkCellRendererToggle *cell, gchar *path_string, gpointer user_data) ;
 
 static GtkWidget *configure_make_toplevel(ColConfigure configure_data);
@@ -308,7 +309,8 @@ static GtkItemFactoryEntry menu_items_G[] =
     { (gchar *)"/_File",           NULL,          NULL,             0, (gchar *)"<Branch>",      NULL},
     { (gchar *)"/File/Close",      (gchar *)"<control>W", (GtkItemFactoryCallback)requestDestroyCB, 0, NULL,            NULL},
     { (gchar *)"/_Help",           NULL,          NULL,             0, (gchar *)"<LastBranch>",  NULL},
-    { (gchar *)"/Help/General",    NULL,          (GtkItemFactoryCallback)helpCB,           0, NULL,            NULL}
+    { (gchar *)"/Help/General",    NULL,          (GtkItemFactoryCallback)helpCB,           0, NULL,            NULL},
+    { (gchar *)"/Help/Display",    NULL,          (GtkItemFactoryCallback)helpDisplayCB,           0, NULL,            NULL}
   };
 
 
@@ -1718,10 +1720,10 @@ static GtkWidget *make_scrollable_vbox(GtkWidget *child)
 
 /* Utility to create a tree view column with the required properties and add it to the tree view */
 static void createTreeViewColumn(GtkTreeView *tree_view,
-                                               const char *col_name, 
-                                               DialogColumns tree_col_id,
-                                               GtkCellRenderer *renderer,
-                                               const char *property)
+                                 const char *col_name, 
+                                 DialogColumns tree_col_id,
+                                 GtkCellRenderer *renderer,
+                                 const char *property)
 {
   GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(col_name, renderer, property, tree_col_id, NULL);
   
@@ -1942,9 +1944,6 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
   createTreeViewColumn(tree_view, "Column", NAME_COLUMN, text_renderer, "text") ;
 
-  /* Create the style column */
-  createTreeViewColumn(tree_view, "Style", STYLE_COLUMN, text_renderer, "text") ;
-
   /* Create the radio button columns */
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, SHOW_FWD_COLUMN, SHOW_LABEL) ;
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, AUTO_FWD_COLUMN, SHOWHIDE_LABEL) ;
@@ -1952,6 +1951,9 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, SHOW_REV_COLUMN, SHOW_LABEL) ;
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, AUTO_REV_COLUMN, SHOWHIDE_LABEL) ;
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, HIDE_REV_COLUMN, HIDE_LABEL) ;
+
+  /* Create the style column */
+  createTreeViewColumn(tree_view, "Style", STYLE_COLUMN, text_renderer, "text") ;
 
 
   page_data->tree_view = GTK_TREE_VIEW(tree) ;
@@ -2056,9 +2058,10 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
   GList *columns_list = zMapFeatureGetOrderedColumnsList(page_data->window->context_map) ;
 
   /* Create a tree store containing one row per column */
-  GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING,
+  GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, 
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, 
-                                           G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN) ;
+                                           G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
+                                           G_TYPE_STRING) ;
 
   /* Loop through all columns in display order (columns are shown in mirror order on the rev
    * strand but we always use forward-strand order) */
@@ -2328,12 +2331,12 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
   revert_button = gtk_button_new_from_stock(GTK_STOCK_REVERT_TO_SAVED) ;
   gtk_box_pack_start(GTK_BOX(button_box), revert_button, FALSE, FALSE, 0) ;
   gtk_signal_connect(GTK_OBJECT(revert_button), "clicked", GTK_SIGNAL_FUNC(revert_button_cb), configure_data) ;
-  gtk_widget_set_tooltip_text(revert_button, "Revert to saved values") ;
+  gtk_widget_set_tooltip_text(revert_button, "Revert to last applied values") ;
 
-  apply_button = gtk_button_new_from_stock(GTK_STOCK_SAVE) ;
+  apply_button = gtk_button_new_from_stock(GTK_STOCK_APPLY) ;
   gtk_box_pack_end(GTK_BOX(button_box), apply_button, FALSE, FALSE, 0) ;
   gtk_signal_connect(GTK_OBJECT(apply_button), "clicked", GTK_SIGNAL_FUNC(apply_button_cb), configure_data) ;
-  gtk_widget_set_tooltip_text(apply_button, "Save changes (can't be undone)") ;
+  gtk_widget_set_tooltip_text(apply_button, "Save and apply changes (can't be undone)") ;
 
   /* set close button as default. */
   GTK_WIDGET_SET_FLAGS(apply_button, GTK_CAN_DEFAULT) ;
@@ -2352,10 +2355,43 @@ static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
 {
   const char *title = "Column Configuration Window" ;
   const char *help_text =
-    "The ZMap Column Configuration Window allows you to change the way columns are displayed.\n"
+    "The ZMap Column Configuration Window allows you to change various Column-specific settings.\n"
     "\n"
-    "The window displays columns separately for the forward and reverse strands. You can set\n"
-    "the display state of each column to one of:\n"
+    "Select one or more rows in the list of Columns. Then you can change the visibility by\n"
+    "selecting Show/Auto/Hide (see the Help->Display menu for more information) or you can\n"
+    "assign a new style for the Columns by pressing the Choose Style button.\n"
+    "\n"
+    "You can navigate up/down the list with the up/down arrows on your keyboard. Hold down shift\n"
+    "or control to select mutliple rows.\n"
+    "\n"
+    "Enter a search term in the Search box to jump to rows containing that text in the Column name.\n"
+    "Press the down/up arrows while the focus is in the Search box to jump to the next/previous match.\n"
+    "Enter a search term in the Filter box to filter the rows to Column names containing that text.\n"
+    "Press Enter to perform the filter. Press the Clear button to clear the Search/Filter boxes.\n"
+    "\n"
+    "Drag and drop rows to reorder the Columns manually. Click on the column headers to sort the columns\n"
+    "automatically. Click Clear to disable automatic sorting so that you can drag-and-drop rows manually\n"
+    "again (note that this will not revert the order, it just enables manual ordering based on the new order).\n"
+    "\n"
+    "Click Apply when finished to save and apply the changes you have made (if there is no Apply button,\n"
+    "changes will be applied immediately). If you want to reset the dialog to the last-saved values, click\n"
+    "Revert. If you want to exit without saving the latest changes, click Close.\n"
+    "\n" ;
+
+  zMapGUIShowText(title, help_text, FALSE) ;
+
+  return ;
+}
+
+/* This is not the way to do help, we should really used html and have a set of help files. */
+static void helpDisplayCB(gpointer data, guint callback_action, GtkWidget *w)
+{
+  const char *title = "Column Configuration - Display States" ;
+  const char *help_text =
+    "The Show/Auto/Hide buttons allow you to change which columns are visible in ZMap.\n"
+    "\n"
+    "The window displays separate options for the forward and reverse strands. You can set\n"
+    "the display state for each strand to one of:\n"
     "\n"
     "\"" SHOW_LABEL "\"  - always show the column\n"
     "\n"
@@ -2367,17 +2403,12 @@ static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
     "including the min and max zoom levels at which the column should be shown, how the\n"
     "the column is bumped, the window mark and compress options. Column display can be\n"
     "overridden however to always show or always hide columns.\n"
-    "\n"
-    "To redraw the display, either click the \"Apply\" button, or if there is no button the\n"
-    "display will be redrawn immediately.  To temporarily turn on the immediate redraw hold\n"
-    "Control while selecting the radio button."
     "\n" ;
 
   zMapGUIShowText(title, help_text, FALSE) ;
 
   return ;
 }
-
 
 
 
