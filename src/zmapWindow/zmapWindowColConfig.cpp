@@ -1664,6 +1664,23 @@ static GtkWidget *make_scrollable_vbox(GtkWidget *child)
 }
 
 
+/* Utility to create a tree view column with the required properties and add it to the tree view */
+static void createTreeViewColumn(GtkTreeView *tree_view,
+                                               const char *col_name, 
+                                               DialogColumns tree_col_id,
+                                               GtkCellRenderer *renderer,
+                                               const char *property)
+{
+  GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(col_name, renderer, property, tree_col_id, NULL);
+  
+  gtk_tree_view_column_set_resizable(column, TRUE) ;
+  gtk_tree_view_column_set_reorderable(column, TRUE) ;
+  gtk_tree_view_column_set_sort_column_id(column, tree_col_id) ;
+
+  gtk_tree_view_append_column(tree_view, column);
+}
+
+
 /* Create a column in the given tree for the given toggle button column */
 static void loaded_cols_panel_create_column(LoadedPageData page_data,
                                             GtkTreeModel *model,
@@ -1683,9 +1700,7 @@ static void loaded_cols_panel_create_column(LoadedPageData page_data,
   gtk_cell_renderer_toggle_set_radio(GTK_CELL_RENDERER_TOGGLE(renderer), TRUE) ;
   g_signal_connect (renderer, "toggled", G_CALLBACK (loaded_column_visibility_toggled_cb), show_hide_data);
 
-  GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(col_name, renderer, "active", tree_col_id, NULL);
-
-  gtk_tree_view_append_column(GTK_TREE_VIEW(tree), column);
+  createTreeViewColumn(GTK_TREE_VIEW(tree), col_name, tree_col_id, renderer, "active") ;
 }
 
 
@@ -1852,15 +1867,11 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   gtk_tree_selection_set_select_function(tree_selection, tree_select_function_cb, page_data, NULL) ;
 
   /* Create the name column */
-  GtkTreeViewColumn *column = NULL ;
-
   GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
-  column = gtk_tree_view_column_new_with_attributes("Column", text_renderer, "text", NAME_COLUMN, NULL);
-  gtk_tree_view_append_column(tree_view, column);
+  createTreeViewColumn(tree_view, "Column", NAME_COLUMN, text_renderer, "text") ;
 
   /* Create the style column */
-  column = gtk_tree_view_column_new_with_attributes("Style", text_renderer, "text", STYLE_COLUMN, NULL);
-  gtk_tree_view_append_column(tree_view, column);
+  createTreeViewColumn(tree_view, "Style", STYLE_COLUMN, text_renderer, "text") ;
 
   /* Create the radio button columns */
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_FORWARD, SHOW_FWD_COLUMN, SHOW_LABEL) ;
