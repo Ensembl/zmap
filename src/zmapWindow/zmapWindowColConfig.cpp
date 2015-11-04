@@ -1807,6 +1807,26 @@ static gboolean tree_view_popup_menu_cb(GtkWidget *tree_view, gpointer user_data
 }
 
 
+/* Case insensitive version of strstr */
+static char* my_strcasestr(const char *haystack, const char *needle)
+{
+  char *result = 0 ;
+
+  if (haystack && needle && *haystack && *needle)
+    {
+      char *h = g_ascii_strdown(haystack, -1) ;
+      char *n = g_ascii_strdown(needle, -1) ;
+      
+      result = strstr(h, n) ;
+
+      g_free(h) ;
+      g_free(n) ;
+    }
+
+  return result ;
+}
+
+
 /* Callback used to determine if a search term matches a row in the tree. Returns false if it
  * matches, true otherwise. */
 gboolean tree_view_search_equal_func_cb(GtkTreeModel *model,
@@ -1827,7 +1847,7 @@ gboolean tree_view_search_equal_func_cb(GtkTreeModel *model,
       key && 
       strlen(column_name) > 0 && 
       strlen(key) > 0 &&
-      strstr(column_name, key) != NULL)
+      my_strcasestr(column_name, key) != NULL)
     {
       result = FALSE ;
     }
@@ -1967,7 +1987,7 @@ gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gp
     }
   else if (column_name && 
            *column_name != 0 && 
-           strstr(column_name, text) != NULL)
+           my_strcasestr(column_name, text) != NULL)
     {
       result = TRUE ;
     }
