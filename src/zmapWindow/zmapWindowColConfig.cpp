@@ -2084,15 +2084,18 @@ static void set_column_style_cb(GtkTreeModel *model, GtkTreePath *path, GtkTreeI
   if (feature_set)
     {
       /* Update the featureset */
-      zmapWindowFeaturesetSetStyle(page_data->last_style_id,
-                                   feature_set,
-                                   page_data->window->context_map,
-                                   page_data->window);
+      gboolean ok = zmapWindowFeaturesetSetStyle(page_data->last_style_id,
+                                                 feature_set,
+                                                 page_data->window->context_map,
+                                                 page_data->window);
 
-      /* Update the style column in the tree model */
-      gtk_list_store_set(GTK_LIST_STORE(model), iter, 
-                         STYLE_COLUMN, g_quark_to_string(page_data->last_style_id),
-                         -1) ;
+      if (ok)
+        {
+          /* Update the style column in the tree model */
+          gtk_list_store_set(GTK_LIST_STORE(model), iter, 
+                             STYLE_COLUMN, g_quark_to_string(page_data->last_style_id),
+                             -1) ;
+        }
     }
 }
 
