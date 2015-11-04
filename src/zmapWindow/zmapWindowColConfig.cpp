@@ -666,6 +666,11 @@ static void loaded_page_apply(NotebookPage notebook_page)
   /* Now reposition everything */
   zmapWindowFullReposition(configure_data->window->feature_root_group,TRUE, "show hide") ;
 
+  /* Maintain the current order but clear any sorting */
+  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(loaded_page_data->tree_model), 
+                                       GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
+                                       GTK_SORT_ASCENDING) ;
+
   return ;
 }
 
@@ -2117,6 +2122,12 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
 
   /* Use the unfiltered tree model so that it can be reordered */
   gtk_tree_view_set_model(page_data->tree_view, page_data->tree_model) ;
+
+  /* Clear the sort column so that the tree can be reordered again manually. Note that this does
+   * not revert the sort order - use the Revert button for that. */
+  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(page_data->tree_model), 
+                                       GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
+                                       GTK_SORT_ASCENDING) ;
 }
 
 
@@ -2131,22 +2142,26 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
       gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Search:"), FALSE, FALSE, 0) ;
       page_data->search_entry = GTK_ENTRY(gtk_entry_new()) ;
       gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(page_data->search_entry), FALSE, FALSE, 0) ;
+      gtk_widget_set_tooltip_text(GTK_WIDGET(page_data->search_entry), "Search for column names containing this text. Press the up/down arrows to progress to next/previous match.") ;
 
       gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Filter:"), FALSE, FALSE, 0) ;
       page_data->filter_entry = GTK_ENTRY(gtk_entry_new()) ;
       gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(page_data->filter_entry), FALSE, FALSE, 0) ;
       g_signal_connect(G_OBJECT(page_data->filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), page_data) ;
+      gtk_widget_set_tooltip_text(GTK_WIDGET(page_data->filter_entry), "Show only column names containing this text. Press enter to apply the filter.") ;
 
       /* Add a button to clear the contents of the search/filter boxes */
-      GtkWidget *button = gtk_button_new_from_stock(GTK_STOCK_CLEAR) ;
+      GtkWidget *button = gtk_button_new_with_mnemonic("C_lear") ;
       gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
       g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(clear_button_cb), page_data) ;
+      gtk_widget_set_tooltip_text(button, "Clear the search/filter boxes and the sort order, so that rows can be reordered manually") ;
     }
 
   /* Add a button to choose a style for the selected columns */
-  GtkWidget *button = gtk_button_new_with_mnemonic("Choose _Style") ;
+  GtkWidget *button = gtk_button_new_with_mnemonic("Choose S_tyle") ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(choose_style_button_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Assign a style to the selected tracks") ;
 
   return hbox ;
 }
@@ -2231,32 +2246,29 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
 
   button_box = gtk_hbutton_box_new();
   gtk_button_box_set_layout (GTK_BUTTON_BOX (button_box), GTK_BUTTONBOX_END);
-  gtk_box_set_spacing (GTK_BOX(button_box),
-                       ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
-  gtk_container_set_border_width (GTK_CONTAINER (button_box),
-                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
-
-  revert_button = gtk_button_new_from_stock(GTK_STOCK_REVERT_TO_SAVED) ;
-  gtk_box_pack_start(GTK_BOX(button_box), revert_button, FALSE, FALSE, 0) ;
-  gtk_signal_connect(GTK_OBJECT(revert_button), "clicked",
-                     GTK_SIGNAL_FUNC(revert_button_cb), (gpointer)configure_data) ;
+  gtk_box_set_spacing (GTK_BOX(button_box), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
+  gtk_container_set_border_width (GTK_CONTAINER (button_box), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
   cancel_button = gtk_button_new_from_stock(GTK_STOCK_CLOSE) ;
   gtk_box_pack_start(GTK_BOX(button_box), cancel_button, FALSE, FALSE, 0) ;
-  gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked",
-                     GTK_SIGNAL_FUNC(cancel_button_cb), (gpointer)configure_data) ;
+  gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked", GTK_SIGNAL_FUNC(cancel_button_cb), configure_data) ;
+  gtk_widget_set_tooltip_text(cancel_button, "Close and lose unsaved changes") ;
 
-  apply_button = gtk_button_new_from_stock(GTK_STOCK_APPLY) ;
+  revert_button = gtk_button_new_from_stock(GTK_STOCK_REVERT_TO_SAVED) ;
+  gtk_box_pack_start(GTK_BOX(button_box), revert_button, FALSE, FALSE, 0) ;
+  gtk_signal_connect(GTK_OBJECT(revert_button), "clicked", GTK_SIGNAL_FUNC(revert_button_cb), configure_data) ;
+  gtk_widget_set_tooltip_text(revert_button, "Revert to saved values") ;
+
+  apply_button = gtk_button_new_from_stock(GTK_STOCK_SAVE) ;
   gtk_box_pack_end(GTK_BOX(button_box), apply_button, FALSE, FALSE, 0) ;
-  gtk_signal_connect(GTK_OBJECT(apply_button), "clicked",
-     GTK_SIGNAL_FUNC(apply_button_cb), (gpointer)configure_data) ;
+  gtk_signal_connect(GTK_OBJECT(apply_button), "clicked", GTK_SIGNAL_FUNC(apply_button_cb), configure_data) ;
+  gtk_widget_set_tooltip_text(apply_button, "Save changes (can't be undone)") ;
 
   /* set close button as default. */
   GTK_WIDGET_SET_FLAGS(apply_button, GTK_CAN_DEFAULT) ;
 
   frame = gtk_frame_new(NULL) ;
-  gtk_container_set_border_width(GTK_CONTAINER(frame),
-                                 ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+  gtk_container_set_border_width(GTK_CONTAINER(frame), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
   gtk_box_pack_start(GTK_BOX(parent), frame, FALSE, FALSE, 0) ;
 
   gtk_container_add(GTK_CONTAINER(frame), button_box);
