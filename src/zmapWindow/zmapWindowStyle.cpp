@@ -784,6 +784,9 @@ static gboolean applyChanges(gpointer cb_data)
 
       if (zMapStyleMerge(tmp_style, style))
         {
+          if (parent)
+            tmp_style->parent_id = parent->unique_id ;
+
           styles.remove_style(style) ;
           zMapStyleDestroy(style);
 
