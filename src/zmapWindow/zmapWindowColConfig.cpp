@@ -2472,7 +2472,8 @@ static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_dat
       if (IS_3FRAME(window->display_3_frame))
         {
           ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)(column_group);;
-          GList *feature_sets = zmapWindowContainerFeatureSetGetFeatureSets(container) ;
+
+          GList *feature_sets = container ? zmapWindowContainerFeatureSetGetFeatureSets(container) : NULL ;
 
           for (GList *item = feature_sets; item; item = item->next)
             {
@@ -2604,8 +2605,11 @@ static GList* tree_model_get_column_featuresets(LoadedPageData page_data, GtkTre
 
   /* gb10: it feels like we should apply these changes to all featuresets in the column but it
    * causes a crash so leaving it at just this one featureset for now, which was the original behaviour */
-  ZMapFeatureSet feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container) ;
-  result = g_list_append(result, feature_set) ;
+  if (container)
+    {
+      ZMapFeatureSet feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container) ;
+      result = g_list_append(result, feature_set) ;
+    }
 
   //GList *featureset_ids = zmapWindowContainerFeatureSetGetFeatureSets(container);
   //
