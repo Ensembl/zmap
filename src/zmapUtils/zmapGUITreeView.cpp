@@ -1203,10 +1203,6 @@ static void zmap_guitreeview_simple_add_values(ZMapGUITreeView zmap_tv,
           gtk_tree_model_get_iter(zmap_tv->tree_model, &parent_iter, parent_path) ;
           gtk_tree_store_append(store, &iter, &parent_iter);
         }
-      else if (parent_tag)
-        {
-          zMapLogWarning("Error finding tree node for parent '%s'", g_quark_to_string(parent_tag)) ;
-        }
       else
         {
           /* No parent - add it as a toplevel node */
