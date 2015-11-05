@@ -122,7 +122,7 @@ void zMapGUITreeViewAddTuple(ZMapGUITreeView zmap_tv, gpointer user_data);
  */
 void zMapGUITreeViewAddTupleFromColumnData(ZMapGUITreeView zmap_tv,
                                            GList *values_list,
-                                           const int parent_tag);
+                                           const GQuark parent_tag);
 /*!
  * \brief add rows to the model
  */

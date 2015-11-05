@@ -418,7 +418,7 @@ typedef struct _ZMapGuiNotebookTagValueStruct
 {
   ZMapGuiNotebookType type ;
   GQuark tag ;
-  int parent_tag ;
+  GQuark parent_tag ;
   ZMapGuiNotebookParagraph parent ;
   unsigned int ignore_duplicates : 1;	/* RT_66037 */
   GList *children_unused ;				    /* Always NULL, no children ever. */
@@ -563,7 +563,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValueChild(ZMapGuiNotebookParagr
                                                            const char *tag_value_name,
                                                            const char *tooltip,
                                                            ZMapGuiNotebookTagValueDisplayType display_type,
-                                                           const int parent_tag,
+                                                           const GQuark parent_tag,
                                                            const char *arg_type, ...) ;
 void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage page) ;
 void zMapGUINotebookAddChapter(ZMapGuiNotebook notebook, ZMapGuiNotebookChapter chapter) ;

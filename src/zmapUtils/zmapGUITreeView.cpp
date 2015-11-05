@@ -117,7 +117,7 @@ static void zmap_guitreeview_simple_add(ZMapGUITreeView zmap_tv,
                               gpointer user_data);
 static void zmap_guitreeview_simple_add_values(ZMapGUITreeView zmap_tv,
                                                GList *values_list,
-                                               const int parent_tag);
+                                               const GQuark parent_tag);
 static void zmap_guitreeview_add_list_of_tuples(ZMapGUITreeView zmap_tv,
                                     GList *tuples_list);
 
@@ -358,7 +358,7 @@ void zMapGUITreeViewAddTuple(ZMapGUITreeView zmap_tv, gpointer user_data)
 
 void zMapGUITreeViewAddTupleFromColumnData(ZMapGUITreeView zmap_tv,
                                            GList *values_list,
-                                           const int parent_tag)
+                                           const GQuark parent_tag)
 {
   if(ZMAP_GUITREEVIEW_GET_CLASS(zmap_tv)->add_tuple_value_list)
     (* ZMAP_GUITREEVIEW_GET_CLASS(zmap_tv)->add_tuple_value_list)(zmap_tv, values_list, parent_tag);
@@ -1112,19 +1112,22 @@ static void zmap_guitreeview_simple_add(ZMapGUITreeView zmap_tv,
 
 
 /* Returns true if the given column in the given iterator has the given value */
-static gboolean tree_iter_col_has_string_value(GtkTreeModel *tree_model, GtkTreeIter *iter, const int col, const int parent_tag)
+static gboolean tree_iter_col_has_string_value(GtkTreeModel *tree_model, GtkTreeIter *iter, const int col, const GQuark parent_tag)
 {
   gboolean result = FALSE ;
   
   GType column_type = gtk_tree_model_get_column_type(tree_model, col);
 
-  if (column_type == G_TYPE_INT)
+  if (column_type == G_TYPE_STRING)
     {
-      int value = 0 ;
-      gtk_tree_model_get(tree_model, iter, col, &value, -1);
+      char *value_str = NULL;
+      gtk_tree_model_get(tree_model, iter, col, &value_str, -1);
 
-      if (value == parent_tag)
+      if (value_str && strcmp(value_str, g_quark_to_string(parent_tag)) == 0)
         result = TRUE ;
+
+      if (value_str)
+        g_free(value_str) ;
     }
   else
     {
@@ -1140,7 +1143,7 @@ static gboolean tree_iter_col_has_string_value(GtkTreeModel *tree_model, GtkTree
 static GtkTreePath* tree_model_find_parent(GtkTreeModel *tree_model, 
                                            GtkTreeIter *curr_iter,
                                            const int col,
-                                           const int parent_tag)
+                                           const GQuark parent_tag)
 {
   GtkTreePath *parent_path = NULL ;
 
@@ -1171,7 +1174,7 @@ static GtkTreePath* tree_model_find_parent(GtkTreeModel *tree_model,
 
 static void zmap_guitreeview_simple_add_values(ZMapGUITreeView zmap_tv,
                                                GList *values_list,
-                                               const int parent_tag)
+                                               const GQuark parent_tag)
 {
   GList *tmp;
 
@@ -1180,7 +1183,7 @@ static void zmap_guitreeview_simple_add_values(ZMapGUITreeView zmap_tv,
     {
       /* Check if there's a parent iter with the same value as parent_tag in the first col (not
        * including the index col) */
-      const int col = 0 ;
+      const int col = 1 ;
       GtkTreePath *parent_path = NULL ;
       GtkTreeIter root_iter ; 
 
@@ -1202,7 +1205,7 @@ static void zmap_guitreeview_simple_add_values(ZMapGUITreeView zmap_tv,
         }
       else if (parent_tag)
         {
-          zMapLogWarning("Error finding tree node for parent '%d'", parent_tag) ;
+          zMapLogWarning("Error finding tree node for parent '%s'", g_quark_to_string(parent_tag)) ;
         }
       else
         {

@@ -504,7 +504,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValueChild(ZMapGuiNotebookParagr
                                                            const char *tag_value_name,
                                                            const char *tooltip,
                                                            ZMapGuiNotebookTagValueDisplayType display_type,
-                                                           const int parent_tag,
+                                                           const GQuark parent_tag,
                                                            const gchar *arg_type, ...)
 {
   ZMapGuiNotebookTagValue tag_value = NULL ;
