@@ -500,97 +500,6 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 }
 
 
-ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValueChild(ZMapGuiNotebookParagraph paragraph,
-                                                           const char *tag_value_name,
-                                                           const char *tooltip,
-                                                           ZMapGuiNotebookTagValueDisplayType display_type,
-                                                           const GQuark parent_tag,
-                                                           const gchar *arg_type, ...)
-{
-  ZMapGuiNotebookTagValue tag_value = NULL ;
-  va_list args ;
-  gboolean bool_arg ;
-  int int_arg ;
-  double double_arg ;
-  char *string_arg ;
-  FooCanvasItem *item_arg ;
-  GList *compound_arg ;
-
-  tag_value = (ZMapGuiNotebookTagValue)createSectionAny(ZMAPGUI_NOTEBOOK_TAGVALUE, tag_value_name) ;
-  tag_value->tooltip = g_quark_from_string(tooltip) ;
-  tag_value->display_type = display_type ;
-
-
-  /* Convert given type.... */
-  va_start(args, arg_type) ;
-
-  if (strcmp(arg_type, "bool") == 0)
-    {
-      tag_value->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_BOOL ;
-
-      bool_arg = va_arg(args, gboolean) ;
-
-      tag_value->original_data.bool_value = tag_value->data.bool_value = bool_arg ;
-    }
-  else if (strcmp(arg_type, "int") == 0)
-    {
-      tag_value->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT ;
-
-      int_arg = va_arg(args, int) ;
-
-      tag_value->original_data.int_value = tag_value->data.int_value = int_arg ;
-    }
-  else if (strcmp(arg_type, "float") == 0)
-    {
-      tag_value->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT ;
-
-      double_arg = va_arg(args, double) ;
-
-      tag_value->original_data.float_value = tag_value->data.float_value = double_arg ;
-    }
-  else if (strcmp(arg_type, "string") == 0)
-    {
-      tag_value->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING ;
-
-      string_arg = va_arg(args, char *) ;
-
-      tag_value->data.string_value = tag_value->original_data.string_value = g_strdup(string_arg) ;
-    }
-  else if (strcmp(arg_type, "item") == 0)
-    {
-      tag_value->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_ITEM ;
-
-      item_arg = va_arg(args, FooCanvasItem *) ;
-
-      tag_value->data.item_value = item_arg ;
-    }
-  else if (strcmp(arg_type, "compound") == 0)
-    {
-      tag_value->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_COMPOUND ;
-
-      compound_arg = va_arg(args, GList *) ;
-
-      tag_value->data.compound_values = compound_arg ;
-      tag_value->parent_tag = parent_tag ;
-    }
-  else
-    {
-      zMapWarnIfReached() ;
-    }
-
-  va_end (args);
-
-
-  if (paragraph)
-    {
-      tag_value->parent = paragraph ;
-      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
-    }
-
-  return tag_value ;
-}
-
-
 /*! Add a chapter to a notebook.
  *
  * NOTE: this could be made into a general function that adds any to any.
@@ -1570,8 +1479,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
     case ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND:
       {
         zMapGUITreeViewAddTupleFromColumnData(make_notebook->zmap_tree_view,
-                                              tag_value->data.compound_values,
-                                              tag_value->parent_tag);
+                                              tag_value->data.compound_values);
         break ;
       }
 
