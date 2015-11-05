@@ -31,13 +31,10 @@
  *-------------------------------------------------------------------
  */
 
-//#include <ZMap/zmap.hpp>
-//
-//#include <string.h>
-//
-//#include <ZMap/zmapUtils.hpp>
-//#include <ZMap/zmapGLibUtils.hpp>
-//#include <ZMap/zmapConfigIni.hpp>   // for zMapConfigLegacyStyles() only can remove when system has moved on
+#include <vector>
+#include <algorithm>
+#include <string.h>
+
 #include <zmapStyle_P.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 #include <ZMap/zmapUtilsMesg.hpp>
