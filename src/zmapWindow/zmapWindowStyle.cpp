@@ -839,28 +839,25 @@ static gboolean applyChanges(gpointer cb_data)
 }
 
 
-/* Get the color spec string for the given color buttons. The result should be free'd by the caller
- * with g_free. Returns null if there was a problem. */
-static char* getColorSpecStr(GtkWidget *fill_widget, GtkWidget *border_widget)
+/* Utility to get the colors from the color buttons. Returns true if ok. */
+static gboolean getColors(GtkWidget *fill_widget, GtkWidget *border_widget,
+                          GdkColor *fill, GdkColor *border)
 {
-  char *colour_spec = NULL ;
+  gboolean ok = FALSE ;
 
   if (fill_widget && border_widget && 
       GTK_IS_COLOR_BUTTON(fill_widget) && GTK_IS_COLOR_BUTTON(border_widget))
     {
-      GdkColor colour ;
+      if (fill)
+        gtk_color_button_get_color(GTK_COLOR_BUTTON(fill_widget), fill) ;
 
-      gtk_color_button_get_color(GTK_COLOR_BUTTON(fill_widget), &colour) ;
-      char *fill_str = gdk_color_to_string(&colour) ;
+      if (border)
+        gtk_color_button_get_color(GTK_COLOR_BUTTON(border_widget), border) ;
 
-      gtk_color_button_get_color(GTK_COLOR_BUTTON(border_widget), &colour) ;
-      char *border_str = gdk_color_to_string(&colour) ;
-
-      colour_spec = zMapStyleMakeColourString(fill_str, "black", border_str,
-                                              fill_str, "black", border_str) ;
+      ok = TRUE ;
     }
 
-  return colour_spec ;
+  return ok ;
 }
 
 
@@ -873,27 +870,21 @@ static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style)
 
 
   /* Set the colours */
-  char *colour_spec = getColorSpecStr(my_data->fill_widget, my_data->border_widget) ;
+  GdkColor fill, border ;
 
-  if (colour_spec)
+  if (getColors(my_data->fill_widget, my_data->border_widget, &fill, &border))
     {
-      g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_COLOURS, colour_spec, NULL);
-      g_free(colour_spec) ;
-      colour_spec = NULL ;
+      zMapStyleSetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                          &fill, NULL, &border) ;
     }
 
 
   /* Set the CDS colours, if it's a transcript */
-  if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT &&
+     getColors(my_data->cds_fill_widget, my_data->cds_border_widget, &fill, &border))
     {
-      colour_spec = getColorSpecStr(my_data->cds_fill_widget, my_data->cds_border_widget) ;
-
-      if (colour_spec)
-        {
-          g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS, colour_spec, NULL);
-          g_free(colour_spec) ;
-          colour_spec = NULL ;
-        }
+      zMapStyleSetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                          &fill, NULL, &border) ;
     }
 
 }
