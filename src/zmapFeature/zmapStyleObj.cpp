@@ -118,8 +118,7 @@ gboolean zMapStyleSetAdd(GHashTable *style_set, ZMapFeatureTypeStyle style)
   gboolean result = FALSE ;
   GQuark style_id ;
 
-  if (!style_set || !style)
-    return result ;
+  zMapReturnValIfFail((style_set && style), FALSE) ;
 
   style_id = zMapStyleGetUniqueID(style) ;
 

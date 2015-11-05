@@ -1668,7 +1668,12 @@ static GQuark showGroupDialog(ZMapBlixemData blixem_data)
   else
     last_selection = result ;
 
-  g_list_free_full(free_me, g_free) ;
+  GList *item = free_me;
+
+  for ( ; item; item = item->next)
+    g_free(item->data) ;
+
+  g_list_free(free_me);
 
   gtk_widget_destroy(dialog) ;
 

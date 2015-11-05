@@ -1,41 +1,20 @@
 
-Git commits for  from commit "production" until commit "release/2.2.0"
+Git commits for  from commit "production" until commit "release/2.3.0"
 
-e05ee76 2015-09-16 filter help not included in list files for dist. - BUG FIX
-e09f672 2015-09-10 RT477879, added pipe symbol to allowed symbols. - BUG FIX
-ffd4ed5 2015-09-10 Add filter help docs to help system. - NEW FEATURE 'Filter Feature window'
-2af1528 2015-09-10 Improve some text labels. - NEW FEATURE 'Filter Feature window'
-016a990 2015-09-10 docs for new filtering window. - NEW FEATURE 'Filter Feature window'
-3552236 2015-09-10 Fix a few bugs in comparing multiple features and different parts. - NEW FEATURE 'Filter Feature Window'
-f425856 2015-09-10 Fix but in splice position. - BUG FIX
-71fedb5 2015-09-10 Improve enum descriptions/types for filtering. - NEW FEATURE 'Filter Feature Window'
-41cab11 2015-09-10 Fix faulty positioning of splice markers. - BUG FIX
-eb94c6c 2015-09-10 Redo splice marker positioning so it is positioned at the required base. - BUG FIX
-08ded18 2015-09-10 Add code to support resetting filter feature and target column. - NEW FEATURE 'Filter Feature Window'
-0645397 2015-09-10 Add in item to start up new filter window. - NEW FEATURE 'New Feature Filter Window'
-ab712fd 2015-09-10 Change to use new abbrev function. - BUG FIX
-7ebf21f 2015-09-10 Rationalise the abbrev code into a func. - BUG FIX
-044f838 2015-08-27 remove redundant cds stuff. - NEW FEATURE 'develop'
-d03e86c 2015-08-27 Update descriptions to be more intelligible. - NEW FEATURE '<feature_name>'
-1b02101 2015-08-26 changes to support new filter window. - NEW FEATURE 'develop'
-1b3bd19 2015-08-26 Add code to support new filter window. - NEW FEATURE 'develop'
-21a59f7 2015-08-26 Add new dialog for filtering. - NEW FEATURE '<feature_name>'
-a0c9b19 2015-08-25 add new zmapWindowFocusGetFeatureListFull() func to return current focus feature list and col/item. - NEW FEATURE '<feature_name>'
-5f59d02 2015-08-25 Convert enums to use zmapEnum.h, add code to support filter window. - NEW FEATURE 'develop'
-daea230 2015-08-25 Add funcs to list columns and find a column, strangely missing at this level. - NEW FEATURE 'develop'
-9fa98a2 2015-08-25 Fix but in handling of partial match, i.e. missing exons. - BUG FIX
-273c1ba 2015-08-25 Fix bug in handling bad match for whole feature coords. - BUG FIX
-5401fa9 2015-08-25 Add missing macros for getting/converting the long text in one of our enums. - BUG FIX
-db3f48e 2015-09-09 Fix a bug where temp feature coords incorrect - BUG FIX
-89800c7 2015-09-09 Fix a bug with exporting incorrect SO term for temp feature - BUG FIX
-0d68da7 2015-09-09 Merge branch 'feature/config' into develop
-6b4c5b8 2015-09-07 Merge branch 'feature/styles' into develop - NEW FEATURE 'Edit/export styles'
-a6595b4 2015-08-24 Fix intrusive validation messages in Preferences dialog - BUG FIX
-6879c7b 2015-08-21 Fix a problem with incorrect blixem range when using keyboard shortcut - RT 468772
-d747eb2 2015-08-21 Merge branch 'feature/ensembl' into develop
-f9f50ae 2015-08-20 update to fix incorrect coordinates in file import dialogue - RT 485214
-47fbb2a 2015-08-18 Fix major memory leaks in ensembl server code - BUG FIX
-801040e 2015-08-18 Fix bug whereby zeromq lib. always installed even if present. - BUG FIX
+6f38384 2015-10-27 Fix really bad log message for style not loaded. - BUG FIX
+5e89e32 2015-10-14 Merge branch 'feature/blixem' into develop - NEW FEATURE 'Blixem config'
+72968d5 2015-10-13 Improve default CDS fill colour - NEW FEATURE 'styles'
+60cfe62 2015-10-13 Remove hard-coded black/white styles - NEW FEATURE 'styles'
+97ca234 2015-10-12 Fix crash when creating new style - REGRESSION FIX
+4c61c5b 2015-10-09 Merge branch 'feature/config' into develop - NEW FEATURE 'styles and config'
+cdc441d 2015-10-08 adding some test targets for qt
+a8118a1 2015-10-08 Fix a bug exporting features to blixem that have adjacent insertion/intron - BUG FIX
+87eee3c 2015-09-28 Export parent-child style relationships correctly - NEW FEATURE 'Export styles'
+916ac3f 2015-09-24 Ensembl: add supporting evidence - NEW FEATURE 'Ensembl evidence'
+22a51b9 2015-09-24 Fix bugs with updating filtered column backgrounds - BUG FIX
+0222bcf 2015-09-21 Merge branch 'feature/colours' into develop - NEW FEATURE 'Colour configuration'
+ecdef8b 2015-09-21 Merge branch 'feature/config' into develop - NEW FEATURE 'dynamic column reordering'
+6249f17 2015-09-15 RT485716 error in remotecommand code, leading to a free of unallocated memory. - BUG FIX
 
 
 End of git commits

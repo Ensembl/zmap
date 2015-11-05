@@ -4079,8 +4079,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
         }
     }
 
-  /* Inform the layer about us that our state has changed. */
-  if (state_change)
+
+
+  /* If we have connections left then inform the layer about us that our state has changed. */
+  if ((zmap_view->connection_list) && state_change)
     {
       (*(view_cbs_G->state_change))(zmap_view, zmap_view->app_data, NULL) ;
     }

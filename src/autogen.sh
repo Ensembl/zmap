@@ -296,6 +296,50 @@ zmap_message_out "ZMap version is: $ZMAP_VERSION"
 #
 $BASE_DIR/../scripts/zmap_SO_header.pl || zmap_message_exit "zmap failed to generate SO header"
 
+#
+# This should find the location of the local installation of qmake 
+# and save it to the file specified. This will be modified at some point 
+# to find the location from a function in scripts/zmap_functions.sh
+#
+config_set_ZMAP_ARCH `hostname`
+zmap_message_out "ZMAP_ARCH is $ZMAP_ARCH"
+arch_trusty="trusty_x86_64"
+arch_tviewsrv="Linux_i686"
+arch_mac="Darwin_x86_64"
+function qt_location
+{
+  local return_value
+  if [ "$ZMAP_ARCH" = "$arch_trusty" ] ; then
+    return_value=`find /usr/local/[QTqt]*/5.5 -type f -executable -name qmake`
+  elif [ "$ZMAP_ARCH" = "$arch_tviewsrv" ] ; then
+    return_value=`find /usr/local/[QTqt]*/5.5 -type f -executable -name qmake`
+  elif [ "$ZMAP_ARCH" = "$arch_mac" ] ; then
+    return_value="qt_not_installed_yet_on_mac"
+  fi
+  echo "$return_value"
+}
+function qt_qmake_args
+{
+  local return_value
+  if [ "$ZMAP_ARCH" = "$arch_trusty" ] ; then
+    return_value="-r -spec linux-g++"
+  elif [ "$ZMAP_ARCH" = "$arch_tviewsrv" ] ; then
+    return_value="-r -spec linux-g++"
+  elif [ "$ZMAP_ARCH" = "$arch_mac" ] ; then
+    return_value="qt_not_installed_yet_on_mac"
+  fi
+  echo "$return_value"
+}
+QMAKE_LOCAL=$(qt_location)
+QMAKE_ARGS=$(qt_qmake_args)
+zmap_message_out "qmake is found in $QMAKE_LOCAL"
+zmap_message_out "qmake args are $QMAKE_ARGS"
+qmake_location='qmake.location'
+rm -f $qmake_location
+echo "QMAKE_LOCAL=$QMAKE_LOCAL" > $qmake_location 
+echo "QMAKE_ARGS=$QMAKE_ARGS" >> $qmake_location
+
+
 
 
 # SURELY THIS ISN'T NEEDED NOW....OR WE SHOULD DELETE THE CVSIGNORE STUFF FROM THE REPOSITORY.

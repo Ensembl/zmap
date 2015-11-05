@@ -44,7 +44,7 @@ MAIL_SUBJECT="ZMap Build Failed (control script)"
 
 # where build scripts are located.
 BASE_DIR=~zmap
-SCRIPTS_DIR="$BASE_DIR/BUILD_CHECKOUT/ZMap/scripts"
+SCRIPTS_DIR="$BASE_DIR/BUILD_ZMAP/ZMap/scripts"
 
 
 
