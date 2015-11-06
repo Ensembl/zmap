@@ -1032,7 +1032,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
         /* if we have an active dialog update it: they have to click on a feature not the column */
         ZMapFeatureSet feature_set = (ZMapFeatureSet)(feature->parent) ; 
         if (feature_set)
-          zmapWindowStyleDialogSetStyle(window, feature_set->style) ;
+          zmapWindowStyleDialogSetStyle(window, feature_set->style, feature_set, FALSE) ;
 
       }
 

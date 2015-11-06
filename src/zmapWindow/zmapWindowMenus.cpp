@@ -2650,7 +2650,7 @@ static void colourMenuCB(int menu_item_id, gpointer callback_data)
   if (menu_data && menu_data->feature_set)
     zMapWindowShowStyleDialog(menu_data->window, 
                               menu_data->feature_set->style, 
-                              menu_data->feature_set->original_id, 
+                              FALSE,
                               menu_data->feature_set, 
                               NULL, NULL);
   /* don't free the callback data, it's in use */

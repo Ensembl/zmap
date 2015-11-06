@@ -399,7 +399,7 @@ static void edit_button_clicked_cb(GtkWidget *button, gpointer user_data)
 
   if (style)
     {
-      zMapWindowShowStyleDialog(data->window, style, 0, NULL, NULL, NULL);
+      zMapWindowShowStyleDialog(data->window, style, FALSE, NULL, NULL, NULL);
     }
   else
     {
@@ -523,12 +523,7 @@ static void add_button_clicked_cb(GtkWidget *button, gpointer user_data)
 
   ZMapFeatureTypeStyle parent_style = getSelectedStyle(data) ;
 
-  static int count = 1 ;
-  char *new_style_name = g_strdup_printf("new-style-%d", count) ;
-
-  zMapWindowShowStyleDialog(data->window, parent_style, g_quark_from_string(new_style_name), NULL, updateNewStyle, data) ;
-
-  g_free(new_style_name) ;
+  zMapWindowShowStyleDialog(data->window, parent_style, TRUE, NULL, updateNewStyle, data) ;
 }
 
 

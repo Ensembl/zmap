@@ -733,7 +733,7 @@ void zMapWindowColumnHide(ZMapWindow window, GQuark column_id) ;
 void zMapWindowColumnShow(ZMapWindow window, GQuark column_id) ;
 double zMapWindowGetDisplayOrigin(ZMapWindow window) ;
 void zMapWindowSetDisplayOrigin(ZMapWindow window, double origin) ;
-void zMapWindowShowStyleDialog(ZMapWindow window, ZMapFeatureTypeStyle style, GQuark new_style_name, ZMapFeatureSet feature_set, GFunc cb_func, gpointer cb_data) ;
+void zMapWindowShowStyleDialog(ZMapWindow window, ZMapFeatureTypeStyle style, const gboolean create_child, ZMapFeatureSet feature_set, GFunc cb_func, gpointer cb_data) ;
 void zMapWindowShowStylesDialog(ZMapWindow window) ;
 GQuark zMapWindowChooseStyleDialog(ZMapWindow window, ZMapFeatureSet feature_set) ;
 GQuark zMapWindowChooseStyleDialog(ZMapWindow window, GList* feature_sets) ;
