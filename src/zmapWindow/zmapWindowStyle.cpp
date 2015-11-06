@@ -289,7 +289,7 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
       f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
       if(s2s && f2c)
         {
-          s2s->style_id = style->unique_id;
+          s2s->style_id = style_id ;
           column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(f2c->column_id));
           if(column)
             {
@@ -306,7 +306,7 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
                     {
                       if(GPOINTER_TO_UINT(c2s->data) == feature_set->style->unique_id)
                         {
-                          c2s->data = GUINT_TO_POINTER(style->unique_id);
+                          c2s->data = GUINT_TO_POINTER(style_id);
                           break;
                         }
                     }

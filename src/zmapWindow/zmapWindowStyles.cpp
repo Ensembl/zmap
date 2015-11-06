@@ -413,35 +413,58 @@ static void edit_button_clicked_cb(GtkWidget *button, gpointer user_data)
 static void delete_button_clicked_cb(GtkWidget *button, gpointer user_data)
 {
   EditStylesDialog data = (EditStylesDialog)user_data ;
-  zMapReturnIfFail(data && data->tree_model) ;
+  zMapReturnIfFail(data && data->tree_model && data->window && data->window->feature_context) ;
 
   ZMapFeatureTypeStyle style = getSelectedStyle(data) ;
 
   if (style)
     {
-      char *msg = g_strdup_printf("Are you sure you want to delete style '%s'?", g_quark_to_string(style->original_id)) ;
+      GList *feature_sets = zMapStyleGetFeaturesets(style, (ZMapFeatureAny)data->window->feature_context) ;
 
-      if (zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, msg))
+      if (feature_sets)
         {
-          /* Remove the style from the tree in the context */
-          data->styles_tree->remove_style(style) ;
+          /* For now disable deleting styles that have featuresets. We could allow it but would
+           * need to assign a different style to these featuresets (maybe the parent style or the
+           * default style). */
+          zMapWarning("Cannot delete style '%s' because it has featuresets. Please reassign the style for all featuresets first.", 
+                      g_quark_to_string(style->original_id)) ;
 
-          /* Remove it from our dialog's tree view */
-          GtkTreeStore *tree_store = GTK_TREE_STORE(data->tree_model) ;
-          GtkTreeIter iter ;
+        }
+      else if (data->styles_tree->has_children(style))
+        {
+          /* For now disable deleting styles that have child styles. We could allow it but would
+           * have to delete the child styles too or maybe move them up to the parent */
+          zMapWarning("Cannot delete style '%s' because it has child styles. Please delete the child styles first.", 
+                      g_quark_to_string(style->original_id)) ;
+        }
+      else
+        {
+          char *msg = g_strdup_printf("Are you sure you want to delete style '%s'?", g_quark_to_string(style->original_id)) ;
 
-          gtk_tree_model_get_iter(data->tree_model, &iter, data->selected_tree_path) ;
-          gtk_tree_store_remove(tree_store, &iter) ;
+          if (zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, msg))
+            {
+              /* Remove the style from the tree in the context */
+              data->styles_tree->remove_style(style) ;
 
-          /* Reset the selection to iter, which will point to the next row (if valid) */
-          gtk_tree_path_free(data->selected_tree_path) ;
-          data->selected_tree_path = NULL ;
+              /* Remove it from our dialog's tree view */
+              GtkTreeStore *tree_store = GTK_TREE_STORE(data->tree_model) ;
+              GtkTreeIter iter ;
+
+              gtk_tree_model_get_iter(data->tree_model, &iter, data->selected_tree_path) ;
+              gtk_tree_store_remove(tree_store, &iter) ;
+
+              /* Reset the selection to iter, which will point to the next row (if valid) */
+              gtk_tree_path_free(data->selected_tree_path) ;
+              data->selected_tree_path = NULL ;
               
-          if (gtk_tree_store_iter_is_valid(tree_store, &iter))
-            data->selected_tree_path = gtk_tree_model_get_path(data->tree_model, &iter) ;
+              if (gtk_tree_store_iter_is_valid(tree_store, &iter))
+                data->selected_tree_path = gtk_tree_model_get_path(data->tree_model, &iter) ;
 
-          /* Destroy the style */
-          zMapStyleDestroy(style);
+              /* Destroy the style */
+              zMapStyleDestroy(style);
+            }
+
+          g_free(msg) ;
         }
     }
   else

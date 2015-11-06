@@ -47,12 +47,16 @@ public:
   ZMapStyleTree(ZMapFeatureTypeStyle style) : m_style(style) {} ;
   ~ZMapStyleTree() ;
 
+  gboolean has_children(ZMapFeatureTypeStyle style) const ;
+
   ZMapFeatureTypeStyle get_style() const ;
   const std::vector<ZMapStyleTree*>& get_children() const ;
+
   int count() const ;
 
   void foreach(ZMapStyleForeachFunc func, gpointer data) ;
 
+  const ZMapStyleTree* find(ZMapFeatureTypeStyle style) const ;
   ZMapStyleTree* find(ZMapFeatureTypeStyle style) ;
   ZMapStyleTree* find(const GQuark style_id) ;
   ZMapFeatureTypeStyle find_style(const GQuark style_id) ;
@@ -71,6 +75,8 @@ private:
 
   gboolean is_style(ZMapFeatureTypeStyle style) const ;
   gboolean is_style(const GQuark style_id) const ;
+
+  gboolean has_children() const ;
 
   void set_style(ZMapFeatureTypeStyle style) ;
   ZMapStyleTree* find_parent(ZMapFeatureTypeStyle style) ;

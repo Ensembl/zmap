@@ -85,9 +85,30 @@ gboolean ZMapStyleTree::is_style(const GQuark style_id) const
   return result ;
 }
 
+/* Find the tree node for the given style. Return the tree node or null if not found. */
+const ZMapStyleTree* ZMapStyleTree::find(ZMapFeatureTypeStyle style) const
+{
+  const ZMapStyleTree *result = NULL ;
+
+  if (is_style(style))
+    {
+      result = this ;
+    }
+  else
+    {
+      for (std::vector<ZMapStyleTree*>::const_iterator iter = m_children.begin(); !result && iter != m_children.end(); ++iter)
+        {
+          const ZMapStyleTree *child = *iter ;
+          result = child->find(style) ;
+        }
+    }
+
+  return result ;
+}
+
 
 /* Find the tree node for the given style. Return the tree node or null if not found. */
-ZMapStyleTree* ZMapStyleTree::find(ZMapFeatureTypeStyle style)
+ZMapStyleTree* ZMapStyleTree::find(ZMapFeatureTypeStyle style) 
 {
   ZMapStyleTree *result = NULL ;
 
@@ -480,4 +501,33 @@ int ZMapStyleTree::count() const
     }
 
   return total ;
+}
+
+
+/* Return true if this node has child nodes */
+gboolean ZMapStyleTree::has_children() const
+{
+  gboolean result = FALSE ;
+
+  if (m_children.size() > 0)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+/* Return true if the given style is in the tree and if it has child styles */
+gboolean ZMapStyleTree::has_children(ZMapFeatureTypeStyle style) const
+{
+  gboolean result = FALSE ;
+
+  if (style)
+    {
+      const ZMapStyleTree *node = find(style) ;
+
+      if (node)
+        result = node->has_children() ;
+    }
+
+  return result ;
 }
