@@ -48,6 +48,7 @@
 
 #define SCRATCH_FEATURE_NAME "temp_feature"
 
+class ZMapStyleTree ;
 
 /*! Opaque type, represents an individual ZMap window. */
 typedef struct ZMapWindowStructType *ZMapWindow ;
@@ -539,7 +540,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             GList *feature_set_names, gboolean *flags, int *int_values) ;
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap sequence,
                           void *app_data, ZMapWindow old,
-                          ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
+                          ZMapFeatureContext features,
                           ZMapWindowLockType window_locking) ;
 
 void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
@@ -573,6 +574,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
                              gboolean reversed) ;
 void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 gboolean zMapWindowZoomFromClipboard(ZMapWindow window) ;
+ZMapStyleTree* zMapWindowGetStyles(ZMapWindow window) ;
+ZMapFeatureContext zMapWindowGetContext(ZMapWindow window) ;
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
 double zMapWindowGetZoomFactor(ZMapWindow window);
 double zMapWindowGetZoomMin(ZMapWindow window) ;
@@ -730,6 +733,10 @@ void zMapWindowColumnHide(ZMapWindow window, GQuark column_id) ;
 void zMapWindowColumnShow(ZMapWindow window, GQuark column_id) ;
 double zMapWindowGetDisplayOrigin(ZMapWindow window) ;
 void zMapWindowSetDisplayOrigin(ZMapWindow window, double origin) ;
+void zMapWindowShowStyleDialog(ZMapWindow window, ZMapFeatureTypeStyle style, const gboolean create_child, ZMapFeatureSet feature_set, GFunc cb_func, gpointer cb_data) ;
+void zMapWindowShowStylesDialog(ZMapWindow window) ;
+GQuark zMapWindowChooseStyleDialog(ZMapWindow window, ZMapFeatureSet feature_set) ;
+GQuark zMapWindowChooseStyleDialog(ZMapWindow window, GList* feature_sets) ;
 
 /*
  * Set whether we are to display slice or chromosome coordinates.

@@ -57,7 +57,7 @@ typedef struct
 {
   gboolean    status ;
   GIOChannel *channel ;
-  GHashTable *styles ;
+  ZMapStyleTree *styles ;
   GString    *dump_string;
   GError    **dump_error ;
   DumpAny     dump_data;/* will contain the user's data in dump_data->user_data */
@@ -81,7 +81,7 @@ static void invoke_dump_features_cb(gpointer list_data, gpointer user_data) ;
 static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   key,
                                                                      gpointer data, gpointer user_data,
                                                                      char   **err_out) ;
-static gboolean simple_context_print_cb(ZMapFeatureAny feature_any, GHashTable *styles,
+static gboolean simple_context_print_cb(ZMapFeatureAny feature_any, ZMapStyleTree *styles,
                                         GString *dump_string_in_out, GError **error, gpointer user_data) ;
 
 GString *feature2Text(GString *feature_str, ZMapFeature feature) ;
@@ -121,20 +121,25 @@ char *zMapFeatureAsString(ZMapFeature feature)
 /*!
  * \brief Dump the Feature Context in a zmap speific context format.  Useful for debugging.
  */
-gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GHashTable *styles,
-GIOChannel *file, GError **error_out)
+gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, 
+                                ZMapStyleTree *styles,
+                                GIOChannel *file, 
+                                GError **error_out)
 {
   gboolean result = FALSE;
 
-  result = zMapFeatureContextDumpToFile((ZMapFeatureAny)feature_context, styles,
-                                        simple_context_print_cb, NULL,
-                                        file, error_out);
+  result = zMapFeatureContextDumpToFile((ZMapFeatureAny)feature_context, 
+                                        styles,
+                                        simple_context_print_cb, 
+                                        NULL,
+                                        file, 
+                                        error_out);
 
   return result;
 }
 
 /* N.B. call only returns TRUE if the dump _and_ the io channel close succeed. */
-gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GHashTable *styles, GError **error_out)
+gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, ZMapStyleTree *styles, GError **error_out)
 {
   gboolean result = FALSE ;
   GIOChannel *file ;
@@ -163,7 +168,7 @@ gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GHash
 
 
 gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context, const char *filename, const char *header,
-                                   GHashTable *styles, GError **error_out)
+                                   ZMapStyleTree *styles, GError **error_out)
 {
   gboolean result = FALSE ;
   GIOChannel *file ;
@@ -269,7 +274,7 @@ gboolean zMapFeatureListForeachDumperDestroy(gpointer dumper_data)
 /* This dumps to the given dump_file if that is non-null, and/or returns the result
  * in text_out, if that is non-null */
 gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_list,
-                                           GHashTable                 *styles,
+                                           ZMapStyleTree *styles,
                                            ZMapFeatureDumpFeatureFunc dump_func,
                                            gpointer                   dump_user_data,
                                            GIOChannel                *dump_file,
@@ -324,7 +329,7 @@ gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_li
  * and this code calls the callback to do the output of the feature in the appropriate
  * form. */
 gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
-      GHashTable                *styles,
+      ZMapStyleTree *styles,
       ZMapFeatureDumpFeatureFunc dump_func,
       gpointer                   dump_user_data,
       GIOChannel                *dump_file,
@@ -373,7 +378,7 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
 }
 
 gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
-   GHashTable                *styles,
+                                           ZMapStyleTree                *styles,
    ZMapSpan                   span_data,
    ZMapFeatureDumpFeatureFunc dump_func,
    gpointer                   dump_user_data,
@@ -607,7 +612,7 @@ static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   ke
 
 
 static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
-                                        GHashTable    *styles,
+                                        ZMapStyleTree *styles,
                                         GString       *dump_string_in_out,
                                         GError       **error,
                                         gpointer       user_data)

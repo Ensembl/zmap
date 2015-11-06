@@ -409,6 +409,27 @@ ZMapWindowCallbacks zmapWindowGetCBs(void)
 }
 
 
+ZMapStyleTree* zMapWindowGetStyles(ZMapWindow window)
+{
+  ZMapStyleTree *result = NULL ;
+
+  if (window && window->context_map)
+    result = &window->context_map->styles ;
+
+  return result ;
+}
+
+ZMapFeatureContext zMapWindowGetContext(ZMapWindow window)
+{
+  ZMapFeatureContext result = NULL ;
+
+  if (window)
+    result = window->feature_context ;
+
+  return result ;
+}
+
+
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             ZMapFeatureSequenceMap sequence, void *app_data,
                             GList *feature_set_names, gboolean *flags, int *int_values)
@@ -431,7 +452,6 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap sequence,
                           void *app_data, ZMapWindow original_window,
                           ZMapFeatureContext feature_context,
-                          GHashTable *read_only_styles, GHashTable *display_styles,
                           ZMapWindowLockType window_locking)
 {
   ZMapWindow new_window = NULL ;
@@ -4357,13 +4377,13 @@ static void dragDataGetCB(GtkWidget *widget,
         {
           /* Swop to other strand..... */
           if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-            zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+            zMapFeatureContextReverseComplement(window->feature_context) ;
 
           zMapGFFDumpList(feature_list, window->context_map->styles, NULL, NULL, result, &tmp_error) ;
 
           /* And swop it back again. */
           if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-            zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+            zMapFeatureContextReverseComplement(window->feature_context) ;
         }
 
       if (result)

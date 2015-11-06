@@ -54,7 +54,7 @@ typedef struct
   /* inputs */
   ZMapWindowNavigator navigate;
   ZMapFeatureContext  context;
-  GHashTable              *styles;
+  ZMapStyleTree       &styles;
 
   /* The current features in the recursion */
   ZMapFeatureAlignment current_align;
@@ -405,16 +405,12 @@ void zMapWindowNavigatorMergeInFeatureSetNames(ZMapWindowNavigator navigate,
 /* draw features */
 void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
                                      ZMapFeatureContext full_context,
-                                     GHashTable *styles)
+                                     ZMapStyleTree &styles)
 {
   FooCanvas *canvas = NULL;
-  NavigateDrawStruct draw_data = {NULL};
+  NavigateDrawStruct draw_data = {navigate, full_context, styles};
 
 //printf("nav draw features %p -> %p\n",navigate, navigate->current_window);
-
-  draw_data.navigate  = navigate;
-  draw_data.context   = full_context;
-  draw_data.styles    = styles;
 
   navigate->full_span.x1 = full_context->master_align->sequence_span.x1;
   navigate->full_span.x2 = full_context->master_align->sequence_span.x2 + 1.0;
@@ -913,7 +909,7 @@ static void createColumnCB(gpointer data, gpointer user_data)
   /* mh17: need to canonicalise the set name to find the style */
   set_unique_id = zMapStyleCreateID((char *) g_quark_to_string(set_id)) ;
 
-  style = zMapFindStyle(draw_data->styles, set_unique_id) ;
+  style = draw_data->styles.find_style(set_unique_id) ;
 
   draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_unique_id);
 

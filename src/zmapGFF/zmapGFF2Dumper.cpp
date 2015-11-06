@@ -119,7 +119,7 @@ static void deleteFeatureSearch(FeatureSearch *) ;
  * ZMapFeatureDumpFeatureFunc to dump gff. Writes lines into gstring buffer.
  *
  */
-static gboolean dump_gff_cb(ZMapFeatureAny feature_any, GHashTable *styles,
+static gboolean dump_gff_cb(ZMapFeatureAny feature_any, ZMapStyleTree  *styles,
   GString *gff_string,  GError **error, gpointer user_data);
 
 
@@ -154,7 +154,7 @@ ZMapGFFVersion zMapGFFDumpVersionGet()
  * sequences.
  *
  */
-gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out)
+gboolean zMapGFFDump(ZMapFeatureAny dump_set, ZMapStyleTree &styles, GIOChannel *file, GError **error_out)
 {
   gboolean result = TRUE;
 
@@ -163,7 +163,7 @@ gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *fi
   return result;
 }
 
-gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
+gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, ZMapStyleTree &styles,
                            ZMapSpan region_span, GIOChannel *file, GError **error_out)
 {
   gboolean result = FALSE ;
@@ -192,10 +192,10 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
       /* This might get overwritten later, but as DumpToFile uses
        * Subset, there's a chance it wouldn't get set at all */
       if(region_span)
-        result = zMapFeatureContextRangeDumpToFile((ZMapFeatureAny)dump_set, styles, region_span,
+        result = zMapFeatureContextRangeDumpToFile((ZMapFeatureAny)dump_set, &styles, region_span,
                    dump_gff_cb, format_data, file, error_out) ;
       else
-        result = zMapFeatureContextDumpToFile((ZMapFeatureAny)dump_set, styles,
+        result = zMapFeatureContextDumpToFile((ZMapFeatureAny)dump_set, &styles,
                    dump_gff_cb, format_data, file, error_out) ;
     }
 
@@ -214,7 +214,7 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
  * values of the featureset->unique_id. If the region_span
  * is NULL then use all features available, otherwise only output ones that overlap.
  */
-gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny feature_any, GHashTable *styles,
+gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny feature_any, ZMapStyleTree &styles,
   GList* featuresets, ZMapSpan region_span, GIOChannel *file, GError **error_out)
 {
   gboolean result = FALSE ;
@@ -226,7 +226,6 @@ gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny feature_any, GHashTable *styles,
 
   zMapReturnValIfFail(    feature_any
                        && (feature_any->struct_type == ZMAPFEATURE_STRUCT_CONTEXT)
-                       && styles
                        && featuresets
                        && g_list_length(featuresets)
                        && file,
@@ -311,7 +310,7 @@ gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny feature_any, GHashTable *styles,
  * Dump a list of features to file or string buffer.
  */
 gboolean zMapGFFDumpList(GList *dump_list,
-                         GHashTable *styles,
+                         ZMapStyleTree &styles,
                          char *sequence,
                          GIOChannel *file,
                          GString *text_out,
@@ -341,7 +340,7 @@ gboolean zMapGFFDumpList(GList *dump_list,
 
   if (result)
     {
-      result = zMapFeatureListDumpToFileOrBuffer(dump_list, styles, dump_gff_cb,
+      result = zMapFeatureListDumpToFileOrBuffer(dump_list, &styles, dump_gff_cb,
                                                  format_data, file, text_out, error_out) ;
     }
 
@@ -557,7 +556,7 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark  key, gpoin
  * in this case).
  */
 static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
-    GHashTable         *styles,
+    ZMapStyleTree          *styles,
     GString       *line,
     GError       **error,
     gpointer       user_data)

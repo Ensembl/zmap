@@ -32,6 +32,8 @@
 
 #include <glib-object.h>
 
+class ZMapStyleTree ;
+
 
 
 /* default list of in-built columns if not specified in config file */

@@ -159,7 +159,9 @@ void zmapControlShowPreferences(ZMap zmap)
 /* Main entry point for saving all user-specified preferences into a context. This is provided
  * in addition to the saveCB (which is called from the prefs dialog itsef) so that we can save 
  * preferences from an external interface such as the main menu or columns dialog */
-void zMapControlPreferencesUpdateContext(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, gpointer data)
+void zMapControlPreferencesUpdateContext(ZMapConfigIniContext context, 
+                                         ZMapConfigIniFileType file_type, 
+                                         gpointer data)
 {
   userPrefsUpdateContext(context, file_type) ;
   zMapViewBlixemUserPrefsUpdateContext(context, file_type) ;

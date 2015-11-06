@@ -170,7 +170,7 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
   /* check for style too. */
   /* sometimes we don't have a feature_context ... ODD! */
   if(window->feature_context
-     && zMapFindStyle(window->context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+     && window->context_map->styles.find_style(zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
     {
       drawable = zMapFeatureContextGetDNAStatus(window->feature_context);
     }
@@ -1030,7 +1030,9 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
                                   NULL, replace_highlight, highlight_same_names, highlight_sub_part, &display_style) ;
 
         /* if we have an active dialog update it: they have to click on a feature not the column */
-        zmapWindowStyleDialogSetFeature(window, item, feature);
+        ZMapFeatureSet feature_set = (ZMapFeatureSet)(feature->parent) ; 
+        if (feature_set)
+          zmapWindowStyleDialogSetStyle(window, feature_set->style, feature_set, FALSE) ;
 
       }
 

@@ -134,7 +134,7 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, GString *pString,
  */
 gboolean zMapGFFIsValidVersion(ZMapGFFParser) ;
 ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_start, int features_end) ;
-gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
+gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, ZMapStyleTree *sources, gboolean parse_only) ;
 gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished, ZMapGFFHeaderState *header_state) ;
 gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequence_finished) ;
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line) ;
@@ -175,7 +175,7 @@ gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser);
 ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser, GQuark sequence_name);
 int zMapGFFGetSequenceNum(ZMapGFFParser parser) ;
 gboolean zMapGFFSequenceDestroy(ZMapSequence sequence) ;
-GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser);
+ZMapStyleTree *zMapGFFParserGetStyles(ZMapGFFParser parser);
 void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error) ;
 void zMapGFFSetParseOnly(ZMapGFFParser parser, gboolean parse_only) ;
 gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block) ;
@@ -203,12 +203,12 @@ gboolean zMapGFFFormatMandatory(gboolean, GString *, const char *, const char *,
   int, int, float, ZMapStrand, ZMapPhase, gboolean, gboolean ) ;
 gboolean zMapGFFDumpVersionSet(ZMapGFFVersion gff_version ) ;
 ZMapGFFVersion zMapGFFDumpVersionGet() ;
-gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out);
-gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
+gboolean zMapGFFDump(ZMapFeatureAny dump_set, ZMapStyleTree &styles, GIOChannel *file, GError **error_out);
+gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, ZMapStyleTree &styles,
   ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
-gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence,
+gboolean zMapGFFDumpList(GList *dump_list, ZMapStyleTree &styles, char *sequence,
   GIOChannel *file, GString *text_out, GError **error_out) ;
-gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny, GHashTable *, GList*, ZMapSpan,
+gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny, ZMapStyleTree &, GList*, ZMapSpan,
   GIOChannel *, GError **) ;
 
 gboolean zMapWriteAttributeURL(ZMapFeature, GString *) ;

@@ -337,7 +337,6 @@ typedef struct FilterColsDataStructType
 
 
 
-
 static void maskToggleMenuCB(int menu_item_id, gpointer callback_data);
 
 static void searchListMenuCB(int menu_item_id, gpointer callback_data) ;
@@ -348,7 +347,7 @@ static void copyPasteMenuCB(int menu_item_id, gpointer callback_data) ;
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void colourMenuCB(int menu_item_id, gpointer callback_data);
-static void setStyleCB(int menu_item_id, gpointer callback_data);
+static void chooseStyleCB(int menu_item_id, gpointer callback_data) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -428,7 +427,6 @@ static void createExonTextTag(gpointer data, gpointer user_data) ;
 static void offsetTextAttr(gpointer data, gpointer user_data) ;
 
 static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window) ;
-
 
 
 
@@ -677,7 +675,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
     if(!(style->is_default) && (parent_id = style->parent_id))
       {
-        parent = (ZMapFeatureTypeStyle)g_hash_table_lookup(window->context_map->styles, GUINT_TO_POINTER(parent_id));
+        parent = window->context_map->styles.find_style(parent_id);
       }
 
     /*
@@ -1774,96 +1772,17 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
                                                ZMapGUIMenuItemCallbackFunc callback_func, gpointer callback_data,
                                                ZMapFeatureTypeStyle cur_style, ZMapStyleMode f_type)
 {
-  /* get a list of featuresets from the window's context_map */
-  static ZMapGUIMenuItem menu = NULL;
-  static int n_menu = 0;
-  ItemMenuCBData cbdata  = (ItemMenuCBData)callback_data;
-  ZMapGUIMenuItem m;
-  GHashTable *styles = NULL ;
-  GList *style_list, *sl;
-  int n_styles;
-  int i = 0;
-
-  zMapReturnValIfFail(cbdata && cbdata->window && cbdata->window->context_map, NULL ) ;
-
-  styles = cbdata->window->context_map->styles;
-
-  zMap_g_hash_table_get_data(&style_list,styles);
-  style_list = g_list_sort_with_data(style_list, style_menu_sort, (gpointer) cur_style);
-  n_styles = g_list_length(style_list);                /* max possible, will never be reached */
-
-  if (!n_styles)
-    return NULL;
-
-
-  if(n_menu < n_styles + N_STYLE_MODE + 1)
+  static ZMapGUIMenuItemStruct menu[] =
     {
-      /* as this derives from config data read on creating the view
-       * it will not change unless we reconfig and open another view
-       * alloc enough for all views
-       */
-      if(menu)
-        {
-          for(m = menu; m->type != ZMAPGUI_MENU_NONE ;m++)
-            g_free((void *)(m->name));
+      {ZMAPGUI_MENU_NORMAL, COLUMN_CONFIG_STR "/" COLUMN_COLOUR, 0, colourMenuCB, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, COLUMN_CONFIG_STR "/" COLUMN_STYLE_OPTS, 0, chooseStyleCB, NULL, NULL},
 
-          g_free(menu);
-        }
+      {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
+    } ;
 
-        n_menu = n_styles + N_STYLE_MODE + 10;
-      menu = g_new0(ZMapGUIMenuItemStruct, n_menu);
-
-    }
-
-  m = menu;
-
-  m->type = ZMAPGUI_MENU_NORMAL;
-  m->name = g_strdup(COLUMN_CONFIG_STR "/" COLUMN_COLOUR);
-  m->id = 0;
-  m->callback_func = colourMenuCB;
-  m++;
-
-  /* add sub menu */
-  m->type = ZMAPGUI_MENU_BRANCH;
-  m->name = g_strdup(COLUMN_CONFIG_STR "/" COLUMN_STYLE_OPTS);
-  m->id = 0;
-  m->callback_func = NULL;
-  m++;
-
-  for( i = 0, sl = style_list;i < n_styles; i++, sl = sl->next)
-    {
-      char *name;
-      const char *mode = "";
-      ZMapFeatureTypeStyle s = (ZMapFeatureTypeStyle) sl->data;
-
-      if (!style_is_compatable(s,f_type))
-        continue;
-
-      m->type = ZMAPGUI_MENU_NORMAL;
-
-      name = get_menu_string(s->original_id, '-');
-
-      if(s->mode != cur_style->mode)
-        mode = (char *) zMapStyleMode2ShortText(s->mode);
-
-      m->name = g_strdup_printf(COLUMN_CONFIG_STR "/" COLUMN_STYLE_OPTS"/%s%s%s", mode, *mode ? "/" : "", name);
-      g_free(name);
-
-      m->id = s->unique_id;
-      m->callback_func = setStyleCB;
-      m++;
-    }
-
-  if (m <= menu + 3)        /* empty sub_menu or choice of current */
-    m = menu + 1;
-  m->type = ZMAPGUI_MENU_NONE;
-  m->name = NULL;
-
-
-  /* this overrides data in the menus as given in the args, but index and func are always NULL */
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
-  return menu;
+  return menu ;
 }
 
 
@@ -2248,8 +2167,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
            * partial transcript as an enhancement if/when users ask for it. */
           if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT
               && (user_start <= feature->x1 && user_end >= feature->x2)
-              && ((style = zMapFindStyle(menu_data->window->context_map->styles,
-                                         zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+              && ((style = menu_data->window->context_map->styles.find_style(zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
                   && getSeqColours(style, &non_coding, &coding, &split_5, &split_3)))
             {
               char *dna_fasta_title ;
@@ -2729,22 +2647,33 @@ static void colourMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
-  zmapWindowShowStyleDialog(menu_data);
+  if (menu_data && menu_data->feature_set)
+    zMapWindowShowStyleDialog(menu_data->window, 
+                              menu_data->feature_set->style, 
+                              FALSE,
+                              menu_data->feature_set, 
+                              NULL, NULL);
   /* don't free the callback data, it's in use */
 
   return ;
 }
 
-static void setStyleCB(int menu_item_id, gpointer callback_data)
+/* Called to show the Choose Style dialog */
+static void chooseStyleCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
-  if (menu_data->feature_set)
+  if (menu_data && menu_data->feature_set)
     {
-      zmapWindowFeaturesetSetStyle((GQuark)menu_item_id, 
-                                   menu_data->feature_set,
-                                   menu_data->context_map,
-                                   menu_data->window);
+      GQuark style_id = zMapWindowChooseStyleDialog(menu_data->window, menu_data->feature_set) ;
+
+      if (style_id)
+        {
+          zmapWindowFeaturesetSetStyle(style_id,
+                                       menu_data->feature_set,
+                                       menu_data->context_map,
+                                       menu_data->window);
+        }
     }
 
   g_free(menu_data) ;
@@ -4301,7 +4230,6 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
 {
   gboolean result = FALSE ;
   ZMapFeatureAny context = NULL ;
-  GHashTable *styles = NULL ;
   ZMapSpanStruct mark_region = {0,0};
   GIOChannel *file = NULL ;
   char *filepath = NULL ;
@@ -4320,11 +4248,10 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
   context = (ZMapFeatureAny) window->feature_context ;
 
 
-  zMapReturnValIfFail(    (context->struct_type == ZMAPFEATURE_STRUCT_CONTEXT)
-                       && window->context_map->styles,
+  zMapReturnValIfFail(    (context->struct_type == ZMAPFEATURE_STRUCT_CONTEXT),
                           result ) ;
 
-  styles = window->context_map->styles ;
+  ZMapStyleTree &styles = window->context_map->styles ;
 
   /*
    * Fish out the marked region if it is available; otherwise leave its start
@@ -4354,7 +4281,7 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
        * Revcomp if required.
       */
       if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-        zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+        zMapFeatureContextReverseComplement(window->feature_context) ;
 
       /*
        * Do the filenames/path business and create the IOChannel.
@@ -4405,7 +4332,7 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
        * succeeded.
        */
       if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-        zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+        zMapFeatureContextReverseComplement(window->feature_context) ;
 
     }
 
@@ -4482,7 +4409,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
 
   /* Swop to other strand..... */
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+    zMapFeatureContextReverseComplement(window->feature_context) ;
 
   if (!filepath)
     filepath = zmapGUIFileChooser(gtk_widget_get_toplevel(window->toplevel), "Feature Export filename ?", NULL, "gff") ;
@@ -4543,8 +4470,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
               const GQuark featureset_unique_id = zMapFeatureSetCreateID(g_quark_to_string(featureset_id)) ;
               temp_featureset = zMapFeatureSetIDCreate(featureset_id, featureset_unique_id, NULL, NULL) ;
 
-              ZMapFeatureTypeStyle style = zMapFindStyle(window->context_map->styles, 
-                                                         zMapStyleCreateID(g_quark_to_string(featureset_id))) ;
+              ZMapFeatureTypeStyle style = window->context_map->styles.find_style(zMapStyleCreateID(g_quark_to_string(featureset_id))) ;
               zMapFeatureStyleCopy(style);
               temp_featureset->style = style ;
 
@@ -4606,7 +4532,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
 
   /* And swop it back again. */
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureContextReverseComplement(window->feature_context, window->context_map->styles) ;
+    zMapFeatureContextReverseComplement(window->feature_context) ;
 
   if (filepath)
     {
@@ -4652,7 +4578,7 @@ void dumpConfig(GHashTable *f2c, GHashTable *f2s)
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "Config Dump filename ?", NULL, "zmap"))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapFeatureContextDump(window->feature_context, window->context_map->styles, file, &error))
+      || !zMapFeatureContextDump(window->feature_context, &window->context_map->styles, file, &error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */
@@ -4730,7 +4656,7 @@ gboolean zMapWindowExportContext(ZMapWindow window, GError **error)
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "Context Export filename ?", NULL, "zmap"))
       || !(file = g_io_channel_new_file(filepath, "w", &tmp_error))
-      || !zMapFeatureContextDump(window->feature_context, window->context_map->styles, file, &tmp_error))
+      || !zMapFeatureContextDump(window->feature_context, &window->context_map->styles, file, &tmp_error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */

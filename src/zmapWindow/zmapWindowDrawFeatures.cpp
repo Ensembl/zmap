@@ -2192,7 +2192,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       /* for strand separator this is hard coded in zmapView/getIniData(); */
       ZMapFeatureTypeStyle s;
 
-      s = (ZMapFeatureTypeStyle)g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
+      s = window->context_map->styles.find_style(column->style_id);
       if(s)
         {
           GdkColor *fill_col = NULL;

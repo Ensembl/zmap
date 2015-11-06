@@ -79,7 +79,6 @@ typedef struct
 
 typedef struct
 {
-  GHashTable *styles ;
   int block_start, block_end ;
   int start;
   int end ;
@@ -147,11 +146,9 @@ static gboolean catch_hash_abuse_G = TRUE ;
  * mappings etc.....needs some thought and effort....
  *
  */
-void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable *styles)
+void zMapFeatureContextReverseComplement(ZMapFeatureContext context)
 {
   RevCompDataStruct cb_data ;
-
-  cb_data.styles = styles ;
 
   cb_data.start = context->parent_span.x1;
   cb_data.end   = context->parent_span.x2 ;

@@ -149,7 +149,7 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
 	  continue;
 	}
 
-      style =  zMapFindStyle(view->context_map.styles, src2src->style_id);
+      style =  view->context_map.styles.find_style(src2src->style_id);
 
       if (!style)
 	{
@@ -275,7 +275,7 @@ static ZMapFeatureContextExecuteStatus maskNewFeaturesetByAll(GQuark key,
         if(!style)
           {
             zMapLogWarning("looking up style for featureset %s",g_quark_to_string(feature_set->unique_id));
-            style = feature_set->style = zMapFindStyle(cb_data->view->context_map.styles,src2src->style_id);
+            style = feature_set->style = cb_data->view->context_map.styles.find_style(src2src->style_id);
           }
 
         masked_by = zMapStyleGetMaskList(style);            /* all the masker featuresets */

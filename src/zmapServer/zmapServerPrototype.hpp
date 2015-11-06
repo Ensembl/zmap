@@ -77,7 +77,7 @@ typedef ZMapServerResponseType (*ZMapServerSetContextFunc)(void *server_conn, ZM
 typedef ZMapFeatureContext (*ZMapServerCopyContextFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetFeatures)(void *server_conn,
-							GHashTable *styles,
+							ZMapStyleTree &styles,
 							ZMapFeatureContext feature_context) ;
 
 // ok....need to remove feature context and styles from here and replace with raw dna stuff.....   

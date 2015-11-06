@@ -73,6 +73,7 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 static void printCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+static void stylesCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void preferencesCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
@@ -121,6 +122,8 @@ static GtkItemFactoryEntry menu_items[] = {
     { (char*)"/Edit/_Paste Feature Coords",           (char*)"<control>V", G_CALLBACK(copyPasteCB),           EDIT_PASTE, NULL },
 
     { (char*)"/Edit/_Redraw",                NULL, G_CALLBACK(redrawCB),       0, NULL },
+    { (char*)"/Edit/sep1",                   NULL, NULL,                       0, (char*)"<Separator>" },
+    { (char*)"/Edit/S_tyles",           NULL, G_CALLBACK(stylesCB),  0, NULL },
     { (char*)"/Edit/sep1",                   NULL, NULL,                       0, (char*)"<Separator>" },
     { (char*)"/Edit/P_references",           NULL, G_CALLBACK(preferencesCB),  0, NULL },
     { (char*)"/Edit/_Set Developer status",  NULL, G_CALLBACK(developerCB),    0, NULL },
@@ -441,6 +444,20 @@ static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
 
   zMapViewRedraw(zmap->focus_viewwindow) ;
+
+  return ;
+}
+
+
+/* Shows styles edit window. */
+static void stylesCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  ZMap zmap = NULL ;
+  zMapReturnIfFail(cb_data) ;
+  zmap = (ZMap)cb_data ;
+
+  ZMapWindow zmap_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
+  zMapWindowShowStylesDialog(zmap_window) ;
 
   return ;
 }

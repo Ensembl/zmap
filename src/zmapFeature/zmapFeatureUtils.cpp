@@ -52,6 +52,16 @@ typedef struct SimpleParent2ChildDataStructType
   int counter;
 } SimpleParent2ChildDataStruct, *SimpleParent2ChildData;
 
+
+/* Utility struct used for callback when finding featuresets for a given style */
+typedef struct GetStyleFeaturesetsStruct_
+{
+  GList *featuresets ;
+  ZMapFeatureTypeStyle style ;
+} GetStyleFeaturesetsStruct, *GetStyleFeaturesets ;
+
+
+
 static ZMapFrame feature_frame(ZMapFeature feature, int start_coord);
 static ZMapFrame feature_frame_coords(int start_coord, int offset);
 
@@ -73,6 +83,12 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
                               int *exon_cds_start, int *exon_cds_end, ZMapPhase *phase_out) ;
 
 static void printChildCB(gpointer key, gpointer value, gpointer user_data_unused) ;
+
+static ZMapFeatureContextExecuteStatus get_style_featuresets_ids_cb(GQuark key, gpointer data,
+                                                                    gpointer user_data, char **err_out) ;
+
+static ZMapFeatureContextExecuteStatus get_style_featuresets_cb(GQuark key, gpointer data,
+                                                                gpointer user_data, char **err_out) ;
 
 
 /*!
@@ -730,6 +746,44 @@ ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, Z
 }
 
 
+ZMapFeatureTypeStyle zMapFindFeatureStyle(ZMapStyleTree *styles, GQuark style_id, ZMapStyleMode feature_type)
+{
+  ZMapFeatureTypeStyle style = NULL ;
+
+  if (styles)
+    style = zMapFindFeatureStyle(*styles, style_id, feature_type) ;
+
+  return style ;
+}
+
+
+ZMapFeatureTypeStyle zMapFindFeatureStyle(ZMapStyleTree &styles, GQuark style_id, ZMapStyleMode feature_type)
+{
+  ZMapFeatureTypeStyle feature_style = NULL ;
+  char *type;
+
+  if(!(feature_style = styles.find_style(style_id)))
+  {
+    /* feature_style_id is as configured or defaults to the same name as the featureset
+     * if not defined try a style with the same name as the feature type
+     */
+
+    type = (char *) zMapStyleMode2ExactStr(feature_type);
+    style_id = zMapStyleCreateID(type);
+    feature_style = styles.find_style(style_id);
+
+    if (!feature_style)
+      {
+        /* Try again with the short text version of the style name (e.g. "basic" instead of
+         * "zmapstyle_mode_basic" */
+        style_id = g_quark_from_string(zMapStyleMode2ShortText(feature_type)) ;
+        feature_style = styles.find_style(style_id) ;
+      }
+  }
+  return feature_style;
+}
+
+
 /* Check that a style name exists in a list of styles. */
 gboolean zMapStyleNameExists(GList *style_name_list, char *style_name)
 {
@@ -757,6 +811,81 @@ GList *zMapStylesGetNames(GHashTable *styles)
 
   return quark_list ;
 }
+
+
+/* Get the list of featureset IDs (as GQuarks) that use the given style. Result
+ * should be free'd by the caller with g_list_free. */
+GList* zMapStyleGetFeaturesetsIDs(ZMapFeatureTypeStyle style, ZMapFeatureAny feature_any)
+{
+  GList *result = NULL ;
+
+  GetStyleFeaturesetsStruct get_data = {NULL, style} ;
+
+  zMapFeatureContextExecute(feature_any, ZMAPFEATURE_STRUCT_FEATURESET,
+                            get_style_featuresets_ids_cb, &get_data) ;
+
+  result = get_data.featuresets ;
+
+  return result ;
+}
+
+
+/* Get the list of featuresets (as ZMapFeatureSet structs) that use the given style. Result
+ * should be free'd by the caller with g_list_free. */
+GList* zMapStyleGetFeaturesets(ZMapFeatureTypeStyle style, ZMapFeatureAny feature_any)
+{
+  GList *result = NULL ;
+
+  GetStyleFeaturesetsStruct get_data = {NULL, style} ;
+
+  zMapFeatureContextExecute(feature_any, ZMAPFEATURE_STRUCT_FEATURESET,
+                            get_style_featuresets_cb, &get_data) ;
+
+  result = get_data.featuresets ;
+
+  return result ;
+}
+
+
+/* Callback to add this featureset ID to the result list if it has the given style */
+static ZMapFeatureContextExecuteStatus get_style_featuresets_ids_cb(GQuark key, gpointer data,
+                                                                    gpointer user_data, char **err_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny) data ;
+  GetStyleFeaturesets get_data = (GetStyleFeaturesets)user_data ;
+
+  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+    {
+      ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any ;
+
+      if (feature_set->style == get_data->style)
+        get_data->featuresets = g_list_append(get_data->featuresets, GINT_TO_POINTER(feature_set->original_id)) ;
+    }
+
+  return status ;
+}
+
+
+/* Callback to add this featureset to the result list if it has the given style */
+static ZMapFeatureContextExecuteStatus get_style_featuresets_cb(GQuark key, gpointer data,
+                                                                gpointer user_data, char **err_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny) data ;
+  GetStyleFeaturesets get_data = (GetStyleFeaturesets)user_data ;
+
+  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+    {
+      ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any ;
+
+      if (feature_set->style == get_data->style)
+        get_data->featuresets = g_list_append(get_data->featuresets, feature_set) ;
+    }
+
+  return status ;
+}
+
 
 /* GFunc() callback function, appends style names to a string, its called for lists
  * of either style name GQuarks or lists of style structs. */

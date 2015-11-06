@@ -990,7 +990,7 @@ void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus)
         {
           ZMapFeatureTypeStyle s ;
 
-          s = (ZMapFeatureTypeStyle)g_hash_table_lookup(focus->window->context_map->styles,GUINT_TO_POINTER(column->style_id));
+          s = focus->window->context_map->styles.find_style(column->style_id);
 
           if(s)
             zMapStyleGetColours(s, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &colour, NULL, NULL);
