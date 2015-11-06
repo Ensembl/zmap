@@ -1364,27 +1364,6 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
       status = checkBlixArgNum(icount) ;
     }
 
-  if (status && ((blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ) || blixem_data->isSeq) )
-    {
-      paramString[icount] = g_strdup("--show-coverage");
-      ++icount ;
-      status = checkBlixArgNum(icount) ;
-
-      if (status)
-        {
-          paramString[icount] = g_strdup("--squash-matches");
-          ++icount ;
-          status = checkBlixArgNum(icount) ;
-        }
-
-      if (status)
-        {
-          paramString[icount] = g_strdup("--sort-mode=p");
-          ++icount ;
-          status = checkBlixArgNum(icount) ;
-        }
-    }
-
   return status ;
 }
 
