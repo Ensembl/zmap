@@ -685,7 +685,7 @@ static void updateFeaturesets(StyleChange my_data, ZMapFeatureTypeStyle style)
   /* redraw affected featuresets */
   if (style && my_data && my_data->window && my_data->window->feature_context)
     {
-      GList *featuresets_list = zMapStyleGetFeaturesets(style, (ZMapFeatureAny)my_data->window->feature_context) ;
+      GList *featuresets_list = my_data->feature_sets ;
   
       for (GList *featureset_item = featuresets_list ; featureset_item ; featureset_item = featureset_item->next)
         {
