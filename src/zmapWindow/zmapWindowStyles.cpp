@@ -388,6 +388,44 @@ static ZMapFeatureTypeStyle getSelectedStyle(EditStylesDialog data)
 }
 
 
+/* This is called after a new style has been added to update the tree with the new style */
+static void updateNewStyle(gpointer cb_data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)cb_data ;
+  EditStylesDialog data = (EditStylesDialog)user_data ;
+  zMapReturnIfFail(style && data && data->window) ;
+
+  GtkTreeStore *tree_store = GTK_TREE_STORE(data->tree_model) ;
+  ZMapFeatureContext context = zMapWindowGetContext(data->window) ;
+
+  /* Add a new row to the tree store under the currently-selected row (or to the root if
+   * no row is selected) */
+  GtkTreeIter parent_iter ;
+  GtkTreeIter iter ;
+  gtk_tree_model_get_iter(data->tree_model, &parent_iter, data->selected_tree_path) ;
+  gtk_tree_store_append(tree_store, &iter, &parent_iter) ;
+
+  const char *parent_name = "" ;
+  if (style->parent_id)
+    {
+      ZMapFeatureTypeStyle parent_style = data->styles_tree->find_style(style->parent_id) ;
+      parent_name = g_quark_to_string(parent_style->original_id) ;
+    }
+
+  GList *featuresets_list = zMapStyleGetFeaturesetsIDs(style, (ZMapFeatureAny)context) ;
+  char *featuresets = zMap_g_list_quark_to_string(featuresets_list, ";") ;
+
+  g_free(featuresets) ;
+  g_list_free(featuresets_list) ;
+
+  gtk_tree_store_set(tree_store, &iter, 
+                     0, g_quark_to_string(style->original_id), 
+                     1, parent_name, 
+                     2, featuresets, 
+                     -1);
+}
+
+
 /* Callback called when the user clicks the edit button. Opens the Edit Style dialog on the
  * currently selected style */
 static void edit_button_clicked_cb(GtkWidget *button, gpointer user_data)
@@ -399,7 +437,7 @@ static void edit_button_clicked_cb(GtkWidget *button, gpointer user_data)
 
   if (style)
     {
-      zMapWindowShowStyleDialog(data->window, style, FALSE, NULL, NULL, NULL);
+      zMapWindowShowStyleDialog(data->window, style, FALSE, NULL, updateNewStyle, data);
     }
   else
     {
@@ -471,48 +509,6 @@ static void delete_button_clicked_cb(GtkWidget *button, gpointer user_data)
     {
       zMapWarning("%s", "Please select a style to delete") ;
     }
-}
-
-
-
-/* This is called after a new style has been added to update the tree with the new style */
-static void updateNewStyle(gpointer cb_data, gpointer user_data)
-{
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)cb_data ;
-  EditStylesDialog data = (EditStylesDialog)user_data ;
-  zMapReturnIfFail(style && data && data->window) ;
-
-  GtkTreeStore *tree_store = GTK_TREE_STORE(data->tree_model) ;
-  ZMapFeatureContext context = zMapWindowGetContext(data->window) ;
-
-  /* Add the style to the hierarchy */
-  data->styles_tree->add_style(style) ;
-
-  /* Add a new row to the tree store under the currently-selected row (or to the root if
-   * no row is selected) */
-  GtkTreeIter parent_iter ;
-  GtkTreeIter iter ;
-  gtk_tree_model_get_iter(data->tree_model, &parent_iter, data->selected_tree_path) ;
-  gtk_tree_store_append(tree_store, &iter, &parent_iter) ;
-
-  const char *parent_name = "" ;
-  if (style->parent_id)
-    {
-      ZMapFeatureTypeStyle parent_style = data->styles_tree->find_style(style->parent_id) ;
-      parent_name = g_quark_to_string(parent_style->original_id) ;
-    }
-
-  GList *featuresets_list = zMapStyleGetFeaturesetsIDs(style, (ZMapFeatureAny)context) ;
-  char *featuresets = zMap_g_list_quark_to_string(featuresets_list, ";") ;
-
-  g_free(featuresets) ;
-  g_list_free(featuresets_list) ;
-
-  gtk_tree_store_set(tree_store, &iter, 
-                     0, g_quark_to_string(style->original_id), 
-                     1, parent_name, 
-                     2, featuresets, 
-                     -1);
 }
 
 

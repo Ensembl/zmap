@@ -74,7 +74,7 @@ typedef struct
 
   GQuark last_edited_style_id;            /* if we've already changed a style remember its id here */
 
-  GFunc cb_func ;                         /* if non-null, called when changes are applied */
+  GFunc created_cb_func ;                 /* if non-null, called when a new style is created */
   gpointer cb_data ;
 
 
@@ -131,7 +131,7 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
                                ZMapFeatureTypeStyle style,
                                const gboolean create_child,
                                ZMapFeatureSet feature_set,
-                               GFunc cb_func,
+                               GFunc created_cb_func,
                                gpointer cb_data)
 {
   /* Check if the dialog data has already been created - if so, just update the existing data
@@ -148,7 +148,7 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
   StyleChange my_data = g_new0(StyleChangeStruct,1);
 
   my_data->window = window;
-  my_data->cb_func = cb_func ;
+  my_data->created_cb_func = created_cb_func ;
   my_data->cb_data = cb_data ;
 
   /* Add ptr so parent knows about us */
@@ -770,7 +770,7 @@ static void createChildStyleCB(GtkButton *button, gpointer cb_data)
   StyleChange my_data = (StyleChange)cb_data ;
 
   zMapWindowShowStyleDialog(my_data->window, my_data->style, TRUE, my_data->feature_set,
-                            my_data->cb_func, my_data->cb_data) ;
+                            my_data->created_cb_func, my_data->cb_data) ;
   
 }
 
@@ -856,7 +856,7 @@ static gboolean applyChanges(gpointer cb_data)
   /* See if the new style already exists */
   const char *new_style_name = gtk_entry_get_text(GTK_ENTRY(my_data->new_style_name_widget)) ;
 
-  if (!new_style_name)
+  if (!new_style_name || *new_style_name == '\0')
     {
       zMapWarning("%s", "No style name given") ;
       ok = FALSE ;
@@ -943,7 +943,7 @@ static gboolean applyChanges(gpointer cb_data)
             }
           else
             {
-              zMapWarning("Cannot create new style %s",new_style_name);
+              zMapWarning("Failed to create new style '%s'", new_style_name);
               zMapStyleDestroy(tmp_style);
               zMapStyleDestroy(style);
               ok = FALSE;
@@ -954,7 +954,7 @@ static gboolean applyChanges(gpointer cb_data)
           /* We're overwriting a style that isn't "owned" by this featureset. The user may
            * have accidentally entered a style name that already exists - check if they want
            * to overwrite it. Only do this if they haven't already confirmed that it's ok! */
-          char *msg = g_strdup_printf("You are changing a style that affects other featuresets.\n\nAre you sure you want to overwrite it?") ;
+          char *msg = g_strdup_printf("You are changing a style that affects multiple featuresets.\n\nAre you sure you want to overwrite it?") ;
 
           ok = zMapGUIMsgGetBool(GTK_WINDOW(my_data->toplevel), ZMAP_MSG_INFORMATION, msg) ;
 
@@ -980,8 +980,12 @@ static gboolean applyChanges(gpointer cb_data)
        */
       updateFeaturesets(my_data, style) ;
 
-      if (my_data->cb_func)
-        my_data->cb_func(style, my_data->cb_data) ;
+      if (my_data->create_child && my_data->created_cb_func)
+        my_data->created_cb_func(style, my_data->cb_data) ;
+
+      /* If the user continues to edit they're now editing an existing style, so reset the
+       * create_child flag */
+      my_data->create_child = FALSE ;
     }
 
   return ok;
