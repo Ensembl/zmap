@@ -191,7 +191,7 @@ void ZMapStyleTree::set_style(ZMapFeatureTypeStyle style)
 }
 
 
-std::vector<ZMapStyleTree*> ZMapStyleTree::get_children() const
+const std::vector<ZMapStyleTree*>& ZMapStyleTree::get_children() const
 {
   return m_children ;
 }
@@ -338,7 +338,44 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZM
 }
 
 
-/* Remove the given style from the style hierarchy tree */
+/* Add the given child nodes to this node */
+void ZMapStyleTree::add_children(const std::vector<ZMapStyleTree*> &children)
+{
+  for (std::vector<ZMapStyleTree*>::const_iterator iter = children.begin(); iter != children.end(); ++iter)
+    {
+      add_child(*iter) ;
+    }
+}
+
+
+/* Add the given node as a child to this node */
+void ZMapStyleTree::add_child(ZMapStyleTree *child)
+{
+  if (child)
+    {
+      m_children.push_back(child) ;
+    }
+}
+
+
+/* Remove the given child from this node */
+void ZMapStyleTree::remove_child(ZMapStyleTree *child)
+{
+  if (child)
+    {
+      std::vector<ZMapStyleTree*>::iterator iter = std::find(m_children.begin(), m_children.end(), child) ;
+
+      if (iter != m_children.end())
+        {
+          m_children.erase(iter) ;
+        }
+
+    }
+}
+
+
+/* Remove the given style from the style hierarchy tree. If the style has any children then they
+ * are moved up in the hierarchy to the style's parent. */
 void ZMapStyleTree::remove_style(ZMapFeatureTypeStyle style)
 {
   ZMapStyleTree *parent = find_parent(style) ;
@@ -346,10 +383,12 @@ void ZMapStyleTree::remove_style(ZMapFeatureTypeStyle style)
 
   if (parent && node)
     {
-      std::vector<ZMapStyleTree*>::iterator iter = std::find(m_children.begin(), m_children.end(), node) ;
+      /* Add the node's children to the parent's child list */
+      const std::vector<ZMapStyleTree*>& node_children = node->get_children() ;
+      parent->add_children(node_children) ;
 
-      if (iter != m_children.end())
-        m_children.erase(iter) ;
+      /* Remove the node from the parent's child list */
+      parent->remove_child(node) ;
     }
 }
 
