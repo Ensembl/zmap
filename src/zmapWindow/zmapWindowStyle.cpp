@@ -62,8 +62,9 @@ typedef struct
                                            * style if creating a new child style */
   ZMapFeatureSet feature_set ;            /* the feature set the user selected to change the
                                            * style for (may be null if editing a style directly) */
-  GList *feature_sets ;                   /* all featuresets that have the style being edited
-                                           * (may be null if creating a new style) */
+  GList *feature_sets ;                   /* all featuresets that have the original style */
+
+  gboolean create_child ;
 
   gboolean create_new_style ;            /* True if we're creating a new style */
   GQuark new_style_name ;                /* New name if creating a new style */
@@ -110,6 +111,8 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static gboolean applyChanges(gpointer cb_data) ;
 static gboolean revertChanges(gpointer cb_data) ;
+static void renameStyle(StyleChange my_data, ZMapFeatureTypeStyle style, 
+                        const char *new_style_name, const GQuark new_style_id) ;
 static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style) ;
 
 
@@ -151,12 +154,15 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
     my_data->new_style_name = my_data->style->original_id ;
 
   my_data->new_style_id = zMapStyleCreateID(g_quark_to_string(my_data->new_style_name)) ;
+
+  my_data->feature_sets = zMapStyleGetFeaturesets(style, (ZMapFeatureAny)window->feature_context) ;
+  my_data->feature_set = feature_set ;
   
-  /* If creating a new style and a featureset is given then just apply the style to that featureset */
+  /* If the new style id is different to the original then by default create a new style */
   if (feature_set && my_data->new_style_id != style->unique_id)
-    my_data->feature_sets = g_list_append(my_data->feature_sets, feature_set) ;
+    my_data->create_child = TRUE ;
   else
-    my_data->feature_sets = zMapStyleGetFeaturesets(style, (ZMapFeatureAny)window->feature_context) ;
+    my_data->create_child = FALSE ;
 
   /* Add ptr so parent knows about us */
   my_data->window->style_window = (gpointer) my_data ;
@@ -685,12 +691,22 @@ static void updateFeaturesets(StyleChange my_data, ZMapFeatureTypeStyle style)
   /* redraw affected featuresets */
   if (style && my_data && my_data->window && my_data->window->feature_context)
     {
-      GList *featuresets_list = my_data->feature_sets ;
-  
-      for (GList *featureset_item = featuresets_list ; featureset_item ; featureset_item = featureset_item->next)
+      if (my_data->create_child)
         {
-          ZMapFeatureSet feature_set = (ZMapFeatureSet)(featureset_item->data) ;
-          zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, my_data->window->context_map, my_data->window);
+          /* just assign the new style to the specified featureset, if any */
+          if (my_data->feature_set)
+            zmapWindowFeaturesetSetStyle(style->unique_id, my_data->feature_set, my_data->window->context_map, my_data->window);            
+        }
+      else
+        {
+          /* update all affected featuresets */
+          GList *featuresets_list = my_data->feature_sets ;
+  
+          for (GList *featureset_item = featuresets_list ; featureset_item ; featureset_item = featureset_item->next)
+            {
+              ZMapFeatureSet feature_set = (ZMapFeatureSet)(featureset_item->data) ;
+              zmapWindowFeaturesetSetStyle(style->unique_id, feature_set, my_data->window->context_map, my_data->window);
+            }
         }
     }
 
@@ -708,9 +724,8 @@ static gboolean revertChanges(gpointer cb_data)
   ZMapFeatureTypeStyle style = my_data->style;
   GQuark id;
 
-  /* If the current style is different to the original then we have created a child style. Just
-   * remove the child and replace it with the parent */
-  if(style->unique_id != my_data->orig_style_copy.unique_id)   
+  /* If we've created a child style, just remove the child and replace it with the parent */
+  if(my_data->create_child)
     {
       ZMapStyleTree &styles = my_data->window->context_map->styles;
       id = style->parent_id;
@@ -751,75 +766,107 @@ static gboolean applyChanges(gpointer cb_data)
   GQuark new_style_id = zMapStyleCreateID(new_style_name) ;
   ZMapFeatureTypeStyle style = styles.find_style(new_style_id);
 
-  /* It's possible the styles table has our style id but that it points to a different style,
-   * e.g. a default style. We only want to update it if it's the exact style we're looking for. */
-  if (style && style->unique_id != new_style_id)
-    style = NULL ;
-
-  /* If the uesr-set style id is the same as the requested style id (which is often the featureset
-   * name), then we can assume that we "own" the style */
-  const gboolean own_style = (new_style_id == my_data->new_style_id);
-
-  /* Check whether we're editing the original style for this featureset or assigning a different one */
-  //const gboolean using_original_style = (new_style_id == my_data->orig_style_copy.unique_id);
-
-  /* Check whether we've already applied changes to this style */
-  const gboolean already_edited_style = (new_style_id == my_data->last_edited_style_id) ;
-
-  /* We make a new child style if the style doesn't already exist */
-  if (!style)
+  /* If creating a new child we must not have an existing style */
+  if (style && my_data->create_child)
     {
-      /* make new style with the specified name and merge in the parent */
-      ZMapFeatureTypeStyle parent = my_data->style;
-      ZMapFeatureTypeStyle tmp_style;
-
-      style = zMapStyleCreate(new_style_name, new_style_name);
-
-      /* merge is written upside down
-       * we have to copy the parent and merge the child onto it
-       * then delete the style we just created
-       */
-
-      tmp_style = zMapFeatureStyleCopy(parent) ;
-
-      if (zMapStyleMerge(tmp_style, style))
-        {
-          if (parent)
-            tmp_style->parent_id = parent->unique_id ;
-
-          styles.remove_style(style) ;
-          zMapStyleDestroy(style);
-
-          styles.add_style(tmp_style) ;
-          style = tmp_style;
-
-          g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_PARENT_STYLE, parent->unique_id , NULL);
-        }
-      else
-        {
-          zMapWarning("Cannot create new style %s",new_style_name);
-          zMapStyleDestroy(tmp_style);
-          zMapStyleDestroy(style);
-          ok = FALSE;
-        }
+      zMapWarning("Style '%s' already exists", new_style_name) ;
+      ok = FALSE ;
     }
-  else if (!own_style && !already_edited_style)
+
+  if (ok && !my_data->create_child && !style)
     {
-      /* We're overwriting a style that isn't "owned" by this featureset. The user may
-       * have accidentally entered a style name that already exists - check if they want
-       * to overwrite it. Only do this if they haven't already confirmed that it's ok! */
-      char *msg = g_strdup_printf("Style '%s' already exists.\n\nAre you sure you want to overwrite it?", 
-                                  g_quark_to_string(new_style_id)) ;
+      /* If the style wasn't found, we must be renaming it. Use the original style struct */
+      style = my_data->style ;
+    }
 
-      ok = zMapGUIMsgGetBool(GTK_WINDOW(my_data->toplevel), ZMAP_MSG_INFORMATION, msg) ;
+  if (!style && !my_data->create_child)
+    {
+      /* Shouldn't get here because my_data->style should be set, but double check */
+      zMapWarning("%s", "No style to edit") ;
+      ok = FALSE ;
+    }
 
-      g_free(msg) ;
+  if (ok)
+    {
+      /* Check whether we've already applied changes to this style */
+      const gboolean already_edited_style = (new_style_id == my_data->last_edited_style_id) ;
+
+      /* We "own" this style if there's only a single featureset affected by it (and it's the
+       * same as the given featureset, if specified) */
+      gboolean own_style = TRUE ;
+
+      if (!style)
+        own_style = TRUE ; /* creating new style so ok */
+      else if (!my_data->feature_sets)
+        own_style = TRUE ; /* not affecting any styles so ok */
+      else if (g_list_length(my_data->feature_sets) < 1)
+        own_style = TRUE ; /* not affecting any styles so ok */
+      else if (g_list_length(my_data->feature_sets) > 1)
+        own_style = FALSE ; /* affecting more than 1 style so not ok */
+      else if (!my_data->feature_set)
+        own_style = TRUE ; /* only affecting 1 style and unspecified which so ok */
+      else if (my_data->feature_sets->data == my_data->feature_set)
+        own_style = TRUE ; /* only affecting the specified style so ok */
+      else 
+        own_style = FALSE ; /* affecting a style different to the specified one so not ok */
+
+      /* We make a new child style if the style doesn't already exist */
+      if (!style)
+        {
+          /* make new style with the specified name and merge in the parent */
+          ZMapFeatureTypeStyle parent = my_data->style;
+          ZMapFeatureTypeStyle tmp_style;
+
+          style = zMapStyleCreate(new_style_name, new_style_name);
+
+          /* merge is written upside down
+           * we have to copy the parent and merge the child onto it
+           * then delete the style we just created
+           */
+
+          tmp_style = zMapFeatureStyleCopy(parent) ;
+
+          if (zMapStyleMerge(tmp_style, style))
+            {
+              if (parent)
+                tmp_style->parent_id = parent->unique_id ;
+
+              styles.remove_style(style) ;
+              zMapStyleDestroy(style);
+
+              styles.add_style(tmp_style) ;
+              style = tmp_style;
+
+              g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_PARENT_STYLE, parent->unique_id , NULL);
+            }
+          else
+            {
+              zMapWarning("Cannot create new style %s",new_style_name);
+              zMapStyleDestroy(tmp_style);
+              zMapStyleDestroy(style);
+              ok = FALSE;
+            }
+        }
+      else if (!own_style && !already_edited_style)
+        {
+          /* We're overwriting a style that isn't "owned" by this featureset. The user may
+           * have accidentally entered a style name that already exists - check if they want
+           * to overwrite it. Only do this if they haven't already confirmed that it's ok! */
+          char *msg = g_strdup_printf("You are changing a style that affects other featuresets.\n\nAre you sure you want to overwrite it?") ;
+
+          ok = zMapGUIMsgGetBool(GTK_WINDOW(my_data->toplevel), ZMAP_MSG_INFORMATION, msg) ;
+
+          g_free(msg) ;
+        }
     }
 
   if (ok)
     {
       /* Remember that we've edited this style */
       my_data->last_edited_style_id = new_style_id ;
+
+      /* Set the new style name, if necessary */
+      renameStyle(my_data, style, new_style_name, new_style_id) ;
 
       /* apply the chosen colours etc */
       updateStyle(my_data, style);
@@ -858,6 +905,16 @@ static gboolean getColors(GtkWidget *fill_widget, GtkWidget *border_widget,
     }
 
   return ok ;
+}
+
+/* Set a new name/id for the given style */
+static void renameStyle(StyleChange my_data, ZMapFeatureTypeStyle style, 
+                        const char *new_style_name, const GQuark new_style_id)
+{
+  zMapReturnIfFail(style && new_style_name && new_style_id) ;
+
+  style->original_id = g_quark_from_string(new_style_name) ;
+  style->unique_id = new_style_id ;
 }
 
 
