@@ -984,9 +984,10 @@ static gboolean applyChanges(gpointer cb_data)
         my_data->created_cb_func(style, my_data->cb_data) ;
 
       /* If the user continues to edit they're now editing an existing style, so reset the
-       * create_child flag */
-      my_data->create_child = FALSE ;
-    }
+       * dialog contents to reflect that */
+      zMapWindowShowStyleDialog(my_data->window, style, FALSE, my_data->feature_set,
+                                my_data->created_cb_func, my_data->cb_data) ;
+      }
 
   return ok;
 }
