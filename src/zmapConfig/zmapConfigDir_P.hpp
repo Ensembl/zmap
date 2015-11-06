@@ -48,6 +48,10 @@ typedef struct _ZMapConfigDirStruct
   char *sys_conf_dir;		/* The directory of /etc. N.B. This should be changed to reflect any ./configure --sysconfdir=/somewhere/etc */
 
   char *sys_conf_file;		/* The full path of $ZMAP_HOME/etc/ZMAP_USER_CONFIG_FILE */
+
+  char *prefs_conf_dir;         /* The driectory of $ZMAP_HOME/etc/ZMAP_USER_CONFIG_FILE */
+
+  char *prefs_conf_file;        /* The full path of $ZMAP_HOME/etc/ZMAP_USER_CONFIG_FILE */
 } ZMapConfigDirStruct, *ZMapConfigDir ;
 
 

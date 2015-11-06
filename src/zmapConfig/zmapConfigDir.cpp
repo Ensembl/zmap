@@ -154,6 +154,15 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
       dir_context->zmap_conf_dir = dir_context->zmap_conf_file = NULL ;
     }
 
+  if ((dir_context->prefs_conf_dir = zMapGetDir(ZMAP_USER_CONFIG_DIR, TRUE, TRUE)))
+    {
+      dir_context->prefs_conf_file = zMapGetFile(dir_context->prefs_conf_dir, ZMAP_USER_PREFS_FILE, TRUE, "r", NULL) ;
+    }
+  else
+    {
+      dir_context->prefs_conf_dir = dir_context->prefs_conf_file = NULL ;
+    }
+
   if (!((dir_context->sys_conf_dir  = zMapGetDir("/etc", FALSE, FALSE))
         && (dir_context->sys_conf_file = zMapGetFile(dir_context->sys_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE, "r", NULL))))
     {
@@ -249,6 +258,19 @@ char *zMapConfigDirGetSysFile(void)
 
   if (dir_context) 
     config_file = dir_context->sys_conf_file ;
+
+  return config_file ;
+}
+
+char *zMapConfigDirGetPrefsFile(void)
+{
+  char *config_file = NULL ;
+  ZMapConfigDir dir_context = dir_context_G ;
+
+  if (dir_context && dir_context->prefs_conf_file) 
+    {
+      config_file = dir_context->prefs_conf_file ;
+    }
 
   return config_file ;
 }

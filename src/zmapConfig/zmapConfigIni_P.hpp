@@ -183,6 +183,7 @@ gboolean zMapConfigIniReadAll(ZMapConfigIni config, const char *config_file) ;
 gboolean zMapConfigIniReadFileType(ZMapConfigIni config, const char *config_file, ZMapConfigIniFileType file_type) ;
 gboolean zMapConfigIniReadUser(ZMapConfigIni config, const char *config_file);
 gboolean zMapConfigIniReadSystem(ZMapConfigIni config);
+gboolean zMapConfigIniReadPrefs(ZMapConfigIni config);
 gboolean zMapConfigIniReadZmap(ZMapConfigIni config);
 gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, const char *buffer);
 gboolean zMapConfigIniReadStyles(ZMapConfigIni config, const char *file);

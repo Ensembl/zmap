@@ -48,6 +48,7 @@ typedef enum
     ZMAPCONFIG_FILE_BUFFER, /* Config read from a text buffer rather than a file*/
     ZMAPCONFIG_FILE_STYLES, /* Styles file */
     ZMAPCONFIG_FILE_USER,   /* User-specified config file */
+    ZMAPCONFIG_FILE_PREFS,  /* Global user preferences file */
     ZMAPCONFIG_FILE_ZMAP,   /* Default zmap config file */
     ZMAPCONFIG_FILE_SYS,    /* Default system config file */
 

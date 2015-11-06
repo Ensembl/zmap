@@ -201,6 +201,7 @@ typedef struct BlixemConfigDataStructType
     unsigned int homol_max : 1 ;
     unsigned int keep_tmpfiles : 1 ;
     unsigned int sleep_on_startup : 1 ;
+    unsigned int assoc_featuresets : 1 ;
   } is_set ;
 
 
@@ -283,7 +284,7 @@ static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
 
 GList * zMapViewGetColumnFeatureSets(ZMapBlixemData data,GQuark column_id);
 
-static void saveUserPrefs(BlixemConfigData prefs, const char *zmap_config_file) ;
+static void saveUserPrefs(BlixemConfigData prefs) ;
 
 /*
  *                Globals
@@ -527,7 +528,7 @@ gboolean zMapViewBlixemGetConfigFunctions(ZMapView view, gpointer *edit_func,
 void zMapViewBlixemSaveChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
 {
   /* By default, save to the input zmap config file, if there was one */
-  saveUserPrefs(&blixem_config_curr_G, view->view_sequence->config_file);
+  saveUserPrefs(&blixem_config_curr_G);
 
   return ;
 }
@@ -645,71 +646,135 @@ static void deleteBlixemData(ZMapBlixemData *p_blixem_data)
 }
 
 
-/* Get any user preferences specified in config file. */
-static gboolean getUserPrefs(ZMapView view, char *config_file, BlixemConfigData curr_prefs)
+/* Get the user prefs for the given file/file-type (file may be null if the file type determines
+ * the file location, e.g. the global user prefs file). */
+static void getUserPrefsFile(ZMapView view, 
+                             char *config_file, 
+                             BlixemConfigData curr_prefs,
+                             BlixemConfigData file_prefs,
+                             ZMapConfigIniFileType file_type)
 {
-  gboolean status = FALSE ;
   ZMapConfigIniContext context = NULL ;
-  BlixemConfigDataStruct file_prefs = {FALSE} ;
-  if (!curr_prefs)
-    return status ;
 
-  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_USER)))
+  if ((context = zMapConfigIniContextProvide(config_file, file_type)))
     {
       char *tmp_string = NULL ;
       int tmp_int ;
       gboolean tmp_bool ;
 
+      /* Read the config values from the config file. Note that where we ignore empty strings and 0
+       * numbers this means that these values are unset */
+
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                        ZMAPSTANZA_BLIXEM_NETID, &tmp_string))
-        file_prefs.netid = tmp_string ;
+        {
+          if (tmp_string)
+            {
+              file_prefs->netid = tmp_string ;
+              file_prefs->is_set.netid = TRUE ;
+            }
+          else
+            {
+              g_free(tmp_string) ;
+            }
+        }
 
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                    ZMAPSTANZA_BLIXEM_PORT, &tmp_int))
-        file_prefs.port = tmp_int ;
+                                    ZMAPSTANZA_BLIXEM_PORT, &tmp_int)
+          && tmp_int != 0)
+        {
+          file_prefs->port = tmp_int ;
+          file_prefs->is_set.port = TRUE ;
+        }
 
       if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                           ZMAPSTANZA_BLIXEM_SCRIPT, &tmp_string))
-        file_prefs.script = tmp_string ;
+        {
+          if (tmp_string)
+            {
+              file_prefs->script = tmp_string ;
+              file_prefs->is_set.script = TRUE ;
+            }
+          else
+            {
+              g_free(tmp_string) ;
+            }
+        }
 
       if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                           ZMAPSTANZA_BLIXEM_CONF_FILE, &tmp_string))
-        file_prefs.config_file = tmp_string ;
+        {
+          if (tmp_string)
+            {
+              file_prefs->config_file = tmp_string ;
+              file_prefs->is_set.config_file = TRUE ;
+            }
+          else
+            {
+              g_free(tmp_string) ;
+            }
+        }
 
 
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                    ZMAPSTANZA_BLIXEM_SCOPE, &tmp_int))
-        file_prefs.scope = tmp_int ;
+                                    ZMAPSTANZA_BLIXEM_SCOPE, &tmp_int)
+          && tmp_int != 0)
+        {
+          file_prefs->scope = tmp_int ;
+          file_prefs->is_set.scope = TRUE ;
+        }
 
 
       /* NOTE that if scope_from_mark is TRUE then features_from_mark must be. */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                         ZMAPSTANZA_BLIXEM_SCOPE_MARK, &tmp_bool))
-        file_prefs.scope_from_mark = tmp_bool;
+        {
+          file_prefs->scope_from_mark = tmp_bool;
+          file_prefs->is_set.scope_from_mark = TRUE ;
+        }
 
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                         ZMAPSTANZA_BLIXEM_FEATURES_MARK, &tmp_bool))
-        file_prefs.features_from_mark = tmp_bool;
+        {
+          file_prefs->features_from_mark = tmp_bool;
+          file_prefs->is_set.features_from_mark = TRUE ;
+        }
 
-      if (file_prefs.scope_from_mark)
-        file_prefs.features_from_mark = TRUE ;
+      if (file_prefs->scope_from_mark)
+        {
+          file_prefs->features_from_mark = TRUE ;
+          file_prefs->is_set.scope_from_mark = TRUE ;
+        }
 
 
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
-                                    ZMAPSTANZA_BLIXEM_MAX, &tmp_int))
-        file_prefs.homol_max = tmp_int ;
+                                    ZMAPSTANZA_BLIXEM_MAX, &tmp_int)
+          && tmp_int != 0)
+        {
+          file_prefs->homol_max = tmp_int ;
+          file_prefs->is_set.homol_max = TRUE ;
+        }
 
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                         ZMAPSTANZA_BLIXEM_KEEP_TEMP, &tmp_bool))
-        file_prefs.keep_tmpfiles = tmp_bool;
+        {
+          file_prefs->keep_tmpfiles = tmp_bool;
+          file_prefs->is_set.keep_tmpfiles = TRUE ;
+        }
 
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                         ZMAPSTANZA_BLIXEM_SLEEP, &tmp_bool))
-        file_prefs.sleep_on_startup = tmp_bool;
+        {
+          file_prefs->sleep_on_startup = tmp_bool;
+          file_prefs->is_set.sleep_on_startup = TRUE ;
+        }
 
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                         ZMAPSTANZA_BLIXEM_KILL_EXIT, &tmp_bool))
-        file_prefs.kill_on_exit = tmp_bool;
+        {
+          file_prefs->kill_on_exit = tmp_bool;
+          file_prefs->is_set.kill_on_exit = TRUE ;
+        }
 
       /* dna-featuresets and protein-featuresets have been replaced with a single featuresets
        * list. Check for them for backwards compatibility and add them into the assoc_featuresets
@@ -718,48 +783,63 @@ static gboolean getUserPrefs(ZMapView view, char *config_file, BlixemConfigData 
                                        ZMAPSTANZA_BLIXEM_DNA_FS, &tmp_string))
         {
           GList *dna_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
-          file_prefs.assoc_featuresets = g_list_concat(file_prefs.assoc_featuresets, dna_sets) ;
+          file_prefs->assoc_featuresets = g_list_concat(file_prefs->assoc_featuresets, dna_sets) ;
           g_free(tmp_string);
+          file_prefs->is_set.assoc_featuresets = TRUE ;
         }
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                        ZMAPSTANZA_BLIXEM_PROT_FS, &tmp_string))
         {
           GList *protein_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
-          file_prefs.assoc_featuresets = g_list_concat(file_prefs.assoc_featuresets, protein_sets) ;
+          file_prefs->assoc_featuresets = g_list_concat(file_prefs->assoc_featuresets, protein_sets) ;
           g_free(tmp_string);
+          file_prefs->is_set.assoc_featuresets = TRUE ;
         }
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                        ZMAPSTANZA_BLIXEM_FS, &tmp_string))
         {
           GList *assoc_featuresets = zMapConfigString2QuarkList(tmp_string,FALSE);
-          file_prefs.assoc_featuresets = g_list_concat(file_prefs.assoc_featuresets, assoc_featuresets) ;
+          file_prefs->assoc_featuresets = g_list_concat(file_prefs->assoc_featuresets, assoc_featuresets) ;
           g_free(tmp_string);
+          file_prefs->is_set.assoc_featuresets = TRUE ;
         }
 
       /* Reload the column groups from file */
       if (view->context_map.column_groups)
-        g_hash_table_destroy(view->context_map.column_groups) ;
+        {
+          g_hash_table_destroy(view->context_map.column_groups) ;
+        }
 
       view->context_map.column_groups = zMapConfigIniGetColumnGroups(context) ;
 
       zMapConfigIniContextDestroy(context);
     }
 
+  file_prefs->init = TRUE;
+}
+
+
+/* Validate the user prefs and fill in any missing required values with defaults. */
+static gboolean finaliseUserPrefs(BlixemConfigData file_prefs)
+{
+  gboolean status = FALSE ;
+  zMapReturnValIfFailSafe(file_prefs, status) ;
+
   /* We need a blixem script. If it wasn't given, set a default */
-  if (!file_prefs.script)
+  if (!file_prefs->script)
     {
-      file_prefs.script = g_strdup(BLIX_DEFAULT_SCRIPT) ;
+      file_prefs->script = g_strdup(BLIX_DEFAULT_SCRIPT) ;
     }
 
   /* Check that script exists and is executable */
-  if (file_prefs.script)
+  if (file_prefs->script)
     {
       char *tmp = NULL ;
-      tmp = file_prefs.script;
+      tmp = file_prefs->script;
 
-      if ((file_prefs.script = g_find_program_in_path(tmp)))
+      if ((file_prefs->script = g_find_program_in_path(tmp)))
         {
           status = TRUE ;
         }
@@ -777,67 +857,146 @@ static gboolean getUserPrefs(ZMapView view, char *config_file, BlixemConfigData 
       zMapShowMsg(ZMAP_MSG_WARNING, "The blixem script is not specified.") ;
     }
 
-  file_prefs.init = TRUE;
-
-  /* If curr_prefs is initialised then copy any curr prefs set by user into file prefs,
-   * thus overriding file prefs with user prefs. Then copy file prefs into curr_prefs
-   * so that curr prefs now represents latest config file and user prefs combined. */
-  if (curr_prefs->init)
-    {
-      file_prefs.is_set = curr_prefs->is_set ;                    /* struct copy. */
-
-      if (curr_prefs->is_set.scope)
-        file_prefs.scope = curr_prefs->scope ;
-
-      if (curr_prefs->is_set.scope_from_mark)
-        file_prefs.scope_from_mark = curr_prefs->scope_from_mark ;
-
-      if (curr_prefs->is_set.features_from_mark)
-        file_prefs.features_from_mark = curr_prefs->features_from_mark ;
-
-      if (curr_prefs->is_set.homol_max)
-        file_prefs.homol_max = curr_prefs->homol_max ;
-
-      if (curr_prefs->is_set.netid)
-        {
-          g_free(file_prefs.netid) ;
-          file_prefs.netid = curr_prefs->netid ;
-        }
-
-      if (curr_prefs->is_set.port)
-        file_prefs.port = curr_prefs->port ;
-
-      if (curr_prefs->is_set.config_file)
-        {
-          g_free(file_prefs.config_file) ;
-          file_prefs.config_file = curr_prefs->config_file ;
-        }
-
-      if (curr_prefs->is_set.script)
-        {
-          g_free(file_prefs.script) ;
-          file_prefs.script = curr_prefs->script ;
-        }
-
-      if (curr_prefs->is_set.keep_tmpfiles)
-        file_prefs.keep_tmpfiles = curr_prefs->keep_tmpfiles ;
-
-      if (curr_prefs->is_set.sleep_on_startup)
-        file_prefs.sleep_on_startup = curr_prefs->sleep_on_startup ;
-
-      if (curr_prefs->is_set.kill_on_exit)
-        file_prefs.kill_on_exit = curr_prefs->kill_on_exit ;
-    }
-
   /* If a config file is specified, check that it can be found */
-  if (file_prefs.config_file && !zMapFileAccess(file_prefs.config_file, "r"))
+  if (file_prefs->config_file && !zMapFileAccess(file_prefs->config_file, "r"))
     {
       zMapShowMsg(ZMAP_MSG_WARNING,
                   "The Blixem config file \"%s\" cannot be found in your path or it is not read/writeable.",
-                  file_prefs.config_file) ;
+                  file_prefs->config_file) ;
     }
 
-  *curr_prefs = file_prefs ;                                    /* Struct copy. */
+  return status ;
+}
+
+
+/* Override the preferences in dest_prefs with those given in src_prefs, if set. This takes
+ * ownership of any allocated memory in src_prefs. */
+static void overridePrefs(BlixemConfigData dest_prefs, BlixemConfigData src_prefs)
+{
+  zMapReturnIfFailSafe(src_prefs && dest_prefs) ;
+
+  /* If src_prefs is initialised then copy any prefs set in it into dest prefs,
+   * thus overriding dest prefs with src prefs. */
+  if (src_prefs->init)
+    {
+      if (src_prefs->is_set.scope)
+        {
+          dest_prefs->scope = src_prefs->scope ;
+          dest_prefs->is_set.scope = TRUE ;
+        }
+
+      if (src_prefs->is_set.scope_from_mark)
+        {
+          dest_prefs->scope_from_mark = src_prefs->scope_from_mark ;
+          dest_prefs->is_set.scope_from_mark = TRUE ;
+        }
+
+      if (src_prefs->is_set.features_from_mark)
+        {
+          dest_prefs->features_from_mark = src_prefs->features_from_mark ;
+          dest_prefs->is_set.features_from_mark = TRUE ;
+        }
+
+      if (src_prefs->is_set.homol_max)
+        {
+          dest_prefs->homol_max = src_prefs->homol_max ;
+          dest_prefs->is_set.homol_max = TRUE ;
+        }
+
+      if (src_prefs->is_set.netid)
+        {
+          if (dest_prefs->netid)
+            g_free(dest_prefs->netid) ;
+
+          dest_prefs->netid = src_prefs->netid ;
+          dest_prefs->is_set.netid = TRUE ;
+        }
+
+      if (src_prefs->is_set.port)
+        {
+          dest_prefs->port = src_prefs->port ;
+          dest_prefs->is_set.port = TRUE ;
+        }
+
+      if (src_prefs->is_set.config_file)
+        {
+          if (dest_prefs->config_file)
+            g_free(dest_prefs->config_file) ;
+
+          dest_prefs->config_file = src_prefs->config_file ;
+          dest_prefs->is_set.config_file = TRUE ;
+        }
+
+      if (src_prefs->is_set.script)
+        {
+          if (dest_prefs->script)
+            g_free(dest_prefs->script) ;
+
+          dest_prefs->script = src_prefs->script ;
+          dest_prefs->is_set.script = TRUE ;
+        }
+
+      if (src_prefs->is_set.keep_tmpfiles)
+        {
+          dest_prefs->keep_tmpfiles = src_prefs->keep_tmpfiles ;
+          dest_prefs->is_set.keep_tmpfiles = TRUE ;
+        }
+
+      if (src_prefs->is_set.sleep_on_startup)
+        {
+          dest_prefs->sleep_on_startup = src_prefs->sleep_on_startup ;
+          dest_prefs->is_set.sleep_on_startup = TRUE ;
+        }
+
+      if (src_prefs->is_set.kill_on_exit)
+        {
+          dest_prefs->kill_on_exit = src_prefs->kill_on_exit ;
+          dest_prefs->is_set.kill_on_exit = TRUE ;
+        }
+
+      if (src_prefs->is_set.assoc_featuresets)
+        {
+          if (dest_prefs->assoc_featuresets)
+            g_list_free(dest_prefs->assoc_featuresets) ;
+
+          dest_prefs->assoc_featuresets = src_prefs->assoc_featuresets ;
+          dest_prefs->is_set.assoc_featuresets = TRUE ;
+        }
+    }
+}
+
+
+/* Get any user preferences specified in the given config file and/or the global user settings. */
+static gboolean getUserPrefs(ZMapView view, char *config_file, BlixemConfigData curr_prefs)
+{
+  gboolean status = FALSE ;
+  zMapReturnValIfFailSafe(curr_prefs, status) ;
+
+  BlixemConfigDataStruct config_file_prefs = {FALSE} ;
+  BlixemConfigDataStruct user_prefs = {FALSE} ;
+
+  /* Get the prefs from any user-specified config file */
+  getUserPrefsFile(view, config_file, curr_prefs, &config_file_prefs, ZMAPCONFIG_FILE_USER) ;
+
+  /* Get the global user preferences */
+  getUserPrefsFile(view, NULL, curr_prefs, &user_prefs, ZMAPCONFIG_FILE_PREFS) ;
+
+  /* Override the config file prefs with the global user prefs */
+  overridePrefs(&config_file_prefs, &user_prefs) ;
+  
+  /* Override all file prefs with any currently-set prefs in this zmap session */
+  overridePrefs(&config_file_prefs, curr_prefs) ;
+
+  /* Reset is-set flags to those in curr_prefs, that is, we only want to flag that a value has
+   * been "set" if it has been modified by the user in this session. */
+  config_file_prefs.is_set = curr_prefs->is_set ;                    /* struct copy. */
+
+  /* Validate and fill in any missing values with defaults */
+  status = finaliseUserPrefs(&config_file_prefs) ;
+
+  /* Then copy file prefs into curr_prefs so that curr prefs now represents latest config 
+   * file and user prefs combined. */
+  *curr_prefs = config_file_prefs ;                                    /* Struct copy. */
 
   return status ;
 }
@@ -2397,18 +2556,14 @@ static void freeSequences(gpointer data, gpointer user_data_unused)
   return ;
 }
 
+ 
 static gboolean check_edited_values(ZMapGuiNotebookAny note_any, const char *entry_text, gpointer user_data)
 {
-  char *text = (char *)entry_text;
   gboolean allowed = TRUE;
-
-  if (!text || (text && !*text))
-    allowed = FALSE;
-  else
-    allowed = TRUE;
 
   return allowed;
 }
+
 
 static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view)
 {
@@ -2569,14 +2724,16 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
     {
       if (zMapGUINotebookGetTagValue(page, "Host network id", "string", &string_value))
         {
-          if (string_value && *string_value &&
-              (!blixem_config_curr_G.netid ||
+          /* Allow an empty string - this will unset the value */
+          if (blixem_config_curr_G.netid != string_value &&
+              (!blixem_config_curr_G.netid || !string_value ||
                strcmp(string_value, blixem_config_curr_G.netid) != 0))
             {
               /* Add validation ... */
-              g_free(blixem_config_curr_G.netid) ;
+              if (blixem_config_curr_G.netid)
+                g_free(blixem_config_curr_G.netid) ;
 
-              blixem_config_curr_G.netid = g_strdup(string_value) ;
+              blixem_config_curr_G.netid = string_value ? g_strdup(string_value) : NULL ;
               blixem_config_curr_G.is_set.netid = TRUE ;
             }
         }
@@ -2607,36 +2764,48 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
     {
       if (zMapGUINotebookGetTagValue(page, "Config File", "string", &string_value))
         {
-          if (string_value && *string_value &&
-              (!blixem_config_curr_G.config_file ||
+          /* Allow an empty string - this will unset the value */
+          if (blixem_config_curr_G.config_file != string_value &&
+              (!blixem_config_curr_G.config_file || !string_value ||
                strcmp(string_value, blixem_config_curr_G.config_file) != 0))
             {
-              result = zMapFileAccess(string_value, "r") ;
+              /* If a string is given, check it's a valid file */
+              if (string_value && *string_value)
+                {
+                  result = zMapFileAccess(string_value, "r") ;
 
-              if (!result)
-                zMapWarning("Blixem Config File '%s' is not readable.", string_value);
+                  if (!result)
+                    zMapWarning("Blixem Config File '%s' is not readable.", string_value);
+                }
 
-              g_free(blixem_config_curr_G.config_file) ;
+              if (blixem_config_curr_G.config_file)
+                g_free(blixem_config_curr_G.config_file) ;
 
-              blixem_config_curr_G.config_file = g_strdup(string_value) ;
+              blixem_config_curr_G.config_file = string_value ? g_strdup(string_value) : NULL ;
               blixem_config_curr_G.is_set.config_file = TRUE ;
             }
         }
 
       if (zMapGUINotebookGetTagValue(page, "Launch script", "string", &string_value))
         {
-          if (string_value && *string_value &&
-              (!blixem_config_curr_G.script ||
+          /* Allow an empty string - this will unset the value */
+          if (blixem_config_curr_G.script != string_value &&
+              (!blixem_config_curr_G.script || !string_value ||
                strcmp(string_value, blixem_config_curr_G.script) != 0))
             {
-              result = zMapFileAccess(string_value, "x") ;
+              /* If a string is given, check it's a valid executable */
+              if (string_value)
+                {
+                  result = zMapFileAccess(string_value, "x") ;
               
-              if (!result)
-                zMapWarning("Blixem Launch Script '%s' is not executable.", string_value);
+                  if (!result)
+                    zMapWarning("Blixem Launch Script '%s' is not executable.", string_value);
+                }
+              
+              if (blixem_config_curr_G.script)
+                g_free(blixem_config_curr_G.script) ;
 
-              g_free(blixem_config_curr_G.script) ;
-
-              blixem_config_curr_G.script = g_strdup(string_value) ;
+              blixem_config_curr_G.script = string_value ? g_strdup(string_value) : NULL ;
               blixem_config_curr_G.is_set.script = TRUE ;
             }
         }
@@ -2680,7 +2849,7 @@ void zMapViewBlixemUserPrefsUpdateContext(ZMapConfigIniContext context, const ZM
   BlixemConfigData prefs = &blixem_config_curr_G ;
   gboolean changed = FALSE ;
 
-  if (prefs->is_set.netid && prefs->netid)
+  if (prefs->is_set.netid)
     {
       changed = TRUE ;
 
@@ -2761,7 +2930,7 @@ void zMapViewBlixemUserPrefsUpdateContext(ZMapConfigIniContext context, const ZM
                                      ZMAPSTANZA_BLIXEM_KILL_EXIT, prefs->kill_on_exit);
     }
 
-  if (prefs->is_set.script && prefs->script)
+  if (prefs->is_set.script)
     {
       changed = TRUE ;
 
@@ -2770,7 +2939,7 @@ void zMapViewBlixemUserPrefsUpdateContext(ZMapConfigIniContext context, const ZM
                                     ZMAPSTANZA_BLIXEM_SCRIPT, prefs->script);
     }
 
-  if (prefs->is_set.config_file && prefs->config_file)
+  if (prefs->is_set.config_file)
     {
       changed = TRUE ;
 
@@ -2787,25 +2956,60 @@ void zMapViewBlixemUserPrefsUpdateContext(ZMapConfigIniContext context, const ZM
 }
 
 
-static void saveUserPrefs(BlixemConfigData prefs, const char *zmap_config_file)
+/* Check if advanced prefs have changed and if so ask user to confirm this is ok. Returns true if
+ * ok to continue, false otherwise. */
+static gboolean checkAdvancedChanged()
 {
-  zMapReturnIfFail(prefs && zmap_config_file) ;
+  gboolean ok = TRUE ;
+  BlixemConfigData prefs = &blixem_config_curr_G ;
+
+  if (prefs->is_set.netid ||
+      prefs->is_set.port ||
+      prefs->is_set.script ||
+      prefs->is_set.config_file ||
+      prefs->is_set.keep_tmpfiles ||
+      prefs->is_set.sleep_on_startup ||
+      prefs->is_set.kill_on_exit)
+    {
+      ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, " \
+You are about to save changes to the advanced settings. This\n\
+will override settings in any config files you use for all future\n\
+future sessions, which may interfere with the way that ZMap works.\n\
+\n\
+Are you sure you want to continue?\n\
+\n\
+If you are not sure, hit Cancel. You can still hit\n\
+Apply on the Preferences dialog to apply the changes\n\
+just for this session.") ;
+    }
+
+  return ok ;
+}
+
+
+static void saveUserPrefs(BlixemConfigData prefs)
+{
+  zMapReturnIfFail(prefs) ;
 
   ZMapConfigIniContext context = NULL;
 
-  /* Create the context from the existing zmap config file (if any - otherwise create an empty
-   * context). */
-  if ((context = zMapConfigIniContextProvide(zmap_config_file, ZMAPCONFIG_FILE_USER)))
+  /* Check that it's ok to continue */
+  if (checkAdvancedChanged())
     {
-      /* Update the settings in the context. Note that the file type of 'user' means the
-       * user-specified config file, i.e. the one we passed in to ContextProvide */
-      ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_USER ;
+      /* Create the context from the existing prefs file (if any - otherwise create an empty
+       * context). */
+      if ((context = zMapConfigIniContextProvide(NULL, ZMAPCONFIG_FILE_PREFS)))
+        {
+          /* Update the settings in the context. Note that the file type of 'user' means the
+           * user-specified config file, i.e. the one we passed in to ContextProvide */
+          ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_PREFS ;
 
-      zMapViewBlixemUserPrefsUpdateContext(context, file_type) ;
+          zMapViewBlixemUserPrefsUpdateContext(context, file_type) ;
 
-      zMapConfigIniContextSave(context, file_type);
+          zMapConfigIniContextSave(context, file_type);
 
-      zMapConfigIniContextDestroy(context) ;
+          zMapConfigIniContextDestroy(context) ;
+        }
     }
 
   return ;

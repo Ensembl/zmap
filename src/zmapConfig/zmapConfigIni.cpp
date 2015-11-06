@@ -110,8 +110,7 @@ ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file)
     {
       context->config = zMapConfigIniNew();
 
-      if(config_file)
-        context->config_read = zMapConfigIniReadAll(context->config, config_file) ;
+      context->config_read = zMapConfigIniReadAll(context->config, config_file) ;
     }
 
   return context;
@@ -126,29 +125,29 @@ ZMapConfigIniContext zMapConfigIniContextCreateType(const char *config_file, ZMa
     {
       context->config = zMapConfigIniNew();
 
-      if(config_file)
+      switch (file_type)
         {
-          switch (file_type)
-            {
-            case ZMAPCONFIG_FILE_USER:
-              context->config_read = zMapConfigIniReadUser(context->config, config_file) ;
-              break ;
-            case ZMAPCONFIG_FILE_SYS:
-              context->config_read = zMapConfigIniReadSystem(context->config) ;
-              break ;
-            case ZMAPCONFIG_FILE_ZMAP:
-              context->config_read = zMapConfigIniReadZmap(context->config) ;
-              break ;
-            case ZMAPCONFIG_FILE_STYLES:
-              context->config_read = zMapConfigIniReadStyles(context->config, config_file) ;
-              break ;
-            case ZMAPCONFIG_FILE_BUFFER:
-              context->config_read = zMapConfigIniReadBuffer(context->config, config_file) ;
-              break ;
+        case ZMAPCONFIG_FILE_USER:
+          context->config_read = zMapConfigIniReadUser(context->config, config_file) ;
+          break ;
+        case ZMAPCONFIG_FILE_PREFS:
+          context->config_read = zMapConfigIniReadPrefs(context->config) ;
+          break ;
+        case ZMAPCONFIG_FILE_SYS:
+          context->config_read = zMapConfigIniReadSystem(context->config) ;
+          break ;
+        case ZMAPCONFIG_FILE_ZMAP:
+          context->config_read = zMapConfigIniReadZmap(context->config) ;
+          break ;
+        case ZMAPCONFIG_FILE_STYLES:
+          context->config_read = zMapConfigIniReadStyles(context->config, config_file) ;
+          break ;
+        case ZMAPCONFIG_FILE_BUFFER:
+          context->config_read = zMapConfigIniReadBuffer(context->config, config_file) ;
+          break ;
 
-            default:
-              break ;
-            }
+        default:
+          break ;
         }
     }
 
@@ -548,8 +547,11 @@ gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
       GValue value = {0};
 
       g_value_init(&value, G_TYPE_STRING);
+      
+      /* Allow null values - represent them as empty strings */
+      const char *value_str_non_null = value_str ? value_str : "" ;
 
-      g_value_set_static_string(&value, value_str);
+      g_value_set_static_string(&value, value_str_non_null);
 
       is_set = zMapConfigIniContextSetValue(context, 
                                             file_type,

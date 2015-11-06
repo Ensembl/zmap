@@ -98,7 +98,18 @@ static const char *help_text_G =
   "\t to allow you to configure that section.\n\n"
   "After you have made your changes you can click:\n\n"
   "\t\"Cancel\" to discard them and quit the resources dialog\n"
-  "\t\"Ok\" to apply them and quit the resources dialog\n" ;
+  "\t\"Ok\" to apply them and quit the resources dialog\n\n" 
+  "To save settings for future sessions:\n\n"
+  "\tClick \"File->Save\" to save settings for the current section only\n" 
+  "\tClick \"File->Save All\" to save settigns for all sections\n\n"
+  "\t**IMPORTANT NOTE:** You probably SHOULDN'T SAVE CHANGES TO THE ADVANCED settings unless you are\n"
+  "\tsure what you are doing. Saved settings will override settings from any peer program (e.g. Otter)\n"
+  "\tfor ALL future sessions and the Advanced settings may be key for your setup to work correctly.\n\n"
+  "To reset a value:\n" 
+  "\tClear the contents of a text box to unset the value. If you had previously saved changes, then\n" 
+  "\tsave again to override the previously-saved value. The default values will then be used in your\n"
+  "\tnext session.\n" 
+  ;
 
 /* WHAT IS THIS FOR ????? 
  * (sm23) I reomved this as it is not used.  
@@ -261,7 +272,7 @@ static gboolean getUserPrefs(PrefsData curr_prefs, const char *config_file)
   if (!curr_prefs)
     return status ;
 
-  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_USER)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_PREFS)))
     {
       char *tmp_string = NULL ;
       gboolean tmp_bool ;
@@ -329,17 +340,17 @@ static gboolean getUserPrefs(PrefsData curr_prefs, const char *config_file)
  * file). */
 static void saveUserPrefs(PrefsData prefs, const char *config_file)
 {
-  zMapReturnIfFail(prefs && config_file) ;
+  zMapReturnIfFail(prefs) ;
 
   ZMapConfigIniContext context = NULL;
 
   /* Create the context from the existing config file (if any - otherwise create an empty
    * context). */
-  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_USER)))
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_PREFS)))
     {
       /* Update the settings in the context. Note that the file type of 'user' means the
        * user-specified config file, i.e. the one we passed in to ContextProvide */
-      ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_USER ;
+      ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_PREFS ;
 
       userPrefsUpdateContext(context, file_type) ;
 
