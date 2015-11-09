@@ -1,6 +1,6 @@
-/*  File: zmapAppSequenceView.c
- *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2012-2015: Genome Research Ltd.
+/*  File: zmapAppSource.cpp
+ *  Author: Gemma Guest (gb10@sanger.ac.uk)
+ *  Copyright (c) 2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

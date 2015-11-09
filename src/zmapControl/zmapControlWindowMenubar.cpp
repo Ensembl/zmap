@@ -63,6 +63,7 @@ typedef enum {
 
 
 static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
+static void newSourceCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void makeSequenceViewCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data) ;
 static void closeSequenceDialogCB(GtkWidget *toplevel, gpointer user_data) ;
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
@@ -92,6 +93,7 @@ GtkItemFactory *item_factory;
 static GtkItemFactoryEntry menu_items[] = {
   { (char*)"/_File",                                NULL,                NULL,                              0,  (char*)"<Branch>" },
          { (char*)"/File/_New Sequence",                   NULL,                G_CALLBACK(newSequenceByConfigCB), 2,  NULL },
+         { (char*)"/File/New Source",                      NULL,                G_CALLBACK(newSourceCB),           0,  NULL },
          { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
          { (char*)"/File/_Save",                           (char*)"<control>S", G_CALLBACK(exportCB),              SAVE_FEATURES, NULL },
          { (char*)"/File/Save _As",                        (char*)"<shift><control>S", G_CALLBACK(exportCB),       SAVE_FEATURES_AS, NULL },
@@ -724,6 +726,22 @@ static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWi
   if (!(zmap->sequence_dialog))
     zmap->sequence_dialog = zMapAppGetSequenceView(makeSequenceViewCB, zmap, closeSequenceDialogCB, zmap,
                                                    zmap->default_sequence, FALSE) ;
+
+  return ;
+}
+
+/* Creaet a new source. */
+static void newSourceCB(gpointer cb_data, guint callback_action, GtkWidget *w)
+{
+  ZMap zmap = NULL ;
+
+  zMapReturnIfFail(cb_data) ;
+
+  zmap = (ZMap)cb_data ;
+  zMapReturnIfFail(zmap) ;
+
+  if (!(zmap->sequence_dialog))
+    zmap->sequence_dialog = zMapAppCreateSource(zmap->sequence_map) ;
 
   return ;
 }
