@@ -1049,7 +1049,7 @@ ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpMode(ZMapWindowContainerFe
   zMapReturnValIfFail(container_set, mode ) ;
 
   mode = container_set->bump_mode;
-  if(mode == ZMAPBUMP_INVALID)
+  if(mode == ZMAPBUMP_INVALID && container_set->style)
     mode = zMapStyleGetInitialBumpMode(container_set->style);
   if(mode == ZMAPBUMP_INVALID)
     mode = ZMAPBUMP_UNBUMP;
