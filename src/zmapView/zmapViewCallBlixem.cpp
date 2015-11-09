@@ -806,13 +806,14 @@ static void getUserPrefsFile(ZMapView view,
           file_prefs->is_set.assoc_featuresets = TRUE ;
         }
 
-      /* Reload the column groups from file */
-      if (view->context_map.column_groups)
+      /* Reload the column groups from file. Only do this if it's the config file. */
+      if (file_type == ZMAPCONFIG_FILE_USER)
         {
-          g_hash_table_destroy(view->context_map.column_groups) ;
-        }
+          if (view->context_map.column_groups)
+            g_hash_table_destroy(view->context_map.column_groups) ;
 
-      view->context_map.column_groups = zMapConfigIniGetColumnGroups(context) ;
+          view->context_map.column_groups = zMapConfigIniGetColumnGroups(context) ;
+        }
 
       zMapConfigIniContextDestroy(context);
     }
