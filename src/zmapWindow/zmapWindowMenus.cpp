@@ -208,6 +208,7 @@ enum
     BLIX_SET,                               /* Blixem all matches for all features in this column. */
     BLIX_MULTI_SETS,                        /* Blixem all matches for all features in the list of columns in the blixem config file. */
     BLIX_SEQ_COVERAGE,                      /* Blixem a coverage column: find the real data column */
+    BLIX_SEQ_COVERAGE_MULTISET,             /* Blixem a coverage column and associated columns */
     /*BLIX_SEQ_SET */                         /* Blixem a paired read featureset */
   } ;
 
@@ -3684,8 +3685,17 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
   if (blixem_col && m)
     {
       m->type = ZMAPGUI_MENU_NORMAL;
-      m->name = g_strdup_printf("Blixem %s paired reads", blixem_col);
+      m->name = g_strdup_printf("Blixem %s", blixem_col);
       m->id = BLIX_SEQ_COVERAGE;
+      m->callback_func = blixemMenuCB;
+      m++;
+    }
+
+  if (blixem_col && m)
+    {
+      m->type = ZMAPGUI_MENU_NORMAL;
+      m->name = g_strdup_printf("Blixem %s - associated columns", blixem_col);
+      m->id = BLIX_SEQ_COVERAGE_MULTISET;
       m->callback_func = blixemMenuCB;
       m++;
     }
@@ -4074,6 +4084,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
       break;
 
+    case BLIX_SEQ_COVERAGE_MULTISET: /* fall through */
     case BLIX_SEQ_COVERAGE:                /* blixem from a selected item in a coverage featureset */
 #if RESTRICT_TO_MARK
       if (!zmapWindowMarkIsSet(menu_data->window->mark))
@@ -4085,7 +4096,11 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
         {
           /*! \todo #warning if we ever have paired reads data in a virtual featureset we need to expand that here */
           seq_sets = add_column_featuresets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
-          requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ ;
+
+          if (menu_item_id == BLIX_SEQ_COVERAGE_MULTISET)
+            requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET ;
+          else
+            requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ ;
         }
       break;
 

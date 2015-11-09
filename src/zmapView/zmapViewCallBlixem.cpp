@@ -279,6 +279,7 @@ static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 
 static void featureSetGetAlignList(gpointer data, gpointer user_data) ;
+static void featureSetWriteBAMList(gpointer data, gpointer user_data) ;
 static void getAlignFeatureCB(gpointer key, gpointer data, gpointer user_data) ;
 static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
 
@@ -1111,7 +1112,10 @@ static gboolean setBlixemScope(ZMapBlixemData blixem_data)
       blixem_data->features_min = blixem_data->scope_min ;
       blixem_data->features_max = blixem_data->scope_max ;
 
-      if (is_mark && (blixem_data->features_from_mark || blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ))
+      if (is_mark && 
+          (blixem_data->features_from_mark ||
+           blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ ||
+           blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET))
         {
           blixem_data->features_min = blixem_data->mark_start ;
           blixem_data->features_max = blixem_data->mark_end ;
@@ -1529,14 +1533,15 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
 
 
 /* Write the GFF header into the output file */
-static gboolean writeGFFHeader(ZMapBlixemData blixem_data, const int start, const int end)
+static gboolean writeGFFHeader(ZMapBlixemData blixem_data)
 {
   gboolean status = FALSE ;
   zMapReturnValIfFail(blixem_data, status) ;
 
   /* Get the GFF header text */
   zMapGFFFormatHeader(TRUE, blixem_data->line,
-                      g_quark_to_string(blixem_data->block->original_id), start, end) ;
+                      g_quark_to_string(blixem_data->block->original_id), 
+                      blixem_data->features_min, blixem_data->features_max) ;
 
   /* Initialise the output file with the header text */
   char * err_out = NULL ;
@@ -1633,8 +1638,41 @@ static void writeRequestedHomologyList(ZMapBlixemData blixem_data)
 }
 
 
+/* Write out a single line to the gff to indicate to blixem it needs to fetch bam data for a
+ * particular source/region */
+static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id, GString *attribute)
+{
+  const char *sequence_name = g_quark_to_string(blixem_data->block->original_id) ;
+  static const char * SO_region = "region" ;
+
+  gboolean ok = zMapGFFFormatMandatory(blixem_data->over_write, 
+                                       blixem_data->line,
+                                       sequence_name,
+                                       g_quark_to_string(featureset_id),
+                                       SO_region,
+                                       blixem_data->features_min,
+                                       blixem_data->features_max,
+                                       (float)0.0,
+                                       ZMAPSTRAND_NONE, 
+                                       ZMAPPHASE_NONE,
+                                       TRUE,
+                                       TRUE) ;
+
+  if (ok)
+    {
+      g_string_append_printf(attribute, "dataType=short-read") ;
+      zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
+      g_string_append_c(blixem_data->line, '\n') ;
+      g_string_truncate(attribute, (gsize)0);
+
+      zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
+                                  blixem_data->line, TRUE) ;
+    }
+}
+
+
 /* If the requested set is a coverage column then write its data to the output file */
-static void writeCoverageColumn(ZMapBlixemData blixem_data, const int start, const int end)
+static void writeCoverageColumn(ZMapBlixemData blixem_data)
 {
   zMapReturnIfFail(blixem_data) ;
 
@@ -1645,28 +1683,19 @@ static void writeCoverageColumn(ZMapBlixemData blixem_data, const int start, con
       
       for(l = blixem_data->source; l ; l = l->next)
         {
-          const char *sequence_name = g_quark_to_string(blixem_data->block->original_id) ;
-          static const char * SO_region = "region" ;
-
-          if (zMapGFFFormatMandatory(blixem_data->over_write, blixem_data->line, sequence_name,
-                                     g_quark_to_string(GPOINTER_TO_UINT(l->data)), SO_region,
-                                     start, end,
-                                     (float)0.0, ZMAPSTRAND_NONE, ZMAPPHASE_NONE,
-                                     TRUE, TRUE) )
-            {
-              g_string_append_printf(attribute, "dataType=short-read") ;
-              zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
-              g_string_append_c(blixem_data->line, '\n') ;
-              g_string_truncate(attribute, (gsize)0);
-
-              zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
-                                          blixem_data->line, TRUE) ;
-            }
+          writeBAMLine(blixem_data, GPOINTER_TO_UINT(l->data), attribute) ;
         }
 
       /* Free our string buffer. */
-      g_string_free(attribute, TRUE ) ;
+      g_string_free(attribute, TRUE) ;
     }
+  else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET)
+    {
+      /* Write out any associated bam featuresets */
+      if (blixem_data->assoc_featuresets)
+        g_list_foreach(blixem_data->assoc_featuresets, featureSetWriteBAMList, blixem_data) ;
+    }
+
 }
 
 
@@ -1678,15 +1707,36 @@ static void getColumnGroupCB(gpointer key, gpointer data, gpointer user_data)
   GList *group_featuresets = (GList*)data ;
   ZMapBlixemData blixem_data = (ZMapBlixemData)user_data ;
 
-  zMapReturnIfFail(blixem_data && blixem_data->feature_set && group_featuresets) ;
+  zMapReturnIfFail(blixem_data && group_featuresets) ;
 
   for (GList *group_item = group_featuresets; group_item ; group_item = group_item->next)
     {
       GQuark group_featureset = (GQuark)GPOINTER_TO_INT(group_item->data) ;
-
       GQuark group_featureset_id = zMapStyleCreateID(g_quark_to_string(group_featureset)) ;
 
-      if (group_featureset_id == blixem_data->feature_set->unique_id)
+      /* Check if the featureset is in this group. This is the given featureset for a
+       * regular multiset command or the list of sources for a BAM multiset command. */
+      gboolean found = FALSE ;
+
+      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET && 
+          blixem_data->feature_set &&
+          group_featureset_id == blixem_data->feature_set->unique_id)
+        {
+          found = TRUE ;
+        }
+      else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET && blixem_data->source)
+        {
+          for (GList *item = blixem_data->source; item && !found; item = item->next)
+            {
+              GQuark featureset_id = (GQuark)GPOINTER_TO_INT(item->data) ;
+              featureset_id = zMapStyleCreateID(g_quark_to_string(featureset_id))  ;
+
+              found = (featureset_id == group_featureset_id) ;
+            }
+        }
+
+      /* If this is the right group, add it to the result and exit */
+      if (found)
         {
           blixem_data->column_groups = g_list_append(blixem_data->column_groups, GINT_TO_POINTER(group_id)) ;
           break ;
@@ -1699,7 +1749,7 @@ static void getColumnGroupCB(gpointer key, gpointer data, gpointer user_data)
  * column_groups member of the blixem_data. The result should be free'd with g_list_free. */
 static void getColumnGroups(ZMapBlixemData blixem_data)
 {
-  zMapReturnIfFail(blixem_data && blixem_data->feature_set) ;
+  zMapReturnIfFail(blixem_data && (blixem_data->feature_set || blixem_data->source)) ;
 
   if (blixem_data && blixem_data->view && blixem_data->view->context_map.column_groups)
     {
@@ -1824,9 +1874,11 @@ static GQuark showGroupDialog(ZMapBlixemData blixem_data)
  * nothing. Otherwise checks for column groups and sets it from there if applicable. */
 static void getAssocFeaturesets(ZMapBlixemData blixem_data)
 {
-  zMapReturnIfFail(blixem_data && blixem_data->feature_set) ;
+  zMapReturnIfFail(blixem_data) ;
 
-  if (!blixem_data->assoc_featuresets && blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET)
+  if (!blixem_data->assoc_featuresets && 
+      (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET ||
+       blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET))
     {
       /* First, populate the list of column groups that the selected feature set is in */
       getColumnGroups(blixem_data) ;
@@ -1856,15 +1908,15 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
 
   gboolean status = TRUE ;
   GError *channel_error = NULL ;
-  int start = blixem_data->features_min ;
-  int end = blixem_data->features_max ; ;
+  const int start = blixem_data->features_min ;
+  const int end = blixem_data->features_max ; ;
 
   /* Rev-comp the coords if necessary */
   if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
+    zMapFeatureReverseComplementCoords(blixem_data->view->features, &blixem_data->features_min, &blixem_data->features_max) ;
 
   /* Write the headers */
-  status = writeGFFHeader(blixem_data, start, end) ;
+  status = writeGFFHeader(blixem_data) ;
 
   /* Write the features. */
   if (status)
@@ -1875,7 +1927,12 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
       getAssocFeaturesets(blixem_data) ;
 
       /* Do coverage columns */
-      writeCoverageColumn(blixem_data, start, end) ;
+      writeCoverageColumn(blixem_data) ;
+
+      /* gb10: not sure if these need reverting here but doing this to maintain original
+       * behaviour */
+      blixem_data->features_min = start ;
+      blixem_data->features_max = end ;
 
       /* Do requested Homology data */
       writeRequestedHomologyList(blixem_data) ;
@@ -1929,6 +1986,9 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
         g_free(channel_error);
     }
 
+  blixem_data->features_min = start ;
+  blixem_data->features_max = end ;
+   
   return status ;
 }
 
@@ -2189,6 +2249,35 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
 
   return ;
 }
+
+
+/* Callback called on each featureset in a GList. This writes out the gff line
+ * to bam-fetch the features if this is a bam featureset type */
+static void featureSetWriteBAMList(gpointer data, gpointer user_data)
+{
+  GQuark set_id = GPOINTER_TO_UINT(data) ;
+  GQuark canon_id = 0 ;
+  ZMapBlixemData blixem_data = (ZMapBlixemData)user_data ;
+  ZMapFeatureSet feature_set = NULL ;
+
+  if (!blixem_data)
+    return ;
+
+  canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
+
+  feature_set = (ZMapFeatureSet)g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id));
+
+  if(feature_set)
+    {
+      GString *attribute = g_string_new(NULL) ;
+
+      writeBAMLine(blixem_data, feature_set->unique_id, attribute) ;
+
+      /* Free our string buffer. */
+      g_string_free(attribute, TRUE) ;
+    }
+}
+
 
 
 /* Callback called on each featureset in a GList. This writes each feature from the featureset

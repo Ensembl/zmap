@@ -163,7 +163,8 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
       if (zmapWindowMarkIsSet(window->mark))
         zmapWindowMarkGetSequenceRange(window->mark, &(align->mark_start), &(align->mark_end)) ;
 
-      if (requested_homol_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+      if (requested_homol_set == ZMAPWINDOW_ALIGNCMD_SEQ ||
+          requested_homol_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET)
         {
           align->homol_type = ZMAPHOMOL_N_HOMOL ;
 
