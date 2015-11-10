@@ -2271,7 +2271,7 @@ static void featureSetWriteBAMList(gpointer data, gpointer user_data)
     {
       GString *attribute = g_string_new(NULL) ;
 
-      writeBAMLine(blixem_data, feature_set->unique_id, attribute) ;
+      writeBAMLine(blixem_data, feature_set->original_id, attribute) ;
 
       /* Free our string buffer. */
       g_string_free(attribute, TRUE) ;
