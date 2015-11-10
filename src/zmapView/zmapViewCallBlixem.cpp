@@ -807,15 +807,6 @@ static void getUserPrefsFile(ZMapView view,
           file_prefs->is_set.assoc_featuresets = TRUE ;
         }
 
-      /* Reload the column groups from file. Only do this if it's the config file. */
-      if (file_type == ZMAPCONFIG_FILE_USER)
-        {
-          if (view->context_map.column_groups)
-            g_hash_table_destroy(view->context_map.column_groups) ;
-
-          view->context_map.column_groups = zMapConfigIniGetColumnGroups(context) ;
-        }
-
       zMapConfigIniContextDestroy(context);
     }
 
@@ -1704,8 +1695,8 @@ static void writeCoverageColumn(ZMapBlixemData blixem_data)
 static void getColumnGroupCB(gpointer key, gpointer data, gpointer user_data)
 {
   GQuark group_id = (GQuark)GPOINTER_TO_INT(key) ;
-  GList *group_featuresets = (GList*)data ;
   ZMapBlixemData blixem_data = (ZMapBlixemData)user_data ;
+  GList *group_featuresets = (GList*)data ;
 
   zMapReturnIfFail(blixem_data && group_featuresets) ;
 
@@ -1870,15 +1861,14 @@ static GQuark showGroupDialog(ZMapBlixemData blixem_data)
 }
 
 
-/* Get the list of associated featuresets. If already set from the config then does
- * nothing. Otherwise checks for column groups and sets it from there if applicable. */
+/* Get the list of associated featuresets from the column groups and append them to
+ * any list already set from the config file (from the blixem stanza).  */
 static void getAssocFeaturesets(ZMapBlixemData blixem_data)
 {
   zMapReturnIfFail(blixem_data) ;
 
-  if (!blixem_data->assoc_featuresets && 
-      (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET ||
-       blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET))
+  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET ||
+      blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET)
     {
       /* First, populate the list of column groups that the selected feature set is in */
       getColumnGroups(blixem_data) ;
@@ -1895,7 +1885,10 @@ static void getAssocFeaturesets(ZMapBlixemData blixem_data)
               GList *group_featuresets = (GList*)g_hash_table_lookup(blixem_data->view->context_map.column_groups, 
                                                                            GINT_TO_POINTER(group_id)) ;
 
-              blixem_data->assoc_featuresets = zMapFeatureCopyQuarkList(group_featuresets) ;
+              /* Make a copy so we have ownership */
+              GList *new_list = zMapFeatureCopyQuarkList(group_featuresets) ;
+
+              blixem_data->assoc_featuresets = g_list_concat(blixem_data->assoc_featuresets, new_list) ;
             }
         }
     }
