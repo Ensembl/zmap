@@ -177,6 +177,8 @@ typedef struct ZMapBlixemDataStruct_
 
   ZMapFeatureSequenceMap sequence_map;      /* where the sequence comes from, used for BAM scripts */
 
+  gboolean coverage_done ;
+
 } ZMapBlixemDataStruct, *ZMapBlixemData ;
 
 
@@ -1667,8 +1669,24 @@ static void writeCoverageColumn(ZMapBlixemData blixem_data)
 {
   zMapReturnIfFail(blixem_data) ;
 
-  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+  /* The multiset option will set coverage_done to true if it finds and successfully writes out
+   * the group (actually, just any member in the group, but that's good enough). We need to check
+   * this because it's possible the user attempted to blixem associated featuresets for a column
+   * that is not in a group, in which case this flag will remain false and we will process the
+   * single selected featureset instead. */
+  blixem_data->coverage_done = FALSE ;
+
+  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET)
     {
+      /* Write out any associated bam featuresets */
+      if (blixem_data->assoc_featuresets)
+        g_list_foreach(blixem_data->assoc_featuresets, featureSetWriteBAMList, blixem_data) ;
+    }
+  
+  if (!blixem_data->coverage_done ||
+      blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+    {
+      /* Write out the selected bam featureset */
       GList *l = NULL;
       GString *attribute = g_string_new(NULL) ;
       
@@ -1679,12 +1697,6 @@ static void writeCoverageColumn(ZMapBlixemData blixem_data)
 
       /* Free our string buffer. */
       g_string_free(attribute, TRUE) ;
-    }
-  else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET)
-    {
-      /* Write out any associated bam featuresets */
-      if (blixem_data->assoc_featuresets)
-        g_list_foreach(blixem_data->assoc_featuresets, featureSetWriteBAMList, blixem_data) ;
     }
 
 }
@@ -2265,10 +2277,13 @@ static void featureSetWriteBAMList(gpointer data, gpointer user_data)
       /* check it's a bam type */
       if (blixem_data->view && zMapFeatureIsSeqFeatureSet(&blixem_data->view->context_map, feature_set->unique_id))
         {
+          /* Indicate that we've processed a valid featureset */
+          blixem_data->coverage_done = TRUE ;
+
           GString *attribute = g_string_new(NULL) ;
 
           writeBAMLine(blixem_data, feature_set->original_id, attribute) ;
-
+            
           /* Free our string buffer. */
           g_string_free(attribute, TRUE) ;
         }
