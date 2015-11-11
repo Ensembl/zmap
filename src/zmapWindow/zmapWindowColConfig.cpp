@@ -721,7 +721,7 @@ static void loaded_page_apply_groups(LoadedPageData page_data)
         {
           do
             {
-              GQuark group_id = tree_model_get_group_id(model, &iter) ;
+              GQuark new_group_id = tree_model_get_group_id(model, &iter) ;
               GList *featuresets = tree_model_get_column_featuresets(page_data, model, &iter) ;
 
               for (GList *item = featuresets; item; item = item->next)
@@ -732,21 +732,26 @@ static void loaded_page_apply_groups(LoadedPageData page_data)
                     {
                       GQuark old_group_id = hashListFindID(column_groups, feature_set->original_id) ;
 
-                      if (old_group_id && old_group_id != group_id)
+                      if (new_group_id != old_group_id)
                         {
-                          /* Remove from existing group */
-                          GList *old_featuresets = (GList*)(g_hash_table_lookup(column_groups, GINT_TO_POINTER(old_group_id))) ;
-                          old_featuresets = g_list_remove(old_featuresets, GINT_TO_POINTER(feature_set->original_id)) ;
-                          g_hash_table_insert(column_groups, GINT_TO_POINTER(old_group_id), old_featuresets) ;
+                          if (old_group_id)
+                            {
+                              /* Remove from existing group */
+                              GList *old_featuresets = (GList*)(g_hash_table_lookup(column_groups, GINT_TO_POINTER(old_group_id))) ;
+                              old_featuresets = g_list_remove(old_featuresets, GINT_TO_POINTER(feature_set->original_id)) ;
+                              g_hash_table_insert(column_groups, GINT_TO_POINTER(old_group_id), old_featuresets) ;
+                              page_data->window->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = TRUE ;
+                            }
+
+                          /* Add to new group */
+                          if (new_group_id)
+                            {
+                              GList *group_featuresets = (GList*)(g_hash_table_lookup(column_groups, GINT_TO_POINTER(new_group_id))) ;
+                              group_featuresets = g_list_append(group_featuresets, GINT_TO_POINTER(feature_set->original_id)) ;
+                              g_hash_table_insert(column_groups, GINT_TO_POINTER(new_group_id), group_featuresets) ;
+                              page_data->window->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = TRUE ;
+                            }
                         }
-
-                      /* Add to new group */
-                      GList *group_featuresets = (GList*)(g_hash_table_lookup(column_groups, GINT_TO_POINTER(group_id))) ;
-                      group_featuresets = g_list_append(group_featuresets, GINT_TO_POINTER(feature_set->original_id)) ;
-                      g_hash_table_insert(column_groups, GINT_TO_POINTER(group_id), group_featuresets) ;
-
-                      /* Indicate that there are changes to the column-groups that need saving in the config */
-                      page_data->window->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = TRUE ;
                     }
                 }
             } while (gtk_tree_model_iter_next(model, &iter)) ;
