@@ -2033,7 +2033,7 @@ static void writeFeatureSetList(gpointer data, gpointer user_data)
   writeFeatureSet(set_id, blixem_data) ;
 }
 
-/* This function does the work to write out a named feature set to file. It calls */
+/* This function does the work to write out a named feature set to file.*/
 static void writeFeatureSet(GQuark set_id, ZMapBlixemData blixem_data)
 {
   zMapReturnIfFail(blixem_data) ;
@@ -2262,12 +2262,16 @@ static void featureSetWriteBAMList(gpointer data, gpointer user_data)
 
   if(feature_set)
     {
-      GString *attribute = g_string_new(NULL) ;
+      /* check it's a bam type */
+      if (blixem_data->view && zMapFeatureIsSeqFeatureSet(&blixem_data->view->context_map), feature_set->unique_id)
+        {
+          GString *attribute = g_string_new(NULL) ;
 
-      writeBAMLine(blixem_data, feature_set->original_id, attribute) ;
+          writeBAMLine(blixem_data, feature_set->original_id, attribute) ;
 
-      /* Free our string buffer. */
-      g_string_free(attribute, TRUE) ;
+          /* Free our string buffer. */
+          g_string_free(attribute, TRUE) ;
+        }
     }
 }
 
