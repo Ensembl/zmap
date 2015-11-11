@@ -6,6 +6,19 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.3.0</h4>
+<ul>
+  <li>The Columns dialog has been reorganised into a single list of featuresets with strand-specific options.
+  <li>Columns can now be dynamically reordered using the up/down buttons on the Columns dialog. The new order can be exported to a configuration file using the menu File->Export->Configuration.
+  <li>Added functionality to load supporting evidence from Ensembl databases.
+  <li>Added new configuration options to allow the user to specify the colour for the rubber band and ruler bar (these were hard-coded as black before, which doesn't work well on a dark background).
+  <li>Added column-groups configuration option to allow multiple different groupings of columns for blixem.
+  <li>Fixed a bug where column backgrounds were always being set to white after you filter a column - it now uses the configured background colour.
+  <li>Fixed a bug calling blixem on certain reads which have an insertion/intron adjacent to each other. ZMap was skipping the second operator in the cigar string so the alignment was bad in blixem.
+  <li>Fixed a bug where a new style was not being created when editing a featureset with a default style.
+  <li>Fixed an error building zmap on machines which have an incomplete installation of mysql.
+</ul>
+
 <h4>Version 2.2.1</h4>
 <ul>
   <li>Fix a bug where incorrect alignments were being exported to Blixem for alignments that contain adjacent insertions and introns.
