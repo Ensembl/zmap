@@ -700,6 +700,49 @@ static void loaded_page_apply_styles(LoadedPageData page_data)
 }
 
 
+/* For a hash table of IDs to GLists of IDs, remove the given value from the GList for the given
+ * key. If this would leave the list empty then also remove the list from the hash table. */
+static void hashListRemoveID(GHashTable *ghash, const GQuark key, const GQuark value)
+{
+  /* Get the list of values */
+  GList *values = (GList*)(g_hash_table_lookup(ghash, GINT_TO_POINTER(key))) ;
+
+  /* Remove the given value from the list of values */
+  values = g_list_remove(values, GINT_TO_POINTER(value)) ;
+
+  if (values && g_list_length(values) > 0)
+    {
+      /* There are still values in the list, so update the list in the hash table */
+      g_hash_table_replace(ghash, GINT_TO_POINTER(key), values) ;
+    }
+  else
+    {
+      /* The list is now empty so remove it from the hash table */
+      g_hash_table_remove(ghash, GINT_TO_POINTER(key)) ;
+
+      if (values)
+        g_list_free(values) ;
+    }
+}
+
+
+/* For a hash table of IDs to GLists of IDs, insert the given value into the GList for the given
+ * key. If the list does not exist then create it. */
+static void hashListInsertID(GHashTable *ghash, const GQuark key, const GQuark value)
+{
+  GList *list = (GList*)(g_hash_table_lookup(ghash, GINT_TO_POINTER(key))) ;
+
+  /* If the list is null then we create a new one.*/
+  gboolean new_list = (list == NULL) ;
+  list = g_list_append(list, GINT_TO_POINTER(value)) ;
+
+  if (new_list)
+    g_hash_table_insert(ghash, GINT_TO_POINTER(key), list) ;
+  else
+    g_hash_table_replace(ghash, GINT_TO_POINTER(key), list) ;
+}
+
+
 /* Assign groups based on their values in the tree */
 static void loaded_page_apply_groups(LoadedPageData page_data)
 {
@@ -714,14 +757,17 @@ static void loaded_page_apply_groups(LoadedPageData page_data)
       GtkTreeModel *model = page_data->tree_model ;
       GHashTable *column_groups = page_data->window->context_map->column_groups ;
 
-      /* Loop through all rows in the tree and set the style for each column */
+      /* Loop through all rows in the tree */
       GtkTreeIter iter;
   
       if (gtk_tree_model_get_iter_first(model, &iter))
         {
           do
             {
+              /* Get the new group id from the tree row */
               GQuark new_group_id = tree_model_get_group_id(model, &iter) ;
+
+              /* Loop through all featuresets for this row's track */
               GList *featuresets = tree_model_get_column_featuresets(page_data, model, &iter) ;
 
               for (GList *item = featuresets; item; item = item->next)
@@ -730,27 +776,20 @@ static void loaded_page_apply_groups(LoadedPageData page_data)
 
                   if (feature_set)
                     {
+                      /* Find the existing group for this featureset */
                       GQuark old_group_id = hashListFindID(column_groups, feature_set->original_id) ;
 
+                      /* Check if the group has changed */
                       if (new_group_id != old_group_id)
                         {
                           if (old_group_id)
-                            {
-                              /* Remove from existing group */
-                              GList *old_featuresets = (GList*)(g_hash_table_lookup(column_groups, GINT_TO_POINTER(old_group_id))) ;
-                              old_featuresets = g_list_remove(old_featuresets, GINT_TO_POINTER(feature_set->original_id)) ;
-                              g_hash_table_insert(column_groups, GINT_TO_POINTER(old_group_id), old_featuresets) ;
-                              page_data->window->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = TRUE ;
-                            }
+                            hashListRemoveID(column_groups, old_group_id, feature_set->original_id) ;
 
                           /* Add to new group */
                           if (new_group_id)
-                            {
-                              GList *group_featuresets = (GList*)(g_hash_table_lookup(column_groups, GINT_TO_POINTER(new_group_id))) ;
-                              group_featuresets = g_list_append(group_featuresets, GINT_TO_POINTER(feature_set->original_id)) ;
-                              g_hash_table_insert(column_groups, GINT_TO_POINTER(new_group_id), group_featuresets) ;
-                              page_data->window->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = TRUE ;
-                            }
+                            hashListInsertID(column_groups, new_group_id, feature_set->original_id) ;
+
+                          page_data->window->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = TRUE ;
                         }
                     }
                 }
@@ -2079,11 +2118,11 @@ static void hashListFindIDCB(gpointer key, gpointer data, gpointer user_data)
 /* Return the key in the hash table of the entry that contains the given id in a list. Returns 0
  * if not found. Takes a hash table of GQuark to GList of GQuarks and looks for the search_id in
  * the GList. */
-static GQuark hashListFindID(GHashTable *column_groups, const GQuark search_id)
+static GQuark hashListFindID(GHashTable *ghash, const GQuark search_id)
 {
   HashListFindIDStruct data = {0, search_id} ;
 
-  g_hash_table_foreach(column_groups, hashListFindIDCB, &data) ;
+  g_hash_table_foreach(ghash, hashListFindIDCB, &data) ;
 
   return data.result ;
 }
