@@ -302,7 +302,7 @@ static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
 static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, GtkTreeModel *model, GtkTreeIter *iter) ;
 
 static GList* tree_model_get_column_featuresets(LoadedPageData page_data, GtkTreeModel *model, GtkTreeIter *iter) ;
-static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter) ;
+static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter, const gboolean unique) ;
 static GQuark tree_model_get_style_id(GtkTreeModel *model, GtkTreeIter *iter) ;
 static GQuark tree_model_get_group_id(GtkTreeModel *model, GtkTreeIter *iter) ;
 
@@ -624,7 +624,7 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
         {
           do
             {
-              GQuark column_id = tree_model_get_column_id(model, &iter) ;
+              GQuark column_id = tree_model_get_column_id(model, &iter, TRUE) ;
           
               ZMapFeatureColumn column = (ZMapFeatureColumn)g_hash_table_lookup(columns, GINT_TO_POINTER(column_id)) ;
 
@@ -764,34 +764,20 @@ static void loaded_page_apply_groups(LoadedPageData page_data)
         {
           do
             {
-              /* Get the new group id from the tree row */
+              GQuark column_id = tree_model_get_column_id(model, &iter, FALSE) ;
               GQuark new_group_id = tree_model_get_group_id(model, &iter) ;
+              GQuark old_group_id = hashListFindID(column_groups, column_id) ;
 
-              /* Loop through all featuresets for this row's track */
-              GList *featuresets = tree_model_get_column_featuresets(page_data, model, &iter) ;
-
-              for (GList *item = featuresets; item; item = item->next)
+              /* Check if the group has changed */
+              if (new_group_id != old_group_id)
                 {
-                  ZMapFeatureSet feature_set = (ZMapFeatureSet)(item->data) ;
+                  if (old_group_id)
+                    hashListRemoveID(column_groups, old_group_id, column_id) ;
 
-                  if (feature_set)
-                    {
-                      /* Find the existing group for this featureset */
-                      GQuark old_group_id = hashListFindID(column_groups, feature_set->original_id) ;
-
-                      /* Check if the group has changed */
-                      if (new_group_id != old_group_id)
-                        {
-                          if (old_group_id)
-                            hashListRemoveID(column_groups, old_group_id, feature_set->original_id) ;
-
-                          /* Add to new group */
-                          if (new_group_id)
-                            hashListInsertID(column_groups, new_group_id, feature_set->original_id) ;
-
-                          page_data->window->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = TRUE ;
-                        }
-                    }
+                  if (new_group_id)
+                    hashListInsertID(column_groups, new_group_id, column_id) ;
+                  
+                  page_data->window->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = TRUE ;
                 }
             } while (gtk_tree_model_iter_next(model, &iter)) ;
         }
@@ -1016,7 +1002,7 @@ static void loaded_page_update_matching_tree_rows(LoadedPageData loaded_page_dat
     {
       do
         {
-          GQuark column_id = tree_model_get_column_id(model, &iter) ;
+          GQuark column_id = tree_model_get_column_id(model, &iter, TRUE) ;
           FooCanvasGroup *column_group = zmapWindowGetColumnByID(loaded_page_data->window, strand, column_id) ;
 
           if (column_group == search_column_group)
@@ -2739,7 +2725,7 @@ static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_dat
   ColConfigure configure_data = loaded_page_data->configure_data ;
   
   /* Get the column that's in this tree row */
-  GQuark column_id = tree_model_get_column_id(model, iter) ;
+  GQuark column_id = tree_model_get_column_id(model, iter, TRUE) ;
   FooCanvasGroup *column_group = zmapWindowGetColumnByID(loaded_page_data->window, strand, column_id) ;
 
   /* Get the required state of this tree row according to the toggle value in the tree model */
@@ -2806,8 +2792,9 @@ static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_dat
 
 
 
-/* Get the column name for the given row in the given tree. Return it as a unique id */
-static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter)
+/* Get the column name for the given row in the given tree. If 'unique' is true returns the
+ * unique id, otherwise the original id */
+static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter, const gboolean unique)
 {
   GQuark column_id = 0 ;
   char *column_name = NULL ;
@@ -2895,7 +2882,7 @@ static GList* tree_model_get_column_featuresets(LoadedPageData page_data, GtkTre
   GList *result = NULL ;
   zMapReturnValIfFail(page_data && page_data->window, result) ;
 
-  GQuark column_id = tree_model_get_column_id(model, iter) ;
+  GQuark column_id = tree_model_get_column_id(model, iter, TRUE) ;
 
   FooCanvasGroup *column_group = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column_id) ;
 
