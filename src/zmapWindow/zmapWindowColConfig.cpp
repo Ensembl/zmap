@@ -2362,10 +2362,19 @@ static void set_column_group(LoadedPageData page_data,
     {
       gtk_tree_model_get_iter(model_in, &iter, path) ;
     }
-      
-  gtk_list_store_set(GTK_LIST_STORE(model), &iter, 
-                     GROUP_COLUMN, g_quark_to_string(page_data->last_group_id),
-                     -1) ;
+
+  if (page_data->last_group_id)
+    {
+      gtk_list_store_set(GTK_LIST_STORE(model), &iter, 
+                         GROUP_COLUMN, g_quark_to_string(page_data->last_group_id),
+                         -1) ;
+    }
+  else
+    {
+      gtk_list_store_set(GTK_LIST_STORE(model), &iter, 
+                         GROUP_COLUMN, NULL,
+                         -1) ;
+    }
 }
 
 
@@ -2380,14 +2389,17 @@ static void set_group_button_cb(GtkButton *button, gpointer user_data)
 
   if (selection)
     {
-      const char *msg = "Please enter a group name (lowercase only)" ;
+      const char *msg = "Please enter a group name (lowercase only).\n\nClear the text to remvoe the group." ;
       char *text_out = NULL ;
 
       GtkResponseType response = zMapGUIMsgGetText(NULL, ZMAP_MSG_INFORMATION, msg, FALSE, &text_out) ;
 
       if (response == GTK_RESPONSE_OK)
         {
-          page_data->last_group_id = zMapStyleCreateID(text_out) ;
+          if (text_out && *text_out)
+            page_data->last_group_id = zMapStyleCreateID(text_out) ;
+          else
+            page_data->last_group_id = 0 ;
 
           GtkTreeModel *model = NULL ;
           GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
