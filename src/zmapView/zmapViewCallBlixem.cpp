@@ -2263,7 +2263,7 @@ static void featureSetWriteBAMList(gpointer data, gpointer user_data)
   if(feature_set)
     {
       /* check it's a bam type */
-      if (blixem_data->view && zMapFeatureIsSeqFeatureSet(&blixem_data->view->context_map), feature_set->unique_id)
+      if (blixem_data->view && zMapFeatureIsSeqFeatureSet(&blixem_data->view->context_map, feature_set->unique_id))
         {
           GString *attribute = g_string_new(NULL) ;
 

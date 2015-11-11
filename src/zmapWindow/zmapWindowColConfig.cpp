@@ -88,8 +88,6 @@ typedef struct _ColConfigureStruct
    * if false, there will be no Apply button and changes will take effect immediately. */
   unsigned int has_apply_button : 1 ;
 
-  gboolean columns_changed ;
-
 } ColConfigureStruct;
 
 
@@ -614,10 +612,11 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
   if (page_data->apply_now &&
       page_data->configure_data->mode == ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
     {
-      GtkTreeModel *model = page_data->tree_model ;
-      GHashTable *columns = page_data->window->context_map->columns ;
+      gboolean columns_changed = FALSE ;
 
       /* Loop through all rows in the tree and set the column order index */
+      GtkTreeModel *model = page_data->tree_model ;
+      GHashTable *columns = page_data->window->context_map->columns ;
       GtkTreeIter iter;
       int i = 0 ;
 
@@ -634,10 +633,28 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
                   column->order = i ;
                   ++i ;
 
-                  page_data->configure_data->columns_changed = TRUE ;
+                  columns_changed = TRUE ;
                 }
             } while (gtk_tree_model_iter_next(model, &iter)) ;
         }
+
+      /* Need to set the feature_set_names list to the correct order. Not sure if we should include
+       * all featuresets or just reorder the list that is there. For now, include all. */
+      if (page_data->window->feature_set_names)
+        g_list_free(page_data->window->feature_set_names) ;
+
+      page_data->window->feature_set_names = zMapFeatureGetOrderedColumnsListIDs(page_data->window->context_map) ;
+
+      /* Redraw */
+      zmapWindowBusy(page_data->window, FALSE) ;
+      zmapWindowColOrderColumns(page_data->window);
+
+      if(page_data->reposition)
+        zmapWindowFullReposition(page_data->window->feature_root_group, TRUE, "loaded_page_apply_reorder_columns") ;
+
+      zmapWindowBusy(page_data->window, FALSE) ;
+     
+      page_data->configure_data->window->flags[ZMAPFLAG_SAVE_COLUMNS] = TRUE ;
     }
 }
 
@@ -675,11 +692,6 @@ static void loaded_page_apply_styles(LoadedPageData page_data)
                                                    feature_set,
                                                    page_data->window->context_map,
                                                    page_data->window);
-
-
-                      /* Indicate that there are changes to the featureset->style relationships
-                       * that need saving in the config */
-                      page_data->window->flags[ZMAPFLAG_CONFIG_NEEDS_SAVING] = FALSE ;
                     }
                 }
             } while (gtk_tree_model_iter_next(model, &iter)) ;
@@ -733,8 +745,8 @@ static void loaded_page_apply_groups(LoadedPageData page_data)
                       group_featuresets = g_list_append(group_featuresets, GINT_TO_POINTER(feature_set->original_id)) ;
                       g_hash_table_insert(column_groups, GINT_TO_POINTER(group_id), group_featuresets) ;
 
-                      /*! \todo Indicate that there are changes to the column-groups that need saving in the config */
-                      //page_data->window->flags[ZMAPFLAG_CONFIG_NEEDS_SAVING] = FALSE ;
+                      /* Indicate that there are changes to the column-groups that need saving in the config */
+                      page_data->window->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = TRUE ;
                     }
                 }
             } while (gtk_tree_model_iter_next(model, &iter)) ;
@@ -768,13 +780,6 @@ static void loaded_page_apply(NotebookPage notebook_page)
   loaded_page_apply_styles(loaded_page_data) ;
   loaded_page_apply_groups(loaded_page_data) ;
 
-  /* Need to set the feature_set_names list to the correct order. Not sure if we should include
-   * all featuresets or just reorder the list that is there. For now, include all. */
-  if (window->feature_set_names)
-    g_list_free(window->feature_set_names) ;
-
-  window->feature_set_names = zMapFeatureGetOrderedColumnsListIDs(window->context_map) ;
-
   zmapWindowBusy(loaded_page_data->window, FALSE) ;
   zmapWindowColOrderColumns(loaded_page_data->window);
   zmapWindowFullReposition(loaded_page_data->window->feature_root_group, TRUE, "loaded_page_apply") ;
@@ -783,9 +788,6 @@ static void loaded_page_apply(NotebookPage notebook_page)
   /* Restore the original flag values */
   loaded_page_data->apply_now  = save_apply_now;
   loaded_page_data->reposition = save_reposition;
-
-  /* Now reposition everything */
-  zmapWindowFullReposition(configure_data->window->feature_root_group,TRUE, "show hide") ;
 
   /* Maintain the current order but clear any sorting */
   gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(loaded_page_data->tree_model), 
@@ -2426,11 +2428,15 @@ static void reorder_columns_cb(GtkButton *button, gpointer user_data)
 static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
 {
   zMapReturnValIfFail(page_data && page_data->configure_data, NULL) ;
-  GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
+
+  GtkWidget *vbox = gtk_vbox_new(FALSE, XPAD) ;
 
   /* Add search/filter boxes (only if viewing multiple columns) */
   if (page_data->configure_data->mode == ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
     {
+      GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
+      gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
+
       gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Search:"), FALSE, FALSE, 0) ;
       page_data->search_entry = GTK_ENTRY(gtk_entry_new()) ;
       gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(page_data->search_entry), FALSE, FALSE, 0) ;
@@ -2442,12 +2448,15 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
       g_signal_connect(G_OBJECT(page_data->filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), page_data) ;
       gtk_widget_set_tooltip_text(GTK_WIDGET(page_data->filter_entry), "Show only column names containing this text. Press enter to apply the filter.") ;
 
-      /* Add a button to clear the contents of the search/filter boxes */
+      /* Add a button to clear the search/filter boxes and sort order */
       GtkWidget *button = gtk_button_new_with_mnemonic("C_lear") ;
       gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
       g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(clear_button_cb), page_data) ;
       gtk_widget_set_tooltip_text(button, "Clear the search/filter boxes and the sort order, so that rows can be reordered manually") ;
     }
+
+  GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
 
   /* Add a button to choose a style for the selected columns */
   GtkWidget *button = gtk_button_new_with_mnemonic("Choose _Style") ;
@@ -2469,7 +2478,7 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(reorder_columns_cb), page_data) ;
   gtk_widget_set_tooltip_text(button, "Applies the new track order based on the order of the rows in the list. (Drag and drop rows to change the order.)") ;
 
-  return hbox ;
+  return vbox ;
 }
 
 
@@ -3085,8 +3094,6 @@ static void revert_button_cb(GtkWidget *apply_button, gpointer user_data)
 
   zmapWindowColumnConfigure(configure_data->window, NULL, configure_data->mode);
 
-  configure_data->columns_changed = FALSE ;
-
   return ;
 }
 
@@ -3095,9 +3102,6 @@ static void apply_button_cb(GtkWidget *apply_button, gpointer user_data)
   ColConfigure configure_data = (ColConfigure)user_data;
 
   notebook_foreach_page(configure_data->notebook, FALSE, NOTEBOOK_APPLY_FUNC, NULL);
-
-  if (configure_data->columns_changed)
-    configure_data->window->flags[ZMAPFLAG_COLUMNS_NEED_SAVING] = TRUE ;
 
   return ;
 }
