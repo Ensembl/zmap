@@ -177,6 +177,8 @@ typedef struct ZMapBlixemDataStruct_
 
   ZMapFeatureSequenceMap sequence_map;      /* where the sequence comes from, used for BAM scripts */
 
+  gboolean coverage_done ;
+
 } ZMapBlixemDataStruct, *ZMapBlixemData ;
 
 
@@ -805,15 +807,6 @@ static void getUserPrefsFile(ZMapView view,
           file_prefs->assoc_featuresets = g_list_concat(file_prefs->assoc_featuresets, assoc_featuresets) ;
           g_free(tmp_string);
           file_prefs->is_set.assoc_featuresets = TRUE ;
-        }
-
-      /* Reload the column groups from file. Only do this if it's the config file. */
-      if (file_type == ZMAPCONFIG_FILE_USER)
-        {
-          if (view->context_map.column_groups)
-            g_hash_table_destroy(view->context_map.column_groups) ;
-
-          view->context_map.column_groups = zMapConfigIniGetColumnGroups(context) ;
         }
 
       zMapConfigIniContextDestroy(context);
@@ -1676,8 +1669,24 @@ static void writeCoverageColumn(ZMapBlixemData blixem_data)
 {
   zMapReturnIfFail(blixem_data) ;
 
-  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+  /* The multiset option will set coverage_done to true if it finds and successfully writes out
+   * the group (actually, just any member in the group, but that's good enough). We need to check
+   * this because it's possible the user attempted to blixem associated featuresets for a column
+   * that is not in a group, in which case this flag will remain false and we will process the
+   * single selected featureset instead. */
+  blixem_data->coverage_done = FALSE ;
+
+  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET)
     {
+      /* Write out any associated bam featuresets */
+      if (blixem_data->assoc_featuresets)
+        g_list_foreach(blixem_data->assoc_featuresets, featureSetWriteBAMList, blixem_data) ;
+    }
+  
+  if (!blixem_data->coverage_done ||
+      blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+    {
+      /* Write out the selected bam featureset */
       GList *l = NULL;
       GString *attribute = g_string_new(NULL) ;
       
@@ -1689,12 +1698,6 @@ static void writeCoverageColumn(ZMapBlixemData blixem_data)
       /* Free our string buffer. */
       g_string_free(attribute, TRUE) ;
     }
-  else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET)
-    {
-      /* Write out any associated bam featuresets */
-      if (blixem_data->assoc_featuresets)
-        g_list_foreach(blixem_data->assoc_featuresets, featureSetWriteBAMList, blixem_data) ;
-    }
 
 }
 
@@ -1704,8 +1707,8 @@ static void writeCoverageColumn(ZMapBlixemData blixem_data)
 static void getColumnGroupCB(gpointer key, gpointer data, gpointer user_data)
 {
   GQuark group_id = (GQuark)GPOINTER_TO_INT(key) ;
-  GList *group_featuresets = (GList*)data ;
   ZMapBlixemData blixem_data = (ZMapBlixemData)user_data ;
+  GList *group_featuresets = (GList*)data ;
 
   zMapReturnIfFail(blixem_data && group_featuresets) ;
 
@@ -1870,15 +1873,14 @@ static GQuark showGroupDialog(ZMapBlixemData blixem_data)
 }
 
 
-/* Get the list of associated featuresets. If already set from the config then does
- * nothing. Otherwise checks for column groups and sets it from there if applicable. */
+/* Get the list of associated featuresets from the column groups and append them to
+ * any list already set from the config file (from the blixem stanza).  */
 static void getAssocFeaturesets(ZMapBlixemData blixem_data)
 {
   zMapReturnIfFail(blixem_data) ;
 
-  if (!blixem_data->assoc_featuresets && 
-      (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET ||
-       blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET))
+  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET ||
+      blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET)
     {
       /* First, populate the list of column groups that the selected feature set is in */
       getColumnGroups(blixem_data) ;
@@ -1895,7 +1897,10 @@ static void getAssocFeaturesets(ZMapBlixemData blixem_data)
               GList *group_featuresets = (GList*)g_hash_table_lookup(blixem_data->view->context_map.column_groups, 
                                                                            GINT_TO_POINTER(group_id)) ;
 
-              blixem_data->assoc_featuresets = zMapFeatureCopyQuarkList(group_featuresets) ;
+              /* Make a copy so we have ownership */
+              GList *new_list = zMapFeatureCopyQuarkList(group_featuresets) ;
+
+              blixem_data->assoc_featuresets = g_list_concat(blixem_data->assoc_featuresets, new_list) ;
             }
         }
     }
@@ -2040,7 +2045,7 @@ static void writeFeatureSetList(gpointer data, gpointer user_data)
   writeFeatureSet(set_id, blixem_data) ;
 }
 
-/* This function does the work to write out a named feature set to file. It calls */
+/* This function does the work to write out a named feature set to file.*/
 static void writeFeatureSet(GQuark set_id, ZMapBlixemData blixem_data)
 {
   zMapReturnIfFail(blixem_data) ;
@@ -2269,12 +2274,19 @@ static void featureSetWriteBAMList(gpointer data, gpointer user_data)
 
   if(feature_set)
     {
-      GString *attribute = g_string_new(NULL) ;
+      /* check it's a bam type */
+      if (blixem_data->view && zMapFeatureIsSeqFeatureSet(&blixem_data->view->context_map, feature_set->unique_id))
+        {
+          /* Indicate that we've processed a valid featureset */
+          blixem_data->coverage_done = TRUE ;
 
-      writeBAMLine(blixem_data, feature_set->original_id, attribute) ;
+          GString *attribute = g_string_new(NULL) ;
 
-      /* Free our string buffer. */
-      g_string_free(attribute, TRUE) ;
+          writeBAMLine(blixem_data, feature_set->original_id, attribute) ;
+            
+          /* Free our string buffer. */
+          g_string_free(attribute, TRUE) ;
+        }
     }
 }
 

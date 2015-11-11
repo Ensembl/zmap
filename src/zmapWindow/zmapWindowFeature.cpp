@@ -1447,7 +1447,7 @@ static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
                * actually been created but the peer may change any of the feature details before
                * creating and sending it back to us so we have no way of knowing when the correct
                * feature has been created. */
-              remote_data->window->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
+              remote_data->window->flags[ZMAPFLAG_SAVE_SCRATCH] = FALSE ;
             }
         }
     }

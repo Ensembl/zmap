@@ -96,13 +96,14 @@ typedef enum
   {
     ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
     ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, /* True if filtered columns should be highlighted */
-    ZMAPFLAG_FEATURES_NEED_SAVING,       /* True if there are new features that have not been saved */
-    ZMAPFLAG_SCRATCH_NEEDS_SAVING,       /* True if changes have been made in the scratch column
+
+    ZMAPFLAG_SAVE_FEATURES,              /* True if there are new features that have not been saved */
+    ZMAPFLAG_SAVE_SCRATCH,               /* True if changes have been made in the scratch column
                                           * that have not been "saved" to a real featureset */
-    ZMAPFLAG_CONFIG_NEEDS_SAVING,        /* True if there are unsaved changes to prefs */
-    ZMAPFLAG_STYLES_NEED_SAVING,         /* True if there are unsaved changes to styles */
-    ZMAPFLAG_COLUMNS_NEED_SAVING,        /* True if there are unsaved changes to the columns order */
-    ZMAPFLAG_CHANGED_FEATURESET_STYLE,   /* True if featureset-style relationships have changed */
+    ZMAPFLAG_SAVE_COLUMN_GROUPS,         /* True if there are unsaved changes to column groups */
+    ZMAPFLAG_SAVE_STYLES,                /* True if there are unsaved changes to styles */
+    ZMAPFLAG_SAVE_COLUMNS,               /* True if there are unsaved changes to the columns order */
+    ZMAPFLAG_SAVE_FEATURESET_STYLE,      /* True if featureset-style relationships have changed */
 
     ZMAPFLAG_ENABLE_ANNOTATION,          /* True if we should enable editing via the annotation column */
     ZMAPFLAG_ENABLE_ANNOTATION_INIT,     /* False until the enable-annotation flag has been initialised */

@@ -64,6 +64,7 @@ typedef enum
     AUTO_REV_COLUMN, 
     HIDE_REV_COLUMN,
     STYLE_COLUMN,
+    GROUP_COLUMN,
 
     N_COLUMNS
   } DialogColumns ;
@@ -86,8 +87,6 @@ typedef struct _ColConfigureStruct
   /* If true, flag indicates that changes will only be applied when the Apply button is pressed;
    * if false, there will be no Apply button and changes will take effect immediately. */
   unsigned int has_apply_button : 1 ;
-
-  gboolean columns_changed ;
 
 } ColConfigureStruct;
 
@@ -171,6 +170,7 @@ typedef struct _LoadedPageDataStruct
                              * clicked another column */
 
   GQuark last_style_id ;   /* the last style id that was chosen using the Choose Style option */
+  GQuark last_group_id ;
 } LoadedPageDataStruct;
 
 
@@ -246,6 +246,14 @@ typedef struct GetFeaturesetsDataStructType
 } GetFeaturesetsDataStruct, *GetFeaturesetsData ;
 
 
+/* Utility for looking up an id in a hash of GQuark to list of GQuark */
+typedef struct HashListFindIDStructType
+{
+  GQuark result ;
+  GQuark search_id ;
+} HashListFindIDStruct, *HashListFindID ;
+
+
 static GtkWidget *make_menu_bar(ColConfigure configure_data);
 static void loaded_cols_panel(LoadedPageData loaded_page_data, FooCanvasGroup *column_group) ;
 static char *label_text_from_column(FooCanvasGroup *column_group);
@@ -294,8 +302,11 @@ static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
 static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_data, ZMapStrand strand, GtkTreeModel *model, GtkTreeIter *iter) ;
 
 static GList* tree_model_get_column_featuresets(LoadedPageData page_data, GtkTreeModel *model, GtkTreeIter *iter) ;
-static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter) ;
+static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter, const gboolean unique) ;
 static GQuark tree_model_get_style_id(GtkTreeModel *model, GtkTreeIter *iter) ;
+static GQuark tree_model_get_group_id(GtkTreeModel *model, GtkTreeIter *iter) ;
+
+static GQuark hashListFindID(GHashTable *column_groups, const GQuark search_id) ;
 
 static ZMapStyleColumnDisplayState get_state_from_tree_store_value(GtkTreeModel *model, 
                                                                    GtkTreeIter *iter, 
@@ -601,10 +612,11 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
   if (page_data->apply_now &&
       page_data->configure_data->mode == ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
     {
-      GtkTreeModel *model = page_data->tree_model ;
-      GHashTable *columns = page_data->window->context_map->columns ;
+      gboolean columns_changed = FALSE ;
 
       /* Loop through all rows in the tree and set the column order index */
+      GtkTreeModel *model = page_data->tree_model ;
+      GHashTable *columns = page_data->window->context_map->columns ;
       GtkTreeIter iter;
       int i = 0 ;
 
@@ -612,7 +624,7 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
         {
           do
             {
-              GQuark column_id = tree_model_get_column_id(model, &iter) ;
+              GQuark column_id = tree_model_get_column_id(model, &iter, TRUE) ;
           
               ZMapFeatureColumn column = (ZMapFeatureColumn)g_hash_table_lookup(columns, GINT_TO_POINTER(column_id)) ;
 
@@ -621,10 +633,28 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
                   column->order = i ;
                   ++i ;
 
-                  page_data->configure_data->columns_changed = TRUE ;
+                  columns_changed = TRUE ;
                 }
             } while (gtk_tree_model_iter_next(model, &iter)) ;
         }
+
+      /* Need to set the feature_set_names list to the correct order. Not sure if we should include
+       * all featuresets or just reorder the list that is there. For now, include all. */
+      if (page_data->window->feature_set_names)
+        g_list_free(page_data->window->feature_set_names) ;
+
+      page_data->window->feature_set_names = zMapFeatureGetOrderedColumnsListIDs(page_data->window->context_map) ;
+
+      /* Redraw */
+      zmapWindowBusy(page_data->window, FALSE) ;
+      zmapWindowColOrderColumns(page_data->window);
+
+      if(page_data->reposition)
+        zmapWindowFullReposition(page_data->window->feature_root_group, TRUE, "loaded_page_apply_reorder_columns") ;
+
+      zmapWindowBusy(page_data->window, FALSE) ;
+     
+      page_data->configure_data->window->flags[ZMAPFLAG_SAVE_COLUMNS] = TRUE ;
     }
 }
 
@@ -662,12 +692,92 @@ static void loaded_page_apply_styles(LoadedPageData page_data)
                                                    feature_set,
                                                    page_data->window->context_map,
                                                    page_data->window);
-
-
-                      /* Indicate that there are changes to the featureset->style relationships
-                       * that need saving in the config */
-                      page_data->window->flags[ZMAPFLAG_CONFIG_NEEDS_SAVING] = FALSE ;
                     }
+                }
+            } while (gtk_tree_model_iter_next(model, &iter)) ;
+        }
+    }
+}
+
+
+/* For a hash table of IDs to GLists of IDs, remove the given value from the GList for the given
+ * key. If this would leave the list empty then also remove the list from the hash table. */
+static void hashListRemoveID(GHashTable *ghash, const GQuark key, const GQuark value)
+{
+  /* Get the list of values */
+  GList *values = (GList*)(g_hash_table_lookup(ghash, GINT_TO_POINTER(key))) ;
+
+  /* Remove the given value from the list of values */
+  values = g_list_remove(values, GINT_TO_POINTER(value)) ;
+
+  if (values && g_list_length(values) > 0)
+    {
+      /* There are still values in the list, so update the list in the hash table */
+      g_hash_table_replace(ghash, GINT_TO_POINTER(key), values) ;
+    }
+  else
+    {
+      /* The list is now empty so remove it from the hash table */
+      g_hash_table_remove(ghash, GINT_TO_POINTER(key)) ;
+
+      if (values)
+        g_list_free(values) ;
+    }
+}
+
+
+/* For a hash table of IDs to GLists of IDs, insert the given value into the GList for the given
+ * key. If the list does not exist then create it. */
+static void hashListInsertID(GHashTable *ghash, const GQuark key, const GQuark value)
+{
+  GList *list = (GList*)(g_hash_table_lookup(ghash, GINT_TO_POINTER(key))) ;
+
+  /* If the list is null then we create a new one.*/
+  gboolean new_list = (list == NULL) ;
+  list = g_list_append(list, GINT_TO_POINTER(value)) ;
+
+  if (new_list)
+    g_hash_table_insert(ghash, GINT_TO_POINTER(key), list) ;
+  else
+    g_hash_table_replace(ghash, GINT_TO_POINTER(key), list) ;
+}
+
+
+/* Assign groups based on their values in the tree */
+static void loaded_page_apply_groups(LoadedPageData page_data)
+{
+  zMapReturnIfFail(page_data && 
+                   page_data->tree_model &&
+                   page_data->window &&
+                   page_data->window->context_map &&
+                   page_data->window->context_map->column_groups) ;
+
+  if (page_data->apply_now)
+    {
+      GtkTreeModel *model = page_data->tree_model ;
+      GHashTable *column_groups = page_data->window->context_map->column_groups ;
+
+      /* Loop through all rows in the tree */
+      GtkTreeIter iter;
+  
+      if (gtk_tree_model_get_iter_first(model, &iter))
+        {
+          do
+            {
+              GQuark column_id = tree_model_get_column_id(model, &iter, FALSE) ;
+              GQuark new_group_id = tree_model_get_group_id(model, &iter) ;
+              GQuark old_group_id = hashListFindID(column_groups, column_id) ;
+
+              /* Check if the group has changed */
+              if (new_group_id != old_group_id)
+                {
+                  if (old_group_id)
+                    hashListRemoveID(column_groups, old_group_id, column_id) ;
+
+                  if (new_group_id)
+                    hashListInsertID(column_groups, new_group_id, column_id) ;
+                  
+                  page_data->window->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = TRUE ;
                 }
             } while (gtk_tree_model_iter_next(model, &iter)) ;
         }
@@ -695,21 +805,10 @@ static void loaded_page_apply(NotebookPage notebook_page)
   loaded_page_data->apply_now  = TRUE;
   loaded_page_data->reposition = FALSE;
 
-  /* Apply the new visibility states */
+  /* Apply the new visibility states, styles and groups */
   loaded_page_apply_visibility(loaded_page_data) ;
-
-  /* Apply the new styles */
   loaded_page_apply_styles(loaded_page_data) ;
-
-  /* Apply the new column order based on the tree order */
-  loaded_page_apply_reorder_columns(loaded_page_data) ;
-
-  /* Need to set the feature_set_names list to the correct order. Not sure if we should include
-   * all featuresets or just reorder the list that is there. For now, include all. */
-  if (window->feature_set_names)
-    g_list_free(window->feature_set_names) ;
-
-  window->feature_set_names = zMapFeatureGetOrderedColumnsListIDs(window->context_map) ;
+  loaded_page_apply_groups(loaded_page_data) ;
 
   zmapWindowBusy(loaded_page_data->window, FALSE) ;
   zmapWindowColOrderColumns(loaded_page_data->window);
@@ -719,9 +818,6 @@ static void loaded_page_apply(NotebookPage notebook_page)
   /* Restore the original flag values */
   loaded_page_data->apply_now  = save_apply_now;
   loaded_page_data->reposition = save_reposition;
-
-  /* Now reposition everything */
-  zmapWindowFullReposition(configure_data->window->feature_root_group,TRUE, "show hide") ;
 
   /* Maintain the current order but clear any sorting */
   gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(loaded_page_data->tree_model), 
@@ -906,7 +1002,7 @@ static void loaded_page_update_matching_tree_rows(LoadedPageData loaded_page_dat
     {
       do
         {
-          GQuark column_id = tree_model_get_column_id(model, &iter) ;
+          GQuark column_id = tree_model_get_column_id(model, &iter, TRUE) ;
           FooCanvasGroup *column_group = zmapWindowGetColumnByID(loaded_page_data->window, strand, column_id) ;
 
           if (column_group == search_column_group)
@@ -1967,10 +2063,54 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   /* Create the style column */
   createTreeViewColumn(tree_view, "Style", STYLE_COLUMN, text_renderer, "text", TRUE) ;
 
+  /* Create the group column */
+  createTreeViewColumn(tree_view, "Group", GROUP_COLUMN, text_renderer, "text", TRUE) ;
+
 
   page_data->tree_view = GTK_TREE_VIEW(tree) ;
 
   return tree ;
+}
+
+
+/* Called on each entry in a hash table of glists and sets the result if this glist contains the
+ * given search id */
+static void hashListFindIDCB(gpointer key, gpointer data, gpointer user_data)
+{
+  GQuark group_id = (GQuark)GPOINTER_TO_INT(key) ;
+  GList *group_featuresets = (GList*)data ;
+  HashListFindID find_data = (HashListFindID)user_data ;
+
+  if (group_id && group_featuresets)
+    {
+      GQuark unique_id = zMapStyleCreateID(g_quark_to_string(find_data->search_id)) ;
+
+      for (GList *item = group_featuresets; item; item = item->next)
+        {
+          GQuark group_featureset_id = GPOINTER_TO_INT(item->data) ;
+          GQuark group_unique_id = zMapStyleCreateID(g_quark_to_string(group_featureset_id)) ;
+
+          if (group_featureset_id == find_data->search_id ||
+              group_unique_id == unique_id)
+            {
+              find_data->result = group_id ;
+              break ;
+            }
+        }
+    }
+}
+
+
+/* Return the key in the hash table of the entry that contains the given id in a list. Returns 0
+ * if not found. Takes a hash table of GQuark to GList of GQuarks and looks for the search_id in
+ * the GList. */
+static GQuark hashListFindID(GHashTable *ghash, const GQuark search_id)
+{
+  HashListFindIDStruct data = {0, search_id} ;
+
+  g_hash_table_foreach(ghash, hashListFindIDCB, &data) ;
+
+  return data.result ;
 }
 
 
@@ -1995,7 +2135,13 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
 
   /* Set the style name */
   if (column->style)
-    gtk_list_store_set(store, &iter, STYLE_COLUMN, g_quark_to_string(column->style->original_id), -1);
+    gtk_list_store_set(store, &iter, STYLE_COLUMN, g_quark_to_string(column->style->unique_id), -1);
+
+  /* Set the group name */
+  GQuark group_id = hashListFindID(page_data->window->context_map->column_groups, column->column_id) ;
+          
+  if (group_id)
+    gtk_list_store_set(store, &iter, GROUP_COLUMN, g_quark_to_string(group_id), -1);
 
   /* Show two sets of radio buttons for each column to change column display state for
    * each strand. gb10: not sure why but historically we only added an apply button if we set
@@ -2073,7 +2219,7 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
   GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, 
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, 
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
-                                           G_TYPE_STRING) ;
+                                           G_TYPE_STRING, G_TYPE_STRING) ;
 
   /* Loop through all columns in display order (columns are shown in mirror order on the rev
    * strand but we always use forward-strand order) */
@@ -2157,12 +2303,11 @@ static void set_column_style_cb(GtkTreeModel *model_in, GtkTreePath *path, GtkTr
   gtk_list_store_set(GTK_LIST_STORE(model), iter, 
                      STYLE_COLUMN, g_quark_to_string(page_data->last_style_id),
                      -1) ;
-
-  /* Apply the changes (if the apply-now flag is set) */
-  loaded_page_apply_styles(page_data) ;
 }
 
 
+/* Called when the user hits the set-group button. Prompts for a style and assigns it to the
+ * currently-selected rows. */
 static void choose_style_button_cb(GtkButton *button, gpointer user_data)
 {
   LoadedPageData page_data = (LoadedPageData)user_data ;
@@ -2181,6 +2326,92 @@ static void choose_style_button_cb(GtkButton *button, gpointer user_data)
         {
           page_data->last_style_id = style_id ;
           gtk_tree_selection_selected_foreach(selection, &set_column_style_cb, page_data) ;
+
+          /* Apply the changes (if the apply-now flag is set) */
+          loaded_page_apply_styles(page_data) ;
+        }
+    }
+  else
+    {
+      zMapWarning("%s", "Please select one or more columns") ;
+    }
+}
+
+
+/* Called for each row in the current selection to set the group to the last-selected group in
+ * the data */
+static void set_column_group(LoadedPageData page_data, 
+                             GtkTreeModel *model_in, 
+                             GtkTreePath *path)
+{
+  zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
+
+  /* Update the group column in the tree model */
+  GtkTreeIter iter ;
+  GtkTreeModel *model = model_in ;
+
+  if (GTK_IS_TREE_MODEL_FILTER(model_in))
+    {
+      /* Its the filtered model, so we must find the child model and iter */
+      model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
+      GtkTreeIter iter_in ;
+      gtk_tree_model_get_iter(model_in, &iter_in, path) ;
+      gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), &iter, &iter_in) ;
+    }
+  else
+    {
+      gtk_tree_model_get_iter(model_in, &iter, path) ;
+    }
+
+  if (page_data->last_group_id)
+    {
+      gtk_list_store_set(GTK_LIST_STORE(model), &iter, 
+                         GROUP_COLUMN, g_quark_to_string(page_data->last_group_id),
+                         -1) ;
+    }
+  else
+    {
+      gtk_list_store_set(GTK_LIST_STORE(model), &iter, 
+                         GROUP_COLUMN, NULL,
+                         -1) ;
+    }
+}
+
+
+/* Called when the user hits the set-group button. Prompts for a group name and applies it to the
+ * currently-selected rows. */
+static void set_group_button_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+
+  if (selection)
+    {
+      const char *msg = "Please enter a group name (lowercase only).\n\nClear the text to remvoe the group." ;
+      char *text_out = NULL ;
+
+      GtkResponseType response = zMapGUIMsgGetText(NULL, ZMAP_MSG_INFORMATION, msg, FALSE, &text_out) ;
+
+      if (response == GTK_RESPONSE_OK)
+        {
+          if (text_out && *text_out)
+            page_data->last_group_id = zMapStyleCreateID(text_out) ;
+          else
+            page_data->last_group_id = 0 ;
+
+          GtkTreeModel *model = NULL ;
+          GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+          
+          for (GList *item = rows; item; item = item->next)
+            {
+              GtkTreePath *path = (GtkTreePath*)(item->data) ;
+              set_column_group(page_data, model, path) ;
+            }
+
+          /* Apply the changes (if the apply-now flag is set) */
+          loaded_page_apply_groups(page_data) ;
         }
     }
   else
@@ -2217,14 +2448,37 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
 }
 
 
+/* Called when the user hits the button to apply the new column order. */
+static void reorder_columns_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  
+  gboolean save_apply_now  = page_data->apply_now;
+  gboolean save_reposition = page_data->reposition;
+
+  page_data->apply_now  = TRUE;
+  page_data->reposition = TRUE;
+
+  loaded_page_apply_reorder_columns(page_data) ;
+
+  /* Restore the original flag values */
+  page_data->apply_now  = save_apply_now;
+  page_data->reposition = save_reposition;
+}
+
+
 static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
 {
   zMapReturnValIfFail(page_data && page_data->configure_data, NULL) ;
-  GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
+
+  GtkWidget *vbox = gtk_vbox_new(FALSE, XPAD) ;
 
   /* Add search/filter boxes (only if viewing multiple columns) */
   if (page_data->configure_data->mode == ZMAPWINDOWCOLUMN_CONFIGURE_ALL)
     {
+      GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
+      gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
+
       gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Search:"), FALSE, FALSE, 0) ;
       page_data->search_entry = GTK_ENTRY(gtk_entry_new()) ;
       gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(page_data->search_entry), FALSE, FALSE, 0) ;
@@ -2236,20 +2490,37 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
       g_signal_connect(G_OBJECT(page_data->filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), page_data) ;
       gtk_widget_set_tooltip_text(GTK_WIDGET(page_data->filter_entry), "Show only column names containing this text. Press enter to apply the filter.") ;
 
-      /* Add a button to clear the contents of the search/filter boxes */
+      /* Add a button to clear the search/filter boxes and sort order */
       GtkWidget *button = gtk_button_new_with_mnemonic("C_lear") ;
       gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
       g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(clear_button_cb), page_data) ;
       gtk_widget_set_tooltip_text(button, "Clear the search/filter boxes and the sort order, so that rows can be reordered manually") ;
     }
 
+  GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
+
   /* Add a button to choose a style for the selected columns */
-  GtkWidget *button = gtk_button_new_with_mnemonic("Choose S_tyle") ;
+  GtkWidget *button = gtk_button_new_with_mnemonic("Choose _Style") ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(choose_style_button_cb), page_data) ;
   gtk_widget_set_tooltip_text(button, "Assign a style to the selected tracks") ;
 
-  return hbox ;
+  /* Add a button to set a group for the selected columns */
+  button = gtk_button_new_with_mnemonic("Set _Group") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(set_group_button_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Choose a group for the selected tracks") ;
+
+  /* Add a button to apply the new column order. We want them to explicitly choose to reorder
+   * rather than doing this when they hit the Apply button because they might have reordered just
+   * to be able to view columns better. */
+  button = gtk_button_new_with_mnemonic("Apply Column _Order") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(reorder_columns_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Applies the new track order based on the order of the rows in the list. (Drag and drop rows to change the order.)") ;
+
+  return vbox ;
 }
 
 
@@ -2340,15 +2611,15 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
   gtk_box_set_spacing (GTK_BOX(button_box), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
   gtk_container_set_border_width (GTK_CONTAINER (button_box), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
-  cancel_button = gtk_button_new_from_stock(GTK_STOCK_CLOSE) ;
-  gtk_box_pack_start(GTK_BOX(button_box), cancel_button, FALSE, FALSE, 0) ;
-  gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked", GTK_SIGNAL_FUNC(cancel_button_cb), configure_data) ;
-  gtk_widget_set_tooltip_text(cancel_button, "Close and lose unsaved changes") ;
-
   revert_button = gtk_button_new_from_stock(GTK_STOCK_REVERT_TO_SAVED) ;
   gtk_box_pack_start(GTK_BOX(button_box), revert_button, FALSE, FALSE, 0) ;
   gtk_signal_connect(GTK_OBJECT(revert_button), "clicked", GTK_SIGNAL_FUNC(revert_button_cb), configure_data) ;
   gtk_widget_set_tooltip_text(revert_button, "Revert to last applied values") ;
+
+  cancel_button = gtk_button_new_from_stock(GTK_STOCK_CLOSE) ;
+  gtk_box_pack_start(GTK_BOX(button_box), cancel_button, FALSE, FALSE, 0) ;
+  gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked", GTK_SIGNAL_FUNC(cancel_button_cb), configure_data) ;
+  gtk_widget_set_tooltip_text(cancel_button, "Close and lose unsaved changes") ;
 
   apply_button = gtk_button_new_from_stock(GTK_STOCK_APPLY) ;
   gtk_box_pack_end(GTK_BOX(button_box), apply_button, FALSE, FALSE, 0) ;
@@ -2466,7 +2737,7 @@ static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_dat
   ColConfigure configure_data = loaded_page_data->configure_data ;
   
   /* Get the column that's in this tree row */
-  GQuark column_id = tree_model_get_column_id(model, iter) ;
+  GQuark column_id = tree_model_get_column_id(model, iter, TRUE) ;
   FooCanvasGroup *column_group = zmapWindowGetColumnByID(loaded_page_data->window, strand, column_id) ;
 
   /* Get the required state of this tree row according to the toggle value in the tree model */
@@ -2533,8 +2804,9 @@ static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_dat
 
 
 
-/* Get the column name for the given row in the given tree. Return it as a unique id */
-static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter)
+/* Get the column name for the given row in the given tree. If 'unique' is true returns the
+ * unique id, otherwise the original id */
+static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter, const gboolean unique)
 {
   GQuark column_id = 0 ;
   char *column_name = NULL ;
@@ -2573,6 +2845,26 @@ static GQuark tree_model_get_style_id(GtkTreeModel *model, GtkTreeIter *iter)
 }
 
 
+/* Get the group id for the given row in the given tree */
+static GQuark tree_model_get_group_id(GtkTreeModel *model, GtkTreeIter *iter)
+{
+  GQuark group_id = 0 ;
+  char *group_name = NULL ;
+
+  gtk_tree_model_get (model, iter,
+                      GROUP_COLUMN, &group_name,
+                      -1);
+
+  if (group_name)
+    {
+      group_id = zMapStyleCreateID(group_name) ;
+      g_free(group_name) ;
+    }
+
+  return group_id ;
+}
+
+
 /* Convert a list of featureset ids to a list of ZMapFeatureSet structs. Returns a newly
  * allocated GList. */
 //static GList* getFeaturesetStructsFromIDs(GList *featureset_ids, ZMapFeatureContext context)
@@ -2602,7 +2894,7 @@ static GList* tree_model_get_column_featuresets(LoadedPageData page_data, GtkTre
   GList *result = NULL ;
   zMapReturnValIfFail(page_data && page_data->window, result) ;
 
-  GQuark column_id = tree_model_get_column_id(model, iter) ;
+  GQuark column_id = tree_model_get_column_id(model, iter, TRUE) ;
 
   FooCanvasGroup *column_group = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column_id) ;
 
@@ -2845,8 +3137,6 @@ static void revert_button_cb(GtkWidget *apply_button, gpointer user_data)
 
   zmapWindowColumnConfigure(configure_data->window, NULL, configure_data->mode);
 
-  configure_data->columns_changed = FALSE ;
-
   return ;
 }
 
@@ -2855,9 +3145,6 @@ static void apply_button_cb(GtkWidget *apply_button, gpointer user_data)
   ColConfigure configure_data = (ColConfigure)user_data;
 
   notebook_foreach_page(configure_data->notebook, FALSE, NOTEBOOK_APPLY_FUNC, NULL);
-
-  if (configure_data->columns_changed)
-    configure_data->window->flags[ZMAPFLAG_COLUMNS_NEED_SAVING] = TRUE ;
 
   return ;
 }

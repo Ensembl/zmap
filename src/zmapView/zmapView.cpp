@@ -106,6 +106,9 @@
 
 
 
+typedef gboolean (*HashListExportValueFunc)(const char *key_str, const char *value_str) ;
+
+
 /* Struct describing features loaded. */
 typedef struct LoadFeaturesDataStructType
 {
@@ -351,7 +354,12 @@ static void getWindowList(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void configUpdateContext(ZMapView view, ZMapConfigIniContext context, const ZMapViewExportType export_type, ZMapConfigIniFileType file_type) ;
-void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *stanza, GHashTable *ghash) ;
+static void updateContextHashList(ZMapConfigIniContext context,
+                                  ZMapConfigIniFileType file_type, 
+                                  const char *stanza,
+                                  GHashTable *ghash,
+                                  HashListExportValueFunc export_func) ;
+
 static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
                                                                     gpointer data,
                                                                     gpointer user_data,
@@ -2324,7 +2332,7 @@ static GtkResponseType checkForUnsavedAnnotation(ZMapView zmap_view)
 {
   GtkResponseType response = GTK_RESPONSE_OK ;
 
-  if (zmap_view && zmap_view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING])
+  if (zmap_view && zmap_view->flags[ZMAPFLAG_SAVE_SCRATCH])
     {
       GtkWindow *parent = NULL ;
 
@@ -2358,7 +2366,7 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
 {
   GtkResponseType response = GTK_RESPONSE_OK ;
 
-  if (zmap_view && zmap_view->flags[ZMAPFLAG_FEATURES_NEED_SAVING])
+  if (zmap_view && zmap_view->flags[ZMAPFLAG_SAVE_FEATURES])
     {
       GtkWindow *parent = NULL ;
 
@@ -2423,7 +2431,7 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
 //  GtkResponseType response = GTK_RESPONSE_OK ;
 //  GError *error = NULL ;
 //
-//  if (zmap_view && zmap_view->flags[ZMAPFLAG_CONFIG_NEEDS_SAVING])
+//  if (zmap_view && zmap_view->flags[ZMAPFLAG_SAVE_CONFIG])
 //    {
 //      GtkWindow *parent = NULL ;
 //
@@ -6983,7 +6991,7 @@ void zMapViewSetSaveFile(ZMapView view, const ZMapViewExportType export_type, co
 {
   zMapReturnIfFail(view) ;
   view->save_file[export_type] = g_quark_from_string(filename) ;
-  view->flags[ZMAPFLAG_FEATURES_NEED_SAVING] = FALSE ;
+  view->flags[ZMAPFLAG_SAVE_FEATURES] = FALSE ;
 }
 
 
@@ -7095,7 +7103,7 @@ static void configUpdateContext(ZMapView view,
 
   zMapReturnIfFailSafe(export_type == ZMAPVIEW_EXPORT_CONFIG) ;
 
-  if (view->flags[ZMAPFLAG_COLUMNS_NEED_SAVING])
+  if (view->flags[ZMAPFLAG_SAVE_COLUMNS])
     {
       GList *ordered_list = zMapFeatureGetOrderedColumnsListIDs(&view->context_map) ;
       char *result = zMap_g_list_quark_to_string(ordered_list, NULL) ;
@@ -7109,12 +7117,12 @@ static void configUpdateContext(ZMapView view,
     }
 
 
-  if (view->flags[ZMAPFLAG_CHANGED_FEATURESET_STYLE])
+  if (view->flags[ZMAPFLAG_SAVE_FEATURESET_STYLE])
     {
       /* Set values in the context for the column-style stanza based on the column_2_styles hash table */
       /* gb10: not implemented yet - we don't yet allow the user to edit the column styles, just
        * the featureset styles */
-      //updateContextColumnStyles(context, file_type, ZMAPSTANZA_COLUMN_STYLE_CONFIG, view->context_map.column_2_styles);
+      //updateContextHashList(context, file_type, ZMAPSTANZA_COLUMN_STYLE_CONFIG, view->context_map.column_2_styles, exportColumnStyle);
 
       /* Set values for the featureset-style stanza */
       GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;
@@ -7124,20 +7132,54 @@ static void configUpdateContext(ZMapView view,
 
       changed = TRUE ;
     }
+
+  if (view->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS])
+    {
+      updateContextHashList(context, file_type, ZMAPSTANZA_COLUMN_GROUPS, view->context_map.column_groups, NULL) ;
+    }
   
   /* Set the unsaved flag in the context if there were any changes */
   if (changed)
     {
-      view->flags[ZMAPFLAG_COLUMNS_NEED_SAVING] = FALSE ;
-      view->flags[ZMAPFLAG_CHANGED_FEATURESET_STYLE] = FALSE ;
+      view->flags[ZMAPFLAG_SAVE_COLUMNS] = FALSE ;
+      view->flags[ZMAPFLAG_SAVE_FEATURESET_STYLE] = FALSE ;
       zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
     }
 }
 
 
-/*  Update the given context with featureset-style relationships */
+/* Returns true if the given style should be included when exporting column-style values */
+static gboolean exportColumnStyle(const char *key_str, const char *value_str)
+{
+  gboolean result = TRUE ;
+
+  /* Only export if value is different to key (otherwise the style name is the
+   * same as the column name, and this stanza doesn't add anything). Also don't
+   * export if it's a default style. */
+  if (value_str != key_str &&
+      strcmp(value_str, "invalid") &&
+      strcmp(value_str, "basic") &&
+      strcmp(value_str, "alignment") &&
+      strcmp(value_str, "transcript") &&
+      strcmp(value_str, "sequence") &&
+      strcmp(value_str, "assembly-path") &&
+      strcmp(value_str, "text") &&
+      strcmp(value_str, "graph") &&
+      strcmp(value_str, "glyph") &&
+      strcmp(value_str, "plain") &&
+      strcmp(value_str, "meta") &&
+      strcmp(value_str, "search hit marker"))
+    {
+      result = FALSE ;
+    }
+
+  return result ;
+}
+
+
+/*  Update the given context with column-style relationships */
 void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
-                                   const char *stanza, GHashTable *ghash)
+                               const char *stanza, GHashTable *ghash)
 {
   zMapReturnIfFail(context && context->config) ;
 
@@ -7163,22 +7205,7 @@ void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileTy
                 {
                   const char *value_str = g_quark_to_string(GPOINTER_TO_INT(item->data)) ;
 
-                  /* Only export if value is different to key (otherwise the style name is the
-                   * same as the column name, and this stanza doesn't add anything). Also don't
-                   * export if it's a default style. */
-                  if (value_str != key_str &&
-                      strcmp(value_str, "invalid") &&
-                      strcmp(value_str, "basic") &&
-                      strcmp(value_str, "alignment") &&
-                      strcmp(value_str, "transcript") &&
-                      strcmp(value_str, "sequence") &&
-                      strcmp(value_str, "assembly-path") &&
-                      strcmp(value_str, "text") &&
-                      strcmp(value_str, "graph") &&
-                      strcmp(value_str, "glyph") &&
-                      strcmp(value_str, "plain") &&
-                      strcmp(value_str, "meta") &&
-                      strcmp(value_str, "search hit marker"))
+                  if (exportColumnStyle(key_str, value_str))
                     {
                       if (!values_str)
                         values_str = g_string_new(value_str) ;
@@ -7196,6 +7223,59 @@ void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileTy
         }
     }
 }
+
+
+/* Update the given context with the given hash table of ids mapped to a glist of ids. This is
+ * exported as key=value where the hash table id is the key and the value is a
+ * semi-colon-separated list of the ids from the glist. export_func is an optional function that
+ * takes the key and glist-value and returns true if the value should be included in the context, false if
+ * not. If this function is null then all values are included.  */
+static void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
+                                  const char *stanza, GHashTable *ghash, HashListExportValueFunc export_func)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;
+
+  if (gkf)
+    {
+      /* Loop through all entries in the hash table */
+      GList *iter = NULL ;
+      gpointer key = NULL,value = NULL;
+
+      zMap_g_hash_table_iter_init(&iter, ghash) ;
+
+      while(zMap_g_hash_table_iter_next(&iter, &key, &value))
+        {
+          const char *key_str = g_quark_to_string(GPOINTER_TO_INT(key)) ;
+
+          if (key_str)
+            {
+              GString *values_str = NULL ;
+
+              for (GList *item = (GList*)value ; item ; item = item->next) 
+                {
+                  const char *value_str = g_quark_to_string(GPOINTER_TO_INT(item->data)) ;
+
+                  if (!export_func || export_func(key_str, value_str))
+                    {
+                      if (!values_str)
+                        values_str = g_string_new(value_str) ;
+                      else
+                        g_string_append_printf(values_str, " ; %s", value_str) ;
+                    }
+                }
+
+              if (values_str)
+                {
+                  g_key_file_set_string(gkf, stanza, key_str, values_str->str) ;
+                  g_string_free(values_str, TRUE) ;
+                }
+            }
+        }
+    }
+}
+
 
 
 /* Callback called for all featuresets to set the key-value pair for the featureset-style stanza
@@ -7244,3 +7324,4 @@ static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
 
   return status ;
 }
+

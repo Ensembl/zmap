@@ -2874,8 +2874,8 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
        * created a new "real" feature which is unsaved. */
       if (create_feature)
         {
-          window->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
-          window->flags[ZMAPFLAG_FEATURES_NEED_SAVING] = TRUE ;
+          window->flags[ZMAPFLAG_SAVE_SCRATCH] = FALSE ;
+          window->flags[ZMAPFLAG_SAVE_FEATURES] = TRUE ;
         }
 
       /*! \todo Check that feature was saved successfully before reporting back. Also close
