@@ -2660,10 +2660,12 @@ static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
     "Drag and drop rows to reorder the Columns manually. Click on the column headers to sort the columns\n"
     "automatically. Click Clear to disable automatic sorting so that you can drag-and-drop rows manually\n"
     "again (note that this will not revert the order, it just enables manual ordering based on the new order).\n"
+    "Note that you must click the APPLY COLUMN ORDER button to apply the new order (the main Apply button WILL\n"
+    "NOT reorder columns).\n"
     "\n"
-    "Click Apply when finished to save and apply the changes you have made (if there is no Apply button,\n"
-    "changes will be applied immediately). If you want to reset the dialog to the last-saved values, click\n"
-    "Revert. If you want to exit without saving the latest changes, click Close.\n"
+    "Click Apply when finished to save and apply the changes you have made (other than column order - see above).\n"
+    "If there is no Apply button, changes will be applied immediately. If you want to reset the dialog to the\n"
+    "last-saved values, click Revert. If you want to exit without saving the latest changes, click Close.\n"
     "\n" ;
 
   zMapGUIShowText(title, help_text, FALSE) ;
