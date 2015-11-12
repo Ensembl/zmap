@@ -50,7 +50,7 @@ gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error
 GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
                                   ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
                                   ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
-void zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map) ;
+GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map) ;
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
 				      ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
 void zMapAppMergeSequenceName(ZMapFeatureSequenceMap seq_map_inout, const char *sequence_name, 

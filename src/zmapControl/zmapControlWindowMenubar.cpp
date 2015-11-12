@@ -733,15 +733,14 @@ static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWi
 /* Creaet a new source. */
 static void newSourceCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
-  ZMap zmap = NULL ;
-
-  zMapReturnIfFail(cb_data) ;
-
-  zmap = (ZMap)cb_data ;
+  ZMap zmap = (ZMap)cb_data ;
   zMapReturnIfFail(zmap) ;
 
   if (!(zmap->sequence_dialog))
-    zmap->sequence_dialog = zMapAppCreateSource(zmap->sequence_map) ;
+    {
+      ZMapView view = zMapViewGetView(zmap->focus_viewwindow) ;
+      zmap->sequence_dialog = zMapAppCreateSource(zMapViewGetSequenceMap(view)) ;
+    }
 
   return ;
 }

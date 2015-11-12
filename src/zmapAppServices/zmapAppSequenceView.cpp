@@ -123,18 +123,6 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
 }
 
 
-/* Show a dialog to create a new source */
-void zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map)
-{
-  GtkWidget *toplevel = zMapGUIToplevelNew(NULL, "Create a new source") ;
-
-  gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
-  gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
-
-  gtk_widget_show_all(toplevel) ;
-}
-
-
 /* As for zMapAppGetSequenceView() except that returns a GtkWidget that can be
  * incorporated into a window. */
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
