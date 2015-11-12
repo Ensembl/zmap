@@ -730,7 +730,18 @@ static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWi
   return ;
 }
 
-/* Creaet a new source. */
+
+/* Callback called when the create-source dialog has been ok'd to do the work to create the new
+ * source from the user-provided info */
+static void createNewSourceCB(ZMapURL url, const char *name, const char *featuresets, gpointer user_data)
+{
+  ZMap zmap = (ZMap)user_data ;
+  
+  
+}
+
+
+/* Menu option callback to create a new source. */
 static void newSourceCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMap zmap = (ZMap)cb_data ;
@@ -739,7 +750,10 @@ static void newSourceCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   if (!(zmap->sequence_dialog))
     {
       ZMapView view = zMapViewGetView(zmap->focus_viewwindow) ;
-      zmap->sequence_dialog = zMapAppCreateSource(zMapViewGetSequenceMap(view)) ;
+
+      zmap->sequence_dialog = zMapAppCreateSource(zMapViewGetSequenceMap(view),
+                                                  createNewSourceCB,
+                                                  zmap) ;
     }
 
   return ;

@@ -41,19 +41,24 @@
 
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
-
+#include <ZMap/zmapUrl.hpp>
 
 
 /* Data we need in callbacks. */
 typedef struct MainFrameStructName
 {
   GtkWidget *toplevel ;
+
+  GtkWidget *name_widg ;
   GtkWidget *url_widg ;
   GtkWidget *featuresets_widg ;
 
   GtkWidget *chooser_widg ;
 
   ZMapFeatureSequenceMap sequence_map ;
+  
+  ZMapAppCreateSourceCB user_func ;
+  gpointer user_data ;
 
 } MainFrameStruct, *MainFrame ;
 
@@ -77,7 +82,9 @@ static void applyCB(GtkWidget *widget, gpointer cb_data) ;
 
 
 /* Show a dialog to create a new source */
-GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map)
+GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
+                               ZMapAppCreateSourceCB user_func,
+                               gpointer user_data)
 {
   GtkWidget *toplevel = NULL ;
   GtkWidget *container ;
@@ -177,6 +184,10 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
 
+  main_data->name_widg = entry = gtk_entry_new() ;
+  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+
   main_data->url_widg = entry = gtk_entry_new() ;
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
@@ -249,9 +260,23 @@ static void cancelCB(GtkWidget *widget, gpointer cb_data)
 /* Create the new source. */
 static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
-  //  MainFrame main_data = (MainFrame)cb_data ;
+  MainFrame main_frame = (MainFrame)cb_data ;
 
-  
+  const char *name = gtk_entry_get_text(GTK_ENTRY(main_frame->name_widg)) ;
+  const char *path = gtk_entry_get_text(GTK_ENTRY(main_frame->url_widg)) ;
+  const char *featuresets = gtk_entry_get_text(GTK_ENTRY(main_frame->featuresets_widg)) ;
+
+  if (path)
+    {
+      ZMapURL zmap_url = g_new0(ZMapURLStruct, 1) ;
+
+      zmap_url->scheme = SCHEME_FILE ;
+      zmap_url->protocol = g_strdup("file") ;
+      zmap_url->path = g_strdup(path) ;
+      zmap_url->url = g_strdup_printf("%s://%s", zmap_url->protocol, zmap_url->path) ;
+
+      (main_frame->user_func)(zmap_url, name, featuresets, main_frame->user_data) ;
+    }
 
   return ;
 }
