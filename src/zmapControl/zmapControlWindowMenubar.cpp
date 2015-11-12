@@ -733,7 +733,7 @@ static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWi
 
 /* Callback called when the create-source dialog has been ok'd to do the work to create the new
  * source from the user-provided info */
-static void createNewSourceCB(ZMapURL url, const char *name, const char *featuresets, gpointer user_data)
+static void createNewSourceCB(const char *name, const char *url, const char *featuresets, gpointer user_data)
 {
   ZMap zmap = (ZMap)user_data ;
   

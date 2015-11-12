@@ -35,7 +35,6 @@
 #include <gtk/gtk.h>
 
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
-#include <ZMap/zmapUrl.hpp>
 
 
 
@@ -46,7 +45,7 @@ typedef void (*ZMapAppGetSequenceViewCB)(ZMapFeatureSequenceMap sequence_map, gp
 typedef void (*ZMapAppClosedSequenceViewCB)(GtkWidget *toplevel, gpointer user_data) ;
 
 /* User callback function, called by zMapAppCreateSource code */
-typedef void (*ZMapAppCreateSourceCB)(ZMapURL zmap_url, const char *name, const char *featuresets, gpointer user_data) ;
+typedef void (*ZMapAppCreateSourceCB)(const char *name, const char *url, const char *featuresets, gpointer user_data) ;
 
 
 

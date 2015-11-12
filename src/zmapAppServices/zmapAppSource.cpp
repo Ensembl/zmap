@@ -41,7 +41,6 @@
 
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
-#include <ZMap/zmapUrl.hpp>
 
 
 /* Data we need in callbacks. */
@@ -268,14 +267,9 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
 
   if (path)
     {
-      ZMapURL zmap_url = g_new0(ZMapURLStruct, 1) ;
+      char *url = g_strdup_printf("file://%s", path) ;
 
-      zmap_url->scheme = SCHEME_FILE ;
-      zmap_url->protocol = g_strdup("file") ;
-      zmap_url->path = g_strdup(path) ;
-      zmap_url->url = g_strdup_printf("%s://%s", zmap_url->protocol, zmap_url->path) ;
-
-      (main_frame->user_func)(zmap_url, name, featuresets, main_frame->user_data) ;
+      (main_frame->user_func)(name, url, featuresets, main_frame->user_data) ;
     }
 
   return ;
