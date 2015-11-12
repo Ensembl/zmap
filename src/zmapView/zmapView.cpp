@@ -365,6 +365,11 @@ static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
                                                                     gpointer user_data,
                                                                     char **err_out) ;
 
+static void viewWindowsMergeColumns(ZMapView zmap_view) ;
+static void viewSetUpStyles(ZMapView zmap_view, char *stylesfile) ;
+static void viewSetUpPredefinedColumns(ZMapView zmap_view, ZMapFeatureSequenceMap sequence_map) ;
+static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_list, GError **error) ;
+static void viewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server) ;
 
 
 /*
@@ -633,7 +638,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
     }
   else
     {
-      GList *settings_list = NULL, *free_this_list = NULL;
+      GList *settings_list = NULL ;
 
       zMapPrintTimer(NULL, "Open connection") ;
 
@@ -655,234 +660,21 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       // create stanza structs for any URLs passed on command line
       zmapViewGetCmdLineSources(sequence_map, &settings_list) ;
 
-      /*
-       * read styles from file
-       * the idea is that we can create a new view with new styles without restarting ZMap
-       * but as that involves re-requesting data there's little gain.
-       * Maybe you could have views of two sequences and you want to change a style in one ?
-       *
-       * each server can have it's own styles file, but was always use the same for each
-       * and ACE can provide it's own styles. w/otterlace we use that same styles file
-       * w/ XACE they want thier original styles????
-       * so we have an (optional) global file and cache this data in the view
-       * servers would traditionally read the file each time, and merge it into the view data
-       * which is then passsed back to the servers. No need to do this 40x
-       *
-       * if we define a global stylesfile and still want styles from ACE then we
-       * set 'req_styles=true' in the server config
-       */
-
-      /* There are a number of predefined methods that we require so add these in as well
-       * and the mapping for "feature set" -> style for these.
-       */
-      addPredefined(zmap_view->context_map.styles, &(zmap_view->context_map.column_2_styles)) ;
-
-      if (stylesfile)
-        {
-          GHashTable * styles = NULL;
-
-          if (zMapConfigIniGetStylesFromFile(zmap_view->view_sequence->config_file, NULL, stylesfile, &styles, NULL))
-            {
-              zMapStyleMergeStyles(zmap_view->context_map.styles, styles, ZMAPSTYLE_MERGE_MERGE) ;
-            }
-          else
-            {
-              zMapLogWarning("Could not read styles file \"%s\"", stylesfile) ;
-            }
-         }
+      viewSetUpStyles(zmap_view, stylesfile) ;
 
       /* read in a few ZMap stanzas giving column groups etc. */
       getIniData(zmap_view, config_str, settings_list) ;
 
       if (!zmap_view->features)
         {
-          /* add a strand separator featureset, we need it for the yellow stripe in the middle of the screen */
-          /* it will cause a column of the same name to be created */
-          /* real separator featuresets have diff names and will be added to the column */
-          ZMapFeatureSet feature_set;
-          GQuark style_id ;
-          ZMapFeatureTypeStyle style ;
-          ZMapSpan loaded;
-          ZMapFeatureSequenceMap sequence = zmap_view->view_sequence;
-          ZMapFeatureContext context;
-          ZMapFeatureContextMergeStats merge_stats ;
-          GList *dummy = NULL;
-          ZMapFeatureBlock block ;
-          ZMapFeatureContextMergeCode merge ;
-
-          style_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR) ;
-
-          if ((feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, NULL)))
-            {
-              style = zmap_view->context_map.styles.find_style(style_id) ;
-
-              zMapFeatureSetStyle(feature_set,style);
-
-              loaded = g_new0(ZMapSpanStruct,1);        /* prevent silly log messages */
-              loaded->x1 = sequence->start;
-              loaded->x2 = sequence->end;
-              feature_set->loaded = g_list_append(NULL,loaded);
-
-            }
-
-          context = zmapViewCreateContext(zmap_view, g_list_append(NULL, GUINT_TO_POINTER(style_id)),
-                                          feature_set);        /* initialise to strand separator */
-
-          block = (ZMapFeatureBlock)(feature_set->parent) ;
-          zmapViewScratchInit(zmap_view, sequence_map, context, block) ;
-
-
-          /* now merge and draw it */
-          if ((merge = justMergeContext(zmap_view,
-                                        &context, &merge_stats,
-                                        &dummy, FALSE, TRUE))
-              == ZMAPFEATURE_CONTEXT_OK)
-            {
-              justDrawContext(zmap_view, context, dummy, NULL, NULL) ;
-            }
-          else if (merge == ZMAPFEATURE_CONTEXT_NONE)
-            {
-              zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
-            }
-          else
-            {
-              zMapLogCritical("%s", "Context merge failed, serious error.") ;
-            }
+          viewSetUpPredefinedColumns(zmap_view, sequence_map) ;
         }
 
+      /* Merge the list of columns into each window's list of feature_set_names. */
+      viewWindowsMergeColumns(zmap_view) ;
 
-      if (zmap_view->columns_set)
-        {
-          /* MH17:
-           * due to an oversight I lost this ordering when converting columns to a hash table from a list
-           * the columns struct contains the order, and bump status too
-           *
-           * due to constraints w/ old config we need to give the window a list of column name quarks in order
-           */
-          GList *columns = zMapFeatureGetOrderedColumnsListIDs(&zmap_view->context_map) ;
-
-          g_list_foreach(zmap_view->window_list, invoke_merge_in_names, columns);
-
-          g_list_free(columns);
-        }
-
-      /* Set up connections to the named servers. */
-      if (settings_list)
-        {
-          ZMapConfigSource current_server = NULL;
-
-          free_this_list = settings_list ;
-
-          /* Current error handling policy is to connect to servers that we can and
-           * report errors for those where we fail but to carry on and set up the ZMap
-           * as long as at least one connection succeeds. */
-          do
-            {
-              gboolean terminate = TRUE;
-
-              current_server = (ZMapConfigSource)settings_list->data ;
-              // if global            current_server->stylesfile = g_strdup(stylesfile);
-
-              if (current_server->delayed)   // only request data when asked by otterlace
-                continue ;
-
-
-              /* Check for required fields from config, if not there then we can't connect. */
-              if (!current_server->url)
-                {
-                  /* url is absolutely required. Go on to next stanza if there isn't one. */
-                  zMapWarning("%s", "No url specified in configuration file so cannot connect to server.") ;
-
-                  zMapLogWarning("GUI: %s", "No url specified in config source group.") ;
-
-                  continue ;
-
-                }
-#if 0
-        /* featuresets are absolutely not required as if so we could not autoconfigure
-         * a file server without reading the whole file first
-         * which would require us to read it twice
-         * NOTE also that some other code assumes that we know what featuresets
-         * exist in a file before reading it or get told by the server
-         * we could change the pipe server to read the whole file on open connection
-         * construct a list of featuresets and return it
-         * but that mocks the server protocol design somewhat
-         */
-              else if (!(current_server->featuresets))
-                {
-                  /* featuresets are absolutely required, go on to next stanza if there aren't
-                   * any. */
-                  zMapWarning("Server \"%s\": no featuresets specified in configuration file so cannot connect.",
-                              current_server->url) ;
-
-                  zMapLogWarning("GUI: %s", "No featuresets specified in config source group.") ;
-
-                  continue ;
-                }
-#endif
-
-#ifdef NOT_REQUIRED_ATM
-              /* This will become redundant with step stuff..... */
-
-              else if (!checkSequenceToServerMatch(zmap_view->sequence_2_server, &tmp_seq))
-                {
-                  /* If certain sequences must only be fetched from certain servers then make sure
-                   * we only make those connections. */
-                  zMapLogMessage("server %s no sequence: ignored",current_server->url);
-                  continue ;
-                }
-#endif /* NOT_REQUIRED_ATM */
-
-
-              {
-                GList *req_featuresets = NULL ;
-                GList *req_biotypes = NULL ;
-                //                ZMapFeatureContext context;
-                //                gboolean dna_requested = FALSE;
-
-                if(current_server->featuresets)
-                  {
-                    /* req all featuresets  as a list of their quark names. */
-                    /* we need non canonicalised name to get Capitalised name on the status display */
-                    req_featuresets = zMapConfigString2QuarkList(current_server->featuresets,FALSE) ;
-
-                    if(!zmap_view->columns_set)
-                      {
-                        zmapViewCreateColumns(zmap_view,req_featuresets);
-                        g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
-                      }
-                  }
-
-                if(current_server->biotypes)
-                  {
-                    /* req all biotypes  as a list of their quark names. */
-                    req_biotypes = zMapConfigString2QuarkList(current_server->biotypes,FALSE) ;
-                  }
-
-                terminate = g_str_has_prefix(current_server->url,"pipe://");
-
-                zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
-                                     zmap_view->view_sequence->start, zmap_view->view_sequence->end,
-                                     SOURCE_GROUP_START,TRUE, terminate) ;
-              }
-            }
-          while ((settings_list = g_list_next(settings_list)));
-
-
-          if (!zmap_view->sources_loading)
-            {
-              result = FALSE ;
-              g_set_error(&tmp_error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_SOURCES_LOADING, "Sources failed to load") ;
-            }
-
-          zMapConfigSourcesFreeList(free_this_list);
-        }
-      else
-        {
-          result = FALSE;
-          g_set_error(&tmp_error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_SERVERS, "No sources found") ;
-        }
-
+      /* Set up connections to named servers */
+      result = viewSetUpServerConnections(zmap_view, settings_list, &tmp_error) ;
 
       if (!result)
         {
@@ -2243,6 +2035,215 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** styles
  *                      Internal routines
  */
 
+
+/* Merge the list of columns into each window's list of feature_set_names. */
+static void viewWindowsMergeColumns(ZMapView zmap_view)
+{
+  if (zmap_view && zmap_view->columns_set)
+    {
+      /* MH17:
+       * due to an oversight I lost this ordering when converting columns to a hash table from a list
+       * the columns struct contains the order, and bump status too
+       *
+       * due to constraints w/ old config we need to give the window a list of column name quarks in order
+       */
+      GList *columns = zMapFeatureGetOrderedColumnsListIDs(&zmap_view->context_map) ;
+
+      g_list_foreach(zmap_view->window_list, invoke_merge_in_names, columns);
+
+      g_list_free(columns);
+    }
+
+}
+
+
+static void viewSetUpStyles(ZMapView zmap_view, char *stylesfile)
+{
+  //
+  // read styles from file
+  // the idea is that we can create a new view with new styles without restarting ZMap
+  // but as that involves re-requesting data there's little gain.
+  // Maybe you could have views of two sequences and you want to change a style in one ?
+  //
+  // each server can have it's own styles file, but was always use the same for each
+  // and ACE can provide it's own styles. w/otterlace we use that same styles file
+  // w/ XACE they want thier original styles????
+  // so we have an (optional) global file and cache this data in the view
+  // servers would traditionally read the file each time, and merge it into the view data
+  // which is then passsed back to the servers. No need to do this 40x
+  //
+  // if we define a global stylesfile and still want styles from ACE then we
+  // set 'req_styles=true' in the server config
+  //
+
+  /* There are a number of predefined methods that we require so add these in as well
+   * and the mapping for "feature set" -> style for these.
+   */
+  addPredefined(zmap_view->context_map.styles, &(zmap_view->context_map.column_2_styles)) ;
+
+  if (stylesfile)
+    {
+      GHashTable * styles = NULL;
+
+      if (zMapConfigIniGetStylesFromFile(zmap_view->view_sequence->config_file, NULL, stylesfile, &styles, NULL))
+        {
+          zMapStyleMergeStyles(zmap_view->context_map.styles, styles, ZMAPSTYLE_MERGE_MERGE) ;
+        }
+      else
+        {
+          zMapLogWarning("Could not read styles file \"%s\"", stylesfile) ;
+        }
+    }
+}
+
+
+static void viewSetUpPredefinedColumns(ZMapView zmap_view, ZMapFeatureSequenceMap sequence_map)
+{
+  /* add a strand separator featureset, we need it for the yellow stripe in the middle of the screen */
+  /* it will cause a column of the same name to be created */
+  /* real separator featuresets have diff names and will be added to the column */
+  ZMapFeatureSet feature_set;
+  GQuark style_id ;
+  ZMapFeatureTypeStyle style ;
+  ZMapSpan loaded;
+  ZMapFeatureSequenceMap sequence = zmap_view->view_sequence;
+  ZMapFeatureContext context;
+  ZMapFeatureContextMergeStats merge_stats ;
+  GList *dummy = NULL;
+  ZMapFeatureBlock block ;
+  ZMapFeatureContextMergeCode merge ;
+
+  style_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR) ;
+
+  if ((feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, NULL)))
+    {
+      style = zmap_view->context_map.styles.find_style(style_id) ;
+
+      zMapFeatureSetStyle(feature_set,style);
+
+      loaded = g_new0(ZMapSpanStruct,1);        /* prevent silly log messages */
+      loaded->x1 = sequence->start;
+      loaded->x2 = sequence->end;
+      feature_set->loaded = g_list_append(NULL,loaded);
+
+    }
+
+  context = zmapViewCreateContext(zmap_view, g_list_append(NULL, GUINT_TO_POINTER(style_id)),
+                                  feature_set);        /* initialise to strand separator */
+
+  block = (ZMapFeatureBlock)(feature_set->parent) ;
+  zmapViewScratchInit(zmap_view, sequence_map, context, block) ;
+
+
+  /* now merge and draw it */
+  if ((merge = justMergeContext(zmap_view,
+                                &context, &merge_stats,
+                                &dummy, FALSE, TRUE))
+      == ZMAPFEATURE_CONTEXT_OK)
+    {
+      justDrawContext(zmap_view, context, dummy, NULL, NULL) ;
+    }
+  else if (merge == ZMAPFEATURE_CONTEXT_NONE)
+    {
+      zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
+    }
+  else
+    {
+      zMapLogCritical("%s", "Context merge failed, serious error.") ;
+    }
+}
+
+
+/* Set up connections to a list of named servers */
+static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_list, GError **error)
+{
+  gboolean result = TRUE ;
+
+  /* Set up connections to the named servers. */
+  if (zmap_view && settings_list)
+    {
+      /* Current error handling policy is to connect to servers that we can and
+       * report errors for those where we fail but to carry on and set up the ZMap
+       * as long as at least one connection succeeds. */
+      for (GList *current_server = settings_list; current_server; current_server = g_list_next(current_server))
+        {
+          viewSetUpServerConnection(zmap_view, (ZMapConfigSource)current_server->data) ;
+        }
+
+      if (!zmap_view->sources_loading)
+        {
+          result = FALSE ;
+          g_set_error(error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_SOURCES_LOADING, "Sources failed to load") ;
+        }
+
+      zMapConfigSourcesFreeList(settings_list);
+    }
+  else
+    {
+      result = FALSE;
+      g_set_error(error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_SERVERS, "No sources found") ;
+    }
+
+  return result ;
+}
+
+
+/* Set up a connection to a single named server. Does nothing if the server is delayed or if
+ * there is a problem */
+static void viewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server)
+{
+  zMapReturnIfFail(zmap_view && current_server) ;
+
+  gboolean ok = TRUE ;
+  gboolean terminate = TRUE;
+
+  if (current_server->delayed)   // only request data when asked to
+    {
+      ok = FALSE ;
+    }
+
+  /* Check for required fields from config, if not there then we can't connect. */
+  if (ok && !current_server->url)
+    {
+      /* url is absolutely required. Skip if there isn't one. */
+      zMapWarning("%s", "No url specified in configuration file so cannot connect to server.") ;
+
+      zMapLogWarning("GUI: %s", "No url specified in config source group.") ;
+
+      ok = FALSE ;
+    }
+
+  if (ok)
+    {
+      GList *req_featuresets = NULL ;
+      GList *req_biotypes = NULL ;
+
+      if(current_server->featuresets)
+        {
+          /* req all featuresets  as a list of their quark names. */
+          /* we need non canonicalised name to get Capitalised name on the status display */
+          req_featuresets = zMapConfigString2QuarkList(current_server->featuresets,FALSE) ;
+
+          if(!zmap_view->columns_set)
+            {
+              zmapViewCreateColumns(zmap_view,req_featuresets);
+              g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
+            }
+        }
+
+      if(current_server->biotypes)
+        {
+          /* req all biotypes  as a list of their quark names. */
+          req_biotypes = zMapConfigString2QuarkList(current_server->biotypes,FALSE) ;
+        }
+
+      terminate = g_str_has_prefix(current_server->url,"pipe://");
+
+      zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
+                           zmap_view->view_sequence->start, zmap_view->view_sequence->end,
+                           SOURCE_GROUP_START,TRUE, terminate) ;
+    }
+}
 
 
 static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout)
@@ -4850,7 +4851,8 @@ static void killConnections(ZMapView zmap_view)
 
 
 
-
+/* This is called on each view_window in a view to merge the given list of featureset names into
+ * the window's list of feature_set_names */
 static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)list_data;
@@ -4873,8 +4875,7 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
 
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/*#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 aggghhhhhhhhhhhhhhhhhhH MALCOLM.......YOUVE CHANGED IT ALL BUT NOT CHANGED
 THE COMMENTS ETC ETC....HORRIBLE, HORRIBLE, HORRIBLE......
 
@@ -4882,8 +4883,7 @@ THE COMMENTS ETC ETC....HORRIBLE, HORRIBLE, HORRIBLE......
   FUNCTIONS PURPOSE: used the passed in view or create a new one if needed
 
   AND THE ORIGINAL "create" function.....
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+#endif*/
 
 /* Allocate a connection and send over the request to get the sequence displayed. */
 /* NB: this is called from zmapViewLoadFeatures() and commandCB (for DNA only) */
