@@ -6,6 +6,16 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.4.0</h4>
+<ul>
+  <li> Bug in feature filtering (keyboard shortcut) has been fixed
+  <li> Bug in ZMap interface with up and down keys fixed (SIRT:495468)
+  <li> User preferences in ZMap may now be saved (File->Save menu in preferences dialogue)
+  <li> ZMap styles are available through the Edit menu.
+  <li> Columns dialogue has been reworked for greater flexibility (see Help menu in Columns dialogue)
+  <li> Numerous updates and modifications to build systems for otter and ZMap/Seqtools
+</ul>
+
 <h4>Version 2.3.0</h4>
 <ul>
   <li>The Columns dialog has been reorganised into a single list of featuresets with strand-specific options.
