@@ -87,6 +87,8 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
                                ZMapAppCreateSourceCB user_func,
                                gpointer user_data)
 {
+  zMapReturnValIfFail(user_func, NULL) ;
+
   GtkWidget *toplevel = NULL ;
   GtkWidget *container ;
   gpointer seq_data = NULL ;
@@ -265,23 +267,32 @@ static void cancelCB(GtkWidget *widget, gpointer cb_data)
 /* Create the new source. */
 static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
+  gboolean ok = TRUE ;
   MainFrame main_frame = (MainFrame)cb_data ;
 
   const char *name = gtk_entry_get_text(GTK_ENTRY(main_frame->name_widg)) ;
   const char *path = gtk_entry_get_text(GTK_ENTRY(main_frame->url_widg)) ;
   const char *featuresets = gtk_entry_get_text(GTK_ENTRY(main_frame->featuresets_widg)) ;
 
-  if (path)
+  if (path && name)
     {
+      GError *tmp_error = NULL ;
       char *url = g_strdup_printf("file:///%s", path) ;
 
-      if (main_frame->user_func)
-        (main_frame->user_func)(name, url, featuresets, main_frame->user_data) ;
+      (main_frame->user_func)(name, url, featuresets, main_frame->user_data, &tmp_error) ;
+
+      if (tmp_error)
+        zMapWarning("Failed to create new source: %s", tmp_error->message) ;
 
       g_free(url) ;
     }
+  else
+    {
+      zMapWarning("%s", "Please enter a name and path") ;
+    }
 
-  gtk_widget_destroy(main_frame->toplevel); 
+  if (ok)
+    gtk_widget_destroy(main_frame->toplevel); 
 
   return ;
 }

@@ -36,6 +36,9 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <map>
+#include <string>
+
 #include <string.h>
 #include <sys/types.h>
 #include <signal.h>                                            /* kill() */
@@ -364,6 +367,9 @@ static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
                                                                     gpointer data,
                                                                     gpointer user_data,
                                                                     char **err_out) ;
+static void updateContextSources(ZMapConfigIniContext context, 
+                                 ZMapConfigIniFileType file_type,
+                                 std::map<std::string, _ZMapConfigSourceStruct*> sources) ;
 
 static void viewWindowsMergeColumns(ZMapView zmap_view) ;
 static void viewSetUpStyles(ZMapView zmap_view, char *stylesfile) ;
@@ -2030,6 +2036,71 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** styles
 }
 
 
+/* Set up a connection to a single named server. Does nothing if the server is delayed.
+ * Throws if there is a problem */
+void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server, GError **error)
+{
+  zMapReturnIfFail(zmap_view && current_server) ;
+
+  gboolean terminate = TRUE;
+
+  if (!current_server->delayed)   // skip if delayed (we'll only request data when asked to)
+    {
+      /* Check for required fields from config, if not there then we can't connect. */
+      if (!current_server->url)
+        {
+          /* url is absolutely required. Skip if there isn't one. */
+          throw std::invalid_argument("No url specified in the configuration file so cannot connect to server.") ;
+        }
+
+      GList *req_featuresets = NULL ;
+      GList *req_biotypes = NULL ;
+
+      if(current_server->featuresets)
+        {
+          /* req all featuresets  as a list of their quark names. */
+          /* we need non canonicalised name to get Capitalised name on the status display */
+          req_featuresets = zMapConfigString2QuarkList(current_server->featuresets,FALSE) ;
+
+          if(!zmap_view->columns_set)
+            {
+              zmapViewCreateColumns(zmap_view,req_featuresets);
+              g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
+            }
+        }
+
+      if(current_server->biotypes)
+        {
+          /* req all biotypes  as a list of their quark names. */
+          req_biotypes = zMapConfigString2QuarkList(current_server->biotypes,FALSE) ;
+        }
+
+      terminate = g_str_has_prefix(current_server->url,"pipe://");
+
+      zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
+                           zmap_view->view_sequence->start, zmap_view->view_sequence->end,
+                           SOURCE_GROUP_START,TRUE, terminate) ;
+    }
+}
+
+
+/* Add a source to our list of user-created sources. Sets the error if the name already exists. */
+void zMapViewAddSource(ZMapView view, const std::string &source_name, ZMapConfigSource source, GError **error)
+{
+  zMapReturnIfFail(view && source) ;
+
+  if (view->context_map.sources.find(source_name) != view->context_map.sources.end())
+    {
+      g_set_error(error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CREATING_SOURCE,
+                  "Source '%s' already exists", source_name.c_str()) ;
+    }
+  else
+    {
+      view->context_map.sources[source_name] = source ;
+    }
+}
+
+
 /*
  *                      Internal routines
  */
@@ -2166,7 +2237,19 @@ static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_l
        * as long as at least one connection succeeds. */
       for (GList *current_server = settings_list; current_server; current_server = g_list_next(current_server))
         {
-          zMapViewSetUpServerConnection(zmap_view, (ZMapConfigSource)current_server->data) ;
+          GError *tmp_error = NULL ;
+
+          zMapViewSetUpServerConnection(zmap_view, (ZMapConfigSource)current_server->data, &tmp_error) ;
+
+          if (tmp_error)
+            {
+              /* Just warn about any failures */
+              zMapWarning("%s", tmp_error->message) ;
+              zMapLogWarning("GUI: %s", tmp_error->message) ;
+
+              g_error_free(tmp_error) ;
+              tmp_error = NULL ;
+            }
         }
 
       if (!zmap_view->sources_loading)
@@ -2184,64 +2267,6 @@ static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_l
     }
 
   return result ;
-}
-
-
-/* Set up a connection to a single named server. Does nothing if the server is delayed or if
- * there is a problem */
-void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server)
-{
-  zMapReturnIfFail(zmap_view && current_server) ;
-
-  gboolean ok = TRUE ;
-  gboolean terminate = TRUE;
-
-  if (current_server->delayed)   // only request data when asked to
-    {
-      ok = FALSE ;
-    }
-
-  /* Check for required fields from config, if not there then we can't connect. */
-  if (ok && !current_server->url)
-    {
-      /* url is absolutely required. Skip if there isn't one. */
-      zMapWarning("%s", "No url specified in configuration file so cannot connect to server.") ;
-
-      zMapLogWarning("GUI: %s", "No url specified in config source group.") ;
-
-      ok = FALSE ;
-    }
-
-  if (ok)
-    {
-      GList *req_featuresets = NULL ;
-      GList *req_biotypes = NULL ;
-
-      if(current_server->featuresets)
-        {
-          /* req all featuresets  as a list of their quark names. */
-          /* we need non canonicalised name to get Capitalised name on the status display */
-          req_featuresets = zMapConfigString2QuarkList(current_server->featuresets,FALSE) ;
-
-          if(!zmap_view->columns_set)
-            {
-              zmapViewCreateColumns(zmap_view,req_featuresets);
-              g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
-            }
-        }
-
-      if(current_server->biotypes)
-        {
-          /* req all biotypes  as a list of their quark names. */
-          req_biotypes = zMapConfigString2QuarkList(current_server->biotypes,FALSE) ;
-        }
-
-      terminate = g_str_has_prefix(current_server->url,"pipe://");
-
-      zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
-                           zmap_view->view_sequence->start, zmap_view->view_sequence->end,
-                           SOURCE_GROUP_START,TRUE, terminate) ;
-    }
 }
 
 
@@ -7139,8 +7164,8 @@ static void configUpdateContext(ZMapView view,
   /* Update the sources list if the sources have changed */
   if (zMapViewGetFlag(view, ZMAPFLAG_SAVE_SOURCES))
     {
-      /* The context is updated directly when a new source is added so we don't need to do
-       * anything here. Just indicate that the changes need saving... */
+      updateContextSources(context, file_type, view->context_map.sources) ;
+
       changed = TRUE ;
     }
 
@@ -7301,6 +7326,58 @@ static void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFil
             }
         }
     }
+}
+
+
+/* Add the given sources to the given context */
+static void updateContextSources(ZMapConfigIniContext context, 
+                                 ZMapConfigIniFileType file_type,
+                                 std::map<std::string, _ZMapConfigSourceStruct*> sources)
+{
+  std::string sources_str ;
+
+  for (std::map<std::string, _ZMapConfigSourceStruct*>::const_iterator iter = sources.begin(); iter != sources.end(); ++iter)
+    {
+      std::string source_name = iter->first ;
+      ZMapConfigSource source = iter->second ;
+
+      /* Append to the list of sources */
+      if (sources_str.length() == 0)
+        sources_str += source_name ;
+      else
+        sources_str += "; " + source_name ;
+
+      /* Set the values in the source stanza */
+      if (source->url)
+        zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_URL, source->url) ;
+
+      if (source->featuresets)
+        zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_FEATURESETS, source->featuresets) ;
+
+      if (source->biotypes)
+        zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_BIOTYPES, source->biotypes) ;
+
+      if (source->version)
+        zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_VERSION, source->version) ;
+
+      if (source->stylesfile)
+        zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_STYLESFILE, source->stylesfile) ;
+
+      if (source->format)
+        zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_FORMAT, source->format) ;
+
+      zMapConfigIniContextSetInt(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_TIMEOUT, source->timeout) ;
+      zMapConfigIniContextSetInt(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_GROUP, source->group) ;
+
+      zMapConfigIniContextSetBoolean(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_DELAYED, source->delayed) ;
+      zMapConfigIniContextSetBoolean(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_MAPPING, source->provide_mapping) ;
+      zMapConfigIniContextSetBoolean(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_REQSTYLES, source->req_styles) ;
+    }
+
+  /* Set the list of sources for the ZMap stanza */
+  zMapConfigIniContextSetString(context, file_type,
+                                ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                ZMAPSTANZA_APP_SOURCES, sources_str.c_str()) ;
 }
 
 

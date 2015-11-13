@@ -36,6 +36,8 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <string>
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -734,47 +736,45 @@ static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWi
 
 
 /* Callback called when the create-source dialog has been ok'd to do the work to create the new
- * source from the user-provided info */
-static void createNewSourceCB(const char *source_name, const char *url, const char *featuresets, gpointer user_data)
+ * source from the user-provided info. Returns true if successfully created the source.  */
+static void createNewSourceCB(const char *source_name, 
+                              const char *url, 
+                              const char *featuresets, 
+                              gpointer user_data,
+                              GError **error)
 {
   ZMap zmap = (ZMap)user_data ;
+  zMapReturnIfFail(zmap) ;
 
   ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow) ;
-  ZMapFeatureSequenceMap sequence_map = zMapViewGetSequenceMap(zmap_view) ;
-  const char *config_file = sequence_map ? sequence_map->config_file : NULL ;
-  
-  //const char *config_file = NULL ; //sequence_map ? sequence_map->config_file : NULL ;
-  ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_USER ;
 
-  ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file, file_type) ;
-  
-  if (context)
+  GError *tmp_error = NULL ;
+
+  ZMapConfigSource source = g_new0(ZMapConfigSourceStruct, 1) ;
+     
+  source->url = g_strdup(url) ;
+      
+  if (featuresets && *featuresets)
+    source->featuresets = g_strdup(featuresets) ;
+      
+  /* Add the new source to the view */
+  std::string source_name_str(source_name) ;
+  zMapViewAddSource(zmap_view, source_name_str, source, &tmp_error) ;
+
+  /* Connect to the new source */
+  if (!tmp_error)
+    zMapViewSetUpServerConnection(zmap_view, source, &tmp_error) ;
+
+  /* Indicate that there are changes that need saving */
+  if (!tmp_error)
+    zMapViewSetFlag(zmap_view, ZMAPFLAG_SAVE_SOURCES, TRUE) ;
+
+  if (tmp_error)
     {
-      /* Add the source stanza to the context */
-      zMapConfigIniContextSetString(context, file_type, 
-                                    source_name, ZMAPSTANZA_SOURCE_CONFIG, 
-                                    ZMAPSTANZA_SOURCE_URL, url);
+      zMapConfigSourceDestroy(source) ;
+      source = NULL ;
 
-      zMapConfigIniContextSetString(context, file_type, 
-                                    source_name, ZMAPSTANZA_SOURCE_CONFIG, 
-                                    ZMAPSTANZA_SOURCE_FEATURESETS, featuresets);
-
-      /* Add the source to the list of source names in the ZMap stanza */
-      zMapConfigIniContextSetString(context, file_type, 
-                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
-                                    ZMAPSTANZA_APP_SOURCES, source_name);
-
-      /* Get the source back from the context as a ZMapConfigSource struct that we can use to connect */
-      GList *sources = zMapConfigIniContextGetSources(context) ;
-
-      for (GList *item = sources; item; item = g_list_next(item))
-        {
-          ZMapConfigSource source = (ZMapConfigSource)(item->data) ;
-          zMapViewSetUpServerConnection(zmap_view, source) ;
-
-          /* Indicate that there are changes that need saving */
-          zMapViewSetFlag(zmap_view, ZMAPFLAG_SAVE_SOURCES, TRUE) ;
-        }
+      g_propagate_error(error, tmp_error) ;
     }
 }
 

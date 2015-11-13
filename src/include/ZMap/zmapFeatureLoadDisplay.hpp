@@ -37,6 +37,11 @@
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 
+#include <string>
+#include <map>
+
+struct _ZMapConfigSourceStruct ;
+
 
 /* Overview:
  * 
@@ -192,6 +197,9 @@ typedef struct ZMapFeatureContextMapStructType
    * running blixem on a related set of columns. A column can be in multiple groups. 
    * Maps the group unique_id (GQuark) to a GList of column unique ids (GQuark) */
   GHashTable *column_groups ;
+
+  /* This lists all user-created sources */
+  std::map<std::string, _ZMapConfigSourceStruct*> sources ;
 
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap ;
 

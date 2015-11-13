@@ -34,6 +34,8 @@
 #ifndef ZMAPVIEW_H
 #define ZMAPVIEW_H
 
+#include <string>
+
 #include <gtk/gtk.h>
 
 #include <ZMap/zmapConfigIni.hpp>
@@ -44,6 +46,7 @@
 #include <ZMap/zmapUrl.hpp>
 #include <ZMap/zmapAppRemote.hpp>
 #include <ZMap/zmapConfigStanzaStructs.hpp>
+
 
 
 /* Opaque type, represents an instance of a ZMapView. */
@@ -264,7 +267,10 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
 
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view) ;
 
-void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server) ;
+void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server, GError **error) ;
+
+void zMapViewAddSource(ZMapView view, const std::string &source_name, ZMapConfigSource source, GError **error) ;
+
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapView2Str, ZMapViewState) ;
 

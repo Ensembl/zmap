@@ -256,6 +256,30 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
 }
 
 
+
+void zMapConfigSourceDestroy(ZMapConfigSource source_to_free)
+{
+  if(source_to_free->url)
+    g_free(source_to_free->url);
+  if(source_to_free->version)
+    g_free(source_to_free->version);
+  if(source_to_free->featuresets)
+    g_free(source_to_free->featuresets);
+  if(source_to_free->biotypes)
+    g_free(source_to_free->biotypes);
+  //  if(source_to_free->navigatorsets)
+  //    g_free(source_to_free->navigatorsets);
+  if(source_to_free->stylesfile)
+    g_free(source_to_free->stylesfile);
+  //  if(source_to_free->styles_list)
+  //    g_free(source_to_free->styles_list);
+  if(source_to_free->format)
+    g_free(source_to_free->format);
+
+  return ;
+}
+
+
 void zMapConfigSourcesFreeList(GList *config_sources_list)
 {
   zMapReturnIfFail(config_sources_list) ;
@@ -2010,25 +2034,7 @@ static gpointer create_config_source()
 static void free_source_list_item(gpointer list_data, gpointer unused_data)
 {
   ZMapConfigSource source_to_free = (ZMapConfigSource)list_data;
-
-  if(source_to_free->url)
-    g_free(source_to_free->url);
-  if(source_to_free->version)
-    g_free(source_to_free->version);
-  if(source_to_free->featuresets)
-    g_free(source_to_free->featuresets);
-  if(source_to_free->biotypes)
-    g_free(source_to_free->biotypes);
-  //  if(source_to_free->navigatorsets)
-  //    g_free(source_to_free->navigatorsets);
-  if(source_to_free->stylesfile)
-    g_free(source_to_free->stylesfile);
-  //  if(source_to_free->styles_list)
-  //    g_free(source_to_free->styles_list);
-  if(source_to_free->format)
-    g_free(source_to_free->format);
-
-  return ;
+  zMapConfigSourceDestroy(source_to_free) ;
 }
 
 
