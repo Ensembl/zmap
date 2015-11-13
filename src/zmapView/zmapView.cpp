@@ -893,10 +893,10 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       zMapLogTime(TIMER_REVCOMP,TIMER_STOP,0,"Context");
 
       /* Set our record of reverse complementing. */
-      const gboolean value = zMapViewGetFlag(zmap_view, ZMAPFLAG_REVCOMPED_FEATURES) ;
+      const gboolean value = zMapViewGetRevCompStatus(zmap_view) ;
       zMapViewSetFlag(zmap_view, ZMAPFLAG_REVCOMPED_FEATURES, !value) ;
 
-      zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zMapViewGetFlag(zmap_view, ZMAPFLAG_REVCOMPED_FEATURES));
+      zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zMapViewGetRevCompStatus(zmap_view));
       zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->context_map.styles);
 
       if((list_item = g_list_first(zmap_view->window_list)))
@@ -1897,7 +1897,7 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
       zMapFeatureBlockSetFeaturesCoords(block, req_start, req_end) ;
 
 
-      if (zMapViewGetFlag(view, ZMAPFLAG_REVCOMPED_FEATURES))
+      if (zMapViewGetRevCompStatus(view))
         {
           /* revcomp our empty context to get external fwd strand coordinates */
           zMapFeatureContextReverseComplement(context);
@@ -5734,7 +5734,7 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
 
 
   /* When coming from xremote we don't need to do this. */
-  if (revcomp_if_needed && zMapViewGetFlag(view, ZMAPFLAG_REVCOMPED_FEATURES))
+  if (revcomp_if_needed && zMapViewGetRevCompStatus(view))
     {
       zMapFeatureContextReverseComplement(new_features);
     }
@@ -5931,7 +5931,7 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
    * negates the need to keep state as to the length of the sequence,
    * the number of times the scale bar has been drawn, etc... */
   zMapWindowNavigatorReset(view->navigator_window); /* So reset */
-  zMapWindowNavigatorSetStrand(view->navigator_window, zMapViewGetFlag(view, ZMAPFLAG_REVCOMPED_FEATURES));
+  zMapWindowNavigatorSetStrand(view->navigator_window, zMapViewGetRevCompStatus(view));
   /* and draw with _all_ the view's features. */
   zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features, view->context_map.styles);
 
@@ -6002,7 +6002,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
         int req_start = get_data->start;
         int req_end = get_data->end;
 
-        if (zMapViewGetFlag(view, ZMAPFLAG_REVCOMPED_FEATURES))
+        if (zMapViewGetRevCompStatus(view))
           {
             int tmp;
 
