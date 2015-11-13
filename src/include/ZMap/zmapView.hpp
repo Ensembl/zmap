@@ -43,6 +43,7 @@
 #include <ZMap/zmapXMLHandler.hpp>
 #include <ZMap/zmapUrl.hpp>
 #include <ZMap/zmapAppRemote.hpp>
+#include <ZMap/zmapConfigStanzaStructs.hpp>
 
 
 /* Opaque type, represents an instance of a ZMapView. */
@@ -262,6 +263,8 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
                               char **filepath_inout, GError **error) ;
 
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view) ;
+
+void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server) ;
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapView2Str, ZMapViewState) ;
 

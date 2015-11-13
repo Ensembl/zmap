@@ -42,6 +42,8 @@
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
+#include <ZMap/zmapConfigStrings.hpp>
+#include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <zmapControl_P.hpp>
 
 
@@ -733,11 +735,44 @@ static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWi
 
 /* Callback called when the create-source dialog has been ok'd to do the work to create the new
  * source from the user-provided info */
-static void createNewSourceCB(const char *name, const char *url, const char *featuresets, gpointer user_data)
+static void createNewSourceCB(const char *source_name, const char *url, const char *featuresets, gpointer user_data)
 {
   ZMap zmap = (ZMap)user_data ;
+
+  ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow) ;
+  ZMapFeatureSequenceMap sequence_map = zMapViewGetSequenceMap(zmap_view) ;
+  const char *config_file = sequence_map ? sequence_map->config_file : NULL ;
   
+  //const char *config_file = NULL ; //sequence_map ? sequence_map->config_file : NULL ;
+  ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_USER ;
+
+  ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file, file_type) ;
   
+  if (context)
+    {
+      /* Add the source stanza to the context */
+      zMapConfigIniContextSetString(context, file_type, 
+                                    source_name, ZMAPSTANZA_SOURCE_CONFIG, 
+                                    ZMAPSTANZA_SOURCE_URL, url);
+
+      zMapConfigIniContextSetString(context, file_type, 
+                                    source_name, ZMAPSTANZA_SOURCE_CONFIG, 
+                                    ZMAPSTANZA_SOURCE_FEATURESETS, featuresets);
+
+      /* Add the source to the list of source names in the ZMap stanza */
+      zMapConfigIniContextSetString(context, file_type, 
+                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+                                    ZMAPSTANZA_APP_SOURCES, source_name);
+
+      /* Get the source back from the context as a ZMapConfigSource struct that we can use to connect */
+      GList *sources = zMapConfigIniContextGetSources(context) ;
+
+      for (GList *item = sources; item; item = g_list_next(item))
+        {
+          ZMapConfigSource source = (ZMapConfigSource)(item->data) ;
+          zMapViewSetUpServerConnection(zmap_view, source) ;
+        }
+    }
 }
 
 

@@ -65,7 +65,9 @@ typedef struct MainFrameStructName
 
 static GtkWidget *makePanel(GtkWidget *toplevel,
                             gpointer *seqdata_out,
-                            ZMapFeatureSequenceMap sequence_map) ;
+                            ZMapFeatureSequenceMap sequence_map,
+                            ZMapAppCreateSourceCB user_func,
+                            gpointer user_data) ;
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeButtonBox(MainFrame main_data) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
@@ -94,7 +96,7 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
-  container = makePanel(toplevel, &seq_data, sequence_map) ;
+  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
@@ -115,7 +117,9 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
 /* Make the whole panel returning the top container of the panel. */
 static GtkWidget *makePanel(GtkWidget *toplevel, 
                             gpointer *our_data,
-                            ZMapFeatureSequenceMap sequence_map)
+                            ZMapFeatureSequenceMap sequence_map,
+                            ZMapAppCreateSourceCB user_func,
+                            gpointer user_data)
 {
   GtkWidget *frame = NULL ;
   GtkWidget *vbox, *main_frame, *button_box ;
@@ -124,6 +128,8 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
   main_data = g_new0(MainFrameStruct, 1) ;
 
   main_data->sequence_map = sequence_map ;
+  main_data->user_func = user_func ;
+  main_data->user_data = user_data ;
 
   if (toplevel)
     {
@@ -269,8 +275,13 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
     {
       char *url = g_strdup_printf("file://%s", path) ;
 
-      (main_frame->user_func)(name, url, featuresets, main_frame->user_data) ;
+      if (main_frame->user_func)
+        (main_frame->user_func)(name, url, featuresets, main_frame->user_data) ;
+
+      g_free(url) ;
     }
+
+  gtk_widget_destroy(main_frame->toplevel); 
 
   return ;
 }

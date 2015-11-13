@@ -369,7 +369,6 @@ static void viewWindowsMergeColumns(ZMapView zmap_view) ;
 static void viewSetUpStyles(ZMapView zmap_view, char *stylesfile) ;
 static void viewSetUpPredefinedColumns(ZMapView zmap_view, ZMapFeatureSequenceMap sequence_map) ;
 static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_list, GError **error) ;
-static void viewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server) ;
 
 
 /*
@@ -2167,7 +2166,7 @@ static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_l
        * as long as at least one connection succeeds. */
       for (GList *current_server = settings_list; current_server; current_server = g_list_next(current_server))
         {
-          viewSetUpServerConnection(zmap_view, (ZMapConfigSource)current_server->data) ;
+          zMapViewSetUpServerConnection(zmap_view, (ZMapConfigSource)current_server->data) ;
         }
 
       if (!zmap_view->sources_loading)
@@ -2190,7 +2189,7 @@ static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_l
 
 /* Set up a connection to a single named server. Does nothing if the server is delayed or if
  * there is a problem */
-static void viewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server)
+void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server)
 {
   zMapReturnIfFail(zmap_view && current_server) ;
 

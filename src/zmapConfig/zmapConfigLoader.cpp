@@ -228,9 +228,9 @@ GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context)
   GList *glist = NULL;
 
   glist = zMapConfigIniContextGetReferencedStanzas(context, create_config_source,
-  ZMAPSTANZA_APP_CONFIG,
-  ZMAPSTANZA_APP_CONFIG,
-  "sources", "source");
+                                                   ZMAPSTANZA_APP_CONFIG,
+                                                   ZMAPSTANZA_APP_CONFIG,
+                                                   ZMAPSTANZA_APP_SOURCES, "source");
 
   return glist;
 }
@@ -1537,6 +1537,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name,
     { ZMAPSTANZA_APP_STYLESFILE,         G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_LEGACY_STYLES,      G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_COLUMNS,            G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_APP_SOURCES,            G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_STYLE_FROM_METHOD,  G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_XREMOTE_DEBUG,      G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_REPORT_THREAD,      G_TYPE_BOOLEAN, NULL, FALSE },
