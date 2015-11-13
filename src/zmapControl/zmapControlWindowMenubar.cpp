@@ -771,6 +771,9 @@ static void createNewSourceCB(const char *source_name, const char *url, const ch
         {
           ZMapConfigSource source = (ZMapConfigSource)(item->data) ;
           zMapViewSetUpServerConnection(zmap_view, source) ;
+
+          /* Indicate that there are changes that need saving */
+          zMapViewSetFlag(zmap_view, ZMAPFLAG_SAVE_SOURCES, TRUE) ;
         }
     }
 }

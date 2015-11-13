@@ -2029,7 +2029,6 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** styles
 }
 
 
-
 /*
  *                      Internal routines
  */
@@ -7122,6 +7121,7 @@ static void configUpdateContext(ZMapView view,
 
   zMapReturnIfFailSafe(export_type == ZMAPVIEW_EXPORT_CONFIG) ;
 
+  /* Update the columns list if column order has changed */
   if (view->flags[ZMAPFLAG_SAVE_COLUMNS])
     {
       GList *ordered_list = zMapFeatureGetOrderedColumnsListIDs(&view->context_map) ;
@@ -7135,15 +7135,17 @@ static void configUpdateContext(ZMapView view,
       changed = TRUE ;
     }
 
+  /* Update the sources list if the sources have changed */
+  if (view->flags[ZMAPFLAG_SAVE_SOURCES])
+    {
+      /* The context is updated directly when a new source is added so we don't need to do
+       * anything here. Just indicate that the changes need saving... */
+      changed = TRUE ;
+    }
 
+  /* Update the featureset-style stanza if featureset->style relationshiops have changed */
   if (view->flags[ZMAPFLAG_SAVE_FEATURESET_STYLE])
     {
-      /* Set values in the context for the column-style stanza based on the column_2_styles hash table */
-      /* gb10: not implemented yet - we don't yet allow the user to edit the column styles, just
-       * the featureset styles */
-      //updateContextHashList(context, file_type, ZMAPSTANZA_COLUMN_STYLE_CONFIG, view->context_map.column_2_styles, exportColumnStyle);
-
-      /* Set values for the featureset-style stanza */
       GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;
 
       zMapFeatureContextExecute((ZMapFeatureAny)view->features, ZMAPFEATURE_STRUCT_FEATURESET, 
@@ -7152,17 +7154,22 @@ static void configUpdateContext(ZMapView view,
       changed = TRUE ;
     }
 
+  /* Update the column-groups stanza if column groups have changed */
   if (view->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS])
     {
       updateContextHashList(context, file_type, ZMAPSTANZA_COLUMN_GROUPS, view->context_map.column_groups, NULL) ;
+      changed = TRUE ;
     }
   
-  /* Set the unsaved flag in the context if there were any changes */
+  /* Set the unsaved flag in the context if there were any changes, and reset the individual flags */
   if (changed)
     {
-      view->flags[ZMAPFLAG_SAVE_COLUMNS] = FALSE ;
-      view->flags[ZMAPFLAG_SAVE_FEATURESET_STYLE] = FALSE ;
       zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+
+      view->flags[ZMAPFLAG_SAVE_COLUMNS] = FALSE ;
+      view->flags[ZMAPFLAG_SAVE_SOURCES] = FALSE ;
+      view->flags[ZMAPFLAG_SAVE_FEATURESET_STYLE] = FALSE ;
+      view->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = FALSE ;
     }
 }
 

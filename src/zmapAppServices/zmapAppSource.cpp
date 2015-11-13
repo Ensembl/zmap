@@ -273,7 +273,7 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
 
   if (path)
     {
-      char *url = g_strdup_printf("file://%s", path) ;
+      char *url = g_strdup_printf("file:///%s", path) ;
 
       if (main_frame->user_func)
         (main_frame->user_func)(name, url, featuresets, main_frame->user_data) ;

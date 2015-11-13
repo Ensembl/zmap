@@ -103,6 +103,7 @@ typedef enum
     ZMAPFLAG_SAVE_COLUMN_GROUPS,         /* True if there are unsaved changes to column groups */
     ZMAPFLAG_SAVE_STYLES,                /* True if there are unsaved changes to styles */
     ZMAPFLAG_SAVE_COLUMNS,               /* True if there are unsaved changes to the columns order */
+    ZMAPFLAG_SAVE_SOURCES,               /* True if there are unsaved changes to the sources */
     ZMAPFLAG_SAVE_FEATURESET_STYLE,      /* True if featureset-style relationships have changed */
 
     ZMAPFLAG_ENABLE_ANNOTATION,          /* True if we should enable editing via the annotation column */

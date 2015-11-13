@@ -272,7 +272,6 @@ static gboolean getUserPrefs(PrefsData curr_prefs, const char *config_file)
 
   if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_PREFS)))
     {
-      char *tmp_string = NULL ;
       gboolean tmp_bool ;
 
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
