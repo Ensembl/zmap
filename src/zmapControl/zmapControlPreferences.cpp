@@ -61,13 +61,11 @@ typedef struct PrefsDataStructType
     unsigned int shrinkable : 1 ;
     unsigned int highlight_filtered : 1 ;
     unsigned int enable_annotation : 1 ;
-    unsigned int columns_list : 1 ;
   } is_set ;
 
   gboolean shrinkable ;
   gboolean highlight_filtered ;
   gboolean enable_annotation ;
-  char *columns_list ;
 } PrefsDataStruct, *PrefsData ;
 
 
@@ -295,12 +293,6 @@ static gboolean getUserPrefs(PrefsData curr_prefs, const char *config_file)
           file_prefs.enable_annotation = tmp_bool;
         }
 
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                        ZMAPSTANZA_APP_COLUMNS, &tmp_string))
-        {
-          file_prefs.columns_list = tmp_string;
-        }
-
       zMapConfigIniContextDestroy(context);
     }
 
@@ -319,14 +311,6 @@ static gboolean getUserPrefs(PrefsData curr_prefs, const char *config_file)
 
       if (curr_prefs->is_set.enable_annotation)
         file_prefs.enable_annotation = curr_prefs->enable_annotation ;
-
-      if (curr_prefs->is_set.columns_list)
-        {
-          g_free(file_prefs.columns_list) ;
-          file_prefs.columns_list = curr_prefs->columns_list ;
-        }
-
-      
     }
 
 
@@ -392,15 +376,6 @@ void userPrefsUpdateContext(ZMapConfigIniContext context, const ZMapConfigIniFil
       zMapConfigIniContextSetBoolean(context, file_type,
                                      ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                      ZMAPSTANZA_APP_ENABLE_ANNOTATION, prefs->enable_annotation);
-    }
-
-  if (prefs->is_set.columns_list)
-    {
-      changed = TRUE ;
-
-      zMapConfigIniContextSetString(context, file_type,
-                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                    ZMAPSTANZA_APP_COLUMNS, prefs->columns_list);
     }
   
   /* Set the unsaved flag in the context if there were any changes */
