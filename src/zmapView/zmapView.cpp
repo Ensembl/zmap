@@ -704,7 +704,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
  */
 gboolean zMapViewGetHighlightFilteredColumns(ZMapView view)
 {
-  return view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS];
+  return zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS) ;
 }
 
 
@@ -893,9 +893,10 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       zMapLogTime(TIMER_REVCOMP,TIMER_STOP,0,"Context");
 
       /* Set our record of reverse complementing. */
-      zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES] = !(zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES]) ;
+      const gboolean value = zMapViewGetFlag(zmap_view, ZMAPFLAG_REVCOMPED_FEATURES) ;
+      zMapViewSetFlag(zmap_view, ZMAPFLAG_REVCOMPED_FEATURES, !value) ;
 
-      zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES]);
+      zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zMapViewGetFlag(zmap_view, ZMAPFLAG_REVCOMPED_FEATURES));
       zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->context_map.styles);
 
       if((list_item = g_list_first(zmap_view->window_list)))
@@ -933,7 +934,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 /* Return which strand we are showing viz-a-viz reverse complementing. */
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view)
 {
-  return zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
+  return zMapViewGetFlag(zmap_view, ZMAPFLAG_REVCOMPED_FEATURES) ;
 }
 
 
@@ -1896,7 +1897,7 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
       zMapFeatureBlockSetFeaturesCoords(block, req_start, req_end) ;
 
 
-      if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if (zMapViewGetFlag(view, ZMAPFLAG_REVCOMPED_FEATURES))
         {
           /* revcomp our empty context to get external fwd strand coordinates */
           zMapFeatureContextReverseComplement(context);
@@ -2331,7 +2332,7 @@ static GtkResponseType checkForUnsavedAnnotation(ZMapView zmap_view)
 {
   GtkResponseType response = GTK_RESPONSE_OK ;
 
-  if (zmap_view && zmap_view->flags[ZMAPFLAG_SAVE_SCRATCH])
+  if (zmap_view && zMapViewGetFlag(zmap_view, ZMAPFLAG_SAVE_SCRATCH))
     {
       GtkWindow *parent = NULL ;
 
@@ -2365,7 +2366,7 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
 {
   GtkResponseType response = GTK_RESPONSE_OK ;
 
-  if (zmap_view && zmap_view->flags[ZMAPFLAG_SAVE_FEATURES])
+  if (zmap_view && zMapViewGetFlag(zmap_view, ZMAPFLAG_SAVE_FEATURES))
     {
       GtkWindow *parent = NULL ;
 
@@ -2430,7 +2431,7 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
 //  GtkResponseType response = GTK_RESPONSE_OK ;
 //  GError *error = NULL ;
 //
-//  if (zmap_view && zmap_view->flags[ZMAPFLAG_SAVE_CONFIG])
+//  if (zmap_view && zMapViewGetFlag(zmap_view, ZMAPFLAG_SAVE_CONFIG))
 //    {
 //      GtkWindow *parent = NULL ;
 //
@@ -5733,7 +5734,7 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
 
 
   /* When coming from xremote we don't need to do this. */
-  if (revcomp_if_needed && view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+  if (revcomp_if_needed && zMapViewGetFlag(view, ZMAPFLAG_REVCOMPED_FEATURES))
     {
       zMapFeatureContextReverseComplement(new_features);
     }
@@ -5930,7 +5931,7 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
    * negates the need to keep state as to the length of the sequence,
    * the number of times the scale bar has been drawn, etc... */
   zMapWindowNavigatorReset(view->navigator_window); /* So reset */
-  zMapWindowNavigatorSetStrand(view->navigator_window, view->flags[ZMAPFLAG_REVCOMPED_FEATURES]);
+  zMapWindowNavigatorSetStrand(view->navigator_window, zMapViewGetFlag(view, ZMAPFLAG_REVCOMPED_FEATURES));
   /* and draw with _all_ the view's features. */
   zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features, view->context_map.styles);
 
@@ -6001,7 +6002,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
         int req_start = get_data->start;
         int req_end = get_data->end;
 
-        if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+        if (zMapViewGetFlag(view, ZMAPFLAG_REVCOMPED_FEATURES))
           {
             int tmp;
 
@@ -7009,7 +7010,7 @@ void zMapViewSetSaveFile(ZMapView view, const ZMapViewExportType export_type, co
 {
   zMapReturnIfFail(view) ;
   view->save_file[export_type] = g_quark_from_string(filename) ;
-  view->flags[ZMAPFLAG_SAVE_FEATURES] = FALSE ;
+  zMapViewSetFlag(view, ZMAPFLAG_SAVE_FEATURES, FALSE) ;
 }
 
 
@@ -7122,7 +7123,7 @@ static void configUpdateContext(ZMapView view,
   zMapReturnIfFailSafe(export_type == ZMAPVIEW_EXPORT_CONFIG) ;
 
   /* Update the columns list if column order has changed */
-  if (view->flags[ZMAPFLAG_SAVE_COLUMNS])
+  if (zMapViewGetFlag(view, ZMAPFLAG_SAVE_COLUMNS))
     {
       GList *ordered_list = zMapFeatureGetOrderedColumnsListIDs(&view->context_map) ;
       char *result = zMap_g_list_quark_to_string(ordered_list, NULL) ;
@@ -7136,7 +7137,7 @@ static void configUpdateContext(ZMapView view,
     }
 
   /* Update the sources list if the sources have changed */
-  if (view->flags[ZMAPFLAG_SAVE_SOURCES])
+  if (zMapViewGetFlag(view, ZMAPFLAG_SAVE_SOURCES))
     {
       /* The context is updated directly when a new source is added so we don't need to do
        * anything here. Just indicate that the changes need saving... */
@@ -7144,7 +7145,7 @@ static void configUpdateContext(ZMapView view,
     }
 
   /* Update the featureset-style stanza if featureset->style relationshiops have changed */
-  if (view->flags[ZMAPFLAG_SAVE_FEATURESET_STYLE])
+  if (zMapViewGetFlag(view, ZMAPFLAG_SAVE_FEATURESET_STYLE))
     {
       GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;
 
@@ -7155,7 +7156,7 @@ static void configUpdateContext(ZMapView view,
     }
 
   /* Update the column-groups stanza if column groups have changed */
-  if (view->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS])
+  if (zMapViewGetFlag(view, ZMAPFLAG_SAVE_COLUMN_GROUPS))
     {
       updateContextHashList(context, file_type, ZMAPSTANZA_COLUMN_GROUPS, view->context_map.column_groups, NULL) ;
       changed = TRUE ;
@@ -7166,10 +7167,10 @@ static void configUpdateContext(ZMapView view,
     {
       zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
 
-      view->flags[ZMAPFLAG_SAVE_COLUMNS] = FALSE ;
-      view->flags[ZMAPFLAG_SAVE_SOURCES] = FALSE ;
-      view->flags[ZMAPFLAG_SAVE_FEATURESET_STYLE] = FALSE ;
-      view->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = FALSE ;
+      zMapViewSetFlag(view, ZMAPFLAG_SAVE_COLUMNS, FALSE) ;
+      zMapViewSetFlag(view, ZMAPFLAG_SAVE_SOURCES, FALSE) ;
+      zMapViewSetFlag(view, ZMAPFLAG_SAVE_FEATURESET_STYLE, FALSE) ;
+      zMapViewSetFlag(view, ZMAPFLAG_SAVE_COLUMN_GROUPS, FALSE) ;
     }
 }
 

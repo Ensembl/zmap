@@ -728,13 +728,13 @@ static void viewDumpContextToFile(ZMapView view, RequestData request_data)
       if(format && g_ascii_strcasecmp(format, "gff") == 0)
         {
           /* Swop to other strand..... */
-          if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+          if (zMapViewGetFlag(view->flags, ZMAPFLAG_REVCOMPED_FEATURES))
             zMapFeatureContextReverseComplement(view->features) ;
 
           result = zMapGFFDump((ZMapFeatureAny)view->features, view->context_map.styles, file, &error);
 
           /* And swop it back again. */
-          if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+          if (zMapViewGetFlag(view, ZMAPFLAG_REVCOMPED_FEATURES))
             zMapFeatureContextReverseComplement(view->features) ;
         }
 
@@ -2094,7 +2094,7 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
         {
           /* It's probably here that we need to revcomp the feature if the
            * view is revcomp'd.... */
-          if (request_data->view_window->parent_view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+          if (zMapViewGetFlag(request_data->view_window->parent_view, ZMAPFLAG_REVCOMPED_FEATURES))
             {
               zMapFeatureReverseComplement(request_data->orig_context, request_data->edit_feature) ;
             }
