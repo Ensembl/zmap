@@ -42,6 +42,9 @@
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
 
+#define DEFAULT_ENSEMBL_HOST "ensembldb.ensembl.org"
+#define DEFAULT_ENSEMBL_PORT "3306"
+#define DEFAULT_ENSEMBL_USER "anonymous"
 
 /* Data we need in callbacks. */
 typedef struct MainFrameStructName
@@ -49,8 +52,14 @@ typedef struct MainFrameStructName
   GtkWidget *toplevel ;
 
   GtkWidget *name_widg ;
-  GtkWidget *url_widg ;
+  GtkWidget *host_widg ;
+  GtkWidget *port_widg ;
+  GtkWidget *user_widg ;
+  GtkWidget *pass_widg ;
+  GtkWidget *dbname_widg ;
+  GtkWidget *dbprefix_widg ;
   GtkWidget *featuresets_widg ;
+  GtkWidget *biotypes_widg ;
 
   GtkWidget *chooser_widg ;
 
@@ -155,13 +164,39 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
 }
 
 
+/* Make an entry widget and a label and add them to the given boxes. Returns the entry widget. */
+static GtkWidget* makeEntryWidget(const char *label_str, 
+                                  const char *default_value,
+                                  const char *tooltip,
+                                  GtkWidget *labelbox,
+                                  GtkWidget *entrybox)
+{
+  GtkWidget *label = gtk_label_new(label_str) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
+  GtkWidget *entry = gtk_entry_new() ;
+  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+
+  if (default_value)
+    gtk_entry_set_text(GTK_ENTRY(entry), default_value) ;
+
+  if (tooltip)
+    {
+      gtk_widget_set_tooltip_text(label, tooltip) ;
+      gtk_widget_set_tooltip_text(entry, tooltip) ;
+    }
+
+  return entry ;
+}
 
 
 /* Make the label/entry fields frame. */
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
   GtkWidget *frame ;
-  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
+  GtkWidget *topbox, *hbox, *entrybox, *labelbox ;
 
   frame = gtk_frame_new( "New File source: " );
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -174,34 +209,24 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   gtk_container_border_width(GTK_CONTAINER(hbox), 0);
   gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
 
-
-  /* Labels..... */
+  /* a vbox for the labels */
   labelbox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), labelbox, FALSE, FALSE, 0) ;
 
-  label = gtk_label_new( "File path/URL :" ) ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-
-  label = gtk_label_new( "Featuresets :" ) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-
-  /* Entries.... */
+  /* a vbox for the entries */
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
 
-  main_data->name_widg = entry = gtk_entry_new() ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
-
-  main_data->url_widg = entry = gtk_entry_new() ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
-
-  main_data->featuresets_widg = entry = gtk_entry_new() ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+  /* Create the label/entry widgets */
+  main_data->name_widg = makeEntryWidget("Source name :", NULL, "A name for the new source", labelbox, entrybox) ;
+  main_data->host_widg = makeEntryWidget("Host :", DEFAULT_ENSEMBL_HOST, NULL, labelbox, entrybox) ;
+  main_data->port_widg = makeEntryWidget("Port :", DEFAULT_ENSEMBL_PORT, NULL, labelbox, entrybox) ;
+  main_data->user_widg = makeEntryWidget("Username :", DEFAULT_ENSEMBL_USER, NULL, labelbox, entrybox) ;
+  main_data->pass_widg = makeEntryWidget("Password :", NULL, "Can be empty if not required", labelbox, entrybox) ;
+  main_data->dbname_widg = makeEntryWidget("DB name :", NULL, "The database to load features from", labelbox, entrybox) ;
+  main_data->dbprefix_widg = makeEntryWidget("DB prefix :", NULL, "An optional prefix to add to source names for features from this database", labelbox, entrybox) ;
+  main_data->featuresets_widg = makeEntryWidget("Featuresets :", NULL, "If specified, only load these featuresets", labelbox, entrybox) ;
+  main_data->biotypes_widg = makeEntryWidget("Biotypes :", NULL, "If specified, only load these biotypes", labelbox, entrybox) ;
 
   return frame ;
 }
@@ -264,31 +289,106 @@ static void cancelCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+static std::string constructUrl(const char *host, const char *port,
+                                const char *user, const char *pass,
+                                const char *dbname, const char *dbprefix)
+{
+  std::string url = "ensembl://" ;
+
+  if (user)
+    url += user ;
+
+  url += ":" ;
+
+  if (pass)
+    url += pass ;
+
+  url += "@" ;
+
+  if (host)
+    url += host ;
+
+  url += ":" ;
+
+  if (port)
+    url += port ;
+
+  char separator= '?';
+      
+  if (dbname)
+    {
+      url += separator ;
+      url += "db_name=" ;
+      url += dbname ;
+      separator = '&' ;
+    }
+
+  if (dbprefix)
+    {
+      url += separator ;
+      url += "db_prefix=" ;
+      url += dbprefix ;
+    }
+
+  return url ;
+}
+
+
+/* Utility to get entry text but to return null is place of empty strings */
+static const char* getEntryText(GtkEntry *entry)
+{
+  const char *result = NULL ;
+
+  if (entry)
+    result = gtk_entry_get_text(entry) ;
+
+  if (result && *result == 0)
+    result = NULL ;
+
+  return result ;
+}
+
+
 /* Create the new source. */
 static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
-  gboolean ok = TRUE ;
+  gboolean ok = FALSE ;
   MainFrame main_frame = (MainFrame)cb_data ;
 
-  const char *name = gtk_entry_get_text(GTK_ENTRY(main_frame->name_widg)) ;
-  const char *path = gtk_entry_get_text(GTK_ENTRY(main_frame->url_widg)) ;
-  const char *featuresets = gtk_entry_get_text(GTK_ENTRY(main_frame->featuresets_widg)) ;
+  const char *source_name = getEntryText(GTK_ENTRY(main_frame->name_widg)) ;
+  const char *host = getEntryText(GTK_ENTRY(main_frame->host_widg)) ;
+  const char *port = getEntryText(GTK_ENTRY(main_frame->port_widg)) ;
+  const char *user = getEntryText(GTK_ENTRY(main_frame->user_widg)) ;
+  const char *pass = getEntryText(GTK_ENTRY(main_frame->pass_widg)) ;
+  const char *dbname = getEntryText(GTK_ENTRY(main_frame->dbname_widg)) ;
+  const char *dbprefix = getEntryText(GTK_ENTRY(main_frame->dbprefix_widg)) ;
+  const char *featuresets = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
+  const char *biotypes = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
 
-  if (path && name)
+  if (!source_name)
+    {
+      zMapWarning("%s", "Please enter a source name") ;
+    }
+  else if (!host)
+    {
+      zMapWarning("%s", "Please enter a host") ;
+    }
+  else if (!dbname)
+    {
+      zMapWarning("%s", "Please enter a database name") ;
+    }
+  else
     {
       GError *tmp_error = NULL ;
-      char *url = g_strdup_printf("file:///%s", path) ;
+      
+      std::string url = constructUrl(host, port, user, pass, dbname, dbprefix) ;
 
-      (main_frame->user_func)(name, url, featuresets, main_frame->user_data, &tmp_error) ;
+      (main_frame->user_func)(source_name, url, featuresets, biotypes, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
         zMapWarning("Failed to create new source: %s", tmp_error->message) ;
 
-      g_free(url) ;
-    }
-  else
-    {
-      zMapWarning("%s", "Please enter a name and path") ;
+      ok = TRUE ;
     }
 
   if (ok)

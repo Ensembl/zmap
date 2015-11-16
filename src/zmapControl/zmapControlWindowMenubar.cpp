@@ -738,8 +738,9 @@ static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWi
 /* Callback called when the create-source dialog has been ok'd to do the work to create the new
  * source from the user-provided info. Returns true if successfully created the source.  */
 static void createNewSourceCB(const char *source_name, 
-                              const char *url, 
-                              const char *featuresets, 
+                              const std::string &url, 
+                              const char *featuresets,
+                              const char *biotypes,
                               gpointer user_data,
                               GError **error)
 {
@@ -752,7 +753,7 @@ static void createNewSourceCB(const char *source_name,
 
   ZMapConfigSource source = g_new0(ZMapConfigSourceStruct, 1) ;
      
-  source->url = g_strdup(url) ;
+  source->url = g_strdup(url.c_str()) ;
       
   if (featuresets && *featuresets)
     source->featuresets = g_strdup(featuresets) ;
