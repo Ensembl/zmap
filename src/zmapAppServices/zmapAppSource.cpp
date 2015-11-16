@@ -289,38 +289,35 @@ static void cancelCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+static void appendUrlValue(std::string &url, const char *prefix, const char *value)
+{
+  if (prefix)
+    url += prefix ;
+
+  if (value)
+    url += value ;
+}
+
+
 static std::string constructUrl(const char *host, const char *port,
                                 const char *user, const char *pass,
                                 const char *dbname, const char *dbprefix)
 {
   std::string url = "ensembl://" ;
 
-  if (user)
-    url += user ;
+  appendUrlValue(url, NULL, user) ;
+  appendUrlValue(url, ":", pass) ;
+  appendUrlValue(url, "@", host) ;
+  appendUrlValue(url, ":", port) ;
 
-  url += ":" ;
-
-  if (pass)
-    url += pass ;
-
-  url += "@" ;
-
-  if (host)
-    url += host ;
-
-  url += ":" ;
-
-  if (port)
-    url += port ;
-
-  char separator= '?';
+  const char *separator= "?";
       
   if (dbname)
     {
       url += separator ;
       url += "db_name=" ;
       url += dbname ;
-      separator = '&' ;
+      separator = "&" ;
     }
 
   if (dbprefix)
@@ -328,6 +325,7 @@ static std::string constructUrl(const char *host, const char *port,
       url += separator ;
       url += "db_prefix=" ;
       url += dbprefix ;
+      separator = "&" ;
     }
 
   return url ;
