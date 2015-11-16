@@ -31,7 +31,6 @@
  *
  * Exported functions: See ZMap/zmapAppServices.h
  *
- * NOTE this file has been copied and used as a basis for zmapControlImportFile.c
  *-------------------------------------------------------------------
  */
 
