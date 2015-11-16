@@ -79,7 +79,7 @@ static const char * const ZMAP_BAM_SOURCE   = "zmap_bam2gff_conversion" ;
 /*
  * Create a ZMapDataSource object
  */
-ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error)
+ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error_out)
 {
   static const char * open_mode = "r" ;
   ZMapDataSource data_source = NULL ;
@@ -103,7 +103,7 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
           else
             {
               if (error)
-                g_error_free(error) ;
+                g_propagate_error(error, error_out) ;
               g_free(file) ;
             }
         }
