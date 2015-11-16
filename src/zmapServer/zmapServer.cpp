@@ -395,7 +395,7 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, ZMapStyl
     {
       char *sequence_name ;
       int start, end, dna_length = 0 ;
-      char *dna_sequence ;
+      char *dna_sequence = NULL ;
       ZMapFeatureAlignment align ;
       ZMapFeatureBlock feature_block ;
 

@@ -7087,9 +7087,12 @@ gboolean zMapViewExportConfig(ZMapView view,
   if (ok && !output_file)
     {
       output_file = zmapGUIFileChooser(NULL, "Configuration Export filename ?", NULL, "ini") ;
+
+      if (!output_file)
+        ok = FALSE ;
     }
 
-  if (ok && output_file)
+  if (ok)
     {
       /* Read the context from the original input config file (if there was one - otherwise this
        * will return an empty context. Note that it will also include any system config files too.) */
