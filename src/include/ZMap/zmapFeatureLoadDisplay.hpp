@@ -36,11 +36,10 @@
 
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
+#include <ZMap/zmapConfigStanzaStructs.hpp>
 
 #include <string>
 #include <map>
-
-struct _ZMapConfigSourceStruct ;
 
 
 /* Overview:
@@ -199,7 +198,7 @@ typedef struct ZMapFeatureContextMapStructType
   GHashTable *column_groups ;
 
   /* This lists all user-created sources */
-  std::map<std::string, _ZMapConfigSourceStruct*> sources ;
+  std::map<std::string, ZMapConfigSource> *sources ;
 
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap ;
 

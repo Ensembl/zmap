@@ -103,7 +103,7 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
           else
             {
               if (error)
-                g_propagate_error(error, error_out) ;
+                g_propagate_error(error_out, error) ;
               g_free(file) ;
             }
         }
