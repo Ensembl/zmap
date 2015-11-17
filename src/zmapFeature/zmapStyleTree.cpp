@@ -263,7 +263,7 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles)
     {
       ZMapFeatureTypeStyle parent = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style->parent_id)) ;
 
-      if (parent)
+      if (parent && parent->unique_id != style->unique_id)
         {
           ZMapStyleTree *parent_node = find(parent) ;
 
@@ -282,7 +282,14 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles)
         }
       else
         {
-          /* This style has no parent, so add it to the root style in the tree */
+          if (parent && parent->unique_id == style->unique_id)
+            {
+              zMapLogWarning("Style '%s' has cyclic dependancy. It will be added to the root of the tree instead of the named parent '%s'.",
+                             g_quark_to_string(style->original_id),
+                             g_quark_to_string(parent->original_id)) ;
+            }
+
+          /* This style has no (valid) parent, so add it to the root style in the tree */
           add_child_style(style) ;
         }
       
@@ -301,7 +308,8 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZM
     {
       ZMapFeatureTypeStyle parent = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style->parent_id)) ;
 
-      if (parent)
+      /* Check that the user hasn't tried to add a child to itself. */
+      if (parent && parent->unique_id != style->unique_id)
         {
           ZMapStyleTree *parent_node = find(parent) ;
 
@@ -320,7 +328,14 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZM
         }
       else
         {
-          /* This style has no parent, so add it to the root style in the tree */
+          if (parent && parent->unique_id == style->unique_id)
+            {
+              zMapLogWarning("Style '%s' has cyclic dependancy. It will be added to the root of the tree instead of the named parent '%s'.",
+                             g_quark_to_string(style->original_id),
+                             g_quark_to_string(parent->original_id)) ;
+            }
+
+          /* This style has no (valid) parent, so add it to the root style in the tree */
           add_child_style(style) ;
         }
       
