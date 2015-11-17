@@ -1,3 +1,10 @@
+2015-11-17  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.3.0-125-g834e0f3 - Update RT and git commit reports
+ src/ChangeLog                                  |   23 +++++++++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    2 ++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 3 files changed, 26 insertions(+), 1 deletions(-)
+
 2015-11-17  Gemma Guest  <gb10@sanger.ac.uk>
  Fix a bug merging styles, and don't allow cyclic dependencies - REGRESSION FIX
  src/include/ZMap/zmapStyleTree.hpp |    4 +-
