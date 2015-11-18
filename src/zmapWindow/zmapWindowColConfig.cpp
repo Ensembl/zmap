@@ -1894,28 +1894,28 @@ static gboolean tree_select_function_cb(GtkTreeSelection *selection,
 
 
 /* Called when the user selects a style on the tree right-click menu */
-static void tree_view_popup_menu_selected_cb(GtkWidget *menuitem, gpointer userdata)
-{
-}
+//static void tree_view_popup_menu_selected_cb(GtkWidget *menuitem, gpointer userdata)
+//{
+//}
 
 
 static gboolean tree_view_show_popup_menu(GtkWidget *tree_view, LoadedPageData page_data, GdkEvent *event)
 {
   gboolean result = FALSE ;
 
-  GtkWidget *menu = gtk_menu_new();
-
-  GtkWidget *menuitem = gtk_menu_item_new_with_label("Do something");
-
-  g_signal_connect(menuitem, "activate", G_CALLBACK(tree_view_popup_menu_selected_cb), page_data);
-
-  gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
-
-  gtk_widget_show_all(menu);
-
-  /* Note: event can be NULL here when called from view_onPopupMenu;
-   *  gdk_event_get_time() accepts a NULL argument */
-  gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, gdk_event_get_time(event));
+//  GtkWidget *menu = gtk_menu_new();
+//
+//  GtkWidget *menuitem = gtk_menu_item_new_with_label("Do something");
+//
+//  g_signal_connect(menuitem, "activate", G_CALLBACK(tree_view_popup_menu_selected_cb), page_data);
+//
+//  gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
+//
+//  gtk_widget_show_all(menu);
+//
+//  /* Note: event can be NULL here when called from view_onPopupMenu;
+//   *  gdk_event_get_time() accepts a NULL argument */
+//  gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, gdk_event_get_time(event));
 
   return result ;
 }
