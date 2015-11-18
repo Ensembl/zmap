@@ -40,6 +40,7 @@
 #include <gbtools/gbtools.hpp>
 
 
+
 /* Labels for column state, used in code and the help page. */
 #define SHOW_LABEL     "Show"
 #define SHOWHIDE_LABEL "Auto"
@@ -307,7 +308,7 @@ static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_dat
 
 static GList* tree_model_get_column_featuresets(LoadedPageData page_data, GtkTreeModel *model, GtkTreeIter *iter) ;
 static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter, const gboolean unique) ;
-static GQuark tree_model_get_style_id(GtkTreeModel *model, GtkTreeIter *iter) ;
+static char* tree_model_get_style_ids(GtkTreeModel *model, GtkTreeIter *iter) ;
 static GQuark tree_model_get_group_id(GtkTreeModel *model, GtkTreeIter *iter) ;
 
 static GQuark hashListFindID(GHashTable *column_groups, const GQuark search_id) ;
@@ -663,45 +664,97 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
 }
 
 
-/* Assign styles based on their values in the tree */
-static void loaded_page_apply_styles(LoadedPageData page_data)
+/* Get the list of styles as a ;-separated string for the given column */
+static char* columnGetStylesList(LoadedPageData page_data, ZMapFeatureContextMap context_map, const GQuark column_id)
 {
-  zMapReturnIfFail(page_data && 
-                   page_data->tree_model &&
-                   page_data->window &&
-                   page_data->window->context_map &&
-                   page_data->window->context_map->columns) ;
+  char *style_names = NULL ;
+  zMapReturnValIfFail(context_map && page_data && page_data->window && context_map->columns, style_names) ;
 
-  if (page_data->apply_now)
+  /*! \todo This isn't working so disable for now */
+  return style_names ;
+
+  //ZMapFeatureColumn column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns, GINT_TO_POINTER(column_id)) ;
+
+  // finding all styles for column doesn't seem to work ;for now look in the featuresets
+
+  FooCanvasGroup *column_group = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column_id) ;
+
+  if (!column_group)
+    column_group = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_REVERSE, column_id) ;
+
+  ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)(column_group);
+
+  /* gb10: we should use all featuresets in the column but it causes a crash so leaving it at
+   * just this one featureset for now */
+  if (container)
     {
-      GtkTreeModel *model = page_data->tree_model ;
+      ZMapFeatureSet feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container) ;
 
-      /* Loop through all rows in the tree and set the style for each column */
-      GtkTreeIter iter;
-  
-      if (gtk_tree_model_get_iter_first(model, &iter))
-        {
-          do
-            {
-              GQuark style_id = tree_model_get_style_id(model, &iter) ;
-              GList *featuresets = tree_model_get_column_featuresets(page_data, model, &iter) ;
-
-              for (GList *item = featuresets; item; item = item->next)
-                {
-                  ZMapFeatureSet feature_set = (ZMapFeatureSet)(item->data) ;
-
-                  if (feature_set && feature_set->style && feature_set->style->unique_id != style_id)
-                    {
-                      zmapWindowFeaturesetSetStyle(style_id,
-                                                   feature_set,
-                                                   page_data->window->context_map,
-                                                   page_data->window);
-                    }
-                }
-            } while (gtk_tree_model_iter_next(model, &iter)) ;
-        }
+      if (feature_set && feature_set->style)
+        style_names = g_strdup(g_quark_to_string(feature_set->style->original_id)) ;
     }
+  
+
+//  if (column)
+//    {
+//      GList *styles_list = column->style_table ;
+//      //GList *styles_list = (GList*)g_hash_table_lookup(context_map->column_2_styles, GINT_TO_POINTER(column_id)) ;
+//      style_names = zMap_g_list_quark_to_string(styles_list, ";") ;
+//    }
+
+  return style_names ;
 }
+
+
+///* Assign styles based on their values in the tree */
+//static void loaded_page_apply_styles(LoadedPageData page_data)
+//{
+//  zMapReturnIfFail(page_data && 
+//                   page_data->tree_model &&
+//                   page_data->window &&
+//                   page_data->window->context_map &&
+//                   page_data->window->context_map->columns) ;
+//
+//  if (page_data->apply_now)
+//    {
+//      GtkTreeModel *model = page_data->tree_model ;
+//
+//      /* Loop through all rows in the tree and set the style for each column */
+//      GtkTreeIter iter;
+//  
+//      if (gtk_tree_model_get_iter_first(model, &iter))
+//        {
+//          do
+//            {
+//              GQuark column_id = tree_model_get_column_id(model, &iter, TRUE) ;
+//              char *new_style_names = tree_model_get_style_ids(model, &iter) ;
+//              char *old_style_names = columnGetStylesList(page_data, page_data->window->context_map, column_id) ;
+//
+//              /* Only apply changes if the style has changed. */
+//              /*! \todo Need to assign the style id on a per-featureset basis. For now this
+//               * only works if there's only one style for the column i.e. there is no ; separator */
+//              if (strcmp(new_style_names, old_style_names) != 0 && strchr(new_style_names, ';'))
+//                {
+//                  GQuark style_id = g_quark_from_string(new_style_names) ;
+//                  GList *featuresets = tree_model_get_column_featuresets(page_data, model, &iter) ;
+//
+//                  for (GList *item = featuresets; item; item = item->next)
+//                    {
+//                      ZMapFeatureSet feature_set = (ZMapFeatureSet)(item->data) ;
+//
+//                      if (feature_set && feature_set->style && feature_set->style->unique_id != style_id)
+//                        {
+//                          zmapWindowFeaturesetSetStyle(style_id,
+//                                                       feature_set,
+//                                                       page_data->window->context_map,
+//                                                       page_data->window);
+//                        }
+//                    }
+//                }
+//            } while (gtk_tree_model_iter_next(model, &iter)) ;
+//        }
+//    }
+//}
 
 
 /* For a hash table of IDs to GLists of IDs, remove the given value from the GList for the given
@@ -853,7 +906,7 @@ static void loaded_page_apply(NotebookPage notebook_page)
 
   /* Apply the new visibility states, styles and groups */
   loaded_page_apply_visibility(loaded_page_data) ;
-  loaded_page_apply_styles(loaded_page_data) ;
+  //loaded_page_apply_styles(loaded_page_data) ;
   loaded_page_apply_groups(loaded_page_data) ;
 
   zmapWindowBusy(loaded_page_data->window, FALSE) ;
@@ -2109,7 +2162,7 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, HIDE_REV_COLUMN, "RH") ;
 
   /* Create the style column */
-  createTreeViewColumn(tree_view, "Style", STYLE_COLUMN, text_renderer, "text", TRUE) ;
+  createTreeViewColumn(tree_view, "Styles", STYLE_COLUMN, text_renderer, "text", TRUE) ;
 
   /* Create the group column */
   createTreeViewColumn(tree_view, "Group", GROUP_COLUMN, text_renderer, "text", TRUE) ;
@@ -2181,9 +2234,17 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
   const char *label_text = g_quark_to_string(column->column_id);
   gtk_list_store_set(store, &iter, NAME_COLUMN, label_text, -1);
 
-  /* Set the style name */
+  /* Set the style names */
   if (column->style)
-    gtk_list_store_set(store, &iter, STYLE_COLUMN, g_quark_to_string(column->style->unique_id), -1);
+    {
+      char *style_names = columnGetStylesList(page_data, page_data->window->context_map, column->column_id) ;
+      
+      if (style_names)
+        {
+          gtk_list_store_set(store, &iter, STYLE_COLUMN, style_names, -1);
+          g_free(style_names) ;
+        }
+    }
 
   /* Set the group name */
   GQuark group_id = hashListFindID(page_data->window->context_map->column_groups, column->column_id) ;
@@ -2389,7 +2450,7 @@ static void choose_style_button_cb(GtkButton *button, gpointer user_data)
           gtk_tree_selection_selected_foreach(selection, &set_column_style_cb, page_data) ;
 
           /* Apply the changes (if the apply-now flag is set) */
-          loaded_page_apply_styles(page_data) ;
+          //loaded_page_apply_styles(page_data) ;
         }
     }
   else
@@ -2550,10 +2611,10 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
   gtk_widget_set_tooltip_text(button, "Select all visible tracks") ;
 
   /* Add a button to choose a style for the selected columns */
-  button = gtk_button_new_with_mnemonic("Choose _Style") ;
-  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
-  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(choose_style_button_cb), page_data) ;
-  gtk_widget_set_tooltip_text(button, "Assign a style to the selected tracks") ;
+  //button = gtk_button_new_with_mnemonic("Choose _Style") ;
+  //gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  //g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(choose_style_button_cb), page_data) ;
+  //gtk_widget_set_tooltip_text(button, "Assign a style to the selected tracks") ;
 
   /* Add a button to set a group for the selected columns */
   button = gtk_button_new_with_mnemonic("Set _Group") ;
@@ -2883,23 +2944,17 @@ static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter, c
 }
 
 
-/* Get the unique style id for the given row in the given tree. Return it as a unique id */
-static GQuark tree_model_get_style_id(GtkTreeModel *model, GtkTreeIter *iter)
+/* Get the style name(s) for the given row in the given tree. Returns a list of semi-colon
+ * separated values */
+static char* tree_model_get_style_ids(GtkTreeModel *model, GtkTreeIter *iter)
 {
-  GQuark style_id = 0 ;
-  char *style_name = NULL ;
+  char *style_names = NULL ;
 
   gtk_tree_model_get (model, iter,
-                      STYLE_COLUMN, &style_name,
+                      STYLE_COLUMN, &style_names,
                       -1);
 
-  if (style_name)
-    {
-      style_id = zMapStyleCreateID(style_name) ;
-      g_free(style_name) ;
-    }
-
-  return style_id ;
+  return style_names ;
 }
 
 
