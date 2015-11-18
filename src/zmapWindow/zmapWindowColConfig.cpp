@@ -97,6 +97,7 @@ typedef enum
   {
     NOTEBOOK_INVALID_FUNC,
     NOTEBOOK_POPULATE_FUNC,
+    NOTEBOOK_REORDER_FUNC,
     NOTEBOOK_APPLY_FUNC,
     NOTEBOOK_UPDATE_FUNC,
     NOTEBOOK_CLEAR_FUNC,
@@ -134,6 +135,7 @@ typedef struct _NotebookPageStruct
   NotebookPageConstruct  page_constructor; /* A+ */
   NotebookPageColFunc    page_populate;    /* B+ */
   NotebookPageFunc       page_apply;  /* C  */
+  NotebookPageFunc       page_reorder;  /* C  */
   NotebookPageUpdateFunc page_update;      /* D */
   NotebookPageFunc       page_clear;  /* B- */
   NotebookPageFunc       page_destroy;  /* A- */
@@ -281,6 +283,8 @@ static void configure_clear_containers(ColConfigure configure_data);
 static void cancel_button_cb(GtkWidget *apply_button, gpointer user_data) ;
 static void revert_button_cb(GtkWidget *apply_button, gpointer user_data);
 static void apply_button_cb(GtkWidget *apply_button, gpointer user_data);
+static void ok_button_cb(GtkWidget *apply_button, gpointer user_data);
+static void reorder_button_cb(GtkWidget *apply_button, gpointer user_data) ;
 
 
 static void notebook_foreach_page(GtkWidget *notebook_widget, gboolean current_page_only,
@@ -785,6 +789,48 @@ static void loaded_page_apply_groups(LoadedPageData page_data)
 }
 
 
+/* Apply column order changes on the loaded-columns page */
+static void loaded_page_reorder(NotebookPage notebook_page)
+{
+  LoadedPageData loaded_page_data;
+  ColConfigure configure_data;
+  gboolean save_apply_now, save_reposition;
+  ZMapWindow window ;
+
+  configure_data = notebook_page->configure_data;
+  loaded_page_data = (LoadedPageData)(notebook_page->page_data);
+  window = loaded_page_data->window ;
+
+  /* Reset the flags so that we apply changes now but don't reposition yet. Save the original
+   * flag values first */
+  save_apply_now  = loaded_page_data->apply_now;
+  save_reposition = loaded_page_data->reposition;
+
+  loaded_page_data->apply_now  = TRUE;
+  loaded_page_data->reposition = FALSE;
+
+
+  /* Do the reorder */
+  loaded_page_apply_reorder_columns(loaded_page_data) ;
+
+
+  zmapWindowBusy(loaded_page_data->window, FALSE) ;
+  zmapWindowColOrderColumns(loaded_page_data->window);
+  zmapWindowFullReposition(loaded_page_data->window->feature_root_group, TRUE, "loaded_page_apply") ;
+  zmapWindowBusy(loaded_page_data->window, FALSE) ;
+
+  /* Restore the original flag values */
+  loaded_page_data->apply_now  = save_apply_now;
+  loaded_page_data->reposition = save_reposition;
+
+  /* Maintain the current order but clear any sorting */
+  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(loaded_page_data->tree_model), 
+                                       GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
+                                       GTK_SORT_ASCENDING) ;
+
+}
+
+
 /* Apply changes on the loaded-columns page */
 static void loaded_page_apply(NotebookPage notebook_page)
 {
@@ -1099,6 +1145,7 @@ static NotebookPage loaded_page_create(ColConfigure configure_data, char **page_
       page_data->page_constructor = loaded_page_construct;
       page_data->page_populate    = loaded_page_populate;
       page_data->page_apply       = loaded_page_apply;
+      page_data->page_reorder     = loaded_page_reorder;
       page_data->page_update      = loaded_page_update;
       page_data->page_clear       = loaded_page_clear;
       page_data->page_destroy     = loaded_page_destroy;
@@ -1702,6 +1749,7 @@ static NotebookPage deferred_page_create(ColConfigure configure_data, char **pag
       page_data->page_constructor = deferred_page_construct;
       page_data->page_populate    = deferred_page_populate;
       page_data->page_apply       = deferred_page_apply;
+      page_data->page_reorder     = NULL ;
       page_data->page_clear       = deferred_page_clear;
       page_data->page_destroy     = deferred_page_destroy;
 
@@ -2306,6 +2354,19 @@ static void set_column_style_cb(GtkTreeModel *model_in, GtkTreePath *path, GtkTr
 }
 
 
+/* Called when the user hits the select-all button. */
+static void select_all_button_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+
+  if (selection)
+    gtk_tree_selection_select_all(selection) ;
+}
+
+
 /* Called when the user hits the set-group button. Prompts for a style and assigns it to the
  * currently-selected rows. */
 static void choose_style_button_cb(GtkButton *button, gpointer user_data)
@@ -2448,25 +2509,6 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
 }
 
 
-/* Called when the user hits the button to apply the new column order. */
-static void reorder_columns_cb(GtkButton *button, gpointer user_data)
-{
-  LoadedPageData page_data = (LoadedPageData)user_data ;
-  
-  gboolean save_apply_now  = page_data->apply_now;
-  gboolean save_reposition = page_data->reposition;
-
-  page_data->apply_now  = TRUE;
-  page_data->reposition = TRUE;
-
-  loaded_page_apply_reorder_columns(page_data) ;
-
-  /* Restore the original flag values */
-  page_data->apply_now  = save_apply_now;
-  page_data->reposition = save_reposition;
-}
-
-
 static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
 {
   zMapReturnValIfFail(page_data && page_data->configure_data, NULL) ;
@@ -2499,9 +2541,16 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
 
   GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Selection:"), FALSE, FALSE, 0) ;
+
+  /* Add a button to select all the visible rows */
+  GtkWidget *button = gtk_button_new_with_mnemonic("S_elect All") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(select_all_button_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Select all visible tracks") ;
 
   /* Add a button to choose a style for the selected columns */
-  GtkWidget *button = gtk_button_new_with_mnemonic("Choose _Style") ;
+  button = gtk_button_new_with_mnemonic("Choose _Style") ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(choose_style_button_cb), page_data) ;
   gtk_widget_set_tooltip_text(button, "Assign a style to the selected tracks") ;
@@ -2511,14 +2560,6 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(set_group_button_cb), page_data) ;
   gtk_widget_set_tooltip_text(button, "Choose a group for the selected tracks") ;
-
-  /* Add a button to apply the new column order. We want them to explicitly choose to reorder
-   * rather than doing this when they hit the Apply button because they might have reordered just
-   * to be able to view columns better. */
-  button = gtk_button_new_with_mnemonic("Apply Column _Order") ;
-  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
-  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(reorder_columns_cb), page_data) ;
-  gtk_widget_set_tooltip_text(button, "Applies the new track order based on the order of the rows in the list. (Drag and drop rows to change the order.)") ;
 
   return vbox ;
 }
@@ -2602,7 +2643,8 @@ static GtkWidget *create_label(GtkWidget *parent, const char *text)
 
 static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
 {
-  GtkWidget *button_box, *apply_button, *cancel_button, *revert_button, *frame, *parent;
+  GtkWidget *button_box, *ok_button, *reorder_button, *apply_button,
+    *cancel_button, *revert_button, *frame, *parent;
 
   parent = configure_data->vbox;
 
@@ -2612,28 +2654,42 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
   gtk_container_set_border_width (GTK_CONTAINER (button_box), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
   revert_button = gtk_button_new_from_stock(GTK_STOCK_REVERT_TO_SAVED) ;
-  gtk_box_pack_start(GTK_BOX(button_box), revert_button, FALSE, FALSE, 0) ;
+  gtk_box_pack_end(GTK_BOX(button_box), revert_button, FALSE, FALSE, 0) ;
   gtk_signal_connect(GTK_OBJECT(revert_button), "clicked", GTK_SIGNAL_FUNC(revert_button_cb), configure_data) ;
   gtk_widget_set_tooltip_text(revert_button, "Revert to last applied values") ;
 
-  cancel_button = gtk_button_new_from_stock(GTK_STOCK_CLOSE) ;
-  gtk_box_pack_start(GTK_BOX(button_box), cancel_button, FALSE, FALSE, 0) ;
-  gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked", GTK_SIGNAL_FUNC(cancel_button_cb), configure_data) ;
-  gtk_widget_set_tooltip_text(cancel_button, "Close and lose unsaved changes") ;
+  /* Add a button to apply the new column order. We want them to explicitly choose to reorder
+   * rather than doing this when they hit the Apply button because they might have reordered just
+   * to be able to view columns better. */
+  reorder_button = gtk_button_new_with_mnemonic("Apply _Order") ;
+  gtk_box_pack_end(GTK_BOX(button_box), reorder_button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(reorder_button), "clicked", G_CALLBACK(reorder_button_cb), configure_data) ;
+  gtk_widget_set_tooltip_text(reorder_button, "Applies the new track order based on the order of the rows in the list. (Drag and drop rows to reorder the list, or click column headers to sort.)") ;
 
   apply_button = gtk_button_new_from_stock(GTK_STOCK_APPLY) ;
   gtk_box_pack_end(GTK_BOX(button_box), apply_button, FALSE, FALSE, 0) ;
   gtk_signal_connect(GTK_OBJECT(apply_button), "clicked", GTK_SIGNAL_FUNC(apply_button_cb), configure_data) ;
   gtk_widget_set_tooltip_text(apply_button, "Save and apply changes (can't be undone)") ;
 
-  /* set close button as default. */
-  GTK_WIDGET_SET_FLAGS(apply_button, GTK_CAN_DEFAULT) ;
+  cancel_button = gtk_button_new_from_stock(GTK_STOCK_CANCEL) ;
+  gtk_box_pack_end(GTK_BOX(button_box), cancel_button, FALSE, FALSE, 0) ;
+  gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked", GTK_SIGNAL_FUNC(cancel_button_cb), configure_data) ;
+  gtk_widget_set_tooltip_text(cancel_button, "Close and lose unsaved changes") ;
+
+  ok_button = gtk_button_new_from_stock(GTK_STOCK_OK) ;
+  gtk_box_pack_end(GTK_BOX(button_box), ok_button, FALSE, FALSE, 0) ;
+  gtk_signal_connect(GTK_OBJECT(ok_button), "clicked", GTK_SIGNAL_FUNC(ok_button_cb), configure_data) ;
+  gtk_widget_set_tooltip_text(ok_button, "Save and apply changes (can't be undone)") ;
 
   frame = gtk_frame_new(NULL) ;
   gtk_container_set_border_width(GTK_CONTAINER(frame), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
   gtk_box_pack_start(GTK_BOX(parent), frame, FALSE, FALSE, 0) ;
 
   gtk_container_add(GTK_CONTAINER(frame), button_box);
+
+
+  /* set apply button as default. */
+  GTK_WIDGET_SET_FLAGS(apply_button, GTK_CAN_DEFAULT) ;
 
   return apply_button;
 }
@@ -3084,6 +3140,16 @@ static void notebook_foreach_page(GtkWidget       *notebook_widget,
                   }
               }
               break;
+            case NOTEBOOK_REORDER_FUNC:
+              {
+                NotebookPageFunc reorder_func;
+
+                if((reorder_func = page_data->page_reorder))
+                  {
+                    (reorder_func)(page_data);
+                  }
+              }
+              break;
             case NOTEBOOK_POPULATE_FUNC:
               {
                 NotebookPageColFunc pop_func;
@@ -3142,11 +3208,31 @@ static void revert_button_cb(GtkWidget *apply_button, gpointer user_data)
   return ;
 }
 
+static void reorder_button_cb(GtkWidget *apply_button, gpointer user_data)
+{
+  ColConfigure configure_data = (ColConfigure)user_data;
+
+  notebook_foreach_page(configure_data->notebook, FALSE, NOTEBOOK_REORDER_FUNC, NULL);
+
+  return ;
+}
+
 static void apply_button_cb(GtkWidget *apply_button, gpointer user_data)
 {
   ColConfigure configure_data = (ColConfigure)user_data;
 
   notebook_foreach_page(configure_data->notebook, FALSE, NOTEBOOK_APPLY_FUNC, NULL);
+
+  return ;
+}
+
+static void ok_button_cb(GtkWidget *ok_button, gpointer user_data)
+{
+  ColConfigure configure_data = (ColConfigure)user_data;
+
+  notebook_foreach_page(configure_data->notebook, FALSE, NOTEBOOK_APPLY_FUNC, NULL);
+
+  gtk_widget_destroy(configure_data->window->col_config_window) ;
 
   return ;
 }
