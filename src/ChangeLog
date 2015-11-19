@@ -1,4 +1,9 @@
 2015-11-17  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.3.0-126-gc0e948b - Update RT and git commit reports
+ src/ChangeLog |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+2015-11-17  zmap  <zmap@sanger.ac.uk>
  ZMap version 2.3.0-125-g834e0f3 - Update RT and git commit reports
  src/ChangeLog                                  |   23 +++++++++++++++++++++++
  src/build/release_docs/GIT_COMMITS.txt         |    2 ++
