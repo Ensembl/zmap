@@ -62,8 +62,7 @@ public:
   ZMapFeatureTypeStyle find_style(const GQuark style_id) ;
 
   void add_style(ZMapFeatureTypeStyle style) ;
-  void add_style(ZMapFeatureTypeStyle style, GHashTable *styles) ;
-  void add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZMapStyleMergeMode merge_mode) ;
+  void add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZMapStyleMergeMode merge_mode = ZMAPSTYLE_MERGE_PRESERVE) ;
   void remove_style(ZMapFeatureTypeStyle style) ;
   void merge(GHashTable *styles_hash, ZMapStyleMergeMode merge_mode) ;
   void sort() ;
@@ -87,6 +86,7 @@ private:
 
   void add_child_style(ZMapFeatureTypeStyle style) ;
 
+  void do_add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZMapStyleMergeMode merge_mode) ;
 };
 
 

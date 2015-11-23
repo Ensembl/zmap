@@ -223,6 +223,8 @@ const std::vector<ZMapStyleTree*>& ZMapStyleTree::get_children() const
  * in the tree or that it should be added to the root node if not. */
 void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style)
 {
+  zMapReturnIfFail(style) ;
+
   if (!find(style))
     {
       if (style->parent_id)
@@ -236,8 +238,8 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style)
             }
           else
             {
-              zMapWarning("Adding style '%s' to parent '%s' failed; parent style not found",
-                          g_quark_to_string(style->unique_id), g_quark_to_string(style->parent_id)) ;
+              zMapLogWarning("Adding style '%s' to parent '%s' failed; parent style not found",
+                             g_quark_to_string(style->unique_id), g_quark_to_string(style->parent_id)) ;
             }
         }
       else
@@ -250,56 +252,72 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style)
 }
 
 
-/* Add the given style into the style hierarchy tree in the appropriate place according to its
- * parent. Recursively add the style's parent(s) if not already in the tree. Does nothing if the
- * style is already in the tree. 
- * This function is provided to support the old acedb way of loading styles where we may only
- * know the parent id up front and not have the whole parent style available. In this case the
- * ids are added into a hash table and we only merge them into the styles tree when we've parsed
- * them all. */
-void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles)
+/* Check whether a style has the given style in its parent hierarchy */
+static gboolean styleDependsOnParent(ZMapFeatureTypeStyle style, 
+                                     const GQuark search_id,
+                                     GHashTable *styles)
 {
-  if (!find(style))
+  gboolean result = FALSE ;
+
+  if (style && search_id)
     {
-      ZMapFeatureTypeStyle parent = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style->parent_id)) ;
-
-      if (parent)
+      if (!style->parent_id)
         {
-          ZMapStyleTree *parent_node = find(parent) ;
-
-          /* If the parent doesn't exist, recursively create it */
-          if (!parent_node)
-            {
-              add_style(parent, styles) ;
-              parent_node = find(parent) ;
-            }
-
-          /* Add the child to the parent node */
-          if (parent_node)
-            parent_node->add_child_style(style) ;
-          else
-            zMapWarning("%s", "Error adding style to tree") ;
+          /* No parent; not found */
+          result = FALSE ;
+        }
+      else if (style->parent_id == search_id)
+        {
+          /* Found */
+          result = TRUE ;
+        }
+      else if (style->parent_id == style->unique_id)
+        {
+          /* Don't recurse through a style with a direct cyclic dependancy on itself */
+          result = FALSE ;
         }
       else
         {
-          /* This style has no parent, so add it to the root style in the tree */
-          add_child_style(style) ;
+          /* Recursively look through the parent hierarchy */
+          ZMapFeatureTypeStyle parent_style = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style->parent_id)) ;
+
+          if (parent_style)
+            result = styleDependsOnParent(parent_style, search_id, styles) ;
         }
-      
     }
+
+  return result ;
 }
 
 
-/* Add/update the given style into the style hierarchy tree in the appropriate place according to its
- * parent. Recursively add/update the style's parent(s) if not already in the tree. If the style
- * is already in the tree it is ignored/updated/replaced depending on the merge mode */
-void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZMapStyleMergeMode merge_mode)
+/* Does the work to add a new style. Assumes the style does not already exist.  */
+void ZMapStyleTree::do_add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZMapStyleMergeMode merge_mode)
 {
-  ZMapStyleTree *found_node = find(style) ;
+  zMapReturnIfFail(style && styles) ;
 
-  if (!found_node)
+  /* Check if we need to add this to a parent style */
+  if (!style->parent_id)
+    {
+      /* This style has no parent, so add it to the root style in the tree */
+      add_child_style(style) ;
+    }
+  else if (styleDependsOnParent(style, style->unique_id, styles))
+    {
+      /* The child has itself in its parent hierarchy. We can't add styles with cyclic dependancies. */
+      zMapLogWarning("Style '%s' cannot be added because it has a cyclic dependancy on parent '%s'.",
+                     g_quark_to_string(style->unique_id),
+                     g_quark_to_string(style->parent_id)) ;
+    }
+  else if (style->parent_id && style->parent_id != style->unique_id)
     {
       ZMapFeatureTypeStyle parent = (ZMapFeatureTypeStyle)g_hash_table_lookup(styles, GINT_TO_POINTER(style->parent_id)) ;
+
+      /* If there is no parent with this id in the input hash table then create an empty
+       * style with this id just as a placeholder */
+      if (!parent)
+        {
+          parent = zMapStyleCreate(g_quark_to_string(style->parent_id), g_quark_to_string(style->parent_id)) ;
+        }
 
       if (parent)
         {
@@ -314,46 +332,79 @@ void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, GHashTable *styles, ZM
 
           /* Add the child to the parent node */
           if (parent_node)
-            parent_node->add_child_style(style) ;
+            {
+              parent_node->add_child_style(style) ;
+            }
           else
-            zMapWarning("%s", "Error adding style to tree") ;
+            {
+              zMapLogWarning("Error adding style '%s' to tree: no parent style '%s'", 
+                             g_quark_to_string(style->original_id),
+                             g_quark_to_string(style->parent_id)) ;
+            }
         }
       else
         {
-          /* This style has no parent, so add it to the root style in the tree */
-          add_child_style(style) ;
+          zMapLogWarning("Could not create parent style '%s'; style '%s' will be omitted.",
+                         g_quark_to_string(style->parent_id),
+                         g_quark_to_string(style->original_id)) ;
         }
-      
+    }
+}
+
+
+/* Add/update the given style into the style hierarchy tree in the appropriate place according to its
+ * parent. Recursively add/update the style's parent(s) if not already in the tree. If the style
+ * is already in the tree it is ignored/updated/replaced depending on the merge mode.
+ * 
+ * This function is provided to support the old acedb way of loading styles where we may only
+ * know the parent id up front and not have the whole parent style available. In this case the
+ * ids are added into a hash table and we only merge them into the styles tree when we've parsed
+ * them all. */
+void ZMapStyleTree::add_style(ZMapFeatureTypeStyle style, 
+                              GHashTable *styles,
+                              ZMapStyleMergeMode merge_mode)
+{
+  zMapReturnIfFail(style && styles) ;
+  ZMapStyleTree *found_node = find(style) ;
+
+  if (!found_node)
+    {
+      do_add_style(style, styles, merge_mode) ;
     }
   else
     {
-      switch (merge_mode)
+      ZMapFeatureTypeStyle curr_style = found_node->get_style() ;
+
+      /* We only need to do a merge if we have two different versions of this style, i.e. if the
+       * pointers are not the same */
+      if (curr_style && curr_style != style)
         {
-        case ZMAPSTYLE_MERGE_PRESERVE:
-          {
-            /* Leave the existing style untouched. */
-            break ;
-          }
-        case ZMAPSTYLE_MERGE_REPLACE:
-          {
-            /* Remove the existing style and put the new one in its place. */
-            ZMapFeatureTypeStyle curr_style = found_node->get_style() ;
-            found_node->set_style(style) ;
-            zMapStyleDestroy(curr_style) ;
-            break ;
-          }
-        case ZMAPSTYLE_MERGE_MERGE:
-          {
-            /* Merge the existing and new styles. */
-            ZMapFeatureTypeStyle curr_style = found_node->get_style() ;
-            zMapStyleMerge(curr_style, style) ;
-            break ;
-          }
-        default:
-          {
-            zMapWarnIfReached() ;
-            break ;
-          }
+          switch (merge_mode)
+            {
+            case ZMAPSTYLE_MERGE_PRESERVE:
+              {
+                /* Leave the existing style untouched. */
+                break ;
+              }
+            case ZMAPSTYLE_MERGE_REPLACE:
+              {
+                /* Remove the existing style and put the new one in its place. */
+                found_node->set_style(style) ;
+                zMapStyleDestroy(curr_style) ;
+                break ;
+              }
+            case ZMAPSTYLE_MERGE_MERGE:
+              {
+                /* Merge the existing and new styles. */
+                zMapStyleMerge(curr_style, style) ;
+                break ;
+              }
+            default:
+              {
+                zMapWarnIfReached() ;
+                break ;
+              }
+            }
         }
     }
 }
