@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/2.4.0"
 
+729ff2f 2015-11-23 Fix a bug where curl_multi_fdset failures weren't being handled - BUG FIX
 834e0f3 2015-11-17 Fix a bug merging styles, and don't allow cyclic dependencies - REGRESSION FIX
 d652251 2015-11-17 Avoid potential cyclic dependency with styles - REGRESSION FIX
 faf2d26 2015-11-11 Update relase notes for last release - DOC

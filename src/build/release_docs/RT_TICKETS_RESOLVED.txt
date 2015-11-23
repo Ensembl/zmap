@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 19/10/2015 to 19/11/2015
+Request Tracker Tickets Resolved from 19/10/2015 to 23/11/2015
 
 ticket/410365
 id: ticket/410365
@@ -8,6 +8,16 @@ Subject: Feature search window.
 Requestors: sm23@sanger.ac.uk
 Owner: sm23
 Resolved: Wed Oct 21 16:44:48 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/472209
+id: ticket/472209
+Queue: zmap
+Subject: Zmap crashes when I save a new transcript.
+Requestors: erb@sanger.ac.uk
+Owner: jgrg
+Resolved: Mon Nov 23 12:20:46 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
