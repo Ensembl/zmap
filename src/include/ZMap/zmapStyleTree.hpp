@@ -24,7 +24,10 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Style and Style set handling functions.
+ * Description: This tree contains a hierarchy of styles. The hierarchy is
+ *              constructed from the parent releationships specified in
+ *              the styles config file / default styles. Styles and parent
+ *              relationships can also be modified by the user within zmap.
  *
  *-------------------------------------------------------------------
  */
