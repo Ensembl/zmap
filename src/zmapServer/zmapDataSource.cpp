@@ -79,7 +79,7 @@ static const char * const ZMAP_BAM_SOURCE   = "zmap_bam2gff_conversion" ;
 /*
  * Create a ZMapDataSource object
  */
-ZMapDataSource zMapDataSourceCreate(const char * const file_name )
+ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error)
 {
   static const char * open_mode = "r" ;
   ZMapDataSource data_source = NULL ;
@@ -116,7 +116,10 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name )
         {
           file->type = ZMAPDATASOURCE_TYPE_HTS ;
           file->hts_file = hts_open(file_name, open_mode);
-          file->hts_hdr = sam_hdr_read(file->hts_file) ;
+
+          if (file->hts_file)
+            file->hts_hdr = sam_hdr_read(file->hts_file) ;
+
           file->hts_rec = bam_init1() ;
           if (file->hts_file && file->hts_hdr && file->hts_rec)
             {
@@ -134,6 +137,8 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name )
               if (file->hts_rec)
                 bam_destroy1(file->hts_rec) ;
               g_free(file) ;
+
+              g_set_error(error, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'", file_name) ;
             }
         }
     }

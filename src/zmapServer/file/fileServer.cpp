@@ -304,7 +304,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   /*
    * Create data source object (file or GIOChannel)
    */
-  server->data_source = zMapDataSourceCreate(server->path ) ;
+  server->data_source = zMapDataSourceCreate(server->path, &error) ;
   if (server->data_source != NULL )
     status = TRUE ;
 
