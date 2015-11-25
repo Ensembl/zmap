@@ -61,7 +61,13 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 
   zMapReturnValIfFail((server_global_data_out), FALSE) ;
 
-  zMapReturnValIfFail((url->scheme == SCHEME_FILE || url->scheme == SCHEME_PIPE || url->scheme == SCHEME_HTTP
+  zMapReturnValIfFail((url->scheme == SCHEME_FILE
+                       || url->scheme == SCHEME_PIPE 
+                       || url->scheme == SCHEME_HTTP 
+                       || url->scheme == SCHEME_FTP
+#ifdef HAVE_SSL
+                       || url->scheme == SCHEME_HTTPS 
+#endif
 #ifdef USE_ACECONN
                        || url->scheme == SCHEME_ACEDB
 #endif
@@ -87,14 +93,13 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
       pipeGetServerFuncs(serverfuncs);
       break;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    case SCHEME_HTTP:
-      /*  case SCHEME_HTTPS: */
-      // Not supported at the moment.
+#ifdef HAVE_SSL
+    case SCHEME_HTTPS: // fall through
+#endif
+    case SCHEME_HTTP: // fall through
+    case SCHEME_FTP:
+      fileGetServerFuncs(serverfuncs) ;
       break;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 #ifdef USE_ACECONN
     case SCHEME_ACEDB:

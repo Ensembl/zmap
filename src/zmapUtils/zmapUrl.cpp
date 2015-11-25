@@ -877,7 +877,7 @@ ZMapURL url_parse (const char *url, int *error)
   const char *query_b,     *query_e;
   const char *fragment_b,  *fragment_e;
 
-  int port;
+  int port = 0;
   char *user = NULL, *passwd = NULL;
 
   //char *url_expanded = NULL;
@@ -899,6 +899,7 @@ ZMapURL url_parse (const char *url, int *error)
 
   /* escape special characters */
   url_encoded = reencode_escapes (url);
+
   p = url_encoded;
 
   p += strlen (supported_schemes[scheme].leading_string);
