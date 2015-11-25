@@ -1,3 +1,10 @@
+2015-11-23  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.3.0-132-g729ff2f - Update RT and git commit reports
+ src/ChangeLog                                  |   26 ++++++++++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   12 ++++++++++-
+ 3 files changed, 38 insertions(+), 1 deletions(-)
+
 2015-11-23  Gemma Guest  <gb10@sanger.ac.uk>
  Fix a bug where curl_multi_fdset failures weren't being handled - BUG FIX
  src/libcurlobject/libcurlobject.c |  118 +++++++++++++++++++++++--------------
