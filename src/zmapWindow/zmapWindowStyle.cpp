@@ -292,7 +292,16 @@ gboolean zmapWindowColumnAddStyle(const GQuark style_id,
 
   if(column)
     {
-      GList *styles_list = (GList *)g_hash_table_lookup(context_map->column_2_styles, GUINT_TO_POINTER(column_id));
+      gpointer styles_list_ptr = NULL ;
+      GList *styles_list = NULL ;
+
+      bool list_exists = g_hash_table_lookup_extended(context_map->column_2_styles, 
+                                                      GUINT_TO_POINTER(column_id),
+                                                      NULL,
+                                                      &styles_list_ptr);
+
+      if (list_exists && styles_list_ptr)
+        styles_list = (GList*)styles_list_ptr ;
 
       /* Regenerate the column's style */
       g_list_free(column->style_table);
@@ -302,11 +311,19 @@ gboolean zmapWindowColumnAddStyle(const GQuark style_id,
 
       zMapWindowGetSetColumnStyle(window, style_id);
 
-      /* Update the column_2_styles table */
-      styles_list = g_list_append(styles_list, GUINT_TO_POINTER(style_id)) ;
-      g_hash_table_replace(context_map->column_2_styles, GUINT_TO_POINTER(column_id), styles_list) ;
+      /* Check the style is not already in the list */
+      if (styles_list && !g_list_find(styles_list, GUINT_TO_POINTER(style_id)))
+        {
+          /* Update the column_2_styles table */
+          styles_list = g_list_append(styles_list, GUINT_TO_POINTER(style_id)) ;
 
-      ok = TRUE;
+          if (list_exists)
+            g_hash_table_replace(context_map->column_2_styles, GUINT_TO_POINTER(column_id), styles_list) ;
+          else
+            g_hash_table_insert(context_map->column_2_styles, GUINT_TO_POINTER(column_id), styles_list) ;
+        
+          ok = TRUE;
+        }
     }
 
   return ok ;
@@ -347,14 +364,18 @@ gboolean zmapWindowColumnRemoveStyle(const GQuark style_id,
             {
               if(GPOINTER_TO_UINT(c2s->data) == style_id)
                 {
-                  /* Remove the item from the list */
-                  styles_list = g_list_delete_link(styles_list, c2s) ;
-
-                  /* Update the hash table with the new list (or remove it if empty) */
-                  if (styles_list)
-                    g_hash_table_replace(context_map->column_2_styles, GUINT_TO_POINTER(column_id), styles_list) ;
+                  /* Update the hash table with the new list (or remove it if it will be empty -
+                   * note that we must not delete_link if we're removing it because destroyList is
+                   * called on the list when it's removed from the table) */
+                  if (g_list_length(styles_list) > 1)
+                    {
+                      styles_list = g_list_delete_link(styles_list, c2s) ;
+                      g_hash_table_replace(context_map->column_2_styles, GUINT_TO_POINTER(column_id), styles_list) ;
+                    }
                   else
-                    g_hash_table_remove(context_map->column_2_styles, GUINT_TO_POINTER(column_id)) ;
+                    {
+                      g_hash_table_remove(context_map->column_2_styles, GUINT_TO_POINTER(column_id)) ;
+                    }
 
                   break;
                 }
@@ -387,7 +408,7 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
 
   style = context_map->styles.find_style(style_id);
 
-  if(style)
+  if(style && update_column)
     {
       ZMapFeatureSource s2s;
 
@@ -406,6 +427,10 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
           if (ok)
             ok = zmapWindowColumnAddStyle(style_id, f2c->column_id, context_map, window) ;
         }
+    }
+  else if (style)
+    {
+      ok = TRUE ;
     }
 
   if (ok && destroy_canvas_items)
@@ -507,7 +532,7 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
 
   if (!ok)
     {
-      zMapWarning("%s", "Error setting new style '%s' for featureset '%s'",
+      zMapWarning("Error setting new style '%s' for featureset '%s'",
                   g_quark_to_string(style_id), g_quark_to_string(feature_set->unique_id));
     }
 
