@@ -3953,7 +3953,10 @@ GList * add_column_featuresets(ZMapFeatureContextMap map, GList *glist, GQuark c
   if (!map || !column_id)
     return glist ;
 
-  column = (ZMapFeatureColumn)g_hash_table_lookup(map->columns,(GUINT_TO_POINTER(column_id)));
+  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = map->columns->find(column_id) ;
+  
+  if (col_iter != map->columns->end())
+    column = col_iter->second ;
 
   if(column)
     l = zMapFeatureGetColumnFeatureSets(map, column_id, unique_id);

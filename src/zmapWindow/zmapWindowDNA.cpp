@@ -454,14 +454,17 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
       g_hash_table_insert(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), glist);
     }
 
-  column = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
-  if(!column)
+  if (window->context_map->columns)
     {
-      column = g_new0(ZMapFeatureColumnStruct,1);
-      column->unique_id = f2c->column_id;
-      column->style_table = g_list_prepend(NULL, (gpointer)  style);
-      /* the rest shoudl get filled in elsewhere */
-      g_hash_table_insert(window->context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
+      column = (*window->context_map->columns)[f2c->column_id] ;
+      if(!column)
+        {
+          column = g_new0(ZMapFeatureColumnStruct,1);
+          column->unique_id = f2c->column_id;
+          column->style_table = g_list_prepend(NULL, (gpointer)  style);
+          /* the rest shoudl get filled in elsewhere */
+          (*window->context_map->columns)[f2c->column_id] = column ;
+        }
     }
 
   fstyle.feature_set   = separator_featureset;

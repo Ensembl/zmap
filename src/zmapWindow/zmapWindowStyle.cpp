@@ -284,7 +284,11 @@ gboolean zmapWindowColumnAddStyle(const GQuark style_id,
   gboolean ok = FALSE ;
   zMapReturnValIfFail(style_id && column_id && context_map, ok) ;
 
-  ZMapFeatureColumn column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns, GUINT_TO_POINTER(column_id));
+  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = context_map->columns->find(column_id) ;
+  ZMapFeatureColumn column = NULL ;
+  
+  if (col_iter != context_map->columns->end())
+    column = col_iter->second ;
 
   if(column)
     {
@@ -318,7 +322,11 @@ gboolean zmapWindowColumnRemoveStyle(const GQuark style_id,
   gboolean ok = FALSE ;
   zMapReturnValIfFail(style_id && column_id && context_map, ok) ;
 
-  ZMapFeatureColumn column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns, GUINT_TO_POINTER(column_id));
+  ZMapFeatureColumn column = NULL ;
+  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = context_map->columns->find(column_id) ;
+
+  if (col_iter != window->context_map->columns->end())
+    column = col_iter->second ;
 
   if(column)
     {

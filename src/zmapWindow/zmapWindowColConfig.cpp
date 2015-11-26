@@ -622,7 +622,7 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
 
       /* Loop through all rows in the tree and set the column order index */
       GtkTreeModel *model = page_data->tree_model ;
-      GHashTable *columns = page_data->window->context_map->columns ;
+      std::map<GQuark, ZMapFeatureColumn> &columns = *page_data->window->context_map->columns ;
       GtkTreeIter iter;
       int i = 0 ;
 
@@ -631,9 +631,13 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
           do
             {
               GQuark column_id = tree_model_get_column_id(model, &iter, TRUE) ;
+              ZMapFeatureColumn column = NULL ;
           
-              ZMapFeatureColumn column = (ZMapFeatureColumn)g_hash_table_lookup(columns, GINT_TO_POINTER(column_id)) ;
+              std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = columns.find(column_id) ;
 
+              if (col_iter != columns.end())
+                column = col_iter->second ;
+                  
               if (column)
                 {
                   column->order = i ;
@@ -689,8 +693,11 @@ static char* columnGetStylesList(LoadedPageData page_data, ZMapFeatureContextMap
 //        style_names = g_strdup(g_quark_to_string(feature_set->style->original_id)) ;
 //    }
   
+  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = context_map->columns->find(column_id) ;
+  ZMapFeatureColumn column = NULL ;
 
-  ZMapFeatureColumn column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns, GINT_TO_POINTER(column_id)) ;
+  if (col_iter != context_map->columns->end())
+    column = col_iter->second ;
 
   if (column)
     {
@@ -1457,12 +1464,16 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page, GList *columns
               if (mark_set)
                 {
                   DeferredPageData page_data;
-                  ZMapFeatureColumn col;
+                  ZMapFeatureColumn col = NULL ;
 
                   page_data   = (DeferredPageData)notebook_page->page_data;
 
-                  col = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns,
-                                                               GUINT_TO_POINTER(zMapFeatureSetCreateID(column_name)));
+                  GQuark unique_id = zMapFeatureSetCreateID(column_name) ;
+
+                  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = window->context_map->columns->find(unique_id) ;
+
+                  if (col_iter != window->context_map->columns->end())
+                    col = col_iter->second ;
 
                   if (col)
                     loaded_in_mark = column_is_loaded_in_range(window->context_map,
@@ -1666,7 +1677,6 @@ static GList *configure_get_deferred_column_lists(ColConfigure configure_data,
 {
   GList *columns = NULL;
   ZMapWindow window;
-  GList *disp_cols = NULL;
   ZMapFeatureColumn column;
 
   window         = configure_data->window;
@@ -1678,11 +1688,11 @@ static GList *configure_get_deferred_column_lists(ColConfigure configure_data,
    * if we are doing 'configure this column' then we only include it
    * if not fully loaded and also include no others
    */
-  zMap_g_hash_table_get_data(&disp_cols,window->context_map->columns);
-
-  while(disp_cols)
+  for (std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = window->context_map->columns->begin();
+       col_iter != window->context_map->columns->end();
+       ++col_iter)
     {
-      column = (ZMapFeatureColumn) disp_cols->data;
+      column = col_iter->second ;
 
       if((!column_name || column_name == column->unique_id )
          && (column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
@@ -1694,8 +1704,6 @@ static GList *configure_get_deferred_column_lists(ColConfigure configure_data,
         {
           columns = g_list_prepend(columns,GUINT_TO_POINTER(column->column_id));
         }
-
-      disp_cols = g_list_delete_link(disp_cols,disp_cols);
     }
 
   columns = g_list_sort(columns,col_sort_by_name);

@@ -31,9 +31,12 @@
 #define ZMAP_CONFIG_INI_H
 
 #include <glib-object.h>
+#include <map>
+
 
 class ZMapStyleTree ;
 
+struct ZMapFeatureColumnStructType ;
 
 
 /* default list of in-built columns if not specified in config file */
@@ -185,7 +188,8 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
 GHashTable * zmapConfigIniGetDefaultStyles(void);
 gboolean zMapConfigIniGetStylesFromFile(char *config_file,
 					char *styles_list, char *styles_file, GHashTable **styles_out, const char *buffer);
-GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *ghash,GHashTable *columns);
+GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *ghash,
+                                              std::map<GQuark, ZMapFeatureColumnStructType*> columns);
 
 gboolean zMapConfigLegacyStyles(char *config_file) ;
 
@@ -206,7 +210,7 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
 
 GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context) ;
 
-GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context);
+std::map<GQuark, ZMapFeatureColumnStructType*> *zMapConfigIniGetColumns(ZMapConfigIniContext context);
 
 void zMapConfigSourcesFreeList(GList *config_sources_list);
 

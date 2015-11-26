@@ -1895,12 +1895,17 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
             if(gffset)
               {
                 // got the featureset_2_column mapping, look up the column
-                gffset  = (ZMapFeatureSetDesc)g_hash_table_lookup(window->context_map->columns,
-                                                                  GUINT_TO_POINTER(gffset->column_id));
-                if(gffset)
+                std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = 
+                  window->context_map->columns->find(gffset->column_id) ;
+
+                ZMapFeatureColumn column = NULL ;
+                
+                if (col_iter != window->context_map->columns->end())
+                  column = col_iter->second ;
+
+                if(column)
                   {
-                    select.feature_desc.feature_set =
-                      g_strdup(g_quark_to_string(gffset->column_ID));
+                    select.feature_desc.feature_set = g_strdup(g_quark_to_string(column->column_id));
                   }
               }
 

@@ -501,7 +501,11 @@ ZMapFeatureColumn zMapWindowGetColumn(ZMapFeatureContextMap map,GQuark col_id)
 {
   ZMapFeatureColumn column = NULL;
 
-  column = (ZMapFeatureColumn)g_hash_table_lookup(map->columns,GUINT_TO_POINTER(col_id));
+  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = map->columns->find(col_id) ;
+
+  if (col_iter != map->columns->end())
+    column = col_iter->second ;
+
   if(!column)
     zMapLogWarning("no column for featureset %s",g_quark_to_string(col_id));
 

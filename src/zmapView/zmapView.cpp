@@ -2628,7 +2628,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
        */
       view->context_map.columns = zMapConfigIniGetColumns(context);
 
-      if (g_hash_table_size(view->context_map.columns))
+      if (view->context_map.columns->size() > 0)
         view->columns_set = TRUE;
 
       /*-------------------------------------
@@ -2699,8 +2699,9 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
               }
           }
 
-
-        fset_col = zMapConfigIniGetFeatureset2Column(context, fset_col, view->context_map.columns) ;
+        
+        if (view->context_map.columns)
+          fset_col = zMapConfigIniGetFeatureset2Column(context, fset_col, *view->context_map.columns) ;
 
         if (g_hash_table_size(fset_col))
           view->context_map.featureset_2_column = fset_col ;
@@ -2931,14 +2932,13 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 
         if (col_styles)
           {
-            zMap_g_hash_table_iter_init (&iter, view->context_map.columns);
-
-            while (zMap_g_hash_table_iter_next (&iter, &key, &value))
+            for (std::map<GQuark, ZMapFeatureColumn>::iterator map_iter = view->context_map.columns->begin();
+                 map_iter != view->context_map.columns->end();
+                 ++map_iter)
               {
-                GQuark style_id;
+                column = map_iter->second ;
 
-                column = (ZMapFeatureColumn) value;
-                style_id = GPOINTER_TO_UINT(g_hash_table_lookup(col_styles,GUINT_TO_POINTER(column->unique_id)));
+                GQuark style_id = GPOINTER_TO_UINT(g_hash_table_lookup(col_styles,GUINT_TO_POINTER(column->unique_id)));
                 // set the column style if there
                 if(style_id)
                   {
@@ -2959,8 +2959,12 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
           ZMapFeatureSetDesc f2c ;
 
           /* hard coded column style for strand separator */
-          if ((column = (ZMapFeatureColumn)g_hash_table_lookup(view->context_map.columns, GUINT_TO_POINTER(col_id))))
+          std::map<GQuark, ZMapFeatureColumn>::iterator map_iter = view->context_map.columns->find(col_id) ;
+
+          if (map_iter != view->context_map.columns->end())
             {
+              column = map_iter->second ;
+
               column->style_id = col_id ;
 
               zMap_g_hashlist_insert(view->context_map.column_2_styles,
@@ -3018,7 +3022,11 @@ static void zmapViewCreateColumns(ZMapView view,GList *featuresets)
     {
       /* this ought to do a featureset_2_column lookup  and then default to the featureset name */
 
-      if(!g_hash_table_lookup(view->context_map.columns,featuresets->data))
+      GQuark featureset_id = (GQuark)GPOINTER_TO_INT(featuresets->data) ;
+
+      std::map<GQuark, ZMapFeatureColumn>::iterator iter = view->context_map.columns->find(featureset_id) ;
+
+      if (iter == view->context_map.columns->end())
         {
           char *str = (char *) g_quark_to_string(GPOINTER_TO_UINT(featuresets->data));
           col = (ZMapFeatureColumn) g_new0(ZMapFeatureColumnStruct,1);
@@ -3029,8 +3037,8 @@ static void zmapViewCreateColumns(ZMapView view,GList *featuresets)
           col->order = zMapFeatureColumnOrderNext(FALSE);
 
           /* no column specific style possible from servers */
-
-          g_hash_table_insert(view->context_map.columns,GUINT_TO_POINTER(col->unique_id),col);
+          
+          (*view->context_map.columns)[col->unique_id] = col ;
         }
     }
 
@@ -4522,9 +4530,12 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
               fset = (ZMapFeatureSetDesc) value;
 
               /* construct a reverse col 2 featureset mapping */
-              column = (ZMapFeatureColumn)g_hash_table_lookup(zmap_view->context_map.columns,GUINT_TO_POINTER(fset->column_id));
-              if(column)
+              std::map<GQuark, ZMapFeatureColumn>::iterator map_iter = zmap_view->context_map.columns->find(fset->column_id) ;
+              
+              if(map_iter != zmap_view->context_map.columns->end())
                 {
+                  column = map_iter->second ;
+
                   fset->column_ID = column->column_id;      /* upper cased display name */
 
                   /* construct reverse mapping from column to featureset */
@@ -5747,7 +5758,12 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
           char *set_name = (char *) g_quark_to_string(set_id);
           set_id = zMapFeatureSetCreateID(set_name);
 
-          if (!(column = (ZMapFeatureColumn)g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_id))))
+          std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = view->context_map.columns->find(set_id) ;
+
+          if (col_iter != view->context_map.columns->end())
+            column = col_iter->second ;
+
+          if (!column)
             {
               ZMapFeatureSetDesc set_desc ;
 
@@ -5756,7 +5772,12 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
               /* If merge request came directly from otterlace then need to look up feature set
                * in column/featureset hash. */
               if ((set_desc = (ZMapFeatureSetDesc)g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(set_id))))
-                column = (ZMapFeatureColumn)g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_desc->column_id)) ;
+                {
+                  col_iter = view->context_map.columns->find(set_desc->column_id) ;
+
+                  if (col_iter != view->context_map.columns->end())
+                    column = col_iter->second ;
+                }
             }
 
 

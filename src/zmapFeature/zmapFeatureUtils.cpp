@@ -979,35 +979,61 @@ int zMapFeatureColumnOrderNext(const gboolean reset)
 
 static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 {
-  ZMapFeatureColumn pa,pb;
-  GHashTable *ghash = (GHashTable *) user_data;
+  ZMapFeatureColumn pa = NULL,pb = NULL;
+  std::map<GQuark, ZMapFeatureColumn> *columns = (std::map<GQuark, ZMapFeatureColumn>*)user_data;
 
-  pa = (ZMapFeatureColumn)g_hash_table_lookup(ghash,a);
-  pb = (ZMapFeatureColumn)g_hash_table_lookup(ghash,b);
-  if(pa && pb)
+  if (columns)
     {
-      if(pa->order < pb->order)
-        return(-1);
-      if(pa->order > pb->order)
-        return(1);
+      GQuark quark1 = (GQuark)GPOINTER_TO_INT(a) ;
+      GQuark quark2 = (GQuark)GPOINTER_TO_INT(b) ;
+      std::map<GQuark, ZMapFeatureColumn>::iterator iter1 = columns->find(quark1) ;
+      std::map<GQuark, ZMapFeatureColumn>::iterator iter2 = columns->find(quark2) ;
+
+      if (iter1 != columns->end())
+        pa = iter1->second ;
+
+      if (iter2 != columns->end())
+        pb = iter2->second ;
+
+      if(pa && pb)
+        {
+          if(pa->order < pb->order)
+            return(-1);
+          if(pa->order > pb->order)
+            return(1);
+        }
     }
+
   return(0);
 }
 
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 {
-  ZMapFeatureColumn pa,pb;
-  GHashTable *ghash = (GHashTable *) user_data;
+  ZMapFeatureColumn pa = NULL,pb = NULL;
+  std::map<GQuark, ZMapFeatureColumn> *columns = (std::map<GQuark, ZMapFeatureColumn>*) user_data;
 
-  pa = (ZMapFeatureColumn)g_hash_table_lookup(ghash,GINT_TO_POINTER(((ZMapFeatureColumn)a)->unique_id));
-  pb = (ZMapFeatureColumn)g_hash_table_lookup(ghash,GINT_TO_POINTER(((ZMapFeatureColumn)b)->unique_id));
-  if(pa && pb)
+  if (columns)
     {
-      if(pa->order < pb->order)
-        return(-1);
-      if(pa->order > pb->order)
-        return(1);
+      GQuark quark1 = (GQuark)GPOINTER_TO_INT(a) ;
+      GQuark quark2 = (GQuark)GPOINTER_TO_INT(b) ;
+      std::map<GQuark, ZMapFeatureColumn>::iterator iter1 = columns->find(quark1) ;
+      std::map<GQuark, ZMapFeatureColumn>::iterator iter2 = columns->find(quark2) ;
+
+      if (iter1 != columns->end())
+        pa = iter1->second ;
+
+      if (iter2 != columns->end())
+        pb = iter2->second ;
+
+      if(pa && pb)
+        {
+          if(pa->order < pb->order)
+            return(-1);
+          if(pa->order > pb->order)
+            return(1);
+        }
     }
+
   return(0);
 }
 
@@ -1018,13 +1044,13 @@ static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 GList* zMapFeatureGetOrderedColumnsListIDs(ZMapFeatureContextMap context_map)
 {
   GList *columns = NULL ;
-  GList *kv = NULL;
-  gpointer key = NULL,value = NULL;
+  zMapReturnValIfFail(context_map, columns) ;
 
-  zMap_g_hash_table_iter_init(&kv, context_map->columns);
-  while(zMap_g_hash_table_iter_next(&kv,&key,&value))
+  for (std::map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->begin() ; 
+       iter != context_map->columns->end(); 
+       ++iter)
     {
-      columns = g_list_prepend(columns,key);
+      columns = g_list_prepend(columns, GINT_TO_POINTER(iter->first));
     }
 
   columns = g_list_sort_with_data(columns, colIDOrderCB, context_map->columns);
@@ -1039,13 +1065,13 @@ GList* zMapFeatureGetOrderedColumnsListIDs(ZMapFeatureContextMap context_map)
 GList* zMapFeatureGetOrderedColumnsList(ZMapFeatureContextMap context_map)
 {
   GList *columns = NULL ;
-  GList *kv = NULL;
-  gpointer key = NULL,value = NULL;
+  zMapReturnValIfFail(context_map, columns) ;
 
-  zMap_g_hash_table_iter_init(&kv, context_map->columns);
-  while(zMap_g_hash_table_iter_next(&kv,&key,&value))
+  for (std::map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->begin() ; 
+       iter != context_map->columns->end(); 
+       ++iter)
     {
-      columns = g_list_prepend(columns,value);
+      columns = g_list_prepend(columns, iter->second);
     }
 
   columns = g_list_sort_with_data(columns, colOrderCB, context_map->columns);
@@ -1091,16 +1117,19 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap context_map,GQua
     }
   /*      else*/
   {
-    column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(gff->column_id));
-    if(!column)
+    std::map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->find(gff->column_id) ;
+
+    if (iter != context_map->columns->end())
+      {
+        column = iter->second ;
+      }
+    else
       {
         ZMapFeatureSource gff_source;
 
-
         column = g_new0(ZMapFeatureColumnStruct,1);
 
-        column->unique_id =
-          column->column_id = set_id;
+        column->unique_id = column->column_id = set_id;
 
         column->order = zMapFeatureColumnOrderNext(FALSE);
 
@@ -1108,7 +1137,7 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap context_map,GQua
         column->column_desc = name;
 
         column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,GUINT_TO_POINTER(set_id));
-        g_hash_table_insert(context_map->columns,GUINT_TO_POINTER(set_id),column);
+        (*context_map->columns)[set_id] = column ;
       }
   }
 
@@ -1122,7 +1151,7 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap context_map,GQuark 
 {
   GList *glist = NULL;
   ZMapFeatureSetDesc fset;
-  ZMapFeatureColumn column;
+  ZMapFeatureColumn column = NULL;
   gpointer key;
   GList *iter;
 
@@ -1135,7 +1164,10 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap context_map,GQuark 
    * also need to scan for all calls to this func since caching the data
    */
 
-  column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(column_id));
+  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = context_map->columns->find(column_id) ;
+
+  if (col_iter != context_map->columns->end())
+      column = col_iter->second ;
 
   if(!column)
     return glist;
