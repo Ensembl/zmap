@@ -1297,7 +1297,8 @@ static void destroyList(gpointer data)
 {
   GList *glist = (GList *)data ;
 
-  g_list_free(glist) ;
+  if (glist)
+    g_list_free(glist) ;
 
   return ;
 }
