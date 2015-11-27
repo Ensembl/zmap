@@ -1092,19 +1092,8 @@ static gboolean validateSequenceDetails(GList *seq_maps, GError **error)
       if ((seq_map->sequence && seq_map->start && seq_map->end)
           || (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end)))
         {
-          /* We must have a config file or some files on the command line (otherwise we have no
-           * sources) */
-          if (seq_map->config_file || seq_map->file_list)
-            {
-
-            }
-          else
-            {
-              result = FALSE ;
-
-              g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_NO_SOURCES,
-                          "No data sources - you must specify a config file, or pass data in GFF files on the command line") ;
-            }
+          /* We no longer check that we have any sources set up because we allow zmap to start up
+           * empty, because the user can create sources from the main window */
         }
       else
         {
