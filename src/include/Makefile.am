@@ -43,6 +43,7 @@ ZMap/zmapSOParser.hpp \
 ZMap/zmapSkipList.hpp\
 ZMap/zmapString.hpp \
 ZMap/zmapStyle.hpp \
+ZMap/zmapStyleTree.hpp \
 ZMap/zmapThreads.hpp \
 ZMap/zmapUrl.hpp \
 ZMap/zmapUrlOptions.hpp \

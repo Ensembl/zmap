@@ -69,7 +69,7 @@ typedef struct
 {
   GList *methods ;
   GHashTable *method_2_data ;
-  GHashTable *styles ;
+  ZMapStyleTree *styles ;
 } LoadableStruct, *Loadable ;
 
 
@@ -103,7 +103,7 @@ typedef struct
 {
   ZMapServerResponseType result ;
   AcedbServer server ;
-  GHashTable *styles ;
+  ZMapStyleTree *styles ;
   GList *src_feature_set_names;
   GHFunc eachBlock ;
 } DoAllAlignBlocksStruct, *DoAllAlignBlocks ;
@@ -168,7 +168,7 @@ static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
+static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
                                           ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in,
                                                  char *sequence_name, int start, int end,
@@ -244,7 +244,7 @@ static void createSet2StyleList(gpointer data, gpointer user_data) ;
 static void overlayFeatureSet2Column(GHashTable *method_2_feature_set, GHashTable *featureset_2_column) ;
 static void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_data) ;
 
-static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, GHashTable *styles) ;
+static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, ZMapStyleTree *styles) ;
 static void loadableCB(gpointer data, gpointer user_data) ;
 
 static void freeDataCB(gpointer data) ;
@@ -817,7 +817,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 
 /* Get features sequence. */
 static ZMapServerResponseType getFeatures(void *server_in,
-					  GHashTable *styles, ZMapFeatureContext feature_context)
+					  ZMapStyleTree &styles, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType response = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -830,7 +830,7 @@ static ZMapServerResponseType getFeatures(void *server_in,
   get_features.result = ZMAP_SERVERRESPONSE_OK ;
   get_features.server = (AcedbServer)server_in ;
   get_features.server->last_err_status = ACECONN_OK ;
-  get_features.styles = styles ;
+  get_features.styles = &styles ;
   get_features.src_feature_set_names = NULL;
   get_features.eachBlock = eachBlockSequenceRequest;
 
@@ -1301,7 +1301,7 @@ static void addTypeName(gpointer data, gpointer user_data)
 static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock feature_block)
 {
   AcedbServer server = get_features->server;
-  GHashTable *styles = get_features->styles;
+  ZMapStyleTree *styles = get_features->styles;
   gboolean result = FALSE ;
   const char *gene_finder_cmds = "seqactions -gf_features no_draw ;" ;
   char *acedb_request = NULL ;
@@ -4468,7 +4468,7 @@ static void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_d
 }
 
 
-static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, GHashTable *styles)
+static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, ZMapStyleTree *styles)
 {
   GList *loadable_methods = NULL ;
   LoadableStruct loadable_data ;

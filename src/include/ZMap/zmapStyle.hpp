@@ -39,6 +39,7 @@
 #include <ZMap/zmapIO.hpp>
 
 
+class ZMapStyleTree ;
 
 
 
@@ -863,7 +864,6 @@ typedef struct ZMapStyleAssemblyPathStructType
 
 
 
-
 /* THIS STRUCT NEEDS A MAGIC PTR, ONCE IT HAS ONE THEN ADD A TEST TO zmapStyleIsValid() FOR IT.... */
 
 /*! @struct ZMapFeatureTypeStyle zmapStyle_P.h
@@ -1006,7 +1006,6 @@ typedef struct ZMapFeatureTypeStyleStructType
     ZMapStyleGraphStruct graph ;
     ZMapStyleGlyphStruct glyph ;
   } mode_data ;
-
 
 } ZMapFeatureTypeStyleStruct ;
 
@@ -1332,6 +1331,7 @@ GQuark zMapStyleCreateID(const char *style_name) ;
 ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;
 
 
+void zMapStyleSetSubStyle(ZMapFeatureTypeStyle style, gpointer data);
 gboolean zMapStyleSetSubStyles(GHashTable *style_set);
 
 
@@ -1346,9 +1346,11 @@ gboolean zMapStyleInheritAllStyles(GHashTable *style_set) ;
 gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
 ZMapFeatureTypeStyle zMapFindStyle(GHashTable *styles, GQuark style_id) ;
 ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, ZMapStyleMode type);
+ZMapFeatureTypeStyle zMapFindFeatureStyle(ZMapStyleTree &styles, GQuark style_id, ZMapStyleMode feature_type) ;
+ZMapFeatureTypeStyle zMapFindFeatureStyle(ZMapStyleTree *styles, GQuark style_id, ZMapStyleMode feature_type) ;
 GList *zMapStylesGetNames(GHashTable *styles) ;
 GHashTable *zMapStyleGetAllPredefined(void) ;
-GHashTable *zMapStyleMergeStyles(GHashTable *curr_styles, GHashTable *new_styles, ZMapStyleMergeMode merge_mode) ;
+void zMapStyleMergeStyles(ZMapStyleTree &curr_styles, GHashTable *new_styles, ZMapStyleMergeMode merge_mode) ;
 void zMapStyleDestroyStyles(GHashTable *styles) ;
 
 

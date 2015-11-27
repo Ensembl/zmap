@@ -243,7 +243,7 @@ typedef struct ZMapServerReqGetFeaturesStructType
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
-  GHashTable *styles ;					    /* Needed for some features to control
+  ZMapStyleTree *styles ;				    /* Needed for some features to control
 							       how they are fetched. */
 
   ZMapFeatureContext context ;				    /* Returned feature sets. */

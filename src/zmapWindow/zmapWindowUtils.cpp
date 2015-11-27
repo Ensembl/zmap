@@ -525,7 +525,7 @@ void zmapWindowGenColumnStyle(ZMapWindow window,ZMapFeatureColumn column)
         {
           ZMapFeatureTypeStyle s;
 
-          s = (ZMapFeatureTypeStyle)g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
+          s = window->context_map->styles.find_style(column->style_id);
           if(column->style && s && (!s->mode || s->mode == column->style->mode))
             {
               zMapStyleMerge(column->style, s);
@@ -593,7 +593,7 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
 
               style_id = GPOINTER_TO_UINT(glist->data);
 
-              if((style = zMapFindStyle(map->styles, style_id)))    // add styles needed by featuresets
+              if((style = map->styles.find_style(style_id)))    // add styles needed by featuresets
                 {
                   styles_list = g_list_append(styles_list, (gpointer) style);
 
@@ -609,9 +609,8 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
                 }
               else
                 {
-                  zMapLogWarning("Could not find style %s for column \"%s\" in table of %d",
-                                 g_quark_to_string(style_id),g_quark_to_string(column_id),
-                                 g_hash_table_size(map->styles));
+                  zMapLogWarning("Could not find style %s for column \"%s\"",
+                                 g_quark_to_string(style_id),g_quark_to_string(column_id));
                 }
             }
           while((glist = g_list_next(glist)));

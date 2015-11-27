@@ -80,7 +80,7 @@ typedef struct GetFeaturesDataStructType
   GList *feature_set_names ;
   GHashTable *source_2_sourcedata ;
   GHashTable *featureset_2_column ;
-  GHashTable *feature_styles ;
+  ZMapStyleTree *feature_styles ;
 
 } GetFeaturesDataStruct, *GetFeaturesData ;
 
@@ -90,7 +90,7 @@ typedef struct GetSequenceDataStructType
 {
   EnsemblServer server ;
 
-  GHashTable *styles ;
+  ZMapStyleTree &styles ;
 } GetSequenceDataStruct, *GetSequenceData ;
 
 
@@ -126,7 +126,7 @@ static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
+static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
                                           ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in,
                                                  char *sequence_name, int start, int end,
@@ -442,7 +442,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 
 
 /* Get all features on a sequence. */
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
+static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
                                           ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
@@ -456,7 +456,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   get_features_data.feature_set_names = NULL ;
   get_features_data.source_2_sourcedata = server->source_2_sourcedata ;
   get_features_data.featureset_2_column = server->featureset_2_column ;
-  get_features_data.feature_styles = styles ;
+  get_features_data.feature_styles = &styles ;
 
   DoAllAlignBlocksStruct all_data ;
   all_data.server = server ;
@@ -1671,7 +1671,7 @@ static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
       if (source_data)
         source_data->style_id = feature_style_id;
 
-      g_hash_table_insert(get_features_data->feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
+      get_features_data->feature_styles->add_style(feature_style) ;
 
       if (source_data && feature_style->unique_id != feature_style_id)
         source_data->style_id = feature_style->unique_id;

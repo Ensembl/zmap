@@ -729,13 +729,13 @@ static void viewDumpContextToFile(ZMapView view, RequestData request_data)
         {
           /* Swop to other strand..... */
           if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-            zMapFeatureContextReverseComplement(view->features, view->context_map.styles) ;
+            zMapFeatureContextReverseComplement(view->features) ;
 
           result = zMapGFFDump((ZMapFeatureAny)view->features, view->context_map.styles, file, &error);
 
           /* And swop it back again. */
           if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-            zMapFeatureContextReverseComplement(view->features, view->context_map.styles) ;
+            zMapFeatureContextReverseComplement(view->features) ;
         }
 
 #ifdef STYLES_PRINT_TO_FILE
@@ -744,7 +744,7 @@ static void viewDumpContextToFile(ZMapView view, RequestData request_data)
 #endif /* STYLES_PRINT_TO_FILE */
 
       else
-        result = zMapFeatureContextDump(view->features, view->context_map.styles, file, &error);
+        result = zMapFeatureContextDump(view->features, &view->context_map.styles, file, &error);
 
       if(!result)
         {
@@ -1592,8 +1592,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
           // then if the style is not there then we'll drop the features
           ZMapFeatureTypeStyle style ;
 
-          if ((style = zMapFindStyle(request_data->view_window->parent_view->context_map.styles,
-                                     request_data->style_id)))
+          if ((style = request_data->view_window->parent_view->context_map.styles.find_style(request_data->style_id)))
             {
               /* Make sure style is correct for what might be a new column. */
 

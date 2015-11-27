@@ -48,6 +48,7 @@
 
 #define SCRATCH_FEATURE_NAME "temp_feature"
 
+class ZMapStyleTree ;
 
 /*! Opaque type, represents an individual ZMap window. */
 typedef struct ZMapWindowStructType *ZMapWindow ;
@@ -95,13 +96,14 @@ typedef enum
   {
     ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
     ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, /* True if filtered columns should be highlighted */
-    ZMAPFLAG_FEATURES_NEED_SAVING,       /* True if there are new features that have not been saved */
-    ZMAPFLAG_SCRATCH_NEEDS_SAVING,       /* True if changes have been made in the scratch column
+
+    ZMAPFLAG_SAVE_FEATURES,              /* True if there are new features that have not been saved */
+    ZMAPFLAG_SAVE_SCRATCH,               /* True if changes have been made in the scratch column
                                           * that have not been "saved" to a real featureset */
-    ZMAPFLAG_CONFIG_NEEDS_SAVING,        /* True if there are unsaved changes to prefs */
-    ZMAPFLAG_STYLES_NEED_SAVING,         /* True if there are unsaved changes to styles */
-    ZMAPFLAG_COLUMNS_NEED_SAVING,        /* True if there are unsaved changes to the columns order */
-    ZMAPFLAG_CHANGED_FEATURESET_STYLE,   /* True if featureset-style relationships have changed */
+    ZMAPFLAG_SAVE_COLUMN_GROUPS,         /* True if there are unsaved changes to column groups */
+    ZMAPFLAG_SAVE_STYLES,                /* True if there are unsaved changes to styles */
+    ZMAPFLAG_SAVE_COLUMNS,               /* True if there are unsaved changes to the columns order */
+    ZMAPFLAG_SAVE_FEATURESET_STYLE,      /* True if featureset-style relationships have changed */
 
     ZMAPFLAG_ENABLE_ANNOTATION,          /* True if we should enable editing via the annotation column */
     ZMAPFLAG_ENABLE_ANNOTATION_INIT,     /* False until the enable-annotation flag has been initialised */
@@ -349,7 +351,8 @@ typedef enum
     ZMAPWINDOW_ALIGNCMD_EXPANDED,   /* selected features expanded into hidden underlying data */
     ZMAPWINDOW_ALIGNCMD_SET,        /* all matches for all features in this column. */
     ZMAPWINDOW_ALIGNCMD_MULTISET,   /* all matches for all features in the list of columns in the blixem config file. */
-    ZMAPWINDOW_ALIGNCMD_SEQ         /* a coverage column: find the real data column */
+    ZMAPWINDOW_ALIGNCMD_SEQ,        /* a coverage column: find the real data column */
+    ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET /* a coverage column plus associated columns */
   } ZMapWindowAlignSetType ;
 
 typedef struct ZMapWindowCallbackCommandAlignStructName
@@ -539,7 +542,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             GList *feature_set_names, gboolean *flags, int *int_values) ;
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap sequence,
                           void *app_data, ZMapWindow old,
-                          ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
+                          ZMapFeatureContext features,
                           ZMapWindowLockType window_locking) ;
 
 void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
@@ -573,6 +576,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
                              gboolean reversed) ;
 void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
 gboolean zMapWindowZoomFromClipboard(ZMapWindow window) ;
+ZMapStyleTree* zMapWindowGetStyles(ZMapWindow window) ;
+ZMapFeatureContext zMapWindowGetContext(ZMapWindow window) ;
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
 double zMapWindowGetZoomFactor(ZMapWindow window);
 double zMapWindowGetZoomMin(ZMapWindow window) ;
@@ -730,6 +735,10 @@ void zMapWindowColumnHide(ZMapWindow window, GQuark column_id) ;
 void zMapWindowColumnShow(ZMapWindow window, GQuark column_id) ;
 double zMapWindowGetDisplayOrigin(ZMapWindow window) ;
 void zMapWindowSetDisplayOrigin(ZMapWindow window, double origin) ;
+void zMapWindowShowStyleDialog(ZMapWindow window, ZMapFeatureTypeStyle style, const gboolean create_child, ZMapFeatureSet feature_set, GFunc cb_func, gpointer cb_data) ;
+void zMapWindowShowStylesDialog(ZMapWindow window) ;
+GQuark zMapWindowChooseStyleDialog(ZMapWindow window, ZMapFeatureSet feature_set) ;
+GQuark zMapWindowChooseStyleDialog(ZMapWindow window, GList* feature_sets) ;
 
 /*
  * Set whether we are to display slice or chromosome coordinates.

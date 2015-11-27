@@ -36,6 +36,7 @@
 #include <glib.h>
 
 #include <ZMap/zmapStyle.hpp>
+#include <ZMap/zmapStyleTree.hpp>
 #include <ZMap/zmapConfigDir.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapConfigIni.hpp>
@@ -68,7 +69,7 @@ typedef struct
 /* Struct to pass data to the callback function to update a style */
 typedef struct
 {
-  GHashTable *styles ;
+  ZMapStyleTree *styles ;
   ZMapConfigIniContext context ;
 } UpdateStyleDataStruct, *UpdateStyleData ;
 
@@ -83,7 +84,7 @@ static GType get_stanza_key_type(ZMapConfigIniContext context,
                                  const char *key_name);
 static gint match_name_type(gconstpointer list_data, gconstpointer user_data);
 static void setErrorMessage(ZMapConfigIniContext context,char *error_message);
-static void context_update_style(gpointer key, gpointer value, gpointer data);
+static void context_update_style(ZMapFeatureTypeStyle style, gpointer data);
 
 
 
@@ -109,8 +110,7 @@ ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file)
     {
       context->config = zMapConfigIniNew();
 
-      if(config_file)
-        context->config_read = zMapConfigIniReadAll(context->config, config_file) ;
+      context->config_read = zMapConfigIniReadAll(context->config, config_file) ;
     }
 
   return context;
@@ -125,29 +125,29 @@ ZMapConfigIniContext zMapConfigIniContextCreateType(const char *config_file, ZMa
     {
       context->config = zMapConfigIniNew();
 
-      if(config_file)
+      switch (file_type)
         {
-          switch (file_type)
-            {
-            case ZMAPCONFIG_FILE_USER:
-              context->config_read = zMapConfigIniReadUser(context->config, config_file) ;
-              break ;
-            case ZMAPCONFIG_FILE_SYS:
-              context->config_read = zMapConfigIniReadSystem(context->config) ;
-              break ;
-            case ZMAPCONFIG_FILE_ZMAP:
-              context->config_read = zMapConfigIniReadZmap(context->config) ;
-              break ;
-            case ZMAPCONFIG_FILE_STYLES:
-              context->config_read = zMapConfigIniReadStyles(context->config, config_file) ;
-              break ;
-            case ZMAPCONFIG_FILE_BUFFER:
-              context->config_read = zMapConfigIniReadBuffer(context->config, config_file) ;
-              break ;
+        case ZMAPCONFIG_FILE_USER:
+          context->config_read = zMapConfigIniReadUser(context->config, config_file) ;
+          break ;
+        case ZMAPCONFIG_FILE_PREFS:
+          context->config_read = zMapConfigIniReadPrefs(context->config) ;
+          break ;
+        case ZMAPCONFIG_FILE_SYS:
+          context->config_read = zMapConfigIniReadSystem(context->config) ;
+          break ;
+        case ZMAPCONFIG_FILE_ZMAP:
+          context->config_read = zMapConfigIniReadZmap(context->config) ;
+          break ;
+        case ZMAPCONFIG_FILE_STYLES:
+          context->config_read = zMapConfigIniReadStyles(context->config, config_file) ;
+          break ;
+        case ZMAPCONFIG_FILE_BUFFER:
+          context->config_read = zMapConfigIniReadBuffer(context->config, config_file) ;
+          break ;
 
-            default:
-              break ;
-            }
+        default:
+          break ;
         }
     }
 
@@ -312,11 +312,11 @@ void zMapConfigIniContextSetStyles(ZMapConfigIniContext context, ZMapConfigIniFi
 {
   zMapReturnIfFail(file_type == ZMAPCONFIG_FILE_STYLES) ;
 
-  GHashTable *styles = (GHashTable*)data ;
+  ZMapStyleTree *styles = (ZMapStyleTree*)data ;
 
   UpdateStyleDataStruct update_data = {styles, context} ;
 
-  g_hash_table_foreach(styles, context_update_style, &update_data) ;
+  styles->foreach(context_update_style, &update_data) ;
 }
 
 
@@ -547,8 +547,11 @@ gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
       GValue value = {0};
 
       g_value_init(&value, G_TYPE_STRING);
+      
+      /* Allow null values - represent them as empty strings */
+      const char *value_str_non_null = value_str ? value_str : "" ;
 
-      g_value_set_static_string(&value, value_str);
+      g_value_set_static_string(&value, value_str_non_null);
 
       is_set = zMapConfigIniContextSetValue(context, 
                                             file_type,
@@ -870,9 +873,8 @@ static gboolean param_value_diffs(char **value, const char *parent_value, const 
 
 /* Update the context given in the user data with the style given in the value. This loops
  * through all the parameters that are set in the style and updates them in the context's  */
-static void context_update_style(gpointer key, gpointer value, gpointer data)
+static void context_update_style(ZMapFeatureTypeStyle style, gpointer data)
 {
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) value;
   UpdateStyleData update_data = (UpdateStyleData)data ;
 
   zMapReturnIfFail(style && 
@@ -912,10 +914,9 @@ static void context_update_style(gpointer key, gpointer value, gpointer data)
               /* If the style has a parent with the same value then only include that value in the
                * parent, i.e. exclude it from this child. Always include the parent-style value
                * itself though. */
-              if (ok && strcmp(param_name, "parent-style") != 0 && style->parent_id && update_data->styles)
+              if (ok && strcmp(param_name, "parent-style") != 0 && style->parent_id)
                 {
-                  ZMapFeatureTypeStyle parent_style = (ZMapFeatureTypeStyle)
-                    g_hash_table_lookup(update_data->styles, GINT_TO_POINTER(style->parent_id)) ;
+                  ZMapFeatureTypeStyle parent_style = update_data->styles->find_style(style->parent_id) ;
 
                   if (parent_style)
                     {

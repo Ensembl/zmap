@@ -1050,7 +1050,7 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
 
 static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context)
 {
-  zMapReturnIfFail(zmap_view && zmap_view->context_map.styles);
+  zMapReturnIfFail(zmap_view);
 
   ZMapFeatureSet featureset = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
@@ -1061,7 +1061,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
 
   ZMapFeatureContextMap context_map = &zmap_view->context_map;
 
-  if((style = zMapFindStyle(context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_HAND_BUILT_NAME))))
+  if((style = context_map->styles.find_style(zMapStyleCreateID(ZMAP_FIXED_STYLE_HAND_BUILT_NAME))))
     {
       /* Create the featureset */
       featureset = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_HAND_BUILT_NAME, NULL);
@@ -1121,6 +1121,8 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
             {
               column = g_new0(ZMapFeatureColumnStruct,1);
               column->unique_id = col_id;
+              column->column_id = col_quark ;
+              column->column_desc = g_strdup(ZMAP_FIXED_STYLE_HAND_BUILT_TEXT);
               column->style_table = g_list_prepend(NULL, (gpointer)  style);
               column->order = zMapFeatureColumnOrderNext(FALSE) ;
               /* the rest shoudl get filled in elsewhere */
@@ -1252,7 +1254,7 @@ static void scratchFeatureRecreate(ZMapView view)
  */
 void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context_in, ZMapFeatureBlock block_in)
 {
-  zMapReturnIfFail(zmap_view && zmap_view->context_map.styles);
+  zMapReturnIfFail(zmap_view);
 
   ZMapFeatureSet scratch_featureset = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
@@ -1265,7 +1267,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
   ZMapFeatureContext context = context_in;
   ZMapFeatureBlock block = block_in;
 
-  if((style = zMapFindStyle(context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))))
+  if((style = context_map->styles.find_style(zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))))
     {
       /* Create the featureset */
       scratch_featureset = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SCRATCH_NAME, NULL);
@@ -1327,6 +1329,8 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
             {
               column = g_new0(ZMapFeatureColumnStruct,1);
               column->unique_id = col_id;
+              column->column_id = col_quark ;
+              column->column_desc = g_strdup(ZMAP_FIXED_STYLE_SCRATCH_TEXT);
               column->style_table = g_list_prepend(NULL, (gpointer)  style);
               column->order = zMapFeatureColumnOrderNext(FALSE);
               /* the rest shoudl get filled in elsewhere */
@@ -1436,7 +1440,7 @@ gboolean zmapViewScratchCopyFeatures(ZMapView view,
       if (!zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
         zMapViewSetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION, TRUE) ;
 
-      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+      view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1);
 
@@ -1476,7 +1480,7 @@ gboolean zmapViewScratchSetCDS(ZMapView view,
    * column keys have no effect if the column is disabled.) */
   if (features && zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
     {
-      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+      view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1);
 
@@ -1527,7 +1531,7 @@ gboolean zmapViewScratchDeleteFeatures(ZMapView view,
    * column keys have no effect if the column is disabled.) */
   if (features && zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
     {
-      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+      view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1);
 
@@ -1566,7 +1570,7 @@ gboolean zmapViewScratchClear(ZMapView view)
       if (view->edit_list_start)
         {
           /* There will be nothing in the scratch column now so nothing needs saving */
-          view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
+          view->flags[ZMAPFLAG_SAVE_SCRATCH] = FALSE ;
 
           EditOperation operation = g_new0(EditOperationStruct, 1) ;
 
@@ -1593,7 +1597,7 @@ gboolean zmapViewScratchUndo(ZMapView view)
     {
       if (view->edit_list_end)
         {
-          view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+          view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
 
           /* Special treatment if the last operation was a "clear" or "save" because these shift the start
            * pointer to be the same as the end pointer, so we need to move it back (to the start of
@@ -1659,7 +1663,7 @@ gboolean zmapViewScratchRedo(ZMapView view)
       /* Move the end pointer forward */
       if (view->edit_list_end && view->edit_list_end->next)
         {
-          view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+          view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
           view->edit_list_end = view->edit_list_end->next ;
 
           /* For clear/save operations we need to move the start pointer to the same as the end pointer */
@@ -1671,7 +1675,7 @@ gboolean zmapViewScratchRedo(ZMapView view)
         }
       else if (!view->edit_list_end && view->edit_list)
         {
-          view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+          view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
 
           /* If the list exists but start/end pointers are null then we had un-done the entire list,
            * so we just need to set the start/end pointers to the first item in the list */
@@ -1705,7 +1709,7 @@ gboolean zmapViewScratchSave(ZMapView view, ZMapFeature feature)
 {
   if (zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION) && feature)
     {
-      view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = TRUE ;
+      view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
 
       /* Save the cached feature name and featureset in the source feature (instead of the
        * temp feature name and featureset which are no longer needed now we're taking

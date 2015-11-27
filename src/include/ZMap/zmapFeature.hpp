@@ -248,10 +248,6 @@ typedef struct ZMapExonStructType
 } ZMapExonStruct, *ZMapExon ;
 
 
-
-
-
-
 /* Assumes x1 <= x2. */
 #define ZMAP_SPAN_LENGTH(SPAN_STRUCT)                 \
   (((SPAN_STRUCT)->x2 - (SPAN_STRUCT)->x1) + 1)
@@ -1050,7 +1046,7 @@ typedef ZMapFeatureContextExecuteStatus (*ZMapGDataRecurseFunc)(GQuark   key_id,
 
 /* For custom feature context dumping. */
 typedef gboolean (*ZMapFeatureDumpFeatureFunc)(ZMapFeatureAny feature_any,
-					       GHashTable    *styles,
+					       ZMapStyleTree *styles,
 					       GString       *dump_string_in_out,
 					       GError       **error,
 					       gpointer       user_data) ;
@@ -1177,7 +1173,7 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
 void zMapFeature2BlockCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 void zMapBlock2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 
-void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable *styles) ;
+void zMapFeatureContextReverseComplement(ZMapFeatureContext context) ;
 void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature feature) ;
 void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_inout, int *end_inout) ;
 
@@ -1221,6 +1217,9 @@ char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int end) ;
 GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark original_id) ;
 GList *zMapFeatureSetGetNamedFeaturesForStrand(ZMapFeatureSet feature_set, GQuark original_id, ZMapStrand strand) ;
+
+GList* zMapStyleGetFeaturesetsIDs(ZMapFeatureTypeStyle style, ZMapFeatureAny feature_any) ;
+GList* zMapStyleGetFeaturesets(ZMapFeatureTypeStyle style, ZMapFeatureAny feature_any) ;
 
 ZMapFeatureSet zMapFeatureSetCopy(ZMapFeatureSet feature_set);
 
@@ -1370,27 +1369,27 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
 /* Probably should be merged at some time.... */
 char *zMapFeatureAsString(ZMapFeature feature) ;
-gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GHashTable *styles, GError **error_out) ;
+gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, ZMapStyleTree *styles, GError **error_out) ;
 gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context, const char *filename, const char *header,
-                                   GHashTable *styles, GError **error_out);
-gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GHashTable *styles,
+                                   ZMapStyleTree *styles, GError **error_out);
+gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, ZMapStyleTree *styles,
 				GIOChannel *file, GError **error_out) ;
 
 gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             feature_any,
-				      GHashTable *styles,
+				      ZMapStyleTree *styles,
 				      ZMapFeatureDumpFeatureFunc dump_func,
 				      gpointer                   dump_user_data,
 				      GIOChannel                *dump_file,
 				      GError                   **dump_error_out);
 gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
-					   GHashTable                     *styles,
+					   ZMapStyleTree                     *styles,
 					   ZMapSpan                   span_data,
 					   ZMapFeatureDumpFeatureFunc dump_func,
 					   gpointer                   dump_user_data,
 					   GIOChannel                *dump_file,
 					   GError                   **dump_error_out) ;
 gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_list,
-                                           GHashTable *styles,
+                                           ZMapStyleTree *styles,
                                            ZMapFeatureDumpFeatureFunc dump_func,
                                            gpointer                   dump_user_data,
                                            GIOChannel                *dump_file,

@@ -253,8 +253,8 @@ typedef struct ZMapGFFParserFeatureSetStruct_
                                                                                                      \
                                               GString *raw_line_data ;                               \
                                                                                                      \
-                                              GHashTable *sources,                                   \
-                                                         *excluded_features,                         \
+                                              ZMapStyleTree *sources ;                               \
+                                              GHashTable *excluded_features,                         \
                                                          *source_2_feature_set,                      \
                                                          *source_2_sourcedata;                       \
                                                                                                      \

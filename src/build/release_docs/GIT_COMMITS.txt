@@ -1,20 +1,18 @@
 
-Git commits for  from commit "production" until commit "release/2.3.0"
+Git commits for  from commit "production" until commit "release/2.4.0"
 
-6f38384 2015-10-27 Fix really bad log message for style not loaded. - BUG FIX
-5e89e32 2015-10-14 Merge branch 'feature/blixem' into develop - NEW FEATURE 'Blixem config'
-72968d5 2015-10-13 Improve default CDS fill colour - NEW FEATURE 'styles'
-60cfe62 2015-10-13 Remove hard-coded black/white styles - NEW FEATURE 'styles'
-97ca234 2015-10-12 Fix crash when creating new style - REGRESSION FIX
-4c61c5b 2015-10-09 Merge branch 'feature/config' into develop - NEW FEATURE 'styles and config'
-cdc441d 2015-10-08 adding some test targets for qt
-a8118a1 2015-10-08 Fix a bug exporting features to blixem that have adjacent insertion/intron - BUG FIX
-87eee3c 2015-09-28 Export parent-child style relationships correctly - NEW FEATURE 'Export styles'
-916ac3f 2015-09-24 Ensembl: add supporting evidence - NEW FEATURE 'Ensembl evidence'
-22a51b9 2015-09-24 Fix bugs with updating filtered column backgrounds - BUG FIX
-0222bcf 2015-09-21 Merge branch 'feature/colours' into develop - NEW FEATURE 'Colour configuration'
-ecdef8b 2015-09-21 Merge branch 'feature/config' into develop - NEW FEATURE 'dynamic column reordering'
-6249f17 2015-09-15 RT485716 error in remotecommand code, leading to a free of unallocated memory. - BUG FIX
+729ff2f 2015-11-23 Fix a bug where curl_multi_fdset failures weren't being handled - BUG FIX
+834e0f3 2015-11-17 Fix a bug merging styles, and don't allow cyclic dependencies - REGRESSION FIX
+d652251 2015-11-17 Avoid potential cyclic dependency with styles - REGRESSION FIX
+faf2d26 2015-11-11 Update relase notes for last release - DOC
+b3f3a76 2015-11-11 Update help pages - DOC
+2daf114 2015-11-11 Merge branch 'feature/columns' into develop - NEW FEATURE 'column groups'
+1f26c7b 2015-11-09 Fix blixem-associated-columns bug - REGRESSION FIX
+c9b5f85 2015-11-09 Avoid potential null access - BUG FIX
+52740ad 2015-11-06 Save user preferences - NEW FEATURE 'Save prefs'
+2c61386 2015-11-06 Remove special treatment of bam reads for blixem - BUG FIX
+b9d7a5e 2015-11-06 Merge branch 'feature/styles' into develop
+4ef21d0 2015-11-03 RT495468 with no persistent columns we were resetting state in a tight loop thus blocking tooltips etc. - BUG FIX
 
 
 End of git commits

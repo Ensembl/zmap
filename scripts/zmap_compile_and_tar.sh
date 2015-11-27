@@ -203,7 +203,7 @@ then
 
     # Do the copy. (Hack to hard-code path to copy script - can't find it in the
     # local checkout for some reason.)
-    copy_script=~zmap/BUILD_CHECKOUT/ZMap_develop/scripts/copy_directory.sh
+    copy_script=~zmap/BUILD_ZMAP/ZMap_develop/scripts/copy_directory.sh
 
     # Copy the source directory to the project area (the source includes the bin and share 
     # subdirectories so we don't need to explicitly specify those). 

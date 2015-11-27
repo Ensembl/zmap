@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 10/09/2015 to 27/10/2015
+Request Tracker Tickets Resolved from 19/10/2015 to 25/11/2015
 
 ticket/410365
 id: ticket/410365
@@ -11,53 +11,53 @@ Resolved: Wed Oct 21 16:44:48 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/468459
-id: ticket/468459
+ticket/472209
+id: ticket/472209
 Queue: zmap
-Subject: several column filtering bugs
-Requestors: mms@sanger.ac.uk
+Subject: Zmap crashes when I save a new transcript.
+Requestors: erb@sanger.ac.uk
+Owner: jgrg
+Resolved: Mon Nov 23 12:20:46 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/494900
+id: ticket/494900
+Queue: zmap
+Subject: autconf macros bug ?
+Requestors: edgrif@sanger.ac.uk
 Owner: edgrif
-Resolved: Thu Sep 10 14:53:09 2015
+Resolved: Tue Nov 03 09:19:38 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/477879
-id: ticket/477879
+ticket/495468
+id: ticket/495468
 Queue: zmap
-Subject: FASTA header issue with OTF alignment
-Requestors: th2@sanger.ac.uk
+Subject: up and down arrows in zmap seem to be broken.
+Requestors: gdr@sanger.ac.uk, mpk@sanger.ac.uk
 Owner: edgrif
-Resolved: Thu Sep 10 16:03:15 2015
+Resolved: Tue Nov 03 11:00:32 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/485716
-id: ticket/485716
+ticket/496304
+id: ticket/496304
 Queue: zmap
-Subject: otterlace error: ZMAP crash whilst  I clicked on model. ZMAP still loading at the time.
-Requestors: aeb@sanger.ac.uk
+Subject: Splice comparison feature bug
+Requestors: mh19@sanger.ac.uk
 Owner: edgrif
-Resolved: Tue Sep 15 09:33:58 2015
+Resolved: Tue Nov 03 10:17:36 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/485875
-id: ticket/485875
+ticket/498166
+id: ticket/498166
 Queue: zmap
-Subject: otterlace error: Otter-95-02: Zmap froze and could not be re-loaded while zooming-in
-Requestors: mms@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Sep 18 17:10:50 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/493053
-id: ticket/493053
-Queue: zmap
-Subject: zmap does not compile without mysql
-Requestors: jgrg@sanger.ac.uk, mg13@sanger.ac.uk
-Owner: gb10
-Resolved: Thu Oct 08 10:22:31 2015
+Subject: Cron <zmap@tviewsrv> cd ~/BUILD_CHECKOUT ; ./annobuild -o > /nfs/zmap/ZMap/BUILDS/OVERNIGHT_BUILDS/ANNOBUILD.LOG 2>&1
+Requestors: root@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon Nov 09 15:57:41 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

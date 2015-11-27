@@ -2577,6 +2577,7 @@ static ZMapFeatureSet makeFeatureSet(ZMapWindow window,
                                      ZMapFeatureBlock feature_block)
 {
   ZMapFeatureSet feature_set = NULL ;
+  zMapReturnValIfFail(window && window->context_map, feature_set) ;
 
   /*
    * Now deal with the source -> data mapping referred to in the parser.
@@ -2585,14 +2586,10 @@ static ZMapFeatureSet makeFeatureSet(ZMapWindow window,
   GQuark feature_style_id = 0 ;
   ZMapFeatureSource source_data = NULL ;
   GHashTable *source_2_sourcedata = NULL ;
-  GHashTable *feature_styles = NULL ;
+  ZMapStyleTree &feature_styles = window->context_map->styles ;
   ZMapFeatureTypeStyle feature_style = NULL ;
 
-  if (window && window->context_map)
-    {
-      source_2_sourcedata = window->context_map->source_2_sourcedata ;
-      feature_styles = window->context_map->styles ;
-    }
+  source_2_sourcedata = window->context_map->source_2_sourcedata ;
 
   if (source_2_sourcedata)
     {
@@ -2628,7 +2625,7 @@ static ZMapFeatureSet makeFeatureSet(ZMapWindow window,
       if (source_data)
         source_data->style_id = feature_style_id;
                   
-      g_hash_table_insert(feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
+      feature_styles.add_style(feature_style) ;
                   
       if (source_data && feature_style->unique_id != feature_style_id)
         source_data->style_id = feature_style->unique_id;
@@ -2877,8 +2874,8 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
        * created a new "real" feature which is unsaved. */
       if (create_feature)
         {
-          window->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
-          window->flags[ZMAPFLAG_FEATURES_NEED_SAVING] = TRUE ;
+          window->flags[ZMAPFLAG_SAVE_SCRATCH] = FALSE ;
+          window->flags[ZMAPFLAG_SAVE_FEATURES] = TRUE ;
         }
 
       /*! \todo Check that feature was saved successfully before reporting back. Also close

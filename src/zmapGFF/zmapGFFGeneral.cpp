@@ -248,7 +248,7 @@ void zMapGFFDestroyParser(ZMapGFFParser parser)
  * they don't have styles info directly but this is stored in the parser
  * during the protocol steps
  */
-GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser)
+ZMapStyleTree *zMapGFFParserGetStyles(ZMapGFFParser parser)
 {
   if(!parser)
     return NULL ;
@@ -269,7 +269,7 @@ GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser)
  * This function must be called prior to parsing feature lines, it is not required
  * for either the header lines or sequences.
  */
-gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only)
+gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, ZMapStyleTree *sources, gboolean parse_only)
 {
   gboolean result = FALSE ;
   GQuark locus_id ;
@@ -281,7 +281,7 @@ gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources,
 
   /* Check for Locus as one of the sources as this needs to be constructed as we go along. */
   locus_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
-  if (!(parser->locus_set_style = zMapFindStyle(parser->sources, locus_id)))
+  if (!(parser->locus_set_style = parser->sources->find_style(locus_id)))
     {
       zMapLogWarning("Locus set will not be created, "
                      "could not find style \"%s\" for feature set \"%s\".",

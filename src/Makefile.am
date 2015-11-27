@@ -346,8 +346,8 @@ $(top_srcdir)/autom4te.cache
 
 EXTERNAL_LIBS = $(top_srcdir)/AceConn $(top_srcdir)/ensc-core $(top_srcdir)/gbtools \
 $(top_srcdir)/htslib $(top_srcdir)/zeromq
-EXTERNAL_PLACEHOLDERS = $(top_srcdir)/AceConn/README_ZMAP $(top_srcdir)/ensc-core/README_ZMAP \
-$(top_srcdir)/gbtools/README_ZMAP $(top_srcdir)/htslib/README_ZMAP $(top_srcdir)/zeromq/README_ZMAP
+EXTERNAL_PLACEHOLDERS = $(top_srcdir)/AceConn $(top_srcdir)/ensc-core \
+$(top_srcdir)/gbtools $(top_srcdir)/htslib $(top_srcdir)/zeromq
 
 maintainer-clean-local:
 	@echo 'maintainer-clean-local: Removing all generated files....'
@@ -410,13 +410,18 @@ install-zmap-static-libs:
 	touch @MACOSX_UNIVERSAL_FILE@
 
 #
-# location on tviewsrv is '/usr/local/qt5/5.5/gcc/bin/qmake'
+# location on tviewsrv is '/usr/local/qt5/5.5/gcc/bin/qmake' and the command to use is of the form:
+#/usr/local/Qt5.5.0/5.5/gcc_64/bin/qmake /nfs/users/nfs_s/sm23/Work/TestCode/QT/QT01/QT01.pro -r -spec linux-g++ ;\
 #
+# OK so this just has my test program in place temporarily to check that things work; eventually this
+# will become something of the form: $(QMAKE_LOCAL) $(ZMAP_SRC_DIRS)
+#
+include qmake.location
 test-qt:
 	@echo "make test-qt"
 	mkdir $(top_builddir)/test-qt ;\
 	cd $(top_builddir)/test-qt ;\
-	/usr/local/Qt5.5.0/5.5/gcc_64/bin/qmake /nfs/users/nfs_s/sm23/Work/TestCode/QT/QT01/QT01.pro -r -spec linux-g++ ;\
+        $(QMAKE_LOCAL) /nfs/users/nfs_s/sm23/Work/TestCode/QT/QT01/QT01.pro $(QMAKE_ARGS) ;\
 	make ;\
 	cd $(top_builddir)
 

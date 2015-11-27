@@ -106,6 +106,9 @@
 
 
 
+typedef gboolean (*HashListExportValueFunc)(const char *key_str, const char *value_str) ;
+
+
 /* Struct describing features loaded. */
 typedef struct LoadFeaturesDataStructType
 {
@@ -167,7 +170,7 @@ typedef struct ConnectionDataStructType
   GHashTable *featureset_2_column;                            /* needed by pipeServers */
   GHashTable *source_2_sourcedata;
 
-  GHashTable *curr_styles ;                                    /* Styles for this context. */
+  ZMapStyleTree *curr_styles ;                                    /* Styles for this context. */
   ZMapFeatureContext curr_context ;
 
   ZMapServerReqGetFeatures get_features;                    /* features got from the server,
@@ -192,7 +195,8 @@ typedef struct DrawableDataStructType
 
 typedef struct FindStylesStructType
 {
-  GHashTable *all_styles ;
+  ZMapStyleTree *all_styles_tree ;
+  GHashTable *all_styles_hash ;
   gboolean found_style ;
   GString *missing_styles ;
 } FindStylesStruct, *FindStyles ;
@@ -206,7 +210,7 @@ static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data
 static void destroyZMapView(ZMapView *zmap) ;
 static void displayDataWindows(ZMapView zmap_view,
                                ZMapFeatureContext all_features, ZMapFeatureContext new_features,
-                               GHashTable *new_styles, LoadFeaturesData loaded_features,
+                               LoadFeaturesData loaded_features,
                                gboolean undisplay, GList *masked,
                                ZMapFeature highlight_feature, gboolean splice_highlight,
                                gboolean allow_clean) ;
@@ -275,11 +279,11 @@ static gboolean nextIsQuoted(char **text) ;
 
 static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
                                                     ZMapFeatureContextMergeStats *merge_stats_out,
-                                                    GHashTable *styles, GList **masked,
+                                                    GList **masked,
                                                     gboolean request_as_columns, gboolean revcomp_if_needed) ;
 
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
-                            GHashTable *styles, GList *masked, ZMapFeature highlight_feature,
+                            GList *masked, ZMapFeature highlight_feature,
                             ConnectionData connect_data);
 
 static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
@@ -304,10 +308,10 @@ static void killAllSpawned(ZMapView zmap_view);
 static gboolean checkContinue(ZMapView zmap_view) ;
 
 
-static gboolean makeStylesDrawable(char *config_file, GHashTable *styles, char **missing_styles_out) ;
-static void drawableCB(gpointer key_id, gpointer data, gpointer user_data) ;
+static gboolean makeStylesDrawable(char *config_file, ZMapStyleTree &styles, char **missing_styles_out) ;
+static void drawableCB(ZMapFeatureTypeStyle style, gpointer user_data) ;
 
-static void addPredefined(GHashTable **styles_inout, GHashTable **column_2_styles_inout) ;
+static void addPredefined(ZMapStyleTree &styles, GHashTable **column_2_styles_inout) ;
 static void styleCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
 static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
@@ -350,7 +354,12 @@ static void getWindowList(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void configUpdateContext(ZMapView view, ZMapConfigIniContext context, const ZMapViewExportType export_type, ZMapConfigIniFileType file_type) ;
-void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *stanza, GHashTable *ghash) ;
+static void updateContextHashList(ZMapConfigIniContext context,
+                                  ZMapConfigIniFileType file_type, 
+                                  const char *stanza,
+                                  GHashTable *ghash,
+                                  HashListExportValueFunc export_func) ;
+
 static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
                                                                     gpointer data,
                                                                     gpointer user_data,
@@ -666,7 +675,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       /* There are a number of predefined methods that we require so add these in as well
        * and the mapping for "feature set" -> style for these.
        */
-      addPredefined(&(zmap_view->context_map.styles), &(zmap_view->context_map.column_2_styles)) ;
+      addPredefined(zmap_view->context_map.styles, &(zmap_view->context_map.column_2_styles)) ;
 
       if (stylesfile)
         {
@@ -674,8 +683,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
           if (zMapConfigIniGetStylesFromFile(zmap_view->view_sequence->config_file, NULL, stylesfile, &styles, NULL))
             {
-              zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles,
-                                                                   styles, ZMAPSTYLE_MERGE_MERGE) ;
+              zMapStyleMergeStyles(zmap_view->context_map.styles, styles, ZMAPSTYLE_MERGE_MERGE) ;
             }
           else
             {
@@ -706,7 +714,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
           if ((feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, NULL)))
             {
-              style = (ZMapFeatureTypeStyle)g_hash_table_lookup(zmap_view->context_map.styles, GUINT_TO_POINTER(style_id)) ;
+              style = zmap_view->context_map.styles.find_style(style_id) ;
 
               zMapFeatureSetStyle(feature_set,style);
 
@@ -727,10 +735,10 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
           /* now merge and draw it */
           if ((merge = justMergeContext(zmap_view,
                                         &context, &merge_stats,
-                                        zmap_view->context_map.styles, &dummy, FALSE, TRUE))
+                                        &dummy, FALSE, TRUE))
               == ZMAPFEATURE_CONTEXT_OK)
             {
-              justDrawContext(zmap_view, context, zmap_view->context_map.styles, dummy, NULL, NULL) ;
+              justDrawContext(zmap_view, context, dummy, NULL, NULL) ;
             }
           else if (merge == ZMAPFEATURE_CONTEXT_NONE)
             {
@@ -929,20 +937,16 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
                                   ZMapWindow copy_window, ZMapWindowLockType window_locking)
 {
   ZMapViewWindow view_window = NULL ;
-  GHashTable *copy_styles ;
 
   zMapReturnValIfFail((zmap_view->state != ZMAPVIEW_DYING), view_window) ;
   zMapReturnValIfFail((zmap_view && parent_widget && zmap_view->window_list), view_window) ;
 
   /* the view _must_ already have a window _and_ data. */
-  copy_styles = zmap_view->context_map.styles ;
-
   view_window = createWindow(zmap_view, NULL) ;
 
   if (!(view_window->window = zMapWindowCopy(parent_widget, zmap_view->view_sequence,
                                              view_window, copy_window,
                                              zmap_view->features,
-                                             zmap_view->context_map.styles, copy_styles,
                                              window_locking)))
     {
       /* should glog and/or gerror at this stage....really need g_errors.... */
@@ -1093,7 +1097,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       zMapLogTime(TIMER_REVCOMP,TIMER_START,0,"Context");
 
       /* Call the feature code that will do the revcomp. */
-      zMapFeatureContextReverseComplement(zmap_view->features, zmap_view->context_map.styles) ;
+      zMapFeatureContextReverseComplement(zmap_view->features) ;
 
       zMapLogTime(TIMER_REVCOMP,TIMER_STOP,0,"Context");
 
@@ -1293,13 +1297,13 @@ ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view)
   return features ;
 }
 
-GHashTable *zMapViewGetStyles(ZMapViewWindow view_window)
+ZMapStyleTree *zMapViewGetStyles(ZMapViewWindow view_window)
 {
-  GHashTable *styles = NULL ;
+  ZMapStyleTree *styles = NULL ;
   ZMapView view = zMapViewGetView(view_window);
 
   if (view->state != ZMAPVIEW_DYING)
-    styles = view->context_map.styles ;
+    styles = &view->context_map.styles ;
 
   return styles;
 }
@@ -1406,6 +1410,18 @@ ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
     window = view_window->window ;
 
   return window ;
+}
+
+ZMapFeatureContext zMapViewGetContext(ZMapViewWindow view_window)
+{
+  ZMapFeatureContext context = NULL ;
+
+  zMapReturnValIfFail((view_window), context) ;
+
+  if (view_window->parent_view->state != ZMAPVIEW_DYING)
+    context = view_window->parent_view->features ;
+
+  return context ;
 }
 
 ZMapWindowNavigator zMapViewGetNavigator(ZMapView view)
@@ -1900,7 +1916,7 @@ ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext cont
     {
       ZMapFeatureContextMergeCode result = ZMAPFEATURE_CONTEXT_ERROR ;
 
-      result = justMergeContext(view, &context, merge_stats_out, NULL, NULL, TRUE, FALSE) ;
+      result = justMergeContext(view, &context, merge_stats_out, NULL, TRUE, FALSE) ;
 
       if (result == ZMAPFEATURE_CONTEXT_OK)
         zMapLogMessage("%s", "Context merge successful.") ;
@@ -1935,7 +1951,7 @@ gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context
       if (view->features == *diff_context)
         context_freed = FALSE ;
 
-      justDrawContext(view, *diff_context, NULL, NULL, highlight_feature, NULL) ;
+      justDrawContext(view, *diff_context, NULL, highlight_feature, NULL) ;
     }
   else
     {
@@ -2092,7 +2108,7 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
       if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
         {
           /* revcomp our empty context to get external fwd strand coordinates */
-          zMapFeatureContextReverseComplement(context, view->context_map.styles);
+          zMapFeatureContextReverseComplement(context);
         }
     }
   else
@@ -2316,7 +2332,7 @@ static GtkResponseType checkForUnsavedAnnotation(ZMapView zmap_view)
 {
   GtkResponseType response = GTK_RESPONSE_OK ;
 
-  if (zmap_view && zmap_view->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING])
+  if (zmap_view && zmap_view->flags[ZMAPFLAG_SAVE_SCRATCH])
     {
       GtkWindow *parent = NULL ;
 
@@ -2350,7 +2366,7 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
 {
   GtkResponseType response = GTK_RESPONSE_OK ;
 
-  if (zmap_view && zmap_view->flags[ZMAPFLAG_FEATURES_NEED_SAVING])
+  if (zmap_view && zmap_view->flags[ZMAPFLAG_SAVE_FEATURES])
     {
       GtkWindow *parent = NULL ;
 
@@ -2415,7 +2431,7 @@ static GtkResponseType checkForUnsavedFeatures(ZMapView zmap_view)
 //  GtkResponseType response = GTK_RESPONSE_OK ;
 //  GError *error = NULL ;
 //
-//  if (zmap_view && zmap_view->flags[ZMAPFLAG_CONFIG_NEEDS_SAVING])
+//  if (zmap_view && zmap_view->flags[ZMAPFLAG_SAVE_CONFIG])
 //    {
 //      GtkWindow *parent = NULL ;
 //
@@ -4071,8 +4087,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
         }
     }
 
-  /* Inform the layer about us that our state has changed. */
-  if (state_change)
+
+
+  /* If we have connections left then inform the layer about us that our state has changed. */
+  if ((zmap_view->connection_list) && state_change)
     {
       (*(view_cbs_G->state_change))(zmap_view, zmap_view->app_data, NULL) ;
     }
@@ -4246,7 +4264,9 @@ static void findStyleCB(gpointer data, gpointer user_data)
 
   style_id = zMapStyleCreateID((char *)g_quark_to_string(style_id)) ;
 
-  if ((zMapFindStyle(find_data->all_styles, style_id)))
+  if (find_data->all_styles_hash && zMapFindStyle(find_data->all_styles_hash, style_id))
+    find_data->found_style = TRUE ;
+  else if (find_data->all_styles_tree && find_data->all_styles_tree->find(style_id))
     find_data->found_style = TRUE;
   else
     {
@@ -4260,7 +4280,7 @@ static void findStyleCB(gpointer data, gpointer user_data)
 }
 
 // returns whether we have any of the needed styles and lists the ones we don't
-static gboolean haveRequiredStyles(GHashTable *all_styles, GList *required_styles, char **missing_styles_out)
+static gboolean haveRequiredStyles(ZMapStyleTree &all_styles, GList *required_styles, char **missing_styles_out)
 {
   gboolean result = FALSE ;
   FindStylesStruct find_data = {NULL} ;
@@ -4268,7 +4288,7 @@ static gboolean haveRequiredStyles(GHashTable *all_styles, GList *required_style
   if(!required_styles)  // MH17: semantics -> don't need styles therefore have those that are required
     return(TRUE);
 
-  find_data.all_styles = all_styles ;
+  find_data.all_styles_tree = &all_styles ;
 
   g_list_foreach(required_styles, findStyleCB, &find_data) ;
 
@@ -4580,11 +4600,10 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
               }
 #endif
 
-            zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles,
-                                                                 get_styles->styles_out, ZMAPSTYLE_MERGE_PRESERVE) ;
+            zMapStyleMergeStyles(zmap_view->context_map.styles, get_styles->styles_out, ZMAPSTYLE_MERGE_PRESERVE) ;
 
             /* need to patch in sub style pointers after merge/ copy */
-            zMapStyleSetSubStyles(zmap_view->context_map.styles);
+            zmap_view->context_map.styles.foreach(zMapStyleSetSubStyle, &zmap_view->context_map.styles) ;
 
             /* test here, where we have global and predefined styles too */
 
@@ -4601,7 +4620,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
         /* Store the curr styles for use in creating the context and drawing features. */
         //        connect_data->curr_styles = get_styles->styles_out ;
         /* as the styles in the window get replaced we need to have all of them not the new ones */
-        connect_data->curr_styles = zmap_view->context_map.styles ;
+        connect_data->curr_styles = &zmap_view->context_map.styles ;
 
         break ;
       }
@@ -5015,7 +5034,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
           }
         else
           {
-            connect_data->curr_styles = zmap_view->context_map.styles ;
+            connect_data->curr_styles = &zmap_view->context_map.styles ;
           }
 
         req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
@@ -5143,7 +5162,7 @@ static void resetWindows(ZMapView zmap_view)
 /* Signal all windows there is data to draw. */
 void displayDataWindows(ZMapView zmap_view,
                         ZMapFeatureContext all_features, ZMapFeatureContext new_features,
-                        GHashTable *new_styles, LoadFeaturesData loaded_features_in,
+                        LoadFeaturesData loaded_features_in,
                         gboolean undisplay, GList *masked,
                         ZMapFeature highlight_feature, gboolean splice_highlight,
                         gboolean allow_clean)
@@ -5522,7 +5541,6 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
 
       merge_results = justMergeContext(zmap_view,
                                        &new_features, &merge_stats,
-                                       connect_data->curr_styles,
                                        &masked, connect_data->session.request_as_columns, TRUE) ;
 
       connect_data->loaded_features->merge_stats = *merge_stats ;
@@ -5535,7 +5553,7 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
         {
           diff_context = new_features ;
 
-          justDrawContext(zmap_view, diff_context, connect_data->curr_styles , masked, NULL, connect_data) ;
+          justDrawContext(zmap_view, diff_context, masked, NULL, connect_data) ;
 
           result = TRUE ;
         }
@@ -5672,7 +5690,7 @@ static ZMapFeatureContextExecuteStatus add_default_styles(GQuark key,
 
 static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
                                                     ZMapFeatureContextMergeStats *merge_stats_out,
-                                                    GHashTable *styles, GList **masked,
+                                                    GList **masked,
                                                     gboolean request_as_columns, gboolean revcomp_if_needed)
 {
   ZMapFeatureContextMergeCode result = ZMAPFEATURE_CONTEXT_ERROR ;
@@ -5708,7 +5726,7 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
   /* When coming from xremote we don't need to do this. */
   if (revcomp_if_needed && view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     {
-      zMapFeatureContextReverseComplement(new_features, view->context_map.styles);
+      zMapFeatureContextReverseComplement(new_features);
     }
 
 
@@ -5865,7 +5883,7 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
 
 
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
-                            GHashTable *new_styles, GList *masked, ZMapFeature highlight_feature,
+                            GList *masked, ZMapFeature highlight_feature,
                             ConnectionData connect_data)
 {
   LoadFeaturesData loaded_features = NULL ;
@@ -5882,7 +5900,7 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
     }
 
   /* Signal the ZMap that there is work to be done. */
-  displayDataWindows(view, view->features, diff_context, new_styles,
+  displayDataWindows(view, view->features, diff_context, 
                      loaded_features, FALSE, masked, NULL, FALSE, TRUE) ;
 
   /* Not sure about the timing of the next bit. */
@@ -5914,7 +5932,7 @@ static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inou
     }
   else
     {
-      displayDataWindows(view, view->features, diff_context, NULL, NULL, TRUE, NULL, NULL, FALSE, TRUE) ;
+      displayDataWindows(view, view->features, diff_context, NULL, TRUE, NULL, NULL, FALSE, TRUE) ;
 
       zMapFeatureContextDestroy(diff_context, TRUE) ;
     }
@@ -6616,14 +6634,14 @@ static gboolean checkContinue(ZMapView zmap_view)
 
 
 
-static gboolean makeStylesDrawable(char *config_file, GHashTable *styles, char **missing_styles_out)
+static gboolean makeStylesDrawable(char *config_file, ZMapStyleTree &styles, char **missing_styles_out)
 {
   gboolean result = FALSE ;
   DrawableDataStruct drawable_data = {NULL, FALSE, NULL} ;
 
   drawable_data.config_file = config_file ;
 
-  g_hash_table_foreach(styles, drawableCB, &drawable_data) ;
+  styles.foreach(drawableCB, &drawable_data) ;
 
   if (drawable_data.missing_styles)
     *missing_styles_out = g_string_free(drawable_data.missing_styles, FALSE) ;
@@ -6635,14 +6653,12 @@ static gboolean makeStylesDrawable(char *config_file, GHashTable *styles, char *
 
 
 
-/* A GHashListForeachFunc() to make the given style drawable. */
-static void drawableCB(gpointer key, gpointer data, gpointer user_data)
+/* A callback to make the given style drawable. */
+static void drawableCB(ZMapFeatureTypeStyle style, gpointer user_data)
 {
-  GQuark key_id = GPOINTER_TO_UINT(key);
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   DrawableData drawable_data = (DrawableData)user_data ;
 
-  if (zMapStyleIsDisplayable(style))
+  if (style && zMapStyleIsDisplayable(style))
     {
       if (zMapStyleMakeDrawable(drawable_data->config_file, style))
         {
@@ -6653,7 +6669,7 @@ static void drawableCB(gpointer key, gpointer data, gpointer user_data)
           if (!(drawable_data->missing_styles))
             drawable_data->missing_styles = g_string_sized_new(1000) ;
 
-          g_string_append_printf(drawable_data->missing_styles, "%s ", g_quark_to_string(key_id)) ;
+          g_string_append_printf(drawable_data->missing_styles, "%s ", g_quark_to_string(style->unique_id)) ;
         }
     }
 
@@ -6664,16 +6680,17 @@ static void drawableCB(gpointer key, gpointer data, gpointer user_data)
 
 
 
-static void addPredefined(GHashTable **styles_out, GHashTable **column_2_styles_inout)
+static void addPredefined(ZMapStyleTree &styles_tree, GHashTable **column_2_styles_inout)
 {
-  GHashTable *styles ;
+  GHashTable *styles_hash ;
   GHashTable *f2s = *column_2_styles_inout ;
 
-  styles = zmapConfigIniGetDefaultStyles();                // zMapStyleGetAllPredefined() ;
+  styles_hash = zmapConfigIniGetDefaultStyles();                // zMapStyleGetAllPredefined() ;
 
-  g_hash_table_foreach(styles, styleCB, f2s) ;
+  g_hash_table_foreach(styles_hash, styleCB, f2s) ;
 
-  *styles_out = styles ;
+  styles_tree.merge(styles_hash, ZMAPSTYLE_MERGE_PRESERVE) ;
+
   *column_2_styles_inout = f2s ;
 
   return ;
@@ -6974,7 +6991,7 @@ void zMapViewSetSaveFile(ZMapView view, const ZMapViewExportType export_type, co
 {
   zMapReturnIfFail(view) ;
   view->save_file[export_type] = g_quark_from_string(filename) ;
-  view->flags[ZMAPFLAG_FEATURES_NEED_SAVING] = FALSE ;
+  view->flags[ZMAPFLAG_SAVE_FEATURES] = FALSE ;
 }
 
 
@@ -7046,7 +7063,7 @@ gboolean zMapViewExportConfig(ZMapView view,
       zMapConfigIniContextCreateKeyFile(context, file_type) ;
 
       /* Update the context with the new preferences or styles, if anything has changed */
-      update_func(context, file_type, view->context_map.styles) ;
+      update_func(context, file_type, &view->context_map.styles) ;
 
       /* Update the context with any configuration values that have changed */
       configUpdateContext(view, context, export_type, file_type) ;
@@ -7086,7 +7103,7 @@ static void configUpdateContext(ZMapView view,
 
   zMapReturnIfFailSafe(export_type == ZMAPVIEW_EXPORT_CONFIG) ;
 
-  if (view->flags[ZMAPFLAG_COLUMNS_NEED_SAVING])
+  if (view->flags[ZMAPFLAG_SAVE_COLUMNS])
     {
       GList *ordered_list = zMapFeatureGetOrderedColumnsListIDs(&view->context_map) ;
       char *result = zMap_g_list_quark_to_string(ordered_list, NULL) ;
@@ -7100,10 +7117,12 @@ static void configUpdateContext(ZMapView view,
     }
 
 
-  if (view->flags[ZMAPFLAG_CHANGED_FEATURESET_STYLE])
+  if (view->flags[ZMAPFLAG_SAVE_FEATURESET_STYLE])
     {
       /* Set values in the context for the column-style stanza based on the column_2_styles hash table */
-      updateContextColumnStyles(context, file_type, ZMAPSTANZA_COLUMN_STYLE_CONFIG, view->context_map.column_2_styles);
+      /* gb10: not implemented yet - we don't yet allow the user to edit the column styles, just
+       * the featureset styles */
+      //updateContextHashList(context, file_type, ZMAPSTANZA_COLUMN_STYLE_CONFIG, view->context_map.column_2_styles, exportColumnStyle);
 
       /* Set values for the featureset-style stanza */
       GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;
@@ -7113,20 +7132,54 @@ static void configUpdateContext(ZMapView view,
 
       changed = TRUE ;
     }
+
+  if (view->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS])
+    {
+      updateContextHashList(context, file_type, ZMAPSTANZA_COLUMN_GROUPS, view->context_map.column_groups, NULL) ;
+    }
   
   /* Set the unsaved flag in the context if there were any changes */
   if (changed)
     {
-      view->flags[ZMAPFLAG_COLUMNS_NEED_SAVING] = FALSE ;
-      view->flags[ZMAPFLAG_CHANGED_FEATURESET_STYLE] = FALSE ;
+      view->flags[ZMAPFLAG_SAVE_COLUMNS] = FALSE ;
+      view->flags[ZMAPFLAG_SAVE_FEATURESET_STYLE] = FALSE ;
       zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
     }
 }
 
 
-/*  Update the given context with featureset-style relationships */
+/* Returns true if the given style should be included when exporting column-style values */
+static gboolean exportColumnStyle(const char *key_str, const char *value_str)
+{
+  gboolean result = TRUE ;
+
+  /* Only export if value is different to key (otherwise the style name is the
+   * same as the column name, and this stanza doesn't add anything). Also don't
+   * export if it's a default style. */
+  if (value_str != key_str &&
+      strcmp(value_str, "invalid") &&
+      strcmp(value_str, "basic") &&
+      strcmp(value_str, "alignment") &&
+      strcmp(value_str, "transcript") &&
+      strcmp(value_str, "sequence") &&
+      strcmp(value_str, "assembly-path") &&
+      strcmp(value_str, "text") &&
+      strcmp(value_str, "graph") &&
+      strcmp(value_str, "glyph") &&
+      strcmp(value_str, "plain") &&
+      strcmp(value_str, "meta") &&
+      strcmp(value_str, "search hit marker"))
+    {
+      result = FALSE ;
+    }
+
+  return result ;
+}
+
+
+/*  Update the given context with column-style relationships */
 void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
-                                   const char *stanza, GHashTable *ghash)
+                               const char *stanza, GHashTable *ghash)
 {
   zMapReturnIfFail(context && context->config) ;
 
@@ -7152,22 +7205,7 @@ void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileTy
                 {
                   const char *value_str = g_quark_to_string(GPOINTER_TO_INT(item->data)) ;
 
-                  /* Only export if value is different to key (otherwise the style name is the
-                   * same as the column name, and this stanza doesn't add anything). Also don't
-                   * export if it's a default style. */
-                  if (value_str != key_str &&
-                      strcmp(value_str, "invalid") &&
-                      strcmp(value_str, "basic") &&
-                      strcmp(value_str, "alignment") &&
-                      strcmp(value_str, "transcript") &&
-                      strcmp(value_str, "sequence") &&
-                      strcmp(value_str, "assembly-path") &&
-                      strcmp(value_str, "text") &&
-                      strcmp(value_str, "graph") &&
-                      strcmp(value_str, "glyph") &&
-                      strcmp(value_str, "plain") &&
-                      strcmp(value_str, "meta") &&
-                      strcmp(value_str, "search hit marker"))
+                  if (exportColumnStyle(key_str, value_str))
                     {
                       if (!values_str)
                         values_str = g_string_new(value_str) ;
@@ -7185,6 +7223,59 @@ void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileTy
         }
     }
 }
+
+
+/* Update the given context with the given hash table of ids mapped to a glist of ids. This is
+ * exported as key=value where the hash table id is the key and the value is a
+ * semi-colon-separated list of the ids from the glist. export_func is an optional function that
+ * takes the key and glist-value and returns true if the value should be included in the context, false if
+ * not. If this function is null then all values are included.  */
+static void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
+                                  const char *stanza, GHashTable *ghash, HashListExportValueFunc export_func)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;
+
+  if (gkf)
+    {
+      /* Loop through all entries in the hash table */
+      GList *iter = NULL ;
+      gpointer key = NULL,value = NULL;
+
+      zMap_g_hash_table_iter_init(&iter, ghash) ;
+
+      while(zMap_g_hash_table_iter_next(&iter, &key, &value))
+        {
+          const char *key_str = g_quark_to_string(GPOINTER_TO_INT(key)) ;
+
+          if (key_str)
+            {
+              GString *values_str = NULL ;
+
+              for (GList *item = (GList*)value ; item ; item = item->next) 
+                {
+                  const char *value_str = g_quark_to_string(GPOINTER_TO_INT(item->data)) ;
+
+                  if (!export_func || export_func(key_str, value_str))
+                    {
+                      if (!values_str)
+                        values_str = g_string_new(value_str) ;
+                      else
+                        g_string_append_printf(values_str, " ; %s", value_str) ;
+                    }
+                }
+
+              if (values_str)
+                {
+                  g_key_file_set_string(gkf, stanza, key_str, values_str->str) ;
+                  g_string_free(values_str, TRUE) ;
+                }
+            }
+        }
+    }
+}
+
 
 
 /* Callback called for all featuresets to set the key-value pair for the featureset-style stanza
@@ -7233,3 +7324,4 @@ static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
 
   return status ;
 }
+

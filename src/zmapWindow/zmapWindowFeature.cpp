@@ -170,7 +170,7 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
   /* check for style too. */
   /* sometimes we don't have a feature_context ... ODD! */
   if(window->feature_context
-     && zMapFindStyle(window->context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+     && window->context_map->styles.find_style(zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
     {
       drawable = zMapFeatureContextGetDNAStatus(window->feature_context);
     }
@@ -1030,7 +1030,9 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
                                   NULL, replace_highlight, highlight_same_names, highlight_sub_part, &display_style) ;
 
         /* if we have an active dialog update it: they have to click on a feature not the column */
-        zmapWindowStyleDialogSetFeature(window, item, feature);
+        ZMapFeatureSet feature_set = (ZMapFeatureSet)(feature->parent) ; 
+        if (feature_set)
+          zmapWindowStyleDialogSetStyle(window, feature_set->style, feature_set, FALSE) ;
 
       }
 
@@ -1445,7 +1447,7 @@ static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
                * actually been created but the peer may change any of the feature details before
                * creating and sending it back to us so we have no way of knowing when the correct
                * feature has been created. */
-              remote_data->window->flags[ZMAPFLAG_SCRATCH_NEEDS_SAVING] = FALSE ;
+              remote_data->window->flags[ZMAPFLAG_SAVE_SCRATCH] = FALSE ;
             }
         }
     }

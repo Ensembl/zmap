@@ -28,15 +28,15 @@
 # copy of the SeqTools install stuff on the website, FTP site and intranet.
 #
 
-home_dir=~zmap/BUILD_CHECKOUT                        # root directory for zmap checkout
-scripts_dir=$home_dir/ZMap/scripts                        # scripts directory
+home_dir=~zmap/BUILD_ZMAP                                   # root directory for zmap checkout
+scripts_dir=$home_dir/ZMap/scripts                          # scripts directory
 
 msg_prefix="(`basename $0` on `hostname`)"
 
 repo_name=zmap                           		     # repository name
 website_svn_subdir=zmap_web                          # subdirectory of home_dir that contains the website svn repositories
 # NOTE the svn repository was initialised manually via the following commands. This should not need doing again.
-#   cd ~zmap/BUILD_CHECKOUT
+#   cd ~zmap/BUILD_ZMAP
 #   svn co svn+ssh://www-sanger-ac-uk@web-wwwsvn.internal.sanger.ac.uk/repos/svn/sites/www-sanger-ac-uk/trunk/htdocs/resources/software/zmap zmap_web
 # We assume that files in the repository are not edited by hand and therefore we won't get merge conflicts
 

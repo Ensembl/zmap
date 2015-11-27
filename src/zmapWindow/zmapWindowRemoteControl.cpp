@@ -937,8 +937,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
           // as load features processes a complete step list that inludes requesting the style
           // then if the style is not there then we'll drop the features
 
-          if (!(request_data->style = zMapFindStyle(request_data->window->context_map->styles,
-            request_data->style_id)))
+          if (!(request_data->style = request_data->window->context_map->styles.find_style(request_data->style_id)))
             {
               char *err_msg ;
 

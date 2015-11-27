@@ -37,6 +37,9 @@
 /* Default configuration file name within configuration directory. */
 #define ZMAP_USER_CONFIG_FILE   "ZMap"
 
+/* Default preferences file name within configuration directory. */
+#define ZMAP_USER_PREFS_FILE   "zmap_prefs.ini"
+
 /* suffix for the window id file */
 #define WINDOWID_SUFFIX "win_id"
 
@@ -49,6 +52,7 @@ char *zMapConfigDirGetFile(void) ;
 char *zMapConfigDirFindFile(const char *filename) ;
 char *zMapConfigDirGetZmapHomeFile(void);
 char *zMapConfigDirGetSysFile(void);
+char *zMapConfigDirGetPrefsFile(void);
 void zMapConfigDirDestroy(void) ;
 
 

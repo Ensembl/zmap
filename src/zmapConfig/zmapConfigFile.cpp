@@ -50,6 +50,8 @@
 
 static gboolean has_system_file(ZMapConfigIni config);
 static gboolean system_file_loaded(ZMapConfigIni config);
+static gboolean has_prefs_file(ZMapConfigIni config);
+static gboolean prefs_file_loaded(ZMapConfigIni config);
 static gboolean has_system_zmap_file(ZMapConfigIni config);
 static gboolean system_zmap_file_loaded(ZMapConfigIni config);
 static GKeyFile *read_file(const char *file_name, GError **error_in_out);
@@ -93,6 +95,11 @@ gboolean zMapConfigIniReadAll(ZMapConfigIni config, const char *config_file)
       zMapConfigIniReadZmap(config) ;
     }
 
+  if (!prefs_file_loaded(config) && has_prefs_file(config))
+    {
+      zMapConfigIniReadPrefs(config) ;
+    }
+
   red = zMapConfigIniReadUser(config, config_file) ;
 
   return red ;
@@ -114,6 +121,9 @@ gboolean zMapConfigIniReadFileType(ZMapConfigIni config, const char *config_file
       break ;
     case ZMAPCONFIG_FILE_USER:
       zMapConfigIniReadUser(config, config_file) ;
+      break ;
+    case ZMAPCONFIG_FILE_PREFS:
+      zMapConfigIniReadPrefs(config) ;
       break ;
     case ZMAPCONFIG_FILE_STYLES:
       zMapConfigIniReadStyles(config, config_file) ;
@@ -149,20 +159,32 @@ gboolean zMapConfigIniReadZmap(ZMapConfigIni config)
 gboolean zMapConfigIniReadUser(ZMapConfigIni config, const char *config_file)
 {
   gboolean red = FALSE ;
-  zMapReturnValIfFail(config && config_file, red) ;
+  zMapReturnValIfFail(config, red) ;
 
-  if (!config->unsaved_changes[ZMAPCONFIG_FILE_USER])
+  if (config_file)
     {
-      config->key_file[ZMAPCONFIG_FILE_USER] = read_file(config_file, &(config->key_error[ZMAPCONFIG_FILE_USER])) ;
-    }
-
-  if (config->key_file[ZMAPCONFIG_FILE_USER] != NULL)
-    {
-      config->key_file_name[ZMAPCONFIG_FILE_USER] = g_quark_from_string(config_file) ;
-      red = TRUE ;
+      if (!config->unsaved_changes[ZMAPCONFIG_FILE_USER])
+        {
+          config->key_file[ZMAPCONFIG_FILE_USER] = read_file(config_file, &(config->key_error[ZMAPCONFIG_FILE_USER])) ;
+        }
+      
+      if (config->key_file[ZMAPCONFIG_FILE_USER] != NULL)
+        {
+          config->key_file_name[ZMAPCONFIG_FILE_USER] = g_quark_from_string(config_file) ;
+          red = TRUE ;
+        }
     }
 
   return red ;
+}
+
+
+gboolean zMapConfigIniReadPrefs(ZMapConfigIni config)
+{
+  const char *filename = zMapConfigDirGetPrefsFile() ;
+  config->key_file[ZMAPCONFIG_FILE_PREFS] = read_file(filename, &(config->key_error[ZMAPCONFIG_FILE_PREFS])) ;
+  config->key_file_name[ZMAPCONFIG_FILE_PREFS] = g_quark_from_string(filename) ;
+  return TRUE ;
 }
 
 
@@ -203,26 +225,29 @@ gboolean zMapConfigIniReadStyles(ZMapConfigIni config, const char *file)
     return read ; */ 
   zMapReturnValIfFail(config, read ) ; 
 
-  char *file_expanded = zMapExpandFilePath(file) ;
-  char *filepath = NULL ;
-
-  if (!g_path_is_absolute(file_expanded))
-    filepath = zMapConfigDirFindFile(file_expanded) ;
-  else
-    filepath = g_strdup(file_expanded) ;
-
-  if (filepath
-      && (config->key_file[ZMAPCONFIG_FILE_STYLES] = read_file(filepath, &(config->key_error[ZMAPCONFIG_FILE_STYLES]))))
+  if (file)
     {
-      config->key_file_name[ZMAPCONFIG_FILE_STYLES] = g_quark_from_string(file) ;
-      read = TRUE;
+      char *file_expanded = zMapExpandFilePath(file) ;
+      char *filepath = NULL ;
+
+      if (!g_path_is_absolute(file_expanded))
+        filepath = zMapConfigDirFindFile(file_expanded) ;
+      else
+        filepath = g_strdup(file_expanded) ;
+
+      if (filepath
+          && (config->key_file[ZMAPCONFIG_FILE_STYLES] = read_file(filepath, &(config->key_error[ZMAPCONFIG_FILE_STYLES]))))
+        {
+          config->key_file_name[ZMAPCONFIG_FILE_STYLES] = g_quark_from_string(file) ;
+          read = TRUE;
+        }
+
+      if (file_expanded)
+        g_free(file_expanded) ;
+
+      if (filepath)
+        g_free(filepath) ;
     }
-
-  if (file_expanded)
-    g_free(file_expanded) ;
-
-  if (filepath)
-    g_free(filepath) ;
 
   return read ;
 }
@@ -394,6 +419,27 @@ static gboolean system_file_loaded(ZMapConfigIni config)
   gboolean exists = FALSE;
 
   if(config->key_file[ZMAPCONFIG_FILE_SYS])
+    exists = TRUE;
+
+  return exists;
+}
+
+static gboolean has_prefs_file(ZMapConfigIni config)
+{
+  gboolean exists = FALSE;
+  char *file = NULL;
+
+  if((file = zMapConfigDirGetPrefsFile()))
+    exists = TRUE;
+
+  return exists;
+}
+
+static gboolean prefs_file_loaded(ZMapConfigIni config)
+{
+  gboolean exists = FALSE;
+
+  if(config->key_file[ZMAPCONFIG_FILE_PREFS])
     exists = TRUE;
 
   return exists;

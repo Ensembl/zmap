@@ -33,6 +33,7 @@
 #define ZMAP_FEATURE_LOAD_DISPLAY_H
 
 #include <ZMap/zmapStyle.hpp>
+#include <ZMap/zmapStyleTree.hpp>
 
 
 /* Overview:
@@ -130,7 +131,8 @@ typedef struct ZMapFeatureContextMapStructType
 {
   /* All the styles known to the view or window.
    * Maps the style's unique_id (GQuark) to ZMapFeatureTypeStyle. */
-  GHashTable *styles ;
+  //GHashTable *styles ;
+  ZMapStyleTree styles ;
 
   /* All the columns that ZMap will display.
    * These may contain several featuresets each, They are in display order left to right.
