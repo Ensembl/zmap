@@ -32,6 +32,8 @@
 #ifndef ZMAP_FEATURE_LOAD_DISPLAY_H
 #define ZMAP_FEATURE_LOAD_DISPLAY_H
 
+#include <map>
+
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 
@@ -137,7 +139,7 @@ typedef struct ZMapFeatureContextMapStructType
   /* All the columns that ZMap will display.
    * These may contain several featuresets each, They are in display order left to right.
    * Maps the column's unique_id (GQuark) to ZMapFeatureColumn */
-  GHashTable *columns ;
+  std::map<GQuark, ZMapFeatureColumn> *columns ;
 
 
   /* Mapping of a feature source to a column using ZMapFeatureSetDesc

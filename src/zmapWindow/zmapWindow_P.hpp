@@ -1633,7 +1633,15 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 /* UM....WHY ON EARTH IS THIS IN HERE....????? */
 ZMapXMLUtilsEventStack zMapFeatureAnyAsXMLEvents(ZMapFeature feature) ;
 
-gboolean zmapWindowFeaturesetSetStyle(GQuark style_id, ZMapFeatureSet feature_set, ZMapFeatureContextMap context_map, ZMapWindow window);
+gboolean zmapWindowFeaturesetSetStyle(GQuark style_id, 
+                                      ZMapFeatureSet feature_set, 
+                                      ZMapFeatureContextMap context_map, 
+                                      ZMapWindow window, 
+                                      const gboolean update_column = TRUE, 
+                                      const gboolean destroy_canvas_items = TRUE,
+                                      const gboolean redraw = TRUE);
+gboolean zmapWindowColumnAddStyle(const GQuark style_id, const GQuark column_id, ZMapFeatureContextMap context_map, ZMapWindow window) ;
+gboolean zmapWindowColumnRemoveStyle(const GQuark style_id, const GQuark column_id, ZMapFeatureContextMap context_map, ZMapWindow window) ;
 gboolean zmapWindowStyleDialogSetStyle(ZMapWindow window, ZMapFeatureTypeStyle style_in, ZMapFeatureSet feature_set, const gboolean create_child);
 void zmapWindowStyleDialogDestroy(ZMapWindow window);
 

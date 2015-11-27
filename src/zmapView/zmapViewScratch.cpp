@@ -1116,7 +1116,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
 
       if (context_map->columns)
         {
-          column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(col_id));
+          column = (*context_map->columns)[col_id] ;
           if(!column)
             {
               column = g_new0(ZMapFeatureColumnStruct,1);
@@ -1126,7 +1126,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
               column->style_table = g_list_prepend(NULL, (gpointer)  style);
               column->order = zMapFeatureColumnOrderNext(FALSE) ;
               /* the rest shoudl get filled in elsewhere */
-              g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(col_id), column);
+              (*context_map->columns)[col_id] = column ;
             }
         }
     }
@@ -1324,7 +1324,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
 
       if (context_map->columns)
         {
-          column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(col_id));
+          column = (*context_map->columns)[col_id] ;
           if(!column)
             {
               column = g_new0(ZMapFeatureColumnStruct,1);
@@ -1334,7 +1334,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
               column->style_table = g_list_prepend(NULL, (gpointer)  style);
               column->order = zMapFeatureColumnOrderNext(FALSE);
               /* the rest shoudl get filled in elsewhere */
-              g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(col_id), column);
+              (*context_map->columns)[col_id] = column ;
             }
         }
 

@@ -705,7 +705,9 @@ GList *zMapConfigString2QuarkIDList(const char *string_list)
  * and if this is aditional to that already configured it's added
  */
 
-GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHashTable *ghash, GHashTable *columns)
+GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, 
+                                              GHashTable *ghash, 
+                                              std::map<GQuark, ZMapFeatureColumn> columns)
 {
   GKeyFile *gkf;
   gchar ** keys,**freethis;
@@ -738,7 +740,8 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
           normalkey = zMapConfigNormaliseWhitespace(*keys,FALSE); /* changes in situ: get names first */
           column = g_quark_from_string(normalkey);
           column_id = zMapFeatureSetCreateID(normalkey);
-          f_col = (ZMapFeatureColumn)g_hash_table_lookup(columns,GUINT_TO_POINTER(column_id));
+
+          f_col = columns[column_id] ;
 
           if (!f_col)
             {
@@ -749,7 +752,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
               f_col->column_desc = normalkey;
               f_col->order = zMapFeatureColumnOrderNext(FALSE);
 
-              g_hash_table_insert(columns,GUINT_TO_POINTER(f_col->unique_id),f_col);
+              columns[column_id] = f_col ;
             }
 
 #if MH17_USE_COLUMNS_HASH
@@ -959,19 +962,19 @@ GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context)
 
 // get the complete list of columns to display, in order
 // somewhere this gets mangled by strandedness
-GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
+std::map<GQuark, ZMapFeatureColumn> *zMapConfigIniGetColumns(ZMapConfigIniContext context)
 {
+  std::map<GQuark, ZMapFeatureColumn> *columns_table = NULL ;
   GKeyFile *gkf;
   GList *columns = NULL,*col;
   gchar *colstr;
   ZMapFeatureColumn f_col;
-  GHashTable *ghash = NULL;
   GHashTable *col_desc;
   char *desc;
 
-  zMapReturnValIfFail(context, ghash) ;
+  zMapReturnValIfFail(context, columns_table) ;
 
-  ghash = g_hash_table_new(NULL,NULL);
+  columns_table = new std::map<GQuark, ZMapFeatureColumn> ;
 
   // nb there is a small memory leak if we config description for non-existant columns
   col_desc   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG,QQ_STRING);
@@ -994,7 +997,7 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
   /* Add the hard-coded strand-separator column at the start of the list */
   col = g_list_prepend(columns, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
 
-  /* Loop through the list and create the column struct, and add it to the ghash table */
+  /* Loop through the list and create the column struct, and add it to the columns_table */
   for(; col;col = col->next)
     {
       f_col = g_new0(ZMapFeatureColumnStruct,1);
@@ -1009,13 +1012,13 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
 
       f_col->order = zMapFeatureColumnOrderNext(FALSE) ;
 
-      g_hash_table_insert(ghash,GUINT_TO_POINTER(f_col->unique_id),f_col);
+      (*columns_table)[f_col->unique_id] = f_col ;
     }
 
   if(col_desc)
     g_hash_table_destroy(col_desc);
 
-  return(ghash);
+  return columns_table ;
 }
 
 
