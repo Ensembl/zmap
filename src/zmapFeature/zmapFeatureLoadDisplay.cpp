@@ -273,7 +273,7 @@ void zMapFeatureSequenceMapAddSource(ZMapFeatureSequenceMap sequence_map,
                                      ZMapConfigSource source, 
                                      GError **error)
 {
-  zMapReturnIfFail(sequence_map && sequence_map->sources && source) ;
+  zMapReturnIfFail(sequence_map && source) ;
 
   if (sequence_map->sources && sequence_map->sources->find(source_name) != sequence_map->sources->end())
     {
@@ -302,8 +302,19 @@ GList* zMapFeatureSequenceMapGetSources(ZMapFeatureSequenceMap sequence_map,
   // get any sources specified in the config file or the given config string
   settings_list = zMapConfigGetSources(sequence_map->config_file, config_str, stylesfile) ;
 
-  // create stanza structs for any URLs passed on command line
+  // get sources for any URLs passed on command line
   getCmdLineSources(sequence_map, &settings_list) ;
+
+  // get sources specified by the user
+  if (sequence_map->sources)
+    {
+      for (std::map<std::string, ZMapConfigSource>::iterator iter = sequence_map->sources->begin();
+           iter != sequence_map->sources->end() ;
+           ++iter)
+        {
+          settings_list = g_list_append(settings_list, iter->second) ;
+        }
+    }
 
   return settings_list ;
 }

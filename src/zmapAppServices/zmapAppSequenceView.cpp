@@ -162,6 +162,7 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   main_data->user_data = user_data ;
   main_data->close_func = close_func ;
   main_data->close_data = close_data ;
+  main_data->orig_sequence_map = sequence_map ;
   main_data->sequence_map = *sequence_map ;
   main_data->sequence_map.sequence = g_strdup(main_data->sequence_map.sequence) ;
   main_data->sequence_map.config_file = g_strdup(main_data->sequence_map.config_file) ;
