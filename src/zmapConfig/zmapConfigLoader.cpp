@@ -1046,6 +1046,34 @@ std::map<GQuark, ZMapFeatureColumn> *zMapConfigIniGetColumns(ZMapConfigIniContex
 }
 
 
+/* Get the list of sources from the given config file / config string */
+GList *zMapConfigGetSources(char *config_file, char *config_str, char ** stylesfile)
+{
+  GList *settings_list = NULL;
+  ZMapConfigIniContext context ;
+
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
+    {
+
+      if (config_str)
+        zMapConfigIniContextIncludeBuffer(context, config_str);
+
+      settings_list = zMapConfigIniContextGetSources(context);
+
+      if(stylesfile)
+        {
+          zMapConfigIniContextGetFilePath(context,
+                                          ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
+                                          ZMAPSTANZA_APP_STYLESFILE,stylesfile);
+        }
+      zMapConfigIniContextDestroy(context);
+
+    }
+
+  return(settings_list);
+}
+
+
 
 
 /*
@@ -1191,9 +1219,6 @@ gboolean zMapConfigLegacyStyles(char *config_file)
 
   return(result) ;
 }
-
-
-
 
 
 

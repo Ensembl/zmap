@@ -659,7 +659,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       stylesfile = zmap_view->view_sequence->stylesfile;
 
       // get the stanza structs from ZMap config
-      settings_list = zmapViewGetIniSources(zmap_view->view_sequence->config_file, config_str, &stylesfile) ;
+      settings_list = zMapConfigGetSources(zmap_view->view_sequence->config_file, config_str, &stylesfile) ;
 
       // create stanza structs for any URLs passed on command line
       zMapFeatureSequenceMapGetCmdLineSources(zmap_view->view_sequence, &settings_list) ;
@@ -1455,7 +1455,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
       /* OH DEAR...THINK WE MIGHT NEED THE CONFIG FILE HERE TOO.... */
 
      /* mh17: this is tedious to do for each request esp on startup */
-      sources = zmapViewGetIniSources(view->view_sequence->config_file, NULL, NULL) ;
+      sources = zMapConfigGetSources(view->view_sequence->config_file, NULL, NULL) ;
       ghash = getFeatureSourceHash(sources);
 
       for ( ; req_sources ; req_sources = g_list_next(req_sources))
@@ -2004,35 +2004,6 @@ void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
     }
 }
 
-
-
-
-
-GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** stylesfile)
-{
-  GList *settings_list = NULL;
-  ZMapConfigIniContext context ;
-
-  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
-    {
-
-      if (config_str)
-        zMapConfigIniContextIncludeBuffer(context, config_str);
-
-      settings_list = zMapConfigIniContextGetSources(context);
-
-      if(stylesfile)
-        {
-          zMapConfigIniContextGetFilePath(context,
-                                          ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
-                                          ZMAPSTANZA_APP_STYLESFILE,stylesfile);
-        }
-      zMapConfigIniContextDestroy(context);
-
-    }
-
-  return(settings_list);
-}
 
 
 /* Set up a connection to a single named server. Does nothing if the server is delayed.

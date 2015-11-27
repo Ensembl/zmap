@@ -217,6 +217,6 @@ std::map<GQuark, ZMapFeatureColumnStructType*> *zMapConfigIniGetColumns(ZMapConf
 void zMapConfigSourceDestroy(ZMapConfigSource source_to_free) ;
 void zMapConfigSourcesFreeList(GList *config_sources_list);
 
-
+GList *zMapConfigGetSources(char *config_file, char *config_str,char **stylesfile);
 
 #endif /* ZMAP_CONFIG_INI_H */

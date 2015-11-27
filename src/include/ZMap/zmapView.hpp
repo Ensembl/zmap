@@ -218,7 +218,6 @@ ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id);
 void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src);
 void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value) ;
 gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag) ;
-GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfile);
 
 gboolean zMapViewRequestServer(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
 			       gpointer server, /* ZMapConfigSource */

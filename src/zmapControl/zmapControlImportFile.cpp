@@ -1292,7 +1292,7 @@ static void importFileCB(gpointer cb_data)
 
       if (*config_str)
         {
-          servers = zmapViewGetIniSources(NULL, config_str, NULL) ;
+          servers = zMapConfigGetSources(NULL, config_str, NULL) ;
 
           if (servers)
             {
