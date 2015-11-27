@@ -551,6 +551,9 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
 
       seq_map->config_file = g_strdup(config_txt) ;
 
+      if (main_data->orig_sequence_map)
+        seq_map->sources = main_data->orig_sequence_map->sources ;
+
       if (*sequence)
         {
           sequence_ok = TRUE ;
