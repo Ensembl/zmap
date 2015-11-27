@@ -25,6 +25,7 @@ zmapStyleTree.cpp         \
 zmapStyle_P.hpp       \
 zmapStyleObj.cpp  \
 zmapStyleUtils.cpp    \
+zmapFeatureLoadDisplay.cpp \
 $(NULL)
 
 libZMapFeature_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils

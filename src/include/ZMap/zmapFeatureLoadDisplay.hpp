@@ -36,10 +36,12 @@
 
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
-#include <ZMap/zmapConfigStanzaStructs.hpp>
 
 #include <string>
 #include <map>
+
+
+struct _ZMapConfigSourceStruct ;
 
 
 /* Overview:
@@ -198,7 +200,7 @@ typedef struct ZMapFeatureContextMapStructType
   GHashTable *column_groups ;
 
   /* This lists all user-created sources */
-  std::map<std::string, ZMapConfigSource> *sources ;
+  std::map<std::string, _ZMapConfigSourceStruct*> *sources ;
 
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap ;
 
@@ -231,7 +233,7 @@ typedef struct ZMapFeatureSequenceMapStructType
   GHashTable *cached_parsers ; /* filenames (as GQuarks) mapped to cached info about GFF parsing that
                                 * is in progress (ZMapFeatureParserCache) if parsing has already been started */
 
-  std::map<std::string, ZMapConfigSource> sources ;
+  std::map<std::string, _ZMapConfigSourceStruct*> *sources ;
 
   char *dataset ;                                           /* e.g. human */
   char *sequence ;                                          /* e.g. chr6-18 */
@@ -241,10 +243,20 @@ typedef struct ZMapFeatureSequenceMapStructType
 
 
 ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map, GQuark set_id) ;
+GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map, GQuark column_id, gboolean unique_id) ;
 gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map, GQuark column_id) ;
 gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map, GQuark column_id) ;
 gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map, GQuark fset_id) ;
-GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map, GQuark column_id, gboolean unique_id) ;
+
+
+void zMapFeatureSequenceMapAddSource(ZMapFeatureSequenceMap sequence_map, 
+                                     const std::string &source_name, 
+                                     _ZMapConfigSourceStruct *source, 
+                                     GError **error) ;
+
+void zMapFeatureSequenceMapGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, 
+                                             GList **settings_list_inout) ;
+
 
 #endif /* ZMAP_FEATURE_LOAD_DISPLAY_H */
 

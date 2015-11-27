@@ -208,7 +208,6 @@ typedef struct FindStylesStructType
 static void getIniData(ZMapView view, char *config_str, GList *sources) ;
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets) ;
 static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *ghash,GQuark featurequark);
-static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout) ;
 static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data) ;
 static void destroyZMapView(ZMapView *zmap) ;
 static void displayDataWindows(ZMapView zmap_view,
@@ -663,7 +662,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       settings_list = zmapViewGetIniSources(zmap_view->view_sequence->config_file, config_str, &stylesfile) ;
 
       // create stanza structs for any URLs passed on command line
-      zmapViewGetCmdLineSources(sequence_map, &settings_list) ;
+      zMapFeatureSequenceMapGetCmdLineSources(zmap_view->view_sequence, &settings_list) ;
 
       viewSetUpStyles(zmap_view, stylesfile) ;
 
@@ -2084,26 +2083,6 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_
 }
 
 
-/* Add a source to our list of user-created sources. Sets the error if the name already exists. */
-void zMapViewAddSource(ZMapView view, const std::string &source_name, ZMapConfigSource source, GError **error)
-{
-  zMapReturnIfFail(view && source) ;
-
-  if (view->context_map.sources && view->context_map.sources->find(source_name) != view->context_map.sources->end())
-    {
-      g_set_error(error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CREATING_SOURCE,
-                  "Source '%s' already exists", source_name.c_str()) ;
-    }
-  else
-    {
-      if (!view->context_map.sources)
-        view->context_map.sources = new std::map<std::string, ZMapConfigSource> ;
-
-      (*view->context_map.sources)[source_name] = source ;
-    }
-}
-
-
 /*
  *                      Internal routines
  */
@@ -2270,26 +2249,6 @@ static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_l
     }
 
   return result ;
-}
-
-
-static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout)
-{
-  zMapReturnIfFailSafe(sequence_map) ;
-
-  GSList *file_item = sequence_map->file_list ;
-
-  for ( ; file_item; file_item = file_item->next)
-    {
-      char *file = (char*)(file_item->data) ;
-
-      ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1) ;
-      src->group = SOURCE_GROUP_START ;        // default_value
-      src->url = g_strdup_printf("file:///%s", file) ;
-      src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
-
-      *settings_list_inout = g_list_append(*settings_list_inout, (gpointer)src) ;
-    }
 }
 
 

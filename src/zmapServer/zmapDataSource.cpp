@@ -84,12 +84,12 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
   static const char * open_mode = "r" ;
   ZMapDataSource data_source = NULL ;
   ZMapDataSourceType source_type = ZMAPDATASOURCE_TYPE_UNK ;
+  GError *error = NULL ;
   zMapReturnValIfFail(file_name && *file_name, data_source ) ;
 
   source_type = zMapDataSourceTypeFromFilename(file_name) ;
   if (source_type == ZMAPDATASOURCE_TYPE_GIO)
     {
-      GError *error = NULL ;
       ZMapDataSourceGIO file = NULL ;
       file = (ZMapDataSourceGIO) g_new0(ZMapDataSourceGIOStruct, 1) ;
       if (file != NULL)
@@ -102,8 +102,6 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
             }
           else
             {
-              if (error)
-                g_propagate_error(error_out, error) ;
               g_free(file) ;
             }
         }
@@ -138,10 +136,13 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
                 bam_destroy1(file->hts_rec) ;
               g_free(file) ;
 
-              g_set_error(error, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'", file_name) ;
+              g_set_error(&error, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'", file_name) ;
             }
         }
     }
+
+  if (error)
+    g_propagate_error(error_out, error) ;
 
   return data_source ;
 }

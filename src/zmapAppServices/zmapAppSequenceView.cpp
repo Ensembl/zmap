@@ -385,7 +385,7 @@ static void createNewSourceCB(const char *source_name,
                               GError **error)
 {
   ZMapFeatureSequenceMap sequence_map = (ZMapFeatureSequenceMap)user_data ;
-  zMapReturnIfFail(zmap) ;
+  zMapReturnIfFail(sequence_map) ;
 
   GError *tmp_error = NULL ;
 
@@ -398,7 +398,7 @@ static void createNewSourceCB(const char *source_name,
       
   /* Add the new source to the view */
   std::string source_name_str(source_name) ;
-  zMapSequenceMapAddSource(sequence_map, source_name_str, source, &tmp_error) ;
+  zMapFeatureSequenceMapAddSource(sequence_map, source_name_str, source, &tmp_error) ;
 
   if (tmp_error)
     {

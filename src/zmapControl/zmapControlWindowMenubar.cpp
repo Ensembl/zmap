@@ -745,7 +745,7 @@ static void createNewSourceCB(const char *source_name,
                               GError **error)
 {
   ZMap zmap = (ZMap)user_data ;
-  zMapReturnIfFail(zmap) ;
+  zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
 
   ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow) ;
 
@@ -760,7 +760,9 @@ static void createNewSourceCB(const char *source_name,
       
   /* Add the new source to the view */
   std::string source_name_str(source_name) ;
-  zMapViewAddSource(zmap_view, source_name_str, source, &tmp_error) ;
+  ZMapFeatureSequenceMap sequence_map = zMapViewGetSequenceMap(zmap_view) ;
+
+  zMapFeatureSequenceMapAddSource(sequence_map, source_name_str, source, &tmp_error) ;
 
   /* Connect to the new source */
   if (!tmp_error)
