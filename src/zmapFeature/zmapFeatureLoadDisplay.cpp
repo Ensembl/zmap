@@ -41,6 +41,11 @@
 #include <ZMap/zmapConfigIni.hpp>
 
 
+static void getCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout) ;
+static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
+static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
+
+
 /*
  *              ZMapFeatureContextMap routines
  */
@@ -213,6 +218,50 @@ gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap context_map,GQuark fse
 }
 
 
+/* Get a GList of column IDs as GQuarks in the correct order according to the 'order' field in
+ * each ZMapFeatureColumn struct (from the context_map.columns hash table).
+ * Returns a new GList which should be free'd with g_list_free() */
+GList* zMapFeatureGetOrderedColumnsListIDs(ZMapFeatureContextMap context_map)
+{
+  GList *columns = NULL ;
+  zMapReturnValIfFail(context_map, columns) ;
+
+  for (std::map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->begin() ; 
+       iter != context_map->columns->end(); 
+       ++iter)
+    {
+      columns = g_list_prepend(columns, GINT_TO_POINTER(iter->first));
+    }
+
+  columns = g_list_sort_with_data(columns, colIDOrderCB, context_map->columns);
+
+  return columns ;
+}
+
+
+/* Get a GList of columns as ZMapFeatureColumn structs in the correct order according to 
+ * the 'order' field in the struct (from the context_map.columns hash table).
+ * Returns a new GList which should be free'd with g_list_free() */
+GList* zMapFeatureGetOrderedColumnsList(ZMapFeatureContextMap context_map)
+{
+  GList *columns = NULL ;
+  zMapReturnValIfFail(context_map, columns) ;
+
+  for (std::map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->begin() ; 
+       iter != context_map->columns->end(); 
+       ++iter)
+    {
+      columns = g_list_prepend(columns, iter->second);
+    }
+
+  columns = g_list_sort_with_data(columns, colOrderCB, context_map->columns);
+
+  return columns ;
+}
+
+
+
+
 /*
  *              ZMapFeatureSequenceMap routines
  */
@@ -241,7 +290,33 @@ void zMapFeatureSequenceMapAddSource(ZMapFeatureSequenceMap sequence_map,
 }
 
 
-void zMapFeatureSequenceMapGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout)
+/* Get the full list of all sources (including any from the config file, the given config string,
+ * the command line, or any that have been specified dynamically by the user) */
+GList* zMapFeatureSequenceMapGetSources(ZMapFeatureSequenceMap sequence_map,
+                                        const char *config_str,
+                                        char **stylesfile)
+{
+  GList *settings_list = NULL ;
+  zMapReturnValIfFail(sequence_map, settings_list) ;
+
+  // get any sources specified in the config file or the given config string
+  settings_list = zMapConfigGetSources(sequence_map->config_file, config_str, stylesfile) ;
+
+  // create stanza structs for any URLs passed on command line
+  getCmdLineSources(sequence_map, &settings_list) ;
+
+  return settings_list ;
+}
+
+
+
+/*
+ *              Internal routines.
+ */
+
+
+/* Add any sources that were specified on the command line to the given list */
+static void getCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout)
 {
   zMapReturnIfFailSafe(sequence_map) ;
 
@@ -261,7 +336,63 @@ void zMapFeatureSequenceMapGetCmdLineSources(ZMapFeatureSequenceMap sequence_map
 }
 
 
+static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
+{
+  ZMapFeatureColumn pa = NULL,pb = NULL;
+  std::map<GQuark, ZMapFeatureColumn> *columns = (std::map<GQuark, ZMapFeatureColumn>*)user_data;
 
-/*
- *              Internal routines.
- */
+  if (columns)
+    {
+      GQuark quark1 = (GQuark)GPOINTER_TO_INT(a) ;
+      GQuark quark2 = (GQuark)GPOINTER_TO_INT(b) ;
+      std::map<GQuark, ZMapFeatureColumn>::iterator iter1 = columns->find(quark1) ;
+      std::map<GQuark, ZMapFeatureColumn>::iterator iter2 = columns->find(quark2) ;
+
+      if (iter1 != columns->end())
+        pa = iter1->second ;
+
+      if (iter2 != columns->end())
+        pb = iter2->second ;
+
+      if(pa && pb)
+        {
+          if(pa->order < pb->order)
+            return(-1);
+          if(pa->order > pb->order)
+            return(1);
+        }
+    }
+
+  return(0);
+}
+
+
+static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
+{
+  ZMapFeatureColumn pa = NULL,pb = NULL;
+  std::map<GQuark, ZMapFeatureColumn> *columns = (std::map<GQuark, ZMapFeatureColumn>*) user_data;
+
+  if (columns)
+    {
+      GQuark quark1 = (GQuark)GPOINTER_TO_INT(a) ;
+      GQuark quark2 = (GQuark)GPOINTER_TO_INT(b) ;
+      std::map<GQuark, ZMapFeatureColumn>::iterator iter1 = columns->find(quark1) ;
+      std::map<GQuark, ZMapFeatureColumn>::iterator iter2 = columns->find(quark2) ;
+
+      if (iter1 != columns->end())
+        pa = iter1->second ;
+
+      if (iter2 != columns->end())
+        pb = iter2->second ;
+
+      if(pa && pb)
+        {
+          if(pa->order < pb->order)
+            return(-1);
+          if(pa->order > pb->order)
+            return(1);
+        }
+    }
+
+  return(0);
+}

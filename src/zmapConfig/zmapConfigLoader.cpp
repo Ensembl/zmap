@@ -1047,7 +1047,7 @@ std::map<GQuark, ZMapFeatureColumn> *zMapConfigIniGetColumns(ZMapConfigIniContex
 
 
 /* Get the list of sources from the given config file / config string */
-GList *zMapConfigGetSources(char *config_file, char *config_str, char ** stylesfile)
+GList *zMapConfigGetSources(const char *config_file, const char *config_str, char ** stylesfile)
 {
   GList *settings_list = NULL;
   ZMapConfigIniContext context ;

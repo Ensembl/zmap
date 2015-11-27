@@ -247,6 +247,8 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map, GQuark column_
 gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map, GQuark column_id) ;
 gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map, GQuark column_id) ;
 gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map, GQuark fset_id) ;
+GList* zMapFeatureGetOrderedColumnsListIDs(ZMapFeatureContextMap context_map) ;
+GList* zMapFeatureGetOrderedColumnsList(ZMapFeatureContextMap context_map) ;
 
 
 void zMapFeatureSequenceMapAddSource(ZMapFeatureSequenceMap sequence_map, 
@@ -254,9 +256,9 @@ void zMapFeatureSequenceMapAddSource(ZMapFeatureSequenceMap sequence_map,
                                      _ZMapConfigSourceStruct *source, 
                                      GError **error) ;
 
-void zMapFeatureSequenceMapGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, 
-                                             GList **settings_list_inout) ;
-
+GList* zMapFeatureSequenceMapGetSources(ZMapFeatureSequenceMap sequence_map,
+                                        const char *config_str,
+                                        char **stylesfile) ;
 
 #endif /* ZMAP_FEATURE_LOAD_DISPLAY_H */
 

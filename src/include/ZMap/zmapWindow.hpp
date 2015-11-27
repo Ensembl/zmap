@@ -48,7 +48,11 @@
 
 #define SCRATCH_FEATURE_NAME "temp_feature"
 
+
 class ZMapStyleTree ;
+struct ZMapFeatureSequenceMapStructType ;
+struct ZMapFeatureContextMapStructType ;
+
 
 /*! Opaque type, represents an individual ZMap window. */
 typedef struct ZMapWindowStructType *ZMapWindow ;
@@ -539,9 +543,9 @@ extern int focus_group_mask[];  /* indexed by ZMapWindowFocusType */
 
 void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
-                            ZMapFeatureSequenceMap sequence, void *app_data,
+                            ZMapFeatureSequenceMapStructType *sequence, void *app_data,
                             GList *feature_set_names, gboolean *flags, int *int_values) ;
-ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap sequence,
+ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMapStructType *sequence,
                           void *app_data, ZMapWindow old,
                           ZMapFeatureContext features,
                           ZMapWindowLockType window_locking) ;
@@ -558,7 +562,7 @@ void zMapWindowSetCursor(ZMapWindow window, GdkCursor *cursor) ;
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
                            ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-                           ZMapFeatureContextMap context_map,
+                           ZMapFeatureContextMapStructType *context_map,
                            GList *masked,
                            ZMapFeature highlight_feature,  gboolean splice_highlight,
                            gpointer loaded_cb_user_data) ;
