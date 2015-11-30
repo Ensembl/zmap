@@ -519,6 +519,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   sequence_fetch->start = sequence_map->start ;
   sequence_fetch->end = sequence_map->end ;
   sequence_fetch->cached_parsers = sequence_map->cached_parsers ;
+  sequence_fetch->file_list = sequence_map->file_list ;
   sequence_fetch->sources = sequence_map->sources ;
 
   sequences_list = g_list_append(sequences_list, sequence_fetch) ;
