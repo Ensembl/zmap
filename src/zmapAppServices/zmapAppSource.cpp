@@ -101,7 +101,7 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
   GtkWidget *container ;
   gpointer seq_data = NULL ;
 
-  toplevel = zMapGUIToplevelNew(NULL, "Please specify sequence to be viewed.") ;
+  toplevel = zMapGUIToplevelNew(NULL, "Create Source") ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
@@ -167,16 +167,28 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
 static GtkWidget* makeEntryWidget(const char *label_str, 
                                   const char *default_value,
                                   const char *tooltip,
-                                  GtkWidget *labelbox,
-                                  GtkWidget *entrybox)
+                                  GtkTable *table,
+                                  int *row,
+                                  const int col,
+                                  const int max_col)
 {
+  const int xpad = 4 ;
+  const int ypad = 4 ;
+
   GtkWidget *label = gtk_label_new(label_str) ;
+  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+  gtk_table_attach(table, label, col, col + 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
 
   GtkWidget *entry = gtk_entry_new() ;
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+
+  gtk_table_attach(table, entry, col + 1, max_col, *row, *row + 1, 
+                   (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), 
+                   (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), 
+                   xpad, ypad) ;
+
+  *row += 1;
 
   if (default_value)
     gtk_entry_set_text(GTK_ENTRY(entry), default_value) ;
@@ -194,38 +206,46 @@ static GtkWidget* makeEntryWidget(const char *label_str,
 /* Make the label/entry fields frame. */
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
-  GtkWidget *frame ;
-  GtkWidget *topbox, *hbox, *entrybox, *labelbox ;
-
-  frame = gtk_frame_new( "New File source: " );
+  GtkWidget *frame = gtk_frame_new( "New File source: " ) ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
 
-  topbox = gtk_vbox_new(FALSE, 5) ;
-  gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
-  gtk_container_add (GTK_CONTAINER (frame), topbox) ;
+  const int rows = 5 ;
+  const int cols = 4 ;
+  GtkTable *table = GTK_TABLE(gtk_table_new(rows, cols, FALSE)) ;
+  gtk_container_add (GTK_CONTAINER (frame), GTK_WIDGET(table)) ;
 
-  hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_container_border_width(GTK_CONTAINER(hbox), 0);
-  gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
-
-  /* a vbox for the labels */
-  labelbox = gtk_vbox_new(TRUE, 0) ;
-  gtk_box_pack_start(GTK_BOX(hbox), labelbox, FALSE, FALSE, 0) ;
-
-  /* a vbox for the entries */
-  entrybox = gtk_vbox_new(TRUE, 0) ;
-  gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
+  int row = 0 ;
 
   /* Create the label/entry widgets */
-  main_data->name_widg = makeEntryWidget("Source name :", NULL, "A name for the new source", labelbox, entrybox) ;
-  main_data->host_widg = makeEntryWidget("Host :", DEFAULT_ENSEMBL_HOST, NULL, labelbox, entrybox) ;
-  main_data->port_widg = makeEntryWidget("Port :", DEFAULT_ENSEMBL_PORT, NULL, labelbox, entrybox) ;
-  main_data->user_widg = makeEntryWidget("Username :", DEFAULT_ENSEMBL_USER, NULL, labelbox, entrybox) ;
-  main_data->pass_widg = makeEntryWidget("Password :", NULL, "Can be empty if not required", labelbox, entrybox) ;
-  main_data->dbname_widg = makeEntryWidget("DB name :", NULL, "The database to load features from", labelbox, entrybox) ;
-  main_data->dbprefix_widg = makeEntryWidget("DB prefix :", NULL, "An optional prefix to add to source names for features from this database", labelbox, entrybox) ;
-  main_data->featuresets_widg = makeEntryWidget("Featuresets :", NULL, "If specified, only load these featuresets", labelbox, entrybox) ;
-  main_data->biotypes_widg = makeEntryWidget("Biotypes :", NULL, "If specified, only load these biotypes", labelbox, entrybox) ;
+
+  /* First column */
+  main_data->name_widg = makeEntryWidget("Source name :", NULL, 
+                                         "REQUIRED: Please enter a name for the new source", 
+                                         table, &row, 0, 2) ;
+  main_data->dbname_widg = makeEntryWidget("DB name :", NULL, 
+                                           "REQUIRED: The database to load features from", 
+                                           table, &row, 0, 2) ;
+  main_data->dbprefix_widg = makeEntryWidget("DB prefix :", NULL, 
+                                             "OPTIONAL: If specified, this prefix will be added to source names for features from this database", 
+                                             table, &row, 0, 2) ;
+
+  /* Second column */
+  int max_row = row ;
+  row = 0 ;
+
+  main_data->host_widg = makeEntryWidget("Host :", DEFAULT_ENSEMBL_HOST, NULL, table, &row, 2, cols) ;
+  main_data->port_widg = makeEntryWidget("Port :", DEFAULT_ENSEMBL_PORT, NULL, table, &row, 2, cols) ;
+  main_data->user_widg = makeEntryWidget("Username :", DEFAULT_ENSEMBL_USER, NULL, table, &row, 2, cols) ;
+  main_data->pass_widg = makeEntryWidget("Password :", NULL, "Can be empty if not required", table, &row, 2, cols) ;
+
+  /* Rows at bottom spanning full width */
+  if (max_row > row)
+    row = max_row ;
+
+  main_data->featuresets_widg = makeEntryWidget("Featuresets :", NULL, "If specified, only load these featuresets", 
+                                                table, &row, 0, cols) ;
+  main_data->biotypes_widg = makeEntryWidget("Biotypes :", NULL, "If specified, only load these biotypes", 
+                                             table, &row, 0, cols) ;
 
   return frame ;
 }
