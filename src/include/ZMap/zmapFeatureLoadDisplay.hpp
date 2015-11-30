@@ -227,7 +227,6 @@ typedef struct ZMapFeatureParserCacheStructType
 typedef struct ZMapFeatureSequenceMapStructType
 {
   char *config_file ;
-  GSList *file_list ;   /* list of filenames passed on command line */
   char *stylesfile ;    /* path to styles file given on command line or in config dir */
 
   GHashTable *cached_parsers ; /* filenames (as GQuarks) mapped to cached info about GFF parsing that
@@ -240,8 +239,10 @@ typedef struct ZMapFeatureSequenceMapStructType
   int start, end ;                                          /* chromosome coordinates */
 
 
-  void AddSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
   GList* GetSources(const char *config_str, char **stylesfile) ;
+
+  void AddSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
+  void AddFileSource(const char *file) ;
 
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 

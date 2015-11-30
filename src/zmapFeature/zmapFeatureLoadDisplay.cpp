@@ -41,7 +41,6 @@
 #include <ZMap/zmapConfigIni.hpp>
 
 
-static void getCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout) ;
 static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 
@@ -289,6 +288,34 @@ void ZMapFeatureSequenceMapStructType::AddSource(const std::string &source_name,
 }
 
 
+/* Add a file source to our list of user-created sources. */
+void ZMapFeatureSequenceMapStructType::AddFileSource(const char *file)
+{
+  zMapReturnIfFail(file) ;
+
+  /* Create the new source */
+  ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1) ;
+
+  src->group = SOURCE_GROUP_START ;        // default_value
+  src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
+
+  if (strncasecmp(file, "http://", 7) != 0 && strncasecmp(file, "ftp://", 6) != 0)
+    src->url = g_strdup_printf("file:///%s", file) ;
+
+  /* Add the source to our list. Use the filename as the source name */
+  std::string source_name(file) ;
+  GError *error = NULL ;
+
+  AddSource(source_name, src, &error) ;
+
+  if (error)
+    {
+      zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
+      g_error_free(error) ;
+    }
+}
+
+
 /* Get the full list of all sources (including any from the config file, the given config string,
  * the command line, or any that have been specified dynamically by the user) */
 GList* ZMapFeatureSequenceMapStructType::GetSources(const char *config_str,
@@ -298,9 +325,6 @@ GList* ZMapFeatureSequenceMapStructType::GetSources(const char *config_str,
 
   // get any sources specified in the config file or the given config string
   settings_list = zMapConfigGetSources(config_file, config_str, stylesfile) ;
-
-  // get sources for any URLs passed on command line
-  getCmdLineSources(this, &settings_list) ;
 
   // get sources specified by the user
   if (sources)
@@ -321,28 +345,6 @@ GList* ZMapFeatureSequenceMapStructType::GetSources(const char *config_str,
 /*
  *              Internal routines.
  */
-
-
-/* Add any sources that were specified on the command line to the given list */
-static void getCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout)
-{
-  zMapReturnIfFailSafe(sequence_map) ;
-
-  GSList *file_item = sequence_map->file_list ;
-
-  for ( ; file_item; file_item = file_item->next)
-    {
-      char *file = (char*)(file_item->data) ;
-
-      ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1) ;
-      src->group = SOURCE_GROUP_START ;        // default_value
-      src->url = g_strdup_printf("file:///%s", file) ;
-      src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
-
-      *settings_list_inout = g_list_append(*settings_list_inout, (gpointer)src) ;
-    }
-}
-
 
 static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 {
