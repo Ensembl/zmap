@@ -7,7 +7,7 @@ AM_CPPFLAGS += -I$(top_srcdir)/zmapServer -I@MYSQL_LOCATION@ $(libEnsemblServer_
 
 noinst_LTLIBRARIES = libEnsemblServer.la
 
-libEnsemblServer_la_SOURCES = ensemblServer.cpp ensemblServer_P.hpp
+libEnsemblServer_la_SOURCES = ensemblServer.cpp ensemblServer_P.hpp ensemblUtils.cpp
 libEnsemblServer_la_LIBADD  = 
 libEnsemblServer_la_CFLAGS  = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapServer $(MYSQL_CFLAGS)
 libEnsemblServer_la_LDFLAGS = -lensc $(MYSQL_LDFLAGS)
