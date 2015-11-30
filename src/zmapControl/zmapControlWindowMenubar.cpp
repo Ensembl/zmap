@@ -762,7 +762,8 @@ static void createNewSourceCB(const char *source_name,
   std::string source_name_str(source_name) ;
   ZMapFeatureSequenceMap sequence_map = zMapViewGetSequenceMap(zmap_view) ;
 
-  zMapFeatureSequenceMapAddSource(sequence_map, source_name_str, source, &tmp_error) ;
+  if (sequence_map)
+    sequence_map->AddSource(source_name_str, source, &tmp_error) ;
 
   /* Connect to the new source */
   if (!tmp_error)

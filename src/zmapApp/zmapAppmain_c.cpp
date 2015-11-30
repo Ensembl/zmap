@@ -1264,6 +1264,7 @@ static void checkInputFileForSequenceDetails(const char* const filename,
             seq_map = createSequenceMap(sequence, start, end, config_file, styles_file, seq_maps_inout) ;
 
           /* Cache the filename and parser state */
+          //zMapFeatureSequenceMapAddSource(seq_map, filename) ;
           seq_map->file_list = g_slist_append(seq_map->file_list, g_strdup(filename)) ;
 
           ZMapFeatureParserCache parser_cache = g_new0(ZMapFeatureParserCacheStruct, 1) ;

@@ -399,7 +399,7 @@ static void createNewSourceCB(const char *source_name,
       
   /* Add the new source to the view */
   std::string source_name_str(source_name) ;
-  zMapFeatureSequenceMapAddSource(sequence_map, source_name_str, source, &tmp_error) ;
+  sequence_map->AddSource(source_name_str, source, &tmp_error) ;
 
   if (tmp_error)
     {

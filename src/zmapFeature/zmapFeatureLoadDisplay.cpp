@@ -268,48 +268,45 @@ GList* zMapFeatureGetOrderedColumnsList(ZMapFeatureContextMap context_map)
 
 
 /* Add a source to our list of user-created sources. Sets the error if the name already exists. */
-void zMapFeatureSequenceMapAddSource(ZMapFeatureSequenceMap sequence_map,
-                                     const std::string &source_name, 
-                                     ZMapConfigSource source, 
-                                     GError **error)
+void ZMapFeatureSequenceMapStructType::AddSource(const std::string &source_name, 
+                                                 ZMapConfigSource source, 
+                                                 GError **error)
 {
-  zMapReturnIfFail(sequence_map && source) ;
+  zMapReturnIfFail(source) ;
 
-  if (sequence_map->sources && sequence_map->sources->find(source_name) != sequence_map->sources->end())
+  if (sources && sources->find(source_name) != sources->end())
     {
       g_set_error(error, g_quark_from_string("ZMap"), 99,
                   "Source '%s' already exists", source_name.c_str()) ;
     }
   else
     {
-      if (!sequence_map->sources)
-        sequence_map->sources = new std::map<std::string, ZMapConfigSource> ;
+      if (!sources)
+        sources = new std::map<std::string, ZMapConfigSource> ;
 
-      (*sequence_map->sources)[source_name] = source ;
+      (*sources)[source_name] = source ;
     }
 }
 
 
 /* Get the full list of all sources (including any from the config file, the given config string,
  * the command line, or any that have been specified dynamically by the user) */
-GList* zMapFeatureSequenceMapGetSources(ZMapFeatureSequenceMap sequence_map,
-                                        const char *config_str,
-                                        char **stylesfile)
+GList* ZMapFeatureSequenceMapStructType::GetSources(const char *config_str,
+                                                    char **stylesfile)
 {
   GList *settings_list = NULL ;
-  zMapReturnValIfFail(sequence_map, settings_list) ;
 
   // get any sources specified in the config file or the given config string
-  settings_list = zMapConfigGetSources(sequence_map->config_file, config_str, stylesfile) ;
+  settings_list = zMapConfigGetSources(config_file, config_str, stylesfile) ;
 
   // get sources for any URLs passed on command line
-  getCmdLineSources(sequence_map, &settings_list) ;
+  getCmdLineSources(this, &settings_list) ;
 
   // get sources specified by the user
-  if (sequence_map->sources)
+  if (sources)
     {
-      for (std::map<std::string, ZMapConfigSource>::iterator iter = sequence_map->sources->begin();
-           iter != sequence_map->sources->end() ;
+      for (std::map<std::string, ZMapConfigSource>::iterator iter = sources->begin();
+           iter != sources->end() ;
            ++iter)
         {
           settings_list = g_list_append(settings_list, iter->second) ;
