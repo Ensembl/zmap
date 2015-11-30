@@ -2203,18 +2203,7 @@ static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_l
             }
         }
 
-      if (!zmap_view->sources_loading)
-        {
-          result = FALSE ;
-          g_set_error(error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_SOURCES_LOADING, "Sources failed to load") ;
-        }
-
       zMapConfigSourcesFreeList(settings_list);
-    }
-  else
-    {
-      result = FALSE;
-      g_set_error(error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_SERVERS, "No sources found") ;
     }
 
   return result ;
