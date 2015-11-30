@@ -10,6 +10,7 @@ ARFLAGS = cru
 # I'm hacking in zmapApp here for now....
 AM_CPPFLAGS = \
 -I$(top_srcdir)/zmapApp \
+-std=c++0x \
 -g \
 -I$(top_srcdir)/include \
 -I$(top_builddir) \
