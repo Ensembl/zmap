@@ -919,7 +919,9 @@ static GString *transcriptFeature2Txt(GString *result_in, const char *indent, ZM
         }
     }
 
-
+  if (feature->feature.transcript.vulgar_str)
+    g_string_append_printf(result, "%sVULGAR: \"%s\"\n",
+                           indent, feature->feature.transcript.vulgar_str) ;
 
   return result ;
 }
