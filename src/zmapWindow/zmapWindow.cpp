@@ -1734,10 +1734,9 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   ZMapWindowSelectStruct select = {(ZMapWindowSelectType)0} ;
   FooCanvasGroup *feature_group;
   ZMapStrand query_strand = ZMAPSTRAND_NONE;
-  char *feature_term, *sub_feature_term;
-  int feature_total_length, feature_start, feature_end, feature_length, query_start, query_end ;
-  int sub_feature_index, sub_feature_start, sub_feature_end, sub_feature_length;
-  int query_length ;
+  char *feature_term ;
+  int feature_total_length, feature_start, feature_end, feature_length ;
+  int query_start, query_end, query_length ;
   int dna_start, dna_end ;
   int display_start, display_end ;
   int start, end ;
@@ -1926,12 +1925,11 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       /* zero all of this. */
       feature_total_length = feature_start = feature_end = feature_length
-        = query_start = query_end
-        = sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0 ;
+        = query_start = query_end = query_length = 0 ;
 
-      feature_term = sub_feature_term = NULL;
+      feature_term = NULL ;
 
-
+      // Get overall feature coords.   
       if (zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
                              "total-length", &feature_total_length,
                              "start", &feature_start,
@@ -1957,6 +1955,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
         }
 
 
+      // For an alignment also get overall query coords.   
       if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
         {
           if (zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
@@ -1969,7 +1968,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
               select.feature_desc.feature_query_start  = g_strdup_printf("%d", query_start) ;
               select.feature_desc.feature_query_end    = g_strdup_printf("%d", query_end) ;
               select.feature_desc.feature_query_length = g_strdup_printf("%d", query_length) ;
-              select.feature_desc.feature_query_strand = zMapFeatureStrand2Str(query_strand) ;
+              select.feature_desc.feature_query_strand = (char *)zMapFeatureStrand2Str(query_strand) ;
             }
 
           if (feature_arg->feature.homol.align)
@@ -1987,51 +1986,110 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
         }
       else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
+          // THIS SEEMS A BIT HOKEY...WHEN'S IT ACTUALLY DISPLAYED....   
           if (!(feature->feature.transcript.introns))
             select.feature_desc.sub_feature_none_txt = g_strdup("NO INTRONS") ;
         }
 
 
-
-      if (sub_part)/* If sub_feature == NULL we'll only get the same as previous! */
+      // Do the feature sub-part if there is one.
+      if (sub_part)
         {
-          feature_start = feature_end = feature_length = query_start = query_end =
-            sub_feature_index = sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0 ;
+          char *sub_feature_term ;
+          const char *prop_index, *prop_start, *prop_end, *prop_length, *prop_term ;
+          int sub_feature_index, sub_feature_start, sub_feature_end, sub_feature_length ;
+          int sub_feature_query_start, sub_feature_query_end, sub_feature_query_length ;
+          bool gapped_exon = FALSE ;
 
+
+          sub_feature_index = sub_feature_start = sub_feature_end = sub_feature_length
+            = sub_feature_query_start = sub_feature_query_end = sub_feature_query_length = 0 ;
+
+          if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT
+              && (sub_part->subpart == ZMAPFEATURE_SUBPART_GAP || sub_part->subpart == ZMAPFEATURE_SUBPART_MATCH))
+            gapped_exon = TRUE ;
+
+          if (gapped_exon)
+            {
+              prop_index = "exon-index" ;
+              prop_start = "exon-start" ;
+              prop_end = "exon-end" ;
+              prop_length = "exon-length" ;
+              prop_term = "exon-term" ;
+            }
+          else
+            {
+              prop_index = "index" ;
+              prop_start = "start" ;
+              prop_end = "end" ;
+              prop_length = "length" ;
+              prop_term = "term" ;
+            }
+
+
+          // Get the subpart coords, querying with a sub_part causes the sub-part data to be
+          // returned rather than data for the overall feature.
           if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_part,
-                                 "index",  &sub_feature_index,
-                                 "start",  &sub_feature_start,
-                                 "end",    &sub_feature_end,
-                                 "length", &sub_feature_length,
-                                 "term",   &sub_feature_term,
+                                 prop_index,  &sub_feature_index,
+                                 prop_start,  &sub_feature_start,
+                                 prop_end,    &sub_feature_end,
+                                 prop_length, &sub_feature_length,
+                                 prop_term,   &sub_feature_term,
                                  NULL))
             {
               zmapWindowCoordPairToDisplay(window, sub_feature_start, sub_feature_end,
                                            &sub_feature_start, &sub_feature_end) ;
 
-              select.feature_desc.sub_feature_index  = g_strdup_printf("%d", sub_feature_index) ;
-              select.feature_desc.sub_feature_start  = g_strdup_printf("%d", sub_feature_start) ;
-              select.feature_desc.sub_feature_end    = g_strdup_printf("%d", sub_feature_end) ;
+              select.feature_desc.sub_feature_index = g_strdup_printf("%d", sub_feature_index) ;
+              select.feature_desc.sub_feature_start = g_strdup_printf("%d", sub_feature_start) ;
+              select.feature_desc.sub_feature_end = g_strdup_printf("%d", sub_feature_end) ;
               select.feature_desc.sub_feature_length = g_strdup_printf("%d", sub_feature_length) ;
-              select.feature_desc.sub_feature_term   = sub_feature_term ;
+              select.feature_desc.sub_feature_term = sub_feature_term ;
             }
 
-          if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+          if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT || gapped_exon)
             {
               if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_part,
-                                     "query-start",  &query_start,
-                                     "query-end",    &query_end,
-                                     "query-length", &query_length,
+                                     "query-start",  &sub_feature_query_start,
+                                     "query-end",    &sub_feature_query_end,
+                                     "query-length", &sub_feature_query_length,
                                      NULL))
                 {
-                  select.feature_desc.sub_feature_query_start = g_strdup_printf("%d", query_start) ;
-                  select.feature_desc.sub_feature_query_end   = g_strdup_printf("%d", query_end) ;
+                  select.feature_desc.sub_feature_query_start = g_strdup_printf("%d", sub_feature_query_start) ;
+                  select.feature_desc.sub_feature_query_end   = g_strdup_printf("%d", sub_feature_query_end) ;
+
+                  // why is length not recorded here ?   
                 }
             }
+
+          // For a gapped exon record the exon that the match was in.
+          if (gapped_exon)
+            {
+              int match_index = 0, match_start = 0, match_end = 0, match_length = 0 ;
+              char *match_term = NULL ;
+
+              if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_part,
+                                     "index",  &match_index,
+                                     "start",  &match_start,
+                                     "end",    &match_end,
+                                     "length", &match_length,
+                                     "term", &match_term,
+                                     NULL))
+                {
+                  select.feature_desc.subpart_feature_index = g_strdup_printf("%d", match_index) ;
+                  select.feature_desc.subpart_feature_start = g_strdup_printf("%d", match_start) ;
+                  select.feature_desc.subpart_feature_end = g_strdup_printf("%d", match_end) ;
+                  select.feature_desc.subpart_feature_length = g_strdup_printf("%d", match_length) ;
+                  select.feature_desc.subpart_feature_term = match_term ;
+                }
+            }
+
+
         }
       else
         {
-          select.feature_desc.sub_feature_term = "-";
+          // Not sure why we do this.....   
+          select.feature_desc.sub_feature_term = (char *)"-";
         }
 
       zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
@@ -2041,7 +2099,11 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
         {
           select.feature_desc.feature_name = g_strdup_printf("%s (%s)",
                                                              (char *)g_quark_to_string(feature->original_id),
-                                                             (char *)(strlen(feature->feature.basic.variation_str) < max_variation_str_len ? feature->feature.basic.variation_str : "allele str") ) ;
+                                                             (char *)(strlen(feature->feature.basic.variation_str)
+                                                                      < max_variation_str_len
+                                                                      ? feature->feature.basic.variation_str
+                                                                      : "allele str") ) ;
+
           if (strlen(feature->feature.basic.variation_str) >= max_variation_str_len)
             {
               /* select.feature_desc.feature_variation_string = g_strdup(feature->feature.basic.variation_str) ; */
@@ -2070,7 +2132,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.known_name)
         select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.transcript.known_name) ;
 
-      select.feature_desc.feature_strand = zMapFeatureStrand2Str(zmapWindowStrandToDisplay(window, feature->strand)) ;
+      select.feature_desc.feature_strand = (char *)zMapFeatureStrand2Str(zmapWindowStrandToDisplay(window, feature->strand)) ;
 
       if (zMapStyleIsFrameSpecific(style))
         select.feature_desc.feature_frame = zMapFeatureFrame2Str(zmapWindowFeatureFrame(feature)) ;
@@ -2086,7 +2148,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
         {
           if (feature->feature.homol.percent_id)
-            select.feature_desc.feature_percent_id = g_strdup_printf("%g%%", (double) (feature->feature.homol.percent_id)) ;
+            select.feature_desc.feature_percent_id = g_strdup_printf("%g%%",
+                                                                     (double)(feature->feature.homol.percent_id)) ;
 
         }
 
