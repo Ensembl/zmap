@@ -66,6 +66,9 @@ typedef struct HighlightDataStructType
 static void highlightSplice(gpointer data, gpointer user_data) ;
 
 
+static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *foo, gboolean is_forward) ;
+
+
 
 
 /*
@@ -614,6 +617,105 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
 }
 
 
+gboolean zMapCanvasDrawBoxGapped(GdkDrawable *drawable,
+                                 int fill_set, int outline_set,
+                                 gulong ufill, gulong outline,
+                                 ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                 double x1, double x2,
+                                 AlignGap gapped)
+{
+  gboolean result = FALSE ;
+  FooCanvasItem *foo = (FooCanvasItem *)featureset ;
+
+  /* Draw full gapped alignment boxes, colinear lines etc etc. */
+  AlignGap ag;
+  GdkColor c;
+  int cx1, cy1, cx2, cy2 ;
+  int gx, gy1, gy2 ;
+
+
+
+  /*
+   * create a list of things to draw at this zoom taking onto account bases per pixel
+   *
+   * Note that: The function makeGapped() returns data in canvas pixel coordinates
+   * _relative_to_ the start of the feature, that is the quantity feature->feature->x1.
+   * Hence the rather arcane looking arithmetic on coordinates in the section below
+   * where these are modified for cases that are truncated.
+   */
+
+
+  /* draw them */
+
+  /* get item canvas coords.  gaps data is relative to feature y1 in pixel coordinates */
+  foo_canvas_w2c(foo->canvas, x1, feature->feature->x1 - featureset->start + featureset->dy, &cx1, &cy1) ;
+  foo_canvas_w2c(foo->canvas, x2, 0, &cx2, NULL) ;
+  cy2 = cy1 ;
+
+  for (ag = gapped ; ag ; ag = ag->next)
+    {
+
+      gy1 = cy1 + ag->y1;
+      gy2 = cy1 + ag->y2;
+
+      switch(ag->type)
+        {
+        case GAP_BOX:
+          {
+
+            /* Can't use generalised draw call here because these are already canvas coords. */
+            if (fill_set && (!outline_set || (gy2 - gy1 > 1)))/* ufill will be visible */
+              {
+                c.pixel = ufill;
+                gdk_gc_set_foreground(featureset->gc, &c) ;
+                zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, TRUE) ;
+              }
+
+            if (outline_set)
+              {
+                c.pixel = outline;
+                gdk_gc_set_foreground (featureset->gc, &c);
+                zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, FALSE);
+              }
+
+            break;
+          }
+
+        case GAP_HLINE:/* x coords differ, y is the same */
+          {
+            if (!outline_set)/* must be or else we are up the creek! */
+              break;
+
+            c.pixel = outline;
+            gdk_gc_set_foreground (featureset->gc, &c);
+            zMap_draw_line(drawable, featureset, cx1, gy1, cx2 - 1, gy2);/* GDK foible */
+            break;
+          }
+        case GAP_VLINE_INTRON:      /* fall through */
+        case GAP_VLINE:/* y coords differ, x is the same */
+          if (!outline_set)/* must be or else we are up the creek! */
+            break;
+
+          gx = (cx1 + cx2) / 2;
+          c.pixel = outline;
+          gdk_gc_set_foreground (featureset->gc, &c);
+
+          if (ag->type == GAP_VLINE_INTRON)
+            zMap_draw_broken_line(drawable, featureset, gx, gy1, gx, gy2);
+          else
+            zMap_draw_line(drawable, featureset, gx, gy1, gx, gy2);
+          break;
+
+        } /* switch statement */
+
+    } /* for (ag = align->gapped ; ag ; ag = ag->next) */
+
+
+  return result ;
+}
+
+
+
 
 /* Given the featureset, drawable etc., display all the splices for the given feature.
  * (See Splice_highlighting.html)
@@ -734,5 +836,10 @@ static void highlightSplice(gpointer data, gpointer user_data)
 
   return ;
 }
+
+
+
+
+
 
 
