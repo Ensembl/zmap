@@ -65,9 +65,14 @@ static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeatur
                              double item_x, double item_y, int cx, int cy,
                              double local_x, double local_y, double x_off) ;
 static gboolean hasNCSplices(ZMapFeature left, ZMapFeature right, gboolean *left_nc, gboolean *right_nc) ;
+
+
 static void align_gap_free(AlignGap ag) ;
 static AlignGap align_gap_alloc(void) ;
-static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *foo, gboolean is_forward) ;
+static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *foo,
+                           int start, int end, GArray *align_gaps, gboolean is_forward) ;
+
+
 
 
 
@@ -398,89 +403,17 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
           if (homol->strand == ZMAPSTRAND_REVERSE)
             is_forward = !is_forward;
 
-          align->gapped = makeGapped(feature->feature, featureset->dy - featureset->start, foo, is_forward) ;
-
-          for (ag = align->gapped ; ag ; ag = ag->next )
-            {
-              /* treat start of box */
-              ag->y1 = ag->y1 < 0 ? 0 : ag->y1 ;
-              ag->y2 = ag->y2 < 0 ? 0 : ag->y2 ;
-
-              /* treat end of box */
-              foo_canvas_w2c(foo->canvas, 0, feature->feature->x1, NULL, &cy1) ;
-              foo_canvas_w2c(foo->canvas, 0, feature->feature->x2+1, NULL, &cy2) ;
-              cy2 -= cy1 ;
-              ag->y1 = ag->y1 > cy2 ? cy2 : ag->y1 ;
-              ag->y2 = ag->y2 > cy2 ? cy2 : ag->y2 ;
-            }
+          align->gapped = zMapWindowCanvasAlignmentMakeGapped(featureset, feature,
+                                                              feature->feature->x1,
+                                                              feature->feature->x2,
+                                                              homol->align, is_forward) ;
         }
 
-      /* draw them */
-
-      /* get item canvas coords.  gaps data is relative to feature y1 in pixel coordinates */
-      foo_canvas_w2c(foo->canvas, x1, feature->feature->x1 - featureset->start + featureset->dy, &cx1, &cy1) ;
-      foo_canvas_w2c(foo->canvas, x2, 0, &cx2, NULL) ;
-      cy2 = cy1 ;
-
-      for (ag = align->gapped ; ag ; ag = ag->next)
-        {
-
-          gy1 = cy1 + ag->y1;
-          gy2 = cy1 + ag->y2;
-
-          switch(ag->type)
-            {
-            case GAP_BOX:
-              {
-
-                /* Can't use generalised draw call here because these are already canvas coords. */
-                if (fill_set && (!outline_set || (gy2 - gy1 > 1)))/* ufill will be visible */
-                  {
-                    c.pixel = ufill;
-                    gdk_gc_set_foreground(featureset->gc, &c) ;
-                    zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, TRUE) ;
-                  }
-
-                if (outline_set)
-                  {
-                    c.pixel = outline;
-                    gdk_gc_set_foreground (featureset->gc, &c);
-                    zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, FALSE);
-                  }
-
-                break;
-              }
-
-            case GAP_HLINE:/* x coords differ, y is the same */
-              {
-                if (!outline_set)/* must be or else we are up the creek! */
-                  break;
-
-                c.pixel = outline;
-                gdk_gc_set_foreground (featureset->gc, &c);
-                zMap_draw_line(drawable, featureset, cx1, gy1, cx2 - 1, gy2);/* GDK foible */
-                break;
-              }
-            case GAP_VLINE_INTRON:      /* fall through */
-            case GAP_VLINE:/* y coords differ, x is the same */
-              if (!outline_set)/* must be or else we are up the creek! */
-                break;
-
-              gx = (cx1 + cx2) / 2;
-              c.pixel = outline;
-              gdk_gc_set_foreground (featureset->gc, &c);
-
-              if (ag->type == GAP_VLINE_INTRON)
-                zMap_draw_broken_line(drawable, featureset, gx, gy1, gx, gy2);
-              else
-                zMap_draw_line(drawable, featureset, gx, gy1, gx, gy2);
-              break;
-
-            } /* switch statement */
-
-        } /* for (ag = align->gapped ; ag ; ag = ag->next) */
+      zMapCanvasDrawBoxGapped(drawable,
+                              fill_set, outline_set, ufill, outline,
+                              featureset, feature,
+                              x1, x2, align->gapped) ;
     }
-
 
 
   /* Highlight all splice positions if they exist, do this bumped or unbumped otherwise user
@@ -793,38 +726,59 @@ static void zMapWindowCanvasAlignmentFreeSet(ZMapWindowFeaturesetItem featureset
 }
 
 
-/* Returns a newly-allocated ZMapFeatureSubPartSpan, which the caller must free with g_free,
- * or NULL. */
-static ZMapFeatureSubPart zmapWindowCanvasAlignmentGetSubPart(FooCanvasItem *foo,
-                                                              ZMapFeature feature, double x, double y)
+
+AlignGap zMapWindowCanvasAlignmentMakeGapped(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                             int start, int end,
+                                             GArray *align_gaps,
+                                             gboolean is_forward)
+{
+  AlignGap gapped = NULL ;
+  FooCanvasItem *foo = (FooCanvasItem *)featureset ;
+  AlignGap ag ;
+  int cy1, cy2 ;
+
+  gapped = makeGapped(feature->feature, featureset->dy - featureset->start, foo,
+                      start, end, align_gaps, is_forward) ;
+
+  for (ag = gapped ; ag ; ag = ag->next )
+    {
+      /* treat start of box */
+      ag->y1 = ag->y1 < 0 ? 0 : ag->y1 ;
+      ag->y2 = ag->y2 < 0 ? 0 : ag->y2 ;
+
+      /* treat end of box */
+      foo_canvas_w2c(foo->canvas, 0, start, NULL, &cy1) ;
+      foo_canvas_w2c(foo->canvas, 0, end + 1, NULL, &cy2) ;
+
+      cy2 -= cy1 ;
+      ag->y1 = ag->y1 > cy2 ? cy2 : ag->y1 ;
+      ag->y2 = ag->y2 > cy2 ? cy2 : ag->y2 ;
+    }
+
+  return gapped ;
+}
+
+
+void zMapWindowCanvasAlignmentFreeGapped(AlignGap ag)
+{
+  align_gap_free(ag) ;
+
+  return ;
+}
+
+
+
+ZMapFeatureSubPart zMapWindowCanvasGetGappedSubPart(GArray *aligns_array, ZMapStrand strand, double y)
 {
   ZMapFeatureSubPart sub_part = NULL ;
-  ZMapWindowFeaturesetItem fi = NULL ;
   ZMapAlignBlock ab, prev_ab ;
   int i = 0, match_num = 0, gap_num = 0 ;
 
-  zMapReturnValIfFail(foo && feature, sub_part) ;
 
-  fi = (ZMapWindowFeaturesetItem) foo ;
-
-  /* find the gap or match if we are bumped */
-  if (!fi->bumped)
-    return NULL;
-  if (!feature->feature.homol.align)/* is un-gapped */
-    return NULL;
-
-  /* get sequence coords for x,y,  well y at least */
-  /* AFAICS y is a world coordinate as the caller runs it through foo_w2c() */
-
-  /* we refer to the actual feature gaps data not the display data
-   * as that may be compressed and does not contain sequence info
-   * return the type index and target start and end
-   */
-
-  match_num = feature->feature.homol.align->len ;
+  match_num = aligns_array->len ;
   gap_num = match_num - 1 ;
   prev_ab = NULL ;
-  for (i = 0 ; !sub_part && i < feature->feature.homol.align->len ; i++)
+  for (i = 0 ; !sub_part && i < aligns_array->len ; i++)
     {
       /* in the original foo based code
        * match n corresponds to the match block indexed from 1
@@ -832,7 +786,7 @@ static ZMapFeatureSubPart zmapWindowCanvasAlignmentGetSubPart(FooCanvasItem *foo
        */
       double start, end ;
 
-      ab = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i) ;
+      ab = &g_array_index(aligns_array, ZMapAlignBlockStruct, i) ;
 
       /* Matches.... */
       start = ab->t1 ;
@@ -841,7 +795,7 @@ static ZMapFeatureSubPart zmapWindowCanvasAlignmentGetSubPart(FooCanvasItem *foo
         {
           sub_part = (ZMapFeatureSubPart)g_malloc0(sizeof *sub_part) ;
 
-          if (feature->strand == ZMAPSTRAND_FORWARD)
+          if (strand == ZMAPSTRAND_FORWARD)
             sub_part->index = i + 1 ;
           else
             sub_part->index = (match_num - i) ;
@@ -863,7 +817,7 @@ static ZMapFeatureSubPart zmapWindowCanvasAlignmentGetSubPart(FooCanvasItem *foo
             {
               sub_part = (ZMapFeatureSubPart)g_malloc0(sizeof *sub_part) ;
 
-              if (feature->strand == ZMAPSTRAND_FORWARD)
+              if (strand == ZMAPSTRAND_FORWARD)
                 sub_part->index = i ;
               else
                 sub_part->index = (gap_num - i) + 1 ;
@@ -875,6 +829,51 @@ static ZMapFeatureSubPart zmapWindowCanvasAlignmentGetSubPart(FooCanvasItem *foo
         }
 
       prev_ab = ab ;
+    }
+
+
+  return sub_part ;
+}
+
+
+
+
+/* Returns a newly-allocated ZMapFeatureSubPartSpan, which the caller must free with g_free,
+ * or NULL. */
+ZMapFeatureSubPart zmapWindowCanvasAlignmentGetSubPart(FooCanvasItem *foo,
+                                                       ZMapFeature feature, double x, double y)
+{
+  ZMapFeatureSubPart sub_part = NULL ;
+  ZMapWindowFeaturesetItem fi = NULL ;
+  ZMapAlignBlock ab, prev_ab ;
+  int i = 0, match_num = 0, gap_num = 0 ;
+
+  zMapReturnValIfFail(foo && feature, NULL) ;
+
+  fi = (ZMapWindowFeaturesetItem)foo ;
+
+  if (!fi->bumped)
+    {
+      // gaps/matches only displayed if bumped so only return them if bumped.
+
+      sub_part = NULL ;
+    }
+  else  if (!feature->feature.homol.align)
+    {
+      // Ungapped match so nothing to return.
+     
+      sub_part = NULL ;
+    }
+  else
+    {
+      /* get sequence coords for x,y,  well y at least */
+      /* AFAICS y is a world coordinate as the caller runs it through foo_w2c() */
+
+      /* we refer to the actual feature gaps data not the display data
+       * as that may be compressed and does not contain sequence info
+       * return the type index and target start and end
+       */
+      sub_part = zMapWindowCanvasGetGappedSubPart(feature->feature.homol.align, feature->strand, y) ;
     }
 
   return sub_part ;
@@ -1089,6 +1088,7 @@ static AlignGap align_gap_alloc(void)
 
       n_gap_alloc++;
     }
+
   return ag;
 }
 
@@ -1120,7 +1120,9 @@ static void align_gap_free(AlignGap ag)
  * colour, so we flag this if the colour is visible and add another box not a line. Yuk
  *
  */
-static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *foo, gboolean is_forward)
+static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *foo,
+                           int start, int end,
+                           GArray *align_gaps, gboolean is_forward)
 {
   int i;
   AlignGap ag = NULL ;
@@ -1135,10 +1137,11 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
 
   zMapReturnValIfFail(foo && feature, display_ag) ;
 
-  foo_canvas_w2c(foo->canvas, 0, feature->x1 + offset, NULL, &fy1);
+  foo_canvas_w2c(foo->canvas, 0, start + offset, NULL, &fy1);
 
-  gaps = feature->feature.homol.align ;
-  n = gaps->len ;
+  gaps = align_gaps ;
+  n = align_gaps->len ;
+
   for (i = 0; i < n ;i++)
     {
       ab = &g_array_index(gaps, ZMapAlignBlockStruct, i);
@@ -1226,5 +1229,7 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
 
   return display_ag ;
 }
+
+
 
 
