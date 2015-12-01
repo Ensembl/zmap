@@ -34,16 +34,39 @@
  *-------------------------------------------------------------------
  */
 
+#include <zmapAppServices_P.hpp>
+
 #include <ZMap/zmap.hpp>
 
 #include <string.h>
 
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
+#include <ZMap/zmapEnsemblUtils.hpp>
+
+#include <gbtools/gbtools.hpp>
+
+using namespace std ;
+
 
 #define DEFAULT_ENSEMBL_HOST "ensembldb.ensembl.org"
 #define DEFAULT_ENSEMBL_PORT "3306"
 #define DEFAULT_ENSEMBL_USER "anonymous"
+#define DEFAULT_ENSEMBL_PASS NULL
+#define xpad 4
+#define ypad 4
+
+
+/* Generic definitions of columns for displaying a list of e.g. databases. For now just include a
+ * single column to display the name */
+typedef enum
+  {
+    NAME_COLUMN,       /* shows the value name */
+
+    N_COLUMNS
+  } DialogColumns ;
+
+
 
 /* Data we need in callbacks. */
 typedef struct MainFrameStructName
@@ -59,8 +82,6 @@ typedef struct MainFrameStructName
   GtkWidget *dbprefix_widg ;
   GtkWidget *featuresets_widg ;
   GtkWidget *biotypes_widg ;
-
-  GtkWidget *chooser_widg ;
 
   ZMapFeatureSequenceMap sequence_map ;
   
@@ -79,6 +100,7 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeButtonBox(MainFrame main_data) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
+static void dbnameCB(GtkWidget *widget, gpointer cb_data) ;
 static void cancelCB(GtkWidget *widget, gpointer cb_data) ;
 static void applyCB(GtkWidget *widget, gpointer cb_data) ;
 
@@ -172,9 +194,6 @@ static GtkWidget* makeEntryWidget(const char *label_str,
                                   const int col,
                                   const int max_col)
 {
-  const int xpad = 4 ;
-  const int ypad = 4 ;
-
   GtkWidget *label = gtk_label_new(label_str) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
@@ -210,42 +229,47 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
 
   const int rows = 5 ;
-  const int cols = 4 ;
+  const int cols = 5 ;
   GtkTable *table = GTK_TABLE(gtk_table_new(rows, cols, FALSE)) ;
   gtk_container_add (GTK_CONTAINER (frame), GTK_WIDGET(table)) ;
 
   int row = 0 ;
+  int col = 0 ;
 
   /* Create the label/entry widgets */
 
   /* First column */
-  main_data->name_widg = makeEntryWidget("Source name :", NULL, 
-                                         "REQUIRED: Please enter a name for the new source", 
-                                         table, &row, 0, 2) ;
-  main_data->dbname_widg = makeEntryWidget("DB name :", NULL, 
-                                           "REQUIRED: The database to load features from", 
-                                           table, &row, 0, 2) ;
-  main_data->dbprefix_widg = makeEntryWidget("DB prefix :", NULL, 
-                                             "OPTIONAL: If specified, this prefix will be added to source names for features from this database", 
-                                             table, &row, 0, 2) ;
+  main_data->name_widg = makeEntryWidget("Source name :", NULL, "REQUIRED: Please enter a name for the new source", 
+                                         table, &row, col, col + 3) ;
+  main_data->dbprefix_widg = makeEntryWidget("DB prefix :", NULL, "OPTIONAL: If specified, this prefix will be added to source names for features from this database", 
+                                             table, &row, col, col + 3) ;
+  main_data->dbname_widg = makeEntryWidget("DB name :", NULL, "REQUIRED: The database to load features from", 
+                                           table, &row, col, col + 2) ;
+
+  /* Add a button next to the dbname widget to allow the user to search for a db in this host */
+  GtkWidget *dbname_button = gtk_button_new_from_stock(GTK_STOCK_FIND) ;
+  gtk_signal_connect(GTK_OBJECT(dbname_button), "clicked", GTK_SIGNAL_FUNC(dbnameCB), main_data) ;
+  gtk_table_attach(table, dbname_button, col + 2, col + 3, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
 
   /* Second column */
   int max_row = row ;
   row = 0 ;
+  col += 3 ;
 
-  main_data->host_widg = makeEntryWidget("Host :", DEFAULT_ENSEMBL_HOST, NULL, table, &row, 2, cols) ;
-  main_data->port_widg = makeEntryWidget("Port :", DEFAULT_ENSEMBL_PORT, NULL, table, &row, 2, cols) ;
-  main_data->user_widg = makeEntryWidget("Username :", DEFAULT_ENSEMBL_USER, NULL, table, &row, 2, cols) ;
-  main_data->pass_widg = makeEntryWidget("Password :", NULL, "Can be empty if not required", table, &row, 2, cols) ;
+  main_data->host_widg = makeEntryWidget("Host :", DEFAULT_ENSEMBL_HOST, NULL, table, &row, col, cols) ;
+  main_data->port_widg = makeEntryWidget("Port :", DEFAULT_ENSEMBL_PORT, NULL, table, &row, col, cols) ;
+  main_data->user_widg = makeEntryWidget("Username :", DEFAULT_ENSEMBL_USER, NULL, table, &row, col, cols) ;
+  main_data->pass_widg = makeEntryWidget("Password :", DEFAULT_ENSEMBL_PASS, "Can be empty if not required", table, &row, col, cols) ;
 
   /* Rows at bottom spanning full width */
+  col = 0 ;
   if (max_row > row)
     row = max_row ;
 
   main_data->featuresets_widg = makeEntryWidget("Featuresets :", NULL, "If specified, only load these featuresets", 
-                                                table, &row, 0, cols) ;
+                                                table, &row, col, cols) ;
   main_data->biotypes_widg = makeEntryWidget("Biotypes :", NULL, "If specified, only load these biotypes", 
-                                             table, &row, 0, cols) ;
+                                             table, &row, col, cols) ;
 
   return frame ;
 }
@@ -292,6 +316,227 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_data = (MainFrame)cb_data ;
 
   g_free(main_data) ;
+
+  return ;
+}
+
+
+/* Get the list of databases available from the host specified in the entry widgets */
+static list<string>* mainFrameGetDatabaseList(MainFrame main_data, GError **error)
+{
+  list<string> *db_list = NULL ;
+  
+  zMapReturnValIfFail(main_data && 
+                      main_data->host_widg && main_data->port_widg && 
+                      main_data->user_widg && main_data->pass_widg,
+                      db_list) ;
+
+  const char *host = gtk_entry_get_text(GTK_ENTRY(main_data->host_widg)) ;
+  const int port = atoi(gtk_entry_get_text(GTK_ENTRY(main_data->port_widg))) ;
+  const char *user = gtk_entry_get_text(GTK_ENTRY(main_data->user_widg)) ;
+  const char *pass = gtk_entry_get_text(GTK_ENTRY(main_data->pass_widg)) ;
+  
+  db_list = EnsemblGetDatabaseList(host, port, user, pass, error) ;
+
+  return db_list ;
+}
+
+
+/* Case insensitive version of strstr */
+static char* my_strcasestr(const char *haystack, const char *needle)
+{
+  char *result = 0 ;
+
+  if (haystack && needle && *haystack && *needle)
+    {
+      char *h = g_ascii_strdown(haystack, -1) ;
+      char *n = g_ascii_strdown(needle, -1) ;
+      
+      result = strstr(h, n) ;
+
+      g_free(h) ;
+      g_free(n) ;
+    }
+
+  return result ;
+}
+
+
+/* Callback used to determine if a search term matches a row in the tree. Returns false if it
+ * matches, true otherwise. */
+gboolean search_equal_func_cb(GtkTreeModel *model,
+                              gint column,
+                              const gchar *key,
+                              GtkTreeIter *iter,
+                              gpointer user_data)
+{
+  gboolean result = TRUE ;
+
+  char *column_name = NULL ;
+
+  gtk_tree_model_get(model, iter,
+                     NAME_COLUMN, &column_name,
+                     -1) ;
+
+  if (column_name && 
+      key && 
+      strlen(column_name) > 0 && 
+      strlen(key) > 0 &&
+      my_strcasestr(column_name, key) != NULL)
+    {
+      result = FALSE ;
+    }
+
+  g_free(column_name) ;
+
+  return result ;
+}
+
+
+static GtkTreeView* createDbListWidget(MainFrame main_data, list<string> *db_list, GtkEntry *search_entry)
+{
+  GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING) ;
+
+  /* Loop through all of the database names */
+  for (list<string>::const_iterator db_iter = db_list->begin(); db_iter != db_list->end(); ++db_iter)
+    {
+      /* Create a new row in the list store and set the db name */
+      GtkTreeIter store_iter ;
+      gtk_list_store_append(store, &store_iter);
+      gtk_list_store_set(store, &store_iter, NAME_COLUMN, db_iter->c_str(), -1);
+    }
+
+  GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(store))) ;
+
+  gtk_tree_view_set_enable_search(tree_view, FALSE);
+  gtk_tree_view_set_search_column(tree_view, NAME_COLUMN);
+  gtk_tree_view_set_search_entry(tree_view, search_entry) ;
+  gtk_tree_view_set_search_equal_func(tree_view, search_equal_func_cb, NULL, NULL) ;
+
+  GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+  GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("Database name", 
+                                                                       renderer, 
+                                                                       "text", 
+                                                                       NAME_COLUMN, 
+                                                                       NULL);
+
+  gtk_tree_view_column_set_resizable(column, TRUE) ;
+  gtk_tree_view_append_column(tree_view, column);
+
+  return tree_view ;
+}
+
+
+/* Update the given entry with selected values from the given tree */
+static gboolean setEntryFromSelection(GtkEntry *entry, GtkTreeView *tree_view)
+{
+  gboolean ok = FALSE ;
+
+  GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
+
+  if (tree_selection)
+    {
+      /* Loop through all rows in the selection and compile values into a semi-colon-separated
+       * list */
+      string result ;
+      GtkTreeModel *model = NULL ;
+      GList *rows = gtk_tree_selection_get_selected_rows(tree_selection, &model) ;
+          
+      for (GList *row = rows; row; row = g_list_next(rows))
+        {
+          GtkTreePath *path = (GtkTreePath*)(row->data) ;
+          GtkTreeIter iter ;
+          gtk_tree_model_get_iter(model, &iter, path) ;
+
+          char *value_str = NULL ;
+
+          gtk_tree_model_get(model, &iter, NAME_COLUMN, &value_str, -1) ;
+
+          if (value_str)
+            {
+              if (result.size() > 0)
+                result += "; " ;
+                
+              result += value_str ;
+
+              g_free(value_str) ;
+              value_str = NULL ;
+            }
+        }
+
+      gtk_entry_set_text(entry, result.c_str()) ;
+      ok = TRUE ;
+    }
+  else
+    {
+      zMapCritical("%s", "Please select a database name") ;
+      ok = FALSE ;
+    }
+
+  return ok ;
+}
+
+
+/* Called when the user hits the button to search for a database name. If the user selects a name
+ * successfully then this updates the value in the dbname_widg */
+static void dbnameCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+  zMapReturnIfFail(main_data) ;
+
+  /* Connect to the host and get the list of databases */
+  GError *error = NULL ;
+  list<string> *db_list = mainFrameGetDatabaseList(main_data, &error) ;
+
+  if (db_list)
+    {
+      GtkWidget *dialog = gtk_dialog_new_with_buttons("Select database",
+                                                      NULL,
+                                                      (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                      GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                                      NULL);
+
+
+
+      gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
+      int height = 0 ;
+
+      if (gbtools::GUIGetTrueMonitorSize(dialog, NULL, &height))
+        gtk_window_set_default_size(GTK_WINDOW(dialog), -1, height * 0.5) ;
+
+      GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
+
+      GtkWidget *hbox = gtk_hbox_new(FALSE, 0) ;
+      gtk_box_pack_start(content, hbox, FALSE, FALSE, 0) ;
+      gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Search:"), FALSE, FALSE, 0) ;
+      GtkEntry *search_entry = GTK_ENTRY(gtk_entry_new()) ;
+      gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(search_entry), FALSE, FALSE, 0) ;
+
+      GtkWidget *scrollwin = gtk_scrolled_window_new(NULL, NULL) ;
+      gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollwin), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+      gtk_box_pack_start(content, GTK_WIDGET(scrollwin), TRUE, TRUE, 0) ;
+
+      GtkTreeView *db_list_widget = createDbListWidget(main_data, db_list, search_entry) ;
+      gtk_container_add(GTK_CONTAINER(scrollwin), GTK_WIDGET(db_list_widget)) ;
+
+      gtk_widget_show_all(dialog) ;
+
+      gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+
+      if (response == GTK_RESPONSE_OK)
+        {
+          if (setEntryFromSelection(GTK_ENTRY(main_data->dbname_widg), db_list_widget))
+            {
+              delete db_list ;
+              gtk_widget_destroy(dialog) ;
+            }
+        }
+    }
+  else
+    {
+      zMapCritical("Could not get database list: %s", error ? error->message : "") ;
+    }
 
   return ;
 }

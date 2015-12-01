@@ -31,6 +31,7 @@
 
 /* File needs renaming to be a general config getting file.... */
 
+#include <zmapAppServices_P.hpp>
 
 #include <ZMap/zmap.hpp>
 
@@ -44,22 +45,6 @@
 #include <ZMap/zmapUtilsDebug.hpp>
 
 #include <string.h>
-
-
-/*
- * We follow glib convention in error domain naming:
- *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
- */
-#define ZMAP_APP_SERVICES_ERROR g_quark_from_string("ZMAP_APP_SERVICES_ERROR")
-
-typedef enum
-{
-  ZMAPAPPSERVICES_ERROR_BAD_COORDS,
-  ZMAPAPPSERVICES_ERROR_NO_SEQUENCE,
-  ZMAPAPPSERVICES_ERROR_CONFLICT_DATASET,
-  ZMAPAPPSERVICES_ERROR_CONFLICT_SEQUENCE,
-  ZMAPAPPSERVICES_ERROR_BAD_SEQUENCE_NAME
-} ZMapUtilsError;
 
 
 /* SHOULD MAKE THIS INTO A COVER FUNCTION FOR A MORE GENERALISED FUNCTION THAT GIVEN

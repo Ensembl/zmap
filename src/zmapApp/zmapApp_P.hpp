@@ -125,7 +125,7 @@ typedef enum
   ZMAPAPP_ERROR_CHECK_FILE,
   ZMAPAPP_ERROR_NO_SOURCES,
   ZMAPAPP_ERROR_SEQUENCE_MAP
-} ZMapUtilsError;
+} ZMapAppError;
 
 
 

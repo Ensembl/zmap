@@ -42,10 +42,27 @@
 using namespace std ;
 
 
+/*
+ * We follow glib convention in error domain naming:
+ *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
+ */
+#define ZMAP_ENSEMBLUTILS_ERROR g_quark_from_string("ZMAP_ENSEMBLUTILS_ERROR")
+
+/*
+ * Some error types for use in the view
+ */
+typedef enum
+{
+  ZMAPENSEMBLUTILS_ERROR_CONNECT,
+} ZMapEnsemblUtilsError ;
+
+
+
 list<string>* EnsemblGetDatabaseList(const char *host, 
                                      const int port,
                                      const char *user,
-                                     const char *passwd)
+                                     const char *passwd,
+                                     GError **error)
 {
   list<string> *result = NULL ;
   zMapReturnValIfFail(host, result) ;
@@ -61,6 +78,8 @@ list<string>* EnsemblGetDatabaseList(const char *host,
 
   if (mysql)
     {
+      result = new list<string> ;
+
       char *statement = g_strdup("SHOW DATABASES") ;
       const int statement_len = strlen(statement) ;
 
@@ -72,14 +91,16 @@ list<string>* EnsemblGetDatabaseList(const char *host,
 
       while (mysql_row)
         {
-          result->push_back(string(mysql_row[0])) ;
+          string string_val(mysql_row[0]) ;
+          result->push_back(string_val) ;
 
           mysql_row = mysql_fetch_row(mysql_results) ;
         }
     }
   else
     {
-      zMapLogWarning("Failed to open connection to '%s:%d", host, port) ;
+      g_set_error(error, ZMAP_ENSEMBLUTILS_ERROR, ZMAPENSEMBLUTILS_ERROR_CONNECT,
+                  "Failed to open connection to '%s:%d' for user '%s'", host, port, user) ;
     }
 
   pthread_mutex_unlock(&mutex) ;
