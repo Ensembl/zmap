@@ -74,14 +74,22 @@ typedef enum
 } ZMapWindowCanvasTranscriptSubType;
 
 
+// Is there one of these per exon/intron or per transcript ????
+// looks like one per exon/intron.....
+//   
 typedef struct _zmapWindowCanvasTranscriptStruct
 {
   zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 
+  // ??? what was this used for ??   
   int index;		/* of intron or exon */
 
   ZMapWindowCanvasTranscriptSubType sub_type;
   /* can tell if exon has CDS/  UTR from feature->feature struct */
+
+  // Try this here for gapped exons....   
+  AlignGap gapped ;                                         /* boxes and lines to draw when bumped */
+
 
 } zmapWindowCanvasTranscriptStruct, *ZMapWindowCanvasTranscript;
 

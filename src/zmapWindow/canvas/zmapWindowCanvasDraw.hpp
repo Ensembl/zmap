@@ -34,6 +34,7 @@
 
 #include <glib.h>
 #include <zmapWindowCanvasFeatureset.hpp>
+#include <zmapWindowCanvasAlignment.hpp>
 
 
 /* X Windows has some limits that are part of the protocol, this means they cannot
@@ -88,6 +89,13 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
 void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                                               GdkDrawable *drawable, double x1, double x2) ;
 
+
+gboolean zMapCanvasDrawBoxGapped(GdkDrawable *drawable,
+                                 int fill_set, int outline_set,
+                                 gulong ufill, gulong outline,
+                                 ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                 double x1, double x2,
+                                 AlignGap gapped) ;
 
 
 #endif /* !ZMAP_CANVAS_DRAW_H */

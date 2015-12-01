@@ -206,6 +206,15 @@ static gboolean LOG_MEM_CALLS = FALSE ;
 ZMAP_MAGIC_NEW(feature_magic_G, ZMapFeatureAnyStruct) ;
 #endif /* FEATURES_NEED_MAGIC */
 
+
+
+
+/*
+ *                               External package routines.
+ */
+
+
+
 /* !
  * A set of functions for allocating, populating and destroying features.
  * The feature create and add data are in two steps because currently the required
@@ -376,11 +385,6 @@ gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *
 }
 #endif
 
-
-
-/*
- *                               External package routines.
- */
 
 
 gboolean zMapFeatureAnyHasChildren(ZMapFeatureAny feature_any)
@@ -1908,6 +1912,8 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
         if (orig_feature->url)
           new_feature->url = g_strdup(orig_feature->url) ;
 
+
+        // These special cases should be moved out to the files concerned with these types of feature.   
         if (new_feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
           {
             ZMapAlignBlockStruct align;
@@ -1917,10 +1923,9 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
               {
                 unsigned int i ;
 
-                new_feature->feature.homol.align =
-                  g_array_sized_new(FALSE, TRUE,
-                    sizeof(ZMapAlignBlockStruct),
-                    orig_feature->feature.homol.align->len);
+                new_feature->feature.homol.align = g_array_sized_new(FALSE, TRUE,
+                                                                     sizeof(ZMapAlignBlockStruct),
+                                                                     orig_feature->feature.homol.align->len);
 
                 for (i = 0; i < orig_feature->feature.homol.align->len; i++)
                   {
@@ -1965,13 +1970,61 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
                       g_array_append_val(new_feature->feature.transcript.introns, span);
                   }
               }
+
+            // nested copy, it's a list of lists...
+            if (orig_feature->feature.transcript.exon_aligns != NULL)
+              {
+                int i ;
+                GArray *orig_array_aligns, *new_array_aligns ;
+
+                orig_array_aligns = orig_feature->feature.transcript.exon_aligns ;
+
+                new_array_aligns = g_array_sized_new(FALSE, TRUE, sizeof(GArray *), orig_array_aligns->len) ;
+
+                // Step through the array of GArrays each one a GArray of align blocks.   
+                for (i = 0 ; i < orig_array_aligns->len ; i++)
+                  {
+                    GArray *orig_aligns, *new_aligns ;
+                    int j ;
+
+                    orig_aligns = g_array_index(orig_array_aligns, GArray *, i) ;
+
+                    // Allocate a new GArray to hold a copy of the original align blocks and copy
+                    // the blocks.
+                    new_aligns = g_array_sized_new(FALSE, TRUE, sizeof(GArray *), orig_array_aligns->len) ;
+
+                    for (j = 0 ; j < orig_aligns->len ; j++)
+                      {
+                        ZMapAlignBlockStruct align ;
+
+                        align = g_array_index(orig_aligns, ZMapAlignBlockStruct, j) ;
+                        new_aligns = g_array_append_val(new_aligns, align) ;
+                      }
+
+                    // put the new array of aligns into the array of arrays. 
+                    new_array_aligns = g_array_append_val(new_array_aligns, new_aligns) ;
+
+                  }
+
+                // ok...all done, add the new array of arrays.   
+                new_feature->feature.transcript.exon_aligns = new_array_aligns ;
+              }
+
+            if (orig_feature->feature.transcript.vulgar_str)
+              new_feature->feature.transcript.vulgar_str = g_strdup(orig_feature->feature.transcript.vulgar_str) ;
           }
+
+
 
         break ;
       }
+
     default:
-      zMapWarnIfReached();
-      break;
+      {
+        zMapWarnIfReached() ;
+
+        break;
+      }
     }
 
   return new_feature_any ;
@@ -2016,11 +2069,34 @@ static void destroyFeature(ZMapFeature feature)
 
   if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
+      // should be a call to the transcript file code......   
+
+
       if (feature->feature.transcript.exons)
         g_array_free(feature->feature.transcript.exons, TRUE) ;
 
       if (feature->feature.transcript.introns)
         g_array_free(feature->feature.transcript.introns, TRUE) ;
+
+      if (feature->feature.transcript.exon_aligns)
+        {
+          int i ;
+
+          for (i = 0 ; i < feature->feature.transcript.exon_aligns->len ; i++)
+            {
+              GArray *align_array ;
+
+              align_array = g_array_index(feature->feature.transcript.exon_aligns, GArray *, i) ;
+
+              g_array_free(align_array, TRUE) ;
+            }
+
+          g_array_free(feature->feature.transcript.exon_aligns, TRUE) ;
+        }
+
+      if (feature->feature.transcript.vulgar_str)
+        g_free((void*)(feature->feature.transcript.vulgar_str)) ;
+
     }
   else if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
     {
@@ -3072,9 +3148,9 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
 /* Allocate a feature structure of the requested type, filling in the feature any fields. */
 static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureLevelType struct_type,
-      ZMapFeatureAny parent,
-      GQuark original_id, GQuark unique_id,
-      GHashTable *children)
+                                              ZMapFeatureAny parent,
+                                              GQuark original_id, GQuark unique_id,
+                                              GHashTable *children)
 {
   ZMapFeatureAny feature_any = NULL ;
   gulong nbytes = 0 ;

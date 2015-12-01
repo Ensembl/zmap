@@ -156,12 +156,12 @@ gboolean zMapFeatureTranscriptInit(ZMapFeature feature)
   if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT
       && (!(feature->feature.transcript.exons) && !(feature->feature.transcript.introns)))
     {
+      feature->feature.transcript.exons = zMapFeatureTranscriptCreateSpanArray() ;
 
-      feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
-                                                            sizeof(ZMapSpanStruct), 30) ;
+      feature->feature.transcript.introns = zMapFeatureTranscriptCreateSpanArray() ;
 
-      feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
-                                                              sizeof(ZMapSpanStruct), 30) ;
+      feature->feature.transcript.exon_aligns = zMapFeatureTranscriptCreateSpanArray() ;
+
 
       result = TRUE ;
     }
@@ -170,7 +170,15 @@ gboolean zMapFeatureTranscriptInit(ZMapFeature feature)
 }
 
 
+// Make an introns or exons array in a standard way.   
+GArray *zMapFeatureTranscriptCreateSpanArray(void)
+{
+  GArray *spans ;
 
+  spans = g_array_sized_new(FALSE, TRUE, sizeof(ZMapSpanStruct), 40) ;
+
+  return spans ;
+}
 
 /*
  * Adds CDS start and end to a feature but tests values as we go along to make sure
@@ -378,6 +386,97 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 
   return result ;
 }
+
+
+
+// Add exons, introns, fails if any of these are already there.
+gboolean zMapFeatureTranscriptAddSubparts(ZMapFeature feature, GArray *exons, GArray *introns)
+{
+  gboolean result = FALSE ;
+
+  if ((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && exons && introns)
+      && !(feature->feature.transcript.exons->len || feature->feature.transcript.introns->len))
+    {
+      if (feature->feature.transcript.exons)
+        g_array_free(feature->feature.transcript.exons, TRUE) ;
+      feature->feature.transcript.exons = exons ;
+
+      if (feature->feature.transcript.introns)
+        g_array_free(feature->feature.transcript.introns, TRUE) ;
+      feature->feature.transcript.introns = introns ;
+
+      // Update transcript overall start/end.   
+      feature->x1 = ((ZMapSpan)&(g_array_index(exons, ZMapSpanStruct, 0)))->x1 ;
+
+      feature->x2 = ((ZMapSpan)&(g_array_index(exons, ZMapSpanStruct, (exons->len - 1))))->x2 ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+gboolean zMapFeatureTranscriptAddAlignparts(ZMapFeature feature,
+                                            int query_start, int query_end, ZMapStrand query_strand,
+                                            GArray *exon_aligns, const char *vulgar_str)
+{
+  gboolean result = FALSE ;
+
+  if ((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+      && (query_start > 0 && query_start < query_end && (query_strand))
+      && !(zMapFeatureTranscriptHasAlignParts(feature)))
+    {
+      feature->feature.transcript.query_start = query_start ;
+      feature->feature.transcript.query_end = query_end ;
+      feature->feature.transcript.query_strand = query_strand ;
+
+      // this array is optional.   
+      if (exon_aligns)
+        {
+          if (feature->feature.transcript.exon_aligns)
+            g_array_free(feature->feature.transcript.exon_aligns, TRUE) ;
+      
+          feature->feature.transcript.exon_aligns = exon_aligns ;
+        }
+
+      if (vulgar_str && *vulgar_str)
+        feature->feature.transcript.vulgar_str = g_strdup(vulgar_str) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+bool zMapFeatureTranscriptHasAlignParts(ZMapFeature feature)
+{
+  bool result = false ;
+
+  if ((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+      && (feature->feature.transcript.exon_aligns->len))
+    result = true ;
+
+  return result ;
+}
+
+// exon_index from zero.
+GArray *zMapFeatureTranscriptGetAlignParts(ZMapFeature feature, int exon_index)
+{
+  GArray *exon_aligns = NULL ;
+
+  if ((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+      && (exon_index < feature->feature.transcript.exons->len)
+      && (feature->feature.transcript.exon_aligns->len)
+      && ((g_array_index(feature->feature.transcript.exon_aligns, GArray *, exon_index))->len))
+    exon_aligns = g_array_index(feature->feature.transcript.exon_aligns, GArray *, exon_index) ;
+
+  return exon_aligns ;
+}
+
+
 
 
 /* Remove all the variation metadata in a transcript. */

@@ -1414,7 +1414,8 @@ gboolean zMapAttParseGaps(ZMapGFFAttribute pAttribute, GArray ** const pGaps, ZM
  * cigar_exonerate (according to http://www.sequenceontology.org/resources/gff3.html).
  */
 gboolean zMapAttParseGap(ZMapGFFAttribute pAttribute , GArray ** const pGaps,
-  ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
+                         ZMapStrand cRefStrand, int iRefStart, int iRefEnd,
+                         ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
 
 {
   gboolean bResult = FALSE ;
@@ -1450,13 +1451,15 @@ gboolean zMapAttParseGap(ZMapGFFAttribute pAttribute , GArray ** const pGaps,
  * return false.
  */
 gboolean zMapAttParseCigarExonerate(ZMapGFFAttribute pAttribute , GArray ** const pGaps,
-  ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
+                                    ZMapStrand cRefStrand, int iRefStart, int iRefEnd,
+                                    ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseCigarExonerate()" ;
 
   if (!pAttribute)
     return bResult ;
+
   char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp(sAttributeName_cigar_exonerate, zMapGFFAttributeGetNamestring(pAttribute)))
     {
@@ -1478,16 +1481,19 @@ gboolean zMapAttParseCigarExonerate(ZMapGFFAttribute pAttribute , GArray ** cons
 /*
  * This parses the "cigar_ensemble" attribute.
  */
-gboolean zMapAttParseCigarEnsembl(ZMapGFFAttribute pAttribute, GArray ** const pGaps ,
-  ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
+gboolean zMapAttParseCigarEnsembl(ZMapGFFAttribute pAttribute, GArray **const pGaps,
+                                  ZMapStrand cRefStrand, int iRefStart, int iRefEnd,
+                                  ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseCigarEnsembl()" ;
 
   if (!pAttribute)
     return bResult ;
+
   char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-    if (strcmp(sAttributeName_cigar_ensembl, zMapGFFAttributeGetNamestring(pAttribute)))
+
+  if (strcmp(sAttributeName_cigar_ensembl, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1506,25 +1512,26 @@ gboolean zMapAttParseCigarEnsembl(ZMapGFFAttribute pAttribute, GArray ** const p
 /*
  * This parses the "cigar_bam" attribute.
  */
-gboolean zMapAttParseCigarBam(ZMapGFFAttribute pAttribute , GArray ** const pGaps,
-  ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd )
+gboolean zMapAttParseCigarBam(ZMapGFFAttribute pAttribute , GArray **const pGaps,
+                              ZMapStrand cRefStrand, int iRefStart, int iRefEnd,
+                              ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
 {
   gboolean bResult = FALSE ;
-  static const char *sMyName = "zMapAttParseCigarBam()" ;
+  char *sValue ;
 
-  if (!pAttribute)
-    return bResult ;
-  char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+
   if (strcmp(sAttributeName_cigar_bam, zMapGFFAttributeGetNamestring(pAttribute)))
     {
-      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-      return bResult ;
+      zMapLogWarning("Attribute wrong type %s %s", zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
     }
-
-  bResult = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_BAM,
-                                            cRefStrand, iRefStart, iRefEnd,
-                                            cMatchStrand, iMatchStart, iMatchEnd,
-                                            sValue, pGaps) ;
+  else
+    {
+      bResult = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_BAM,
+                                                cRefStrand, iRefStart, iRefEnd,
+                                                cMatchStrand, iMatchStart, iMatchEnd,
+                                                sValue, pGaps) ;
+    }
 
   return bResult ;
 }
@@ -1535,33 +1542,30 @@ gboolean zMapAttParseCigarBam(ZMapGFFAttribute pAttribute , GArray ** const pGap
 /*
  * This parses the "vulgar_exonerate" attribute. This one is not yet implemented.
  */
-gboolean zMapAttParseVulgarExonerate(ZMapGFFAttribute pAttribute , GArray ** const pGaps ,
-  ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
+gboolean zMapAttParseVulgarExonerate(ZMapGFFAttribute pAttribute,
+                                     ZMapStrand cRefStrand, int iRefStart, int iRefEnd,
+                                     ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd,
+                                     GArray **exons_out, GArray **introns_out, GArray **exon_aligns_out)
 {
   gboolean bResult = FALSE ;
-  static const char *sMyName = "zMapAttParseVulgarExonerate()" ;
-  static const char *sFormat = "%*[\"]%500[^\"]%*[\"] %*s" ;
-  static const unsigned int iExpectedFields = 1 ;
-  char sStringBuff[ZMAPGFF_MAX_FIELD_CHARS + 1] = "" ;
+  const char *sValue ;
 
-  if (!pAttribute)
-    return bResult ;
-  const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+
   if (strcmp(sAttributeName_vulgar_exonerate, zMapGFFAttributeGetNamestring(pAttribute)))
     {
-      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-      return bResult ;
+      zMapLogWarning("Attribute wrong type %s %s", zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
     }
-
-  /*
-   * First step is to extract the quoted part of the value string of the attribute.
-   */
-  if (sscanf(sValue, sFormat, sStringBuff) == iExpectedFields)
+  else
     {
-      bResult = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_VULGAR_EXONERATE,
-                                                cRefStrand, iRefStart, iRefEnd,
-                                                cMatchStrand, iMatchStart, iMatchEnd,
-                                                sStringBuff, pGaps) ;
+      /*
+       * First step is to extract the quoted part of the value string of the attribute.
+       */
+      bResult = zMapFeatureAlignmentString2ExonsGaps(ZMAPALIGN_FORMAT_VULGAR_EXONERATE,
+                                                     cRefStrand, iRefStart, iRefEnd,
+                                                     cMatchStrand, iMatchStart, iMatchEnd,
+                                                     sValue,
+                                                     exons_out, introns_out, exon_aligns_out) ;
     }
 
   return bResult ;

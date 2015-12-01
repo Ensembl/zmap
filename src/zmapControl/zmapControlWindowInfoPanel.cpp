@@ -235,18 +235,40 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
            * Subpart start and end data
            */
           if (feature_desc->sub_feature_start)
-            text[3] = g_strdup_printf("%s %s: %s, %s%s%s%s%s%s%s%s",
-                                      feature_desc->sub_feature_term,
-                                      feature_desc->sub_feature_index,
-                                      feature_desc->sub_feature_start,
-                                      feature_desc->sub_feature_end,
-                                      (feature_desc->sub_feature_query_start ? "  <-  " : ""),
-                                      (feature_desc->sub_feature_query_start ? feature_desc->sub_feature_query_start : ""),
-                                      (feature_desc->sub_feature_query_start ? ", " : ""),
-                                      (feature_desc->sub_feature_query_end ? feature_desc->sub_feature_query_end : ""),
-                                      (feature_desc->sub_feature_length ? "  (" : ""),
-                                      (feature_desc->sub_feature_length ? feature_desc->sub_feature_length : ""),
-                                      (feature_desc->sub_feature_length ? ")" : "")) ;
+            {
+              GString *sub_feature_text ;
+
+              sub_feature_text = g_string_sized_new(1000) ;
+
+              g_string_append_printf(sub_feature_text, "%s %s: %s, %s",
+                                     feature_desc->sub_feature_term,
+                                     feature_desc->sub_feature_index,
+                                     feature_desc->sub_feature_start,
+                                     feature_desc->sub_feature_end) ;
+
+              if (feature_desc->sub_feature_query_start)
+                g_string_append_printf(sub_feature_text, "%s%s%s%s",
+                                       (feature_desc->sub_feature_query_start ? "  <-  " : ""),
+                                       (feature_desc->sub_feature_query_start ? feature_desc->sub_feature_query_start : ""),
+                                       (feature_desc->sub_feature_query_start ? ", " : ""),
+                                       (feature_desc->sub_feature_query_end ? feature_desc->sub_feature_query_end : "")) ;
+
+              if (feature_desc->sub_feature_length)
+                g_string_append_printf(sub_feature_text, "%s%s%s",
+                                       (feature_desc->sub_feature_length ? "  (" : ""),
+                                       (feature_desc->sub_feature_length ? feature_desc->sub_feature_length : ""),
+                                       (feature_desc->sub_feature_length ? ")" : "")) ;
+
+              if ((feature_desc->subpart_feature_term))
+                g_string_append_printf(sub_feature_text, "  <-  %s %s: %s, %s (%s)",
+                                       feature_desc->subpart_feature_term,
+                                       feature_desc->subpart_feature_index,
+                                       feature_desc->subpart_feature_start,
+                                       feature_desc->subpart_feature_end,
+                                       feature_desc->subpart_feature_length) ;
+
+              text[3] = g_string_free(sub_feature_text, FALSE) ;
+            }
           else if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->sub_feature_none_txt)
             text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
           else if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature_desc->sub_feature_none_txt)

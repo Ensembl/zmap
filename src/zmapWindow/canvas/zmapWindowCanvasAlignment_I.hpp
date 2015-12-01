@@ -38,27 +38,6 @@
 #include <zmapWindowCanvasAlignment.hpp>
 
 
-/* Different parts of a gapped alignment. */
-typedef enum
-  {
-    GAP_BOX,                                                /* Match box. */
-    GAP_HLINE,                                              /* Drawing a match boundary where there is no gap. */
-    GAP_VLINE,                                              /* Drawing gap line between matches. */
-    GAP_VLINE_INTRON                                        /* Um...don't know... */
-} GappedAlignFeaturesType ;
-
-
-typedef struct _AlignGapStruct
-{
-  int y1,y2;                                                /* in pixel coords from feature y1 */
-
-  GappedAlignFeaturesType type ;                            /* See GAP_XXXX above... */
-
-  gboolean edge;                                            /* for squashed short reads: edge blocks are diff colour */
-
-  struct _AlignGapStruct *next;
-
-} AlignGapStruct, *AlignGap;
 
 #define N_ALIGN_GAP_ALLOC	1000
 

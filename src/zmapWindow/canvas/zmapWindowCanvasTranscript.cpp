@@ -47,6 +47,9 @@
 static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
                                    ZMapWindowCanvasFeature feature,
                                    GdkDrawable *drawable, GdkEventExpose *expose) ;
+static void transcriptPreZoom(ZMapWindowFeaturesetItem featureset) ;
+static void transcriptZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
+static void transcriptFreeSet(ZMapWindowFeaturesetItem featureset) ;
 static ZMapWindowCanvasFeature transcriptAddFeature(ZMapWindowFeaturesetItem featureset,
                                                     ZMapFeature feature, double y1, double y2) ;
 static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo, ZMapFeature feature, double x, double y) ;
@@ -75,13 +78,17 @@ void zMapWindowCanvasTranscriptInit(void)
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
   gpointer feature_funcs[CANVAS_FEATURE_FUNC_N_FUNC] = { NULL };
 
-  funcs[FUNC_PAINT] = (void *)transcriptPaintFeature;
-  funcs[FUNC_ADD]   = (void *)transcriptAddFeature;
+  funcs[FUNC_PAINT] = (void *)transcriptPaintFeature ;
+  funcs[FUNC_PRE_ZOOM] = (void *)transcriptPreZoom ;
+  funcs[FUNC_ZOOM] = (void *)transcriptZoomSet ;
+  funcs[FUNC_FREE] = (void *)transcriptFreeSet ;
+  funcs[FUNC_ADD] = (void *)transcriptAddFeature ;
 
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TRANSCRIPT, funcs, (size_t)0) ;
 
   feature_funcs[CANVAS_FEATURE_FUNC_EXTENT] = (void *)transcriptGetFeatureExtent ;
-  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = (void *)transcriptGetSubPart;
+  feature_funcs[CANVAS_FEATURE_FUNC_SUBPART] = (void *)transcriptGetSubPart ;
+
   zMapWindowCanvasFeatureSetSize(FEATURE_TRANSCRIPT, feature_funcs, sizeof(zmapWindowCanvasTranscriptStruct)) ;
 
   return ;
@@ -97,18 +104,20 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
   int colours_set = 0, fill_set = 0, outline_set = 0 ;
   int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
   double x1 = 0.0, x2 = 0.0, y1 = 0.0, y2 = 0.0, y1_cache = 0.0, y2_cache = 0.0, col_width = 0.0 ;
-  ZMapWindowCanvasTranscript tr = NULL ;
   FooCanvasItem *foo = NULL ;
+  ZMapWindowCanvasTranscript tr = NULL ;
+  ZMapFeature real_feature ;
   ZMapTranscript transcript = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
   gboolean ignore_truncation_glyphs = FALSE,
     truncated_start = FALSE,
     truncated_end = FALSE ;
 
-  zMapReturnIfFail(featureset && feature && feature->feature && drawable && expose ) ;
+  zMapReturnIfFail(featureset && feature && feature->feature && drawable && expose) ;
 
   foo = (FooCanvasItem *) featureset;
   tr = (ZMapWindowCanvasTranscript) feature;
+  real_feature = feature->feature ;
   transcript = &feature->feature->feature.transcript;
   style = *feature->feature->style;
 
@@ -283,13 +292,41 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
   /*
    * Now draw either box for CDS of exon, or intron lines.
    */
-  if(tr->sub_type == TRANSCRIPT_EXON)
+  if (tr->sub_type == TRANSCRIPT_EXON)
     {
-      zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set, outline_set, ufill, outline) ;
+      int exon_index = tr->index - 1 ;
+      GArray *exon_aligns ;
+
+      // ok, here we need to detect whether this exon has gaps and act accordingly....   
+      if (!zMapFeatureTranscriptHasAlignParts(real_feature)
+          || !(exon_aligns = zMapFeatureTranscriptGetAlignParts(real_feature, exon_index)))
+        {
+          zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2,
+                                           drawable, fill_set, outline_set, ufill, outline) ;
+        }
+      else
+        {
+          if (!(tr->gapped))
+            {
+              gboolean is_forward = TRUE ;
+              ZMapSpan exon ;
+
+              exon = &g_array_index(transcript->exons, ZMapSpanStruct, exon_index) ;
+
+              tr->gapped = zMapWindowCanvasAlignmentMakeGapped(featureset, feature,
+                                                               y1, y2,
+                                                               exon_aligns, is_forward) ;
+            }
+
+          zMapCanvasDrawBoxGapped(drawable,
+                                  fill_set, outline_set, ufill, outline,
+                                  featureset, feature,
+                                  x1, x2, tr->gapped) ;
+        }
     }
   else if (outline_set)
     {
-      if(tr->sub_type == TRANSCRIPT_INTRON)
+      if (tr->sub_type == TRANSCRIPT_INTRON)
         {
           GdkColor c;
 
@@ -364,6 +401,65 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
    */
   feature->y1 = y1_cache ;
   feature->y2 = y2_cache ;
+
+  return ;
+}
+
+
+static void transcriptPreZoom(ZMapWindowFeaturesetItem featureset)
+{
+  /* Need to call routine to trigger calculate on zoom for text here... */
+  transcriptZoomSet(featureset, NULL) ;
+
+  return ;
+}
+
+
+/*
+ * if we are displaying a gapped alignment, recalculate this data
+ * do this by freeing the existing data, new stuff will be added by the paint function
+ *
+ * NOTE ref to FreeSet() below -> drawable may be NULL
+ */
+static void transcriptZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
+{
+  ZMapSkipList sl;
+
+  zMapReturnIfFail(featureset) ;
+
+  /* NOTE display index will be null on first call */
+
+  /* feature specific eg bumped gapped alignments - adjust gaps display */
+  for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+    {
+      ZMapWindowCanvasTranscript transcript = (ZMapWindowCanvasTranscript)(sl->data) ;
+      AlignGap ag, del;
+
+      if (transcript->feature.type != FEATURE_TRANSCRIPT)/* we could have other types in the col due to mis-config */
+        continue;
+
+      /* delete the old, these get created on paint */
+      for(ag = transcript->gapped ; ag ; )
+        {
+          del = ag ;
+          ag = ag->next ;
+
+          zMapWindowCanvasAlignmentFreeGapped(del) ;
+        }
+
+      transcript->gapped = NULL ;
+    }
+
+  //printf("alignment zoom: %ld %ld %ld\n",n_block_alloc, n_gap_alloc, n_gap_free);
+
+  return ;
+}
+
+
+static void transcriptFreeSet(ZMapWindowFeaturesetItem featureset)
+{
+  /* frees gapped data _and does not alloc any more_ */
+  transcriptZoomSet(featureset, NULL) ;
 
   return ;
 }
@@ -483,25 +579,21 @@ static ZMapWindowCanvasFeature transcriptAddFeature(ZMapWindowFeaturesetItem fea
 
 
 
-
-static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo,
-                                               ZMapFeature feature, double x, double y)
+/* the interface to this is via zMapWindowCanvasItemGetInterval(), so here we have to look up the feature again */
+/*! \todo #warning revisit this when canvas items are simplified */
+/* and then we find the transcript data in the feature context which has a list of exons and introns */
+/* or we could find the exons/introns in the canvas and process those */
+static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo, ZMapFeature feature, double x, double y)
 {
   ZMapFeatureSubPart sub_part = NULL ;
-
-  /* the interface to this is via zMapWindowCanvasItemGetInterval(), so here we have to look up the feature again */
-  /*! \todo #warning revisit this when canvas items are simplified */
-  /* and then we find the transcript data in the feature context which has a list of exons and introms */
-  /* or we could find the exons/introns in the canvas and process those */
-
   ZMapSpan exon,intron ;
   int ni = 0, ne = 0, i ;
   GArray *introns,*exons ;
   ZMapTranscript tr = NULL ;
 
-  zMapReturnValIfFail(feature, sub_part ) ;
+  zMapReturnValIfFail(feature, NULL) ;
 
-  tr = &feature->feature.transcript;
+  tr = &feature->feature.transcript ;
 
   introns = tr->introns;
   exons = tr->exons;
@@ -510,14 +602,16 @@ static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo,
   if(exons)
     ne = exons->len;
 
-  /* NOTE: is we have truncated introns then we will not return a sub part as they are not in the feature */
+  /* NOTE: if we have truncated introns then we will not return a sub part as they are not in the feature */
 
-  for(i = 0 ; i < ne ; i++)
+  for (i = 0 ; i < ne ; i++)
     {
       exon = &g_array_index(exons, ZMapSpanStruct, i) ;
 
       if (exon->x1 <= y && exon->x2 >= y)
         {
+          GArray *exon_aligns ;
+
           sub_part = g_new0(ZMapFeatureSubPartStruct, 1) ;
 
           if (feature->strand == ZMAPSTRAND_FORWARD)
@@ -525,46 +619,59 @@ static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo,
           else
             sub_part->index = (ne - i) ;
 
-          sub_part->start = exon->x1;
-          sub_part->end = exon->x2;
-          sub_part->subpart = ZMAPFEATURE_SUBPART_EXON;
+          sub_part->subpart = ZMAPFEATURE_SUBPART_EXON ;
 
-          /* we have to handle both ends :-(   |----UTR-----|--------CDS--------|-----UTR------| */
-          if (tr->flags.cds)
+          if (zMapFeatureTranscriptHasAlignParts(feature)
+              && (exon_aligns = zMapFeatureTranscriptGetAlignParts(feature, i)))
             {
-              if(tr->cds_start <= y && tr->cds_end >= y)
-                {
-                  /* cursor in CDS but could have UTR in this exon */
-                  sub_part->subpart = ZMAPFEATURE_SUBPART_EXON_CDS;
+              // Gapped exon from align program, we assume it's all CDS for now.
+              sub_part = zMapWindowCanvasGetGappedSubPart(exon_aligns, feature->strand, y) ;
+            }
+          else
+            {
+              // non-gapped, "traditional" exon, check for UTR, CDS etc....   
 
-                  if(sub_part->start < tr->cds_start)
-                    {
-                      sub_part->start = tr->cds_start;
-                    }
+              sub_part->start = exon->x1;
+              sub_part->end = exon->x2;
 
-                  if(sub_part->end > tr->cds_end)
-                    {
-                      sub_part->end = tr->cds_end ;
-                    }
-                }
-              else if (y >= tr->cds_end)
+              /* we have to handle both ends :-(   |----UTR-----|--------CDS--------|-----UTR------| */
+              if (tr->flags.cds)
                 {
-                  /* cursor not in CDS but could have some in this exon */
-                  if (sub_part->start <= tr->cds_end)
+                  if(tr->cds_start <= y && tr->cds_end >= y)
                     {
-                      sub_part->start = tr->cds_end + 1;
+                      /* cursor in CDS but could have UTR in this exon */
+                      sub_part->subpart = ZMAPFEATURE_SUBPART_EXON_CDS;
+
+                      if(sub_part->start < tr->cds_start)
+                        {
+                          sub_part->start = tr->cds_start;
+                        }
+
+                      if(sub_part->end > tr->cds_end)
+                        {
+                          sub_part->end = tr->cds_end ;
+                        }
+                    }
+                  else if (y >= tr->cds_end)
+                    {
+                      /* cursor not in CDS but could have some in this exon */
+                      if (sub_part->start <= tr->cds_end)
+                        {
+                          sub_part->start = tr->cds_end + 1;
+                        }
+                    }
+                  else if (y <= tr->cds_start)
+                    {
+                      if (sub_part->end >= tr->cds_start)
+                        {
+                          sub_part->end = tr->cds_start - 1;
+                        }
                     }
                 }
-              else if (y <= tr->cds_start)
-                {
-                  if (sub_part->end >= tr->cds_start)
-                    {
-                      sub_part->end = tr->cds_start - 1;
-                    }
-                }
+
             }
 
-          return sub_part ;
+          break ;
         }
 
       if (i < ni)
@@ -580,19 +687,20 @@ static ZMapFeatureSubPart transcriptGetSubPart(FooCanvasItem *foo,
               else
                 sub_part->index = (ni - i) ;
 
-              sub_part->start = intron->x1;
-              sub_part->end = intron->x2;
-              sub_part->subpart = ZMAPFEATURE_SUBPART_INTRON;
+              sub_part->start = intron->x1 ;
+              sub_part->end = intron->x2 ;
+              sub_part->subpart = ZMAPFEATURE_SUBPART_INTRON ;
 
               if(tr->flags.cds && tr->cds_start <= y && tr->cds_end >= y)
-                sub_part->subpart = ZMAPFEATURE_SUBPART_INTRON_CDS;
+                sub_part->subpart = ZMAPFEATURE_SUBPART_INTRON_CDS ;
 
-              return sub_part;
+              break ;
             }
         }
     }
 
-  return NULL;
+
+  return sub_part ;
 }
 
 
@@ -630,6 +738,11 @@ static void transcriptGetFeatureExtent(ZMapWindowCanvasFeature feature, ZMapSpan
 
   return ;
 }
+
+
+
+
+
 
 
 
