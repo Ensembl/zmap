@@ -27,15 +27,6 @@
  *
  *-------------------------------------------------------------------
  */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#ifdef __cplusplus
-extern "C" {
-#endif
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 #ifndef ZMAP_FEATURE_H
 #define ZMAP_FEATURE_H
 
@@ -130,7 +121,7 @@ typedef enum {ZMAPHOMOL_NONE = 0, ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMO
 #define ZMAPSTYLE_ALIGNMENT_GAPS   "Gaps"
 #define ZMAPSTYLE_ALIGNMENT_CIGAR  "cigar"
 #define ZMAPSTYLE_ALIGNMENT_VULGAR  "vulgar"
-#define ZMAP_CIGAR_PARSE_ERROR "ZMAP_CIGAR_PARSE_ERROR"
+
 
 
 #define ZMAP_ALIGN_GAP_FORMAT_LIST(_)					\
@@ -283,15 +274,15 @@ typedef struct ZMapFullExonStructType
 } ZMapFullExonStruct, *ZMapFullExon ;
 
 
-/* This tells us information about the start boundary of an alignment block */
-typedef enum
-{
-  ALIGN_BLOCK_BOUNDARY_EDGE,                               /* starts at the edge of the feature
-                                                              (i.e. it's the first alignment block) */
-  ALIGN_BLOCK_BOUNDARY_DELETION,                           /* abuts a deletion */
-  ALIGN_BLOCK_BOUNDARY_INTRON,                             /* abuts an intron */
-  ALIGN_BLOCK_BOUNDARY_MATCH                               /* abuts another alignment block */
-} AlignBlockBoundaryType ;
+// This tells us information about the start/end boundaries of sub-blocks within an alignment block.
+#define ZMAP_ALIGN_BLOCK_BOUNDARY_LIST(_)                               \
+  _(ALIGN_BLOCK_BOUNDARY_INVALID,  , "invalid",  "invalid mode "                                 , "") \
+  _(ALIGN_BLOCK_BOUNDARY_EDGE,     , "edge",     "Starts/ends a feature" , "") \
+  _(ALIGN_BLOCK_BOUNDARY_DELETION, , "deletion", "Abuts a deletion." , "") \
+  _(ALIGN_BLOCK_BOUNDARY_INTRON,   , "intron",   "Abuts an intron."  , "") \
+  _(ALIGN_BLOCK_BOUNDARY_MATCH,    , "match",    "Abuts another alignment block"  , "")
+
+ZMAP_DEFINE_ENUM(AlignBlockBoundaryType, ZMAP_ALIGN_BLOCK_BOUNDARY_LIST) ;
 
 
 /* the following is used to store alignment gap information */
@@ -689,15 +680,30 @@ typedef struct ZMapTranscriptStructType
    * i.e. it must have a value in the range 1 -> 3. */
   int start_not_found ;
 
-  ZMapPhase phase ;                                        /* Used for features in context of GFFv3 */
-  GArray *exons ;                                          /* Of ZMapSpanStruct. */
-  GArray *introns ;                                        /* Of ZMapSpanStruct. */
+  ZMapPhase phase ;                                         /* Used for features in context of GFFv3 */
 
-  GList *variations ;                                      /* List of variations to apply to this
-                                                            * transcript's sequence */
+  GArray *exons ;                                           /* Of ZMapSpanStruct. */
+  GArray *introns ;                                         /* Of ZMapSpanStruct. */
 
-  GList *evidence ;                                        /* List of evidence for this
-                                                            * transcript */
+
+  // If transcript is an alignment/prediction then it may be from a query sequence in which case
+  // we may have start/end/strand information for the prediction.   
+  /* Coords are _always_ for the forward strand of the match sequence and always x1 <= x2,
+   * strand shows which strand is aligned. */
+  int query_start, query_end ;                              /* Start/end in match sequence. */
+  ZMapStrand query_strand ;                                 /* Which strand of the homol was
+                                                               aligned to the sequence. */
+  // STICK NEW ARRAY HERE.....NEED TO FILL IN FROM VULGAR IF AVAILABLE....   
+  GArray *exon_aligns ;                                     // Array of arrays of gaps in exons.
+
+  const char *vulgar_str ;
+
+
+  GList *variations ;                                       /* List of variations to apply to this
+                                                             * transcript's sequence */// 
+
+  GList *evidence ;                                         /* List of evidence for this
+                                                             * transcript */
 } ZMapTranscriptStruct, *ZMapTranscript ;
 
 
@@ -974,19 +980,22 @@ typedef struct ZMapFeatureDescStructName
                                                             /* very helpful, changed in favour of */
                                                             /* "Transcript" (could add feature_so_term) */
 
+  // Feature toplevel standard quantities   
   char *feature_start ;
   char *feature_end ;
   char *feature_length ;
-  const char *feature_strand ;
+  char *feature_strand ;
   char *feature_frame ;
 
+  // Feature toplevel align quantities if feature is an align.   
   char *feature_query_start ;
   char *feature_query_end ;
   char *feature_query_length ;
-  const char *feature_query_strand ;
+  char *feature_query_strand ;
 
 
-  /* sub feature details (still all strings) */
+  // Sub feature details (exon, match etc.)
+  char *sub_feature_term ;
   char *sub_feature_index ;
   char *sub_feature_start ;
   char *sub_feature_end ;
@@ -994,9 +1003,17 @@ typedef struct ZMapFeatureDescStructName
   char *sub_feature_query_end ;
   char *sub_feature_length ;
   char *sub_feature_none_txt ;                             /* If no subfeature, gives reason.... */
-  const char *sub_feature_term;                                  /* Avoid monkeying all over the shop. */
 
-  /* more specific details (more strings) */
+
+  // Used when we have an exon and that exon has subparts.....all a bit hokey...
+  char *subpart_feature_term ;
+  char *subpart_feature_index ;
+  char *subpart_feature_start ;
+  char *subpart_feature_end ;
+  char *subpart_feature_length ;
+
+
+  // more specific details
 
   char *feature_population;
 
@@ -1117,6 +1134,7 @@ gboolean zMapFeatureHasMatchingBoundary(ZMapFeature feature,
 
 gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature) ;
 gboolean zMapFeatureTranscriptInit(ZMapFeature feature) ;
+GArray *zMapFeatureTranscriptCreateSpanArray(void) ;
 gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase,
                                             gboolean, gboolean, int) ;
 gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature, gboolean cds, Coord cds_start, Coord cds_end) ;
@@ -1127,6 +1145,10 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 					  gboolean end_not_found_flag) ;
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
+gboolean zMapFeatureTranscriptAddSubparts(ZMapFeature feature, GArray *exons, GArray *introns) ;
+gboolean zMapFeatureTranscriptAddAlignparts(ZMapFeature feature,
+                                            int query_start, int query_end, ZMapStrand query_strand,
+                                            GArray *exon_aligns, const char *vulgar_str) ;
 gboolean zMapFeatureRemoveTranscriptVariations(ZMapFeature feature, GError **error) ;
 gboolean zMapFeatureAddTranscriptVariation(ZMapFeature feature, ZMapFeature variation, GError **error) ;
 void zMapFeatureRemoveExons(ZMapFeature feature);
@@ -1156,8 +1178,21 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
 					 ZMapStrand ref_strand, int ref_start, int ref_end,
 					 ZMapStrand match_strand, int match_start, int match_end,
 					 char *align_string, GArray **gaps_out) ;
+gboolean zMapFeatureAlignmentString2ExonsGaps(ZMapFeatureAlignFormat align_format,
+                                              ZMapStrand ref_strand, int ref_start, int ref_end,
+                                              ZMapStrand match_strand, int match_start, int match_end,
+                                              const char *align_string,
+                                              GArray **exons_out, GArray **introns_out, GArray **exon_aligns_out) ;
+
+void zMapFeatureAlignmentPrintExonsAligns(GArray *exons, GArray *introns, GArray *exon_aligns) ;
+
+
+
 gboolean zMapFeatureAlignmentMatchForeach(ZMapFeature feature, GFunc function, gpointer user_data);
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat) ;
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapFeatureAlignBoundary2ShortText, AlignBlockBoundaryType) ;
+
+
 
 
 gboolean zMapFeatureSequenceSetType(ZMapFeature feature, ZMapSequenceType type) ;
@@ -1495,11 +1530,9 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
 ZMapFeatureSet zmapFeatureContextGetFeaturesetFromId(ZMapFeatureContext context, GQuark set_id) ;
 ZMapFeature zmapFeatureContextGetFeatureFromId(ZMapFeatureContext context, GQuark feature_id) ;
 
-GType zMapFeatureDataGetType(void);
-gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,
-			    ZMapFeatureSubPart sub_feature,
-			    const gchar           *first_property_name,
-			    ...);
+GType zMapFeatureDataGetType(void) ;
+gboolean zMapFeatureGetInfo(ZMapFeatureAny feature_any, ZMapFeatureSubPart sub_feature,
+			    const gchar *first_property_name, ...) ;
 
 GArray* zMapAlignBlockArrayCreate() ;
 gboolean zMapAlignBlockArrayDestroy(GArray* const) ;
@@ -1551,14 +1584,7 @@ int zMapFeatureTranscriptGetCDSEnd(ZMapFeature feature) ;
 GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature) ;
 void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data) ;
 ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src) ;
+bool zMapFeatureTranscriptHasAlignParts(ZMapFeature feature) ;
+GArray *zMapFeatureTranscriptGetAlignParts(ZMapFeature feature, int exon_index) ;
 
 #endif /* ZMAP_FEATURE_H */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#ifdef __cplusplus
-}
-#endif
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-

@@ -3841,6 +3841,80 @@ static void parseTestFunction01()
     g_free(sTest01) ;
 }
 #undef TEST_STRING_MAX
+
+
+static void parseTestFunction02()
+{
+  ZMapFeatureAlignFormat align_format = ZMAPALIGN_FORMAT_VULGAR_EXONERATE ;
+  ZMapStrand ref_strand = ZMAPSTRAND_FORWARD ;
+  int ref_start = 1, ref_end = 1 ;
+  ZMapStrand match_strand = ZMAPSTRAND_FORWARD ;
+  int match_start = 0, match_end = 0 ;
+  const char *align_string ;
+  GArray *exons, *introns, *exon_aligns ;
+
+
+  const char *vulgar_nucleotide =   "M 10 10 G 0 1 M 20 20 5 0 2 I 0 50 3 0 2 M 10 10" ;
+
+  const char *vulgar_nucleotide_s =   "M 10 10 G 0 1 M 20 20 S 1 1 5 0 2 I 0 50 3 0 2 S 2 2 M 10 10" ;
+
+  const char *vulgar_nucleotide_1 = "M 10 10 G 0 1 M 20 20 5 0 2 I 0 50 3 0 2 M 10 10 5 0 2 I 0 20 3 0 2 M 10 10 5 0 2 I 0 60 3 0 2 M 20 20" ;
+
+  const char *vulgar_protein = "M 12 36 G 1 0 M 31 93 G 0 3 M 31 93 G 0 6 M 17 51" ;
+
+
+  align_string = (char *)vulgar_nucleotide ;
+  ref_start = 1 ;
+  ref_end = 95 ;
+  match_start = 1 ;
+  match_end = 40 ;
+    
+  zMapFeatureAlignmentString2ExonsGaps(align_format,
+                                       ref_strand, ref_start, ref_end,
+                                       match_strand, match_start, match_end,
+                                       align_string,
+                                       &exons, &introns, &exon_aligns) ;
+
+
+  align_string = (char *)vulgar_protein ;
+  ref_start = 1 ;
+  ref_end = 282 ;
+  match_start = 1 ;
+  match_end = 92 ;
+    
+  zMapFeatureAlignmentString2ExonsGaps(align_format,
+                                       ref_strand, ref_start, ref_end,
+                                       match_strand, match_start, match_end,
+                                       align_string,
+                                       &exons, &introns, &exon_aligns) ;
+
+  align_string = (char *)vulgar_nucleotide_s ;
+  ref_start = 1 ;
+  ref_end = 98 ;
+  match_start = 1 ;
+  match_end = 43 ;
+    
+  zMapFeatureAlignmentString2ExonsGaps(align_format,
+                                       ref_strand, ref_start, ref_end,
+                                       match_strand, match_start, match_end,
+                                       align_string,
+                                       &exons, &introns, &exon_aligns) ;
+
+  align_string = (char *)vulgar_nucleotide_1 ;
+  ref_start = 1 ;
+  ref_end = 213 ;
+  match_start = 1 ;
+  match_end = 70 ;
+    
+  zMapFeatureAlignmentString2ExonsGaps(align_format,
+                                       ref_strand, ref_start, ref_end,
+                                       match_strand, match_start, match_end,
+                                       align_string,
+                                       &exons, &introns, &exon_aligns) ;
+
+  return ;
+}
+
 #endif
 
 
