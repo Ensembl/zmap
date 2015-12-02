@@ -56,7 +56,7 @@ typedef struct GetFeaturesDataStruct_
 
 } GetFeaturesDataStruct, *GetFeaturesData ;
 
-static const char * PROTOCOL_NAME = "FileServer" ;
+static const char *PROTOCOL_NAME = "FileServer" ;
 
 /*
  * Interface functions.
@@ -883,9 +883,9 @@ static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
   /*
    * Attempt to read HTS header and then...
    */
-  if (zMapDataSourceReadHTSHeader(server->data_source) )
+  if (zMapDataSourceReadHTSHeader(server->data_source, server->sequence_map->sequence))
     {
-      if ( ( (ZMapDataSourceHTSFile) server->data_source)->sequence )
+      if (((ZMapDataSourceHTSFile) server->data_source)->sequence)
         {
           /*
            *  (i) Put in a fake header line to make it look to ZMap like something
