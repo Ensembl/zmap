@@ -40,5 +40,19 @@ std::list<std::string> *EnsemblGetDatabaseList(const char *host,
                                                const char *pass,
                                                GError **error) ;
 
+std::list<std::string> *EnsemblGetFeaturesetsList(const char *host, 
+                                                  const int port,
+                                                  const char *user,
+                                                  const char *pass,
+                                                  const char *dbname,
+                                                  GError **error) ;
+
+std::list<std::string> *EnsemblGetBiotypesList(const char *host, 
+                                               const int port,
+                                               const char *user,
+                                               const char *pass,
+                                               const char *dbname,
+                                               GError **error) ;
+
 
 #endif /* !ZMAP_ENSEMBL_UTILS_H */

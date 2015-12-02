@@ -279,7 +279,7 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   if (max_row > row)
     row = max_row ;
 
-  main_data->featuresets_widg = makeEntryWidget("Featuresets :", NULL, "If specified, only load these featuresets", 
+  main_data->featuresets_widg = makeEntryWidget("Featuresets :", NULL, "OPTIONAL: Semi-colon-separated list of featuresets to filter input by", 
                                                 table, &row, col, cols - 1, FALSE) ;
 
   /* Add a button next to the featuresets widget to allow the user to search for featuresets in this database */
@@ -289,7 +289,7 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   gtk_signal_connect(GTK_OBJECT(featuresets_button), "clicked", GTK_SIGNAL_FUNC(featuresetsCB), main_data) ;
   gtk_table_attach(table, featuresets_button, cols - 1, cols, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
 
-  main_data->biotypes_widg = makeEntryWidget("Biotypes :", NULL, "If specified, only load these biotypes", 
+  main_data->biotypes_widg = makeEntryWidget("Biotypes :", NULL, "OPTIONAL: Semi-colon-separated list of biotypes to filter input by", 
                                              table, &row, col, cols - 1, FALSE) ;
 
   /* Add a button next to the biotypes widget to allow the user to search for biotypes in this database */
@@ -365,6 +365,50 @@ static list<string>* mainFrameGetDatabaseList(MainFrame main_data, GError **erro
   const char *pass = gtk_entry_get_text(GTK_ENTRY(main_data->pass_widg)) ;
   
   db_list = EnsemblGetDatabaseList(host, port, user, pass, error) ;
+
+  return db_list ;
+}
+
+
+/* Get the list of featuresets available from the database specified in the entry widgets */
+static list<string>* mainFrameGetFeaturesetsList(MainFrame main_data, GError **error)
+{
+  list<string> *db_list = NULL ;
+  
+  zMapReturnValIfFail(main_data && 
+                      main_data->host_widg && main_data->port_widg && 
+                      main_data->user_widg && main_data->pass_widg && main_data->dbname_widg,
+                      db_list) ;
+
+  const char *host = gtk_entry_get_text(GTK_ENTRY(main_data->host_widg)) ;
+  const int port = atoi(gtk_entry_get_text(GTK_ENTRY(main_data->port_widg))) ;
+  const char *user = gtk_entry_get_text(GTK_ENTRY(main_data->user_widg)) ;
+  const char *pass = gtk_entry_get_text(GTK_ENTRY(main_data->pass_widg)) ;
+  const char *dbname = gtk_entry_get_text(GTK_ENTRY(main_data->dbname_widg)) ;
+  
+  db_list = EnsemblGetFeaturesetsList(host, port, user, pass, dbname, error) ;
+
+  return db_list ;
+}
+
+
+/* Get the list of biotypes available from the database specified in the entry widgets */
+static list<string>* mainFrameGetBiotypesList(MainFrame main_data, GError **error)
+{
+  list<string> *db_list = NULL ;
+  
+  zMapReturnValIfFail(main_data && 
+                      main_data->host_widg && main_data->port_widg && 
+                      main_data->user_widg && main_data->pass_widg && main_data->dbname_widg,
+                      db_list) ;
+
+  const char *host = gtk_entry_get_text(GTK_ENTRY(main_data->host_widg)) ;
+  const int port = atoi(gtk_entry_get_text(GTK_ENTRY(main_data->port_widg))) ;
+  const char *user = gtk_entry_get_text(GTK_ENTRY(main_data->user_widg)) ;
+  const char *pass = gtk_entry_get_text(GTK_ENTRY(main_data->pass_widg)) ;
+  const char *dbname = gtk_entry_get_text(GTK_ENTRY(main_data->dbname_widg)) ;
+  
+  db_list = EnsemblGetBiotypesList(host, port, user, pass, dbname, error) ;
 
   return db_list ;
 }
@@ -606,7 +650,7 @@ static void featuresetsCB(GtkWidget *widget, gpointer cb_data)
     {
       /* Connect to the database and get the list of featuresets */
       GError *error = NULL ;
-      list<string> *featuresets_list = mainFrameGetDatabaseList(main_data, &error) ;
+      list<string> *featuresets_list = mainFrameGetFeaturesetsList(main_data, &error) ;
 
       if (featuresets_list)
         {
@@ -640,7 +684,7 @@ static void biotypesCB(GtkWidget *widget, gpointer cb_data)
     {
       /* Connect to the database and get the list of biotypes */
       GError *error = NULL ;
-      list<string> *biotypes_list = mainFrameGetDatabaseList(main_data, &error) ;
+      list<string> *biotypes_list = mainFrameGetBiotypesList(main_data, &error) ;
 
       if (biotypes_list)
         {

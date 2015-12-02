@@ -42,6 +42,15 @@
 using namespace std ;
 
 
+static list<string>* ensemblGetList(const char *host,
+                                    const int port,
+                                    const char *user,
+                                    const char *passwd,
+                                    const char *dbname,
+                                    const string &query,
+                                    GError **error) ;
+
+
 /*
  * We follow glib convention in error domain naming:
  *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
@@ -65,25 +74,77 @@ list<string>* EnsemblGetDatabaseList(const char *host,
                                      GError **error)
 {
   list<string> *result = NULL ;
-  zMapReturnValIfFail(host, result) ;
 
-  const char *db_name = NULL; //"homo_sapiens_core_80_38" ;
+  string query("SHOW DATABASES") ;
+
+  result = ensemblGetList(host, port, user, passwd, NULL, query, error) ;
+
+  return result ;
+}
+
+
+list<string>* EnsemblGetFeaturesetsList(const char *host, 
+                                        const int port,
+                                        const char *user,
+                                        const char *passwd,
+                                        const char *dbname,
+                                        GError **error)
+{
+  list<string> *result = NULL ;
+
+  string query("SELECT logic_name FROM analysis") ;
+
+  result = ensemblGetList(host, port, user, passwd, dbname, query, error) ;
+
+  return result ;
+}
+
+
+list<string>* EnsemblGetBiotypesList(const char *host, 
+                                     const int port,
+                                     const char *user,
+                                     const char *passwd,
+                                     const char *dbname,
+                                     GError **error)
+{
+  list<string> *result = NULL ;
+
+  string query("SELECT biotype FROM gene GROUP BY biotype") ;
+
+  result = ensemblGetList(host, port, user, passwd, dbname, query, error) ;
+
+  return result ;
+}
+
+
+
+/* 
+ *    Internal routines
+ */
+
+static list<string>* ensemblGetList(const char *host,
+                                    const int port,
+                                    const char *user,
+                                    const char *passwd,
+                                    const char *dbname,
+                                    const string &query,
+                                    GError **error)
+{
+  list<string> *result = NULL ;
+  zMapReturnValIfFail(host, result) ;
 
   pthread_mutex_t mutex ;
   pthread_mutex_init(&mutex, NULL) ;
   pthread_mutex_lock(&mutex) ;
 
   MYSQL *mysql = mysql_init(NULL) ;
-  mysql_real_connect(mysql, host, user, passwd, db_name, port, NULL, 0) ;
+  mysql_real_connect(mysql, host, user, passwd, dbname, port, NULL, 0) ;
 
   if (mysql)
     {
       result = new list<string> ;
 
-      char *statement = g_strdup("SHOW DATABASES") ;
-      const int statement_len = strlen(statement) ;
-
-      mysql_real_query(mysql, statement, statement_len) ;
+      mysql_real_query(mysql, query.c_str(), query.size()) ;
 
       MYSQL_RES *mysql_results = mysql_store_result(mysql) ;
 
