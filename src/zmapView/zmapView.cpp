@@ -5748,8 +5748,7 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
 
   if (request_as_columns)                                   /* ie came from ACEDB */
     {
-
-      ZMapFeatureColumn column;
+      ZMapFeatureColumn column = NULL ;
 
       l = new_features->req_feature_set_names;  /* column names as quarks, not normalised */
       while(l)
