@@ -467,7 +467,6 @@ gboolean zMapFeatureAlignmentString2ExonsGaps(ZMapFeatureAlignFormat align_forma
   AlignStrCanonical canon = NULL ;
   GArray *exons = NULL, *introns = NULL, *exon_aligns = NULL ;
   int cds_start = 0, cds_end = 0 ;
-  char *curr ;
   char *err_msg = NULL ;
 
 
@@ -1047,7 +1046,6 @@ static bool parseIsValidOpData(char *sBuff,
   bool result = false ;
   bool found_nums = false ;
   static const char cSpace = ' ' ;
-  char *num_pos = NULL ;
   char *first_num_str = NULL, *second_num_str = NULL ;
   int first_num = 0, second_num = 0 ;
   int num_opt = 0 ;
@@ -2077,9 +2075,8 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
   int curr_ref, curr_match ;
   int i ;
   GArray *exons, *introns, *aligns ;
-  GArray *local_map = NULL, *canon_align ;
+  GArray *canon_align ;
   AlignBlockBoundaryType prev_start_boundary, prev_end_boundary ;
-  ZMapAlignBlock prev_gap = NULL ;
   AlignStrOpStruct *op = NULL ;
   VulgarParseState state ;
   char curr_op, prev_op ;
@@ -2115,7 +2112,6 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
     {
       /* If you alter this code be sure to notice the += and -= which alter curr_ref and curr_match. */
       int match_length = 0, ref_length = 0 ;
-      ZMapAlignBlockStruct sub_align = {0} ;
       bool get_next_op ;
 
       get_next_op = false ;
@@ -2236,7 +2232,6 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
                           {
                             // Previous was a gap so continue exon but start a new align array.
                             GArray *local_map ;
-                            ZMapAlignBlock sub_align ;
 
                             curr_exon = &(g_array_index(exons, ZMapSpanStruct, (exons->len - 1))) ;
                             extendCoords(ref_strand, curr_ref, ref_length, &(curr_exon->x1), &(curr_exon->x2)) ;
@@ -3967,6 +3962,8 @@ static void addNewAlign(GArray *local_map,
 }
 
 
+#ifdef UNUSED
+// gb10: Not sure if this is required. Commenting it out for now to avoid compiler warnings.
 static void calcAlignCoords(ZMapAlignBlock sub_align,
                             ZMapStrand ref_strand, int curr_ref, int ref_length,
                             ZMapStrand match_strand, int curr_match, int match_length)
@@ -3981,6 +3978,8 @@ static void calcAlignCoords(ZMapAlignBlock sub_align,
 
   return ;
 }
+#endif
+
 
 static void extendAlignCoords(ZMapAlignBlock sub_align,
                               ZMapStrand ref_strand, int curr_ref, int ref_length,

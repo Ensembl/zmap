@@ -215,8 +215,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
     style = NULL ;
   gulong ufill,outline;
   int cx1, cy1, cx2, cy2,
-    colours_set, fill_set, outline_set,
-    gy1, gy2, gx ;
+    colours_set, fill_set, outline_set ;
   gulong edge;
   gboolean truncated_start = FALSE,
     truncated_end = FALSE,
@@ -383,9 +382,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
        */
 
       /* Draw full gapped alignment boxes, colinear lines etc etc. */
-      AlignGap ag;
-      GdkColor c;
-
 
       /*
        * create a list of things to draw at this zoom taking onto account bases per pixel
@@ -845,8 +841,6 @@ ZMapFeatureSubPart zmapWindowCanvasAlignmentGetSubPart(FooCanvasItem *foo,
 {
   ZMapFeatureSubPart sub_part = NULL ;
   ZMapWindowFeaturesetItem fi = NULL ;
-  ZMapAlignBlock ab, prev_ab ;
-  int i = 0, match_num = 0, gap_num = 0 ;
 
   zMapReturnValIfFail(foo && feature, NULL) ;
 
