@@ -238,11 +238,11 @@ typedef struct ZMapFeatureSequenceMapStructType
 
   ZMapFeatureSequenceMapStructType* copy() ;
 
-  GList* GetSources() ;
-  void ConstructSources(const char *config_str, char **stylesfile) ;
+  GList* getSources() ;
+  void constructSources(const char *config_str, char **stylesfile) ;
 
-  void AddSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
-  void AddFileSource(const char *file) ;
+  void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
+  void addFileSource(const char *file) ;
 
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 

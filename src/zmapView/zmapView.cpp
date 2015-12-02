@@ -651,8 +651,8 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       stylesfile = zmap_view->view_sequence->stylesfile;
 
       // get the stanza structs from ZMap config
-      zmap_view->view_sequence->ConstructSources(config_str, &stylesfile) ;
-      settings_list = zmap_view->view_sequence->GetSources() ;
+      zmap_view->view_sequence->constructSources(config_str, &stylesfile) ;
+      settings_list = zmap_view->view_sequence->getSources() ;
 
       viewSetUpStyles(zmap_view, stylesfile) ;
 

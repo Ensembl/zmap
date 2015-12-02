@@ -288,7 +288,7 @@ ZMapFeatureSequenceMapStructType* ZMapFeatureSequenceMapStructType::copy()
 
 
 /* Add a source to our list of user-created sources. Sets the error if the name already exists. */
-void ZMapFeatureSequenceMapStructType::AddSource(const string &source_name, 
+void ZMapFeatureSequenceMapStructType::addSource(const string &source_name, 
                                                  ZMapConfigSource source, 
                                                  GError **error)
 {
@@ -310,7 +310,7 @@ void ZMapFeatureSequenceMapStructType::AddSource(const string &source_name,
 
 
 /* Add a file source to our list of user-created sources. */
-void ZMapFeatureSequenceMapStructType::AddFileSource(const char *file)
+void ZMapFeatureSequenceMapStructType::addFileSource(const char *file)
 {
   zMapReturnIfFail(file) ;
 
@@ -327,7 +327,7 @@ void ZMapFeatureSequenceMapStructType::AddFileSource(const char *file)
   string source_name(file) ;
   GError *error = NULL ;
 
-  AddSource(source_name, src, &error) ;
+  addSource(source_name, src, &error) ;
 
   if (error)
     {
@@ -338,7 +338,7 @@ void ZMapFeatureSequenceMapStructType::AddFileSource(const char *file)
 
 
 /* Get the list of ZMapConfigSource structs from our sources map, returned in a glist. */
-GList* ZMapFeatureSequenceMapStructType::GetSources()
+GList* ZMapFeatureSequenceMapStructType::getSources()
 {
   GList *settings_list = NULL ;
 
@@ -359,7 +359,7 @@ GList* ZMapFeatureSequenceMapStructType::GetSources()
 /* Construct the full list of all sources. this adds any sources from the config file or 
  * the given config string to those already stored in the sources list (from the command line or
  * user-defined sources). */
-void ZMapFeatureSequenceMapStructType::ConstructSources(const char *config_str,
+void ZMapFeatureSequenceMapStructType::constructSources(const char *config_str,
                                                         char **stylesfile)
 {
   // This will be the list of names from the sources stanza
